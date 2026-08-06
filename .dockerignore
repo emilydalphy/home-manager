@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+app/home_manager.db
+app/home_manager.db-journal
+.git
+.env

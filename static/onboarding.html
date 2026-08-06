@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Set up — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  p.subtitle { color: #666; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
+  .dot { height: 4px; flex: 1; border-radius: 2px; background: #ddd; }
+  .dot.done { background: #2b6cb0; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+  .card:hover { border-color: #2b6cb0; }
+  .card.selected { border-color: #2b6cb0; background: #eaf1fa; }
+  .card p.title { font-weight: 600; margin: 6px 0 2px; }
+  .card p.desc { color: #666; font-size: 0.85rem; margin: 0; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  input[type=text], input[type=number], textarea, select {
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    font-family: inherit;
+    width: 100%;
+    background: white;
+    color: #222;
+  }
+  input::placeholder, textarea::placeholder { color: #999; }
+  textarea { resize: vertical; }
+  .remove-btn {
+    flex: 0 0 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #888;
+  }
+  .add-btn {
+    background: white;
+    border: 1px solid #2b6cb0;
+    color: #2b6cb0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-bottom: 1.25rem;
+  }
+  label.field-label { font-size: 0.85rem; font-weight: 600; display: block; margin: 1rem 0 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 6px 13px;
+    font-size: 0.85rem;
+    border-radius: 16px;
+    border: 1px solid #ccc;
+    background: white;
+    color: #555;
+    cursor: pointer;
+  }
+  .chip.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  .chip.small { padding: 4px 10px; font-size: 0.75rem; }
+  .seg { display: flex; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; flex: 0 0 auto; }
+  .seg-btn { padding: 6px 11px; font-size: 0.78rem; border: none; background: white; color: #666; cursor: pointer; border-right: 1px solid #ccc; }
+  .seg-btn:last-child { border-right: none; }
+  .seg-btn.active { background: #2b6cb0; color: white; }
+  .protein-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .next-btn {
+    background: #2b6cb0;
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-top: 1.5rem;
+  }
+  .next-btn:disabled { opacity: 0.6; cursor: default; }
+  .back-link { color: #888; font-size: 0.85rem; cursor: pointer; margin-top: 0.75rem; display: inline-block; }
+  .member-block { border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
+  .member-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+  .two-col { display: flex; gap: 10px; }
+  .two-col > div { flex: 1; }
+  .chore-row {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.8rem;
+    margin-bottom: 8px;
+  }
+  .chore-row.excluded { opacity: 0.45; }
+  .chore-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .chore-top input[type=text] { flex: 1; }
+  .chore-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chore-controls select { width: auto; font-size: 0.82rem; padding: 6px 8px; }
+  .loading-note { color: #666; font-size: 0.85rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div id="step-household">
+  <h1>Tell us about your household</h1>
+  <p class="subtitle">This helps tailor everything else.</p>
+
+  <label class="field-label">Who lives here?</label>
+  <div id="members"></div>
+  <button class="add-btn" id="add-member" type="button">+ Add person</button>
+
+  <label class="field-label">Any pets?</label>
+  <div id="pets"></div>
+  <button class="add-btn" id="add-pet" type="button">+ Add pet</button>
+
+  <label class="field-label">What are you hoping this app helps with?</label>
+  <textarea id="goals" rows="2" placeholder="Stay on top of chores, eat healthier, waste less food..."></textarea>
+
+  <div><button class="next-btn" id="household-next" type="button">Continue</button></div>
+</div>
+
+<div id="step-modules" style="display:none">
+  <h1>What do you want to set up?</h1>
+  <p class="subtitle">Pick as many as you like — anything skipped can be set up later in chat.</p>
+
+  <div class="card" data-module="meal">
+    <p class="title">Meal planning</p>
+    <p class="desc">Dietary needs, favorite meals, balanced plates</p>
+  </div>
+  <div class="card" data-module="chores">
+    <p class="title">Chores</p>
+    <p class="desc">Answer a few questions, get a recommended cleaning schedule</p>
+  </div>
+
+  <div><button class="next-btn" id="modules-next" type="button">Continue</button></div>
+  <span class="back-link" data-back="household">&larr; Back</span>
+</div>
+
+<div id="step-meal" style="display:none">
+  <h1>Meal planning preferences</h1>
+  <p class="subtitle">Tap to select. Nothing here is a hard rule — you can always ask for whatever you want.</p>
+
+  <label class="field-label">Dietary restrictions, per person</label>
+  <div id="diet-by-member"></div>
+
+  <label class="field-label">Proteins — more or less?</label>
+  <div id="proteins"></div>
+
+  <label class="field-label">Favorite cuisines</label>
+  <div class="chip-row" id="cuisine-chips"></div>
+  <div class="row" style="margin-top:8px">
+    <input type="text" id="cuisine-custom" placeholder="Something not listed? Type it and press Enter" />
+  </div>
+
+  <label class="field-label">Weeknight cooking time</label>
+  <div class="chip-row" id="time-chips"></div>
+
+  <label class="field-label">Anything else? (optional)</label>
+  <textarea id="meal-notes" rows="2" placeholder="Anything else worth knowing about how you eat..."></textarea>
+
+  <div><button class="next-btn" id="meal-next" type="button">Continue</button></div>
+  <span class="back-link" data-back="modules">&larr; Back</span>
+</div>
+
+<div id="step-chores-intro" style="display:none">
+  <h1>Nice, meal planning is set.</h1>
+  <p class="subtitle">Now we'll move on to chores — a few quick questions about your home, and we'll put together a recommended cleaning schedule for you to review.</p>
+  <div><button class="next-btn" id="chores-intro-next" type="button">Continue to chores</button></div>
+</div>
+
+<div id="step-chores-q" style="display:none">
+  <h1>A few questions about your home</h1>
+  <p class="subtitle">This is just to get a starting point — you'll review and can change anything before it's saved.</p>
+
+  <label class="field-label">Home type</label>
+  <div class="chip-row" id="home-type-chips"></div>
+
+  <div class="two-col" style="margin-top:1rem">
+    <div>
+      <label class="field-label">Bedrooms</label>
+      <input type="number" id="bedrooms" min="0" value="2" />
+    </div>
+    <div>
+      <label class="field-label">Bathrooms</label>
+      <input type="number" id="bathrooms" min="0" value="1" />
+    </div>
+  </div>
+
+  <label class="field-label">Do you have a yard or outdoor space to maintain?</label>
+  <div class="chip-row" id="yard-chips"></div>
+
+  <label class="field-label">How would you describe the upkeep you want?</label>
+  <div class="chip-row" id="standard-chips"></div>
+
+  <label class="field-label">Who should be in the chore rotation?</label>
+  <div class="chip-row" id="rotation-chips"></div>
+
+  <label class="field-label">Any existing help (cleaning service, etc.)?</label>
+  <div class="row">
+    <input type="text" id="existing-help" placeholder="e.g. Cleaning service, or leave blank for none" style="flex:1.5" />
+    <input type="text" id="existing-help-freq" placeholder="How often?" style="flex:1" />
+  </div>
+
+  <label class="field-label">Anything you specifically want tracked?</label>
+  <textarea id="include-notes" rows="2" placeholder="e.g. we always forget the air filter"></textarea>
+
+  <label class="field-label">Anything to leave out?</label>
+  <textarea id="exclude-notes" rows="2" placeholder="e.g. we have a dishwasher, skip dish reminders"></textarea>
+
+  <div><button class="next-btn" id="chores-q-next" type="button">Save and start using the app</button></div>
+  <p class="loading-note" id="chores-loading" style="display:none">Saving...</p>
+  <span class="back-link" id="chores-q-back">&larr; Back</span>
+</div>
+
+<div id="step-chores-review" style="display:none">
+  <h1>Here's what we'd recommend</h1>
+  <p class="subtitle">Uncheck anything you don't want, edit frequency or who's responsible, or add your own below.</p>
+
+  <div id="chore-list"></div>
+  <button class="add-btn" id="add-chore-row" type="button">+ Add a chore</button>
+
+  <div><button class="next-btn" id="finish-btn" type="button">Save and start using the app</button></div>
+  <span class="back-link" data-back="chores-q">&larr; Back</span>
+</div>
+
+<script>
+const AGE_GROUPS = ['Adult', 'Teen', 'Child', 'Toddler'];
+const DIET_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Nut allergy', 'None'];
+const PROTEINS = ['Chicken', 'Beef', 'Pork', 'Fish / seafood', 'Plant-based / tofu', 'Eggs'];
+const CUISINES = ['Italian', 'Mexican', 'Asian', 'Mediterranean', 'American', 'Indian'];
+const TIME_OPTIONS = ['Quick (under 20 min)', 'Moderate', "I don't mind cooking"];
+const HOME_TYPES = ['House', 'Apartment / condo'];
+const STANDARD_OPTIONS = ['Relaxed', 'Standard', 'Meticulous'];
+const FREQUENCIES = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'once'];
+
+function chipWithCustom(container, options, multi) {
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip';
+    btn.textContent = opt;
+    btn.dataset.value = opt;
+    btn.onclick = () => {
+      if (!multi) container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.toggle('active');
+    };
+    container.appendChild(btn);
+  });
+}
+function addCustomChip(container, text, multi) {
+  if (!text.trim()) return;
+  if (!multi) container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'chip active';
+  btn.textContent = text.trim();
+  btn.dataset.value = text.trim();
+  btn.onclick = () => btn.classList.toggle('active');
+  container.appendChild(btn);
+}
+function getActiveChips(container) {
+  return [...container.querySelectorAll('.chip.active')].map(c => c.dataset.value);
+}
+function getActiveChip(container) {
+  const el = container.querySelector('.chip.active');
+  return el ? el.dataset.value : '';
+}
+
+// ---------- Step: household ----------
+const membersDiv = document.getElementById('members');
+function addMemberRow(name, ageGroup) {
+  const block = document.createElement('div');
+  block.className = 'member-block';
+  block.innerHTML = `
+    <div class="row">
+      <input type="text" class="member-name" placeholder="Name" value="${name || ''}" style="flex:2">
+      <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
+    </div>
+    <div class="chip-row member-age"></div>
+  `;
+  const ageRow = block.querySelector('.member-age');
+  chipWithCustom(ageRow, AGE_GROUPS, false);
+  if (ageGroup) {
+    const match = [...ageRow.querySelectorAll('.chip')].find(c => c.dataset.value === ageGroup);
+    if (match) match.classList.add('active');
+  }
+  block.querySelector('.remove-btn').onclick = () => block.remove();
+  membersDiv.appendChild(block);
+}
+addMemberRow('', 'Adult');
+addMemberRow('', 'Adult');
+document.getElementById('add-member').onclick = () => addMemberRow('', '');
+
+const petsDiv = document.getElementById('pets');
+function addPetRow() {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <input type="text" class="pet-name" placeholder="Pet's name" style="flex:1.5">
+    <input type="text" class="pet-type" placeholder="Type (dog, cat...)" style="flex:1">
+    <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
+  `;
+  row.querySelector('.remove-btn').onclick = () => row.remove();
+  petsDiv.appendChild(row);
+}
+document.getElementById('add-pet').onclick = () => addPetRow();
+
+function currentMembers() {
+  return [...membersDiv.querySelectorAll('.member-block')].map(block => {
+    const name = block.querySelector('.member-name').value.trim();
+    const ageChip = block.querySelector('.member-age .chip.active');
+    return { name, age_group: ageChip ? ageChip.dataset.value : '' };
+  }).filter(m => m.name);
+}
+function currentPets() {
+  return [...petsDiv.querySelectorAll('.row')].map(row => ({
+    name: row.querySelector('.pet-name').value.trim(),
+    pet_type: row.querySelector('.pet-type').value.trim(),
+  })).filter(p => p.name);
+}
+
+async function saveHousehold() {
+  const body = { members: currentMembers(), pets: currentPets(), goals: document.getElementById('goals').value.trim() };
+  await fetch('/api/onboarding/household', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+}
+
+// ---------- Step: modules ----------
+const selectedModules = new Set();
+document.querySelectorAll('#step-modules .card').forEach(card => {
+  card.addEventListener('click', () => {
+    const m = card.dataset.module;
+    if (selectedModules.has(m)) { selectedModules.delete(m); card.classList.remove('selected'); }
+    else { selectedModules.add(m); card.classList.add('selected'); }
+  });
+});
+
+// ---------- Step: meal planning ----------
+function buildMealStep() {
+  const dietDiv = document.getElementById('diet-by-member');
+  dietDiv.innerHTML = '';
+  currentMembers().forEach(m => {
+    const block = document.createElement('div');
+    block.className = 'member-block';
+    block.innerHTML = `<p style="font-size:0.85rem;color:#666;margin:0 0 6px">${m.name}</p>
+      <div class="chip-row diet-chips" data-member="${m.name}"></div>`;
+    chipWithCustom(block.querySelector('.diet-chips'), DIET_OPTIONS, true);
+    dietDiv.appendChild(block);
+  });
+
+  const proteinsDiv = document.getElementById('proteins');
+  if (!proteinsDiv.dataset.built) {
+    PROTEINS.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'protein-row';
+      row.innerHTML = `<span style="font-size:0.9rem">${p}</span>
+        <div class="seg" data-protein="${p}">
+          <button type="button" class="seg-btn" data-val="less">Less</button>
+          <button type="button" class="seg-btn active" data-val="neutral">Neutral</button>
+          <button type="button" class="seg-btn" data-val="more">More</button>
+        </div>`;
+      row.querySelectorAll('.seg-btn').forEach(btn => {
+        btn.onclick = () => {
+          row.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
+      });
+      proteinsDiv.appendChild(row);
+    });
+    proteinsDiv.dataset.built = '1';
+  }
+
+  const cuisineChips = document.getElementById('cuisine-chips');
+  if (!cuisineChips.dataset.built) {
+    chipWithCustom(cuisineChips, CUISINES, true);
+    cuisineChips.dataset.built = '1';
+    document.getElementById('cuisine-custom').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addCustomChip(cuisineChips, e.target.value, true); e.target.value = ''; }
+    });
+  }
+  const timeChips = document.getElementById('time-chips');
+  if (!timeChips.dataset.built) { chipWithCustom(timeChips, TIME_OPTIONS, false); timeChips.dataset.built = '1'; }
+}
+
+async function saveMealPreferences() {
+  const dietary_restrictions = {};
+  document.querySelectorAll('.diet-chips').forEach(el => { dietary_restrictions[el.dataset.member] = getActiveChips(el); });
+  const protein_preferences = {};
+  document.querySelectorAll('#proteins .seg').forEach(seg => {
+    const active = seg.querySelector('.seg-btn.active');
+    protein_preferences[seg.dataset.protein] = active ? active.dataset.val : 'neutral';
+  });
+  const cuisine_preferences = getActiveChips(document.getElementById('cuisine-chips'));
+  const cooking_time_preference = getActiveChip(document.getElementById('time-chips'));
+  const notes = document.getElementById('meal-notes').value.trim();
+  await fetch('/api/onboarding/meal-preferences', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dietary_restrictions, protein_preferences, cuisine_preferences, cooking_time_preference, notes }),
+  });
+}
+
+// ---------- Step: chores questions ----------
+function buildChoresQStep() {
+  const typeChips = document.getElementById('home-type-chips');
+  if (!typeChips.dataset.built) { chipWithCustom(typeChips, HOME_TYPES, false); typeChips.dataset.built = '1'; }
+  const yardChips = document.getElementById('yard-chips');
+  if (!yardChips.dataset.built) { chipWithCustom(yardChips, ['Yes', 'No'], false); yardChips.dataset.built = '1'; }
+  const standardChips = document.getElementById('standard-chips');
+  if (!standardChips.dataset.built) {
+    chipWithCustom(standardChips, STANDARD_OPTIONS, false);
+    standardChips.querySelector('[data-value="Standard"]').classList.add('active');
+    standardChips.dataset.built = '1';
+  }
+  const rotationChips = document.getElementById('rotation-chips');
+  rotationChips.innerHTML = '';
+  currentMembers().forEach(m => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip';
+    btn.textContent = m.name;
+    btn.dataset.value = m.name;
+    if (m.age_group === 'Adult' || m.age_group === 'Teen') btn.classList.add('active');
+    btn.onclick = () => btn.classList.toggle('active');
+    rotationChips.appendChild(btn);
+  });
+}
+
+function buildChoreProfile() {
+  return {
+    home_type: getActiveChip(document.getElementById('home-type-chips')),
+    bedrooms: parseInt(document.getElementById('bedrooms').value) || 0,
+    bathrooms: parseInt(document.getElementById('bathrooms').value) || 0,
+    has_yard: getActiveChip(document.getElementById('yard-chips')) === 'Yes',
+    standard: (getActiveChip(document.getElementById('standard-chips')) || 'Standard').toLowerCase(),
+    rotation_members: getActiveChips(document.getElementById('rotation-chips')),
+    existing_help: document.getElementById('existing-help').value.trim(),
+    existing_help_frequency: document.getElementById('existing-help-freq').value.trim(),
+    include_notes: document.getElementById('include-notes').value.trim(),
+    exclude_notes: document.getElementById('exclude-notes').value.trim(),
+  };
+}
+
+async function saveChoresProfile() {
+  const profile = buildChoreProfile();
+  const res = await fetch('/api/onboarding/chores-profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error('Could not save');
+}
+
+// Kept for later: generates a recommended chore list via Claude and returns
+// it for review, instead of just saving the profile. Not wired into the
+// current flow yet.
+async function requestChoreRecommendations() {
+  const profile = buildChoreProfile();
+  const res = await fetch('/api/onboarding/chores/recommend', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error('Could not get recommendations');
+  const data = await res.json();
+  return { chores: data.chores || [], rotation_members: profile.rotation_members };
+}
+
+// ---------- Step: chores review ----------
+let lastRotationMembers = [];
+function renderChoreList(chores) {
+  const listDiv = document.getElementById('chore-list');
+  listDiv.innerHTML = '';
+  chores.forEach(c => addChoreRow(c));
+}
+function addChoreRow(c) {
+  c = c || { name: '', category: 'cleaning', frequency: 'weekly', assignee_names: [] };
+  const listDiv = document.getElementById('chore-list');
+  const row = document.createElement('div');
+  row.className = 'chore-row';
+  row.innerHTML = `
+    <div class="chore-top">
+      <input type="checkbox" class="chore-include" checked>
+      <input type="text" class="chore-name" value="${(c.name || '').replace(/"/g, '&quot;')}" placeholder="Chore name">
+      <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
+    </div>
+    <div class="chore-controls">
+      <select class="chore-category">
+        <option value="cleaning">Cleaning</option>
+        <option value="maintenance">Maintenance</option>
+        <option value="other">Other</option>
+      </select>
+      <select class="chore-frequency"></select>
+      <div class="chip-row chore-assignees"></div>
+    </div>
+  `;
+  row.querySelector('.chore-category').value = c.category || 'cleaning';
+  const freqSelect = row.querySelector('.chore-frequency');
+  FREQUENCIES.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f; opt.textContent = f;
+    freqSelect.appendChild(opt);
+  });
+  freqSelect.value = c.frequency || 'weekly';
+
+  const assigneesDiv = row.querySelector('.chore-assignees');
+  lastRotationMembers.forEach(name => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip small';
+    btn.textContent = name;
+    btn.dataset.value = name;
+    if ((c.assignee_names || []).includes(name)) btn.classList.add('active');
+    btn.onclick = () => btn.classList.toggle('active');
+    assigneesDiv.appendChild(btn);
+  });
+
+  row.querySelector('.chore-include').addEventListener('change', (e) => {
+    row.classList.toggle('excluded', !e.target.checked);
+  });
+  row.querySelector('.remove-btn').onclick = () => row.remove();
+  listDiv.appendChild(row);
+}
+document.getElementById('add-chore-row').onclick = () => addChoreRow();
+
+function collectChoresForSave() {
+  return [...document.querySelectorAll('.chore-row')]
+    .filter(row => row.querySelector('.chore-include').checked)
+    .map(row => ({
+      name: row.querySelector('.chore-name').value.trim(),
+      category: row.querySelector('.chore-category').value,
+      frequency: row.querySelector('.chore-frequency').value,
+      assignee_names: getActiveChips(row.querySelector('.chore-assignees')),
+    }))
+    .filter(c => c.name);
+}
+
+// ---------- Navigation ----------
+let stepOrder = ['household', 'modules'];
+let currentIndex = 0;
+
+function renderProgress() {
+  const progress = document.getElementById('progress');
+  progress.innerHTML = '';
+  stepOrder.forEach((key, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i <= currentIndex ? ' done' : '');
+    progress.appendChild(dot);
+  });
+}
+function showStep(key) {
+  ['household', 'modules', 'meal', 'chores-intro', 'chores-q', 'chores-review'].forEach(k => {
+    document.getElementById('step-' + k).style.display = (k === key) ? 'block' : 'none';
+  });
+  currentIndex = stepOrder.indexOf(key);
+  renderProgress();
+  window.scrollTo(0, 0);
+}
+
+document.getElementById('household-next').onclick = async () => {
+  await saveHousehold();
+  showStep('modules');
+};
+
+document.getElementById('modules-next').onclick = () => {
+  stepOrder = ['household', 'modules'];
+  if (selectedModules.has('meal')) stepOrder.push('meal');
+  if (selectedModules.has('meal') && selectedModules.has('chores')) stepOrder.push('chores-intro');
+  if (selectedModules.has('chores')) stepOrder.push('chores-q', 'chores-review');
+
+  if (stepOrder.length === 2) { window.location.href = '/'; return; }
+
+  const next = stepOrder[2];
+  if (next === 'meal') buildMealStep();
+  if (next === 'chores-q') buildChoresQStep();
+  showStep(next);
+};
+
+document.getElementById('meal-next').onclick = async () => {
+  await saveMealPreferences();
+  if (stepOrder.includes('chores-intro')) {
+    showStep('chores-intro');
+  } else if (stepOrder.includes('chores-q')) {
+    buildChoresQStep();
+    showStep('chores-q');
+  } else {
+    window.location.href = '/';
+  }
+};
+
+document.getElementById('chores-intro-next').onclick = () => {
+  buildChoresQStep();
+  showStep('chores-q');
+};
+
+document.getElementById('chores-q-next').onclick = async () => {
+  const btn = document.getElementById('chores-q-next');
+  btn.disabled = true;
+  document.getElementById('chores-loading').style.display = 'block';
+  try {
+    await saveChoresProfile();
+    window.location.href = '/';
+  } catch (err) {
+    alert('Could not save: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('chores-loading').style.display = 'none';
+  }
+};
+
+document.getElementById('finish-btn').onclick = async () => {
+  try {
+    await fetch('/api/onboarding/chores/save', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chores: collectChoresForSave() }),
+    });
+  } catch (err) {
+    alert('Could not save chores: ' + err.message);
+    return;
+  }
+  window.location.href = '/';
+};
+
+document.querySelectorAll('[data-back]').forEach(el => {
+  el.addEventListener('click', () => showStep(el.dataset.back));
+});
+document.getElementById('chores-q-back').addEventListener('click', () => {
+  showStep(stepOrder.includes('chores-intro') ? 'chores-intro' : 'modules');
+});
+
+renderProgress();
+</script>
+</body>
+</html>

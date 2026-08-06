@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
+  #chat {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    height: 60vh;
+    overflow-y: auto;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .msg { margin-bottom: 14px; line-height: 1.4; white-space: pre-wrap; }
+  .msg.user { text-align: right; }
+  .msg.user .bubble { background: #2b6cb0; color: white; }
+  .msg.assistant .bubble { background: #eee; color: #222; }
+  .bubble { display: inline-block; padding: 8px 12px; border-radius: 12px; max-width: 85%; }
+  form { display: flex; gap: 8px; }
+  input[type=text] {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    background: white;
+    color: #222;
+  }
+  input::placeholder { color: #999; }
+  button {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    background: #2b6cb0;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .quick-btn {
+    background: white;
+    color: #2b6cb0;
+    border: 1px solid #2b6cb0;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .quick-btn:hover { background: #eaf1fa; }
+</style>
+</head>
+<body>
+  <h1>Home Manager</h1>
+  <p class="subtitle">Chores, meal plan, groceries — ask it anything. <a href="/onboarding" style="color:#2b6cb0">Edit household setup</a></p>
+  <div id="chat"></div>
+  <div id="quick-actions">
+    <button class="quick-btn" data-msg="Let's set up chores for our household.">Set up chores</button>
+    <button class="quick-btn" data-msg="What chores are coming up this week?">This week's chores</button>
+    <button class="quick-btn" data-msg="Add a new chore.">Add a chore</button>
+    <button class="quick-btn" data-msg="Let's set up meal planning — ask me about dietary restrictions and what we like to eat.">Set up meal planning</button>
+    <button class="quick-btn" data-msg="What's the meal plan for this week?">This week's meals</button>
+    <button class="quick-btn" data-msg="I want to save a recipe.">Add a recipe</button>
+    <button class="quick-btn" data-msg="What's on the grocery list?">Grocery list</button>
+  </div>
+  <form id="form">
+    <input id="input" type="text" placeholder="e.g. what's on the grocery list?" autocomplete="off" />
+    <button type="submit">Send</button>
+  </form>
+
+<script>
+const chat = document.getElementById('chat');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const sessionId = 'default';
+
+// First-time visitors (no household members saved at all) go through the
+// onboarding wizard instead of landing straight in chat.
+(async () => {
+  try {
+    const res = await fetch('/api/onboarding/status');
+    const data = await res.json();
+    if (data.household && data.household.has_members === false) {
+      window.location.href = '/onboarding';
+    }
+  } catch (err) {
+    // If the check fails (e.g. server just starting), just stay on chat.
+    console.warn('Onboarding status check failed:', err);
+  }
+})();
+
+function addMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const bubble = document.createElement('span');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  div.appendChild(bubble);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage(message) {
+  if (!message) return;
+  addMessage('user', message);
+  input.disabled = true;
+  document.querySelectorAll('.quick-btn').forEach(b => b.disabled = true);
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, message }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Request failed');
+    addMessage('assistant', data.reply);
+  } catch (err) {
+    addMessage('assistant', 'Error: ' + err.message);
+  } finally {
+    input.disabled = false;
+    document.querySelectorAll('.quick-btn').forEach(b => b.disabled = false);
+    input.focus();
+  }
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = '';
+  sendMessage(message);
+});
+
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => sendMessage(btn.dataset.msg));
+});
+
+addMessage('assistant', "Hi! I'm your home manager. Tap \"Set up chores\" to get started, or just tell me what you need.");
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/static/service-worker.js').catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
