@@ -113,6 +113,12 @@ correct anything directly in conversation ("actually I like Thai food," "forget
 that I said no peppers") and it's saved immediately, the same way new
 preferences are.
 
+There's also a dedicated **What We Know** page (linked from the top of the
+chat page) if you'd rather review and edit things directly instead of asking
+in chat — add/remove dislikes and favorite cuisines as chips, add/remove
+protein preferences, and edit cooking-time preference, notes, and household
+goals, all with immediate save, no conversation required.
+
 ### Grocery list
 
 Just say what you need — "add milk and eggs to the list" — and it's saved,

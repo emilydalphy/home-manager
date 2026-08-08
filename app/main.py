@@ -82,6 +82,16 @@ class ChoreSaveRequest(BaseModel):
     chores: list[ChoreItemInput] = []
 
 
+class MemoryEditRequest(BaseModel):
+    field: str  # notes | cooking_time_preference | cuisine_preferences | protein_preferences | goals
+    value: object  # str, list[str], or dict depending on field
+
+
+class MemoryDeleteRequest(BaseModel):
+    field: str  # dislikes | cuisine_preferences | protein_preferences | notes | cooking_time_preference
+    item: str | None = None
+
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -209,6 +219,48 @@ def onboarding_chores_save(req: ChoreSaveRequest):
     return {"saved": True, "created": len(req.chores)}
 
 
+@app.get("/api/memory")
+def get_memory():
+    """Everything the app has saved about this household's meal preferences — powers the 'what we know' view."""
+    try:
+        memory = tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Fetching household memory failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/edit")
+def edit_memory(req: MemoryEditRequest):
+    """Directly set a preference field (see MemoryEditRequest for valid fields), used by the 'what we know' view's edit controls."""
+    try:
+        if req.field == "goals":
+            tools.set_household_goals(str(req.value))
+        else:
+            tools.edit_preference(req.field, req.value)
+        memory = tools.get_household_memory()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Editing preference failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/delete")
+def delete_memory(req: MemoryDeleteRequest):
+    """Remove/clear a preference field or a single list item, used by the 'what we know' view's remove controls."""
+    try:
+        tools.delete_preference(req.field, req.item)
+        memory = tools.get_household_memory()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Deleting preference failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     history = SESSIONS.get(req.session_id, [])
@@ -236,3 +288,8 @@ def index():
 @app.get("/onboarding")
 def onboarding_page():
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
+
+
+@app.get("/memory")
+def memory_page():
+    return FileResponse(os.path.join(static_dir, "memory.html"))

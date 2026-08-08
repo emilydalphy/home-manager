@@ -921,13 +921,29 @@ def edit_preference(field: str, value) -> dict:
     know" view or conversationally ("actually make cooking time preference
     quick"). Valid fields: 'notes' (str), 'cooking_time_preference' (str),
     'cuisine_preferences' (list of str — replaces the whole list),
+    'dislikes' (list of str — replaces the whole list; for adding just one
+    new dislike in conversation, prefer add_food_dislikes instead so it
+    merges rather than requiring you to pass the full existing list),
     'protein_preferences' (dict like {"chicken": "more"} — merged into
     existing). To remove a single item from a list rather than replacing
     it wholesale, use delete_preference instead.
     """
-    valid_fields = {"notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences"}
+    valid_fields = {"notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes"}
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
+    if field == "dislikes":
+        conn = get_conn()
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
+            """,
+            (HOUSEHOLD_ID, json.dumps(value)),
+        )
+        conn.commit()
+        conn.close()
+        return {"dislikes": value}
     if field == "cuisine_preferences":
         return set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
     if field == "protein_preferences":

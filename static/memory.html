@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>What We Know — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: #2b6cb0; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 4px; }
+  .card .hint { color: #888; font-size: 0.8rem; margin: 0 0 10px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eaf1fa;
+    color: #2b6cb0;
+    border: 1px solid #cfe0f2;
+    padding: 5px 6px 5px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+  }
+  .chip button {
+    background: none;
+    border: none;
+    color: #2b6cb0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 50%;
+  }
+  .chip button:hover { background: #d8e8f8; }
+  .empty { color: #999; font-size: 0.85rem; font-style: italic; }
+  .add-row { display: flex; gap: 8px; margin-top: 4px; }
+  input[type=text], textarea, select {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    background: white;
+    color: #222;
+    font-family: inherit;
+  }
+  input::placeholder, textarea::placeholder { color: #999; }
+  textarea { width: 100%; min-height: 60px; resize: vertical; box-sizing: border-box; }
+  button.action {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #2b6cb0;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button.action:hover { opacity: 0.9; }
+  button.action.secondary {
+    background: white;
+    color: #2b6cb0;
+    border: 1px solid #2b6cb0;
+  }
+  .save-row { display: flex; gap: 8px; margin-top: 8px; }
+  .protein-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+  .member { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  .member:last-child { border-bottom: none; }
+  .member .name { font-weight: 600; }
+  .member .restrictions { color: #666; font-size: 0.85rem; }
+  #status { color: #888; font-size: 0.8rem; height: 16px; margin-top: -6px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+  <h1>What we know</h1>
+  <p class="subtitle">Everything saved about your household's meal preferences. <a href="/">&larr; Back to chat</a></p>
+  <div id="status"></div>
+
+  <div class="card">
+    <h2>Household</h2>
+    <p class="hint">Members and their dietary restrictions — edit these from the onboarding flow.</p>
+    <div id="members"></div>
+    <h2 style="margin-top:14px;">Goals</h2>
+    <textarea id="goals" placeholder="e.g. stay on top of chores, eat healthier"></textarea>
+    <div class="save-row">
+      <button class="action" onclick="saveGoals()">Save</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Dislikes</h2>
+    <p class="hint">Foods to avoid in suggestions — not allergies, just preference.</p>
+    <div class="chip-row" id="dislikes"></div>
+    <div class="add-row">
+      <input type="text" id="new-dislike" placeholder="Add a dislike..." onkeydown="if(event.key==='Enter')addDislike()" />
+      <button class="action" onclick="addDislike()">Add</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Favorite cuisines</h2>
+    <div class="chip-row" id="cuisines"></div>
+    <div class="add-row">
+      <input type="text" id="new-cuisine" placeholder="Add a cuisine..." onkeydown="if(event.key==='Enter')addCuisine()" />
+      <button class="action" onclick="addCuisine()">Add</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Protein preferences</h2>
+    <p class="hint">e.g. "chicken: more", "beef: less"</p>
+    <div id="proteins"></div>
+    <div class="add-row">
+      <input type="text" id="new-protein-name" placeholder="Protein (e.g. chicken)" style="flex:2" />
+      <select id="new-protein-value" style="flex:1">
+        <option value="more">more</option>
+        <option value="less">less</option>
+        <option value="neutral">neutral</option>
+      </select>
+      <button class="action" onclick="addProtein()">Add</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Cooking time preference</h2>
+    <div class="add-row">
+      <input type="text" id="cooking-time" placeholder="e.g. quick, moderate, no preference" />
+      <button class="action" onclick="saveCookingTime()">Save</button>
+      <button class="action secondary" onclick="clearCookingTime()">Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Notes</h2>
+    <p class="hint">Freeform — anything else worth remembering.</p>
+    <textarea id="notes" placeholder="Anything else to remember..."></textarea>
+    <div class="save-row">
+      <button class="action" onclick="saveNotes()">Save</button>
+      <button class="action secondary" onclick="clearNotes()">Clear</button>
+    </div>
+  </div>
+
+<script>
+let memory = {};
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg || '';
+  if (msg) setTimeout(() => { document.getElementById('status').textContent = ''; }, 2500);
+}
+
+async function loadMemory() {
+  const res = await fetch('/api/memory');
+  memory = await res.json();
+  render();
+}
+
+function render() {
+  const membersEl = document.getElementById('members');
+  membersEl.innerHTML = (memory.members || []).length
+    ? memory.members.map(m => `
+        <div class="member">
+          <div class="name">${escapeHtml(m.name)}${m.age_group ? ' <span class="restrictions">(' + escapeHtml(m.age_group) + ')</span>' : ''}</div>
+          <div class="restrictions">${m.dietary_restrictions && m.dietary_restrictions.length ? escapeHtml(m.dietary_restrictions.join(', ')) : 'No restrictions noted'}</div>
+        </div>`).join('')
+    : '<p class="empty">No members added yet.</p>';
+
+  document.getElementById('goals').value = memory.goals || '';
+  document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
+  document.getElementById('notes').value = memory.notes || '';
+
+  const dislikesEl = document.getElementById('dislikes');
+  dislikesEl.innerHTML = (memory.dislikes || []).length
+    ? memory.dislikes.map(d => chip('dislikes', d)).join('')
+    : '<p class="empty">No dislikes saved.</p>';
+
+  const cuisinesEl = document.getElementById('cuisines');
+  cuisinesEl.innerHTML = (memory.cuisine_preferences || []).length
+    ? memory.cuisine_preferences.map(c => chip('cuisine_preferences', c)).join('')
+    : '<p class="empty">No favorite cuisines saved.</p>';
+
+  const proteinsEl = document.getElementById('proteins');
+  const proteinEntries = Object.entries(memory.protein_preferences || {});
+  proteinsEl.innerHTML = proteinEntries.length
+    ? proteinEntries.map(([name, val]) => `
+        <div class="protein-row">
+          <span>${escapeHtml(name)}: ${escapeHtml(val)}</span>
+          <button class="action secondary remove-chip" style="padding:4px 10px;" data-field="protein_preferences" data-item="${escapeHtml(name)}">Remove</button>
+        </div>`).join('')
+    : '<p class="empty">No protein preferences saved.</p>';
+}
+
+function chip(field, label) {
+  return `<span class="chip">${escapeHtml(label)} <button class="remove-chip" data-field="${escapeHtml(field)}" data-item="${escapeHtml(label)}">&times;</button></span>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Event delegation for all remove buttons rendered above — avoids ever
+// embedding user-entered text inside an inline onclick attribute, which
+// breaks (or worse, injects) if the text contains quote characters.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.remove-chip');
+  if (!btn) return;
+  removeItem(btn.dataset.field, btn.dataset.item);
+});
+
+async function removeItem(field, item) {
+  setStatus('Removing...');
+  const res = await fetch('/api/memory/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ field, item }),
+  });
+  memory = await res.json();
+  render();
+  setStatus('Saved');
+}
+
+async function editField(field, value) {
+  setStatus('Saving...');
+  const res = await fetch('/api/memory/edit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ field, value }),
+  });
+  memory = await res.json();
+  render();
+  setStatus('Saved');
+}
+
+function addDislike() {
+  const input = document.getElementById('new-dislike');
+  const val = input.value.trim();
+  if (!val) return;
+  const updated = [...new Set([...(memory.dislikes || []), val])];
+  editField('dislikes', updated);
+  input.value = '';
+}
+
+function addCuisine() {
+  const input = document.getElementById('new-cuisine');
+  const val = input.value.trim();
+  if (!val) return;
+  const updated = [...new Set([...(memory.cuisine_preferences || []), val])];
+  editField('cuisine_preferences', updated);
+  input.value = '';
+}
+
+function addProtein() {
+  const nameInput = document.getElementById('new-protein-name');
+  const valueSelect = document.getElementById('new-protein-value');
+  const name = nameInput.value.trim();
+  if (!name) return;
+  const updated = { ...(memory.protein_preferences || {}) };
+  updated[name] = valueSelect.value;
+  editField('protein_preferences', updated);
+  nameInput.value = '';
+}
+
+function saveCookingTime() {
+  editField('cooking_time_preference', document.getElementById('cooking-time').value.trim());
+}
+function clearCookingTime() {
+  removeItem('cooking_time_preference', null);
+  document.getElementById('cooking-time').value = '';
+}
+function saveNotes() {
+  editField('notes', document.getElementById('notes').value.trim());
+}
+function clearNotes() {
+  removeItem('notes', null);
+  document.getElementById('notes').value = '';
+}
+function saveGoals() {
+  editField('goals', document.getElementById('goals').value.trim());
+}
+
+loadMemory();
+</script>
+</body>
+</html>

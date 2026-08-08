@@ -489,12 +489,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences' (list of strings, replaces the whole list), 'protein_preferences' (dict like {\"chicken\": \"more\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes' (list of strings, replaces the whole list — prefer add_food_dislikes for adding a single new dislike conversationally), 'protein_preferences' (dict like {\"chicken\": \"more\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences"]},
-                "value": {"description": "String for notes/cooking_time_preference, array for cuisine_preferences, object for protein_preferences."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes"]},
+                "value": {"description": "String for notes/cooking_time_preference, array for cuisine_preferences/dislikes, object for protein_preferences."},
             },
             "required": ["field", "value"],
         },
