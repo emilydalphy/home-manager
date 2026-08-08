@@ -92,7 +92,25 @@
   .member:last-child { border-bottom: none; }
   .member .name { font-weight: 600; }
   .member .restrictions { color: #666; font-size: 0.85rem; }
-  #status { color: #888; font-size: 0.8rem; height: 16px; margin-top: -6px; margin-bottom: 10px; }
+  #status {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(20px);
+    background: #2f855a;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1000;
+  }
+  #status.error { background: #c53030; }
+  #status.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -166,16 +184,28 @@
 
 <script>
 let memory = {};
+let statusTimer = null;
 
-function setStatus(msg) {
-  document.getElementById('status').textContent = msg || '';
-  if (msg) setTimeout(() => { document.getElementById('status').textContent = ''; }, 2500);
+function setStatus(msg, isError) {
+  const el = document.getElementById('status');
+  clearTimeout(statusTimer);
+  el.textContent = msg || '';
+  el.classList.toggle('error', !!isError);
+  el.classList.toggle('visible', !!msg);
+  if (msg) {
+    statusTimer = setTimeout(() => { el.classList.remove('visible'); }, 2200);
+  }
 }
 
 async function loadMemory() {
-  const res = await fetch('/api/memory');
-  memory = await res.json();
-  render();
+  try {
+    const res = await fetch('/api/memory');
+    if (!res.ok) throw new Error('Failed to load');
+    memory = await res.json();
+    render();
+  } catch (e) {
+    setStatus('Couldn\'t load — try refreshing', true);
+  }
 }
 
 function render() {
@@ -231,27 +261,35 @@ document.addEventListener('click', (e) => {
 });
 
 async function removeItem(field, item) {
-  setStatus('Removing...');
-  const res = await fetch('/api/memory/delete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ field, item }),
-  });
-  memory = await res.json();
-  render();
-  setStatus('Saved');
+  try {
+    const res = await fetch('/api/memory/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, item }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to remove');
+    memory = await res.json();
+    render();
+    setStatus('✓ Removed');
+  } catch (e) {
+    setStatus(e.message || 'Something went wrong — try again', true);
+  }
 }
 
 async function editField(field, value) {
-  setStatus('Saving...');
-  const res = await fetch('/api/memory/edit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ field, value }),
-  });
-  memory = await res.json();
-  render();
-  setStatus('Saved');
+  try {
+    const res = await fetch('/api/memory/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, value }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to save');
+    memory = await res.json();
+    render();
+    setStatus('✓ Saved');
+  } catch (e) {
+    setStatus(e.message || 'Something went wrong — try again', true);
+  }
 }
 
 function addDislike() {
