@@ -154,13 +154,7 @@
     <div id="proteins"></div>
     <div class="add-row">
       <input type="text" id="new-protein-name" placeholder="Protein (e.g. chicken)" style="flex:2" />
-      <select id="new-protein-value" style="flex:1;text-transform:capitalize;">
-        <option value="several times a week">several times a week</option>
-        <option value="1-2 times a week">1-2 times a week</option>
-        <option value="occasionally" selected>occasionally</option>
-        <option value="rarely">rarely</option>
-        <option value="avoid">avoid</option>
-      </select>
+      <select id="new-protein-value" style="flex:1;text-transform:capitalize;"></select>
       <button class="action" onclick="addProtein()">Add</button>
     </div>
   </div>
@@ -187,6 +181,14 @@
 <script>
 let memory = {};
 let statusTimer = null;
+
+const PROTEIN_FREQUENCIES = ['several times a week', '1-2 times a week', 'occasionally', 'rarely', 'avoid'];
+
+function proteinFreqOptions(selected) {
+  return PROTEIN_FREQUENCIES.map(f =>
+    `<option value="${f}" ${f === selected ? 'selected' : ''}>${f}</option>`
+  ).join('');
+}
 
 function setStatus(msg, isError) {
   const el = document.getElementById('status');
@@ -239,10 +241,17 @@ function render() {
   proteinsEl.innerHTML = proteinEntries.length
     ? proteinEntries.map(([name, val]) => `
         <div class="protein-row">
-          <span>${escapeHtml(name)}: ${escapeHtml(val)}</span>
-          <button class="action secondary remove-chip" style="padding:4px 10px;" data-field="protein_preferences" data-item="${escapeHtml(name)}">Remove</button>
+          <span>${escapeHtml(name)}</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select class="protein-edit" style="text-transform:capitalize;" data-name="${escapeHtml(name)}">
+              ${proteinFreqOptions(val)}
+            </select>
+            <button class="action secondary remove-chip" style="padding:4px 10px;" data-field="protein_preferences" data-item="${escapeHtml(name)}">Remove</button>
+          </div>
         </div>`).join('')
     : '<p class="empty">No protein preferences saved.</p>';
+
+  document.getElementById('new-protein-value').innerHTML = proteinFreqOptions('occasionally');
 }
 
 function chip(field, label) {
@@ -260,6 +269,16 @@ document.addEventListener('click', (e) => {
   const btn = e.target.closest('.remove-chip');
   if (!btn) return;
   removeItem(btn.dataset.field, btn.dataset.item);
+});
+
+// Changing a protein's frequency dropdown in place edits it directly,
+// no need to remove and re-add.
+document.addEventListener('change', (e) => {
+  const sel = e.target.closest('.protein-edit');
+  if (!sel) return;
+  const updated = { ...(memory.protein_preferences || {}) };
+  updated[sel.dataset.name] = sel.value;
+  editField('protein_preferences', updated);
 });
 
 async function removeItem(field, item) {
