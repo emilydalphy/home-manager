@@ -87,6 +87,7 @@
   .seg-btn:last-child { border-right: none; }
   .seg-btn.active { background: #2b6cb0; color: white; }
   .protein-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .protein-row select.protein-freq { flex: 0 0 auto; width: auto; font-size: 0.82rem; padding: 6px 8px; text-transform: capitalize; }
   .next-btn {
     background: #2b6cb0;
     color: white;
@@ -164,7 +165,7 @@
   <label class="field-label">Dietary restrictions, per person</label>
   <div id="diet-by-member"></div>
 
-  <label class="field-label">Proteins — more or less?</label>
+  <label class="field-label">Proteins — how often?</label>
   <div id="proteins"></div>
 
   <label class="field-label">Favorite cuisines</label>
@@ -248,6 +249,11 @@
 const AGE_GROUPS = ['Adult', 'Teen', 'Child', 'Toddler'];
 const DIET_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Nut allergy', 'None'];
 const PROTEINS = ['Chicken', 'Beef', 'Pork', 'Fish / seafood', 'Plant-based / tofu', 'Eggs'];
+// Frequency-based rather than a vague "more/less" — reflects how often the
+// household actually wants to eat it (preference, health, and budget all
+// factor in), and is directly usable by the weekly plan generator. Keep in
+// sync with the same list in memory.html.
+const PROTEIN_FREQUENCIES = ['several times a week', '1-2 times a week', 'occasionally', 'rarely', 'avoid'];
 const CUISINES = ['Italian', 'Mexican', 'Asian', 'Mediterranean', 'American', 'Indian'];
 const TIME_OPTIONS = ['Quick (under 20 min)', 'Moderate', "I don't mind cooking"];
 const HOME_TYPES = ['House', 'Apartment / condo'];
@@ -377,17 +383,9 @@ function buildMealStep() {
       const row = document.createElement('div');
       row.className = 'protein-row';
       row.innerHTML = `<span style="font-size:0.9rem">${p}</span>
-        <div class="seg" data-protein="${p}">
-          <button type="button" class="seg-btn" data-val="less">Less</button>
-          <button type="button" class="seg-btn active" data-val="neutral">Neutral</button>
-          <button type="button" class="seg-btn" data-val="more">More</button>
-        </div>`;
-      row.querySelectorAll('.seg-btn').forEach(btn => {
-        btn.onclick = () => {
-          row.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        };
-      });
+        <select class="protein-freq" data-protein="${p}">
+          ${PROTEIN_FREQUENCIES.map(f => `<option value="${f}" ${f === 'occasionally' ? 'selected' : ''}>${f}</option>`).join('')}
+        </select>`;
       proteinsDiv.appendChild(row);
     });
     proteinsDiv.dataset.built = '1';
@@ -409,9 +407,8 @@ async function saveMealPreferences() {
   const dietary_restrictions = {};
   document.querySelectorAll('.diet-chips').forEach(el => { dietary_restrictions[el.dataset.member] = getActiveChips(el); });
   const protein_preferences = {};
-  document.querySelectorAll('#proteins .seg').forEach(seg => {
-    const active = seg.querySelector('.seg-btn.active');
-    protein_preferences[seg.dataset.protein] = active ? active.dataset.val : 'neutral';
+  document.querySelectorAll('#proteins .protein-freq').forEach(sel => {
+    protein_preferences[sel.dataset.protein] = sel.value;
   });
   const cuisine_preferences = getActiveChips(document.getElementById('cuisine-chips'));
   const cooking_time_preference = getActiveChip(document.getElementById('time-chips'));

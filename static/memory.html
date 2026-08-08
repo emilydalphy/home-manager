@@ -150,14 +150,16 @@
 
   <div class="card">
     <h2>Protein preferences</h2>
-    <p class="hint">e.g. "chicken: more", "beef: less"</p>
+    <p class="hint">How often the household wants each protein — preference, health, and budget can all factor in.</p>
     <div id="proteins"></div>
     <div class="add-row">
       <input type="text" id="new-protein-name" placeholder="Protein (e.g. chicken)" style="flex:2" />
-      <select id="new-protein-value" style="flex:1">
-        <option value="more">more</option>
-        <option value="less">less</option>
-        <option value="neutral">neutral</option>
+      <select id="new-protein-value" style="flex:1;text-transform:capitalize;">
+        <option value="several times a week">several times a week</option>
+        <option value="1-2 times a week">1-2 times a week</option>
+        <option value="occasionally" selected>occasionally</option>
+        <option value="rarely">rarely</option>
+        <option value="avoid">avoid</option>
       </select>
       <button class="action" onclick="addProtein()">Add</button>
     </div>

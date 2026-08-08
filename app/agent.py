@@ -56,8 +56,10 @@ up in a conversation — check silently):
 questions before diving in:
   1. Any dietary restrictions or allergies, per person? Use set_member_dietary_restrictions \
 for each household member (an empty list is a fine answer).
-  2. Protein preferences (more/less/neutral on chicken, beef, pork, fish, plant-based, \
-eggs), favorite cuisines, and typical cooking time — save with set_household_meal_preferences \
+  2. Protein preferences — how often they want each protein (chicken, beef, pork, fish, \
+plant-based, eggs), e.g. 'several times a week', '1-2 times a week', 'occasionally', 'rarely', \
+'avoid' — preference, health, and budget can all factor in. Favorite cuisines and typical \
+cooking time too — save with set_household_meal_preferences \
 (protein_preferences, cuisine_preferences, cooking_time_preference, notes for anything else). \
 Call it even if answers are brief — it marks onboarding complete.
 - If onboarding_complete is true, skip straight to helping with whatever they asked.
@@ -224,14 +226,14 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_household_meal_preferences",
-        "description": "Save household food preferences: freeform notes, protein preferences (more/less/neutral per protein), favorite cuisines, cooking time preference. Any field can be partial. Marks meal-planning onboarding complete by default.",
+        "description": "Save household food preferences: freeform notes, protein preferences (how often per protein), favorite cuisines, cooking time preference. Any field can be partial. Marks meal-planning onboarding complete by default.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "notes": {"type": "string"},
                 "protein_preferences": {
                     "type": "object",
-                    "description": "e.g. {\"chicken\": \"more\", \"beef\": \"less\"} — values are 'more'/'less'/'neutral'.",
+                    "description": "How often the household wants each protein, e.g. {\"chicken\": \"several times a week\", \"beef\": \"rarely\"}. Suggested values: 'several times a week', '1-2 times a week', 'occasionally', 'rarely', 'avoid' — but use whatever frequency phrasing the user actually gives.",
                 },
                 "cuisine_preferences": {"type": "array", "items": {"type": "string"}},
                 "cooking_time_preference": {"type": "string", "description": "e.g. 'quick', 'moderate', 'no preference'"},
@@ -489,7 +491,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes' (list of strings, replaces the whole list — prefer add_food_dislikes for adding a single new dislike conversationally), 'protein_preferences' (dict like {\"chicken\": \"more\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes' (list of strings, replaces the whole list — prefer add_food_dislikes for adding a single new dislike conversationally), 'protein_preferences' (dict of protein -> how-often, e.g. {\"chicken\": \"several times a week\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -670,6 +672,12 @@ preferences), so the rotation doesn't shrink to only "safe" meals over time.
 - Avoid repeating any meal (or a near-identical variant) that appears in recent_history \
 within the last 3 weeks, and avoid repeating the same main_protein or cuisine too many \
 days in a row — check recent_history's cuisine/main_protein fields, not just meal names.
+- household_memory's protein_preferences say how often the household wants each protein \
+(e.g. "several times a week", "1-2 times a week", "occasionally", "rarely", "avoid") — treat \
+this as a real constraint on the week's mix, not just a tiebreaker: a protein marked "avoid" \
+shouldn't appear at all, "rarely" should appear at most once across the week, and one marked \
+"several times a week" should show up more than once. Weigh this alongside — not instead of — \
+the variety rules above.
 - Honor any per-week constraints in constraints_notes exactly (e.g. "out Thursday/Friday" \
 means don't plan those days; "under 30 minutes on weeknights" means quick weeknight meals).
 - For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \

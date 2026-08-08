@@ -205,9 +205,10 @@ def set_household_meal_preferences(
 ) -> dict:
     """
     Save household food preferences: freeform notes (the "let me type it"
-    catch-all), protein preferences (e.g. {"chicken": "more", "beef": "less"}
-    with values 'more'/'less'/'neutral'), favorite cuisines, and a cooking
-    time preference. Any field can be omitted/partial — pass what you have.
+    catch-all), protein preferences (how often per protein, e.g.
+    {"chicken": "several times a week", "beef": "rarely"} — reflects
+    preference, health, and budget together, not just taste), favorite
+    cuisines, and a cooking time preference. Any field can be omitted/partial — pass what you have.
     By default this marks meal-planning onboarding as complete; pass
     mark_complete=False if you're saving a partial update mid-conversation.
     """
@@ -924,8 +925,9 @@ def edit_preference(field: str, value) -> dict:
     'dislikes' (list of str — replaces the whole list; for adding just one
     new dislike in conversation, prefer add_food_dislikes instead so it
     merges rather than requiring you to pass the full existing list),
-    'protein_preferences' (dict like {"chicken": "more"} — merged into
-    existing). To remove a single item from a list rather than replacing
+    'protein_preferences' (dict of protein -> how-often, e.g. {"chicken":
+    "several times a week"} — merged into existing). To remove a single
+    item from a list rather than replacing
     it wholesale, use delete_preference instead.
     """
     valid_fields = {"notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes"}
