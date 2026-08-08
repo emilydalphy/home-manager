@@ -132,7 +132,10 @@ peas, garlic, ginger, cilantro) are 'produce', not pantry, even when used as a s
 ingredient. When genuinely unsure between two categories, prefer the one closer to where a \
 typical grocery store actually shelves it, not where it's used in a recipe. When showing or \
 reviewing the grocery list with the user, use get_grocery_list_by_section (grouped by aisle) \
-rather than list_grocery_list's flat view.
+rather than list_grocery_list's flat view. If get_grocery_list_by_section ever shows the same \
+item name more than once (leftover from before consolidation applied, or any other way it \
+happens), just call consolidate_grocery_list right away — don't ask permission first, this is \
+a safe cleanup, not a destructive one.
 - When suggesting meal plans or chore rotations, ask for missing preferences rather than \
 guessing, but don't over-ask — use sensible defaults for a typical household on minor details.
 - When suggesting recipes, prefer ones the household already has saved (list_recipes shows \
@@ -553,6 +556,14 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "consolidate_grocery_list",
+        "description": "Merge any duplicate lines for the same item into one, combining quantities. Call this immediately (don't just ask permission) if you notice the same item listed more than once when reviewing the grocery list, or if the user asks to clean up/consolidate it.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+        },
+    },
+    {
         "name": "mark_grocery_item",
         "description": "Update a grocery item's status, given its item_id.",
         "input_schema": {
@@ -750,6 +761,7 @@ TOOL_FUNCTIONS = {
     "add_grocery_items": tools.add_grocery_items,
     "list_grocery_list": tools.list_grocery_list,
     "get_grocery_list_by_section": tools.get_grocery_list_by_section,
+    "consolidate_grocery_list": tools.consolidate_grocery_list,
     "mark_grocery_item": tools.mark_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
 }

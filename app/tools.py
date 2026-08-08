@@ -1159,6 +1159,43 @@ def get_grocery_list_by_section(status: str = "needed") -> dict:
     return {"sections": [{"section": s, "items": sections[s]} for s in _GROCERY_SECTION_ORDER if sections[s]]}
 
 
+def consolidate_grocery_list(status: str = "needed") -> dict:
+    """
+    Merge any duplicate lines already on the list (same item name,
+    case-insensitive) into one line each, combining quantities with the
+    same logic add_grocery_item uses automatically for new additions.
+    Call this if the user asks to clean up/consolidate the list, or if you
+    notice the same item appears more than once — items added since
+    consolidation shipped shouldn't duplicate going forward, but this
+    cleans up anything added before that, or any way it happens to slip
+    through.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity, category FROM grocery_items WHERE household_id = ? AND status = ? ORDER BY id",
+        (HOUSEHOLD_ID, status),
+    ).fetchall()
+
+    groups: dict[str, list[dict]] = {}
+    for r in rows:
+        groups.setdefault(r["item"].strip().lower(), []).append(dict(r))
+
+    merged_count = 0
+    for entries in groups.values():
+        if len(entries) < 2:
+            continue
+        keep = entries[0]
+        merged_qty = keep["quantity"] or ""
+        for extra in entries[1:]:
+            merged_qty, _ = _try_consolidate_quantity(merged_qty, extra["quantity"] or "")
+            conn.execute("DELETE FROM grocery_items WHERE id = ?", (extra["id"],))
+            merged_count += 1
+        conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (merged_qty, keep["id"]))
+    conn.commit()
+    conn.close()
+    return {"lines_merged_away": merged_count}
+
+
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """Update a grocery item's status (needed/in_cart/purchased)."""
     conn = get_conn()
