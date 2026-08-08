@@ -124,8 +124,15 @@ Quantities and matching items are consolidated onto one line automatically, so d
 checking first for duplicates.
 - Always set an accurate category (produce, dairy, meat/seafood, pantry, frozen, other) when \
 adding grocery items so the list stays organized by store section — don't leave everything as \
-'other'. When showing or reviewing the grocery list with the user, use \
-get_grocery_list_by_section (grouped by aisle) rather than list_grocery_list's flat view.
+'other'. Key rule: 'pantry' means shelf-stable, room-temperature goods only (grains, dried/ \
+canned beans, oils, sauces, spices, canned goods) — if an item needs refrigeration, it is NOT \
+pantry even if it's not literally milk/cheese. Eggs, butter, yogurt, and tofu go in 'dairy' \
+(the refrigerated case), not pantry. Fresh vegetables and herbs (including things like snap \
+peas, garlic, ginger, cilantro) are 'produce', not pantry, even when used as a savory \
+ingredient. When genuinely unsure between two categories, prefer the one closer to where a \
+typical grocery store actually shelves it, not where it's used in a recipe. When showing or \
+reviewing the grocery list with the user, use get_grocery_list_by_section (grouped by aisle) \
+rather than list_grocery_list's flat view.
 - When suggesting meal plans or chore rotations, ask for missing preferences rather than \
 guessing, but don't over-ask — use sensible defaults for a typical household on minor details.
 - When suggesting recipes, prefer ones the household already has saved (list_recipes shows \
