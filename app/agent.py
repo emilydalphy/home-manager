@@ -119,8 +119,13 @@ the grocery list — mention this briefly, don't over-explain.
 just adding items is how the list is "remembered." Whenever the user mentions wanting to buy \
 something, in passing or directly ("add milk and eggs", "we're out of paper towels"), call \
 add_grocery_items right away in the same turn — don't wait to be asked, and use the plural \
-tool (not one-by-one add_grocery_item calls) whenever more than one item is mentioned. It \
-already skips anything already on the list, so don't bother checking first.
+tool (not one-by-one add_grocery_item calls) whenever more than one item is mentioned. \
+Quantities and matching items are consolidated onto one line automatically, so don't bother \
+checking first for duplicates.
+- Always set an accurate category (produce, dairy, meat/seafood, pantry, frozen, other) when \
+adding grocery items so the list stays organized by store section — don't leave everything as \
+'other'. When showing or reviewing the grocery list with the user, use \
+get_grocery_list_by_section (grouped by aisle) rather than list_grocery_list's flat view.
 - When suggesting meal plans or chore rotations, ask for missing preferences rather than \
 guessing, but don't over-ask — use sensible defaults for a typical household on minor details.
 - When suggesting recipes, prefer ones the household already has saved (list_recipes shows \
@@ -485,32 +490,56 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_grocery_item",
-        "description": "Add an item to the grocery list.",
+        "description": "Add an item to the grocery list. If a matching item is already on the list, quantities are consolidated into one line automatically (units permitting) rather than creating a duplicate.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "item": {"type": "string"},
                 "quantity": {"type": "string"},
-                "category": {"type": "string", "enum": ["produce", "dairy", "meat", "pantry", "household", "other"]},
+                "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"], "description": "Pick the one that actually matches the item so the list stays organized by store section."},
             },
             "required": ["item"],
         },
     },
     {
         "name": "add_grocery_items",
-        "description": "Add several items to the grocery list at once, e.g. from 'add milk and eggs to the list'. Preferred over add_grocery_item when the user names more than one thing. Skips anything already on the list so it's safe to call even if unsure whether an item was already added — items stay on the list across the week until purchased, so this is also how you 'remember' the list, not just add to it.",
+        "description": "Add several items to the grocery list at once, e.g. from 'add milk and eggs to the list'. Preferred over add_grocery_item when the user names more than one thing. Each entry can be a plain string, or an object {item, quantity, category} when you know more detail (e.g. from a recipe). Quantities consolidate with anything already on the list automatically.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "items": {"type": "array", "items": {"type": "string"}},
-                "category": {"type": "string", "enum": ["produce", "dairy", "meat", "pantry", "household", "other"]},
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "item": {"type": "string"},
+                                    "quantity": {"type": "string"},
+                                    "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
+                                },
+                                "required": ["item"],
+                            },
+                        ],
+                    },
+                },
+                "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"], "description": "Fallback category for entries given as plain strings."},
             },
             "required": ["items"],
         },
     },
     {
         "name": "list_grocery_list",
-        "description": "List grocery items filtered by status.",
+        "description": "List grocery items as a flat list, filtered by status.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+        },
+    },
+    {
+        "name": "get_grocery_list_by_section",
+        "description": "Get the grocery list grouped into standard store sections (produce, dairy, meat/seafood, pantry, frozen, other) in shopping order. Prefer this over list_grocery_list whenever showing or reviewing the list with the user, so it reads like something they can actually shop from.",
         "input_schema": {
             "type": "object",
             "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
@@ -713,6 +742,7 @@ TOOL_FUNCTIONS = {
     "add_grocery_item": tools.add_grocery_item,
     "add_grocery_items": tools.add_grocery_items,
     "list_grocery_list": tools.list_grocery_list,
+    "get_grocery_list_by_section": tools.get_grocery_list_by_section,
     "mark_grocery_item": tools.mark_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
 }

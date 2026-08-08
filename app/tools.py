@@ -10,6 +10,7 @@ instead of the constant.
 from __future__ import annotations  # lets `str | None` etc. work on Python 3.9
 
 import json
+import re
 from datetime import date, timedelta
 from .db import get_conn
 
@@ -698,17 +699,18 @@ def plan_meal(
         )
         conn.commit()
 
+    recipe_ingredients = json.loads(recipe["ingredients_json"]) if recipe else []
+    conn.close()
+
     added_items = []
     if recipe and add_ingredients_to_grocery_list:
-        for ing in json.loads(recipe["ingredients_json"]):
-            conn.execute(
-                "INSERT INTO grocery_items (household_id, item, quantity, added_by) VALUES (?, ?, ?, 'ai')",
-                (HOUSEHOLD_ID, ing["item"], ing.get("qty", "")),
-            )
+        # Routed through add_grocery_item (its own connection per call) rather
+        # than a raw insert here, so quantities consolidate with anything
+        # already on the list instead of creating duplicate lines.
+        for ing in recipe_ingredients:
+            add_grocery_item(ing["item"], quantity=ing.get("qty", ""), added_by="ai")
             added_items.append(ing["item"])
-        conn.commit()
 
-    conn.close()
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]
     return {
         "entry_id": entry_id,
@@ -985,9 +987,111 @@ def delete_preference(field: str, item: str | None = None) -> dict:
 
 # ---------- Grocery list ----------
 
+# Standard store sections, in a sensible shopping order. "meat" is an alias
+# kept for rows saved before "meat/seafood" was standardized.
+_GROCERY_SECTION_ORDER = ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]
+_GROCERY_CATEGORY_ALIASES = {"meat": "meat/seafood", "seafood": "meat/seafood"}
+
+_UNIT_ALIASES = {
+    "cup": "cup", "cups": "cup", "c": "cup",
+    "tbsp": "tbsp", "tablespoon": "tbsp", "tablespoons": "tbsp",
+    "tsp": "tsp", "teaspoon": "tsp", "teaspoons": "tsp",
+    "lb": "lb", "lbs": "lb", "pound": "lb", "pounds": "lb",
+    "oz": "oz", "ounce": "oz", "ounces": "oz",
+    "g": "g", "gram": "g", "grams": "g",
+    "kg": "kg", "kilogram": "kg", "kilograms": "kg",
+    "ml": "ml", "milliliter": "ml", "milliliters": "ml",
+    "l": "l", "liter": "l", "liters": "l",
+}
+
+_QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]*)$")
+
+
+def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
+    """Parse a freeform quantity string into (amount, normalized_unit_or_None). Returns None if unparseable (e.g. blank, or freeform text like 'a bunch')."""
+    if not qty or not qty.strip():
+        return None
+    match = _QTY_RE.match(qty.strip().lower())
+    if not match:
+        return None
+    amount_str, unit_str = match.group(1), match.group(2).strip()
+    try:
+        if "/" in amount_str:
+            parts = amount_str.split(" ")
+            if len(parts) == 2:
+                whole, frac = parts
+                num, den = frac.split("/")
+                amount = float(whole) + float(num) / float(den)
+            else:
+                num, den = amount_str.split("/")
+                amount = float(num) / float(den)
+        else:
+            amount = float(amount_str)
+    except (ValueError, ZeroDivisionError):
+        return None
+    return amount, (_UNIT_ALIASES.get(unit_str, unit_str) or None)
+
+
+_UNIT_PLURALS = {"cup": "cups", "lb": "lbs"}
+
+
+def _format_quantity(amount: float, unit: str | None) -> str:
+    amount_str = f"{amount:g}"
+    if not unit:
+        return amount_str
+    display_unit = _UNIT_PLURALS.get(unit, unit) if amount != 1 else unit
+    return f"{amount_str} {display_unit}"
+
+
+def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
+    """
+    Try to merge two quantity strings for the same grocery item. Returns
+    (resulting_quantity_string, was_merged). Merges when both are parseable
+    and share the same unit (e.g. "2 cups" + "1 cup" -> "3 cups"), or when
+    one side is blank. When units are both present but don't reconcile
+    (e.g. "2 cups flour" + "1 lb flour"), nothing is guessed — both amounts
+    are kept together on one line so the shopper sees both rather than a
+    silently wrong conversion.
+    """
+    if not (existing_qty or "").strip():
+        return new_qty, True
+    if not (new_qty or "").strip():
+        return existing_qty, True
+    existing_parsed = _parse_quantity(existing_qty)
+    new_parsed = _parse_quantity(new_qty)
+    if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
+        return _format_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]), True
+    return f"{existing_qty} + {new_qty}", False
+
+
 def add_grocery_item(item: str, quantity: str = "", category: str = "other", added_by: str = "user") -> dict:
-    """Add an item to the grocery list."""
+    """
+    Add an item to the grocery list. If an item with the same name is
+    already on the list (status 'needed'), the quantity is consolidated
+    into that single line — e.g. "2 cups flour" + "1 cup flour" becomes
+    "3 cups flour" — instead of creating a duplicate line. If the
+    quantities can't be reconciled (different, incompatible units), both
+    are kept together on the one line rather than silently guessing a
+    conversion. category should be one of: produce, dairy, meat/seafood,
+    pantry, frozen, other — pick the one that actually matches the item so
+    the list stays organized by store section.
+    """
     conn = get_conn()
+    existing = conn.execute(
+        "SELECT id, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' AND LOWER(item) = LOWER(?)",
+        (HOUSEHOLD_ID, item),
+    ).fetchone()
+    if existing:
+        merged_qty, merged = _try_consolidate_quantity(existing["quantity"] or "", quantity)
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ?",
+            (merged_qty, category, existing["id"]),
+        )
+        conn.commit()
+        item_id = existing["id"]
+        conn.close()
+        return {"item_id": item_id, "item": item, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
+
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by) VALUES (?, ?, ?, ?, ?)",
         (HOUSEHOLD_ID, item, quantity, category, added_by),
@@ -995,42 +1099,36 @@ def add_grocery_item(item: str, quantity: str = "", category: str = "other", add
     conn.commit()
     item_id = cur.lastrowid
     conn.close()
-    return {"item_id": item_id, "item": item, "quantity": quantity}
+    return {"item_id": item_id, "item": item, "quantity": quantity, "merged": False, "units_reconciled": True}
 
 
-def add_grocery_items(items: list[str], category: str = "other", added_by: str = "user") -> dict:
+def add_grocery_items(items: list, category: str = "other", added_by: str = "user") -> dict:
     """
-    Add several items to the grocery list at once, e.g. ["milk", "eggs"] from
-    "add milk and eggs to the list". Skips anything already sitting on the
-    list as 'needed' (case-insensitive) so repeating an item doesn't create a
-    duplicate line — the list simply carries over and grows across the week
-    until items are marked purchased, so there's no need to re-add anything
-    already on it.
+    Add several items to the grocery list at once. Each entry can be a
+    plain string (e.g. "milk") or, when you know more, a dict like
+    {"item": "flour", "quantity": "2 cups", "category": "pantry"} — mix
+    and match as needed. Prefer setting an accurate category per item
+    (produce, dairy, meat/seafood, pantry, frozen, other) so the list
+    stays organized by store section; the category argument is only a
+    fallback for entries you didn't categorize individually. Quantities
+    are consolidated with any matching item already on the list rather
+    than creating duplicate lines (see add_grocery_item).
     """
-    conn = get_conn()
-    existing = {
-        r["item"].strip().lower()
-        for r in conn.execute(
-            "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'needed'", (HOUSEHOLD_ID,)
-        ).fetchall()
-    }
-    added, skipped = [], []
+    added, merged = [], []
     for raw in items:
-        name = raw.strip()
+        if isinstance(raw, dict):
+            name = (raw.get("item") or "").strip()
+            qty = raw.get("quantity", "")
+            cat = raw.get("category") or category
+        else:
+            name = (raw or "").strip()
+            qty = ""
+            cat = category
         if not name:
             continue
-        if name.lower() in existing:
-            skipped.append(name)
-            continue
-        conn.execute(
-            "INSERT INTO grocery_items (household_id, item, category, added_by) VALUES (?, ?, ?, ?)",
-            (HOUSEHOLD_ID, name, category, added_by),
-        )
-        existing.add(name.lower())
-        added.append(name)
-    conn.commit()
-    conn.close()
-    return {"added": added, "already_on_list": skipped}
+        result = add_grocery_item(name, quantity=qty, category=cat, added_by=added_by)
+        (merged if result["merged"] else added).append(name)
+    return {"added": added, "merged_with_existing": merged}
 
 
 def list_grocery_list(status: str = "needed") -> list[dict]:
@@ -1042,6 +1140,23 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def get_grocery_list_by_section(status: str = "needed") -> dict:
+    """
+    Get the grocery list grouped into standard store sections (produce,
+    dairy, meat/seafood, pantry, frozen, other) in a sensible shopping
+    order, rather than a flat list. Use this whenever showing or reviewing
+    the grocery list to the user so it reads like something they can
+    actually shop from, aisle by aisle, instead of a flat ingredient dump.
+    """
+    items = list_grocery_list(status=status)
+    sections: dict[str, list[dict]] = {s: [] for s in _GROCERY_SECTION_ORDER}
+    for it in items:
+        cat = _GROCERY_CATEGORY_ALIASES.get(it["category"], it["category"])
+        sections.setdefault("other", [])
+        sections[cat if cat in sections else "other"].append(it)
+    return {"sections": [{"section": s, "items": sections[s]} for s in _GROCERY_SECTION_ORDER if sections[s]]}
 
 
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:

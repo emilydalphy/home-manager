@@ -118,10 +118,16 @@ preferences are.
 Just say what you need — "add milk and eggs to the list" — and it's saved,
 whether you mention one item or several at once. Items stay on the list
 across the week (there's no expiration or reset) until you mark them
-purchased, so the list itself is how it "remembers" — no need to re-add
-anything already on it, and re-adding a duplicate is a no-op. Planning a
-saved recipe still auto-adds its ingredients on top of anything you've
-listed manually.
+purchased, so the list itself is how it "remembers." Planning a saved recipe
+still auto-adds its ingredients on top of anything you've listed manually.
+
+The list is organized into store sections (produce, dairy, meat/seafood,
+pantry, frozen, other) so it reads like something you can actually shop from,
+aisle by aisle, rather than a flat dump. Adding the same item twice doesn't
+create duplicate lines — quantities are consolidated automatically when the
+units match (e.g. "2 cups flour" + "1 cup flour" becomes "3 cups flour"); if
+the units genuinely don't reconcile (like cups vs. pounds), both amounts are
+kept together on one line rather than the app silently guessing a conversion.
 
 Recipes and planned meals can also carry `food_groups` (protein/carb/vegetable
 coverage) — when something's missing, the assistant may mention it once as an
