@@ -708,7 +708,9 @@ def plan_meal(
         # than a raw insert here, so quantities consolidate with anything
         # already on the list instead of creating duplicate lines.
         for ing in recipe_ingredients:
-            add_grocery_item(ing["item"], quantity=ing.get("qty", ""), added_by="ai")
+            add_grocery_item(
+                ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai"
+            )
             added_items.append(ing["item"])
 
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]

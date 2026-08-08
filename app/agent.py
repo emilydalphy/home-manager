@@ -136,6 +136,11 @@ rather than list_grocery_list's flat view. If get_grocery_list_by_section ever s
 item name more than once (leftover from before consolidation applied, or any other way it \
 happens), just call consolidate_grocery_list right away — don't ask permission first, this is \
 a safe cleanup, not a destructive one.
+- The same category rules apply when saving a recipe's ingredients via add_recipe — set \
+category per ingredient there too, since that's what gets used automatically when the recipe \
+is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
+blank category defaults to 'other' with no chance to fix it until the item's actually on the \
+list.
 - When suggesting meal plans or chore rotations, ask for missing preferences rather than \
 guessing, but don't over-ask — use sensible defaults for a typical household on minor details.
 - When suggesting recipes, prefer ones the household already has saved (list_recipes shows \
@@ -360,7 +365,15 @@ TOOL_DEFINITIONS = [
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "properties": {"item": {"type": "string"}, "qty": {"type": "string"}},
+                        "properties": {
+                            "item": {"type": "string"},
+                            "qty": {"type": "string"},
+                            "category": {
+                                "type": "string",
+                                "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
+                                "description": "Grocery store section this ingredient belongs to when it's auto-added to the list — same rules as the grocery tools (pantry = shelf-stable only; eggs/butter/tofu are dairy; fresh vegetables/herbs are produce).",
+                            },
+                        },
                         "required": ["item"],
                     },
                 },
@@ -607,7 +620,15 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "description": "Required if is_new_recipe is true; omit/empty for an existing saved recipe.",
                             "items": {
                                 "type": "object",
-                                "properties": {"item": {"type": "string"}, "qty": {"type": "string"}},
+                                "properties": {
+                                    "item": {"type": "string"},
+                                    "qty": {"type": "string"},
+                                    "category": {
+                                        "type": "string",
+                                        "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
+                                        "description": "Grocery store section (pantry = shelf-stable only; eggs/butter/tofu are dairy; fresh vegetables/herbs are produce).",
+                                    },
+                                },
                                 "required": ["item"],
                             },
                         },
@@ -658,6 +679,11 @@ its ingredients.
 - cuisine and main_protein should be filled in for every day where reasonably inferable \
 (existing or new recipe) — this is what powers future variety checks, so don't leave it \
 blank just because the recipe already existed.
+- For every new-recipe ingredient, set category to the grocery store section it actually \
+belongs to (produce, dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable \
+only; eggs, butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines \
+which aisle it's grouped under when auto-added to the grocery list, so don't leave it blank \
+or default to pantry/other out of habit.
 
 Call submit_weekly_plan with the result."""
 
