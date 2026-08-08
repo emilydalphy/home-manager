@@ -37,6 +37,9 @@ _MIGRATIONS = [
     ("meal_preferences", "dislikes_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("recipes", "rating", "TEXT NOT NULL DEFAULT ''"),
     ("recipes", "feedback_notes", "TEXT NOT NULL DEFAULT ''"),
+    ("recipes", "cuisine", "TEXT NOT NULL DEFAULT ''"),
+    ("recipes", "main_protein", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_plan_entries", "weekly_plan_id", "INTEGER"),
 ]
 
 

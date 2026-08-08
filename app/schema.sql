@@ -94,7 +94,22 @@ CREATE TABLE IF NOT EXISTS recipes (
     last_cooked_date TEXT,
     rating TEXT NOT NULL DEFAULT '', -- '' | 'liked' | 'disliked' — feedback after actually making it
     feedback_notes TEXT NOT NULL DEFAULT '', -- freeform, e.g. "loved the sauce, a bit too spicy for the kids"
+    cuisine TEXT NOT NULL DEFAULT '', -- freeform, e.g. "Italian", "Mexican" — used for plan variety checks
+    main_protein TEXT NOT NULL DEFAULT '', -- freeform, e.g. "chicken", "beef", "vegetarian" — used for plan variety checks
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- A single-pass generated week of meals, reviewable/editable as one artifact
+-- rather than living implicitly in chat history. The Eater share link (later
+-- phase) always points at whichever plan is most recent for the household.
+CREATE TABLE IF NOT EXISTS weekly_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    week_start_date TEXT NOT NULL, -- ISO date, the Monday (or first planned day) of the week
+    status TEXT NOT NULL DEFAULT 'draft', -- draft | approved
+    constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- A meal scheduled for a specific date/slot (breakfast/lunch/dinner)
@@ -106,6 +121,7 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     recipe_id INTEGER REFERENCES recipes(id),
     freeform_meal TEXT, -- used if not tied to a saved recipe
     food_groups_json TEXT NOT NULL DEFAULT '[]', -- subset of ["protein", "carb", "vegetable"] covered by this plate
+    weekly_plan_id INTEGER REFERENCES weekly_plans(id), -- null for ad hoc/one-off meals not part of a generated week
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -82,6 +82,24 @@ next time.
 - When suggesting meals, prefer recipes list_recipes surfaces first (it sorts liked recipes to \
 the top) and be cautious about re-suggesting anything marked 'disliked'.
 
+Weekly planning (prefer this over meal-by-meal chat planning):
+- When the user wants a week (or several days) planned at once — "plan my week," "what should \
+we eat this week," "do our dinners for the next 7 days" — call generate_weekly_plan rather \
+than calling plan_meal repeatedly across several turns. It builds the whole week in one pass \
+using saved preferences, dislikes, restrictions, and recent history, and returns a reviewable \
+plan. Only fall back to individual plan_meal calls for genuinely one-off, single-meal requests.
+- To change just one day of an already-generated plan ("swap Tuesday for something with \
+chicken"), use swap_meal_in_plan rather than regenerating the whole week.
+- Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
+this week?" rather than relying on get_meal_plan's flatter list when a generated plan exists.
+
+What the app knows (memory transparency):
+- If the user asks what the app knows/remembers about their preferences, call \
+get_household_memory and summarize it plainly rather than describing your own reasoning.
+- To correct something ("actually I like Thai food," "forget that I said no peppers"), use \
+edit_preference or delete_preference directly rather than just replying that you've noted it — \
+the same "persist immediately" rule as everywhere else in this prompt applies here too.
+
 Balanced plates (gentle, never enforced):
 - Recipes and planned meals can carry food_groups — a subset of protein/carb/vegetable they \
 cover. When saving a recipe or planning a freeform meal, tag food_groups if it's clear from \
@@ -392,6 +410,80 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "generate_weekly_plan",
+        "description": "Generate and save a full week's meal plan in one pass, tailored to this household's preferences, dislikes, restrictions, and recent meal history (avoids repeats, surfaces new recipes). Preferred over multiple plan_meal calls whenever the user wants a whole week planned at once (e.g. 'plan my week', 'what should we eat this week').",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "week_start_date": {"type": "string", "description": "YYYY-MM-DD, first day to plan."},
+                "constraints_notes": {"type": "string", "description": "Freeform per-week asks, e.g. 'out Thu/Fri, keep it under 30 min on weeknights, one vegetarian night'."},
+                "day_count": {"type": "integer", "description": "Defaults to 7."},
+            },
+            "required": ["week_start_date"],
+        },
+    },
+    {
+        "name": "get_weekly_plan",
+        "description": "Get a generated weekly plan with all its meals. Omit weekly_plan_id to get the household's most recent plan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "swap_meal_in_plan",
+        "description": "Replace one day's meal in an already-generated weekly plan without regenerating the rest of the week.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "meal_date": {"type": "string", "description": "YYYY-MM-DD"},
+                "new_meal": {"type": "string"},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+            },
+            "required": ["weekly_plan_id", "meal_date", "new_meal"],
+        },
+    },
+    {
+        "name": "approve_weekly_plan",
+        "description": "Mark a weekly plan as approved/reviewed by the Planner.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+            "required": ["weekly_plan_id"],
+        },
+    },
+    {
+        "name": "get_household_memory",
+        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, notes, goals. Use this when the user asks what the app knows/remembers, or before generating a plan.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "edit_preference",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences' (list of strings, replaces the whole list), 'protein_preferences' (dict like {\"chicken\": \"more\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences"]},
+                "value": {"description": "String for notes/cooking_time_preference, array for cuisine_preferences, object for protein_preferences."},
+            },
+            "required": ["field", "value"],
+        },
+    },
+    {
+        "name": "delete_preference",
+        "description": "Remove a remembered preference. For 'dislikes' or 'cuisine_preferences', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes' or 'cooking_time_preference', omit item to clear the field.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference"]},
+                "item": {"type": "string"},
+            },
+            "required": ["field"],
+        },
+    },
+    {
         "name": "add_grocery_item",
         "description": "Add an item to the grocery list.",
         "input_schema": {
@@ -447,6 +539,144 @@ TOOL_DEFINITIONS = [
     },
 ]
 
+_GENERATE_WEEKLY_PLAN_TOOL = {
+    "name": "submit_weekly_plan",
+    "description": "Submit the generated weekly meal plan.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "days": {
+                "type": "array",
+                "description": "One entry per planned day/slot.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "date": {"type": "string", "description": "ISO date, e.g. 2026-08-10."},
+                        "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                        "meal_name": {"type": "string", "description": "Recipe name, existing or new."},
+                        "is_new_recipe": {"type": "boolean"},
+                        "ingredients": {
+                            "type": "array",
+                            "description": "Required if is_new_recipe is true; omit/empty for an existing saved recipe.",
+                            "items": {
+                                "type": "object",
+                                "properties": {"item": {"type": "string"}, "qty": {"type": "string"}},
+                                "required": ["item"],
+                            },
+                        },
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+                        "cuisine": {"type": "string"},
+                        "main_protein": {"type": "string"},
+                    },
+                    "required": ["date", "slot", "meal_name", "is_new_recipe"],
+                },
+            },
+        },
+        "required": ["days"],
+    },
+}
+
+
+def generate_weekly_plan_llm(context: dict) -> list[dict]:
+    """
+    Given household context (preferences, dislikes, member restrictions,
+    saved recipes, recent meal history), ask Claude for a full week's meal
+    plan in a single pass. Uses a forced tool call so the result is always
+    structured, reviewable data — not a chat narrative. Recipes are
+    generated/adapted for this household's specific preferences, not
+    filtered from a fixed catalog, per the product's moat thesis.
+    """
+    client = _client()
+    prompt = f"""Household context (JSON):
+{json.dumps(context, indent=2)}
+
+Generate a full week's dinner plan (7 days unless day_count says otherwise) for this \
+household. Guidelines:
+- Respect every listed dietary restriction and allergy without exception. Avoid every \
+listed dislike.
+- Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
+times_cooked), but don't just repeat them — surface at least one recipe not already in \
+saved_recipes this week (a genuinely new suggestion, tailored to this household's \
+preferences), so the rotation doesn't shrink to only "safe" meals over time.
+- Avoid repeating any meal (or a near-identical variant) that appears in recent_history \
+within the last 3 weeks, and avoid repeating the same main_protein or cuisine too many \
+days in a row — check recent_history's cuisine/main_protein fields, not just meal names.
+- Honor any per-week constraints in constraints_notes exactly (e.g. "out Thursday/Friday" \
+means don't plan those days; "under 30 minutes on weeknights" means quick weeknight meals).
+- For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
+main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
+saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
+its ingredients.
+- cuisine and main_protein should be filled in for every day where reasonably inferable \
+(existing or new recipe) — this is what powers future variety checks, so don't leave it \
+blank just because the recipe already existed.
+
+Call submit_weekly_plan with the result."""
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=4096,
+        tools=[_GENERATE_WEEKLY_PLAN_TOOL],
+        tool_choice={"type": "tool", "name": "submit_weekly_plan"},
+        messages=[{"role": "user", "content": prompt}],
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input.get("days", [])
+    return []
+
+
+def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_count: int = 7) -> dict:
+    """
+    Generate and save a full week's meal plan in one pass: gathers current
+    household memory, saved recipes, and recent meal history, asks Claude
+    for a complete week via a forced tool call, then persists it as a new
+    weekly_plan with each day's meal attached — creating new recipes as
+    needed. Returns the saved plan via get_weekly_plan. This is the
+    preferred way to handle "plan my week" / "what should we eat this
+    week" style requests instead of planning meal-by-meal across several
+    plan_meal calls.
+    """
+    context = {
+        "week_start_date": week_start_date,
+        "day_count": day_count,
+        "constraints_notes": constraints_notes,
+        "household_memory": tools.get_household_memory(),
+        "saved_recipes": tools.list_recipes(),
+        "recent_history": tools.get_recent_meal_history(weeks=3),
+    }
+    days = generate_weekly_plan_llm(context)
+
+    plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
+    plan_id = plan["weekly_plan_id"]
+
+    for day in days:
+        meal_name = day.get("meal_name")
+        if not meal_name:
+            continue
+        if day.get("is_new_recipe") and day.get("ingredients"):
+            existing = next((r for r in tools.list_recipes() if r["name"] == meal_name), None)
+            if not existing:
+                tools.add_recipe(
+                    name=meal_name,
+                    ingredients=day.get("ingredients", []),
+                    tags=day.get("tags", []),
+                    food_groups=day.get("food_groups", []),
+                    cuisine=day.get("cuisine", ""),
+                    main_protein=day.get("main_protein", ""),
+                )
+        tools.plan_meal(
+            meal_date=day.get("date"),
+            meal=meal_name,
+            slot=day.get("slot", "dinner"),
+            food_groups=day.get("food_groups"),
+            weekly_plan_id=plan_id,
+        )
+
+    return tools.get_weekly_plan(plan_id)
+
+
 TOOL_FUNCTIONS = {
     "get_household_setup_status": tools.get_household_setup_status,
     "add_member": tools.add_member,
@@ -473,6 +703,13 @@ TOOL_FUNCTIONS = {
     "mark_recipe_feedback": tools.mark_recipe_feedback,
     "plan_meal": tools.plan_meal,
     "get_meal_plan": tools.get_meal_plan,
+    "generate_weekly_plan": generate_weekly_plan,
+    "get_weekly_plan": tools.get_weekly_plan,
+    "swap_meal_in_plan": tools.swap_meal_in_plan,
+    "approve_weekly_plan": tools.approve_weekly_plan,
+    "get_household_memory": tools.get_household_memory,
+    "edit_preference": tools.edit_preference,
+    "delete_preference": tools.delete_preference,
     "add_grocery_item": tools.add_grocery_item,
     "add_grocery_items": tools.add_grocery_items,
     "list_grocery_list": tools.list_grocery_list,

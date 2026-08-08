@@ -547,6 +547,8 @@ def add_recipe(
     notes: str = "",
     tags: list[str] | None = None,
     food_groups: list[str] | None = None,
+    cuisine: str = "",
+    main_protein: str = "",
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -555,16 +557,27 @@ def add_recipe(
     dish covers on its own — e.g. spaghetti and meatballs is ["protein",
     "carb"] (no vegetable); a stir fry with rice might be all three. Use
     your judgment based on the ingredients; leave out anything unclear.
+    cuisine (e.g. "Italian", "Mexican") and main_protein (e.g. "chicken",
+    "beef", "vegetarian") are freeform but worth filling in when you can —
+    they power variety checks when generating future weekly plans so the
+    rotation doesn't quietly repeat the same protein or cuisine too often.
     """
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json) VALUES (?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, name, notes, json.dumps(ingredients), json.dumps(tags or []), json.dumps(food_groups or [])),
+        "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            HOUSEHOLD_ID, name, notes, json.dumps(ingredients), json.dumps(tags or []),
+            json.dumps(food_groups or []), cuisine, main_protein,
+        ),
     )
     conn.commit()
     recipe_id = cur.lastrowid
     conn.close()
-    return {"recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or []}
+    return {
+        "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
+        "cuisine": cuisine, "main_protein": main_protein,
+    }
 
 
 def list_recipes() -> list[dict]:
@@ -579,7 +592,7 @@ def list_recipes() -> list[dict]:
     rows = conn.execute(
         """
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
-               times_cooked, last_cooked_date, rating, feedback_notes
+               times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein
         FROM recipes WHERE household_id = ?
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
         """,
@@ -598,6 +611,8 @@ def list_recipes() -> list[dict]:
             "last_cooked_date": r["last_cooked_date"],
             "rating": r["rating"] or None,
             "feedback_notes": r["feedback_notes"],
+            "cuisine": r["cuisine"] or None,
+            "main_protein": r["main_protein"] or None,
         }
         for r in rows
     ]
@@ -644,6 +659,7 @@ def plan_meal(
     slot: str = "dinner",
     add_ingredients_to_grocery_list: bool = True,
     food_groups: list[str] | None = None,
+    weekly_plan_id: int | None = None,
 ) -> dict:
     """
     Schedule a meal for a date. `meal` can be a saved recipe name or a
@@ -653,7 +669,10 @@ def plan_meal(
     automatically. For a freeform meal, pass food_groups yourself if you
     can tell what it covers (subset of protein/carb/vegetable) — this
     powers gentle "want to round this out?" suggestions, never a
-    requirement. Leave it out if you're not sure.
+    requirement. Leave it out if you're not sure. Pass weekly_plan_id to
+    attach this meal to a specific generated weekly plan (see
+    create_weekly_plan/generate_weekly_plan) rather than leaving it as a
+    standalone one-off entry.
     """
     conn = get_conn()
     recipe = conn.execute(
@@ -665,8 +684,9 @@ def plan_meal(
     entry_food_groups = json.loads(recipe["food_groups_json"]) if recipe else (food_groups or [])
 
     cur = conn.execute(
-        "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json) VALUES (?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups)),
+        "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json, weekly_plan_id) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id),
     )
     conn.commit()
     entry_id = cur.lastrowid
@@ -720,6 +740,247 @@ def get_meal_plan(days_ahead: int = 7) -> list[dict]:
         {"date": r["date"], "slot": r["slot"], "meal": r["meal"], "food_groups": json.loads(r["food_groups_json"])}
         for r in rows
     ]
+
+
+def get_recent_meal_history(weeks: int = 3) -> list[dict]:
+    """
+    Look up what's actually been planned/cooked in the last N weeks
+    (default 3), including each meal's cuisine and main protein where
+    known. Call this before generating a new week's plan so you can avoid
+    repeating the same recipe or near-identical meals within the window,
+    and check protein/cuisine variety across it — not just literal repeats.
+    """
+    conn = get_conn()
+    start_date = (date.today() - timedelta(weeks=weeks)).isoformat()
+    rows = conn.execute(
+        """
+        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal, r.cuisine, r.main_protein
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.household_id = ? AND mpe.date >= ?
+        ORDER BY mpe.date DESC
+        """,
+        (HOUSEHOLD_ID, start_date),
+    ).fetchall()
+    conn.close()
+    return [
+        {"date": r["date"], "meal": r["meal"], "cuisine": r["cuisine"] or None, "main_protein": r["main_protein"] or None}
+        for r in rows
+    ]
+
+
+# ---------- Weekly plans (plan-as-object, reviewable/editable as a whole) ----------
+
+def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dict:
+    """
+    Start a new weekly plan — a reviewable batch of meals for a week,
+    rather than meals living only as scattered chat-planned entries.
+    constraints_notes is freeform per-week context (e.g. "out Thu/Fri,
+    keep it under 30 min on weeknights"). After creating it, attach each
+    day's meal via plan_meal(..., weekly_plan_id=this id). Prefer
+    generate_weekly_plan over calling this directly when the user just
+    wants "plan my week" — it handles the whole generation in one step.
+    """
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes) VALUES (?, ?, ?)",
+        (HOUSEHOLD_ID, week_start_date, constraints_notes),
+    )
+    conn.commit()
+    plan_id = cur.lastrowid
+    conn.close()
+    return {"weekly_plan_id": plan_id, "week_start_date": week_start_date, "status": "draft"}
+
+
+def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
+    """
+    Get a weekly plan with all its meals, day by day. If weekly_plan_id is
+    omitted, returns the household's most recently created plan — use that
+    form when the user just says "what's this week's plan?" Returns
+    weekly_plan_id: None with an empty meals list if no plan exists yet.
+    """
+    conn = get_conn()
+    if weekly_plan_id is None:
+        plan = conn.execute(
+            "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC LIMIT 1",
+            (HOUSEHOLD_ID,),
+        ).fetchone()
+    else:
+        plan = conn.execute(
+            "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, HOUSEHOLD_ID),
+        ).fetchone()
+    if not plan:
+        conn.close()
+        return {"weekly_plan_id": None, "meals": []}
+
+    meals = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.food_groups_json
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ?
+        ORDER BY mpe.date ASC, mpe.slot ASC
+        """,
+        (plan["id"],),
+    ).fetchall()
+    conn.close()
+    return {
+        "weekly_plan_id": plan["id"],
+        "week_start_date": plan["week_start_date"],
+        "status": plan["status"],
+        "constraints_notes": plan["constraints_notes"],
+        "meals": [
+            {
+                "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "meal": m["meal"],
+                "food_groups": json.loads(m["food_groups_json"]),
+            }
+            for m in meals
+        ],
+    }
+
+
+def approve_weekly_plan(weekly_plan_id: int) -> dict:
+    """Mark a weekly plan as approved/reviewed by the Planner."""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"weekly_plan_id": weekly_plan_id, "status": "approved"}
+
+
+def swap_meal_in_plan(
+    weekly_plan_id: int,
+    meal_date: str,
+    new_meal: str,
+    slot: str = "dinner",
+    food_groups: list[str] | None = None,
+) -> dict:
+    """
+    Replace the meal on one day/slot of an already-generated weekly plan,
+    without regenerating or touching the rest of the plan. new_meal can be
+    a saved recipe name or a freeform description, same as plan_meal.
+    """
+    conn = get_conn()
+    conn.execute(
+        "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
+        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return plan_meal(meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id)
+
+
+# ---------- Household memory (transparency & correction) ----------
+
+def get_household_memory() -> dict:
+    """
+    Return a plain summary of everything the app has learned/saved about
+    this household: each member's dietary restrictions, favorite proteins
+    and cuisines, standing dislikes, cooking-time preference, freeform
+    notes, and household goals. Powers a "what the app knows" view the user
+    can review and correct directly (see edit_preference/delete_preference),
+    and is useful context to pull before discussing or generating meal
+    plans.
+    """
+    conn = get_conn()
+    prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
+    members = conn.execute(
+        "SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchall()
+    household = conn.execute("SELECT goals FROM households WHERE id = ?", (HOUSEHOLD_ID,)).fetchone()
+    conn.close()
+    return {
+        "members": [
+            {
+                "name": m["name"], "age_group": m["age_group"],
+                "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
+            }
+            for m in members
+        ],
+        "goals": household["goals"] if household else "",
+        "notes": prefs["notes"] if prefs else "",
+        "protein_preferences": json.loads(prefs["protein_preferences_json"]) if prefs else {},
+        "cuisine_preferences": json.loads(prefs["cuisine_preferences_json"]) if prefs else [],
+        "dislikes": json.loads(prefs["dislikes_json"]) if prefs else [],
+        "cooking_time_preference": prefs["cooking_time_preference"] if prefs else "",
+    }
+
+
+def edit_preference(field: str, value) -> dict:
+    """
+    Directly set a household meal-preference field to a new value — for
+    correcting something the app got wrong, whether from the "what we
+    know" view or conversationally ("actually make cooking time preference
+    quick"). Valid fields: 'notes' (str), 'cooking_time_preference' (str),
+    'cuisine_preferences' (list of str — replaces the whole list),
+    'protein_preferences' (dict like {"chicken": "more"} — merged into
+    existing). To remove a single item from a list rather than replacing
+    it wholesale, use delete_preference instead.
+    """
+    valid_fields = {"notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences"}
+    if field not in valid_fields:
+        raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
+    if field == "cuisine_preferences":
+        return set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
+    if field == "protein_preferences":
+        return set_household_meal_preferences(protein_preferences=value, mark_complete=False)
+    if field == "notes":
+        return set_household_meal_preferences(notes=value, mark_complete=False)
+    return set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
+
+
+def delete_preference(field: str, item: str | None = None) -> dict:
+    """
+    Remove a remembered preference. For list fields ('dislikes' or
+    'cuisine_preferences'), pass item = the specific value to remove
+    (case-insensitive match). For 'protein_preferences', item = the
+    protein name to forget. For scalar fields ('notes' or
+    'cooking_time_preference'), omit item to clear the field entirely.
+    """
+    conn = get_conn()
+    existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
+    if not existing:
+        conn.close()
+        raise ValueError("No saved preferences yet.")
+
+    if field == "dislikes":
+        updated = [d for d in json.loads(existing["dislikes_json"]) if d.lower() != (item or "").lower()]
+        conn.execute(
+            "UPDATE meal_preferences SET dislikes_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+            (json.dumps(updated), HOUSEHOLD_ID),
+        )
+    elif field == "cuisine_preferences":
+        updated = [c for c in json.loads(existing["cuisine_preferences_json"]) if c.lower() != (item or "").lower()]
+        conn.execute(
+            "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+            (json.dumps(updated), HOUSEHOLD_ID),
+        )
+    elif field == "protein_preferences":
+        current = dict(json.loads(existing["protein_preferences_json"]))
+        current.pop(item, None)
+        conn.execute(
+            "UPDATE meal_preferences SET protein_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+            (json.dumps(current), HOUSEHOLD_ID),
+        )
+    elif field == "notes":
+        conn.execute(
+            "UPDATE meal_preferences SET notes = '', updated_at = datetime('now') WHERE household_id = ?", (HOUSEHOLD_ID,)
+        )
+    elif field == "cooking_time_preference":
+        conn.execute(
+            "UPDATE meal_preferences SET cooking_time_preference = '', updated_at = datetime('now') WHERE household_id = ?",
+            (HOUSEHOLD_ID,),
+        )
+    else:
+        conn.close()
+        raise ValueError(f"Unknown preference field '{field}'.")
+    conn.commit()
+    conn.close()
+    return {"field": field, "item": item, "deleted": True}
 
 
 # ---------- Grocery list ----------

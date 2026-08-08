@@ -92,6 +92,27 @@ surfaced first in future suggestions; disliked ones are avoided. Same goes for
 general dislikes ("no peppers, please") — said once, remembered in every
 conversation after, not just the current one.
 
+### Weekly meal plans
+
+Ask for a full week at once ("plan my week," "what should we eat this week") and
+the assistant generates a whole week's dinners in a single pass — not a
+back-and-forth chat negotiation — as a real, reviewable plan rather than
+scattered one-off entries. It leans on saved favorites but always works in at
+least one new recipe, and avoids repeating meals, proteins, or cuisines it's
+already served in the last 3 weeks (an explicit request for a repeat, like
+"let's do the tacos from last week," is always honored). To change just one
+day without touching the rest of the week, ask for a swap ("swap Tuesday for
+something with chicken") instead of regenerating everything.
+
+### What the app knows
+
+Ask "what do you know about our preferences?" (or similar) and the assistant
+will summarize everything it's saved — dietary restrictions, favorite
+proteins/cuisines, dislikes, cooking-time preference, and notes. You can
+correct anything directly in conversation ("actually I like Thai food," "forget
+that I said no peppers") and it's saved immediately, the same way new
+preferences are.
+
 ### Grocery list
 
 Just say what you need — "add milk and eggs to the list" — and it's saved,
