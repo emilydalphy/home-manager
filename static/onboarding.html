@@ -184,6 +184,15 @@
   <span class="back-link" data-back="modules">&larr; Back</span>
 </div>
 
+<div id="step-plan" style="display:none">
+  <h1>Your first week, planned</h1>
+  <p class="subtitle" id="plan-subtitle">Building a real week of meals from what you just told us...</p>
+  <p class="loading-note" id="plan-loading">This can take up to 30 seconds.</p>
+  <div id="plan-days"></div>
+  <div><button class="next-btn" id="plan-next" type="button" style="display:none">Continue</button></div>
+  <span class="back-link" data-back="meal">&larr; Back</span>
+</div>
+
 <div id="step-chores-intro" style="display:none">
   <h1>Nice, meal planning is set.</h1>
   <p class="subtitle">Now we'll move on to chores — a few quick questions about your home, and we'll put together a recommended cleaning schedule for you to review.</p>
@@ -564,7 +573,7 @@ function renderProgress() {
   });
 }
 function showStep(key) {
-  ['household', 'modules', 'meal', 'chores-intro', 'chores-q', 'chores-review'].forEach(k => {
+  ['household', 'modules', 'meal', 'plan', 'chores-intro', 'chores-q', 'chores-review'].forEach(k => {
     document.getElementById('step-' + k).style.display = (k === key) ? 'block' : 'none';
   });
   currentIndex = stepOrder.indexOf(key);
@@ -579,7 +588,7 @@ document.getElementById('household-next').onclick = async () => {
 
 document.getElementById('modules-next').onclick = () => {
   stepOrder = ['household', 'modules'];
-  if (selectedModules.has('meal')) stepOrder.push('meal');
+  if (selectedModules.has('meal')) stepOrder.push('meal', 'plan');
   if (selectedModules.has('meal') && selectedModules.has('chores')) stepOrder.push('chores-intro');
   if (selectedModules.has('chores')) stepOrder.push('chores-q', 'chores-review');
 
@@ -591,8 +600,59 @@ document.getElementById('modules-next').onclick = () => {
   showStep(next);
 };
 
-document.getElementById('meal-next').onclick = async () => {
-  await saveMealPreferences();
+function escapeHtmlLocal(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function formatPlanDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function renderPlanDays(meals) {
+  const daysDiv = document.getElementById('plan-days');
+  daysDiv.innerHTML = '';
+  if (!meals.length) {
+    daysDiv.innerHTML = '<p style="color:#666;font-size:0.9rem">No meals generated yet — you can ask for a weekly plan any time in chat.</p>';
+    return;
+  }
+  meals.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'member-block';
+    row.innerHTML = `<p style="font-weight:600;margin:0 0 2px">${escapeHtmlLocal(formatPlanDate(m.date))}</p>
+      <p style="margin:0;color:#333">${escapeHtmlLocal(m.meal || '')}</p>`;
+    daysDiv.appendChild(row);
+  });
+}
+
+async function generateFirstPlan() {
+  const subtitle = document.getElementById('plan-subtitle');
+  const loading = document.getElementById('plan-loading');
+  const nextBtn = document.getElementById('plan-next');
+  const daysDiv = document.getElementById('plan-days');
+  subtitle.textContent = 'Building a real week of meals from what you just told us...';
+  loading.style.display = 'block';
+  nextBtn.style.display = 'none';
+  daysDiv.innerHTML = '';
+  try {
+    const res = await fetch('/api/onboarding/generate-first-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!res.ok) throw new Error('Could not generate plan');
+    const data = await res.json();
+    renderPlanDays(data.meals || []);
+    subtitle.textContent = "Here's a real first week — built from the dietary needs and protein/cuisine preferences you just entered, not a generic starter.";
+  } catch (err) {
+    subtitle.textContent = "Couldn't generate a plan right now — no worries, just ask for one any time in chat.";
+  } finally {
+    loading.style.display = 'none';
+    nextBtn.style.display = 'inline-block';
+  }
+}
+
+function afterMealFlow() {
   if (stepOrder.includes('chores-intro')) {
     showStep('chores-intro');
   } else if (stepOrder.includes('chores-q')) {
@@ -601,6 +661,16 @@ document.getElementById('meal-next').onclick = async () => {
   } else {
     window.location.href = '/';
   }
+}
+
+document.getElementById('meal-next').onclick = async () => {
+  await saveMealPreferences();
+  showStep('plan');
+  generateFirstPlan();
+};
+
+document.getElementById('plan-next').onclick = () => {
+  afterMealFlow();
 };
 
 document.getElementById('chores-intro-next').onclick = () => {

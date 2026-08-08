@@ -8,11 +8,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+import datetime
 import logging
 import os
 
 from .db import init_db
-from .agent import run_agent_turn, generate_chore_recommendations
+from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan
 from . import tools
 
 logger = logging.getLogger("home_manager")
@@ -148,6 +149,25 @@ def onboarding_meal_preferences(req: MealPreferencesOnboardingRequest):
         logger.exception("Meal preferences onboarding save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"saved": True}
+
+
+@app.post("/api/onboarding/generate-first-plan")
+def onboarding_generate_first_plan():
+    """
+    Generate and save a real first weekly plan from what was just entered in
+    onboarding (household composition, dietary restrictions, protein/cuisine/
+    cooking-time preferences). Called once, right after meal-preferences
+    onboarding is saved, so the wizard can show a plan that visibly reflects
+    what the person just told it instead of ending on a generic confirmation
+    screen. Starts the week today.
+    """
+    try:
+        week_start = datetime.date.today().isoformat()
+        plan = generate_weekly_plan(week_start)
+    except Exception as e:
+        logger.exception("First-plan generation during onboarding failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return plan
 
 
 @app.post("/api/onboarding/chores/recommend")
