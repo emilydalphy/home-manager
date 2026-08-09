@@ -6,6 +6,7 @@ use. This is intentionally simple/explicit rather than using the full
 Agent SDK, since our tool set is small and we want full control over the
 loop for a product we may eventually ship.
 """
+import datetime
 import logging
 import os
 import json
@@ -908,11 +909,21 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
 
+    # The model has no live clock, so it can't answer "today"/"tomorrow"/
+    # "this week" style requests (or fill in a week_start_date for
+    # generate_weekly_plan) without being told the actual date each turn.
+    today = datetime.date.today()
+    system_with_date = (
+        f"{SYSTEM_PROMPT}\n\nToday's date is {today.isoformat()} ({today.strftime('%A')}). "
+        "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
+        "\"next Monday\" yourself — never ask the user what today's date is."
+    )
+
     while True:
         response = client.messages.create(
             model=MODEL,
             max_tokens=1024,
-            system=SYSTEM_PROMPT,
+            system=system_with_date,
             tools=TOOL_DEFINITIONS,
             messages=conversation,
         )
