@@ -142,6 +142,12 @@ rather than list_grocery_list's flat view. If get_grocery_list_by_section ever s
 item name more than once (leftover from before consolidation applied, or any other way it \
 happens), just call consolidate_grocery_list right away — don't ask permission first, this is \
 a safe cleanup, not a destructive one.
+- Every new generate_weekly_plan call automatically clears 'needed' grocery items left over from \
+the previous week's plan before adding this week's, so quantities shouldn't silently stack up \
+across many weeks. If the user still notices something oddly large or stale (e.g. "why do we \
+need 9 lbs of chicken?"), call clear_stale_grocery_items directly — it's safe, it only removes \
+items tied to an old, already-superseded plan, never anything the user added themselves. If \
+they explicitly want the whole list wiped and starting over, use clear_grocery_list instead.
 - The same category rules apply when saving a recipe's ingredients via add_recipe — set \
 category per ingredient there too, since that's what gets used automatically when the recipe \
 is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
@@ -583,6 +589,19 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "clear_stale_grocery_items",
+        "description": "Remove 'needed' items sourced from an older, already-superseded generated weekly plan (not the current one) — fixes quantities silently stacking up across several weeks onto the same line. Never touches items a person added directly. This runs automatically each time a new week is generated, but call it directly if the user points out old/inflated quantities and wants them cleared.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "clear_grocery_list",
+        "description": "Remove ALL items with a given status in one shot — a full reset. Only use this when the user explicitly asks to wipe/empty/start the grocery list over, not for routine cleanup (use consolidate_grocery_list or clear_stale_grocery_items instead).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+        },
+    },
+    {
         "name": "mark_grocery_item",
         "description": "Update a grocery item's status, given its item_id.",
         "input_schema": {
@@ -743,6 +762,14 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
     plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
     plan_id = plan["weekly_plan_id"]
 
+    # Clears out any 'needed' grocery items still sourced from the PREVIOUS
+    # plan before this week's ingredients get added below — otherwise
+    # quantities from old, already-superseded weeks silently keep stacking
+    # onto the same line forever. Passing plan_id explicitly rather than
+    # letting it re-derive "current" avoids any ambiguity if two plans get
+    # created within the same second.
+    tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
+
     for day in days:
         meal_name = day.get("meal_name")
         if not meal_name:
@@ -807,6 +834,8 @@ TOOL_FUNCTIONS = {
     "list_grocery_list": tools.list_grocery_list,
     "get_grocery_list_by_section": tools.get_grocery_list_by_section,
     "consolidate_grocery_list": tools.consolidate_grocery_list,
+    "clear_stale_grocery_items": tools.clear_stale_grocery_items,
+    "clear_grocery_list": tools.clear_grocery_list,
     "mark_grocery_item": tools.mark_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
 }

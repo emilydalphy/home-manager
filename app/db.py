@@ -40,6 +40,7 @@ _MIGRATIONS = [
     ("recipes", "cuisine", "TEXT NOT NULL DEFAULT ''"),
     ("recipes", "main_protein", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "weekly_plan_id", "INTEGER"),
+    ("grocery_items", "source_weekly_plan_id", "INTEGER"),
 ]
 
 

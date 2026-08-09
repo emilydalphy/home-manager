@@ -708,10 +708,15 @@ def plan_meal(
     if recipe and add_ingredients_to_grocery_list:
         # Routed through add_grocery_item (its own connection per call) rather
         # than a raw insert here, so quantities consolidate with anything
-        # already on the list instead of creating duplicate lines.
+        # already on the list instead of creating duplicate lines. Tagged
+        # with source_weekly_plan_id when this meal belongs to a generated
+        # week (not an ad hoc one-off), so a later week's generation can
+        # tell this ingredient apart from a genuine standing want and clear
+        # it out once it's stale — see clear_stale_grocery_items.
         for ing in recipe_ingredients:
             add_grocery_item(
-                ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai"
+                ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai",
+                source_weekly_plan_id=weekly_plan_id,
             )
             added_items.append(ing["item"])
 
@@ -807,8 +812,12 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     """
     conn = get_conn()
     if weekly_plan_id is None:
+        # id DESC as a tiebreaker matters: two plans created within the same
+        # second (created_at has only second-level resolution) would
+        # otherwise resolve non-deterministically, which broke
+        # clear_stale_grocery_items identifying the actual newest plan.
         plan = conn.execute(
-            "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC LIMIT 1",
+            "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
             (HOUSEHOLD_ID,),
         ).fetchone()
     else:
@@ -1136,7 +1145,13 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     return f"{existing_qty} + {new_qty}", False
 
 
-def add_grocery_item(item: str, quantity: str = "", category: str = "other", added_by: str = "user") -> dict:
+def add_grocery_item(
+    item: str,
+    quantity: str = "",
+    category: str = "other",
+    added_by: str = "user",
+    source_weekly_plan_id: int | None = None,
+) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
     already on the list (status 'needed'), the quantity is consolidated
@@ -1146,7 +1161,13 @@ def add_grocery_item(item: str, quantity: str = "", category: str = "other", add
     are kept together on the one line rather than silently guessing a
     conversion. category should be one of: produce, dairy, meat/seafood,
     pantry, frozen, other — pick the one that actually matches the item so
-    the list stays organized by store section.
+    the list stays organized by store section. Leave source_weekly_plan_id
+    unset for anything a person asked for directly (or an ad hoc one-off
+    meal) — it marks the item as a standing want that should never be
+    auto-cleared. It's set automatically when ingredients come from a
+    generated weekly plan (see plan_meal/generate_weekly_plan), so
+    clear_stale_grocery_items can tell a current week's ingredients apart
+    from an old week's leftovers.
     """
     conn = get_conn()
     existing = conn.execute(
@@ -1156,8 +1177,8 @@ def add_grocery_item(item: str, quantity: str = "", category: str = "other", add
     if existing:
         merged_qty, merged = _try_consolidate_quantity(existing["quantity"] or "", quantity)
         conn.execute(
-            "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ?",
-            (merged_qty, category, existing["id"]),
+            "UPDATE grocery_items SET quantity = ?, category = ?, source_weekly_plan_id = ? WHERE id = ?",
+            (merged_qty, category, source_weekly_plan_id, existing["id"]),
         )
         conn.commit()
         item_id = existing["id"]
@@ -1165,8 +1186,8 @@ def add_grocery_item(item: str, quantity: str = "", category: str = "other", add
         return {"item_id": item_id, "item": item, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
 
     cur = conn.execute(
-        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by) VALUES (?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, item, quantity, category, added_by),
+        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id) VALUES (?, ?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, item, quantity, category, added_by, source_weekly_plan_id),
     )
     conn.commit()
     item_id = cur.lastrowid
@@ -1266,6 +1287,70 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     conn.commit()
     conn.close()
     return {"lines_merged_away": merged_count}
+
+
+def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict:
+    """
+    Remove 'needed' grocery items that came from an OLDER generated weekly
+    plan — not the current one — and were never marked purchased. This is
+    the fix for quantities silently stacking up across several weeks'
+    plans onto the same line (e.g. "9 lbs chicken breast" built from 4
+    different weeks). Items a person added directly, or that came from an
+    ad hoc one-off meal rather than a generated week, are never touched —
+    those represent a standing want, not a stale one. Pass
+    current_weekly_plan_id explicitly when you already know it (e.g. right
+    after creating a new plan); otherwise it falls back to whichever plan
+    get_weekly_plan considers most recent. Called automatically at the
+    start of every generate_weekly_plan; also fine to call directly if the
+    user notices buildup and asks to clean it up.
+    """
+    current_id = current_weekly_plan_id
+    if current_id is None:
+        current_id = get_weekly_plan().get("weekly_plan_id")
+    conn = get_conn()
+    if current_id is None:
+        rows = conn.execute(
+            "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            "AND source_weekly_plan_id IS NOT NULL",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
+            (HOUSEHOLD_ID, current_id),
+        ).fetchall()
+    removed = [r["item"] for r in rows]
+    if rows:
+        conn.executemany("DELETE FROM grocery_items WHERE id = ?", [(r["id"],) for r in rows])
+        conn.commit()
+    conn.close()
+    return {"removed_count": len(removed), "removed_items": removed}
+
+
+def clear_grocery_list(status: str = "needed") -> dict:
+    """
+    Remove ALL items with the given status (default 'needed') in one shot —
+    a full reset, not a merge or a staleness check. Use only when the user
+    explicitly asks to clear/empty/start the grocery list over (e.g. "wipe
+    the list, we're starting fresh"). For routine cleanup use
+    consolidate_grocery_list (duplicates) or clear_stale_grocery_items (old
+    plan leftovers) instead — this one has no way to know what's still
+    actually needed.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
+        (HOUSEHOLD_ID, status, status),
+    ).fetchall()
+    count = len(rows)
+    conn.execute(
+        "DELETE FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
+        (HOUSEHOLD_ID, status, status),
+    )
+    conn.commit()
+    conn.close()
+    return {"removed_count": count}
 
 
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:

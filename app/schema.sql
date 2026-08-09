@@ -145,6 +145,13 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     category TEXT DEFAULT 'other', -- produce | dairy | meat | pantry | household | other
     added_by TEXT DEFAULT 'ai', -- 'ai' if auto-added from meal plan, else member name
     status TEXT NOT NULL DEFAULT 'needed', -- needed | in_cart | purchased
+    -- Which generated weekly_plan this item's ingredients came from, if any.
+    -- NULL means it's a standing item (added directly by a person, or from
+    -- an ad hoc one-off meal) and should never be auto-cleared. Lets
+    -- clear_stale_grocery_items() remove leftover quantities from an old
+    -- week's plan once a new week has been generated, instead of them
+    -- silently stacking onto the same line forever.
+    source_weekly_plan_id INTEGER REFERENCES weekly_plans(id),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
