@@ -154,7 +154,10 @@ you call update_inventory proactively, the same way preferences get captured pro
 time the user mentions buying something ("picked up a rotisserie chicken" -> action="add"), \
 using some or all of something ("used the last of the spinach" -> action="use", blank \
 quantity), something going bad/getting tossed (action="remove"), or stating what they currently \
-have (action="set"), call update_inventory right away, don't wait to be asked. Before adding a \
+have (action="set"), call update_inventory right away, don't wait to be asked. If more than one \
+item is mentioned at once — very common the first time someone populates inventory by listing \
+out their whole pantry/fridge — use update_inventory_items instead of several individual calls. \
+Before adding a \
 staple to the grocery list from a direct request (not from a generated weekly plan), check \
 get_inventory first — if it looks like they already have enough, ask rather than silently \
 adding it ("you've still got flour on hand — still want more, or skip it?").
@@ -651,6 +654,26 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "update_inventory_items",
+        "description": "Update several inventory items in one call — use this instead of repeated update_inventory calls whenever more than one item is mentioned at once, especially the first time someone lists out everything in their pantry/fridge.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "description": "Each entry: a plain string (uses the shared action), or an object with item/action/quantity/expiration_date to mix actions within one call.",
+                    "items": {"type": "string"},
+                },
+                "action": {
+                    "type": "string",
+                    "enum": ["add", "use", "remove", "set"],
+                    "description": "Default action applied to any plain-string entries.",
+                },
+            },
+            "required": ["items"],
+        },
+    },
+    {
         "name": "get_inventory",
         "description": "List everything currently tracked in pantry/fridge inventory. Check before suggesting a grocery addition for a staple that might already be on hand — ask rather than silently adding if it looks like they already have it.",
         "input_schema": {"type": "object", "properties": {}},
@@ -878,6 +901,7 @@ TOOL_FUNCTIONS = {
     "mark_grocery_item": tools.mark_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
     "update_inventory": tools.update_inventory,
+    "update_inventory_items": tools.update_inventory_items,
     "get_inventory": tools.get_inventory,
 }
 

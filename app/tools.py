@@ -1542,6 +1542,36 @@ def update_inventory(
     raise ValueError(f"Unknown inventory action '{action}'.")
 
 
+def update_inventory_items(items: list, action: str = "add") -> dict:
+    """
+    Update several inventory items at once — use this (not repeated
+    update_inventory calls) whenever the user mentions more than one item
+    in the same breath, which is exactly what happens the first time
+    someone populates inventory ("here's what's in our pantry: rice, olive
+    oil, canned tomatoes, flour..."). Each entry can be a plain string (uses
+    the shared `action`) or, when you know more, a dict like {"item":
+    "flour", "action": "add", "quantity": "2 cups", "expiration_date":
+    "2026-09-01"} to mix actions/quantities within one call. See
+    update_inventory for what each action means.
+    """
+    results = []
+    for raw in items:
+        if isinstance(raw, dict):
+            name = (raw.get("item") or "").strip()
+            act = raw.get("action") or action
+            qty = raw.get("quantity", "")
+            exp = raw.get("expiration_date")
+        else:
+            name = (raw or "").strip()
+            act = action
+            qty = ""
+            exp = None
+        if not name:
+            continue
+        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp))
+    return {"updated": results}
+
+
 def get_inventory() -> list[dict]:
     """
     List everything currently tracked in pantry/fridge inventory. Check
