@@ -155,6 +155,22 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
+-- list — this is "what we currently have", captured primarily via chat
+-- mention ("picked up a rotisserie chicken", "used the last of the
+-- spinach"), not a manual-entry form. Also populated automatically when a
+-- grocery item is checked off as purchased (source='grocery_checkoff').
+CREATE TABLE IF NOT EXISTS inventory_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    item TEXT NOT NULL,
+    quantity TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL DEFAULT 'chat', -- 'chat' | 'grocery_checkoff'
+    expiration_date TEXT, -- ISO date, left unset unless explicitly known — nothing reads this yet (Phase 4)
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

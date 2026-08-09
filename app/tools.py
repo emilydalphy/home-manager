@@ -668,14 +668,16 @@ def plan_meal(
     Schedule a meal for a date. `meal` can be a saved recipe name or a
     freeform description (e.g. "leftovers", "tacos"). If it matches a saved
     recipe and add_ingredients_to_grocery_list is true, its ingredients are
-    auto-added to the grocery list, and its food_groups are used
-    automatically. For a freeform meal, pass food_groups yourself if you
-    can tell what it covers (subset of protein/carb/vegetable) — this
-    powers gentle "want to round this out?" suggestions, never a
-    requirement. Leave it out if you're not sure. Pass weekly_plan_id to
-    attach this meal to a specific generated weekly plan (see
-    create_weekly_plan/generate_weekly_plan) rather than leaving it as a
-    standalone one-off entry.
+    auto-added to the grocery list (skipping anything already tracked in
+    pantry/fridge inventory with a quantity on hand — see update_inventory —
+    reported back as already_have_skipped rather than silently vanishing),
+    and its food_groups are used automatically. For a freeform meal, pass
+    food_groups yourself if you can tell what it covers (subset of protein/
+    carb/vegetable) — this powers gentle "want to round this out?"
+    suggestions, never a requirement. Leave it out if you're not sure. Pass
+    weekly_plan_id to attach this meal to a specific generated weekly plan
+    (see create_weekly_plan/generate_weekly_plan) rather than leaving it as
+    a standalone one-off entry.
     """
     conn = get_conn()
     recipe = conn.execute(
@@ -705,7 +707,24 @@ def plan_meal(
     conn.close()
 
     added_items = []
+    already_have = []
     if recipe and add_ingredients_to_grocery_list:
+        # Skip auto-adding anything already tracked in pantry/fridge
+        # inventory (with a non-blank quantity) — this is the "accounts for
+        # logged inventory" behavior for the automated plan-generation path.
+        # For a direct chat-driven add ("add flour to the list"), the agent
+        # checks get_inventory itself and asks first instead (see system
+        # prompt) since there's a person there to actually ask.
+        inv_conn = get_conn()
+        have_names = {
+            row["item"].strip().lower()
+            for row in inv_conn.execute(
+                "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
+                (HOUSEHOLD_ID,),
+            ).fetchall()
+        }
+        inv_conn.close()
+
         # Routed through add_grocery_item (its own connection per call) rather
         # than a raw insert here, so quantities consolidate with anything
         # already on the list instead of creating duplicate lines. Tagged
@@ -714,6 +733,9 @@ def plan_meal(
         # tell this ingredient apart from a genuine standing want and clear
         # it out once it's stale — see clear_stale_grocery_items.
         for ing in recipe_ingredients:
+            if ing["item"].strip().lower() in have_names:
+                already_have.append(ing["item"])
+                continue
             add_grocery_item(
                 ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai",
                 source_weekly_plan_id=weekly_plan_id,
@@ -727,6 +749,7 @@ def plan_meal(
         "slot": slot,
         "meal": meal,
         "groceries_added": added_items,
+        "already_have_skipped": already_have,
         "food_groups_covered": entry_food_groups,
         "food_groups_missing": missing,
     }
@@ -1354,14 +1377,24 @@ def clear_grocery_list(status: str = "needed") -> dict:
 
 
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
-    """Update a grocery item's status (needed/in_cart/purchased)."""
+    """
+    Update a grocery item's status (needed/in_cart/purchased). Marking
+    something purchased also adds it to tracked pantry/fridge inventory
+    automatically (source='grocery_checkoff'), with expiration left unset —
+    see update_inventory/get_inventory.
+    """
     conn = get_conn()
+    row = conn.execute(
+        "SELECT item, quantity FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+    ).fetchone()
     conn.execute(
         "UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ?",
         (status, item_id, HOUSEHOLD_ID),
     )
     conn.commit()
     conn.close()
+    if status == "purchased" and row:
+        _add_to_inventory(row["item"], row["quantity"] or "", source="grocery_checkoff")
     return {"item_id": item_id, "status": status}
 
 
@@ -1372,6 +1405,157 @@ def remove_grocery_item(item_id: int) -> dict:
     conn.commit()
     conn.close()
     return {"item_id": item_id, "deleted": True}
+
+
+# ---------- Pantry & fridge inventory ----------
+# Real tracked baseline of what's currently on hand, distinct from the
+# grocery list (what's still needed). Chat mention is the only capture
+# method this phase — no manual-entry form, no photo recognition (both
+# pushed to a later phase once this simpler path is proven out).
+
+def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | None, bool]:
+    """
+    Try to subtract minus_qty from existing_qty for the same inventory item.
+    Returns (resulting_quantity_or_None, reconciled). None means "fully used
+    up, remove the row" — either because minus_qty was blank (caller meant
+    "all of it") or because subtracting brought it to zero or below.
+    reconciled=False means the units didn't match closely enough to safely
+    subtract, so existing_qty is returned unchanged rather than guessing.
+    """
+    if not (minus_qty or "").strip():
+        return None, True
+    existing_parsed = _parse_quantity(existing_qty)
+    minus_parsed = _parse_quantity(minus_qty)
+    if not existing_parsed:
+        # Existing quantity is freeform/unset (e.g. "a bunch") — can't do
+        # precise math, so treat any explicit "used some" as using it all
+        # rather than leaving a stale, unreconciled line behind.
+        return None, True
+    if minus_parsed and existing_parsed[1] == minus_parsed[1]:
+        remaining = existing_parsed[0] - minus_parsed[0]
+        if remaining <= 0:
+            return None, True
+        return _format_quantity(remaining, existing_parsed[1]), True
+    return existing_qty, False
+
+
+def _add_to_inventory(item: str, quantity: str = "", source: str = "chat", expiration_date: str | None = None) -> dict:
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+        (HOUSEHOLD_ID, item),
+    ).fetchone()
+    if existing:
+        merged_qty, _ = _try_consolidate_quantity(existing["quantity"] or "", quantity)
+        conn.execute(
+            "UPDATE inventory_items SET quantity = ?, source = ?, updated_at = datetime('now')"
+            + (", expiration_date = ?" if expiration_date else "") + " WHERE id = ?",
+            (merged_qty, source, expiration_date, existing["id"]) if expiration_date else (merged_qty, source, existing["id"]),
+        )
+        conn.commit()
+        item_id = existing["id"]
+    else:
+        cur = conn.execute(
+            "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date) VALUES (?, ?, ?, ?, ?)",
+            (HOUSEHOLD_ID, item, quantity, source, expiration_date),
+        )
+        conn.commit()
+        item_id = cur.lastrowid
+    conn.close()
+    return {"item_id": item_id, "item": item}
+
+
+def update_inventory(
+    item: str,
+    action: str,
+    quantity: str = "",
+    expiration_date: str | None = None,
+) -> dict:
+    """
+    Update pantry/fridge inventory from a chat mention — this is the
+    primary (and, this phase, only) way inventory gets captured; there's no
+    manual-entry screen, so call this proactively any time the user
+    mentions buying, using, or running out of something, the same way
+    preferences get captured proactively. action is one of:
+      - "add": something was bought/received, e.g. "picked up a rotisserie chicken"
+      - "use": some (or all, if quantity is left blank) of an item was used,
+        e.g. "used the last of the spinach" (blank quantity) or "used a cup
+        of the rice" (quantity given)
+      - "remove": the item is gone for any other reason (spoiled, thrown
+        out) — same effect as "use" with a blank quantity
+      - "set": state an absolute amount currently on hand, e.g. "I have
+        about 2 lbs of ground beef left"
+    quantity is a freeform string like "2 lbs" or "1 dozen" — leave it blank
+    when the person didn't mention an amount. expiration_date (ISO date) is
+    optional — only set it if the person actually mentioned one; leave it
+    unset otherwise rather than guessing.
+    """
+    if action == "add":
+        return _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date)
+
+    if action == "set":
+        conn = get_conn()
+        existing = conn.execute(
+            "SELECT id FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+            (HOUSEHOLD_ID, item),
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
+                (quantity, existing["id"]),
+            )
+            conn.commit()
+            item_id = existing["id"]
+        else:
+            cur = conn.execute(
+                "INSERT INTO inventory_items (household_id, item, quantity, source) VALUES (?, ?, ?, 'chat')",
+                (HOUSEHOLD_ID, item, quantity),
+            )
+            conn.commit()
+            item_id = cur.lastrowid
+        conn.close()
+        return {"item_id": item_id, "item": item, "quantity": quantity}
+
+    if action in ("use", "remove"):
+        conn = get_conn()
+        existing = conn.execute(
+            "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+            (HOUSEHOLD_ID, item),
+        ).fetchone()
+        if not existing:
+            conn.close()
+            return {"item": item, "found": False}
+        remaining, reconciled = _try_subtract_quantity(existing["quantity"] or "", quantity)
+        if remaining is None:
+            conn.execute("DELETE FROM inventory_items WHERE id = ?", (existing["id"],))
+            conn.commit()
+            conn.close()
+            return {"item": item, "removed": True}
+        conn.execute(
+            "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
+            (remaining, existing["id"]),
+        )
+        conn.commit()
+        conn.close()
+        return {"item": item, "quantity": remaining, "units_reconciled": reconciled}
+
+    raise ValueError(f"Unknown inventory action '{action}'.")
+
+
+def get_inventory() -> list[dict]:
+    """
+    List everything currently tracked in pantry/fridge inventory. Check
+    this before suggesting grocery additions for staples that might already
+    be on hand, and before generating a weekly plan (already threaded into
+    generate_weekly_plan's context automatically).
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity, source, expiration_date FROM inventory_items WHERE household_id = ? ORDER BY item",
+        (HOUSEHOLD_ID,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # ---------- internal helpers ----------

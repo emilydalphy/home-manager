@@ -148,6 +148,16 @@ across many weeks. If the user still notices something oddly large or stale (e.g
 need 9 lbs of chicken?"), call clear_stale_grocery_items directly — it's safe, it only removes \
 items tied to an old, already-superseded plan, never anything the user added themselves. If \
 they explicitly want the whole list wiped and starting over, use clear_grocery_list instead.
+- Pantry/fridge inventory (what's actually on hand right now, separate from the grocery list) \
+is tracked purely from chat mentions — there's no manual-entry screen, so this only works if \
+you call update_inventory proactively, the same way preferences get captured proactively. Any \
+time the user mentions buying something ("picked up a rotisserie chicken" -> action="add"), \
+using some or all of something ("used the last of the spinach" -> action="use", blank \
+quantity), something going bad/getting tossed (action="remove"), or stating what they currently \
+have (action="set"), call update_inventory right away, don't wait to be asked. Before adding a \
+staple to the grocery list from a direct request (not from a generated weekly plan), check \
+get_inventory first — if it looks like they already have enough, ask rather than silently \
+adding it ("you've still got flour on hand — still want more, or skip it?").
 - The same category rules apply when saving a recipe's ingredients via add_recipe — set \
 category per ingredient there too, since that's what gets used automatically when the recipe \
 is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
@@ -622,6 +632,29 @@ TOOL_DEFINITIONS = [
             "required": ["item_id"],
         },
     },
+    {
+        "name": "update_inventory",
+        "description": "Update pantry/fridge inventory from a chat mention (buying, using, running out of something). Call this proactively any time the user mentions inventory-related info, the same way preferences get captured proactively — there's no manual-entry screen, chat is the only way this gets tracked.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item": {"type": "string"},
+                "action": {
+                    "type": "string",
+                    "enum": ["add", "use", "remove", "set"],
+                    "description": "add=bought/received it; use=some or all was used (blank quantity means all); remove=gone for another reason (spoiled, thrown out); set=state an absolute amount currently on hand.",
+                },
+                "quantity": {"type": "string", "description": "Freeform, e.g. '2 lbs'. Leave blank if not mentioned (for use/remove, blank means all of it)."},
+                "expiration_date": {"type": "string", "description": "ISO date, only if the person actually mentioned one. Leave unset otherwise."},
+            },
+            "required": ["item", "action"],
+        },
+    },
+    {
+        "name": "get_inventory",
+        "description": "List everything currently tracked in pantry/fridge inventory. Check before suggesting a grocery addition for a staple that might already be on hand — ask rather than silently adding if it looks like they already have it.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
 ]
 
 _GENERATE_WEEKLY_PLAN_TOOL = {
@@ -715,6 +748,11 @@ belongs to (produce, dairy, meat/seafood, pantry, frozen, other) — pantry mean
 only; eggs, butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines \
 which aisle it's grouped under when auto-added to the grocery list, so don't leave it blank \
 or default to pantry/other out of habit.
+- current_inventory lists what's already on hand. For an ingredient already covered there in a \
+comparable quantity, still include it in the recipe's ingredients list (the recipe should stay \
+accurate/reusable), but leave its category as normal — the household already has it, so it \
+doesn't need to be over-represented as a fresh grocery need; don't let already-stocked pantry \
+staples influence which recipes you pick either way.
 
 Call submit_weekly_plan with the result."""
 
@@ -756,6 +794,7 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
         "household_memory": tools.get_household_memory(),
         "saved_recipes": tools.list_recipes(),
         "recent_history": tools.get_recent_meal_history(weeks=3),
+        "current_inventory": tools.get_inventory(),
     }
     days = generate_weekly_plan_llm(context)
 
@@ -838,6 +877,8 @@ TOOL_FUNCTIONS = {
     "clear_grocery_list": tools.clear_grocery_list,
     "mark_grocery_item": tools.mark_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
+    "update_inventory": tools.update_inventory,
+    "get_inventory": tools.get_inventory,
 }
 
 
