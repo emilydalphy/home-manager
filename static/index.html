@@ -74,6 +74,21 @@
     cursor: pointer;
   }
   .quick-btn:hover { background: #eaf1fa; }
+  #mic-btn {
+    flex: 0 0 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid #2b6cb0;
+    background: white;
+    color: #2b6cb0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  #mic-btn.active { background: #c53030; border-color: #c53030; color: white; }
+  #mic-btn:disabled { opacity: 0.5; cursor: default; }
 </style>
 </head>
 <body>
@@ -91,6 +106,12 @@
   </div>
   <form id="form">
     <input id="input" type="text" placeholder="e.g. what's on the grocery list?" autocomplete="off" />
+    <button type="button" id="mic-btn" aria-label="Dictate message" title="Dictate message">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>
+        <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/>
+      </svg>
+    </button>
     <button type="submit">Send</button>
   </form>
 
@@ -130,6 +151,7 @@ async function sendMessage(message) {
   if (!message) return;
   addMessage('user', message);
   input.disabled = true;
+  micBtn.disabled = true;
   document.querySelectorAll('.quick-btn').forEach(b => b.disabled = true);
 
   try {
@@ -145,9 +167,68 @@ async function sendMessage(message) {
     addMessage('assistant', 'Error: ' + err.message);
   } finally {
     input.disabled = false;
+    micBtn.disabled = false;
     document.querySelectorAll('.quick-btn').forEach(b => b.disabled = false);
     input.focus();
   }
+}
+
+// ---------- Voice dictation ----------
+// Two very different situations to cover:
+// - Android Chrome (and desktop Chrome) expose the Web Speech API, so a mic
+//   button can drive an in-page transcription directly.
+// - iOS Safari does NOT expose the Web Speech API at all — dictation there
+//   only exists as the mic key built into the native keyboard on any text
+//   field, which already works with zero code. Our button can't trigger
+//   that programmatically, so on iOS it just focuses the input and points
+//   at the keyboard mic once, since that affordance is easy to miss.
+const micBtn = document.getElementById('mic-btn');
+const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let recognizing = false;
+
+if (SpeechRecognitionCtor) {
+  recognition = new SpeechRecognitionCtor();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    input.value = (input.value ? input.value.trim() + ' ' : '') + transcript;
+    input.focus();
+  };
+  recognition.onerror = () => {
+    recognizing = false;
+    micBtn.classList.remove('active');
+  };
+  recognition.onend = () => {
+    recognizing = false;
+    micBtn.classList.remove('active');
+  };
+
+  micBtn.addEventListener('click', () => {
+    if (recognizing) {
+      recognition.stop();
+      return;
+    }
+    recognizing = true;
+    micBtn.classList.add('active');
+    try {
+      recognition.start();
+    } catch (err) {
+      recognizing = false;
+      micBtn.classList.remove('active');
+    }
+  });
+} else {
+  micBtn.addEventListener('click', () => {
+    input.focus();
+    if (!micBtn.dataset.hinted) {
+      addMessage('assistant', 'Tap the microphone icon on your keyboard to dictate your message.');
+      micBtn.dataset.hinted = '1';
+    }
+  });
 }
 
 form.addEventListener('submit', (e) => {
