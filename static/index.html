@@ -198,9 +198,22 @@ if (SpeechRecognitionCtor) {
     input.value = (input.value ? input.value.trim() + ' ' : '') + transcript;
     input.focus();
   };
-  recognition.onerror = () => {
+  // Errors were being swallowed silently before — the button would just
+  // reset with zero feedback, which looks identical whether the mic was
+  // blocked, missing, or just didn't catch anything. Surfacing the actual
+  // reason so it's diagnosable instead of a mystery "nothing happens".
+  recognition.onerror = (e) => {
     recognizing = false;
     micBtn.classList.remove('active');
+    const messages = {
+      'not-allowed': "Microphone access is blocked for this site — check your browser's site settings (usually the icon left of the address bar) and allow the microphone, then try again.",
+      'service-not-allowed': "Microphone access is blocked for this site — check your browser's site settings (usually the icon left of the address bar) and allow the microphone, then try again.",
+      'audio-capture': "No microphone found — check that one's connected and selected as your input device.",
+      'no-speech': "Didn't catch anything — try again and speak right after tapping the mic.",
+      'network': 'Voice dictation needs an internet connection — check your connection and try again.',
+    };
+    if (e.error === 'aborted') return; // user-initiated stop, not a real error
+    addMessage('assistant', messages[e.error] || ('Voice dictation error: ' + e.error));
   };
   recognition.onend = () => {
     recognizing = false;
@@ -219,6 +232,7 @@ if (SpeechRecognitionCtor) {
     } catch (err) {
       recognizing = false;
       micBtn.classList.remove('active');
+      addMessage('assistant', 'Could not start voice dictation: ' + err.message);
     }
   });
 } else {
