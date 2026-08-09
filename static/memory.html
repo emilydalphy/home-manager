@@ -169,6 +169,15 @@
   </div>
 
   <div class="card">
+    <h2>Recipe variety</h2>
+    <p class="hint">How often new recipes get surfaced when a week gets planned — even the lowest setting still includes at least one new recipe.</p>
+    <div class="add-row">
+      <select id="novelty-preference" style="flex:1"></select>
+      <button class="action" onclick="saveNovelty()">Save</button>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>Notes</h2>
     <p class="hint">Freeform — anything else worth remembering.</p>
     <textarea id="notes" placeholder="Anything else to remember..."></textarea>
@@ -187,6 +196,18 @@ const PROTEIN_FREQUENCIES = ['several times a week', '1-2 times a week', 'occasi
 function proteinFreqOptions(selected) {
   return PROTEIN_FREQUENCIES.map(f =>
     `<option value="${f}" ${f === selected ? 'selected' : ''}>${f}</option>`
+  ).join('');
+}
+
+const NOVELTY_OPTIONS = [
+  { value: 'mostly_favorites', label: 'Mostly favorites' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'surprise_me_often', label: 'Surprise me often' },
+];
+
+function noveltyOptions(selected) {
+  return NOVELTY_OPTIONS.map(o =>
+    `<option value="${o.value}" ${o.value === selected ? 'selected' : ''}>${o.label}</option>`
   ).join('');
 }
 
@@ -224,6 +245,7 @@ function render() {
 
   document.getElementById('goals').value = memory.goals || '';
   document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
+  document.getElementById('novelty-preference').innerHTML = noveltyOptions(memory.novelty_preference || 'balanced');
   document.getElementById('notes').value = memory.notes || '';
 
   const dislikesEl = document.getElementById('dislikes');
@@ -348,6 +370,9 @@ function saveCookingTime() {
 function clearCookingTime() {
   removeItem('cooking_time_preference', null);
   document.getElementById('cooking-time').value = '';
+}
+function saveNovelty() {
+  editField('novelty_preference', document.getElementById('novelty-preference').value);
 }
 function saveNotes() {
   editField('notes', document.getElementById('notes').value.trim());

@@ -41,6 +41,8 @@ _MIGRATIONS = [
     ("recipes", "main_protein", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "weekly_plan_id", "INTEGER"),
     ("grocery_items", "source_weekly_plan_id", "INTEGER"),
+    ("meal_preferences", "novelty_preference", "TEXT NOT NULL DEFAULT 'balanced'"),
+    ("recipes", "temporarily_excluded", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 

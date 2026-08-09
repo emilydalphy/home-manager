@@ -98,6 +98,20 @@ plan. Only fall back to individual plan_meal calls for genuinely one-off, single
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
 this week?" rather than relying on get_meal_plan's flatter list when a generated plan exists.
+- One-off constraints for a specific week ("3 nights this week," "one vegetarian night") \
+belong in constraints_notes when generating (generate_weekly_plan), or via set_week_constraints \
+for a plan that already exists — never save these as a standing preference via \
+edit_preference/set_household_meal_preferences, they're specific to that week only.
+- If the household is tired of a saved recipe for now but doesn't actually dislike it \
+("let's not do the stir fry for a while"), use flag_recipe_temporary rather than \
+mark_recipe_feedback('disliked') — the distinction matters, since a permanent 'disliked' rating \
+excludes it entirely while a temporary flag can be lifted any time with flag_recipe_temporary \
+(excluded=false).
+- A single complaint about one specific time a recipe was made ("wasn't great with this cut of \
+meat," "took way longer than expected") is a one-off note, not a pattern — log it with \
+log_recipe_note, not mark_recipe_feedback, so it doesn't quietly blacklist a recipe the \
+household actually likes overall. Reserve mark_recipe_feedback for when the user is actually \
+expressing a real like/dislike pattern.
 
 What the app knows (memory transparency):
 - If the user asks what the app knows/remembers about their preferences, call \
@@ -260,6 +274,11 @@ TOOL_DEFINITIONS = [
                 },
                 "cuisine_preferences": {"type": "array", "items": {"type": "string"}},
                 "cooking_time_preference": {"type": "string", "description": "e.g. 'quick', 'moderate', 'no preference'"},
+                "novelty_preference": {
+                    "type": "string",
+                    "enum": ["mostly_favorites", "balanced", "surprise_me_often"],
+                    "description": "How often new recipes should get surfaced in generated plans. Defaults to 'balanced'.",
+                },
                 "mark_complete": {"type": "boolean", "description": "Defaults true. Set false for a partial mid-conversation update."},
             },
         },
@@ -419,18 +438,44 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "list_recipes",
-        "description": "List all saved recipes with ingredients, tags, times_cooked, and any rating/feedback from previous times they were made. Sorted to surface liked recipes first — use this to favor known favorites when suggesting meals.",
-        "input_schema": {"type": "object", "properties": {}},
+        "description": "List all saved recipes with ingredients, tags, times_cooked, rating/feedback, recent one-off notes, and whether each is temporarily excluded from rotation. Sorted to surface liked recipes first — use this to favor known favorites when suggesting meals.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "include_temporarily_excluded": {"type": "boolean", "description": "Set false when building weekly-plan candidates so flagged recipes aren't suggested."},
+            },
+        },
     },
     {
         "name": "mark_recipe_feedback",
-        "description": "Record feedback on a saved recipe — 'liked'/'disliked' rating and/or freeform notes. Call the moment the user expresses an opinion about a specific recipe they've made, so future suggestions can favor what they actually liked.",
+        "description": "Record PERMANENT feedback on a saved recipe — 'liked'/'disliked' rating and/or freeform notes reflecting an actual pattern ('we don't like this,' 'this is a new favorite'). Call the moment the user expresses a real opinion about a recipe. For a single one-off comment about a specific time it was made ('wasn't great with this cut of meat') that shouldn't blacklist the recipe, use log_recipe_note instead.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "recipe_name": {"type": "string"},
                 "rating": {"type": "string", "enum": ["liked", "disliked"], "description": "Omit to add notes without changing an existing rating."},
                 "notes": {"type": "string", "description": "e.g. 'loved the sauce, a bit too spicy for the kids'. Appended to any existing feedback."},
+            },
+            "required": ["recipe_name"],
+        },
+    },
+    {
+        "name": "log_recipe_note",
+        "description": "Log a one-off note about a specific time a recipe was made, WITHOUT changing its permanent rating — e.g. 'wasn't great with this cut of meat,' 'ran out of time to marinate.' A single bad experience shouldn't blacklist a recipe the way mark_recipe_feedback's 'disliked' rating does. Surfaced as a soft signal in future plan generation.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"recipe_name": {"type": "string"}, "note": {"type": "string"}},
+            "required": ["recipe_name", "note"],
+        },
+    },
+    {
+        "name": "flag_recipe_temporary",
+        "description": "Temporarily exclude a recipe from auto-suggestion rotation (excluded=true), or bring it back (excluded=false) — distinct from a permanent 'disliked' rating. Use when the household is just tired of a favorite for now, not actually disliking it.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "recipe_name": {"type": "string"},
+                "excluded": {"type": "boolean", "description": "Defaults to true (exclude). Pass false to bring it back into rotation."},
             },
             "required": ["recipe_name"],
         },
@@ -473,6 +518,18 @@ TOOL_DEFINITIONS = [
                 "day_count": {"type": "integer", "description": "Defaults to 7."},
             },
             "required": ["week_start_date"],
+        },
+    },
+    {
+        "name": "set_week_constraints",
+        "description": "Set/update one-off constraints on a specific week's plan (e.g. '3 nights this week', 'under 30 min on weeknights') without making them a permanent preference. Omit weekly_plan_id for the current/most recent plan. If generating a brand-new plan, just pass constraints_notes to generate_weekly_plan instead — use this for constraints that come up after a plan already exists.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "constraints_notes": {"type": "string"},
+                "weekly_plan_id": {"type": "integer"},
+            },
+            "required": ["constraints_notes"],
         },
     },
     {
@@ -745,9 +802,17 @@ household. Guidelines:
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
 - Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
-times_cooked), but don't just repeat them — surface at least one recipe not already in \
-saved_recipes this week (a genuinely new suggestion, tailored to this household's \
-preferences), so the rotation doesn't shrink to only "safe" meals over time.
+times_cooked), but don't just repeat them. household_memory's novelty_preference sets how \
+much new-recipe exposure to aim for this week: "mostly_favorites" -> still surface at least \
+ONE new recipe (never zero — this is a floor, not optional), the rest can lean on favorites; \
+"balanced" (the default) -> aim for 2-3 new recipes across the week alongside favorites; \
+"surprise_me_often" -> most of the week can be new/untested recipes, favorites become the \
+minority. Regardless of setting, never let the rotation shrink to only "safe" meals — that's \
+the floor this whole rule exists to enforce.
+- A recipe's recent_one_off_notes (see saved_recipes) are a single occurrence's comment, not a \
+verdict — weigh them softly (e.g. avoid the exact same misstep if a note calls one out), but \
+don't treat them like rating='disliked'. Only an actual 'disliked' rating should exclude a \
+recipe from suggestion.
 - Avoid repeating any meal (or a near-identical variant) that appears in recent_history \
 within the last 3 weeks, and avoid repeating the same main_protein or cuisine too many \
 days in a row — check recent_history's cuisine/main_protein fields, not just meal names.
@@ -815,7 +880,10 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
         "day_count": day_count,
         "constraints_notes": constraints_notes,
         "household_memory": tools.get_household_memory(),
-        "saved_recipes": tools.list_recipes(),
+        # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
+        # here at the source rather than relying on a prompt instruction, so
+        # they're never even a candidate for suggestion.
+        "saved_recipes": tools.list_recipes(include_temporarily_excluded=False),
         "recent_history": tools.get_recent_meal_history(weeks=3),
         "current_inventory": tools.get_inventory(),
     }
@@ -882,9 +950,12 @@ TOOL_FUNCTIONS = {
     "add_recipe": tools.add_recipe,
     "list_recipes": tools.list_recipes,
     "mark_recipe_feedback": tools.mark_recipe_feedback,
+    "log_recipe_note": tools.log_recipe_note,
+    "flag_recipe_temporary": tools.flag_recipe_temporary,
     "plan_meal": tools.plan_meal,
     "get_meal_plan": tools.get_meal_plan,
     "generate_weekly_plan": generate_weekly_plan,
+    "set_week_constraints": tools.set_week_constraints,
     "get_weekly_plan": tools.get_weekly_plan,
     "swap_meal_in_plan": tools.swap_meal_in_plan,
     "approve_weekly_plan": tools.approve_weekly_plan,

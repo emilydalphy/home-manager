@@ -202,6 +202,7 @@ def set_household_meal_preferences(
     protein_preferences: dict[str, str] | None = None,
     cuisine_preferences: list[str] | None = None,
     cooking_time_preference: str = "",
+    novelty_preference: str = "",
     mark_complete: bool = True,
 ) -> dict:
     """
@@ -209,7 +210,10 @@ def set_household_meal_preferences(
     catch-all), protein preferences (how often per protein, e.g.
     {"chicken": "several times a week", "beef": "rarely"} — reflects
     preference, health, and budget together, not just taste), favorite
-    cuisines, and a cooking time preference. Any field can be omitted/partial — pass what you have.
+    cuisines, a cooking time preference, and novelty_preference (how often
+    new recipes should get surfaced: 'mostly_favorites', 'balanced', or
+    'surprise_me_often' — even 'mostly_favorites' still gets occasional new
+    recipes, it's not "never"). Any field can be omitted/partial — pass what you have.
     By default this marks meal-planning onboarding as complete; pass
     mark_complete=False if you're saving a partial update mid-conversation.
     """
@@ -226,17 +230,19 @@ def set_household_meal_preferences(
         json.loads(existing["cuisine_preferences_json"]) if existing else []
     )
     merged_cooking_time = cooking_time_preference or (existing["cooking_time_preference"] if existing else "")
+    merged_novelty = novelty_preference or (existing["novelty_preference"] if existing else "balanced")
 
     conn.execute(
         """
         INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, onboarding_complete, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET
             notes = excluded.notes,
             protein_preferences_json = excluded.protein_preferences_json,
             cuisine_preferences_json = excluded.cuisine_preferences_json,
             cooking_time_preference = excluded.cooking_time_preference,
+            novelty_preference = excluded.novelty_preference,
             onboarding_complete = excluded.onboarding_complete,
             updated_at = datetime('now')
         """,
@@ -246,6 +252,7 @@ def set_household_meal_preferences(
             json.dumps(merged_proteins),
             json.dumps(merged_cuisines),
             merged_cooking_time,
+            merged_novelty,
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
@@ -256,6 +263,7 @@ def set_household_meal_preferences(
         "protein_preferences": merged_proteins,
         "cuisine_preferences": merged_cuisines,
         "cooking_time_preference": merged_cooking_time,
+        "novelty_preference": merged_novelty,
         "onboarding_complete": bool(mark_complete),
     }
 
@@ -583,25 +591,46 @@ def add_recipe(
     }
 
 
-def list_recipes() -> list[dict]:
+def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     """
     List all saved recipes, including tags, food groups covered, how often
-    each has been planned, and any feedback (rating + notes) from previous
-    times it was made. Sorted to surface liked recipes first, then by how
-    often they've been made — use this ordering to favor known favorites
-    over untested ones when suggesting meals.
+    each has been planned, permanent feedback (rating + notes), any recent
+    one-off feedback notes (see log_recipe_note — soft signals distinct
+    from the permanent rating), and whether it's currently temporarily
+    excluded from rotation (see flag_recipe_temporary — distinct from a
+    permanent 'disliked' rating). Sorted to surface liked recipes first,
+    then by how often they've been made — use this ordering to favor known
+    favorites over untested ones when suggesting meals. Pass
+    include_temporarily_excluded=False when building a weekly plan's
+    candidate list, so temporarily-flagged recipes aren't suggested (they
+    still show up here otherwise, e.g. for "what recipes do we have").
     """
     conn = get_conn()
-    rows = conn.execute(
-        """
+    query = """
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
-               times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein
+               times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
+               temporarily_excluded
         FROM recipes WHERE household_id = ?
+        {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
-        """,
-        (HOUSEHOLD_ID,),
-    ).fetchall()
+        """.format(exclusion_clause="" if include_temporarily_excluded else "AND temporarily_excluded = 0")
+    rows = conn.execute(query, (HOUSEHOLD_ID,)).fetchall()
+
+    recipe_ids = [r["id"] for r in rows]
+    notes_by_recipe: dict[int, list[str]] = {}
+    if recipe_ids:
+        placeholders = ",".join("?" * len(recipe_ids))
+        note_rows = conn.execute(
+            f"SELECT recipe_id, note FROM recipe_notes WHERE recipe_id IN ({placeholders}) "
+            "AND note_type = 'feedback' ORDER BY created_at DESC",
+            recipe_ids,
+        ).fetchall()
+        for nr in note_rows:
+            notes_by_recipe.setdefault(nr["recipe_id"], [])
+            if len(notes_by_recipe[nr["recipe_id"]]) < 3:  # most recent few is plenty of signal
+                notes_by_recipe[nr["recipe_id"]].append(nr["note"])
     conn.close()
+
     return [
         {
             "id": r["id"],
@@ -614,8 +643,10 @@ def list_recipes() -> list[dict]:
             "last_cooked_date": r["last_cooked_date"],
             "rating": r["rating"] or None,
             "feedback_notes": r["feedback_notes"],
+            "recent_one_off_notes": notes_by_recipe.get(r["id"], []),
             "cuisine": r["cuisine"] or None,
             "main_protein": r["main_protein"] or None,
+            "temporarily_excluded": bool(r["temporarily_excluded"]),
         }
         for r in rows
     ]
@@ -654,6 +685,60 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     conn.commit()
     conn.close()
     return {"name": recipe_name, "rating": rating, "feedback_notes": merged_notes}
+
+
+def log_recipe_note(recipe_name: str, note: str) -> dict:
+    """
+    Log a one-off note about a specific time a recipe was made — e.g.
+    "wasn't great with this cut of meat," "ran out of time to marinate
+    properly" — WITHOUT changing the recipe's permanent rating. This is the
+    key distinction from mark_recipe_feedback: a single bad (or good, but
+    not pattern-worthy) experience shouldn't by itself blacklist or
+    permanently boost a recipe. Use mark_recipe_feedback instead when the
+    user is expressing an actual pattern ("we don't like this," "this is a
+    new favorite"). Recent notes are surfaced alongside the rating (see
+    list_recipes) as a soft signal when generating future plans.
+    """
+    conn = get_conn()
+    recipe = conn.execute(
+        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, recipe_name)
+    ).fetchone()
+    if not recipe:
+        conn.close()
+        raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
+    conn.execute(
+        "INSERT INTO recipe_notes (household_id, recipe_id, note_type, note) VALUES (?, ?, 'feedback', ?)",
+        (HOUSEHOLD_ID, recipe["id"], note),
+    )
+    conn.commit()
+    conn.close()
+    return {"name": recipe_name, "note": note}
+
+
+def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
+    """
+    Temporarily exclude a recipe from auto-suggestion rotation (excluded=
+    True), or bring it back (excluded=False) — distinct from a permanent
+    'disliked' rating (see mark_recipe_feedback). Use this when the
+    household is just tired of a favorite for now ("let's not do the
+    chicken stir fry for a while") rather than actually disliking it; it
+    stays saved and can come back into rotation any time by calling this
+    again with excluded=False. No auto-expiry — it's manually toggled.
+    """
+    conn = get_conn()
+    recipe = conn.execute(
+        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, recipe_name)
+    ).fetchone()
+    if not recipe:
+        conn.close()
+        raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
+    conn.execute(
+        "UPDATE recipes SET temporarily_excluded = ? WHERE id = ?",
+        (1 if excluded else 0, recipe["id"]),
+    )
+    conn.commit()
+    conn.close()
+    return {"name": recipe_name, "temporarily_excluded": excluded}
 
 
 def plan_meal(
@@ -826,6 +911,38 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     return {"weekly_plan_id": plan_id, "week_start_date": week_start_date, "status": "draft"}
 
 
+def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = None) -> dict:
+    """
+    Set/update the one-off constraints for a specific week's plan (e.g. "3
+    nights this week," "under 30 minutes on weeknights," "one vegetarian
+    night") without those constraints becoming a permanent household
+    preference — they only apply to this plan record, unlike
+    edit_preference which changes standing preferences. Omit
+    weekly_plan_id to apply to the household's current (most recent) plan.
+    If you're generating a brand-new plan, just pass constraints_notes
+    directly to generate_weekly_plan instead — use this tool when
+    constraints come up for a plan that already exists (e.g. mid-week) or
+    you want them on record before generating.
+    """
+    conn = get_conn()
+    if weekly_plan_id is None:
+        row = conn.execute(
+            "SELECT id FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+            (HOUSEHOLD_ID,),
+        ).fetchone()
+        if not row:
+            conn.close()
+            raise ValueError("No weekly plan exists yet — generate one first, or pass constraints_notes to generate_weekly_plan directly.")
+        weekly_plan_id = row["id"]
+    conn.execute(
+        "UPDATE weekly_plans SET constraints_notes = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (constraints_notes, weekly_plan_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"weekly_plan_id": weekly_plan_id, "constraints_notes": constraints_notes}
+
+
 def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     """
     Get a weekly plan with all its meals, day by day. If weekly_plan_id is
@@ -996,6 +1113,7 @@ def get_household_memory() -> dict:
         "cuisine_preferences": json.loads(prefs["cuisine_preferences_json"]) if prefs else [],
         "dislikes": json.loads(prefs["dislikes_json"]) if prefs else [],
         "cooking_time_preference": prefs["cooking_time_preference"] if prefs else "",
+        "novelty_preference": prefs["novelty_preference"] if prefs else "balanced",
     }
 
 
@@ -1010,11 +1128,16 @@ def edit_preference(field: str, value) -> dict:
     new dislike in conversation, prefer add_food_dislikes instead so it
     merges rather than requiring you to pass the full existing list),
     'protein_preferences' (dict of protein -> how-often, e.g. {"chicken":
-    "several times a week"} — merged into existing). To remove a single
-    item from a list rather than replacing
+    "several times a week"} — merged into existing), 'novelty_preference'
+    (str: 'mostly_favorites', 'balanced', or 'surprise_me_often' — how often
+    new recipes get surfaced when generating a weekly plan). To remove a
+    single item from a list rather than replacing
     it wholesale, use delete_preference instead.
     """
-    valid_fields = {"notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes"}
+    valid_fields = {
+        "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
+        "dislikes", "novelty_preference",
+    }
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
     if field == "dislikes":
@@ -1036,6 +1159,8 @@ def edit_preference(field: str, value) -> dict:
         return set_household_meal_preferences(protein_preferences=value, mark_complete=False)
     if field == "notes":
         return set_household_meal_preferences(notes=value, mark_complete=False)
+    if field == "novelty_preference":
+        return set_household_meal_preferences(novelty_preference=value, mark_complete=False)
     return set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
 

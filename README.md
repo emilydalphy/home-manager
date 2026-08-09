@@ -135,6 +135,19 @@ units match (e.g. "2 cups flour" + "1 cup flour" becomes "3 cups flour"); if
 the units genuinely don't reconcile (like cups vs. pounds), both amounts are
 kept together on one line rather than the app silently guessing a conversion.
 
+### Plan flexibility & feedback nuance
+
+One-off constraints for a specific week ("3 nights this week," "under 30 minutes on
+weeknights," "one vegetarian night") apply only to that week's plan — they don't become
+a standing preference. Recipes can be temporarily flagged out of rotation ("let's not do
+the stir fry for a while") without permanently disliking them, distinct from an actual
+"we don't like this" rating. A single bad (or good) experience with a recipe can be
+logged as a one-off note without flipping its permanent rating — only a real pattern of
+feedback should exclude a recipe from suggestions going forward. A "Recipe variety"
+setting (mostly favorites / balanced / surprise me often, editable from the What We Know
+page) controls how much new-recipe exposure shows up in generated plans, with a floor —
+even "mostly favorites" still includes at least one new recipe a week.
+
 ### Pantry & fridge inventory
 
 Separate from the grocery list — this tracks what you actually *have*, not what you

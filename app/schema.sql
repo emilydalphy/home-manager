@@ -34,6 +34,11 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     cuisine_preferences_json TEXT NOT NULL DEFAULT '[]', -- ["Italian", "Mexican", ...]
     dislikes_json TEXT NOT NULL DEFAULT '[]', -- ingredients/foods to avoid, e.g. ["peppers", "mushrooms"] — not allergies, just preference
     cooking_time_preference TEXT NOT NULL DEFAULT '', -- e.g. "quick", "moderate", "no preference"
+    -- How often new (not-yet-saved) recipes should get surfaced when generating a
+    -- weekly plan: 'mostly_favorites' | 'balanced' | 'surprise_me_often'. Has a
+    -- floor even at the lowest setting — see generate_weekly_plan_llm's prompt —
+    -- so freshness never drops to zero just because the household leans safe.
+    novelty_preference TEXT NOT NULL DEFAULT 'balanced',
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -96,6 +101,27 @@ CREATE TABLE IF NOT EXISTS recipes (
     feedback_notes TEXT NOT NULL DEFAULT '', -- freeform, e.g. "loved the sauce, a bit too spicy for the kids"
     cuisine TEXT NOT NULL DEFAULT '', -- freeform, e.g. "Italian", "Mexican" — used for plan variety checks
     main_protein TEXT NOT NULL DEFAULT '', -- freeform, e.g. "chicken", "beef", "vegetarian" — used for plan variety checks
+    -- Temporarily excluded from auto-suggestion rotation (e.g. "we're sick of this
+    -- for now") — distinct from rating='disliked', which is a permanent pattern.
+    -- Manually toggled on/off via flag_recipe_temporary; no auto-expiry.
+    temporarily_excluded INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- One-off notes tied to a specific recipe, distinct from the recipe's
+-- permanent rating (recipes.rating/feedback_notes, set via
+-- mark_recipe_feedback). note_type='feedback' is a single occurrence's
+-- comment ("wasn't great with this cut of meat") that shouldn't by itself
+-- blacklist the recipe the way a 'disliked' rating does — it's a soft
+-- signal, weighed alongside the recipe's actual rating, not a replacement
+-- for it. note_type='deviation' is reserved for the Cooker execution layer
+-- (what actually changed while cooking) so both share the same store.
+CREATE TABLE IF NOT EXISTS recipe_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id),
+    note_type TEXT NOT NULL DEFAULT 'feedback', -- 'feedback' | 'deviation'
+    note TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
