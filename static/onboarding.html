@@ -132,8 +132,11 @@
   <button class="add-btn" id="add-member" type="button">+ Add person</button>
 
   <label class="field-label">Any pets?</label>
-  <div id="pets"></div>
-  <button class="add-btn" id="add-pet" type="button">+ Add pet</button>
+  <div class="chip-row" id="has-pets-chips"></div>
+  <div id="pets-detail" style="display:none; margin-top:10px">
+    <div id="pets"></div>
+    <button class="add-btn" id="add-pet" type="button">+ Add pet</button>
+  </div>
 
   <label class="field-label">What are you hoping this app helps with?</label>
   <textarea id="goals" rows="2" placeholder="Stay on top of chores, eat healthier, waste less food..."></textarea>
@@ -341,6 +344,18 @@ function addPetRow() {
   petsDiv.appendChild(row);
 }
 document.getElementById('add-pet').onclick = () => addPetRow();
+
+const hasPetsChips = document.getElementById('has-pets-chips');
+const petsDetail = document.getElementById('pets-detail');
+chipWithCustom(hasPetsChips, ['Yes', 'No'], false);
+hasPetsChips.querySelectorAll('.chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const yes = btn.dataset.value === 'Yes';
+    petsDetail.style.display = yes ? 'block' : 'none';
+    if (yes && !petsDiv.querySelector('.row')) addPetRow();
+    if (!yes) petsDiv.innerHTML = '';
+  });
+});
 
 function currentMembers() {
   return [...membersDiv.querySelectorAll('.member-block')].map(block => {
