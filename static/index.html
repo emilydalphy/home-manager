@@ -87,8 +87,12 @@
     justify-content: center;
     cursor: pointer;
   }
-  #mic-btn.active { background: #c53030; border-color: #c53030; color: white; }
-  #mic-btn:disabled { opacity: 0.5; cursor: default; }
+  #mic-btn.active { background: #c53030; border-color: #c53030; color: white; animation: mic-pulse 1.4s ease-in-out infinite; }
+  #mic-btn:disabled { opacity: 0.5; cursor: default; animation: none; }
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(197, 48, 48, 0.45); }
+    50% { box-shadow: 0 0 0 6px rgba(197, 48, 48, 0); }
+  }
 </style>
 </head>
 <body>
@@ -183,20 +187,31 @@ async function sendMessage(message) {
 //   that programmatically, so on iOS it just focuses the input and points
 //   at the keyboard mic once, since that affordance is easy to miss.
 const micBtn = document.getElementById('mic-btn');
+const originalPlaceholder = input.placeholder;
 const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let recognizing = false;
+let dictationBaseValue = ''; // whatever was already typed before dictation started
 
 if (SpeechRecognitionCtor) {
   recognition = new SpeechRecognitionCtor();
   recognition.continuous = false;
-  recognition.interimResults = false;
+  // Interim results stream words into the input as you speak, instead of
+  // everything appearing at once after you stop — makes it clear the mic
+  // is actually hearing you in real time rather than looking frozen.
+  recognition.interimResults = true;
   recognition.lang = 'en-US';
 
   recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    input.value = (input.value ? input.value.trim() + ' ' : '') + transcript;
-    input.focus();
+    let finalText = '';
+    let interimText = '';
+    for (let i = 0; i < e.results.length; i++) {
+      const result = e.results[i];
+      if (result.isFinal) finalText += result[0].transcript;
+      else interimText += result[0].transcript;
+    }
+    const spoken = (finalText + interimText).trim();
+    input.value = dictationBaseValue ? (dictationBaseValue + ' ' + spoken) : spoken;
   };
   // Errors were being swallowed silently before — the button would just
   // reset with zero feedback, which looks identical whether the mic was
@@ -212,12 +227,15 @@ if (SpeechRecognitionCtor) {
       'no-speech': "Didn't catch anything — try again and speak right after tapping the mic.",
       'network': 'Voice dictation needs an internet connection — check your connection and try again.',
     };
+    input.placeholder = originalPlaceholder;
     if (e.error === 'aborted') return; // user-initiated stop, not a real error
     addMessage('assistant', messages[e.error] || ('Voice dictation error: ' + e.error));
   };
   recognition.onend = () => {
     recognizing = false;
     micBtn.classList.remove('active');
+    input.placeholder = originalPlaceholder;
+    input.focus();
   };
 
   micBtn.addEventListener('click', () => {
@@ -225,13 +243,16 @@ if (SpeechRecognitionCtor) {
       recognition.stop();
       return;
     }
+    dictationBaseValue = input.value.trim();
     recognizing = true;
     micBtn.classList.add('active');
+    input.placeholder = 'Listening... tap the mic again to stop';
     try {
       recognition.start();
     } catch (err) {
       recognizing = false;
       micBtn.classList.remove('active');
+      input.placeholder = originalPlaceholder;
       addMessage('assistant', 'Could not start voice dictation: ' + err.message);
     }
   });
