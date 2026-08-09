@@ -148,6 +148,56 @@ setting (mostly favorites / balanced / surprise me often, editable from the What
 page) controls how much new-recipe exposure shows up in generated plans, with a floor —
 even "mostly favorites" still includes at least one new recipe a week.
 
+Households can also switch how planning works entirely: **day-based** (the default — one
+meal per day) or **component-based** (a pool of items by category — a breakfast for the
+week, a few proteins, a few vegetables, carbs, a treat, a dip — for the household to mix
+and match freely instead of a fixed day-to-day schedule). This is a standing household
+setting, not a per-week choice, and switching doesn't affect any plan already generated.
+
+### Cooker (turning an approved plan into dinner actually happening)
+
+Recipes now carry full detail beyond just a shopping list — ordered instructions, default
+servings, prep/cook time, and any advance-prep notes ("marinate overnight," "soak beans the
+day before"). Ask for a recipe's full detail ("how do I make the chicken skewers?") or to
+scale it for a different number of people ("make that for 6") and quantities adjust
+automatically wherever they're parseable (anything freeform, like "a pinch," is left as-is
+and flagged rather than guessed).
+
+After a plan is generated, the assistant can build a prep schedule — working backward from
+each recipe's advance-prep notes to flag things like "marinate the chicken tonight" on the
+right day ahead of when it's needed. Ask "what's left to cook" or "what's my prep schedule"
+any time for a done-vs-outstanding view. Mention that a meal or prep step is done ("we ate
+the tacos," "chicken's marinating") and it's checked off immediately, not just acknowledged
+in the chat.
+
+If you changed something while cooking — swapped an ingredient, adjusted a step — mention it
+("used thighs instead of breast this time") and it's logged as a one-off deviation, feeding
+into the same soft-signal memory as recipe feedback, without touching the recipe's permanent
+rating.
+
+### Household coordination & trust
+
+Before a plan is approved, the assistant checks it against any saved dietary restrictions/
+allergies and flags likely clashes ("heads up, the noodle dish has peanut butter and Jamie
+has a peanut allergy") — a warning to weigh, not a hard block, since it's a simple keyword
+match and can be a false positive. Ask "why did you suggest this?" or "why haven't we had
+X in a while?" for the actual reasoning (rating, notes, history) behind a meal, rather than
+a guess.
+
+If you're cooked something and haven't said whether you liked it, the assistant may bring
+it up once, naturally, the next time you're chatting — not a push notification, just a
+low-key "how'd the salmon turn out?" the next time you open it.
+
+Ad hoc items ("also grab batteries") work exactly like any other grocery add — no need for
+them to trace back to a recipe. If the household shops at more than one store, say so once
+("we get bulk stuff at Costco") and future adds of that item are pre-sorted there
+automatically; ask for the list split by store instead of by section once more than one
+store is in play.
+
+Ask "what have you learned about us?" for an aggregate picture — how many recipes are
+tracked, how many are liked/disliked, how many deviations have been logged — distinct from
+the raw preference dump on the What We Know page.
+
 ### Pantry & fridge inventory
 
 Separate from the grocery list — this tracks what you actually *have*, not what you

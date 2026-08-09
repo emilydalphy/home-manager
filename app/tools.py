@@ -560,6 +560,11 @@ def add_recipe(
     food_groups: list[str] | None = None,
     cuisine: str = "",
     main_protein: str = "",
+    instructions: list[str] | None = None,
+    default_servings: int = 4,
+    prep_time_minutes: int | None = None,
+    cook_time_minutes: int | None = None,
+    advance_prep_notes: str = "",
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -572,14 +577,26 @@ def add_recipe(
     "beef", "vegetarian") are freeform but worth filling in when you can —
     they power variety checks when generating future weekly plans so the
     rotation doesn't quietly repeat the same protein or cuisine too often.
+    instructions is an ordered list of step strings — fill this in whenever
+    you can (from the user, or a reasonable version if generating a new
+    recipe) so the recipe is actually cookable from within the app, not
+    just a shopping list. default_servings is what the ingredient
+    quantities are scaled for (defaults to 4) — used by scale_recipe.
+    prep_time_minutes/cook_time_minutes and advance_prep_notes (e.g.
+    "marinate at least 4 hours ahead, can be done the night before") power
+    generate_prep_schedule — fill them in when you reasonably can, leave
+    unset rather than guessing if you can't.
     """
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
+        "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             HOUSEHOLD_ID, name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
+            json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
+            advance_prep_notes,
         ),
     )
     conn.commit()
@@ -587,7 +604,8 @@ def add_recipe(
     conn.close()
     return {
         "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
-        "cuisine": cuisine, "main_protein": main_protein,
+        "cuisine": cuisine, "main_protein": main_protein, "instructions": instructions or [],
+        "default_servings": default_servings,
     }
 
 
@@ -609,7 +627,8 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     query = """
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
                times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
-               temporarily_excluded
+               temporarily_excluded, instructions_json, default_servings, prep_time_minutes,
+               cook_time_minutes, advance_prep_notes
         FROM recipes WHERE household_id = ?
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
@@ -620,9 +639,12 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     notes_by_recipe: dict[int, list[str]] = {}
     if recipe_ids:
         placeholders = ",".join("?" * len(recipe_ids))
+        # Both note types (one-off feedback AND cooking deviations) feed the
+        # same soft signal — per the product decision that deviations "feed
+        # back into the same memory system recipe ratings already use."
         note_rows = conn.execute(
             f"SELECT recipe_id, note FROM recipe_notes WHERE recipe_id IN ({placeholders}) "
-            "AND note_type = 'feedback' ORDER BY created_at DESC",
+            "ORDER BY created_at DESC",
             recipe_ids,
         ).fetchall()
         for nr in note_rows:
@@ -647,9 +669,63 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             "cuisine": r["cuisine"] or None,
             "main_protein": r["main_protein"] or None,
             "temporarily_excluded": bool(r["temporarily_excluded"]),
+            "instructions": json.loads(r["instructions_json"]),
+            "default_servings": r["default_servings"],
+            "prep_time_minutes": r["prep_time_minutes"],
+            "cook_time_minutes": r["cook_time_minutes"],
+            "advance_prep_notes": r["advance_prep_notes"],
         }
         for r in rows
     ]
+
+
+def get_recipe(recipe_name: str) -> dict:
+    """
+    Get full detail for a single saved recipe by exact name — ingredients,
+    instructions, timing, everything. Use this when the user wants to see
+    a specific recipe in full (e.g. "show me the recipe for the chicken
+    stir fry") rather than filtering list_recipes yourself.
+    """
+    matches = [r for r in list_recipes() if r["name"].lower() == recipe_name.lower()]
+    if not matches:
+        raise ValueError(f"No recipe named '{recipe_name}'.")
+    return matches[0]
+
+
+def scale_recipe(recipe_name: str, target_servings: int) -> dict:
+    """
+    Scale a saved recipe's ingredient quantities from its default_servings
+    to target_servings — e.g. cooking for 6 when the recipe is written for
+    4. Quantities that parse cleanly (a number + a known unit) are scaled
+    directly; anything freeform (like "a pinch" or "to taste") is left
+    as-is rather than guessed, and flagged in unscaled_items so the Cooker
+    knows to eyeball it themselves.
+    """
+    recipe = get_recipe(recipe_name)
+    base_servings = recipe["default_servings"] or 4
+    if base_servings <= 0:
+        base_servings = 4
+    ratio = target_servings / base_servings
+
+    scaled_ingredients = []
+    unscaled_items = []
+    for ing in recipe["ingredients"]:
+        parsed = _parse_quantity(ing.get("qty", ""))
+        if parsed:
+            amount, unit = parsed
+            scaled_ingredients.append({**ing, "qty": _format_quantity(amount * ratio, unit)})
+        else:
+            scaled_ingredients.append(dict(ing))
+            if (ing.get("qty") or "").strip():
+                unscaled_items.append(ing["item"])
+
+    return {
+        "name": recipe_name,
+        "base_servings": base_servings,
+        "target_servings": target_servings,
+        "scaled_ingredients": scaled_ingredients,
+        "unscaled_items": unscaled_items,
+    }
 
 
 def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str = "") -> dict:
@@ -715,6 +791,33 @@ def log_recipe_note(recipe_name: str, note: str) -> dict:
     return {"name": recipe_name, "note": note}
 
 
+def log_cooking_deviation(recipe_name: str, note: str) -> dict:
+    """
+    Capture something that actually changed while cooking a recipe — a
+    swap ("used ground turkey instead of beef"), an adjusted step ("skipped
+    the marinating step, still turned out fine"), a doubled component
+    ("doubled the sauce") — so it's not lost. Feeds into the same memory
+    system recipe feedback already uses (see list_recipes'
+    recent_one_off_notes), distinct from log_recipe_note only in intent
+    (what changed vs. a taste/quality comment) — call this the moment the
+    user mentions cooking something differently than the recipe says.
+    """
+    conn = get_conn()
+    recipe = conn.execute(
+        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, recipe_name)
+    ).fetchone()
+    if not recipe:
+        conn.close()
+        raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
+    conn.execute(
+        "INSERT INTO recipe_notes (household_id, recipe_id, note_type, note) VALUES (?, ?, 'deviation', ?)",
+        (HOUSEHOLD_ID, recipe["id"], note),
+    )
+    conn.commit()
+    conn.close()
+    return {"name": recipe_name, "note": note}
+
+
 def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     """
     Temporarily exclude a recipe from auto-suggestion rotation (excluded=
@@ -748,6 +851,7 @@ def plan_meal(
     add_ingredients_to_grocery_list: bool = True,
     food_groups: list[str] | None = None,
     weekly_plan_id: int | None = None,
+    component_category: str | None = None,
 ) -> dict:
     """
     Schedule a meal for a date. `meal` can be a saved recipe name or a
@@ -762,7 +866,11 @@ def plan_meal(
     suggestions, never a requirement. Leave it out if you're not sure. Pass
     weekly_plan_id to attach this meal to a specific generated weekly plan
     (see create_weekly_plan/generate_weekly_plan) rather than leaving it as
-    a standalone one-off entry.
+    a standalone one-off entry. Pass component_category (e.g. "protein",
+    "vegetable", "breakfast", "carb", "treat", "dip") only for a
+    component_based plan's entries — in that case meal_date should just be
+    the plan's week_start_date as a placeholder, since the item isn't tied
+    to a specific day, and slot is ignored.
     """
     conn = get_conn()
     recipe = conn.execute(
@@ -774,9 +882,9 @@ def plan_meal(
     entry_food_groups = json.loads(recipe["food_groups_json"]) if recipe else (food_groups or [])
 
     cur = conn.execute(
-        "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json, weekly_plan_id) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id),
+        "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json, weekly_plan_id, component_category) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id, component_category),
     )
     conn.commit()
     entry_id = cur.lastrowid
@@ -833,6 +941,7 @@ def plan_meal(
         "date": meal_date,
         "slot": slot,
         "meal": meal,
+        "component_category": component_category,
         "groceries_added": added_items,
         "already_have_skipped": already_have,
         "food_groups_covered": entry_food_groups,
@@ -895,20 +1004,54 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     Start a new weekly plan — a reviewable batch of meals for a week,
     rather than meals living only as scattered chat-planned entries.
     constraints_notes is freeform per-week context (e.g. "out Thu/Fri,
-    keep it under 30 min on weeknights"). After creating it, attach each
-    day's meal via plan_meal(..., weekly_plan_id=this id). Prefer
-    generate_weekly_plan over calling this directly when the user just
-    wants "plan my week" — it handles the whole generation in one step.
+    keep it under 30 min on weeknights"). Snapshots the household's current
+    planning_mode (day_based/component_based, see set_planning_mode) onto
+    this plan so it stays interpretable even if the household later
+    switches modes. After creating it, attach each day's meal via
+    plan_meal(..., weekly_plan_id=this id). Prefer generate_weekly_plan
+    over calling this directly when the user just wants "plan my week" —
+    it handles the whole generation in one step.
     """
     conn = get_conn()
+    prefs = conn.execute(
+        "SELECT planning_mode FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    planning_mode = prefs["planning_mode"] if prefs else "day_based"
     cur = conn.execute(
-        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes) VALUES (?, ?, ?)",
-        (HOUSEHOLD_ID, week_start_date, constraints_notes),
+        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes, planning_mode) VALUES (?, ?, ?, ?)",
+        (HOUSEHOLD_ID, week_start_date, constraints_notes, planning_mode),
     )
     conn.commit()
     plan_id = cur.lastrowid
     conn.close()
-    return {"weekly_plan_id": plan_id, "week_start_date": week_start_date, "status": "draft"}
+    return {"weekly_plan_id": plan_id, "week_start_date": week_start_date, "status": "draft", "planning_mode": planning_mode}
+
+
+def set_planning_mode(mode: str) -> dict:
+    """
+    Set the household's standing weekly-planning mode: 'day_based' (default
+    — one meal per day/slot) or 'component_based' (plan by category instead
+    — a breakfast for the week, several proteins, several vegetables,
+    carbs, a treat, a dip — for the household to assemble freely rather
+    than a fixed day->meal mapping). This is household-level, not per-week
+    — it applies to the next plan generated, and can be changed again any
+    time, but a single already-generated plan stays whatever mode it was
+    created under.
+    """
+    if mode not in ("day_based", "component_based"):
+        raise ValueError("mode must be 'day_based' or 'component_based'.")
+    conn = get_conn()
+    conn.execute(
+        """
+        INSERT INTO meal_preferences (household_id, planning_mode, updated_at)
+        VALUES (?, ?, datetime('now'))
+        ON CONFLICT(household_id) DO UPDATE SET planning_mode = excluded.planning_mode, updated_at = datetime('now')
+        """,
+        (HOUSEHOLD_ID, mode),
+    )
+    conn.commit()
+    conn.close()
+    return {"planning_mode": mode}
 
 
 def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = None) -> dict:
@@ -943,12 +1086,21 @@ def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = No
     return {"weekly_plan_id": weekly_plan_id, "constraints_notes": constraints_notes}
 
 
+_COMPONENT_CATEGORY_ORDER = ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]
+
+
 def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     """
-    Get a weekly plan with all its meals, day by day. If weekly_plan_id is
-    omitted, returns the household's most recently created plan — use that
-    form when the user just says "what's this week's plan?" Returns
+    Get a weekly plan with all its meals. If weekly_plan_id is omitted,
+    returns the household's most recently created plan — use that form
+    when the user just says "what's this week's plan?" Returns
     weekly_plan_id: None with an empty meals list if no plan exists yet.
+    Always includes a flat `meals` list (each with date/slot/
+    component_category). For a component_based plan (see planning_mode),
+    also includes a `components` list grouped by category — prefer that
+    grouping when describing a component_based plan back to the user,
+    since date/slot aren't meaningful there (every entry shares the same
+    placeholder date).
     """
     conn = get_conn()
     if weekly_plan_id is None:
@@ -971,7 +1123,8 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
 
     meals = conn.execute(
         """
-        SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.food_groups_json
+        SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               mpe.food_groups_json, mpe.component_category, mpe.cooked_status
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -980,19 +1133,36 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         (plan["id"],),
     ).fetchall()
     conn.close()
-    return {
+
+    meal_dicts = [
+        {
+            "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "meal": m["meal"],
+            "food_groups": json.loads(m["food_groups_json"]),
+            "component_category": m["component_category"],
+            "cooked_status": m["cooked_status"],
+        }
+        for m in meals
+    ]
+
+    result = {
         "weekly_plan_id": plan["id"],
         "week_start_date": plan["week_start_date"],
         "status": plan["status"],
         "constraints_notes": plan["constraints_notes"],
-        "meals": [
-            {
-                "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "meal": m["meal"],
-                "food_groups": json.loads(m["food_groups_json"]),
-            }
-            for m in meals
-        ],
+        "planning_mode": plan["planning_mode"],
+        "meals": meal_dicts,
     }
+
+    if plan["planning_mode"] == "component_based":
+        by_category: dict[str, list[str]] = {}
+        for m in meal_dicts:
+            cat = m["component_category"] or "other"
+            by_category.setdefault(cat, []).append(m["meal"])
+        ordered_cats = [c for c in _COMPONENT_CATEGORY_ORDER if c in by_category]
+        ordered_cats += [c for c in by_category if c not in ordered_cats]
+        result["components"] = [{"category": c, "items": by_category[c]} for c in ordered_cats]
+
+    return result
 
 
 def approve_weekly_plan(weekly_plan_id: int) -> dict:
@@ -1027,6 +1197,345 @@ def swap_meal_in_plan(
     conn.commit()
     conn.close()
     return plan_meal(meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id)
+
+
+def swap_component_in_plan(
+    weekly_plan_id: int,
+    component_category: str,
+    old_meal: str,
+    new_meal: str,
+    food_groups: list[str] | None = None,
+) -> dict:
+    """
+    Replace one item within a component_based plan's category (e.g. swap
+    out one of the proteins) without touching the rest of the plan — the
+    component_based equivalent of swap_meal_in_plan. old_meal must match
+    the exact meal name currently in that category/plan.
+    """
+    conn = get_conn()
+    week_start_date = conn.execute(
+        "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchone()
+    if not week_start_date:
+        conn.close()
+        raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+    week_start_date = week_start_date["week_start_date"]
+
+    deleted = conn.execute(
+        """
+        DELETE FROM meal_plan_entries WHERE id IN (
+            SELECT mpe.id FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.weekly_plan_id = ? AND mpe.component_category = ? AND mpe.household_id = ?
+              AND COALESCE(r.name, mpe.freeform_meal) = ?
+            LIMIT 1
+        )
+        """,
+        (weekly_plan_id, component_category, HOUSEHOLD_ID, old_meal),
+    )
+    conn.commit()
+    removed = deleted.rowcount
+    conn.close()
+    if not removed:
+        raise ValueError(f"Couldn't find '{old_meal}' under category '{component_category}' in that plan.")
+    return plan_meal(
+        week_start_date, new_meal, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
+        component_category=component_category,
+    )
+
+
+# ---------- Cooker execution layer (recipe detail, prep schedule, check-off) ----------
+
+def check_off_meal(entry_id: int, status: str = "done") -> dict:
+    """Mark a specific planned meal (meal_plan_entries row) as cooked (status='done') or back to pending. Use get_weekly_plan/get_plan_progress to find the entry_id."""
+    conn = get_conn()
+    cooked_at = "datetime('now')" if status == "done" else "NULL"
+    conn.execute(
+        f"UPDATE meal_plan_entries SET cooked_status = ?, cooked_at = {cooked_at} WHERE id = ? AND household_id = ?",
+        (status, entry_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"entry_id": entry_id, "cooked_status": status}
+
+
+def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
+    """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule) as done or back to pending."""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE prep_tasks SET status = ? WHERE id = ? AND household_id = ?",
+        (status, prep_task_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"prep_task_id": prep_task_id, "status": status}
+
+
+def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
+    """Get the generated prep-task schedule for a plan (see generate_prep_schedule). Omit weekly_plan_id for the household's current/most recent plan."""
+    conn = get_conn()
+    if weekly_plan_id is None:
+        row = conn.execute(
+            "SELECT id FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+            (HOUSEHOLD_ID,),
+        ).fetchone()
+        if not row:
+            conn.close()
+            return []
+        weekly_plan_id = row["id"]
+    rows = conn.execute(
+        "SELECT id, task_date, description, related_meal, status FROM prep_tasks "
+        "WHERE weekly_plan_id = ? AND household_id = ? ORDER BY task_date ASC, id ASC",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def save_prep_tasks(weekly_plan_id: int, tasks: list[dict]) -> dict:
+    """
+    Persist a generated prep schedule for a plan — internal helper used by
+    generate_prep_schedule right after the LLM produces the task list.
+    Replaces any previously-generated tasks for this plan (re-generating
+    supersedes, rather than appending duplicates).
+    """
+    conn = get_conn()
+    conn.execute("DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?", (weekly_plan_id, HOUSEHOLD_ID))
+    for t in tasks:
+        if not t.get("task_date") or not t.get("description"):
+            continue
+        conn.execute(
+            "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal) VALUES (?, ?, ?, ?, ?)",
+            (HOUSEHOLD_ID, weekly_plan_id, t["task_date"], t["description"], t.get("related_meal", "")),
+        )
+    conn.commit()
+    conn.close()
+    return {"weekly_plan_id": weekly_plan_id, "task_count": len(tasks)}
+
+
+def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
+    """
+    Get a done-vs-outstanding view of a weekly plan: which meals have been
+    cooked (see check_off_meal) and which prep tasks are done (see
+    check_off_prep_step), plus counts. Omit weekly_plan_id for the
+    household's current/most recent plan.
+    """
+    plan = get_weekly_plan(weekly_plan_id)
+    if plan.get("weekly_plan_id") is None:
+        return {"weekly_plan_id": None, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0}
+    conn = get_conn()
+    meal_rows = conn.execute(
+        "SELECT mpe.id AS entry_id, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.cooked_status AS cooked_status "
+        "FROM meal_plan_entries mpe "
+        "LEFT JOIN recipes r ON r.id = mpe.recipe_id WHERE mpe.weekly_plan_id = ?",
+        (plan["weekly_plan_id"],),
+    ).fetchall()
+    conn.close()
+    prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
+    return {
+        "weekly_plan_id": plan["weekly_plan_id"],
+        "meals": [{"entry_id": m["entry_id"], "meal": m["meal"], "cooked_status": m["cooked_status"]} for m in meal_rows],
+        "meals_done": sum(1 for m in meal_rows if m["cooked_status"] == "done"),
+        "meals_total": len(meal_rows),
+        "prep_tasks": prep_tasks,
+        "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
+        "prep_total": len(prep_tasks),
+    }
+
+
+# ---------- Household coordination & trust (Phase 3, Workstream D) ----------
+
+def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
+    """
+    Flag (don't block) any meals on a plan that look like they clash with a
+    member's saved dietary restriction/allergy (set_member_dietary_restrictions)
+    — a simple keyword match between the restriction and the recipe's
+    ingredients, e.g. "peanut allergy" against a recipe listing "peanut
+    butter". This is a soft warning surfaced before approval, not a hard
+    block — the plan can still be approved as-is if the conflict is
+    intentional or a false positive from the keyword match. Call this right
+    before approve_weekly_plan and mention any conflicts found so the
+    Planner can decide, rather than silently approving.
+    """
+    plan = get_weekly_plan(weekly_plan_id)
+    if plan.get("weekly_plan_id") is None:
+        return {"weekly_plan_id": None, "conflicts": []}
+
+    members = list_members()
+    restrictions = [(m["name"], r.lower()) for m in members for r in m["dietary_restrictions"] if r.strip()]
+    if not restrictions:
+        return {"weekly_plan_id": plan["weekly_plan_id"], "conflicts": []}
+
+    recipes_by_name = {r["name"].lower(): r for r in list_recipes()}
+    conflicts = []
+    for meal in plan["meals"]:
+        recipe = recipes_by_name.get((meal["meal"] or "").lower())
+        if not recipe:
+            continue
+        ingredient_text = " ".join((i.get("item") or "") for i in recipe.get("ingredients", [])).lower()
+        for member_name, restriction in restrictions:
+            # crude but transparent: match on the restriction's significant words
+            # (skip generic words like "allergy"/"free" that would false-positive on everything)
+            keywords = [w for w in restriction.replace("-", " ").split() if w not in ("allergy", "allergic", "free", "intolerance", "intolerant")]
+            if keywords and any(kw in ingredient_text for kw in keywords):
+                conflicts.append({
+                    "meal": meal["meal"], "member": member_name, "restriction": restriction,
+                    "date": meal.get("date"), "component_category": meal.get("component_category"),
+                })
+    return {"weekly_plan_id": plan["weekly_plan_id"], "conflicts": conflicts}
+
+
+def explain_meal_choice(meal_name: str) -> dict:
+    """
+    Get the full signal picture behind why a meal is/isn't a natural
+    suggestion — use when the user asks "why did you suggest this?" or "why
+    haven't we had X in a while?" Returns rating, feedback notes, recent
+    one-off notes/deviations, times cooked, last cooked date, tags, cuisine,
+    main protein, whether it's temporarily excluded, and the household's
+    current novelty_preference setting (for context on how much new-recipe
+    exposure the plan is aiming for generally).
+    """
+    try:
+        recipe = get_recipe(meal_name)
+    except ValueError:
+        return {"meal_name": meal_name, "found": False, "reason": "Not a saved recipe — likely a freeform/one-off meal with no tracked history."}
+    memory = get_household_memory()
+    return {
+        "meal_name": recipe["name"],
+        "found": True,
+        "rating": recipe["rating"],
+        "feedback_notes": recipe["feedback_notes"],
+        "recent_one_off_notes": recipe["recent_one_off_notes"],
+        "times_cooked": recipe["times_cooked"],
+        "last_cooked_date": recipe["last_cooked_date"],
+        "tags": recipe["tags"],
+        "cuisine": recipe["cuisine"],
+        "main_protein": recipe["main_protein"],
+        "temporarily_excluded": bool(recipe["temporarily_excluded"]),
+        "household_novelty_preference": memory.get("novelty_preference", "balanced"),
+    }
+
+
+def get_feedback_nudge() -> dict:
+    """
+    Check whether there's a good moment to gently ask for feedback on
+    something recently cooked — call once near the start of a new
+    conversation (not on every message) and, if it returns a meal, work a
+    single low-key ask into the response rather than a separate prompt.
+    Only surfaces a meal that's been checked off as cooked (check_off_meal)
+    in the last 7 days AND whose recipe has never been rated — once a
+    recipe has any rating this stops nudging about it.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.household_id = ? AND mpe.cooked_status = 'done' AND mpe.cooked_at IS NOT NULL
+          AND mpe.cooked_at >= datetime('now', '-7 days')
+          AND mpe.recipe_id IS NOT NULL
+          AND (SELECT rating FROM recipes WHERE id = mpe.recipe_id) = ''
+        ORDER BY mpe.cooked_at DESC LIMIT 1
+        """,
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    conn.close()
+    if not row:
+        return {"has_nudge": False}
+    return {"has_nudge": True, "meal": row["meal"], "cooked_at": row["cooked_at"]}
+
+
+def set_item_store(item: str, store: str) -> dict:
+    """
+    Remember which store an item (or type of item) should be bought at,
+    e.g. "we get paper towels at Costco" -> set_item_store("paper towels",
+    "Costco"). Applies immediately to any matching item already on the
+    grocery list, and automatically to future adds of that same item name.
+    Pass an empty store to clear the preference.
+    """
+    conn = get_conn()
+    if store:
+        conn.execute(
+            "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
+            "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
+            (HOUSEHOLD_ID, item.strip().lower(), store),
+        )
+        conn.execute(
+            "UPDATE grocery_items SET store = ? WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+            (store, HOUSEHOLD_ID, item),
+        )
+    else:
+        conn.execute(
+            "DELETE FROM item_store_preferences WHERE household_id = ? AND item = ?",
+            (HOUSEHOLD_ID, item.strip().lower()),
+        )
+        conn.execute(
+            "UPDATE grocery_items SET store = '' WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+            (HOUSEHOLD_ID, item),
+        )
+    conn.commit()
+    conn.close()
+    return {"item": item, "store": store}
+
+
+def get_grocery_list_by_store(status: str = "needed") -> dict:
+    """
+    Get the grocery list split into store groups (see set_item_store),
+    each internally grouped by section like get_grocery_list_by_section —
+    use this instead of get_grocery_list_by_section when the household
+    shops at more than one store, so the list reads like separate trips
+    rather than one mixed pile. Items with no assigned store are grouped
+    under "Unassigned".
+    """
+    items = list_grocery_list(status=status)
+    by_store: dict[str, list[dict]] = {}
+    for it in items:
+        store = it.get("store") or "Unassigned"
+        by_store.setdefault(store, []).append(it)
+    stores = []
+    for store, store_items in by_store.items():
+        sections: dict[str, list[dict]] = {s: [] for s in _GROCERY_SECTION_ORDER}
+        for it in store_items:
+            cat = _GROCERY_CATEGORY_ALIASES.get(it["category"], it["category"])
+            sections.setdefault("other", [])
+            sections[cat if cat in sections else "other"].append(it)
+        stores.append({
+            "store": store,
+            "sections": [{"section": s, "items": sections[s]} for s in _GROCERY_SECTION_ORDER if sections[s]],
+        })
+    return {"stores": stores}
+
+
+def get_learning_summary() -> dict:
+    """
+    A visible, human-readable snapshot of what the app has actually learned
+    so far — use when the user asks something like "what have you picked up
+    about us?" or "has this gotten smarter?" Distinct from
+    get_household_memory (raw preference values): this is aggregate stats
+    that show adaptation over time.
+    """
+    recipes = list_recipes()
+    liked = [r for r in recipes if r["rating"] == "liked"]
+    disliked = [r for r in recipes if r["rating"] == "disliked"]
+    excluded = [r for r in recipes if r["temporarily_excluded"]]
+    deviation_notes = 0
+    conn = get_conn()
+    deviation_notes = conn.execute(
+        "SELECT COUNT(*) AS c FROM recipe_notes WHERE household_id = ? AND note_type = 'deviation'",
+        (HOUSEHOLD_ID,),
+    ).fetchone()["c"]
+    conn.close()
+    return {
+        "recipes_tracked": len(recipes),
+        "recipes_liked": len(liked),
+        "recipes_disliked": len(disliked),
+        "recipes_temporarily_excluded": len(excluded),
+        "cooking_deviations_logged": deviation_notes,
+        "liked_recipe_names": [r["name"] for r in liked],
+        "disliked_recipe_names": [r["name"] for r in disliked],
+    }
 
 
 # ---------- Eater share link (read-only, tokenized, no new auth) ----------
@@ -1114,6 +1623,7 @@ def get_household_memory() -> dict:
         "dislikes": json.loads(prefs["dislikes_json"]) if prefs else [],
         "cooking_time_preference": prefs["cooking_time_preference"] if prefs else "",
         "novelty_preference": prefs["novelty_preference"] if prefs else "balanced",
+        "planning_mode": prefs["planning_mode"] if prefs else "day_based",
     }
 
 
@@ -1322,6 +1832,11 @@ def add_grocery_item(
         "SELECT id, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' AND LOWER(item) = LOWER(?)",
         (HOUSEHOLD_ID, item),
     ).fetchone()
+    pref = conn.execute(
+        "SELECT store FROM item_store_preferences WHERE household_id = ? AND item = ?",
+        (HOUSEHOLD_ID, item.strip().lower()),
+    ).fetchone()
+    preferred_store = pref["store"] if pref else ""
     if existing:
         merged_qty, merged = _try_consolidate_quantity(existing["quantity"] or "", quantity)
         conn.execute(
@@ -1334,8 +1849,8 @@ def add_grocery_item(
         return {"item_id": item_id, "item": item, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
 
     cur = conn.execute(
-        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id) VALUES (?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, item, quantity, category, added_by, source_weekly_plan_id),
+        "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, item, quantity, category, added_by, source_weekly_plan_id, preferred_store),
     )
     conn.commit()
     item_id = cur.lastrowid
@@ -1376,7 +1891,7 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     """List grocery items, optionally filtered by status (needed/in_cart/purchased/all)."""
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, item, quantity, category, status FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?) ORDER BY category, item",
+        "SELECT id, item, quantity, category, status, store FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?) ORDER BY category, item",
         (HOUSEHOLD_ID, status, status),
     ).fetchall()
     conn.close()

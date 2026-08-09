@@ -98,6 +98,15 @@ plan. Only fall back to individual plan_meal calls for genuinely one-off, single
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
 this week?" rather than relying on get_meal_plan's flatter list when a generated plan exists.
+- Households can plan day-based (default: one meal per day) or component_based (a pool of \
+items by category — breakfast, protein, vegetable, carb, treat, dip — assembled freely across \
+the week instead of a fixed day->meal mapping). This is a standing household setting (see \
+set_planning_mode), not a per-week choice — don't ask which mode for a specific week, only \
+switch it when the household explicitly wants to change how they plan going forward. \
+generate_weekly_plan automatically produces whichever mode is currently set. When describing a \
+component_based plan back to the user, use get_weekly_plan's `components` grouping (by \
+category), not the day/date framing. To change one item within a component_based plan, use \
+swap_component_in_plan instead of swap_meal_in_plan.
 - One-off constraints for a specific week ("3 nights this week," "one vegetarian night") \
 belong in constraints_notes when generating (generate_weekly_plan), or via set_week_constraints \
 for a plan that already exists — never save these as a standing preference via \
@@ -112,6 +121,40 @@ meat," "took way longer than expected") is a one-off note, not a pattern — log
 log_recipe_note, not mark_recipe_feedback, so it doesn't quietly blacklist a recipe the \
 household actually likes overall. Reserve mark_recipe_feedback for when the user is actually \
 expressing a real like/dislike pattern.
+
+Cooker execution layer (turning an approved plan into dinner actually happening):
+- For "what's the recipe for X" / "how do I make X," use get_recipe for full detail \
+(ingredients, instructions, timing) rather than digging through list_recipes yourself.
+- Cooking for more or fewer people than the plan assumed ("we've got guests, need this for 6 \
+not 4")? Use scale_recipe rather than doing the math yourself.
+- After generating (or regenerating) a plan, proactively offer to run generate_prep_schedule if \
+any of the week's recipes have advance_prep_notes worth surfacing (marinating, thawing, etc.) — \
+don't wait to be asked. Use get_prep_schedule/get_plan_progress to answer "what do I need to \
+prep" or "what's left to cook this week."
+- Use check_off_meal and check_off_prep_step the moment the user says something's done ("just \
+made the stir fry," "marinated the chicken") — don't just acknowledge in text.
+- If the user mentions cooking something differently than the recipe said (a swap, a skipped/ \
+adjusted step, doubling a component), call log_cooking_deviation right away so it's not lost — \
+distinct from log_recipe_note (a taste/quality comment) or mark_recipe_feedback (a permanent \
+rating); this one is specifically about what actually happened while cooking.
+
+Household coordination & trust:
+- Right before approve_weekly_plan, call check_plan_conflicts and mention any flagged clashes \
+with a member's dietary restriction — this is a warning to weigh, not a block; still approve if \
+the user wants to proceed anyway (it may be a false positive, or intentional).
+- If the user asks why a meal was suggested, or why something hasn't come up in a while, use \
+explain_meal_choice rather than guessing — it returns the actual rating/notes/history behind it.
+- Near the start of a new conversation (not every message), you may call get_feedback_nudge once; \
+if it returns a meal, work one low-key ask about it into your reply rather than a separate prompt \
+("by the way, how'd the salmon turn out Tuesday?"). Don't nudge more than once per conversation.
+- If the household shops at more than one store ("we get bulk stuff at Costco"), use \
+set_item_store to remember it per item, and get_grocery_list_by_store instead of \
+get_grocery_list_by_section once more than one store is in play.
+- Ad hoc grocery items ("also grab batteries") just use add_grocery_item/add_grocery_items like \
+anything else — no special handling needed, a grocery item doesn't need to trace back to a recipe.
+- If the user asks what's been learned or whether suggestions have improved, use \
+get_learning_summary for the aggregate picture (recipes tracked, liked/disliked counts, \
+deviations logged) rather than get_household_memory, which is raw preference values.
 
 What the app knows (memory transparency):
 - If the user asks what the app knows/remembers about their preferences, call \
@@ -481,6 +524,36 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "get_recipe",
+        "description": "Get full detail for a single saved recipe by exact name — ingredients, instructions, timing. Use when the user wants to see a specific recipe in full.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"recipe_name": {"type": "string"}},
+            "required": ["recipe_name"],
+        },
+    },
+    {
+        "name": "scale_recipe",
+        "description": "Scale a saved recipe's ingredient quantities to a different number of servings than it's written for (e.g. cooking for 6 when the recipe serves 4).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "recipe_name": {"type": "string"},
+                "target_servings": {"type": "integer"},
+            },
+            "required": ["recipe_name", "target_servings"],
+        },
+    },
+    {
+        "name": "log_cooking_deviation",
+        "description": "Capture something that actually changed while cooking a recipe — a swap, an adjusted step, a doubled component — so it's not lost. Call the moment the user mentions cooking something differently than the recipe says.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"recipe_name": {"type": "string"}, "note": {"type": "string"}},
+            "required": ["recipe_name", "note"],
+        },
+    },
+    {
         "name": "plan_meal",
         "description": "Schedule a meal (recipe name or freeform description) for a date/slot. Auto-adds ingredients to grocery list and food_groups if it's a saved recipe. Returns food_groups_missing so you can optionally, gently, suggest rounding it out.",
         "input_schema": {
@@ -556,12 +629,128 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "swap_component_in_plan",
+        "description": "Replace one item within a component_based plan's category (e.g. swap out one of the proteins) without touching the rest of the plan — the component-plan equivalent of swap_meal_in_plan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "component_category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]},
+                "old_meal": {"type": "string", "description": "Exact current item name being replaced."},
+                "new_meal": {"type": "string"},
+                "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+            },
+            "required": ["weekly_plan_id", "component_category", "old_meal", "new_meal"],
+        },
+    },
+    {
         "name": "approve_weekly_plan",
         "description": "Mark a weekly plan as approved/reviewed by the Planner.",
         "input_schema": {
             "type": "object",
             "properties": {"weekly_plan_id": {"type": "integer"}},
             "required": ["weekly_plan_id"],
+        },
+    },
+    {
+        "name": "generate_prep_schedule",
+        "description": "Generate (or regenerate) the prep/cooking schedule for a weekly plan — what needs prepping or starting ahead of time (marinating, thawing, batch-cooking) and when, derived from each meal's recipe timing. Omit weekly_plan_id for the household's current plan. Regenerating replaces the previous schedule.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "get_prep_schedule",
+        "description": "Get the generated prep-task schedule for a plan. Omit weekly_plan_id for the household's current plan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "check_off_prep_step",
+        "description": "Mark a specific prep task as done or back to pending.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prep_task_id": {"type": "integer"},
+                "status": {"type": "string", "enum": ["pending", "done"]},
+            },
+            "required": ["prep_task_id"],
+        },
+    },
+    {
+        "name": "check_off_meal",
+        "description": "Mark a specific planned meal as cooked (status='done') or back to pending. Find the entry_id via get_weekly_plan or get_plan_progress.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "entry_id": {"type": "integer"},
+                "status": {"type": "string", "enum": ["pending", "done"]},
+            },
+            "required": ["entry_id"],
+        },
+    },
+    {
+        "name": "get_plan_progress",
+        "description": "Get a done-vs-outstanding view of a weekly plan: which meals have been cooked and which prep tasks are done, plus counts. Omit weekly_plan_id for the household's current plan. Use this when the user asks 'what's left to cook this week' or similar.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "check_plan_conflicts",
+        "description": "Check a weekly plan's meals against household members' saved dietary restrictions/allergies for likely clashes (e.g. a peanut allergy against a recipe listing peanut butter). Non-blocking — surfaces warnings, doesn't prevent approval. Call before approve_weekly_plan and mention any conflicts found. Omit weekly_plan_id for the household's current plan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "explain_meal_choice",
+        "description": "Explain why a meal is/isn't a natural suggestion right now — rating, feedback notes, times cooked, last cooked date, tags, cuisine, whether it's temporarily excluded, etc. Use when the user asks 'why did you suggest this?' or 'why haven't we had X in a while?'",
+        "input_schema": {
+            "type": "object",
+            "properties": {"meal_name": {"type": "string"}},
+            "required": ["meal_name"],
+        },
+    },
+    {
+        "name": "get_feedback_nudge",
+        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Call once near the start of a new conversation (not every message); if it returns has_nudge=true, work a single low-key ask into your response.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "set_item_store",
+        "description": "Remember which store a grocery item should be bought at (e.g. 'we get paper towels at Costco'). Applies to matching items already on the list and to future adds of that item name. Pass an empty store to clear.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"item": {"type": "string"}, "store": {"type": "string"}},
+            "required": ["item", "store"],
+        },
+    },
+    {
+        "name": "get_grocery_list_by_store",
+        "description": "Get the grocery list split into store groups (see set_item_store), each grouped by section. Use instead of get_grocery_list_by_section once the household has assigned items to more than one store.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+        },
+    },
+    {
+        "name": "get_learning_summary",
+        "description": "Get an aggregate, human-readable snapshot of what's been learned so far (recipes tracked, liked/disliked counts, temporarily excluded, deviations logged). Use when the user asks 'what have you picked up about us?' or similar — distinct from get_household_memory's raw preference values.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "set_planning_mode",
+        "description": "Set the household's standing weekly-planning mode: 'day_based' (default, one meal per day/slot) or 'component_based' (plan by category instead — a breakfast for the week, several proteins, several vegetables, carbs, a treat, a dip, for the household to assemble freely). Household-level, applies to the next generated plan; can be changed again any time.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"mode": {"type": "string", "enum": ["day_based", "component_based"]}},
+            "required": ["mode"],
         },
     },
     {
@@ -774,6 +963,14 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                         "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
                         "cuisine": {"type": "string"},
                         "main_protein": {"type": "string"},
+                        "instructions": {
+                            "type": "array", "items": {"type": "string"},
+                            "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
+                        },
+                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
+                        "prep_time_minutes": {"type": "integer"},
+                        "cook_time_minutes": {"type": "integer"},
+                        "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
                     },
                     "required": ["date", "slot", "meal_name", "is_new_recipe"],
                 },
@@ -841,6 +1038,13 @@ comparable quantity, still include it in the recipe's ingredients list (the reci
 accurate/reusable), but leave its category as normal — the household already has it, so it \
 doesn't need to be over-represented as a fresh grocery need; don't let already-stocked pantry \
 staples influence which recipes you pick either way.
+- For any new recipe, fill in instructions (ordered cooking steps) so it's actually cookable \
+later, not just a shopping list — this powers the Cooker view. Also fill in default_servings, \
+prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
+ahead") whenever reasonably inferable — advance_prep_notes in particular feeds \
+generate_prep_schedule, so leave it blank rather than guessing if nothing genuinely needs \
+advance prep, but don't skip it out of habit when something clearly does (marinating, thawing, \
+soaking, dough that needs to rise, etc.).
 
 Call submit_weekly_plan with the result."""
 
@@ -864,6 +1068,116 @@ Call submit_weekly_plan with the result."""
     return []
 
 
+_GENERATE_COMPONENT_PLAN_TOOL = {
+    "name": "submit_component_plan",
+    "description": "Submit the generated component-based weekly plan.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "items": {
+                "type": "array",
+                "description": "One entry per planned item — e.g. three separate entries with category='protein' for three proteins, not one entry covering all three.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]},
+                        "meal_name": {"type": "string", "description": "Recipe/item name, existing or new."},
+                        "is_new_recipe": {"type": "boolean"},
+                        "ingredients": {
+                            "type": "array",
+                            "description": "Required if is_new_recipe is true; omit/empty for an existing saved recipe.",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "item": {"type": "string"},
+                                    "qty": {"type": "string"},
+                                    "category": {
+                                        "type": "string",
+                                        "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
+                                        "description": "Grocery store section.",
+                                    },
+                                },
+                                "required": ["item"],
+                            },
+                        },
+                        "tags": {"type": "array", "items": {"type": "string"}},
+                        "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+                        "cuisine": {"type": "string"},
+                        "main_protein": {"type": "string"},
+                        "instructions": {
+                            "type": "array", "items": {"type": "string"},
+                            "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
+                        },
+                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
+                        "prep_time_minutes": {"type": "integer"},
+                        "cook_time_minutes": {"type": "integer"},
+                        "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                    },
+                    "required": ["category", "meal_name", "is_new_recipe"],
+                },
+            },
+        },
+        "required": ["items"],
+    },
+}
+
+
+def generate_component_plan_llm(context: dict) -> list[dict]:
+    """
+    Component_based equivalent of generate_weekly_plan_llm: instead of one
+    meal per day, produces a pool of items by category (breakfast, protein,
+    vegetable, carb, treat, dip) for the household to assemble freely
+    across the week. Same forced-tool-call approach for structured output.
+    """
+    client = _client()
+    prompt = f"""Household context (JSON):
+{json.dumps(context, indent=2)}
+
+Generate a component-based weekly plan for this household — NOT a day-by-day plan. \
+Produce a pool of items by category that the household will mix and match across the week \
+themselves, roughly: 1 breakfast idea, 2-3 proteins, 3-4 vegetables, 1-2 carbs, 1 treat, and \
+1 dip/sauce (adjust counts modestly for household size/goals in constraints_notes, but stay \
+close to this shape — it's a reasonable default, not a rigid rule). Guidelines:
+- Respect every listed dietary restriction and allergy without exception. Avoid every listed \
+dislike.
+- Lean toward liked/favorite recipes from saved_recipes, but honor novelty_preference the same \
+way as day-based planning — even "mostly_favorites" should include at least one new item \
+somewhere in the pool.
+- A recipe's recent_one_off_notes are a soft signal, not a verdict — only an actual \
+rating='disliked' should exclude something entirely.
+- household_memory's protein_preferences should shape which/how many proteins you pick (a \
+protein marked "avoid" shouldn't appear; "several times a week" can appear more than once \
+across the protein items).
+- Honor any per-week constraints in constraints_notes exactly.
+- For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
+main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \
+the exact meal_name.
+- For every new-item ingredient, set category to the correct grocery store section (produce, \
+dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs/butter/tofu \
+are dairy; fresh vegetables/herbs are produce.
+- current_inventory lists what's already on hand — still include those ingredients in a new \
+recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
+- For any new recipe, fill in instructions (ordered cooking steps), default_servings, \
+prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-based planning \
+— see the equivalent guidance there. This powers the Cooker view and prep schedule.
+
+Call submit_component_plan with the result."""
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=8192,
+        tools=[_GENERATE_COMPONENT_PLAN_TOOL],
+        tool_choice={"type": "tool", "name": "submit_component_plan"},
+        messages=[{"role": "user", "content": prompt}],
+    )
+    if response.stop_reason == "max_tokens":
+        logger.warning("generate_component_plan_llm hit max_tokens; plan may be incomplete")
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input.get("items", [])
+    return []
+
+
 def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_count: int = 7) -> dict:
     """
     Generate and save a full week's meal plan in one pass: gathers current
@@ -873,13 +1187,17 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
     needed. Returns the saved plan via get_weekly_plan. This is the
     preferred way to handle "plan my week" / "what should we eat this
     week" style requests instead of planning meal-by-meal across several
-    plan_meal calls.
+    plan_meal calls. Automatically generates a component_based plan
+    instead of day-based if that's the household's current planning_mode
+    (see set_planning_mode) — the caller doesn't need to know which mode
+    is active, this handles both.
     """
+    household_memory = tools.get_household_memory()
     context = {
         "week_start_date": week_start_date,
         "day_count": day_count,
         "constraints_notes": constraints_notes,
-        "household_memory": tools.get_household_memory(),
+        "household_memory": household_memory,
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
         # here at the source rather than relying on a prompt instruction, so
         # they're never even a candidate for suggestion.
@@ -887,7 +1205,6 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
         "recent_history": tools.get_recent_meal_history(weeks=3),
         "current_inventory": tools.get_inventory(),
     }
-    days = generate_weekly_plan_llm(context)
 
     plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
     plan_id = plan["weekly_plan_id"]
@@ -900,30 +1217,167 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
     # created within the same second.
     tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
 
-    for day in days:
-        meal_name = day.get("meal_name")
-        if not meal_name:
-            continue
-        if day.get("is_new_recipe") and day.get("ingredients"):
+    def _ensure_recipe_saved(meal_name, item):
+        if item.get("is_new_recipe") and item.get("ingredients"):
             existing = next((r for r in tools.list_recipes() if r["name"] == meal_name), None)
             if not existing:
                 tools.add_recipe(
                     name=meal_name,
-                    ingredients=day.get("ingredients", []),
-                    tags=day.get("tags", []),
-                    food_groups=day.get("food_groups", []),
-                    cuisine=day.get("cuisine", ""),
-                    main_protein=day.get("main_protein", ""),
+                    ingredients=item.get("ingredients", []),
+                    tags=item.get("tags", []),
+                    food_groups=item.get("food_groups", []),
+                    cuisine=item.get("cuisine", ""),
+                    main_protein=item.get("main_protein", ""),
+                    instructions=item.get("instructions", []),
+                    default_servings=item.get("default_servings") or 4,
+                    prep_time_minutes=item.get("prep_time_minutes"),
+                    cook_time_minutes=item.get("cook_time_minutes"),
+                    advance_prep_notes=item.get("advance_prep_notes", ""),
                 )
-        tools.plan_meal(
-            meal_date=day.get("date"),
-            meal=meal_name,
-            slot=day.get("slot", "dinner"),
-            food_groups=day.get("food_groups"),
-            weekly_plan_id=plan_id,
-        )
+
+    if household_memory.get("planning_mode") == "component_based":
+        items = generate_component_plan_llm(context)
+        for item in items:
+            meal_name = item.get("meal_name")
+            category = item.get("category")
+            if not meal_name or not category:
+                continue
+            _ensure_recipe_saved(meal_name, item)
+            tools.plan_meal(
+                meal_date=week_start_date,  # placeholder — component items aren't tied to a specific day
+                meal=meal_name,
+                food_groups=item.get("food_groups"),
+                weekly_plan_id=plan_id,
+                component_category=category,
+            )
+    else:
+        days = generate_weekly_plan_llm(context)
+        for day in days:
+            meal_name = day.get("meal_name")
+            if not meal_name:
+                continue
+            _ensure_recipe_saved(meal_name, day)
+            tools.plan_meal(
+                meal_date=day.get("date"),
+                meal=meal_name,
+                slot=day.get("slot", "dinner"),
+                food_groups=day.get("food_groups"),
+                weekly_plan_id=plan_id,
+            )
 
     return tools.get_weekly_plan(plan_id)
+
+
+_GENERATE_PREP_SCHEDULE_TOOL = {
+    "name": "submit_prep_schedule",
+    "description": "Submit the generated prep/cooking schedule for a weekly plan.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "description": "Prep tasks derived from each meal's timing/advance_prep_notes — only include a task when something genuinely needs prepping ahead (marinating, thawing, batch-cooking, dough rising, etc.), not every meal needs one.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "task_date": {"type": "string", "description": "ISO date this should happen on (the day before the meal, morning of, etc. — whatever the timing calls for)."},
+                        "description": {"type": "string", "description": "e.g. 'Marinate the chicken for tonight's stir fry (at least 4 hours)'."},
+                        "related_meal": {"type": "string", "description": "Exact meal name this task supports."},
+                    },
+                    "required": ["task_date", "description", "related_meal"],
+                },
+            },
+        },
+        "required": ["tasks"],
+    },
+}
+
+
+def generate_prep_schedule_llm(context: dict) -> list[dict]:
+    """
+    Given a week's plan (dates/meals) and each meal's full recipe detail
+    (instructions, prep/cook time, advance_prep_notes), work out what needs
+    prepping or starting ahead of time and when — derived purely from
+    recipe timing, not any real calendar or the Cooker's availability. This
+    is closer to a small backward-scheduling pass than simple CRUD: for
+    each meal with advance_prep_notes (e.g. "marinate 4+ hours ahead"),
+    figure out a sensible date (same day if a few hours is enough, the day
+    before if it says "overnight" or the plan is component_based with no
+    specific day per item — use the plan's week_start_date as the
+    reference point in that case).
+    """
+    client = _client()
+    prompt = f"""Weekly plan + recipe detail (JSON):
+{json.dumps(context, indent=2)}
+
+Generate a prep/cooking schedule for this week. Guidelines:
+- Only create a task where a recipe's advance_prep_notes, prep_time_minutes, or instructions \
+genuinely call for doing something ahead of time (marinating, thawing, soaking, dough that \
+needs to rise, batch-cooking a component in advance). Most meals need no task at all — don't \
+invent busywork.
+- Work backward from each meal's planned date: if advance_prep_notes says "at least 4 hours \
+ahead," a same-day morning task is fine; if it says "overnight" or "the night before," schedule \
+it the day before instead.
+- For a component_based plan (planning_mode='component_based'), items aren't tied to a specific \
+day — use week_start_date as the reference point for any tasks needed (e.g. "before you start \
+using this component this week").
+- Keep descriptions specific and actionable, e.g. "Marinate the chicken for the stir fry (at \
+least 4 hours, can do the night before)" rather than just "prep chicken."
+
+Call submit_prep_schedule with the result."""
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=4096,
+        tools=[_GENERATE_PREP_SCHEDULE_TOOL],
+        tool_choice={"type": "tool", "name": "submit_prep_schedule"},
+        messages=[{"role": "user", "content": prompt}],
+    )
+    if response.stop_reason == "max_tokens":
+        logger.warning("generate_prep_schedule_llm hit max_tokens; schedule may be incomplete")
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input.get("tasks", [])
+    return []
+
+
+def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
+    """
+    Generate (or regenerate) the prep/cooking schedule for a weekly plan —
+    gathers the plan's meals plus each one's full recipe detail (timing,
+    advance-prep notes), asks Claude to work out what needs prepping ahead
+    and when, and persists it. Regenerating replaces any previous schedule
+    for this plan rather than duplicating it. Returns the plan's progress
+    view (see get_plan_progress) so the caller sees both the schedule and
+    current done/outstanding state in one call.
+    """
+    plan = tools.get_weekly_plan(weekly_plan_id)
+    plan_id = plan.get("weekly_plan_id")
+    if plan_id is None:
+        raise ValueError("No weekly plan exists yet — generate one first with generate_weekly_plan.")
+
+    recipes_by_name = {r["name"]: r for r in tools.list_recipes()}
+    meals_detail = []
+    for m in plan["meals"]:
+        recipe = recipes_by_name.get(m["meal"])
+        meals_detail.append({
+            "date": m["date"],
+            "meal": m["meal"],
+            "component_category": m.get("component_category"),
+            "instructions": recipe["instructions"] if recipe else [],
+            "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
+            "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,
+            "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
+        })
+
+    context = {
+        "week_start_date": plan["week_start_date"],
+        "planning_mode": plan["planning_mode"],
+        "meals": meals_detail,
+    }
+    tasks = generate_prep_schedule_llm(context)
+    tools.save_prep_tasks(plan_id, tasks)
+    return tools.get_plan_progress(plan_id)
 
 
 TOOL_FUNCTIONS = {
@@ -949,8 +1403,11 @@ TOOL_FUNCTIONS = {
     "complete_chore": tools.complete_chore,
     "add_recipe": tools.add_recipe,
     "list_recipes": tools.list_recipes,
+    "get_recipe": tools.get_recipe,
+    "scale_recipe": tools.scale_recipe,
     "mark_recipe_feedback": tools.mark_recipe_feedback,
     "log_recipe_note": tools.log_recipe_note,
+    "log_cooking_deviation": tools.log_cooking_deviation,
     "flag_recipe_temporary": tools.flag_recipe_temporary,
     "plan_meal": tools.plan_meal,
     "get_meal_plan": tools.get_meal_plan,
@@ -958,7 +1415,20 @@ TOOL_FUNCTIONS = {
     "set_week_constraints": tools.set_week_constraints,
     "get_weekly_plan": tools.get_weekly_plan,
     "swap_meal_in_plan": tools.swap_meal_in_plan,
+    "swap_component_in_plan": tools.swap_component_in_plan,
     "approve_weekly_plan": tools.approve_weekly_plan,
+    "generate_prep_schedule": generate_prep_schedule,
+    "get_prep_schedule": tools.get_prep_schedule,
+    "check_off_prep_step": tools.check_off_prep_step,
+    "check_off_meal": tools.check_off_meal,
+    "get_plan_progress": tools.get_plan_progress,
+    "check_plan_conflicts": tools.check_plan_conflicts,
+    "explain_meal_choice": tools.explain_meal_choice,
+    "get_feedback_nudge": tools.get_feedback_nudge,
+    "set_item_store": tools.set_item_store,
+    "get_grocery_list_by_store": tools.get_grocery_list_by_store,
+    "get_learning_summary": tools.get_learning_summary,
+    "set_planning_mode": tools.set_planning_mode,
     "get_household_memory": tools.get_household_memory,
     "edit_preference": tools.edit_preference,
     "delete_preference": tools.delete_preference,

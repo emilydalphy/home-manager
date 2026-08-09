@@ -43,6 +43,17 @@ _MIGRATIONS = [
     ("grocery_items", "source_weekly_plan_id", "INTEGER"),
     ("meal_preferences", "novelty_preference", "TEXT NOT NULL DEFAULT 'balanced'"),
     ("recipes", "temporarily_excluded", "INTEGER NOT NULL DEFAULT 0"),
+    ("meal_preferences", "planning_mode", "TEXT NOT NULL DEFAULT 'day_based'"),
+    ("weekly_plans", "planning_mode", "TEXT NOT NULL DEFAULT 'day_based'"),
+    ("meal_plan_entries", "component_category", "TEXT"),
+    ("recipes", "instructions_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("recipes", "default_servings", "INTEGER NOT NULL DEFAULT 4"),
+    ("recipes", "prep_time_minutes", "INTEGER"),
+    ("recipes", "cook_time_minutes", "INTEGER"),
+    ("recipes", "advance_prep_notes", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_plan_entries", "cooked_status", "TEXT NOT NULL DEFAULT 'pending'"),
+    ("meal_plan_entries", "cooked_at", "TEXT"),
+    ("grocery_items", "store", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 

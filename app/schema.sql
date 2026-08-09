@@ -39,6 +39,13 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- floor even at the lowest setting — see generate_weekly_plan_llm's prompt —
     -- so freshness never drops to zero just because the household leans safe.
     novelty_preference TEXT NOT NULL DEFAULT 'balanced',
+    -- Household-level, not per-week: 'day_based' (default) assigns one meal per
+    -- day/slot, same as Phase 2. 'component_based' plans by category instead
+    -- (a breakfast for the week, several proteins, several vegetables, carbs,
+    -- a treat, a dip) for the household to assemble freely rather than a fixed
+    -- day->meal mapping. A household is one or the other, never mixed within a
+    -- single week, but can switch any time via set_planning_mode.
+    planning_mode TEXT NOT NULL DEFAULT 'day_based',
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -105,6 +112,13 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- for now") — distinct from rating='disliked', which is a permanent pattern.
     -- Manually toggled on/off via flag_recipe_temporary; no auto-expiry.
     temporarily_excluded INTEGER NOT NULL DEFAULT 0,
+    -- Cooker execution layer (Phase 3): full recipe detail beyond just
+    -- ingredients, so a recipe is actually cookable from within the app.
+    instructions_json TEXT NOT NULL DEFAULT '[]', -- ordered list of step strings
+    default_servings INTEGER NOT NULL DEFAULT 4, -- baseline for scale_recipe
+    prep_time_minutes INTEGER, -- active prep time, if known
+    cook_time_minutes INTEGER, -- active cook time, if known
+    advance_prep_notes TEXT NOT NULL DEFAULT '', -- e.g. "marinate at least 4 hours ahead, can be done the night before" — feeds generate_prep_schedule
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -134,6 +148,10 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     week_start_date TEXT NOT NULL, -- ISO date, the Monday (or first planned day) of the week
     status TEXT NOT NULL DEFAULT 'draft', -- draft | approved
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
+    -- Snapshotted from meal_preferences.planning_mode at creation time, so a
+    -- past plan stays interpretable even if the household later switches
+    -- modes — see meal_plan_entries.component_category.
+    planning_mode TEXT NOT NULL DEFAULT 'day_based',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -148,6 +166,36 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     freeform_meal TEXT, -- used if not tied to a saved recipe
     food_groups_json TEXT NOT NULL DEFAULT '[]', -- subset of ["protein", "carb", "vegetable"] covered by this plate
     weekly_plan_id INTEGER REFERENCES weekly_plans(id), -- null for ad hoc/one-off meals not part of a generated week
+    -- Set only for entries belonging to a component_based plan — e.g.
+    -- "breakfast", "protein", "vegetable", "carb", "treat", "dip". NULL means
+    -- a normal day-based entry (date/slot are what matters). When set, `date`
+    -- is just the plan's week_start_date as a placeholder (this item isn't
+    -- tied to a specific day) and `slot` is unused.
+    component_category TEXT,
+    -- Cooker execution layer: has this specific planned meal actually been
+    -- cooked yet? Separate from recipes.times_cooked (a lifetime counter) —
+    -- this is per-entry, so the week's progress view can show done vs.
+    -- outstanding. See check_off_meal/get_plan_progress.
+    cooked_status TEXT NOT NULL DEFAULT 'pending', -- pending | done
+    -- When cooked_status was last set to 'done' — powers the feedback nudge
+    -- (get_feedback_nudge): a meal that's been cooked but whose recipe still
+    -- has no rating is worth gently asking about, but only once, and only
+    -- for something recently made.
+    cooked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- A generated prep/cooking task for a weekly plan — "what needs prepping or
+-- starting ahead of time and when," derived purely from recipe timing (see
+-- generate_prep_schedule), not the Cooker's calendar/availability.
+CREATE TABLE IF NOT EXISTS prep_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    weekly_plan_id INTEGER NOT NULL REFERENCES weekly_plans(id),
+    task_date TEXT NOT NULL, -- ISO date this task should happen on
+    description TEXT NOT NULL, -- e.g. "Marinate chicken for Wednesday's stir fry"
+    related_meal TEXT NOT NULL DEFAULT '', -- freeform meal name this task supports
+    status TEXT NOT NULL DEFAULT 'pending', -- pending | done
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -178,7 +226,25 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- week's plan once a new week has been generated, instead of them
     -- silently stacking onto the same line forever.
     source_weekly_plan_id INTEGER REFERENCES weekly_plans(id),
+    -- Which store this item should be bought at, if the household shops
+    -- across more than one (e.g. Costco for bulk pantry, a regular grocery
+    -- store for everything else). '' means unassigned/default. Populated
+    -- automatically from item_store_preferences when set — see set_item_store.
+    store TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Remembered default store per item name (Phase 3, household coordination) —
+-- so once someone says "we get paper towels at Costco," every future add of
+-- that item is pre-assigned there instead of asking again. One row per
+-- item name per household.
+CREATE TABLE IF NOT EXISTS item_store_preferences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    item TEXT NOT NULL,
+    store TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, item)
 );
 
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
