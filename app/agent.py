@@ -922,7 +922,13 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
     while True:
         response = client.messages.create(
             model=MODEL,
-            max_tokens=1024,
+            # Was 1024 — too tight once tool calls like generate_weekly_plan
+            # come back with a full week's worth of meals to summarize; the
+            # model would hit max_tokens mid-response (sometimes before
+            # writing any text at all), which our stop_reason check below
+            # was treating as a normal finish, producing a silently empty
+            # reply. Bumped to give real summaries room to breathe.
+            max_tokens=4096,
             system=system_with_date,
             tools=TOOL_DEFINITIONS,
             messages=conversation,
@@ -932,6 +938,16 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
 
         if response.stop_reason != "tool_use":
             text = "".join(block.text for block in response.content if block.type == "text")
+            if not text.strip():
+                # Defensive fallback: never silently return a blank bubble to
+                # the user, even if a future edge case produces one.
+                logger.warning(
+                    "run_agent_turn produced an empty reply (stop_reason=%s)", response.stop_reason
+                )
+                text = (
+                    "Sorry, I hit a snag putting that response together — could you try asking "
+                    "again, maybe a bit more specifically?"
+                )
             return text, conversation
 
         tool_results = []
