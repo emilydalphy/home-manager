@@ -11,6 +11,7 @@ from __future__ import annotations  # lets `str | None` etc. work on Python 3.9
 
 import json
 import re
+import secrets
 from datetime import date, timedelta
 from .db import get_conn
 
@@ -877,6 +878,57 @@ def swap_meal_in_plan(
     conn.commit()
     conn.close()
     return plan_meal(meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id)
+
+
+# ---------- Eater share link (read-only, tokenized, no new auth) ----------
+
+def get_or_create_share_link() -> dict:
+    """
+    Get this household's read-only share-link token for the weekly meal
+    plan, creating one on first use. The token is stable — it's not tied to
+    a specific plan, so the same link keeps working and always shows
+    whichever plan is most recent as new weeks get generated. No login is
+    involved; anyone with the link can view the current plan, nothing else.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT token FROM share_links WHERE household_id = ? ORDER BY created_at ASC LIMIT 1",
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    if row:
+        token = row["token"]
+    else:
+        token = secrets.token_urlsafe(16)
+        conn.execute(
+            "INSERT INTO share_links (household_id, token) VALUES (?, ?)",
+            (HOUSEHOLD_ID, token),
+        )
+        conn.commit()
+    conn.close()
+    return {"token": token}
+
+
+def get_shared_weekly_plan(token: str) -> dict | None:
+    """
+    Resolve a share-link token to the household's current (most recent)
+    weekly plan. Returns None if the token doesn't match anything, so the
+    caller can 404 rather than leak whether a token almost matched. Only
+    meal-plan data is returned — no other household info (dietary details,
+    chores, etc.) is exposed through this path.
+    """
+    conn = get_conn()
+    row = conn.execute("SELECT household_id FROM share_links WHERE token = ?", (token,)).fetchone()
+    household = None
+    if row:
+        household = conn.execute(
+            "SELECT name FROM households WHERE id = ?", (row["household_id"],)
+        ).fetchone()
+    conn.close()
+    if not row:
+        return None
+    plan = get_weekly_plan()
+    plan["household_name"] = household["name"] if household else ""
+    return plan
 
 
 # ---------- Household memory (transparency & correction) ----------

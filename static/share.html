@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>This week's meals</title>
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.subtitle { color: #666; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  .day-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 10px;
+  }
+  .day-card .date { font-weight: 600; font-size: 0.85rem; color: #2b6cb0; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .day-card .meal { font-size: 1.05rem; margin: 0; }
+  .day-card .slot { color: #888; font-size: 0.8rem; margin: 2px 0 0; text-transform: capitalize; }
+  .empty, .error { color: #666; font-size: 0.95rem; padding: 1rem 0; }
+  .footer-note { color: #999; font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1 id="page-title">This week's meals</h1>
+<p class="subtitle" id="subtitle">Loading...</p>
+<div id="days"></div>
+<p class="footer-note" id="footer-note" style="display:none">This link always shows the current plan — no need to ask for a new one.</p>
+
+<script>
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+async function load() {
+  const token = window.location.pathname.split('/').filter(Boolean).pop();
+  const daysDiv = document.getElementById('days');
+  const subtitle = document.getElementById('subtitle');
+  const title = document.getElementById('page-title');
+  const footerNote = document.getElementById('footer-note');
+
+  try {
+    const res = await fetch('/api/share/' + encodeURIComponent(token));
+    if (res.status === 404) {
+      subtitle.textContent = '';
+      daysDiv.innerHTML = '<p class="error">This link isn\'t valid — ask whoever shared it for a fresh one.</p>';
+      return;
+    }
+    if (!res.ok) throw new Error('Could not load the plan');
+    const plan = await res.json();
+
+    if (plan.household_name) {
+      title.textContent = plan.household_name + "'s meals this week";
+    }
+
+    if (!plan.weekly_plan_id || !plan.meals || !plan.meals.length) {
+      subtitle.textContent = '';
+      daysDiv.innerHTML = '<p class="empty">No plan has been made for this week yet — check back soon.</p>';
+      return;
+    }
+
+    subtitle.textContent = 'Week of ' + formatDate(plan.week_start_date);
+    daysDiv.innerHTML = plan.meals.map(m => `
+      <div class="day-card">
+        <p class="date">${escapeHtml(formatDate(m.date))}</p>
+        <p class="meal">${escapeHtml(m.meal || '')}</p>
+        <p class="slot">${escapeHtml(m.slot || '')}</p>
+      </div>
+    `).join('');
+    footerNote.style.display = 'block';
+  } catch (err) {
+    subtitle.textContent = '';
+    daysDiv.innerHTML = '<p class="error">Couldn\'t load the plan right now — try refreshing.</p>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

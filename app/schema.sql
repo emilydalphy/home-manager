@@ -125,6 +125,18 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Read-only tokenized link for sharing the current weekly plan with someone
+-- outside the household (the "Eater" persona from the PRD) — no login, no
+-- new auth model. The token is stable and always resolves to whichever
+-- weekly_plan is most recent, so it never needs to be regenerated as new
+-- plans get created week to week; the same link just stays live.
+CREATE TABLE IF NOT EXISTS share_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    token TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS grocery_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),

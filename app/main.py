@@ -281,6 +281,30 @@ def delete_memory(req: MemoryDeleteRequest):
     return memory
 
 
+@app.get("/api/share-link")
+def get_share_link():
+    """Get (or create on first call) this household's read-only Eater share-link token."""
+    try:
+        result = tools.get_or_create_share_link()
+    except Exception as e:
+        logger.exception("Share link lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/share/{token}")
+def get_shared_plan(token: str):
+    """Public, read-only: resolve a share token to the household's current weekly plan. No auth."""
+    try:
+        plan = tools.get_shared_weekly_plan(token)
+    except Exception as e:
+        logger.exception("Shared plan lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if plan is None:
+        raise HTTPException(status_code=404, detail="This link isn't valid.")
+    return plan
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     history = SESSIONS.get(req.session_id, [])
@@ -313,3 +337,10 @@ def onboarding_page():
 @app.get("/memory")
 def memory_page():
     return FileResponse(os.path.join(static_dir, "memory.html"))
+
+
+@app.get("/share/{token}")
+def share_page(token: str):
+    """Public read-only page — no auth check here (share.html itself calls /api/share/{token}
+    and shows a friendly not-found state if the token is invalid); this route just serves the shell."""
+    return FileResponse(os.path.join(static_dir, "share.html"))
