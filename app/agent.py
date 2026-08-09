@@ -6,10 +6,13 @@ use. This is intentionally simple/explicit rather than using the full
 Agent SDK, since our tool set is small and we want full control over the
 loop for a product we may eventually ship.
 """
+import logging
 import os
 import json
 from anthropic import Anthropic
 from . import tools
+
+logger = logging.getLogger("home_manager")
 
 MODEL = "claude-sonnet-5"
 
@@ -695,13 +698,20 @@ or default to pantry/other out of habit.
 
 Call submit_weekly_plan with the result."""
 
+    # A full week where every day is a brand-new recipe (the common case on
+    # first-ever use, before any saved_recipes exist) needs a full
+    # ingredients/tags/food_groups list per day — 4096 tokens was cutting
+    # this off mid-JSON, which the SDK can't parse, causing the whole
+    # generation to fail. Bumped well above the realistic worst case.
     response = client.messages.create(
         model=MODEL,
-        max_tokens=4096,
+        max_tokens=8192,
         tools=[_GENERATE_WEEKLY_PLAN_TOOL],
         tool_choice={"type": "tool", "name": "submit_weekly_plan"},
         messages=[{"role": "user", "content": prompt}],
     )
+    if response.stop_reason == "max_tokens":
+        logger.warning("generate_weekly_plan_llm hit max_tokens; plan may be incomplete")
     for block in response.content:
         if block.type == "tool_use":
             return block.input.get("days", [])
