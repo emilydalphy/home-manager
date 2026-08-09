@@ -332,8 +332,24 @@ addMessage('assistant', "Hi! I'm your home manager. Tap \"Set up chores\" to get
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/service-worker.js').catch((err) => {
+    navigator.serviceWorker.register('/static/service-worker.js').then((reg) => {
+      // Proactively check for a newer service worker on every load instead
+      // of waiting on the browser's own update schedule — a stale one can
+      // otherwise sit active indefinitely, invisible to any future deploy.
+      reg.update();
+    }).catch((err) => {
       console.warn('Service worker registration failed:', err);
+    });
+
+    // When a new service worker actually takes over, reload once
+    // automatically so the fresh version is what's actually running,
+    // instead of requiring a manual hard refresh every time something
+    // changes.
+    let reloadedForNewWorker = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadedForNewWorker) return;
+      reloadedForNewWorker = true;
+      window.location.reload();
     });
   });
 }
