@@ -93,6 +93,8 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(197, 48, 48, 0.45); }
     50% { box-shadow: 0 0 0 6px rgba(197, 48, 48, 0); }
   }
+  .bubble.loading { font-style: italic; color: #888; animation: loading-pulse 1.3s ease-in-out infinite; }
+  @keyframes loading-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -149,6 +151,35 @@ function addMessage(role, text) {
   div.appendChild(bubble);
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+// Loading phrases, picked by lightly matching the message against what it's
+// probably about — falls back to a generic kitchen-themed line for anything
+// that doesn't match (chores, general questions, etc.).
+const LOADING_PHRASES = {
+  grocery: ['Cooking up your list...', 'Sorting the aisles...', 'Filling the cart...'],
+  meal: ['Cooking up a plan...', 'Simmering on your week...', 'Plating up some ideas...', 'Preheating the ideas oven...'],
+  chore: ['Sweeping up the details...', 'Tidying up your schedule...', 'Dusting things off...'],
+  default: ['Whipping this up...', 'Stirring up an answer...', 'Cooking something up...', 'Simmering on it...'],
+};
+function pickLoadingPhrase(message) {
+  const m = (message || '').toLowerCase();
+  let bucket = 'default';
+  if (/grocer|shopping list|\bcart\b/.test(m)) bucket = 'grocery';
+  else if (/meal|dinner|breakfast|lunch|recipe|\bplan\b|cook|\beat\b/.test(m)) bucket = 'meal';
+  else if (/chore|clean|tidy|vacuum|dust|laundry/.test(m)) bucket = 'chore';
+  const options = LOADING_PHRASES[bucket];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+let loadingBubble = null;
+function showLoading(message) {
+  loadingBubble = addMessage('assistant', pickLoadingPhrase(message));
+  loadingBubble.querySelector('.bubble').classList.add('loading');
+}
+function hideLoading() {
+  if (loadingBubble) { loadingBubble.remove(); loadingBubble = null; }
 }
 
 async function sendMessage(message) {
@@ -157,6 +188,7 @@ async function sendMessage(message) {
   input.disabled = true;
   micBtn.disabled = true;
   document.querySelectorAll('.quick-btn').forEach(b => b.disabled = true);
+  showLoading(message);
 
   try {
     const res = await fetch('/api/chat', {
@@ -165,9 +197,11 @@ async function sendMessage(message) {
       body: JSON.stringify({ session_id: sessionId, message }),
     });
     const data = await res.json();
+    hideLoading();
     if (!res.ok) throw new Error(data.detail || 'Request failed');
     addMessage('assistant', data.reply);
   } catch (err) {
+    hideLoading();
     addMessage('assistant', 'Error: ' + err.message);
   } finally {
     input.disabled = false;
