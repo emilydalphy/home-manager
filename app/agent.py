@@ -1421,6 +1421,87 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
     return tools.get_plan_progress(plan_id)
 
 
+_FILL_RECIPE_DETAIL_TOOL = {
+    "name": "submit_recipe_detail",
+    "description": "Submit a full cookable step-by-step for a recipe that's missing one.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "instructions": {
+                "type": "array", "items": {"type": "string"},
+                "description": "Ordered, specific cooking steps — enough to actually cook the dish from, not a vague summary.",
+            },
+            "default_servings": {"type": "integer", "description": "What the existing ingredient quantities are written for. Keep the recipe's current value unless it's clearly wrong."},
+            "prep_time_minutes": {"type": "integer"},
+            "cook_time_minutes": {"type": "integer"},
+            "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Empty string if nothing needs advance prep."},
+        },
+        "required": ["instructions", "default_servings", "prep_time_minutes", "cook_time_minutes", "advance_prep_notes"],
+    },
+}
+
+
+def generate_recipe_detail_llm(recipe: dict) -> dict:
+    """
+    Given a saved recipe's name and ingredients (and its current
+    default_servings, since the ingredient quantities are already written
+    for that count), work out a full step-by-step from general cooking
+    knowledge of the dish. Powers the Cooker view's "Fill in this recipe"
+    button, for recipes that predate instructions being tracked (or were
+    saved quickly, e.g. from a reused/component plan) — the chat agent
+    already does this inline per the system prompt, but the Cooker view is
+    a plain page with no LLM loop of its own, so it needs this as a direct
+    call instead.
+    """
+    client = _client()
+    prompt = f"""Recipe (JSON):
+{json.dumps(recipe, indent=2)}
+
+This recipe has ingredients but no saved instructions. Write a complete, specific, ordered \
+step-by-step for actually cooking it, using your general knowledge of the dish and the \
+ingredients/quantities given. Also fill in prep_time_minutes, cook_time_minutes, and \
+advance_prep_notes (leave advance_prep_notes as an empty string if nothing needs to be done \
+ahead of time — don't invent advance prep that isn't really needed). Keep default_servings the \
+same as the recipe's current value unless it's obviously wrong for the ingredient quantities.
+
+Call submit_recipe_detail with the result."""
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        tools=[_FILL_RECIPE_DETAIL_TOOL],
+        tool_choice={"type": "tool", "name": "submit_recipe_detail"},
+        messages=[{"role": "user", "content": prompt}],
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+    return {}
+
+
+def fill_in_recipe(recipe_name: str) -> dict:
+    """
+    Generate and save a full step-by-step for a recipe that's missing one —
+    used by the Cooker view's "Fill in this recipe" button. Idempotent: if
+    the recipe already has instructions by the time this runs, just returns
+    it as-is rather than overwriting.
+    """
+    recipe = tools.get_recipe(recipe_name)
+    if recipe["instructions"]:
+        return recipe
+    detail = generate_recipe_detail_llm(recipe)
+    if not detail.get("instructions"):
+        raise ValueError("Couldn't generate instructions for this recipe — try again.")
+    return tools.update_recipe_details(
+        recipe_name,
+        instructions=detail.get("instructions"),
+        default_servings=detail.get("default_servings"),
+        prep_time_minutes=detail.get("prep_time_minutes"),
+        cook_time_minutes=detail.get("cook_time_minutes"),
+        advance_prep_notes=detail.get("advance_prep_notes"),
+    )
+
+
 TOOL_FUNCTIONS = {
     "get_household_setup_status": tools.get_household_setup_status,
     "add_member": tools.add_member,

@@ -97,6 +97,16 @@
   .detail ul, .detail ol { margin: 0; padding-left: 20px; }
   .detail li { margin-bottom: 3px; }
   .no-recipe { color: #999; font-style: italic; font-size: 0.85rem; margin-top: 8px; }
+  .fill-recipe-btn {
+    background: #2b6cb0;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .fill-recipe-btn:disabled { opacity: 0.6; cursor: default; }
   .prep-task { display: flex; align-items: center; gap: 10px; }
   .prep-task .desc { flex: 1; }
   .prep-task .date { color: #2b6cb0; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; margin: 0 0 2px; }
@@ -129,6 +139,7 @@ function formatDate(dateStr) {
 }
 
 let cache = null;
+let openDetailIdx = null;
 
 function render(view) {
   cache = view;
@@ -206,7 +217,8 @@ function render(view) {
           <h4>Instructions</h4>
           ${m.instructions && m.instructions.length
             ? `<ol>${m.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
-            : '<p class="empty" style="padding:0">No steps saved — ask in chat for the full recipe and it\'ll fill this in.</p>'}
+            : `<p class="empty" style="padding:0 0 8px">No steps saved yet.</p>
+               <button class="fill-recipe-btn" data-recipe-name="${escapeHtml(m.meal || '')}">Fill in this recipe</button>`}
         </div>`;
     } else {
       html += `<p class="no-recipe">Freeform meal — no saved recipe detail. Ask in chat for the full recipe.</p>`;
@@ -217,12 +229,48 @@ function render(view) {
 
   content.innerHTML = html;
 
+  if (openDetailIdx !== null) {
+    const detail = document.getElementById('detail-' + openDetailIdx);
+    const toggleBtn = content.querySelector(`.detail-toggle[data-toggle="${openDetailIdx}"]`);
+    if (detail) {
+      detail.classList.add('open');
+      if (toggleBtn) toggleBtn.textContent = 'Hide recipe ↑';
+    }
+  }
+
   content.querySelectorAll('.detail-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-toggle');
       const detail = document.getElementById('detail-' + id);
       const open = detail.classList.toggle('open');
       btn.textContent = open ? 'Hide recipe ↑' : 'Show recipe ↓';
+      openDetailIdx = open ? id : null;
+    });
+  });
+
+  content.querySelectorAll('.fill-recipe-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const recipeName = btn.getAttribute('data-recipe-name');
+      const idx = btn.closest('.detail').id.replace('detail-', '');
+      btn.disabled = true;
+      btn.textContent = 'Writing recipe…';
+      openDetailIdx = idx;
+      try {
+        const res = await fetch('/api/cooker/fill-recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipe_name: recipeName }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'failed');
+        }
+        render(await res.json());
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Fill in this recipe';
+        alert("Couldn't generate that recipe right now — try again.");
+      }
     });
   });
 

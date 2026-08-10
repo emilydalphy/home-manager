@@ -13,7 +13,7 @@ import logging
 import os
 
 from .db import init_db
-from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan
+from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe
 from . import tools
 
 logger = logging.getLogger("home_manager")
@@ -101,6 +101,10 @@ class CheckOffMealRequest(BaseModel):
 class CheckOffPrepRequest(BaseModel):
     prep_task_id: int
     status: str = "done"  # pending | done
+
+
+class FillRecipeRequest(BaseModel):
+    recipe_name: str
 
 
 @app.on_event("startup")
@@ -322,6 +326,20 @@ def cooker_check_prep(req: CheckOffPrepRequest):
         view = tools.get_cooker_view()
     except Exception as e:
         logger.exception("Cooker check-prep failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
+@app.post("/api/cooker/fill-recipe")
+def cooker_fill_recipe(req: FillRecipeRequest):
+    """Generate and save a full step-by-step for a recipe that's missing one, directly from the Cooker view."""
+    try:
+        fill_in_recipe(req.recipe_name)
+        view = tools.get_cooker_view()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker fill-recipe failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
 
