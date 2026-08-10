@@ -1112,7 +1112,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                     "type": "object",
                     "properties": {
                         "category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]},
-                        "meal_name": {"type": "string", "description": "Recipe/item name, existing or new."},
+                        "meal_name": {"type": "string", "description": "A single standalone item for this category only — don't bundle in another category (e.g. a protein item should not include 'with rice' or 'with beans' in the name; submit those as their own separate carb/vegetable items)."},
                         "is_new_recipe": {"type": "boolean"},
                         "ingredients": {
                             "type": "array",
@@ -1188,6 +1188,16 @@ dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; 
 are dairy; fresh vegetables/herbs are produce.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
 recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
+- Each item must be a standalone single component of its own category, not a bundled dish that \
+mixes categories — the whole point is the household mixes and matches these freely. A protein \
+item is just the protein preparation (e.g. "Garlic Lime Shrimp", "Chicken Fajita"), NOT "Garlic \
+Lime Shrimp with Black Beans and Cilantro Rice" — that bundles in a carb and hides it from the \
+carb slot entirely, so it can't be paired with anything else and the pool undercounts carbs. If a \
+dish idea naturally has a rice/beans/rice-and-beans side, split it: submit the protein alone under \
+category='protein' and submit the rice/beans separately under category='carb' or 'vegetable' as \
+its own item (even if they were conceived as one recipe). Same rule for every category — a \
+vegetable item shouldn't secretly include a protein, a carb item shouldn't secretly include a \
+sauce that's really a dip item, etc.
 - For any new recipe, fill in instructions (ordered cooking steps), default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-based planning \
 — see the equivalent guidance there. This powers the Cooker view and prep schedule.
