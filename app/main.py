@@ -93,6 +93,16 @@ class MemoryDeleteRequest(BaseModel):
     item: str | None = None
 
 
+class CheckOffMealRequest(BaseModel):
+    entry_id: int
+    status: str = "done"  # pending | done
+
+
+class CheckOffPrepRequest(BaseModel):
+    prep_task_id: int
+    status: str = "done"  # pending | done
+
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -281,6 +291,41 @@ def delete_memory(req: MemoryDeleteRequest):
     return memory
 
 
+@app.get("/api/cooker-view")
+def get_cooker_view(weekly_plan_id: int | None = None):
+    """Everything needed to cook the current (or given) weekly plan — powers the dedicated Cooker view page."""
+    try:
+        view = tools.get_cooker_view(weekly_plan_id)
+    except Exception as e:
+        logger.exception("Cooker view lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
+@app.post("/api/cooker/check-meal")
+def cooker_check_meal(req: CheckOffMealRequest):
+    """Mark a planned meal cooked/pending directly from the Cooker view (no chat round-trip needed)."""
+    try:
+        tools.check_off_meal(req.entry_id, req.status)
+        view = tools.get_cooker_view()
+    except Exception as e:
+        logger.exception("Cooker check-meal failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
+@app.post("/api/cooker/check-prep")
+def cooker_check_prep(req: CheckOffPrepRequest):
+    """Mark a prep task done/pending directly from the Cooker view (no chat round-trip needed)."""
+    try:
+        tools.check_off_prep_step(req.prep_task_id, req.status)
+        view = tools.get_cooker_view()
+    except Exception as e:
+        logger.exception("Cooker check-prep failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
 @app.get("/api/share-link")
 def get_share_link():
     """Get (or create on first call) this household's read-only Eater share-link token."""
@@ -337,6 +382,11 @@ def onboarding_page():
 @app.get("/memory")
 def memory_page():
     return FileResponse(os.path.join(static_dir, "memory.html"))
+
+
+@app.get("/cooker")
+def cooker_page():
+    return FileResponse(os.path.join(static_dir, "cooker.html"))
 
 
 @app.get("/share/{token}")

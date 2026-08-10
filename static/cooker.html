@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Cooker View — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: #2b6cb0; }
+  .progress-bar-wrap {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .progress-stat { flex: 1; min-width: 140px; }
+  .progress-stat .label { color: #888; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 3px; }
+  .progress-stat .value { font-size: 1.3rem; font-weight: 600; margin: 0; }
+  .progress-track { background: #eee; border-radius: 6px; height: 6px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { background: #2b6cb0; height: 100%; border-radius: 6px; transition: width 0.3s ease; }
+  h2.section-title { font-size: 1rem; margin: 20px 0 8px; color: #444; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .card.done { opacity: 0.6; }
+  .card-top { display: flex; align-items: flex-start; gap: 10px; }
+  .check-toggle {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #cfe0f2;
+    background: white;
+    cursor: pointer;
+    color: #2b6cb0;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-top: 2px;
+  }
+  .check-toggle.checked { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  .card-body { flex: 1; min-width: 0; }
+  .meal-name { font-size: 1.05rem; font-weight: 600; margin: 0; }
+  .meal-name.done { text-decoration: line-through; }
+  .meal-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; text-transform: capitalize; }
+  .badge {
+    display: inline-block;
+    background: #fff4e5;
+    color: #b06a00;
+    border: 1px solid #ffe0b3;
+    border-radius: 12px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    margin-left: 6px;
+  }
+  .detail-toggle {
+    background: none;
+    border: none;
+    color: #2b6cb0;
+    font-size: 0.82rem;
+    cursor: pointer;
+    padding: 6px 0 0;
+    text-align: left;
+  }
+  .detail { display: none; margin-top: 10px; font-size: 0.9rem; }
+  .detail.open { display: block; }
+  .detail h4 { margin: 10px 0 4px; font-size: 0.82rem; color: #666; text-transform: uppercase; letter-spacing: 0.02em; }
+  .detail h4:first-child { margin-top: 0; }
+  .detail ul, .detail ol { margin: 0; padding-left: 20px; }
+  .detail li { margin-bottom: 3px; }
+  .no-recipe { color: #999; font-style: italic; font-size: 0.85rem; margin-top: 8px; }
+  .prep-task { display: flex; align-items: center; gap: 10px; }
+  .prep-task .desc { flex: 1; }
+  .prep-task .date { color: #2b6cb0; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; margin: 0 0 2px; }
+  .prep-task.done .desc-text { text-decoration: line-through; color: #999; }
+  .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
+  .error { color: #b00020; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<h1>Cooker View</h1>
+<p class="subtitle" id="subtitle">This week's plan, ready to cook. <a href="/">&larr; Back to chat</a></p>
+
+<div id="content">
+  <p class="empty">Loading...</p>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+let cache = null;
+
+function render(view) {
+  cache = view;
+  const content = document.getElementById('content');
+
+  if (!view.weekly_plan_id) {
+    content.innerHTML = '<p class="empty">No plan yet this week — generate one in chat first.</p>';
+    return;
+  }
+
+  const mealsPct = view.meals_total ? Math.round(100 * view.meals_done / view.meals_total) : 0;
+  const prepPct = view.prep_total ? Math.round(100 * view.prep_done / view.prep_total) : 0;
+
+  let html = '';
+  html += `<div class="progress-bar-wrap">
+    <div class="progress-stat">
+      <p class="label">Meals cooked</p>
+      <p class="value">${view.meals_done} / ${view.meals_total}</p>
+      <div class="progress-track"><div class="progress-fill" style="width:${mealsPct}%"></div></div>
+    </div>
+    <div class="progress-stat">
+      <p class="label">Prep done</p>
+      <p class="value">${view.prep_done} / ${view.prep_total}</p>
+      <div class="progress-track"><div class="progress-fill" style="width:${prepPct}%"></div></div>
+    </div>
+  </div>`;
+
+  if (view.prep_tasks && view.prep_tasks.length) {
+    html += '<h2 class="section-title">Prep schedule</h2>';
+    for (const t of view.prep_tasks) {
+      const isDone = t.status === 'done';
+      html += `<div class="card prep-task ${isDone ? 'done' : ''}">
+        <button class="check-toggle ${isDone ? 'checked' : ''}" data-prep-id="${t.id}" data-next="${isDone ? 'pending' : 'done'}">${isDone ? '&check;' : ''}</button>
+        <div class="desc">
+          <p class="date">${escapeHtml(formatDate(t.task_date))}</p>
+          <p class="desc-text" style="margin:0">${escapeHtml(t.description)}${t.related_meal ? ' <span style="color:#999">(' + escapeHtml(t.related_meal) + ')</span>' : ''}</p>
+        </div>
+      </div>`;
+    }
+  }
+
+  html += '<h2 class="section-title">Meals</h2>';
+  if (!view.meals.length) {
+    html += '<p class="empty">No meals on this plan yet.</p>';
+  }
+  view.meals.forEach((m, idx) => {
+    const isDone = m.cooked_status === 'done';
+    const metaBits = [];
+    if (m.component_category) metaBits.push(m.component_category);
+    else {
+      if (m.date) metaBits.push(formatDate(m.date));
+      if (m.slot) metaBits.push(m.slot);
+    }
+    if (m.prep_time_minutes || m.cook_time_minutes) {
+      const bits = [];
+      if (m.prep_time_minutes) bits.push(m.prep_time_minutes + 'm prep');
+      if (m.cook_time_minutes) bits.push(m.cook_time_minutes + 'm cook');
+      metaBits.push(bits.join(' + '));
+    }
+
+    html += `<div class="card ${isDone ? 'done' : ''}">
+      <div class="card-top">
+        <button class="check-toggle ${isDone ? 'checked' : ''}" data-entry-id="${m.entry_id}" data-next="${isDone ? 'pending' : 'done'}">${isDone ? '&check;' : ''}</button>
+        <div class="card-body">
+          <p class="meal-name ${isDone ? 'done' : ''}">${escapeHtml(m.meal || '')}${m.advance_prep_notes ? '<span class="badge">advance prep</span>' : ''}</p>
+          <p class="meal-meta">${escapeHtml(metaBits.join(' · '))}</p>`;
+
+    if (m.has_full_recipe) {
+      html += `<button class="detail-toggle" data-toggle="${idx}">Show recipe &darr;</button>
+        <div class="detail" id="detail-${idx}">
+          ${m.default_servings ? `<p style="margin:0;color:#888;font-size:0.82rem">Serves ${m.default_servings}</p>` : ''}
+          ${m.advance_prep_notes ? `<h4>Advance prep</h4><p style="margin:0">${escapeHtml(m.advance_prep_notes)}</p>` : ''}
+          <h4>Ingredients</h4>
+          <ul>${(m.ingredients || []).map(i => `<li>${escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || ''))}</li>`).join('') || '<li class="empty" style="padding:0">None listed</li>'}</ul>
+          <h4>Instructions</h4>
+          ${m.instructions && m.instructions.length
+            ? `<ol>${m.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
+            : '<p class="empty" style="padding:0">No steps saved — ask in chat for the full recipe and it\'ll fill this in.</p>'}
+        </div>`;
+    } else {
+      html += `<p class="no-recipe">Freeform meal — no saved recipe detail. Ask in chat for the full recipe.</p>`;
+    }
+
+    html += `</div></div></div>`;
+  });
+
+  content.innerHTML = html;
+
+  content.querySelectorAll('.detail-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-toggle');
+      const detail = document.getElementById('detail-' + id);
+      const open = detail.classList.toggle('open');
+      btn.textContent = open ? 'Hide recipe ↑' : 'Show recipe ↓';
+    });
+  });
+
+  content.querySelectorAll('.check-toggle[data-entry-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/cooker/check-meal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entry_id: parseInt(btn.getAttribute('data-entry-id')), status: btn.getAttribute('data-next') }),
+        });
+        if (!res.ok) throw new Error('failed');
+        render(await res.json());
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.check-toggle[data-prep-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/cooker/check-prep', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prep_task_id: parseInt(btn.getAttribute('data-prep-id')), status: btn.getAttribute('data-next') }),
+        });
+        if (!res.ok) throw new Error('failed');
+        render(await res.json());
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+}
+
+async function load() {
+  const content = document.getElementById('content');
+  try {
+    const res = await fetch('/api/cooker-view');
+    if (!res.ok) throw new Error('Could not load');
+    render(await res.json());
+  } catch (err) {
+    content.innerHTML = '<p class="error">Couldn\'t load the Cooker view right now — try refreshing.</p>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

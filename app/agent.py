@@ -123,8 +123,15 @@ household actually likes overall. Reserve mark_recipe_feedback for when the user
 expressing a real like/dislike pattern.
 
 Cooker execution layer (turning an approved plan into dinner actually happening):
-- For "what's the recipe for X" / "how do I make X," use get_recipe for full detail \
-(ingredients, instructions, timing) rather than digging through list_recipes yourself.
+- For "what's the recipe for X" / "how do I make X" / "full recipe for [day]'s meal," always \
+give a complete, cookable breakdown — ingredients AND step-by-step instructions, every time, \
+no exceptions. Use get_recipe for full detail (ingredients, instructions, timing) rather than \
+digging through list_recipes yourself. If get_recipe comes back with empty instructions (common \
+for recipes saved before this was tracked), do NOT just tell the user nothing's saved and ask if \
+they want you to add it — write a reasonable step-by-step yourself, from your own knowledge of \
+the dish and the recipe's existing ingredients, present it as the answer, and call \
+update_recipe_details in that same turn to save it so it's there next time. The user should never \
+have to ask twice or explicitly request that you fill it in.
 - Cooking for more or fewer people than the plan assumed ("we've got guests, need this for 6 \
 not 4")? Use scale_recipe rather than doing the math yourself.
 - After generating (or regenerating) a plan, proactively offer to run generate_prep_schedule if \
@@ -533,6 +540,22 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "update_recipe_details",
+        "description": "Backfill or correct a saved recipe's instructions/servings/timing/advance-prep notes. Use this right after get_recipe comes back with empty instructions: work out a reasonable step-by-step yourself and save it here in the same turn, rather than telling the user nothing's saved. Only pass the fields you're setting.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "recipe_name": {"type": "string"},
+                "instructions": {"type": "array", "items": {"type": "string"}},
+                "default_servings": {"type": "integer"},
+                "prep_time_minutes": {"type": "integer"},
+                "cook_time_minutes": {"type": "integer"},
+                "advance_prep_notes": {"type": "string"},
+            },
+            "required": ["recipe_name"],
+        },
+    },
+    {
         "name": "scale_recipe",
         "description": "Scale a saved recipe's ingredient quantities to a different number of servings than it's written for (e.g. cooking for 6 when the recipe serves 4).",
         "input_schema": {
@@ -695,6 +718,14 @@ TOOL_DEFINITIONS = [
     {
         "name": "get_plan_progress",
         "description": "Get a done-vs-outstanding view of a weekly plan: which meals have been cooked and which prep tasks are done, plus counts. Omit weekly_plan_id for the household's current plan. Use this when the user asks 'what's left to cook this week' or similar.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "get_cooker_view",
+        "description": "Get everything needed to cook this week's plan in one shot: each meal with full recipe detail (ingredients, instructions, timing, advance-prep notes, cooked status), the prep schedule, and progress. Omit weekly_plan_id for the household's current plan.",
         "input_schema": {
             "type": "object",
             "properties": {"weekly_plan_id": {"type": "integer"}},
@@ -1404,6 +1435,7 @@ TOOL_FUNCTIONS = {
     "add_recipe": tools.add_recipe,
     "list_recipes": tools.list_recipes,
     "get_recipe": tools.get_recipe,
+    "update_recipe_details": tools.update_recipe_details,
     "scale_recipe": tools.scale_recipe,
     "mark_recipe_feedback": tools.mark_recipe_feedback,
     "log_recipe_note": tools.log_recipe_note,
@@ -1422,6 +1454,7 @@ TOOL_FUNCTIONS = {
     "check_off_prep_step": tools.check_off_prep_step,
     "check_off_meal": tools.check_off_meal,
     "get_plan_progress": tools.get_plan_progress,
+    "get_cooker_view": tools.get_cooker_view,
     "check_plan_conflicts": tools.check_plan_conflicts,
     "explain_meal_choice": tools.explain_meal_choice,
     "get_feedback_nudge": tools.get_feedback_nudge,

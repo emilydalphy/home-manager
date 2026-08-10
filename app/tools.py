@@ -609,6 +609,60 @@ def add_recipe(
     }
 
 
+def update_recipe_details(
+    recipe_name: str,
+    instructions: list[str] | None = None,
+    default_servings: int | None = None,
+    prep_time_minutes: int | None = None,
+    cook_time_minutes: int | None = None,
+    advance_prep_notes: str | None = None,
+) -> dict:
+    """
+    Backfill or correct Cooker-layer detail on an already-saved recipe —
+    instructions, servings, timing, advance-prep notes. Use this whenever
+    get_recipe comes back with empty instructions (common for recipes saved
+    before this detail was tracked, or a freeform meal that got saved
+    quickly): work out a reasonable step-by-step from your own knowledge of
+    the dish (using the recipe's existing ingredients as a guide), show it
+    to the user as part of your answer, and save it here in the same turn
+    so it's there next time — don't just tell the user nothing's saved and
+    stop. Only pass the fields you're actually setting; anything left as
+    None is untouched.
+    """
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        (HOUSEHOLD_ID, recipe_name),
+    ).fetchone()
+    if not existing:
+        conn.close()
+        raise ValueError(f"No saved recipe named '{recipe_name}'.")
+
+    fields, params = [], []
+    if instructions is not None:
+        fields.append("instructions_json = ?")
+        params.append(json.dumps(instructions))
+    if default_servings is not None:
+        fields.append("default_servings = ?")
+        params.append(default_servings)
+    if prep_time_minutes is not None:
+        fields.append("prep_time_minutes = ?")
+        params.append(prep_time_minutes)
+    if cook_time_minutes is not None:
+        fields.append("cook_time_minutes = ?")
+        params.append(cook_time_minutes)
+    if advance_prep_notes is not None:
+        fields.append("advance_prep_notes = ?")
+        params.append(advance_prep_notes)
+
+    if fields:
+        params.append(existing["id"])
+        conn.execute(f"UPDATE recipes SET {', '.join(fields)} WHERE id = ?", params)
+        conn.commit()
+    conn.close()
+    return get_recipe(recipe_name)
+
+
 def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     """
     List all saved recipes, including tags, food groups covered, how often
@@ -1338,6 +1392,55 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
         "meals": [{"entry_id": m["entry_id"], "meal": m["meal"], "cooked_status": m["cooked_status"]} for m in meal_rows],
         "meals_done": sum(1 for m in meal_rows if m["cooked_status"] == "done"),
         "meals_total": len(meal_rows),
+        "prep_tasks": prep_tasks,
+        "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
+        "prep_total": len(prep_tasks),
+    }
+
+
+def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
+    """
+    Everything the person actually cooking needs for the current (or given)
+    plan in one shot: each meal with its full recipe detail (ingredients,
+    instructions, timing, advance-prep notes, cooked status), plus the prep
+    schedule and overall progress — powers the dedicated Cooker view page
+    rather than requiring separate get_weekly_plan/get_recipe/
+    get_prep_schedule calls. Omit weekly_plan_id for the household's
+    current plan.
+    """
+    plan = get_weekly_plan(weekly_plan_id)
+    if plan.get("weekly_plan_id") is None:
+        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0}
+
+    recipes_by_name = {r["name"].lower(): r for r in list_recipes()}
+    meals = []
+    for m in plan["meals"]:
+        recipe = recipes_by_name.get((m["meal"] or "").lower())
+        meals.append({
+            "entry_id": m["entry_id"],
+            "date": m["date"],
+            "slot": m["slot"],
+            "component_category": m["component_category"],
+            "meal": m["meal"],
+            "cooked_status": m["cooked_status"],
+            "ingredients": recipe["ingredients"] if recipe else [],
+            "instructions": recipe["instructions"] if recipe else [],
+            "default_servings": recipe["default_servings"] if recipe else None,
+            "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
+            "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,
+            "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
+            "has_full_recipe": recipe is not None,
+        })
+
+    prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
+    return {
+        "weekly_plan_id": plan["weekly_plan_id"],
+        "week_start_date": plan["week_start_date"],
+        "planning_mode": plan["planning_mode"],
+        "status": plan["status"],
+        "meals": meals,
+        "meals_done": sum(1 for m in meals if m["cooked_status"] == "done"),
+        "meals_total": len(meals),
         "prep_tasks": prep_tasks,
         "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
         "prep_total": len(prep_tasks),

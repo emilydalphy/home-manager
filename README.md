@@ -175,6 +175,16 @@ If you changed something while cooking — swapped an ingredient, adjusted a ste
 into the same soft-signal memory as recipe feedback, without touching the recipe's permanent
 rating.
 
+### Cooker view
+
+A dedicated page (linked at the top of chat, next to What We Know) built for whoever's
+actually standing in the kitchen: this week's meals with full ingredients and step-by-step
+instructions expandable per meal, the generated prep schedule, and tap-to-check-off progress
+for both — no need to go back and forth with chat mid-cook. Asking for a recipe in chat
+always returns the full breakdown too: if a recipe predates having instructions saved (or
+was added quickly without them), the assistant works out a reasonable step-by-step from its
+own knowledge on the spot and saves it, rather than telling you nothing's there.
+
 ### Household coordination & trust
 
 Before a plan is approved, the assistant checks it against any saved dietary restrictions/
