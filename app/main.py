@@ -107,6 +107,14 @@ class FillRecipeRequest(BaseModel):
     recipe_name: str
 
 
+class InventoryUpdateRequest(BaseModel):
+    item: str
+    action: str = "set"  # add | use | remove | set
+    quantity: str = ""
+    category: str = "other"
+    expiration_date: str | None = None
+
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -344,6 +352,43 @@ def cooker_fill_recipe(req: FillRecipeRequest):
     return view
 
 
+@app.get("/api/inventory")
+def get_inventory_view():
+    """Pantry/fridge inventory grouped by store section — powers the dedicated Inventory view page."""
+    try:
+        result = tools.get_inventory_by_section()
+    except Exception as e:
+        logger.exception("Inventory lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/inventory/update")
+def update_inventory_view(req: InventoryUpdateRequest):
+    """Add/update an inventory item directly from the Inventory view (not via chat)."""
+    try:
+        tools.update_inventory(req.item, req.action, quantity=req.quantity, expiration_date=req.expiration_date, category=req.category)
+        result = tools.get_inventory_by_section()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Inventory update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/inventory/{item_id}/remove")
+def remove_inventory_view_item(item_id: int):
+    """Remove a single inventory item directly from the Inventory view."""
+    try:
+        tools.remove_inventory_item(item_id)
+        result = tools.get_inventory_by_section()
+    except Exception as e:
+        logger.exception("Inventory remove failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.get("/api/share-link")
 def get_share_link():
     """Get (or create on first call) this household's read-only Eater share-link token."""
@@ -405,6 +450,11 @@ def memory_page():
 @app.get("/cooker")
 def cooker_page():
     return FileResponse(os.path.join(static_dir, "cooker.html"))
+
+
+@app.get("/inventory")
+def inventory_page():
+    return FileResponse(os.path.join(static_dir, "inventory.html"))
 
 
 @app.get("/share/{token}")

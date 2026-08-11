@@ -2128,7 +2128,7 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT item, quantity FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+        "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
     ).fetchone()
     conn.execute(
         "UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ?",
@@ -2137,7 +2137,7 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     conn.commit()
     conn.close()
     if status == "purchased" and row:
-        _add_to_inventory(row["item"], row["quantity"] or "", source="grocery_checkoff")
+        _add_to_inventory(row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"])
     return {"item_id": item_id, "status": status}
 
 
@@ -2182,7 +2182,13 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
     return existing_qty, False
 
 
-def _add_to_inventory(item: str, quantity: str = "", source: str = "chat", expiration_date: str | None = None) -> dict:
+def _add_to_inventory(
+    item: str,
+    quantity: str = "",
+    source: str = "chat",
+    expiration_date: str | None = None,
+    category: str | None = None,
+) -> dict:
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
@@ -2190,17 +2196,22 @@ def _add_to_inventory(item: str, quantity: str = "", source: str = "chat", expir
     ).fetchone()
     if existing:
         merged_qty, _ = _try_consolidate_quantity(existing["quantity"] or "", quantity)
-        conn.execute(
-            "UPDATE inventory_items SET quantity = ?, source = ?, updated_at = datetime('now')"
-            + (", expiration_date = ?" if expiration_date else "") + " WHERE id = ?",
-            (merged_qty, source, expiration_date, existing["id"]) if expiration_date else (merged_qty, source, existing["id"]),
-        )
+        fields = "quantity = ?, source = ?, updated_at = datetime('now')"
+        params = [merged_qty, source]
+        if expiration_date:
+            fields += ", expiration_date = ?"
+            params.append(expiration_date)
+        if category:
+            fields += ", category = ?"
+            params.append(category)
+        params.append(existing["id"])
+        conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
         conn.commit()
         item_id = existing["id"]
     else:
         cur = conn.execute(
-            "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date) VALUES (?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, item, quantity, source, expiration_date),
+            "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category) VALUES (?, ?, ?, ?, ?, ?)",
+            (HOUSEHOLD_ID, item, quantity, source, expiration_date, category or "other"),
         )
         conn.commit()
         item_id = cur.lastrowid
@@ -2213,12 +2224,13 @@ def update_inventory(
     action: str,
     quantity: str = "",
     expiration_date: str | None = None,
+    category: str | None = None,
 ) -> dict:
     """
     Update pantry/fridge inventory from a chat mention — this is the
-    primary (and, this phase, only) way inventory gets captured; there's no
-    manual-entry screen, so call this proactively any time the user
-    mentions buying, using, or running out of something, the same way
+    primary way inventory gets captured (there's also a dedicated Inventory
+    view page for direct editing), so call this proactively any time the
+    user mentions buying, using, or running out of something, the same way
     preferences get captured proactively. action is one of:
       - "add": something was bought/received, e.g. "picked up a rotisserie chicken"
       - "use": some (or all, if quantity is left blank) of an item was used,
@@ -2231,10 +2243,13 @@ def update_inventory(
     quantity is a freeform string like "2 lbs" or "1 dozen" — leave it blank
     when the person didn't mention an amount. expiration_date (ISO date) is
     optional — only set it if the person actually mentioned one; leave it
-    unset otherwise rather than guessing.
+    unset otherwise rather than guessing. category should be one of:
+    produce, dairy, meat/seafood, pantry, frozen, other — same taxonomy as
+    the grocery list — so the Inventory view stays organized; pick whichever
+    matches the item, defaults to 'other' if omitted.
     """
     if action == "add":
-        return _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date)
+        return _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date, category=category)
 
     if action == "set":
         conn = get_conn()
@@ -2243,16 +2258,19 @@ def update_inventory(
             (HOUSEHOLD_ID, item),
         ).fetchone()
         if existing:
-            conn.execute(
-                "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
-                (quantity, existing["id"]),
-            )
+            fields = "quantity = ?, updated_at = datetime('now')"
+            params = [quantity]
+            if category:
+                fields += ", category = ?"
+                params.append(category)
+            params.append(existing["id"])
+            conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
             conn.commit()
             item_id = existing["id"]
         else:
             cur = conn.execute(
-                "INSERT INTO inventory_items (household_id, item, quantity, source) VALUES (?, ?, ?, 'chat')",
-                (HOUSEHOLD_ID, item, quantity),
+                "INSERT INTO inventory_items (household_id, item, quantity, source, category) VALUES (?, ?, ?, 'chat', ?)",
+                (HOUSEHOLD_ID, item, quantity, category or "other"),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -2294,8 +2312,10 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
     oil, canned tomatoes, flour..."). Each entry can be a plain string (uses
     the shared `action`) or, when you know more, a dict like {"item":
     "flour", "action": "add", "quantity": "2 cups", "expiration_date":
-    "2026-09-01"} to mix actions/quantities within one call. See
-    update_inventory for what each action means.
+    "2026-09-01", "category": "pantry"} to mix actions/quantities/categories
+    within one call. See update_inventory for what each action/category
+    means — fill in category per item when populating a batch so everything
+    lands in the right section of the Inventory view immediately.
     """
     results = []
     for raw in items:
@@ -2304,14 +2324,16 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
             act = raw.get("action") or action
             qty = raw.get("quantity", "")
             exp = raw.get("expiration_date")
+            cat = raw.get("category")
         else:
             name = (raw or "").strip()
             act = action
             qty = ""
             exp = None
+            cat = None
         if not name:
             continue
-        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp))
+        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp, category=cat))
     return {"updated": results}
 
 
@@ -2324,11 +2346,37 @@ def get_inventory() -> list[dict]:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, item, quantity, source, expiration_date FROM inventory_items WHERE household_id = ? ORDER BY item",
+        "SELECT id, item, quantity, source, expiration_date, category FROM inventory_items WHERE household_id = ? ORDER BY item",
         (HOUSEHOLD_ID,),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def get_inventory_by_section() -> dict:
+    """
+    Get pantry/fridge inventory grouped into store sections (produce,
+    dairy, meat/seafood, pantry, frozen, other) — same grouping as
+    get_grocery_list_by_section. Powers the dedicated Inventory view page;
+    use this instead of get_inventory whenever showing the full inventory
+    to the user so it reads organized rather than a flat list.
+    """
+    items = get_inventory()
+    sections: dict[str, list[dict]] = {s: [] for s in _GROCERY_SECTION_ORDER}
+    for it in items:
+        cat = _GROCERY_CATEGORY_ALIASES.get(it["category"], it["category"])
+        sections.setdefault("other", [])
+        sections[cat if cat in sections else "other"].append(it)
+    return {"sections": [{"section": s, "items": sections[s]} for s in _GROCERY_SECTION_ORDER if sections[s]]}
+
+
+def remove_inventory_item(item_id: int) -> dict:
+    """Remove a single inventory item outright (e.g. it spoiled, or was added by mistake) — used by the Inventory view's delete control."""
+    conn = get_conn()
+    conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "removed": True}
 
 
 # ---------- internal helpers ----------

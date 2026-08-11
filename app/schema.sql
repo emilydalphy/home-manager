@@ -259,6 +259,12 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     quantity TEXT NOT NULL DEFAULT '',
     source TEXT NOT NULL DEFAULT 'chat', -- 'chat' | 'grocery_checkoff'
     expiration_date TEXT, -- ISO date, left unset unless explicitly known — nothing reads this yet (Phase 4)
+    -- Store section, same taxonomy as grocery_items.category (produce, dairy,
+    -- meat/seafood, pantry, frozen, other) so the Inventory view can group
+    -- items the same way the grocery list does. Inherited automatically when
+    -- an item is checked off the grocery list into inventory; set directly
+    -- by the assistant otherwise.
+    category TEXT NOT NULL DEFAULT 'other',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

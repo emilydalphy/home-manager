@@ -213,15 +213,18 @@ need 9 lbs of chicken?"), call clear_stale_grocery_items directly — it's safe,
 items tied to an old, already-superseded plan, never anything the user added themselves. If \
 they explicitly want the whole list wiped and starting over, use clear_grocery_list instead.
 - Pantry/fridge inventory (what's actually on hand right now, separate from the grocery list) \
-is tracked purely from chat mentions — there's no manual-entry screen, so this only works if \
+is tracked purely from chat mentions — there's a dedicated Inventory view page for browsing/ \
+editing it directly, but adding/updating still only happens through chat, so this only works if \
 you call update_inventory proactively, the same way preferences get captured proactively. Any \
 time the user mentions buying something ("picked up a rotisserie chicken" -> action="add"), \
 using some or all of something ("used the last of the spinach" -> action="use", blank \
 quantity), something going bad/getting tossed (action="remove"), or stating what they currently \
-have (action="set"), call update_inventory right away, don't wait to be asked. If more than one \
+have (action="set"), call update_inventory right away, don't wait to be asked. Always fill in \
+category (produce/dairy/meat-seafood/pantry/frozen/other) so it lands in the right section of \
+the Inventory view — same taxonomy as the grocery list. If more than one \
 item is mentioned at once — very common the first time someone populates inventory by listing \
-out their whole pantry/fridge — use update_inventory_items instead of several individual calls. \
-Before adding a \
+out their whole pantry/fridge — use update_inventory_items instead of several individual calls, \
+with category set per item. Before adding a \
 staple to the grocery list from a direct request (not from a generated weekly plan), check \
 get_inventory first — if it looks like they already have enough, ask rather than silently \
 adding it ("you've still got flour on hand — still want more, or skip it?").
@@ -926,6 +929,7 @@ TOOL_DEFINITIONS = [
                 },
                 "quantity": {"type": "string", "description": "Freeform, e.g. '2 lbs'. Leave blank if not mentioned (for use/remove, blank means all of it)."},
                 "expiration_date": {"type": "string", "description": "ISO date, only if the person actually mentioned one. Leave unset otherwise."},
+                "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"], "description": "Grocery-style store section, so the Inventory view stays organized. Defaults to 'other' if omitted."},
             },
             "required": ["item", "action"],
         },
@@ -938,7 +942,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "items": {
                     "type": "array",
-                    "description": "Each entry: a plain string (uses the shared action), or an object with item/action/quantity/expiration_date to mix actions within one call.",
+                    "description": "Each entry: a plain string (uses the shared action), or an object with item/action/quantity/expiration_date/category to mix actions within one call. Fill in category per item (produce/dairy/meat-seafood/pantry/frozen/other) so everything lands in the right Inventory view section.",
                     "items": {"type": "string"},
                 },
                 "action": {
@@ -954,6 +958,20 @@ TOOL_DEFINITIONS = [
         "name": "get_inventory",
         "description": "List everything currently tracked in pantry/fridge inventory. Check before suggesting a grocery addition for a staple that might already be on hand — ask rather than silently adding if it looks like they already have it.",
         "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_inventory_by_section",
+        "description": "Get pantry/fridge inventory grouped into store sections (produce, dairy, meat/seafood, pantry, frozen, other). Use this instead of get_inventory whenever showing the full inventory to the user, so it reads organized rather than a flat list.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "remove_inventory_item",
+        "description": "Remove a single inventory item outright by id (e.g. it spoiled, or was tracked by mistake).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"item_id": {"type": "integer"}},
+            "required": ["item_id"],
+        },
     },
 ]
 
@@ -1568,6 +1586,8 @@ TOOL_FUNCTIONS = {
     "update_inventory": tools.update_inventory,
     "update_inventory_items": tools.update_inventory_items,
     "get_inventory": tools.get_inventory,
+    "get_inventory_by_section": tools.get_inventory_by_section,
+    "remove_inventory_item": tools.remove_inventory_item,
 }
 
 

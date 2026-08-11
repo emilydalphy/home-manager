@@ -208,6 +208,15 @@ Ask "what have you learned about us?" for an aggregate picture — how many reci
 tracked, how many are liked/disliked, how many deviations have been logged — distinct from
 the raw preference dump on the What We Know page.
 
+### Inventory view
+
+A dedicated page (linked at the top of chat) for browsing what's on hand without going
+through chat — grouped into the same store sections as the grocery list (produce, dairy,
+meat/seafood, pantry, frozen, other), with inline quantity editing and removal, plus a quick
+add-item form for anything you'd rather type directly than mention conversationally. Adding
+still happens either way — through chat ("used the last of the spinach") or here — and both
+stay in sync automatically.
+
 ### Pantry & fridge inventory
 
 Separate from the grocery list — this tracks what you actually *have*, not what you

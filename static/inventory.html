@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Inventory — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: #2b6cb0; }
+  h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 4px 16px;
+    margin-bottom: 10px;
+  }
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-weight: 500; margin: 0; }
+  .item-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; }
+  .qty-input {
+    width: 90px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.85rem;
+  }
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 4px 7px;
+    border-radius: 6px;
+    color: #888;
+  }
+  .icon-btn:hover { background: #f0f0f0; }
+  .icon-btn.save { color: #2b6cb0; }
+  .icon-btn.remove { color: #b00020; }
+  .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
+  .error { color: #b00020; font-size: 0.9rem; }
+  .add-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 20px;
+  }
+  .add-card h2 { font-size: 0.95rem; margin: 0 0 10px; color: #444; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-row input[type=text] {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    background: white;
+    color: #222;
+  }
+  #add-item { flex: 2; min-width: 140px; }
+  #add-qty { flex: 1; min-width: 90px; }
+  select#add-category {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    background: white;
+    color: #222;
+  }
+  button.action {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #2b6cb0;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.action:disabled { opacity: 0.6; cursor: default; }
+</style>
+</head>
+<body>
+
+<h1>Inventory</h1>
+<p class="subtitle">What's actually on hand — pantry, fridge, and freezer. <a href="/">&larr; Back to chat</a></p>
+
+<div id="content">
+  <p class="empty">Loading...</p>
+</div>
+
+<div class="add-card">
+  <h2>Add or update an item</h2>
+  <div class="add-row">
+    <input type="text" id="add-item" placeholder="Item, e.g. ground beef" />
+    <input type="text" id="add-qty" placeholder="Quantity, e.g. 2 lbs" />
+    <select id="add-category">
+      <option value="produce">Produce</option>
+      <option value="dairy">Dairy</option>
+      <option value="meat/seafood">Meat/seafood</option>
+      <option value="pantry">Pantry</option>
+      <option value="frozen">Frozen</option>
+      <option value="other" selected>Other</option>
+    </select>
+    <button class="action" id="add-btn">Add</button>
+  </div>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function render(view) {
+  const content = document.getElementById('content');
+  const sections = view.sections || [];
+
+  if (!sections.length) {
+    content.innerHTML = '<p class="empty">Nothing tracked yet — mention what you have in chat ("picked up a rotisserie chicken"), or add items below.</p>';
+    return;
+  }
+
+  let html = '';
+  for (const sec of sections) {
+    html += `<h2 class="section-title">${escapeHtml(sec.section)}</h2><div class="card">`;
+    for (const it of sec.items) {
+      html += `<div class="item-row" data-item-id="${it.id}">
+        <div class="item-info">
+          <p class="item-name">${escapeHtml(it.item)}</p>
+          ${it.expiration_date ? `<p class="item-meta">Exp ${escapeHtml(it.expiration_date)}</p>` : ''}
+        </div>
+        <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" data-item-name="${escapeHtml(it.item)}" data-category="${escapeHtml(it.category)}" />
+        <button class="icon-btn save" title="Save quantity">&check;</button>
+        <button class="icon-btn remove" title="Remove" data-item-id="${it.id}">&times;</button>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+
+  content.querySelectorAll('.icon-btn.save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const input = row.querySelector('.qty-input');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/inventory/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            item: input.getAttribute('data-item-name'),
+            action: 'set',
+            quantity: input.value,
+            category: input.getAttribute('data-category'),
+          }),
+        });
+        if (!res.ok) throw new Error('failed');
+        render(await res.json());
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.remove').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/inventory/' + btn.getAttribute('data-item-id') + '/remove', { method: 'POST' });
+        if (!res.ok) throw new Error('failed');
+        render(await res.json());
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't remove that — try again.");
+      }
+    });
+  });
+}
+
+async function load() {
+  const content = document.getElementById('content');
+  try {
+    const res = await fetch('/api/inventory');
+    if (!res.ok) throw new Error('Could not load');
+    render(await res.json());
+  } catch (err) {
+    content.innerHTML = '<p class="error">Couldn\'t load inventory right now — try refreshing.</p>';
+  }
+}
+
+document.getElementById('add-btn').addEventListener('click', async () => {
+  const itemInput = document.getElementById('add-item');
+  const qtyInput = document.getElementById('add-qty');
+  const catSelect = document.getElementById('add-category');
+  const btn = document.getElementById('add-btn');
+  const name = itemInput.value.trim();
+  if (!name) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/inventory/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: name, action: 'set', quantity: qtyInput.value, category: catSelect.value }),
+    });
+    if (!res.ok) throw new Error('failed');
+    render(await res.json());
+    itemInput.value = '';
+    qtyInput.value = '';
+    catSelect.value = 'other';
+  } catch (err) {
+    alert("Couldn't add that — try again.");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+load();
+</script>
+</body>
+</html>
