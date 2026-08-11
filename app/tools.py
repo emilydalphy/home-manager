@@ -1530,9 +1530,16 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         ingredient_text = " ".join((i.get("item") or "") for i in recipe.get("ingredients", [])).lower()
         for member_name, restriction in restrictions:
             # crude but transparent: match on the restriction's significant words
-            # (skip generic words like "allergy"/"free" that would false-positive on everything)
-            keywords = [w for w in restriction.replace("-", " ").split() if w not in ("allergy", "allergic", "free", "intolerance", "intolerant")]
-            if keywords and any(kw in ingredient_text for kw in keywords):
+            # (skip generic/negation words like "allergy"/"free"/"no" that would
+            # false-positive on everything — "no" in particular used to slip
+            # through and substring-match words like "oregano", flagging
+            # totally unrelated recipes)
+            keywords = [w for w in restriction.replace("-", " ").split() if w not in ("allergy", "allergic", "free", "intolerance", "intolerant", "no", "not")]
+            # whole-word match, not substring — substring matching let short
+            # keywords like "no" (before the filter above) or e.g. "egg" match
+            # inside unrelated words ("oregano", "eggplant") instead of the
+            # actual ingredient
+            if keywords and any(re.search(r"\b" + re.escape(kw) + r"\b", ingredient_text) for kw in keywords):
                 conflicts.append({
                     "meal": meal["meal"], "member": member_name, "restriction": restriction,
                     "date": meal.get("date"), "component_category": meal.get("component_category"),
