@@ -31,6 +31,21 @@
   .day-card .meal { font-size: 1.05rem; margin: 0; }
   .day-card .slot { color: #888; font-size: 0.8rem; margin: 2px 0 0; text-transform: capitalize; }
   .empty, .error { color: #666; font-size: 0.95rem; padding: 1rem 0; }
+  h2.category-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
+  h2.category-title:first-child { margin-top: 0; }
+  .component-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0.4rem 1.15rem;
+    margin-bottom: 10px;
+  }
+  .component-card .item {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 1.05rem;
+  }
+  .component-card .item:last-child { border-bottom: none; }
   .footer-note { color: #999; font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
 </style>
 </head>
@@ -83,13 +98,27 @@ async function load() {
     }
 
     subtitle.textContent = 'Week of ' + formatDate(plan.week_start_date);
-    daysDiv.innerHTML = plan.meals.map(m => `
-      <div class="day-card">
-        <p class="date">${escapeHtml(formatDate(m.date))}</p>
-        <p class="meal">${escapeHtml(m.meal || '')}</p>
-        <p class="slot">${escapeHtml(m.slot || '')}</p>
-      </div>
-    `).join('');
+
+    if (plan.planning_mode === 'component_based' && plan.components && plan.components.length) {
+      // Component-based plans are a pool of items by category to mix and
+      // match, not a fixed day->meal mapping — date/slot aren't meaningful
+      // here, so group by category instead (matches how the assistant
+      // itself describes a component_based plan).
+      daysDiv.innerHTML = plan.components.map(c => `
+        <h2 class="category-title">${escapeHtml(c.category)}</h2>
+        <div class="component-card">
+          ${c.items.map(item => `<p class="item">${escapeHtml(item || '')}</p>`).join('')}
+        </div>
+      `).join('');
+    } else {
+      daysDiv.innerHTML = plan.meals.map(m => `
+        <div class="day-card">
+          <p class="date">${escapeHtml(formatDate(m.date))}</p>
+          <p class="meal">${escapeHtml(m.meal || '')}</p>
+          <p class="slot">${escapeHtml(m.slot || '')}</p>
+        </div>
+      `).join('');
+    }
     footerNote.style.display = 'block';
   } catch (err) {
     subtitle.textContent = '';
