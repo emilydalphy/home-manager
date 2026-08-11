@@ -253,7 +253,10 @@ specific date — always pass expiration_date when they do state or imply one ("
 Tuesday", a receipt/photo date), since an explicit date always beats the estimate. Check \
 get_expiring_soon proactively when it's relevant — near the start of a conversation about meals, \
 or when asked "what's about to go bad" — and mention what's coming up, especially anything \
-already expired.
+already expired. For a one-off "what should we make" suggestion (not a full generated plan), \
+also check get_fresh_perishable_inventory and lean toward using meats/seafood/produce/dairy \
+already on hand over suggesting something that needs a fresh purchase — a soft general \
+preference, not a requirement.
 - The same category rules apply when saving a recipe's ingredients via add_recipe — set \
 category per ingredient there too, since that's what gets used automatically when the recipe \
 is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
@@ -1035,6 +1038,14 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "get_fresh_perishable_inventory",
+        "description": "List meats/seafood, produce, and dairy on hand that aren't urgent yet (that's get_expiring_soon) but are still perishable. Use when suggesting a one-off meal or answering 'what should we make' to lean toward using what's already on hand over defaulting to a fresh purchase — a soft general preference, not a hard rule.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"near_expiring_days": {"type": "integer", "description": "Items expiring within this many days are excluded (they're already covered by get_expiring_soon). Defaults to 4."}},
+        },
+    },
+    {
         "name": "remove_inventory_item",
         "description": "Remove a single inventory item outright by id (e.g. it spoiled, or was tracked by mistake).",
         "input_schema": {
@@ -1163,6 +1174,14 @@ least one recipe this week that uses up something on this list, especially anyth
 'expired'. This is a real goal, not a tiebreaker — reducing food waste is the point — but don't \
 force a bad fit: skip an item if nothing reasonable uses it, rather than contorting a recipe \
 around it.
+- fresh_perishable_inventory lists meats/seafood, produce, and dairy already on hand that aren't \
+urgent yet (that's near_expiring_inventory above) but are still perishable. Give these a gentle, \
+general preference over buying more of the same when a recipe would work well with them — e.g. \
+if there's chicken thighs on hand and you're picking a protein for one of the nights anyway, lean \
+toward a chicken recipe rather than defaulting to something requiring a fresh purchase. This is a \
+soft lean, not a rule: don't force an odd combination, don't feel obligated to use every item on \
+the list, and don't let it override genuine variety/preference/novelty considerations — it only \
+matters as a tiebreaker-ish nudge among otherwise-reasonable options.
 - For any new recipe, fill in instructions (ordered cooking steps) so it's actually cookable \
 later, not just a shopping list — this powers the Cooker view. Also fill in default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
@@ -1286,6 +1305,10 @@ recipe's list for accuracy, but don't let already-stocked items influence which 
 unlike current_inventory generally, actively favor at least one item this week that uses up \
 something on this list, especially anything already 'expired'. Skip it if nothing reasonable \
 uses the item rather than forcing a bad fit.
+- fresh_perishable_inventory lists meats/seafood, produce, and dairy on hand that aren't urgent \
+yet but are still perishable. Give these a soft general lean when picking proteins/vegetables for \
+the pool — favor something that uses what's already on hand over defaulting to a fresh purchase, \
+without forcing a bad fit or feeling obligated to use every item on the list.
 - Each item must be a standalone single component of its own category, not a bundled dish that \
 mixes categories — the whole point is the household mixes and matches these freely. A protein \
 item is just the protein preparation (e.g. "Garlic Lime Shrimp", "Chicken Fajita"), NOT "Garlic \
@@ -1347,6 +1370,10 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
         # prompts are instructed to weight candidate recipes toward using
         # these up, especially the most urgent ones.
         "near_expiring_inventory": tools.get_expiring_soon(),
+        # Phase 4, §4.2 follow-up: perishables on hand that aren't urgent
+        # yet — a softer "favor what's fresh" nudge distinct from the
+        # near-expiring one above.
+        "fresh_perishable_inventory": tools.get_fresh_perishable_inventory(),
     }
 
     plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
@@ -1676,6 +1703,7 @@ TOOL_FUNCTIONS = {
     "get_inventory": tools.get_inventory,
     "get_inventory_by_section": tools.get_inventory_by_section,
     "get_expiring_soon": tools.get_expiring_soon,
+    "get_fresh_perishable_inventory": tools.get_fresh_perishable_inventory,
     "remove_inventory_item": tools.remove_inventory_item,
 }
 

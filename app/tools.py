@@ -2731,6 +2731,32 @@ def get_expiring_soon(days: int = 4) -> list[dict]:
     return result
 
 
+def get_fresh_perishable_inventory(near_expiring_days: int = 4) -> list[dict]:
+    """
+    List perishable items on hand (meat/seafood, produce, dairy) that
+    AREN'T already covered by get_expiring_soon — i.e. still have some
+    runway left, not just the ones about to go bad. Soonest-expiring first.
+    Use alongside get_expiring_soon when generating a weekly plan: this is
+    a softer, general nudge to favor meats/seafood/produce/dairy already on
+    hand over buying more of the same, distinct from near_expiring_inventory's
+    stronger "use this up before it's wasted" signal.
+    """
+    cutoff = (date.today() + timedelta(days=near_expiring_days)).isoformat()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity, category, expiration_date FROM inventory_items "
+        "WHERE household_id = ? AND category IN ('produce', 'dairy', 'meat/seafood') "
+        "AND (expiration_date IS NULL OR expiration_date = '' OR expiration_date > ?) "
+        "ORDER BY CASE WHEN expiration_date IS NULL OR expiration_date = '' THEN 1 ELSE 0 END, expiration_date ASC",
+        (HOUSEHOLD_ID, cutoff),
+    ).fetchall()
+    conn.close()
+    return [
+        {"id": r["id"], "item": r["item"], "quantity": r["quantity"], "category": r["category"], "expiration_date": r["expiration_date"]}
+        for r in rows
+    ]
+
+
 def remove_inventory_item(item_id: int) -> dict:
     """Remove a single inventory item outright (e.g. it spoiled, or was added by mistake) — used by the Inventory view's delete control."""
     conn = get_conn()

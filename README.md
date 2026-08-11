@@ -221,6 +221,13 @@ generating a weekly plan, the assistant actively looks for a chance to work in a
 recipe that uses up something near-expiring — a real goal, not just a tiebreaker, though it
 won't force a bad fit just to use up an odd ingredient.
 
+Beyond that stronger near-expiring nudge, the assistant also gives a softer general lean toward
+meats/seafood, produce, and dairy already on hand even when nothing's urgent yet — favoring what's
+already in the fridge over defaulting to a fresh purchase, both when generating a full weekly plan
+and when suggesting a one-off meal in chat. This is a light preference, not a rule: it won't force
+an odd combination or expect every item on hand to get used, and it never overrides genuine
+variety, dietary restrictions, or preference.
+
 ### Inventory view
 
 A dedicated page (linked at the top of chat) for browsing what's on hand without going
