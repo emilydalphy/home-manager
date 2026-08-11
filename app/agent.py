@@ -1631,6 +1631,109 @@ def fill_in_recipe(recipe_name: str) -> dict:
     )
 
 
+# ---------- Photo-based inventory capture (Phase 4, §4.3) ----------
+# Two entry points (receipt, fridge/pantry shelf) sharing one output shape
+# and one forced-tool-call pattern, using Claude's native multimodal
+# support directly rather than a separate OCR/vision service. Neither is
+# registered as a chat tool — like generate_recipe_detail_llm, these are
+# direct calls from a dedicated endpoint/button, not something the chat
+# agent invokes itself. Per the PRD, NEITHER result is ever saved
+# directly — both return a draft list for the Inventory view to show as an
+# editable review step before anything is written to inventory_items, since
+# especially fridge/pantry recognition is expected to be error-prone.
+
+_SCAN_ITEMS_TOOL = {
+    "name": "submit_scanned_items",
+    "description": "Submit the food items detected in the photo, for the user to review/edit before anything is saved.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "item": {"type": "string", "description": "Plain item name, e.g. 'ground beef', not the receipt's abbreviated/all-caps SKU text."},
+                        "quantity": {"type": "string", "description": "Freeform, e.g. '2 lbs' or '1 dozen'. Leave blank if not reasonably determinable."},
+                        "category": {
+                            "type": "string",
+                            "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
+                            "description": "Grocery store section.",
+                        },
+                        "confidence": {"type": "string", "enum": ["high", "low"], "description": "'low' for anything you're genuinely unsure about (partially obscured, ambiguous, guessed from packaging alone) — surfaced to the user so they know what to double-check."},
+                    },
+                    "required": ["item", "category", "confidence"],
+                },
+            },
+        },
+        "required": ["items"],
+    },
+}
+
+
+def _scan_image_for_items(image_b64: str, media_type: str, instructions: str) -> list[dict]:
+    client = _client()
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=4096,
+        tools=[_SCAN_ITEMS_TOOL],
+        tool_choice={"type": "tool", "name": "submit_scanned_items"},
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+                {"type": "text", "text": instructions},
+            ],
+        }],
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input.get("items", [])
+    return []
+
+
+def scan_receipt_image(image_b64: str, media_type: str) -> list[dict]:
+    """
+    Extract grocery items from a photographed receipt — food/grocery line
+    items only. Returns a draft list; nothing is saved to inventory here.
+    """
+    instructions = """This is a photo of a grocery store receipt. Extract every actual food/grocery \
+item purchased, with your best-guess plain item name (expand abbreviated/all-caps SKU text into a \
+normal name, e.g. "ORG BANANA" -> "organic bananas"), a quantity if the receipt states or implies \
+one (weight, count, "2 @ $3"), and the correct grocery category. Skip anything that isn't a \
+purchased food item: tax, subtotal/total lines, payment info, loyalty point lines, bag fees, \
+coupons/discounts, store header/address text. If a line is illegible or you can't tell what it is, \
+leave it out rather than guessing wildly — better to under-extract than invent items. Mark \
+confidence 'low' for anything you're genuinely unsure about (unclear abbreviation, ambiguous \
+category).
+
+Call submit_scanned_items with the result."""
+    return _scan_image_for_items(image_b64, media_type, instructions)
+
+
+def scan_fridge_photo(image_b64: str, media_type: str) -> list[dict]:
+    """
+    Identify food items visible in a fridge/pantry photo for an initial
+    stock-take or re-sync. This is the harder recognition problem of the
+    two (mixed/stacked/partially obscured items) — per the PRD this always
+    ships with a confirm/edit step, never trusted silently, so this always
+    returns a draft list rather than saving anything.
+    """
+    instructions = """This is a photo of the inside of a fridge, freezer, or pantry shelf. Identify \
+each distinct food item you can make out, with your best-guess plain name and the correct grocery \
+category (use 'frozen' for anything visibly in a freezer compartment, not by food type alone). \
+Quantity is often not reliably determinable from a photo like this — leave it blank rather than \
+guessing a specific amount unless it's genuinely obvious (e.g. "a dozen eggs" visible in a carton). \
+Items are frequently stacked, partially hidden behind other items, or in opaque containers — mark \
+confidence 'low' for anything you're inferring rather than clearly seeing (a guess from a container \
+shape/label edge, something mostly blocked by another item), and don't invent items you can't \
+actually make out just to fill out the list. It's fine to return fewer, more confident items than \
+to over-guess.
+
+Call submit_scanned_items with the result."""
+    return _scan_image_for_items(image_b64, media_type, instructions)
+
+
 TOOL_FUNCTIONS = {
     "get_household_setup_status": tools.get_household_setup_status,
     "add_member": tools.add_member,

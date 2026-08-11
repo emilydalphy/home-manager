@@ -4,16 +4,17 @@ FastAPI backend for the Home Manager chat app.
 Run with:  uvicorn app.main:app --reload
 Then open: http://localhost:8000
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+import base64
 import datetime
 import logging
 import os
 
 from .db import init_db
-from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe
+from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo
 from . import tools
 
 logger = logging.getLogger("home_manager")
@@ -121,6 +122,17 @@ class InventoryUpdateRequest(BaseModel):
     quantity: str = ""
     category: str = "other"
     expiration_date: str | None = None
+
+
+class ScannedItem(BaseModel):
+    item: str
+    quantity: str = ""
+    category: str = "other"
+    expiration_date: str | None = None
+
+
+class ConfirmScanRequest(BaseModel):
+    items: list[ScannedItem]
 
 
 @app.on_event("startup")
@@ -404,6 +416,70 @@ def remove_inventory_view_item(item_id: int):
         result = tools.get_inventory_by_section()
     except Exception as e:
         logger.exception("Inventory remove failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+_MAX_SCAN_IMAGE_BYTES = 8 * 1024 * 1024  # generous for a phone photo; Claude's own image limits are higher still
+
+
+async def _read_scan_image(photo: UploadFile) -> tuple[str, str]:
+    if photo.content_type not in ("image/jpeg", "image/png", "image/webp", "image/gif"):
+        raise HTTPException(status_code=400, detail="Please upload a JPEG, PNG, WEBP, or GIF photo.")
+    data = await photo.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="That photo came through empty — try again.")
+    if len(data) > _MAX_SCAN_IMAGE_BYTES:
+        raise HTTPException(status_code=400, detail="That photo's too large — try a smaller/lower-res photo.")
+    return base64.b64encode(data).decode("ascii"), photo.content_type
+
+
+@app.post("/api/inventory/scan-receipt")
+async def scan_receipt(photo: UploadFile = File(...)):
+    """
+    Phase 4, §4.3: photograph a grocery receipt and get back a draft list of
+    detected items — nothing is saved yet, the Inventory view shows this as
+    an editable review step before /api/inventory/confirm-scan actually
+    writes anything.
+    """
+    image_b64, media_type = await _read_scan_image(photo)
+    try:
+        items = scan_receipt_image(image_b64, media_type)
+    except Exception as e:
+        logger.exception("Receipt scan failed")
+        raise HTTPException(status_code=500, detail=f"Couldn't read that receipt: {e}")
+    return {"items": items}
+
+
+@app.post("/api/inventory/scan-fridge")
+async def scan_fridge(photo: UploadFile = File(...)):
+    """
+    Phase 4, §4.3: photograph fridge/pantry shelves and get back a draft
+    list of detected items for an initial stock-take or re-sync — same
+    review-before-save flow as the receipt scan, but expect lower
+    confidence given mixed/stacked/partially obscured items.
+    """
+    image_b64, media_type = await _read_scan_image(photo)
+    try:
+        items = scan_fridge_photo(image_b64, media_type)
+    except Exception as e:
+        logger.exception("Fridge/pantry scan failed")
+        raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
+    return {"items": items}
+
+
+@app.post("/api/inventory/confirm-scan")
+def confirm_scan(req: ConfirmScanRequest):
+    """Save a reviewed/edited scan result (receipt or fridge/pantry photo) into inventory."""
+    try:
+        entries = [
+            {"item": i.item, "action": "add", "quantity": i.quantity, "category": i.category, "expiration_date": i.expiration_date}
+            for i in req.items
+        ]
+        tools.update_inventory_items(entries, action="add")
+        result = tools.get_inventory_by_section()
+    except Exception as e:
+        logger.exception("Confirm-scan save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 

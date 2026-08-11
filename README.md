@@ -237,6 +237,24 @@ add-item form for anything you'd rather type directly than mention conversationa
 still happens either way — through chat ("used the last of the spinach") or here — and both
 stay in sync automatically.
 
+### Photo-based inventory capture
+
+Two "Scan instead of typing" buttons at the top of the Inventory view, each uploading a photo
+to Claude's own multimodal vision (no separate OCR/vision service) to extract a draft item list:
+
+- **Scan a receipt** — extracts food/grocery line items with their quantity and category,
+  skipping tax/subtotal/payment/loyalty-point lines automatically.
+- **Scan fridge/pantry** — identifies visible food items on a shelf for an initial stock-take or
+  re-sync. This is the harder recognition problem (mixed, stacked, partially obscured items), so
+  quantity is often left blank rather than guessed.
+
+Neither scan ever saves directly — both return a draft list shown as an editable review (uncheck
+anything wrong, fix the name/quantity/category) before anything is written to inventory, and
+anything the model was genuinely unsure about is flagged "double-check" rather than presented
+with false confidence. Accuracy — especially for fridge/pantry photos — hasn't yet been
+validated against real photos; treat early results with appropriate skepticism until that's been
+tested live.
+
 ### Pantry & fridge inventory
 
 Separate from the grocery list — this tracks what you actually *have*, not what you

@@ -130,6 +130,50 @@
   .expiring-banner ul { margin: 0; padding-left: 20px; }
   .expiring-banner li { margin-bottom: 3px; }
   .expiring-banner .tag { font-weight: 600; }
+  .scan-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .scan-card h2 { font-size: 0.95rem; margin: 0 0 4px; color: #444; }
+  .scan-card p.hint { color: #888; font-size: 0.82rem; margin: 0 0 10px; }
+  .scan-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.scan-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #2b6cb0;
+    background: white;
+    color: #2b6cb0;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  button.scan-btn:disabled { opacity: 0.6; cursor: default; }
+  .review-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .review-card h2 { font-size: 0.95rem; margin: 0 0 4px; color: #444; }
+  .review-card p.hint { color: #888; font-size: 0.82rem; margin: 0 0 10px; }
+  .review-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+  }
+  .review-row:last-child { border-bottom: none; }
+  .review-row input[type=checkbox] { flex: 0 0 auto; }
+  .review-row input[type=text].review-name { flex: 2; min-width: 110px; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem; }
+  .review-row input[type=text].review-qty { flex: 1; min-width: 80px; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem; }
+  .review-row select.review-cat { flex: 1; min-width: 110px; padding: 6px 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.8rem; background: white; color: #444; }
+  .low-conf-badge { background: #fff8e6; color: #7a5b00; border: 1px solid #f3e0a8; border-radius: 5px; font-size: 0.7rem; padding: 2px 6px; flex: 0 0 auto; }
+  .review-actions { display: flex; gap: 8px; margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -138,6 +182,19 @@
 <p class="subtitle">What's actually on hand — pantry, fridge, and freezer. <a href="/">&larr; Back to chat</a></p>
 
 <div id="expiring-banner"></div>
+
+<div class="scan-card">
+  <h2>Scan instead of typing</h2>
+  <p class="hint">Photograph a grocery receipt, or the inside of your fridge/pantry, and review what's detected before it's added.</p>
+  <div class="scan-row">
+    <button class="scan-btn" id="scan-receipt-btn">📷 Scan a receipt</button>
+    <button class="scan-btn" id="scan-fridge-btn">📷 Scan fridge/pantry</button>
+  </div>
+  <input type="file" id="scan-receipt-input" accept="image/*" capture="environment" style="display:none" />
+  <input type="file" id="scan-fridge-input" accept="image/*" capture="environment" style="display:none" />
+</div>
+
+<div id="review-container"></div>
 
 <div id="content">
   <p class="empty">Loading...</p>
@@ -335,6 +392,113 @@ document.getElementById('add-btn').addEventListener('click', async () => {
     btn.disabled = false;
   }
 });
+
+const CATEGORY_LABELS = { produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat/seafood', pantry: 'Pantry', frozen: 'Frozen', other: 'Other' };
+function reviewCategoryOptions(current) {
+  return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('');
+}
+
+function renderReview(items, kind) {
+  const container = document.getElementById('review-container');
+  if (!items || !items.length) {
+    container.innerHTML = `<div class="review-card"><h2>Nothing detected</h2><p class="hint">Couldn't make out any items in that photo — try again with better lighting, or add items directly below.</p></div>`;
+    return;
+  }
+  const title = kind === 'receipt' ? 'Review scanned receipt' : 'Review scanned fridge/pantry photo';
+  container.innerHTML = `
+    <div class="review-card">
+      <h2>${title}</h2>
+      <p class="hint">Uncheck anything that's wrong, fix names/quantities/categories as needed, then add the rest to inventory.</p>
+      <div id="review-rows"></div>
+      <div class="review-actions">
+        <button class="action" id="review-confirm-btn">Add to inventory</button>
+        <button class="icon-btn" id="review-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+  const rowsDiv = document.getElementById('review-rows');
+  rowsDiv.innerHTML = items.map((it, idx) => `
+    <div class="review-row" data-idx="${idx}">
+      <input type="checkbox" class="review-include" checked />
+      <input type="text" class="review-name" value="${escapeHtml(it.item || '')}" />
+      <input type="text" class="review-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" />
+      <select class="review-cat">${reviewCategoryOptions(it.category || 'other')}</select>
+      ${it.confidence === 'low' ? '<span class="low-conf-badge">double-check</span>' : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('review-cancel-btn').addEventListener('click', () => {
+    container.innerHTML = '';
+  });
+
+  document.getElementById('review-confirm-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('review-confirm-btn');
+    const rows = rowsDiv.querySelectorAll('.review-row');
+    const confirmed = [];
+    rows.forEach(row => {
+      if (!row.querySelector('.review-include').checked) return;
+      const name = row.querySelector('.review-name').value.trim();
+      if (!name) return;
+      confirmed.push({
+        item: name,
+        quantity: row.querySelector('.review-qty').value.trim(),
+        category: row.querySelector('.review-cat').value,
+      });
+    });
+    if (!confirmed.length) {
+      container.innerHTML = '';
+      return;
+    }
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/inventory/confirm-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: confirmed }),
+      });
+      if (!res.ok) throw new Error('failed');
+      render(await res.json());
+      refreshBanner();
+      container.innerHTML = `<div class="review-card"><h2>Added</h2><p class="hint">${confirmed.length} item(s) added to inventory.</p></div>`;
+      setTimeout(() => { container.innerHTML = ''; }, 2500);
+    } catch (err) {
+      btn.disabled = false;
+      alert("Couldn't save those items — try again.");
+    }
+  });
+}
+
+function wireScanInput(buttonId, inputId, endpoint, kind) {
+  const btn = document.getElementById(buttonId);
+  const input = document.getElementById(inputId);
+  btn.addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    const container = document.getElementById('review-container');
+    container.innerHTML = `<div class="review-card"><h2>Reading photo...</h2><p class="hint">This can take a few seconds.</p></div>`;
+    btn.disabled = true;
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await fetch(endpoint, { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Scan failed');
+      }
+      const data = await res.json();
+      renderReview(data.items, kind);
+    } catch (err) {
+      container.innerHTML = `<div class="review-card"><h2>Couldn't read that photo</h2><p class="hint">${escapeHtml(err.message || 'Try again.')}</p></div>`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+wireScanInput('scan-receipt-btn', 'scan-receipt-input', '/api/inventory/scan-receipt', 'receipt');
+wireScanInput('scan-fridge-btn', 'scan-fridge-input', '/api/inventory/scan-fridge', 'fridge');
 
 load();
 </script>
