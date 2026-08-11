@@ -19,6 +19,12 @@ HOUSEHOLD_ID = 1
 
 _FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quarterly": 91, "once": None}
 
+# Junk "no answer" values that sometimes get written into a restrictions
+# list instead of just an empty list — filtered out in
+# set_member_dietary_restrictions so they never persist as if they were a
+# real restriction (see Phase 4, §4.1 follow-up fix).
+_NON_RESTRICTION_VALUES = {"none", "n/a", "na", "no restrictions", "no allergies", "nothing", "no", "-", ""}
+
 
 # ---------- Household setup / onboarding ----------
 
@@ -91,6 +97,11 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     """
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
+    # Placeholder non-answers (an LLM occasionally writes "None" instead of
+    # an empty list when someone says they have no restrictions) should
+    # never actually get stored as a restriction — filtered out on both
+    # merge and replace so this can't silently accumulate as real entries.
+    restrictions = [r for r in restrictions if r.strip().lower() not in _NON_RESTRICTION_VALUES]
     if replace:
         merged = list(restrictions)
     else:
@@ -98,6 +109,7 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
             "SELECT dietary_restrictions_json FROM members WHERE id = ?", (member_id,)
         ).fetchone()
         existing = json.loads(existing_row["dietary_restrictions_json"]) if existing_row else []
+        existing = [r for r in existing if r.strip().lower() not in _NON_RESTRICTION_VALUES]
         seen_lower = {r.strip().lower() for r in existing}
         merged = list(existing)
         for r in restrictions:
