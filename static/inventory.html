@@ -51,6 +51,20 @@
     border: 1px solid #ccc;
     font-size: 0.85rem;
   }
+  .cat-select {
+    width: 118px;
+    padding: 5px 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.8rem;
+    background: white;
+    color: #444;
+  }
+  .cat-select:disabled { opacity: 0.6; }
+  @media (max-width: 520px) {
+    .item-row { flex-wrap: wrap; }
+    .cat-select, .qty-input { flex: 1; min-width: 100px; }
+  }
   .icon-btn {
     background: none;
     border: none;
@@ -139,6 +153,11 @@ function escapeHtml(s) {
   }[c]));
 }
 
+const CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
+function categoryOptions(current) {
+  return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c === 'meat/seafood' ? 'Meat/seafood' : c[0].toUpperCase() + c.slice(1)}</option>`).join('');
+}
+
 function render(view) {
   const content = document.getElementById('content');
   const sections = view.sections || [];
@@ -157,6 +176,7 @@ function render(view) {
           <p class="item-name">${escapeHtml(it.item)}</p>
           ${it.expiration_date ? `<p class="item-meta">Exp ${escapeHtml(it.expiration_date)}</p>` : ''}
         </div>
+        <select class="cat-select" data-item-name="${escapeHtml(it.item)}">${categoryOptions(it.category)}</select>
         <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" data-item-name="${escapeHtml(it.item)}" data-category="${escapeHtml(it.category)}" />
         <button class="icon-btn save" title="Save quantity">&check;</button>
         <button class="icon-btn remove" title="Remove" data-item-id="${it.id}">&times;</button>
@@ -166,10 +186,36 @@ function render(view) {
   }
   content.innerHTML = html;
 
+  content.querySelectorAll('.cat-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const row = sel.closest('.item-row');
+      const qtyInput = row.querySelector('.qty-input');
+      sel.disabled = true;
+      try {
+        const res = await fetch('/api/inventory/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            item: sel.getAttribute('data-item-name'),
+            action: 'set',
+            quantity: qtyInput.value,
+            category: sel.value,
+          }),
+        });
+        if (!res.ok) throw new Error('failed');
+        render(await res.json());
+      } catch (err) {
+        sel.disabled = false;
+        alert("Couldn't update that category — try again.");
+      }
+    });
+  });
+
   content.querySelectorAll('.icon-btn.save').forEach(btn => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('.item-row');
       const input = row.querySelector('.qty-input');
+      const catSelect = row.querySelector('.cat-select');
       btn.disabled = true;
       try {
         const res = await fetch('/api/inventory/update', {
@@ -179,7 +225,7 @@ function render(view) {
             item: input.getAttribute('data-item-name'),
             action: 'set',
             quantity: input.value,
-            category: input.getAttribute('data-category'),
+            category: catSelect ? catSelect.value : input.getAttribute('data-category'),
           }),
         });
         if (!res.ok) throw new Error('failed');
