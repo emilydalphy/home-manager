@@ -2054,8 +2054,8 @@ def delete_preference(field: str, item: str | None = None) -> dict:
 _GROCERY_SECTION_ORDER = ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]
 _GROCERY_CATEGORY_ALIASES = {"meat": "meat/seafood", "seafood": "meat/seafood"}
 
-# Phase 4, §4.2: default shelf life (days) by broad category, used to
-# estimate an inventory item's expiration when none is explicitly given.
+# Phase 4, §4.2: default shelf life (days) by broad category, used only as
+# a fallback when an item isn't found in _ITEM_SHELF_LIFE_DAYS below.
 # Deliberately a plain code constant, not a DB table/setting — the PRD
 # calls for global defaults only this phase, not household-customizable,
 # consistent with not building a tunable setting before there's dogfooding
@@ -2070,10 +2070,54 @@ _DEFAULT_SHELF_LIFE_DAYS = {
     "other": 14,
 }
 
+# Item-level shelf life (days), refrigerated/pantry as typical for that
+# item, adapted from general USDA FoodKeeper / FDA freshness guidance —
+# still rough rule-of-thumb estimates, not a live lookup against any
+# database, and always overridden by an explicit expiration_date. Keys are
+# matched as substrings against the (lowercased) item name, longest key
+# first, so "sweet potato" matches before the more generic "potato". Falls
+# back to the category-level default in _DEFAULT_SHELF_LIFE_DAYS when no
+# item key matches.
+_ITEM_SHELF_LIFE_DAYS = {
+    # Dairy
+    "milk": 7, "buttermilk": 14, "yogurt": 14, "sour cream": 14,
+    "heavy cream": 10, "half and half": 7, "cream cheese": 14,
+    "feta": 30, "mozzarella": 14, "burrata": 3, "parmesan": 60,
+    "cheddar": 30, "cheese": 21, "butter": 90, "eggs": 21, "egg": 21,
+    # Produce
+    "lettuce": 7, "spinach": 5, "arugula": 5, "kale": 7, "salad mix": 5,
+    "greens": 5, "berries": 5, "strawberr": 5, "raspberr": 4,
+    "blueberr": 10, "blackberr": 4, "banana": 5, "apple": 21,
+    "avocado": 5, "tomato": 7, "cucumber": 7, "zucchini": 7,
+    "broccoli": 7, "cauliflower": 10, "carrot": 21, "celery": 14,
+    "bell pepper": 10, "pepper": 10, "mushroom": 5, "onion": 30,
+    "garlic": 30, "ginger": 21, "sweet potato": 21, "potato": 30,
+    "lemon": 21, "lime": 21, "cilantro": 5, "parsley": 7, "basil": 5,
+    "mint": 5, "asparagus": 4,
+    # Meat / seafood
+    "ground beef": 2, "ground turkey": 2, "ground pork": 2,
+    "chicken": 2, "turkey": 2, "steak": 3, "pork": 3, "beef": 3,
+    "salmon": 2, "shrimp": 2, "fish": 2, "seafood": 2, "bacon": 7,
+    "sausage": 5, "deli meat": 5, "ham": 5,
+    # Pantry (longer-lived; category default of 180 already covers most)
+    "bread": 7, "tortilla": 14,
+}
 
-def _estimate_expiration_date(category: str, from_date: date | None = None) -> str:
-    """ISO date estimate for when an item of this category likely goes bad, starting from today (or from_date) — see _DEFAULT_SHELF_LIFE_DAYS."""
-    days = _DEFAULT_SHELF_LIFE_DAYS.get(category, _DEFAULT_SHELF_LIFE_DAYS["other"])
+
+def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
+    name = item.strip().lower()
+    best_match: tuple[str, int] | None = None
+    for key, days in _ITEM_SHELF_LIFE_DAYS.items():
+        if key in name and (best_match is None or len(key) > len(best_match[0])):
+            best_match = (key, days)
+    if best_match:
+        return best_match[1]
+    return _DEFAULT_SHELF_LIFE_DAYS.get(category, _DEFAULT_SHELF_LIFE_DAYS["other"])
+
+
+def _estimate_expiration_date(category: str, item: str = "", from_date: date | None = None) -> str:
+    """ISO date estimate for when this item likely goes bad, starting from today (or from_date). Checks _ITEM_SHELF_LIFE_DAYS for an item-specific estimate first, falling back to the category-level default in _DEFAULT_SHELF_LIFE_DAYS."""
+    days = _lookup_item_shelf_life_days(item, category)
     base = from_date or date.today()
     return (base + timedelta(days=days)).isoformat()
 
@@ -2083,6 +2127,7 @@ def _resolved_expiration_update(
     new_category: str | None,
     existing_category: str | None,
     existing_expiration_date: str | None,
+    item: str = "",
 ) -> str | None:
     """
     Work out what (if anything) an inventory write should set
@@ -2101,9 +2146,9 @@ def _resolved_expiration_update(
     if not effective_category:
         return None
     if not existing_expiration_date:
-        return _estimate_expiration_date(effective_category)
+        return _estimate_expiration_date(effective_category, item)
     if existing_category == "other" and new_category and new_category != "other":
-        return _estimate_expiration_date(new_category)
+        return _estimate_expiration_date(new_category, item)
     return None
 
 _UNIT_ALIASES = {
@@ -2470,7 +2515,7 @@ def _add_to_inventory(
         merged_qty, _ = _try_consolidate_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
         params = [merged_qty, source]
-        resolved_exp = _resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"])
+        resolved_exp = _resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)
         if resolved_exp:
             fields += ", expiration_date = ?"
             params.append(resolved_exp)
@@ -2485,7 +2530,7 @@ def _add_to_inventory(
         item_category = category or "other"
         cur = conn.execute(
             "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category) VALUES (?, ?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, item, quantity, source, expiration_date or _estimate_expiration_date(item_category), item_category),
+            (HOUSEHOLD_ID, item, quantity, source, expiration_date or _estimate_expiration_date(item_category, item), item_category),
         )
         conn.commit()
         item_id = cur.lastrowid
@@ -2534,7 +2579,7 @@ def update_inventory(
         if existing:
             fields = "quantity = ?, updated_at = datetime('now')"
             params = [quantity]
-            resolved_exp = _resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"])
+            resolved_exp = _resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)
             if resolved_exp:
                 fields += ", expiration_date = ?"
                 params.append(resolved_exp)
@@ -2549,7 +2594,7 @@ def update_inventory(
             item_category = category or "other"
             cur = conn.execute(
                 "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date) VALUES (?, ?, ?, 'chat', ?, ?)",
-                (HOUSEHOLD_ID, item, quantity, item_category, expiration_date or _estimate_expiration_date(item_category)),
+                (HOUSEHOLD_ID, item, quantity, item_category, expiration_date or _estimate_expiration_date(item_category, item)),
             )
             conn.commit()
             item_id = cur.lastrowid

@@ -210,9 +210,12 @@ the raw preference dump on the What We Know page.
 
 ### Expiration & use-it-up
 
-Inventory items get an estimated expiration automatically based on category (produce, dairy,
-meat/seafood, pantry, frozen — a rough, conservative global default per type) whenever an
-exact date isn't given; mention or scan an actual date and that always takes precedence. The
+Inventory items get an estimated expiration automatically whenever an exact date isn't given.
+The estimate first checks a table of common item-level shelf lives (eggs, milk, feta, ground
+beef, etc. — around 60 items, adapted from general USDA/FDA freshness guidance, not a live
+lookup) and falls back to a rough per-category default (produce, dairy, meat/seafood, pantry,
+frozen) only for items it doesn't recognize. Mention or scan an actual date and that always
+takes precedence over any estimate. The
 Inventory view surfaces a banner for anything already gone bad or coming up soon. When
 generating a weekly plan, the assistant actively looks for a chance to work in at least one
 recipe that uses up something near-expiring — a real goal, not just a tiebreaker, though it
