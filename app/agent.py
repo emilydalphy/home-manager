@@ -1721,14 +1721,21 @@ def scan_fridge_photo(image_b64: str, media_type: str) -> list[dict]:
     """
     instructions = """This is a photo of the inside of a fridge, freezer, or pantry shelf. Identify \
 each distinct food item you can make out, with your best-guess plain name and the correct grocery \
-category (use 'frozen' for anything visibly in a freezer compartment, not by food type alone). \
-Quantity is often not reliably determinable from a photo like this — leave it blank rather than \
-guessing a specific amount unless it's genuinely obvious (e.g. "a dozen eggs" visible in a carton). \
-Items are frequently stacked, partially hidden behind other items, or in opaque containers — mark \
-confidence 'low' for anything you're inferring rather than clearly seeing (a guess from a container \
-shape/label edge, something mostly blocked by another item), and don't invent items you can't \
-actually make out just to fill out the list. It's fine to return fewer, more confident items than \
-to over-guess.
+category (use 'frozen' for anything visibly in a freezer compartment, not by food type alone).
+
+For quantity, actually look for and use whatever visual evidence is there before leaving it blank: \
+a package's printed size/volume/weight (e.g. "4 L" on a milk jug, "1 lb" on a butter box, "12" on \
+an egg carton), or a clearly countable number of discrete units (3 apples sitting together, 2 \
+yogurt tubs). Use that real information rather than defaulting to blank just because it takes more \
+looking — someone reading this list shouldn't have to guess what a quick label-glance would've \
+told you. That said, never invent a quantity you can't actually read or count: don't assume a \
+"typical" size for a product, don't guess how full a container is, and don't estimate a count for \
+anything stacked/obscured/too far to make out clearly — leave quantity blank in those cases rather \
+than fabricating a plausible-sounding number. Mark confidence 'low' on the whole item (not just the \
+quantity) for anything you're meaningfully inferring rather than clearly seeing (a guess from a \
+container shape/label edge, something mostly blocked by another item), and don't invent items you \
+can't actually make out just to fill out the list. It's fine to return fewer, more confident items \
+than to over-guess.
 
 Call submit_scanned_items with the result."""
     return _scan_image_for_items(image_b64, media_type, instructions)
