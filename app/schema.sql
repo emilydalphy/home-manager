@@ -211,6 +211,35 @@ CREATE TABLE IF NOT EXISTS share_links (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Phase 4, §4.1: Eater self-service — a personal, tokenized link tied to a
+-- single members row (unlike share_links above, which is household-wide and
+-- read-only). Write access through this token is scoped narrowly to that
+-- member's own dietary_restrictions and freeform notes (member_notes below)
+-- — nothing else. Standing by default (doesn't expire), but the Planner can
+-- revoke it (revoked=1) and generate a fresh one; resolve_member_share_link
+-- only honors a non-revoked row, so an old leaked link stops working the
+-- moment it's revoked without needing to delete history.
+CREATE TABLE IF NOT EXISTS member_share_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    token TEXT NOT NULL UNIQUE,
+    revoked INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Freeform preference/feedback notes an Eater leaves via their own
+-- self-service link — distinct from recipe_notes (which is tied to a
+-- specific recipe); this is a general note attributed to a person, e.g.
+-- "I'd love more vegetarian nights" or "loved the tacos, more of that."
+CREATE TABLE IF NOT EXISTS member_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    note TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS grocery_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),

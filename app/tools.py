@@ -75,17 +75,42 @@ def list_members() -> list[dict]:
     ]
 
 
-def set_member_dietary_restrictions(name: str, restrictions: list[str]) -> dict:
-    """Set a member's dietary restrictions/allergies (e.g. ['vegetarian', 'peanut allergy']). Pass an empty list if they have none."""
+def set_member_dietary_restrictions(name: str, restrictions: list[str], replace: bool = False) -> dict:
+    """
+    Add dietary restrictions/allergies for a household member (e.g.
+    ['vegetarian', 'peanut allergy']). Defaults to fetch-then-merge — merges
+    with whatever's already saved for this person rather than overwriting
+    it, deduplicated case-insensitively — so it's safe to call from a
+    one-off mid-conversation mention ("my partner doesn't eat shellfish")
+    without risking anything previously saved for them being silently lost
+    (Phase 4, §4.1 Fix 2). Pass replace=True only when the person is
+    stating their complete, authoritative list right now and anything not
+    listed should be dropped — this is the right choice during onboarding
+    (initial setup or a full redo), not for an ad hoc mention. Pass an
+    empty list with replace=True to clear all restrictions for someone.
+    """
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
+    if replace:
+        merged = list(restrictions)
+    else:
+        existing_row = conn.execute(
+            "SELECT dietary_restrictions_json FROM members WHERE id = ?", (member_id,)
+        ).fetchone()
+        existing = json.loads(existing_row["dietary_restrictions_json"]) if existing_row else []
+        seen_lower = {r.strip().lower() for r in existing}
+        merged = list(existing)
+        for r in restrictions:
+            if r.strip() and r.strip().lower() not in seen_lower:
+                merged.append(r)
+                seen_lower.add(r.strip().lower())
     conn.execute(
         "UPDATE members SET dietary_restrictions_json = ? WHERE id = ?",
-        (json.dumps(restrictions), member_id),
+        (json.dumps(merged), member_id),
     )
     conn.commit()
     conn.close()
-    return {"name": name, "dietary_restrictions": restrictions}
+    return {"name": name, "dietary_restrictions": merged}
 
 
 def set_member_age_group(name: str, age_group: str) -> dict:
@@ -1692,6 +1717,174 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     return plan
 
 
+# ---------- Eater self-service (Phase 4, §4.1 new capability) ----------
+# A personal, tokenized, limited-write link tied to one members row, so a
+# household member other than the Planner can register their own dietary
+# restrictions and feedback directly, without full account creation or
+# relaying it secondhand through the Planner. Modeled on the read-only plan
+# share link above, but scoped to a single person and able to write.
+
+def get_or_create_member_share_link(member_name: str) -> dict:
+    """
+    Get (or create on first use) a standing, personal share link for one
+    household member — lets them view/add their own dietary restrictions
+    and leave feedback notes directly, without going through the Planner.
+    Raises ValueError if no member with this name exists yet (add them with
+    add_member or set_member_dietary_restrictions first). If a non-revoked
+    link already exists for this person, returns the same one rather than
+    creating a duplicate — use regenerate_member_share_link to force a new
+    token instead.
+    """
+    conn = get_conn()
+    member = conn.execute(
+        "SELECT id, name FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        (HOUSEHOLD_ID, member_name),
+    ).fetchone()
+    if not member:
+        conn.close()
+        raise ValueError(f"No household member named '{member_name}' yet.")
+    row = conn.execute(
+        "SELECT token FROM member_share_links WHERE household_id = ? AND member_id = ? AND revoked = 0 "
+        "ORDER BY created_at DESC LIMIT 1",
+        (HOUSEHOLD_ID, member["id"]),
+    ).fetchone()
+    if row:
+        token = row["token"]
+    else:
+        token = secrets.token_urlsafe(16)
+        conn.execute(
+            "INSERT INTO member_share_links (household_id, member_id, token) VALUES (?, ?, ?)",
+            (HOUSEHOLD_ID, member["id"], token),
+        )
+        conn.commit()
+    conn.close()
+    return {"member_name": member["name"], "token": token}
+
+
+def revoke_member_share_link(member_name: str) -> dict:
+    """Revoke a household member's self-service link — any existing link stops working immediately. Use before regenerate_member_share_link, or on its own if the link should just be shut off (e.g. it was shared by mistake)."""
+    conn = get_conn()
+    member = conn.execute(
+        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        (HOUSEHOLD_ID, member_name),
+    ).fetchone()
+    if not member:
+        conn.close()
+        raise ValueError(f"No household member named '{member_name}'.")
+    conn.execute(
+        "UPDATE member_share_links SET revoked = 1 WHERE household_id = ? AND member_id = ? AND revoked = 0",
+        (HOUSEHOLD_ID, member["id"]),
+    )
+    conn.commit()
+    conn.close()
+    return {"member_name": member_name, "revoked": True}
+
+
+def regenerate_member_share_link(member_name: str) -> dict:
+    """Revoke a household member's current self-service link (if any) and issue a fresh one in the same call — use if a link may have leaked, or the Planner just wants a clean new one."""
+    revoke_member_share_link(member_name)
+    return get_or_create_member_share_link(member_name)
+
+
+def resolve_member_share_link(token: str) -> dict | None:
+    """
+    Resolve a member self-service token to that person's own view: their
+    name, current dietary restrictions, and any notes they've left before.
+    Returns None for an invalid or revoked token, so the caller can 404
+    rather than leak whether a token almost matched. Only this one member's
+    own data is exposed through this path — nothing else about the
+    household.
+    """
+    conn = get_conn()
+    link = conn.execute(
+        "SELECT member_id FROM member_share_links WHERE token = ? AND revoked = 0", (token,)
+    ).fetchone()
+    if not link:
+        conn.close()
+        return None
+    member = conn.execute(
+        "SELECT name, dietary_restrictions_json FROM members WHERE id = ?", (link["member_id"],)
+    ).fetchone()
+    if not member:
+        conn.close()
+        return None
+    notes = conn.execute(
+        "SELECT note, created_at FROM member_notes WHERE member_id = ? ORDER BY created_at DESC LIMIT 10",
+        (link["member_id"],),
+    ).fetchall()
+    conn.close()
+    return {
+        "member_name": member["name"],
+        "dietary_restrictions": json.loads(member["dietary_restrictions_json"]),
+        "notes": [{"note": n["note"], "created_at": n["created_at"]} for n in notes],
+    }
+
+
+def eater_add_dietary_restriction(token: str, restrictions: list[str]) -> dict:
+    """
+    Add dietary restriction(s) for the member behind this self-service
+    token — merges with whatever they already have (never a destructive
+    replace, since this is a one-off self-edit, not a full-list
+    resubmission). Raises ValueError for an invalid/revoked token.
+    """
+    conn = get_conn()
+    link = conn.execute(
+        "SELECT member_id FROM member_share_links WHERE token = ? AND revoked = 0", (token,)
+    ).fetchone()
+    if not link:
+        conn.close()
+        raise ValueError("This link isn't valid.")
+    member = conn.execute("SELECT name FROM members WHERE id = ?", (link["member_id"],)).fetchone()
+    conn.close()
+    if not member:
+        raise ValueError("This link isn't valid.")
+    return set_member_dietary_restrictions(member["name"], restrictions)
+
+
+def eater_add_note(token: str, note: str) -> dict:
+    """Leave a freeform preference/feedback note as the member behind this self-service token. Raises ValueError for an invalid/revoked token."""
+    conn = get_conn()
+    link = conn.execute(
+        "SELECT member_id FROM member_share_links WHERE token = ? AND revoked = 0", (token,)
+    ).fetchone()
+    if not link:
+        conn.close()
+        raise ValueError("This link isn't valid.")
+    conn.execute(
+        "INSERT INTO member_notes (household_id, member_id, note) VALUES (?, ?, ?)",
+        (HOUSEHOLD_ID, link["member_id"], note),
+    )
+    conn.commit()
+    conn.close()
+    return {"saved": True}
+
+
+def get_member_notes(member_name: str | None = None) -> list[dict]:
+    """
+    List freeform notes members have left via their self-service links —
+    use this when the Planner asks what an Eater has said, or as part of
+    reviewing feedback generally. Omit member_name for every member's
+    notes, most recent first.
+    """
+    conn = get_conn()
+    if member_name:
+        rows = conn.execute(
+            "SELECT m.name, n.note, n.created_at FROM member_notes n "
+            "JOIN members m ON m.id = n.member_id "
+            "WHERE n.household_id = ? AND LOWER(m.name) = LOWER(?) ORDER BY n.created_at DESC",
+            (HOUSEHOLD_ID, member_name),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT m.name, n.note, n.created_at FROM member_notes n "
+            "JOIN members m ON m.id = n.member_id "
+            "WHERE n.household_id = ? ORDER BY n.created_at DESC",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    conn.close()
+    return [{"member_name": r["name"], "note": r["note"], "created_at": r["created_at"]} for r in rows]
+
+
 # ---------- Household memory (transparency & correction) ----------
 
 def get_household_memory() -> dict:
@@ -1833,6 +2026,58 @@ def delete_preference(field: str, item: str | None = None) -> dict:
 # kept for rows saved before "meat/seafood" was standardized.
 _GROCERY_SECTION_ORDER = ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]
 _GROCERY_CATEGORY_ALIASES = {"meat": "meat/seafood", "seafood": "meat/seafood"}
+
+# Phase 4, §4.2: default shelf life (days) by broad category, used to
+# estimate an inventory item's expiration when none is explicitly given.
+# Deliberately a plain code constant, not a DB table/setting — the PRD
+# calls for global defaults only this phase, not household-customizable,
+# consistent with not building a tunable setting before there's dogfooding
+# data to justify it. Rough, conservative estimates; an explicit
+# expiration_date (from the user, or a receipt/photo scan) always wins.
+_DEFAULT_SHELF_LIFE_DAYS = {
+    "produce": 7,
+    "dairy": 10,
+    "meat/seafood": 3,
+    "pantry": 180,
+    "frozen": 90,
+    "other": 14,
+}
+
+
+def _estimate_expiration_date(category: str, from_date: date | None = None) -> str:
+    """ISO date estimate for when an item of this category likely goes bad, starting from today (or from_date) — see _DEFAULT_SHELF_LIFE_DAYS."""
+    days = _DEFAULT_SHELF_LIFE_DAYS.get(category, _DEFAULT_SHELF_LIFE_DAYS["other"])
+    base = from_date or date.today()
+    return (base + timedelta(days=days)).isoformat()
+
+
+def _resolved_expiration_update(
+    explicit_expiration_date: str | None,
+    new_category: str | None,
+    existing_category: str | None,
+    existing_expiration_date: str | None,
+) -> str | None:
+    """
+    Work out what (if anything) an inventory write should set
+    expiration_date to, without ever clobbering something more specific
+    than what's being provided now:
+      - An explicit date always wins outright.
+      - Otherwise, estimate/re-estimate only if there's no date yet, or the
+        only date on file was itself a guess from the generic 'other'
+        bucket and a real category is now known — refining an unknown-item
+        placeholder, not overwriting a specific-category estimate.
+      - Returns None when nothing should change.
+    """
+    if explicit_expiration_date:
+        return explicit_expiration_date
+    effective_category = new_category or existing_category
+    if not effective_category:
+        return None
+    if not existing_expiration_date:
+        return _estimate_expiration_date(effective_category)
+    if existing_category == "other" and new_category and new_category != "other":
+        return _estimate_expiration_date(new_category)
+    return None
 
 _UNIT_ALIASES = {
     "cup": "cup", "cups": "cup", "c": "cup",
@@ -2191,16 +2436,17 @@ def _add_to_inventory(
 ) -> dict:
     conn = get_conn()
     existing = conn.execute(
-        "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+        "SELECT id, quantity, category, expiration_date FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
         (HOUSEHOLD_ID, item),
     ).fetchone()
     if existing:
         merged_qty, _ = _try_consolidate_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
         params = [merged_qty, source]
-        if expiration_date:
+        resolved_exp = _resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"])
+        if resolved_exp:
             fields += ", expiration_date = ?"
-            params.append(expiration_date)
+            params.append(resolved_exp)
         if category:
             fields += ", category = ?"
             params.append(category)
@@ -2209,9 +2455,10 @@ def _add_to_inventory(
         conn.commit()
         item_id = existing["id"]
     else:
+        item_category = category or "other"
         cur = conn.execute(
             "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category) VALUES (?, ?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, item, quantity, source, expiration_date, category or "other"),
+            (HOUSEHOLD_ID, item, quantity, source, expiration_date or _estimate_expiration_date(item_category), item_category),
         )
         conn.commit()
         item_id = cur.lastrowid
@@ -2254,12 +2501,16 @@ def update_inventory(
     if action == "set":
         conn = get_conn()
         existing = conn.execute(
-            "SELECT id FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+            "SELECT id, category, expiration_date FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
             (HOUSEHOLD_ID, item),
         ).fetchone()
         if existing:
             fields = "quantity = ?, updated_at = datetime('now')"
             params = [quantity]
+            resolved_exp = _resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"])
+            if resolved_exp:
+                fields += ", expiration_date = ?"
+                params.append(resolved_exp)
             if category:
                 fields += ", category = ?"
                 params.append(category)
@@ -2268,9 +2519,10 @@ def update_inventory(
             conn.commit()
             item_id = existing["id"]
         else:
+            item_category = category or "other"
             cur = conn.execute(
-                "INSERT INTO inventory_items (household_id, item, quantity, source, category) VALUES (?, ?, ?, 'chat', ?)",
-                (HOUSEHOLD_ID, item, quantity, category or "other"),
+                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date) VALUES (?, ?, ?, 'chat', ?, ?)",
+                (HOUSEHOLD_ID, item, quantity, item_category, expiration_date or _estimate_expiration_date(item_category)),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -2370,6 +2622,36 @@ def get_inventory_by_section() -> dict:
     return {"sections": [{"section": s, "items": sections[s]} for s in _GROCERY_SECTION_ORDER if sections[s]]}
 
 
+def get_expiring_soon(days: int = 4) -> list[dict]:
+    """
+    List inventory items that are already past their (entered or
+    estimated) expiration, or expiring within the given number of days —
+    soonest/most overdue first. Each item includes a status of 'expired' or
+    'expiring_soon'. Use this for "what's about to go bad" questions, and
+    check it proactively when generating a weekly plan or suggesting a
+    meal, so near-expiring items get worked in before they're wasted (see
+    generate_weekly_plan's use_it_up weighting).
+    """
+    cutoff = (date.today() + timedelta(days=days)).isoformat()
+    today = date.today().isoformat()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity, category, expiration_date FROM inventory_items "
+        "WHERE household_id = ? AND expiration_date IS NOT NULL AND expiration_date != '' AND expiration_date <= ? "
+        "ORDER BY expiration_date ASC",
+        (HOUSEHOLD_ID, cutoff),
+    ).fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        status = "expired" if r["expiration_date"] < today else "expiring_soon"
+        result.append({
+            "id": r["id"], "item": r["item"], "quantity": r["quantity"], "category": r["category"],
+            "expiration_date": r["expiration_date"], "status": status,
+        })
+    return result
+
+
 def remove_inventory_item(item_id: int) -> dict:
     """Remove a single inventory item outright (e.g. it spoiled, or was added by mistake) — used by the Inventory view's delete control."""
     conn = get_conn()
@@ -2382,8 +2664,13 @@ def remove_inventory_item(item_id: int) -> dict:
 # ---------- internal helpers ----------
 
 def _get_or_create_member(conn, name: str) -> int:
+    # Case-insensitive lookup, matching the pattern used for recipes and
+    # grocery items elsewhere in this file — an exact-match lookup here let
+    # something like "my partner" vs. the saved name "Alex" (or even just
+    # "alex" vs. "Alex") silently create a duplicate member row instead of
+    # attaching to the existing person (Phase 4, §4.1 Fix 1).
     row = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, name)
+        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (HOUSEHOLD_ID, name)
     ).fetchone()
     if row:
         return row["id"]

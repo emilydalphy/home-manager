@@ -59,7 +59,9 @@ up in a conversation — check silently):
 - Call get_meal_planning_setup_status. If onboarding_complete is false, ask a couple of \
 questions before diving in:
   1. Any dietary restrictions or allergies, per person? Use set_member_dietary_restrictions \
-for each household member (an empty list is a fine answer).
+for each household member with replace=true (an empty list is a fine answer) — this is their \
+complete list as of right now, including on a redo of onboarding, so anything not mentioned \
+should be dropped rather than merged with stale entries.
   2. Protein preferences — how often they want each protein (chicken, beef, pork, fish, \
 plant-based, eggs), e.g. 'several times a week', '1-2 times a week', 'occasionally', 'rarely', \
 'avoid' — preference, health, and budget can all factor in. Favorite cuisines and typical \
@@ -80,6 +82,14 @@ be asked to save it, and don't just silently note it in your own reply — persi
 tool or it won't be remembered next time.
 - Check dislikes (from get_meal_planning_setup_status) before suggesting meals or recipes, \
 and avoid suggesting anything containing them.
+- The same applies to a dietary restriction/allergy said about a specific person, at any point \
+in conversation, not just during onboarding — "my partner doesn't eat shellfish," "actually our \
+kid is allergic to tree nuts now." Call set_member_dietary_restrictions right away with that \
+person's name and the restriction (leave replace unset/false — this is a mid-conversation \
+mention, not their full list, so it should merge with whatever's already saved for them, not \
+overwrite it). Match the name to an existing member from list_members/get_household_memory \
+where you reasonably can (e.g. "my partner" -> whichever member fits) rather than inventing a \
+new one when they clearly mean someone already on file.
 - The same goes for positive or negative feedback on a specific recipe they've actually made — \
 "we loved that chicken dish", "that pasta was too bland", "make that again sometime" — call \
 mark_recipe_feedback right away with the recipe name, a rating ('liked'/'disliked') if implied, \
@@ -162,6 +172,14 @@ anything else — no special handling needed, a grocery item doesn't need to tra
 - If the user asks what's been learned or whether suggestions have improved, use \
 get_learning_summary for the aggregate picture (recipes tracked, liked/disliked counts, \
 deviations logged) rather than get_household_memory, which is raw preference values.
+- If the user wants someone else in the household to add their own dietary restrictions or \
+feedback directly ("can my partner just tell you themselves," "give Alex a way to add their own \
+stuff") rather than relaying it secondhand, use get_or_create_member_share_link for that \
+person and share the resulting link — it's a personal, standing link scoped to just that \
+person's own restrictions/notes, not the whole household. Use revoke_member_share_link or \
+regenerate_member_share_link if they want it shut off or replaced (e.g. it was shared \
+somewhere it shouldn't have been). Use get_member_notes to check what a member has said via \
+their link if asked, or when it's relevant to a suggestion.
 
 What the app knows (memory transparency):
 - If the user asks what the app knows/remembers about their preferences, call \
@@ -228,6 +246,12 @@ with category set per item. Before adding a \
 staple to the grocery list from a direct request (not from a generated weekly plan), check \
 get_inventory first — if it looks like they already have enough, ask rather than silently \
 adding it ("you've still got flour on hand — still want more, or skip it?").
+- Items get an estimated expiration automatically (by category) if the user doesn't mention a \
+specific date — always pass expiration_date when they do state or imply one ("that expires next \
+Tuesday", a receipt/photo date), since an explicit date always beats the estimate. Check \
+get_expiring_soon proactively when it's relevant — near the start of a conversation about meals, \
+or when asked "what's about to go bad" — and mention what's coming up, especially anything \
+already expired.
 - The same category rules apply when saving a recipe's ingredients via add_recipe — set \
 category per ingredient there too, since that's what gets used automatically when the recipe \
 is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
@@ -267,12 +291,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_member_dietary_restrictions",
-        "description": "Set a household member's dietary restrictions/allergies. Pass an empty list if they have none.",
+        "description": "Add dietary restrictions/allergies for a household member. Defaults to merging with whatever's already saved for them (safe for a one-off mid-conversation mention) — pass replace=true only when they're stating their complete list right now (onboarding) and anything unlisted should be dropped.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "restrictions": {"type": "array", "items": {"type": "string"}},
+                "restrictions": {"type": "array", "items": {"type": "string"}, "description": "Restriction(s) to add (or, with replace=true, the complete list)."},
+                "replace": {"type": "boolean", "description": "true = this is their full, authoritative list, drop anything not listed (onboarding). false/omitted = merge with existing (mid-conversation mentions)."},
             },
             "required": ["name", "restrictions"],
         },
@@ -788,6 +813,41 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "get_or_create_member_share_link",
+        "description": "Get (or create) a standing personal link for one household member, so they can add their own dietary restrictions and leave feedback notes directly without going through the Planner. Returns the same link on repeat calls unless it's been revoked/regenerated.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"member_name": {"type": "string"}},
+            "required": ["member_name"],
+        },
+    },
+    {
+        "name": "revoke_member_share_link",
+        "description": "Revoke a household member's self-service link — it stops working immediately (e.g. it was shared by mistake, or the household wants to shut it off).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"member_name": {"type": "string"}},
+            "required": ["member_name"],
+        },
+    },
+    {
+        "name": "regenerate_member_share_link",
+        "description": "Revoke a household member's current self-service link and issue a fresh one in one step (e.g. it may have leaked).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"member_name": {"type": "string"}},
+            "required": ["member_name"],
+        },
+    },
+    {
+        "name": "get_member_notes",
+        "description": "List freeform preference/feedback notes household members have left via their self-service links. Omit member_name for everyone's notes.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"member_name": {"type": "string"}},
+        },
+    },
+    {
         "name": "get_household_memory",
         "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, notes, goals. Use this when the user asks what the app knows/remembers, or before generating a plan.",
         "input_schema": {"type": "object", "properties": {}},
@@ -965,6 +1025,14 @@ TOOL_DEFINITIONS = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "get_expiring_soon",
+        "description": "List inventory items already expired or expiring within N days (soonest first), each flagged 'expired' or 'expiring_soon'. Use for 'what's about to go bad' questions, and check proactively before suggesting meals so near-expiring items get used before they're wasted.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"days": {"type": "integer", "description": "Lookahead window in days. Defaults to 4."}},
+        },
+    },
+    {
         "name": "remove_inventory_item",
         "description": "Remove a single inventory item outright by id (e.g. it spoiled, or was tracked by mistake).",
         "input_schema": {
@@ -1087,6 +1155,12 @@ comparable quantity, still include it in the recipe's ingredients list (the reci
 accurate/reusable), but leave its category as normal — the household already has it, so it \
 doesn't need to be over-represented as a fresh grocery need; don't let already-stocked pantry \
 staples influence which recipes you pick either way.
+- near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
+unlike current_inventory generally (which shouldn't sway recipe choice), actively favor at \
+least one recipe this week that uses up something on this list, especially anything already \
+'expired'. This is a real goal, not a tiebreaker — reducing food waste is the point — but don't \
+force a bad fit: skip an item if nothing reasonable uses it, rather than contorting a recipe \
+around it.
 - For any new recipe, fill in instructions (ordered cooking steps) so it's actually cookable \
 later, not just a shopping list — this powers the Cooker view. Also fill in default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
@@ -1206,6 +1280,10 @@ dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; 
 are dairy; fresh vegetables/herbs are produce.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
 recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
+- near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
+unlike current_inventory generally, actively favor at least one item this week that uses up \
+something on this list, especially anything already 'expired'. Skip it if nothing reasonable \
+uses the item rather than forcing a bad fit.
 - Each item must be a standalone single component of its own category, not a bundled dish that \
 mixes categories — the whole point is the household mixes and matches these freely. A protein \
 item is just the protein preparation (e.g. "Garlic Lime Shrimp", "Chicken Fajita"), NOT "Garlic \
@@ -1263,6 +1341,10 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
         "saved_recipes": tools.list_recipes(include_temporarily_excluded=False),
         "recent_history": tools.get_recent_meal_history(weeks=3),
         "current_inventory": tools.get_inventory(),
+        # Phase 4, §4.2: items already expired or expiring soon — the LLM
+        # prompts are instructed to weight candidate recipes toward using
+        # these up, especially the most urgent ones.
+        "near_expiring_inventory": tools.get_expiring_soon(),
     }
 
     plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
@@ -1571,6 +1653,10 @@ TOOL_FUNCTIONS = {
     "get_grocery_list_by_store": tools.get_grocery_list_by_store,
     "get_learning_summary": tools.get_learning_summary,
     "set_planning_mode": tools.set_planning_mode,
+    "get_or_create_member_share_link": tools.get_or_create_member_share_link,
+    "revoke_member_share_link": tools.revoke_member_share_link,
+    "regenerate_member_share_link": tools.regenerate_member_share_link,
+    "get_member_notes": tools.get_member_notes,
     "get_household_memory": tools.get_household_memory,
     "edit_preference": tools.edit_preference,
     "delete_preference": tools.delete_preference,
@@ -1587,6 +1673,7 @@ TOOL_FUNCTIONS = {
     "update_inventory_items": tools.update_inventory_items,
     "get_inventory": tools.get_inventory,
     "get_inventory_by_section": tools.get_inventory_by_section,
+    "get_expiring_soon": tools.get_expiring_soon,
     "remove_inventory_item": tools.remove_inventory_item,
 }
 

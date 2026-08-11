@@ -107,6 +107,14 @@ class FillRecipeRequest(BaseModel):
     recipe_name: str
 
 
+class MemberRestrictionRequest(BaseModel):
+    restriction: str
+
+
+class MemberNoteRequest(BaseModel):
+    note: str
+
+
 class InventoryUpdateRequest(BaseModel):
     item: str
     action: str = "set"  # add | use | remove | set
@@ -159,7 +167,7 @@ def onboarding_meal_preferences(req: MealPreferencesOnboardingRequest):
     """Save meal-planning onboarding answers directly (dietary restrictions per member, protein/cuisine/cooking-time preferences). Marks meal-planning onboarding complete."""
     try:
         for name, restrictions in req.dietary_restrictions.items():
-            tools.set_member_dietary_restrictions(name, restrictions)
+            tools.set_member_dietary_restrictions(name, restrictions, replace=True)
         tools.set_household_meal_preferences(
             notes=req.notes,
             protein_preferences=req.protein_preferences,
@@ -363,6 +371,17 @@ def get_inventory_view():
     return result
 
 
+@app.get("/api/inventory/expiring")
+def get_inventory_expiring(days: int = 4):
+    """Items already expired or expiring within `days` days — powers the Inventory view's 'going bad soon' banner."""
+    try:
+        result = tools.get_expiring_soon(days=days)
+    except Exception as e:
+        logger.exception("Expiring-inventory lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": result}
+
+
 @app.post("/api/inventory/update")
 def update_inventory_view(req: InventoryUpdateRequest):
     """Add/update an inventory item directly from the Inventory view (not via chat)."""
@@ -411,6 +430,47 @@ def get_shared_plan(token: str):
     if plan is None:
         raise HTTPException(status_code=404, detail="This link isn't valid.")
     return plan
+
+
+@app.get("/api/member-share/{token}")
+def get_member_share(token: str):
+    """Public: resolve a member self-service token to that person's own name, restrictions, and notes. No auth beyond the token itself."""
+    try:
+        view = tools.resolve_member_share_link(token)
+    except Exception as e:
+        logger.exception("Member share lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if view is None:
+        raise HTTPException(status_code=404, detail="This link isn't valid.")
+    return view
+
+
+@app.post("/api/member-share/{token}/restriction")
+def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
+    """Public: add a dietary restriction as the member behind this token — merges with their existing list."""
+    try:
+        tools.eater_add_dietary_restriction(token, [req.restriction])
+        view = tools.resolve_member_share_link(token)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Member share restriction add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
+@app.post("/api/member-share/{token}/note")
+def add_member_share_note(token: str, req: MemberNoteRequest):
+    """Public: leave a freeform preference/feedback note as the member behind this token."""
+    try:
+        tools.eater_add_note(token, req.note)
+        view = tools.resolve_member_share_link(token)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Member share note add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
 
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -462,3 +522,10 @@ def share_page(token: str):
     """Public read-only page — no auth check here (share.html itself calls /api/share/{token}
     and shows a friendly not-found state if the token is invalid); this route just serves the shell."""
     return FileResponse(os.path.join(static_dir, "share.html"))
+
+
+@app.get("/member-share/{token}")
+def member_share_page(token: str):
+    """Public member self-service page — no auth check here (member-share.html calls
+    /api/member-share/{token} and shows a not-found state if the token is invalid/revoked)."""
+    return FileResponse(os.path.join(static_dir, "member-share.html"))

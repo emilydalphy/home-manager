@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>My preferences</title>
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.subtitle { color: #666; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 4px; }
+  .card .hint { color: #888; font-size: 0.8rem; margin: 0 0 10px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chip {
+    background: #eaf1fa;
+    color: #2b6cb0;
+    border: 1px solid #cfe0f2;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+  }
+  .empty { color: #999; font-size: 0.85rem; font-style: italic; }
+  .error { color: #b00020; font-size: 0.95rem; padding: 1rem 0; }
+  .add-row { display: flex; gap: 8px; }
+  input[type=text], textarea {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    background: white;
+    color: #222;
+    font-family: inherit;
+  }
+  textarea { width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box; margin-bottom: 8px; }
+  button.action {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #2b6cb0;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.action:disabled { opacity: 0.6; cursor: default; }
+  .note-item { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+  .note-item:last-child { border-bottom: none; }
+  .note-date { color: #999; font-size: 0.75rem; }
+  .footer-note { color: #999; font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1 id="page-title">My preferences</h1>
+<p class="subtitle" id="subtitle">Loading...</p>
+<div id="content"></div>
+
+<script>
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function getToken() {
+  return window.location.pathname.split('/').filter(Boolean).pop();
+}
+
+function render(view) {
+  const content = document.getElementById('content');
+  const restrictions = view.dietary_restrictions || [];
+  const notes = view.notes || [];
+
+  content.innerHTML = `
+    <div class="card">
+      <h2>Dietary restrictions &amp; allergies</h2>
+      <p class="hint">These get factored into meal plans for this household.</p>
+      <div class="chip-row" id="restriction-chips">
+        ${restrictions.length ? restrictions.map(r => `<span class="chip">${escapeHtml(r)}</span>`).join('') : '<span class="empty">None on file</span>'}
+      </div>
+      <div class="add-row">
+        <input type="text" id="restriction-input" placeholder="e.g. shellfish allergy" />
+        <button class="action" id="restriction-btn">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Leave a note</h2>
+      <p class="hint">Anything you'd like factored in — a preference, feedback on a recent meal, anything.</p>
+      <textarea id="note-input" placeholder="e.g. I'd love more vegetarian nights"></textarea>
+      <button class="action" id="note-btn">Save note</button>
+      ${notes.length ? `<div style="margin-top:14px">${notes.map(n => `<div class="note-item">${escapeHtml(n.note)}<div class="note-date">${escapeHtml(n.created_at || '')}</div></div>`).join('')}</div>` : ''}
+    </div>
+    <p class="footer-note">This link is just for you — it only edits your own restrictions and notes, nothing else in the household.</p>
+  `;
+
+  document.getElementById('restriction-btn').addEventListener('click', async () => {
+    const input = document.getElementById('restriction-input');
+    const val = input.value.trim();
+    if (!val) return;
+    const btn = document.getElementById('restriction-btn');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/member-share/' + encodeURIComponent(getToken()) + '/restriction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restriction: val }),
+      });
+      if (!res.ok) throw new Error('failed');
+      render(await res.json());
+    } catch (err) {
+      btn.disabled = false;
+      alert("Couldn't save that — try again.");
+    }
+  });
+
+  document.getElementById('note-btn').addEventListener('click', async () => {
+    const input = document.getElementById('note-input');
+    const val = input.value.trim();
+    if (!val) return;
+    const btn = document.getElementById('note-btn');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/member-share/' + encodeURIComponent(getToken()) + '/note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: val }),
+      });
+      if (!res.ok) throw new Error('failed');
+      render(await res.json());
+    } catch (err) {
+      btn.disabled = false;
+      alert("Couldn't save that — try again.");
+    }
+  });
+}
+
+async function load() {
+  const content = document.getElementById('content');
+  const subtitle = document.getElementById('subtitle');
+  const title = document.getElementById('page-title');
+
+  try {
+    const res = await fetch('/api/member-share/' + encodeURIComponent(getToken()));
+    if (res.status === 404) {
+      subtitle.textContent = '';
+      content.innerHTML = '<p class="error">This link isn\'t valid — it may have been revoked. Ask whoever shared it for a fresh one.</p>';
+      return;
+    }
+    if (!res.ok) throw new Error('Could not load');
+    const view = await res.json();
+    title.textContent = view.member_name + "'s preferences";
+    subtitle.textContent = 'Add your own dietary restrictions or leave a note — no account needed.';
+    render(view);
+  } catch (err) {
+    subtitle.textContent = '';
+    content.innerHTML = '<p class="error">Couldn\'t load this right now — try refreshing.</p>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

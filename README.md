@@ -208,6 +208,16 @@ Ask "what have you learned about us?" for an aggregate picture — how many reci
 tracked, how many are liked/disliked, how many deviations have been logged — distinct from
 the raw preference dump on the What We Know page.
 
+### Expiration & use-it-up
+
+Inventory items get an estimated expiration automatically based on category (produce, dairy,
+meat/seafood, pantry, frozen — a rough, conservative global default per type) whenever an
+exact date isn't given; mention or scan an actual date and that always takes precedence. The
+Inventory view surfaces a banner for anything already gone bad or coming up soon. When
+generating a weekly plan, the assistant actively looks for a chance to work in at least one
+recipe that uses up something near-expiring — a real goal, not just a tiebreaker, though it
+won't force a bad fit just to use up an odd ingredient.
+
 ### Inventory view
 
 A dedicated page (linked at the top of chat) for browsing what's on hand without going
