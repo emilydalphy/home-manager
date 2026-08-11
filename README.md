@@ -283,6 +283,10 @@ and Fly.io work similarly):
 5. Once deployed, Railway gives you a public URL
    (`something.up.railway.app`). Open that on your phone and install it as
    described above.
+6. Add one more env var: `PUBLIC_BASE_URL=https://something.up.railway.app`
+   (the exact URL from step 5, no trailing slash). Without this, any link the
+   assistant hands back in chat — like an Eater's self-service link — has no
+   way to know its own domain and can't construct a working URL.
 
 This still has no login/accounts — treat the URL as private (don't share it
 publicly) until the auth work described below is done.

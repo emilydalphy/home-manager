@@ -10,12 +10,26 @@ instead of the constant.
 from __future__ import annotations  # lets `str | None` etc. work on Python 3.9
 
 import json
+import os
 import re
 import secrets
 from datetime import date, timedelta
 from .db import get_conn
 
 HOUSEHOLD_ID = 1
+
+# The app's own public URL, so a tool can hand back a real, absolute link
+# (e.g. for the Eater self-service link) instead of the chat agent having
+# to guess/type out a domain itself — which it has no way to know and will
+# otherwise hallucinate. Set via Railway (or wherever this is hosted) env
+# vars, e.g. PUBLIC_BASE_URL=https://home-manager-production-4949.up.railway.app
+# (no trailing slash). Falls back to a relative path if unset (e.g. local
+# dev), which still works fine since the app only has one host there.
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+
+
+def _absolute_url(path: str) -> str:
+    return f"{PUBLIC_BASE_URL}{path}" if PUBLIC_BASE_URL else path
 
 _FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quarterly": 91, "once": None}
 
@@ -1703,7 +1717,7 @@ def get_or_create_share_link() -> dict:
         )
         conn.commit()
     conn.close()
-    return {"token": token}
+    return {"token": token, "link": _absolute_url(f"/share/{token}")}
 
 
 def get_shared_weekly_plan(token: str) -> dict | None:
@@ -1745,7 +1759,8 @@ def get_or_create_member_share_link(member_name: str) -> dict:
     add_member or set_member_dietary_restrictions first). If a non-revoked
     link already exists for this person, returns the same one rather than
     creating a duplicate — use regenerate_member_share_link to force a new
-    token instead.
+    token instead. Returns a `link` field with the actual, absolute URL —
+    share that value verbatim, never construct or guess a URL yourself.
     """
     conn = get_conn()
     member = conn.execute(
@@ -1770,7 +1785,7 @@ def get_or_create_member_share_link(member_name: str) -> dict:
         )
         conn.commit()
     conn.close()
-    return {"member_name": member["name"], "token": token}
+    return {"member_name": member["name"], "token": token, "link": _absolute_url(f"/member-share/{token}")}
 
 
 def revoke_member_share_link(member_name: str) -> dict:

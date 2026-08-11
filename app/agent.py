@@ -175,8 +175,10 @@ deviations logged) rather than get_household_memory, which is raw preference val
 - If the user wants someone else in the household to add their own dietary restrictions or \
 feedback directly ("can my partner just tell you themselves," "give Alex a way to add their own \
 stuff") rather than relaying it secondhand, use get_or_create_member_share_link for that \
-person and share the resulting link — it's a personal, standing link scoped to just that \
-person's own restrictions/notes, not the whole household. Use revoke_member_share_link or \
+person and share the tool result's `link` field exactly as returned — it's a real, absolute \
+URL already; never type out, guess, or reconstruct a URL yourself, you have no way of knowing \
+this app's actual domain and will get it wrong. It's a personal, standing link scoped to just \
+that person's own restrictions/notes, not the whole household. Use revoke_member_share_link or \
 regenerate_member_share_link if they want it shut off or replaced (e.g. it was shared \
 somewhere it shouldn't have been). Use get_member_notes to check what a member has said via \
 their link if asked, or when it's relevant to a suggestion.
@@ -814,7 +816,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_or_create_member_share_link",
-        "description": "Get (or create) a standing personal link for one household member, so they can add their own dietary restrictions and leave feedback notes directly without going through the Planner. Returns the same link on repeat calls unless it's been revoked/regenerated.",
+        "description": "Get (or create) a standing personal link for one household member, so they can add their own dietary restrictions and leave feedback notes directly without going through the Planner. Returns the same link on repeat calls unless it's been revoked/regenerated. The result's `link` field is the real, absolute URL — share it exactly as returned, never type out or guess a URL yourself.",
         "input_schema": {
             "type": "object",
             "properties": {"member_name": {"type": "string"}},
