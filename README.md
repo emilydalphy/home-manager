@@ -207,6 +207,10 @@ always returns the full breakdown too: if a recipe predates having instructions 
 was added quickly without them), the assistant works out a reasonable step-by-step from its
 own knowledge on the spot and saves it, rather than telling you nothing's there.
 
+For a component-based household, meals are listed grouped by category in the same order the
+plan itself was organized (protein, vegetable, carb, treat, dip) rather than incidental
+insertion order — so the Cooker view reads the same way the plan was actually put together.
+
 A banner at the top surfaces anything in the **needs your attention** list — an
 inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been
 rated — with a quick mark-handled/not-relevant action right there, no need to go through

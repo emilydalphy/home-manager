@@ -1713,6 +1713,16 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "has_full_recipe": recipe is not None,
         })
 
+    if plan["planning_mode"] == "component_based":
+        # get_weekly_plan's meals are ordered by date/slot, which is
+        # meaningless for a component-based plan (every entry shares the
+        # same placeholder date) — order by the canonical component
+        # category order instead (protein, vegetable, carb, etc.) so the
+        # Cooker view reads grouped the same way the plan itself was
+        # organized, rather than incidental insertion order.
+        cat_rank = {c: i for i, c in enumerate(_COMPONENT_CATEGORY_ORDER)}
+        meals.sort(key=lambda m: cat_rank.get(m["component_category"] or "", len(_COMPONENT_CATEGORY_ORDER)))
+
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
