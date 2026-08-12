@@ -127,6 +127,10 @@ async function load() {
 }
 
 load();
+// This is a read-only link others may leave open in a background tab, so it
+// polls quietly rather than relying on a manual refresh — keeps it in sync
+// as meals get added/swapped in chat without anyone needing to reload.
+setInterval(load, 60000);
 </script>
 </body>
 </html>

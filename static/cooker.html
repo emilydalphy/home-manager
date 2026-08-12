@@ -137,11 +137,27 @@
   }
   .attn-btn:hover { background: #dbe8f5; }
   .attn-btn.dismiss { color: #7a5b00; }
+  .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .refresh-btn {
+    background: white;
+    border: 1px solid #d8d8d4;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    color: #2b6cb0;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .refresh-btn:hover { background: #f0f4f8; }
+  .refresh-btn:disabled { opacity: 0.6; cursor: default; }
 </style>
 </head>
 <body>
 
-<h1>Cooker View</h1>
+<div class="header-row">
+  <h1>Cooker View</h1>
+  <button class="refresh-btn" id="refresh-btn" title="Reload latest plan/inventory data">&#8635; Refresh</button>
+</div>
 <p class="subtitle" id="subtitle">This week's plan, ready to cook. <a href="/">&larr; Back to chat</a></p>
 
 <div id="attention-banner"></div>
@@ -410,6 +426,19 @@ async function load() {
     content.innerHTML = '<p class="error">Couldn\'t load the Cooker view right now — try refreshing.</p>';
   }
 }
+
+const refreshBtn = document.getElementById('refresh-btn');
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.disabled = true;
+  const original = refreshBtn.innerHTML;
+  refreshBtn.innerHTML = '&#8635; Refreshing…';
+  try {
+    await load();
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = original;
+  }
+});
 
 load();
 </script>
