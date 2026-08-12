@@ -1558,15 +1558,21 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     it's checked off as cooked — called automatically from check_off_meal,
     not meant to be called directly for a meal that isn't actually being
     marked done. Confident ingredient-to-inventory name matches deplete
-    automatically with no interruption. Anything less certain — an
-    ambiguous name match ("garlic" vs a tracked "garlic bulb"), or a
-    confident name match whose quantity couldn't actually be subtracted
-    (e.g. recipe says "1 cup rice" but inventory just has "a bag," so
-    nothing was really depleted even though the match itself was fine) —
-    is never silently dropped or guessed at; it's queued into
-    get_attention_items for later review instead, so inventory doesn't
-    quietly drift out of sync with reality. Freeform meals (no saved
-    recipe) have no ingredient list, so there's nothing to deplete or flag.
+    automatically with no interruption — and if the recipe itself states a
+    quantity for the ingredient (e.g. "1 lb deli meat"), that's trusted as
+    the amount used without asking, even when the *existing* tracked
+    quantity is too imprecise or in a mismatched unit to compute an exact
+    new remaining total (the recipe already told us what was used; there's
+    just nothing more precise to write back for what's left, so the
+    tracked row is simply left as-is rather than interrupting to ask about
+    something already answered). The only things actually queued into
+    get_attention_items for review are genuine unknowns: an ambiguous name
+    match ("garlic" vs a tracked "garlic bulb"), or a confident match where
+    the recipe itself doesn't say how much of the ingredient was used —
+    guessing "all of it" there risks wrongly zeroing out inventory that's
+    still mostly there, so it's worth a quick check instead. Freeform meals
+    (no saved recipe) have no ingredient list, so there's nothing to
+    deplete or flag.
     """
     conn = get_conn()
     entry = conn.execute(
@@ -1608,8 +1614,13 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
             })
             queued.append({"ingredient": ing_name, "candidate": match["item"]})
             continue
-        result = _use_inventory_row_by_id(match["id"], ing.get("qty", ""))
-        if not result.get("units_reconciled", True) and not result.get("removed"):
+        qty_used = (ing.get("qty") or "").strip()
+        if not qty_used:
+            # The recipe doesn't say how much of this ingredient was used
+            # (freeform, e.g. "salt to taste") — genuinely unclear, and
+            # assuming "used all of it" here could wrongly wipe out
+            # inventory that's still mostly there, so this is worth a
+            # quick check rather than a guess.
             tracked_qty = match["quantity"] or "no amount tracked"
             summary = (
                 f"How much {ing_name} did you use for {entry['meal_name']}? "
@@ -1621,8 +1632,15 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
                 "needs_amount_used": True,
             })
             queued.append({"ingredient": ing_name, "candidate": match["item"]})
-        else:
-            depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
+            continue
+        # The recipe told us exactly how much was used, so this always
+        # counts as depleted (not queued) even if the *existing* tracked
+        # quantity was too imprecise or in a mismatched unit for
+        # _use_inventory_row_by_id to compute an exact new remaining total
+        # — see units_reconciled on the result for whether the tracked row
+        # was actually updated or just left as-is.
+        result = _use_inventory_row_by_id(match["id"], qty_used)
+        depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
     return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued}
 
 

@@ -183,14 +183,20 @@ serves ("cook a big batch of rice — enough for Tuesday's stir fry and Thursday
 rice") instead of a near-duplicate task per meal.
 
 Checking a meal off as cooked also tries to deplete its ingredients from tracked inventory.
-A confident match (the ingredient name lines up with something tracked) depletes silently —
-no interruption. Anything less certain — an ambiguous match ("garlic" against a tracked
-"garlic bulb" — probably the same thing, but not safe to assume) or a quantity that
-genuinely can't be reconciled (the recipe says "1 cup," inventory just has "a bag") — is
-never silently guessed at or dropped; it lands in the **needs your attention** list instead
-(a banner on the Cooker view, and the assistant will work it into chat naturally rather
-than an interrogation). This same list also covers the existing "how'd that turn out?"
-nudge for a recently-cooked, unrated meal — one place for anything worth a second look.
+A confident name match (the ingredient lines up with something tracked) depletes silently —
+no interruption — and if the recipe itself states a quantity ("1 lb deli meat"), that's
+trusted as the amount used without asking, even when what's *already* tracked is too
+imprecise or in a different unit to compute an exact new remaining total (the recipe already
+answered "how much," so there's nothing left to ask — the tracked row is just left as-is
+rather than interrupting over something already known). The only things that actually land in
+the **needs your attention** list (a banner on the Cooker view, worked into chat naturally
+rather than an interrogation) are genuine unknowns: an ambiguous name match ("garlic" against
+a tracked "garlic bulb" — probably the same thing, but not safe to assume), or a confident
+match where the recipe itself doesn't say how much was used (e.g. "salt to taste") — guessing
+"used all of it" there risks wrongly zeroing out inventory that's still mostly there, so it's
+worth a quick check instead, with a text field right in the banner to log the amount directly.
+This same list also covers the existing "how'd that turn out?" nudge for a recently-cooked,
+unrated meal — one place for anything worth a second look.
 
 If you changed something while cooking — swapped an ingredient, adjusted a step — mention it
 ("used thighs instead of breast this time") and it's logged as a one-off deviation, feeding
