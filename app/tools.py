@@ -1395,6 +1395,61 @@ def resolve_attention_item(item_id: int, status: str = "resolved") -> dict:
     return {"id": item_id, "status": status}
 
 
+def record_attention_item_usage(item_id: int, amount_used: str = "") -> dict:
+    """
+    Resolve a "needs_amount_used" inventory_depletion attention item by
+    applying the amount the person says they actually used, rather than
+    asking them to instead go figure out and report what's left (less
+    intuitive in the moment, right after cooking). Reuses the same
+    lenient subtract logic as the general chat "use" flow (_try_subtract_
+    quantity) — appropriate here because, unlike the original automated
+    depletion attempt, this IS an explicit person-confirmed amount, so an
+    unparseable/freeform tracked quantity can safely be treated as "used
+    it all" rather than queued again. Leaving amount_used blank means
+    "used all of it," same convention as update_inventory's "use" action.
+    Marks the attention item resolved either way (even if the candidate
+    row no longer exists) so it doesn't stay stuck in the queue.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, detail_json FROM attention_items WHERE id = ? AND household_id = ? AND status = 'pending'",
+        (item_id, HOUSEHOLD_ID),
+    ).fetchone()
+    if not row:
+        conn.close()
+        return {"item_id": item_id, "applied": False, "reason": "not found or already resolved"}
+    detail = json.loads(row["detail_json"])
+    candidate_item_id = detail.get("candidate_item_id")
+    inv_row = None
+    if candidate_item_id is not None:
+        inv_row = conn.execute(
+            "SELECT id, item, quantity FROM inventory_items WHERE id = ? AND household_id = ?",
+            (candidate_item_id, HOUSEHOLD_ID),
+        ).fetchone()
+    conn.close()
+
+    if inv_row is None:
+        resolve_attention_item(item_id, "resolved")
+        return {"item_id": item_id, "applied": False, "reason": "tracked item no longer exists"}
+
+    remaining, reconciled = _try_subtract_quantity(inv_row["quantity"] or "", amount_used)
+    conn = get_conn()
+    if remaining is None:
+        conn.execute("DELETE FROM inventory_items WHERE id = ?", (inv_row["id"],))
+        conn.commit()
+        conn.close()
+        resolve_attention_item(item_id, "resolved")
+        return {"item_id": item_id, "applied": True, "item": inv_row["item"], "removed": True, "units_reconciled": True}
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
+        (remaining, inv_row["id"]),
+    )
+    conn.commit()
+    conn.close()
+    resolve_attention_item(item_id, "resolved")
+    return {"item_id": item_id, "applied": True, "item": inv_row["item"], "quantity": remaining, "units_reconciled": reconciled}
+
+
 def get_attention_items() -> list[dict]:
     """
     The unified "needs your attention" list — combines the feedback nudge
@@ -1555,13 +1610,15 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
             continue
         result = _use_inventory_row_by_id(match["id"], ing.get("qty", ""))
         if not result.get("units_reconciled", True) and not result.get("removed"):
+            tracked_qty = match["quantity"] or "no amount tracked"
             summary = (
-                f"Used {ing_name} for {entry['meal_name']}, but couldn't tell how much to subtract "
-                f"from \"{match['item']}\" ({match['quantity']}) — mind checking the amount left?"
+                f"How much {ing_name} did you use for {entry['meal_name']}? "
+                f"(tracking \"{match['item']}\" — {tracked_qty})"
             )
             add_attention_item("inventory_depletion", summary, {
                 "entry_id": entry_id, "meal": entry["meal_name"], "ingredient": ing_name,
                 "candidate_item_id": match["id"], "candidate_item": match["item"],
+                "needs_amount_used": True,
             })
             queued.append({"ingredient": ing_name, "candidate": match["item"]})
         else:

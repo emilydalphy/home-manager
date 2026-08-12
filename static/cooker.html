@@ -137,6 +137,34 @@
   }
   .attn-btn:hover { background: #dbe8f5; }
   .attn-btn.dismiss { color: #7a5b00; }
+  .attention-item.usage-item { flex-direction: column; align-items: stretch; }
+  .attention-item .usage-row { display: flex; gap: 6px; margin-top: 6px; }
+  .attention-item .usage-row input {
+    flex: 1;
+    border: 1px solid #cfe0f2;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+  }
+  .attention-item .usage-row button.log-btn {
+    background: #2b6cb0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .attention-item .usage-row button.log-btn:disabled { opacity: 0.6; cursor: default; }
+  .attention-item .usage-row button.skip-btn {
+    background: none;
+    border: none;
+    color: #7a5b00;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
   .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .refresh-btn {
     background: white;
@@ -363,22 +391,79 @@ function renderAttentionBanner(items) {
   banner.innerHTML = `
     <div class="attention-banner">
       <h2>Needs your attention</h2>
-      ${items.map(it => `
-        <div class="attention-item" data-item-id="${it.id == null ? '' : it.id}">
-          <span class="summary">${escapeHtml(it.summary)}</span>
-          ${it.id != null ? `
-            <span class="attn-actions">
-              <button class="attn-btn resolve" title="Mark handled">&check;</button>
-              <button class="attn-btn dismiss" title="Not relevant">&times;</button>
-            </span>` : ''}
-        </div>
-      `).join('')}
+      ${items.map(it => {
+        const needsAmount = it.id != null && it.detail && it.detail.needs_amount_used;
+        if (needsAmount) {
+          return `
+            <div class="attention-item usage-item" data-item-id="${it.id}" data-mode="usage">
+              <span class="summary">${escapeHtml(it.summary)}</span>
+              <span class="usage-row">
+                <input type="text" class="usage-input" placeholder="e.g. 1 cup, or leave blank for all of it" />
+                <button class="log-btn">Log it</button>
+                <button class="skip-btn" title="Skip for now">Skip</button>
+              </span>
+            </div>`;
+        }
+        return `
+          <div class="attention-item" data-item-id="${it.id == null ? '' : it.id}">
+            <span class="summary">${escapeHtml(it.summary)}</span>
+            ${it.id != null ? `
+              <span class="attn-actions">
+                <button class="attn-btn resolve" title="Mark handled">&check;</button>
+                <button class="attn-btn dismiss" title="Not relevant">&times;</button>
+              </span>` : ''}
+          </div>`;
+      }).join('')}
     </div>
   `;
 
   banner.querySelectorAll('.attention-item').forEach(row => {
     const itemId = row.getAttribute('data-item-id');
     if (!itemId) return; // the feedback-nudge entry (id=None) has no action buttons
+
+    if (row.getAttribute('data-mode') === 'usage') {
+      const input = row.querySelector('.usage-input');
+      const logBtn = row.querySelector('.log-btn');
+      const skipBtn = row.querySelector('.skip-btn');
+      async function logUsage() {
+        logBtn.disabled = true;
+        skipBtn.disabled = true;
+        try {
+          const res = await fetch('/api/attention/' + itemId + '/use', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount_used: input.value.trim() }),
+          });
+          if (!res.ok) throw new Error('failed');
+          renderAttentionBanner((await res.json()).items);
+        } catch (err) {
+          logBtn.disabled = false;
+          skipBtn.disabled = false;
+          alert("Couldn't log that — try again.");
+        }
+      }
+      logBtn.addEventListener('click', logUsage);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') logUsage(); });
+      skipBtn.addEventListener('click', async () => {
+        logBtn.disabled = true;
+        skipBtn.disabled = true;
+        try {
+          const res = await fetch('/api/attention/' + itemId + '/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'dismissed' }),
+          });
+          if (!res.ok) throw new Error('failed');
+          renderAttentionBanner((await res.json()).items);
+        } catch (err) {
+          logBtn.disabled = false;
+          skipBtn.disabled = false;
+          alert("Couldn't update that — try again.");
+        }
+      });
+      return;
+    }
+
     const resolveBtn = row.querySelector('.attn-btn.resolve');
     const dismissBtn = row.querySelector('.attn-btn.dismiss');
     async function resolve(status) {

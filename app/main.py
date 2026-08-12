@@ -112,6 +112,10 @@ class ResolveAttentionRequest(BaseModel):
     status: str = "resolved"  # resolved | dismissed
 
 
+class AttentionUsageRequest(BaseModel):
+    amount_used: str = ""
+
+
 class MemberRestrictionRequest(BaseModel):
     restriction: str
 
@@ -399,6 +403,18 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
         logger.exception("Attention-item resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"items": items}
+
+
+@app.post("/api/attention/{item_id}/use")
+def record_attention_usage(item_id: int, req: AttentionUsageRequest):
+    """Log how much was actually used for a 'needs_amount_used' inventory-depletion attention item, applying it directly to the tracked inventory row and resolving the item — the inline alternative to answering by rewriting the amount left."""
+    try:
+        result = tools.record_attention_item_usage(item_id, req.amount_used)
+        items = tools.get_attention_items()
+    except Exception as e:
+        logger.exception("Attention-item usage log failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"result": result, "items": items}
 
 
 @app.get("/api/inventory")

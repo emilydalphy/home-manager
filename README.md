@@ -214,7 +214,14 @@ insertion order — so the Cooker view reads the same way the plan was actually 
 A banner at the top surfaces anything in the **needs your attention** list — an
 inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been
 rated — with a quick mark-handled/not-relevant action right there, no need to go through
-chat for it.
+chat for it. When the only thing uncertain is the amount (recipe says "1 cup," inventory just
+has "a bag"), it asks how much you actually used rather than asking you to go check what's
+left — more intuitive right after cooking — with a text field to log it inline; the amount
+is applied straight to the tracked quantity and the item drops off the list.
+
+The page loads once and doesn't auto-refresh, so a tab left open before a meal gets added or
+swapped in chat elsewhere can go stale — use the Refresh button next to the title to pull the
+latest plan and attention items without a full page reload.
 
 ### Household coordination & trust
 
