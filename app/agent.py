@@ -248,6 +248,15 @@ with category set per item. Before adding a \
 staple to the grocery list from a direct request (not from a generated weekly plan), check \
 get_inventory first — if it looks like they already have enough, ask rather than silently \
 adding it ("you've still got flour on hand — still want more, or skip it?").
+- Also set location (fridge/freezer/pantry) whenever it's mentioned or reasonably implied — \
+it's independent from category and often diverges from it (an opened sauce is category='pantry' \
+by food type but location='fridge' once opened; "it's in the fridge now that it's open" is a \
+location update, not a category one). This matters especially when the same item might already \
+be tracked somewhere else — e.g. an opened BBQ sauce in the fridge and a separate unopened one \
+in the pantry are two real, distinct things, so pass location so they're tracked as separate \
+entries rather than merging into one. If the user asks specifically what's in the fridge or \
+what's in the pantry, use get_inventory_by_location rather than get_inventory_by_section — it's \
+grouped by where things actually are, not by food-aisle category.
 - Items get an estimated expiration automatically (by category) if the user doesn't mention a \
 specific date — always pass expiration_date when they do state or imply one ("that expires next \
 Tuesday", a receipt/photo date), since an explicit date always beats the estimate. Check \
@@ -257,6 +266,10 @@ already expired. For a one-off "what should we make" suggestion (not a full gene
 also check get_fresh_perishable_inventory and lean toward using meats/seafood/produce/dairy \
 already on hand over suggesting something that needs a fresh purchase — a soft general \
 preference, not a requirement.
+- Check get_cross_location_duplicates proactively too, alongside get_expiring_soon — same item \
+tracked in more than one place (an opened one in the fridge, an unopened one still in the \
+pantry) is worth flagging on its own (use up the opened one first) and worth checking before \
+adding something to the grocery list (they may already have one, just not where they'd expect).
 - The same category rules apply when saving a recipe's ingredients via add_recipe — set \
 category per ingredient there too, since that's what gets used automatically when the recipe \
 is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
@@ -995,6 +1008,7 @@ TOOL_DEFINITIONS = [
                 "quantity": {"type": "string", "description": "Freeform, e.g. '2 lbs'. Leave blank if not mentioned (for use/remove, blank means all of it)."},
                 "expiration_date": {"type": "string", "description": "ISO date, only if the person actually mentioned one. Leave unset otherwise."},
                 "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"], "description": "Grocery-style store section, so the Inventory view stays organized. Defaults to 'other' if omitted."},
+                "location": {"type": "string", "enum": ["fridge", "freezer", "pantry"], "description": "Where it's physically stored, independent from category (e.g. an opened sauce is category='pantry' by food type but location='fridge' once opened). Set explicitly when mentioned/implied, especially if the same item might also exist elsewhere (an unopened one still in the pantry) so they're tracked as distinct entries. Leave unset to fall back to a category-based guess for a new item, or leave an existing item's location unchanged."},
             },
             "required": ["item", "action"],
         },
@@ -1007,7 +1021,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "items": {
                     "type": "array",
-                    "description": "Each entry: a plain string (uses the shared action), or an object with item/action/quantity/expiration_date/category to mix actions within one call. Fill in category per item (produce/dairy/meat-seafood/pantry/frozen/other) so everything lands in the right Inventory view section.",
+                    "description": "Each entry: a plain string (uses the shared action), or an object with item/action/quantity/expiration_date/category/location to mix actions within one call. Fill in category per item (produce/dairy/meat-seafood/pantry/frozen/other) so everything lands in the right Inventory view section, and location (fridge/freezer/pantry) whenever it's known or implied — see update_inventory.",
                     "items": {"type": "string"},
                 },
                 "action": {
@@ -1027,6 +1041,16 @@ TOOL_DEFINITIONS = [
     {
         "name": "get_inventory_by_section",
         "description": "Get pantry/fridge inventory grouped into store sections (produce, dairy, meat/seafood, pantry, frozen, other). Use this instead of get_inventory whenever showing the full inventory to the user, so it reads organized rather than a flat list.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_inventory_by_location",
+        "description": "Get pantry/fridge inventory grouped by storage location (fridge, freezer, pantry) instead of food category. Use this specifically when the user asks what's in the fridge, what's in the pantry, etc. — location can diverge from category (an opened sauce is category='pantry' by food type but location='fridge' once opened), so this is the more accurate answer to that particular question than get_inventory_by_section.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_cross_location_duplicates",
+        "description": "Find items tracked in more than one storage location at once (e.g. an opened BBQ sauce in the fridge and an unopened one still in the pantry). Check this proactively alongside get_expiring_soon when it's relevant — inventory questions, before adding something to the grocery list, when generating a plan — and flag it (e.g. 'you've got mustard in both the fridge and pantry — might want to use up the opened one before buying more').",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
@@ -1632,13 +1656,13 @@ def fill_in_recipe(recipe_name: str) -> dict:
 
 
 # ---------- Photo-based inventory capture (Phase 4, §4.3) ----------
-# Two entry points (receipt, fridge/pantry shelf) sharing one output shape
-# and one forced-tool-call pattern, using Claude's native multimodal
-# support directly rather than a separate OCR/vision service. Neither is
-# registered as a chat tool — like generate_recipe_detail_llm, these are
-# direct calls from a dedicated endpoint/button, not something the chat
-# agent invokes itself. Per the PRD, NEITHER result is ever saved
-# directly — both return a draft list for the Inventory view to show as an
+# Three entry points (receipt, fridge shelf, pantry shelf) sharing one
+# output shape and one forced-tool-call pattern, using Claude's native
+# multimodal support directly rather than a separate OCR/vision service.
+# None of these are registered as chat tools — like generate_recipe_detail_llm,
+# they're direct calls from a dedicated endpoint/button, not something the
+# chat agent invokes itself. Per the PRD, results are never saved directly —
+# all three return a draft list for the Inventory view to show as an
 # editable review step before anything is written to inventory_items, since
 # especially fridge/pantry recognition is expected to be error-prone.
 
@@ -1711,15 +1735,7 @@ Call submit_scanned_items with the result."""
     return _scan_image_for_items(image_b64, media_type, instructions)
 
 
-def scan_fridge_photo(image_b64: str, media_type: str) -> list[dict]:
-    """
-    Identify food items visible in a fridge/pantry photo for an initial
-    stock-take or re-sync. This is the harder recognition problem of the
-    two (mixed/stacked/partially obscured items) — per the PRD this always
-    ships with a confirm/edit step, never trusted silently, so this always
-    returns a draft list rather than saving anything.
-    """
-    instructions = """This is a photo of the inside of a fridge, freezer, or pantry shelf. Identify \
+_FRIDGE_PANTRY_SCAN_INSTRUCTIONS_TEMPLATE = """This is a photo of the inside of a {place}. Identify \
 each distinct food item you can make out, with your best-guess plain name and the correct grocery \
 category (use 'frozen' for anything visibly in a freezer compartment, not by food type alone).
 
@@ -1738,7 +1754,49 @@ can't actually make out just to fill out the list. It's fine to return fewer, mo
 than to over-guess.
 
 Call submit_scanned_items with the result."""
-    return _scan_image_for_items(image_b64, media_type, instructions)
+
+
+def _tag_scan_location(items: list[dict], default_location: str) -> list[dict]:
+    """
+    Attach a storage location to each scanned item deterministically from
+    which button/photo the scan came from, rather than asking the model to
+    also infer location (unreliable and unnecessary — we already know
+    whether this was the fridge or pantry button). The one exception:
+    anything visibly in a freezer compartment gets 'freezer' regardless,
+    since category='frozen' already signals that from the image itself.
+    """
+    for it in items:
+        it["location"] = "freezer" if it.get("category") == "frozen" else default_location
+    return items
+
+
+def scan_fridge_photo(image_b64: str, media_type: str) -> list[dict]:
+    """
+    Identify food items visible in a fridge (or fridge freezer compartment)
+    photo for an initial stock-take or re-sync. This is the harder
+    recognition problem of the two capture methods (mixed/stacked/partially
+    obscured items) — per the PRD this always ships with a confirm/edit
+    step, never trusted silently, so this always returns a draft list
+    rather than saving anything. Every returned item is tagged
+    location='fridge' (or 'freezer' for anything visibly in a freezer
+    compartment) so it lands in the right place in the Inventory view's
+    location grouping without the user having to set it manually.
+    """
+    instructions = _FRIDGE_PANTRY_SCAN_INSTRUCTIONS_TEMPLATE.format(place="fridge, including its freezer compartment if visible")
+    items = _scan_image_for_items(image_b64, media_type, instructions)
+    return _tag_scan_location(items, "fridge")
+
+
+def scan_pantry_photo(image_b64: str, media_type: str) -> list[dict]:
+    """
+    Identify food items visible in a pantry/cupboard shelf photo. Same
+    review-before-save flow as scan_fridge_photo. Every returned item is
+    tagged location='pantry' (or 'freezer' for the unusual case of a
+    visible chest freezer/freezer drawer in the photo).
+    """
+    instructions = _FRIDGE_PANTRY_SCAN_INSTRUCTIONS_TEMPLATE.format(place="pantry or cupboard shelf")
+    items = _scan_image_for_items(image_b64, media_type, instructions)
+    return _tag_scan_location(items, "pantry")
 
 
 TOOL_FUNCTIONS = {
@@ -1812,6 +1870,8 @@ TOOL_FUNCTIONS = {
     "update_inventory_items": tools.update_inventory_items,
     "get_inventory": tools.get_inventory,
     "get_inventory_by_section": tools.get_inventory_by_section,
+    "get_inventory_by_location": tools.get_inventory_by_location,
+    "get_cross_location_duplicates": tools.get_cross_location_duplicates,
     "get_expiring_soon": tools.get_expiring_soon,
     "get_fresh_perishable_inventory": tools.get_fresh_perishable_inventory,
     "remove_inventory_item": tools.remove_inventory_item,

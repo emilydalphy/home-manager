@@ -2061,6 +2061,31 @@ def delete_preference(field: str, item: str | None = None) -> dict:
 _GROCERY_SECTION_ORDER = ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]
 _GROCERY_CATEGORY_ALIASES = {"meat": "meat/seafood", "seafood": "meat/seafood"}
 
+# Storage location — independent from category/food-type, since an item's
+# physical location can diverge from its grocery-aisle category (an opened
+# sauce is category='pantry' by food type but lives in the fridge once
+# opened). Falls back to a category-based guess when not stated explicitly.
+_LOCATION_ORDER = ["fridge", "freezer", "pantry"]
+_DEFAULT_LOCATION_BY_CATEGORY = {
+    "produce": "fridge",
+    "dairy": "fridge",
+    "meat/seafood": "fridge",
+    "frozen": "freezer",
+    "pantry": "pantry",
+    "other": "pantry",
+}
+
+
+def _resolve_location(explicit_location: str | None, category: str | None) -> str:
+    if explicit_location:
+        return explicit_location
+    return _DEFAULT_LOCATION_BY_CATEGORY.get(category or "other", "pantry")
+
+
+def _display_location(item: dict) -> str:
+    """An item's location, falling back to the category-based default for legacy rows saved before location was tracked."""
+    return item.get("location") or _DEFAULT_LOCATION_BY_CATEGORY.get(item.get("category"), "pantry")
+
 # Phase 4, §4.2: default shelf life (days) by broad category, used only as
 # a fallback when an item isn't found in _ITEM_SHELF_LIFE_DAYS below.
 # Deliberately a plain code constant, not a DB table/setting — the PRD
@@ -2512,12 +2537,25 @@ def _add_to_inventory(
     source: str = "chat",
     expiration_date: str | None = None,
     category: str | None = None,
+    location: str | None = None,
 ) -> dict:
     conn = get_conn()
-    existing = conn.execute(
-        "SELECT id, quantity, category, expiration_date FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-        (HOUSEHOLD_ID, item),
-    ).fetchone()
+    # If a location is given, only merge into a row already tracked at that
+    # SAME location — a "BBQ sauce" bought new for the pantry shouldn't
+    # silently merge into an already-opened one sitting in the fridge; that
+    # should become (and stay) a second, distinct row. Without a location
+    # hint, fall back to the old broad match-by-name-anywhere behavior.
+    if location:
+        existing = conn.execute(
+            "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
+            "WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
+            (HOUSEHOLD_ID, item, location),
+        ).fetchone()
+    else:
+        existing = conn.execute(
+            "SELECT id, quantity, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+            (HOUSEHOLD_ID, item),
+        ).fetchone()
     if existing:
         merged_qty, _ = _try_consolidate_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
@@ -2529,15 +2567,19 @@ def _add_to_inventory(
         if category:
             fields += ", category = ?"
             params.append(category)
+        if location and location != existing["location"]:
+            fields += ", location = ?"
+            params.append(location)
         params.append(existing["id"])
         conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
         conn.commit()
         item_id = existing["id"]
     else:
         item_category = category or "other"
+        item_location = _resolve_location(location, item_category)
         cur = conn.execute(
-            "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category) VALUES (?, ?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, item, quantity, source, expiration_date or _estimate_expiration_date(item_category, item), item_category),
+            "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (HOUSEHOLD_ID, item, quantity, source, expiration_date or _estimate_expiration_date(item_category, item), item_category, item_location),
         )
         conn.commit()
         item_id = cur.lastrowid
@@ -2551,6 +2593,7 @@ def update_inventory(
     quantity: str = "",
     expiration_date: str | None = None,
     category: str | None = None,
+    location: str | None = None,
 ) -> dict:
     """
     Update pantry/fridge inventory from a chat mention — this is the
@@ -2572,17 +2615,32 @@ def update_inventory(
     unset otherwise rather than guessing. category should be one of:
     produce, dairy, meat/seafood, pantry, frozen, other — same taxonomy as
     the grocery list — so the Inventory view stays organized; pick whichever
-    matches the item, defaults to 'other' if omitted.
+    matches the item, defaults to 'other' if omitted. location (fridge,
+    freezer, or pantry) is where it's physically stored, which can diverge
+    from category (an opened sauce is category='pantry' by food type but
+    location='fridge' once opened) — set it explicitly whenever the person
+    mentions or implies where something's actually kept ("it's in the
+    fridge now that it's open"), especially for the same item that might
+    also exist elsewhere (an unopened one still in the pantry) so they stay
+    as distinct entries rather than merging into one. Leave it unset to
+    fall back to a reasonable category-based guess for a brand-new item, or
+    to leave an existing item's location as-is.
     """
     if action == "add":
-        return _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date, category=category)
+        return _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date, category=category, location=location)
 
     if action == "set":
         conn = get_conn()
-        existing = conn.execute(
-            "SELECT id, category, expiration_date FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (HOUSEHOLD_ID, item),
-        ).fetchone()
+        if location:
+            existing = conn.execute(
+                "SELECT id, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
+                (HOUSEHOLD_ID, item, location),
+            ).fetchone()
+        else:
+            existing = conn.execute(
+                "SELECT id, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+                (HOUSEHOLD_ID, item),
+            ).fetchone()
         if existing:
             fields = "quantity = ?, updated_at = datetime('now')"
             params = [quantity]
@@ -2593,15 +2651,19 @@ def update_inventory(
             if category:
                 fields += ", category = ?"
                 params.append(category)
+            if location and location != existing["location"]:
+                fields += ", location = ?"
+                params.append(location)
             params.append(existing["id"])
             conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
             conn.commit()
             item_id = existing["id"]
         else:
             item_category = category or "other"
+            item_location = _resolve_location(location, item_category)
             cur = conn.execute(
-                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date) VALUES (?, ?, ?, 'chat', ?, ?)",
-                (HOUSEHOLD_ID, item, quantity, item_category, expiration_date or _estimate_expiration_date(item_category, item)),
+                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location) VALUES (?, ?, ?, 'chat', ?, ?, ?)",
+                (HOUSEHOLD_ID, item, quantity, item_category, expiration_date or _estimate_expiration_date(item_category, item), item_location),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -2610,10 +2672,21 @@ def update_inventory(
 
     if action in ("use", "remove"):
         conn = get_conn()
-        existing = conn.execute(
-            "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (HOUSEHOLD_ID, item),
-        ).fetchone()
+        if location:
+            existing = conn.execute(
+                "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
+                (HOUSEHOLD_ID, item, location),
+            ).fetchone()
+        else:
+            # No location given and this item might exist in more than one
+            # place at once (see get_cross_location_duplicates) — this picks
+            # whichever row the database returns first rather than asking,
+            # a known limitation; pass location when it's actually known to
+            # avoid the ambiguity.
+            existing = conn.execute(
+                "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+                (HOUSEHOLD_ID, item),
+            ).fetchone()
         if not existing:
             conn.close()
             return {"item": item, "found": False}
@@ -2643,10 +2716,11 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
     oil, canned tomatoes, flour..."). Each entry can be a plain string (uses
     the shared `action`) or, when you know more, a dict like {"item":
     "flour", "action": "add", "quantity": "2 cups", "expiration_date":
-    "2026-09-01", "category": "pantry"} to mix actions/quantities/categories
-    within one call. See update_inventory for what each action/category
-    means — fill in category per item when populating a batch so everything
-    lands in the right section of the Inventory view immediately.
+    "2026-09-01", "category": "pantry", "location": "pantry"} to mix
+    actions/quantities/categories/locations within one call. See
+    update_inventory for what each action/category/location means — fill in
+    category (and location, when known) per item when populating a batch so
+    everything lands in the right place immediately.
     """
     results = []
     for raw in items:
@@ -2656,15 +2730,17 @@ def update_inventory_items(items: list, action: str = "add") -> dict:
             qty = raw.get("quantity", "")
             exp = raw.get("expiration_date")
             cat = raw.get("category")
+            loc = raw.get("location")
         else:
             name = (raw or "").strip()
             act = action
             qty = ""
             exp = None
             cat = None
+            loc = None
         if not name:
             continue
-        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp, category=cat))
+        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp, category=cat, location=loc))
     return {"updated": results}
 
 
@@ -2677,11 +2753,14 @@ def get_inventory() -> list[dict]:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, item, quantity, source, expiration_date, category FROM inventory_items WHERE household_id = ? ORDER BY item",
+        "SELECT id, item, quantity, source, expiration_date, category, location FROM inventory_items WHERE household_id = ? ORDER BY item",
         (HOUSEHOLD_ID,),
     ).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    items = [dict(r) for r in rows]
+    for it in items:
+        it["location"] = _display_location(it)
+    return items
 
 
 def get_inventory_by_section() -> dict:
@@ -2699,6 +2778,52 @@ def get_inventory_by_section() -> dict:
         sections.setdefault("other", [])
         sections[cat if cat in sections else "other"].append(it)
     return {"sections": [{"section": s, "items": sections[s]} for s in _GROCERY_SECTION_ORDER if sections[s]]}
+
+
+def get_inventory_by_location() -> dict:
+    """
+    Get pantry/fridge inventory grouped by storage location (fridge,
+    freezer, pantry) instead of food category — use this when the user
+    specifically wants to know what's in the fridge or what's in the
+    pantry, since location can diverge from category (an opened sauce is
+    category='pantry' by food type but location='fridge' once opened).
+    Powers the Inventory view's location-grouping toggle.
+    """
+    items = get_inventory()
+    buckets: dict[str, list[dict]] = {loc: [] for loc in _LOCATION_ORDER}
+    for it in items:
+        loc = it["location"]
+        buckets.setdefault(loc, [])
+        buckets[loc if loc in buckets else "pantry"].append(it)
+    return {"locations": [{"location": loc, "items": buckets[loc]} for loc in _LOCATION_ORDER if buckets[loc]]}
+
+
+def get_cross_location_duplicates() -> list[dict]:
+    """
+    Find items tracked in more than one storage location at once — e.g. an
+    opened BBQ sauce in the fridge and an unopened one still in the pantry.
+    Surfaced so a near-empty opened item doesn't go unnoticed while an
+    unopened twin sits untouched elsewhere, and so a grocery re-buy doesn't
+    happen when one's already on hand, just not where expected. Check this
+    proactively the same way as get_expiring_soon when it's relevant to the
+    conversation (inventory questions, plan generation, grocery additions).
+    """
+    items = get_inventory()
+    by_name: dict[str, list[dict]] = {}
+    for it in items:
+        by_name.setdefault(it["item"].strip().lower(), []).append(it)
+    duplicates = []
+    for entries in by_name.values():
+        locations = {e["location"] for e in entries}
+        if len(entries) > 1 and len(locations) > 1:
+            duplicates.append({
+                "item": entries[0]["item"],
+                "entries": [
+                    {"id": e["id"], "quantity": e["quantity"], "location": e["location"], "expiration_date": e["expiration_date"]}
+                    for e in entries
+                ],
+            })
+    return duplicates
 
 
 def get_expiring_soon(days: int = 4) -> list[dict]:

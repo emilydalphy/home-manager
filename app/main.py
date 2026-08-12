@@ -14,7 +14,7 @@ import logging
 import os
 
 from .db import init_db
-from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo
+from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo
 from . import tools
 
 logger = logging.getLogger("home_manager")
@@ -122,6 +122,7 @@ class InventoryUpdateRequest(BaseModel):
     quantity: str = ""
     category: str = "other"
     expiration_date: str | None = None
+    location: str | None = None  # fridge | freezer | pantry — falls back to a category-based guess if unset
 
 
 class ScannedItem(BaseModel):
@@ -129,6 +130,7 @@ class ScannedItem(BaseModel):
     quantity: str = ""
     category: str = "other"
     expiration_date: str | None = None
+    location: str | None = None
 
 
 class ConfirmScanRequest(BaseModel):
@@ -394,11 +396,33 @@ def get_inventory_expiring(days: int = 4):
     return {"items": result}
 
 
+@app.get("/api/inventory/by-location")
+def get_inventory_view_by_location():
+    """Pantry/fridge inventory grouped by storage location (fridge/freezer/pantry) — powers the Inventory view's location-grouping toggle."""
+    try:
+        result = tools.get_inventory_by_location()
+    except Exception as e:
+        logger.exception("Inventory-by-location lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/inventory/duplicates")
+def get_inventory_duplicates():
+    """Items tracked in more than one storage location at once (e.g. an opened sauce in the fridge and an unopened one in the pantry) — powers the Inventory view's duplicates banner."""
+    try:
+        result = tools.get_cross_location_duplicates()
+    except Exception as e:
+        logger.exception("Cross-location duplicate lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"duplicates": result}
+
+
 @app.post("/api/inventory/update")
 def update_inventory_view(req: InventoryUpdateRequest):
     """Add/update an inventory item directly from the Inventory view (not via chat)."""
     try:
-        tools.update_inventory(req.item, req.action, quantity=req.quantity, expiration_date=req.expiration_date, category=req.category)
+        tools.update_inventory(req.item, req.action, quantity=req.quantity, expiration_date=req.expiration_date, category=req.category, location=req.location)
         result = tools.get_inventory_by_section()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -454,26 +478,44 @@ async def scan_receipt(photo: UploadFile = File(...)):
 @app.post("/api/inventory/scan-fridge")
 async def scan_fridge(photo: UploadFile = File(...)):
     """
-    Phase 4, §4.3: photograph fridge/pantry shelves and get back a draft
-    list of detected items for an initial stock-take or re-sync — same
+    Phase 4, §4.3: photograph fridge shelves and get back a draft list of
+    detected items for an initial stock-take or re-sync — same
     review-before-save flow as the receipt scan, but expect lower
-    confidence given mixed/stacked/partially obscured items.
+    confidence given mixed/stacked/partially obscured items. Every returned
+    item is pre-tagged location='fridge' (or 'freezer' for anything
+    visibly in a freezer compartment) so it lands in the right place
+    without extra manual work.
     """
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_fridge_photo(image_b64, media_type)
     except Exception as e:
-        logger.exception("Fridge/pantry scan failed")
+        logger.exception("Fridge scan failed")
+        raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
+    return {"items": items}
+
+
+@app.post("/api/inventory/scan-pantry")
+async def scan_pantry(photo: UploadFile = File(...)):
+    """
+    Phase 4, §4.3 follow-up: photograph pantry/cupboard shelves — same flow
+    as scan-fridge, but every returned item is pre-tagged location='pantry'.
+    """
+    image_b64, media_type = await _read_scan_image(photo)
+    try:
+        items = scan_pantry_photo(image_b64, media_type)
+    except Exception as e:
+        logger.exception("Pantry scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
     return {"items": items}
 
 
 @app.post("/api/inventory/confirm-scan")
 def confirm_scan(req: ConfirmScanRequest):
-    """Save a reviewed/edited scan result (receipt or fridge/pantry photo) into inventory."""
+    """Save a reviewed/edited scan result (receipt, fridge, or pantry photo) into inventory."""
     try:
         entries = [
-            {"item": i.item, "action": "add", "quantity": i.quantity, "category": i.category, "expiration_date": i.expiration_date}
+            {"item": i.item, "action": "add", "quantity": i.quantity, "category": i.category, "expiration_date": i.expiration_date, "location": i.location}
             for i in req.items
         ]
         tools.update_inventory_items(entries, action="add")

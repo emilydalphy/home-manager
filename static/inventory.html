@@ -61,10 +61,45 @@
     color: #444;
   }
   .cat-select:disabled { opacity: 0.6; }
+  .loc-select {
+    width: 100px;
+    padding: 5px 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.8rem;
+    background: white;
+    color: #444;
+  }
+  .loc-select:disabled { opacity: 0.6; }
   @media (max-width: 520px) {
     .item-row { flex-wrap: wrap; }
-    .cat-select, .qty-input { flex: 1; min-width: 100px; }
+    .cat-select, .loc-select, .qty-input { flex: 1; min-width: 100px; }
   }
+  .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+  button.toggle-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background: white;
+    color: #555;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  button.toggle-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  .duplicates-banner {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    background: #eef4fb;
+    border: 1px solid #cfe0f2;
+    color: #1e4a75;
+  }
+  .duplicates-banner h2 { font-size: 0.9rem; margin: 0 0 8px; color: inherit; }
+  .duplicates-banner ul { margin: 0; padding-left: 20px; }
+  .duplicates-banner li { margin-bottom: 5px; }
+  .duplicates-banner .tag { font-weight: 600; }
+  .duplicates-banner .locs { color: #4a6b8a; }
   .icon-btn {
     background: none;
     border: none;
@@ -171,7 +206,7 @@
   .review-row input[type=checkbox] { flex: 0 0 auto; }
   .review-row input[type=text].review-name { flex: 2; min-width: 110px; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem; }
   .review-row input[type=text].review-qty { flex: 1; min-width: 80px; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem; }
-  .review-row select.review-cat { flex: 1; min-width: 110px; padding: 6px 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.8rem; background: white; color: #444; }
+  .review-row select.review-cat, .review-row select.review-loc { flex: 1; min-width: 100px; padding: 6px 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.8rem; background: white; color: #444; }
   .low-conf-badge { background: #fff8e6; color: #7a5b00; border: 1px solid #f3e0a8; border-radius: 5px; font-size: 0.7rem; padding: 2px 6px; flex: 0 0 auto; }
   .review-actions { display: flex; gap: 8px; margin-top: 12px; }
 </style>
@@ -182,19 +217,27 @@
 <p class="subtitle">What's actually on hand — pantry, fridge, and freezer. <a href="/">&larr; Back to chat</a></p>
 
 <div id="expiring-banner"></div>
+<div id="duplicates-banner"></div>
 
 <div class="scan-card">
   <h2>Scan instead of typing</h2>
-  <p class="hint">Photograph a grocery receipt, or the inside of your fridge/pantry, and review what's detected before it's added.</p>
+  <p class="hint">Photograph a grocery receipt, your fridge, or your pantry, and review what's detected before it's added.</p>
   <div class="scan-row">
     <button class="scan-btn" id="scan-receipt-btn">📷 Scan a receipt</button>
-    <button class="scan-btn" id="scan-fridge-btn">📷 Scan fridge/pantry</button>
+    <button class="scan-btn" id="scan-fridge-btn">📷 Scan fridge</button>
+    <button class="scan-btn" id="scan-pantry-btn">📷 Scan pantry</button>
   </div>
   <input type="file" id="scan-receipt-input" accept="image/*" capture="environment" style="display:none" />
   <input type="file" id="scan-fridge-input" accept="image/*" capture="environment" style="display:none" />
+  <input type="file" id="scan-pantry-input" accept="image/*" capture="environment" style="display:none" />
 </div>
 
 <div id="review-container"></div>
+
+<div class="view-toggle">
+  <button class="toggle-btn active" id="view-section-btn">By store section</button>
+  <button class="toggle-btn" id="view-location-btn">By fridge/pantry</button>
+</div>
 
 <div id="content">
   <p class="empty">Loading...</p>
@@ -213,6 +256,12 @@
       <option value="frozen">Frozen</option>
       <option value="other" selected>Other</option>
     </select>
+    <select id="add-location">
+      <option value="">Location (auto)</option>
+      <option value="fridge">Fridge</option>
+      <option value="freezer">Freezer</option>
+      <option value="pantry">Pantry</option>
+    </select>
     <button class="action" id="add-btn">Add</button>
   </div>
 </div>
@@ -229,85 +278,85 @@ function categoryOptions(current) {
   return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c === 'meat/seafood' ? 'Meat/seafood' : c[0].toUpperCase() + c.slice(1)}</option>`).join('');
 }
 
+const LOCATIONS = ['fridge', 'freezer', 'pantry'];
+const LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
+function locationOptions(current) {
+  return LOCATIONS.map(l => `<option value="${l}" ${l === current ? 'selected' : ''}>${LOCATION_LABELS[l]}</option>`).join('');
+}
+
+let currentView = 'section'; // 'section' | 'location'
+
+function itemRowHtml(it) {
+  return `<div class="item-row" data-item-id="${it.id}">
+    <div class="item-info">
+      <p class="item-name">${escapeHtml(it.item)}</p>
+      ${it.expiration_date ? `<p class="item-meta">Exp ${escapeHtml(it.expiration_date)}</p>` : ''}
+    </div>
+    <select class="cat-select" data-item-name="${escapeHtml(it.item)}" data-loc="${escapeHtml(it.location || '')}">${categoryOptions(it.category)}</select>
+    <select class="loc-select" data-item-name="${escapeHtml(it.item)}" data-cat="${escapeHtml(it.category)}">${locationOptions(it.location)}</select>
+    <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" data-item-name="${escapeHtml(it.item)}" data-category="${escapeHtml(it.category)}" data-location="${escapeHtml(it.location || '')}" />
+    <button class="icon-btn save" title="Save quantity">&check;</button>
+    <button class="icon-btn remove" title="Remove" data-item-id="${it.id}">&times;</button>
+  </div>`;
+}
+
 function render(view) {
   const content = document.getElementById('content');
-  const sections = view.sections || [];
+  const groups = currentView === 'location'
+    ? (view.locations || []).map(g => ({ label: LOCATION_LABELS[g.location] || g.location, items: g.items }))
+    : (view.sections || []).map(g => ({ label: g.section, items: g.items }));
 
-  if (!sections.length) {
+  if (!groups.length) {
     content.innerHTML = '<p class="empty">Nothing tracked yet — mention what you have in chat ("picked up a rotisserie chicken"), or add items below.</p>';
     return;
   }
 
   let html = '';
-  for (const sec of sections) {
-    html += `<h2 class="section-title">${escapeHtml(sec.section)}</h2><div class="card">`;
-    for (const it of sec.items) {
-      html += `<div class="item-row" data-item-id="${it.id}">
-        <div class="item-info">
-          <p class="item-name">${escapeHtml(it.item)}</p>
-          ${it.expiration_date ? `<p class="item-meta">Exp ${escapeHtml(it.expiration_date)}</p>` : ''}
-        </div>
-        <select class="cat-select" data-item-name="${escapeHtml(it.item)}">${categoryOptions(it.category)}</select>
-        <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" data-item-name="${escapeHtml(it.item)}" data-category="${escapeHtml(it.category)}" />
-        <button class="icon-btn save" title="Save quantity">&check;</button>
-        <button class="icon-btn remove" title="Remove" data-item-id="${it.id}">&times;</button>
-      </div>`;
+  for (const g of groups) {
+    html += `<h2 class="section-title">${escapeHtml(g.label)}</h2><div class="card">`;
+    for (const it of g.items) {
+      html += itemRowHtml(it);
     }
     html += `</div>`;
   }
   content.innerHTML = html;
 
-  content.querySelectorAll('.cat-select').forEach(sel => {
-    sel.addEventListener('change', async () => {
-      const row = sel.closest('.item-row');
-      const qtyInput = row.querySelector('.qty-input');
-      sel.disabled = true;
-      try {
-        const res = await fetch('/api/inventory/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            item: sel.getAttribute('data-item-name'),
-            action: 'set',
-            quantity: qtyInput.value,
-            category: sel.value,
-          }),
-        });
-        if (!res.ok) throw new Error('failed');
-        render(await res.json());
-        refreshBanner();
-      } catch (err) {
-        sel.disabled = false;
-        alert("Couldn't update that category — try again.");
-      }
-    });
+  function currentRowValues(row) {
+    const catSelect = row.querySelector('.cat-select');
+    const locSelect = row.querySelector('.loc-select');
+    const qtyInput = row.querySelector('.qty-input');
+    return {
+      item: catSelect.getAttribute('data-item-name'),
+      quantity: qtyInput.value,
+      category: catSelect.value,
+      location: locSelect.value,
+    };
+  }
+
+  async function saveRow(row, disableEl) {
+    disableEl.disabled = true;
+    try {
+      const res = await fetch('/api/inventory/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...currentRowValues(row), action: 'set' }),
+      });
+      if (!res.ok) throw new Error('failed');
+      render(await res.json());
+      refreshBanner();
+      refreshDuplicates();
+    } catch (err) {
+      disableEl.disabled = false;
+      alert("Couldn't save that — try again.");
+    }
+  }
+
+  content.querySelectorAll('.cat-select, .loc-select').forEach(sel => {
+    sel.addEventListener('change', () => saveRow(sel.closest('.item-row'), sel));
   });
 
   content.querySelectorAll('.icon-btn.save').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const input = row.querySelector('.qty-input');
-      const catSelect = row.querySelector('.cat-select');
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/inventory/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            item: input.getAttribute('data-item-name'),
-            action: 'set',
-            quantity: input.value,
-            category: catSelect ? catSelect.value : input.getAttribute('data-category'),
-          }),
-        });
-        if (!res.ok) throw new Error('failed');
-        render(await res.json());
-        refreshBanner();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't update that — try again.");
-      }
-    });
+    btn.addEventListener('click', () => saveRow(btn.closest('.item-row'), btn));
   });
 
   content.querySelectorAll('.icon-btn.remove').forEach(btn => {
@@ -318,6 +367,7 @@ function render(view) {
         if (!res.ok) throw new Error('failed');
         render(await res.json());
         refreshBanner();
+        refreshDuplicates();
       } catch (err) {
         btn.disabled = false;
         alert("Couldn't remove that — try again.");
@@ -350,27 +400,72 @@ function renderExpiringBanner(items) {
   `;
 }
 
+async function refreshDuplicates() {
+  try {
+    const res = await fetch('/api/inventory/duplicates');
+    if (res.ok) renderDuplicatesBanner((await res.json()).duplicates);
+  } catch (err) { /* non-critical, ignore */ }
+}
+
+function renderDuplicatesBanner(duplicates) {
+  const banner = document.getElementById('duplicates-banner');
+  if (!duplicates || !duplicates.length) {
+    banner.innerHTML = '';
+    return;
+  }
+  banner.innerHTML = `
+    <div class="duplicates-banner">
+      <h2>Tracked in more than one place</h2>
+      <ul>
+        ${duplicates.map(d => `<li><span class="tag">${escapeHtml(d.item)}</span> — <span class="locs">${d.entries.map(e => `${LOCATION_LABELS[e.location] || e.location}${e.quantity ? ' (' + escapeHtml(e.quantity) + ')' : ''}`).join(' and ')}</span>. Worth using up the opened one before buying more.</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
 async function load() {
   const content = document.getElementById('content');
   try {
-    const [invRes, expRes] = await Promise.all([
-      fetch('/api/inventory'),
+    const invUrl = currentView === 'location' ? '/api/inventory/by-location' : '/api/inventory';
+    const [invRes, expRes, dupRes] = await Promise.all([
+      fetch(invUrl),
       fetch('/api/inventory/expiring'),
+      fetch('/api/inventory/duplicates'),
     ]);
     if (!invRes.ok) throw new Error('Could not load');
     render(await invRes.json());
     if (expRes.ok) {
       renderExpiringBanner((await expRes.json()).items);
     }
+    if (dupRes.ok) {
+      renderDuplicatesBanner((await dupRes.json()).duplicates);
+    }
   } catch (err) {
     content.innerHTML = '<p class="error">Couldn\'t load inventory right now — try refreshing.</p>';
   }
 }
 
+document.getElementById('view-section-btn').addEventListener('click', () => {
+  if (currentView === 'section') return;
+  currentView = 'section';
+  document.getElementById('view-section-btn').classList.add('active');
+  document.getElementById('view-location-btn').classList.remove('active');
+  load();
+});
+
+document.getElementById('view-location-btn').addEventListener('click', () => {
+  if (currentView === 'location') return;
+  currentView = 'location';
+  document.getElementById('view-location-btn').classList.add('active');
+  document.getElementById('view-section-btn').classList.remove('active');
+  load();
+});
+
 document.getElementById('add-btn').addEventListener('click', async () => {
   const itemInput = document.getElementById('add-item');
   const qtyInput = document.getElementById('add-qty');
   const catSelect = document.getElementById('add-category');
+  const locSelect = document.getElementById('add-location');
   const btn = document.getElementById('add-btn');
   const name = itemInput.value.trim();
   if (!name) return;
@@ -379,13 +474,16 @@ document.getElementById('add-btn').addEventListener('click', async () => {
     const res = await fetch('/api/inventory/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item: name, action: 'set', quantity: qtyInput.value, category: catSelect.value }),
+      body: JSON.stringify({ item: name, action: 'set', quantity: qtyInput.value, category: catSelect.value, location: locSelect.value || null }),
     });
     if (!res.ok) throw new Error('failed');
     render(await res.json());
+    refreshBanner();
+    refreshDuplicates();
     itemInput.value = '';
     qtyInput.value = '';
     catSelect.value = 'other';
+    locSelect.value = '';
   } catch (err) {
     alert("Couldn't add that — try again.");
   } finally {
@@ -398,17 +496,25 @@ function reviewCategoryOptions(current) {
   return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('');
 }
 
+function reviewLocationOptions(current) {
+  const opts = [`<option value="" ${!current ? 'selected' : ''}>Location (auto)</option>`];
+  for (const l of LOCATIONS) {
+    opts.push(`<option value="${l}" ${l === current ? 'selected' : ''}>${LOCATION_LABELS[l]}</option>`);
+  }
+  return opts.join('');
+}
+
 function renderReview(items, kind) {
   const container = document.getElementById('review-container');
   if (!items || !items.length) {
     container.innerHTML = `<div class="review-card"><h2>Nothing detected</h2><p class="hint">Couldn't make out any items in that photo — try again with better lighting, or add items directly below.</p></div>`;
     return;
   }
-  const title = kind === 'receipt' ? 'Review scanned receipt' : 'Review scanned fridge/pantry photo';
+  const titles = { receipt: 'Review scanned receipt', fridge: 'Review scanned fridge photo', pantry: 'Review scanned pantry photo' };
   container.innerHTML = `
     <div class="review-card">
-      <h2>${title}</h2>
-      <p class="hint">Uncheck anything that's wrong, fix names/quantities/categories as needed, then add the rest to inventory.</p>
+      <h2>${titles[kind] || 'Review scanned photo'}</h2>
+      <p class="hint">Uncheck anything that's wrong, fix names/quantities/categories/locations as needed, then add the rest to inventory.</p>
       <div id="review-rows"></div>
       <div class="review-actions">
         <button class="action" id="review-confirm-btn">Add to inventory</button>
@@ -423,6 +529,7 @@ function renderReview(items, kind) {
       <input type="text" class="review-name" value="${escapeHtml(it.item || '')}" />
       <input type="text" class="review-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" />
       <select class="review-cat">${reviewCategoryOptions(it.category || 'other')}</select>
+      <select class="review-loc">${reviewLocationOptions(it.location || '')}</select>
       ${it.confidence === 'low' ? '<span class="low-conf-badge">double-check</span>' : ''}
     </div>
   `).join('');
@@ -443,6 +550,7 @@ function renderReview(items, kind) {
         item: name,
         quantity: row.querySelector('.review-qty').value.trim(),
         category: row.querySelector('.review-cat').value,
+        location: row.querySelector('.review-loc').value || null,
       });
     });
     if (!confirmed.length) {
@@ -459,6 +567,7 @@ function renderReview(items, kind) {
       if (!res.ok) throw new Error('failed');
       render(await res.json());
       refreshBanner();
+      refreshDuplicates();
       container.innerHTML = `<div class="review-card"><h2>Added</h2><p class="hint">${confirmed.length} item(s) added to inventory.</p></div>`;
       setTimeout(() => { container.innerHTML = ''; }, 2500);
     } catch (err) {
@@ -499,6 +608,7 @@ function wireScanInput(buttonId, inputId, endpoint, kind) {
 
 wireScanInput('scan-receipt-btn', 'scan-receipt-input', '/api/inventory/scan-receipt', 'receipt');
 wireScanInput('scan-fridge-btn', 'scan-fridge-input', '/api/inventory/scan-fridge', 'fridge');
+wireScanInput('scan-pantry-btn', 'scan-pantry-input', '/api/inventory/scan-pantry', 'pantry');
 
 load();
 </script>

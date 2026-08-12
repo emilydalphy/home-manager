@@ -255,6 +255,31 @@ with false confidence. Accuracy — especially for fridge/pantry photos — hasn
 validated against real photos; treat early results with appropriate skepticism until that's been
 tested live.
 
+The fridge/pantry scan is actually two separate buttons — **Scan fridge** and **Scan pantry** —
+so each detected item is automatically tagged with the right storage location (see below) without
+extra manual work; anything visibly in a freezer compartment is tagged 'freezer' regardless of
+which button was used.
+
+### Storage location (fridge/freezer/pantry) & duplicate detection
+
+Every inventory item has a storage location — fridge, freezer, or pantry — separate from its
+grocery category. These often diverge: a bottle of BBQ sauce is category='pantry' by food type,
+but once opened it usually lives in the fridge. Location defaults to a sensible guess from
+category (produce/dairy/meat go to the fridge, frozen to the freezer, everything else to the
+pantry) but can be set explicitly — in chat ("it's in the fridge now that it's open"), from the
+Inventory view's per-item location dropdown, or automatically from which photo-scan button was
+used.
+
+The Inventory view has a toggle at the top — **by store section** (the original grouping,
+matching the grocery list) or **by fridge/pantry** — so you can see everything actually in the
+fridge or the pantry specifically, not just grouped by food type.
+
+Because the same item name can now be tracked in more than one location at once (an opened BBQ
+sauce in the fridge, a separate unopened one in the pantry), a banner surfaces whenever that
+happens — flagging it so an opened, nearly-empty item doesn't get overlooked while an unopened
+one sits untouched, and so a re-buy doesn't happen when one's already on hand somewhere else. The
+assistant checks for this proactively in chat too, the same way it checks for near-expiring items.
+
 ### Pantry & fridge inventory
 
 Separate from the grocery list — this tracks what you actually *have*, not what you

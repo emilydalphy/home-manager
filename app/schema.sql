@@ -294,6 +294,12 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     -- an item is checked off the grocery list into inventory; set directly
     -- by the assistant otherwise.
     category TEXT NOT NULL DEFAULT 'other',
+    -- Storage location: 'fridge' | 'freezer' | 'pantry'. Independent from
+    -- category — a sauce is category='pantry' by food type but often moves
+    -- to the fridge once opened, so this is tracked as its own field
+    -- rather than derived from category alone. Defaults to a category-based
+    -- guess when not stated explicitly (see _DEFAULT_LOCATION_BY_CATEGORY).
+    location TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
