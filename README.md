@@ -276,6 +276,19 @@ add-item form for anything you'd rather type directly than mention conversationa
 still happens either way — through chat ("used the last of the spinach") or here — and both
 stay in sync automatically.
 
+### Grocery list view
+
+A dedicated page (linked at the top of chat) for shopping from without going through chat —
+the same store-section grouping as `get_grocery_list_by_section` (produce, dairy, meat/seafood,
+pantry, frozen, other). Three toggles: **To buy** (the default — check an item's box while
+you're shopping to mark it purchased, which also adds it to tracked inventory automatically,
+same as checking it off in chat), **Purchased** (what's been checked off, with an undo), and
+**Getting elsewhere** (anything hidden via exclude — with a button to put it back). Quantity and
+category are editable inline on the To buy view, and there's an add-item form for anything you'd
+rather type directly than mention conversationally. Everything added or checked off here stays in
+sync with chat and with what a generated weekly plan adds automatically — same underlying list,
+just a second way to work with it.
+
 ### Photo-based inventory capture
 
 Two "Scan instead of typing" buttons at the top of the Inventory view, each uploading a photo

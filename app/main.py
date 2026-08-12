@@ -145,6 +145,21 @@ class ConfirmScanRequest(BaseModel):
     items: list[ScannedItem]
 
 
+class GroceryAddRequest(BaseModel):
+    item: str
+    quantity: str = ""
+    category: str = "other"
+
+
+class GroceryUpdateRequest(BaseModel):
+    quantity: str | None = None
+    category: str | None = None
+
+
+class GroceryStatusRequest(BaseModel):
+    status: str = "purchased"  # needed | in_cart | purchased
+
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -487,6 +502,83 @@ def remove_inventory_view_item(item_id: int):
     return result
 
 
+@app.get("/api/grocery-list")
+def get_grocery_list_view(status: str = "needed"):
+    """Grocery list grouped by store section — powers the dedicated Grocery List view page. status: needed | in_cart | purchased | excluded | all."""
+    try:
+        result = tools.get_grocery_list_by_section(status=status)
+    except Exception as e:
+        logger.exception("Grocery list lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/add")
+def add_grocery_list_item(req: GroceryAddRequest):
+    """Add an item to the grocery list directly from the Grocery List view (not via chat)."""
+    try:
+        result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by="user")
+    except Exception as e:
+        logger.exception("Grocery list add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/update")
+def update_grocery_list_item(item_id: int, req: GroceryUpdateRequest):
+    """Correct an already-listed item's quantity/category directly from the Grocery List view."""
+    try:
+        result = tools.update_grocery_item(item_id, quantity=req.quantity, category=req.category)
+    except Exception as e:
+        logger.exception("Grocery list item update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/status")
+def set_grocery_list_item_status(item_id: int, req: GroceryStatusRequest):
+    """Move an item between needed/in_cart/purchased — checking something off as purchased also adds it to tracked inventory automatically."""
+    try:
+        result = tools.mark_grocery_item(item_id, status=req.status)
+    except Exception as e:
+        logger.exception("Grocery list status update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/remove")
+def remove_grocery_list_item(item_id: int):
+    """Delete an item from the grocery list entirely, directly from the Grocery List view."""
+    try:
+        result = tools.remove_grocery_item(item_id)
+    except Exception as e:
+        logger.exception("Grocery list remove failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/exclude")
+def exclude_grocery_list_item(item_id: int):
+    """Hide an item from the normal shown list (getting it elsewhere) without deleting it, directly from the Grocery List view."""
+    try:
+        result = tools.exclude_grocery_item(item_id)
+    except Exception as e:
+        logger.exception("Grocery list exclude failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/include")
+def include_grocery_list_item(item_id: int):
+    """Undo exclude — put an item back on the normal shown list, directly from the Grocery List view."""
+    try:
+        result = tools.include_grocery_item(item_id)
+    except Exception as e:
+        logger.exception("Grocery list include failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 _MAX_SCAN_IMAGE_BYTES = 8 * 1024 * 1024  # generous for a phone photo; Claude's own image limits are higher still
 
 
@@ -676,6 +768,11 @@ def cooker_page():
 @app.get("/inventory")
 def inventory_page():
     return FileResponse(os.path.join(static_dir, "inventory.html"))
+
+
+@app.get("/grocery")
+def grocery_page():
+    return FileResponse(os.path.join(static_dir, "grocery.html"))
 
 
 @app.get("/share/{token}")

@@ -2844,6 +2844,34 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     return {"item_id": item_id, "status": status}
 
 
+def update_grocery_item(item_id: int, quantity: str | None = None, category: str | None = None) -> dict:
+    """
+    Directly edit an already-listed grocery item's quantity and/or category
+    by id — for correcting something already on the list (wrong amount,
+    miscategorized) rather than adding a new line. Unlike add_grocery_item,
+    this never merges/consolidates with another row since it's already
+    targeting one specific, known item. Leave a field as None to leave it
+    unchanged.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, HOUSEHOLD_ID),
+    ).fetchone()
+    if not row:
+        conn.close()
+        return {"item_id": item_id, "found": False}
+    new_quantity = quantity if quantity is not None else row["quantity"]
+    new_category = category if category is not None else row["category"]
+    conn.execute(
+        "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ?",
+        (new_quantity, new_category, item_id),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "quantity": new_quantity, "category": new_category, "found": True}
+
+
 def remove_grocery_item(item_id: int) -> dict:
     """Delete an item from the grocery list."""
     conn = get_conn()

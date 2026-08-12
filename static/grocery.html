@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Grocery List — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#2b6cb0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px;
+    background: #f7f7f5;
+    color: #222;
+  }
+  .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: #2b6cb0; }
+  .refresh-btn {
+    background: white;
+    border: 1px solid #d8d8d4;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    color: #2b6cb0;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .refresh-btn:hover { background: #f0f4f8; }
+  .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+  h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
+  h2.section-title:first-child { margin-top: 0; }
+  .card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 4px 16px;
+    margin-bottom: 10px;
+  }
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-row.checked-off .item-name { text-decoration: line-through; color: #999; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-weight: 500; margin: 0; }
+  .item-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; }
+  .qty-input {
+    width: 90px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.85rem;
+  }
+  .cat-select {
+    width: 118px;
+    padding: 5px 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.8rem;
+    background: white;
+    color: #444;
+  }
+  @media (max-width: 520px) {
+    .item-row { flex-wrap: wrap; }
+    .cat-select, .qty-input { flex: 1; min-width: 100px; }
+  }
+  .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  button.toggle-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background: white;
+    color: #555;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  button.toggle-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 4px 7px;
+    border-radius: 6px;
+    color: #888;
+  }
+  .icon-btn:hover { background: #f0f0f0; }
+  .icon-btn.save { color: #2b6cb0; }
+  .icon-btn.remove { color: #b00020; }
+  .icon-btn.exclude, .icon-btn.include, .icon-btn.undo { font-size: 0.78rem; white-space: nowrap; }
+  .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
+  .error { color: #b00020; font-size: 0.9rem; }
+  .add-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 20px;
+  }
+  .add-card h2 { font-size: 0.95rem; margin: 0 0 10px; color: #444; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-row input[type=text] {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    background: white;
+    color: #222;
+  }
+  #add-item { flex: 2; min-width: 140px; }
+  #add-qty { flex: 1; min-width: 90px; }
+  select#add-category {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    background: white;
+    color: #222;
+  }
+  button.action {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #2b6cb0;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.action:disabled { opacity: 0.6; cursor: default; }
+</style>
+</head>
+<body>
+
+<div class="header-row">
+  <h1>Grocery List</h1>
+  <button class="refresh-btn" id="refresh-btn" title="Reload the latest list">&#8635; Refresh</button>
+</div>
+<p class="subtitle">This week's shopping list. <a href="/">&larr; Back to chat</a></p>
+
+<div class="view-toggle">
+  <button class="toggle-btn active" id="view-needed-btn" data-status="needed">To buy</button>
+  <button class="toggle-btn" id="view-purchased-btn" data-status="purchased">Purchased</button>
+  <button class="toggle-btn" id="view-excluded-btn" data-status="excluded">Getting elsewhere</button>
+</div>
+
+<div id="content">
+  <p class="empty">Loading...</p>
+</div>
+
+<div class="add-card">
+  <h2>Add an item</h2>
+  <div class="add-row">
+    <input type="text" id="add-item" placeholder="Item, e.g. ground beef" />
+    <input type="text" id="add-qty" placeholder="Quantity, e.g. 2 lbs" />
+    <select id="add-category">
+      <option value="produce">Produce</option>
+      <option value="dairy">Dairy</option>
+      <option value="meat/seafood">Meat/seafood</option>
+      <option value="pantry">Pantry</option>
+      <option value="frozen">Frozen</option>
+      <option value="other" selected>Other</option>
+    </select>
+    <button class="action" id="add-btn">Add</button>
+  </div>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+const CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
+const CATEGORY_LABELS = { produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat/seafood', pantry: 'Pantry', frozen: 'Frozen', other: 'Other' };
+function categoryOptions(current) {
+  return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('');
+}
+
+let currentStatus = 'needed'; // 'needed' | 'purchased' | 'excluded'
+
+function itemRowHtml(it) {
+  const checkedOff = currentStatus === 'purchased';
+  return `<div class="item-row ${checkedOff ? 'checked-off' : ''}" data-item-id="${it.id}">
+    ${currentStatus === 'needed' ? `<input type="checkbox" class="buy-checkbox" title="Mark purchased" />` : ''}
+    ${currentStatus === 'purchased' ? `<button class="icon-btn undo" title="Move back to To buy">&#8630;</button>` : ''}
+    <div class="item-info">
+      <p class="item-name">${escapeHtml(it.item)}</p>
+      ${it.store ? `<p class="item-meta">${escapeHtml(it.store)}</p>` : ''}
+    </div>
+    <select class="cat-select" ${currentStatus !== 'needed' ? 'disabled' : ''}>${categoryOptions(it.category)}</select>
+    <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" ${currentStatus !== 'needed' ? 'disabled' : ''} />
+    ${currentStatus === 'needed' ? `
+      <button class="icon-btn save" title="Save changes">&check;</button>
+      <button class="icon-btn exclude" title="Get elsewhere — hide from this list">elsewhere</button>` : ''}
+    ${currentStatus === 'excluded' ? `<button class="icon-btn include" title="Back on the list">&#8617; back on list</button>` : ''}
+    <button class="icon-btn remove" title="Delete">&times;</button>
+  </div>`;
+}
+
+function render(view) {
+  const content = document.getElementById('content');
+  const sections = view.sections || [];
+
+  if (!sections.length) {
+    const emptyMsg = currentStatus === 'needed'
+      ? 'Nothing on the list — add items below, or they\'ll show up automatically from meal planning.'
+      : currentStatus === 'purchased' ? 'Nothing marked purchased yet.'
+      : 'Nothing set to "get elsewhere" right now.';
+    content.innerHTML = `<p class="empty">${emptyMsg}</p>`;
+    return;
+  }
+
+  let html = '';
+  for (const s of sections) {
+    html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
+    for (const it of s.items) {
+      html += itemRowHtml(it);
+    }
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+
+  content.querySelectorAll('.buy-checkbox').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const row = cb.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      cb.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'purchased' }),
+        });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        cb.disabled = false;
+        cb.checked = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.undo').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'needed' }),
+        });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      const qty = row.querySelector('.qty-input').value;
+      const cat = row.querySelector('.cat-select').value;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: qty, category: cat }),
+        });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't save that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.exclude').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/exclude', { method: 'POST' });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.include').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/include', { method: 'POST' });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.remove').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/remove', { method: 'POST' });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't remove that — try again.");
+      }
+    });
+  });
+}
+
+async function load() {
+  const content = document.getElementById('content');
+  try {
+    const res = await fetch('/api/grocery-list?status=' + encodeURIComponent(currentStatus));
+    if (!res.ok) throw new Error('Could not load');
+    render(await res.json());
+  } catch (err) {
+    content.innerHTML = '<p class="error">Couldn\'t load the grocery list right now — try refreshing.</p>';
+  }
+}
+
+function setView(status, btnId) {
+  if (currentStatus === status) return;
+  currentStatus = status;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(btnId).classList.add('active');
+  load();
+}
+
+document.getElementById('view-needed-btn').addEventListener('click', () => setView('needed', 'view-needed-btn'));
+document.getElementById('view-purchased-btn').addEventListener('click', () => setView('purchased', 'view-purchased-btn'));
+document.getElementById('view-excluded-btn').addEventListener('click', () => setView('excluded', 'view-excluded-btn'));
+
+document.getElementById('add-btn').addEventListener('click', async () => {
+  const itemInput = document.getElementById('add-item');
+  const qtyInput = document.getElementById('add-qty');
+  const catSelect = document.getElementById('add-category');
+  const btn = document.getElementById('add-btn');
+  const name = itemInput.value.trim();
+  if (!name) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/grocery-list/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: name, quantity: qtyInput.value, category: catSelect.value }),
+    });
+    if (!res.ok) throw new Error('failed');
+    itemInput.value = '';
+    qtyInput.value = '';
+    catSelect.value = 'other';
+    if (currentStatus !== 'needed') setView('needed', 'view-needed-btn');
+    else load();
+  } catch (err) {
+    alert("Couldn't add that — try again.");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+const refreshBtn = document.getElementById('refresh-btn');
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.disabled = true;
+  const original = refreshBtn.innerHTML;
+  refreshBtn.innerHTML = '&#8635; Refreshing…';
+  try {
+    await load();
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = original;
+  }
+});
+
+load();
+</script>
+</body>
+</html>

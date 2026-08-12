@@ -1021,6 +1021,19 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "update_grocery_item",
+        "description": "Directly correct an already-listed grocery item's quantity and/or category by item_id (e.g. \"actually make that 3 lbs, not 2\" or \"that's produce, not pantry\") — for fixing a line already on the list, not adding a new one. Leave a field unset to leave it unchanged.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item_id": {"type": "integer"},
+                "quantity": {"type": "string"},
+                "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
+            },
+            "required": ["item_id"],
+        },
+    },
+    {
         "name": "remove_grocery_item",
         "description": "Delete an item from the grocery list, given its item_id. For something the Shopper will get elsewhere rather than buying it at all, prefer exclude_grocery_item instead — this permanently removes it from meal-plan ingredient tracking too, not just the shown list.",
         "input_schema": {
@@ -1941,6 +1954,7 @@ TOOL_FUNCTIONS = {
     "clear_stale_grocery_items": tools.clear_stale_grocery_items,
     "clear_grocery_list": tools.clear_grocery_list,
     "mark_grocery_item": tools.mark_grocery_item,
+    "update_grocery_item": tools.update_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
     "exclude_grocery_item": tools.exclude_grocery_item,
     "include_grocery_item": tools.include_grocery_item,
