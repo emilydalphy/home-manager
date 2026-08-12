@@ -26,6 +26,8 @@
   p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
   p.subtitle a { color: #2b6cb0; }
   h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
+  h3.category-subheading { font-size: 0.78rem; margin: 0; padding: 10px 0 4px; color: #999; text-transform: uppercase; letter-spacing: 0.03em; }
+  h3.category-subheading:first-child { padding-top: 4px; }
   .card {
     background: white;
     border: 1px solid #e0e0e0;
@@ -300,6 +302,19 @@ function itemRowHtml(it) {
   </div>`;
 }
 
+function categorySubgroups(items) {
+  // Within a location group, still break items out by category (produce,
+  // dairy, etc.) rather than one flat list — location answers "where is
+  // it" but category still matters for scanning a list quickly.
+  const byCat = {};
+  for (const it of items) {
+    const cat = it.category || 'other';
+    byCat[cat] = byCat[cat] || [];
+    byCat[cat].push(it);
+  }
+  return CATEGORIES.filter(c => byCat[c] && byCat[c].length).map(c => ({ label: CATEGORY_LABELS[c], items: byCat[c] }));
+}
+
 function render(view) {
   const content = document.getElementById('content');
   const groups = currentView === 'location'
@@ -314,8 +329,17 @@ function render(view) {
   let html = '';
   for (const g of groups) {
     html += `<h2 class="section-title">${escapeHtml(g.label)}</h2><div class="card">`;
-    for (const it of g.items) {
-      html += itemRowHtml(it);
+    if (currentView === 'location') {
+      for (const sub of categorySubgroups(g.items)) {
+        html += `<h3 class="category-subheading">${escapeHtml(sub.label)}</h3>`;
+        for (const it of sub.items) {
+          html += itemRowHtml(it);
+        }
+      }
+    } else {
+      for (const it of g.items) {
+        html += itemRowHtml(it);
+      }
     }
     html += `</div>`;
   }
