@@ -56,6 +56,7 @@ _MIGRATIONS = [
     ("grocery_items", "store", "TEXT NOT NULL DEFAULT ''"),
     ("inventory_items", "category", "TEXT NOT NULL DEFAULT 'other'"),
     ("inventory_items", "location", "TEXT NOT NULL DEFAULT ''"),
+    ("grocery_items", "excluded_from_list", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 

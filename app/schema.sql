@@ -199,6 +199,24 @@ CREATE TABLE IF NOT EXISTS prep_tasks (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Phase 4, §4.4: a "needs your attention" queue item — currently used for
+-- low-confidence inventory-depletion matches from check_off_meal (an
+-- ambiguous ingredient-to-inventory name match, or a name match whose
+-- quantity couldn't be reconciled), so nothing gets silently dropped or
+-- guessed at. Designed to be reusable for other kinds of soft nudges later
+-- (kind is a free string, detail_json holds whatever's specific to that
+-- kind) rather than a table scoped to just this one feature.
+CREATE TABLE IF NOT EXISTS attention_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    kind TEXT NOT NULL, -- e.g. 'inventory_depletion'
+    summary TEXT NOT NULL, -- human-readable one-liner
+    detail_json TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT 'pending', -- pending | resolved | dismissed
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at TEXT
+);
+
 -- Read-only tokenized link for sharing the current weekly plan with someone
 -- outside the household (the "Eater" persona from the PRD) — no login, no
 -- new auth model. The token is stable and always resolves to whichever
@@ -260,6 +278,15 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- store for everything else). '' means unassigned/default. Populated
     -- automatically from item_store_preferences when set — see set_item_store.
     store TEXT NOT NULL DEFAULT '',
+    -- Phase 4, §4.5: hide this item from the normal shown/shopped list
+    -- without deleting it — for something the Shopper will get elsewhere
+    -- (a butcher, a farmers market) rather than on the regular trip. Stays
+    -- in this table with status unchanged, so it still counts as the same
+    -- tracked line for meal-plan ingredient consolidation (a future
+    -- add_grocery_item call for the same item merges into this line rather
+    -- than creating a duplicate) — only its visibility in the default list
+    -- changes. See exclude_grocery_item/include_grocery_item.
+    excluded_from_list INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

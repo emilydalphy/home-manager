@@ -113,12 +113,38 @@
   .prep-task.done .desc-text { text-decoration: line-through; color: #999; }
   .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
   .error { color: #b00020; font-size: 0.9rem; }
+  .attention-banner {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    background: #eef4fb;
+    border: 1px solid #cfe0f2;
+    color: #1e4a75;
+  }
+  .attention-banner h2 { font-size: 0.9rem; margin: 0 0 8px; color: inherit; }
+  .attention-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; }
+  .attention-item .summary { flex: 1; }
+  .attention-item .attn-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .attn-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: #1e4a75;
+  }
+  .attn-btn:hover { background: #dbe8f5; }
+  .attn-btn.dismiss { color: #7a5b00; }
 </style>
 </head>
 <body>
 
 <h1>Cooker View</h1>
 <p class="subtitle" id="subtitle">This week's plan, ready to cook. <a href="/">&larr; Back to chat</a></p>
+
+<div id="attention-banner"></div>
 
 <div id="content">
   <p class="empty">Loading...</p>
@@ -285,6 +311,7 @@ function render(view) {
         });
         if (!res.ok) throw new Error('failed');
         render(await res.json());
+        refreshAttention(); // checking a meal off can queue new inventory-depletion items
       } catch (err) {
         btn.disabled = false;
         alert("Couldn't update that — try again.");
@@ -311,12 +338,74 @@ function render(view) {
   });
 }
 
+function renderAttentionBanner(items) {
+  const banner = document.getElementById('attention-banner');
+  if (!items || !items.length) {
+    banner.innerHTML = '';
+    return;
+  }
+  banner.innerHTML = `
+    <div class="attention-banner">
+      <h2>Needs your attention</h2>
+      ${items.map(it => `
+        <div class="attention-item" data-item-id="${it.id == null ? '' : it.id}">
+          <span class="summary">${escapeHtml(it.summary)}</span>
+          ${it.id != null ? `
+            <span class="attn-actions">
+              <button class="attn-btn resolve" title="Mark handled">&check;</button>
+              <button class="attn-btn dismiss" title="Not relevant">&times;</button>
+            </span>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  banner.querySelectorAll('.attention-item').forEach(row => {
+    const itemId = row.getAttribute('data-item-id');
+    if (!itemId) return; // the feedback-nudge entry (id=None) has no action buttons
+    const resolveBtn = row.querySelector('.attn-btn.resolve');
+    const dismissBtn = row.querySelector('.attn-btn.dismiss');
+    async function resolve(status) {
+      resolveBtn.disabled = true;
+      dismissBtn.disabled = true;
+      try {
+        const res = await fetch('/api/attention/' + itemId + '/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!res.ok) throw new Error('failed');
+        renderAttentionBanner((await res.json()).items);
+      } catch (err) {
+        resolveBtn.disabled = false;
+        dismissBtn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    }
+    resolveBtn.addEventListener('click', () => resolve('resolved'));
+    dismissBtn.addEventListener('click', () => resolve('dismissed'));
+  });
+}
+
+async function refreshAttention() {
+  try {
+    const res = await fetch('/api/attention');
+    if (res.ok) renderAttentionBanner((await res.json()).items);
+  } catch (err) { /* non-critical, ignore */ }
+}
+
 async function load() {
   const content = document.getElementById('content');
   try {
-    const res = await fetch('/api/cooker-view');
-    if (!res.ok) throw new Error('Could not load');
-    render(await res.json());
+    const [viewRes, attnRes] = await Promise.all([
+      fetch('/api/cooker-view'),
+      fetch('/api/attention'),
+    ]);
+    if (!viewRes.ok) throw new Error('Could not load');
+    render(await viewRes.json());
+    if (attnRes.ok) {
+      renderAttentionBanner((await attnRes.json()).items);
+    }
   } catch (err) {
     content.innerHTML = '<p class="error">Couldn\'t load the Cooker view right now — try refreshing.</p>';
   }

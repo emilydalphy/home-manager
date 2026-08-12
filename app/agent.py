@@ -161,9 +161,22 @@ with a member's dietary restriction — this is a warning to weigh, not a block;
 the user wants to proceed anyway (it may be a false positive, or intentional).
 - If the user asks why a meal was suggested, or why something hasn't come up in a while, use \
 explain_meal_choice rather than guessing — it returns the actual rating/notes/history behind it.
-- Near the start of a new conversation (not every message), you may call get_feedback_nudge once; \
-if it returns a meal, work one low-key ask about it into your reply rather than a separate prompt \
-("by the way, how'd the salmon turn out Tuesday?"). Don't nudge more than once per conversation.
+- Near the start of a new conversation (not every message), call get_attention_items once — it \
+covers the feedback nudge (a recently-cooked, unrated meal) plus anything queued from \
+check_off_meal's inventory depletion (an ambiguous ingredient match, or a quantity that couldn't \
+be reconciled). If it returns anything, work ONE low-key mention into your reply rather than a \
+separate prompt or a checklist ("by the way, how'd the salmon turn out Tuesday? Also, should I \
+take that garlic off the tracked garlic bulb, or was that something else?") — don't raise more \
+than a couple of items at once even if more are pending, and don't bring it up again later in the \
+same conversation once mentioned. Once the user answers a queued item, call resolve_attention_item \
+with its id (status='resolved' if handled, 'dismissed' if it's not relevant) — the feedback-nudge \
+entry has id=None and doesn't need this, it clears itself once the meal gets a rating.
+- check_off_meal (marking a meal cooked) automatically tries to deplete its ingredients from \
+tracked inventory. A confident match (the ingredient name matches a tracked item) depletes \
+silently — fine to mention briefly if it's naturally relevant ("that used up the rest of the \
+chicken"), no need to announce every one. Anything less certain doesn't guess: an ambiguous name \
+match or an unreconcilable quantity gets queued into get_attention_items instead, surfaced the \
+same way as above.
 - If the household shops at more than one store ("we get bulk stuff at Costco"), use \
 set_item_store to remember it per item, and get_grocery_list_by_store instead of \
 get_grocery_list_by_section once more than one store is in play.
@@ -226,6 +239,12 @@ rather than list_grocery_list's flat view. If get_grocery_list_by_section ever s
 item name more than once (leftover from before consolidation applied, or any other way it \
 happens), just call consolidate_grocery_list right away — don't ask permission first, this is \
 a safe cleanup, not a destructive one.
+- If the Shopper says they'll get something elsewhere instead of on the regular grocery trip (a \
+butcher, a farmers market, a specialty store) — not that they don't need it at all — use \
+exclude_grocery_item rather than remove_grocery_item. This hides it from the normal list without \
+deleting it, so it's still tracked as covered (a future add of the same item still consolidates \
+into this line rather than creating a duplicate) — use include_grocery_item if they change their \
+mind. Only use remove_grocery_item when the item genuinely isn't needed anymore.
 - Every new generate_weekly_plan call automatically clears 'needed' grocery items left over from \
 the previous week's plan before adding this week's, so quantities shouldn't silently stack up \
 across many weeks. If the user still notices something oddly large or stale (e.g. "why do we \
@@ -751,7 +770,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "check_off_meal",
-        "description": "Mark a specific planned meal as cooked (status='done') or back to pending. Find the entry_id via get_weekly_plan or get_plan_progress.",
+        "description": "Mark a specific planned meal as cooked (status='done') or back to pending. Find the entry_id via get_weekly_plan or get_plan_progress. Marking done also tries to deplete its ingredients from tracked inventory — confident matches happen silently (mention briefly if relevant, e.g. 'used up the last of the chicken'), anything uncertain is queued into get_attention_items rather than guessed at (returned in the result as inventory_queued_for_review).",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -796,8 +815,25 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_feedback_nudge",
-        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Call once near the start of a new conversation (not every message); if it returns has_nudge=true, work a single low-key ask into your response.",
+        "description": "Check whether there's a good moment to gently ask about something recently cooked that's never been rated. Prefer get_attention_items instead in most cases — it includes this same check plus anything else pending (like low-confidence inventory-depletion matches) in one call.",
         "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_attention_items",
+        "description": "The unified 'needs your attention' list — a recently-cooked, unrated meal (the feedback nudge) plus any low-confidence ingredient-to-inventory matches from checking a meal off as cooked. Call this once near the start of a conversation (not every message) and, if it returns anything, work it into your response in one low-key way rather than an interrogation checklist — e.g. 'by the way, the garlic in last night's dinner — should I take that off the tracked garlic bulb, or was that something else?' Use resolve_attention_item once the user's answered.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "resolve_attention_item",
+        "description": "Mark a queued attention item handled ('resolved') or not relevant ('dismissed') so it stops showing up in get_attention_items. Only pass a real item id (from get_attention_items) — the feedback-nudge entry has id=None and resolves itself once the meal gets a rating, not through this.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item_id": {"type": "integer"},
+                "status": {"type": "string", "enum": ["resolved", "dismissed"]},
+            },
+            "required": ["item_id"],
+        },
     },
     {
         "name": "set_item_store",
@@ -813,7 +849,7 @@ TOOL_DEFINITIONS = [
         "description": "Get the grocery list split into store groups (see set_item_store), each grouped by section. Use instead of get_grocery_list_by_section once the household has assigned items to more than one store.",
         "input_schema": {
             "type": "object",
-            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all", "excluded"], "description": "'excluded' shows only items hidden via exclude_grocery_item; they're left out automatically from 'needed'/'in_cart'/'purchased' but included in 'all'."}},
         },
     },
     {
@@ -940,7 +976,7 @@ TOOL_DEFINITIONS = [
         "description": "List grocery items as a flat list, filtered by status.",
         "input_schema": {
             "type": "object",
-            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all", "excluded"], "description": "'excluded' shows only items hidden via exclude_grocery_item; they're left out automatically from 'needed'/'in_cart'/'purchased' but included in 'all'."}},
         },
     },
     {
@@ -948,7 +984,7 @@ TOOL_DEFINITIONS = [
         "description": "Get the grocery list grouped into standard store sections (produce, dairy, meat/seafood, pantry, frozen, other) in shopping order. Prefer this over list_grocery_list whenever showing or reviewing the list with the user, so it reads like something they can actually shop from.",
         "input_schema": {
             "type": "object",
-            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all", "excluded"], "description": "'excluded' shows only items hidden via exclude_grocery_item; they're left out automatically from 'needed'/'in_cart'/'purchased' but included in 'all'."}},
         },
     },
     {
@@ -986,7 +1022,25 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "remove_grocery_item",
-        "description": "Delete an item from the grocery list, given its item_id.",
+        "description": "Delete an item from the grocery list, given its item_id. For something the Shopper will get elsewhere rather than buying it at all, prefer exclude_grocery_item instead — this permanently removes it from meal-plan ingredient tracking too, not just the shown list.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"item_id": {"type": "integer"}},
+            "required": ["item_id"],
+        },
+    },
+    {
+        "name": "exclude_grocery_item",
+        "description": "Hide an item from the normal shown/shopped grocery list without deleting it — for something the Shopper will get elsewhere (a butcher, a farmers market) instead of on the regular trip. Stays tracked (a future add of the same item still consolidates into this line, not a duplicate); just won't appear in the list shown by default. Use include_grocery_item to undo.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"item_id": {"type": "integer"}},
+            "required": ["item_id"],
+        },
+    },
+    {
+        "name": "include_grocery_item",
+        "description": "Undo exclude_grocery_item — put an item back on the normal shown/shopped grocery list.",
         "input_schema": {
             "type": "object",
             "properties": {"item_id": {"type": "integer"}},
@@ -1475,8 +1529,8 @@ _GENERATE_PREP_SCHEDULE_TOOL = {
                     "type": "object",
                     "properties": {
                         "task_date": {"type": "string", "description": "ISO date this should happen on (the day before the meal, morning of, etc. — whatever the timing calls for)."},
-                        "description": {"type": "string", "description": "e.g. 'Marinate the chicken for tonight's stir fry (at least 4 hours)'."},
-                        "related_meal": {"type": "string", "description": "Exact meal name this task supports."},
+                        "description": {"type": "string", "description": "e.g. 'Marinate the chicken for tonight's stir fry (at least 4 hours)'. For a consolidated batch-prep task covering more than one meal, describe it as one task, e.g. 'Cook a big batch of rice — enough for Tuesday's stir fry and Thursday's fried rice'."},
+                        "related_meal": {"type": "string", "description": "Meal name(s) this task supports. If it's a batch-prep task consolidated across more than one meal (see guidance below), list all of them joined with ' + ', e.g. 'Tuesday's stir fry + Thursday's fried rice' — one task, not a duplicate per meal."},
                     },
                     "required": ["task_date", "description", "related_meal"],
                 },
@@ -1498,7 +1552,10 @@ def generate_prep_schedule_llm(context: dict) -> list[dict]:
     figure out a sensible date (same day if a few hours is enough, the day
     before if it says "overnight" or the plan is component_based with no
     specific day per item — use the plan's week_start_date as the
-    reference point in that case).
+    reference point in that case). Also does batch-prep consolidation
+    (Phase 4, §4.4): recognizes a component shared across more than one
+    meal this week (a rice side, a marinade base) and produces one task
+    covering all of them instead of a duplicate task per meal.
     """
     client = _client()
     prompt = f"""Weekly plan + recipe detail (JSON):
@@ -1517,6 +1574,16 @@ day — use week_start_date as the reference point for any tasks needed (e.g. "b
 using this component this week").
 - Keep descriptions specific and actionable, e.g. "Marinate the chicken for the stir fry (at \
 least 4 hours, can do the night before)" rather than just "prep chicken."
+- Batch-prep consolidation: before finalizing, look across the WHOLE week's ingredients for \
+components that recur in more than one meal — the same side (rice, a grain, a slaw base) used \
+in two dishes, a marinade/sauce base shared across meals, an ingredient that needs the same \
+chopping/prep for multiple recipes. When you spot a genuine match, consolidate it into ONE task \
+that covers all of them (e.g. "Cook a big batch of rice — enough for Tuesday's stir fry and \
+Thursday's fried rice") instead of writing a separate near-identical task per meal, and list \
+every meal it covers in related_meal. Only consolidate when it's genuinely the same prep serving \
+multiple meals — don't force a merge across meals with different quantities, timing, or doneness \
+needs just because the ingredient name matches (e.g. rice cooked plain for one dish vs. seasoned \
+a specific way for another may still warrant separate tasks; use judgment).
 
 Call submit_prep_schedule with the result."""
 
@@ -1559,6 +1626,13 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
             "meal": m["meal"],
             "component_category": m.get("component_category"),
             "instructions": recipe["instructions"] if recipe else [],
+            # ingredients included (not just timing) so the prep schedule can
+            # spot the same component recurring across meals this week — a
+            # rice side used twice, a marinade base shared by two dishes —
+            # and consolidate that into one batch-prep task instead of one
+            # per meal (see the "batch-prep consolidation" prompt guidance
+            # in generate_prep_schedule_llm).
+            "ingredients": recipe["ingredients"] if recipe else [],
             "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
             "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
@@ -1846,6 +1920,8 @@ TOOL_FUNCTIONS = {
     "check_plan_conflicts": tools.check_plan_conflicts,
     "explain_meal_choice": tools.explain_meal_choice,
     "get_feedback_nudge": tools.get_feedback_nudge,
+    "get_attention_items": tools.get_attention_items,
+    "resolve_attention_item": tools.resolve_attention_item,
     "set_item_store": tools.set_item_store,
     "get_grocery_list_by_store": tools.get_grocery_list_by_store,
     "get_learning_summary": tools.get_learning_summary,
@@ -1866,6 +1942,8 @@ TOOL_FUNCTIONS = {
     "clear_grocery_list": tools.clear_grocery_list,
     "mark_grocery_item": tools.mark_grocery_item,
     "remove_grocery_item": tools.remove_grocery_item,
+    "exclude_grocery_item": tools.exclude_grocery_item,
+    "include_grocery_item": tools.include_grocery_item,
     "update_inventory": tools.update_inventory,
     "update_inventory_items": tools.update_inventory_items,
     "get_inventory": tools.get_inventory,

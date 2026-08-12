@@ -108,6 +108,10 @@ class FillRecipeRequest(BaseModel):
     recipe_name: str
 
 
+class ResolveAttentionRequest(BaseModel):
+    status: str = "resolved"  # resolved | dismissed
+
+
 class MemberRestrictionRequest(BaseModel):
     restriction: str
 
@@ -372,6 +376,29 @@ def cooker_fill_recipe(req: FillRecipeRequest):
         logger.exception("Cooker fill-recipe failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
+
+
+@app.get("/api/attention")
+def get_attention():
+    """Phase 4, §4.4: the unified 'needs your attention' list (feedback nudge + queued inventory-depletion matches) — powers the Cooker view's attention banner."""
+    try:
+        items = tools.get_attention_items()
+    except Exception as e:
+        logger.exception("Attention-items lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": items}
+
+
+@app.post("/api/attention/{item_id}/resolve")
+def resolve_attention(item_id: int, req: ResolveAttentionRequest):
+    """Mark a queued attention item resolved/dismissed directly from the Cooker view."""
+    try:
+        tools.resolve_attention_item(item_id, req.status)
+        items = tools.get_attention_items()
+    except Exception as e:
+        logger.exception("Attention-item resolve failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": items}
 
 
 @app.get("/api/inventory")

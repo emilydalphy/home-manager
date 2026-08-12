@@ -135,6 +135,12 @@ units match (e.g. "2 cups flour" + "1 cup flour" becomes "3 cups flour"); if
 the units genuinely don't reconcile (like cups vs. pounds), both amounts are
 kept together on one line rather than the app silently guessing a conversion.
 
+If you're getting something elsewhere instead of on the regular trip — a butcher, a
+farmers market — say so and it's excluded from the shown list without being deleted: it
+stays tracked (so a future ingredient add for the same item still consolidates into that
+line instead of duplicating it), it's just hidden from what you're about to shop from.
+Say the word and it's back on the list.
+
 ### Plan flexibility & feedback nuance
 
 One-off constraints for a specific week ("3 nights this week," "under 30 minutes on
@@ -170,6 +176,22 @@ any time for a done-vs-outstanding view. Mention that a meal or prep step is don
 the tacos," "chicken's marinating") and it's checked off immediately, not just acknowledged
 in the chat.
 
+The prep schedule also looks across the whole week for shared prep, not just meal by meal —
+if the same component turns up more than once (a rice side used twice, a marinade base
+shared by two dishes), it's consolidated into one batch-prep task covering every meal it
+serves ("cook a big batch of rice — enough for Tuesday's stir fry and Thursday's fried
+rice") instead of a near-duplicate task per meal.
+
+Checking a meal off as cooked also tries to deplete its ingredients from tracked inventory.
+A confident match (the ingredient name lines up with something tracked) depletes silently —
+no interruption. Anything less certain — an ambiguous match ("garlic" against a tracked
+"garlic bulb" — probably the same thing, but not safe to assume) or a quantity that
+genuinely can't be reconciled (the recipe says "1 cup," inventory just has "a bag") — is
+never silently guessed at or dropped; it lands in the **needs your attention** list instead
+(a banner on the Cooker view, and the assistant will work it into chat naturally rather
+than an interrogation). This same list also covers the existing "how'd that turn out?"
+nudge for a recently-cooked, unrated meal — one place for anything worth a second look.
+
 If you changed something while cooking — swapped an ingredient, adjusted a step — mention it
 ("used thighs instead of breast this time") and it's logged as a one-off deviation, feeding
 into the same soft-signal memory as recipe feedback, without touching the recipe's permanent
@@ -185,6 +207,11 @@ always returns the full breakdown too: if a recipe predates having instructions 
 was added quickly without them), the assistant works out a reasonable step-by-step from its
 own knowledge on the spot and saves it, rather than telling you nothing's there.
 
+A banner at the top surfaces anything in the **needs your attention** list — an
+inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been
+rated — with a quick mark-handled/not-relevant action right there, no need to go through
+chat for it.
+
 ### Household coordination & trust
 
 Before a plan is approved, the assistant checks it against any saved dietary restrictions/
@@ -194,9 +221,10 @@ match and can be a false positive. Ask "why did you suggest this?" or "why haven
 X in a while?" for the actual reasoning (rating, notes, history) behind a meal, rather than
 a guess.
 
-If you're cooked something and haven't said whether you liked it, the assistant may bring
+If you've cooked something and haven't said whether you liked it, the assistant may bring
 it up once, naturally, the next time you're chatting — not a push notification, just a
-low-key "how'd the salmon turn out?" the next time you open it.
+low-key "how'd the salmon turn out?" the next time you open it. This is one of the checks
+folded into the needs-your-attention list described under Cooker above.
 
 Ad hoc items ("also grab batteries") work exactly like any other grocery add — no need for
 them to trace back to a recipe. If the household shops at more than one store, say so once

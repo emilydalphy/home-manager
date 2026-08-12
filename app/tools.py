@@ -1350,10 +1350,235 @@ def swap_component_in_plan(
     )
 
 
+# ---------- Needs-attention queue (Phase 4, §4.4) ----------
+# The first real multi-item "needs your attention" surface — until now the
+# only precedent (get_feedback_nudge) was a single computed check with
+# nothing persisted. Built for inventory-depletion matches that are too
+# uncertain to act on silently, but kept general (kind + freeform
+# detail_json) so other soft nudges can land here later instead of each
+# inventing their own one-off pattern.
+
+def add_attention_item(kind: str, summary: str, detail: dict | None = None) -> dict:
+    """
+    Queue something for later review rather than guessing or silently
+    dropping it. Skips creating a duplicate if a pending item with the same
+    kind+summary already exists, so the same ambiguous match doesn't spam
+    the queue every time it's encountered again before being resolved.
+    """
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT id FROM attention_items WHERE household_id = ? AND kind = ? AND summary = ? AND status = 'pending'",
+        (HOUSEHOLD_ID, kind, summary),
+    ).fetchone()
+    if existing:
+        conn.close()
+        return {"id": existing["id"], "created": False}
+    cur = conn.execute(
+        "INSERT INTO attention_items (household_id, kind, summary, detail_json) VALUES (?, ?, ?, ?)",
+        (HOUSEHOLD_ID, kind, summary, json.dumps(detail or {})),
+    )
+    conn.commit()
+    item_id = cur.lastrowid
+    conn.close()
+    return {"id": item_id, "created": True}
+
+
+def resolve_attention_item(item_id: int, status: str = "resolved") -> dict:
+    """Mark a queued attention item 'resolved' (handled) or 'dismissed' (not relevant/skip it) — either way it stops showing up in get_attention_items."""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE attention_items SET status = ?, resolved_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (status, item_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"id": item_id, "status": status}
+
+
+def get_attention_items() -> list[dict]:
+    """
+    The unified "needs your attention" list — combines the feedback nudge
+    (a recently-cooked meal with no rating yet, see get_feedback_nudge)
+    with persisted queue items (currently: low-confidence
+    ingredient-to-inventory matches from checking a meal off as cooked, see
+    check_off_meal). Check this proactively near the start of a
+    conversation, the same way get_expiring_soon/get_cross_location_duplicates
+    are checked, and work anything pending into the reply in one low-key
+    way — not an interrogation checklist. Each item has an `id` (None for
+    the feedback nudge, since that's computed rather than a real row —
+    only pass real ids to resolve_attention_item), `kind`, `summary`, and
+    `detail`.
+    """
+    items = []
+    nudge = get_feedback_nudge()
+    if nudge.get("has_nudge"):
+        items.append({
+            "id": None,
+            "kind": "feedback_nudge",
+            "summary": f"{nudge['meal']} was cooked recently and hasn't been rated yet — worth asking how it went.",
+            "detail": {"meal": nudge["meal"], "cooked_at": nudge["cooked_at"]},
+        })
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, kind, summary, detail_json, created_at FROM attention_items WHERE household_id = ? AND status = 'pending' ORDER BY created_at ASC",
+        (HOUSEHOLD_ID,),
+    ).fetchall()
+    conn.close()
+    for r in rows:
+        items.append({
+            "id": r["id"], "kind": r["kind"], "summary": r["summary"],
+            "detail": json.loads(r["detail_json"]), "created_at": r["created_at"],
+        })
+    return items
+
+
 # ---------- Cooker execution layer (recipe detail, prep schedule, check-off) ----------
 
+def _find_inventory_match(ingredient_item: str, inventory_items: list[dict]) -> tuple[dict | None, bool]:
+    """
+    Try to match a recipe ingredient name to a tracked inventory row for
+    depletion purposes. Returns (matched_row_or_None, confident).
+    confident=True only for an exact case-insensitive match (allowing a
+    simple trailing-'s' plural difference, e.g. "egg" vs "eggs") — anything
+    looser is returned as a candidate with confident=False rather than
+    silently treated as the same thing, since 'close' isn't a safe basis
+    to deplete inventory from on its own (e.g. "garlic" vs a tracked
+    "garlic bulb" — probably the same ingredient, but not safe to assume).
+    """
+    name = (ingredient_item or "").strip().lower()
+    if not name:
+        return None, False
+    name_singular = name[:-1] if name.endswith("s") else name
+    for row in inventory_items:
+        row_name = row["item"].strip().lower()
+        row_singular = row_name[:-1] if row_name.endswith("s") else row_name
+        if name_singular == row_singular:
+            return row, True
+    candidates = [
+        row for row in inventory_items
+        if name in row["item"].strip().lower() or row["item"].strip().lower() in name
+    ]
+    if candidates:
+        return candidates[0], False
+    return None, False
+
+
+def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
+    """Deplete a specific, already-identified inventory row by id (not by name lookup) — used by deplete_inventory_for_meal once a match has already been resolved, so there's no risk of a second, different row matching the same name."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return {"item_id": item_id, "found": False}
+    # Unlike the general chat "use" flow (_try_subtract_quantity's default
+    # for update_inventory, where an unparseable/freeform existing quantity
+    # like "a big bag" is treated as fully consumed), don't apply that same
+    # leniency here — that default makes sense when a person explicitly
+    # says "used the rice," but automated depletion has no such explicit
+    # confirmation, so guessing "fully used" risks silently wiping out
+    # inventory that's mostly still there. Flag it for review instead.
+    if _parse_quantity(row["quantity"] or "") is None:
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "quantity": row["quantity"], "units_reconciled": False}
+    remaining, reconciled = _try_subtract_quantity(row["quantity"] or "", minus_qty)
+    if remaining is None:
+        conn.execute("DELETE FROM inventory_items WHERE id = ?", (item_id,))
+        conn.commit()
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "removed": True, "units_reconciled": True}
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
+        (remaining, item_id),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "quantity": remaining, "units_reconciled": reconciled}
+
+
+def deplete_inventory_for_meal(entry_id: int) -> dict:
+    """
+    Phase 4, §4.4: deplete tracked inventory for a meal's ingredients when
+    it's checked off as cooked — called automatically from check_off_meal,
+    not meant to be called directly for a meal that isn't actually being
+    marked done. Confident ingredient-to-inventory name matches deplete
+    automatically with no interruption. Anything less certain — an
+    ambiguous name match ("garlic" vs a tracked "garlic bulb"), or a
+    confident name match whose quantity couldn't actually be subtracted
+    (e.g. recipe says "1 cup rice" but inventory just has "a bag," so
+    nothing was really depleted even though the match itself was fine) —
+    is never silently dropped or guessed at; it's queued into
+    get_attention_items for later review instead, so inventory doesn't
+    quietly drift out of sync with reality. Freeform meals (no saved
+    recipe) have no ingredient list, so there's nothing to deplete or flag.
+    """
+    conn = get_conn()
+    entry = conn.execute(
+        "SELECT mpe.id, mpe.recipe_id, COALESCE(r.name, mpe.freeform_meal) AS meal_name "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.id = ? AND mpe.household_id = ?",
+        (entry_id, HOUSEHOLD_ID),
+    ).fetchone()
+    conn.close()
+    if not entry or not entry["recipe_id"]:
+        return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
+
+    try:
+        recipe = get_recipe(entry["meal_name"])
+    except ValueError:
+        return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
+    ingredients = recipe.get("ingredients", [])
+    if not ingredients:
+        return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
+
+    inventory = get_inventory()
+    depleted, queued = [], []
+    for ing in ingredients:
+        ing_name = (ing.get("item") or "").strip()
+        if not ing_name:
+            continue
+        match, confident = _find_inventory_match(ing_name, inventory)
+        if not match:
+            continue  # nothing tracked for this ingredient — nothing to deplete or flag
+        if not confident:
+            summary = (
+                f"Used {ing_name} for {entry['meal_name']} — closest thing tracked is "
+                f"\"{match['item']}\" ({match['quantity'] or 'no quantity tracked'}). Deplete that, "
+                f"or was this something else?"
+            )
+            add_attention_item("inventory_depletion", summary, {
+                "entry_id": entry_id, "meal": entry["meal_name"], "ingredient": ing_name,
+                "candidate_item_id": match["id"], "candidate_item": match["item"],
+            })
+            queued.append({"ingredient": ing_name, "candidate": match["item"]})
+            continue
+        result = _use_inventory_row_by_id(match["id"], ing.get("qty", ""))
+        if not result.get("units_reconciled", True) and not result.get("removed"):
+            summary = (
+                f"Used {ing_name} for {entry['meal_name']}, but couldn't tell how much to subtract "
+                f"from \"{match['item']}\" ({match['quantity']}) — mind checking the amount left?"
+            )
+            add_attention_item("inventory_depletion", summary, {
+                "entry_id": entry_id, "meal": entry["meal_name"], "ingredient": ing_name,
+                "candidate_item_id": match["id"], "candidate_item": match["item"],
+            })
+            queued.append({"ingredient": ing_name, "candidate": match["item"]})
+        else:
+            depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
+    return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued}
+
+
 def check_off_meal(entry_id: int, status: str = "done") -> dict:
-    """Mark a specific planned meal (meal_plan_entries row) as cooked (status='done') or back to pending. Use get_weekly_plan/get_plan_progress to find the entry_id."""
+    """
+    Mark a specific planned meal (meal_plan_entries row) as cooked
+    (status='done') or back to pending. Use get_weekly_plan/get_plan_progress
+    to find the entry_id. Marking a meal done also attempts to deplete its
+    ingredients from tracked inventory (see deplete_inventory_for_meal) —
+    confident matches happen silently; anything uncertain is queued into
+    get_attention_items rather than guessed at, and both are reported back
+    in the result so it can be mentioned if relevant.
+    """
     conn = get_conn()
     cooked_at = "datetime('now')" if status == "done" else "NULL"
     conn.execute(
@@ -1362,7 +1587,12 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     )
     conn.commit()
     conn.close()
-    return {"entry_id": entry_id, "cooked_status": status}
+    result = {"entry_id": entry_id, "cooked_status": status}
+    if status == "done":
+        depletion = deplete_inventory_for_meal(entry_id)
+        result["inventory_depleted"] = depletion["depleted"]
+        result["inventory_queued_for_review"] = depletion["queued_for_review"]
+    return result
 
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
@@ -2340,14 +2570,69 @@ def add_grocery_items(items: list, category: str = "other", added_by: str = "use
 
 
 def list_grocery_list(status: str = "needed") -> list[dict]:
-    """List grocery items, optionally filtered by status (needed/in_cart/purchased/all)."""
+    """
+    List grocery items, optionally filtered by status: 'needed', 'in_cart',
+    'purchased', 'all' (every status, including excluded items), or
+    'excluded' (only items hidden via exclude_grocery_item). For 'needed'/
+    'in_cart'/'purchased', items excluded from the list (see
+    exclude_grocery_item) are left out automatically — they're still
+    tracked, just not shown on the normal shopping list.
+    """
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT id, item, quantity, category, status, store FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?) ORDER BY category, item",
-        (HOUSEHOLD_ID, status, status),
-    ).fetchall()
+    if status == "excluded":
+        rows = conn.execute(
+            "SELECT id, item, quantity, category, status, store, excluded_from_list FROM grocery_items "
+            "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    elif status == "all":
+        rows = conn.execute(
+            "SELECT id, item, quantity, category, status, store, excluded_from_list FROM grocery_items "
+            "WHERE household_id = ? ORDER BY category, item",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT id, item, quantity, category, status, store, excluded_from_list FROM grocery_items "
+            "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
+            (HOUSEHOLD_ID, status),
+        ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def exclude_grocery_item(item_id: int) -> dict:
+    """
+    Hide an item from the normal shown/shopped grocery list without
+    deleting it — for something the Shopper will get elsewhere (a butcher,
+    a farmers market) rather than on the regular trip. It stays tracked:
+    still in grocery_items with its status unchanged, so a future
+    add_grocery_item call for the same item still consolidates into this
+    same line instead of creating a duplicate — only its visibility in the
+    default 'needed'/'in_cart'/'purchased' views changes. See
+    include_grocery_item to undo, and list_grocery_list(status='excluded')
+    to see what's currently hidden this way.
+    """
+    conn = get_conn()
+    conn.execute(
+        "UPDATE grocery_items SET excluded_from_list = 1 WHERE id = ? AND household_id = ?",
+        (item_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "excluded_from_list": True}
+
+
+def include_grocery_item(item_id: int) -> dict:
+    """Undo exclude_grocery_item — put an item back on the normal shown/shopped grocery list."""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE grocery_items SET excluded_from_list = 0 WHERE id = ? AND household_id = ?",
+        (item_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "excluded_from_list": False}
 
 
 def get_grocery_list_by_section(status: str = "needed") -> dict:
@@ -2357,6 +2642,8 @@ def get_grocery_list_by_section(status: str = "needed") -> dict:
     order, rather than a flat list. Use this whenever showing or reviewing
     the grocery list to the user so it reads like something they can
     actually shop from, aisle by aisle, instead of a flat ingredient dump.
+    Items hidden via exclude_grocery_item are left out automatically (see
+    list_grocery_list) unless status='excluded' or 'all' is passed.
     """
     items = list_grocery_list(status=status)
     sections: dict[str, list[dict]] = {s: [] for s in _GROCERY_SECTION_ORDER}
