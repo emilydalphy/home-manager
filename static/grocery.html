@@ -38,6 +38,30 @@
   }
   .refresh-btn:hover { background: #f0f4f8; }
   .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+  .voice-btn {
+    background: white;
+    border: 1px solid #2b6cb0;
+    color: #2b6cb0;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .voice-btn.active { background: #c0392b; border-color: #c0392b; color: white; animation: voice-pulse 1.6s ease-in-out infinite; }
+  @keyframes voice-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .voice-status {
+    display: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    background: #fdf2f2;
+    border: 1px solid #f3c6c6;
+    color: #7a2020;
+  }
+  .voice-status.showing { display: block; }
+  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0392b; margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
+  .voice-status .voice-note { display: block; margin-top: 4px; color: #8a4b4b; font-size: 0.78rem; }
   h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
   h2.section-title:first-child { margin-top: 0; }
   h2.store-title { font-size: 1.05rem; margin: 22px 0 6px; color: #222; }
@@ -197,12 +221,14 @@
 </div>
 <p class="subtitle">This week's shopping list. <a href="/">&larr; Back to chat</a></p>
 
+<div id="voice-status" class="voice-status"></div>
 <div id="already-have-banner"></div>
 
 <div class="view-toggle">
   <button class="toggle-btn active" id="view-needed-btn" data-view="needed">To buy</button>
   <button class="toggle-btn" id="view-store-btn" data-view="store">By store</button>
   <button class="toggle-btn" id="view-purchased-btn" data-view="purchased">Purchased</button>
+  <button class="voice-btn" id="voice-toggle-btn" title="Hands-free: check off, add, or ask about items by voice">&#127908; Hands-free</button>
 </div>
 
 <div id="content">
@@ -226,6 +252,7 @@
   </div>
 </div>
 
+<script src="/static/voice-session.js"></script>
 <script>
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
@@ -240,6 +267,136 @@ function categoryOptions(current) {
 }
 
 let currentView = 'needed'; // 'needed' | 'store' | 'purchased'
+
+// ---------- Phase 5: hands-free voice (Shopper case, §4.2) ----------
+// Reuses the exact same engine as Cooker view (/static/voice-session.js)
+// rather than a second implementation, per the PRD. Scoped to the 'needed'
+// (To buy) list regardless of which toggle view happens to be showing,
+// since that's the actual shopping list — commands always fetch a fresh
+// copy of it rather than relying on whatever's currently rendered, so a
+// spoken command works correctly even mid-way through browsing By store or
+// Purchased.
+
+let voiceSession = null;
+
+function setVoiceStatus(text) {
+  const el = document.getElementById('voice-status');
+  if (!text) { el.classList.remove('showing'); el.innerHTML = ''; return; }
+  el.classList.add('showing');
+  el.innerHTML = `<span class="voice-dot"></span>${escapeHtml(text)}<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
+}
+
+function updateVoiceButton() {
+  const btn = document.getElementById('voice-toggle-btn');
+  const isOn = !!(voiceSession && voiceSession.isActive());
+  btn.classList.toggle('active', isOn);
+  btn.innerHTML = isOn ? '&#127908; Stop hands-free' : '&#127908; Hands-free';
+}
+
+// Same loose-matching approach as the Cooker view's voice handler
+// (duplicated rather than shared, since these are two separate static
+// pages with no shared JS beyond the voice engine itself) — exact match
+// first, then substring overlap, then word overlap. Never silently
+// changes data on a weak match alone; the caller always confirms back via
+// TTS what it acted on.
+function groceryVoiceFuzzyFind(text, candidates, getLabel) {
+  const t = (text || '').trim().toLowerCase();
+  if (!t || !candidates || !candidates.length) return null;
+  for (const c of candidates) {
+    if (getLabel(c).trim().toLowerCase() === t) return c;
+  }
+  for (const c of candidates) {
+    const label = getLabel(c).trim().toLowerCase();
+    if (label && (label.includes(t) || t.includes(label))) return c;
+  }
+  const words = t.split(/\s+/);
+  let best = null, bestScore = 0;
+  for (const c of candidates) {
+    const labelWords = getLabel(c).trim().toLowerCase().split(/\s+/);
+    const score = words.filter(w => labelWords.includes(w)).length;
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  return bestScore > 0 ? best : null;
+}
+
+function isVoiceEndCommand(command) {
+  return /^(done|stop|end session|that'?s all|all done)\b/i.test(command);
+}
+
+async function fetchNeededItemsFlat() {
+  const res = await fetch('/api/grocery-list?status=needed');
+  if (!res.ok) return [];
+  const view = await res.json();
+  const items = [];
+  (view.sections || []).forEach(s => items.push(...s.items));
+  return items;
+}
+
+async function handleShopperVoiceCommand(command) {
+  if (isVoiceEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
+
+  const checkMatch = command.match(/^(?:check off|got|grabbed|found)\s+(.+)/i);
+  if (checkMatch) {
+    const items = await fetchNeededItemsFlat();
+    const item = groceryVoiceFuzzyFind(checkMatch[1], items, i => i.item);
+    if (!item) return { spoken: "I don't see that on the list." };
+    const res = await fetch('/api/grocery-list/' + item.id + '/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'purchased' }),
+    });
+    if (!res.ok) return null;
+    if (currentView === 'needed' || currentView === 'purchased' || currentView === 'store') load();
+    return { spoken: `Got it, ${item.item} checked off.` };
+  }
+
+  const addMatch = command.match(/^add\s+(.+)/i);
+  if (addMatch) {
+    const name = addMatch[1].trim();
+    const res = await fetch('/api/grocery-list/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: name, quantity: '', category: 'other' }),
+    });
+    if (!res.ok) return null;
+    if (currentView === 'needed') load();
+    return { spoken: `Added ${name} to the list.` };
+  }
+
+  const storeMatch = command.match(/^(?:what|which)\s+(?:store|section)\s+(?:is\s+)?(.+?)(?:\s+in)?$/i);
+  if (storeMatch) {
+    const items = await fetchNeededItemsFlat();
+    const item = groceryVoiceFuzzyFind(storeMatch[1], items, i => i.item);
+    if (!item) return { spoken: "I don't see that on the list." };
+    const storeText = item.store && item.store.trim() ? item.store : 'no store assigned';
+    return { spoken: `${item.item} is ${item.category}, ${storeText}.` };
+  }
+
+  return null;
+}
+
+function startShopperVoiceSession() {
+  if (voiceSession && voiceSession.isActive()) {
+    voiceSession.stop();
+    return;
+  }
+  voiceSession = createVoiceSession({
+    onListeningChange: (isListening) => {
+      updateVoiceButton();
+      if (!isListening) setVoiceStatus('');
+    },
+    onStatus: (text) => setVoiceStatus(text),
+    onCommand: (command) => handleShopperVoiceCommand(command),
+    onEnd: () => updateVoiceButton(),
+  });
+  if (voiceSession.isStandaloneIOS()) {
+    setVoiceStatus('Heads up: hands-free voice can be unreliable in the installed home-screen app on iOS — if it doesn\'t seem to hear you, try this from a regular Safari tab instead.');
+  }
+  voiceSession.start();
+  updateVoiceButton();
+}
+
+document.getElementById('voice-toggle-btn').addEventListener('click', startShopperVoiceSession);
 
 function itemRowHtml(it) {
   const checkedOff = currentView === 'purchased';

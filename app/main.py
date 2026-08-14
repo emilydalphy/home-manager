@@ -108,6 +108,11 @@ class FillRecipeRequest(BaseModel):
     recipe_name: str
 
 
+class CookingDeviationRequest(BaseModel):
+    recipe_name: str
+    note: str
+
+
 class ResolveAttentionRequest(BaseModel):
     status: str = "resolved"  # resolved | dismissed
 
@@ -391,6 +396,19 @@ def cooker_check_prep(req: CheckOffPrepRequest):
         logger.exception("Cooker check-prep failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
+
+
+@app.post("/api/cooker/log-deviation")
+def cooker_log_deviation(req: CookingDeviationRequest):
+    """Log a one-off cooking deviation/substitution against a recipe directly from the Cooker view — used by the hands-free voice 'log a substitution' command (Phase 5, §4.1), also usable from a future UI control."""
+    try:
+        result = tools.log_cooking_deviation(req.recipe_name, req.note)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker log-deviation failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
 
 
 @app.post("/api/cooker/fill-recipe")

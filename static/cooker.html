@@ -199,6 +199,31 @@
   }
   .refresh-btn:hover { background: #f0f4f8; }
   .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+  .voice-btn {
+    background: white;
+    border: 1px solid #2b6cb0;
+    color: #2b6cb0;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin: 6px 0;
+  }
+  .voice-btn.active { background: #c0392b; border-color: #c0392b; color: white; animation: voice-pulse 1.6s ease-in-out infinite; }
+  @keyframes voice-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .voice-status {
+    display: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    background: #fdf2f2;
+    border: 1px solid #f3c6c6;
+    color: #7a2020;
+  }
+  .voice-status.showing { display: block; }
+  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0392b; margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
+  .voice-status .voice-note { display: block; margin-top: 4px; color: #8a4b4b; font-size: 0.78rem; }
 </style>
 </head>
 <body>
@@ -209,11 +234,14 @@
 </div>
 <p class="subtitle" id="subtitle">This week's plan, ready to cook. <a href="/">&larr; Back to chat</a></p>
 
+<div id="voice-status" class="voice-status"></div>
 <div id="attention-banner"></div>
 
 <div id="content">
   <p class="empty">Loading...</p>
 </div>
+
+<script src="/static/voice-session.js"></script>
 
 <script>
 function escapeHtml(s) {
@@ -231,6 +259,175 @@ function formatDate(dateStr) {
 
 let cache = null;
 let openDetailIdx = null;
+
+// ---------- Phase 5: hands-free voice (Cooker case, §4.1/§4.3) ----------
+// One session active at a time, scoped either to the prep schedule or to a
+// single meal's recipe (matching how the PRD frames activation — "while
+// viewing a recipe or the prep schedule"). See /static/voice-session.js for
+// the shared engine (also reused by grocery.html for the Shopper case).
+
+let voiceSession = null;
+let voiceContext = null; // { type: 'prep' } | { type: 'meal', idx: number }
+let voiceStepCursor = {}; // per-meal "what's next" progress, reset each session
+
+function setVoiceStatus(text) {
+  const el = document.getElementById('voice-status');
+  if (!text) { el.classList.remove('showing'); el.innerHTML = ''; return; }
+  el.classList.add('showing');
+  el.innerHTML = `<span class="voice-dot"></span>${escapeHtml(text)}<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
+}
+
+function updateVoiceButtons() {
+  document.querySelectorAll('.voice-btn').forEach(btn => {
+    const ctxType = btn.getAttribute('data-ctx');
+    const btnIdx = btn.getAttribute('data-idx');
+    const isThisOne = !!(voiceSession && voiceSession.isActive() && voiceContext &&
+      voiceContext.type === ctxType && (ctxType !== 'meal' || String(voiceContext.idx) === btnIdx));
+    btn.classList.toggle('active', isThisOne);
+    btn.innerHTML = isThisOne ? '&#127908; Stop hands-free' : '&#127908; Hands-free';
+  });
+}
+
+// Loose match for a spoken phrase against a list of candidates (prep task
+// descriptions, ingredient names) — exact match first, then substring
+// overlap, then a simple word-overlap score. Deliberately permissive since
+// spoken transcripts are noisier than typed text; unlike the inventory
+// depletion matcher this never silently changes data on a weak match by
+// itself — the caller still confirms back via TTS what it acted on.
+function voiceFuzzyFind(text, candidates, getLabel) {
+  const t = (text || '').trim().toLowerCase();
+  if (!t || !candidates || !candidates.length) return null;
+  for (const c of candidates) {
+    if (getLabel(c).trim().toLowerCase() === t) return c;
+  }
+  for (const c of candidates) {
+    const label = getLabel(c).trim().toLowerCase();
+    if (label && (label.includes(t) || t.includes(label))) return c;
+  }
+  const words = t.split(/\s+/);
+  let best = null, bestScore = 0;
+  for (const c of candidates) {
+    const labelWords = getLabel(c).trim().toLowerCase().split(/\s+/);
+    const score = words.filter(w => labelWords.includes(w)).length;
+    if (score > bestScore) { bestScore = score; best = c; }
+  }
+  return bestScore > 0 ? best : null;
+}
+
+function isEndCommand(command) {
+  return /^(done|stop|end session|that'?s all|all done)\b/i.test(command);
+}
+
+async function handlePrepVoiceCommand(command) {
+  if (isEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
+
+  let task = null;
+  const stepMatch = command.match(/(?:check off|mark|complete)\s+(?:step|task)\s+(\d+)/i) || command.match(/^step\s+(\d+)/i);
+  if (stepMatch) {
+    task = (cache.prep_tasks || [])[parseInt(stepMatch[1], 10) - 1] || null;
+  } else {
+    const afterVerb = command.replace(/^(check off|mark|complete)\s+/i, '');
+    task = voiceFuzzyFind(afterVerb, cache.prep_tasks || [], t => t.description);
+  }
+  if (!task) return null;
+
+  const res = await fetch('/api/cooker/check-prep', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prep_task_id: task.id, status: 'done' }),
+  });
+  if (!res.ok) return null;
+  render(await res.json());
+  refreshAttention();
+  return { spoken: `Got it, "${task.description}" marked done.` };
+}
+
+async function handleMealVoiceCommand(command, idx) {
+  const meal = cache && cache.meals ? cache.meals[idx] : null;
+  if (!meal) return null;
+
+  if (isEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
+
+  if (/(check off|mark|finish|complete).*(this )?(meal|recipe|dish)/i.test(command) ||
+      /^(we'?re |i'?m )?(done|finished)( cooking)?$/i.test(command)) {
+    const res = await fetch('/api/cooker/check-meal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_id: meal.entry_id, status: 'done' }),
+    });
+    if (!res.ok) return null;
+    render(await res.json());
+    refreshAttention();
+    return { spoken: `Got it, ${meal.meal} marked done.` };
+  }
+
+  const stepNumMatch = command.match(/step\s+(\d+)/i);
+  if (stepNumMatch) {
+    const n = parseInt(stepNumMatch[1], 10);
+    const step = (meal.instructions || [])[n - 1];
+    return step
+      ? { spoken: `Step ${n}: ${step}` }
+      : { spoken: `There's no step ${n} — this recipe has ${(meal.instructions || []).length} steps.` };
+  }
+
+  if (/what'?s next|next step/i.test(command)) {
+    const cursor = voiceStepCursor[idx] || 0;
+    const step = (meal.instructions || [])[cursor];
+    if (!step) return { spoken: "That's the last step — nothing more after this." };
+    voiceStepCursor[idx] = cursor + 1;
+    return { spoken: `Step ${cursor + 1}: ${step}` };
+  }
+
+  const ingredientMatch = command.match(/(?:how much|what'?s the amount of|amount of)\s+(.+)/i);
+  if (ingredientMatch) {
+    const ing = voiceFuzzyFind(ingredientMatch[1], meal.ingredients || [], i => i.item || '');
+    return ing
+      ? { spoken: `${ing.qty || 'No amount tracked'} of ${ing.item}.` }
+      : { spoken: "I don't see that ingredient in this recipe." };
+  }
+
+  const subMatch = command.match(/^(?:log a substitution|log a deviation|note that|note|i used)[:\s]+(.+)/i);
+  if (subMatch) {
+    const note = subMatch[1].trim();
+    try {
+      const res = await fetch('/api/cooker/log-deviation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipe_name: meal.meal, note }),
+      });
+      if (!res.ok) return null;
+    } catch (err) {
+      return null;
+    }
+    return { spoken: 'Got it, logged.' };
+  }
+
+  return null;
+}
+
+function startVoiceSession(ctx) {
+  if (voiceSession && voiceSession.isActive()) voiceSession.stop();
+  voiceContext = ctx;
+  voiceStepCursor = {};
+  voiceSession = createVoiceSession({
+    onListeningChange: (isListening) => {
+      updateVoiceButtons();
+      if (!isListening) setVoiceStatus('');
+    },
+    onStatus: (text) => setVoiceStatus(text),
+    onCommand: async (command) => {
+      if (ctx.type === 'prep') return handlePrepVoiceCommand(command);
+      if (ctx.type === 'meal') return handleMealVoiceCommand(command, ctx.idx);
+      return null;
+    },
+    onEnd: () => { voiceContext = null; updateVoiceButtons(); },
+  });
+  if (voiceSession.isStandaloneIOS()) {
+    setVoiceStatus('Heads up: hands-free voice can be unreliable in the installed home-screen app on iOS — if it doesn\'t seem to hear you, try this from a regular Safari tab instead.');
+  }
+  voiceSession.start();
+  updateVoiceButtons();
+}
 
 function render(view) {
   cache = view;
@@ -260,6 +457,7 @@ function render(view) {
 
   if (view.prep_tasks && view.prep_tasks.length) {
     html += '<h2 class="section-title">Prep schedule</h2>';
+    html += `<button class="voice-btn" data-ctx="prep" title="Hands-free: check off prep steps by voice">&#127908; Hands-free</button>`;
     for (const t of view.prep_tasks) {
       const isDone = t.status === 'done';
       html += `<div class="card prep-task ${isDone ? 'done' : ''}">
@@ -301,6 +499,7 @@ function render(view) {
     if (m.has_full_recipe) {
       html += `<button class="detail-toggle" data-toggle="${idx}">Show recipe &darr;</button>
         <div class="detail" id="detail-${idx}">
+          <button class="voice-btn" data-ctx="meal" data-idx="${idx}" title="Hands-free: check off, ask about ingredients/steps, log a substitution, by voice">&#127908; Hands-free</button>
           ${m.default_servings ? `<p style="margin:0;color:#888;font-size:0.82rem">Serves ${m.default_servings}</p>` : ''}
           ${m.advance_prep_notes ? `<h4>Advance prep</h4><p style="margin:0">${escapeHtml(m.advance_prep_notes)}</p>` : ''}
           <h4>Ingredients</h4>
@@ -338,6 +537,22 @@ function render(view) {
       openDetailIdx = open ? id : null;
     });
   });
+
+  content.querySelectorAll('.voice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ctxType = btn.getAttribute('data-ctx');
+      const btnIdx = btn.getAttribute('data-idx');
+      const isThisActive = voiceSession && voiceSession.isActive() && voiceContext &&
+        voiceContext.type === ctxType && (ctxType !== 'meal' || String(voiceContext.idx) === btnIdx);
+      if (isThisActive) {
+        voiceSession.stop();
+        return;
+      }
+      const ctx = ctxType === 'meal' ? { type: 'meal', idx: parseInt(btnIdx, 10) } : { type: 'prep' };
+      startVoiceSession(ctx);
+    });
+  });
+  updateVoiceButtons();
 
   content.querySelectorAll('.fill-recipe-btn').forEach(btn => {
     btn.addEventListener('click', async () => {

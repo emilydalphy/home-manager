@@ -257,6 +257,45 @@ Ask "what have you learned about us?" for an aggregate picture — how many reci
 tracked, how many are liked/disliked, how many deviations have been logged — distinct from
 the raw preference dump on the What We Know page.
 
+### Hands-free voice (Phase 5)
+
+True hands-free voice, distinct from talk-to-text dictation (which just rides on the OS
+keyboard's own dictation into the chat input) — no text field involved at all, meant for wet
+or messy hands in the kitchen or hands full at the store. Session-based, not always-on: tap a
+"🎙 Hands-free" button to start (in a recipe's expanded detail, in the Prep schedule, or on the
+Grocery List page), then say **"hey home manager"** followed by a command — the trigger phrase
+is what lets the app stay listening for the whole session without reacting to ordinary kitchen
+conversation or someone just narrating to themselves. A session ends with a second tap, or by
+saying "hey home manager, done" (or "stop"). Every action gets a spoken confirmation ("Got it,
+step 3 marked done") plus the same text in a visual status banner, so a muted phone or a TTS
+hiccup never leaves the confirmation silent.
+
+**Cooker** (recipe or prep-schedule scoped): "check off step 3" (prep tasks), "mark this meal
+done", "what's step 2", "what's next" (reads instructions one at a time), "how much yogurt"
+(reads back an ingredient's tracked amount), "log a substitution: used thighs instead of
+breast" (saved as a real cooking deviation, same as typing it in chat).
+
+**Shopper** (Grocery List page, reuses the exact same engine rather than a second
+implementation): "check off apples", "add napkins", "what store is coffee" (reads back the
+item's assigned store/section). Always acts on the live To-buy list regardless of which toggle
+view happens to be showing.
+
+A command that isn't recognized gets "Didn't catch that, try again" rather than guessing or
+silently doing nothing.
+
+**Known limitation, found during the technical spike and not fully resolved:** both the
+browser-native Web Speech API (used for recognition) and MediaRecorder-based audio capture
+have documented reliability problems specifically when a PWA is installed to an iOS home
+screen (standalone display mode) — recognition can silently stop producing results, and audio
+recording can silently capture an empty file — while the same APIs work much more reliably in
+a regular Safari browser tab. Recognition is also built to restart after each utterance rather
+than run continuously (`continuous: false` with a manual restart loop), since continuous mode
+specifically is the flakier of the two on iOS Safari. If hands-free voice doesn't seem to be
+hearing you on iPhone, try it from a plain Safari tab before assuming it's broken, and treat
+"add the hosted-transcription-API fallback path from the PRD's §5" as the next real option if
+that turns out not to be enough after actual kitchen/store use — this phase deliberately didn't
+build that fallback speculatively before confirming it's actually needed.
+
 ### Expiration & use-it-up
 
 Inventory items get an estimated expiration automatically whenever an exact date isn't given.
