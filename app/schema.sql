@@ -287,6 +287,14 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- than creating a duplicate) — only its visibility in the default list
     -- changes. See exclude_grocery_item/include_grocery_item.
     excluded_from_list INTEGER NOT NULL DEFAULT 0,
+    -- Cross-referenced against tracked inventory and flagged as "you may
+    -- already have this" on the Grocery List view's review section (see
+    -- get_grocery_already_have_items). 0 means still flagged/unreviewed
+    -- (pulled out of the normal To-buy list into the review section); 1
+    -- means the shopper confirmed they still need it, so it shows normally
+    -- in To-buy again despite the inventory match. Never affects removal —
+    -- confirming "doesn't need to be on the list" just deletes the row.
+    already_have_reviewed INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

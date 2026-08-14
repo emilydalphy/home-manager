@@ -229,6 +229,10 @@ The page loads once and doesn't auto-refresh, so a tab left open before a meal g
 swapped in chat elsewhere can go stale — use the Refresh button next to the title to pull the
 latest plan and attention items without a full page reload.
 
+The recently-cooked-and-unrated nudge is answerable right there too — Liked it/Not a hit buttons
+plus an optional notes field, instead of only being answerable back in chat. Rating it clears the
+nudge immediately, the same as answering "how'd it go?" in chat would.
+
 ### Household coordination & trust
 
 Before a plan is approved, the assistant checks it against any saved dietary restrictions/
@@ -284,16 +288,29 @@ stay in sync automatically.
 
 ### Grocery list view
 
-A dedicated page (linked at the top of chat) for shopping from without going through chat —
-the same store-section grouping as `get_grocery_list_by_section` (produce, dairy, meat/seafood,
-pantry, frozen, other). Three toggles: **To buy** (the default — check an item's box while
-you're shopping to mark it purchased, which also adds it to tracked inventory automatically,
-same as checking it off in chat), **Purchased** (what's been checked off, with an undo), and
-**Getting elsewhere** (anything hidden via exclude — with a button to put it back). Quantity and
-category are editable inline on the To buy view, and there's an add-item form for anything you'd
-rather type directly than mention conversationally. Everything added or checked off here stays in
-sync with chat and with what a generated weekly plan adds automatically — same underlying list,
-just a second way to work with it.
+A dedicated page (linked at the top of chat) for shopping from without going through chat.
+Three toggles: **To buy** (the default — check an item's box while you're shopping to mark it
+purchased, which also adds it to tracked inventory automatically, same as checking it off in
+chat), **By store** (the same list split into store groups instead of just section groups, for
+a household that shops in more than one place — see `set_item_store`/`get_grocery_list_by_store`;
+assign or fix an item's store right from either view with its store field), and **Purchased**
+(what's been checked off, with an undo). Quantity and category are editable inline on the To buy
+and By store views, and there's an add-item form for anything you'd rather type directly than
+mention conversationally. Everything added or checked off here stays in sync with chat and with
+what a generated weekly plan adds automatically — same underlying list, just a second way to work
+with it. (Getting an item elsewhere without deleting it — `exclude_grocery_item`/
+`include_grocery_item` — is still available through chat; it just isn't a dedicated tab on this
+page anymore.)
+
+Above the To buy list, an **"Already have this?"** section cross-references everything on the
+list against tracked inventory (the same confident-match logic used for meal-plan ingredient
+auto-adding) and pulls out anything that's also already tracked with a quantity on hand — most
+often something added ad hoc in chat before checking, or left over from before inventory caught
+up. Each flagged item shows what's requested vs. what's already tracked (and where), with two
+one-click actions: **Remove from list** if the shopper agrees it's redundant, or **Keep it, I
+need it** if they're running low despite the match — which drops it out of this review for good
+and puts it back in the normal To buy list. Nothing is ever auto-removed; it's just surfaced for
+a quick human call before it's actually bought again.
 
 ### Photo-based inventory capture
 

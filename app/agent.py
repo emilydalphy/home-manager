@@ -1061,6 +1061,20 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "get_grocery_already_have_items",
+        "description": "Cross-reference the 'needed' grocery list against tracked inventory to flag items that may not actually need buying (already tracked with a quantity on hand). Check this if the user asks whether anything on the list is redundant, or proactively mention it if something obviously overlaps. Each item is only flagged once — see mark_grocery_item_already_have_reviewed to confirm one is still needed.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "mark_grocery_item_already_have_reviewed",
+        "description": "Confirm a grocery item flagged by get_grocery_already_have_items is still needed despite the inventory match (e.g. running low) — stops it from being flagged again.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"item_id": {"type": "integer"}},
+            "required": ["item_id"],
+        },
+    },
+    {
         "name": "update_inventory",
         "description": "Update pantry/fridge inventory from a chat mention (buying, using, running out of something). Call this proactively any time the user mentions inventory-related info, the same way preferences get captured proactively — there's no manual-entry screen, chat is the only way this gets tracked.",
         "input_schema": {
@@ -1958,6 +1972,8 @@ TOOL_FUNCTIONS = {
     "remove_grocery_item": tools.remove_grocery_item,
     "exclude_grocery_item": tools.exclude_grocery_item,
     "include_grocery_item": tools.include_grocery_item,
+    "get_grocery_already_have_items": tools.get_grocery_already_have_items,
+    "mark_grocery_item_already_have_reviewed": tools.mark_grocery_item_already_have_reviewed,
     "update_inventory": tools.update_inventory,
     "update_inventory_items": tools.update_inventory_items,
     "get_inventory": tools.get_inventory,

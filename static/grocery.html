@@ -40,6 +40,8 @@
   .refresh-btn:disabled { opacity: 0.6; cursor: default; }
   h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
   h2.section-title:first-child { margin-top: 0; }
+  h2.store-title { font-size: 1.05rem; margin: 22px 0 6px; color: #222; }
+  h2.store-title:first-child { margin-top: 0; }
   .card {
     background: white;
     border: 1px solid #e0e0e0;
@@ -53,14 +55,22 @@
     gap: 10px;
     padding: 10px 0;
     border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
   }
   .item-row:last-child { border-bottom: none; }
   .item-row.checked-off .item-name { text-decoration: line-through; color: #999; }
-  .item-info { flex: 1; min-width: 0; }
+  .item-info { flex: 1; min-width: 120px; }
   .item-name { font-weight: 500; margin: 0; }
   .item-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; }
   .qty-input {
     width: 90px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.85rem;
+  }
+  .store-input {
+    width: 110px;
     padding: 5px 8px;
     border-radius: 6px;
     border: 1px solid #ccc;
@@ -76,8 +86,7 @@
     color: #444;
   }
   @media (max-width: 520px) {
-    .item-row { flex-wrap: wrap; }
-    .cat-select, .qty-input { flex: 1; min-width: 100px; }
+    .cat-select, .qty-input, .store-input { flex: 1; min-width: 100px; }
   }
   .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
   button.toggle-btn {
@@ -102,7 +111,7 @@
   .icon-btn:hover { background: #f0f0f0; }
   .icon-btn.save { color: #2b6cb0; }
   .icon-btn.remove { color: #b00020; }
-  .icon-btn.exclude, .icon-btn.include, .icon-btn.undo { font-size: 0.78rem; white-space: nowrap; }
+  .icon-btn.exclude, .icon-btn.undo, .icon-btn.keep { font-size: 0.78rem; white-space: nowrap; }
   .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
   .error { color: #b00020; font-size: 0.9rem; }
   .add-card {
@@ -144,6 +153,40 @@
     cursor: pointer;
   }
   button.action:disabled { opacity: 0.6; cursor: default; }
+  .already-have-banner {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+    background: #fff8e6;
+    border: 1px solid #f3e0a8;
+    color: #7a5b00;
+  }
+  .already-have-banner h2 { font-size: 0.9rem; margin: 0 0 4px; color: inherit; }
+  .already-have-banner p.hint { margin: 0 0 10px; color: #8a6d1f; font-size: 0.82rem; }
+  .already-have-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid #f0e3b8;
+    flex-wrap: wrap;
+  }
+  .already-have-row:last-child { border-bottom: none; }
+  .already-have-row .info { flex: 1; min-width: 160px; }
+  .already-have-row .tag { font-weight: 600; }
+  .already-have-row .actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .ah-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .ah-btn.remove-btn { background: #b00020; color: white; }
+  .ah-btn.keep-btn { background: white; border: 1px solid #d9c37a; color: #7a5b00; }
+  .ah-btn:disabled { opacity: 0.6; cursor: default; }
 </style>
 </head>
 <body>
@@ -154,10 +197,12 @@
 </div>
 <p class="subtitle">This week's shopping list. <a href="/">&larr; Back to chat</a></p>
 
+<div id="already-have-banner"></div>
+
 <div class="view-toggle">
-  <button class="toggle-btn active" id="view-needed-btn" data-status="needed">To buy</button>
-  <button class="toggle-btn" id="view-purchased-btn" data-status="purchased">Purchased</button>
-  <button class="toggle-btn" id="view-excluded-btn" data-status="excluded">Getting elsewhere</button>
+  <button class="toggle-btn active" id="view-needed-btn" data-view="needed">To buy</button>
+  <button class="toggle-btn" id="view-store-btn" data-view="store">By store</button>
+  <button class="toggle-btn" id="view-purchased-btn" data-view="purchased">Purchased</button>
 </div>
 
 <div id="content">
@@ -194,50 +239,27 @@ function categoryOptions(current) {
   return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('');
 }
 
-let currentStatus = 'needed'; // 'needed' | 'purchased' | 'excluded'
+let currentView = 'needed'; // 'needed' | 'store' | 'purchased'
 
 function itemRowHtml(it) {
-  const checkedOff = currentStatus === 'purchased';
+  const checkedOff = currentView === 'purchased';
+  const editable = currentView === 'needed' || currentView === 'store';
   return `<div class="item-row ${checkedOff ? 'checked-off' : ''}" data-item-id="${it.id}">
-    ${currentStatus === 'needed' ? `<input type="checkbox" class="buy-checkbox" title="Mark purchased" />` : ''}
-    ${currentStatus === 'purchased' ? `<button class="icon-btn undo" title="Move back to To buy">&#8630;</button>` : ''}
+    ${currentView === 'needed' ? `<input type="checkbox" class="buy-checkbox" title="Mark purchased" />` : ''}
+    ${currentView === 'purchased' ? `<button class="icon-btn undo" title="Move back to To buy">&#8630;</button>` : ''}
     <div class="item-info">
       <p class="item-name">${escapeHtml(it.item)}</p>
-      ${it.store ? `<p class="item-meta">${escapeHtml(it.store)}</p>` : ''}
     </div>
-    <select class="cat-select" ${currentStatus !== 'needed' ? 'disabled' : ''}>${categoryOptions(it.category)}</select>
-    <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" ${currentStatus !== 'needed' ? 'disabled' : ''} />
-    ${currentStatus === 'needed' ? `
-      <button class="icon-btn save" title="Save changes">&check;</button>
-      <button class="icon-btn exclude" title="Get elsewhere — hide from this list">elsewhere</button>` : ''}
-    ${currentStatus === 'excluded' ? `<button class="icon-btn include" title="Back on the list">&#8617; back on list</button>` : ''}
+    <select class="cat-select" ${!editable ? 'disabled' : ''}>${categoryOptions(it.category)}</select>
+    <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" ${!editable ? 'disabled' : ''} />
+    ${editable ? `<input type="text" class="store-input" value="${escapeHtml(it.store || '')}" placeholder="Store" />` : ''}
+    ${editable ? `<button class="icon-btn save" title="Save changes">&check;</button>` : ''}
+    ${currentView === 'needed' ? `<button class="icon-btn exclude" title="Get elsewhere — hide from this list">elsewhere</button>` : ''}
     <button class="icon-btn remove" title="Delete">&times;</button>
   </div>`;
 }
 
-function render(view) {
-  const content = document.getElementById('content');
-  const sections = view.sections || [];
-
-  if (!sections.length) {
-    const emptyMsg = currentStatus === 'needed'
-      ? 'Nothing on the list — add items below, or they\'ll show up automatically from meal planning.'
-      : currentStatus === 'purchased' ? 'Nothing marked purchased yet.'
-      : 'Nothing set to "get elsewhere" right now.';
-    content.innerHTML = `<p class="empty">${emptyMsg}</p>`;
-    return;
-  }
-
-  let html = '';
-  for (const s of sections) {
-    html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
-    for (const it of s.items) {
-      html += itemRowHtml(it);
-    }
-    html += `</div>`;
-  }
-  content.innerHTML = html;
-
+function wireRowActions(content) {
   content.querySelectorAll('.buy-checkbox').forEach(cb => {
     cb.addEventListener('change', async () => {
       const row = cb.closest('.item-row');
@@ -285,14 +307,25 @@ function render(view) {
       const itemId = row.getAttribute('data-item-id');
       const qty = row.querySelector('.qty-input').value;
       const cat = row.querySelector('.cat-select').value;
+      const storeInput = row.querySelector('.store-input');
       btn.disabled = true;
       try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quantity: qty, category: cat }),
-        });
-        if (!res.ok) throw new Error('failed');
+        const calls = [
+          fetch('/api/grocery-list/' + itemId + '/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quantity: qty, category: cat }),
+          }),
+        ];
+        if (storeInput) {
+          calls.push(fetch('/api/grocery-list/' + itemId + '/store', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store: storeInput.value.trim() }),
+          }));
+        }
+        const results = await Promise.all(calls);
+        if (results.some(r => !r.ok)) throw new Error('failed');
         load();
       } catch (err) {
         btn.disabled = false;
@@ -308,22 +341,6 @@ function render(view) {
       btn.disabled = true;
       try {
         const res = await fetch('/api/grocery-list/' + itemId + '/exclude', { method: 'POST' });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't update that — try again.");
-      }
-    });
-  });
-
-  content.querySelectorAll('.icon-btn.include').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/include', { method: 'POST' });
         if (!res.ok) throw new Error('failed');
         load();
       } catch (err) {
@@ -350,28 +367,143 @@ function render(view) {
   });
 }
 
+function renderNeededOrPurchased(view) {
+  const content = document.getElementById('content');
+  const sections = view.sections || [];
+
+  if (!sections.length) {
+    const emptyMsg = currentView === 'needed'
+      ? 'Nothing on the list — add items below, or they\'ll show up automatically from meal planning.'
+      : 'Nothing marked purchased yet.';
+    content.innerHTML = `<p class="empty">${emptyMsg}</p>`;
+    return;
+  }
+
+  let html = '';
+  for (const s of sections) {
+    html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
+    for (const it of s.items) {
+      html += itemRowHtml(it);
+    }
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+  wireRowActions(content);
+}
+
+function renderByStore(view) {
+  const content = document.getElementById('content');
+  const stores = view.stores || [];
+
+  if (!stores.length || !stores.some(s => s.sections && s.sections.length)) {
+    content.innerHTML = '<p class="empty">Nothing on the list yet — add items below.</p>';
+    return;
+  }
+
+  let html = '';
+  for (const store of stores) {
+    if (!store.sections || !store.sections.length) continue;
+    html += `<h2 class="store-title">${escapeHtml(store.store)}</h2>`;
+    for (const s of store.sections) {
+      html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
+      for (const it of s.items) {
+        html += itemRowHtml(it);
+      }
+      html += `</div>`;
+    }
+  }
+  content.innerHTML = html;
+  wireRowActions(content);
+}
+
+async function renderAlreadyHaveBanner() {
+  const banner = document.getElementById('already-have-banner');
+  if (currentView !== 'needed') {
+    banner.innerHTML = '';
+    return;
+  }
+  let items = [];
+  try {
+    const res = await fetch('/api/grocery-list/already-have');
+    if (res.ok) items = (await res.json()).items || [];
+  } catch (err) { /* non-critical, ignore */ }
+
+  if (!items.length) {
+    banner.innerHTML = '';
+    return;
+  }
+
+  banner.innerHTML = `
+    <div class="already-have-banner">
+      <h2>Already have this?</h2>
+      <p class="hint">These are on the list, but inventory shows some already on hand — pulled out here for a quick check before shopping.</p>
+      ${items.map(it => `
+        <div class="already-have-row" data-item-id="${it.item_id}">
+          <div class="info">
+            <span class="tag">${escapeHtml(it.item)}</span>${it.quantity ? ' (' + escapeHtml(it.quantity) + ' wanted)' : ''}
+            — tracking ${escapeHtml(it.inventory_quantity || 'some')}${it.inventory_location ? ' in the ' + escapeHtml(it.inventory_location) : ''}
+          </div>
+          <div class="actions">
+            <button class="ah-btn keep-btn">Keep it, I need it</button>
+            <button class="ah-btn remove-btn">Remove from list</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  banner.querySelectorAll('.already-have-row').forEach(row => {
+    const itemId = row.getAttribute('data-item-id');
+    const keepBtn = row.querySelector('.keep-btn');
+    const removeBtn = row.querySelector('.remove-btn');
+    async function act(endpoint) {
+      keepBtn.disabled = true;
+      removeBtn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + endpoint, { method: 'POST' });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        keepBtn.disabled = false;
+        removeBtn.disabled = false;
+        alert("Couldn't update that — try again.");
+      }
+    }
+    keepBtn.addEventListener('click', () => act('/keep'));
+    removeBtn.addEventListener('click', () => act('/remove'));
+  });
+}
+
 async function load() {
   const content = document.getElementById('content');
   try {
-    const res = await fetch('/api/grocery-list?status=' + encodeURIComponent(currentStatus));
-    if (!res.ok) throw new Error('Could not load');
-    render(await res.json());
+    if (currentView === 'store') {
+      const res = await fetch('/api/grocery-list/by-store?status=needed');
+      if (!res.ok) throw new Error('Could not load');
+      renderByStore(await res.json());
+    } else {
+      const status = currentView === 'purchased' ? 'purchased' : 'needed';
+      const res = await fetch('/api/grocery-list?status=' + encodeURIComponent(status));
+      if (!res.ok) throw new Error('Could not load');
+      renderNeededOrPurchased(await res.json());
+    }
+    renderAlreadyHaveBanner();
   } catch (err) {
     content.innerHTML = '<p class="error">Couldn\'t load the grocery list right now — try refreshing.</p>';
   }
 }
 
-function setView(status, btnId) {
-  if (currentStatus === status) return;
-  currentStatus = status;
+function setView(view, btnId) {
+  if (currentView === view) return;
+  currentView = view;
   document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(btnId).classList.add('active');
   load();
 }
 
 document.getElementById('view-needed-btn').addEventListener('click', () => setView('needed', 'view-needed-btn'));
+document.getElementById('view-store-btn').addEventListener('click', () => setView('store', 'view-store-btn'));
 document.getElementById('view-purchased-btn').addEventListener('click', () => setView('purchased', 'view-purchased-btn'));
-document.getElementById('view-excluded-btn').addEventListener('click', () => setView('excluded', 'view-excluded-btn'));
 
 document.getElementById('add-btn').addEventListener('click', async () => {
   const itemInput = document.getElementById('add-item');
@@ -391,7 +523,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
     itemInput.value = '';
     qtyInput.value = '';
     catSelect.value = 'other';
-    if (currentStatus !== 'needed') setView('needed', 'view-needed-btn');
+    if (currentView !== 'needed') setView('needed', 'view-needed-btn');
     else load();
   } catch (err) {
     alert("Couldn't add that — try again.");

@@ -124,6 +124,12 @@ class MemberNoteRequest(BaseModel):
     note: str
 
 
+class RecipeFeedbackRequest(BaseModel):
+    recipe_name: str
+    rating: str | None = None  # liked | disliked | None (notes only)
+    notes: str = ""
+
+
 class InventoryUpdateRequest(BaseModel):
     item: str
     action: str = "set"  # add | use | remove | set
@@ -158,6 +164,10 @@ class GroceryUpdateRequest(BaseModel):
 
 class GroceryStatusRequest(BaseModel):
     status: str = "purchased"  # needed | in_cart | purchased
+
+
+class GroceryStoreRequest(BaseModel):
+    store: str = ""
 
 
 @app.on_event("startup")
@@ -420,6 +430,19 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
     return {"items": items}
 
 
+@app.post("/api/recipe-feedback")
+def record_recipe_feedback(req: RecipeFeedbackRequest):
+    """Rate a recipe (liked/disliked, with optional notes) directly from the Cooker view's feedback-nudge banner item — the inline alternative to answering 'how'd it go?' back in chat."""
+    try:
+        result = tools.mark_recipe_feedback(req.recipe_name, rating=req.rating, notes=req.notes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Recipe feedback failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.post("/api/attention/{item_id}/use")
 def record_attention_usage(item_id: int, req: AttentionUsageRequest):
     """Log how much was actually used for a 'needs_amount_used' inventory-depletion attention item, applying it directly to the tracked inventory row and resolving the item — the inline alternative to answering by rewriting the amount left."""
@@ -504,11 +527,90 @@ def remove_inventory_view_item(item_id: int):
 
 @app.get("/api/grocery-list")
 def get_grocery_list_view(status: str = "needed"):
-    """Grocery list grouped by store section — powers the dedicated Grocery List view page. status: needed | in_cart | purchased | excluded | all."""
+    """
+    Grocery list grouped by store section — powers the dedicated Grocery
+    List view page. status: needed | in_cart | purchased | excluded | all.
+    For 'needed', items flagged by get_grocery_already_have_items (not yet
+    reviewed) are left out here too — they're shown separately in the
+    view's "Already have this?" review section instead, so nothing appears
+    twice.
+    """
     try:
         result = tools.get_grocery_list_by_section(status=status)
+        if status == "needed":
+            already_have_ids = {it["item_id"] for it in tools.get_grocery_already_have_items()}
+            if already_have_ids:
+                result = {
+                    "sections": [
+                        {"section": s["section"], "items": [it for it in s["items"] if it["id"] not in already_have_ids]}
+                        for s in result["sections"]
+                    ]
+                }
+                result["sections"] = [s for s in result["sections"] if s["items"]]
     except Exception as e:
         logger.exception("Grocery list lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/grocery-list/by-store")
+def get_grocery_list_by_store_view(status: str = "needed"):
+    """
+    Grocery list split into store groups (see set_item_store) — powers the
+    Grocery List view's 'By store' toggle. Same already-have filtering as
+    the main /api/grocery-list endpoint for status='needed', so a flagged
+    item doesn't show here while also sitting in the review section.
+    """
+    try:
+        result = tools.get_grocery_list_by_store(status=status)
+        if status == "needed":
+            already_have_ids = {it["item_id"] for it in tools.get_grocery_already_have_items()}
+            if already_have_ids:
+                stores = []
+                for store in result["stores"]:
+                    sections = [
+                        {"section": s["section"], "items": [it for it in s["items"] if it["id"] not in already_have_ids]}
+                        for s in store["sections"]
+                    ]
+                    sections = [s for s in sections if s["items"]]
+                    if sections:
+                        stores.append({"store": store["store"], "sections": sections})
+                result = {"stores": stores}
+    except Exception as e:
+        logger.exception("Grocery list by-store lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/grocery-list/already-have")
+def get_grocery_already_have_view():
+    """Items on the 'needed' list that may already be covered by tracked inventory — powers the Grocery List view's 'Already have this?' review section."""
+    try:
+        result = tools.get_grocery_already_have_items()
+    except Exception as e:
+        logger.exception("Grocery already-have lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": result}
+
+
+@app.post("/api/grocery-list/{item_id}/keep")
+def keep_grocery_list_item(item_id: int):
+    """Confirm an already-have-flagged item is still needed — moves it back into the normal To-buy list."""
+    try:
+        result = tools.mark_grocery_item_already_have_reviewed(item_id)
+    except Exception as e:
+        logger.exception("Grocery already-have review failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/store")
+def set_grocery_list_item_store(item_id: int, req: GroceryStoreRequest):
+    """Assign which store a specific listed item should be bought at, directly from the Grocery List view."""
+    try:
+        result = tools.set_grocery_item_store(item_id, req.store)
+    except Exception as e:
+        logger.exception("Grocery list store assignment failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 

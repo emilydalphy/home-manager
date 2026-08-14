@@ -137,6 +137,27 @@
   }
   .attn-btn:hover { background: #dbe8f5; }
   .attn-btn.dismiss { color: #7a5b00; }
+  .attention-item.feedback-item { flex-direction: column; align-items: stretch; }
+  .attention-item .feedback-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .attention-item .feedback-row .fb-btn {
+    background: white;
+    border: 1px solid #cfe0f2;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    color: #1e4a75;
+    cursor: pointer;
+  }
+  .attention-item .feedback-row .fb-btn:hover { background: #dbe8f5; }
+  .attention-item .feedback-row .fb-btn:disabled { opacity: 0.6; cursor: default; }
+  .attention-item .feedback-row .fb-notes {
+    flex: 1;
+    min-width: 120px;
+    border: 1px solid #cfe0f2;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+  }
   .attention-item.usage-item { flex-direction: column; align-items: stretch; }
   .attention-item .usage-row { display: flex; gap: 6px; margin-top: 6px; }
   .attention-item .usage-row input {
@@ -404,6 +425,18 @@ function renderAttentionBanner(items) {
               </span>
             </div>`;
         }
+        if (it.kind === 'feedback_nudge') {
+          const mealName = (it.detail && it.detail.meal) || '';
+          return `
+            <div class="attention-item feedback-item" data-mode="feedback" data-meal="${escapeHtml(mealName)}">
+              <span class="summary">${escapeHtml(it.summary)}</span>
+              <span class="feedback-row">
+                <button class="fb-btn liked">&#128077; Liked it</button>
+                <button class="fb-btn disliked">&#128078; Not a hit</button>
+                <input type="text" class="fb-notes" placeholder="Notes (optional)" />
+              </span>
+            </div>`;
+        }
         return `
           <div class="attention-item" data-item-id="${it.id == null ? '' : it.id}">
             <span class="summary">${escapeHtml(it.summary)}</span>
@@ -418,8 +451,35 @@ function renderAttentionBanner(items) {
   `;
 
   banner.querySelectorAll('.attention-item').forEach(row => {
+    if (row.getAttribute('data-mode') === 'feedback') {
+      const mealName = row.getAttribute('data-meal');
+      const likedBtn = row.querySelector('.fb-btn.liked');
+      const dislikedBtn = row.querySelector('.fb-btn.disliked');
+      const notesInput = row.querySelector('.fb-notes');
+      async function rate(rating) {
+        likedBtn.disabled = true;
+        dislikedBtn.disabled = true;
+        try {
+          const res = await fetch('/api/recipe-feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipe_name: mealName, rating, notes: notesInput.value.trim() }),
+          });
+          if (!res.ok) throw new Error('failed');
+          refreshAttention();
+        } catch (err) {
+          likedBtn.disabled = false;
+          dislikedBtn.disabled = false;
+          alert("Couldn't save that rating — try again.");
+        }
+      }
+      likedBtn.addEventListener('click', () => rate('liked'));
+      dislikedBtn.addEventListener('click', () => rate('disliked'));
+      return;
+    }
+
     const itemId = row.getAttribute('data-item-id');
-    if (!itemId) return; // the feedback-nudge entry (id=None) has no action buttons
+    if (!itemId) return; // the feedback-nudge entry (id=None) has no other action buttons
 
     if (row.getAttribute('data-mode') === 'usage') {
       const input = row.querySelector('.usage-input');

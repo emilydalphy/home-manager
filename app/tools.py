@@ -1984,6 +1984,73 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
     return {"stores": stores}
 
 
+def set_grocery_item_store(item_id: int, store: str) -> dict:
+    """Same as set_item_store, but targeting one specific already-listed grocery item by id rather than every item with that name — for setting a store directly from a grocery list row rather than a general "we get X at Costco" chat mention."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+    ).fetchone()
+    if not row:
+        conn.close()
+        return {"item_id": item_id, "found": False}
+    conn.execute("UPDATE grocery_items SET store = ? WHERE id = ?", (store, item_id))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "store": store, "found": True}
+
+
+def get_grocery_already_have_items() -> list[dict]:
+    """
+    Cross-reference the 'needed' grocery list against tracked inventory to
+    flag items that may not actually need buying — e.g. added ad hoc in
+    chat before checking, or left over from before inventory caught up.
+    Uses the same confident name-match logic as meal-plan ingredient
+    auto-adding (get_inventory's items with a non-blank tracked quantity),
+    not a guess. Only returns items not yet reviewed (see
+    mark_grocery_item_already_have_reviewed) — once the shopper confirms
+    they still need something, it drops out of this list for good (even
+    though the inventory match still technically exists) rather than
+    nagging about the same item every time. Powers the Grocery List view's
+    "Already have this?" review section, which pulls these out of the
+    normal To-buy list until reviewed.
+    """
+    needed = list_grocery_list(status="needed")
+    if not needed:
+        return []
+    inventory = get_inventory()
+    have_matches = []
+    for it in needed:
+        if it.get("already_have_reviewed"):
+            continue
+        match, confident = _find_inventory_match(it["item"], inventory)
+        if not match or not confident:
+            continue
+        if not (match.get("quantity") or "").strip():
+            continue  # tracked but with no quantity on hand isn't a confident "we have it"
+        have_matches.append({
+            "item_id": it["id"], "item": it["item"], "quantity": it["quantity"], "category": it["category"],
+            "inventory_quantity": match["quantity"], "inventory_location": match.get("location", ""),
+        })
+    return have_matches
+
+
+def mark_grocery_item_already_have_reviewed(item_id: int) -> dict:
+    """
+    Confirm an item flagged by get_grocery_already_have_items is still
+    needed despite the inventory match (e.g. running low) — moves it back
+    into the normal To-buy list and stops it from being flagged again for
+    this same listing. Does not touch quantity/status; only clears the flag.
+    """
+    conn = get_conn()
+    conn.execute(
+        "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
+        (item_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "already_have_reviewed": True}
+
+
 def get_learning_summary() -> dict:
     """
     A visible, human-readable snapshot of what the app has actually learned
@@ -2666,19 +2733,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     conn = get_conn()
     if status == "excluded":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
             (HOUSEHOLD_ID,),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
             (HOUSEHOLD_ID,),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
             (HOUSEHOLD_ID, status),
         ).fetchall()
