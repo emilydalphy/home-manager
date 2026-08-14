@@ -1489,6 +1489,10 @@ def get_attention_items() -> list[dict]:
 
 # ---------- Cooker execution layer (recipe detail, prep schedule, check-off) ----------
 
+def _singularize(word: str) -> str:
+    return word[:-1] if word.endswith("s") else word
+
+
 def _find_inventory_match(ingredient_item: str, inventory_items: list[dict]) -> tuple[dict | None, bool]:
     """
     Try to match a recipe ingredient name to a tracked inventory row for
@@ -1499,23 +1503,46 @@ def _find_inventory_match(ingredient_item: str, inventory_items: list[dict]) -> 
     silently treated as the same thing, since 'close' isn't a safe basis
     to deplete inventory from on its own (e.g. "garlic" vs a tracked
     "garlic bulb" — probably the same ingredient, but not safe to assume).
+
+    When more than one loose candidate matches, they're ranked rather than
+    just taking whichever happens to come first in inventory order — e.g.
+    for ingredient "feta cheese" tracked alongside both a "Feta" and a
+    generic "Cheese" row, "Feta" should be the one surfaced for review, not
+    "Cheese". Candidates whose full name exactly matches one of the
+    ingredient's words win over a merely-partial substring match, and among
+    those, an earlier word wins over a later one — in an English compound
+    food name ("feta cheese", "soy sauce", "chicken broth") the leading
+    word is typically the specific descriptor and the trailing word the
+    generic category, so matching on the earlier word is the more specific,
+    more likely-correct guess.
     """
     name = (ingredient_item or "").strip().lower()
     if not name:
         return None, False
-    name_singular = name[:-1] if name.endswith("s") else name
+    name_words = name.split()
+    name_singular = _singularize(name)
     for row in inventory_items:
         row_name = row["item"].strip().lower()
-        row_singular = row_name[:-1] if row_name.endswith("s") else row_name
+        row_singular = _singularize(row_name)
         if name_singular == row_singular:
             return row, True
+
     candidates = [
         row for row in inventory_items
         if name in row["item"].strip().lower() or row["item"].strip().lower() in name
     ]
-    if candidates:
-        return candidates[0], False
-    return None, False
+    if not candidates:
+        return None, False
+
+    def candidate_rank(row):
+        row_words = [_singularize(w) for w in row["item"].strip().lower().split()]
+        for idx, w in enumerate(name_words):
+            if _singularize(w) in row_words:
+                return (0, idx)  # exact whole-word match — ranked by how early that word appears
+        return (1, 0)  # only a raw substring overlap, no shared whole word
+
+    candidates.sort(key=candidate_rank)
+    return candidates[0], False
 
 
 def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
