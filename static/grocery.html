@@ -61,7 +61,10 @@
   }
   .voice-status.showing { display: block; }
   .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0392b; margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
-  .voice-status .voice-note { display: block; margin-top: 4px; color: #8a4b4b; font-size: 0.78rem; }
+  .voice-status .voice-note { display: block; margin-top: 6px; color: #8a4b4b; font-size: 0.78rem; }
+  .voice-status .voice-log { margin: 6px 0 0; padding: 0; list-style: none; }
+  .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid #f3c6c6; }
+  .voice-status .voice-log li:first-child { border-top: none; }
   h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
   h2.section-title:first-child { margin-top: 0; }
   h2.store-title { font-size: 1.05rem; margin: 22px 0 6px; color: #222; }
@@ -278,12 +281,25 @@ let currentView = 'needed'; // 'needed' | 'store' | 'purchased'
 // Purchased.
 
 let voiceSession = null;
+let voiceLog = [];
 
 function setVoiceStatus(text) {
   const el = document.getElementById('voice-status');
-  if (!text) { el.classList.remove('showing'); el.innerHTML = ''; return; }
+  if (!text) {
+    voiceLog = [];
+    el.classList.remove('showing');
+    el.innerHTML = '';
+    return;
+  }
+  // Keep a short scrollback rather than a single overwritten line — a
+  // single line was flashing by before it could be read, making it
+  // impossible to tell what was actually heard when a command failed.
+  voiceLog.unshift(text);
+  voiceLog = voiceLog.slice(0, 5);
   el.classList.add('showing');
-  el.innerHTML = `<span class="voice-dot"></span>${escapeHtml(text)}<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
+  el.innerHTML = `<span class="voice-dot"></span>Listening…` +
+    `<ul class="voice-log">${voiceLog.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` +
+    `<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
 }
 
 function updateVoiceButton() {
@@ -319,8 +335,12 @@ function groceryVoiceFuzzyFind(text, candidates, getLabel) {
   return bestScore > 0 ? best : null;
 }
 
+// Keyword-anywhere-in-phrase matching (not exact leading-phrase anchoring)
+// — see cooker.html's handlers for the same rationale: natural phrasing
+// varies too much to require an exact sentence structure.
 function isVoiceEndCommand(command) {
-  return /^(done|stop|end session|that'?s all|all done)\b/i.test(command);
+  return /\b(stop|cancel|exit|goodbye|end session|that'?s all|all done)\b/i.test(command) ||
+    /^done$/i.test(command.trim());
 }
 
 async function fetchNeededItemsFlat() {
@@ -335,10 +355,21 @@ async function fetchNeededItemsFlat() {
 async function handleShopperVoiceCommand(command) {
   if (isVoiceEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
 
-  const checkMatch = command.match(/^(?:check off|got|grabbed|found)\s+(.+)/i);
-  if (checkMatch) {
+  // "What store/section is X in" — checked before the check-off/add
+  // patterns since it's the most specific (has its own keyword pair).
+  if (/\b(what|which)\b/i.test(command) && /\b(store|section)\b/i.test(command)) {
+    const afterKeyword = command.replace(/^.*?\b(store|section)\b\s*(?:is|does)?\s*/i, '').replace(/\bin\??$/i, '').trim();
     const items = await fetchNeededItemsFlat();
-    const item = groceryVoiceFuzzyFind(checkMatch[1], items, i => i.item);
+    const item = groceryVoiceFuzzyFind(afterKeyword, items, i => i.item);
+    if (!item) return { spoken: "I don't see that on the list." };
+    const storeText = item.store && item.store.trim() ? item.store : 'no store assigned';
+    return { spoken: `${item.item} is ${item.category}, ${storeText}.` };
+  }
+
+  if (/\b(check off|got|grabbed|found|bought|picked up)\b/i.test(command)) {
+    const afterKeyword = command.replace(/^.*?\b(check off|got|grabbed|found|bought|picked up)\b\s*/i, '').trim();
+    const items = await fetchNeededItemsFlat();
+    const item = groceryVoiceFuzzyFind(afterKeyword, items, i => i.item);
     if (!item) return { spoken: "I don't see that on the list." };
     const res = await fetch('/api/grocery-list/' + item.id + '/status', {
       method: 'POST',
@@ -350,9 +381,13 @@ async function handleShopperVoiceCommand(command) {
     return { spoken: `Got it, ${item.item} checked off.` };
   }
 
-  const addMatch = command.match(/^add\s+(.+)/i);
-  if (addMatch) {
-    const name = addMatch[1].trim();
+  if (/\b(add|put|need)\b/i.test(command)) {
+    const name = command
+      .replace(/^.*?\b(add)\b\s*/i, '')
+      .replace(/\b(to the list|to my list|on the list|on my list)\b/gi, '')
+      .replace(/^(put|we need|need)\s+/i, '')
+      .trim();
+    if (!name) return null;
     const res = await fetch('/api/grocery-list/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -361,15 +396,6 @@ async function handleShopperVoiceCommand(command) {
     if (!res.ok) return null;
     if (currentView === 'needed') load();
     return { spoken: `Added ${name} to the list.` };
-  }
-
-  const storeMatch = command.match(/^(?:what|which)\s+(?:store|section)\s+(?:is\s+)?(.+?)(?:\s+in)?$/i);
-  if (storeMatch) {
-    const items = await fetchNeededItemsFlat();
-    const item = groceryVoiceFuzzyFind(storeMatch[1], items, i => i.item);
-    if (!item) return { spoken: "I don't see that on the list." };
-    const storeText = item.store && item.store.trim() ? item.store : 'no store assigned';
-    return { spoken: `${item.item} is ${item.category}, ${storeText}.` };
   }
 
   return null;

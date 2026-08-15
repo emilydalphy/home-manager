@@ -32,6 +32,33 @@
 const VOICE_TRIGGER_PHRASE = 'hey home manager';
 const VOICE_SESSION_TIMEOUT_MS = 5 * 60 * 1000; // end session after 5 min of no recognized command
 
+// Shared spoken-number parser — commands are matched permissively (see
+// cooker.html/grocery.html command handlers) rather than requiring exact
+// phrasing, and people naturally say "step three" as often as "step 3", so
+// both need to resolve to the same integer. Scans for a digit token first,
+// then a number/ordinal word anywhere in the text.
+const VOICE_NUMBER_WORDS = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17,
+  eighteen: 18, nineteen: 19, twenty: 20,
+  first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+  eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15, sixteenth: 16,
+  seventeenth: 17, eighteenth: 18, nineteenth: 19, twentieth: 20,
+};
+
+function voiceParseNumber(text) {
+  if (!text) return null;
+  const digitMatch = text.match(/\b(\d{1,2})\b/);
+  if (digitMatch) return parseInt(digitMatch[1], 10);
+  const words = text.toLowerCase().split(/[^a-z]+/);
+  for (const w of words) {
+    if (Object.prototype.hasOwnProperty.call(VOICE_NUMBER_WORDS, w)) return VOICE_NUMBER_WORDS[w];
+  }
+  return null;
+}
+
+window.voiceParseNumber = voiceParseNumber;
+
 function createVoiceSession(opts) {
   // opts:
   //   onListeningChange(isListening: bool) — update the visual mic indicator
@@ -103,7 +130,11 @@ function createVoiceSession(opts) {
       if (result.endSession) stop();
     } else {
       speak("Didn't catch that, try again.");
-      opts.onStatus && opts.onStatus('Didn’t catch that — try "hey home manager" plus a command again.');
+      // Includes the actual heard text (not just a generic failure) so a
+      // mis-transcription or an unsupported phrasing is visible rather than
+      // flashing by and leaving no trace of what went wrong — this was the
+      // gap that made "everything fails" hard to diagnose.
+      opts.onStatus && opts.onStatus('Didn’t recognize: "' + command + '" — try rephrasing after "hey home manager".');
     }
   }
 

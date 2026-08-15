@@ -280,8 +280,14 @@ implementation): "check off apples", "add napkins", "what store is coffee" (read
 item's assigned store/section). Always acts on the live To-buy list regardless of which toggle
 view happens to be showing.
 
-A command that isn't recognized gets "Didn't catch that, try again" rather than guessing or
-silently doing nothing.
+Command matching is deliberately loose — it looks for a topic keyword anywhere in what you said
+("step", "done", "add", "store", etc., plus spoken numbers like "step three" as well as digits)
+rather than requiring one exact sentence structure, since real speech (and imperfect
+transcription) rarely comes back phrased the same way twice. A command that still isn't
+recognized gets "Didn't catch that, try again" rather than guessing or silently doing nothing,
+and the visual status banner now keeps a short scrollback of the last few things it heard (not
+just the most recent line) so a mis-transcription is actually visible long enough to read and
+troubleshoot, instead of flashing by.
 
 **Known limitation, found during the technical spike and not fully resolved:** both the
 browser-native Web Speech API (used for recognition) and MediaRecorder-based audio capture

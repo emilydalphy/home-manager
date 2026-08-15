@@ -223,7 +223,10 @@
   }
   .voice-status.showing { display: block; }
   .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0392b; margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
-  .voice-status .voice-note { display: block; margin-top: 4px; color: #8a4b4b; font-size: 0.78rem; }
+  .voice-status .voice-note { display: block; margin-top: 6px; color: #8a4b4b; font-size: 0.78rem; }
+  .voice-status .voice-log { margin: 6px 0 0; padding: 0; list-style: none; }
+  .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid #f3c6c6; }
+  .voice-status .voice-log li:first-child { border-top: none; }
 </style>
 </head>
 <body>
@@ -270,11 +273,25 @@ let voiceSession = null;
 let voiceContext = null; // { type: 'prep' } | { type: 'meal', idx: number }
 let voiceStepCursor = {}; // per-meal "what's next" progress, reset each session
 
+let voiceLog = [];
+
 function setVoiceStatus(text) {
   const el = document.getElementById('voice-status');
-  if (!text) { el.classList.remove('showing'); el.innerHTML = ''; return; }
+  if (!text) {
+    voiceLog = [];
+    el.classList.remove('showing');
+    el.innerHTML = '';
+    return;
+  }
+  // Keep a short scrollback (not just the latest line) — a single
+  // overwritten status was flashing by before you could read what was
+  // actually heard, which made "everything fails" impossible to diagnose.
+  voiceLog.unshift(text);
+  voiceLog = voiceLog.slice(0, 5);
   el.classList.add('showing');
-  el.innerHTML = `<span class="voice-dot"></span>${escapeHtml(text)}<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
+  el.innerHTML = `<span class="voice-dot"></span>Listening…` +
+    `<ul class="voice-log">${voiceLog.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` +
+    `<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
 }
 
 function updateVoiceButtons() {
@@ -314,19 +331,31 @@ function voiceFuzzyFind(text, candidates, getLabel) {
   return bestScore > 0 ? best : null;
 }
 
+// Matching is deliberately keyword/anywhere-in-phrase based rather than
+// requiring an exact sentence structure — real speech (and imperfect
+// transcription) rarely comes back phrased exactly one way. Each handler
+// checks for a topic keyword anywhere in the command, not a fixed prefix.
 function isEndCommand(command) {
-  return /^(done|stop|end session|that'?s all|all done)\b/i.test(command);
+  return /\b(stop|cancel|exit|goodbye|end session|that'?s all|all done)\b/i.test(command) ||
+    /^done$/i.test(command.trim());
 }
 
 async function handlePrepVoiceCommand(command) {
   if (isEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
 
   let task = null;
-  const stepMatch = command.match(/(?:check off|mark|complete)\s+(?:step|task)\s+(\d+)/i) || command.match(/^step\s+(\d+)/i);
-  if (stepMatch) {
-    task = (cache.prep_tasks || [])[parseInt(stepMatch[1], 10) - 1] || null;
-  } else {
-    const afterVerb = command.replace(/^(check off|mark|complete)\s+/i, '');
+  // Prep steps have no other voice action besides checking them off, so any
+  // mention of "step"/"task" plus a number (digit or spoken word) is enough
+  // — no need to also match a specific verb like "check off".
+  if (/\b(step|task)\b/i.test(command)) {
+    const n = voiceParseNumber(command);
+    if (n !== null) {
+      task = (cache.prep_tasks || [])[n - 1] || null;
+      if (!task) return { spoken: `There's no step ${n} — I only count ${(cache.prep_tasks || []).length}.` };
+    }
+  }
+  if (!task) {
+    const afterVerb = command.replace(/\b(check off|mark|complete|finish|done with)\b/gi, '');
     task = voiceFuzzyFind(afterVerb, cache.prep_tasks || [], t => t.description);
   }
   if (!task) return null;
@@ -348,8 +377,34 @@ async function handleMealVoiceCommand(command, idx) {
 
   if (isEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
 
-  if (/(check off|mark|finish|complete).*(this )?(meal|recipe|dish)/i.test(command) ||
-      /^(we'?re |i'?m )?(done|finished)( cooking)?$/i.test(command)) {
+  // Recipe instructions aren't individually checkable (only the whole meal
+  // and prep tasks are) — so any mention of "step" plus a number is always
+  // a read-it-back question, never an action, and there's no ambiguity to
+  // resolve against other commands.
+  if (/\bstep\b/i.test(command)) {
+    const n = voiceParseNumber(command);
+    if (n !== null) {
+      const step = (meal.instructions || [])[n - 1];
+      return step
+        ? { spoken: `Step ${n}: ${step}` }
+        : { spoken: `There's no step ${n} — this recipe has ${(meal.instructions || []).length} steps.` };
+    }
+  }
+
+  if (/\bnext\b/i.test(command)) {
+    const cursor = voiceStepCursor[idx] || 0;
+    const step = (meal.instructions || [])[cursor];
+    if (!step) return { spoken: "That's the last step — nothing more after this." };
+    voiceStepCursor[idx] = cursor + 1;
+    return { spoken: `Step ${cursor + 1}: ${step}` };
+  }
+
+  // Marking the whole meal done requires an explicit qualifier ("cooking",
+  // "meal", "recipe", "dish", or "it"/"this") specifically so a bare "I'm
+  // done" or "finished" doesn't collide with the session-ending "done"/
+  // "stop" phrase, which is checked first above.
+  if (/\b(done|finish|finished|complete|completed|mark|check off)\b/i.test(command) &&
+      /\b(cooking|meal|recipe|dish|this|it)\b/i.test(command)) {
     const res = await fetch('/api/cooker/check-meal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -361,34 +416,18 @@ async function handleMealVoiceCommand(command, idx) {
     return { spoken: `Got it, ${meal.meal} marked done.` };
   }
 
-  const stepNumMatch = command.match(/step\s+(\d+)/i);
-  if (stepNumMatch) {
-    const n = parseInt(stepNumMatch[1], 10);
-    const step = (meal.instructions || [])[n - 1];
-    return step
-      ? { spoken: `Step ${n}: ${step}` }
-      : { spoken: `There's no step ${n} — this recipe has ${(meal.instructions || []).length} steps.` };
-  }
-
-  if (/what'?s next|next step/i.test(command)) {
-    const cursor = voiceStepCursor[idx] || 0;
-    const step = (meal.instructions || [])[cursor];
-    if (!step) return { spoken: "That's the last step — nothing more after this." };
-    voiceStepCursor[idx] = cursor + 1;
-    return { spoken: `Step ${cursor + 1}: ${step}` };
-  }
-
-  const ingredientMatch = command.match(/(?:how much|what'?s the amount of|amount of)\s+(.+)/i);
-  if (ingredientMatch) {
-    const ing = voiceFuzzyFind(ingredientMatch[1], meal.ingredients || [], i => i.item || '');
+  if (/\b(how much|amount|how many)\b/i.test(command)) {
+    const afterKeyword = command.replace(/^.*?\b(how much|how many|amount of|amount)\b/i, '').trim();
+    const ing = voiceFuzzyFind(afterKeyword, meal.ingredients || [], i => i.item || '');
     return ing
       ? { spoken: `${ing.qty || 'No amount tracked'} of ${ing.item}.` }
       : { spoken: "I don't see that ingredient in this recipe." };
   }
 
-  const subMatch = command.match(/^(?:log a substitution|log a deviation|note that|note|i used)[:\s]+(.+)/i);
-  if (subMatch) {
-    const note = subMatch[1].trim();
+  if (/\bsubstitut|\b(swap|swapped|instead|log|note)\b/i.test(command)) {
+    const note = command
+      .replace(/^(?:log a substitution|log a deviation|log that|note that|note|i substituted|i swapped)[:\s]*/i, '')
+      .trim() || command;
     try {
       const res = await fetch('/api/cooker/log-deviation', {
         method: 'POST',
