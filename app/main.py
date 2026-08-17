@@ -14,7 +14,7 @@ import logging
 import os
 
 from .db import init_db
-from .agent import run_agent_turn, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo
+from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo
 from . import tools
 
 logger = logging.getLogger("home_manager")
@@ -85,12 +85,12 @@ class ChoreSaveRequest(BaseModel):
 
 
 class MemoryEditRequest(BaseModel):
-    field: str  # notes | cooking_time_preference | cuisine_preferences | protein_preferences | goals
+    field: str  # notes | cooking_time_preference | cuisine_preferences | protein_preferences | dislikes | usual_stores | goals
     value: object  # str, list[str], or dict depending on field
 
 
 class MemoryDeleteRequest(BaseModel):
-    field: str  # dislikes | cuisine_preferences | protein_preferences | notes | cooking_time_preference
+    field: str  # dislikes | cuisine_preferences | protein_preferences | notes | cooking_time_preference | usual_stores
     item: str | None = None
 
 
@@ -857,7 +857,11 @@ def chat(req: ChatRequest):
         # common cause is a missing/invalid ANTHROPIC_API_KEY.
         logger.exception("Chat turn failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    SESSIONS[req.session_id] = updated_history
+    # Cap stored history so a long-lived browser tab (no logout, "default"
+    # session id) can't grow this — and the full payload re-sent to Claude
+    # every turn — without bound. See trim_conversation for why this is
+    # safe to cut mid-list without breaking tool_use/tool_result pairing.
+    SESSIONS[req.session_id] = trim_conversation(updated_history)
     return ChatResponse(reply=reply)
 
 

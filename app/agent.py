@@ -2126,7 +2126,28 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
         "\"next Monday\" yourself — never ask the user what today's date is."
     )
 
+    # Safety cap on tool-calling rounds within a single turn. Without this,
+    # a model that keeps calling tools (e.g. retrying a tool that keeps
+    # erroring, or looping over a large draft plan) grows `conversation`
+    # unboundedly in memory with no way out — that's a real production
+    # crash risk (worker OOM/kill), not just a slow response, and it's
+    # indistinguishable from a normal error to the browser since the
+    # process dies mid-request instead of returning any HTTP response at
+    # all. Hard-stopping after a generous but finite number of rounds turns
+    # that failure mode into an ordinary, recoverable chat reply instead.
+    MAX_TOOL_ROUNDS = 25
+    rounds = 0
+
     while True:
+        rounds += 1
+        if rounds > MAX_TOOL_ROUNDS:
+            logger.warning("run_agent_turn hit MAX_TOOL_ROUNDS (%d) — aborting loop", MAX_TOOL_ROUNDS)
+            text = (
+                "Sorry, that got stuck in a loop on my end — could you try again, maybe broken "
+                "into a couple smaller requests?"
+            )
+            return text, conversation
+
         response = client.messages.create(
             model=MODEL,
             # Was 1024 — too tight once tool calls like generate_weekly_plan
@@ -2179,3 +2200,30 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
             )
 
         conversation.append({"role": "user", "content": tool_results})
+
+
+# A "real" user turn boundary is a {"role": "user"} entry whose content is a
+# plain string — that's an actual typed message, appended once per
+# run_agent_turn call. Tool-result continuations within a turn also use
+# {"role": "user"}, but their content is a list of tool_result blocks, not a
+# string, so they're never mistaken for a boundary here.
+MAX_CONVERSATION_TURNS = 40
+
+
+def trim_conversation(history: list[dict], max_turns: int = MAX_CONVERSATION_TURNS) -> list[dict]:
+    """
+    Cap stored session history to the most recent `max_turns` real user
+    turns. A single browser tab's session can run indefinitely (there's no
+    logout), so without a cap the conversation — and the full payload sent
+    to Claude on every single turn — grows without bound the longer someone
+    keeps a session open, which is both a real memory-growth risk and a
+    steadily worsening cost/latency one. Only ever cuts at a genuine turn
+    boundary (see above), never mid-turn, so a tool_use block is never
+    separated from its paired tool_result — the Anthropic API rejects a
+    request where those don't line up.
+    """
+    boundaries = [i for i, m in enumerate(history) if m.get("role") == "user" and isinstance(m.get("content"), str)]
+    if len(boundaries) <= max_turns:
+        return history
+    cut_at = boundaries[-max_turns]
+    return history[cut_at:]

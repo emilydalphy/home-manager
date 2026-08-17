@@ -211,9 +211,18 @@ async function sendMessage(message) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_id: sessionId, message }),
     });
-    const data = await res.json();
     hideLoading();
-    if (!res.ok) throw new Error(data.detail || 'Request failed');
+    if (!res.ok) {
+      // Try to parse a JSON error body for a real message; if the response
+      // isn't JSON at all (e.g. a platform-level crash/restart page rather
+      // than our own app responding), fall back to the HTTP status instead
+      // of a totally generic message — status + reason gives something to
+      // go on next time instead of a dead end.
+      let detail = '';
+      try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
+      throw new Error(detail || `Request failed (${res.status} ${res.statusText})`);
+    }
+    const data = await res.json();
     addMessage('assistant', data.reply);
   } catch (err) {
     hideLoading();
