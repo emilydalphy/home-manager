@@ -94,6 +94,16 @@ class MemoryDeleteRequest(BaseModel):
     item: str | None = None
 
 
+class StoreTypicalItemAddRequest(BaseModel):
+    store: str
+    item: str
+
+
+class StoreTypicalItemRemoveRequest(BaseModel):
+    store: str
+    item: str
+
+
 class CheckOffMealRequest(BaseModel):
     entry_id: int
     status: str = "done"  # pending | done
@@ -359,6 +369,30 @@ def delete_memory(req: MemoryDeleteRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Deleting preference failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/store-items/add")
+def add_memory_store_item(req: StoreTypicalItemAddRequest):
+    """Add one typical item for a usual store, used by the 'what we know' view's per-store item lists."""
+    try:
+        tools.add_store_typical_items(req.store, [req.item])
+        memory = tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Adding store typical item failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/store-items/remove")
+def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
+    """Remove one typical item from a usual store's list, used by the 'what we know' view's per-store item lists."""
+    try:
+        tools.remove_store_typical_item(req.store, req.item)
+        memory = tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Removing store typical item failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
 

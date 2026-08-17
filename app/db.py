@@ -59,6 +59,7 @@ _MIGRATIONS = [
     ("grocery_items", "excluded_from_list", "INTEGER NOT NULL DEFAULT 0"),
     ("grocery_items", "already_have_reviewed", "INTEGER NOT NULL DEFAULT 0"),
     ("meal_preferences", "usual_stores_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("meal_preferences", "store_typical_items_json", "TEXT NOT NULL DEFAULT '{}'"),
 ]
 
 

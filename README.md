@@ -130,6 +130,14 @@ Know page) and doubles as the suggestion list for the store field when
 tagging items in the grocery list view, so you don't have to retype the same
 store name from scratch every time.
 
+Each usual store on the What We Know page can also expand to hold what you
+typically buy there ("at Costco I usually get paper towels and rotisserie
+chicken" works in chat too, or add them directly on the page). Those show up
+as a "Usually get here" suggestion row for that store in the grocery list's
+By Store view — even before anything else is on the list for that store —
+so confirming a regular is one tap instead of retyping it, and skipping it
+just means not tapping. Removing a store also clears its typical-items list.
+
 ### Grocery list
 
 Just say what you need — "add milk and eggs to the list" — and it's saved,

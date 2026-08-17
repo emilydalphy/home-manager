@@ -116,6 +116,17 @@ we eat this week," "do our dinners for the next 7 days" — call generate_weekly
 than calling plan_meal repeatedly across several turns. It builds the whole week in one pass \
 using saved preferences, dislikes, restrictions, and recent history, and returns a reviewable \
 plan. Only fall back to individual plan_meal calls for genuinely one-off, single-meal requests.
+- When a one-off meal request is the user's own dish idea rather than a saved recipe or a vague \
+placeholder ("leftovers," "takeout," "whatever's in the fridge" stay freeform — there's no real \
+dish to flesh out) — e.g. "let's do Greek chicken skewers with tomato and cucumber tonight," "I \
+want to try stuffed peppers this week" — don't just pass that string straight to plan_meal as a \
+freeform_meal. Build it into a real recipe first with add_recipe (ingredients, ordered \
+instructions, tags, food_groups, cuisine, main_protein — same as generating a new recipe for a \
+weekly plan), using exactly what the user described as the concept/name and filling in a \
+reasonable full version around it, then call plan_meal with that saved recipe's exact name. This \
+is what makes the meal actually cookable from the Cooker view afterward instead of showing "no \
+saved recipe detail, ask in chat" — the user gave you the idea once and shouldn't have to ask \
+again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
@@ -431,6 +442,30 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "add_store_typical_items",
+        "description": "Remember items typically bought at a specific usual store (e.g. store='Costco', items=['paper towels', 'rotisserie chicken']) — used to surface 'usually get here' suggestions in the grocery list's By Store view, which the user can confirm to add to the current list. Call this the moment the user mentions what they typically get somewhere, even mid-conversation. Merges with anything already saved for that store.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "store": {"type": "string"},
+                "items": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["store", "items"],
+        },
+    },
+    {
+        "name": "remove_store_typical_item",
+        "description": "Remove a single item from a store's typical-items list (e.g. it was a one-off, not actually a regular purchase there).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "store": {"type": "string"},
+                "item": {"type": "string"},
+            },
+            "required": ["store", "item"],
+        },
+    },
+    {
         "name": "get_chores_profile",
         "description": "Get saved chores context (home type, bed/bath count, yard, cleanliness standard, rotation members, existing help, notes), if the onboarding wizard's chores step already collected it. Call this before asking chores-setup questions to avoid re-asking what's already known.",
         "input_schema": {"type": "object", "properties": {}},
@@ -666,7 +701,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "plan_meal",
-        "description": "Schedule a meal (recipe name or freeform description) for a date/slot. Auto-adds ingredients to grocery list and food_groups if it's a saved recipe. Returns food_groups_missing so you can optionally, gently, suggest rounding it out.",
+        "description": "Schedule a meal (recipe name or freeform description) for a date/slot. Auto-adds ingredients to grocery list and food_groups if it's a saved recipe. Returns food_groups_missing so you can optionally, gently, suggest rounding it out. For the user's own dish idea (not a vague placeholder like 'leftovers'), call add_recipe first to build it into a real, cookable recipe, then pass that saved name here — see the system prompt's weekly-planning guidance for when a freeform string vs. a saved recipe is appropriate.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1945,6 +1980,8 @@ TOOL_FUNCTIONS = {
     "set_household_meal_preferences": tools.set_household_meal_preferences,
     "add_food_dislikes": tools.add_food_dislikes,
     "add_usual_stores": tools.add_usual_stores,
+    "add_store_typical_items": tools.add_store_typical_items,
+    "remove_store_typical_item": tools.remove_store_typical_item,
     "get_chores_profile": tools.get_chores_profile,
     "set_chores_profile": tools.set_chores_profile,
     "add_chore": tools.add_chore,

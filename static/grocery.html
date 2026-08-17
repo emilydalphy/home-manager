@@ -69,6 +69,25 @@
   h2.section-title:first-child { margin-top: 0; }
   h2.store-title { font-size: 1.05rem; margin: 22px 0 6px; color: #222; }
   h2.store-title:first-child { margin-top: 0; }
+  .suggestion-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .suggestion-label { color: #888; font-size: 0.8rem; margin-right: 2px; }
+  .suggestion-chip {
+    background: #eaf1fa;
+    color: #2b6cb0;
+    border: 1px solid #cfe0f2;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .suggestion-chip:hover { background: #d8e8f8; }
+  .suggestion-chip:disabled { opacity: 0.5; cursor: default; }
   .card {
     background: white;
     border: 1px solid #e0e0e0;
@@ -273,6 +292,7 @@ function categoryOptions(current) {
 
 let currentView = 'needed'; // 'needed' | 'store' | 'purchased'
 let usualStores = []; // household's usual stores, from /api/memory — populates the store-input datalist
+let storeTypicalItems = {}; // store -> typically-bought-there items, from /api/memory — powers "usually get here" suggestions in the By Store view
 
 async function loadUsualStores() {
   try {
@@ -280,8 +300,12 @@ async function loadUsualStores() {
     if (!res.ok) return;
     const memory = await res.json();
     usualStores = memory.usual_stores || [];
+    storeTypicalItems = memory.store_typical_items || {};
     const dl = document.getElementById('usual-stores-list');
     if (dl) dl.innerHTML = usualStores.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
+    // Suggestions depend on this data — if the By Store view already
+    // rendered before this fetch resolved, refresh it once we have it.
+    if (currentView === 'store') load();
   } catch (err) {
     // Store suggestions are a nicety, not load-bearing — the plain text
     // input still works fine without them.
@@ -595,16 +619,42 @@ function renderByStore(view) {
   const content = document.getElementById('content');
   const stores = view.stores || [];
 
-  if (!stores.length || !stores.some(s => s.sections && s.sections.length)) {
+  // A store with saved typical items but nothing currently on the list
+  // (e.g. a usual store just added, no items tagged to it yet) wouldn't
+  // otherwise appear here at all — but that's exactly where a suggestion
+  // row is most useful, so synthesize an empty entry for it too.
+  const knownStoreNames = new Set(stores.map(s => s.store));
+  const allStores = [...stores];
+  for (const store of Object.keys(storeTypicalItems)) {
+    if (!knownStoreNames.has(store) && (storeTypicalItems[store] || []).length) {
+      allStores.push({ store, sections: [] });
+    }
+  }
+
+  const hasAnything = allStores.some(s => (s.sections && s.sections.length) || (storeTypicalItems[s.store] || []).length);
+  if (!hasAnything) {
     content.innerHTML = '<p class="empty">Nothing on the list yet — add items below.</p>';
     return;
   }
 
   let html = '';
-  for (const store of stores) {
-    if (!store.sections || !store.sections.length) continue;
+  for (const store of allStores) {
+    const hasSections = store.sections && store.sections.length;
+    const typicalItems = store.store === 'Unassigned' ? [] : (storeTypicalItems[store.store] || []);
+    if (!hasSections && !typicalItems.length) continue;
+
+    const currentNames = new Set();
+    (store.sections || []).forEach(s => s.items.forEach(it => currentNames.add((it.item || '').toLowerCase())));
+    const suggestions = typicalItems.filter(i => !currentNames.has(i.toLowerCase()));
+
     html += `<h2 class="store-title">${escapeHtml(store.store)}</h2>`;
-    for (const s of store.sections) {
+    if (suggestions.length) {
+      html += `<div class="suggestion-row" data-store="${escapeHtml(store.store)}">
+        <span class="suggestion-label">Usually get here:</span>
+        ${suggestions.map(i => `<button class="suggestion-chip" data-store="${escapeHtml(store.store)}" data-item="${escapeHtml(i)}">+ ${escapeHtml(i)}</button>`).join('')}
+      </div>`;
+    }
+    for (const s of (store.sections || [])) {
       html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
       for (const it of s.items) {
         html += itemRowHtml(it);
@@ -614,6 +664,38 @@ function renderByStore(view) {
   }
   content.innerHTML = html;
   wireRowActions(content);
+  wireSuggestionChips(content);
+}
+
+async function confirmStoreSuggestion(store, item) {
+  try {
+    const addRes = await fetch('/api/grocery-list/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item, quantity: '', category: 'other' }),
+    });
+    if (!addRes.ok) throw new Error('add failed');
+    const added = await addRes.json();
+    // Tag it with the store it was suggested from in the same action, so
+    // confirming a suggestion doesn't leave the item unassigned.
+    await fetch('/api/grocery-list/' + added.item_id + '/store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ store }),
+    });
+    load();
+  } catch (err) {
+    alert("Couldn't add that — try again.");
+  }
+}
+
+function wireSuggestionChips(content) {
+  content.querySelectorAll('.suggestion-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      confirmStoreSuggestion(btn.dataset.store, btn.dataset.item);
+    });
+  });
 }
 
 async function renderAlreadyHaveBanner() {

@@ -275,6 +275,56 @@ def add_usual_stores(items: list[str]) -> dict:
     return {"usual_stores": merged}
 
 
+def add_store_typical_items(store: str, items: list[str]) -> dict:
+    """
+    Remember one or more items typically bought at a specific usual store
+    (e.g. store='Costco', items=['paper towels', 'rotisserie chicken']) —
+    used to surface "usually get here" suggestions in the By Store view of
+    the grocery list, which the user can confirm to add to the current
+    list. Call this whenever the user mentions what they typically get
+    somewhere, even mid-conversation. Merges with anything already saved
+    for that store rather than replacing it; doesn't require the store to
+    already be in usual_stores first, though pairing the two makes the
+    suggestions actually surface in the grocery list.
+    """
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    current = json.loads(existing["store_typical_items_json"]) if existing else {}
+    store_items = list(dict.fromkeys(current.get(store, []) + [i.strip() for i in items if i.strip()]))
+    current[store] = store_items
+    conn.execute(
+        """
+        INSERT INTO meal_preferences (household_id, store_typical_items_json, updated_at)
+        VALUES (?, ?, datetime('now'))
+        ON CONFLICT(household_id) DO UPDATE SET store_typical_items_json = excluded.store_typical_items_json, updated_at = datetime('now')
+        """,
+        (HOUSEHOLD_ID, json.dumps(current)),
+    )
+    conn.commit()
+    conn.close()
+    return {"store": store, "typical_items": store_items}
+
+
+def remove_store_typical_item(store: str, item: str) -> dict:
+    """Remove a single item from a store's typical-items list (case-insensitive match). Leaves the store itself (in usual_stores) untouched."""
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    current = json.loads(existing["store_typical_items_json"]) if existing else {}
+    store_items = [i for i in current.get(store, []) if i.lower() != (item or "").lower()]
+    current[store] = store_items
+    conn.execute(
+        "UPDATE meal_preferences SET store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+        (json.dumps(current), HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"store": store, "typical_items": store_items}
+
+
 def set_household_meal_preferences(
     notes: str = "",
     protein_preferences: dict[str, str] | None = None,
@@ -2391,6 +2441,7 @@ def get_household_memory() -> dict:
         "novelty_preference": prefs["novelty_preference"] if prefs else "balanced",
         "planning_mode": prefs["planning_mode"] if prefs else "day_based",
         "usual_stores": json.loads(prefs["usual_stores_json"]) if prefs else [],
+        "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},
     }
 
 
@@ -2485,9 +2536,14 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         )
     elif field == "usual_stores":
         updated = [s for s in json.loads(existing["usual_stores_json"]) if s.lower() != (item or "").lower()]
+        # Drop that store's typical-items list along with it — an orphaned
+        # entry would keep surfacing "usually get here" suggestions in the
+        # grocery list for a store the household no longer shops at.
+        store_items = json.loads(existing["store_typical_items_json"])
+        store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
         conn.execute(
-            "UPDATE meal_preferences SET usual_stores_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), HOUSEHOLD_ID),
+            "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+            (json.dumps(updated), json.dumps(store_items), HOUSEHOLD_ID),
         )
     elif field == "protein_preferences":
         current = dict(json.loads(existing["protein_preferences_json"]))
