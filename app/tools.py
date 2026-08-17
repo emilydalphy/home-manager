@@ -248,6 +248,33 @@ def add_food_dislikes(items: list[str]) -> dict:
     return {"dislikes": merged}
 
 
+def add_usual_stores(items: list[str]) -> dict:
+    """
+    Remember one or more stores/chains this household usually shops at
+    (e.g. ['Trader Joe\'s', 'Costco']) — used to populate store suggestions
+    in the grocery list view. Call this whenever the user mentions where
+    they usually shop, even mid-conversation. Merges with anything already
+    saved rather than replacing it.
+    """
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    current = json.loads(existing["usual_stores_json"]) if existing else []
+    merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
+    conn.execute(
+        """
+        INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
+        VALUES (?, ?, datetime('now'))
+        ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
+        """,
+        (HOUSEHOLD_ID, json.dumps(merged)),
+    )
+    conn.commit()
+    conn.close()
+    return {"usual_stores": merged}
+
+
 def set_household_meal_preferences(
     notes: str = "",
     protein_preferences: dict[str, str] | None = None,
@@ -2363,6 +2390,7 @@ def get_household_memory() -> dict:
         "cooking_time_preference": prefs["cooking_time_preference"] if prefs else "",
         "novelty_preference": prefs["novelty_preference"] if prefs else "balanced",
         "planning_mode": prefs["planning_mode"] if prefs else "day_based",
+        "usual_stores": json.loads(prefs["usual_stores_json"]) if prefs else [],
     }
 
 
@@ -2379,13 +2407,16 @@ def edit_preference(field: str, value) -> dict:
     'protein_preferences' (dict of protein -> how-often, e.g. {"chicken":
     "several times a week"} — merged into existing), 'novelty_preference'
     (str: 'mostly_favorites', 'balanced', or 'surprise_me_often' — how often
-    new recipes get surfaced when generating a weekly plan). To remove a
+    new recipes get surfaced when generating a weekly plan), 'usual_stores'
+    (list of str — the stores/chains this household usually shops at, e.g.
+    ["Trader Joe's", "Costco"] — replaces the whole list; used to populate
+    store suggestions in the grocery list view). To remove a
     single item from a list rather than replacing
     it wholesale, use delete_preference instead.
     """
     valid_fields = {
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
-        "dislikes", "novelty_preference",
+        "dislikes", "novelty_preference", "usual_stores",
     }
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
@@ -2402,6 +2433,19 @@ def edit_preference(field: str, value) -> dict:
         conn.commit()
         conn.close()
         return {"dislikes": value}
+    if field == "usual_stores":
+        conn = get_conn()
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
+            """,
+            (HOUSEHOLD_ID, json.dumps(value)),
+        )
+        conn.commit()
+        conn.close()
+        return {"usual_stores": value}
     if field == "cuisine_preferences":
         return set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
     if field == "protein_preferences":
@@ -2415,10 +2459,10 @@ def edit_preference(field: str, value) -> dict:
 
 def delete_preference(field: str, item: str | None = None) -> dict:
     """
-    Remove a remembered preference. For list fields ('dislikes' or
-    'cuisine_preferences'), pass item = the specific value to remove
-    (case-insensitive match). For 'protein_preferences', item = the
-    protein name to forget. For scalar fields ('notes' or
+    Remove a remembered preference. For list fields ('dislikes',
+    'cuisine_preferences', or 'usual_stores'), pass item = the specific
+    value to remove (case-insensitive match). For 'protein_preferences',
+    item = the protein name to forget. For scalar fields ('notes' or
     'cooking_time_preference'), omit item to clear the field entirely.
     """
     conn = get_conn()
@@ -2437,6 +2481,12 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         updated = [c for c in json.loads(existing["cuisine_preferences_json"]) if c.lower() != (item or "").lower()]
         conn.execute(
             "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+            (json.dumps(updated), HOUSEHOLD_ID),
+        )
+    elif field == "usual_stores":
+        updated = [s for s in json.loads(existing["usual_stores_json"]) if s.lower() != (item or "").lower()]
+        conn.execute(
+            "UPDATE meal_preferences SET usual_stores_json = ?, updated_at = datetime('now') WHERE household_id = ?",
             (json.dumps(updated), HOUSEHOLD_ID),
         )
     elif field == "protein_preferences":

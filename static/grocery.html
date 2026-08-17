@@ -234,6 +234,8 @@
   <button class="voice-btn" id="voice-toggle-btn" title="Hands-free: check off, add, or ask about items by voice">&#127908; Hands-free</button>
 </div>
 
+<datalist id="usual-stores-list"></datalist>
+
 <div id="content">
   <p class="empty">Loading...</p>
 </div>
@@ -270,6 +272,21 @@ function categoryOptions(current) {
 }
 
 let currentView = 'needed'; // 'needed' | 'store' | 'purchased'
+let usualStores = []; // household's usual stores, from /api/memory — populates the store-input datalist
+
+async function loadUsualStores() {
+  try {
+    const res = await fetch('/api/memory');
+    if (!res.ok) return;
+    const memory = await res.json();
+    usualStores = memory.usual_stores || [];
+    const dl = document.getElementById('usual-stores-list');
+    if (dl) dl.innerHTML = usualStores.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
+  } catch (err) {
+    // Store suggestions are a nicety, not load-bearing — the plain text
+    // input still works fine without them.
+  }
+}
 
 // ---------- Phase 5: hands-free voice (Shopper case, §4.2) ----------
 // Reuses the exact same engine as Cooker view (/static/voice-session.js)
@@ -435,7 +452,7 @@ function itemRowHtml(it) {
     </div>
     <select class="cat-select" ${!editable ? 'disabled' : ''}>${categoryOptions(it.category)}</select>
     <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" ${!editable ? 'disabled' : ''} />
-    ${editable ? `<input type="text" class="store-input" value="${escapeHtml(it.store || '')}" placeholder="Store" />` : ''}
+    ${editable ? `<input type="text" class="store-input" list="usual-stores-list" value="${escapeHtml(it.store || '')}" placeholder="Store" />` : ''}
     ${editable ? `<button class="icon-btn save" title="Save changes">&check;</button>` : ''}
     ${currentView === 'needed' ? `<button class="icon-btn exclude" title="Get elsewhere — hide from this list">elsewhere</button>` : ''}
     <button class="icon-btn remove" title="Delete">&times;</button>
@@ -729,6 +746,7 @@ refreshBtn.addEventListener('click', async () => {
 });
 
 load();
+loadUsualStores();
 </script>
 </body>
 </html>

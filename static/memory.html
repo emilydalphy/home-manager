@@ -140,6 +140,16 @@
   </div>
 
   <div class="card">
+    <h2>Usual stores</h2>
+    <p class="hint">Stores/chains this household usually shops at — used as suggestions when tagging a store on the grocery list.</p>
+    <div class="chip-row" id="usual-stores"></div>
+    <div class="add-row">
+      <input type="text" id="new-usual-store" placeholder="Add a store..." onkeydown="if(event.key==='Enter')addUsualStore()" />
+      <button class="action" onclick="addUsualStore()">Add</button>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>Favorite cuisines</h2>
     <div class="chip-row" id="cuisines"></div>
     <div class="add-row">
@@ -253,6 +263,11 @@ function render() {
     ? memory.dislikes.map(d => chip('dislikes', d)).join('')
     : '<p class="empty">No dislikes saved.</p>';
 
+  const usualStoresEl = document.getElementById('usual-stores');
+  usualStoresEl.innerHTML = (memory.usual_stores || []).length
+    ? memory.usual_stores.map(s => chip('usual_stores', s)).join('')
+    : '<p class="empty">No usual stores saved.</p>';
+
   const cuisinesEl = document.getElementById('cuisines');
   cuisinesEl.innerHTML = (memory.cuisine_preferences || []).length
     ? memory.cuisine_preferences.map(c => chip('cuisine_preferences', c)).join('')
@@ -341,6 +356,15 @@ function addDislike() {
   if (!val) return;
   const updated = [...new Set([...(memory.dislikes || []), val])];
   editField('dislikes', updated);
+  input.value = '';
+}
+
+function addUsualStore() {
+  const input = document.getElementById('new-usual-store');
+  const val = input.value.trim();
+  if (!val) return;
+  const updated = [...new Set([...(memory.usual_stores || []), val])];
+  editField('usual_stores', updated);
   input.value = '';
 }
 

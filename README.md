@@ -4,6 +4,11 @@ A Claude-powered household assistant for cleaning schedule, meal planning, and
 grocery list. Chat-based, backed by SQLite, built on FastAPI + the Anthropic
 Messages API with tool use.
 
+The assistant's tone (set in `app/agent.py`'s `SYSTEM_PROMPT`) is deliberately warm and
+cheery — someone glad to help, not a flat utility — while staying clear and concise, no
+fluff: short, upbeat replies rather than long or robotic ones, with directness preserved for
+anything that actually needs attention (a failed save, a conflict, an allergy risk).
+
 ## How it's built
 
 - **`app/schema.sql`** — SQLite schema. Every table has a `household_id`
@@ -115,9 +120,15 @@ preferences are.
 
 There's also a dedicated **What We Know** page (linked from the top of the
 chat page) if you'd rather review and edit things directly instead of asking
-in chat — add/remove dislikes and favorite cuisines as chips, add/remove
-protein preferences, and edit cooking-time preference, notes, and household
-goals, all with immediate save, no conversation required.
+in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
+add/remove protein preferences, and edit cooking-time preference, notes, and
+household goals, all with immediate save, no conversation required.
+
+**Usual stores** — the stores/chains this household usually shops at (e.g.
+"Trader Joe's," "Costco") — is captured the same way (chat or the What We
+Know page) and doubles as the suggestion list for the store field when
+tagging items in the grocery list view, so you don't have to retype the same
+store name from scratch every time.
 
 ### Grocery list
 
@@ -301,6 +312,14 @@ hearing you on iPhone, try it from a plain Safari tab before assuming it's broke
 "add the hosted-transcription-API fallback path from the PRD's §5" as the next real option if
 that turns out not to be enough after actual kitchen/store use — this phase deliberately didn't
 build that fallback speculatively before confirming it's actually needed.
+
+**Status: known issue, not launch-blocking.** Real-device testing still shows hands-free voice
+failing to recognize most spoken commands even after broadening the command-matching logic
+(keyword-anywhere matching, spoken numbers, done/stop disambiguation — all verified working
+against simulated transcripts). This points to the underlying speech-to-text transcription
+itself, not the command parsing, which can't be fully diagnosed or fixed without on-device
+debugging. Tabled as a nice-to-have for now; revisit with real console/network logs from the
+device, or consider the hosted-transcription-API fallback above.
 
 ### Expiration & use-it-up
 
