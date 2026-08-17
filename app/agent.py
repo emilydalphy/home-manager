@@ -573,7 +573,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_recipe",
-        "description": "Save a recipe with its ingredients, for reuse in meal planning.",
+        "description": "Save a recipe with its ingredients, for reuse in meal planning. When you're building this out from the user's own dish idea (see the weekly-planning guidance on one-off meals), fill in instructions/default_servings/prep_time_minutes/cook_time_minutes/advance_prep_notes too in this same call rather than leaving them for a separate update_recipe_details call — a recipe with no instructions saved shows in the Cooker view as 'no saved recipe detail,' which defeats the point of building it out.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -604,6 +604,22 @@ TOOL_DEFINITIONS = [
                     "type": "array",
                     "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
                     "description": "What this dish covers on its own, based on ingredients. Leave out if unclear.",
+                },
+                "cuisine": {"type": "string", "description": "e.g. 'Italian', 'Mexican' — powers variety checks in future weekly plans. Leave out if unclear."},
+                "main_protein": {"type": "string", "description": "e.g. 'chicken', 'beef', 'vegetarian' — powers variety checks in future weekly plans. Leave out if unclear."},
+                "instructions": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Ordered cooking steps — fill in whenever you can so the recipe is actually cookable from the Cooker view, not just a shopping list.",
+                },
+                "default_servings": {"type": "integer", "description": "What the ingredient quantities are scaled for. Defaults to 4 if omitted."},
+                "prep_time_minutes": {"type": "integer"},
+                "cook_time_minutes": {"type": "integer"},
+                "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                "advance_prep_step_indices": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                    "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it — this lets the Cooker view separate 'do ahead' from 'day of' instead of listing everything flat.",
                 },
             },
             "required": ["name", "ingredients"],
@@ -1264,6 +1280,11 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                        "advance_prep_step_indices": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it.",
+                        },
                     },
                     "required": ["date", "slot", "meal_name", "is_new_recipe"],
                 },
@@ -1351,7 +1372,12 @@ prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at l
 ahead") whenever reasonably inferable — advance_prep_notes in particular feeds \
 generate_prep_schedule, so leave it blank rather than guessing if nothing genuinely needs \
 advance prep, but don't skip it out of habit when something clearly does (marinating, thawing, \
-soaking, dough that needs to rise, etc.).
+soaking, dough that needs to rise, etc.). Whenever you set advance_prep_notes, also set \
+advance_prep_step_indices to the 1-based position(s) within `instructions` of the actual step(s) \
+that are the advance prep (e.g. instructions = ["Preheat oven...", "Make marinade and coat \
+chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours ahead" should set \
+advance_prep_step_indices to [2]) — this lets the Cooker view show a clear "do ahead" vs "day of" \
+split instead of one flat numbered list. Leave it empty whenever advance_prep_notes is empty.
 
 Call submit_weekly_plan with the result."""
 
@@ -1419,6 +1445,11 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                        "advance_prep_step_indices": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it.",
+                        },
                     },
                     "required": ["category", "meal_name", "is_new_recipe"],
                 },
@@ -1575,6 +1606,7 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
                     prep_time_minutes=item.get("prep_time_minutes"),
                     cook_time_minutes=item.get("cook_time_minutes"),
                     advance_prep_notes=item.get("advance_prep_notes", ""),
+                    advance_prep_step_indices=item.get("advance_prep_step_indices", []),
                 )
 
     if household_memory.get("planning_mode") == "component_based":
@@ -1756,8 +1788,13 @@ _FILL_RECIPE_DETAIL_TOOL = {
             "prep_time_minutes": {"type": "integer"},
             "cook_time_minutes": {"type": "integer"},
             "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Empty string if nothing needs advance prep."},
+            "advance_prep_step_indices": {
+                "type": "array",
+                "items": {"type": "integer"},
+                "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it. Empty array if nothing needs advance prep.",
+            },
         },
-        "required": ["instructions", "default_servings", "prep_time_minutes", "cook_time_minutes", "advance_prep_notes"],
+        "required": ["instructions", "default_servings", "prep_time_minutes", "cook_time_minutes", "advance_prep_notes", "advance_prep_step_indices"],
     },
 }
 
@@ -1820,6 +1857,7 @@ def fill_in_recipe(recipe_name: str) -> dict:
         prep_time_minutes=detail.get("prep_time_minutes"),
         cook_time_minutes=detail.get("cook_time_minutes"),
         advance_prep_notes=detail.get("advance_prep_notes"),
+        advance_prep_step_indices=detail.get("advance_prep_step_indices"),
     )
 
 

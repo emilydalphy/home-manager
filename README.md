@@ -230,7 +230,16 @@ instructions expandable per meal, the generated prep schedule, and tap-to-check-
 for both — no need to go back and forth with chat mid-cook. Asking for a recipe in chat
 always returns the full breakdown too: if a recipe predates having instructions saved (or
 was added quickly without them), the assistant works out a reasonable step-by-step from its
-own knowledge on the spot and saves it, rather than telling you nothing's there.
+own knowledge on the spot and saves it, rather than telling you nothing's there. The same
+now applies to a one-off meal you describe yourself in chat ("let's do Greek chicken skewers
+with tomato and cucumber tonight") — instead of saving a bare placeholder with no detail, it's
+built out into a real, cookable recipe up front.
+
+When a recipe has steps that should be done ahead of time (marinating, making a sauce a day
+early, etc.), the Instructions section splits into a **Do ahead** group and a **Day of** group
+— each with their own step numbering — instead of one flat numbered list that leaves it unclear
+which step is the advance one and which steps come later using what was prepped. Recipes with
+nothing to prep ahead, or saved before this was tracked, still show as one plain numbered list.
 
 For a component-based household, meals are listed grouped by category in the same order the
 plan itself was organized (protein, vegetable, carb, treat, dip) rather than incidental

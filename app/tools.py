@@ -693,6 +693,7 @@ def add_recipe(
     prep_time_minutes: int | None = None,
     cook_time_minutes: int | None = None,
     advance_prep_notes: str = "",
+    advance_prep_step_indices: list[int] | None = None,
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -713,18 +714,24 @@ def add_recipe(
     prep_time_minutes/cook_time_minutes and advance_prep_notes (e.g.
     "marinate at least 4 hours ahead, can be done the night before") power
     generate_prep_schedule — fill them in when you reasonably can, leave
-    unset rather than guessing if you can't.
+    unset rather than guessing if you can't. advance_prep_step_indices is
+    the 1-based position(s) within `instructions` of the specific step(s)
+    that ARE the advance prep (e.g. [2] if step 2 is "make the marinade
+    ahead of time") — only set this alongside advance_prep_notes, and only
+    when a specific instruction step actually corresponds to it; leave
+    empty otherwise. This lets the Cooker view clearly separate "do ahead"
+    steps from "day of" steps instead of just listing them flat.
     """
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
-        "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             HOUSEHOLD_ID, name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
             json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
-            advance_prep_notes,
+            advance_prep_notes, json.dumps(advance_prep_step_indices or []),
         ),
     )
     conn.commit()
@@ -733,7 +740,7 @@ def add_recipe(
     return {
         "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
         "cuisine": cuisine, "main_protein": main_protein, "instructions": instructions or [],
-        "default_servings": default_servings,
+        "default_servings": default_servings, "advance_prep_step_indices": advance_prep_step_indices or [],
     }
 
 
@@ -744,6 +751,7 @@ def update_recipe_details(
     prep_time_minutes: int | None = None,
     cook_time_minutes: int | None = None,
     advance_prep_notes: str | None = None,
+    advance_prep_step_indices: list[int] | None = None,
 ) -> dict:
     """
     Backfill or correct Cooker-layer detail on an already-saved recipe —
@@ -754,8 +762,12 @@ def update_recipe_details(
     the dish (using the recipe's existing ingredients as a guide), show it
     to the user as part of your answer, and save it here in the same turn
     so it's there next time — don't just tell the user nothing's saved and
-    stop. Only pass the fields you're actually setting; anything left as
-    None is untouched.
+    stop. advance_prep_step_indices is the 1-based position(s) within
+    `instructions` of the step(s) that ARE the advance prep — set it
+    alongside advance_prep_notes whenever a specific step corresponds to
+    it, so the Cooker view can separate "do ahead" from "day of" instead of
+    listing everything flat. Only pass the fields you're actually setting;
+    anything left as None is untouched.
     """
     conn = get_conn()
     existing = conn.execute(
@@ -782,6 +794,9 @@ def update_recipe_details(
     if advance_prep_notes is not None:
         fields.append("advance_prep_notes = ?")
         params.append(advance_prep_notes)
+    if advance_prep_step_indices is not None:
+        fields.append("advance_prep_step_indices_json = ?")
+        params.append(json.dumps(advance_prep_step_indices))
 
     if fields:
         params.append(existing["id"])
@@ -810,7 +825,7 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
                times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
                temporarily_excluded, instructions_json, default_servings, prep_time_minutes,
-               cook_time_minutes, advance_prep_notes
+               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json
         FROM recipes WHERE household_id = ?
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
@@ -856,6 +871,12 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             "prep_time_minutes": r["prep_time_minutes"],
             "cook_time_minutes": r["cook_time_minutes"],
             "advance_prep_notes": r["advance_prep_notes"],
+            # 1-based positions within `instructions` that should be done
+            # ahead of time (matches advance_prep_notes) — e.g. [2] means
+            # instructions[1] (step 2) is the make-ahead step, everything
+            # else happens day-of. Empty when nothing needs advance prep,
+            # or for recipes saved before this was tracked.
+            "advance_prep_step_indices": json.loads(r["advance_prep_step_indices_json"]),
         }
         for r in rows
     ]
@@ -1889,6 +1910,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
             "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
+            "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
         })
 

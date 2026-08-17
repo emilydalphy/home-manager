@@ -81,6 +81,17 @@
     font-size: 0.72rem;
     margin-left: 6px;
   }
+  .instr-group-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin: 14px 0 4px;
+    padding: 2px 0;
+  }
+  .instr-group-label:first-of-type { margin-top: 4px; }
+  h5.instr-group-label:nth-of-type(1) { color: #b06a00; }
+  h5.instr-group-label:nth-of-type(2) { color: #2b6cb0; }
   .detail-toggle {
     background: none;
     border: none;
@@ -258,6 +269,32 @@ function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   if (isNaN(d)) return dateStr;
   return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+// When a recipe has advance_prep_step_indices (1-based positions within
+// `instructions` that are the make-ahead steps), split the instructions
+// into a "Do ahead" group and a "Day of" group with their own step
+// numbering, instead of one flat numbered list — so it's clear what to
+// prep ahead vs. what happens later using what was prepped. Falls back to
+// a single flat list when nothing is tagged (most recipes, and any saved
+// before this was tracked).
+function renderInstructions(m) {
+  const steps = m.instructions || [];
+  if (!steps.length) {
+    return `<p class="empty" style="padding:0 0 8px">No steps saved yet.</p>
+            <button class="fill-recipe-btn" data-recipe-name="${escapeHtml(m.meal || '')}">Fill in this recipe</button>`;
+  }
+  const prepIndices = new Set(m.advance_prep_step_indices || []);
+  if (!prepIndices.size) {
+    return `<ol>${steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`;
+  }
+  const doAhead = steps.filter((_, i) => prepIndices.has(i + 1));
+  const dayOf = steps.filter((_, i) => !prepIndices.has(i + 1));
+  return `
+    <h5 class="instr-group-label">Do ahead</h5>
+    <ol>${doAhead.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
+    <h5 class="instr-group-label">Day of</h5>
+    <ol>${dayOf.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`;
 }
 
 let cache = null;
@@ -544,10 +581,7 @@ function render(view) {
           <h4>Ingredients</h4>
           <ul>${(m.ingredients || []).map(i => `<li>${escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || ''))}</li>`).join('') || '<li class="empty" style="padding:0">None listed</li>'}</ul>
           <h4>Instructions</h4>
-          ${m.instructions && m.instructions.length
-            ? `<ol>${m.instructions.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
-            : `<p class="empty" style="padding:0 0 8px">No steps saved yet.</p>
-               <button class="fill-recipe-btn" data-recipe-name="${escapeHtml(m.meal || '')}">Fill in this recipe</button>`}
+          ${renderInstructions(m)}
         </div>`;
     } else {
       html += `<p class="no-recipe">Freeform meal — no saved recipe detail. Ask in chat for the full recipe.</p>`;
