@@ -17,8 +17,20 @@ logger = logging.getLogger("home_manager")
 
 MODEL = "claude-sonnet-5"
 
-SYSTEM_PROMPT = """You are a helpful, no-nonsense home manager assistant for a household. \
-You manage the cleaning/maintenance chore schedule, meal planning, and the grocery list.
+SYSTEM_PROMPT = """You are a helpful home manager assistant for a household — the kind of \
+presence that makes the day feel a little lighter, not another thing to manage. You manage \
+the cleaning/maintenance chore schedule, meal planning, and the grocery list.
+
+Tone & personality: warm, cheery, and genuinely positive — someone people are glad to check in \
+with, not a neutral utility. Default to an upbeat, encouraging register ("Got it, adding those \
+now!" beats "Added."), and let a little personality show (a light "nice choice" on a good meal \
+pick, real enthusiasm when a chore streak or a full pantry is worth celebrating) without ever \
+tipping into forced or over-the-top. At the same time, stay clear and concise, no fluff: short \
+sentences, no padding, no repeating information back at length, no hedging filler ("I think \
+maybe possibly..."). Warmth is in the word choice and energy, not in length — a cheerful reply \
+can still be one line. When something's gone wrong or needs the user's attention (a failed \
+save, a conflict, an allergy risk), stay direct and clear first — reassuring tone should never \
+soften or bury something that actually needs their attention.
 
 Setup note: there's a dedicated onboarding wizard (household basics, then meal planning \
 preferences) that most users go through outside this chat — it saves members, ages, pets, \
@@ -215,7 +227,9 @@ meal, and never block or refuse to plan a meal because it's "unbalanced." The po
 make balance easy when wanted, not to enforce it.
 
 General guidelines:
-- Be concise and practical. This is a household utility, not a chat companion.
+- Be concise and practical, and keep the warm/cheery tone described above — this is a \
+household utility, not a chat companion, so don't ramble, but a short reply can still sound \
+glad to help rather than flat or robotic.
 - When a user plans a meal from a saved recipe, ingredients are automatically added to \
 the grocery list — mention this briefly, don't over-explain.
 - Grocery list items persist until purchased — nothing expires at the end of the week, so \
@@ -401,6 +415,15 @@ TOOL_DEFINITIONS = [
     {
         "name": "add_food_dislikes",
         "description": "Remember disliked foods/ingredients to avoid in future suggestions (e.g. ['peppers']) — not allergies, just preference. Call this the moment the user mentions not wanting something, even mid-conversation, so it sticks permanently rather than just for the current chat.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"items": {"type": "array", "items": {"type": "string"}}},
+            "required": ["items"],
+        },
+    },
+    {
+        "name": "add_usual_stores",
+        "description": "Remember stores/chains this household usually shops at (e.g. ['Trader Joe's', 'Costco']) — used to populate store suggestions in the grocery list view. Call this the moment the user mentions where they usually shop, even mid-conversation, so it sticks permanently rather than just for the current chat. Merges with anything already saved.",
         "input_schema": {
             "type": "object",
             "properties": {"items": {"type": "array", "items": {"type": "string"}}},
@@ -903,28 +926,28 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_household_memory",
-        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, notes, goals. Use this when the user asks what the app knows/remembers, or before generating a plan.",
+        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, notes, goals, usual stores. Use this when the user asks what the app knows/remembers, or before generating a plan.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes' (list of strings, replaces the whole list — prefer add_food_dislikes for adding a single new dislike conversationally), 'protein_preferences' (dict of protein -> how-often, e.g. {\"chicken\": \"several times a week\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> how-often, e.g. {\"chicken\": \"several times a week\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes"]},
-                "value": {"description": "String for notes/cooking_time_preference, array for cuisine_preferences/dislikes, object for protein_preferences."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores"]},
+                "value": {"description": "String for notes/cooking_time_preference, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences."},
             },
             "required": ["field", "value"],
         },
     },
     {
         "name": "delete_preference",
-        "description": "Remove a remembered preference. For 'dislikes' or 'cuisine_preferences', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes' or 'cooking_time_preference', omit item to clear the field.",
+        "description": "Remove a remembered preference. For 'dislikes', 'cuisine_preferences', or 'usual_stores', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes' or 'cooking_time_preference', omit item to clear the field.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference"]},
+                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference", "usual_stores"]},
                 "item": {"type": "string"},
             },
             "required": ["field"],
@@ -1418,12 +1441,21 @@ without forcing a bad fit or feeling obligated to use every item on the list.
 mixes categories — the whole point is the household mixes and matches these freely. A protein \
 item is just the protein preparation (e.g. "Garlic Lime Shrimp", "Chicken Fajita"), NOT "Garlic \
 Lime Shrimp with Black Beans and Cilantro Rice" — that bundles in a carb and hides it from the \
-carb slot entirely, so it can't be paired with anything else and the pool undercounts carbs. If a \
-dish idea naturally has a rice/beans/rice-and-beans side, split it: submit the protein alone under \
-category='protein' and submit the rice/beans separately under category='carb' or 'vegetable' as \
-its own item (even if they were conceived as one recipe). Same rule for every category — a \
-vegetable item shouldn't secretly include a protein, a carb item shouldn't secretly include a \
-sauce that's really a dip item, etc.
+carb slot entirely, so it can't be paired with anything else and the pool undercounts carbs. \
+This applies just as much to vegetables as to carbs: NOT "Greek Chicken Skewers with Tomato and \
+Cucumber" — the tomato and cucumber are a vegetable side that belongs in its own category='vegetable' \
+item (e.g. "Greek Tomato Cucumber Salad"), not folded into the protein's name or ingredient list. \
+If a dish idea naturally has a rice/beans/veggie/sauce side, split it: submit the protein alone under \
+category='protein' and submit each side separately under its own correct category (carb, \
+vegetable, dip) as its own item (even if they were conceived as one recipe). Same rule for every \
+category — a vegetable item shouldn't secretly include a protein, a carb item shouldn't secretly \
+include a sauce that's really a dip item, etc.
+- Once a protein (or any item) is split down to just its own category, its name still needs to \
+be specific enough to be useful on its own, since the side dishes that used to make the full \
+dish name descriptive are now separate items — "Chicken Skewers" or "Grilled Chicken" alone is \
+too generic. Keep the flavor profile, marinade, or prep method in the name even after splitting: \
+"Greek Lemon-Oregano Chicken Skewers", "Garlic Lime Shrimp", "Blackened Cajun Salmon" — specific \
+enough that picking it out of a pool of proteins tells you what it actually tastes like.
 - For any new recipe, fill in instructions (ordered cooking steps), default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-based planning \
 — see the equivalent guidance there. This powers the Cooker view and prep schedule.
@@ -1912,6 +1944,7 @@ TOOL_FUNCTIONS = {
     "get_meal_planning_setup_status": tools.get_meal_planning_setup_status,
     "set_household_meal_preferences": tools.set_household_meal_preferences,
     "add_food_dislikes": tools.add_food_dislikes,
+    "add_usual_stores": tools.add_usual_stores,
     "get_chores_profile": tools.get_chores_profile,
     "set_chores_profile": tools.set_chores_profile,
     "add_chore": tools.add_chore,

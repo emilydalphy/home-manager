@@ -142,12 +142,27 @@ const sessionId = 'default';
   }
 })();
 
+// Assistant replies sometimes use light markdown (bold section headers,
+// "- " bullet lines) — textContent used to render that literally (visible
+// "**" asterisks). This escapes HTML first for safety, then converts just
+// **bold** and leading "- "/"* " bullet markers to real HTML; line breaks
+// still come from the .msg { white-space: pre-wrap } rule, no need to
+// touch those.
+function renderMarkdownLite(text) {
+  const escaped = String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const bolded = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return bolded
+    .split('\n')
+    .map(line => line.replace(/^(\s*)[-*]\s+/, '$1&bull;&nbsp;'))
+    .join('\n');
+}
+
 function addMessage(role, text) {
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   const bubble = document.createElement('span');
   bubble.className = 'bubble';
-  bubble.textContent = text;
+  bubble.innerHTML = renderMarkdownLite(text);
   div.appendChild(bubble);
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
