@@ -1289,7 +1289,78 @@ def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = No
     return {"weekly_plan_id": weekly_plan_id, "constraints_notes": constraints_notes}
 
 
-_COMPONENT_CATEGORY_ORDER = ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]
+_COMPONENT_CATEGORY_ORDER = ["breakfast", "protein", "vegetable", "carb", "treat", "dip", "snack"]
+
+
+def _build_day_based_menu(meal_dicts: list[dict]) -> list[dict]:
+    """
+    Group a day-based plan's flat meal entries into a day-by-day menu — one
+    row per date with each planned slot filled in (breakfast/lunch/dinner/
+    snack), for a real weekly-menu view (see get_weekly_plan's `menu`)
+    instead of one flat card per meal. This is real, already-planned data,
+    not a suggestion.
+    """
+    by_date: dict[str, dict] = {}
+    for m in meal_dicts:
+        if not m["date"]:
+            continue
+        day = by_date.setdefault(
+            m["date"], {"date": m["date"], "breakfast": None, "lunch": None, "dinner": None, "snack": None}
+        )
+        slot = m["slot"] if m["slot"] in day else "dinner"
+        day[slot] = m["meal"]
+    return [by_date[d] for d in sorted(by_date)]
+
+
+def _build_suggested_schedule(components: list[dict], week_start_date: str, days: int = 7) -> list[dict]:
+    """
+    Deterministically spread a component_based item pool across a 7-day
+    menu, purely for display (see get_weekly_plan's `menu`/
+    `menu_is_suggested`) — the whole point of component_based planning is
+    that the household assembles freely, so this is never saved or tracked
+    as "planned," just one reasonable example arrangement. The pool
+    (roughly a handful of proteins/vegetables/carbs, one breakfast idea, a
+    treat, a dip, a snack or two) is intentionally smaller than 7 days x 4
+    meals, so items repeat across days by design — rotated with an offset
+    per slot so the same day doesn't always pair the same vegetable with
+    both lunch and dinner.
+    """
+    by_cat = {c["category"]: c["items"] for c in components if c.get("items")}
+    breakfast = by_cat.get("breakfast", [])
+    protein = by_cat.get("protein", [])
+    vegetable = by_cat.get("vegetable", [])
+    carb = by_cat.get("carb", [])
+    treat = by_cat.get("treat", [])
+    dip = by_cat.get("dip", [])
+    snack = by_cat.get("snack", [])
+
+    def pick(items, i):
+        return items[i % len(items)] if items else None
+
+    def plate(*parts):
+        parts = [p for p in parts if p]
+        return " with ".join(parts) if parts else None
+
+    def snack_pick(i):
+        if snack:
+            return pick(snack, i)
+        # No dedicated snack items saved — fall back to alternating the
+        # treat/dip pool rather than leaving the slot empty, since either
+        # reasonably doubles as a snack.
+        fallback = (treat if i % 2 == 0 else dip) or treat or dip
+        return pick(fallback, i)
+
+    start = date.fromisoformat(week_start_date)
+    schedule = []
+    for i in range(days):
+        schedule.append({
+            "date": (start + timedelta(days=i)).isoformat(),
+            "breakfast": pick(breakfast, i),
+            "lunch": plate(pick(vegetable, i), pick(carb, i)),
+            "dinner": plate(pick(protein, i), pick(vegetable, i + 1), pick(carb, i + 1)),
+            "snack": snack_pick(i),
+        })
+    return schedule
 
 
 def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
@@ -1364,6 +1435,16 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         ordered_cats = [c for c in _COMPONENT_CATEGORY_ORDER if c in by_category]
         ordered_cats += [c for c in by_category if c not in ordered_cats]
         result["components"] = [{"category": c, "items": by_category[c]} for c in ordered_cats]
+        # `menu`: a real day-by-day weekly menu for display (see the Share
+        # view) even though component_based plans have no fixed day
+        # mapping underneath — menu_is_suggested tells the caller this is
+        # one example arrangement, not something actually planned/tracked.
+        result["suggested_schedule"] = _build_suggested_schedule(result["components"], plan["week_start_date"])
+        result["menu"] = result["suggested_schedule"]
+        result["menu_is_suggested"] = True
+    else:
+        result["menu"] = _build_day_based_menu(meal_dicts)
+        result["menu_is_suggested"] = False
 
     return result
 

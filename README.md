@@ -173,11 +173,18 @@ setting (mostly favorites / balanced / surprise me often, editable from the What
 page) controls how much new-recipe exposure shows up in generated plans, with a floor —
 even "mostly favorites" still includes at least one new recipe a week.
 
-Households can also switch how planning works entirely: **day-based** (the default — one
-meal per day) or **component-based** (a pool of items by category — a breakfast for the
-week, a few proteins, a few vegetables, carbs, a treat, a dip — for the household to mix
-and match freely instead of a fixed day-to-day schedule). This is a standing household
+Households can also switch how planning works entirely: **day-based** (the default) or
+**component-based** (a pool of items by category — a breakfast for the week, a few
+proteins, a few vegetables, carbs, a treat, a dip, a snack or two — for the household to
+mix and match freely instead of a fixed day-to-day schedule). This is a standing household
 setting, not a per-week choice, and switching doesn't affect any plan already generated.
+
+Generating a week now covers the full day, not just dinner: breakfast, lunch, dinner, and a
+snack for every day (dinner still gets the full treatment — a specific recipe with complete
+ingredients and instructions — while breakfast/lunch/snack are genuinely real but
+lower-effort, like a bowl of oatmeal or a sandwich, and the same idea repeating a couple
+times across the week is normal, not a bug). Say something like "just plan dinners this
+week" as a one-off constraint if that's all you want for a given week.
 
 ### Cooker (turning an approved plan into dinner actually happening)
 
@@ -242,8 +249,23 @@ which step is the advance one and which steps come later using what was prepped.
 nothing to prep ahead, or saved before this was tracked, still show as one plain numbered list.
 
 For a component-based household, meals are listed grouped by category in the same order the
-plan itself was organized (protein, vegetable, carb, treat, dip) rather than incidental
-insertion order — so the Cooker view reads the same way the plan was actually put together.
+plan itself was organized (protein, vegetable, carb, treat, dip, snack) rather than
+incidental insertion order — so the Cooker view reads the same way the plan was actually put
+together.
+
+### Weekly menu (Share view)
+
+The read-only share link ("Share meal plan," safe to hand to anyone in the household — no
+login, no write access) now shows a genuine day-by-day weekly menu instead of a flat list:
+each day gets its own card with Breakfast/Lunch/Dinner/Snack rows, blank slots simply
+omitted. For a day-based household this is the real, actually-planned meals. For a
+component-based household — which has no fixed day-to-day schedule by design, since the
+whole point is mixing and matching freely — it's a **suggested** arrangement worked out
+from that week's pool (rotating through the proteins/vegetables/carbs so combos vary day to
+day, repeating items across the week since the pool is intentionally smaller than 7 days ×
+4 meals), clearly labeled as suggested with the full pool still one tap away below if anyone
+wants to mix and match differently. Nothing about the suggested arrangement is saved or
+tracked as "planned" — it's purely a friendlier way to look at the pool.
 
 A banner at the top surfaces anything in the **needs your attention** list — an
 inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been

@@ -20,6 +20,15 @@
   }
   h1 { font-size: 1.4rem; margin: 0 0 4px; }
   p.subtitle { color: #666; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  .suggested-note {
+    background: #fff4e5;
+    color: #8a5300;
+    border: 1px solid #ffe0b3;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
   .day-card {
     background: white;
     border: 1px solid #e0e0e0;
@@ -27,10 +36,44 @@
     padding: 1rem 1.15rem;
     margin-bottom: 10px;
   }
-  .day-card .date { font-weight: 600; font-size: 0.85rem; color: #2b6cb0; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.02em; }
-  .day-card .meal { font-size: 1.05rem; margin: 0; }
-  .day-card .slot { color: #888; font-size: 0.8rem; margin: 2px 0 0; text-transform: capitalize; }
+  .day-card .date {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2b6cb0;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .menu-row {
+    display: flex;
+    gap: 10px;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: baseline;
+  }
+  .menu-row:last-child { border-bottom: none; }
+  .menu-row .slot {
+    color: #888;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    width: 72px;
+    flex-shrink: 0;
+    padding-top: 0.15rem;
+  }
+  .menu-row .meal { font-size: 1rem; }
   .empty, .error { color: #666; font-size: 0.95rem; padding: 1rem 0; }
+  .pool-toggle {
+    display: block;
+    text-align: center;
+    color: #2b6cb0;
+    font-size: 0.85rem;
+    background: none;
+    border: none;
+    padding: 10px 0 4px;
+    cursor: pointer;
+    width: 100%;
+  }
   h2.category-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
   h2.category-title:first-child { margin-top: 0; }
   .component-card {
@@ -46,6 +89,8 @@
     font-size: 1.05rem;
   }
   .component-card .item:last-child { border-bottom: none; }
+  #pool { display: none; }
+  #pool.open { display: block; }
   .footer-note { color: #999; font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
 </style>
 </head>
@@ -53,7 +98,14 @@
 
 <h1 id="page-title">This week's meals</h1>
 <p class="subtitle" id="subtitle">Loading...</p>
+<div id="suggested-note" class="suggested-note" style="display:none">
+  These are suggested plate combos put together from this week's mix-and-match pool — the
+  household is free to combine things differently. The full pool is below if you'd rather browse
+  it directly.
+</div>
 <div id="days"></div>
+<button id="pool-toggle" class="pool-toggle" style="display:none">Show the full pool &darr;</button>
+<div id="pool"></div>
 <p class="footer-note" id="footer-note" style="display:none">This link always shows the current plan — no need to ask for a new one.</p>
 
 <script>
@@ -70,12 +122,41 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
+const SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
+const SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+
+// Renders the day-by-day menu grid shared by both planning modes — real
+// planned meals for day-based, suggested combos for component-based (see
+// plan.menu_is_suggested). Blank slots (nothing planned/suggested for that
+// meal that day) are simply omitted rather than shown as empty rows.
+function renderMenu(days) {
+  return days.map(day => {
+    const rows = SLOT_ORDER
+      .filter(slot => day[slot])
+      .map(slot => `
+        <div class="menu-row">
+          <span class="slot">${SLOT_LABELS[slot]}</span>
+          <span class="meal">${escapeHtml(day[slot])}</span>
+        </div>`)
+      .join('');
+    if (!rows) return '';
+    return `
+      <div class="day-card">
+        <p class="date">${escapeHtml(formatDate(day.date))}</p>
+        ${rows}
+      </div>`;
+  }).join('');
+}
+
 async function load() {
   const token = window.location.pathname.split('/').filter(Boolean).pop();
   const daysDiv = document.getElementById('days');
   const subtitle = document.getElementById('subtitle');
   const title = document.getElementById('page-title');
   const footerNote = document.getElementById('footer-note');
+  const suggestedNote = document.getElementById('suggested-note');
+  const poolToggle = document.getElementById('pool-toggle');
+  const poolDiv = document.getElementById('pool');
 
   try {
     const res = await fetch('/api/share/' + encodeURIComponent(token));
@@ -94,37 +175,46 @@ async function load() {
     if (!plan.weekly_plan_id || !plan.meals || !plan.meals.length) {
       subtitle.textContent = '';
       daysDiv.innerHTML = '<p class="empty">No plan has been made for this week yet — check back soon.</p>';
+      suggestedNote.style.display = 'none';
+      poolToggle.style.display = 'none';
       return;
     }
 
     subtitle.textContent = 'Week of ' + formatDate(plan.week_start_date);
+    suggestedNote.style.display = plan.menu_is_suggested ? 'block' : 'none';
+
+    const menu = plan.menu || [];
+    daysDiv.innerHTML = renderMenu(menu) || '<p class="empty">Nothing to show yet.</p>';
 
     if (plan.planning_mode === 'component_based' && plan.components && plan.components.length) {
-      // Component-based plans are a pool of items by category to mix and
-      // match, not a fixed day->meal mapping — date/slot aren't meaningful
-      // here, so group by category instead (matches how the assistant
-      // itself describes a component_based plan).
-      daysDiv.innerHTML = plan.components.map(c => `
+      poolToggle.style.display = 'block';
+      poolDiv.innerHTML = plan.components.map(c => `
         <h2 class="category-title">${escapeHtml(c.category)}</h2>
         <div class="component-card">
           ${c.items.map(item => `<p class="item">${escapeHtml(item || '')}</p>`).join('')}
         </div>
       `).join('');
     } else {
-      daysDiv.innerHTML = plan.meals.map(m => `
-        <div class="day-card">
-          <p class="date">${escapeHtml(formatDate(m.date))}</p>
-          <p class="meal">${escapeHtml(m.meal || '')}</p>
-          <p class="slot">${escapeHtml(m.slot || '')}</p>
-        </div>
-      `).join('');
+      poolToggle.style.display = 'none';
+      poolDiv.classList.remove('open');
+      poolDiv.innerHTML = '';
     }
+
     footerNote.style.display = 'block';
   } catch (err) {
     subtitle.textContent = '';
     daysDiv.innerHTML = '<p class="error">Couldn\'t load the plan right now — try refreshing.</p>';
+    suggestedNote.style.display = 'none';
+    poolToggle.style.display = 'none';
   }
 }
+
+document.getElementById('pool-toggle').addEventListener('click', () => {
+  const pool = document.getElementById('pool');
+  const btn = document.getElementById('pool-toggle');
+  const open = pool.classList.toggle('open');
+  btn.textContent = open ? 'Hide the full pool ↑' : 'Show the full pool ↓';
+});
 
 load();
 // This is a read-only link others may leave open in a background tab, so it

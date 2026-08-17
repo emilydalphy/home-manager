@@ -723,7 +723,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "meal_date": {"type": "string", "description": "YYYY-MM-DD"},
                 "meal": {"type": "string"},
-                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                 "add_ingredients_to_grocery_list": {"type": "boolean"},
                 "food_groups": {
                     "type": "array",
@@ -784,7 +784,7 @@ TOOL_DEFINITIONS = [
                 "weekly_plan_id": {"type": "integer"},
                 "meal_date": {"type": "string", "description": "YYYY-MM-DD"},
                 "new_meal": {"type": "string"},
-                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                 "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
@@ -797,7 +797,7 @@ TOOL_DEFINITIONS = [
             "type": "object",
             "properties": {
                 "weekly_plan_id": {"type": "integer"},
-                "component_category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]},
+                "component_category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip", "snack"]},
                 "old_meal": {"type": "string", "description": "Exact current item name being replaced."},
                 "new_meal": {"type": "string"},
                 "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
@@ -1248,7 +1248,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                     "type": "object",
                     "properties": {
                         "date": {"type": "string", "description": "ISO date, e.g. 2026-08-10."},
-                        "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                        "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                         "meal_name": {"type": "string", "description": "Recipe name, existing or new."},
                         "is_new_recipe": {"type": "boolean"},
                         "ingredients": {
@@ -1308,8 +1308,18 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     prompt = f"""Household context (JSON):
 {json.dumps(context, indent=2)}
 
-Generate a full week's dinner plan (7 days unless day_count says otherwise) for this \
-household. Guidelines:
+Generate a full week's menu (7 days unless day_count says otherwise) for this household — \
+breakfast, lunch, dinner, AND a snack every day, not dinner alone, so the week reads as a real \
+day-by-day menu rather than just a dinner list. That means 4 separate entries per day (same \
+date, different slot), unless constraints_notes says otherwise (e.g. "just dinners this week" \
+means skip breakfast/lunch/snack entirely for the week — honor that exactly). Guidelines:
+- Dinner gets full treatment same as always: a real, specific recipe with complete ingredients \
+and instructions. Breakfast, lunch, and snack should be genuinely real meals too, but \
+lower-effort by nature (a bowl of oatmeal, a sandwich, yogurt with fruit, hummus and veggies) — \
+they don't need elaborate multi-step instructions or advance prep, and it's normal and expected \
+for the same breakfast/lunch/snack idea to repeat 2-3 times across the week rather than forcing \
+a fully distinct one every day. Don't stretch these into restaurant-tier new recipes; match the \
+actual effort level of what they are.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
 - Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
@@ -1386,9 +1396,12 @@ Call submit_weekly_plan with the result."""
     # ingredients/tags/food_groups list per day — 4096 tokens was cutting
     # this off mid-JSON, which the SDK can't parse, causing the whole
     # generation to fail. Bumped well above the realistic worst case.
+    # Further bumped when breakfast/lunch/dinner/snack generation replaced
+    # dinner-only (4x the entries per day, even though breakfast/lunch/
+    # snack are individually lighter-weight than dinner).
     response = client.messages.create(
         model=MODEL,
-        max_tokens=8192,
+        max_tokens=16000,
         tools=[_GENERATE_WEEKLY_PLAN_TOOL],
         tool_choice={"type": "tool", "name": "submit_weekly_plan"},
         messages=[{"role": "user", "content": prompt}],
@@ -1413,7 +1426,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip"]},
+                        "category": {"type": "string", "enum": ["breakfast", "protein", "vegetable", "carb", "treat", "dip", "snack"]},
                         "meal_name": {"type": "string", "description": "A single standalone item for this category only — don't bundle in another category (e.g. a protein item should not include 'with rice' or 'with beans' in the name; submit those as their own separate carb/vegetable items)."},
                         "is_new_recipe": {"type": "boolean"},
                         "ingredients": {
@@ -1473,9 +1486,12 @@ def generate_component_plan_llm(context: dict) -> list[dict]:
 
 Generate a component-based weekly plan for this household — NOT a day-by-day plan. \
 Produce a pool of items by category that the household will mix and match across the week \
-themselves, roughly: 1 breakfast idea, 2-3 proteins, 3-4 vegetables, 1-2 carbs, 1 treat, and \
-1 dip/sauce (adjust counts modestly for household size/goals in constraints_notes, but stay \
-close to this shape — it's a reasonable default, not a rigid rule). Guidelines:
+themselves, roughly: 1 breakfast idea, 2-3 proteins, 3-4 vegetables, 1-2 carbs, 1 treat, 1 \
+dip/sauce, and 1-2 snacks (adjust counts modestly for household size/goals in constraints_notes, \
+but stay close to this shape — it's a reasonable default, not a rigid rule). A snack item is its \
+own standalone thing (e.g. "hummus and carrots," "trail mix," "apple with peanut butter") — \
+distinct from treat (a dessert-y indulgence) and dip (a sauce/dip meant to accompany a meal), not \
+just a smaller version of either. Guidelines:
 - Respect every listed dietary restriction and allergy without exception. Avoid every listed \
 dislike.
 - Lean toward liked/favorite recipes from saved_recipes, but honor novelty_preference the same \
