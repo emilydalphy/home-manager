@@ -1323,7 +1323,9 @@ def _build_suggested_schedule(components: list[dict], week_start_date: str, days
     treat, a dip, a snack or two) is intentionally smaller than 7 days x 4
     meals, so items repeat across days by design — rotated with an offset
     per slot so the same day doesn't always pair the same vegetable with
-    both lunch and dinner.
+    both lunch and dinner. Lunch and dinner are both built as full plates —
+    protein + vegetable + carb — never just a side pairing, so every
+    suggested meal reads as a real plate rather than a partial one.
     """
     by_cat = {c["category"]: c["items"] for c in components if c.get("items")}
     breakfast = by_cat.get("breakfast", [])
@@ -1356,8 +1358,8 @@ def _build_suggested_schedule(components: list[dict], week_start_date: str, days
         schedule.append({
             "date": (start + timedelta(days=i)).isoformat(),
             "breakfast": pick(breakfast, i),
-            "lunch": plate(pick(vegetable, i), pick(carb, i)),
-            "dinner": plate(pick(protein, i), pick(vegetable, i + 1), pick(carb, i + 1)),
+            "lunch": plate(pick(protein, i), pick(vegetable, i), pick(carb, i)),
+            "dinner": plate(pick(protein, i + 1), pick(vegetable, i + 1), pick(carb, i + 1)),
             "snack": snack_pick(i),
         })
     return schedule
