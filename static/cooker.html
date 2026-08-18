@@ -122,6 +122,45 @@
   }
   .detail { display: none; margin-top: 10px; font-size: 0.9rem; }
   .detail.open { display: block; }
+  .serving-stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 2px;
+  }
+  .serving-label {
+    font-family: var(--font-body, "Karla", sans-serif);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted, #8A7F6E);
+  }
+  .serving-btn {
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--midnight-violet, #66304E);
+    background: transparent;
+    color: var(--midnight-violet, #66304E);
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .serving-btn:hover { background: var(--violet-soft, #F1E4EC); }
+  .serving-count {
+    font-family: var(--font-heading, "Quicksand", sans-serif);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--midnight-violet, #66304E);
+    min-width: 1.4em;
+    text-align: center;
+  }
+  .unscaled-note {
+    color: var(--text-muted, #8A7F6E);
+    font-size: 0.78rem;
+    font-style: italic;
+    margin: 4px 0 0;
+  }
   .detail h4 { font-family: var(--font-heading, "Quicksand", sans-serif); margin: 10px 0 4px; font-size: 0.82rem; font-weight: 600; color: var(--midnight-violet, #66304E); text-transform: uppercase; letter-spacing: 0.02em; }
   .detail h4:first-child { margin-top: 0; }
   .detail ul, .detail ol { margin: 0; padding-left: 20px; }
@@ -634,10 +673,17 @@ function render(view) {
       html += `<button class="detail-toggle" data-toggle="${idx}">Show recipe &darr;</button>
         <div class="detail" id="detail-${idx}">
           <button class="voice-btn" data-ctx="meal" data-idx="${idx}" title="Hands-free: check off, ask about ingredients/steps, log a substitution, by voice">&#127908; Hands-free</button>
-          ${m.default_servings ? `<p style="margin:0;color:#888;font-size:0.82rem">Serves ${m.default_servings}</p>` : ''}
+          ${m.default_servings ? `
+          <div class="serving-stepper" data-idx="${idx}" data-recipe="${escapeHtml(m.meal || '')}" data-base="${m.default_servings}">
+            <span class="serving-label">Serves</span>
+            <button type="button" class="serving-btn" data-delta="-1" aria-label="Fewer servings">&minus;</button>
+            <span class="serving-count">${m.default_servings}</span>
+            <button type="button" class="serving-btn" data-delta="1" aria-label="More servings">+</button>
+          </div>` : ''}
           ${m.advance_prep_notes ? `<h4>Advance prep</h4><p style="margin:0">${escapeHtml(m.advance_prep_notes)}</p>` : ''}
           <h4>Ingredients</h4>
-          <ul>${(m.ingredients || []).map(i => `<li>${escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || ''))}</li>`).join('') || '<li class="empty" style="padding:0">None listed</li>'}</ul>
+          <ul id="ingredients-${idx}">${(m.ingredients || []).map(i => `<li>${escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || ''))}</li>`).join('') || '<li class="empty" style="padding:0">None listed</li>'}</ul>
+          <p class="unscaled-note" id="unscaled-note-${idx}" style="display:none"></p>
           <h4>Instructions</h4>
           ${renderInstructions(m)}
         </div>`;
@@ -684,6 +730,23 @@ function render(view) {
     });
   });
   updateVoiceButtons();
+
+  content.querySelectorAll('.serving-stepper').forEach(wrap => {
+    const idx = wrap.dataset.idx;
+    const recipeName = wrap.dataset.recipe;
+    const base = parseInt(wrap.dataset.base, 10) || 1;
+    const countEl = wrap.querySelector('.serving-count');
+    wrap.querySelectorAll('.serving-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const delta = parseInt(btn.getAttribute('data-delta'), 10);
+        const current = parseInt(countEl.textContent, 10) || base;
+        const next = Math.max(1, current + delta);
+        if (next === current) return;
+        countEl.textContent = next;
+        applyServingScale(idx, recipeName, next);
+      });
+    });
+  });
 
   content.querySelectorAll('.fill-recipe-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -892,6 +955,36 @@ function renderAttentionBanner(items) {
     resolveBtn.addEventListener('click', () => resolve('resolved'));
     dismissBtn.addEventListener('click', () => resolve('dismissed'));
   });
+}
+
+// Serving-size stepper — recalculates ingredient quantities live without a
+// full plan reload. Non-numeric/imprecise quantities ("a pinch," "to
+// taste") can't scale mathematically, so the backend leaves those as-is
+// and flags them in unscaled_items rather than guessing.
+async function applyServingScale(idx, recipeName, servings) {
+  const list = document.getElementById('ingredients-' + idx);
+  const note = document.getElementById('unscaled-note-' + idx);
+  try {
+    const res = await fetch(`/api/recipes/scale?name=${encodeURIComponent(recipeName)}&servings=${servings}`);
+    if (!res.ok) throw new Error('Could not scale');
+    const data = await res.json();
+    if (list) {
+      list.innerHTML = (data.scaled_ingredients || []).map(i =>
+        `<li>${escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || ''))}</li>`
+      ).join('') || '<li class="empty" style="padding:0">None listed</li>';
+    }
+    if (note) {
+      if (data.unscaled_items && data.unscaled_items.length) {
+        note.textContent = `Eyeball these — they don't scale automatically: ${data.unscaled_items.join(', ')}.`;
+        note.style.display = 'block';
+      } else {
+        note.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    // Non-critical — leave the ingredient list as it was rather than
+    // breaking the view over a failed scale request.
+  }
 }
 
 async function refreshAttention() {

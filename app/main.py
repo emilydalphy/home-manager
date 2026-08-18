@@ -408,6 +408,27 @@ def get_cooker_view(weekly_plan_id: int | None = None):
     return view
 
 
+@app.get("/api/recipes/scale")
+def scale_recipe_endpoint(name: str, servings: int):
+    """
+    Live-scale a saved recipe's ingredient quantities to a target serving
+    count — powers the Cooker view's serving-size stepper (no chat
+    round-trip needed for a +/- tap). Quantities that don't parse cleanly
+    (e.g. "a pinch," "to taste") come back unchanged in unscaled_items so
+    the Cooker knows to eyeball them.
+    """
+    if servings < 1:
+        raise HTTPException(status_code=400, detail="Servings must be at least 1.")
+    try:
+        result = tools.scale_recipe(name, servings)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Recipe scaling failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.post("/api/cooker/check-meal")
 def cooker_check_meal(req: CheckOffMealRequest):
     """Mark a planned meal cooked/pending directly from the Cooker view (no chat round-trip needed)."""

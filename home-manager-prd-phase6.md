@@ -1,7 +1,6 @@
 # PRD: Home Manager — Phase 6 (Closing the Design-to-Build Gap)
 
-**Status:** Draft v2 (reasoning storage + growth-counter definition resolved — audits remain
-pending investigation, not a product decision)
+**Status:** Draft v3 (audits complete — see §4.1 Findings; build in progress per §8)
 **Owner:** Emily
 **Related:** home-manager-user-stories.md (Theme 9), home-manager-design-context-brief.md,
 home-manager-screen-specs.md, Home Manager - Branding package.pdf
@@ -58,6 +57,36 @@ and what the app actually shows.
   returns single-store vs. multi-store state to the frontend, and whether the frontend
   already conditionally renders the tab bar based on it, or whether the tabs were just
   visually styled without that logic behind them.
+
+#### 4.1 Findings (audit complete)
+
+- **Conflict-detection logic (US-9.3): exists, but only reaches chat text, not a visible
+  banner.** `tools.check_plan_conflicts()` (Phase 3, Workstream D) is real, working backend
+  logic — it checks planned meals against household members' saved dietary
+  restrictions/allergies via keyword matching against recipe ingredients, and is wired as an
+  agent tool the system prompt instructs the model to call right before
+  `approve_weekly_plan` and mention any conflicts found. What's missing is the surfacing
+  layer the screen specs call for: there's no dedicated interactive weekly-plan screen
+  today (plan approval happens conversationally in chat), so there's nowhere for a compact
+  Electric Coral banner to live, and the read-only share.html view never calls
+  `check_plan_conflicts` at all — an outside viewer never sees a flagged clash even if one
+  exists. **Verdict: UI-wiring task, not backend work** — but "wiring it up" means building
+  an actual visual surface for it, most likely on share.html since that's the closest thing to
+  a "weekly plan view" that exists.
+- **Delete-confirmation step (US-9.7): does not exist.** `removeItem()` in memory.html
+  calls `/api/memory/delete` immediately on click with zero confirmation of any kind — no
+  native `confirm()`, no dialog, nothing. **Verdict: genuinely missing, build from scratch**
+  (the warm copy is already drafted in the screen specs: "Remove this? You can always
+  tell me again.").
+- **Multi-store tab conditional logic (US-9.8): does not exist.** grocery.html's "By store"
+  view is a persistent third toggle (alongside "To buy" and "Purchased") that's always
+  shown regardless of how many stores the household uses — it's not a segmented
+  per-store tab bar (e.g. a "Costco" tab next to a "Farm Boy" tab) and there's no backend
+  signal distinguishing single- vs. multi-store households at all (`usual_stores` is just an
+  unordered list; nothing computes or returns a count). **Verdict: no conditional logic
+  exists, needs to be added** if single-store households should stop seeing "By store" as
+  a meaningful option — worth noting the current always-available grouping view is a
+  reasonable design on its own merits, so this is more a polish decision than a bug fix.
 
 ### 4.2 Weekly plan view completions (US-9.1, US-9.2, US-9.4)
 

@@ -277,6 +277,12 @@ plan itself was organized (protein, vegetable, carb, treat, dip, snack) rather t
 incidental insertion order — so the Cooker view reads the same way the plan was actually put
 together.
 
+Any recipe with a serving count shows a **–/+ stepper** in its detail view — tap it and the
+ingredient list recalculates live (via `GET /api/recipes/scale`, no chat round-trip) without
+touching the saved recipe. Quantities that don't parse as a number-plus-unit ("a pinch," "to
+taste") are left exactly as written rather than guessed at, and called out just below the
+ingredient list so it's clear which ones to eyeball yourself.
+
 ### Weekly menu (Share view)
 
 The read-only share link ("Share meal plan," safe to hand to anyone in the household — no
