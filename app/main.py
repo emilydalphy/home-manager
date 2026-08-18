@@ -620,6 +620,7 @@ def get_grocery_list_view(status: str = "needed"):
                     ]
                 }
                 result["sections"] = [s for s in result["sections"] if s["items"]]
+        result["multi_store"] = tools.is_multi_store_household()
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

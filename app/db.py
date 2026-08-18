@@ -67,6 +67,10 @@ _MIGRATIONS = [
     # create_weekly_plan. Powers the onboarding "here's your first week"
     # intro banner.
     ("weekly_plans", "is_first_plan", "INTEGER NOT NULL DEFAULT 0"),
+    # Phase 6: short "why this?" rationale per planned meal, generated and
+    # persisted at plan-generation time — see schema.sql's comment on
+    # meal_plan_entries.reasoning.
+    ("meal_plan_entries", "reasoning", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 

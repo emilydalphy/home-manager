@@ -1,6 +1,6 @@
 # PRD: Home Manager — Phase 6 (Closing the Design-to-Build Gap)
 
-**Status:** Draft v3 (audits complete — see §4.1 Findings; build in progress per §8)
+**Status:** v4 — all §8 build-order items shipped (audits, serving-size stepper, freshness tag + first-run marker, per-meal reasoning, growth counter + per-person grouping + delete confirmation, multi-store tab conditional logic)
 **Owner:** Emily
 **Related:** home-manager-user-stories.md (Theme 9), home-manager-design-context-brief.md,
 home-manager-screen-specs.md, Home Manager - Branding package.pdf

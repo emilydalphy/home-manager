@@ -863,6 +863,22 @@ async function renderAlreadyHaveBanner() {
   });
 }
 
+// The "By store" tab only earns its place once there's actually more than
+// one store involved (Phase 6 §4.1/§4.4 audit finding: it used to show
+// unconditionally with no signal behind it) — see is_multi_store_household
+// in tools.py for the "usual store list OR item-tagged store" definition.
+// Toggled off the /api/grocery-list response since that's the endpoint
+// already hit on every normal page load; if the household happens to be
+// mid-"By store" browsing when it drops to single-store, bounce back to
+// "To buy" rather than leaving a dead tab selected.
+function applyMultiStoreVisibility(multiStore) {
+  const btn = document.getElementById('view-store-btn');
+  btn.style.display = multiStore ? '' : 'none';
+  if (!multiStore && currentView === 'store') {
+    setView('needed', 'view-needed-btn');
+  }
+}
+
 async function load() {
   const content = document.getElementById('content');
   try {
@@ -874,7 +890,9 @@ async function load() {
       const status = currentView === 'purchased' ? 'purchased' : 'needed';
       const res = await fetch('/api/grocery-list?status=' + encodeURIComponent(status));
       if (!res.ok) throw new Error('Could not load');
-      renderNeededOrPurchased(await res.json());
+      const result = await res.json();
+      applyMultiStoreVisibility(!!result.multi_store);
+      renderNeededOrPurchased(result);
     }
     renderAlreadyHaveBanner();
   } catch (err) {

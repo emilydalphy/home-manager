@@ -138,6 +138,12 @@ again just to get the actual recipe.
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
 this week?" rather than relying on get_meal_plan's flatter list when a generated plan exists.
+- If asked "why this?"/"why did you pick X?" about a planned meal, use the reasoning already \
+stored on that meal (get_weekly_plan's meals list, or per-day reasoning fields in `menu`) \
+rather than making something up on the spot — it was written at generation time for exactly \
+this. If a meal genuinely has no reasoning saved (planned before this was tracked, or added \
+ad hoc via plan_meal without it), say so plainly and give your best honest read instead of \
+inventing a past rationale.
 - Households can plan day-based (default: one meal per day) or component_based (a pool of \
 items by category — breakfast, protein, vegetable, carb, treat, dip — assembled freely across \
 the week instead of a fixed day->meal mapping). This is a standing household setting (see \
@@ -1292,8 +1298,12 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "items": {"type": "integer"},
                             "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it.",
                         },
+                        "reasoning": {
+                            "type": "string",
+                            "description": "One short, specific sentence on why THIS meal for THIS slot — reference the actual signal that drove it (a stated preference, recent history/variety, an expiring ingredient, a per-week constraint, novelty_preference). E.g. \"You said you love salmon, and Tuesdays tend to be quick around here.\" Never generic filler like \"a balanced, tasty option.\" This is shown to the household on request, so it needs to feel like a real reason, not a caption.",
+                        },
                     },
-                    "required": ["date", "slot", "meal_name", "is_new_recipe"],
+                    "required": ["date", "slot", "meal_name", "is_new_recipe", "reasoning"],
                 },
             },
         },
@@ -1358,6 +1368,13 @@ means don't plan those days; "under 30 minutes on weeknights" means quick weekni
 main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
 saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
 its ingredients.
+- For each day, also fill in reasoning: one short, specific sentence a household member \
+would actually find useful if they tapped "why this?" — name the real thing that drove the \
+choice (a stated protein/cuisine preference, filling a variety gap from recent_history, \
+using up something in near_expiring_inventory, honoring a constraint from constraints_notes, \
+surfacing a new recipe per novelty_preference). Skip generic filler like "a balanced choice" \
+— if there's truly nothing more specific than "it fit the week," say that plainly rather \
+than padding it out.
 - cuisine and main_protein should be filled in for every day where reasonably inferable \
 (existing or new recipe) — this is what powers future variety checks, so don't leave it \
 blank just because the recipe already existed.
@@ -1472,8 +1489,12 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                             "items": {"type": "integer"},
                             "description": "1-based position(s) within `instructions` of the specific step(s) that ARE the advance prep (e.g. [2] if step 2 is the make-ahead step). Only set alongside advance_prep_notes, and only when a specific step actually corresponds to it.",
                         },
+                        "reasoning": {
+                            "type": "string",
+                            "description": "One short, specific sentence on why this item made the pool — reference the actual signal (a stated preference, recent variety, an expiring ingredient, novelty_preference). Never generic filler.",
+                        },
                     },
-                    "required": ["category", "meal_name", "is_new_recipe"],
+                    "required": ["category", "meal_name", "is_new_recipe", "reasoning"],
                 },
             },
         },
@@ -1517,6 +1538,9 @@ treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "r
 - For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \
 the exact meal_name.
+- For each item, also fill in reasoning: one short, specific sentence on why it made the \
+pool — same guidance as the day-based prompt (name the real driver: preference, variety, \
+near-expiring inventory, novelty_preference), never generic filler.
 - For every new-item ingredient, set category to the correct grocery store section (produce, \
 dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs/butter/tofu \
 are dairy; fresh vegetables/herbs are produce.
@@ -1650,6 +1674,7 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
                 food_groups=item.get("food_groups"),
                 weekly_plan_id=plan_id,
                 component_category=category,
+                reasoning=item.get("reasoning", ""),
             )
     else:
         days = generate_weekly_plan_llm(context)
@@ -1664,6 +1689,7 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
                 slot=day.get("slot", "dinner"),
                 food_groups=day.get("food_groups"),
                 weekly_plan_id=plan_id,
+                reasoning=day.get("reasoning", ""),
             )
 
     return tools.get_weekly_plan(plan_id)

@@ -144,6 +144,50 @@
   .member .name { font-weight: 700; color: var(--text-body); }
   .member .restrictions { color: var(--text-muted); font-size: 0.85rem; }
 
+  .growth-pill-row { margin: 0 0 16px; }
+
+  .section-heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--midnight-violet);
+    margin: 24px 0 10px;
+  }
+  .section-heading:first-of-type { margin-top: 8px; }
+
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 21, 33, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 24px;
+  }
+  .confirm-overlay.visible { display: flex; }
+  .confirm-box {
+    background: #fff;
+    border-radius: var(--radius-card);
+    padding: 22px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(43, 21, 33, 0.25);
+  }
+  .confirm-text {
+    margin: 0 0 18px;
+    font-size: 0.95rem;
+    color: var(--text-body);
+    text-align: center;
+  }
+  .confirm-actions { display: flex; gap: 10px; }
+  .confirm-actions .action { flex: 1; }
+  .confirm-remove-btn {
+    background: var(--electric-coral) !important;
+    color: #fff !important;
+    border: none !important;
+  }
+
   #status {
     position: fixed;
     left: 50%;
@@ -202,13 +246,29 @@
 <body>
   <h1>What we know</h1>
   <p class="subtitle">Everything saved about your household's meal preferences. <a href="/">&larr; Back to chat</a></p>
+  <p class="growth-pill-row"><span class="pill pill-success" id="growth-pill" style="display:none;"></span></p>
   <div id="status"></div>
 
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <p class="confirm-text">Remove this? You can always tell me again.</p>
+      <div class="confirm-actions">
+        <button class="action secondary" id="confirm-cancel">Cancel</button>
+        <button class="action confirm-remove-btn" id="confirm-remove">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading">Household members</h2>
   <div class="card">
-    <h2>Household</h2>
     <p class="hint">Members and their dietary restrictions — edit these from the onboarding flow.</p>
     <div id="members"></div>
-    <h2 style="margin-top:14px;">Goals</h2>
+  </div>
+
+  <h2 class="section-heading">General / Household</h2>
+
+  <div class="card">
+    <h2>Goals</h2>
     <textarea id="goals" placeholder="e.g. stay on top of chores, eat healthier"></textarea>
     <div class="save-row">
       <button class="action" onclick="saveGoals()">Save</button>
@@ -263,7 +323,7 @@
     <div class="add-row">
       <input type="text" id="cooking-time" placeholder="e.g. quick, moderate, no preference" />
       <button class="action" onclick="saveCookingTime()">Save</button>
-      <button class="action secondary" onclick="clearCookingTime()">Clear</button>
+      <button class="action secondary" onclick="openConfirm(clearCookingTime)">Clear</button>
     </div>
   </div>
 
@@ -282,7 +342,7 @@
     <textarea id="notes" placeholder="Anything else to remember..."></textarea>
     <div class="save-row">
       <button class="action" onclick="saveNotes()">Save</button>
-      <button class="action secondary" onclick="clearNotes()">Clear</button>
+      <button class="action secondary" onclick="openConfirm(clearNotes)">Clear</button>
     </div>
   </div>
 
@@ -373,6 +433,15 @@ function render() {
         </div>`).join('')
     : '<p class="empty-state">I\'m still getting to know your household — add members from onboarding and I\'ll keep track.</p>';
 
+  const growthPill = document.getElementById('growth-pill');
+  const growthCount = memory.growth_count_this_month || 0;
+  if (growthCount > 0) {
+    growthPill.textContent = `You've taught me ${growthCount} thing${growthCount === 1 ? '' : 's'} this month`;
+    growthPill.style.display = 'inline-block';
+  } else {
+    growthPill.style.display = 'none';
+  }
+
   document.getElementById('goals').value = memory.goals || '';
   document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
   document.getElementById('novelty-preference').innerHTML = noveltyOptions(memory.novelty_preference || 'balanced');
@@ -452,13 +521,36 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// Warm confirm-before-remove step (Phase 6 §4.1/§4.3 — none existed before;
+// every destructive action in this view routes through here rather than
+// deleting immediately on click) — "Remove this? You can always tell me
+// again." with a Cancel/Remove choice, not a native confirm() dialog.
+let pendingConfirmAction = null;
+function openConfirm(action) {
+  pendingConfirmAction = action;
+  document.getElementById('confirm-overlay').classList.add('visible');
+}
+function closeConfirm() {
+  pendingConfirmAction = null;
+  document.getElementById('confirm-overlay').classList.remove('visible');
+}
+document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+document.getElementById('confirm-remove').addEventListener('click', () => {
+  const action = pendingConfirmAction;
+  closeConfirm();
+  if (action) action();
+});
+document.getElementById('confirm-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'confirm-overlay') closeConfirm();
+});
+
 // Event delegation for all remove buttons rendered above — avoids ever
 // embedding user-entered text inside an inline onclick attribute, which
 // breaks (or worse, injects) if the text contains quote characters.
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.remove-chip');
   if (!btn) return;
-  removeItem(btn.dataset.field, btn.dataset.item);
+  openConfirm(() => removeItem(btn.dataset.field, btn.dataset.item));
 });
 
 // Dragging a protein's rating slider edits it in place, no need to
@@ -486,7 +578,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.remove-store-item');
   if (!btn) return;
-  removeStoreItem(btn.dataset.store, btn.dataset.item);
+  openConfirm(() => removeStoreItem(btn.dataset.store, btn.dataset.item));
 });
 
 // Add a typical item to a store's list — click the Add button or press Enter.

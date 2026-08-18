@@ -136,6 +136,7 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     )
     conn.commit()
     conn.close()
+    _log_preference_event(f"member:{name}:dietary_restrictions", "write")
     return {"name": name, "dietary_restrictions": merged}
 
 
@@ -155,7 +156,40 @@ def set_household_goals(goals: str) -> dict:
     conn.execute("UPDATE households SET goals = ? WHERE id = ?", (goals, HOUSEHOLD_ID))
     conn.commit()
     conn.close()
+    _log_preference_event("goals", "write")
     return {"goals": goals}
+
+
+def _log_preference_event(field: str, action: str) -> None:
+    """
+    Record one row in the append-only preference_events log — powers the
+    Memory view's growth counter ("You've taught me N things this month").
+    Every write counts on purpose (Phase 6 PRD §6): a correction is still a
+    sign of active engagement, so this doesn't dedupe repeated edits to the
+    same field. Called only from the specific correction/addition entry
+    points below (not from set_household_meal_preferences directly, which
+    onboarding calls in bulk) so getting through onboarding doesn't inflate
+    "this month" on day one.
+    """
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO preference_events (household_id, field, action) VALUES (?, ?, ?)",
+        (HOUSEHOLD_ID, field, action),
+    )
+    conn.commit()
+    conn.close()
+
+
+def count_preference_events_this_month() -> int:
+    """Count preference-write events (create/update/delete) in the current calendar month — backs the Memory view's growth counter."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM preference_events "
+        "WHERE household_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    conn.close()
+    return row["n"]
 
 
 # ---------- Pets ----------
@@ -245,6 +279,7 @@ def add_food_dislikes(items: list[str]) -> dict:
     )
     conn.commit()
     conn.close()
+    _log_preference_event("dislikes", "write")
     return {"dislikes": merged}
 
 
@@ -272,6 +307,7 @@ def add_usual_stores(items: list[str]) -> dict:
     )
     conn.commit()
     conn.close()
+    _log_preference_event("usual_stores", "write")
     return {"usual_stores": merged}
 
 
@@ -304,6 +340,7 @@ def add_store_typical_items(store: str, items: list[str]) -> dict:
     )
     conn.commit()
     conn.close()
+    _log_preference_event("store_typical_items", "write")
     return {"store": store, "typical_items": store_items}
 
 
@@ -322,6 +359,7 @@ def remove_store_typical_item(store: str, item: str) -> dict:
     )
     conn.commit()
     conn.close()
+    _log_preference_event("store_typical_items", "delete")
     return {"store": store, "typical_items": store_items}
 
 
@@ -1057,6 +1095,7 @@ def plan_meal(
     food_groups: list[str] | None = None,
     weekly_plan_id: int | None = None,
     component_category: str | None = None,
+    reasoning: str = "",
 ) -> dict:
     """
     Schedule a meal for a date. `meal` can be a saved recipe name or a
@@ -1075,7 +1114,13 @@ def plan_meal(
     "vegetable", "breakfast", "carb", "treat", "dip") only for a
     component_based plan's entries — in that case meal_date should just be
     the plan's week_start_date as a placeholder, since the item isn't tied
-    to a specific day, and slot is ignored.
+    to a specific day, and slot is ignored. Pass reasoning (a short,
+    specific "why this?" rationale, e.g. "You said you love salmon, and
+    it's Tuesday so nothing too fussy") when planning as part of a
+    generated week — see generate_weekly_plan — so it's ready instantly
+    later instead of needing to be worked out again on demand; omit it for
+    genuinely one-off chat requests where there's no real "why" beyond the
+    user asking for it.
     """
     conn = get_conn()
     recipe = conn.execute(
@@ -1087,9 +1132,9 @@ def plan_meal(
     entry_food_groups = json.loads(recipe["food_groups_json"]) if recipe else (food_groups or [])
 
     cur = conn.execute(
-        "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json, weekly_plan_id, component_category) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id, component_category),
+        "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json, weekly_plan_id, component_category, reasoning) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id, component_category, reasoning),
     )
     conn.commit()
     entry_id = cur.lastrowid
@@ -1314,17 +1359,23 @@ def _build_day_based_menu(meal_dicts: list[dict]) -> list[dict]:
     row per date with each planned slot filled in (breakfast/lunch/dinner/
     snack), for a real weekly-menu view (see get_weekly_plan's `menu`)
     instead of one flat card per meal. This is real, already-planned data,
-    not a suggestion.
+    not a suggestion. Each slot's "why this?" rationale (see
+    meal_plan_entries.reasoning) rides along as `{slot}_reasoning`, e.g.
+    day["dinner_reasoning"], so a "why this?" affordance can show it
+    without a second lookup.
     """
     by_date: dict[str, dict] = {}
+    slots = ["breakfast", "lunch", "dinner", "snack"]
     for m in meal_dicts:
         if not m["date"]:
             continue
         day = by_date.setdefault(
-            m["date"], {"date": m["date"], "breakfast": None, "lunch": None, "dinner": None, "snack": None}
+            m["date"],
+            {"date": m["date"], **{s: None for s in slots}, **{f"{s}_reasoning": None for s in slots}},
         )
-        slot = m["slot"] if m["slot"] in day else "dinner"
+        slot = m["slot"] if m["slot"] in slots else "dinner"
         day[slot] = m["meal"]
+        day[f"{slot}_reasoning"] = m.get("reasoning")
     return [by_date[d] for d in sorted(by_date)]
 
 
@@ -1454,7 +1505,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     meals = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
-               mpe.food_groups_json, mpe.component_category, mpe.cooked_status
+               mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -1470,6 +1521,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
             "food_groups": json.loads(m["food_groups_json"]),
             "component_category": m["component_category"],
             "cooked_status": m["cooked_status"],
+            "reasoning": m["reasoning"] or None,
         }
         for m in meals
     ]
@@ -2043,6 +2095,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "component_category": m["component_category"],
             "meal": m["meal"],
             "cooked_status": m["cooked_status"],
+            "reasoning": m.get("reasoning"),
             "ingredients": recipe["ingredients"] if recipe else [],
             "instructions": recipe["instructions"] if recipe else [],
             "default_servings": recipe["default_servings"] if recipe else None,
@@ -2219,6 +2272,31 @@ def set_item_store(item: str, store: str) -> dict:
     conn.commit()
     conn.close()
     return {"item": item, "store": store}
+
+
+def is_multi_store_household() -> bool:
+    """
+    Whether this household actually shops at more than one store — the
+    signal the Grocery List view uses to decide whether "By store" is
+    worth showing at all (Phase 6 PRD §4.1/§4.4 audit finding: the tab used
+    to show unconditionally, with nothing behind it distinguishing single-
+    from multi-store households). True if either the saved usual_stores
+    list has more than one entry, or more than one distinct store name is
+    actually tagged on a grocery item right now — covers both "told the
+    app up front" and "tagged ad hoc without ever saving it as a usual
+    store."
+    """
+    conn = get_conn()
+    prefs = conn.execute(
+        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    usual = set(json.loads(prefs["usual_stores_json"])) if prefs else set()
+    tagged_rows = conn.execute(
+        "SELECT DISTINCT store FROM grocery_items WHERE household_id = ? AND store != ''", (HOUSEHOLD_ID,)
+    ).fetchall()
+    conn.close()
+    tagged = {r["store"] for r in tagged_rows}
+    return len(usual | tagged) > 1
 
 
 def get_grocery_list_by_store(status: str = "needed") -> dict:
@@ -2576,7 +2654,10 @@ def get_household_memory() -> dict:
     notes, and household goals. Powers a "what the app knows" view the user
     can review and correct directly (see edit_preference/delete_preference),
     and is useful context to pull before discussing or generating meal
-    plans.
+    plans. Also includes growth_count_this_month — how many preference
+    writes (create/update/delete) have happened this calendar month, per
+    the append-only preference_events log — for the "what we know" view's
+    "you've taught me N things this month" counter.
     """
     conn = get_conn()
     prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
@@ -2603,6 +2684,7 @@ def get_household_memory() -> dict:
         "planning_mode": prefs["planning_mode"] if prefs else "day_based",
         "usual_stores": json.loads(prefs["usual_stores_json"]) if prefs else [],
         "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},
+        "growth_count_this_month": count_preference_events_this_month(),
     }
 
 
@@ -2632,6 +2714,7 @@ def edit_preference(field: str, value) -> dict:
     }
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
+    _log_preference_event(field, "write")
     if field == "dislikes":
         conn = get_conn()
         conn.execute(
@@ -2727,6 +2810,7 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         raise ValueError(f"Unknown preference field '{field}'.")
     conn.commit()
     conn.close()
+    _log_preference_event(field, "delete")
     return {"field": field, "item": item, "deleted": True}
 
 

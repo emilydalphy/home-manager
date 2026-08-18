@@ -187,6 +187,14 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- has no rating is worth gently asking about, but only once, and only
     -- for something recently made.
     cooked_at TEXT,
+    -- Phase 6: a short "why this?" rationale, generated and persisted at
+    -- plan-generation time (not computed on demand — the model already has
+    -- the relevant preferences/history/constraints in context right then,
+    -- so this costs a little extra generation output instead of a live
+    -- round-trip every time someone taps "why this?"). Blank for meals
+    -- planned before this was tracked, or added one-off via plan_meal
+    -- without a reasoning argument.
+    reasoning TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -342,6 +350,25 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     location TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Phase 6: append-only log of preference writes (create/update/delete) —
+-- not a value store, meal_preferences/members already hold current state.
+-- Just a timestamped record that a write happened, so the Memory view's
+-- growth counter ("You've taught me N things this month") can count real
+-- activity within a window instead of being a made-up number. Every write
+-- counts, including corrections to the same field — no deduping, per Phase
+-- 6 PRD §6 decision. Only logged from the specific correction/addition
+-- entry points a person or the assistant actually uses after initial setup
+-- (edit_preference, delete_preference, add_food_dislikes, etc.) — not from
+-- onboarding's bulk initial save, so getting through onboarding doesn't
+-- inflate "this month" on day one.
+CREATE TABLE IF NOT EXISTS preference_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    field TEXT NOT NULL, -- e.g. 'dislikes', 'protein_preferences', 'member:Jamie:dietary_restrictions'
+    action TEXT NOT NULL, -- 'write' (create or update) | 'delete'
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Seed a single default household so V1 works out of the box

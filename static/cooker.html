@@ -81,6 +81,31 @@
   .meal-name { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.1rem; font-weight: 600; color: var(--midnight-violet, #66304E); margin: 0; }
   .meal-name.done { text-decoration: line-through; }
   .meal-meta { color: var(--text-muted, #8A7F6E); font-size: 0.78rem; margin: 2px 0 0; text-transform: capitalize; }
+  /* "Why this?" — small, muted, deliberately not competing with the main
+     card content (per screen-spec guidance for this affordance). */
+  .why-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted, #8A7F6E);
+    font-family: var(--font-body, "Karla", sans-serif);
+    font-size: 0.76rem;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px 0;
+    margin: 2px 0 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .why-text {
+    color: var(--text-muted, #8A7F6E);
+    font-family: var(--font-body, "Karla", sans-serif);
+    font-size: 0.82rem;
+    font-style: italic;
+    margin: 0 0 4px;
+    line-height: 1.4;
+  }
   /* "Advance prep" highlight — soft Turmeric Gold tag, not a button. */
   .badge {
     display: inline-block;
@@ -667,7 +692,10 @@ function render(view) {
         <button class="check-toggle ${isDone ? 'checked' : ''}" data-entry-id="${m.entry_id}" data-next="${isDone ? 'pending' : 'done'}">${isDone ? '&check;' : ''}</button>
         <div class="card-body">
           <p class="meal-name ${isDone ? 'done' : ''}">${escapeHtml(m.meal || '')}${m.advance_prep_notes ? '<span class="badge">advance prep</span>' : ''}</p>
-          <p class="meal-meta">${escapeHtml(metaBits.join(' · '))}</p>`;
+          <p class="meal-meta">${escapeHtml(metaBits.join(' · '))}</p>
+          ${m.reasoning ? `
+          <button type="button" class="why-toggle" data-why-toggle="${idx}">Why this? &darr;</button>
+          <p class="why-text" id="why-${idx}" style="display:none">${escapeHtml(m.reasoning)}</p>` : ''}`;
 
     if (m.has_full_recipe) {
       html += `<button class="detail-toggle" data-toggle="${idx}">Show recipe &darr;</button>
@@ -730,6 +758,16 @@ function render(view) {
     });
   });
   updateVoiceButtons();
+
+  content.querySelectorAll('.why-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = btn.getAttribute('data-why-toggle');
+      const text = document.getElementById('why-' + idx);
+      const open = text.style.display !== 'none';
+      text.style.display = open ? 'none' : 'block';
+      btn.innerHTML = open ? 'Why this? &darr;' : 'Why this? &uarr;';
+    });
+  });
 
   content.querySelectorAll('.serving-stepper').forEach(wrap => {
     const idx = wrap.dataset.idx;

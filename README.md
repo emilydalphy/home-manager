@@ -137,7 +137,22 @@ There's also a dedicated **What We Know** page (linked from the top of the
 chat page) if you'd rather review and edit things directly instead of asking
 in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
 add/remove protein preferences, and edit cooking-time preference, notes, and
-household goals, all with immediate save, no conversation required.
+household goals, all with immediate save, no conversation required. The page
+is split into **Household members** (each person's dietary restrictions, set
+during onboarding) and **General / Household** (everything else, since
+today's data model tracks those preferences at the household level, not
+per-person). Removing anything on the page — a dislike, a store, a protein
+preference, notes — asks first with a warm "Remove this? You can always tell
+me again." confirmation rather than deleting on click; nothing there existed
+before Phase 6's audit found the gap.
+
+The page also shows a **growth counter** ("You've taught me 8 things this
+month") whenever there's been at least one preference write this calendar
+month — backed by a real append-only log (`preference_events`) of every
+create/update/delete, not a guess. Every write counts the same, including
+a correction to something already saved, since that's still a sign of active
+use; only onboarding's initial bulk save is excluded so finishing onboarding
+doesn't inflate the counter on day one.
 
 **Protein preferences** are a 1-5 "how much does the household like this"
 slider per protein (1 = avoid entirely, 5 = a favorite) rather than a
@@ -315,6 +330,15 @@ by querying for the earliest plan row, so it stays correct through backfills or
 re-onboarding). The assistant mentions both in chat too when a plan is generated, not just
 on this page.
 
+Any meal with a reason behind it gets a **"Why this?"** toggle right under its name — tap it
+to reveal one short, specific sentence on what actually drove the pick (a stated preference,
+something that fit the week, whatever the real signal was). The reasoning is written and
+saved by the LLM at the moment the plan is generated, not computed on the fly when someone
+taps the toggle, so it stays consistent with whatever the assistant says if you ask "why this?"
+in chat later — same stored sentence, not a freshly invented one. Meals with nothing more
+specific than generic filler skip the toggle entirely rather than showing empty reasoning.
+This shows up both here and in the Cooker view's meal detail.
+
 A banner at the top surfaces anything in the **needs your attention** list — an
 inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been
 rated — with a quick mark-handled/not-relevant action right there, no need to go through
@@ -445,6 +469,12 @@ purchased, which also adds it to tracked inventory automatically, same as checki
 chat), **By store** (the same list split into store groups instead of just section groups, for
 a household that shops in more than one place — see `set_item_store`/`get_grocery_list_by_store`;
 assign or fix an item's store right from either view with its store field), and **Purchased**
+— though **By store only shows up as a tab once it's actually useful**: `is_multi_store_household()`
+checks whether the household has more than one saved usual store, or more than one distinct store
+name tagged on a grocery item right now, and the tab hides itself entirely otherwise (Phase 6
+§4.1/§4.4 — it used to show unconditionally with nothing behind it). If a household drops back to
+single-store while already viewing that tab, it bounces back to To buy rather than leaving a dead
+tab selected.
 (what's been checked off, with an undo). Quantity and category are editable inline on the To buy
 and By store views, and there's an add-item form for anything you'd rather type directly than
 mention conversationally. Everything added or checked off here stays in sync with chat and with
