@@ -297,6 +297,17 @@ day, repeating items across the week since the pool is intentionally smaller tha
 wants to mix and match differently. Nothing about the suggested arrangement is saved or
 tracked as "planned" — it's purely a friendlier way to look at the pool.
 
+The share view also surfaces two signals that used to be generated but invisible: a
+**freshness tag** ("2 new recipes this week," Vivid Leaf) counts how many of this week's
+meals are recipes that didn't exist before this plan was created — not based on
+`recipes.times_cooked`, since that counter increments at planning time rather than actual
+cook time and would misleadingly read every meal as a repeat. And a household's **very
+first generated plan** gets an explicit "Here's your first week — built around what you told
+me" banner, backed by an `is_first_plan` flag set once at creation (never re-derived later
+by querying for the earliest plan row, so it stays correct through backfills or
+re-onboarding). The assistant mentions both in chat too when a plan is generated, not just
+on this page.
+
 A banner at the top surfaces anything in the **needs your attention** list — an
 inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been
 rated — with a quick mark-handled/not-relevant action right there, no need to go through

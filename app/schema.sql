@@ -152,6 +152,11 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- past plan stays interpretable even if the household later switches
     -- modes — see meal_plan_entries.component_category.
     planning_mode TEXT NOT NULL DEFAULT 'day_based',
+    -- Set once, explicitly, at creation (see create_weekly_plan) — true only
+    -- for the very first plan a household ever generates. Never re-derived
+    -- later (e.g. "earliest plan row"), so it stays correct through
+    -- backfills, edits, or re-onboarding. Powers the first-run intro banner.
+    is_first_plan INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

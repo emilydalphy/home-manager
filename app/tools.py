@@ -1222,14 +1222,28 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
         "SELECT planning_mode FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
     ).fetchone()
     planning_mode = prefs["planning_mode"] if prefs else "day_based"
+    # Determined once, atomically, right here at creation — not re-derived
+    # later by querying for the household's earliest plan row, which would
+    # be fragile against backfills/edits/re-onboarding (see db.py's
+    # is_first_plan migration comment).
+    existing_plan_count = conn.execute(
+        "SELECT COUNT(*) AS n FROM weekly_plans WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()["n"]
+    is_first_plan = existing_plan_count == 0
     cur = conn.execute(
-        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes, planning_mode) VALUES (?, ?, ?, ?)",
-        (HOUSEHOLD_ID, week_start_date, constraints_notes, planning_mode),
+        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes, planning_mode, is_first_plan) VALUES (?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, week_start_date, constraints_notes, planning_mode, int(is_first_plan)),
     )
     conn.commit()
     plan_id = cur.lastrowid
     conn.close()
-    return {"weekly_plan_id": plan_id, "week_start_date": week_start_date, "status": "draft", "planning_mode": planning_mode}
+    return {
+        "weekly_plan_id": plan_id,
+        "week_start_date": week_start_date,
+        "status": "draft",
+        "planning_mode": planning_mode,
+        "is_first_plan": is_first_plan,
+    }
 
 
 def set_planning_mode(mode: str) -> dict:
@@ -1367,6 +1381,39 @@ def _build_suggested_schedule(components: list[dict], week_start_date: str, days
     return schedule
 
 
+def _compute_freshness(meal_dicts: list[dict], plan_created_at: str) -> dict:
+    """
+    Count how many of this week's planned meals are recipes newly
+    introduced by this same plan versus recipes that already existed
+    beforehand — the "2 new recipes this week" freshness signal. A recipe
+    counts as "new" if its created_at is at/after this plan's own
+    created_at (it didn't exist before this plan brought it in).
+    Deliberately NOT based on recipes.times_cooked: that counter
+    increments at *planning* time (see plan_meal), not at actual-cooking
+    time, so it already reads >= 1 for every meal in the very plan being
+    inspected — using it here would make everything look like a repeat.
+    Freeform/untracked entries (no saved recipe) aren't counted either way.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT name, created_at FROM recipes WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchall()
+    conn.close()
+    created_by_name = {r["name"].lower(): r["created_at"] for r in rows}
+
+    new_count = 0
+    repeat_count = 0
+    for m in meal_dicts:
+        created_at = created_by_name.get((m["meal"] or "").lower())
+        if created_at is None:
+            continue
+        if created_at >= plan_created_at:
+            new_count += 1
+        else:
+            repeat_count += 1
+    return {"new_recipe_count": new_count, "repeat_recipe_count": repeat_count}
+
+
 def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     """
     Get a weekly plan with all its meals. If weekly_plan_id is omitted,
@@ -1378,7 +1425,12 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     also includes a `components` list grouped by category — prefer that
     grouping when describing a component_based plan back to the user,
     since date/slot aren't meaningful there (every entry shares the same
-    placeholder date).
+    placeholder date). Also includes `is_first_plan` (true only for a
+    household's very first generated plan — mention this warmly, e.g.
+    "here's your first week, built around what you told me") and
+    `new_recipe_count`/`repeat_recipe_count` (the freshness signal — how
+    many planned meals are recipes never cooked before vs. ones the
+    household's made before).
     """
     conn = get_conn()
     if weekly_plan_id is None:
@@ -1428,8 +1480,10 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         "status": plan["status"],
         "constraints_notes": plan["constraints_notes"],
         "planning_mode": plan["planning_mode"],
+        "is_first_plan": bool(plan["is_first_plan"]),
         "meals": meal_dicts,
     }
+    result.update(_compute_freshness(meal_dicts, plan["created_at"]))
 
     if plan["planning_mode"] == "component_based":
         by_category: dict[str, list[str]] = {}

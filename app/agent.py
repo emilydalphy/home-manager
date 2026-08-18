@@ -116,6 +116,13 @@ we eat this week," "do our dinners for the next 7 days" — call generate_weekly
 than calling plan_meal repeatedly across several turns. It builds the whole week in one pass \
 using saved preferences, dislikes, restrictions, and recent history, and returns a reviewable \
 plan. Only fall back to individual plan_meal calls for genuinely one-off, single-meal requests.
+- The result's is_first_plan and new_recipe_count/repeat_recipe_count exist specifically to \
+make the planning happen visibly, not just functionally — mention them in your reply rather \
+than only in the data. If is_first_plan is true, this is the household's very first generated \
+plan ever: say so explicitly and warmly (e.g. "Here's your first week — built around what you \
+told me"), don't give it the same flat framing as a routine week. Otherwise, if new_recipe_count \
+> 0, mention it briefly (e.g. "Your plan's ready — two new recipes this week") rather than \
+staying silent about it; if new_recipe_count is 0, there's no need to call that out.
 - When a one-off meal request is the user's own dish idea rather than a saved recipe or a vague \
 placeholder ("leftovers," "takeout," "whatever's in the fridge" stay freeform — there's no real \
 dish to flesh out) — e.g. "let's do Greek chicken skewers with tomato and cucumber tonight," "I \
@@ -744,7 +751,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "generate_weekly_plan",
-        "description": "Generate and save a full week's meal plan in one pass, tailored to this household's preferences, dislikes, restrictions, and recent meal history (avoids repeats, surfaces new recipes). Preferred over multiple plan_meal calls whenever the user wants a whole week planned at once (e.g. 'plan my week', 'what should we eat this week').",
+        "description": "Generate and save a full week's meal plan in one pass, tailored to this household's preferences, dislikes, restrictions, and recent meal history (avoids repeats, surfaces new recipes). Preferred over multiple plan_meal calls whenever the user wants a whole week planned at once (e.g. 'plan my week', 'what should we eat this week'). The result includes is_first_plan and new_recipe_count/repeat_recipe_count — see the Weekly planning section of these instructions for how to use them in your reply.",
         "input_schema": {
             "type": "object",
             "properties": {

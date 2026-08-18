@@ -19,7 +19,29 @@
     padding: 24px;
   }
   h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  p.subtitle { margin: 0 0 1.5rem; }
+  p.subtitle { margin: 0 0 1.5rem; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .freshness-tag {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #fff;
+    background: var(--vivid-leaf);
+    border-radius: var(--radius-pill);
+    padding: 3px 11px;
+  }
+  .first-run-banner {
+    background: rgba(111, 184, 76, 0.14);
+    color: #2f5a1f;
+    border: 1px solid rgba(111, 184, 76, 0.4);
+    border-radius: var(--radius-card);
+    padding: 0.8rem 1rem;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+  }
   .suggested-note {
     background: var(--violet-soft);
     color: var(--midnight-violet);
@@ -119,7 +141,11 @@
 <body>
 
 <h1 id="page-title">This week's meals</h1>
-<p class="subtitle" id="subtitle">Loading...</p>
+<p class="subtitle">
+  <span id="subtitle">Loading...</span>
+  <span id="freshness-tag" class="freshness-tag" style="display:none"></span>
+</p>
+<div id="first-run-banner" class="first-run-banner" style="display:none"></div>
 <div id="suggested-note" class="suggested-note" style="display:none">
   These are suggested plate combos put together from this week's mix-and-match pool — the
   household is free to combine things differently. The full pool is below if you'd rather browse
@@ -179,12 +205,16 @@ async function load() {
   const suggestedNote = document.getElementById('suggested-note');
   const poolToggle = document.getElementById('pool-toggle');
   const poolDiv = document.getElementById('pool');
+  const freshnessTag = document.getElementById('freshness-tag');
+  const firstRunBanner = document.getElementById('first-run-banner');
 
   try {
     const res = await fetch('/api/share/' + encodeURIComponent(token));
     if (res.status === 404) {
       subtitle.textContent = '';
       daysDiv.innerHTML = '<p class="error">This link isn\'t valid — ask whoever shared it for a fresh one.</p>';
+      freshnessTag.style.display = 'none';
+      firstRunBanner.style.display = 'none';
       return;
     }
     if (!res.ok) throw new Error('Could not load the plan');
@@ -199,11 +229,36 @@ async function load() {
       daysDiv.innerHTML = '<p class="empty">No plan has been made for this week yet — check back soon.</p>';
       suggestedNote.style.display = 'none';
       poolToggle.style.display = 'none';
+      freshnessTag.style.display = 'none';
+      firstRunBanner.style.display = 'none';
       return;
     }
 
     subtitle.textContent = 'Week of ' + formatDate(plan.week_start_date);
     suggestedNote.style.display = plan.menu_is_suggested ? 'block' : 'none';
+
+    // Freshness signal — how many of this week's meals are recipes never
+    // cooked before (see get_weekly_plan's new_recipe_count). Only shown
+    // when there's actually something new to point to.
+    if (plan.new_recipe_count > 0) {
+      freshnessTag.textContent = plan.new_recipe_count === 1
+        ? '1 new recipe this week'
+        : `${plan.new_recipe_count} new recipes this week`;
+      freshnessTag.style.display = 'inline-flex';
+    } else {
+      freshnessTag.style.display = 'none';
+    }
+
+    // First-run intro — only ever true for a household's very first
+    // generated plan (see get_weekly_plan's is_first_plan), so this makes
+    // the "made for you" moment explicit instead of looking identical to
+    // a routine week.
+    if (plan.is_first_plan) {
+      firstRunBanner.textContent = "Here's your first week — built around what you told me.";
+      firstRunBanner.style.display = 'block';
+    } else {
+      firstRunBanner.style.display = 'none';
+    }
 
     const menu = plan.menu || [];
     daysDiv.innerHTML = renderMenu(menu) || '<p class="empty">Nothing to show yet.</p>';
@@ -228,6 +283,8 @@ async function load() {
     daysDiv.innerHTML = '<p class="error">Couldn\'t load the plan right now — try refreshing.</p>';
     suggestedNote.style.display = 'none';
     poolToggle.style.display = 'none';
+    freshnessTag.style.display = 'none';
+    firstRunBanner.style.display = 'none';
   }
 }
 

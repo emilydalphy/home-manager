@@ -61,6 +61,12 @@ _MIGRATIONS = [
     ("meal_preferences", "usual_stores_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("meal_preferences", "store_typical_items_json", "TEXT NOT NULL DEFAULT '{}'"),
     ("recipes", "advance_prep_step_indices_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # Phase 6: set explicitly at creation time (an atomic "does this household
+    # have zero prior plans yet?" check at the moment of insert), never
+    # inferred later by querying for the earliest plan row — see
+    # create_weekly_plan. Powers the onboarding "here's your first week"
+    # intro banner.
+    ("weekly_plans", "is_first_plan", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 
