@@ -2,33 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Cooker View — Home Manager</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#2b6cb0" />
+<meta name="theme-color" content="#66304E" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Home Manager" />
+<link rel="stylesheet" href="/static/theme.css">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-body, "Karla", sans-serif);
     max-width: 720px;
     margin: 0 auto;
     padding: 24px;
-    background: #f7f7f5;
-    color: #222;
+    background: var(--oat-cream, #F6EFE1);
+    color: var(--text-body, #3A2E33);
   }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
-  p.subtitle a { color: #2b6cb0; }
+  h1 { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.7rem; font-weight: 700; color: var(--midnight-violet, #66304E); margin-bottom: 4px; }
+  p.subtitle { color: var(--text-muted, #8A7F6E); margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: var(--midnight-violet, #66304E); font-weight: 700; }
+  /* Meals-cooked / prep-done progress — a positive/complete signal, so it
+     leans on Vivid Leaf rather than the neutral violet. */
   .progress-bar-wrap {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border, #E7DCC8);
+    border-radius: var(--radius-card, 14px);
     padding: 14px 16px;
     margin-bottom: 16px;
     display: flex;
@@ -36,207 +42,259 @@
     flex-wrap: wrap;
   }
   .progress-stat { flex: 1; min-width: 140px; }
-  .progress-stat .label { color: #888; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 3px; }
-  .progress-stat .value { font-size: 1.3rem; font-weight: 600; margin: 0; }
-  .progress-track { background: #eee; border-radius: 6px; height: 6px; overflow: hidden; margin-top: 6px; }
-  .progress-fill { background: #2b6cb0; height: 100%; border-radius: 6px; transition: width 0.3s ease; }
-  h2.section-title { font-size: 1rem; margin: 20px 0 8px; color: #444; }
+  .progress-stat .label { color: var(--text-muted, #8A7F6E); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 3px; font-weight: 500; }
+  .progress-stat .value { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.3rem; font-weight: 700; margin: 0; color: var(--midnight-violet, #66304E); }
+  .progress-track { background: var(--oat-cream-dark, #EDE2CC); border-radius: 6px; height: 6px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { background: var(--vivid-leaf, #6FB84C); height: 100%; border-radius: 6px; transition: width 0.3s ease; }
+  h2.section-title { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.05rem; font-weight: 700; margin: 20px 0 8px; color: var(--midnight-violet, #66304E); }
   .card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border, #E7DCC8);
+    border-radius: var(--radius-card, 14px);
+    box-shadow: var(--shadow-card, 0 1px 2px rgba(102, 48, 78, 0.06));
     padding: 14px 16px;
     margin-bottom: 10px;
   }
-  .card.done { opacity: 0.6; }
-  .card-top { display: flex; align-items: flex-start; gap: 10px; }
+  .card.done { opacity: 0.65; }
+  .card-top { display: flex; align-items: flex-start; gap: 12px; }
+  /* Checkbox — 44x44 tap target even though the visible circle stays
+     compact, per the tap-target minimum for this glanced-at-a-distance
+     screen. Checked = done = positive, so it fills Vivid Leaf. */
   .check-toggle {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    border: 2px solid #cfe0f2;
-    background: white;
+    border: 2px solid var(--card-border, #E7DCC8);
+    background: #fff;
     cursor: pointer;
-    color: #2b6cb0;
-    font-size: 0.85rem;
+    color: var(--vivid-leaf, #6FB84C);
+    font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    margin-top: 2px;
+    margin: -4px 0;
   }
-  .check-toggle.checked { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  .check-toggle.checked { background: var(--vivid-leaf, #6FB84C); border-color: var(--vivid-leaf, #6FB84C); color: #fff; }
   .card-body { flex: 1; min-width: 0; }
-  .meal-name { font-size: 1.05rem; font-weight: 600; margin: 0; }
+  .meal-name { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.1rem; font-weight: 600; color: var(--midnight-violet, #66304E); margin: 0; }
   .meal-name.done { text-decoration: line-through; }
-  .meal-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; text-transform: capitalize; }
+  .meal-meta { color: var(--text-muted, #8A7F6E); font-size: 0.78rem; margin: 2px 0 0; text-transform: capitalize; }
+  /* "Advance prep" highlight — soft Turmeric Gold tag, not a button. */
   .badge {
     display: inline-block;
-    background: #fff4e5;
-    color: #b06a00;
-    border: 1px solid #ffe0b3;
+    background: rgba(240, 180, 41, 0.22);
+    color: #7a5209;
+    border: 1px solid rgba(240, 180, 41, 0.55);
     border-radius: 12px;
     padding: 2px 9px;
     font-size: 0.72rem;
+    font-weight: 700;
     margin-left: 6px;
   }
   .instr-group-label {
-    font-size: 0.78rem;
+    display: inline-block;
+    font-family: var(--font-body, "Karla", sans-serif);
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    margin: 14px 0 4px;
-    padding: 2px 0;
+    margin: 14px 0 6px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill, 999px);
   }
   .instr-group-label:first-of-type { margin-top: 4px; }
-  h5.instr-group-label:nth-of-type(1) { color: #b06a00; }
-  h5.instr-group-label:nth-of-type(2) { color: #2b6cb0; }
+  /* "Do ahead" — the advance-prep highlight, Turmeric Gold tag.
+     "Day of" — the regular/neutral step group, Midnight Violet tag. */
+  h5.instr-group-label:nth-of-type(1) { background: rgba(240, 180, 41, 0.22); color: #7a5209; }
+  h5.instr-group-label:nth-of-type(2) { background: var(--violet-soft, #F1E4EC); color: var(--midnight-violet, #66304E); }
   .detail-toggle {
     background: none;
     border: none;
-    color: #2b6cb0;
-    font-size: 0.82rem;
+    color: var(--midnight-violet, #66304E);
+    font-weight: 700;
+    font-size: 0.85rem;
     cursor: pointer;
-    padding: 6px 0 0;
+    padding: 12px 0;
+    min-height: 44px;
     text-align: left;
   }
   .detail { display: none; margin-top: 10px; font-size: 0.9rem; }
   .detail.open { display: block; }
-  .detail h4 { margin: 10px 0 4px; font-size: 0.82rem; color: #666; text-transform: uppercase; letter-spacing: 0.02em; }
+  .detail h4 { font-family: var(--font-heading, "Quicksand", sans-serif); margin: 10px 0 4px; font-size: 0.82rem; font-weight: 600; color: var(--midnight-violet, #66304E); text-transform: uppercase; letter-spacing: 0.02em; }
   .detail h4:first-child { margin-top: 0; }
   .detail ul, .detail ol { margin: 0; padding-left: 20px; }
-  .detail li { margin-bottom: 3px; }
-  .no-recipe { color: #999; font-style: italic; font-size: 0.85rem; margin-top: 8px; }
+  .detail li { margin-bottom: 4px; }
+  .no-recipe { color: var(--text-muted, #8A7F6E); font-style: italic; font-size: 0.85rem; margin-top: 8px; }
   .fill-recipe-btn {
-    background: #2b6cb0;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 7px 14px;
+    background: transparent;
+    color: var(--midnight-violet, #66304E);
+    border: 1px solid var(--midnight-violet, #66304E);
+    border-radius: var(--radius-control, 10px);
+    padding: 11px 16px;
+    min-height: 44px;
+    font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
   }
+  .fill-recipe-btn:hover:not(:disabled) { background: var(--violet-soft, #F1E4EC); }
   .fill-recipe-btn:disabled { opacity: 0.6; cursor: default; }
-  .prep-task { display: flex; align-items: center; gap: 10px; }
+  .prep-task { display: flex; align-items: center; gap: 12px; }
   .prep-task .desc { flex: 1; }
-  .prep-task .date { color: #2b6cb0; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; margin: 0 0 2px; }
-  .prep-task.done .desc-text { text-decoration: line-through; color: #999; }
-  .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
-  .error { color: #b00020; font-size: 0.9rem; }
+  .prep-task .date { color: var(--text-muted, #8A7F6E); font-weight: 500; font-size: 0.78rem; text-transform: none; margin: 0 0 2px; }
+  .prep-task.done .desc-text { text-decoration: line-through; color: var(--text-muted, #8A7F6E); }
+  .empty { color: var(--text-muted, #8A7F6E); font-size: 0.9rem; font-style: italic; padding: 8px 0; }
+  .error { color: var(--electric-coral, #E8562A); font-size: 0.9rem; font-weight: 500; }
+  /* Advisory banner — soft gold-tinted highlight, not a CTA. */
   .attention-banner {
-    border-radius: 10px;
+    border-radius: var(--radius-card, 14px);
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 0.88rem;
-    background: #eef4fb;
-    border: 1px solid #cfe0f2;
-    color: #1e4a75;
+    background: rgba(240, 180, 41, 0.15);
+    border: 1px solid rgba(240, 180, 41, 0.45);
+    color: var(--text-body, #3A2E33);
   }
-  .attention-banner h2 { font-size: 0.9rem; margin: 0 0 8px; color: inherit; }
-  .attention-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; }
+  .attention-banner h2 { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--midnight-violet, #66304E); }
+  .attention-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; }
   .attention-item .summary { flex: 1; }
   .attention-item .attn-actions { display: flex; gap: 4px; flex-shrink: 0; }
   .attn-btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.85rem;
-    padding: 2px 6px;
-    border-radius: 5px;
-    color: #1e4a75;
+    font-size: 0.9rem;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 8px;
+    color: var(--midnight-violet, #66304E);
   }
-  .attn-btn:hover { background: #dbe8f5; }
-  .attn-btn.dismiss { color: #7a5b00; }
+  .attn-btn.resolve:hover { background: rgba(111, 184, 76, 0.18); color: #3f7a29; }
+  .attn-btn.dismiss:hover { background: rgba(232, 86, 42, 0.15); color: var(--electric-coral, #E8562A); }
   .attention-item.feedback-item { flex-direction: column; align-items: stretch; }
-  .attention-item .feedback-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .attention-item .feedback-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+  /* Feedback rating — Vivid Leaf for "liked", Electric Coral for "not a
+     hit", used sparingly as the buttons' outline/hover only. */
   .attention-item .feedback-row .fb-btn {
-    background: white;
-    border: 1px solid #cfe0f2;
-    border-radius: 6px;
-    padding: 5px 10px;
+    background: #fff;
+    border: 1px solid var(--card-border, #E7DCC8);
+    border-radius: var(--radius-control, 10px);
+    padding: 9px 12px;
+    min-height: 44px;
     font-size: 0.85rem;
-    color: #1e4a75;
+    font-weight: 700;
+    color: var(--text-body, #3A2E33);
     cursor: pointer;
   }
-  .attention-item .feedback-row .fb-btn:hover { background: #dbe8f5; }
+  .attention-item .feedback-row .fb-btn.liked:hover { border-color: var(--vivid-leaf, #6FB84C); color: #3f7a29; background: rgba(111, 184, 76, 0.1); }
+  .attention-item .feedback-row .fb-btn.disliked:hover { border-color: var(--electric-coral, #E8562A); color: var(--electric-coral, #E8562A); background: rgba(232, 86, 42, 0.08); }
   .attention-item .feedback-row .fb-btn:disabled { opacity: 0.6; cursor: default; }
   .attention-item .feedback-row .fb-notes {
     flex: 1;
     min-width: 120px;
-    border: 1px solid #cfe0f2;
-    border-radius: 6px;
-    padding: 5px 8px;
+    min-height: 44px;
+    border: 1px solid var(--card-border, #E7DCC8);
+    border-radius: var(--radius-control, 10px);
+    padding: 5px 10px;
     font-size: 0.85rem;
+    font-family: var(--font-body, "Karla", sans-serif);
   }
   .attention-item.usage-item { flex-direction: column; align-items: stretch; }
-  .attention-item .usage-row { display: flex; gap: 6px; margin-top: 6px; }
+  .attention-item .usage-row { display: flex; gap: 8px; margin-top: 6px; }
   .attention-item .usage-row input {
     flex: 1;
-    border: 1px solid #cfe0f2;
-    border-radius: 6px;
-    padding: 5px 8px;
+    min-height: 44px;
+    border: 1px solid var(--card-border, #E7DCC8);
+    border-radius: var(--radius-control, 10px);
+    padding: 5px 10px;
     font-size: 0.85rem;
+    font-family: var(--font-body, "Karla", sans-serif);
   }
   .attention-item .usage-row button.log-btn {
-    background: #2b6cb0;
-    color: white;
+    background: var(--midnight-violet, #66304E);
+    color: #fff;
     border: none;
-    border-radius: 6px;
-    padding: 5px 12px;
+    border-radius: var(--radius-control, 10px);
+    padding: 5px 14px;
+    min-height: 44px;
+    font-weight: 700;
     font-size: 0.82rem;
     cursor: pointer;
     flex-shrink: 0;
   }
+  .attention-item .usage-row button.log-btn:hover:not(:disabled) { background: var(--violet-hover, #542640); }
   .attention-item .usage-row button.log-btn:disabled { opacity: 0.6; cursor: default; }
   .attention-item .usage-row button.skip-btn {
     background: none;
     border: none;
-    color: #7a5b00;
+    color: var(--text-muted, #8A7F6E);
     font-size: 0.82rem;
+    min-height: 44px;
     cursor: pointer;
     flex-shrink: 0;
   }
   .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .refresh-btn {
-    background: white;
-    border: 1px solid #d8d8d4;
-    border-radius: 8px;
-    padding: 7px 12px;
+    background: transparent;
+    border: 1px solid var(--midnight-violet, #66304E);
+    border-radius: var(--radius-control, 10px);
+    padding: 10px 14px;
+    min-height: 44px;
+    font-weight: 700;
     font-size: 0.85rem;
-    color: #2b6cb0;
+    color: var(--midnight-violet, #66304E);
     cursor: pointer;
     flex-shrink: 0;
   }
-  .refresh-btn:hover { background: #f0f4f8; }
+  .refresh-btn:hover:not(:disabled) { background: var(--violet-soft, #F1E4EC); }
   .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+  /* Hands-free mic entry point — the single most important action on this
+     screen, so it gets the reserved Turmeric Gold hero treatment (the one
+     exception called out in the screen spec). Listening/active state
+     switches to a Vivid Leaf pulsing ring with a readable label instead. */
   .voice-btn {
-    background: white;
-    border: 1px solid #2b6cb0;
-    color: #2b6cb0;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 0.82rem;
+    background: var(--turmeric-gold, #F0B429);
+    border: none;
+    color: var(--midnight-violet, #66304E);
+    border-radius: var(--radius-control, 10px);
+    padding: 10px 16px;
+    min-height: 44px;
+    font-weight: 700;
+    font-size: 0.85rem;
     cursor: pointer;
     margin: 6px 0;
   }
-  .voice-btn.active { background: #c0392b; border-color: #c0392b; color: white; animation: voice-pulse 1.6s ease-in-out infinite; }
-  @keyframes voice-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .voice-btn:hover:not(.active) { background: var(--gold-hover, #DDA224); }
+  .voice-btn.active {
+    background: var(--vivid-leaf, #6FB84C);
+    color: #fff;
+    box-shadow: 0 0 0 0 rgba(111, 184, 76, 0.6);
+    animation: voice-pulse-ring 1.6s ease-out infinite;
+  }
+  @keyframes voice-pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(111, 184, 76, 0.55); }
+    70% { box-shadow: 0 0 0 10px rgba(111, 184, 76, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(111, 184, 76, 0); }
+  }
+  /* Listening panel — lives under the same Vivid Leaf "active" language as
+     the mic button itself. */
   .voice-status {
     display: none;
-    border-radius: 10px;
+    border-radius: var(--radius-card, 14px);
     padding: 10px 14px;
     margin-bottom: 14px;
     font-size: 0.85rem;
-    background: #fdf2f2;
-    border: 1px solid #f3c6c6;
-    color: #7a2020;
+    background: rgba(111, 184, 76, 0.12);
+    border: 1px solid rgba(111, 184, 76, 0.4);
+    color: var(--text-body, #3A2E33);
   }
   .voice-status.showing { display: block; }
-  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0392b; margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
-  .voice-status .voice-note { display: block; margin-top: 6px; color: #8a4b4b; font-size: 0.78rem; }
+  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--vivid-leaf, #6FB84C); margin-right: 6px; animation: voice-pulse-dot 1.2s ease-in-out infinite; }
+  @keyframes voice-pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .voice-status .voice-note { display: block; margin-top: 6px; color: var(--text-muted, #8A7F6E); font-size: 0.78rem; }
   .voice-status .voice-log { margin: 6px 0 0; padding: 0; list-style: none; }
-  .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid #f3c6c6; }
+  .voice-status .voice-log li { padding: 3px 0; border-top: 1px solid rgba(111, 184, 76, 0.3); }
   .voice-status .voice-log li:first-child { border-top: none; }
 </style>
 </head>

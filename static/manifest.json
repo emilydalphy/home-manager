@@ -4,8 +4,8 @@
   "description": "Chores, meal planning, and groceries in one place.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f7f5",
-  "theme_color": "#2b6cb0",
+  "background_color": "#F6EFE1",
+  "theme_color": "#66304E",
   "orientation": "portrait",
   "icons": [
     {

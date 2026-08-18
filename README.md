@@ -9,6 +9,21 @@ cheery — someone glad to help, not a flat utility — while staying clear and 
 fluff: short, upbeat replies rather than long or robotic ones, with directness preserved for
 anything that actually needs attention (a failed save, a conflict, an allergy risk).
 
+## Design system
+
+Every page shares a single visual language defined in `static/theme.css`, applying the
+"Home Manager Brand & Style Guide" (Oat Cream background, Midnight Violet for text/nav/
+primary structure, Turmeric Gold reserved for exactly one hero CTA per screen, Vivid Leaf
+for success/positive states, Electric Coral for attention/urgent states — both secondary
+accents used sparingly). Headlines use Quicksand; body copy, labels, buttons, and captions
+use Karla, loaded from Google Fonts. Shared component classes (`.btn-primary`,
+`.btn-secondary`, `.pill`/`.pill-success`/`.pill-attention`/`.pill-neutral`, `.card`,
+`.list-row`, `.empty-state`, `.app-nav`) live in `theme.css` and get pulled into each
+page's own `<style>` block, so a color or button style only needs to change in one place.
+Interactive elements (checkboxes, icon buttons) target a 44×44px minimum tap size
+throughout, since several screens (grocery, cooker) are used one-handed or from a
+distance while cooking.
+
 ## How it's built
 
 - **`app/schema.sql`** — SQLite schema. Every table has a `household_id`

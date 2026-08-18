@@ -2,121 +2,168 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Set up — Home Manager</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#2b6cb0" />
+<meta name="theme-color" content="#66304E" />
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-body);
     max-width: 640px;
     margin: 0 auto;
     padding: 24px;
-    background: #f7f7f5;
-    color: #222;
+    background: var(--oat-cream);
+    color: var(--text-body);
   }
-  h1 { font-size: 1.3rem; margin: 0 0 4px; }
-  p.subtitle { color: #666; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--midnight-violet); margin: 0 0 4px; }
+  p.subtitle { color: var(--text-muted); margin: 0 0 1.5rem; font-size: 0.9rem; }
+  /* Progress indicator — Midnight Violet for completed/active steps, a muted
+     cream-toned bar for upcoming steps. Gold is reserved for the CTA button. */
   .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
-  .dot { height: 4px; flex: 1; border-radius: 2px; background: #ddd; }
-  .dot.done { background: #2b6cb0; }
+  .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
+  .dot.done { background: var(--midnight-violet); }
   .card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
     padding: 1.1rem 1.25rem;
     margin-bottom: 12px;
     cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .card:hover { border-color: #2b6cb0; }
-  .card.selected { border-color: #2b6cb0; background: #eaf1fa; }
-  .card p.title { font-weight: 600; margin: 6px 0 2px; }
-  .card p.desc { color: #666; font-size: 0.85rem; margin: 0; }
+  .card:hover { border-color: var(--midnight-violet); }
+  .card.selected { border-color: var(--midnight-violet); background: var(--violet-soft); }
+  .card p.title { font-family: var(--font-heading); font-weight: 600; color: var(--midnight-violet); margin: 6px 0 2px; }
+  .card p.desc { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
   .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   input[type=text], input[type=number], textarea, select {
-    padding: 9px 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    padding: 11px 12px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
     font-size: 0.95rem;
-    font-family: inherit;
+    font-family: var(--font-body);
     width: 100%;
-    background: white;
-    color: #222;
+    background: #fff;
+    color: var(--text-body);
+    min-height: 44px;
   }
-  input::placeholder, textarea::placeholder { color: #999; }
-  textarea { resize: vertical; }
+  input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--midnight-violet);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  textarea { resize: vertical; min-height: 60px; }
   .remove-btn {
-    flex: 0 0 34px;
-    height: 34px;
+    flex: 0 0 44px;
+    height: 44px;
     padding: 0;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    background: white;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    background: #fff;
     cursor: pointer;
-    font-size: 1rem;
-    color: #888;
+    font-size: 1.1rem;
+    color: var(--text-muted);
   }
+  .remove-btn:hover { border-color: var(--electric-coral); color: var(--electric-coral); }
+  /* "Add" actions are frequent, lower-stakes — ghost/secondary style. */
   .add-btn {
-    background: white;
-    border: 1px solid #2b6cb0;
-    color: #2b6cb0;
-    padding: 6px 14px;
-    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--midnight-violet);
+    color: var(--midnight-violet);
+    font-family: var(--font-body);
+    font-weight: 700;
+    padding: 10px 16px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
     font-size: 0.85rem;
     cursor: pointer;
     margin-bottom: 1.25rem;
   }
-  label.field-label { font-size: 0.85rem; font-weight: 600; display: block; margin: 1rem 0 6px; }
+  .add-btn:hover { background: var(--violet-soft); }
+  label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--midnight-violet); display: block; margin: 1rem 0 6px; }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
-    padding: 6px 13px;
+    padding: 10px 16px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
     font-size: 0.85rem;
-    border-radius: 16px;
-    border: 1px solid #ccc;
-    background: white;
-    color: #555;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--card-border);
+    background: #fff;
+    color: var(--text-body);
     cursor: pointer;
   }
-  .chip.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
-  .chip.small { padding: 4px 10px; font-size: 0.75rem; }
-  .seg { display: flex; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; flex: 0 0 auto; }
-  .seg-btn { padding: 6px 11px; font-size: 0.78rem; border: none; background: white; color: #666; cursor: pointer; border-right: 1px solid #ccc; }
+  .chip.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+  .chip.small { padding: 6px 12px; min-height: 32px; font-size: 0.75rem; }
+  .seg { display: flex; border: 1px solid var(--card-border); border-radius: var(--radius-control); overflow: hidden; flex: 0 0 auto; }
+  .seg-btn { padding: 6px 11px; font-size: 0.78rem; border: none; background: #fff; color: var(--text-muted); cursor: pointer; border-right: 1px solid var(--card-border); }
   .seg-btn:last-child { border-right: none; }
-  .seg-btn.active { background: #2b6cb0; color: white; }
+  .seg-btn.active { background: var(--midnight-violet); color: #fff; }
   .protein-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-  .protein-row select.protein-freq { flex: 0 0 auto; width: auto; font-size: 0.82rem; padding: 6px 8px; text-transform: capitalize; }
+  .protein-row select.protein-freq { flex: 0 0 auto; width: auto; min-height: 38px; font-size: 0.82rem; padding: 6px 8px; text-transform: capitalize; }
+  /* "Continue" / "Save" is the single gold CTA on each step. */
   .next-btn {
-    background: #2b6cb0;
-    color: white;
+    font-family: var(--font-body);
+    font-weight: 700;
+    background: var(--turmeric-gold);
+    color: var(--midnight-violet);
     border: none;
-    padding: 11px 20px;
-    border-radius: 8px;
+    padding: 13px 22px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
     font-size: 0.95rem;
     cursor: pointer;
     margin-top: 1.5rem;
+    transition: background 0.15s ease;
   }
+  .next-btn:hover:not(:disabled) { background: var(--gold-hover); }
   .next-btn:disabled { opacity: 0.6; cursor: default; }
-  .back-link { color: #888; font-size: 0.85rem; cursor: pointer; margin-top: 0.75rem; display: inline-block; }
-  .member-block { border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
+  /* "Back" is a plain-text ghost action, never gold. */
+  .back-link {
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 0.75rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .back-link:hover { color: var(--midnight-violet); }
+  .member-block { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 10px; }
   .member-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
   .two-col { display: flex; gap: 10px; }
   .two-col > div { flex: 1; }
   .chore-row {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
     padding: 0.8rem;
     margin-bottom: 8px;
   }
   .chore-row.excluded { opacity: 0.45; }
   .chore-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .chore-top input[type=text] { flex: 1; }
+  .chore-top input[type=checkbox] {
+    width: 24px;
+    height: 24px;
+    accent-color: var(--midnight-violet);
+    cursor: pointer;
+    flex: 0 0 24px;
+  }
   .chore-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-  .chore-controls select { width: auto; font-size: 0.82rem; padding: 6px 8px; }
-  .loading-note { color: #666; font-size: 0.85rem; margin-top: 10px; }
+  .chore-controls select { width: auto; min-height: 38px; font-size: 0.82rem; padding: 6px 8px; }
+  .loading-note { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -395,7 +442,7 @@ function buildMealStep() {
   currentMembers().forEach(m => {
     const block = document.createElement('div');
     block.className = 'member-block';
-    block.innerHTML = `<p style="font-size:0.85rem;color:#666;margin:0 0 6px">${m.name}</p>
+    block.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;font-size:0.9rem;color:var(--midnight-violet);margin:0 0 6px">${m.name}</p>
       <div class="chip-row diet-chips" data-member="${m.name}"></div>`;
     chipWithCustom(block.querySelector('.diet-chips'), DIET_OPTIONS, true);
     dietDiv.appendChild(block);
@@ -632,14 +679,14 @@ function renderPlanDays(meals) {
   const daysDiv = document.getElementById('plan-days');
   daysDiv.innerHTML = '';
   if (!meals.length) {
-    daysDiv.innerHTML = '<p style="color:#666;font-size:0.9rem">No meals generated yet — you can ask for a weekly plan any time in chat.</p>';
+    daysDiv.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem">No meals generated yet — you can ask for a weekly plan any time in chat.</p>';
     return;
   }
   meals.forEach(m => {
     const row = document.createElement('div');
     row.className = 'member-block';
-    row.innerHTML = `<p style="font-weight:600;margin:0 0 2px">${escapeHtmlLocal(formatPlanDate(m.date))}</p>
-      <p style="margin:0;color:#333">${escapeHtmlLocal(m.meal || '')}</p>`;
+    row.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;color:var(--midnight-violet);margin:0 0 2px">${escapeHtmlLocal(formatPlanDate(m.date))}</p>
+      <p style="margin:0;color:var(--text-body)">${escapeHtmlLocal(m.meal || '')}</p>`;
     daysDiv.appendChild(row);
   });
 }

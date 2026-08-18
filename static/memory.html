@@ -2,150 +2,169 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>What We Know — Home Manager</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#2b6cb0" />
+<meta name="theme-color" content="#66304E" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Home Manager" />
+<link rel="stylesheet" href="/static/theme.css">
 <style>
   :root { color-scheme: light; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     max-width: 720px;
     margin: 0 auto;
     padding: 24px;
-    background: #f7f7f5;
-    color: #222;
   }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
-  p.subtitle a { color: #2b6cb0; }
-  .card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 14px;
-  }
-  .card h2 { font-size: 1rem; margin: 0 0 4px; }
-  .card .hint { color: #888; font-size: 0.8rem; margin: 0 0 10px; }
-  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  p.subtitle { margin-top: 0; }
+  p.subtitle a { color: var(--midnight-violet); font-weight: 700; }
+
+  .card { padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 17px; margin: 0 0 4px; }
+  .card .hint { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 14px; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
   .chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: #eaf1fa;
-    color: #2b6cb0;
-    border: 1px solid #cfe0f2;
-    padding: 5px 6px 5px 12px;
-    border-radius: 16px;
-    font-size: 0.85rem;
+    gap: 4px;
+    background: var(--violet-soft);
+    color: var(--midnight-violet);
+    border: 1px solid var(--card-border);
+    padding: 8px 6px 8px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.9rem;
+    font-weight: 500;
   }
-  .chip button {
+  /* Delete affordances are visually compact chips/icons, but the clickable
+     hit area is expanded to the brand guide's 44x44 minimum via the
+     ::after overlay below, without inflating the visual design. */
+  .remove-chip, .remove-store-item, .store-remove {
+    position: relative;
     background: none;
     border: none;
-    color: #2b6cb0;
+    color: var(--midnight-violet);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 1rem;
     line-height: 1;
-    padding: 2px 6px;
+    padding: 4px 6px;
     border-radius: 50%;
   }
-  .chip button:hover { background: #d8e8f8; }
-  .empty { color: #999; font-size: 0.85rem; font-style: italic; }
+  .remove-chip::after, .remove-store-item::after, .store-remove::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+  }
+  .remove-chip:hover, .remove-store-item:hover, .store-remove:hover {
+    background: #fff;
+    color: var(--electric-coral);
+  }
+
+  .empty-state { font-size: 0.9rem; padding: 0.5rem 0; }
+
   .add-row { display: flex; gap: 8px; margin-top: 4px; }
   input[type=text], textarea, select {
     flex: 1;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    padding: 11px 12px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
     font-size: 0.95rem;
-    background: white;
-    color: #222;
-    font-family: inherit;
+    background: #fff;
+    color: var(--text-body);
+    font-family: var(--font-body);
+    min-height: 44px;
+    box-sizing: border-box;
   }
-  input::placeholder, textarea::placeholder { color: #999; }
-  textarea { width: 100%; min-height: 60px; resize: vertical; box-sizing: border-box; }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  textarea { width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box; }
+
   button.action {
-    padding: 8px 14px;
-    border-radius: 8px;
+    padding: 11px 18px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
     border: none;
-    background: #2b6cb0;
-    color: white;
+    background: var(--turmeric-gold);
+    color: var(--midnight-violet);
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
     white-space: nowrap;
   }
-  button.action:hover { opacity: 0.9; }
+  button.action:hover { background: var(--gold-hover); }
   button.action.secondary {
-    background: white;
-    color: #2b6cb0;
-    border: 1px solid #2b6cb0;
+    background: transparent;
+    color: var(--midnight-violet);
+    border: 1px solid var(--midnight-violet);
   }
-  .save-row { display: flex; gap: 8px; margin-top: 8px; }
-  .protein-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-  .member { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  button.action.secondary:hover { background: var(--violet-soft); }
+
+  .save-row { display: flex; gap: 8px; margin-top: 10px; }
+  .protein-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; min-height: 44px; }
+  .member { padding: 10px 0; border-bottom: 1px solid var(--card-border); }
   .member:last-child { border-bottom: none; }
-  .member .name { font-weight: 600; }
-  .member .restrictions { color: #666; font-size: 0.85rem; }
+  .member .name { font-weight: 700; color: var(--text-body); }
+  .member .restrictions { color: var(--text-muted); font-size: 0.85rem; }
+
   #status {
     position: fixed;
     left: 50%;
     bottom: 24px;
     transform: translateX(-50%) translateY(20px);
-    background: #2f855a;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 20px;
+    background: var(--vivid-leaf);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    font-weight: 600;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(102, 48, 78, 0.2);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
     z-index: 1000;
   }
-  #status.error { background: #c53030; }
+  #status.error { background: var(--electric-coral); }
   #status.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   .store-block {
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    margin-bottom: 8px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    margin-bottom: 10px;
     overflow: hidden;
+    background: var(--oat-cream);
   }
   .store-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 6px 8px 12px;
-    background: #f7f7f5;
-  }
-  .store-header .store-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
-  .store-toggle {
-    background: none;
-    border: none;
-    color: #2b6cb0;
-    cursor: pointer;
-    font-size: 0.8rem;
+    gap: 4px;
     padding: 4px 6px;
+    background: var(--violet-soft);
   }
-  .store-remove {
+  .store-toggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
     background: none;
     border: none;
-    color: #888;
+    color: var(--midnight-violet);
     cursor: pointer;
-    font-size: 0.95rem;
-    line-height: 1;
-    padding: 2px 8px;
-    border-radius: 50%;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 10px 8px;
+    min-height: 44px;
+    text-align: left;
   }
-  .store-remove:hover { background: #eee; color: #c53030; }
-  .store-items-panel { padding: 10px 12px 12px; border-top: 1px solid #eee; }
-  .store-items-panel .hint { color: #888; font-size: 0.8rem; margin: 0 0 8px; }
+  .store-remove { font-size: 1.1rem; }
+  .store-items-panel { padding: 12px 14px 14px; border-top: 1px solid var(--card-border); }
+  .store-items-panel .hint { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 10px; }
 </style>
 </head>
 <body>
@@ -286,7 +305,7 @@ function render() {
           <div class="name">${escapeHtml(m.name)}${m.age_group ? ' <span class="restrictions">(' + escapeHtml(m.age_group) + ')</span>' : ''}</div>
           <div class="restrictions">${m.dietary_restrictions && m.dietary_restrictions.length ? escapeHtml(m.dietary_restrictions.join(', ')) : 'No restrictions noted'}</div>
         </div>`).join('')
-    : '<p class="empty">No members added yet.</p>';
+    : '<p class="empty-state">I\'m still getting to know your household — add members from onboarding and I\'ll keep track.</p>';
 
   document.getElementById('goals').value = memory.goals || '';
   document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
@@ -296,17 +315,17 @@ function render() {
   const dislikesEl = document.getElementById('dislikes');
   dislikesEl.innerHTML = (memory.dislikes || []).length
     ? memory.dislikes.map(d => chip('dislikes', d)).join('')
-    : '<p class="empty">No dislikes saved.</p>';
+    : '<p class="empty-state">No dislikes yet — tell me what to avoid and I\'ll remember.</p>';
 
   const usualStoresEl = document.getElementById('usual-stores');
   usualStoresEl.innerHTML = (memory.usual_stores || []).length
     ? memory.usual_stores.map(s => storeBlock(s)).join('')
-    : '<p class="empty">No usual stores saved.</p>';
+    : '<p class="empty-state">No usual stores yet — add one and I\'ll suggest it while you shop.</p>';
 
   const cuisinesEl = document.getElementById('cuisines');
   cuisinesEl.innerHTML = (memory.cuisine_preferences || []).length
     ? memory.cuisine_preferences.map(c => chip('cuisine_preferences', c)).join('')
-    : '<p class="empty">No favorite cuisines saved.</p>';
+    : '<p class="empty-state">No favorite cuisines yet — tell me what you love.</p>';
 
   const proteinsEl = document.getElementById('proteins');
   const proteinEntries = Object.entries(memory.protein_preferences || {});
@@ -321,7 +340,7 @@ function render() {
             <button class="action secondary remove-chip" style="padding:4px 10px;" data-field="protein_preferences" data-item="${escapeHtml(name)}">Remove</button>
           </div>
         </div>`).join('')
-    : '<p class="empty">No protein preferences saved.</p>';
+    : '<p class="empty-state">No protein preferences yet — add one to guide suggestions.</p>';
 
   document.getElementById('new-protein-value').innerHTML = proteinFreqOptions('occasionally');
 }
@@ -352,7 +371,7 @@ function storeBlock(store) {
       ${expanded ? `
         <div class="store-items-panel">
           <p class="hint">What you usually get here — suggested (for you to confirm) in the grocery list's By Store view.</p>
-          <div class="chip-row">${items.length ? items.map(i => storeTypicalChip(store, i)).join('') : '<p class="empty">Nothing saved yet.</p>'}</div>
+          <div class="chip-row">${items.length ? items.map(i => storeTypicalChip(store, i)).join('') : '<p class="empty-state">Nothing saved here yet — add what you usually get.</p>'}</div>
           <div class="add-row">
             <input type="text" class="new-store-item" data-store="${escapeHtml(store)}" placeholder="Add an item..." />
             <button class="action add-store-item-btn" data-store="${escapeHtml(store)}">Add</button>

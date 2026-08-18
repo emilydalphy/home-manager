@@ -2,36 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Inventory — Home Manager</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#2b6cb0" />
+<meta name="theme-color" content="#66304E" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Home Manager" />
 <style>
-  :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     max-width: 720px;
     margin: 0 auto;
     padding: 24px;
-    background: #f7f7f5;
-    color: #222;
   }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
-  p.subtitle a { color: #2b6cb0; }
-  h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
-  h3.category-subheading { font-size: 0.78rem; margin: 0; padding: 10px 0 4px; color: #999; text-transform: uppercase; letter-spacing: 0.03em; }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--midnight-violet); margin-bottom: 4px; }
+  p.subtitle { color: var(--text-muted); margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: var(--midnight-violet); font-weight: 700; text-decoration: none; }
+  p.subtitle a:hover { text-decoration: underline; }
+  h2.section-title { font-family: var(--font-heading); font-weight: 600; font-size: 1.05rem; margin: 20px 0 8px; color: var(--midnight-violet); text-transform: capitalize; }
+  h3.category-subheading { font-family: var(--font-body); font-weight: 700; font-size: 0.75rem; margin: 0; padding: 10px 0 4px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
   h3.category-subheading:first-child { padding-top: 4px; }
   .card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 4px 16px;
     margin-bottom: 10px;
   }
@@ -39,38 +41,47 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    min-height: 44px;
     padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--card-border);
   }
   .item-row:last-child { border-bottom: none; }
   .item-info { flex: 1; min-width: 0; }
-  .item-name { font-weight: 500; margin: 0; }
-  .item-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; }
+  .item-name { font-family: var(--font-body); font-weight: 500; color: var(--text-body); margin: 0; }
+  .item-meta { color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0; }
   .qty-input {
     width: 90px;
+    min-height: 40px;
     padding: 5px 8px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-family: var(--font-body);
     font-size: 0.85rem;
+    background: #fff;
+    color: var(--text-body);
   }
   .cat-select {
     width: 118px;
+    min-height: 40px;
     padding: 5px 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-family: var(--font-body);
     font-size: 0.8rem;
-    background: white;
-    color: #444;
+    background: #fff;
+    color: var(--text-body);
   }
   .cat-select:disabled { opacity: 0.6; }
   .loc-select {
     width: 100px;
+    min-height: 40px;
     padding: 5px 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-family: var(--font-body);
     font-size: 0.8rem;
-    background: white;
-    color: #444;
+    background: #fff;
+    color: var(--text-body);
   }
   .loc-select:disabled { opacity: 0.6; }
   @media (max-width: 520px) {
@@ -79,138 +90,188 @@
   }
   .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
   button.toggle-btn {
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    background: white;
-    color: #555;
+    min-height: 44px;
+    padding: 6px 16px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--midnight-violet);
+    background: transparent;
+    color: var(--midnight-violet);
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.82rem;
     cursor: pointer;
+    transition: background 0.15s ease;
   }
-  button.toggle-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  button.toggle-btn:hover { background: var(--violet-soft); }
+  button.toggle-btn.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
   .duplicates-banner {
-    border-radius: 10px;
+    border-radius: var(--radius-card);
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 0.88rem;
-    background: #eef4fb;
-    border: 1px solid #cfe0f2;
-    color: #1e4a75;
+    background: var(--violet-soft);
+    border: 1px solid var(--card-border);
+    color: var(--midnight-violet);
   }
-  .duplicates-banner h2 { font-size: 0.9rem; margin: 0 0 8px; color: inherit; }
+  .duplicates-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 0.95rem; margin: 0 0 8px; color: inherit; }
   .duplicates-banner ul { margin: 0; padding-left: 20px; }
   .duplicates-banner li { margin-bottom: 5px; }
-  .duplicates-banner .tag { font-weight: 600; }
-  .duplicates-banner .locs { color: #4a6b8a; }
+  .duplicates-banner .tag { font-weight: 700; }
+  .duplicates-banner .locs { color: var(--text-muted); }
   .icon-btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 1.05rem;
+    min-width: 44px;
+    min-height: 44px;
     padding: 4px 7px;
-    border-radius: 6px;
-    color: #888;
+    border-radius: var(--radius-control);
+    color: var(--text-muted);
   }
-  .icon-btn:hover { background: #f0f0f0; }
-  .icon-btn.save { color: #2b6cb0; }
-  .icon-btn.remove { color: #b00020; }
-  .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
-  .error { color: #b00020; font-size: 0.9rem; }
+  .icon-btn:hover { background: var(--violet-soft); }
+  .icon-btn.save { color: var(--vivid-leaf); }
+  .icon-btn.remove { color: var(--electric-coral); }
+  .empty { color: var(--text-muted); font-size: 0.9rem; font-style: italic; padding: 8px 0; }
+  .error { color: var(--electric-coral); font-size: 0.9rem; }
   .add-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 14px 16px;
     margin-top: 20px;
   }
-  .add-card h2 { font-size: 0.95rem; margin: 0 0 10px; color: #444; }
+  .add-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 10px; color: var(--midnight-violet); }
   .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .add-row input[type=text] {
+    min-height: 44px;
     padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    background: white;
-    color: #222;
+    background: #fff;
+    color: var(--text-body);
   }
   #add-item { flex: 2; min-width: 140px; }
   #add-qty { flex: 1; min-width: 90px; }
   select#add-category {
     flex: 1;
     min-width: 120px;
+    min-height: 44px;
     padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    background: white;
-    color: #222;
+    background: #fff;
+    color: var(--text-body);
   }
   button.action {
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: none;
-    background: #2b6cb0;
-    color: white;
+    min-height: 44px;
+    padding: 8px 18px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--midnight-violet);
+    background: transparent;
+    color: var(--midnight-violet);
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
+    transition: background 0.15s ease;
   }
+  button.action:hover:not(:disabled) { background: var(--violet-soft); }
   button.action:disabled { opacity: 0.6; cursor: default; }
+  /* The "Add" button is the single primary call-to-action on this screen —
+     Turmeric Gold fill, per brand rule of one CTA max per screen. */
+  #add-btn.action {
+    border: none;
+    background: var(--turmeric-gold);
+    color: var(--midnight-violet);
+  }
+  #add-btn.action:hover:not(:disabled) { background: var(--gold-hover); }
   .expiring-banner {
-    border-radius: 10px;
+    border-radius: var(--radius-card);
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 0.88rem;
   }
-  .expiring-banner.has-expired { background: #fdeaea; border: 1px solid #f3c6c6; color: #8a1f1f; }
-  .expiring-banner.soon-only { background: #fff8e6; border: 1px solid #f3e0a8; color: #7a5b00; }
-  .expiring-banner h2 { font-size: 0.9rem; margin: 0 0 8px; color: inherit; }
+  .expiring-banner.has-expired { background: #FBE1D8; border: 1px solid var(--electric-coral); color: #8A2E15; }
+  .expiring-banner.soon-only { background: #FCEADF; border: 1px solid #F0A987; color: #8A3B1F; }
+  .expiring-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 0.95rem; margin: 0 0 8px; color: inherit; }
   .expiring-banner ul { margin: 0; padding-left: 20px; }
   .expiring-banner li { margin-bottom: 3px; }
-  .expiring-banner .tag { font-weight: 600; }
+  .expiring-banner .tag { font-weight: 700; }
   .scan-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 14px 16px;
     margin-bottom: 16px;
   }
-  .scan-card h2 { font-size: 0.95rem; margin: 0 0 4px; color: #444; }
-  .scan-card p.hint { color: #888; font-size: 0.82rem; margin: 0 0 10px; }
+  .scan-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
+  .scan-card p.hint { color: var(--text-muted); font-size: 0.82rem; margin: 0 0 10px; }
   .scan-row { display: flex; gap: 8px; flex-wrap: wrap; }
   button.scan-btn {
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: 1px solid #2b6cb0;
-    background: white;
-    color: #2b6cb0;
+    min-height: 44px;
+    padding: 8px 16px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--midnight-violet);
+    background: transparent;
+    color: var(--midnight-violet);
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.88rem;
     cursor: pointer;
+    transition: background 0.15s ease;
   }
+  button.scan-btn:hover:not(:disabled) { background: var(--violet-soft); }
   button.scan-btn:disabled { opacity: 0.6; cursor: default; }
   .review-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 14px 16px;
     margin-bottom: 16px;
   }
-  .review-card h2 { font-size: 0.95rem; margin: 0 0 4px; color: #444; }
-  .review-card p.hint { color: #888; font-size: 0.82rem; margin: 0 0 10px; }
+  .review-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
+  .review-card p.hint { color: var(--text-muted); font-size: 0.82rem; margin: 0 0 10px; }
   .review-row {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-height: 44px;
     padding: 8px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--card-border);
     flex-wrap: wrap;
   }
   .review-row:last-child { border-bottom: none; }
-  .review-row input[type=checkbox] { flex: 0 0 auto; }
-  .review-row input[type=text].review-name { flex: 2; min-width: 110px; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem; }
-  .review-row input[type=text].review-qty { flex: 1; min-width: 80px; padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.85rem; }
-  .review-row select.review-cat, .review-row select.review-loc { flex: 1; min-width: 100px; padding: 6px 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.8rem; background: white; color: #444; }
-  .low-conf-badge { background: #fff8e6; color: #7a5b00; border: 1px solid #f3e0a8; border-radius: 5px; font-size: 0.7rem; padding: 2px 6px; flex: 0 0 auto; }
+  .review-row input[type=checkbox] {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin: 12px;
+    accent-color: var(--vivid-leaf);
+  }
+  .review-row input[type=text].review-name { flex: 2; min-width: 110px; min-height: 40px; padding: 6px 8px; border-radius: var(--radius-control); border: 1px solid var(--card-border); font-family: var(--font-body); font-size: 0.85rem; color: var(--text-body); }
+  .review-row input[type=text].review-qty { flex: 1; min-width: 80px; min-height: 40px; padding: 6px 8px; border-radius: var(--radius-control); border: 1px solid var(--card-border); font-family: var(--font-body); font-size: 0.85rem; color: var(--text-body); }
+  .review-row select.review-cat, .review-row select.review-loc { flex: 1; min-width: 100px; min-height: 40px; padding: 6px 6px; border-radius: var(--radius-control); border: 1px solid var(--card-border); font-family: var(--font-body); font-size: 0.8rem; background: #fff; color: var(--text-body); }
+  .low-conf-badge {
+    background: var(--electric-coral);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 3px 9px;
+    flex: 0 0 auto;
+  }
   .review-actions { display: flex; gap: 8px; margin-top: 12px; }
+  #review-cancel-btn.icon-btn { width: auto; padding: 4px 14px; font-size: 0.85rem; font-family: var(--font-body); font-weight: 700; color: var(--midnight-violet); }
 </style>
 </head>
 <body>

@@ -2,44 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>This week's meals</title>
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#2b6cb0" />
+<meta name="theme-color" content="#66304E" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
-  :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     max-width: 640px;
     margin: 0 auto;
     padding: 24px;
-    background: #f7f7f5;
-    color: #222;
   }
-  h1 { font-size: 1.4rem; margin: 0 0 4px; }
-  p.subtitle { color: #666; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  p.subtitle { margin: 0 0 1.5rem; }
   .suggested-note {
-    background: #fff4e5;
-    color: #8a5300;
-    border: 1px solid #ffe0b3;
-    border-radius: 10px;
+    background: var(--violet-soft);
+    color: var(--midnight-violet);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
     padding: 0.7rem 1rem;
+    font-family: var(--font-body);
     font-size: 0.85rem;
     margin-bottom: 14px;
   }
   .day-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 1rem 1.15rem;
     margin-bottom: 10px;
   }
   .day-card .date {
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: #2b6cb0;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--text-muted);
     margin: 0 0 8px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -48,12 +51,14 @@
     display: flex;
     gap: 10px;
     padding: 0.45rem 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--card-border);
     align-items: baseline;
   }
   .menu-row:last-child { border-bottom: none; }
   .menu-row .slot {
-    color: #888;
+    font-family: var(--font-body);
+    font-weight: 500;
+    color: var(--text-muted);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -61,37 +66,54 @@
     flex-shrink: 0;
     padding-top: 0.15rem;
   }
-  .menu-row .meal { font-size: 1rem; }
-  .empty, .error { color: #666; font-size: 0.95rem; padding: 1rem 0; }
+  .menu-row .meal { font-family: var(--font-body); color: var(--text-body); font-size: 1rem; }
+  .empty, .error { color: var(--text-muted); font-size: 0.95rem; padding: 1rem 0; }
   .pool-toggle {
     display: block;
     text-align: center;
-    color: #2b6cb0;
+    font-family: var(--font-body);
+    font-weight: 700;
+    color: var(--midnight-violet);
     font-size: 0.85rem;
-    background: none;
-    border: none;
-    padding: 10px 0 4px;
+    background: transparent;
+    border: 1px solid var(--midnight-violet);
+    border-radius: var(--radius-control);
+    padding: 12px 0;
+    min-height: 44px;
     cursor: pointer;
     width: 100%;
+    margin-top: 6px;
+    transition: background 0.15s ease;
   }
-  h2.category-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
+  .pool-toggle:hover { background: var(--violet-soft); }
+  h2.category-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 20px 0 8px;
+    color: var(--midnight-violet);
+    text-transform: capitalize;
+  }
   h2.category-title:first-child { margin-top: 0; }
   .component-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 0.4rem 1.15rem;
     margin-bottom: 10px;
   }
   .component-card .item {
+    font-family: var(--font-body);
+    color: var(--text-body);
     padding: 0.6rem 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--card-border);
     font-size: 1.05rem;
   }
   .component-card .item:last-child { border-bottom: none; }
   #pool { display: none; }
   #pool.open { display: block; }
-  .footer-note { color: #999; font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+  .footer-note { color: var(--text-muted); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
 </style>
 </head>
 <body>

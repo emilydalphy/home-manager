@@ -1,0 +1,187 @@
+/*
+  Home Manager design system
+  Source: "Home Manager - Branding package.pdf" (Brand & Style Guide v1)
+  and "[For using] home-manager-screen-specs.md.pdf" (component-level
+  application of the brand guide to priority screens).
+
+  Load this on every page AFTER the Quicksand/Karla Google Fonts <link>,
+  BEFORE any page-specific <style> block, so page styles can still
+  override specifics while inheriting the shared tokens/components.
+*/
+
+:root {
+  color-scheme: light;
+
+  /* --- Brand colors (exact hex from brand guide) --- */
+  --oat-cream: #F6EFE1;       /* default background */
+  --midnight-violet: #66304E; /* primary text, nav, primary buttons/outlines */
+  --turmeric-gold: #F0B429;   /* hero accent — CTAs only, one per screen */
+  --vivid-leaf: #6FB84C;      /* secondary accent — positive/success, sparingly */
+  --electric-coral: #E8562A;  /* secondary accent — attention/urgent, sparingly */
+
+  /* Derived working tones (not in the brand guide's 5 swatches, but needed
+     for borders/hover/disabled states — kept close to the brand hues so
+     they read as part of the same system rather than off-palette). */
+  --oat-cream-dark: #EDE2CC;      /* borders/dividers on cream */
+  --violet-soft: #F1E4EC;         /* muted violet fill, e.g. neutral tag bg */
+  --violet-hover: #542640;        /* primary button hover/active */
+  --gold-hover: #DDA224;          /* gold button hover/active */
+  --text-muted: #8A7F6E;          /* captions, secondary text on cream */
+  --text-body: #3A2E33;           /* body text — dark, warm-neutral, not pure black */
+  --card-border: #E7DCC8;
+
+  /* --- Typography --- */
+  --font-heading: "Quicksand", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* --- Radii / shadow, consistent card + button rounding --- */
+  --radius-card: 14px;
+  --radius-pill: 999px;
+  --radius-control: 10px;
+  --shadow-card: 0 1px 2px rgba(102, 48, 78, 0.06);
+}
+
+/* ---------- Base ---------- */
+body {
+  font-family: var(--font-body);
+  background: var(--oat-cream);
+  color: var(--text-body);
+}
+
+h1, h2, h3, .h1, .h2, .h3 {
+  font-family: var(--font-heading);
+  color: var(--midnight-violet);
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+h1, .h1 { font-size: 32px; line-height: 1.2; font-weight: 700; }
+h2, .h2 { font-size: 22px; line-height: 1.25; font-weight: 600; }
+h3, .h3, .card-title { font-size: 17px; line-height: 1.3; font-weight: 600; }
+
+p, li, td, label, input, select, textarea, button {
+  font-family: var(--font-body);
+}
+
+.subtitle, p.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.caption {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+a { color: var(--midnight-violet); }
+
+/* ---------- Shared components ---------- */
+
+/* Primary CTA — Turmeric Gold fill, dark text. Reserve for the single
+   most important action on a screen. */
+.btn-primary, button.btn-primary {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--turmeric-gold);
+  color: var(--midnight-violet);
+  border: none;
+  border-radius: var(--radius-control);
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-primary:hover:not(:disabled) { background: var(--gold-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+/* Secondary / ghost — Midnight Violet outline or text-only. Frequent,
+   lower-stakes actions (add item, edit, cancel). */
+.btn-secondary, button.btn-secondary {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  background: transparent;
+  color: var(--midnight-violet);
+  border: 1px solid var(--midnight-violet);
+  border-radius: var(--radius-control);
+  padding: 11px 18px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-secondary:hover:not(:disabled) { background: var(--violet-soft); }
+.btn-secondary:disabled { opacity: 0.5; cursor: default; }
+
+/* Status tag / pill */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  line-height: 1.4;
+}
+.pill-success { background: var(--vivid-leaf); color: #fff; }
+.pill-attention { background: var(--electric-coral); color: #fff; }
+.pill-neutral { background: var(--violet-soft); color: var(--midnight-violet); }
+
+/* Card */
+.card {
+  background: var(--oat-cream);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Surfaces that sit "above" the cream page background (e.g. panels on
+   pages whose body is cream) use plain white so cards still read as
+   distinct layers. */
+.surface {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+}
+
+/* List row — min 44x44 tap targets on interactive elements is enforced
+   per-element (checkboxes, icon buttons), not just on the row. */
+.list-row {
+  background: var(--oat-cream);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text-body);
+}
+.list-row .row-caption {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.tap-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Empty state — warm, first-person copy, not "No items." */
+.empty-state {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  padding: 1rem 0;
+}
+
+/* Top nav strip shared by every page — Midnight Violet links on Oat Cream. */
+.app-nav {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.app-nav a {
+  color: var(--midnight-violet);
+  text-decoration: none;
+  font-weight: 700;
+}
+.app-nav a:hover { text-decoration: underline; }

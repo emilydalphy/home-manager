@@ -2,96 +2,129 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Grocery List — Home Manager</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#2b6cb0" />
+<meta name="theme-color" content="#66304E" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Home Manager" />
 <style>
-  :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     max-width: 720px;
     margin: 0 auto;
     padding: 24px;
-    background: #f7f7f5;
-    color: #222;
   }
   .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  p.subtitle { color: #666; margin-top: 0; font-size: 0.9rem; }
-  p.subtitle a { color: #2b6cb0; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  p.subtitle { margin-top: 0; }
+  p.subtitle a { color: var(--midnight-violet); font-weight: 700; text-decoration: none; }
+  p.subtitle a:hover { text-decoration: underline; }
+
+  /* Frequent, low-stakes utility actions — ghost style, never gold. */
   .refresh-btn {
-    background: white;
-    border: 1px solid #d8d8d4;
-    border-radius: 8px;
-    padding: 7px 12px;
+    background: transparent;
+    border: 1px solid var(--midnight-violet);
+    border-radius: var(--radius-control);
+    padding: 10px 14px;
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.85rem;
-    color: #2b6cb0;
+    color: var(--midnight-violet);
     cursor: pointer;
     flex-shrink: 0;
+    min-height: 44px;
   }
-  .refresh-btn:hover { background: #f0f4f8; }
+  .refresh-btn:hover { background: var(--violet-soft); }
   .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+
   .voice-btn {
-    background: white;
-    border: 1px solid #2b6cb0;
-    color: #2b6cb0;
-    border-radius: 20px;
-    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--midnight-violet);
+    color: var(--midnight-violet);
+    border-radius: var(--radius-pill);
+    padding: 10px 16px;
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.82rem;
     cursor: pointer;
+    min-height: 44px;
   }
-  .voice-btn.active { background: #c0392b; border-color: #c0392b; color: white; animation: voice-pulse 1.6s ease-in-out infinite; }
+  /* Hands-free is actively listening/recording — the one spot on this
+     screen where an Electric Coral fill is warranted (a live/urgent
+     indicator), used on a single control only. */
+  .voice-btn.active { background: var(--electric-coral); border-color: var(--electric-coral); color: #fff; animation: voice-pulse 1.6s ease-in-out infinite; }
   @keyframes voice-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
   .voice-status {
     display: none;
-    border-radius: 10px;
+    border-radius: var(--radius-card);
     padding: 10px 14px;
     margin-bottom: 14px;
     font-size: 0.85rem;
-    background: #fdf2f2;
-    border: 1px solid #f3c6c6;
-    color: #7a2020;
+    background: var(--violet-soft);
+    border: 1px solid var(--card-border);
+    color: var(--text-body);
   }
   .voice-status.showing { display: block; }
-  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0392b; margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
-  .voice-status .voice-note { display: block; margin-top: 6px; color: #8a4b4b; font-size: 0.78rem; }
+  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--electric-coral); margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
+  .voice-status .voice-note { display: block; margin-top: 6px; color: var(--text-muted); font-size: 0.78rem; }
   .voice-status .voice-log { margin: 6px 0 0; padding: 0; list-style: none; }
-  .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid #f3c6c6; }
+  .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid var(--card-border); }
   .voice-status .voice-log li:first-child { border-top: none; }
-  h2.section-title { font-size: 0.95rem; margin: 20px 0 8px; color: #444; text-transform: capitalize; }
+
+  h2.section-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 20px 0 8px;
+    color: var(--midnight-violet);
+    text-transform: capitalize;
+  }
   h2.section-title:first-child { margin-top: 0; }
-  h2.store-title { font-size: 1.05rem; margin: 22px 0 6px; color: #222; }
+  h2.store-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin: 22px 0 6px;
+    color: var(--midnight-violet);
+  }
   h2.store-title:first-child { margin-top: 0; }
+
   .suggestion-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     margin-bottom: 10px;
   }
-  .suggestion-label { color: #888; font-size: 0.8rem; margin-right: 2px; }
+  .suggestion-label { color: var(--text-muted); font-size: 0.8rem; margin-right: 2px; font-weight: 500; }
   .suggestion-chip {
-    background: #eaf1fa;
-    color: #2b6cb0;
-    border: 1px solid #cfe0f2;
-    border-radius: 14px;
-    padding: 4px 10px;
+    background: var(--violet-soft);
+    color: var(--midnight-violet);
+    border: 1px solid var(--violet-soft);
+    border-radius: var(--radius-pill);
+    padding: 8px 14px;
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.82rem;
     cursor: pointer;
+    min-height: 44px;
   }
-  .suggestion-chip:hover { background: #d8e8f8; }
+  .suggestion-chip:hover { background: #e7d9e2; }
   .suggestion-chip:disabled { opacity: 0.5; cursor: default; }
+
   .card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 4px 16px;
     margin-bottom: 10px;
   }
@@ -100,139 +133,209 @@
     align-items: center;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--card-border);
     flex-wrap: wrap;
   }
   .item-row:last-child { border-bottom: none; }
-  .item-row.checked-off .item-name { text-decoration: line-through; color: #999; }
+  /* Checked-off items keep their strikethrough but stay visible/legible,
+     per the screen spec (fade, don't hide). */
+  .item-row.checked-off { opacity: 0.65; }
+  .item-row.checked-off .item-name { text-decoration: line-through; color: var(--text-muted); }
   .item-info { flex: 1; min-width: 120px; }
-  .item-name { font-weight: 500; margin: 0; }
-  .item-meta { color: #888; font-size: 0.78rem; margin: 2px 0 0; }
+  .item-name { font-family: var(--font-body); font-weight: 500; margin: 0; color: var(--text-body); }
+  .item-meta { font-family: var(--font-body); font-weight: 500; color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0; }
+
+  /* Large 44x44 tap target on the primary in-store action. */
+  input.buy-checkbox {
+    width: 26px;
+    height: 26px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    accent-color: var(--midnight-violet);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
   .qty-input {
     width: 90px;
-    padding: 5px 8px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    padding: 10px 8px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--oat-cream-dark);
+    font-family: var(--font-body);
     font-size: 0.85rem;
+    color: var(--text-body);
+    background: #fff;
+    min-height: 44px;
   }
   .store-input {
     width: 110px;
-    padding: 5px 8px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    padding: 10px 8px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--oat-cream-dark);
+    font-family: var(--font-body);
     font-size: 0.85rem;
+    color: var(--text-body);
+    background: #fff;
+    min-height: 44px;
   }
   .cat-select {
     width: 118px;
-    padding: 5px 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    padding: 10px 6px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--oat-cream-dark);
+    font-family: var(--font-body);
     font-size: 0.8rem;
-    background: white;
-    color: #444;
+    background: #fff;
+    color: var(--text-body);
+    min-height: 44px;
   }
   @media (max-width: 520px) {
     .cat-select, .qty-input, .store-input { flex: 1; min-width: 100px; }
   }
+
   .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  /* Store-tab-style toggle: active view in Midnight Violet, inactive muted
+     — restyled only, the underlying to-buy/by-store/purchased logic is
+     unchanged. */
   button.toggle-btn {
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    background: white;
-    color: #555;
+    padding: 10px 14px;
+    min-height: 44px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--oat-cream-dark);
+    background: #fff;
+    color: var(--text-muted);
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.82rem;
     cursor: pointer;
   }
-  button.toggle-btn.active { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+  button.toggle-btn.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+
   .icon-btn {
     background: none;
     border: none;
     cursor: pointer;
     font-size: 0.95rem;
     padding: 4px 7px;
-    border-radius: 6px;
-    color: #888;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-control);
+    color: var(--text-muted);
   }
-  .icon-btn:hover { background: #f0f0f0; }
-  .icon-btn.save { color: #2b6cb0; }
-  .icon-btn.remove { color: #b00020; }
-  .icon-btn.exclude, .icon-btn.undo, .icon-btn.keep { font-size: 0.78rem; white-space: nowrap; }
-  .empty { color: #999; font-size: 0.9rem; font-style: italic; padding: 8px 0; }
-  .error { color: #b00020; font-size: 0.9rem; }
+  .icon-btn:hover { background: var(--violet-soft); }
+  .icon-btn.save { color: var(--midnight-violet); }
+  /* Destructive action — the sparing, appropriate use of Electric Coral
+     for an urgent/irreversible action. */
+  .icon-btn.remove { color: var(--electric-coral); }
+  .icon-btn.exclude, .icon-btn.undo, .icon-btn.keep { font-size: 0.78rem; white-space: nowrap; font-weight: 700; color: var(--midnight-violet); }
+
+  .empty {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    padding: 8px 0;
+  }
+  .error { color: var(--electric-coral); font-size: 0.9rem; }
+
   .add-card {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     padding: 14px 16px;
     margin-top: 20px;
   }
-  .add-card h2 { font-size: 0.95rem; margin: 0 0 10px; color: #444; }
+  .add-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 10px; color: var(--midnight-violet); }
   .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .add-row input[type=text] {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    padding: 10px 10px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--oat-cream-dark);
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    background: white;
-    color: #222;
+    background: #fff;
+    color: var(--text-body);
+    min-height: 44px;
   }
   #add-item { flex: 2; min-width: 140px; }
   #add-qty { flex: 1; min-width: 90px; }
   select#add-category {
     flex: 1;
     min-width: 120px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    padding: 10px 10px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--oat-cream-dark);
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    background: white;
-    color: #222;
+    background: #fff;
+    color: var(--text-body);
+    min-height: 44px;
   }
+  /* "+ Add item" is frequent and low-stakes — Midnight Violet ghost
+     button, never gold (gold is reserved for a single most-important CTA,
+     and nothing on this list screen qualifies). */
   button.action {
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: none;
-    background: #2b6cb0;
-    color: white;
+    padding: 10px 16px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--midnight-violet);
+    background: transparent;
+    color: var(--midnight-violet);
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
   }
+  button.action:hover:not(:disabled) { background: var(--violet-soft); }
   button.action:disabled { opacity: 0.6; cursor: default; }
+
   .already-have-banner {
-    border-radius: 10px;
+    border-radius: var(--radius-card);
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 0.88rem;
-    background: #fff8e6;
-    border: 1px solid #f3e0a8;
-    color: #7a5b00;
+    background: var(--violet-soft);
+    border: 1px solid var(--card-border);
+    color: var(--text-body);
   }
-  .already-have-banner h2 { font-size: 0.9rem; margin: 0 0 4px; color: inherit; }
-  .already-have-banner p.hint { margin: 0 0 10px; color: #8a6d1f; font-size: 0.82rem; }
+  .already-have-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
+  .already-have-banner p.hint { margin: 0 0 10px; color: var(--text-muted); font-size: 0.82rem; }
   .already-have-row {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     padding: 7px 0;
-    border-bottom: 1px solid #f0e3b8;
+    border-bottom: 1px solid var(--card-border);
     flex-wrap: wrap;
   }
   .already-have-row:last-child { border-bottom: none; }
   .already-have-row .info { flex: 1; min-width: 160px; }
-  .already-have-row .tag { font-weight: 600; }
+  .already-have-row .tag { font-weight: 700; color: var(--text-body); }
   .already-have-row .actions { display: flex; gap: 6px; flex-shrink: 0; }
   .ah-btn {
     border: none;
-    border-radius: 6px;
-    padding: 5px 10px;
+    border-radius: var(--radius-control);
+    padding: 8px 12px;
+    min-height: 44px;
+    font-family: var(--font-body);
+    font-weight: 700;
     font-size: 0.8rem;
     cursor: pointer;
   }
-  .ah-btn.remove-btn { background: #b00020; color: white; }
-  .ah-btn.keep-btn { background: white; border: 1px solid #d9c37a; color: #7a5b00; }
+  /* Removing from the list is the more consequential of the two actions
+     here — Electric Coral, used sparingly on this single control. */
+  .ah-btn.remove-btn { background: var(--electric-coral); color: #fff; }
+  .ah-btn.keep-btn { background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet); }
   .ah-btn:disabled { opacity: 0.6; cursor: default; }
+
+  /* All-done state — everything checked off the To buy list. */
+  .all-done-state { padding: 12px 0; }
+  .all-done-state .pill { margin-bottom: 8px; }
+  .all-done-state p { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
 </style>
 </head>
 <body>
@@ -596,10 +699,14 @@ function renderNeededOrPurchased(view) {
   const sections = view.sections || [];
 
   if (!sections.length) {
-    const emptyMsg = currentView === 'needed'
-      ? 'Nothing on the list — add items below, or they\'ll show up automatically from meal planning.'
-      : 'Nothing marked purchased yet.';
-    content.innerHTML = `<p class="empty">${emptyMsg}</p>`;
+    if (currentView === 'needed') {
+      content.innerHTML = `<div class="all-done-state">
+        <span class="pill pill-success">You're all set!</span>
+        <p>Nothing left to buy — add items below, or they'll show up automatically from meal planning.</p>
+      </div>`;
+    } else {
+      content.innerHTML = `<p class="empty">Nothing marked purchased yet — check things off as you shop.</p>`;
+    }
     return;
   }
 
@@ -633,7 +740,7 @@ function renderByStore(view) {
 
   const hasAnything = allStores.some(s => (s.sections && s.sections.length) || (storeTypicalItems[s.store] || []).length);
   if (!hasAnything) {
-    content.innerHTML = '<p class="empty">Nothing on the list yet — add items below.</p>';
+    content.innerHTML = '<p class="empty">Nothing on the list yet — add what you need below.</p>';
     return;
   }
 
