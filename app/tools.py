@@ -327,7 +327,7 @@ def remove_store_typical_item(store: str, item: str) -> dict:
 
 def set_household_meal_preferences(
     notes: str = "",
-    protein_preferences: dict[str, str] | None = None,
+    protein_preferences: dict[str, int | str] | None = None,
     cuisine_preferences: list[str] | None = None,
     cooking_time_preference: str = "",
     novelty_preference: str = "",
@@ -335,9 +335,11 @@ def set_household_meal_preferences(
 ) -> dict:
     """
     Save household food preferences: freeform notes (the "let me type it"
-    catch-all), protein preferences (how often per protein, e.g.
-    {"chicken": "several times a week", "beef": "rarely"} — reflects
-    preference, health, and budget together, not just taste), favorite
+    catch-all), protein preferences (a 1-5 rating of how much the household
+    likes each protein, e.g. {"chicken": 5, "beef": 2} — 5 is a favorite,
+    1 means avoid entirely; reflects preference, health, and budget
+    together, not just taste — used to decide how often each protein shows
+    up in a generated plan), favorite
     cuisines, a cooking time preference, and novelty_preference (how often
     new recipes should get surfaced: 'mostly_favorites', 'balanced', or
     'surprise_me_often' — even 'mostly_favorites' still gets occasional new
@@ -2560,8 +2562,8 @@ def edit_preference(field: str, value) -> dict:
     'dislikes' (list of str — replaces the whole list; for adding just one
     new dislike in conversation, prefer add_food_dislikes instead so it
     merges rather than requiring you to pass the full existing list),
-    'protein_preferences' (dict of protein -> how-often, e.g. {"chicken":
-    "several times a week"} — merged into existing), 'novelty_preference'
+    'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {"chicken":
+    5} — merged into existing), 'novelty_preference'
     (str: 'mostly_favorites', 'balanced', or 'surprise_me_often' — how often
     new recipes get surfaced when generating a weekly plan), 'usual_stores'
     (list of str — the stores/chains this household usually shops at, e.g.

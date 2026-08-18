@@ -410,7 +410,7 @@ TOOL_DEFINITIONS = [
                 "notes": {"type": "string"},
                 "protein_preferences": {
                     "type": "object",
-                    "description": "How often the household wants each protein, e.g. {\"chicken\": \"several times a week\", \"beef\": \"rarely\"}. Suggested values: 'several times a week', '1-2 times a week', 'occasionally', 'rarely', 'avoid' — but use whatever frequency phrasing the user actually gives.",
+                    "description": "How much the household likes each protein, on a 1-5 scale, e.g. {\"chicken\": 5, \"beef\": 2}. 1 = avoid entirely, 2 = not really a fan (rarely), 3 = neutral/occasional, 4 = like it (regularly), 5 = a favorite (include often). Translate whatever the user actually says (\"we love chicken,\" \"not into beef\") into the closest number on this scale — don't ask them to state a number themselves unless they want to.",
                 },
                 "cuisine_preferences": {"type": "array", "items": {"type": "string"}},
                 "cooking_time_preference": {"type": "string", "description": "e.g. 'quick', 'moderate', 'no preference'"},
@@ -982,7 +982,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> how-often, e.g. {\"chicken\": \"several times a week\"}, merged in). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1337,12 +1337,14 @@ recipe from suggestion.
 - Avoid repeating any meal (or a near-identical variant) that appears in recent_history \
 within the last 3 weeks, and avoid repeating the same main_protein or cuisine too many \
 days in a row — check recent_history's cuisine/main_protein fields, not just meal names.
-- household_memory's protein_preferences say how often the household wants each protein \
-(e.g. "several times a week", "1-2 times a week", "occasionally", "rarely", "avoid") — treat \
-this as a real constraint on the week's mix, not just a tiebreaker: a protein marked "avoid" \
-shouldn't appear at all, "rarely" should appear at most once across the week, and one marked \
-"several times a week" should show up more than once. Weigh this alongside — not instead of — \
-the variety rules above.
+- household_memory's protein_preferences give a 1-5 rating of how much the household likes \
+each protein (5 = favorite, 1 = avoid) — treat this as a real constraint on the week's mix, \
+not just a tiebreaker: a protein rated 1 shouldn't appear at all, 2 should appear at most \
+once across the week, 3 is fine occasionally (once, maybe twice), and 4-5 should show up \
+more than once — the higher the rating, the more it should anchor the week. (Older saved \
+data may still have a frequency phrase like "several times a week" instead of a number — \
+treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "rarely"≈2, \
+"avoid"≈1.) Weigh this alongside — not instead of — the variety rules above.
 - Honor any per-week constraints in constraints_notes exactly (e.g. "out Thursday/Friday" \
 means don't plan those days; "under 30 minutes on weeknights" means quick weeknight meals).
 - For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
@@ -1499,9 +1501,11 @@ way as day-based planning — even "mostly_favorites" should include at least on
 somewhere in the pool.
 - A recipe's recent_one_off_notes are a soft signal, not a verdict — only an actual \
 rating='disliked' should exclude something entirely.
-- household_memory's protein_preferences should shape which/how many proteins you pick (a \
-protein marked "avoid" shouldn't appear; "several times a week" can appear more than once \
-across the protein items).
+- household_memory's protein_preferences give a 1-5 rating of how much the household likes \
+each protein (5 = favorite, 1 = avoid) and should shape which/how many proteins you pick: a \
+protein rated 1 shouldn't appear at all, and 4-5 should show up more than once across the \
+protein items. (Older saved data may still have a frequency phrase instead of a number — \
+treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "rarely"≈2, "avoid"≈1.)
 - Honor any per-week constraints in constraints_notes exactly.
 - For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \

@@ -139,6 +139,15 @@ in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
 add/remove protein preferences, and edit cooking-time preference, notes, and
 household goals, all with immediate save, no conversation required.
 
+**Protein preferences** are a 1-5 "how much does the household like this"
+slider per protein (1 = avoid entirely, 5 = a favorite) rather than a
+frequency dropdown — the assistant translates the rating into how often that
+protein should show up in a generated plan (a 5 anchors the week more than
+once, a 1 never appears at all). Preferences set in chat before the slider
+existed (saved as a frequency phrase like "several times a week") still
+display and factor into planning correctly — they're mapped to the closest
+rating automatically, both in the UI and in the plan-generation prompt.
+
 **Usual stores** — the stores/chains this household usually shops at (e.g.
 "Trader Joe's," "Costco") — is captured the same way (chat or the What We
 Know page) and doubles as the suggestion list for the store field when

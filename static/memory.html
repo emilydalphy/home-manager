@@ -106,7 +106,39 @@
   button.action.secondary:hover { background: var(--violet-soft); }
 
   .save-row { display: flex; gap: 8px; margin-top: 10px; }
-  .protein-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; min-height: 44px; }
+  .protein-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; min-height: 44px; gap: 12px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .protein-row:last-child { border-bottom: none; }
+  .protein-row > span:first-child { font-weight: 500; color: var(--text-body); }
+  .protein-slider-wrap {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 220px;
+  }
+  input[type=range].protein-edit,
+  input[type=range]#new-protein-value {
+    flex: 1;
+    min-width: 100px;
+    height: 44px;
+    accent-color: var(--midnight-violet);
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+    border: none;
+  }
+  .protein-rating-label {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--midnight-violet);
+    background: var(--violet-soft);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    white-space: nowrap;
+    min-width: 76px;
+    text-align: center;
+  }
   .member { padding: 10px 0; border-bottom: 1px solid var(--card-border); }
   .member:last-child { border-bottom: none; }
   .member .name { font-weight: 700; color: var(--text-body); }
@@ -214,11 +246,14 @@
 
   <div class="card">
     <h2>Protein preferences</h2>
-    <p class="hint">How often the household wants each protein — preference, health, and budget can all factor in.</p>
+    <p class="hint">Rate how much the household likes each protein, 1-5 — I'll use it to decide how often to include it.</p>
     <div id="proteins"></div>
-    <div class="add-row">
-      <input type="text" id="new-protein-name" placeholder="Protein (e.g. chicken)" style="flex:2" />
-      <select id="new-protein-value" style="flex:1;text-transform:capitalize;"></select>
+    <div class="add-row" style="align-items:center;">
+      <input type="text" id="new-protein-name" placeholder="Protein (e.g. chicken)" style="flex:1.4" />
+      <div class="protein-slider-wrap">
+        <input type="range" id="new-protein-value" min="1" max="5" step="1" value="3" oninput="updateProteinSliderLabel(this)" />
+        <span class="protein-rating-label" id="new-protein-value-label">Occasionally</span>
+      </div>
       <button class="action" onclick="addProtein()">Add</button>
     </div>
   </div>
@@ -255,12 +290,43 @@
 let memory = {};
 let statusTimer = null;
 
-const PROTEIN_FREQUENCIES = ['several times a week', '1-2 times a week', 'occasionally', 'rarely', 'avoid'];
+// Protein preferences are a 1-5 "how much do they like it" rating — the
+// assistant translates that into how often the protein shows up in a
+// generated plan (see agent.py), rather than the household picking a
+// frequency phrase directly.
+const PROTEIN_RATING_LABELS = { 1: 'Avoid', 2: 'Rarely', 3: 'Occasionally', 4: 'Often', 5: 'Favorite' };
 
-function proteinFreqOptions(selected) {
-  return PROTEIN_FREQUENCIES.map(f =>
-    `<option value="${f}" ${f === selected ? 'selected' : ''}>${f}</option>`
-  ).join('');
+// Households that set protein preferences before the slider existed have
+// old frequency phrases saved (e.g. "several times a week") — map those
+// to their closest rating so existing data still displays sensibly
+// instead of breaking. Any other freeform text (e.g. said in chat) falls
+// back to the neutral middle rating.
+const LEGACY_FREQUENCY_TO_RATING = {
+  'several times a week': 5,
+  '1-2 times a week': 4,
+  'occasionally': 3,
+  'rarely': 2,
+  'avoid': 1,
+};
+
+function proteinRating(val) {
+  if (typeof val === 'number' && !Number.isNaN(val)) return Math.min(5, Math.max(1, Math.round(val)));
+  const asNum = Number(val);
+  if (val !== '' && val !== null && val !== undefined && !Number.isNaN(asNum)) {
+    return Math.min(5, Math.max(1, Math.round(asNum)));
+  }
+  return LEGACY_FREQUENCY_TO_RATING[String(val).toLowerCase().trim()] || 3;
+}
+
+function proteinRatingLabel(rating) {
+  return PROTEIN_RATING_LABELS[rating] || 'Occasionally';
+}
+
+function updateProteinSliderLabel(input) {
+  const label = input.nextElementSibling;
+  if (label && label.classList.contains('protein-rating-label')) {
+    label.textContent = proteinRatingLabel(Number(input.value));
+  }
 }
 
 const NOVELTY_OPTIONS = [
@@ -330,19 +396,20 @@ function render() {
   const proteinsEl = document.getElementById('proteins');
   const proteinEntries = Object.entries(memory.protein_preferences || {});
   proteinsEl.innerHTML = proteinEntries.length
-    ? proteinEntries.map(([name, val]) => `
+    ? proteinEntries.map(([name, val]) => {
+        const rating = proteinRating(val);
+        return `
         <div class="protein-row">
           <span>${escapeHtml(name)}</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <select class="protein-edit" style="text-transform:capitalize;" data-name="${escapeHtml(name)}">
-              ${proteinFreqOptions(val)}
-            </select>
+          <div class="protein-slider-wrap">
+            <input type="range" class="protein-edit" min="1" max="5" step="1" value="${rating}"
+              data-name="${escapeHtml(name)}" oninput="updateProteinSliderLabel(this)" />
+            <span class="protein-rating-label">${proteinRatingLabel(rating)}</span>
             <button class="action secondary remove-chip" style="padding:4px 10px;" data-field="protein_preferences" data-item="${escapeHtml(name)}">Remove</button>
           </div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<p class="empty-state">No protein preferences yet — add one to guide suggestions.</p>';
-
-  document.getElementById('new-protein-value').innerHTML = proteinFreqOptions('occasionally');
 }
 
 function chip(field, label) {
@@ -394,13 +461,14 @@ document.addEventListener('click', (e) => {
   removeItem(btn.dataset.field, btn.dataset.item);
 });
 
-// Changing a protein's frequency dropdown in place edits it directly,
-// no need to remove and re-add.
+// Dragging a protein's rating slider edits it in place, no need to
+// remove and re-add. Saves on 'change' (release), not every 'input'
+// tick, so it's not firing a save per pixel of drag.
 document.addEventListener('change', (e) => {
   const sel = e.target.closest('.protein-edit');
   if (!sel) return;
   const updated = { ...(memory.protein_preferences || {}) };
-  updated[sel.dataset.name] = sel.value;
+  updated[sel.dataset.name] = Number(sel.value);
   editField('protein_preferences', updated);
 });
 
@@ -532,13 +600,15 @@ function addCuisine() {
 
 function addProtein() {
   const nameInput = document.getElementById('new-protein-name');
-  const valueSelect = document.getElementById('new-protein-value');
+  const valueInput = document.getElementById('new-protein-value');
   const name = nameInput.value.trim();
   if (!name) return;
   const updated = { ...(memory.protein_preferences || {}) };
-  updated[name] = valueSelect.value;
+  updated[name] = Number(valueInput.value);
   editField('protein_preferences', updated);
   nameInput.value = '';
+  valueInput.value = 3;
+  updateProteinSliderLabel(valueInput);
 }
 
 function saveCookingTime() {
