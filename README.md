@@ -286,9 +286,16 @@ ingredient list so it's clear which ones to eyeball yourself.
 ### Weekly menu (Share view)
 
 The read-only share link ("Share meal plan," safe to hand to anyone in the household — no
-login, no write access) now shows a genuine day-by-day weekly menu instead of a flat list:
-each day gets its own card with Breakfast/Lunch/Dinner/Snack rows, blank slots simply
-omitted. For a day-based household this is the real, actually-planned meals. For a
+login, no write access) presents as a restaurant-menu card: a Midnight Violet day sidebar
+(Mon–Sun, as many days as the plan has) next to an Oat Cream content column showing one
+day's Breakfast/Lunch/Dinner/Snack at a time, each with a rotated "stamp" badge in its own
+brand color. Clicking a sidebar day swaps the content column instantly (no reload); the
+default day on load is today's date if it's in this week's plan, otherwise the first day
+that actually has something planned. Dinner always carries a "★" — the one meal that gets a
+full, specific, built-out recipe when a plan is generated, so it's the closest real signal
+this app has to "the meal of the day." Switching days is preserved across the page's quiet
+60-second poll, so a visitor who deliberately picked Thursday doesn't get bounced back to
+today. For a day-based household this is the real, actually-planned meals. For a
 component-based household — which has no fixed day-to-day schedule by design, since the
 whole point is mixing and matching freely — it's a **suggested** arrangement worked out
 from that week's pool (rotating through the proteins/vegetables/carbs so combos vary day to

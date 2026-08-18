@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>This week's meals</title>
@@ -12,14 +12,24 @@
 <meta name="theme-color" content="#66304E" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
+  /*
+    Restaurant-menu redesign of the weekly meals share view — per the
+    "Weekly Meals Card" design handoff (option-6a.html). Colors/type/
+    spacing/radii below are pixel-close to that spec using its exact
+    values, not remapped to theme.css's slightly-different tokens, since
+    the handoff called this high-fidelity. Everything outside the card
+    itself (freshness tag, first-run banner, suggested-note, pool toggle)
+    still uses the shared brand tokens, since those weren't part of the
+    handoff and are the same five brand colors anyway.
+  */
   * { box-sizing: border-box; }
   body {
-    max-width: 640px;
+    max-width: 720px;
     margin: 0 auto;
     padding: 24px;
   }
   h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  p.subtitle { margin: 0 0 1.5rem; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  p.subtitle-line { margin: 0 0 1.2rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .freshness-tag {
     display: inline-flex;
     align-items: center;
@@ -52,43 +62,84 @@
     font-size: 0.85rem;
     margin-bottom: 14px;
   }
-  .day-card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 1rem 1.15rem;
-    margin-bottom: 10px;
-  }
-  .day-card .date {
-    font-family: var(--font-body);
-    font-weight: 500;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin: 0 0 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-  .menu-row {
+
+  /* ---- Weekly Meals Card ---- */
+  .menu-card {
     display: flex;
-    gap: 10px;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--card-border);
-    align-items: baseline;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    margin-bottom: 14px;
   }
-  .menu-row:last-child { border-bottom: none; }
-  .menu-row .slot {
-    font-family: var(--font-body);
-    font-weight: 500;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    width: 72px;
+  .sidebar {
+    background: #66304E;
+    width: 52px;
     flex-shrink: 0;
-    padding-top: 0.15rem;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    gap: 12px;
   }
-  .menu-row .meal { font-family: var(--font-body); color: var(--text-body); font-size: 1rem; }
+  .sidebar-tab {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: #F6EFE1;
+    opacity: 0.5;
+    text-align: center;
+    padding: 7px 0;
+    border-radius: 7px;
+    margin: 0 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sidebar-tab:hover:not(.active) { opacity: 1; background: rgba(240, 180, 41, 0.25); }
+  .sidebar-tab.rot-l:hover:not(.active) { transform: rotate(-3deg); }
+  .sidebar-tab.rot-r:hover:not(.active) { transform: rotate(3deg); }
+  .sidebar-tab.active {
+    background: #F0B429;
+    color: #3A2A0A;
+    opacity: 1;
+    font-weight: 800;
+    cursor: default;
+  }
+  .content-col {
+    background: #F6EFE1;
+    flex: 1;
+    padding: 26px 28px;
+    min-width: 0;
+  }
+  .content-header { text-align: center; margin-bottom: 20px; }
+  .day-eyebrow {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8A7A83;
+    margin-bottom: 4px;
+  }
+  .day-title { font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 21px; color: #3A1F2E; }
+  .meal-block { text-align: center; margin-bottom: 16px; }
+  .meal-block:last-child { margin-bottom: 0; }
+  .meal-badge {
+    display: inline-block;
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 20px;
+    margin-bottom: 7px;
+  }
+  .meal-badge.breakfast { background: #ECDFC8; color: #66304E; transform: rotate(-2deg); }
+  .meal-badge.lunch { background: #6FB84C; color: #fff; transform: rotate(2deg); }
+  .meal-badge.dinner { background: #E8562A; color: #fff; transform: rotate(-2deg); }
+  .meal-badge.snack { background: #F0B429; color: #3A2A0A; transform: rotate(2deg); }
+  .meal-name { font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 14.5px; color: #3A1F2E; line-height: 1.4; }
+  .meal-divider { height: 1px; background: #E8562A; opacity: 0.2; width: 36px; margin: 0 auto 16px; }
+
   .empty, .error { color: var(--text-muted); font-size: 0.95rem; padding: 1rem 0; }
   .pool-toggle {
     display: block;
@@ -141,7 +192,7 @@
 <body>
 
 <h1 id="page-title">This week's meals</h1>
-<p class="subtitle">
+<p class="subtitle-line">
   <span id="subtitle">Loading...</span>
   <span id="freshness-tag" class="freshness-tag" style="display:none"></span>
 </p>
@@ -151,7 +202,19 @@
   household is free to combine things differently. The full pool is below if you'd rather browse
   it directly.
 </div>
-<div id="days"></div>
+
+<div id="menu-card" class="menu-card" style="display:none">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="content-col">
+    <div class="content-header">
+      <div class="day-eyebrow" id="day-eyebrow"></div>
+      <div class="day-title" id="day-title"></div>
+    </div>
+    <div id="day-meals"></div>
+  </div>
+</div>
+<div id="status-area"></div>
+
 <button id="pool-toggle" class="pool-toggle" style="display:none">Show the full pool &darr;</button>
 <div id="pool"></div>
 <p class="footer-note" id="footer-note" style="display:none">This link always shows the current plan — no need to ask for a new one.</p>
@@ -170,35 +233,98 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
+const WEEKDAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 const SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+// Fixed per meal type, matching the design handoff exactly (breakfast -2,
+// lunch +2, dinner -2, snack +2) rather than alternating by position, so
+// a day missing a slot doesn't throw off the rotation of the ones that
+// remain.
+const BADGE_ROTATION_CLASS = { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snack' };
 
-// Renders the day-by-day menu grid shared by both planning modes — real
-// planned meals for day-based, suggested combos for component-based (see
-// plan.menu_is_suggested). Blank slots (nothing planned/suggested for that
-// meal that day) are simply omitted rather than shown as empty rows.
-function renderMenu(days) {
-  return days.map(day => {
-    const rows = SLOT_ORDER
-      .filter(slot => day[slot])
-      .map(slot => `
-        <div class="menu-row">
-          <span class="slot">${SLOT_LABELS[slot]}</span>
-          <span class="meal">${escapeHtml(day[slot])}</span>
-        </div>`)
-      .join('');
-    if (!rows) return '';
-    return `
-      <div class="day-card">
-        <p class="date">${escapeHtml(formatDate(day.date))}</p>
-        ${rows}
-      </div>`;
+// The design calls for a "★" on the day's standout meal but doesn't
+// define how that's determined from real data. Dinner is the one meal
+// that always gets a full, specific, built-out recipe when a plan is
+// generated (breakfast/lunch/snack are deliberately lower-effort — see
+// generate_weekly_plan's prompt), so it's the closest real signal to
+// "the meal of the day" this app actually has — using that rather than
+// inventing a fake distinction.
+const STANDOUT_SLOT = 'dinner';
+
+let currentMenu = [];
+let selectedIdx = null; // null until the first load picks a sensible default
+
+function todayIsoDate() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function renderSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = currentMenu.map((day, idx) => {
+    const d = new Date((day.date || '') + 'T00:00:00');
+    const label = isNaN(d) ? '' : WEEKDAY_ABBR[d.getDay()];
+    const rotClass = idx % 2 === 0 ? 'rot-r' : 'rot-l';
+    const activeClass = idx === selectedIdx ? 'active' : '';
+    return `<div class="sidebar-tab ${rotClass} ${activeClass}" data-idx="${idx}">${escapeHtml(label)}</div>`;
   }).join('');
+
+  sidebar.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      selectDay(parseInt(tab.getAttribute('data-idx'), 10));
+    });
+  });
+}
+
+function renderDayContent() {
+  const day = currentMenu[selectedIdx];
+  const eyebrow = document.getElementById('day-eyebrow');
+  const title = document.getElementById('day-title');
+  const mealsDiv = document.getElementById('day-meals');
+  if (!day) {
+    eyebrow.textContent = '';
+    title.textContent = '';
+    mealsDiv.innerHTML = '';
+    return;
+  }
+
+  const d = new Date((day.date || '') + 'T00:00:00');
+  const weekdayName = isNaN(d) ? '' : d.toLocaleDateString(undefined, { weekday: 'long' });
+  eyebrow.textContent = formatDate(day.date).toUpperCase();
+  title.textContent = day.date === todayIsoDate() ? "Today's Table" : (weekdayName ? weekdayName + "'s Table" : 'The Table');
+
+  const presentSlots = SLOT_ORDER.filter(slot => day[slot]);
+  mealsDiv.innerHTML = presentSlots.map((slot, i) => {
+    const badgeText = SLOT_LABELS[slot].toUpperCase() + (slot === STANDOUT_SLOT ? ' &#9733;' : '');
+    const divider = i > 0 ? '<div class="meal-divider"></div>' : '';
+    return `
+      ${divider}
+      <div class="meal-block">
+        <div class="meal-badge ${BADGE_ROTATION_CLASS[slot]}">${badgeText}</div>
+        <div class="meal-name">${escapeHtml(day[slot])}</div>
+      </div>`;
+  }).join('') || '<p class="empty">Nothing planned for this day yet.</p>';
+}
+
+function selectDay(idx) {
+  if (idx < 0 || idx >= currentMenu.length || idx === selectedIdx) return;
+  selectedIdx = idx;
+  renderSidebar();
+  renderDayContent();
+}
+
+// Picks the most useful default day on first load: today's date if it's
+// in this week's menu, otherwise the first day that actually has
+// anything planned, otherwise just the first day.
+function pickDefaultDayIndex(menu) {
+  const todayIdx = menu.findIndex(d => d.date === todayIsoDate());
+  if (todayIdx !== -1) return todayIdx;
+  const firstWithContent = menu.findIndex(d => SLOT_ORDER.some(slot => d[slot]));
+  return firstWithContent !== -1 ? firstWithContent : 0;
 }
 
 async function load() {
   const token = window.location.pathname.split('/').filter(Boolean).pop();
-  const daysDiv = document.getElementById('days');
   const subtitle = document.getElementById('subtitle');
   const title = document.getElementById('page-title');
   const footerNote = document.getElementById('footer-note');
@@ -207,12 +333,15 @@ async function load() {
   const poolDiv = document.getElementById('pool');
   const freshnessTag = document.getElementById('freshness-tag');
   const firstRunBanner = document.getElementById('first-run-banner');
+  const menuCard = document.getElementById('menu-card');
+  const statusArea = document.getElementById('status-area');
 
   try {
     const res = await fetch('/api/share/' + encodeURIComponent(token));
     if (res.status === 404) {
       subtitle.textContent = '';
-      daysDiv.innerHTML = '<p class="error">This link isn\'t valid — ask whoever shared it for a fresh one.</p>';
+      menuCard.style.display = 'none';
+      statusArea.innerHTML = '<p class="error">This link isn\'t valid — ask whoever shared it for a fresh one.</p>';
       freshnessTag.style.display = 'none';
       firstRunBanner.style.display = 'none';
       return;
@@ -226,7 +355,8 @@ async function load() {
 
     if (!plan.weekly_plan_id || !plan.meals || !plan.meals.length) {
       subtitle.textContent = '';
-      daysDiv.innerHTML = '<p class="empty">No plan has been made for this week yet — check back soon.</p>';
+      menuCard.style.display = 'none';
+      statusArea.innerHTML = '<p class="empty">No plan has been made for this week yet — check back soon.</p>';
       suggestedNote.style.display = 'none';
       poolToggle.style.display = 'none';
       freshnessTag.style.display = 'none';
@@ -234,12 +364,13 @@ async function load() {
       return;
     }
 
+    statusArea.innerHTML = '';
     subtitle.textContent = 'Week of ' + formatDate(plan.week_start_date);
     suggestedNote.style.display = plan.menu_is_suggested ? 'block' : 'none';
 
-    // Freshness signal — how many of this week's meals are recipes never
-    // cooked before (see get_weekly_plan's new_recipe_count). Only shown
-    // when there's actually something new to point to.
+    // Freshness signal — how many of this week's meals are recipes newly
+    // introduced by this plan (see get_weekly_plan's new_recipe_count).
+    // Only shown when there's actually something new to point to.
     if (plan.new_recipe_count > 0) {
       freshnessTag.textContent = plan.new_recipe_count === 1
         ? '1 new recipe this week'
@@ -260,8 +391,21 @@ async function load() {
       firstRunBanner.style.display = 'none';
     }
 
-    const menu = plan.menu || [];
-    daysDiv.innerHTML = renderMenu(menu) || '<p class="empty">Nothing to show yet.</p>';
+    currentMenu = plan.menu || [];
+    if (!currentMenu.length) {
+      menuCard.style.display = 'none';
+      statusArea.innerHTML = '<p class="empty">Nothing to show yet.</p>';
+    } else {
+      menuCard.style.display = 'flex';
+      // Keep whatever day the visitor already had open across a poll
+      // refresh; only pick a fresh default on the very first load, or if
+      // the previously-selected day no longer exists in the new menu.
+      if (selectedIdx === null || selectedIdx >= currentMenu.length) {
+        selectedIdx = pickDefaultDayIndex(currentMenu);
+      }
+      renderSidebar();
+      renderDayContent();
+    }
 
     if (plan.planning_mode === 'component_based' && plan.components && plan.components.length) {
       poolToggle.style.display = 'block';
@@ -280,7 +424,8 @@ async function load() {
     footerNote.style.display = 'block';
   } catch (err) {
     subtitle.textContent = '';
-    daysDiv.innerHTML = '<p class="error">Couldn\'t load the plan right now — try refreshing.</p>';
+    menuCard.style.display = 'none';
+    statusArea.innerHTML = '<p class="error">Couldn\'t load the plan right now — try refreshing.</p>';
     suggestedNote.style.display = 'none';
     poolToggle.style.display = 'none';
     freshnessTag.style.display = 'none';
