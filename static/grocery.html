@@ -582,6 +582,7 @@ function itemRowHtml(it) {
     ${editable ? `<input type="text" class="store-input" list="usual-stores-list" value="${escapeHtml(it.store || '')}" placeholder="Store" />` : ''}
     ${editable ? `<button class="icon-btn save" title="Save changes">&check;</button>` : ''}
     ${currentView === 'needed' ? `<button class="icon-btn exclude" title="Get elsewhere — hide from this list">elsewhere</button>` : ''}
+    ${currentView === 'needed' ? `<button class="icon-btn already-have" title="Already have this — add to inventory and take off the list">Already have</button>` : ''}
     <button class="icon-btn remove" title="Delete">&times;</button>
   </div>`;
 }
@@ -673,6 +674,22 @@ function wireRowActions(content) {
       } catch (err) {
         btn.disabled = false;
         alert("Couldn't update that — try again.");
+      }
+    });
+  });
+
+  content.querySelectorAll('.icon-btn.already-have').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.item-row');
+      const itemId = row.getAttribute('data-item-id');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/grocery-list/' + itemId + '/already-have', { method: 'POST' });
+        if (!res.ok) throw new Error('failed');
+        load();
+      } catch (err) {
+        btn.disabled = false;
+        alert("Couldn't move that to inventory — try again.");
       }
     });
   });

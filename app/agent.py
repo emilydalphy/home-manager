@@ -86,6 +86,17 @@ can still be one line. When something's gone wrong or needs the user's attention
 save, a conflict, an allergy risk), stay direct and clear first — reassuring tone should never \
 soften or bury something that actually needs their attention.
 
+Clarifying questions: when a request is genuinely ambiguous (a vague quantity like "some," which \
+item(s) something should replace, which day(s) something applies to), don't just hand the open \
+question back to the user — that puts the whole decision-making load on them. Make a specific, \
+reasonable call yourself (e.g. "swap 3 of them, alternating with what's there now, replacing the \
+Greek yogurt ones since dinners already lean that way") and offer it as a proposal for them to \
+confirm or redirect in one message, rather than a bare multi-part question with no starting \
+point. Never silently guess on something that actually changes what gets bought/cooked/scheduled \
+— always surface the specific call you're making and make it trivially easy to override \
+("...sound good, or would you rather I swap the Cottage Cheese ones instead?"). This is about \
+carrying the mental load of picking a sensible default, not about deciding without them.
+
 Setup note: there's a dedicated onboarding wizard (household basics, then meal planning \
 preferences) that most users go through outside this chat — it saves members, ages, pets, \
 goals, dietary restrictions, and meal preferences directly. So onboarding may already be \
@@ -655,7 +666,7 @@ TOOL_DEFINITIONS = [
                         "type": "object",
                         "properties": {
                             "item": {"type": "string"},
-                            "qty": {"type": "string"},
+                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can') — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead."},
                             "category": {
                                 "type": "string",
                                 "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -1329,7 +1340,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string"},
-                                    "qty": {"type": "string"},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can'), not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -1453,6 +1464,14 @@ belongs to (produce, dairy, meat/seafood, pantry, frozen, other) — pantry mean
 only; eggs, butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines \
 which aisle it's grouped under when auto-added to the grocery list, so don't leave it blank \
 or default to pantry/other out of habit.
+- Write each ingredient's qty as how it's actually bought at the store, not how much ends up \
+used once prepped — "1 head" of cabbage, not "3 cups shredded"; "1 bunch" of cilantro, not "2 \
+tbsp chopped"; "1 lb" of carrots, not "1 cup diced". This is what shows up on the grocery list, \
+so it needs to read like a shopping list line, not a recipe measurement — any prep-specific \
+amount (how much of that head actually gets used) belongs in the instructions text instead \
+("shred half the head"), not in qty. Round up to the smallest sensible whole \
+unit a store actually sells (a head, a bunch, a bag, a lb, a dozen, a can) rather than a \
+fractional recipe amount.
 - current_inventory lists what's already on hand. For an ingredient already covered there in a \
 comparable quantity, still include it in the recipe's ingredients list (the recipe should stay \
 accurate/reusable), but leave its category as normal — the household already has it, so it \
@@ -1532,7 +1551,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string"},
-                                    "qty": {"type": "string"},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can'), not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -1617,6 +1636,9 @@ near-expiring inventory, novelty_preference), never generic filler.
 - For every new-item ingredient, set category to the correct grocery store section (produce, \
 dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs/butter/tofu \
 are dairy; fresh vegetables/herbs are produce.
+- Write each ingredient's qty as how it's actually bought at the store (a head, a bunch, a bag, \
+a lb, a dozen, a can), not how much ends up used once prepped — see the day-based prompt's \
+guidance on this, same rule applies here.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
 recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
 - near_expiring_inventory lists items already expired or expiring soon, most urgent first — \

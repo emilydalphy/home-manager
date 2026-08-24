@@ -774,6 +774,24 @@ def remove_grocery_list_item(item_id: int):
     return result
 
 
+@app.post("/api/grocery-list/{item_id}/already-have")
+def move_grocery_list_item_to_inventory(item_id: int):
+    """
+    'Already have' button on any Grocery List row — turns out the
+    household already has this on hand, so it gets added straight to
+    pantry/fridge inventory (no separate manual entry) and taken off the
+    list, in one tap.
+    """
+    try:
+        result = tools.move_grocery_item_to_inventory(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery list already-have-to-inventory failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.post("/api/grocery-list/{item_id}/exclude")
 def exclude_grocery_list_item(item_id: int):
     """Hide an item from the normal shown list (getting it elsewhere) without deleting it, directly from the Grocery List view."""

@@ -237,6 +237,19 @@ stays tracked (so a future ingredient add for the same item still consolidates i
 line instead of duplicating it), it's just hidden from what you're about to shop from.
 Say the word and it's back on the list.
 
+Quantities on the list are written the way you'd actually shop for them — "1 head" of
+cabbage, "1 bunch" of cilantro, "1 lb" of carrots — not the recipe-prep measurement a
+dish happens to use ("3 cups shredded," "2 tbsp chopped"). That prep-specific detail
+still lives in the recipe's own instructions for cooking; the grocery list only shows
+what you'd actually pick up in the store.
+
+Realize you already have something on the list? Tap "Already have" on that row (Grocery
+List view) and it's added straight to pantry/fridge inventory and taken off the list in
+one step — no separate manual inventory entry needed. This is distinct from the
+"Already have this?" banner at the top of the list, which only flags items inventory
+already happens to be tracking; the per-item button works for anything, known to
+inventory or not.
+
 ### Plan flexibility & feedback nuance
 
 One-off constraints for a specific week ("3 nights this week," "under 30 minutes on

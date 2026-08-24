@@ -3494,6 +3494,43 @@ def remove_grocery_item(item_id: int) -> dict:
     return {"item_id": item_id, "deleted": True}
 
 
+def move_grocery_item_to_inventory(item_id: int) -> dict:
+    """
+    For a grocery list item the household realizes they already have on
+    hand (turns out there's already a box in the pantry, a bag in the
+    freezer, etc.) — not the get_grocery_already_have_items cross-reference
+    case, which only catches items inventory already happens to know
+    about, but the "oh wait, I actually have this" moment on any item,
+    known to inventory or not. Adds it straight to pantry/fridge inventory
+    (merging into a matching existing row the same way _add_to_inventory
+    always does) carrying over its grocery-list quantity and category, then
+    removes it from the grocery list — no separate manual inventory entry
+    needed. Raises ValueError if the item isn't found.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, HOUSEHOLD_ID),
+    ).fetchone()
+    conn.close()
+    if not row:
+        raise ValueError(f"No grocery list item with id {item_id}.")
+
+    inventory_result = _add_to_inventory(
+        row["item"],
+        row["quantity"] or "",
+        source="grocery_list_already_have",
+        category=row["category"] or None,
+    )
+    remove_grocery_item(item_id)
+    return {
+        "item_id": item_id,
+        "item": row["item"],
+        "moved_to_inventory": True,
+        "inventory_item_id": inventory_result.get("item_id"),
+    }
+
+
 # ---------- Pantry & fridge inventory ----------
 # Real tracked baseline of what's currently on hand, distinct from the
 # grocery list (what's still needed). Chat mention is the only capture
