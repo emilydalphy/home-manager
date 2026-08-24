@@ -697,7 +697,7 @@ TOOL_DEFINITIONS = [
                 "default_servings": {"type": "integer", "description": "What the ingredient quantities are scaled for. Defaults to 4 if omitted."},
                 "prep_time_minutes": {"type": "integer"},
                 "cook_time_minutes": {"type": "integer"},
-                "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
                 "advance_prep_step_indices": {
                     "type": "array",
                     "items": {"type": "integer"},
@@ -1361,7 +1361,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                         "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
-                        "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                        "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
                         "advance_prep_step_indices": {
                             "type": "array",
                             "items": {"type": "integer"},
@@ -1506,9 +1506,14 @@ matters as a tiebreaker-ish nudge among otherwise-reasonable options.
 later, not just a shopping list — this powers the Cooker view. Also fill in default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
 ahead") whenever reasonably inferable — advance_prep_notes in particular feeds \
-generate_prep_schedule, so leave it blank rather than guessing if nothing genuinely needs \
-advance prep, but don't skip it out of habit when something clearly does (marinating, thawing, \
-soaking, dough that needs to rise, etc.). Whenever you set advance_prep_notes, also set \
+generate_prep_schedule, so only set it when something is genuinely worth planning around ahead \
+of time (roughly an hour or more — a real marinate, thaw, soak, dough rising, overnight \
+anything), not a quick 10-30 minute step that just happens early in the recipe (a short \
+marinate while you prep everything else, letting something come to room temp) — that's normal \
+same-day cooking, not advance prep, and setting it anyway is misleading (it tells the household \
+this needs planning ahead when it really doesn't). Leave it blank for those, and don't skip it \
+out of habit when something clearly does need real advance time. Whenever you set \
+advance_prep_notes, also set \
 advance_prep_step_indices to the 1-based position(s) within `instructions` of the actual step(s) \
 that are the advance prep (e.g. instructions = ["Preheat oven...", "Make marinade and coat \
 chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours ahead" should set \
@@ -1583,7 +1588,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                         "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
-                        "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Leave blank if nothing needs advance prep."},
+                        "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
                         "advance_prep_step_indices": {
                             "type": "array",
                             "items": {"type": "integer"},
@@ -1951,7 +1956,7 @@ _FILL_RECIPE_DETAIL_TOOL = {
             "default_servings": {"type": "integer", "description": "What the existing ingredient quantities are written for. Keep the recipe's current value unless it's clearly wrong."},
             "prep_time_minutes": {"type": "integer"},
             "cook_time_minutes": {"type": "integer"},
-            "advance_prep_notes": {"type": "string", "description": "e.g. 'marinate at least 4 hours ahead, can be done the night before'. Empty string if nothing needs advance prep."},
+            "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. A quick 10-30 minute step (a short marinate while prepping everything else) is normal same-day cooking, NOT advance prep — leave this empty for those. e.g. 'marinate at least 4 hours ahead, can be done the night before'. Empty string if nothing needs real advance prep."},
             "advance_prep_step_indices": {
                 "type": "array",
                 "items": {"type": "integer"},
