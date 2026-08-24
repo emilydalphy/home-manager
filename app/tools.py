@@ -2935,32 +2935,155 @@ def get_household_memory() -> dict:
         if total_variety else None
     )
 
+    # Context completeness: a plain read on whether there's actually enough
+    # signal for recommendations to be personalized yet, vs. still mostly
+    # running on defaults — see get_context_completeness for the full
+    # weighting rationale. Computed on this same connection/snapshot of
+    # members/prefs rather than re-querying, plus two extra counts
+    # (recipes rated, meals actually cooked) that aren't part of the
+    # regular memory payload.
+    recipes_rated_row = conn.execute(
+        "SELECT COUNT(*) AS c FROM recipes WHERE household_id = ? AND rating IN ('liked', 'disliked')",
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    meals_cooked_row = conn.execute(
+        "SELECT COUNT(*) AS c FROM meal_plan_entries WHERE household_id = ? AND cooked_status = 'done'",
+        (HOUSEHOLD_ID,),
+    ).fetchone()
     conn.close()
+
+    member_list = [
+        {
+            "name": m["name"], "age_group": m["age_group"],
+            "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
+        }
+        for m in members
+    ]
+    protein_prefs = json.loads(prefs["protein_preferences_json"]) if prefs else {}
+    cuisine_prefs = json.loads(prefs["cuisine_preferences_json"]) if prefs else []
+    dislikes = json.loads(prefs["dislikes_json"]) if prefs else []
+    cooking_time_pref = prefs["cooking_time_preference"] if prefs else ""
+    usual_stores = json.loads(prefs["usual_stores_json"]) if prefs else []
+    eating_style = prefs["eating_style"] if prefs else ""
+    goals = household["goals"] if household else ""
+
+    context_completeness = _build_context_completeness(
+        members=member_list, protein_preferences=protein_prefs, cuisine_preferences=cuisine_prefs,
+        dislikes=dislikes, cooking_time_preference=cooking_time_pref, usual_stores=usual_stores,
+        eating_style=eating_style, goals=goals,
+        recipes_rated=recipes_rated_row["c"] if recipes_rated_row else 0,
+        meals_cooked=meals_cooked_row["c"] if meals_cooked_row else 0,
+    )
+
     return {
-        "members": [
-            {
-                "name": m["name"], "age_group": m["age_group"],
-                "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
-            }
-            for m in members
-        ],
-        "goals": household["goals"] if household else "",
+        "members": member_list,
+        "goals": goals,
         "notes": prefs["notes"] if prefs else "",
-        "protein_preferences": json.loads(prefs["protein_preferences_json"]) if prefs else {},
-        "cuisine_preferences": json.loads(prefs["cuisine_preferences_json"]) if prefs else [],
-        "dislikes": json.loads(prefs["dislikes_json"]) if prefs else [],
-        "cooking_time_preference": prefs["cooking_time_preference"] if prefs else "",
+        "protein_preferences": protein_prefs,
+        "cuisine_preferences": cuisine_prefs,
+        "dislikes": dislikes,
+        "cooking_time_preference": cooking_time_pref,
         "cooking_time_insight": cooking_time_insight,
         "novelty_preference": prefs["novelty_preference"] if prefs else "balanced",
         "recipe_variety_insight": recipe_variety_insight,
         "planning_mode": prefs["planning_mode"] if prefs else "day_based",
-        "usual_stores": json.loads(prefs["usual_stores_json"]) if prefs else [],
+        "usual_stores": usual_stores,
         "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},
-        "eating_style": prefs["eating_style"] if prefs else "",
+        "eating_style": eating_style,
         "dinners_per_week": prefs["dinners_per_week"] if prefs else 7,
         "breakfasts_per_week": prefs["breakfasts_per_week"] if prefs else 7,
         "lunches_per_week": prefs["lunches_per_week"] if prefs else 7,
         "growth_count_this_month": count_preference_events_this_month(),
+        "context_completeness": context_completeness,
+    }
+
+
+# Weight of each context signal toward the overall completeness score
+# (out of 100-ish — doesn't need to sum exactly, the score is earned/total).
+# Ordered roughly by how much it actually improves recommendation quality:
+# real taste signal (ratings, protein/cuisine likes) outweighs one-time
+# setup fields, and actual usage (cooked meals) outweighs stated intent.
+_CONTEXT_SIGNALS = [
+    ("members", "Add your household's members", "So dietary restrictions and portions can be personalized per person, not guessed at.", 10),
+    ("dietary_restrictions", "Note any dietary restrictions or allergies", "The single most important thing to get right before I suggest a week of meals.", 15),
+    ("protein_preferences", "Rate a few proteins you like or don't", "Helps me actually favor what your household enjoys instead of rotating blindly.", 10),
+    ("cuisine_preferences", "Tell me a few cuisines you're into", "Keeps suggestions feeling like your food, not a generic rotation.", 10),
+    ("dislikes", "Mention any standing dislikes", "So I stop suggesting the same thing you keep passing on.", 5),
+    ("cooking_time_preference", "Set a cooking time preference", "Keeps weeknight suggestions realistic for how much time you actually have.", 10),
+    ("usual_stores", "Add the store(s) you usually shop at", "Powers store-aware grocery lists and shopping-trip planning.", 10),
+    ("eating_style", "Tell me about your overall eating style", "e.g. vegetarian, keto, low-carb — shapes every suggestion, not just individual meals.", 10),
+    ("goals", "Share any household goals", "e.g. eating healthier, saving money, more variety — gives me something to optimize toward.", 5),
+    ("recipes_rated", "Rate a few recipes after cooking them", "The strongest signal I get — real reactions beat stated preferences every time.", 15),
+    ("meals_cooked", "Cook a few planned meals and check them off", "Shows me the plan is actually being used, not just generated and ignored.", 15),
+]
+
+
+def _build_context_completeness(
+    *, members, protein_preferences, cuisine_preferences, dislikes, cooking_time_preference,
+    usual_stores, eating_style, goals, recipes_rated, meals_cooked,
+) -> dict:
+    """
+    Turn the household's current signals into a plain "how well do I
+    actually know this household yet" read — a weighted checklist (see
+    _CONTEXT_SIGNALS) rolled up into a 0-100 score and a named tier, plus
+    the specific highest-value gaps still open. This is intentionally a
+    simplification: an empty dislikes list, for instance, could mean
+    "nothing to report" or "never asked" — there's no way to tell the
+    difference from stored data alone, so an unset/empty signal always
+    reads as "not yet captured" even if the true answer really is "none."
+    Powers the What We Know view's completeness card.
+    """
+    has_dietary_note = any(m["dietary_restrictions"] for m in members)
+    done_map = {
+        "members": len(members) > 0,
+        "dietary_restrictions": has_dietary_note,
+        "protein_preferences": len(protein_preferences) > 0,
+        "cuisine_preferences": len(cuisine_preferences) > 0,
+        "dislikes": len(dislikes) > 0,
+        "cooking_time_preference": bool(cooking_time_preference),
+        "usual_stores": len(usual_stores) > 0,
+        "eating_style": bool(eating_style),
+        "goals": bool(goals),
+        "recipes_rated": recipes_rated >= 3,
+        "meals_cooked": meals_cooked >= 3,
+    }
+
+    earned = sum(weight for key, _, _, weight in _CONTEXT_SIGNALS if done_map[key])
+    total = sum(weight for _, _, _, weight in _CONTEXT_SIGNALS)
+    score = round(100 * earned / total) if total else 0
+
+    if score >= 80:
+        tier, tier_label, tier_blurb = "dialed_in", "Dialed in", (
+            "I've got a strong read on your household — recommendations should feel personalized and on-target."
+        )
+    elif score >= 50:
+        tier, tier_label, tier_blurb = "know_your_household", "Know your household", (
+            "Recommendations are starting to reflect real preferences, not just generic defaults."
+        )
+    elif score >= 25:
+        tier, tier_label, tier_blurb = "getting_acquainted", "Getting acquainted", (
+            "I've got the basics, but there's still a lot of guessing happening under the hood."
+        )
+    else:
+        tier, tier_label, tier_blurb = "just_met", "Just met", (
+            "I'm working from defaults right now — plans will be pretty generic until I know more about your household."
+        )
+
+    missing = sorted(
+        (
+            {"key": key, "label": label, "why": why, "weight": weight}
+            for key, label, why, weight in _CONTEXT_SIGNALS
+            if not done_map[key]
+        ),
+        key=lambda item: -item["weight"],
+    )
+
+    return {
+        "score": score,
+        "tier": tier,
+        "tier_label": tier_label,
+        "tier_blurb": tier_blurb,
+        "missing": missing,
     }
 
 

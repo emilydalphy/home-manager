@@ -164,6 +164,32 @@
 
   .growth-pill-row { margin: 0 0 16px; }
 
+  /* Context completeness card — "how well do I know your household yet"
+     status, tiered rather than a bare percentage, plus the highest-value
+     things still missing. See get_context_completeness in tools.py. */
+  .completeness-card { margin-bottom: 20px; padding: 16px; }
+  .completeness-top { display: flex; align-items: center; gap: 14px; }
+  .completeness-ring {
+    width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0;
+    background: conic-gradient(var(--vivid-leaf) 0 var(--pct, 0%), var(--violet-soft) var(--pct, 0%) 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .completeness-ring-inner {
+    width: 46px; height: 46px; border-radius: 50%; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .completeness-score { font-family: var(--font-heading); font-weight: 700; font-size: 0.95rem; color: var(--midnight-violet); }
+  .completeness-text { flex: 1; }
+  .completeness-tier { font-family: var(--font-heading); font-weight: 700; font-size: 1.05rem; color: var(--midnight-violet); margin: 0 0 2px; }
+  .completeness-blurb { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+  .completeness-missing { margin-top: 14px; border-top: 1px solid var(--card-border); padding-top: 12px; }
+  .completeness-missing.empty { display: none; }
+  .completeness-missing-label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 8px; }
+  .completeness-item { display: flex; gap: 8px; padding: 6px 0; font-size: 0.85rem; align-items: baseline; }
+  .completeness-item .dot { color: var(--turmeric-gold); flex-shrink: 0; }
+  .completeness-item .item-label { font-weight: 600; color: var(--text-body); }
+  .completeness-item .item-why { color: var(--text-muted); }
+
   .section-heading {
     font-family: var(--font-heading);
     font-weight: 700;
@@ -266,6 +292,21 @@
   <p class="subtitle">Everything saved about your household's meal preferences. <a href="/">&larr; Back to chat</a></p>
   <p class="growth-pill-row"><span class="pill pill-success" id="growth-pill" style="display:none;"></span></p>
   <div id="status"></div>
+
+  <div class="card completeness-card" id="completeness-card">
+    <div class="completeness-top">
+      <div class="completeness-ring" id="completeness-ring">
+        <div class="completeness-ring-inner">
+          <span class="completeness-score" id="completeness-score">0%</span>
+        </div>
+      </div>
+      <div class="completeness-text">
+        <p class="completeness-tier" id="completeness-tier">Just met</p>
+        <p class="completeness-blurb" id="completeness-blurb"></p>
+      </div>
+    </div>
+    <div class="completeness-missing" id="completeness-missing"></div>
+  </div>
 
   <div class="confirm-overlay" id="confirm-overlay">
     <div class="confirm-box">
@@ -504,6 +545,28 @@ function render() {
           <button type="button" class="invite-link-btn" data-invite="${escapeHtml(m.name)}">Get their link</button>
         </div>`).join('')
     : '<p class="empty-state">I\'m still getting to know your household — add members from onboarding and I\'ll keep track.</p>';
+
+  const completeness = memory.context_completeness;
+  if (completeness) {
+    document.getElementById('completeness-ring').style.setProperty('--pct', completeness.score + '%');
+    document.getElementById('completeness-score').textContent = completeness.score + '%';
+    document.getElementById('completeness-tier').textContent = completeness.tier_label;
+    document.getElementById('completeness-blurb').textContent = completeness.tier_blurb;
+    const missingEl = document.getElementById('completeness-missing');
+    const missing = (completeness.missing || []).slice(0, 3);
+    if (missing.length) {
+      missingEl.classList.remove('empty');
+      missingEl.innerHTML = '<p class="completeness-missing-label">Would help the most right now</p>' +
+        missing.map(item => `
+          <div class="completeness-item">
+            <span class="dot">&#9679;</span>
+            <span><span class="item-label">${escapeHtml(item.label)}</span> — <span class="item-why">${escapeHtml(item.why)}</span></span>
+          </div>`).join('');
+    } else {
+      missingEl.classList.add('empty');
+      missingEl.innerHTML = '';
+    }
+  }
 
   const growthPill = document.getElementById('growth-pill');
   const growthCount = memory.growth_count_this_month || 0;

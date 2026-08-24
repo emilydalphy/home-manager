@@ -195,6 +195,21 @@ preference, notes — asks first with a warm "Remove this? You can always tell
 me again." confirmation rather than deleting on click; nothing there existed
 before Phase 6's audit found the gap.
 
+At the top of the page, a **context completeness** card gives a plain read on whether there's
+actually enough for recommendations to be personalized yet, vs. still mostly running on defaults
+(`_build_context_completeness` in tools.py, called from `get_household_memory`). It's a weighted
+checklist — real usage signals like rated recipes and cooked meals count for more than one-time
+setup fields like a cooking-time preference — rolled into a 0-100 score and one of four named
+tiers rather than a bare percentage: **Just met** (0-24), **Getting acquainted** (25-49), **Know
+your household** (50-79), **Dialed in** (80-100), each with a line explaining what that level
+actually means for recommendation quality. Below the tier, the top 3 highest-value things still
+missing are listed with a short "why this helps," so it reads as specific next steps rather than
+a nag. This is a deliberate simplification: an empty dislikes list, for instance, could mean
+"nothing to report" or "never asked" — there's no way to tell the difference from stored data
+alone, so an unset/empty signal always counts as "not yet captured" even when the honest answer
+really is "none." The card recomputes every time What We Know loads, so it stays current as
+preferences get filled in, recipes get rated, and meals get cooked and checked off.
+
 The page also shows a **growth counter** ("You've taught me 8 things this
 month") whenever there's been at least one preference write this calendar
 month — backed by a real append-only log (`preference_events`) of every
