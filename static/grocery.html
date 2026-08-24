@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Grocery List — Home Manager</title>
@@ -16,61 +16,163 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Home Manager" />
 <style>
+  /* ===========================================================
+     Grocery List — design 13a (four-screen redesign)
+     Screens: To buy / Plan your stops / Shopping <store> / Review.
+     See README.md "Grocery list" section for the full write-up,
+     including deliberate deviations from the design handoff.
+     =========================================================== */
   * { box-sizing: border-box; }
   body {
-    max-width: 720px;
+    max-width: 480px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 0 0 28px;
+    background: var(--page, #EFE6D6);
   }
-  .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  h1 { font-size: 1.5rem; margin-bottom: 4px; }
-  p.subtitle { margin-top: 0; }
-  p.subtitle a { color: var(--midnight-violet); font-weight: 700; text-decoration: none; }
-  p.subtitle a:hover { text-decoration: underline; }
+  #app-shell {
+    background: var(--oat-cream);
+    min-height: 100vh;
+    border-radius: 0;
+    position: relative;
+    padding-bottom: 24px;
+  }
+  a.back-link { color: var(--midnight-violet); font-weight: 700; text-decoration: none; font-size: 0.82rem; }
+  a.back-link:hover { text-decoration: underline; }
 
-  /* Frequent, low-stakes utility actions — ghost style, never gold. */
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--midnight-violet);
-    border-radius: var(--radius-control);
-    padding: 10px 14px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--midnight-violet);
-    cursor: pointer;
-    flex-shrink: 0;
-    min-height: 44px;
+  /* ---------- Header / progress wheel ---------- */
+  .gl-header { padding: 26px 20px 14px; }
+  .gl-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .gl-wheel {
+    width: 74px; height: 74px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(var(--violet-light) 0 var(--pct, 0%), rgba(176,97,154,.18) var(--pct, 0%) 100%);
   }
-  .refresh-btn:hover { background: var(--violet-soft); }
-  .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+  .gl-wheel-inner {
+    width: 58px; height: 58px; border-radius: 50%; background: var(--oat-cream);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .gl-wheel-pct { font-family: var(--font-heading); font-weight: 700; font-size: 17px; color: var(--midnight-violet); line-height: 1.1; }
+  .gl-wheel-frac { font-family: var(--font-body); font-weight: 700; font-size: 10px; text-transform: uppercase; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .gl-title-block { flex: 1; }
+  .gl-title { font-family: var(--font-heading); font-weight: 700; font-size: 25px; color: var(--midnight-violet); margin: 0; }
+  .gl-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); margin: 4px 0 0; }
+  .gl-refresh {
+    background: transparent; border: 1px solid var(--violet-light); border-radius: 12px;
+    padding: 8px 10px; color: var(--violet-light); font-weight: 700; font-size: 0.78rem;
+    cursor: pointer; min-height: 40px; flex-shrink: 0;
+  }
+  .gl-refresh:disabled { opacity: 0.6; cursor: default; }
 
-  .voice-btn {
-    background: transparent;
-    border: 1px solid var(--midnight-violet);
-    color: var(--midnight-violet);
-    border-radius: var(--radius-pill);
-    padding: 10px 16px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.82rem;
-    cursor: pointer;
-    min-height: 44px;
+  /* ---------- Tabs ---------- */
+  .gl-tabs { display: flex; gap: 6px; margin-top: 20px; flex-wrap: wrap; }
+  .gl-tab {
+    padding: 9px 16px; border-radius: 13px; border: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 13px; background: #fff; color: #7A6570; font-weight: 600;
   }
-  /* Hands-free is actively listening/recording — the one spot on this
-     screen where an Electric Coral fill is warranted (a live/urgent
-     indicator), used on a single control only. */
-  .voice-btn.active { background: var(--electric-coral); border-color: var(--electric-coral); color: #fff; animation: voice-pulse 1.6s ease-in-out infinite; }
+  .gl-tab.active { background: var(--violet-light); color: #fff; font-weight: 700; }
+
+  .gl-content { padding: 4px 20px 0; }
+
+  /* ---------- Eyebrow / section labels ---------- */
+  .eyebrow {
+    font-family: var(--font-body); font-weight: 700; font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-muted); margin: 0 0 8px;
+  }
+
+  /* ---------- Store group card (Screen 1) ---------- */
+  .store-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); margin-bottom: 14px; overflow: hidden; }
+  .store-card-header {
+    display: flex; align-items: center; gap: 12px; padding: 15px 17px;
+    background: rgba(176,97,154,.1); cursor: pointer;
+  }
+  .store-avatar {
+    width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-heading); font-weight: 700; font-size: 15px; color: #fff;
+  }
+  .store-name { font-family: var(--font-heading); font-weight: 700; font-size: 17px; color: var(--ink); flex: 1; margin: 0; }
+  .badge-left { font-family: var(--font-body); font-weight: 700; font-size: 12px; color: var(--midnight-violet); background: rgba(102,48,78,.09); padding: 4px 10px; border-radius: 999px; }
+  .badge-done { font-family: var(--font-body); font-weight: 700; font-size: 12px; color: var(--leaf-dark); background: rgba(111,184,76,.18); padding: 4px 10px; border-radius: 999px; }
+  .chevron { color: var(--ink-faint); font-weight: 700; font-size: 14px; margin-left: 4px; }
+
+  .aisle-subhead { display: flex; align-items: center; gap: 8px; padding: 12px 17px 4px; border-top: 1px solid rgba(58,31,46,.06); }
+  .aisle-subhead:first-of-type { border-top: none; }
+  .aisle-spine { width: 7px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  .aisle-name { flex: 1; }
+  .aisle-count { font-family: var(--font-body); font-weight: 700; font-size: 11px; }
+  .aisle-count.left { color: var(--midnight-violet); }
+  .aisle-count.done { color: var(--leaf-dark); }
+
+  .gl-row {
+    display: flex; align-items: center; gap: 13px; min-height: 52px; padding: 0 17px;
+    cursor: pointer; border-bottom: 1px solid rgba(58,31,46,.06);
+  }
+  .gl-row:last-child { border-bottom: none; }
+  .gl-row:hover { background: rgba(176,97,154,.07); }
+  .gl-row.tall { min-height: 58px; gap: 14px; }
+  .gl-box {
+    width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(176,97,154,.5);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
+  }
+  .gl-row.tall .gl-box { width: 28px; height: 28px; border-radius: 9px; }
+  .gl-box.checked { background: #6FB84C; border-color: #6FB84C; color: #fff; font-weight: 700; }
+  .gl-name { font-family: var(--font-body); font-weight: 600; font-size: 17px; color: var(--ink); flex: 1; margin: 0; }
+  .gl-row.tall .gl-name { font-size: 18px; }
+  .gl-row.done .gl-name { color: var(--ink-done); text-decoration: line-through; }
+  .gl-qty-chip { font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--midnight-violet); background: var(--oat-cream); padding: 5px 10px; border-radius: 9px; flex-shrink: 0; }
+  .gl-row.tall .gl-qty-chip { font-size: 14px; }
+  .gl-row.done .gl-qty-chip { color: var(--qty-done); background: transparent; }
+
+  /* small overflow menu for edit/exclude/already-have, kept off the main
+     row to stay close to spec visuals — see README deviations note */
+  .gl-overflow-btn { background: none; border: none; color: var(--ink-faint); font-size: 18px; cursor: pointer; min-width: 32px; min-height: 44px; flex-shrink: 0; }
+  .gl-row-actions { display: none; flex-wrap: wrap; gap: 6px; padding: 0 17px 12px; }
+  .gl-row-actions.open { display: flex; }
+  .gl-row-actions input, .gl-row-actions select {
+    padding: 8px 9px; border-radius: 9px; border: 1px solid var(--oat-cream-dark); font-size: 0.8rem;
+    background: #fff; color: var(--text-body); min-height: 38px;
+  }
+  .gl-row-actions button {
+    border: none; border-radius: 9px; padding: 8px 11px; font-family: var(--font-body);
+    font-weight: 700; font-size: 0.78rem; cursor: pointer; min-height: 38px;
+  }
+  .gl-row-actions button.mini-save { background: var(--midnight-violet); color: #fff; }
+  .gl-row-actions button.mini-elsewhere { background: var(--violet-soft); color: var(--midnight-violet); }
+  .gl-row-actions button.mini-have { background: rgba(111,184,76,.18); color: var(--leaf-dark); }
+  .gl-row-actions button.mini-remove { background: var(--electric-coral); color: #fff; }
+
+  /* ---------- Add an item card ---------- */
+  .add-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); padding: 16px; margin: 14px 0; }
+  .add-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .add-chip { width: 26px; height: 26px; border-radius: 8px; background: var(--turmeric-gold); color: var(--ink); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .add-card-title span { font-family: var(--font-heading); font-weight: 700; font-size: 16px; color: var(--ink); }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-row input[type=text] { flex: 1; min-width: 130px; background: var(--oat-cream); border: none; border-radius: 12px; padding: 12px 13px; font-family: var(--font-body); font-size: 14px; min-height: 44px; }
+  .add-row input.add-qty-input { flex: 0 0 80px; min-width: 80px; }
+  .add-row button.add-btn { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 12px; padding: 12px 16px; font-weight: 700; font-size: 14px; cursor: pointer; min-height: 44px; }
+  .add-row button.add-btn:disabled { opacity: 0.6; cursor: default; }
+  .add-row select { flex: 1; min-width: 110px; background: var(--oat-cream); border: none; border-radius: 12px; padding: 12px 13px; font-family: var(--font-body); font-size: 14px; min-height: 44px; }
+
+  /* ---------- Done section ---------- */
+  .done-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); margin-bottom: 14px; overflow: hidden; }
+  .done-card-header { display: flex; align-items: center; gap: 10px; padding: 14px 17px; cursor: pointer; }
+  .done-chip { width: 26px; height: 26px; border-radius: 50%; background: #6FB84C; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .done-label { font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink); flex: 1; }
+  .done-body { display: none; }
+  .done-body.open { display: block; border-top: 1px solid rgba(58,31,46,.06); }
+
+  /* ---------- Floating mic ---------- */
+  .mic-btn {
+    position: fixed; right: max(20px, calc((100vw - 480px) / 2 + 20px)); bottom: 20px;
+    width: 60px; height: 60px; border-radius: 18px; background: var(--midnight-violet); color: var(--oat-cream);
+    border: none; box-shadow: 0 10px 22px -8px rgba(102,48,78,.6); font-size: 22px; cursor: pointer; z-index: 20;
+  }
+  .mic-btn.active { background: var(--electric-coral); animation: voice-pulse 1.6s ease-in-out infinite; }
   @keyframes voice-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .content-pad { padding-bottom: 100px; }
   .voice-status {
-    display: none;
-    border-radius: var(--radius-card);
-    padding: 10px 14px;
-    margin-bottom: 14px;
-    font-size: 0.85rem;
-    background: var(--violet-soft);
-    border: 1px solid var(--card-border);
-    color: var(--text-body);
+    display: none; border-radius: 16px; padding: 10px 14px; margin: 12px 0 0; font-size: 0.85rem;
+    background: var(--violet-soft); border: 1px solid var(--card-border); color: var(--text-body);
   }
   .voice-status.showing { display: block; }
   .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--electric-coral); margin-right: 6px; animation: voice-pulse 1.2s ease-in-out infinite; }
@@ -79,304 +181,194 @@
   .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid var(--card-border); }
   .voice-status .voice-log li:first-child { border-top: none; }
 
-  h2.section-title {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1.05rem;
-    margin: 20px 0 8px;
-    color: var(--midnight-violet);
-    text-transform: capitalize;
-  }
-  h2.section-title:first-child { margin-top: 0; }
-  h2.store-title {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin: 22px 0 6px;
-    color: var(--midnight-violet);
-  }
-  h2.store-title:first-child { margin-top: 0; }
-
-  .suggestion-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .suggestion-label { color: var(--text-muted); font-size: 0.8rem; margin-right: 2px; font-weight: 500; }
-  .suggestion-chip {
-    background: var(--violet-soft);
-    color: var(--midnight-violet);
-    border: 1px solid var(--violet-soft);
-    border-radius: var(--radius-pill);
-    padding: 8px 14px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.82rem;
-    cursor: pointer;
-    min-height: 44px;
-  }
-  .suggestion-chip:hover { background: #e7d9e2; }
-  .suggestion-chip:disabled { opacity: 0.5; cursor: default; }
-
-  .card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 4px 16px;
-    margin-bottom: 10px;
-  }
-  .item-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--card-border);
-    flex-wrap: wrap;
-  }
-  .item-row:last-child { border-bottom: none; }
-  /* Checked-off items keep their strikethrough but stay visible/legible,
-     per the screen spec (fade, don't hide). */
-  .item-row.checked-off { opacity: 0.65; }
-  .item-row.checked-off .item-name { text-decoration: line-through; color: var(--text-muted); }
-  .item-info { flex: 1; min-width: 120px; }
-  .item-name { font-family: var(--font-body); font-weight: 500; margin: 0; color: var(--text-body); }
-  .item-meta { font-family: var(--font-body); font-weight: 500; color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0; }
-
-  /* Large 44x44 tap target on the primary in-store action. */
-  input.buy-checkbox {
-    width: 26px;
-    height: 26px;
-    min-width: 44px;
-    min-height: 44px;
-    margin: 0;
-    accent-color: var(--midnight-violet);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .qty-input {
-    width: 90px;
-    padding: 10px 8px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--oat-cream-dark);
-    font-family: var(--font-body);
-    font-size: 0.85rem;
-    color: var(--text-body);
-    background: #fff;
-    min-height: 44px;
-  }
-  .store-input {
-    width: 110px;
-    padding: 10px 8px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--oat-cream-dark);
-    font-family: var(--font-body);
-    font-size: 0.85rem;
-    color: var(--text-body);
-    background: #fff;
-    min-height: 44px;
-  }
-  .cat-select {
-    width: 118px;
-    padding: 10px 6px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--oat-cream-dark);
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    background: #fff;
-    color: var(--text-body);
-    min-height: 44px;
-  }
-  @media (max-width: 520px) {
-    .cat-select, .qty-input, .store-input { flex: 1; min-width: 100px; }
-  }
-
-  .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-  /* Store-tab-style toggle: active view in Midnight Violet, inactive muted
-     — restyled only, the underlying to-buy/by-store/purchased logic is
-     unchanged. */
-  button.toggle-btn {
-    padding: 10px 14px;
-    min-height: 44px;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--oat-cream-dark);
-    background: #fff;
-    color: var(--text-muted);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.82rem;
-    cursor: pointer;
-  }
-  button.toggle-btn.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
-
-  .icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-    padding: 4px 7px;
-    min-width: 44px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-control);
-    color: var(--text-muted);
-  }
-  .icon-btn:hover { background: var(--violet-soft); }
-  .icon-btn.save { color: var(--midnight-violet); }
-  /* Destructive action — the sparing, appropriate use of Electric Coral
-     for an urgent/irreversible action. */
-  .icon-btn.remove { color: var(--electric-coral); }
-  .icon-btn.exclude, .icon-btn.undo, .icon-btn.keep { font-size: 0.78rem; white-space: nowrap; font-weight: 700; color: var(--midnight-violet); }
-
-  .empty {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    padding: 8px 0;
-  }
-  .error { color: var(--electric-coral); font-size: 0.9rem; }
-
-  .add-card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 14px 16px;
-    margin-top: 20px;
-  }
-  .add-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 10px; color: var(--midnight-violet); }
-  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .add-row input[type=text] {
-    padding: 10px 10px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--oat-cream-dark);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    background: #fff;
-    color: var(--text-body);
-    min-height: 44px;
-  }
-  #add-item { flex: 2; min-width: 140px; }
-  #add-qty { flex: 1; min-width: 90px; }
-  select#add-category {
-    flex: 1;
-    min-width: 120px;
-    padding: 10px 10px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--oat-cream-dark);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    background: #fff;
-    color: var(--text-body);
-    min-height: 44px;
-  }
-  /* "+ Add item" is frequent and low-stakes — Midnight Violet ghost
-     button, never gold (gold is reserved for a single most-important CTA,
-     and nothing on this list screen qualifies). */
-  button.action {
-    padding: 10px 16px;
-    min-height: 44px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--midnight-violet);
-    background: transparent;
-    color: var(--midnight-violet);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-  button.action:hover:not(:disabled) { background: var(--violet-soft); }
-  button.action:disabled { opacity: 0.6; cursor: default; }
-
-  .already-have-banner {
-    border-radius: var(--radius-card);
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-size: 0.88rem;
-    background: var(--violet-soft);
-    border: 1px solid var(--card-border);
-    color: var(--text-body);
-  }
+  /* ---------- Already-have banner (kept from prior release) ---------- */
+  .already-have-banner { border-radius: 16px; padding: 12px 16px; margin: 14px 0; font-size: 0.88rem; background: var(--violet-soft); border: 1px solid var(--card-border); color: var(--text-body); }
   .already-have-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
   .already-have-banner p.hint { margin: 0 0 10px; color: var(--text-muted); font-size: 0.82rem; }
-  .already-have-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--card-border);
-    flex-wrap: wrap;
-  }
+  .already-have-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--card-border); flex-wrap: wrap; }
   .already-have-row:last-child { border-bottom: none; }
   .already-have-row .info { flex: 1; min-width: 160px; }
   .already-have-row .tag { font-weight: 700; color: var(--text-body); }
   .already-have-row .actions { display: flex; gap: 6px; flex-shrink: 0; }
-  .ah-btn {
-    border: none;
-    border-radius: var(--radius-control);
-    padding: 8px 12px;
-    min-height: 44px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.8rem;
-    cursor: pointer;
-  }
-  /* Removing from the list is the more consequential of the two actions
-     here — Electric Coral, used sparingly on this single control. */
+  .ah-btn { border: none; border-radius: 10px; padding: 8px 12px; min-height: 40px; font-family: var(--font-body); font-weight: 700; font-size: 0.8rem; cursor: pointer; }
   .ah-btn.remove-btn { background: var(--electric-coral); color: #fff; }
   .ah-btn.keep-btn { background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet); }
   .ah-btn:disabled { opacity: 0.6; cursor: default; }
 
-  /* All-done state — everything checked off the To buy list. */
   .all-done-state { padding: 12px 0; }
-  .all-done-state .pill { margin-bottom: 8px; }
+  .all-done-state .pill { display: inline-block; margin-bottom: 8px; background: #6FB84C; color: #fff; font-weight: 700; font-size: 13px; padding: 5px 12px; border-radius: 999px; }
   .all-done-state p { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
+  .empty { color: var(--text-muted); font-size: 0.95rem; padding: 12px 0; }
+  .error { color: var(--electric-coral); font-size: 0.9rem; padding: 12px 0; }
+
+  /* ---------- Screen 2: Plan your stops ---------- */
+  .plan-header { padding: 22px 20px 4px; }
+  .plan-title { font-family: var(--font-heading); font-weight: 700; font-size: 23px; color: var(--midnight-violet); margin: 0; }
+  .plan-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); margin: 4px 0 0; }
+
+  .to-sort-card { background: #fff; border-radius: 20px; padding: 2px 16px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); }
+  .to-sort-row { padding-top: 14px; border-bottom: 1px solid rgba(58,31,46,.07); }
+  .to-sort-row:last-child { border-bottom: none; }
+  .to-sort-row-head { display: flex; align-items: baseline; gap: 8px; cursor: pointer; padding-bottom: 14px; }
+  .to-sort-name { font-family: var(--font-heading); font-weight: 700; font-size: 17px; color: var(--ink); }
+  .to-sort-qty { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); flex: 1; }
+  .to-sort-caret { font-family: var(--font-body); font-weight: 700; font-size: 16px; color: var(--violet-light); }
+  .store-pills { display: none; flex-wrap: wrap; gap: 8px; padding: 12px 0 14px; }
+  .store-pills.open { display: flex; }
+  .store-pill { border: 1.5px solid rgba(176,97,154,.5); color: var(--midnight-violet); background: transparent; border-radius: 999px; padding: 10px 16px; font-family: var(--font-body); font-weight: 700; font-size: 14px; cursor: pointer; }
+  .store-pill.selected { background: var(--midnight-violet); color: var(--oat-cream); border-color: var(--midnight-violet); }
+  .to-sort-footer { font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--ink-muted); padding: 12px 0; text-align: center; cursor: pointer; }
+
+  .bucket-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); margin-bottom: 11px; overflow: hidden; }
+  .bucket-header { display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(176,97,154,.1); cursor: pointer; }
+  .bucket-avatar { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--font-heading); font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .bucket-name { font-family: var(--font-heading); font-weight: 700; font-size: 17px; color: var(--ink); flex: 1; }
+  .bucket-chevron { color: var(--violet-light); font-weight: 700; transition: transform 0.15s ease; }
+  .bucket-chevron.expanded { transform: rotate(90deg); }
+  .bucket-collapsed-count { color: var(--ink-faint); font-size: 12px; }
+  .bucket-body { display: none; }
+  .bucket-body.open { display: block; }
+  .bucket-aisle-row { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 16px; border-bottom: 1px solid rgba(58,31,46,.06); }
+  .bucket-aisle-row:last-child { border-bottom: none; }
+  .bucket-item-name { font-family: var(--font-body); font-weight: 600; font-size: 16px; color: var(--ink); flex: 1; }
+  .bucket-item-qty { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); }
+  .bucket-move { background: none; border: none; font-family: var(--font-body); font-weight: 700; font-size: 12px; color: var(--violet-light); cursor: pointer; padding: 6px 4px; min-height: 32px; }
+  .shop-this-store-btn { display: block; width: calc(100% - 32px); margin: 12px 16px 16px; background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 999px; padding: 13px; font-weight: 700; font-size: 15px; cursor: pointer; }
+
+  /* ---------- Screen 3: Shopping a store ---------- */
+  .shop-header { background: var(--violet-light); color: #fff; padding: 22px 20px; display: flex; align-items: center; gap: 16px; margin: -1px -1px 0; }
+  .shop-wheel { width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--turmeric-gold) 0 var(--pct, 0%), rgba(255,255,255,.3) var(--pct, 0%) 100%); }
+  .shop-wheel-inner { width: 46px; height: 46px; border-radius: 50%; background: var(--violet-light); display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; font-size: 15px; }
+  .shop-header-text .eyebrow { color: rgba(255,255,255,.8); opacity: 0.8; margin-bottom: 4px; }
+  .shop-store-name { font-family: var(--font-heading); font-weight: 700; font-size: 26px; margin: 0; }
+  .shop-back { background: none; border: none; color: #fff; opacity: 0.85; font-size: 0.8rem; font-weight: 700; cursor: pointer; padding: 0; margin-top: 6px; }
+
+  .shop-aisle-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); margin: 12px 0; overflow: hidden; }
+  .shop-aisle-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px; background: rgba(246,239,225,.75); }
+  .shop-aisle-header .aisle-spine { width: 9px; height: 22px; }
+  .shop-aisle-header .aisle-name { font-family: var(--font-heading); font-weight: 700; font-size: 16px; color: var(--ink); }
+
+  .done-here-row { background: rgba(111,184,76,.14); border-radius: 20px; padding: 15px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 14px; }
+  .done-here-row .done-chip { background: #6FB84C; }
+  .done-here-row .done-label { color: var(--ink); }
+  .done-here-row .caret { color: #4D8A33; font-weight: 700; }
+
+  /* ---------- Screen 4: Review ---------- */
+  .review-title { font-family: var(--font-heading); font-weight: 700; font-size: 23px; color: var(--midnight-violet); margin: 0; }
+  .review-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); margin: 4px 0 16px; }
+  .flag-card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); margin-bottom: 12px; cursor: pointer; }
+  .flag-card-top { display: flex; align-items: center; gap: 12px; }
+  .flag-badge { width: 28px; height: 28px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .flag-title { font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink); flex: 1; }
+  .flag-caret { color: var(--ink-faint); font-weight: 700; }
+  .flag-detail { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); margin-top: 8px; padding-left: 39px; display: none; }
+  .flag-detail.open { display: block; }
+  .flag-fix-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; flex-wrap: wrap; }
+  .flag-fix-row input { padding: 7px 9px; border-radius: 8px; border: 1px solid var(--oat-cream-dark); font-size: 0.8rem; min-height: 34px; }
+  .flag-fix-row button { border: none; border-radius: 8px; padding: 7px 10px; font-weight: 700; font-size: 0.76rem; cursor: pointer; background: var(--midnight-violet); color: #fff; min-height: 34px; }
+  .flag-fix-row button.secondary { background: var(--violet-soft); color: var(--midnight-violet); }
+
+  .summary-card { background: #fff; border-radius: 20px; padding: 4px 16px; box-shadow: 0 8px 20px -16px rgba(58,31,46,.55); margin-bottom: 14px; }
+  .summary-card .eyebrow { padding-top: 12px; }
+  .summary-row { display: flex; align-items: center; justify-content: space-between; min-height: 40px; border-top: 1px solid rgba(58,31,46,.06); }
+  .summary-row:first-of-type { border-top: none; }
+  .summary-row .aisle { font-family: var(--font-body); font-weight: 600; font-size: 16px; color: var(--ink); }
+  .summary-row .count { font-family: var(--font-body); font-size: 14px; color: var(--ink-muted); }
+
+  .confirm-btn { display: block; width: 100%; background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 999px; padding: 17px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 6px; }
+  .confirm-btn:disabled { opacity: 0.6; cursor: default; }
+  .all-clear-note { font-family: var(--font-body); color: var(--leaf-dark); background: rgba(111,184,76,.14); border-radius: 16px; padding: 12px 16px; font-size: 0.88rem; margin-bottom: 14px; }
 </style>
 </head>
 <body>
 
-<div class="header-row">
-  <h1>Grocery List</h1>
-  <button class="refresh-btn" id="refresh-btn" title="Reload the latest list">&#8635; Refresh</button>
-</div>
-<p class="subtitle">This week's shopping list. <a href="/">&larr; Back to chat</a></p>
-
-<div id="voice-status" class="voice-status"></div>
-<div id="already-have-banner"></div>
-
-<div class="view-toggle">
-  <button class="toggle-btn active" id="view-needed-btn" data-view="needed">To buy</button>
-  <button class="toggle-btn" id="view-store-btn" data-view="store">By store</button>
-  <button class="toggle-btn" id="view-purchased-btn" data-view="purchased">Purchased</button>
-  <button class="voice-btn" id="voice-toggle-btn" title="Hands-free: check off, add, or ask about items by voice">&#127908; Hands-free</button>
-</div>
-
-<datalist id="usual-stores-list"></datalist>
-
-<div id="content">
-  <p class="empty">Loading...</p>
-</div>
-
-<div class="add-card">
-  <h2>Add an item</h2>
-  <div class="add-row">
-    <input type="text" id="add-item" placeholder="Item, e.g. ground beef" />
-    <input type="text" id="add-qty" placeholder="Quantity, e.g. 2 lbs" />
-    <select id="add-category">
-      <option value="produce">Produce</option>
-      <option value="dairy">Dairy</option>
-      <option value="meat/seafood">Meat/seafood</option>
-      <option value="pantry">Pantry</option>
-      <option value="frozen">Frozen</option>
-      <option value="other" selected>Other</option>
-    </select>
-    <button class="action" id="add-btn">Add</button>
+<div id="app-shell">
+  <div style="padding: 12px 20px 0;">
+    <a class="back-link" href="/">&larr; Back to chat</a>
   </div>
+
+  <div id="screen-buy">
+    <div class="gl-header">
+      <div class="gl-header-top">
+        <div class="gl-wheel" id="gl-wheel">
+          <div class="gl-wheel-inner">
+            <span class="gl-wheel-pct" id="gl-wheel-pct">0%</span>
+            <span class="gl-wheel-frac" id="gl-wheel-frac">0/0</span>
+          </div>
+        </div>
+        <div class="gl-title-block">
+          <h1 class="gl-title">Grocery List</h1>
+          <p class="gl-sub" id="gl-sub">Loading…</p>
+        </div>
+        <button class="gl-refresh" id="refresh-btn" title="Reload the latest list">&#8635;</button>
+      </div>
+      <div class="gl-tabs">
+        <button class="gl-tab active" id="tab-buy" data-screen="buy">To buy</button>
+        <button class="gl-tab" id="tab-plan" data-screen="plan">By store</button>
+        <button class="gl-tab" id="tab-review" data-screen="review">Review</button>
+      </div>
+    </div>
+
+    <div class="gl-content content-pad">
+      <div id="already-have-banner"></div>
+      <div id="voice-status" class="voice-status"></div>
+      <div id="buy-content"><p class="empty">Loading…</p></div>
+      <div class="add-card">
+        <div class="add-card-title"><span class="add-chip">+</span><span>Add an item</span></div>
+        <div class="add-row">
+          <input type="text" id="add-item" placeholder="Item, e.g. ground beef" />
+          <input type="text" class="add-qty-input" id="add-qty" placeholder="Qty" />
+          <button class="add-btn" id="add-btn">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-plan" style="display:none">
+    <div class="plan-header">
+      <h1 class="plan-title">Plan your stops</h1>
+      <p class="plan-sub">Tap an item to send it to a store</p>
+    </div>
+    <div class="gl-content content-pad">
+      <div id="plan-content"><p class="empty">Loading…</p></div>
+    </div>
+  </div>
+
+  <div id="screen-shop" style="display:none">
+    <div class="shop-header">
+      <div class="shop-wheel" id="shop-wheel">
+        <div class="shop-wheel-inner" id="shop-wheel-frac">0/0</div>
+      </div>
+      <div class="shop-header-text">
+        <p class="eyebrow" id="shop-stop-label" style="margin:0">Stop 1 of 1</p>
+        <h1 class="shop-store-name" id="shop-store-name">Store</h1>
+        <button class="shop-back" id="shop-back-btn">&larr; Back to Plan your stops</button>
+      </div>
+    </div>
+    <div class="gl-content content-pad">
+      <div id="shop-content"><p class="empty">Loading…</p></div>
+    </div>
+  </div>
+
+  <div id="screen-review" style="display:none">
+    <div class="plan-header">
+      <h1 class="review-title">Everything look right?</h1>
+      <p class="review-sub" id="review-sub">Confirm before you shop</p>
+    </div>
+    <div class="gl-content content-pad">
+      <div id="review-content"><p class="empty">Loading…</p></div>
+      <div class="add-card">
+        <div class="add-card-title"><span class="add-chip">+</span><span>Add anything missing</span></div>
+        <div class="add-row">
+          <input type="text" id="review-add-item" placeholder="Item, e.g. ground beef" />
+          <button class="add-btn" id="review-add-btn">Add</button>
+        </div>
+      </div>
+      <button class="confirm-btn" id="confirm-btn">Confirm list</button>
+    </div>
+  </div>
+
+  <button class="mic-btn" id="voice-toggle-btn" title="Hands-free: check off, add, or ask about items by voice">&#127908;</button>
 </div>
 
 <script src="/static/voice-session.js"></script>
@@ -389,82 +381,757 @@ function escapeHtml(s) {
 
 const CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
 const CATEGORY_LABELS = { produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat/seafood', pantry: 'Pantry', frozen: 'Frozen', other: 'Other' };
+const AISLE_COLORS = { produce: '#6FB84C', dairy: '#F0B429', 'meat/seafood': '#E8562A', pantry: '#B0619A', frozen: '#E8562A', other: '#A3939B' };
+function aisleColor(section) { return AISLE_COLORS[section] || '#A3939B'; }
 function categoryOptions(current) {
   return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('');
 }
+const STORE_PALETTE = ['#66304E', '#B0619A', '#F0B429', '#6FB84C', '#E8562A', '#8A7A83'];
+function storeColor(name) {
+  if (!name || name === 'Unassigned') return '#B0619A';
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return STORE_PALETTE[h % STORE_PALETTE.length];
+}
+function storeLabel(name) { return (!name || name === 'Unassigned') ? 'Any store' : name; }
+function storeInitial(name) { return (!name || name === 'Unassigned') ? '?' : (name.trim()[0] || '?').toUpperCase(); }
 
-let currentView = 'needed'; // 'needed' | 'store' | 'purchased'
-let usualStores = []; // household's usual stores, from /api/memory — populates the store-input datalist
-let storeTypicalItems = {}; // store -> typically-bought-there items, from /api/memory — powers "usually get here" suggestions in the By Store view
+let currentScreen = 'buy'; // buy | plan | shop | review
+let shopStore = null;
+let expandedStoreCards = {}; // store name -> bool (screen 1)
+let planOpenId = null; // to-sort row currently open (screen 2)
+let planPageSize = 5;
+let bucketExpanded = {}; // store name -> bool (screen 2), only one true at a time
+let doneOpen = false; // screen 1 Done section
+let openFlagKey = null; // screen 4
+let openRowMenuId = null; // screen 1 overflow menu
 
-async function loadUsualStores() {
+// ---------- Data loading ----------
+// Combines the by-store 'needed' view with the flat 'purchased' list (which
+// carries each item's store/category too) so every screen can be built
+// client-side from one fetch, per the handoff's "no new endpoints" note.
+async function loadAllData() {
+  const [byStoreRes, purchasedRes, inCartRes] = await Promise.all([
+    fetch('/api/grocery-list/by-store?status=needed'),
+    fetch('/api/grocery-list?status=purchased'),
+    fetch('/api/grocery-list?status=in_cart'),
+  ]);
+  if (!byStoreRes.ok || !purchasedRes.ok || !inCartRes.ok) throw new Error('load failed');
+  const byStore = await byStoreRes.json();
+  const purchasedView = await purchasedRes.json();
+  const inCartView = await inCartRes.json();
+
+  const purchasedItems = [];
+  (purchasedView.sections || []).forEach(s => s.items.forEach(it => purchasedItems.push(it)));
+  const inCartItems = [];
+  (inCartView.sections || []).forEach(s => s.items.forEach(it => inCartItems.push(it)));
+
+  // storeName -> { sections: [{section, items}], purchased: [items], inCart: [items] }
+  const stores = {};
+  for (const s of (byStore.stores || [])) {
+    stores[s.store] = { sections: s.sections, purchased: [], inCart: [] };
+  }
+  for (const it of purchasedItems) {
+    const key = it.store || 'Unassigned';
+    if (!stores[key]) stores[key] = { sections: [], purchased: [], inCart: [] };
+    stores[key].purchased.push(it);
+  }
+  for (const it of inCartItems) {
+    const key = it.store || 'Unassigned';
+    if (!stores[key]) stores[key] = { sections: [], purchased: [], inCart: [] };
+    stores[key].inCart.push(it);
+  }
+  return { stores, purchasedItems, inCartItems };
+}
+
+function neededCountForStore(storeData) {
+  return (storeData.sections || []).reduce((n, s) => n + s.items.length, 0);
+}
+
+// ---------- Screen switching ----------
+function setScreen(screen) {
+  currentScreen = screen;
+  document.getElementById('screen-buy').style.display = screen === 'buy' ? '' : 'none';
+  document.getElementById('screen-plan').style.display = screen === 'plan' ? '' : 'none';
+  document.getElementById('screen-shop').style.display = screen === 'shop' ? '' : 'none';
+  document.getElementById('screen-review').style.display = screen === 'review' ? '' : 'none';
+  document.querySelectorAll('.gl-tab').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  refreshCurrentScreen();
+}
+document.getElementById('tab-buy').addEventListener('click', () => setScreen('buy'));
+document.getElementById('tab-plan').addEventListener('click', () => setScreen('plan'));
+document.getElementById('tab-review').addEventListener('click', () => setScreen('review'));
+document.getElementById('shop-back-btn').addEventListener('click', () => setScreen('plan'));
+
+async function refreshCurrentScreen() {
   try {
-    const res = await fetch('/api/memory');
-    if (!res.ok) return;
-    const memory = await res.json();
-    usualStores = memory.usual_stores || [];
-    storeTypicalItems = memory.store_typical_items || {};
-    const dl = document.getElementById('usual-stores-list');
-    if (dl) dl.innerHTML = usualStores.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
-    // Suggestions depend on this data — if the By Store view already
-    // rendered before this fetch resolved, refresh it once we have it.
-    if (currentView === 'store') load();
+    const data = await loadAllData();
+    if (currentScreen === 'buy') renderBuyScreen(data);
+    else if (currentScreen === 'plan') renderPlanScreen(data);
+    else if (currentScreen === 'shop') renderShopScreen(data);
+    else if (currentScreen === 'review') renderReviewScreen(data);
+    if (currentScreen === 'buy') renderAlreadyHaveBanner();
   } catch (err) {
-    // Store suggestions are a nicety, not load-bearing — the plain text
-    // input still works fine without them.
+    const targetId = currentScreen === 'buy' ? 'buy-content' : currentScreen === 'plan' ? 'plan-content' : currentScreen === 'shop' ? 'shop-content' : 'review-content';
+    const el = document.getElementById(targetId);
+    if (el) el.innerHTML = '<p class="error">Couldn\'t load the grocery list right now — try refreshing.</p>';
   }
 }
 
-// ---------- Phase 5: hands-free voice (Shopper case, §4.2) ----------
-// Reuses the exact same engine as Cooker view (/static/voice-session.js)
-// rather than a second implementation, per the PRD. Scoped to the 'needed'
-// (To buy) list regardless of which toggle view happens to be showing,
-// since that's the actual shopping list — commands always fetch a fresh
-// copy of it rather than relying on whatever's currently rendered, so a
-// spoken command works correctly even mid-way through browsing By store or
-// Purchased.
+// ======================================================================
+// Screen 1 — To buy
+// ======================================================================
+function renderBuyScreen(data) {
+  const storeNames = Object.keys(data.stores);
+  let totalNeeded = 0, totalPurchased = 0, finishedStops = 0;
+  for (const name of storeNames) {
+    const s = data.stores[name];
+    const needed = neededCountForStore(s);
+    totalNeeded += needed;
+    totalPurchased += s.purchased.length;
+    if (name !== 'Unassigned' && needed === 0 && s.purchased.length > 0) finishedStops++;
+  }
+  const totalAll = totalNeeded + totalPurchased;
+  const pct = totalAll ? Math.round((totalPurchased / totalAll) * 100) : 0;
+  document.getElementById('gl-wheel').style.setProperty('--pct', pct + '%');
+  document.getElementById('gl-wheel-pct').textContent = pct + '%';
+  document.getElementById('gl-wheel-frac').textContent = totalPurchased + '/' + totalAll;
+  document.getElementById('gl-sub').textContent = `${totalNeeded} to go · ${finishedStops} stop${finishedStops === 1 ? '' : 's'} finished`;
 
+  const content = document.getElementById('buy-content');
+  const activeStores = storeNames.filter(n => neededCountForStore(data.stores[n]) > 0 || data.stores[n].purchased.length > 0);
+
+  if (!activeStores.length) {
+    content.innerHTML = `<div class="all-done-state">
+      <span class="pill">You're all set!</span>
+      <p>Nothing left to buy — add items below, or they'll show up automatically from meal planning.</p>
+    </div>`;
+    return;
+  }
+  if (totalNeeded === 0) {
+    content.innerHTML = `<div class="all-done-state">
+      <span class="pill">You're all set!</span>
+      <p>Everything's checked off. Nice work.</p>
+    </div>`;
+  } else {
+    let html = '';
+    for (const name of activeStores) {
+      const s = data.stores[name];
+      const needed = neededCountForStore(s);
+      if (needed === 0) continue; // fully-purchased stores fold into the global Done section, not shown here
+      const isExpanded = expandedStoreCards[name] !== false; // default expanded
+      html += `<div class="store-card" data-store="${escapeHtml(name)}">
+        <div class="store-card-header" data-toggle-store="${escapeHtml(name)}">
+          <div class="store-avatar" style="background:${storeColor(name)}">${storeInitial(name)}</div>
+          <p class="store-name">${escapeHtml(storeLabel(name))}</p>
+          <span class="badge-left">${needed} left</span>
+          <span class="chevron">${isExpanded ? '▾' : '▸'}</span>
+        </div>`;
+      if (isExpanded) {
+        for (const sec of s.sections) {
+          if (!sec.items.length) continue;
+          html += `<div class="aisle-subhead"><span class="aisle-spine" style="background:${aisleColor(sec.section)}"></span><span class="eyebrow aisle-name" style="margin:0">${escapeHtml(sec.section)}</span></div>`;
+          for (const it of sec.items) html += buyRowHtml(it);
+        }
+      }
+      html += `</div>`;
+    }
+    // Global Done section
+    const allPurchased = [];
+    for (const name of storeNames) data.stores[name].purchased.forEach(it => allPurchased.push(it));
+    html += `<div class="done-card">
+      <div class="done-card-header" id="done-toggle">
+        <div class="done-chip">&check;</div>
+        <span class="done-label">Done &middot; ${allPurchased.length}</span>
+        <span class="chevron">${doneOpen ? '▾' : '▸'}</span>
+      </div>
+      <div class="done-body ${doneOpen ? 'open' : ''}" id="done-body">
+        ${allPurchased.map(it => doneRowHtml(it)).join('')}
+      </div>
+    </div>`;
+    content.innerHTML = html;
+  }
+
+  wireBuyScreenActions(content);
+}
+
+function buyRowHtml(it) {
+  const menuOpen = openRowMenuId === it.id;
+  return `<div class="gl-row" data-item-id="${it.id}" data-action="check-off">
+      <div class="gl-box"></div>
+      <p class="gl-name">${escapeHtml(it.item)}</p>
+      ${it.quantity ? `<span class="gl-qty-chip">${escapeHtml(it.quantity)}</span>` : ''}
+      <button class="gl-overflow-btn" data-action="toggle-menu" data-item-id="${it.id}" title="More">&#8942;</button>
+    </div>
+    <div class="gl-row-actions ${menuOpen ? 'open' : ''}" data-menu-for="${it.id}">
+      <input type="text" class="row-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" />
+      <select class="row-cat">${categoryOptions(it.category)}</select>
+      <input type="text" class="row-store" value="${escapeHtml(it.store || '')}" placeholder="Store" />
+      <button class="mini-save" data-action="save-row" data-item-id="${it.id}">Save</button>
+      <button class="mini-have" data-action="already-have" data-item-id="${it.id}">Have it</button>
+      <button class="mini-elsewhere" data-action="exclude" data-item-id="${it.id}">Elsewhere</button>
+      <button class="mini-remove" data-action="remove" data-item-id="${it.id}">Remove</button>
+    </div>`;
+}
+
+function doneRowHtml(it) {
+  return `<div class="gl-row done" data-item-id="${it.id}" data-action="uncheck">
+    <div class="gl-box checked">&check;</div>
+    <p class="gl-name">${escapeHtml(it.item)}</p>
+    ${it.quantity ? `<span class="gl-qty-chip">${escapeHtml(it.quantity)}</span>` : ''}
+  </div>`;
+}
+
+async function postJSON(url, body) {
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  if (!res.ok) throw new Error('request failed');
+  return res.json().catch(() => ({}));
+}
+async function postEmpty(url) {
+  const res = await fetch(url, { method: 'POST' });
+  if (!res.ok) throw new Error('request failed');
+  return res.json().catch(() => ({}));
+}
+
+function wireBuyScreenActions(content) {
+  content.querySelectorAll('[data-toggle-store]').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.getAttribute('data-toggle-store');
+      expandedStoreCards[name] = !(expandedStoreCards[name] !== false);
+      refreshCurrentScreen();
+    });
+  });
+
+  const doneToggle = content.parentElement.querySelector('#done-toggle') || document.getElementById('done-toggle');
+  if (doneToggle) doneToggle.addEventListener('click', () => { doneOpen = !doneOpen; refreshCurrentScreen(); });
+
+  content.querySelectorAll('[data-action="check-off"]').forEach(row => {
+    row.addEventListener('click', async (e) => {
+      if (e.target.closest('.gl-overflow-btn')) return;
+      const itemId = row.getAttribute('data-item-id');
+      try { await postJSON('/api/grocery-list/' + itemId + '/status', { status: 'purchased' }); refreshCurrentScreen(); }
+      catch (err) { alert("Couldn't update that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-action="uncheck"]').forEach(row => {
+    row.addEventListener('click', async () => {
+      const itemId = row.getAttribute('data-item-id');
+      try { await postJSON('/api/grocery-list/' + itemId + '/status', { status: 'needed' }); refreshCurrentScreen(); }
+      catch (err) { alert("Couldn't update that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-action="toggle-menu"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-item-id');
+      openRowMenuId = openRowMenuId === id ? null : id;
+      refreshCurrentScreen();
+    });
+  });
+  content.querySelectorAll('[data-action="save-row"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute('data-item-id');
+      const wrap = btn.closest('.gl-row-actions');
+      const qty = wrap.querySelector('.row-qty').value;
+      const cat = wrap.querySelector('.row-cat').value;
+      const store = wrap.querySelector('.row-store').value.trim();
+      btn.disabled = true;
+      try {
+        await Promise.all([
+          postJSON('/api/grocery-list/' + itemId + '/update', { quantity: qty, category: cat }),
+          postJSON('/api/grocery-list/' + itemId + '/store', { store }),
+        ]);
+        openRowMenuId = null;
+        refreshCurrentScreen();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-action="already-have"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute('data-item-id');
+      btn.disabled = true;
+      try { await postEmpty('/api/grocery-list/' + itemId + '/already-have'); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't move that to inventory — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-action="exclude"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute('data-item-id');
+      btn.disabled = true;
+      try { await postEmpty('/api/grocery-list/' + itemId + '/exclude'); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't update that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-action="remove"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute('data-item-id');
+      btn.disabled = true;
+      try { await postEmpty('/api/grocery-list/' + itemId + '/remove'); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't remove that — try again."); }
+    });
+  });
+}
+
+async function renderAlreadyHaveBanner() {
+  const banner = document.getElementById('already-have-banner');
+  let items = [];
+  try {
+    const res = await fetch('/api/grocery-list/already-have');
+    if (res.ok) items = (await res.json()).items || [];
+  } catch (err) { /* non-critical */ }
+  if (!items.length) { banner.innerHTML = ''; return; }
+  banner.innerHTML = `
+    <div class="already-have-banner">
+      <h2>Already have this?</h2>
+      <p class="hint">These are on the list, but inventory shows some already on hand — a quick check before shopping.</p>
+      ${items.map(it => `
+        <div class="already-have-row" data-item-id="${it.item_id}">
+          <div class="info">
+            <span class="tag">${escapeHtml(it.item)}</span>${it.quantity ? ' (' + escapeHtml(it.quantity) + ' wanted)' : ''}
+            — tracking ${escapeHtml(it.inventory_quantity || 'some')}${it.inventory_location ? ' in the ' + escapeHtml(it.inventory_location) : ''}
+          </div>
+          <div class="actions">
+            <button class="ah-btn keep-btn">Keep it, I need it</button>
+            <button class="ah-btn remove-btn">Remove from list</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  banner.querySelectorAll('.already-have-row').forEach(row => {
+    const itemId = row.getAttribute('data-item-id');
+    const keepBtn = row.querySelector('.keep-btn');
+    const removeBtn = row.querySelector('.remove-btn');
+    async function act(endpoint) {
+      keepBtn.disabled = true; removeBtn.disabled = true;
+      try { await postEmpty('/api/grocery-list/' + itemId + endpoint); refreshCurrentScreen(); }
+      catch (err) { keepBtn.disabled = false; removeBtn.disabled = false; alert("Couldn't update that — try again."); }
+    }
+    keepBtn.addEventListener('click', () => act('/keep'));
+    removeBtn.addEventListener('click', () => act('/remove'));
+  });
+}
+
+// ======================================================================
+// Screen 2 — Plan your stops
+// ======================================================================
+function renderPlanScreen(data) {
+  const content = document.getElementById('plan-content');
+  const unsorted = (data.stores['Unassigned'] ? data.stores['Unassigned'].sections : [])
+    .reduce((acc, s) => acc.concat(s.items), []);
+  const bucketNames = Object.keys(data.stores).filter(n => n !== 'Unassigned' && neededCountForStore(data.stores[n]) > 0);
+
+  if (!unsorted.length && !bucketNames.length) {
+    content.innerHTML = '<p class="empty">Nothing on the list yet — add items from the To buy tab.</p>';
+    return;
+  }
+
+  let html = '';
+  if (unsorted.length) {
+    if (planOpenId == null) planOpenId = unsorted[0].id;
+    const shown = unsorted.slice(0, planPageSize);
+    const remaining = unsorted.length - shown.length;
+    html += `<p class="eyebrow">To sort &middot; ${unsorted.length} &middot; tap to assign</p><div class="to-sort-card">`;
+    for (const it of shown) {
+      const isOpen = planOpenId === it.id;
+      html += `<div class="to-sort-row">
+        <div class="to-sort-row-head" data-toggle-sort="${it.id}">
+          <span class="to-sort-name">${escapeHtml(it.item)}</span>
+          <span class="to-sort-qty">${escapeHtml(it.quantity || '')}</span>
+          <span class="to-sort-caret">${isOpen ? '⌄' : '›'}</span>
+        </div>
+        <div class="store-pills ${isOpen ? 'open' : ''}" data-pills-for="${it.id}">
+          ${Object.keys(data.stores).filter(n => n !== 'Unassigned').map(n => `<button class="store-pill" data-assign-store="${escapeHtml(n)}" data-item-id="${it.id}">${escapeHtml(n)}</button>`).join('')}
+          <button class="store-pill" data-assign-store="" data-item-id="${it.id}">Any</button>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+    if (remaining > 0) html += `<div class="to-sort-footer" id="to-sort-more">+${remaining} more to sort</div>`;
+  }
+
+  for (const name of bucketNames) {
+    const s = data.stores[name];
+    const items = s.sections.reduce((acc, sec) => acc.concat(sec.items.map(it => ({ ...it, __section: sec.section }))), []);
+    const aisleCount = s.sections.filter(sec => sec.items.length).length;
+    const expanded = bucketExpanded[name];
+    if (expanded) {
+      html += `<div class="bucket-card" data-bucket="${escapeHtml(name)}">
+        <div class="bucket-header" data-toggle-bucket="${escapeHtml(name)}">
+          <div class="bucket-avatar" style="background:${storeColor(name)}">${items.length}</div>
+          <span class="bucket-name">${escapeHtml(name)}</span>
+          <span class="bucket-chevron expanded">&rsaquo;</span>
+        </div>
+        <div class="bucket-body open">`;
+      for (const sec of s.sections) {
+        if (!sec.items.length) continue;
+        html += `<div class="aisle-subhead"><span class="aisle-spine" style="background:${aisleColor(sec.section)}"></span><span class="eyebrow aisle-name" style="margin:0">${escapeHtml(sec.section)}</span><span class="aisle-count left">${sec.items.length} left</span></div>`;
+        for (const it of sec.items) {
+          html += `<div class="bucket-aisle-row">
+            <span class="bucket-item-name">${escapeHtml(it.item)}</span>
+            <span class="bucket-item-qty">${escapeHtml(it.quantity || '')}</span>
+            <button class="bucket-move" data-move-item="${it.id}">move</button>
+          </div>`;
+        }
+      }
+      html += `</div>
+        <button class="shop-this-store-btn" data-shop-store="${escapeHtml(name)}">Shop this store</button>
+      </div>`;
+    } else {
+      html += `<div class="bucket-card" data-bucket="${escapeHtml(name)}">
+        <div class="bucket-header" data-toggle-bucket="${escapeHtml(name)}">
+          <div class="bucket-avatar" style="background:${storeColor(name)}">${items.length}</div>
+          <span class="bucket-name">${escapeHtml(name)}</span>
+          <span class="bucket-collapsed-count">${items.length} item${items.length === 1 ? '' : 's'} &middot; ${aisleCount} aisle${aisleCount === 1 ? '' : 's'}</span>
+          <span class="bucket-chevron">&rsaquo;</span>
+        </div>
+      </div>`;
+    }
+  }
+
+  content.innerHTML = html || '<p class="empty">Nothing left to sort — nice work.</p>';
+  wirePlanScreenActions(content, data);
+}
+
+function wirePlanScreenActions(content, data) {
+  content.querySelectorAll('[data-toggle-sort]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.getAttribute('data-toggle-sort'), 10);
+      planOpenId = planOpenId === id ? null : id;
+      refreshCurrentScreen();
+    });
+  });
+  content.querySelectorAll('[data-assign-store]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute('data-item-id');
+      const store = btn.getAttribute('data-assign-store');
+      btn.disabled = true;
+      try {
+        await postJSON('/api/grocery-list/' + itemId + '/store', { store });
+        const fresh = await loadAllData();
+        const stillUnsorted = (fresh.stores['Unassigned'] ? fresh.stores['Unassigned'].sections : [])
+          .reduce((acc, s) => acc.concat(s.items), []);
+        planOpenId = stillUnsorted.length ? stillUnsorted[0].id : null;
+        // Auto-expand the store just assigned to, so the shopper sees where it landed.
+        if (store) bucketExpanded = { [store]: true };
+        renderPlanScreen(fresh);
+      } catch (err) { btn.disabled = false; alert("Couldn't assign that — try again."); }
+    });
+  });
+  const moreEl = content.querySelector('#to-sort-more');
+  if (moreEl) moreEl.addEventListener('click', () => { planPageSize += 5; refreshCurrentScreen(); });
+
+  content.querySelectorAll('[data-toggle-bucket]').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.getAttribute('data-toggle-bucket');
+      const wasOpen = !!bucketExpanded[name];
+      bucketExpanded = {};
+      if (!wasOpen) bucketExpanded[name] = true;
+      refreshCurrentScreen();
+    });
+  });
+  content.querySelectorAll('[data-move-item]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = btn.getAttribute('data-move-item');
+      btn.disabled = true;
+      try { await postJSON('/api/grocery-list/' + itemId + '/store', { store: '' }); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't move that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-shop-store]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      shopStore = btn.getAttribute('data-shop-store');
+      setScreen('shop');
+    });
+  });
+}
+
+// ======================================================================
+// Screen 3 — Shopping a store
+// ======================================================================
+function renderShopScreen(data) {
+  if (!shopStore || !data.stores[shopStore]) {
+    document.getElementById('shop-content').innerHTML = '<p class="empty">Pick a store from Plan your stops first.</p>';
+    return;
+  }
+  const s = data.stores[shopStore];
+  const storeNames = Object.keys(data.stores).filter(n => n !== 'Unassigned' && (neededCountForStore(data.stores[n]) > 0 || data.stores[n].inCart.length > 0 || data.stores[n].purchased.length > 0));
+  const stopIndex = storeNames.indexOf(shopStore);
+
+  const inCartCount = s.inCart.length;
+  const neededCount = neededCountForStore(s);
+  const doneCount = s.purchased.length + inCartCount;
+  const totalForWheel = neededCount + doneCount;
+  const pct = totalForWheel ? Math.round((doneCount / totalForWheel) * 100) : 0;
+  document.getElementById('shop-wheel').style.setProperty('--pct', pct + '%');
+  document.getElementById('shop-wheel-frac').textContent = doneCount + '/' + totalForWheel;
+  document.getElementById('shop-stop-label').textContent = `Stop ${stopIndex >= 0 ? stopIndex + 1 : 1} of ${Math.max(storeNames.length, 1)}`;
+  document.getElementById('shop-store-name').textContent = shopStore;
+
+  const content = document.getElementById('shop-content');
+  let html = '';
+  const inCartBySection = {};
+  s.inCart.forEach(it => { const cat = it.category || 'other'; (inCartBySection[cat] = inCartBySection[cat] || []).push(it); });
+
+  const sectionsSeen = new Set();
+  for (const sec of s.sections) {
+    if (!sec.items.length && !(inCartBySection[sec.section] || []).length) continue;
+    sectionsSeen.add(sec.section);
+    const left = sec.items.length;
+    html += `<div class="shop-aisle-card">
+      <div class="shop-aisle-header">
+        <span class="aisle-spine" style="background:${aisleColor(sec.section)}"></span>
+        <span class="aisle-name">${escapeHtml(sec.section)}</span>
+        <span class="aisle-count left" style="margin-left:auto">${left} left</span>
+      </div>`;
+    for (const it of sec.items) html += shopRowHtml(it, false);
+    for (const it of (inCartBySection[sec.section] || [])) html += shopRowHtml(it, true);
+    html += `</div>`;
+  }
+  for (const cat of Object.keys(inCartBySection)) {
+    if (sectionsSeen.has(cat)) continue;
+    html += `<div class="shop-aisle-card">
+      <div class="shop-aisle-header">
+        <span class="aisle-spine" style="background:${aisleColor(cat)}"></span>
+        <span class="aisle-name">${escapeHtml(cat)}</span>
+        <span class="aisle-count done" style="margin-left:auto">all ${inCartBySection[cat].length} &check;</span>
+      </div>`;
+    for (const it of inCartBySection[cat]) html += shopRowHtml(it, true);
+    html += `</div>`;
+  }
+  if (!html) html = '<p class="empty">Nothing left here — head to "Done here" or back to Plan your stops.</p>';
+
+  html += `<div class="done-here-row" id="done-here-btn">
+    <div class="done-chip">&check;</div>
+    <span class="done-label">Done here &middot; ${inCartCount}</span>
+    <span class="caret" style="margin-left:auto">&rsaquo;</span>
+  </div>`;
+
+  content.innerHTML = html;
+  wireShopScreenActions(content);
+}
+
+function shopRowHtml(it, inCart) {
+  return `<div class="gl-row tall ${inCart ? 'done' : ''}" data-item-id="${it.id}" data-in-cart="${inCart ? '1' : '0'}">
+    <div class="gl-box ${inCart ? 'checked' : ''}">${inCart ? '&check;' : ''}</div>
+    <p class="gl-name">${escapeHtml(it.item)}</p>
+    ${it.quantity ? `<span class="gl-qty-chip">${escapeHtml(it.quantity)}</span>` : ''}
+  </div>`;
+}
+
+function wireShopScreenActions(content) {
+  content.querySelectorAll('.gl-row[data-item-id]').forEach(row => {
+    row.addEventListener('click', async () => {
+      const itemId = row.getAttribute('data-item-id');
+      const inCart = row.getAttribute('data-in-cart') === '1';
+      try { await postJSON('/api/grocery-list/' + itemId + '/status', { status: inCart ? 'needed' : 'in_cart' }); refreshCurrentScreen(); }
+      catch (err) { alert("Couldn't update that — try again."); }
+    });
+  });
+  const doneHereBtn = content.querySelector('#done-here-btn');
+  if (doneHereBtn) doneHereBtn.addEventListener('click', async () => {
+    doneHereBtn.style.pointerEvents = 'none';
+    try {
+      const data = await loadAllData();
+      const s = data.stores[shopStore];
+      await Promise.all((s ? s.inCart : []).map(it => postJSON('/api/grocery-list/' + it.id + '/status', { status: 'purchased' })));
+      setScreen('plan');
+    } catch (err) { doneHereBtn.style.pointerEvents = ''; alert("Couldn't finish this stop — try again."); }
+  });
+}
+
+// ======================================================================
+// Screen 4 — Review
+// ======================================================================
+function renderReviewScreen(data) {
+  const content = document.getElementById('review-content');
+  const allNeeded = [];
+  for (const name of Object.keys(data.stores)) {
+    for (const sec of data.stores[name].sections) sec.items.forEach(it => allNeeded.push(it));
+  }
+  document.getElementById('review-sub').textContent = `${allNeeded.length} item${allNeeded.length === 1 ? '' : 's'} to review · confirm before you shop`;
+
+  const missingQty = allNeeded.filter(it => !(it.quantity || '').trim());
+  const noStore = allNeeded.filter(it => !(it.store || '').trim());
+  const seen = {};
+  const dupeGroups = {};
+  allNeeded.forEach(it => {
+    const key = it.item.trim().toLowerCase();
+    (dupeGroups[key] = dupeGroups[key] || []).push(it);
+  });
+  const duplicates = Object.values(dupeGroups).filter(g => g.length > 1);
+
+  let html = '';
+  if (!missingQty.length && !noStore.length && !duplicates.length) {
+    html += `<div class="all-clear-note">Nothing flagged — this list is ready to shop.</div>`;
+  }
+
+  if (missingQty.length) {
+    const open = openFlagKey === 'qty';
+    html += `<div class="flag-card" data-flag-toggle="qty">
+      <div class="flag-card-top">
+        <div class="flag-badge" style="background:#E8562A">!</div>
+        <span class="flag-title">Missing quantity</span>
+        <span class="flag-caret">&rsaquo;</span>
+      </div>
+      <div class="flag-detail ${open ? 'open' : ''}">
+        ${missingQty.map(it => `<div class="flag-fix-row" data-fix-qty="${it.id}">
+          <span>${escapeHtml(it.item)}</span>
+          <input type="text" class="fix-qty-input" placeholder="Add a quantity" />
+          <button data-save-qty="${it.id}">Save</button>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+  if (noStore.length) {
+    const open = openFlagKey === 'store';
+    html += `<div class="flag-card" data-flag-toggle="store">
+      <div class="flag-card-top">
+        <div class="flag-badge" style="background:#F0B429">!</div>
+        <span class="flag-title">No store assigned</span>
+        <span class="flag-caret">&rsaquo;</span>
+      </div>
+      <div class="flag-detail ${open ? 'open' : ''}">
+        ${noStore.map(it => escapeHtml(it.item)).join(', ')}
+        <div class="flag-fix-row"><button data-goto-plan="1">Assign in Plan your stops</button></div>
+      </div>
+    </div>`;
+  }
+  if (duplicates.length) {
+    const open = openFlagKey === 'dupe';
+    html += `<div class="flag-card" data-flag-toggle="dupe">
+      <div class="flag-card-top">
+        <div class="flag-badge" style="background:#B0619A">!</div>
+        <span class="flag-title">Possible duplicate</span>
+        <span class="flag-caret">&rsaquo;</span>
+      </div>
+      <div class="flag-detail ${open ? 'open' : ''}">
+        ${duplicates.map(g => `<div class="flag-fix-row">
+          <span>${escapeHtml(g[0].item)} appears ${g.length} times</span>
+          <button class="secondary" data-merge-dupe="${g.map(it => it.id).join(',')}">Merge</button>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Aisle summary
+  const bySection = {};
+  allNeeded.forEach(it => { (bySection[it.category] = bySection[it.category] || []).push(it); });
+  html += `<div class="summary-card"><p class="eyebrow">Summary</p>`;
+  CATEGORIES.forEach(cat => {
+    if (!bySection[cat] || !bySection[cat].length) return;
+    html += `<div class="summary-row"><span class="aisle">${escapeHtml(CATEGORY_LABELS[cat])}</span><span class="count">${bySection[cat].length} item${bySection[cat].length === 1 ? '' : 's'}</span></div>`;
+  });
+  html += `</div>`;
+
+  document.getElementById('confirm-btn').textContent = `Confirm list · ${allNeeded.length} items`;
+  content.innerHTML = html;
+  wireReviewScreenActions(content);
+}
+
+function wireReviewScreenActions(content) {
+  content.querySelectorAll('[data-flag-toggle]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.flag-fix-row')) return;
+      const key = el.getAttribute('data-flag-toggle');
+      openFlagKey = openFlagKey === key ? null : key;
+      refreshCurrentScreen();
+    });
+  });
+  content.querySelectorAll('[data-save-qty]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.getAttribute('data-save-qty');
+      const row = btn.closest('.flag-fix-row');
+      const qty = row.querySelector('.fix-qty-input').value.trim();
+      if (!qty) return;
+      btn.disabled = true;
+      try { await postJSON('/api/grocery-list/' + itemId + '/update', { quantity: qty }); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-goto-plan]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); setScreen('plan'); });
+  });
+  content.querySelectorAll('[data-merge-dupe]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const ids = btn.getAttribute('data-merge-dupe').split(',');
+      if (!confirm('Merge these into one line? The extra lines will be removed.')) return;
+      btn.disabled = true;
+      try {
+        const [keepId, ...rest] = ids;
+        await Promise.all(rest.map(id => postEmpty('/api/grocery-list/' + id + '/remove')));
+        refreshCurrentScreen();
+      } catch (err) { btn.disabled = false; alert("Couldn't merge those — try again."); }
+    });
+  });
+}
+
+document.getElementById('confirm-btn').addEventListener('click', () => setScreen('buy'));
+document.getElementById('review-add-btn').addEventListener('click', async () => {
+  const input = document.getElementById('review-add-item');
+  const name = input.value.trim();
+  if (!name) return;
+  const btn = document.getElementById('review-add-btn');
+  btn.disabled = true;
+  try {
+    await postJSON('/api/grocery-list/add', { item: name, quantity: '', category: 'other' });
+    input.value = '';
+    refreshCurrentScreen();
+  } catch (err) { alert("Couldn't add that — try again."); }
+  finally { btn.disabled = false; }
+});
+
+// ---------- Add an item (Screen 1) ----------
+document.getElementById('add-btn').addEventListener('click', async () => {
+  const itemInput = document.getElementById('add-item');
+  const qtyInput = document.getElementById('add-qty');
+  const btn = document.getElementById('add-btn');
+  const name = itemInput.value.trim();
+  if (!name) return;
+  btn.disabled = true;
+  try {
+    await postJSON('/api/grocery-list/add', { item: name, quantity: qtyInput.value, category: 'other' });
+    itemInput.value = '';
+    qtyInput.value = '';
+    refreshCurrentScreen();
+  } catch (err) { alert("Couldn't add that — try again."); }
+  finally { btn.disabled = false; }
+});
+
+const refreshBtn = document.getElementById('refresh-btn');
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.disabled = true;
+  try { await refreshCurrentScreen(); } finally { refreshBtn.disabled = false; }
+});
+
+// ---------- Hands-free voice (reused engine, same commands as before) ----------
 let voiceSession = null;
 let voiceLog = [];
 
 function setVoiceStatus(text) {
   const el = document.getElementById('voice-status');
-  if (!text) {
-    voiceLog = [];
-    el.classList.remove('showing');
-    el.innerHTML = '';
-    return;
-  }
-  // Keep a short scrollback rather than a single overwritten line — a
-  // single line was flashing by before it could be read, making it
-  // impossible to tell what was actually heard when a command failed.
+  if (!text) { voiceLog = []; el.classList.remove('showing'); el.innerHTML = ''; return; }
   voiceLog.unshift(text);
   voiceLog = voiceLog.slice(0, 5);
   el.classList.add('showing');
   el.innerHTML = `<span class="voice-dot"></span>Listening…` +
     `<ul class="voice-log">${voiceLog.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` +
-    `<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
+    `<span class="voice-note">Say "hey home manager" plus a command, or tap the mic again to stop.</span>`;
 }
-
 function updateVoiceButton() {
   const btn = document.getElementById('voice-toggle-btn');
   const isOn = !!(voiceSession && voiceSession.isActive());
   btn.classList.toggle('active', isOn);
-  btn.innerHTML = isOn ? '&#127908; Stop hands-free' : '&#127908; Hands-free';
 }
-
-// Same loose-matching approach as the Cooker view's voice handler
-// (duplicated rather than shared, since these are two separate static
-// pages with no shared JS beyond the voice engine itself) — exact match
-// first, then substring overlap, then word overlap. Never silently
-// changes data on a weak match alone; the caller always confirms back via
-// TTS what it acted on.
 function groceryVoiceFuzzyFind(text, candidates, getLabel) {
   const t = (text || '').trim().toLowerCase();
   if (!t || !candidates || !candidates.length) return null;
-  for (const c of candidates) {
-    if (getLabel(c).trim().toLowerCase() === t) return c;
-  }
+  for (const c of candidates) if (getLabel(c).trim().toLowerCase() === t) return c;
   for (const c of candidates) {
     const label = getLabel(c).trim().toLowerCase();
     if (label && (label.includes(t) || t.includes(label))) return c;
@@ -478,15 +1145,9 @@ function groceryVoiceFuzzyFind(text, candidates, getLabel) {
   }
   return bestScore > 0 ? best : null;
 }
-
-// Keyword-anywhere-in-phrase matching (not exact leading-phrase anchoring)
-// — see cooker.html's handlers for the same rationale: natural phrasing
-// varies too much to require an exact sentence structure.
 function isVoiceEndCommand(command) {
-  return /\b(stop|cancel|exit|goodbye|end session|that'?s all|all done)\b/i.test(command) ||
-    /^done$/i.test(command.trim());
+  return /\b(stop|cancel|exit|goodbye|end session|that'?s all|all done)\b/i.test(command) || /^done$/i.test(command.trim());
 }
-
 async function fetchNeededItemsFlat() {
   const res = await fetch('/api/grocery-list?status=needed');
   if (!res.ok) return [];
@@ -495,12 +1156,8 @@ async function fetchNeededItemsFlat() {
   (view.sections || []).forEach(s => items.push(...s.items));
   return items;
 }
-
 async function handleShopperVoiceCommand(command) {
   if (isVoiceEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
-
-  // "What store/section is X in" — checked before the check-off/add
-  // patterns since it's the most specific (has its own keyword pair).
   if (/\b(what|which)\b/i.test(command) && /\b(store|section)\b/i.test(command)) {
     const afterKeyword = command.replace(/^.*?\b(store|section)\b\s*(?:is|does)?\s*/i, '').replace(/\bin\??$/i, '').trim();
     const items = await fetchNeededItemsFlat();
@@ -509,22 +1166,15 @@ async function handleShopperVoiceCommand(command) {
     const storeText = item.store && item.store.trim() ? item.store : 'no store assigned';
     return { spoken: `${item.item} is ${item.category}, ${storeText}.` };
   }
-
   if (/\b(check off|got|grabbed|found|bought|picked up)\b/i.test(command)) {
     const afterKeyword = command.replace(/^.*?\b(check off|got|grabbed|found|bought|picked up)\b\s*/i, '').trim();
     const items = await fetchNeededItemsFlat();
     const item = groceryVoiceFuzzyFind(afterKeyword, items, i => i.item);
     if (!item) return { spoken: "I don't see that on the list." };
-    const res = await fetch('/api/grocery-list/' + item.id + '/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'purchased' }),
-    });
-    if (!res.ok) return null;
-    if (currentView === 'needed' || currentView === 'purchased' || currentView === 'store') load();
+    try { await postJSON('/api/grocery-list/' + item.id + '/status', { status: 'purchased' }); } catch (err) { return null; }
+    refreshCurrentScreen();
     return { spoken: `Got it, ${item.item} checked off.` };
   }
-
   if (/\b(add|put|need)\b/i.test(command)) {
     const name = command
       .replace(/^.*?\b(add)\b\s*/i, '')
@@ -532,29 +1182,16 @@ async function handleShopperVoiceCommand(command) {
       .replace(/^(put|we need|need)\s+/i, '')
       .trim();
     if (!name) return null;
-    const res = await fetch('/api/grocery-list/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item: name, quantity: '', category: 'other' }),
-    });
-    if (!res.ok) return null;
-    if (currentView === 'needed') load();
+    try { await postJSON('/api/grocery-list/add', { item: name, quantity: '', category: 'other' }); } catch (err) { return null; }
+    refreshCurrentScreen();
     return { spoken: `Added ${name} to the list.` };
   }
-
   return null;
 }
-
 function startShopperVoiceSession() {
-  if (voiceSession && voiceSession.isActive()) {
-    voiceSession.stop();
-    return;
-  }
+  if (voiceSession && voiceSession.isActive()) { voiceSession.stop(); return; }
   voiceSession = createVoiceSession({
-    onListeningChange: (isListening) => {
-      updateVoiceButton();
-      if (!isListening) setVoiceStatus('');
-    },
+    onListeningChange: (isListening) => { updateVoiceButton(); if (!isListening) setVoiceStatus(''); },
     onStatus: (text) => setVoiceStatus(text),
     onCommand: (command) => handleShopperVoiceCommand(command),
     onEnd: () => updateVoiceButton(),
@@ -565,412 +1202,9 @@ function startShopperVoiceSession() {
   voiceSession.start();
   updateVoiceButton();
 }
-
 document.getElementById('voice-toggle-btn').addEventListener('click', startShopperVoiceSession);
 
-function itemRowHtml(it) {
-  const checkedOff = currentView === 'purchased';
-  const editable = currentView === 'needed' || currentView === 'store';
-  return `<div class="item-row ${checkedOff ? 'checked-off' : ''}" data-item-id="${it.id}">
-    ${currentView === 'needed' ? `<input type="checkbox" class="buy-checkbox" title="Mark purchased" />` : ''}
-    ${currentView === 'purchased' ? `<button class="icon-btn undo" title="Move back to To buy">&#8630;</button>` : ''}
-    <div class="item-info">
-      <p class="item-name">${escapeHtml(it.item)}</p>
-    </div>
-    <select class="cat-select" ${!editable ? 'disabled' : ''}>${categoryOptions(it.category)}</select>
-    <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" ${!editable ? 'disabled' : ''} />
-    ${editable ? `<input type="text" class="store-input" list="usual-stores-list" value="${escapeHtml(it.store || '')}" placeholder="Store" />` : ''}
-    ${editable ? `<button class="icon-btn save" title="Save changes">&check;</button>` : ''}
-    ${currentView === 'needed' ? `<button class="icon-btn exclude" title="Get elsewhere — hide from this list">elsewhere</button>` : ''}
-    ${currentView === 'needed' ? `<button class="icon-btn already-have" title="Already have this — add to inventory and take off the list">Already have</button>` : ''}
-    <button class="icon-btn remove" title="Delete">&times;</button>
-  </div>`;
-}
-
-function wireRowActions(content) {
-  content.querySelectorAll('.buy-checkbox').forEach(cb => {
-    cb.addEventListener('change', async () => {
-      const row = cb.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      cb.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'purchased' }),
-        });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        cb.disabled = false;
-        cb.checked = false;
-        alert("Couldn't update that — try again.");
-      }
-    });
-  });
-
-  content.querySelectorAll('.icon-btn.undo').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'needed' }),
-        });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't update that — try again.");
-      }
-    });
-  });
-
-  content.querySelectorAll('.icon-btn.save').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      const qty = row.querySelector('.qty-input').value;
-      const cat = row.querySelector('.cat-select').value;
-      const storeInput = row.querySelector('.store-input');
-      btn.disabled = true;
-      try {
-        const calls = [
-          fetch('/api/grocery-list/' + itemId + '/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ quantity: qty, category: cat }),
-          }),
-        ];
-        if (storeInput) {
-          calls.push(fetch('/api/grocery-list/' + itemId + '/store', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ store: storeInput.value.trim() }),
-          }));
-        }
-        const results = await Promise.all(calls);
-        if (results.some(r => !r.ok)) throw new Error('failed');
-        load();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't save that — try again.");
-      }
-    });
-  });
-
-  content.querySelectorAll('.icon-btn.exclude').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/exclude', { method: 'POST' });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't update that — try again.");
-      }
-    });
-  });
-
-  content.querySelectorAll('.icon-btn.already-have').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/already-have', { method: 'POST' });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't move that to inventory — try again.");
-      }
-    });
-  });
-
-  content.querySelectorAll('.icon-btn.remove').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const row = btn.closest('.item-row');
-      const itemId = row.getAttribute('data-item-id');
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + '/remove', { method: 'POST' });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't remove that — try again.");
-      }
-    });
-  });
-}
-
-function renderNeededOrPurchased(view) {
-  const content = document.getElementById('content');
-  const sections = view.sections || [];
-
-  if (!sections.length) {
-    if (currentView === 'needed') {
-      content.innerHTML = `<div class="all-done-state">
-        <span class="pill pill-success">You're all set!</span>
-        <p>Nothing left to buy — add items below, or they'll show up automatically from meal planning.</p>
-      </div>`;
-    } else {
-      content.innerHTML = `<p class="empty">Nothing marked purchased yet — check things off as you shop.</p>`;
-    }
-    return;
-  }
-
-  let html = '';
-  for (const s of sections) {
-    html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
-    for (const it of s.items) {
-      html += itemRowHtml(it);
-    }
-    html += `</div>`;
-  }
-  content.innerHTML = html;
-  wireRowActions(content);
-}
-
-function renderByStore(view) {
-  const content = document.getElementById('content');
-  const stores = view.stores || [];
-
-  // A store with saved typical items but nothing currently on the list
-  // (e.g. a usual store just added, no items tagged to it yet) wouldn't
-  // otherwise appear here at all — but that's exactly where a suggestion
-  // row is most useful, so synthesize an empty entry for it too.
-  const knownStoreNames = new Set(stores.map(s => s.store));
-  const allStores = [...stores];
-  for (const store of Object.keys(storeTypicalItems)) {
-    if (!knownStoreNames.has(store) && (storeTypicalItems[store] || []).length) {
-      allStores.push({ store, sections: [] });
-    }
-  }
-
-  const hasAnything = allStores.some(s => (s.sections && s.sections.length) || (storeTypicalItems[s.store] || []).length);
-  if (!hasAnything) {
-    content.innerHTML = '<p class="empty">Nothing on the list yet — add what you need below.</p>';
-    return;
-  }
-
-  let html = '';
-  for (const store of allStores) {
-    const hasSections = store.sections && store.sections.length;
-    const typicalItems = store.store === 'Unassigned' ? [] : (storeTypicalItems[store.store] || []);
-    if (!hasSections && !typicalItems.length) continue;
-
-    const currentNames = new Set();
-    (store.sections || []).forEach(s => s.items.forEach(it => currentNames.add((it.item || '').toLowerCase())));
-    const suggestions = typicalItems.filter(i => !currentNames.has(i.toLowerCase()));
-
-    html += `<h2 class="store-title">${escapeHtml(store.store)}</h2>`;
-    if (suggestions.length) {
-      html += `<div class="suggestion-row" data-store="${escapeHtml(store.store)}">
-        <span class="suggestion-label">Usually get here:</span>
-        ${suggestions.map(i => `<button class="suggestion-chip" data-store="${escapeHtml(store.store)}" data-item="${escapeHtml(i)}">+ ${escapeHtml(i)}</button>`).join('')}
-      </div>`;
-    }
-    for (const s of (store.sections || [])) {
-      html += `<h2 class="section-title">${escapeHtml(s.section)}</h2><div class="card">`;
-      for (const it of s.items) {
-        html += itemRowHtml(it);
-      }
-      html += `</div>`;
-    }
-  }
-  content.innerHTML = html;
-  wireRowActions(content);
-  wireSuggestionChips(content);
-}
-
-async function confirmStoreSuggestion(store, item) {
-  try {
-    const addRes = await fetch('/api/grocery-list/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item, quantity: '', category: 'other' }),
-    });
-    if (!addRes.ok) throw new Error('add failed');
-    const added = await addRes.json();
-    // Tag it with the store it was suggested from in the same action, so
-    // confirming a suggestion doesn't leave the item unassigned.
-    await fetch('/api/grocery-list/' + added.item_id + '/store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ store }),
-    });
-    load();
-  } catch (err) {
-    alert("Couldn't add that — try again.");
-  }
-}
-
-function wireSuggestionChips(content) {
-  content.querySelectorAll('.suggestion-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.disabled = true;
-      confirmStoreSuggestion(btn.dataset.store, btn.dataset.item);
-    });
-  });
-}
-
-async function renderAlreadyHaveBanner() {
-  const banner = document.getElementById('already-have-banner');
-  if (currentView !== 'needed') {
-    banner.innerHTML = '';
-    return;
-  }
-  let items = [];
-  try {
-    const res = await fetch('/api/grocery-list/already-have');
-    if (res.ok) items = (await res.json()).items || [];
-  } catch (err) { /* non-critical, ignore */ }
-
-  if (!items.length) {
-    banner.innerHTML = '';
-    return;
-  }
-
-  banner.innerHTML = `
-    <div class="already-have-banner">
-      <h2>Already have this?</h2>
-      <p class="hint">These are on the list, but inventory shows some already on hand — pulled out here for a quick check before shopping.</p>
-      ${items.map(it => `
-        <div class="already-have-row" data-item-id="${it.item_id}">
-          <div class="info">
-            <span class="tag">${escapeHtml(it.item)}</span>${it.quantity ? ' (' + escapeHtml(it.quantity) + ' wanted)' : ''}
-            — tracking ${escapeHtml(it.inventory_quantity || 'some')}${it.inventory_location ? ' in the ' + escapeHtml(it.inventory_location) : ''}
-          </div>
-          <div class="actions">
-            <button class="ah-btn keep-btn">Keep it, I need it</button>
-            <button class="ah-btn remove-btn">Remove from list</button>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-
-  banner.querySelectorAll('.already-have-row').forEach(row => {
-    const itemId = row.getAttribute('data-item-id');
-    const keepBtn = row.querySelector('.keep-btn');
-    const removeBtn = row.querySelector('.remove-btn');
-    async function act(endpoint) {
-      keepBtn.disabled = true;
-      removeBtn.disabled = true;
-      try {
-        const res = await fetch('/api/grocery-list/' + itemId + endpoint, { method: 'POST' });
-        if (!res.ok) throw new Error('failed');
-        load();
-      } catch (err) {
-        keepBtn.disabled = false;
-        removeBtn.disabled = false;
-        alert("Couldn't update that — try again.");
-      }
-    }
-    keepBtn.addEventListener('click', () => act('/keep'));
-    removeBtn.addEventListener('click', () => act('/remove'));
-  });
-}
-
-// The "By store" tab only earns its place once there's actually more than
-// one store involved (Phase 6 §4.1/§4.4 audit finding: it used to show
-// unconditionally with no signal behind it) — see is_multi_store_household
-// in tools.py for the "usual store list OR item-tagged store" definition.
-// Toggled off the /api/grocery-list response since that's the endpoint
-// already hit on every normal page load; if the household happens to be
-// mid-"By store" browsing when it drops to single-store, bounce back to
-// "To buy" rather than leaving a dead tab selected.
-function applyMultiStoreVisibility(multiStore) {
-  const btn = document.getElementById('view-store-btn');
-  btn.style.display = multiStore ? '' : 'none';
-  if (!multiStore && currentView === 'store') {
-    setView('needed', 'view-needed-btn');
-  }
-}
-
-async function load() {
-  const content = document.getElementById('content');
-  try {
-    if (currentView === 'store') {
-      const res = await fetch('/api/grocery-list/by-store?status=needed');
-      if (!res.ok) throw new Error('Could not load');
-      renderByStore(await res.json());
-    } else {
-      const status = currentView === 'purchased' ? 'purchased' : 'needed';
-      const res = await fetch('/api/grocery-list?status=' + encodeURIComponent(status));
-      if (!res.ok) throw new Error('Could not load');
-      const result = await res.json();
-      applyMultiStoreVisibility(!!result.multi_store);
-      renderNeededOrPurchased(result);
-    }
-    renderAlreadyHaveBanner();
-  } catch (err) {
-    content.innerHTML = '<p class="error">Couldn\'t load the grocery list right now — try refreshing.</p>';
-  }
-}
-
-function setView(view, btnId) {
-  if (currentView === view) return;
-  currentView = view;
-  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(btnId).classList.add('active');
-  load();
-}
-
-document.getElementById('view-needed-btn').addEventListener('click', () => setView('needed', 'view-needed-btn'));
-document.getElementById('view-store-btn').addEventListener('click', () => setView('store', 'view-store-btn'));
-document.getElementById('view-purchased-btn').addEventListener('click', () => setView('purchased', 'view-purchased-btn'));
-
-document.getElementById('add-btn').addEventListener('click', async () => {
-  const itemInput = document.getElementById('add-item');
-  const qtyInput = document.getElementById('add-qty');
-  const catSelect = document.getElementById('add-category');
-  const btn = document.getElementById('add-btn');
-  const name = itemInput.value.trim();
-  if (!name) return;
-  btn.disabled = true;
-  try {
-    const res = await fetch('/api/grocery-list/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item: name, quantity: qtyInput.value, category: catSelect.value }),
-    });
-    if (!res.ok) throw new Error('failed');
-    itemInput.value = '';
-    qtyInput.value = '';
-    catSelect.value = 'other';
-    if (currentView !== 'needed') setView('needed', 'view-needed-btn');
-    else load();
-  } catch (err) {
-    alert("Couldn't add that — try again.");
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-const refreshBtn = document.getElementById('refresh-btn');
-refreshBtn.addEventListener('click', async () => {
-  refreshBtn.disabled = true;
-  const original = refreshBtn.innerHTML;
-  refreshBtn.innerHTML = '&#8635; Refreshing…';
-  try {
-    await load();
-  } finally {
-    refreshBtn.disabled = false;
-    refreshBtn.innerHTML = original;
-  }
-});
-
-load();
-loadUsualStores();
+refreshCurrentScreen();
 </script>
 </body>
 </html>

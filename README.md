@@ -530,35 +530,43 @@ stay in sync automatically.
 
 ### Grocery list view
 
-A dedicated page (linked at the top of chat) for shopping from without going through chat.
-Three toggles: **To buy** (the default — check an item's box while you're shopping to mark it
-purchased, which also adds it to tracked inventory automatically, same as checking it off in
-chat), **By store** (the same list split into store groups instead of just section groups, for
-a household that shops in more than one place — see `set_item_store`/`get_grocery_list_by_store`;
-assign or fix an item's store right from either view with its store field), and **Purchased**
-— though **By store only shows up as a tab once it's actually useful**: `is_multi_store_household()`
-checks whether the household has more than one saved usual store, or more than one distinct store
-name tagged on a grocery item right now, and the tab hides itself entirely otherwise (Phase 6
-§4.1/§4.4 — it used to show unconditionally with nothing behind it). If a household drops back to
-single-store while already viewing that tab, it bounces back to To buy rather than leaving a dead
-tab selected.
-(what's been checked off, with an undo). Quantity and category are editable inline on the To buy
-and By store views, and there's an add-item form for anything you'd rather type directly than
-mention conversationally. Everything added or checked off here stays in sync with chat and with
-what a generated weekly plan adds automatically — same underlying list, just a second way to work
-with it. (Getting an item elsewhere without deleting it — `exclude_grocery_item`/
-`include_grocery_item` — is still available through chat; it just isn't a dedicated tab on this
-page anymore.)
+A dedicated page (linked at the top of chat) for shopping from without going through chat,
+rebuilt as a four-screen flow (design "13a"). Same underlying `/api/grocery-list*` endpoints and
+data as before — this is a UI rebuild, not a schema change — so everything added or checked off
+here still stays in sync with chat and with what a generated weekly plan adds automatically.
 
-Above the To buy list, an **"Already have this?"** section cross-references everything on the
-list against tracked inventory (the same confident-match logic used for meal-plan ingredient
-auto-adding) and pulls out anything that's also already tracked with a quantity on hand — most
-often something added ad hoc in chat before checking, or left over from before inventory caught
-up. Each flagged item shows what's requested vs. what's already tracked (and where), with two
-one-click actions: **Remove from list** if the shopper agrees it's redundant, or **Keep it, I
-need it** if they're running low despite the match — which drops it out of this review for good
-and puts it back in the normal To buy list. Nothing is ever auto-removed; it's just surfaced for
-a quick human call before it's actually bought again.
+- **To buy** — the default screen. Items grouped by store, then by aisle within each store, with
+  a progress wheel and "n left"/"all n ✓" counters per store. Tapping a row checks it straight off
+  as purchased (which also adds it to tracked inventory automatically, same as checking it off in
+  chat); a collapsed **Done** section at the bottom holds everything already purchased, tap to
+  undo. Each row has a small **⋯** menu for editing quantity/category/store, marking **Have it**
+  (adds straight to inventory and removes it from the list — the "already have" button added
+  earlier), or **Elsewhere** (hides it from the list without deleting it — same
+  `exclude_grocery_item`/`include_grocery_item` as before). An **"Already have this?"** banner sits
+  above the list, cross-referencing everything against tracked inventory the same way it always
+  has — **Remove from list** or **Keep it, I need it**, nothing auto-removed.
+- **By store** (tab label; the screen itself is "Plan your stops") — the new triage screen.
+  Anything without a store assigned yet shows as a tap-to-open row with store pills below it —
+  picking one assigns the store and automatically opens the next unsorted item, so a whole list
+  can be sorted in one pass without re-opening rows by hand. Below that, one card per store
+  ("bucket") — the first expands automatically to show its aisles and a **Shop this store** button,
+  which switches to the in-store screen for that store.
+- **Shopping `<store>`** — reached via "Shop this store," not a tab. Large, one-handed rows per
+  aisle; tapping an item sets it to `in_cart` (not purchased yet — this lets you see what's in the
+  cart vs. what's still needed while you're mid-aisle); **Done here** finalizes everything in the
+  cart to `purchased` for that stop and returns to Plan your stops.
+- **Review** — a pre-checkout sanity pass: flag cards for items missing a quantity, missing a
+  store, or possibly listed twice (each tappable to fix inline or jump to the right screen), an
+  aisle-by-aisle count summary, and an add-anything-missing box. "Confirm list" just closes out
+  the review and returns to To buy — there's no separate "confirmed" state in the data.
+
+The multi-store-only visibility toggle that used to hide "By store" for single-store households
+(`is_multi_store_household`) isn't used by this rebuild — trip-planning is useful even with one
+store, so all three tabs always show now.
+
+The previous single-page version is kept at `static/grocery-legacy.html` (not linked anywhere) so
+this rebuild can be diffed or reverted if needed; it isn't wired into any route and can be deleted
+once the new version's been used for a while.
 
 ### Photo-based inventory capture
 
