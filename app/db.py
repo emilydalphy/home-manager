@@ -71,6 +71,10 @@ _MIGRATIONS = [
     # persisted at plan-generation time — see schema.sql's comment on
     # meal_plan_entries.reasoning.
     ("meal_plan_entries", "reasoning", "TEXT NOT NULL DEFAULT ''"),
+    # Onboarding redesign: free-text eating style/goal, household-level.
+    ("meal_preferences", "eating_style", "TEXT NOT NULL DEFAULT ''"),
+    # Onboarding redesign: how many dinners a typical week actually plans.
+    ("meal_preferences", "dinners_per_week", "INTEGER NOT NULL DEFAULT 7"),
 ]
 
 

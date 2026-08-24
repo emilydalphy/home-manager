@@ -46,6 +46,17 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- day->meal mapping. A household is one or the other, never mixed within a
     -- single week, but can switch any time via set_planning_mode.
     planning_mode TEXT NOT NULL DEFAULT 'day_based',
+    -- Onboarding redesign: free text, not a preset list on purpose (e.g. "keto",
+    -- "high-protein, low-carb") — a specific eating style/goal for meals to
+    -- follow, distinct from hard dietary_restrictions on the members table.
+    -- Household-level per the PRD's default lean, since there's no per-person
+    -- UI surface for this and no clear case yet for splitting it by member.
+    eating_style TEXT NOT NULL DEFAULT '',
+    -- Onboarding redesign: how many dinners a typical week should actually
+    -- plan (1-7). Lets a household say "we're only home for dinner 4 nights"
+    -- instead of always getting all 7 filled in. Defaults to 7 (every night)
+    -- for pre-redesign households that never answered this.
+    dinners_per_week INTEGER NOT NULL DEFAULT 7,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

@@ -416,7 +416,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_household_meal_preferences",
-        "description": "Save household food preferences: freeform notes, protein preferences (how often per protein), favorite cuisines, cooking time preference. Any field can be partial. Marks meal-planning onboarding complete by default.",
+        "description": "Save household food preferences: freeform notes, protein preferences (how often per protein), favorite cuisines, cooking time preference, eating style, dinners per week. Any field can be partial. Marks meal-planning onboarding complete by default.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -432,6 +432,8 @@ TOOL_DEFINITIONS = [
                     "enum": ["mostly_favorites", "balanced", "surprise_me_often"],
                     "description": "How often new recipes should get surfaced in generated plans. Defaults to 'balanced'.",
                 },
+                "eating_style": {"type": "string", "description": "Freeform diet/eating style the household's meals should follow, e.g. 'keto', 'high-protein, low-carb'. Distinct from hard dietary restrictions/allergies (those live on members)."},
+                "dinners_per_week": {"type": "integer", "description": "How many dinners a typical week should actually plan, 1-7. Defaults to 7 (every night) if never set."},
                 "mark_complete": {"type": "boolean", "description": "Defaults true. Set false for a partial mid-conversation update."},
             },
         },
@@ -990,28 +992,28 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_household_memory",
-        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, notes, goals, usual stores. Use this when the user asks what the app knows/remembers, or before generating a plan.",
+        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, eating style, dinners per week, notes, goals, usual stores. Use this when the user asks what the app knows/remembers, or before generating a plan.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference' (both plain strings), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week' (integer 1-7), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores"]},
-                "value": {"description": "String for notes/cooking_time_preference, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores"]},
+                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences."},
             },
             "required": ["field", "value"],
         },
     },
     {
         "name": "delete_preference",
-        "description": "Remove a remembered preference. For 'dislikes', 'cuisine_preferences', or 'usual_stores', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes' or 'cooking_time_preference', omit item to clear the field.",
+        "description": "Remove a remembered preference. For 'dislikes', 'cuisine_preferences', or 'usual_stores', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes', 'cooking_time_preference', or 'eating_style', omit item to clear the field. For 'dinners_per_week', omit item to reset to the default of 7.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference", "usual_stores"]},
+                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference", "usual_stores", "eating_style", "dinners_per_week"]},
                 "item": {"type": "string"},
             },
             "required": ["field"],
@@ -1364,6 +1366,16 @@ treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "r
 "avoid"≈1.) Weigh this alongside — not instead of — the variety rules above.
 - Honor any per-week constraints in constraints_notes exactly (e.g. "out Thursday/Friday" \
 means don't plan those days; "under 30 minutes on weeknights" means quick weeknight meals).
+- household_memory's dinners_per_week (1-7, default 7) is how many nights this household \
+actually wants a dinner planned — if it's less than 7, only plan dinner for that many days, \
+spread across the week rather than clustered (e.g. 4 means skip dinner entirely on the other \
+3 days — leave no dinner entry for those dates at all, don't plan a lighter one as a stand-in). \
+Breakfast/lunch/snack aren't governed by this number — plan those every day as usual \
+regardless of how many dinner nights were requested.
+- household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb") is a \
+style/goal every meal this week should genuinely follow, not just a soft nudge — if it's set \
+and non-empty, let it actually shape ingredient and recipe choices across every slot, not \
+only dinner. If it's blank, ignore it.
 - For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
 saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
@@ -1535,6 +1547,9 @@ protein rated 1 shouldn't appear at all, and 4-5 should show up more than once a
 protein items. (Older saved data may still have a frequency phrase instead of a number — \
 treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "rarely"≈2, "avoid"≈1.)
 - Honor any per-week constraints in constraints_notes exactly.
+- household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb") is a \
+style/goal the whole pool should genuinely follow if it's set and non-empty — let it shape \
+ingredient and item choices across every category, not just proteins. If it's blank, ignore it.
 - For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \
 the exact meal_name.

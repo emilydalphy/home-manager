@@ -62,19 +62,38 @@ distance while cooking.
    ```
 
 5. Open http://localhost:8000. First-time visitors are sent to a dedicated
-   onboarding wizard (`/onboarding`) instead of straight to chat — click-to-select
-   screens for who's in the household (with general age group, not exact age),
-   any pets, your goals for the app, then whichever modules you want to set up
-   now (meal planning, chores, or both — anything skipped can be set up later
-   in chat). Meal planning covers dietary restrictions per person, protein
-   more/less, favorite cuisines, and cooking time. Chores asks a handful of
-   profile questions (home type, bed/bath count, yard, cleanliness standard,
-   who's in the rotation, existing help like a cleaning service) and then
-   calls Claude once to generate a recommended starting chore list, shown as
-   an editable checklist — uncheck anything, edit frequency or who's
-   responsible, or add your own, before saving. Every chip group has a
-   "type your own" option for anything not listed. After onboarding, you
-   land in chat and can just talk normally:
+   onboarding wizard (`/onboarding`) instead of straight to chat.
+
+   **Onboarding is deliberately minimal** — seven questions, no more, before
+   a real first plan gets generated: household size and names; hard
+   allergies/restrictions and whose; a freeform eating style (e.g. "keto,"
+   "high-protein, low-carb" — typed, not picked from a preset list, so it
+   doesn't inherit the fixed-catalog problem the rest of the app avoids);
+   anything the household won't eat, period; a cuisine or two you're excited
+   about right now; and how many dinners a typical week should actually plan
+   (the rest of the week stays open for leftovers/takeout). Everything else —
+   favorite proteins, casual dislikes beyond the won't-eat list, cuisine
+   depth, recipe feedback — is deliberately *not* asked upfront; it
+   accumulates through ordinary chat/UI use afterward, the same way "no
+   peppers" said in passing has always stuck.
+
+   Answering those seven questions hands off straight into a **first-plan
+   reveal** — a visually distinct screen (not the regular plan view with a
+   banner tacked on) that calls out specifically what it built the week
+   around, referencing the actual eating style, won't-eat item, or cuisine
+   just given, so the tailoring reads as legible, not just true. If more
+   than one household member was named, the reveal also offers a one-tap
+   "get their link" per person — the same self-service link mechanism used
+   elsewhere, letting anyone add their own preferences directly — without
+   blocking or slowing down getting to the plan itself; skipping it here
+   doesn't lose the option, the same "get their link" button lives
+   permanently on the What We Know page under each person's name. From the
+   reveal you can either jump straight into chat or continue on to chores
+   setup, which still asks a handful of profile questions (pets, app goals,
+   home type, bed/bath count, yard, cleanliness standard, who's in the
+   rotation, existing help like a cleaning service) before saving. Every
+   chip group has a "type your own" option for anything not listed. After
+   onboarding, you land in chat and can just talk normally:
    - "what chores are coming up this week?"
    - "add a chore: clean out the gutters, every 6 months, maintenance"
    - "mark the trash chore as done"
@@ -136,10 +155,13 @@ preferences are.
 There's also a dedicated **What We Know** page (linked from the top of the
 chat page) if you'd rather review and edit things directly instead of asking
 in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
-add/remove protein preferences, and edit cooking-time preference, notes, and
-household goals, all with immediate save, no conversation required. The page
-is split into **Household members** (each person's dietary restrictions, set
-during onboarding) and **General / Household** (everything else, since
+add/remove protein preferences, edit cooking-time preference/eating
+style/dinners-per-week, and edit notes and household goals, all with
+immediate save, no conversation required. The page is split into
+**Household members** (each person's dietary restrictions, set during
+onboarding — plus a "Get their link" button per person for the same
+self-service link offered at the onboarding reveal, so skipping it there
+doesn't mean losing it) and **General / Household** (everything else, since
 today's data model tracks those preferences at the household level, not
 per-person). Removing anything on the page — a dislike, a store, a protein
 preference, notes — asks first with a warm "Remove this? You can always tell
@@ -151,8 +173,11 @@ month") whenever there's been at least one preference write this calendar
 month — backed by a real append-only log (`preference_events`) of every
 create/update/delete, not a guess. Every write counts the same, including
 a correction to something already saved, since that's still a sign of active
-use; only onboarding's initial bulk save is excluded so finishing onboarding
-doesn't inflate the counter on day one.
+use — the redesigned onboarding's seven questions count too (each is its own
+logged event), since they're genuine preference writes same as any later
+correction; the only thing excluded is the older, broader onboarding bulk
+save this replaced, and the pets/goals/chores-profile save that still
+happens separately after the plan reveal.
 
 **Protein preferences** are a 1-5 "how much does the household like this"
 slider per protein (1 = avoid entirely, 5 = a favorite) rather than a

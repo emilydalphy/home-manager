@@ -139,10 +139,28 @@
     min-width: 76px;
     text-align: center;
   }
-  .member { padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+  .member { padding: 10px 0; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .member:last-child { border-bottom: none; }
   .member .name { font-weight: 700; color: var(--text-body); }
   .member .restrictions { color: var(--text-muted); font-size: 0.85rem; }
+  .invite-link-btn {
+    background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet);
+    font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
+    padding: 8px 12px; min-height: 38px; border-radius: var(--radius-control); cursor: pointer;
+    white-space: nowrap;
+  }
+  .invite-link-btn:hover { background: var(--violet-soft); }
+  .invite-link-btn.copied { background: var(--vivid-leaf); border-color: var(--vivid-leaf); color: #fff; }
+
+  .stepper-wrap { display: flex; align-items: center; gap: 10px; }
+  .stepper-mini-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--midnight-violet); background: #fff;
+    color: var(--midnight-violet); font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .stepper-mini-btn:hover { background: var(--violet-soft); }
+  .stepper-mini-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.2rem; color: var(--midnight-violet); min-width: 26px; text-align: center; }
 
   .growth-pill-row { margin: 0 0 16px; }
 
@@ -261,7 +279,7 @@
 
   <h2 class="section-heading">Household members</h2>
   <div class="card">
-    <p class="hint">Members and their dietary restrictions — edit these from the onboarding flow.</p>
+    <p class="hint">Members and their dietary restrictions — edit these from the onboarding flow. Each person can also get their own link to add preferences and feedback directly.</p>
     <div id="members"></div>
   </div>
 
@@ -333,6 +351,29 @@
     <div class="add-row">
       <select id="novelty-preference" style="flex:1"></select>
       <button class="action" onclick="saveNovelty()">Save</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Eating style</h2>
+    <p class="hint">A diet or style your meals should follow — keto, high-protein, low-carb, whatever fits. Leave blank if there isn't one.</p>
+    <div class="add-row">
+      <input type="text" id="eating-style" placeholder="e.g. high-protein, low-carb" />
+      <button class="action" onclick="saveEatingStyle()">Save</button>
+      <button class="action secondary" onclick="openConfirm(clearEatingStyle)">Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Dinners per week</h2>
+    <p class="hint">How many dinners a typical week should actually plan — the rest of the week is yours.</p>
+    <div class="add-row" style="align-items:center;">
+      <div class="stepper-wrap">
+        <button type="button" class="stepper-mini-btn" id="dinners-minus">&minus;</button>
+        <span class="stepper-mini-value" id="dinners-value">7</span>
+        <button type="button" class="stepper-mini-btn" id="dinners-plus">+</button>
+      </div>
+      <button class="action" onclick="saveDinnersPerWeek()">Save</button>
     </div>
   </div>
 
@@ -428,8 +469,11 @@ function render() {
   membersEl.innerHTML = (memory.members || []).length
     ? memory.members.map(m => `
         <div class="member">
-          <div class="name">${escapeHtml(m.name)}${m.age_group ? ' <span class="restrictions">(' + escapeHtml(m.age_group) + ')</span>' : ''}</div>
-          <div class="restrictions">${m.dietary_restrictions && m.dietary_restrictions.length ? escapeHtml(m.dietary_restrictions.join(', ')) : 'No restrictions noted'}</div>
+          <div>
+            <div class="name">${escapeHtml(m.name)}${m.age_group ? ' <span class="restrictions">(' + escapeHtml(m.age_group) + ')</span>' : ''}</div>
+            <div class="restrictions">${m.dietary_restrictions && m.dietary_restrictions.length ? escapeHtml(m.dietary_restrictions.join(', ')) : 'No restrictions noted'}</div>
+          </div>
+          <button type="button" class="invite-link-btn" data-invite="${escapeHtml(m.name)}">Get their link</button>
         </div>`).join('')
     : '<p class="empty-state">I\'m still getting to know your household — add members from onboarding and I\'ll keep track.</p>';
 
@@ -446,6 +490,9 @@ function render() {
   document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
   document.getElementById('novelty-preference').innerHTML = noveltyOptions(memory.novelty_preference || 'balanced');
   document.getElementById('notes').value = memory.notes || '';
+  document.getElementById('eating-style').value = memory.eating_style || '';
+  dinnersPerWeek = memory.dinners_per_week || 7;
+  document.getElementById('dinners-value').textContent = dinnersPerWeek;
 
   const dislikesEl = document.getElementById('dislikes');
   dislikesEl.innerHTML = (memory.dislikes || []).length
@@ -723,6 +770,55 @@ function clearNotes() {
 function saveGoals() {
   editField('goals', document.getElementById('goals').value.trim());
 }
+
+function saveEatingStyle() {
+  editField('eating_style', document.getElementById('eating-style').value.trim());
+}
+function clearEatingStyle() {
+  removeItem('eating_style', null);
+  document.getElementById('eating-style').value = '';
+}
+
+// Dinners-per-week stepper — mirrors the onboarding flow's Q7 stepper and
+// the Cooker view's serving-size stepper. Local value only changes on
+// +/- taps; the actual save is an explicit button press like every other
+// field on this page.
+let dinnersPerWeek = 7;
+document.getElementById('dinners-minus').addEventListener('click', () => {
+  dinnersPerWeek = Math.max(1, dinnersPerWeek - 1);
+  document.getElementById('dinners-value').textContent = dinnersPerWeek;
+});
+document.getElementById('dinners-plus').addEventListener('click', () => {
+  dinnersPerWeek = Math.min(7, dinnersPerWeek + 1);
+  document.getElementById('dinners-value').textContent = dinnersPerWeek;
+});
+function saveDinnersPerWeek() {
+  editField('dinners_per_week', dinnersPerWeek);
+}
+
+// Resurfacing the invite-at-reveal offer (Phase onboarding-redesign §8):
+// skipping it during the first-plan reveal shouldn't mean losing it for
+// good, so every household member gets a persistent "Get their link"
+// button here that fetches (or creates, on first use) their self-service
+// share link and copies it to the clipboard.
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.invite-link-btn');
+  if (!btn) return;
+  const name = btn.dataset.invite;
+  const original = btn.textContent;
+  try {
+    const res = await fetch('/api/members/' + encodeURIComponent(name) + '/share-link');
+    if (!res.ok) throw new Error('Could not get link');
+    const data = await res.json();
+    await navigator.clipboard.writeText(data.link).catch(() => {});
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2200);
+  } catch (err) {
+    btn.textContent = "Couldn't get link";
+    setTimeout(() => { btn.textContent = original; }, 2200);
+  }
+});
 
 loadMemory();
 </script>

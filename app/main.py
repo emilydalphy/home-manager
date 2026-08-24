@@ -52,12 +52,15 @@ class HouseholdOnboardingRequest(BaseModel):
     goals: str = ""
 
 
-class MealPreferencesOnboardingRequest(BaseModel):
-    dietary_restrictions: dict[str, list[str]] = {}  # member name -> restrictions
-    protein_preferences: dict[str, str] = {}
-    cuisine_preferences: list[str] = []
-    cooking_time_preference: str = ""
-    notes: str = ""
+class OnboardingAnswersRequest(BaseModel):
+    """The onboarding-redesign minimum-viable question set (PRD §4.1) — the
+    only 7 questions asked before the first plan is generated."""
+    member_names: list[str] = []
+    household_restrictions: dict[str, list[str]] = {}  # member name -> restrictions, only for members who have any
+    eating_style: str = ""
+    wont_eat: list[str] = []
+    excited_about: list[str] = []
+    dinners_per_week: int = 7
 
 
 class ChoreProfileRequest(BaseModel):
@@ -224,23 +227,48 @@ def onboarding_household(req: HouseholdOnboardingRequest):
     return {"saved": True}
 
 
-@app.post("/api/onboarding/meal-preferences")
-def onboarding_meal_preferences(req: MealPreferencesOnboardingRequest):
-    """Save meal-planning onboarding answers directly (dietary restrictions per member, protein/cuisine/cooking-time preferences). Marks meal-planning onboarding complete."""
+@app.post("/api/onboarding/answers")
+def onboarding_answers(req: OnboardingAnswersRequest):
+    """
+    Save the onboarding-redesign minimum-viable question set in one call —
+    household member names, per-person hard restrictions, eating style,
+    won't-eat list, excited-about cuisines, and dinners per week. Replaces
+    the old /api/onboarding/meal-preferences endpoint's broader collection
+    (favorite proteins, casual dislikes beyond won't-eat, cooking-time
+    preference) — those are no longer asked upfront; they accumulate
+    through ordinary chat/UI use afterward, per the onboarding redesign PRD.
+    """
     try:
-        for name, restrictions in req.dietary_restrictions.items():
-            tools.set_member_dietary_restrictions(name, restrictions, replace=True)
-        tools.set_household_meal_preferences(
-            notes=req.notes,
-            protein_preferences=req.protein_preferences,
-            cuisine_preferences=req.cuisine_preferences,
-            cooking_time_preference=req.cooking_time_preference,
-            mark_complete=True,
+        memory = tools.save_onboarding_answers(
+            member_names=req.member_names,
+            household_restrictions=req.household_restrictions,
+            eating_style=req.eating_style,
+            wont_eat=req.wont_eat,
+            excited_about=req.excited_about,
+            dinners_per_week=req.dinners_per_week,
         )
     except Exception as e:
-        logger.exception("Meal preferences onboarding save failed")
+        logger.exception("Onboarding answers save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"saved": True}
+    return memory
+
+
+@app.get("/api/members/{name}/share-link")
+def get_member_share_link(name: str):
+    """
+    Get (or create on first use) a household member's self-service link —
+    powers both the onboarding first-plan reveal's invite-at-reveal offer
+    and the persistent "invite" affordance on the Memory view, since
+    skipping the reveal shouldn't mean losing the option entirely.
+    """
+    try:
+        link = tools.get_or_create_member_share_link(name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Member share link lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return link
 
 
 @app.post("/api/onboarding/generate-first-plan")
