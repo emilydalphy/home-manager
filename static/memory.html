@@ -357,8 +357,8 @@
   <div class="card">
     <h2>Eating style</h2>
     <p class="hint">A diet or style your meals should follow — keto, high-protein, low-carb, whatever fits. Leave blank if there isn't one.</p>
-    <div class="add-row">
-      <input type="text" id="eating-style" placeholder="e.g. high-protein, low-carb" />
+    <textarea id="eating-style" rows="3" placeholder="e.g. high-protein, low-carb"></textarea>
+    <div class="save-row">
       <button class="action" onclick="saveEatingStyle()">Save</button>
       <button class="action secondary" onclick="openConfirm(clearEatingStyle)">Clear</button>
     </div>
