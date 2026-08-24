@@ -416,7 +416,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_household_meal_preferences",
-        "description": "Save household food preferences: freeform notes, protein preferences (how often per protein), favorite cuisines, cooking time preference, eating style, dinners per week. Any field can be partial. Marks meal-planning onboarding complete by default.",
+        "description": "Save household food preferences: freeform notes, protein preferences (how often per protein), favorite cuisines, cooking time preference, eating style, breakfasts/lunches/dinners per week. Any field can be partial. Marks meal-planning onboarding complete by default.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -434,6 +434,8 @@ TOOL_DEFINITIONS = [
                 },
                 "eating_style": {"type": "string", "description": "Freeform diet/eating style the household's meals should follow, e.g. 'keto', 'high-protein, low-carb'. Distinct from hard dietary restrictions/allergies (those live on members)."},
                 "dinners_per_week": {"type": "integer", "description": "How many dinners a typical week should actually plan, 1-7. Defaults to 7 (every night) if never set."},
+                "breakfasts_per_week": {"type": "integer", "description": "How many breakfasts a typical week should actually plan, 1-7. Defaults to 7 (every day) if never set."},
+                "lunches_per_week": {"type": "integer", "description": "How many lunches a typical week should actually plan, 1-7. Defaults to 7 (every day) if never set."},
                 "mark_complete": {"type": "boolean", "description": "Defaults true. Set false for a partial mid-conversation update."},
             },
         },
@@ -997,23 +999,23 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week' (integer 1-7), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores"]},
-                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores"]},
+                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences."},
             },
             "required": ["field", "value"],
         },
     },
     {
         "name": "delete_preference",
-        "description": "Remove a remembered preference. For 'dislikes', 'cuisine_preferences', or 'usual_stores', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes', 'cooking_time_preference', or 'eating_style', omit item to clear the field. For 'dinners_per_week', omit item to reset to the default of 7.",
+        "description": "Remove a remembered preference. For 'dislikes', 'cuisine_preferences', or 'usual_stores', pass item = the value to remove. For 'protein_preferences', item = the protein name. For 'notes', 'cooking_time_preference', or 'eating_style', omit item to clear the field. For 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week', omit item to reset that one to the default of 7.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference", "usual_stores", "eating_style", "dinners_per_week"]},
+                "field": {"type": "string", "enum": ["dislikes", "cuisine_preferences", "protein_preferences", "notes", "cooking_time_preference", "usual_stores", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week"]},
                 "item": {"type": "string"},
             },
             "required": ["field"],
@@ -1370,8 +1372,10 @@ means don't plan those days; "under 30 minutes on weeknights" means quick weekni
 actually wants a dinner planned — if it's less than 7, only plan dinner for that many days, \
 spread across the week rather than clustered (e.g. 4 means skip dinner entirely on the other \
 3 days — leave no dinner entry for those dates at all, don't plan a lighter one as a stand-in). \
-Breakfast/lunch/snack aren't governed by this number — plan those every day as usual \
-regardless of how many dinner nights were requested.
+household_memory's breakfasts_per_week and lunches_per_week (1-7, default 7 each) work the \
+same way, independently, for those meals — each is its own count of days to plan that meal, \
+spread across the week rather than clustered, with no entry at all on the other days. Snack \
+isn't governed by any of these three numbers — plan snacks every day as usual regardless.
 - household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb") is a \
 style/goal every meal this week should genuinely follow, not just a soft nudge — if it's set \
 and non-empty, let it actually shape ingredient and recipe choices across every slot, not \

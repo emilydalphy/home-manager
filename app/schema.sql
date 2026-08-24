@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- instead of always getting all 7 filled in. Defaults to 7 (every night)
     -- for pre-redesign households that never answered this.
     dinners_per_week INTEGER NOT NULL DEFAULT 7,
+    -- Same idea as dinners_per_week, for the other two main meals.
+    breakfasts_per_week INTEGER NOT NULL DEFAULT 7,
+    lunches_per_week INTEGER NOT NULL DEFAULT 7,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

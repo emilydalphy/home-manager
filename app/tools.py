@@ -371,6 +371,8 @@ def set_household_meal_preferences(
     novelty_preference: str = "",
     eating_style: str | None = None,
     dinners_per_week: int | None = None,
+    breakfasts_per_week: int | None = None,
+    lunches_per_week: int | None = None,
     mark_complete: bool = True,
 ) -> dict:
     """
@@ -385,10 +387,11 @@ def set_household_meal_preferences(
     'surprise_me_often' — even 'mostly_favorites' still gets occasional new
     recipes, it's not "never"), eating_style (freeform, e.g. "keto",
     "high-protein, low-carb" — a style/goal for meals to follow, distinct
-    from hard dietary_restrictions), and dinners_per_week (1-7, how many
-    dinners a typical week should actually plan — a household that's only
-    home for dinner 4 nights doesn't need all 7 filled in). Any field can
-    be omitted/partial — pass what you have. By default this marks
+    from hard dietary_restrictions), and dinners_per_week/breakfasts_per_week/
+    lunches_per_week (each 1-7, how many days a typical week should actually
+    plan that meal — a household that's only home for dinner 4 nights
+    doesn't need all 7 filled in, same idea for breakfast/lunch). Any field
+    can be omitted/partial — pass what you have. By default this marks
     meal-planning onboarding as complete; pass mark_complete=False if
     you're saving a partial update mid-conversation.
     """
@@ -410,12 +413,18 @@ def set_household_meal_preferences(
     merged_dinners_per_week = dinners_per_week if dinners_per_week is not None else (
         existing["dinners_per_week"] if existing else 7
     )
+    merged_breakfasts_per_week = breakfasts_per_week if breakfasts_per_week is not None else (
+        existing["breakfasts_per_week"] if existing else 7
+    )
+    merged_lunches_per_week = lunches_per_week if lunches_per_week is not None else (
+        existing["lunches_per_week"] if existing else 7
+    )
 
     conn.execute(
         """
         INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, onboarding_complete, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET
             notes = excluded.notes,
             protein_preferences_json = excluded.protein_preferences_json,
@@ -424,6 +433,8 @@ def set_household_meal_preferences(
             novelty_preference = excluded.novelty_preference,
             eating_style = excluded.eating_style,
             dinners_per_week = excluded.dinners_per_week,
+            breakfasts_per_week = excluded.breakfasts_per_week,
+            lunches_per_week = excluded.lunches_per_week,
             onboarding_complete = excluded.onboarding_complete,
             updated_at = datetime('now')
         """,
@@ -436,6 +447,8 @@ def set_household_meal_preferences(
             merged_novelty,
             merged_eating_style,
             merged_dinners_per_week,
+            merged_breakfasts_per_week,
+            merged_lunches_per_week,
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
@@ -449,6 +462,8 @@ def set_household_meal_preferences(
         "novelty_preference": merged_novelty,
         "eating_style": merged_eating_style,
         "dinners_per_week": merged_dinners_per_week,
+        "breakfasts_per_week": merged_breakfasts_per_week,
+        "lunches_per_week": merged_lunches_per_week,
         "onboarding_complete": bool(mark_complete),
     }
 
@@ -460,13 +475,16 @@ def save_onboarding_answers(
     wont_eat: list[str],
     excited_about: list[str],
     dinners_per_week: int,
+    breakfasts_per_week: int = 7,
+    lunches_per_week: int = 7,
 ) -> dict:
     """
-    Save all seven onboarding-redesign questions in one call: household
+    Save all onboarding-redesign questions in one call: household
     member names, per-person hard restrictions/allergies (household_restrictions
     keyed by member name — only members who actually have something get an
     entry), a freeform eating style, standing dislikes ("won't eat, no
-    matter what"), cuisines/foods to lean into, and dinners-per-week. This
+    matter what"), cuisines/foods to lean into, and how many
+    breakfasts/lunches/dinners a typical week should plan. This
     is the entire pre-first-plan question set per the onboarding redesign —
     everything else (favorite proteins, casual dislikes beyond this list,
     cuisine depth beyond this list, feedback) is deliberately NOT asked
@@ -518,10 +536,12 @@ def save_onboarding_answers(
     set_household_meal_preferences(
         cuisine_preferences=excited_about,
         dinners_per_week=dinners_per_week,
+        breakfasts_per_week=breakfasts_per_week,
+        lunches_per_week=lunches_per_week,
         mark_complete=True,
     )
     _log_preference_event("onboarding_excited_about", "write")
-    _log_preference_event("onboarding_dinners_per_week", "write")
+    _log_preference_event("onboarding_meals_per_week", "write")
 
     return get_household_memory()
 
@@ -2776,6 +2796,8 @@ def get_household_memory() -> dict:
         "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},
         "eating_style": prefs["eating_style"] if prefs else "",
         "dinners_per_week": prefs["dinners_per_week"] if prefs else 7,
+        "breakfasts_per_week": prefs["breakfasts_per_week"] if prefs else 7,
+        "lunches_per_week": prefs["lunches_per_week"] if prefs else 7,
         "growth_count_this_month": count_preference_events_this_month(),
     }
 
@@ -2799,14 +2821,16 @@ def edit_preference(field: str, value) -> dict:
     store suggestions in the grocery list view), 'eating_style' (str,
     freeform — a diet/eating style the household's meals should follow,
     e.g. "keto" or "high-protein, low-carb"; distinct from hard dietary
-    restrictions), 'dinners_per_week' (int, 1-7 — how many dinners a
-    typical week should actually plan). To remove a
+    restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week'
+    (each int, 1-7 — how many days a typical week should actually plan
+    that meal). To remove a
     single item from a list rather than replacing
     it wholesale, use delete_preference instead.
     """
     valid_fields = {
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
-        "dislikes", "novelty_preference", "usual_stores", "eating_style", "dinners_per_week",
+        "dislikes", "novelty_preference", "usual_stores", "eating_style",
+        "dinners_per_week", "breakfasts_per_week", "lunches_per_week",
     }
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
@@ -2849,6 +2873,10 @@ def edit_preference(field: str, value) -> dict:
         return set_household_meal_preferences(eating_style=value, mark_complete=False)
     if field == "dinners_per_week":
         return set_household_meal_preferences(dinners_per_week=int(value), mark_complete=False)
+    if field == "breakfasts_per_week":
+        return set_household_meal_preferences(breakfasts_per_week=int(value), mark_complete=False)
+    if field == "lunches_per_week":
+        return set_household_meal_preferences(lunches_per_week=int(value), mark_complete=False)
     return set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
 
@@ -2859,7 +2887,8 @@ def delete_preference(field: str, item: str | None = None) -> dict:
     value to remove (case-insensitive match). For 'protein_preferences',
     item = the protein name to forget. For scalar fields ('notes',
     'cooking_time_preference', or 'eating_style'), omit item to clear the
-    field entirely. 'dinners_per_week' resets to the default of 7.
+    field entirely. 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week'
+    each reset to the default of 7.
     """
     conn = get_conn()
     existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
@@ -2914,6 +2943,16 @@ def delete_preference(field: str, item: str | None = None) -> dict:
     elif field == "dinners_per_week":
         conn.execute(
             "UPDATE meal_preferences SET dinners_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
+            (HOUSEHOLD_ID,),
+        )
+    elif field == "breakfasts_per_week":
+        conn.execute(
+            "UPDATE meal_preferences SET breakfasts_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
+            (HOUSEHOLD_ID,),
+        )
+    elif field == "lunches_per_week":
+        conn.execute(
+            "UPDATE meal_preferences SET lunches_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
             (HOUSEHOLD_ID,),
         )
     else:

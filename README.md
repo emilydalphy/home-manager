@@ -70,8 +70,9 @@ distance while cooking.
    "high-protein, low-carb" — typed, not picked from a preset list, so it
    doesn't inherit the fixed-catalog problem the rest of the app avoids);
    anything the household won't eat, period; a cuisine or two you're excited
-   about right now; and how many dinners a typical week should actually plan
-   (the rest of the week stays open for leftovers/takeout). Everything else —
+   about right now; and how many breakfasts, lunches, and dinners a typical
+   week should actually plan, each independently (the rest of the week stays
+   open for leftovers/takeout). Everything else —
    favorite proteins, casual dislikes beyond the won't-eat list, cuisine
    depth, recipe feedback — is deliberately *not* asked upfront; it
    accumulates through ordinary chat/UI use afterward, the same way "no
@@ -156,7 +157,8 @@ There's also a dedicated **What We Know** page (linked from the top of the
 chat page) if you'd rather review and edit things directly instead of asking
 in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
 add/remove protein preferences, edit cooking-time preference/eating
-style/dinners-per-week, and edit notes and household goals, all with
+style/breakfasts-lunches-dinners-per-week, and edit notes and household
+goals, all with
 immediate save, no conversation required. The page is split into
 **Household members** (each person's dietary restrictions, set during
 onboarding — plus a "Get their link" button per person for the same

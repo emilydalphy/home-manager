@@ -61,6 +61,8 @@ class OnboardingAnswersRequest(BaseModel):
     wont_eat: list[str] = []
     excited_about: list[str] = []
     dinners_per_week: int = 7
+    breakfasts_per_week: int = 7
+    lunches_per_week: int = 7
 
 
 class ChoreProfileRequest(BaseModel):
@@ -246,6 +248,8 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             wont_eat=req.wont_eat,
             excited_about=req.excited_about,
             dinners_per_week=req.dinners_per_week,
+            breakfasts_per_week=req.breakfasts_per_week,
+            lunches_per_week=req.lunches_per_week,
         )
     except Exception as e:
         logger.exception("Onboarding answers save failed")

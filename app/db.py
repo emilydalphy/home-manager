@@ -75,6 +75,8 @@ _MIGRATIONS = [
     ("meal_preferences", "eating_style", "TEXT NOT NULL DEFAULT ''"),
     # Onboarding redesign: how many dinners a typical week actually plans.
     ("meal_preferences", "dinners_per_week", "INTEGER NOT NULL DEFAULT 7"),
+    ("meal_preferences", "breakfasts_per_week", "INTEGER NOT NULL DEFAULT 7"),
+    ("meal_preferences", "lunches_per_week", "INTEGER NOT NULL DEFAULT 7"),
 ]
 
 

@@ -267,16 +267,29 @@
   <span class="back-link" data-back="wont-eat">&larr; Back</span>
 </div>
 
-<!-- Q7: dinners per week -->
+<!-- Q7: meals per week -->
 <div id="step-dinners" style="display:none">
-  <h1>How many dinners should we plan in a typical week?</h1>
+  <h1>How many meals should we plan in a typical week?</h1>
   <p class="subtitle">The rest of the week is yours — leftovers, takeout, whatever works.</p>
+  <p class="stepper-hint" style="margin-top:0">Breakfasts</p>
+  <div class="stepper">
+    <button class="stepper-btn" type="button" id="breakfasts-minus" aria-label="Fewer">&minus;</button>
+    <span class="stepper-value" id="breakfasts-value">7</span>
+    <button class="stepper-btn" type="button" id="breakfasts-plus" aria-label="More">+</button>
+  </div>
+  <p class="stepper-hint">Lunches</p>
+  <div class="stepper">
+    <button class="stepper-btn" type="button" id="lunches-minus" aria-label="Fewer">&minus;</button>
+    <span class="stepper-value" id="lunches-value">7</span>
+    <button class="stepper-btn" type="button" id="lunches-plus" aria-label="More">+</button>
+  </div>
+  <p class="stepper-hint">Dinners</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="dinners-minus" aria-label="Fewer">&minus;</button>
     <span class="stepper-value" id="dinners-value">5</span>
     <button class="stepper-btn" type="button" id="dinners-plus" aria-label="More">+</button>
   </div>
-  <p class="stepper-hint">1 to 7 nights.</p>
+  <p class="stepper-hint">1 to 7 days each.</p>
   <div><button class="next-btn" id="dinners-next" type="button">Build my first week</button></div>
   <span class="back-link" data-back="excited-about">&larr; Back</span>
 </div>
@@ -490,9 +503,13 @@ function buildExcitedStep() {
   });
 }
 
-// ---------- Q7: dinners per week ----------
+// ---------- Q7: meals per week ----------
 let dinnersPerWeek = 5;
+let breakfastsPerWeek = 7;
+let lunchesPerWeek = 7;
 function renderDinnersValue() { document.getElementById('dinners-value').textContent = dinnersPerWeek; }
+function renderBreakfastsValue() { document.getElementById('breakfasts-value').textContent = breakfastsPerWeek; }
+function renderLunchesValue() { document.getElementById('lunches-value').textContent = lunchesPerWeek; }
 document.getElementById('dinners-minus').addEventListener('click', () => {
   dinnersPerWeek = Math.max(1, dinnersPerWeek - 1);
   renderDinnersValue();
@@ -501,7 +518,25 @@ document.getElementById('dinners-plus').addEventListener('click', () => {
   dinnersPerWeek = Math.min(7, dinnersPerWeek + 1);
   renderDinnersValue();
 });
+document.getElementById('breakfasts-minus').addEventListener('click', () => {
+  breakfastsPerWeek = Math.max(1, breakfastsPerWeek - 1);
+  renderBreakfastsValue();
+});
+document.getElementById('breakfasts-plus').addEventListener('click', () => {
+  breakfastsPerWeek = Math.min(7, breakfastsPerWeek + 1);
+  renderBreakfastsValue();
+});
+document.getElementById('lunches-minus').addEventListener('click', () => {
+  lunchesPerWeek = Math.max(1, lunchesPerWeek - 1);
+  renderLunchesValue();
+});
+document.getElementById('lunches-plus').addEventListener('click', () => {
+  lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
+  renderLunchesValue();
+});
 renderDinnersValue();
+renderBreakfastsValue();
+renderLunchesValue();
 
 // ---------- Save the 7-question answer set ----------
 async function saveOnboardingAnswers() {
@@ -512,6 +547,8 @@ async function saveOnboardingAnswers() {
     wont_eat: wontEatItems,
     excited_about: getActiveChips(document.getElementById('excited-chips')),
     dinners_per_week: dinnersPerWeek,
+    breakfasts_per_week: breakfastsPerWeek,
+    lunches_per_week: lunchesPerWeek,
   };
   const res = await fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),

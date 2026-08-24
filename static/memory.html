@@ -365,6 +365,32 @@
   </div>
 
   <div class="card">
+    <h2>Breakfasts per week</h2>
+    <p class="hint">How many breakfasts a typical week should actually plan.</p>
+    <div class="add-row" style="align-items:center;">
+      <div class="stepper-wrap">
+        <button type="button" class="stepper-mini-btn" id="breakfasts-minus">&minus;</button>
+        <span class="stepper-mini-value" id="breakfasts-value">7</span>
+        <button type="button" class="stepper-mini-btn" id="breakfasts-plus">+</button>
+      </div>
+      <button class="action" onclick="saveBreakfastsPerWeek()">Save</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Lunches per week</h2>
+    <p class="hint">How many lunches a typical week should actually plan.</p>
+    <div class="add-row" style="align-items:center;">
+      <div class="stepper-wrap">
+        <button type="button" class="stepper-mini-btn" id="lunches-minus">&minus;</button>
+        <span class="stepper-mini-value" id="lunches-value">7</span>
+        <button type="button" class="stepper-mini-btn" id="lunches-plus">+</button>
+      </div>
+      <button class="action" onclick="saveLunchesPerWeek()">Save</button>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>Dinners per week</h2>
     <p class="hint">How many dinners a typical week should actually plan — the rest of the week is yours.</p>
     <div class="add-row" style="align-items:center;">
@@ -493,6 +519,10 @@ function render() {
   document.getElementById('eating-style').value = memory.eating_style || '';
   dinnersPerWeek = memory.dinners_per_week || 7;
   document.getElementById('dinners-value').textContent = dinnersPerWeek;
+  breakfastsPerWeek = memory.breakfasts_per_week || 7;
+  document.getElementById('breakfasts-value').textContent = breakfastsPerWeek;
+  lunchesPerWeek = memory.lunches_per_week || 7;
+  document.getElementById('lunches-value').textContent = lunchesPerWeek;
 
   const dislikesEl = document.getElementById('dislikes');
   dislikesEl.innerHTML = (memory.dislikes || []).length
@@ -794,6 +824,32 @@ document.getElementById('dinners-plus').addEventListener('click', () => {
 });
 function saveDinnersPerWeek() {
   editField('dinners_per_week', dinnersPerWeek);
+}
+
+let breakfastsPerWeek = 7;
+document.getElementById('breakfasts-minus').addEventListener('click', () => {
+  breakfastsPerWeek = Math.max(1, breakfastsPerWeek - 1);
+  document.getElementById('breakfasts-value').textContent = breakfastsPerWeek;
+});
+document.getElementById('breakfasts-plus').addEventListener('click', () => {
+  breakfastsPerWeek = Math.min(7, breakfastsPerWeek + 1);
+  document.getElementById('breakfasts-value').textContent = breakfastsPerWeek;
+});
+function saveBreakfastsPerWeek() {
+  editField('breakfasts_per_week', breakfastsPerWeek);
+}
+
+let lunchesPerWeek = 7;
+document.getElementById('lunches-minus').addEventListener('click', () => {
+  lunchesPerWeek = Math.max(1, lunchesPerWeek - 1);
+  document.getElementById('lunches-value').textContent = lunchesPerWeek;
+});
+document.getElementById('lunches-plus').addEventListener('click', () => {
+  lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
+  document.getElementById('lunches-value').textContent = lunchesPerWeek;
+});
+function saveLunchesPerWeek() {
+  editField('lunches_per_week', lunchesPerWeek);
 }
 
 // Resurfacing the invite-at-reveal offer (Phase onboarding-redesign §8):
