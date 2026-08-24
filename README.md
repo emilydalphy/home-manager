@@ -135,6 +135,14 @@ tracks how often each one gets planned, so it can favor familiar favorites
 over suggesting something new every time. Planning a saved recipe still
 auto-adds its ingredients to the grocery list.
 
+Recipes are generated from the model's own knowledge in a single pass — there's no web
+lookup or research step behind them. When a new recipe names a specific regional cuisine
+or style (Chettinad, Sichuan, Yucatecan, etc.), the prompt pushes for real depth: the
+actual spice/aromatic blend and technique that style is known for, not a generic dish
+with one token ingredient bolted on. If a named style isn't one it can do justice to, it's
+meant to fall back to a broader cuisine label instead of naming something specific and
+getting it thin.
+
 The assistant also picks up on feedback about specific recipes as soon as you
 mention it — "we loved that chicken dish," "that pasta was too bland," "make
 that again sometime" — and saves a liked/disliked rating plus any freeform
@@ -381,14 +389,16 @@ by querying for the earliest plan row, so it stays correct through backfills or
 re-onboarding). The assistant mentions both in chat too when a plan is generated, not just
 on this page.
 
-Any meal with a reason behind it gets a **"Why this?"** toggle right under its name — tap it
-to reveal one short, specific sentence on what actually drove the pick (a stated preference,
-something that fit the week, whatever the real signal was). The reasoning is written and
-saved by the LLM at the moment the plan is generated, not computed on the fly when someone
-taps the toggle, so it stays consistent with whatever the assistant says if you ask "why this?"
-in chat later — same stored sentence, not a freshly invented one. Meals with nothing more
-specific than generic filler skip the toggle entirely rather than showing empty reasoning.
-This shows up both here and in the Cooker view's meal detail.
+Any meal with a reason behind it has a **"Why this?"** toggle in the Cooker view's meal
+detail — tap it to reveal one short, specific sentence on what actually drove the pick (a
+stated preference, something that fit the week, whatever the real signal was). The reasoning
+is written and saved by the LLM at the moment the plan is generated, not computed on the fly
+when someone taps the toggle, so it stays consistent with whatever the assistant says if you
+ask "why this?" in chat later — same stored sentence, not a freshly invented one. Meals with
+nothing more specific than generic filler skip the toggle entirely rather than showing empty
+reasoning. It's deliberately left off this Share view, though — the page is styled to read
+like an actual restaurant menu for whoever's browsing what's for dinner, and the AI's
+behind-the-scenes rationale felt out of place against that presentation.
 
 A banner at the top surfaces anything in the **needs your attention** list — an
 inventory-depletion match worth double-checking, or a recently-cooked meal that hasn't been

@@ -139,31 +139,6 @@
   .meal-badge.snack { background: #F0B429; color: #3A2A0A; transform: rotate(2deg); }
   .meal-name { font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 14.5px; color: #3A1F2E; line-height: 1.4; }
   .meal-divider { height: 1px; background: #E8562A; opacity: 0.2; width: 36px; margin: 0 auto 16px; }
-  /* "Why this?" — small and muted, matching the card's own eyebrow tone,
-     deliberately not competing with the meal name above it. */
-  .why-toggle {
-    display: inline-block;
-    background: none;
-    border: none;
-    color: #8A7A83;
-    font-family: 'Karla', sans-serif;
-    font-size: 11px;
-    font-weight: 500;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 4px 0;
-    margin-top: 2px;
-    min-height: 44px;
-  }
-  .why-text {
-    color: #8A7A83;
-    font-family: 'Karla', sans-serif;
-    font-size: 12px;
-    font-style: italic;
-    line-height: 1.4;
-    max-width: 320px;
-    margin: 0 auto;
-  }
 
   .empty, .error { color: var(--text-muted); font-size: 0.95rem; padding: 1rem 0; }
   .pool-toggle {
@@ -319,32 +294,23 @@ function renderDayContent() {
   title.textContent = day.date === todayIsoDate() ? "Today's Table" : (weekdayName ? weekdayName + "'s Table" : 'The Table');
 
   const presentSlots = SLOT_ORDER.filter(slot => day[slot]);
+  // Deliberately no "Why this?" reasoning toggle on this view — this page
+  // is styled to read like an actual restaurant menu for whoever's
+  // browsing what's for dinner (not necessarily the person who set up the
+  // plan), and the AI's behind-the-scenes rationale for each pick felt out
+  // of place against that menu-card presentation. It's still shown on the
+  // Cooker view, where it's useful working context for the person actually
+  // planning/cooking.
   mealsDiv.innerHTML = presentSlots.map((slot, i) => {
     const badgeText = SLOT_LABELS[slot].toUpperCase() + (slot === STANDOUT_SLOT ? ' &#9733;' : '');
     const divider = i > 0 ? '<div class="meal-divider"></div>' : '';
-    const reasoning = day[`${slot}_reasoning`];
-    // "Why this?" — only shown when a real rationale was saved with the
-    // meal (see get_weekly_plan's `{slot}_reasoning`), never fabricated.
-    const why = reasoning ? `
-        <button type="button" class="why-toggle" data-why="${escapeHtml(slot)}-${selectedIdx}">Why this? &darr;</button>
-        <p class="why-text" id="why-${escapeHtml(slot)}-${selectedIdx}" style="display:none">${escapeHtml(reasoning)}</p>` : '';
     return `
       ${divider}
       <div class="meal-block">
         <div class="meal-badge ${BADGE_ROTATION_CLASS[slot]}">${badgeText}</div>
         <div class="meal-name">${escapeHtml(day[slot])}</div>
-        ${why}
       </div>`;
   }).join('') || '<p class="empty">Nothing planned for this day yet.</p>';
-
-  mealsDiv.querySelectorAll('.why-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const text = document.getElementById('why-' + btn.getAttribute('data-why'));
-      const open = text.style.display !== 'none';
-      text.style.display = open ? 'none' : 'block';
-      btn.innerHTML = open ? 'Why this? &darr;' : 'Why this? &uarr;';
-    });
-  });
 }
 
 function selectDay(idx) {

@@ -655,7 +655,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_recipe",
-        "description": "Save a recipe with its ingredients, for reuse in meal planning. When you're building this out from the user's own dish idea (see the weekly-planning guidance on one-off meals), fill in instructions/default_servings/prep_time_minutes/cook_time_minutes/advance_prep_notes too in this same call rather than leaving them for a separate update_recipe_details call — a recipe with no instructions saved shows in the Cooker view as 'no saved recipe detail,' which defeats the point of building it out.",
+        "description": "Save a recipe with its ingredients, for reuse in meal planning. When you're building this out from the user's own dish idea (see the weekly-planning guidance on one-off meals), fill in instructions/default_servings/prep_time_minutes/cook_time_minutes/advance_prep_notes too in this same call rather than leaving them for a separate update_recipe_details call — a recipe with no instructions saved shows in the Cooker view as 'no saved recipe detail,' which defeats the point of building it out. If the dish names a specific regional cuisine or style, give it real depth — the actual spice/aromatic blend and technique that style is known for, not a generic dish with one token ingredient bolted on; use a broader cuisine label instead if you don't know the named style well enough to do it justice.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1449,6 +1449,17 @@ only dinner. If it's blank, ignore it.
 main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
 saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
 its ingredients.
+- When a new recipe names a specific cuisine or regional style (Chettinad, Sichuan, Yucatecan, \
+etc. — not just a broad label like "Indian" or "Mexican"), actually cook like that style, not \
+a generic version wearing its name: use the real spice/aromatic blend that style is known for \
+(a Chettinad dish leans on things like fennel seed, star anise, dried red chilies, and roasted \
+coriander/black pepper together, not a single token spice plus salt), and build the technique \
+around how that cuisine actually layers flavor (blooming whole spices in oil, a specific \
+masala/paste base, a particular order of aromatics) rather than a generic sear-and-serve \
+approach with an ethnic ingredient bolted on. If you genuinely don't know a style well enough \
+to do this properly, pick a broader, less specific cuisine label instead of naming a precise \
+regional style and getting it thin — a plausible-but-shallow "Chettinad" dish is worse than \
+an honestly-labeled "Indian-spiced" one.
 - For each day, also fill in reasoning: one short, specific sentence a household member \
 would actually find useful if they tapped "why this?" — name the real thing that drove the \
 choice (a stated protein/cuisine preference, filling a variety gap from recent_history, \
@@ -1630,6 +1641,11 @@ ingredient and item choices across every category, not just proteins. If it's bl
 - For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \
 the exact meal_name.
+- When a new item names a specific regional cuisine or style, give it real depth — the actual \
+spice/aromatic blend and technique that style is known for, not a generic dish with one token \
+ingredient bolted on. See the day-based prompt's guidance on this; same rule applies here. If \
+you don't know a named regional style well enough to do it justice, use a broader cuisine \
+label instead rather than naming something specific and getting it thin.
 - For each item, also fill in reasoning: one short, specific sentence on why it made the \
 pool — same guidance as the day-based prompt (name the real driver: preference, variety, \
 near-expiring inventory, novelty_preference), never generic filler.
