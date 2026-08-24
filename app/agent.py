@@ -2312,6 +2312,43 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
         conversation.append({"role": "assistant", "content": response.content})
 
         if response.stop_reason != "tool_use":
+            # A response can still contain one or more tool_use blocks here
+            # even though the model didn't finish with stop_reason ==
+            # "tool_use" — most commonly when max_tokens cuts generation off
+            # mid-way through a multi-tool-call turn, truncating a later
+            # tool_use block before it's "chosen" as the finishing reason.
+            # The Anthropic API requires every tool_use block to be followed
+            # by a matching tool_result in the very next message — if we
+            # returned here without one, this half-finished assistant
+            # message would be saved into the persisted session history
+            # as-is, and EVERY future turn on this session would then fail
+            # immediately with a 400 (tool_use ids found without paired
+            # tool_result). Since this app pins every browser tab to the
+            # same "default" session id, that one bad turn would silently
+            # brick chat for everyone until the server restarted. Closing
+            # out any stray tool_use blocks with a synthetic error result
+            # keeps the saved history always well-formed, no matter how a
+            # response gets cut off.
+            stray_tool_use = [b for b in response.content if b.type == "tool_use"]
+            if stray_tool_use:
+                logger.warning(
+                    "run_agent_turn got stop_reason=%s with %d unresolved tool_use block(s) — "
+                    "closing them out with synthetic error results to keep history well-formed",
+                    response.stop_reason, len(stray_tool_use),
+                )
+                conversation.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": b.id,
+                            "content": json.dumps({"error": "Response was cut off before this tool call completed."}),
+                            "is_error": True,
+                        }
+                        for b in stray_tool_use
+                    ],
+                })
+
             text = "".join(block.text for block in response.content if block.type == "text")
             if not text.strip():
                 # Defensive fallback: never silently return a blank bubble to
