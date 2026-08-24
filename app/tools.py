@@ -2079,16 +2079,51 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     confident matches happen silently; anything uncertain is queued into
     get_attention_items rather than guessed at, and both are reported back
     in the result so it can be mentioned if relevant.
+
+    Component-based plans are meal-prepped: the same component (e.g. a
+    "Jello Bowl" side) is often planned for several meals across the week,
+    but it only gets cooked once in one batch, not separately per meal —
+    see get_cooker_view, which shows those as a single merged card rather
+    than repeating the row. So checking off any one of those linked entries
+    marks every entry sharing that same component name (within the same
+    plan) done/pending together, and inventory depletion still only runs
+    once (against entry_id itself) since the ingredients were only actually
+    used once for the whole batch.
     """
     conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT mpe.weekly_plan_id, COALESCE(r.name, mpe.freeform_meal) AS meal
+        FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.id = ? AND mpe.household_id = ?
+        """,
+        (entry_id, HOUSEHOLD_ID),
+    ).fetchone()
+    linked_ids = [entry_id]
+    if row and row["weekly_plan_id"] is not None:
+        plan_row = conn.execute(
+            "SELECT planning_mode FROM weekly_plans WHERE id = ?", (row["weekly_plan_id"],)
+        ).fetchone()
+        if plan_row and plan_row["planning_mode"] == "component_based":
+            siblings = conn.execute(
+                """
+                SELECT mpe.id FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+                WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ?
+                  AND LOWER(COALESCE(r.name, mpe.freeform_meal)) = LOWER(?)
+                """,
+                (HOUSEHOLD_ID, row["weekly_plan_id"], row["meal"]),
+            ).fetchall()
+            if siblings:
+                linked_ids = [r["id"] for r in siblings]
+
     cooked_at = "datetime('now')" if status == "done" else "NULL"
-    conn.execute(
+    conn.executemany(
         f"UPDATE meal_plan_entries SET cooked_status = ?, cooked_at = {cooked_at} WHERE id = ? AND household_id = ?",
-        (status, entry_id, HOUSEHOLD_ID),
+        [(status, eid, HOUSEHOLD_ID) for eid in linked_ids],
     )
     conn.commit()
     conn.close()
-    result = {"entry_id": entry_id, "cooked_status": status}
+    result = {"entry_id": entry_id, "cooked_status": status, "linked_entry_ids": linked_ids}
     if status == "done":
         depletion = deplete_inventory_for_meal(entry_id)
         result["inventory_depleted"] = depletion["depleted"]
@@ -2225,6 +2260,44 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # organized, rather than incidental insertion order.
         cat_rank = {c: i for i, c in enumerate(_COMPONENT_CATEGORY_ORDER)}
         meals.sort(key=lambda m: cat_rank.get(m["component_category"] or "", len(_COMPONENT_CATEGORY_ORDER)))
+
+        # A component-based plan assumes meal prep: the same component
+        # (e.g. a "Jello Bowl" side) commonly gets planned into several
+        # meals for the week, but it only needs to be batch-cooked once —
+        # so collapse repeat entries for the same component name into one
+        # card instead of showing "Jello Bowl" three separate times, and
+        # scale its ingredients up to a batch that covers every use
+        # (see check_off_meal, which marks every collapsed entry done
+        # together once this one card gets checked off).
+        grouped: dict[str, dict] = {}
+        order: list[str] = []
+        for m in meals:
+            key = (m["meal"] or "").strip().lower()
+            if key not in grouped:
+                grouped[key] = {**m, "entry_ids": [m["entry_id"]], "meal_count": 1, "_statuses": [m["cooked_status"]]}
+                order.append(key)
+            else:
+                g = grouped[key]
+                g["entry_ids"].append(m["entry_id"])
+                g["meal_count"] += 1
+                g["_statuses"].append(m["cooked_status"])
+
+        merged_meals = []
+        for key in order:
+            g = grouped[key]
+            statuses = g.pop("_statuses")
+            g["cooked_status"] = "done" if all(s == "done" for s in statuses) else "pending"
+            count = g["meal_count"]
+            if count > 1 and g["has_full_recipe"] and g["default_servings"]:
+                batch_servings = g["default_servings"] * count
+                scaled = scale_recipe(g["meal"], batch_servings)
+                g["ingredients"] = scaled["scaled_ingredients"]
+                g["default_servings"] = batch_servings
+                g["batch_note"] = f"Bulk-cook once — makes enough for all {count} meals this week."
+            else:
+                g["batch_note"] = None
+            merged_meals.append(g)
+        meals = merged_meals
 
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
     return {

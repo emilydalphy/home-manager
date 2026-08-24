@@ -357,6 +357,19 @@ plan itself was organized (protein, vegetable, carb, treat, dip, snack) rather t
 incidental insertion order — so the Cooker view reads the same way the plan was actually put
 together.
 
+Component-based plans assume meal prep: the same component (e.g. a "Jello Bowl" side, or a
+sheet-pan chicken meant to stretch across a few lunches) is often planned into several meals
+for the week, but it only gets cooked once, in one batch — so instead of showing that
+component as three separate identical cards, the Cooker view collapses repeated uses of the
+same component into a single card, scales its ingredient quantities up to a batch that covers
+every planned use (see `scale_recipe`), and tags it **"bulk-cook ×N"** with a note on how many
+meals it covers. Checking that one card off as done marks every meal it was standing in for as
+cooked together — see `check_off_meal`, which now looks for sibling `meal_plan_entries` sharing
+the same component name within a component-based plan and updates them as one unit, still only
+depleting inventory once (the ingredients were only actually used once, regardless of how many
+meals the batch gets split across). Day-based plans are unaffected — a recipe repeated across
+different days is still a separate cook each time, not one batch.
+
 Any recipe with a serving count shows a **–/+ stepper** in its detail view — tap it and the
 ingredient list recalculates live (via `GET /api/recipes/scale`, no chat round-trip) without
 touching the saved recipe. Quantities that don't parse as a number-plus-unit ("a pinch," "to

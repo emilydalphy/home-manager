@@ -118,6 +118,20 @@
     font-weight: 700;
     margin-left: 6px;
   }
+  /* Bulk-cook badge/note — a component collapsed from several planned
+     meal-uses into one batch (see get_cooker_view); Vivid Leaf rather than
+     the gold "advance prep" tag so the two aren't confused at a glance. */
+  .badge.batch-badge {
+    background: rgba(111, 184, 76, 0.2);
+    color: #3F7A29;
+    border-color: rgba(111, 184, 76, 0.55);
+  }
+  .batch-note {
+    font-family: var(--font-body, "Karla", sans-serif);
+    font-size: 0.8rem;
+    color: var(--text-muted, #8A7F6E);
+    margin: 2px 0 4px;
+  }
   .instr-group-label {
     display: inline-block;
     font-family: var(--font-body, "Karla", sans-serif);
@@ -691,7 +705,8 @@ function render(view) {
       <div class="card-top">
         <button class="check-toggle ${isDone ? 'checked' : ''}" data-entry-id="${m.entry_id}" data-next="${isDone ? 'pending' : 'done'}">${isDone ? '&check;' : ''}</button>
         <div class="card-body">
-          <p class="meal-name ${isDone ? 'done' : ''}">${escapeHtml(m.meal || '')}${m.advance_prep_notes ? '<span class="badge">advance prep</span>' : ''}</p>
+          <p class="meal-name ${isDone ? 'done' : ''}">${escapeHtml(m.meal || '')}${m.advance_prep_notes ? '<span class="badge">advance prep</span>' : ''}${m.batch_note ? '<span class="badge batch-badge">bulk-cook ×' + m.meal_count + '</span>' : ''}</p>
+          ${m.batch_note ? `<p class="batch-note">${escapeHtml(m.batch_note)}</p>` : ''}
           <p class="meal-meta">${escapeHtml(metaBits.join(' · '))}</p>
           ${m.reasoning ? `
           <button type="button" class="why-toggle" data-why-toggle="${idx}">Why this? &darr;</button>
