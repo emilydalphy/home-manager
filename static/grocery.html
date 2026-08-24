@@ -398,6 +398,19 @@ function storeInitial(name) { return (!name || name === 'Unassigned') ? '?' : (n
 
 let currentScreen = 'buy'; // buy | plan | shop | review
 let shopStore = null;
+let usualStores = []; // household's saved usual stores (from /api/memory) — offered as triage pills even before anything's tagged to them yet
+
+async function loadUsualStores() {
+  try {
+    const res = await fetch('/api/memory');
+    if (!res.ok) return;
+    const memory = await res.json();
+    usualStores = memory.usual_stores || [];
+    if (currentScreen === 'plan') refreshCurrentScreen();
+  } catch (err) {
+    // Store pills still work from whatever's already tagged on the list — this is just a nicety.
+  }
+}
 let expandedStoreCards = {}; // store name -> bool (screen 1)
 let planOpenId = null; // to-sort row currently open (screen 2)
 let planPageSize = 5;
@@ -743,7 +756,7 @@ function renderPlanScreen(data) {
           <span class="to-sort-caret">${isOpen ? '⌄' : '›'}</span>
         </div>
         <div class="store-pills ${isOpen ? 'open' : ''}" data-pills-for="${it.id}">
-          ${Object.keys(data.stores).filter(n => n !== 'Unassigned').map(n => `<button class="store-pill" data-assign-store="${escapeHtml(n)}" data-item-id="${it.id}">${escapeHtml(n)}</button>`).join('')}
+          ${Array.from(new Set([...Object.keys(data.stores).filter(n => n !== 'Unassigned'), ...usualStores])).map(n => `<button class="store-pill" data-assign-store="${escapeHtml(n)}" data-item-id="${it.id}">${escapeHtml(n)}</button>`).join('')}
           <button class="store-pill" data-assign-store="" data-item-id="${it.id}">Any</button>
         </div>
       </div>`;
@@ -1205,6 +1218,7 @@ function startShopperVoiceSession() {
 document.getElementById('voice-toggle-btn').addEventListener('click', startShopperVoiceSession);
 
 refreshCurrentScreen();
+loadUsualStores();
 </script>
 </body>
 </html>
