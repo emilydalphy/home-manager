@@ -338,6 +338,7 @@
 
   <div class="card">
     <h2>Cooking time preference</h2>
+    <p class="hint" id="cooking-time-insight"></p>
     <div class="add-row">
       <input type="text" id="cooking-time" placeholder="e.g. quick, moderate, no preference" />
       <button class="action" onclick="saveCookingTime()">Save</button>
@@ -348,6 +349,7 @@
   <div class="card">
     <h2>Recipe variety</h2>
     <p class="hint">How often new recipes get surfaced when a week gets planned — even the lowest setting still includes at least one new recipe.</p>
+    <p class="hint" id="recipe-variety-insight"></p>
     <div class="add-row">
       <select id="novelty-preference" style="flex:1"></select>
       <button class="action" onclick="saveNovelty()">Save</button>
@@ -514,7 +516,24 @@ function render() {
 
   document.getElementById('goals').value = memory.goals || '';
   document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
+  const ctInsight = document.getElementById('cooking-time-insight');
+  if (memory.cooking_time_insight) {
+    const avg = memory.cooking_time_insight.avg_minutes;
+    const n = memory.cooking_time_insight.meal_count;
+    ctInsight.textContent = `This month's plans have averaged ${avg} min (prep + cook) across ${n} meal${n === 1 ? '' : 's'}.`;
+    ctInsight.style.display = '';
+  } else {
+    ctInsight.style.display = 'none';
+  }
   document.getElementById('novelty-preference').innerHTML = noveltyOptions(memory.novelty_preference || 'balanced');
+  const rvInsight = document.getElementById('recipe-variety-insight');
+  if (memory.recipe_variety_insight) {
+    const { new_count, repeat_count } = memory.recipe_variety_insight;
+    rvInsight.textContent = `This month: ${new_count} new recipe${new_count === 1 ? '' : 's'}, ${repeat_count} repeat${repeat_count === 1 ? '' : 's'}.`;
+    rvInsight.style.display = '';
+  } else {
+    rvInsight.style.display = 'none';
+  }
   document.getElementById('notes').value = memory.notes || '';
   document.getElementById('eating-style').value = memory.eating_style || '';
   dinnersPerWeek = memory.dinners_per_week || 7;

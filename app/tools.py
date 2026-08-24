@@ -2767,7 +2767,12 @@ def get_household_memory() -> dict:
     plans. Also includes growth_count_this_month — how many preference
     writes (create/update/delete) have happened this calendar month, per
     the append-only preference_events log — for the "what we know" view's
-    "you've taught me N things this month" counter.
+    "you've taught me N things this month" counter. cooking_time_insight
+    and recipe_variety_insight pair the cooking-time and recipe-variety
+    settings with an actual read on this month's plans (average prep+cook
+    minutes, new-vs-repeat recipe count) rather than leaving them as plain
+    settings with no feedback loop — either is None if there's not yet
+    enough data this month to say anything meaningful.
     """
     conn = get_conn()
     prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
@@ -2775,6 +2780,47 @@ def get_household_memory() -> dict:
         "SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
     ).fetchall()
     household = conn.execute("SELECT goals FROM households WHERE id = ?", (HOUSEHOLD_ID,)).fetchone()
+
+    # Cooking-time insight: average actual prep+cook time across this
+    # month's planned meals (recipe-backed entries only, and only where
+    # both times are actually known) — pairs the editable
+    # cooking_time_preference setting with a real read on whether plans are
+    # actually landing near it, instead of it just being a form field with
+    # no feedback loop.
+    time_row = conn.execute(
+        """
+        SELECT AVG(r.prep_time_minutes + r.cook_time_minutes) AS avg_minutes, COUNT(*) AS n
+        FROM meal_plan_entries e JOIN recipes r ON r.id = e.recipe_id
+        WHERE e.household_id = ? AND strftime('%Y-%m', e.created_at) = strftime('%Y-%m', 'now')
+          AND r.prep_time_minutes IS NOT NULL AND r.cook_time_minutes IS NOT NULL
+        """,
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    cooking_time_insight = (
+        {"avg_minutes": round(time_row["avg_minutes"]), "meal_count": time_row["n"]}
+        if time_row and time_row["n"] else None
+    )
+
+    # Recipe-variety insight: of this month's planned meals, how many used
+    # a recipe first created this month (a "new" recipe surfacing, same
+    # idea novelty_preference controls) vs. one that already existed before
+    # this month (a repeat/favorite) — same pairing idea as above.
+    variety_row = conn.execute(
+        """
+        SELECT
+          SUM(CASE WHEN strftime('%Y-%m', r.created_at) = strftime('%Y-%m', 'now') THEN 1 ELSE 0 END) AS new_count,
+          SUM(CASE WHEN strftime('%Y-%m', r.created_at) != strftime('%Y-%m', 'now') THEN 1 ELSE 0 END) AS repeat_count
+        FROM meal_plan_entries e JOIN recipes r ON r.id = e.recipe_id
+        WHERE e.household_id = ? AND strftime('%Y-%m', e.created_at) = strftime('%Y-%m', 'now')
+        """,
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    total_variety = (variety_row["new_count"] or 0) + (variety_row["repeat_count"] or 0) if variety_row else 0
+    recipe_variety_insight = (
+        {"new_count": variety_row["new_count"] or 0, "repeat_count": variety_row["repeat_count"] or 0}
+        if total_variety else None
+    )
+
     conn.close()
     return {
         "members": [
@@ -2790,7 +2836,9 @@ def get_household_memory() -> dict:
         "cuisine_preferences": json.loads(prefs["cuisine_preferences_json"]) if prefs else [],
         "dislikes": json.loads(prefs["dislikes_json"]) if prefs else [],
         "cooking_time_preference": prefs["cooking_time_preference"] if prefs else "",
+        "cooking_time_insight": cooking_time_insight,
         "novelty_preference": prefs["novelty_preference"] if prefs else "balanced",
+        "recipe_variety_insight": recipe_variety_insight,
         "planning_mode": prefs["planning_mode"] if prefs else "day_based",
         "usual_stores": json.loads(prefs["usual_stores_json"]) if prefs else [],
         "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},

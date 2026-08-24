@@ -178,7 +178,13 @@ in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
 add/remove protein preferences, edit cooking-time preference/eating
 style/breakfasts-lunches-dinners-per-week, and edit notes and household
 goals, all with
-immediate save, no conversation required. The page is split into
+immediate save, no conversation required. The cooking-time and recipe-variety
+settings each show a real insight alongside the control instead of just being
+a plain field — "this month's plans have averaged 28 min" next to cooking-time
+preference, "2 new recipes, 4 repeats" next to recipe variety — computed from
+actual planned meals, so there's a feedback loop on whether the setting is
+landing, not just a value sitting there unconfirmed. Both stay hidden until
+there's at least one plan this month to compute from. The page is split into
 **Household members** (each person's dietary restrictions, set during
 onboarding — plus a "Get their link" button per person for the same
 self-service link offered at the onboarding reveal, so skipping it there
