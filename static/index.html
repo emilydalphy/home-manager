@@ -39,6 +39,36 @@
   .msg.user .bubble { background: var(--midnight-violet); color: #fff; }
   .msg.assistant .bubble { background: var(--violet-soft); color: var(--text-body); }
   .bubble { display: inline-block; padding: 8px 12px; border-radius: 12px; max-width: 85%; }
+  /* A "week at a glance" table (or any markdown table) coming back in a
+     reply — scrolls horizontally within the bubble rather than forcing the
+     whole bubble wider than the chat column. */
+  .msg.assistant .bubble:has(.msg-table) { max-width: 100%; }
+  .msg-table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0;
+    font-size: 0.85rem;
+    white-space: normal;
+    background: #fff;
+    border-radius: var(--radius-control);
+  }
+  .msg-table thead, .msg-table tbody { display: table; width: 100%; table-layout: auto; }
+  .msg-table th, .msg-table td {
+    padding: 7px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--card-border);
+    white-space: nowrap;
+  }
+  .msg-table th {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--midnight-violet);
+    background: var(--oat-cream);
+  }
+  .msg-table tbody tr:last-child td { border-bottom: none; }
+  .msg-table tbody tr:nth-child(even) { background: rgba(102, 48, 78, 0.04); }
   form { display: flex; gap: 8px; }
   input[type=text] {
     flex: 1;
@@ -155,18 +185,52 @@ const sessionId = 'default';
 })();
 
 // Assistant replies sometimes use light markdown (bold section headers,
-// "- " bullet lines) — textContent used to render that literally (visible
-// "**" asterisks). This escapes HTML first for safety, then converts just
-// **bold** and leading "- "/"* " bullet markers to real HTML; line breaks
-// still come from the .msg { white-space: pre-wrap } rule, no need to
-// touch those.
+// "- " bullet lines, and — especially for a "week at a glance" summary —
+// a pipe-delimited table) — textContent used to render all of that
+// literally (visible "**" asterisks, raw "| Mon | ... |" rows). This
+// escapes HTML first for safety, then converts **bold**, leading "- "/"* "
+// bullet markers, and any markdown table block into real HTML; remaining
+// line breaks still come from the .msg { white-space: pre-wrap } rule, no
+// need to touch those.
+function splitTableRow(line) {
+  const cells = line.split('|');
+  if (cells.length && cells[0].trim() === '') cells.shift();
+  if (cells.length && cells[cells.length - 1].trim() === '') cells.pop();
+  return cells.map(c => c.trim());
+}
+const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
+const TABLE_SEPARATOR_RE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
 function renderMarkdownLite(text) {
   const escaped = String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const bolded = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  return bolded
-    .split('\n')
-    .map(line => line.replace(/^(\s*)[-*]\s+/, '$1&bull;&nbsp;'))
-    .join('\n');
+  const lines = bolded.split('\n');
+
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (TABLE_ROW_RE.test(lines[i]) && i + 1 < lines.length && TABLE_SEPARATOR_RE.test(lines[i + 1])) {
+      const headerCells = splitTableRow(lines[i]);
+      let j = i + 2;
+      const rows = [];
+      while (j < lines.length && TABLE_ROW_RE.test(lines[j])) {
+        rows.push(splitTableRow(lines[j]));
+        j++;
+      }
+      out.push(
+        '<table class="msg-table"><thead><tr>' +
+        headerCells.map(c => `<th>${c}</th>`).join('') +
+        '</tr></thead><tbody>' +
+        rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') +
+        '</tbody></table>'
+      );
+      i = j;
+    } else {
+      out.push(lines[i].replace(/^(\s*)[-*]\s+/, '$1&bull;&nbsp;'));
+      i++;
+    }
+  }
+  return out.join('\n');
 }
 
 function addMessage(role, text) {

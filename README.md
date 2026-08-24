@@ -50,6 +50,15 @@ moment") instead of a raw status code or error blob — customer-first,
 always. A genuine bug (bad request, missing config, etc.) still surfaces
 immediately without wasting time retrying something that won't fix itself.
 
+The chat UI renders a light subset of markdown from Claude's replies (`renderMarkdownLite` in
+`static/index.html`) rather than showing it as raw text — `**bold**`, `- `/`* ` bullet lines, and
+now full markdown tables (pipe-delimited rows plus a `|---|---|` separator), rendered as a real
+scrollable `<table>` rather than literal pipe characters. This matters most for a "week at a
+glance" summary: the system prompt tells Claude to always format a multi-day meal summary as a
+table with the same small icon in each column header every time (🍳 Breakfast, 🥗 Lunch, 🍽️
+Dinner, 🍎 Snack) rather than scattering emoji into individual cells — one consistent visual
+anchor per meal type, not a cluttered one-off per message.
+
 ## Setup
 
 1. Install dependencies:
