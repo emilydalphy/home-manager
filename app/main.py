@@ -708,6 +708,17 @@ def get_grocery_already_have_view():
     return {"items": result}
 
 
+@app.get("/api/grocery-list/store-preferences")
+def get_grocery_item_store_preferences():
+    """Every remembered item->store association (see set_item_store) as a flat map — powers the Grocery List view's 'usually here' indicator on auto-tagged items."""
+    try:
+        prefs = tools.get_item_store_preferences()
+    except Exception as e:
+        logger.exception("Grocery store-preferences lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"preferences": prefs}
+
+
 @app.post("/api/grocery-list/{item_id}/keep")
 def keep_grocery_list_item(item_id: int):
     """Confirm an already-have-flagged item is still needed — moves it back into the normal To-buy list."""

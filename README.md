@@ -581,6 +581,20 @@ The previous single-page version is kept at `static/grocery-legacy.html` (not li
 this rebuild can be diffed or reverted if needed; it isn't wired into any route and can be deleted
 once the new version's been used for a while.
 
+**Remembering where an item usually comes from.** Assigning a store to an item on Plan your
+stops (a triage pill tap) doesn't just tag that one item this week — it's remembered as that
+item's usual store going forward (`set_grocery_item_store`/`get_item_store_preferences`, the
+same underlying preference chat's "we get paper towels at Costco" writes to). The next time
+that item name shows up on the list — a new week's plan, a fresh chat mention, a manual add —
+`add_grocery_item` checks that memory and tags it automatically instead of dropping it back into
+the unsorted "to sort" queue. Because this happens silently on the shopper's behalf, an
+auto-tagged row in an expanded store bucket carries a small **"usually here"** flag with a **"not
+this time"** action next to it — clears just that one row back to unsorted without touching the
+remembered preference, so it's a quick one-tap correction rather than the shopper having to
+notice and re-triage it manually, and it'll still auto-tag there again next week unless
+reassigned somewhere else. Picking "Any" during triage is treated as a one-off skip, not a
+decision to forget an item's usual store — only an actual store pick is remembered.
+
 ### Photo-based inventory capture
 
 Two "Scan instead of typing" buttons at the top of the Inventory view, each uploading a photo

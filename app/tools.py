@@ -2510,8 +2510,24 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
     return {"stores": stores}
 
 
-def set_grocery_item_store(item_id: int, store: str) -> dict:
-    """Same as set_item_store, but targeting one specific already-listed grocery item by id rather than every item with that name — for setting a store directly from a grocery list row rather than a general "we get X at Costco" chat mention."""
+def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> dict:
+    """
+    Set which store a specific already-listed grocery item should be
+    bought at — for assigning a store directly from a grocery list row
+    (e.g. the Grocery List view's triage screen) rather than a general "we
+    get X at Costco" chat mention (see set_item_store for that). By
+    default, assigning a real (non-empty) store also remembers it as this
+    item's usual store going forward — same underlying item_store_preferences
+    row set_item_store writes — so the next time this item name is added to
+    the list (a new week's plan, a chat mention, a manual add) it's already
+    tagged to that store instead of landing back in the unsorted "to sort"
+    queue. Picking "no particular store" (an empty store) never touches or
+    clears an existing preference — that's a one-off skip, not a decision
+    to forget where this item usually comes from. Pass remember=False to
+    set just this one row without touching the remembered preference at
+    all (used when re-displaying/correcting a row rather than the shopper
+    actively choosing a store for it).
+    """
     conn = get_conn()
     row = conn.execute(
         "SELECT id, item FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
@@ -2520,9 +2536,34 @@ def set_grocery_item_store(item_id: int, store: str) -> dict:
         conn.close()
         return {"item_id": item_id, "found": False}
     conn.execute("UPDATE grocery_items SET store = ? WHERE id = ?", (store, item_id))
+    remembered = False
+    if store and remember:
+        conn.execute(
+            "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
+            "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
+            (HOUSEHOLD_ID, row["item"].strip().lower(), store),
+        )
+        remembered = True
     conn.commit()
     conn.close()
-    return {"item_id": item_id, "item": row["item"], "store": store, "found": True}
+    return {"item_id": item_id, "item": row["item"], "store": store, "found": True, "remembered": remembered}
+
+
+def get_item_store_preferences() -> dict:
+    """
+    All remembered item->store associations (see set_item_store/
+    set_grocery_item_store) as a flat {item_name_lowercase: store} map —
+    powers the Grocery List view's "usually here" indicator, so a shopper
+    can see at a glance which store assignments were auto-applied from
+    memory (and weren't necessarily decided fresh this week) rather than
+    treating every tagged item the same.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT item, store FROM item_store_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchall()
+    conn.close()
+    return {r["item"]: r["store"] for r in rows}
 
 
 def get_grocery_already_have_items() -> list[dict]:

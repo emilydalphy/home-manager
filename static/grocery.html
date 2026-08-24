@@ -233,6 +233,11 @@
   .bucket-item-name { font-family: var(--font-body); font-weight: 600; font-size: 16px; color: var(--ink); flex: 1; }
   .bucket-item-qty { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); }
   .bucket-move { background: none; border: none; font-family: var(--font-body); font-weight: 700; font-size: 12px; color: var(--violet-light); cursor: pointer; padding: 6px 4px; min-height: 32px; }
+  /* Flags a store assignment that was auto-applied from a remembered
+     item->store preference (see set_grocery_item_store/get_item_store_preferences)
+     rather than picked fresh this week — "not this time" clears just this
+     row without forgetting the preference for future weeks. */
+  .usually-tag { font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--leaf-dark); background: rgba(111,184,76,.16); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
   .shop-this-store-btn { display: block; width: calc(100% - 32px); margin: 12px 16px 16px; background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 999px; padding: 13px; font-weight: 700; font-size: 15px; cursor: pointer; }
 
   /* ---------- Screen 3: Shopping a store ---------- */
@@ -399,6 +404,7 @@ function storeInitial(name) { return (!name || name === 'Unassigned') ? '?' : (n
 let currentScreen = 'buy'; // buy | plan | shop | review
 let shopStore = null;
 let usualStores = []; // household's saved usual stores (from /api/memory) — offered as triage pills even before anything's tagged to them yet
+let itemStorePrefs = {}; // item name (lowercase) -> remembered store, from /api/grocery-list/store-preferences
 
 async function loadUsualStores() {
   try {
@@ -410,6 +416,22 @@ async function loadUsualStores() {
   } catch (err) {
     // Store pills still work from whatever's already tagged on the list — this is just a nicety.
   }
+}
+
+async function loadItemStorePrefs() {
+  try {
+    const res = await fetch('/api/grocery-list/store-preferences');
+    if (!res.ok) return;
+    const data = await res.json();
+    itemStorePrefs = data.preferences || {};
+    if (currentScreen === 'plan') refreshCurrentScreen();
+  } catch (err) {
+    // "Usually here" tagging is a nicety, not load-bearing.
+  }
+}
+function isUsuallyHere(itemName, store) {
+  const remembered = itemStorePrefs[(itemName || '').trim().toLowerCase()];
+  return !!remembered && remembered === store;
 }
 let expandedStoreCards = {}; // store name -> bool (screen 1)
 let planOpenId = null; // to-sort row currently open (screen 2)
@@ -782,9 +804,12 @@ function renderPlanScreen(data) {
         if (!sec.items.length) continue;
         html += `<div class="aisle-subhead"><span class="aisle-spine" style="background:${aisleColor(sec.section)}"></span><span class="eyebrow aisle-name" style="margin:0">${escapeHtml(sec.section)}</span><span class="aisle-count left">${sec.items.length} left</span></div>`;
         for (const it of sec.items) {
+          const usually = isUsuallyHere(it.item, name);
           html += `<div class="bucket-aisle-row">
             <span class="bucket-item-name">${escapeHtml(it.item)}</span>
+            ${usually ? `<span class="usually-tag" title="Auto-assigned from what you usually get here">usually here</span>` : ''}
             <span class="bucket-item-qty">${escapeHtml(it.quantity || '')}</span>
+            ${usually ? `<button class="bucket-move" data-not-this-time="${it.id}">not this time</button>` : ''}
             <button class="bucket-move" data-move-item="${it.id}">move</button>
           </div>`;
         }
@@ -852,6 +877,19 @@ function wirePlanScreenActions(content, data) {
       btn.disabled = true;
       try { await postJSON('/api/grocery-list/' + itemId + '/store', { store: '' }); refreshCurrentScreen(); }
       catch (err) { btn.disabled = false; alert("Couldn't move that — try again."); }
+    });
+  });
+  // "not this time" on an auto-tagged ("usually here") row — sends it back
+  // to unsorted for this week only. Clearing a row's store this way never
+  // touches the remembered preference itself (see set_grocery_item_store),
+  // so it'll still auto-tag there again next week unless explicitly
+  // reassigned somewhere else via the triage pills.
+  content.querySelectorAll('[data-not-this-time]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = btn.getAttribute('data-not-this-time');
+      btn.disabled = true;
+      try { await postJSON('/api/grocery-list/' + itemId + '/store', { store: '' }); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't update that — try again."); }
     });
   });
   content.querySelectorAll('[data-shop-store]').forEach(btn => {
@@ -1219,6 +1257,7 @@ document.getElementById('voice-toggle-btn').addEventListener('click', startShopp
 
 refreshCurrentScreen();
 loadUsualStores();
+loadItemStorePrefs();
 </script>
 </body>
 </html>
