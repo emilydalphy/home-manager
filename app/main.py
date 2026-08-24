@@ -14,7 +14,7 @@ import logging
 import os
 
 from .db import init_db
-from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo
+from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
 from . import tools
 
 logger = logging.getLogger("home_manager")
@@ -288,6 +288,9 @@ def onboarding_generate_first_plan():
     try:
         week_start = datetime.date.today().isoformat()
         plan = generate_weekly_plan(week_start)
+    except AssistantUnavailableError as e:
+        logger.warning("First-plan generation hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("First-plan generation during onboarding failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -310,6 +313,9 @@ def onboarding_chores_recommend(req: ChoreProfileRequest):
         profile["pets"] = pets
         profile["goals"] = household.get("goals", "")
         chores = generate_chore_recommendations(profile)
+    except AssistantUnavailableError as e:
+        logger.warning("Chore recommendation hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Chore recommendation failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -506,6 +512,9 @@ def cooker_fill_recipe(req: FillRecipeRequest):
         view = tools.get_cooker_view()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except AssistantUnavailableError as e:
+        logger.warning("Cooker fill-recipe hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Cooker fill-recipe failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -812,6 +821,9 @@ async def scan_receipt(photo: UploadFile = File(...)):
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_receipt_image(image_b64, media_type)
+    except AssistantUnavailableError as e:
+        logger.warning("Receipt scan hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Receipt scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that receipt: {e}")
@@ -832,6 +844,9 @@ async def scan_fridge(photo: UploadFile = File(...)):
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_fridge_photo(image_b64, media_type)
+    except AssistantUnavailableError as e:
+        logger.warning("Fridge scan hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Fridge scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
@@ -847,6 +862,9 @@ async def scan_pantry(photo: UploadFile = File(...)):
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_pantry_photo(image_b64, media_type)
+    except AssistantUnavailableError as e:
+        logger.warning("Pantry scan hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Pantry scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
@@ -939,6 +957,14 @@ def chat(req: ChatRequest):
     history = SESSIONS.get(req.session_id, [])
     try:
         reply, updated_history = run_agent_turn(history, req.message)
+    except AssistantUnavailableError as e:
+        # Claude's API itself was down/overloaded even after retrying inside
+        # run_agent_turn — str(e) is already a warm, customer-facing
+        # message (never a raw status code or JSON blob), so it's safe to
+        # show as-is. Session history is untouched here since the request
+        # never got far enough to append anything malformed.
+        logger.warning("Chat turn hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         # Log the full error server-side, but return a short, readable
         # message to the browser instead of a raw crash page — the most

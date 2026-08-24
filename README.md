@@ -39,6 +39,17 @@ distance while cooking.
   chat UI.
 - **`static/index.html`** — single-page chat UI, no build step.
 
+Every call out to Claude's API (chat, plan generation, chore recommendations,
+recipe fill-in, receipt/fridge/pantry photo scans) is wrapped with a short
+automatic retry for transient, not-our-fault failures — Anthropic
+overloaded, rate limited, or a brief network blip. Most of these clear up
+within a second or two, so the retry alone means you usually never see
+them. If it's still failing after retrying, you get a plain, friendly
+message ("having trouble reaching Claude's servers, try again in a
+moment") instead of a raw status code or error blob — customer-first,
+always. A genuine bug (bad request, missing config, etc.) still surfaces
+immediately without wasting time retrying something that won't fix itself.
+
 ## Setup
 
 1. Install dependencies:

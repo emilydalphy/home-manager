@@ -10,12 +10,66 @@ import datetime
 import logging
 import os
 import json
-from anthropic import Anthropic
+import time
+from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import tools
 
 logger = logging.getLogger("home_manager")
 
 MODEL = "claude-sonnet-5"
+
+# Status codes worth silently retrying — Anthropic's own transient blips
+# (overloaded, rate-limited, brief 5xx) rather than anything wrong with the
+# request itself. Retrying anything else (e.g. a 400 bad request) would
+# just fail again the exact same way, so those raise immediately instead.
+_RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504, 529}
+
+
+class AssistantUnavailableError(RuntimeError):
+    """
+    Raised when Claude's API is still failing after retrying — always
+    carries a warm, plain-English message meant to be shown to the person
+    using the app as-is (never a raw status code, error type, or JSON
+    blob). Customer-first: a temporary blip on Anthropic's end should read
+    as "hang on, try again in a sec," not as a scary stack trace.
+    """
+
+
+def _create_with_retry(client: "Anthropic", *, max_attempts: int = 3, **kwargs):
+    """
+    Thin wrapper around client.messages.create that quietly retries a
+    handful of times (short exponential backoff) when the failure is
+    something transient and not our fault — Anthropic overloaded, rate
+    limited, or a brief network hiccup. Most of these clear up within a
+    second or two, so retrying means the person on the other end usually
+    never even notices anything happened. If it's still failing after all
+    attempts, raises AssistantUnavailableError with a friendly message
+    instead of letting the raw API error bubble up to the browser.
+    """
+    delay = 0.75
+    last_error: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return client.messages.create(**kwargs)
+        except (APIConnectionError, APITimeoutError) as e:
+            last_error = e
+        except APIStatusError as e:
+            if e.status_code not in _RETRYABLE_STATUS_CODES:
+                raise
+            last_error = e
+        if attempt < max_attempts:
+            logger.warning(
+                "Anthropic API call failed (attempt %d/%d), retrying in %.1fs: %s",
+                attempt, max_attempts, delay, last_error,
+            )
+            time.sleep(delay)
+            delay *= 2
+    logger.error("Anthropic API call failed after %d attempts: %s", max_attempts, last_error)
+    raise AssistantUnavailableError(
+        "I'm having trouble reaching Claude's servers right now — looks like a temporary "
+        "hiccup on their end, not anything wrong with your data. Please try again in a "
+        "moment, and if it's still not working after a minute or two, let me know."
+    ) from last_error
 
 SYSTEM_PROMPT = """You are a helpful home manager assistant for a household — the kind of \
 presence that makes the day feel a little lighter, not another thing to manage. You manage \
@@ -1441,7 +1495,7 @@ Call submit_weekly_plan with the result."""
     # Further bumped when breakfast/lunch/dinner/snack generation replaced
     # dinner-only (4x the entries per day, even though breakfast/lunch/
     # snack are individually lighter-weight than dinner).
-    response = client.messages.create(
+    response = _create_with_retry(client,
         model=MODEL,
         max_tokens=16000,
         tools=[_GENERATE_WEEKLY_PLAN_TOOL],
@@ -1598,7 +1652,7 @@ prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-
 
 Call submit_component_plan with the result."""
 
-    response = client.messages.create(
+    response = _create_with_retry(client,
         model=MODEL,
         max_tokens=8192,
         tools=[_GENERATE_COMPONENT_PLAN_TOOL],
@@ -1785,7 +1839,7 @@ a specific way for another may still warrant separate tasks; use judgment).
 
 Call submit_prep_schedule with the result."""
 
-    response = client.messages.create(
+    response = _create_with_retry(client,
         model=MODEL,
         max_tokens=4096,
         tools=[_GENERATE_PREP_SCHEDULE_TOOL],
@@ -1896,7 +1950,7 @@ same as the recipe's current value unless it's obviously wrong for the ingredien
 
 Call submit_recipe_detail with the result."""
 
-    response = client.messages.create(
+    response = _create_with_retry(client,
         model=MODEL,
         max_tokens=2048,
         tools=[_FILL_RECIPE_DETAIL_TOOL],
@@ -1975,7 +2029,7 @@ _SCAN_ITEMS_TOOL = {
 
 def _scan_image_for_items(image_b64: str, media_type: str, instructions: str) -> list[dict]:
     client = _client()
-    response = client.messages.create(
+    response = _create_with_retry(client,
         model=MODEL,
         max_tokens=4096,
         tools=[_SCAN_ITEMS_TOOL],
@@ -2239,7 +2293,7 @@ conceivable task.
 
 Call submit_chore_recommendations with the result."""
 
-    response = client.messages.create(
+    response = _create_with_retry(client,
         model=MODEL,
         max_tokens=2048,
         tools=[_RECOMMEND_CHORES_TOOL],
@@ -2295,7 +2349,7 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
             )
             return text, conversation
 
-        response = client.messages.create(
+        response = _create_with_retry(client,
             model=MODEL,
             # Was 1024 — too tight once tool calls like generate_weekly_plan
             # come back with a full week's worth of meals to summarize; the
