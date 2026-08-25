@@ -828,6 +828,53 @@ def complete_chore(instance_id: int) -> dict:
     return {"instance_id": instance_id, "status": "done"}
 
 
+def get_chores_due_today() -> list[dict]:
+    """
+    Chore instances due today — powers the app-shell Today screen's chores
+    card (design_handoff_shell/README.md §4). Includes both pending and
+    done instances (not just pending) so the UI can show an accurate
+    "x of y done" count rather than only the still-open ones.
+
+    Household-wide, not filtered to a signed-in member: there's no
+    per-user login concept yet (see HOUSEHOLD_ID above), so this can't
+    actually distinguish "my chores" from anyone else's the way the
+    redesign's Today spec describes. Noted as a known gap in the README
+    rather than silently faked.
+    """
+    conn = get_conn()
+    today = date.today().isoformat()
+    rows = conn.execute(
+        """
+        SELECT ci.id, c.name AS chore, ci.due_date, ci.status, m.name AS assignee
+        FROM chore_instances ci
+        JOIN chores c ON c.id = ci.chore_id
+        LEFT JOIN members m ON m.id = ci.assignee_id
+        WHERE ci.household_id = ? AND ci.due_date = ? AND ci.status != 'skipped'
+        ORDER BY ci.id ASC
+        """,
+        (HOUSEHOLD_ID, today),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
+    """
+    Mark a chore instance done or back to pending directly from the Today
+    screen's chores card (no chat round-trip needed) — same shape as
+    check_off_meal/check_off_prep_step below.
+    """
+    conn = get_conn()
+    completed_at_sql = "datetime('now')" if status == "done" else "NULL"
+    conn.execute(
+        f"UPDATE chore_instances SET status = ?, completed_at = {completed_at_sql} WHERE id = ? AND household_id = ?",
+        (status, instance_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {"instance_id": instance_id, "status": status}
+
+
 # ---------- Meal planning ----------
 
 def add_recipe(

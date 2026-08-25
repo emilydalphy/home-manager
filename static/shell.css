@@ -95,6 +95,162 @@ html, body {
   margin: 0;
 }
 
+/* ---------- Today (Step 2) ---------- */
+.today-content {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 6px 20px 8px;
+}
+
+.today-heading .kicker {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.today-heading h1 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 29px;
+  color: var(--plum-ink);
+  margin: 0;
+}
+
+/* Named .shell-card, not .card — theme.css already defines .card with a
+   cream fill for older pages; this is deliberately a distinct white-card
+   look for shell content and shouldn't be confused with (or silently
+   override) that one. */
+.shell-card {
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Tonight's dinner — the one plum card on Today. */
+.dinner-card {
+  flex-shrink: 0;
+  background: var(--plum);
+  border-radius: 18px;
+  padding: 20px;
+}
+.dinner-kicker {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.dinner-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 22px;
+  color: #fff;
+  line-height: 1.28;
+  margin-bottom: 14px;
+}
+.dinner-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-gold, .btn-outline-light, .btn-sand {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  min-height: 44px;
+}
+.btn-gold { background: var(--gold); color: var(--gold-ink); }
+.btn-gold:hover { background: #ffc63d; }
+.btn-outline-light { background: none; border: 1.5px solid rgba(255,255,255,.4); color: #fff; }
+.btn-outline-light:hover { background: rgba(255,255,255,.12); }
+.btn-sand { background: var(--sand); color: var(--plum); }
+.btn-sand:hover { background: #e2d2b6; }
+
+/* Your chores */
+.chores-card { padding: 16px 19px 8px; }
+.chores-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.chores-header h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--plum-ink);
+  margin: 0;
+}
+.chores-count {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--good);
+}
+.chores-count.all-done { color: var(--good-ink); }
+.chore-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+.chore-row:last-child { border-bottom: none; }
+.chore-checkbox {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid #c4b09c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.chore-row.done .chore-checkbox { background: var(--good); border-color: var(--good); }
+.chore-name {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--plum-ink);
+  flex: 1;
+}
+.chore-row.done .chore-name { color: var(--faded); text-decoration: line-through; }
+.empty-row {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--muted);
+  padding: 14px 0;
+}
+
+/* Grocery summary */
+.grocery-summary-card {
+  padding: 17px 19px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.grocery-summary-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--plum-ink);
+}
+.grocery-summary-sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+}
+.grocery-summary-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.grocery-summary-card .btn-sand { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
+
 /* ---------- Docked ask bar (every screen) ---------- */
 #ask-bar-dock {
   flex-shrink: 0;
@@ -283,4 +439,5 @@ html, body {
   #shell-rail .rail-share:hover { background: rgba(255,255,255,.08); }
 
   #ask-bar-dock { padding: 14px 32px; max-width: 720px; }
+  .today-content { max-width: 640px; padding: 24px 32px; }
 }

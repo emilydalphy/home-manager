@@ -313,12 +313,51 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
    the right thing; tab switching confirmed to not reload (a JS marker survives switching through
    all four tabs); desktop breakpoint confirmed (rail shows, tab bar hides at ≥1024px).
 
-   Known interim gaps, to close in later steps rather than now: the docked ask bar has no sheet
-   yet (Step 3) — tapping it just switches to the Today tab, where the current chat still lives;
-   on desktop this currently sits redundantly below Today's own embedded chat input until Step 2
-   replaces Today's content and Step 6 gives desktop its permanent ask column.
+   Known interim gap from this step, closed in Step 2 below: at the time Step 1 shipped, Today's
+   panel was still `index.html` embedded in an iframe, and the docked ask bar's interim tap
+   target was "switch to the Today tab." Step 2 replaced Today's content, so that's no longer
+   where the chat lives — see Step 2's note for what the ask bar does now.
 
 2. **Today** — heading, dinner card, chores, grocery summary. No needs-you band yet.
+
+   **✅ Done.** Today's panel in `shell.js` is real now, not the Step-1 `index.html` iframe:
+   derived heading (always "You're clear" for now — needsYouCount is hardcoded to 0 until Step 5
+   builds the band, but the heading logic itself already branches on 1 vs n same as it will
+   then), the plum tonight's-dinner card, a real chores card, and a real grocery summary card.
+
+   **New backend surface (deviation from README §10's "no new endpoint" line):** there was no
+   read endpoint for chores at all — `list_chores()` only existed as a chat-agent tool. Added
+   `GET /api/chores/today` and `POST /api/chores/{id}/status`, following the exact pattern
+   `/api/cooker/check-meal` etc. already use (a thin route wrapping a `tools.py` function, no
+   chat round-trip). Flagged to you before building it; you confirmed adding it was fine.
+
+   **Data sources, all existing endpoints except the two above:** dinner card reads
+   `/api/cooker-view` and finds today's `slot: "dinner"` entry; "Cook mode" switches to the
+   Kitchen tab (real navigation, not a stub); minutes shown = prep + cook time from the recipe.
+   Grocery summary reads `/api/grocery-list?status=needed` and counts items across sections.
+
+   **Known gaps/simplifications, called out rather than silently glossed:**
+   - No signed-in-member concept exists, so "Your chores" is actually household-wide chores due
+     today, not truly *my* chores — `get_chores_due_today()`'s docstring flags this too.
+   - The mock's "n items · needed before Thursday" subtitle assumes a due-date on grocery items
+     that doesn't exist in this schema — the summary shows "n items to get" / "All picked up"
+     instead of inventing a date.
+   - If there's no dinner planned for tonight (or the household is on a component-based plan,
+     which has no per-day dinner), the dinner card just doesn't render, rather than showing
+     something broken. The real "decide now" affordance for an empty slot is the needs-you band
+     — Step 5.
+   - Ask sheet still doesn't exist (Step 3). The docked ask bar and the dinner card's "Swap"
+     button both now do a real (non-shell) navigation to `/static/index.html` — the old chat
+     page still works end to end there. Added a one-line "← Back to Home Manager" link at the
+     top of `index.html` so that's not a dead end — the only internals touch made to any of the
+     four legacy pages so far, and only because Today no longer embeds this one.
+
+   Sandbox-verified against a fresh seeded household: chores card renders real seeded chores,
+   optimistic check/uncheck persists (and rolls back on a failed request), "x of y" and the
+   grocery count are both genuinely derived (checked against empty/all-done/no-dinner-planned
+   states, not just the happy path), Cook mode really switches tabs, and the ask-bar/Swap escape
+   hatch round-trips to chat and back via the new link.
+
 3. **Ask sheet + action cards** — chat moves off the home screen and into the sheet on every route.
 4. **Menu** — the three-slot data model, then the mobile menu, then the desktop grid.
 5. **Needs-you band** — last, because it needs the prioritisation rules (what counts as needing a

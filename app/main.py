@@ -89,6 +89,10 @@ class ChoreSaveRequest(BaseModel):
     chores: list[ChoreItemInput] = []
 
 
+class ChoreStatusRequest(BaseModel):
+    status: str = "done"  # 'done' | 'pending'
+
+
 class MemoryEditRequest(BaseModel):
     field: str  # notes | cooking_time_preference | cuisine_preferences | protein_preferences | dislikes | usual_stores | goals
     value: object  # str, list[str], or dict depending on field
@@ -542,6 +546,36 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
         logger.exception("Attention-item resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"items": items}
+
+
+@app.get("/api/chores/today")
+def chores_today():
+    """
+    Chore instances due today — powers the app-shell Today screen's chores
+    card (design_handoff_shell/README.md §4). Added for Step 2 of that
+    redesign: no chores read endpoint existed before this (list_chores was
+    chat-agent-only), so this — like /api/cooker-view, /api/grocery-list,
+    etc. — is a small direct-read endpoint for a UI page rather than a
+    chat round-trip. See the Step 2 note in the README's build-order log
+    for why this exists despite that doc's "no new endpoints" line.
+    """
+    try:
+        chores = tools.get_chores_due_today()
+    except Exception as e:
+        logger.exception("Today's-chores lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"chores": chores}
+
+
+@app.post("/api/chores/{instance_id}/status")
+def set_chore_status(instance_id: int, req: ChoreStatusRequest):
+    """Toggle a chore instance done/pending directly from the Today screen's chores card (no chat round-trip needed)."""
+    try:
+        result = tools.set_chore_instance_status(instance_id, req.status)
+    except Exception as e:
+        logger.exception("Chore status update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
 
 
 @app.post("/api/recipe-feedback")
