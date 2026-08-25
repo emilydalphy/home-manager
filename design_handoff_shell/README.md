@@ -397,6 +397,62 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
    Checked at both the mobile and desktop breakpoints.
 
 4. **Menu** — the three-slot data model, then the mobile menu, then the desktop grid.
+
+   **✅ Done.** New backend: `tools.get_week_menu()` + `GET /api/week-menu` — this is the one new
+   endpoint README §10 pre-authorizes ("no new endpoint other than the three-slot meal plan").
+   Always returns exactly 7 days anchored at the current (most recently created) plan's
+   `week_start_date` — same "current plan" convention `get_weekly_plan()` already uses, so this
+   doesn't invent an independent Monday/Sunday calendar-week concept. Each day has
+   `breakfast`/`lunch`/`dinner`, each `null` or `{title, meta, source}`.
+
+   **Judgment calls (no spec'd mapping exists for these — documented in the function's docstring
+   too):**
+   - `source`/`meta` are derived from the entry's freeform text: "leftover(s)" → `source:
+     "leftovers"`, `meta: "reheat"`; "takeout"/"take-out"/"delivery"/"order in" → `source:
+     "takeout"`, `meta: "takeout"`; anything else → `source: "plan"`, `meta` = the recipe's
+     `prep_time_minutes + cook_time_minutes` as `"N min"` when both are known on the linked
+     recipe, else `null` (no invented number).
+   - Component-based plans have no real per-day assignment underneath (same as
+     `get_weekly_plan`'s existing `menu_is_suggested` mechanism) — this function fills the 7 days
+     from that same suggested spread, `source: "plan"` / `meta: null` throughout, and passes
+     `menu_is_suggested` through so the UI can note it's an example arrangement.
+   - No plan yet → `week_start_date: null`, `days: []` (household name still included so the empty
+     state can still show "The Dalphy House" / "No meal plan yet").
+
+   Frontend: `shell.js`'s Week tab is real now — mobile renders the paper header card + seven day
+   cards (dotted-leader course rows, italic urgent "Choose a {slot}" / "Pick" for an empty slot,
+   tappable → Today); desktop (`>=1100px`, its own breakpoint per §5, distinct from the shell's
+   1024px rail breakpoint) renders one paper sheet as a 7-column × 3-row grid with a course-label
+   gutter and a tinted today's column. Both are built from one `/api/week-menu` fetch and switched
+   purely by CSS (`.week-days` / `.week-grid`), so there's no JS-side breakpoint branching to keep
+   in sync. `flex-shrink:0` added on the day cards per §8's warning (they use `overflow:hidden`).
+
+   **More judgment calls, on the UI side (no prioritisation/change-tracking exists yet — that's
+   Step 5/6):**
+   - Day status badge: `Tonight` for today, `Served` for a past day, `Needs you` for a future day
+     with any empty slot, otherwise no badge shown. The spec's fourth status, `Updated`, needs
+     "changed in last session" tracking this step doesn't build.
+   - Ribbon: plum for today, `--urgent` for a future/today day with an empty slot, otherwise
+     transparent. `--good` ("just changed") isn't derivable yet either.
+   - A **past** day's empty slot is shown as plain "Not planned" (`--faded`, not tappable) rather
+     than urgent/"Pick" — there's no decision left to make about a day that already happened.
+   - Empty-slot copy is the generic "Choose a {slot}" — the mock's "...— tee-ball night" reason
+     needs a calendar/event signal this app doesn't have.
+   - The header's derived status line counts remaining empty slots from today forward ("2 meals
+     still need a decision" / "Your week is set.") rather than surfacing one specific real-world
+     conflict, for the same reason.
+
+   Sandbox-verified: `get_week_menu()` exercised directly against a seeded DB for all three real
+   source categories (a saved recipe → `"plan"` with real minutes, a freeform "Leftover chili" →
+   `"leftovers"`/`"reheat"`, a freeform "Takeout from Nonna Pizza" → `"takeout"`/`"takeout"`), the
+   no-plan-yet case, and a component-based plan (7-day spread, `menu_is_suggested: true`) — then
+   the same cases again through the real HTTP endpoint. In-browser via Playwright at both
+   breakpoints: 7 day cards / 7-column grid render from real data, the empty-week state, a
+   fully-planned week ("Your week is set.", no urgent rows), a past day showing "Served" +
+   "Not planned" instead of an urgent pick, the 1100px→mobile-stack fallback confirmed still
+   collapsed at 1024px, and clicking a "Pick" row (both the day-card and grid variants) correctly
+   switches to Today.
+
 5. **Needs-you band** — last, because it needs the prioritisation rules (what counts as needing a
    decision, and in what order). Start with two hardcoded rules: an empty dinner slot within 48
    hours, and a shop run whose items are needed before the next planned meal.

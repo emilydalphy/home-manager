@@ -27,6 +27,13 @@
   static/index.html's chat is untouched and still works standalone, but
   nothing in the shell links to it as of this step — the sheet fully
   replaces it as the way to reach the assistant from the app.
+
+  Step 4: Week is real now — the seven-day paper menu on mobile, a
+  7-column x 3-row grid on desktop (>=1100px, its own breakpoint), backed
+  by the new GET /api/week-menu endpoint (see app/tools.get_week_menu for
+  the three-slot {title, meta, source} data model and its derivation
+  judgment calls). See the "Week (Step 4)" section below for the UI-side
+  judgment calls (day status, ribbon, empty-slot copy).
 */
 (function () {
   'use strict';
@@ -44,11 +51,7 @@
 
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.calendarDay, real: true },
-    { key: 'week', path: '/week', label: 'Week', railLabel: 'This Week', icon: ICONS.calendarWeek, placeholder: {
-        kicker: 'Coming in step 4',
-        title: 'Your weekly menu',
-        body: 'The paper-style weekly menu (breakfast / lunch / dinner, seven days) lands here once the meal-plan data model supports three slots a day.'
-      } },
+    { key: 'week', path: '/week', label: 'Week', railLabel: 'This Week', icon: ICONS.calendarWeek, week: true },
     { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, embed: '/static/grocery.html' },
     { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, embed: '/static/cooker.html' }
   ];
@@ -147,6 +150,11 @@
     if (tab.real && !panel.dataset.built) {
       panel.dataset.built = '1';
       buildTodayPanel(panel);
+    }
+    // Lazy-build the Week menu the first time it's shown (Step 4).
+    if (tab.week && !panel.dataset.built) {
+      panel.dataset.built = '1';
+      buildWeekPanel(panel);
     }
 
     if (pushHistory && window.location.pathname.replace(/\/+$/, '') !== (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''))) {
@@ -319,6 +327,218 @@
       console.warn('Grocery summary lookup failed:', err);
       sub.textContent = 'Couldn\'t load the grocery list right now.';
     }
+  }
+
+  // ---------- Week (Step 4) ----------
+  // README §5: the weekly menu, "a printed restaurant menu, not a table."
+  // Backed by GET /api/week-menu (app/tools.get_week_menu) — always 7 days,
+  // three slots a day, each slot null or {title, meta, source}. Mobile
+  // renders a paper header + seven day cards; desktop (>=1100px, a
+  // breakpoint of its own, distinct from the shell's 1024px rail
+  // breakpoint) renders one paper sheet as a 7-column x 3-row grid. Both
+  // are built from the same fetch and switched purely by CSS so there's no
+  // JS-side breakpoint logic to keep in sync.
+  //
+  // Judgment calls (no real prioritisation/"changed last session" tracking
+  // exists yet — that's Step 5/6):
+  //   - Day status: "Tonight" for today, "Served" for past days, "Needs
+  //     you" for a future day with any empty slot, otherwise no status
+  //     badge. The spec's fourth status ("Updated") needs change-tracking
+  //     this step doesn't have yet.
+  //   - Ribbon: plum for today, --urgent for any empty slot, otherwise
+  //     transparent. "--good = just changed" isn't derivable yet either.
+  //   - Empty-slot copy is the generic "Choose a {slot}" — the mock's
+  //     "...— tee-ball night" reason needs a calendar/event signal this
+  //     app doesn't have.
+  //   - Header status line counts remaining empty slots from today forward
+  //     rather than surfacing a specific real-world conflict (same reason).
+  var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+  var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];
+
+  async function buildWeekPanel(panel) {
+    panel.innerHTML =
+      '<div class="week-content">' +
+        '<div class="menu-header shell-card" id="week-header"><div class="menu-loading">Loading your menu&hellip;</div></div>' +
+        '<div class="week-days" id="week-days"></div>' +
+        '<div class="week-grid" id="week-grid" hidden></div>' +
+        '<div class="menu-footer shell-card" id="week-footer">' +
+          '<p>Tell me what&rsquo;s happening this week and I&rsquo;ll rebuild the plan.</p>' +
+          '<button type="button" class="btn-gold" id="week-footer-ask">Ask Home Manager</button>' +
+        '</div>' +
+      '</div>';
+
+    panel.querySelector('#week-footer-ask').addEventListener('click', function () {
+      openAskSheet();
+    });
+
+    await loadWeekMenu(panel);
+  }
+
+  async function loadWeekMenu(panel) {
+    try {
+      var res = await fetch('/api/week-menu');
+      if (!res.ok) throw new Error('week-menu lookup failed');
+      var data = await res.json();
+      renderWeekMenu(panel, data);
+    } catch (err) {
+      console.warn('Week menu lookup failed:', err);
+      panel.querySelector('#week-header').innerHTML = '<div class="menu-loading">Couldn\'t load your menu right now.</div>';
+    }
+  }
+
+  function dayName(dateStr, opts) {
+    // Parse as local, not UTC, so "today" compares correctly regardless of timezone offset.
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', opts);
+  }
+
+  function classifyDay(day, todayStr) {
+    var hasEmpty = WEEK_SLOTS.some(function (s) { return !day[s]; });
+    var isToday = day.date === todayStr;
+    var isPast = day.date < todayStr;
+    // A past day's empty slot isn't an open decision any more — don't flag
+    // it urgent or offer "Pick" for something that already happened.
+    var needsDecision = !isPast && hasEmpty;
+    var status = isToday ? 'Tonight' : (isPast ? 'Served' : (needsDecision ? 'Needs you' : ''));
+    var ribbon = isToday ? 'today' : (needsDecision ? 'urgent' : '');
+    return { hasEmpty: hasEmpty, needsDecision: needsDecision, isToday: isToday, isPast: isPast, status: status, ribbon: ribbon };
+  }
+
+  function renderWeekMenu(panel, data) {
+    var headerEl = panel.querySelector('#week-header');
+    var daysEl = panel.querySelector('#week-days');
+    var gridEl = panel.querySelector('#week-grid');
+
+    if (!data.weekly_plan_id || !data.days.length) {
+      headerEl.innerHTML =
+        '<div class="menu-rule-line">EST. 2019</div>' +
+        '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Home Manager') + '</h1>' +
+        '<div class="menu-subtitle">No meal plan yet</div>' +
+        '<div class="menu-dots">&bull;&bull;&bull;</div>' +
+        '<div class="menu-status">Ask Home Manager to plan your week to get started.</div>';
+      daysEl.innerHTML = '';
+      gridEl.innerHTML = '';
+      return;
+    }
+
+    var todayStr = new Date().toISOString().slice(0, 10);
+    var days = data.days.map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
+    var emptyAheadCount = days.filter(function (d) { return d.needsDecision; }).length;
+    var statusLine = emptyAheadCount === 0
+      ? 'Your week is set.'
+      : (emptyAheadCount === 1 ? 'One meal still needs a decision.' : emptyAheadCount + ' meals still need a decision.');
+
+    headerEl.innerHTML =
+      '<div class="menu-rule-line">EST. 2019</div>' +
+      '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Home Manager') + '</h1>' +
+      '<div class="menu-subtitle">menu for the week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
+      '<div class="menu-dots">&bull;&bull;&bull;</div>' +
+      '<div class="menu-status">' + escapeHtml(statusLine) + '</div>' +
+      (data.menu_is_suggested ? '<div class="menu-suggested-note">One example arrangement — your household assembles freely.</div>' : '');
+
+    function slotRowHtml(day, slot) {
+      var entry = day[slot];
+      var label = '<div class="course-label">' + SLOT_LABELS[slot] + '</div>';
+      if (!entry) {
+        if (day.isPast) {
+          // Already happened — nothing to pick, so no urgent styling or tap target.
+          return (
+            '<div class="course-row">' +
+              '<div class="course-main">' +
+                '<span class="course-dish course-dish-blank">Not planned</span>' +
+                '<span class="course-leader"></span>' +
+              '</div>' +
+              label +
+            '</div>'
+          );
+        }
+        return (
+          '<div class="course-row course-row-empty" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
+            '<div class="course-main">' +
+              '<span class="course-dish course-dish-empty">Choose a ' + slot + '</span>' +
+              '<span class="course-leader"></span>' +
+              '<span class="course-meta course-meta-empty">Pick</span>' +
+            '</div>' +
+            label +
+          '</div>'
+        );
+      }
+      return (
+        '<div class="course-row">' +
+          '<div class="course-main">' +
+            '<span class="course-dish' + (slot === 'dinner' ? ' course-dish-dinner' : '') + '">' + escapeHtml(entry.title) + '</span>' +
+            '<span class="course-leader"></span>' +
+            (entry.meta ? '<span class="course-meta">' + escapeHtml(entry.meta) + '</span>' : '') +
+          '</div>' +
+          label +
+        '</div>'
+      );
+    }
+
+    daysEl.innerHTML = days.map(function (day) {
+      var ribbonClass = day.ribbon ? ' ribbon-' + day.ribbon : '';
+      return (
+        '<div class="shell-card day-card' + ribbonClass + (day.isPast ? ' day-past' : '') + '">' +
+          '<div class="day-header">' +
+            '<span class="day-name">' + dayName(day.date, { weekday: 'long' }) + '</span>' +
+            '<span class="day-date">' + dayName(day.date, { month: 'short', day: 'numeric' }) + '</span>' +
+            '<span class="day-rule"></span>' +
+            (day.status ? '<span class="day-status">' + escapeHtml(day.status) + '</span>' : '') +
+          '</div>' +
+          WEEK_SLOTS.map(function (s) { return slotRowHtml(day, s); }).join('') +
+        '</div>'
+      );
+    }).join('');
+
+    var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
+    gridEl.innerHTML =
+      '<div class="shell-card week-grid-sheet">' +
+        '<div class="week-grid-table">' +
+          '<div class="wg-cell wg-corner"></div>' +
+          days.map(function (day, i) {
+            return (
+              '<div class="wg-cell wg-daycol-head' + (i === todayIndex ? ' wg-today' : '') + '">' +
+                '<div class="wg-day-name">' + dayName(day.date, { weekday: 'long' }) + '</div>' +
+                '<div class="wg-day-date">' + dayName(day.date, { month: 'short', day: 'numeric' }) + '</div>' +
+              '</div>'
+            );
+          }).join('') +
+          WEEK_SLOTS.map(function (slot) {
+            return (
+              '<div class="wg-cell wg-gutter">' + SLOT_LABELS[slot] + '</div>' +
+              days.map(function (day, i) {
+                var entry = day[slot];
+                var cellClass = 'wg-cell wg-slot' + (i === todayIndex ? ' wg-today' : '');
+                if (!entry) {
+                  if (day.isPast) {
+                    return '<div class="' + cellClass + '"><span class="wg-dish wg-dish-blank">Not planned</span></div>';
+                  }
+                  return (
+                    '<div class="' + cellClass + ' wg-slot-empty" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
+                      '<span class="course-dish-empty">Choose a ' + slot + '</span>' +
+                      '<span class="course-meta-empty">Pick</span>' +
+                    '</div>'
+                  );
+                }
+                return (
+                  '<div class="' + cellClass + '">' +
+                    '<span class="wg-dish">' + escapeHtml(entry.title) + '</span>' +
+                    (entry.meta ? '<span class="wg-meta">' + escapeHtml(entry.meta) + '</span>' : '') +
+                  '</div>'
+                );
+              }).join('')
+            );
+          }).join('') +
+        '</div>' +
+      '</div>';
+
+    // "Pick" tap target -> Today, where the (future, Step 5) decision card
+    // resolves it. Nothing else on the menu is tappable, per README §5.
+    panel.querySelectorAll('.course-row-empty, .wg-slot-empty').forEach(function (el) {
+      var go = function () { activateTab('today', true); };
+      el.addEventListener('click', go);
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
   }
 
   // ---------- Docked ask bar ----------

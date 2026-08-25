@@ -595,6 +595,23 @@ def set_chore_status(instance_id: int, req: ChoreStatusRequest):
     return result
 
 
+@app.get("/api/week-menu")
+def week_menu(weekly_plan_id: int | None = None):
+    """
+    The always-7-day, three-slot (breakfast/lunch/dinner) weekly menu —
+    powers the app-shell Week tab (design_handoff_shell/README.md §5). This
+    is the one new endpoint that README §10 pre-authorizes ("no new
+    endpoint other than the three-slot meal plan"). See
+    tools.get_week_menu for the title/meta/source derivation.
+    """
+    try:
+        menu = tools.get_week_menu(weekly_plan_id)
+    except Exception as e:
+        logger.exception("Week-menu lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return menu
+
+
 @app.post("/api/recipe-feedback")
 def record_recipe_feedback(req: RecipeFeedbackRequest):
     """Rate a recipe (liked/disliked, with optional notes) directly from the Cooker view's feedback-nudge banner item — the inline alternative to answering 'how'd it go?' back in chat."""

@@ -596,3 +596,268 @@ html, body {
   #ask-bar-dock { padding: 14px 32px; max-width: 720px; }
   .today-content { max-width: 640px; padding: 24px 32px; }
 }
+
+/* ---------- Week — the weekly menu (Step 4, README §5) ---------- */
+/* "Treat this as a printed restaurant menu, not a table." Mobile is a
+   paper header card + seven day cards; desktop (>=1100px, a breakpoint of
+   its own, distinct from the 1024px shell breakpoint above) is one paper
+   sheet laid out as a 7-column x 3-row grid. Both are built by shell.js
+   from the same fetch and switched purely by this CSS. */
+.week-content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 18px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.menu-header, .menu-footer, .day-card, .week-grid-sheet {
+  background: var(--menu-paper);
+  border: 1px solid var(--menu-rule);
+  border-radius: 18px;
+  box-shadow: 0 2px 0 #efe4cf;
+  flex-shrink: 0;
+}
+.week-days { flex-shrink: 0; }
+
+.menu-header {
+  padding: 20px 18px 17px;
+  text-align: center;
+}
+.menu-loading {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+  padding: 10px 0;
+}
+.menu-rule-line {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .28em;
+  color: var(--menu-ink);
+}
+.menu-household {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 31px;
+  color: var(--plum-ink);
+  margin: 6px 0 2px;
+}
+.menu-subtitle {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--menu-ink);
+}
+.menu-dots {
+  color: #c9a24a;
+  font-size: 5px;
+  letter-spacing: 8px;
+  margin: 10px 0;
+}
+.menu-status {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--plum-ink);
+}
+.menu-suggested-note {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.week-days { display: flex; flex-direction: column; gap: 12px; }
+
+.day-card {
+  padding: 15px 18px 13px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.day-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: transparent;
+}
+.day-card.ribbon-today::before { background: var(--plum); }
+.day-card.ribbon-urgent::before { background: var(--urgent); }
+.day-card.day-past { opacity: .55; }
+
+.day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.day-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--plum-ink);
+}
+.day-date {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--menu-ink);
+}
+.day-rule {
+  flex: 1;
+  border-bottom: 1px solid var(--menu-rule);
+  align-self: center;
+  height: 1px;
+}
+.day-status {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--menu-ink);
+  white-space: nowrap;
+}
+
+.course-row {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--menu-rule);
+}
+.course-row:last-child { border-bottom: none; }
+.course-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.course-dish {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--plum-ink);
+}
+.course-dish-dinner { font-weight: 700; }
+.course-dish-empty { font-style: italic; color: var(--urgent); }
+.course-dish-blank { color: var(--faded); font-style: italic; }
+.course-leader {
+  flex: 1;
+  border-bottom: 1.5px dotted var(--menu-rule);
+  margin-bottom: 4px;
+  height: 1px;
+}
+.course-meta {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--menu-ink);
+  white-space: nowrap;
+}
+.course-meta-empty { color: var(--urgent); font-weight: 700; }
+.course-row-empty { cursor: pointer; }
+.course-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--menu-ink);
+  margin-top: 2px;
+}
+
+.menu-footer {
+  padding: 16px 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.menu-footer p {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--plum-ink);
+  margin: 0;
+}
+
+/* Desktop grid: hidden below 1100px, where the day-card stack above shows instead. */
+.week-grid { display: none; }
+
+@media (min-width: 1100px) {
+  .week-content { max-width: 1100px; }
+  .week-days { display: none; }
+  .week-grid { display: block; }
+
+  .week-grid-sheet { padding: 26px 30px 22px; }
+  .week-grid-sheet .menu-rule-line,
+  .week-grid-sheet .menu-household,
+  .week-grid-sheet .menu-subtitle { display: none; }
+
+  .week-grid-table {
+    display: grid;
+    grid-template-columns: 90px repeat(7, 1fr);
+    grid-auto-rows: auto;
+  }
+  .wg-cell {
+    border-bottom: 1px solid var(--menu-rule);
+    border-right: 1px solid var(--menu-rule);
+    padding: 10px 8px;
+    box-sizing: border-box;
+    min-height: 56px;
+  }
+  .wg-cell:last-child { border-right: none; }
+  .week-grid-table > .wg-cell:nth-last-child(-n+8) { border-bottom: none; }
+  .wg-corner { border-top: none; border-left: none; background: transparent; border-bottom-color: transparent; }
+  .wg-daycol-head {
+    text-align: center;
+    border-bottom: none;
+  }
+  .wg-day-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--plum-ink);
+  }
+  .wg-day-date {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--menu-ink);
+  }
+  .wg-gutter {
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--menu-ink);
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .wg-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+  }
+  .wg-today { background: rgba(102,48,78,.06); }
+  .wg-daycol-head.wg-today { border-top: 3px solid var(--plum); }
+  .wg-dish {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--plum-ink);
+  }
+  .wg-meta {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--menu-ink);
+  }
+  .wg-dish-blank { color: var(--faded); font-style: italic; }
+  .wg-slot-empty { cursor: pointer; }
+  .wg-slot-empty .course-dish-empty { font-size: 15px; display: block; }
+  .wg-slot-empty .course-meta-empty { font-size: 13px; display: block; }
+}

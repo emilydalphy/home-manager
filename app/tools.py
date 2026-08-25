@@ -1716,6 +1716,121 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     return result
 
 
+def get_week_menu(weekly_plan_id: int | None = None) -> dict:
+    """
+    The always-7-day weekly menu for the Week tab (design_handoff_shell/
+    README.md §5) — the "one backend ask" for that redesign. Unlike
+    get_weekly_plan's `menu` (which only lists dates that already have at
+    least one entry), this always returns exactly 7 days starting at the
+    plan's week_start_date, one dict per day with `breakfast`/`lunch`/
+    `dinner` keys — each either None (nothing planned, drives the "Pick"
+    row) or `{title, meta, source}`.
+
+    `source`/`meta` have no backing column in meal_plan_entries, so they're
+    derived with a keyword heuristic against the entry's freeform text —
+    documented here as a judgment call, not a spec'd mapping:
+      - "leftover"/"leftovers" in the text -> source "leftovers", meta "reheat"
+      - "takeout"/"take-out"/"take out"/"delivery"/"order in" -> source
+        "takeout", meta "takeout"
+      - anything else (a saved recipe or a plain freeform entry) -> source
+        "plan", meta the recipe's prep_time_minutes + cook_time_minutes as
+        "N min" when both are known, else None (nothing informative to show
+        rather than a misleading guess).
+
+    Component_based plans (planning_mode == "component_based") have no
+    real per-day assignment underneath — get_weekly_plan already covers
+    this with a suggested_schedule/menu_is_suggested pair. This function
+    mirrors that: it fills the 7 days from that same suggested spread, with
+    every present slot as source "plan" / meta None (it's an example
+    arrangement, not real timing), and passes menu_is_suggested through so
+    the UI can note that.
+
+    Omit weekly_plan_id for the household's current (most recently
+    created) plan, same convention as get_weekly_plan. Returns
+    week_start_date: None and an empty days list if no plan exists yet —
+    there's nothing to anchor 7 days to.
+    """
+    conn = get_conn()
+    household = conn.execute(
+        "SELECT name FROM households WHERE id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    conn.close()
+    household_name = household["name"] if household else ""
+
+    plan = get_weekly_plan(weekly_plan_id)
+    if not plan.get("weekly_plan_id"):
+        return {"weekly_plan_id": None, "week_start_date": None, "household_name": household_name, "days": [], "menu_is_suggested": False}
+
+    slots = ("breakfast", "lunch", "dinner")
+    start = date.fromisoformat(plan["week_start_date"])
+    dates = [(start + timedelta(days=i)).isoformat() for i in range(7)]
+
+    if plan["planning_mode"] == "component_based":
+        by_date = {d["date"]: d for d in plan["menu"]}
+        days = []
+        for d in dates:
+            row = by_date.get(d, {})
+            day = {"date": d}
+            for s in slots:
+                title = row.get(s)
+                day[s] = {"title": title, "meta": None, "source": "plan"} if title else None
+            days.append(day)
+        return {
+            "weekly_plan_id": plan["weekly_plan_id"],
+            "week_start_date": plan["week_start_date"],
+            "household_name": household_name,
+            "days": days,
+            "menu_is_suggested": True,
+        }
+
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
+               COALESCE(r.name, mpe.freeform_meal) AS meal,
+               r.prep_time_minutes, r.cook_time_minutes
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ?
+        """,
+        (plan["weekly_plan_id"],),
+    ).fetchall()
+    conn.close()
+
+    def build_slot(row) -> dict | None:
+        title = row["meal"]
+        if not title:
+            return None
+        text = (row["freeform_meal"] or "").lower()
+        if re.search(r"leftovers?\b", text):
+            return {"title": title, "meta": "reheat", "source": "leftovers"}
+        if re.search(r"take[\s-]?out|delivery|order in", text):
+            return {"title": title, "meta": "takeout", "source": "takeout"}
+        prep = row["prep_time_minutes"] or 0
+        cook = row["cook_time_minutes"] or 0
+        total = prep + cook
+        meta = f"{total} min" if total else None
+        return {"title": title, "meta": meta, "source": "plan"}
+
+    by_date_slot = {}
+    for r in rows:
+        if r["slot"] in slots:
+            by_date_slot[(r["date"], r["slot"])] = build_slot(r)
+
+    days = [
+        {"date": d, **{s: by_date_slot.get((d, s)) for s in slots}}
+        for d in dates
+    ]
+
+    return {
+        "weekly_plan_id": plan["weekly_plan_id"],
+        "week_start_date": plan["week_start_date"],
+        "household_name": household_name,
+        "days": days,
+        "menu_is_suggested": False,
+    }
+
+
 def approve_weekly_plan(weekly_plan_id: int) -> dict:
     """Mark a weekly plan as approved/reviewed by the Planner."""
     conn = get_conn()
