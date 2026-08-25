@@ -50,6 +50,30 @@
   --radius-pill: 999px;
   --radius-control: 10px;
   --shadow-card: 0 1px 2px rgba(102, 48, 78, 0.06);
+
+  /* App-shell redesign (design_handoff_shell/README.md) tokens. These are
+     additive aliases, not replacements — every existing --midnight-violet /
+     --turmeric-gold / --oat-cream / etc. usage above is untouched. Several
+     resolve to the exact same hex as an existing token (confirmed against
+     the brand guide); those are noted so it's clear this isn't drift. */
+  --plum:        #66304e;  /* = --midnight-violet */
+  --plum-ink:    #3a1f2e;  /* = --ink */
+  --gold:        #f0b429;  /* = --turmeric-gold */
+  --gold-ink:    #3a2a0a;
+  --cream:       #f6efe1;  /* = --oat-cream */
+  --card:        #ffffff;
+  --menu-paper:  #fffdf6;  /* menu card surface */
+  --menu-rule:   #e7dcc4;  /* menu card border / rules */
+  --menu-ink:    #a8825c;  /* menu meta, course labels */
+  --sand:        #ecdfc8;  /* secondary button, soft card */
+  --rule:        #f1e8da;  /* list separators */
+  --muted:       #6b5a63;  /* secondary text (shell copy) */
+  --faded:       #a3939b;  /* completed text; = --ink-faint */
+  --urgent:      #e8562a;  /* needs-a-decision; = --electric-coral */
+  --warn:        #f0b429;  /* time-boxed; = --gold/--turmeric-gold */
+  --warn-ink:    #b98a12;
+  --good:        #6fb84c;  /* done, your turn; = --vivid-leaf */
+  --good-ink:    #4d8a33;
 }
 
 /* ---------- Base ---------- */

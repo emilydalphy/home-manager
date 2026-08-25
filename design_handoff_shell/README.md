@@ -294,6 +294,30 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
 1. **Shell** — routes, persistent tabs/rail, scroll area, docked ask bar. Grocery and Kitchen just
    render their existing markup inside it. Nothing else changes. Ship this first; it alone fixes
    problems 1, 4 and 6.
+
+   **✅ Done.** `static/shell.html` + `shell.css` + `shell.js` implement the persistent frame:
+   bottom tabs on mobile, 230px plum rail at ≥1024px, a flex scroll area, and the docked ask bar.
+   `/`, `/week`, `/grocery`, `/kitchen` all serve `shell.html`; `shell.js` client-routes between
+   the four tabs via `history.pushState` with no page reload. Today/Grocery/Kitchen embed the
+   existing `static/index.html` / `grocery.html` / `cooker.html` unmodified via `<iframe>` — zero
+   changes to their internals. Week has no prior page, so it's a plain placeholder until Step 4.
+   `/cooker` now redirects to `/kitchen` (same content). `/onboarding` and `/memory` are
+   deliberately **not** redirected yet — Kitchen has no "What we know" section to receive them
+   until that content is actually built, so redirecting now would strand setup/memory editing.
+   The old top-level onboarding-redirect check (new household → `/onboarding`) moved from
+   `index.html` into `shell.js` so it redirects the whole tab instead of trapping a first-time
+   visitor inside the Today iframe. Added `--plum/--gold/--cream/--urgent/--warn/--good/--menu-*`
+   etc. as additive tokens in `theme.css` (aliases onto the existing brand vars — nothing renamed
+   or removed). Sandbox-verified: fresh DB → onboarding redirect fires at the top level; seeded DB
+   → all four routes, the `/cooker` redirect, and `/onboarding`/`/memory`/`/inventory` all return
+   the right thing; tab switching confirmed to not reload (a JS marker survives switching through
+   all four tabs); desktop breakpoint confirmed (rail shows, tab bar hides at ≥1024px).
+
+   Known interim gaps, to close in later steps rather than now: the docked ask bar has no sheet
+   yet (Step 3) — tapping it just switches to the Today tab, where the current chat still lives;
+   on desktop this currently sits redundantly below Today's own embedded chat input until Step 2
+   replaces Today's content and Step 6 gives desktop its permanent ask column.
+
 2. **Today** — heading, dinner card, chores, grocery summary. No needs-you band yet.
 3. **Ask sheet + action cards** — chat moves off the home screen and into the sheet on every route.
 4. **Menu** — the three-slot data model, then the mobile menu, then the desktop grid.

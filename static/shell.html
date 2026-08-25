@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700;800&family=Quicksand:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="/static/shell.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#66304E" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Home Manager" />
+</head>
+<body>
+  <div id="shell-app">
+
+    <nav id="shell-rail">
+      <div class="wordmark">Home Manager</div>
+      <div id="rail-rows"></div>
+      <div class="rail-divider"></div>
+      <a class="rail-row" href="/memory">
+        <span class="rail-chip">&#9998;</span>
+        <span>What we know</span>
+      </a>
+      <div class="rail-spacer"></div>
+      <button type="button" id="rail-share" class="rail-share">Share meal plan</button>
+    </nav>
+
+    <div id="shell-main">
+      <div id="shell-scroll"></div>
+
+      <div id="ask-bar-dock">
+        <button type="button" id="ask-bar">
+          <span class="ask-placeholder">Ask or add anything&hellip;</span>
+          <span class="ask-send">&uarr;</span>
+        </button>
+      </div>
+
+      <div id="tab-bar"></div>
+    </div>
+
+  </div>
+
+  <script src="/static/shell.js"></script>
+</body>
+</html>

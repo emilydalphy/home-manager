@@ -1,0 +1,286 @@
+/*
+  Persistent app shell — design_handoff_shell/README.md, sections 4, 7, 8.
+  Step 1 build: shell chrome only (routes, tabs/rail, scroll area, docked
+  ask bar). Per-tab content for Today/Week/Grocery/Kitchen is Step 1's
+  placeholder/embed layer, not the real screens (those are later steps).
+*/
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--cream);
+}
+
+#shell-app {
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* #shell-main wraps the scroll area + ask bar + tab bar. It's the flex
+   child that must fill #shell-app on every breakpoint — on mobile
+   #shell-app is a column with only this one child; on desktop #shell-app
+   becomes a row and this sits beside the rail (see media query below). */
+#shell-main {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ---------- Scroll area ---------- */
+/* Section 8: the scroll area is a flex column; every direct child that can
+   collapse needs flex-shrink:0. Here the child is always exactly one active
+   tab-panel, sized to fill via flex:1. */
+#shell-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+#shell-scroll::-webkit-scrollbar { width: 0; }
+
+.tab-panel {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.tab-panel.active { display: flex; }
+
+.tab-panel iframe {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: none;
+  background: var(--cream);
+}
+
+/* Placeholder content (Week, and anything not yet embedded) */
+.tab-placeholder {
+  flex-shrink: 0;
+  margin: 16px 20px;
+  padding: 22px 20px;
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+}
+.tab-placeholder .kicker {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.tab-placeholder h1 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--plum-ink);
+  margin: 0 0 8px;
+}
+.tab-placeholder p {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ---------- Docked ask bar (every screen) ---------- */
+#ask-bar-dock {
+  flex-shrink: 0;
+  padding: 4px 18px 8px;
+}
+#ask-bar {
+  width: 100%;
+  background: var(--card);
+  border: 2px solid var(--plum);
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+#ask-bar .ask-placeholder {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--muted);
+}
+#ask-bar .ask-send {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--sand);
+  color: var(--plum);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+/* ---------- Mobile tab bar ---------- */
+#tab-bar {
+  flex-shrink: 0;
+  background: var(--card);
+  border-top: 1px solid var(--rule);
+  padding: 8px 12px calc(20px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 0;
+  min-height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  font: inherit;
+}
+.tab-btn .tab-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: #d8c8b4;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-btn .tab-chip svg { width: 16px; height: 16px; }
+.tab-btn .tab-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tab-btn.active .tab-chip { background: var(--plum); color: #fff; }
+.tab-btn.active .tab-label { color: var(--plum); }
+.tab-btn .tab-badge {
+  display: none;
+  position: absolute;
+  top: 2px;
+  right: 14px;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 11px;
+  color: #fff;
+  background: var(--urgent);
+  border-radius: 10px;
+  padding: 1px 6px;
+}
+.tab-btn.has-badge:not(.active) .tab-badge { display: block; }
+
+/* ---------- Desktop shell (breakpoint 1024px) ---------- */
+#shell-rail { display: none; }
+
+@media (min-width: 1024px) {
+  #shell-app { flex-direction: row; }
+
+  #tab-bar { display: none; }
+
+  #shell-rail {
+    display: flex;
+    flex-direction: column;
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--plum);
+    height: 100%;
+    box-sizing: border-box;
+    padding: 22px 0 18px;
+  }
+  #shell-rail .wordmark {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 19px;
+    color: #fff;
+    padding: 0 22px 18px;
+  }
+  .rail-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 22px;
+    color: rgba(255,255,255,.78);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    background: none;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+  }
+  .rail-row .rail-chip {
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.25);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rail-row .rail-chip svg { width: 12px; height: 12px; }
+  .rail-row.active {
+    background: rgba(240,180,41,.18);
+    color: #fff;
+    font-weight: 700;
+  }
+  .rail-row.active .rail-chip { background: var(--gold); color: var(--plum-ink); }
+  .rail-row .rail-badge {
+    display: none;
+    margin-left: auto;
+    background: var(--urgent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 10px;
+    padding: 1px 7px;
+  }
+  .rail-row.has-badge .rail-badge { display: inline-block; }
+  #shell-rail .rail-divider {
+    height: 1px;
+    background: rgba(255,255,255,.15);
+    margin: 10px 22px;
+  }
+  #shell-rail .rail-spacer { flex: 1; }
+  #shell-rail .rail-share {
+    margin: 0 22px;
+    padding: 12px 16px;
+    border: 1.5px solid rgba(255,255,255,.4);
+    border-radius: 12px;
+    background: none;
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+  }
+  #shell-rail .rail-share:hover { background: rgba(255,255,255,.08); }
+
+  #ask-bar-dock { padding: 14px 32px; max-width: 720px; }
+}

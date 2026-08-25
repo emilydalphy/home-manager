@@ -6,7 +6,7 @@ Then open: http://localhost:8000
 """
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 import base64
 import datetime
@@ -1012,11 +1012,48 @@ static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
+# App-shell redesign (design_handoff_shell/README.md), Step 1: the four
+# top-level shell routes all serve the same shell.html — it's a persistent
+# app frame whose client-side router (static/shell.js) shows/hides tab
+# content without a page reload. static/index.html, grocery.html and
+# cooker.html are unmodified and still reachable directly under /static/
+# (via the mount below); the shell embeds them via <iframe> for now, so
+# their own behavior (chat, grocery filters, cook steps, etc.) needed zero
+# changes. /week and /kitchen are new destinations with no prior route.
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    return FileResponse(os.path.join(static_dir, "shell.html"))
 
 
+@app.get("/week")
+def week_page():
+    return FileResponse(os.path.join(static_dir, "shell.html"))
+
+
+@app.get("/grocery")
+def grocery_page():
+    return FileResponse(os.path.join(static_dir, "shell.html"))
+
+
+@app.get("/kitchen")
+def kitchen_page():
+    return FileResponse(os.path.join(static_dir, "shell.html"))
+
+
+# /cooker's content now lives at the Kitchen tab (same cooker.html, embedded
+# in the shell) — redirect rather than serve it standalone a second way.
+@app.get("/cooker")
+def cooker_page():
+    return RedirectResponse(url="/kitchen")
+
+
+# /onboarding and /memory are NOT redirected yet, on purpose: the README
+# retires them as top-level destinations once Kitchen's "What we know"
+# absorbs their content, but that content merge hasn't been built (it's not
+# part of Step 1's scope). Redirecting them now, before Kitchen actually
+# has a "What we know" section, would strand first-time setup and memory
+# edits with no way to reach them. They keep serving their real pages
+# unchanged until that merge happens.
 @app.get("/onboarding")
 def onboarding_page():
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
@@ -1027,19 +1064,9 @@ def memory_page():
     return FileResponse(os.path.join(static_dir, "memory.html"))
 
 
-@app.get("/cooker")
-def cooker_page():
-    return FileResponse(os.path.join(static_dir, "cooker.html"))
-
-
 @app.get("/inventory")
 def inventory_page():
     return FileResponse(os.path.join(static_dir, "inventory.html"))
-
-
-@app.get("/grocery")
-def grocery_page():
-    return FileResponse(os.path.join(static_dir, "grocery.html"))
 
 
 @app.get("/share/{token}")
