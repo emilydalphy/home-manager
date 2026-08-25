@@ -507,6 +507,60 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
 
 6. **Desktop** — rail + Today three-column + menu grid.
 
+   **✅ Done — final step.** The rail (Step 1) and menu grid (Step 4) were already built in earlier
+   steps; this step is Today's real desktop layout, the one piece of §7 not yet done.
+
+   **Today, 3-column grid:** `shell.css`'s `.today-body` switches from a mobile flex-column stack
+   to a CSS `grid-template-areas` layout at `>=1024px` — dinner card full-width on its own row,
+   then a `1.5fr/1fr/1fr` row of needs-you / chores / Ask. Same DOM on both breakpoints (no
+   duplicated markup, unlike Week's mobile-stack/desktop-grid split in Step 4) — only the CSS
+   grid-area assignment changes, so there's nothing to keep in sync between breakpoints. Needs-you
+   cards get `border-left:5px` instead of a top ribbon at this width, with `Shop now`/`Later`
+   right-aligned rather than stretched full-width, per §7.
+
+   **Judgment call:** the spec's 3-column row only names needs-you / chores / Ask — no column for
+   the grocery-summary card. Dropping it outright would lose real functionality with nothing to
+   replace it, so it stays stacked under Chores in that same middle column instead of being cut.
+
+   **The Ask column — the substantial new piece:** §7 says "the ask sheet only exists below
+   1024px; above it, the ask column replaces it" as a *permanent* third column (message list +
+   composer pinned to the bottom), not a sheet that opens/closes. Rather than building a second,
+   separate chat implementation, `shell.js` now renders the *same* conversation into whichever of
+   the two message-list elements currently exist in the DOM (`#ask-messages` for the sheet,
+   `#today-ask-messages` for the column) — `addAskMessage`/`sendAskMessage` write into all mounted
+   targets at once, so resizing across the breakpoint never leaves one stale or empty. `openAskSheet`
+   (used by the docked ask bar and the dinner card's `Swap` button) is breakpoint-aware: below
+   1024px it opens the sheet as before; at/above it, it just focuses (and pre-fills) the column's
+   composer, since there's nothing to "open." The docked ask bar itself (`#ask-bar-dock`) is hidden
+   at `>=1024px` — there's no sheet left for it to open, and Today's Ask column is the replacement
+   per spec. Quick-action chips and the markdown-lite renderer are shared as-is between both
+   surfaces (same `.ask-msg`/`.ask-chip`/`.ask-action-card` classes, no desktop-specific styling
+   needed beyond sizing the column itself).
+
+   **Known gap, called out rather than silently accepted:** §7 also specs Grocery/Kitchen as
+   "two-column card grids inside the same rail" at this breakpoint. Their pages
+   (`static/grocery.html`/`cooker.html`) are still embedded unmodified via `<iframe>` per Step 1's
+   zero-changes-to-legacy-internals rule, and their own CSS is single-column at any width — so
+   today they render as a narrow centered column inside the wider desktop frame rather than a
+   two-column grid. Fixing this means editing those pages' own internals, which is outside what
+   this redesign pass has touched anywhere else; flagging it here rather than doing it silently or
+   pretending it's done. A reasonable follow-up if you want that gap closed.
+
+   Sandbox-verified against a fresh seeded household with a real weekly plan attached: the 3-column
+   grid renders correctly with the dinner card spanning full width and needs-you/chores/Ask in the
+   row below; needs-you cards show the border-left treatment and right-aligned shop-run controls at
+   this breakpoint; sending a message through the desktop Ask column round-trips to a mocked
+   `/api/chat` and renders the reply, a markdown table, an action card (with working tab
+   navigation), and the quick-action chips exactly as the mobile sheet does; `Swap` on the dinner
+   card correctly prefills and focuses the desktop column instead of trying to open the (hidden)
+   sheet; the docked ask bar is confirmed hidden at `>=1024px` and still works normally below it;
+   switching among all four tabs at both breakpoints confirmed no page reload and no regressions
+   (Today's mobile stack, Week's grid/day-cards, and the needs-you band from Step 5 all still work
+   exactly as before). Screenshotted Grocery/Kitchen/Week at desktop width to confirm the known gap
+   above and that nothing else broke.
+
+This closes the build order in §9 — all six steps are done.
+
 ## 10. Out of scope
 
 Household/other-people's chores, notifications, sharing beyond the existing share page,

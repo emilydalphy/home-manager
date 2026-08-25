@@ -104,6 +104,16 @@ html, body {
   padding: 6px 20px 8px;
 }
 
+/* §7 Step 6: same cards, rearranged by breakpoint via grid-template-areas
+   rather than by duplicating markup — see the desktop override below. */
+.today-body {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.today-area-chores { display: flex; flex-direction: column; gap: 13px; }
+.today-area-ask { display: none; } /* the Ask column only exists at >=1024px — see §7 */
+
 .today-heading .kicker {
   font-family: var(--font-body);
   font-weight: 700;
@@ -490,7 +500,7 @@ html, body {
 }
 .ask-chip:hover { background: #efe4cf; }
 
-#ask-composer {
+.ask-composer-bar {
   background: var(--cream);
   border: 2px solid var(--plum);
   border-radius: 16px;
@@ -500,7 +510,7 @@ html, body {
   gap: 10px;
   flex-shrink: 0;
 }
-#ask-input {
+.ask-composer-input {
   flex: 1;
   min-width: 0;
   border: none;
@@ -511,7 +521,7 @@ html, body {
   color: var(--plum-ink);
   padding: 10px 0;
 }
-#ask-send-btn {
+.ask-composer-send {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
@@ -526,7 +536,7 @@ html, body {
   font-size: 18px;
   cursor: pointer;
 }
-#ask-send-btn:disabled { opacity: .5; cursor: default; }
+.ask-composer-send:disabled { opacity: .5; cursor: default; }
 
 @media (min-width: 480px) {
   #ask-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 440px; }
@@ -681,11 +691,52 @@ html, body {
   }
   #shell-rail .rail-share:hover { background: rgba(255,255,255,.08); }
 
-  #ask-bar-dock { padding: 14px 32px; max-width: 720px; }
-  .today-content { max-width: 640px; padding: 24px 32px; }
+  /* §7: "The ask sheet only exists below 1024px. Above it, the ask column
+     replaces it" — so the docked bar that opens the sheet has nothing to
+     open up here; Today's Ask column (below) is the replacement. */
+  #ask-bar-dock { display: none; }
 
-  /* No tab bar at this breakpoint — sit just above the docked ask bar instead. */
-  .toast { bottom: 96px; }
+  .today-content { max-width: 960px; padding: 24px 32px; }
+
+  /* §7 Step 6: dinner card spans the full width on its own row, then a
+     1.5fr/1fr/1fr row of needs-you / chores(+grocery) / Ask. Judgment
+     call: the spec's 3-column row only names needs-you/chores/Ask — the
+     grocery-summary card has no named column of its own, so it stays
+     stacked under Chores (see .today-area-chores) rather than being
+     dropped with nothing to replace it. */
+  .today-body {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-areas:
+      "dinner dinner dinner"
+      "needsyou chores ask";
+    gap: 24px;
+    align-items: start;
+  }
+  .today-area-needsyou { grid-area: needsyou; }
+  .today-area-dinner { grid-area: dinner; margin: 0; }
+  .today-area-chores { grid-area: chores; }
+  .today-area-ask {
+    grid-area: ask;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    max-height: calc(100vh - 160px);
+  }
+  .today-area-ask .ask-messages { flex: 1; min-height: 0; }
+
+  /* Needs-you cards: border-left instead of a top ribbon, controls
+     right-aligned inside the card, per §7. */
+  .needs-you-card { border-top: none; border-left: 5px solid transparent; }
+  .needs-you-card.urgency-urgent { border-left-color: var(--urgent); }
+  .needs-you-card.urgency-warn { border-left-color: var(--warn); }
+  .ny-actions { justify-content: flex-end; }
+  .ny-actions .btn-gold, .ny-actions .btn-sand { flex: 0 0 auto; padding-left: 22px; padding-right: 22px; }
+
+  /* No tab bar (and, per above, no docked ask bar) at this breakpoint — a
+     plain safe margin off the bottom of the viewport is enough. */
+  .toast { bottom: 32px; }
 }
 
 /* ---------- Week — the weekly menu (Step 4, README §5) ---------- */

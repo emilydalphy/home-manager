@@ -42,6 +42,16 @@
   tab's mobile-badge/rail-pill are all derived from that same list now,
   not hardcoded to 0. Also adds the shared toast (§6) used when a dinner
   decision resolves.
+
+  Step 6 (final build-order step, §7): the desktop (>=1024px) Today layout
+  is real now — same cards as mobile, rearranged into a CSS grid (dinner
+  full-width on top, then needs-you / chores+grocery / Ask across a row)
+  purely via shell.css's grid-template-areas, no duplicated markup. The
+  Ask sheet and the desktop Ask column render the *same* conversation —
+  see "Ask sheet vs. Ask column" below for how sendAskMessage/addAskMessage
+  write into whichever of the two message-list surfaces currently exist,
+  so resizing across the breakpoint never desyncs them. The docked ask bar
+  is hidden at this breakpoint (nothing left for it to open).
 */
 (function () {
   'use strict';
@@ -173,13 +183,21 @@
   window.addEventListener('popstate', function () { activateTab(currentTabKey(), false); });
 
   // ---------- Today ----------
-  // README §4: heading, needs-you band, tonight's dinner, chores, grocery
-  // summary. Step 5: the needs-you band is real now, backed by
-  // GET /api/needs-you (see app/tools.get_needs_you_items for the two
-  // hardcoded rules it starts with — an undecided dinner within 48h, and a
-  // shop run needed before an upcoming meal). The heading count, and the
-  // Today tab's badge (mobile tab bar + desktop rail), are both derived
-  // from that same list — see setTodayBadge/renderNeedsYou below.
+  // README §4/§7: heading, needs-you band, tonight's dinner, chores,
+  // grocery summary — same cards on every breakpoint, just rearranged.
+  // Mobile stacks them in DOM order (needs-you, dinner, chores+grocery).
+  // Desktop (Step 6, §7) lays the same DOM out as a CSS grid: the dinner
+  // card spans the full width on its own row, then a 1.5fr/1fr/1fr row of
+  // needs-you / chores+grocery / Ask — no JS-side breakpoint branching,
+  // `.today-body`'s grid-template-areas (shell.css) does the rearranging.
+  // The Ask column only exists (is only ever shown) at >=1024px — see
+  // "Ask sheet vs. Ask column" below for how the same conversation renders
+  // into both surfaces depending on which one exists at the moment.
+  //
+  // Judgment call: the spec's 3-column desktop row only names needs-you /
+  // chores / Ask — no mention of the grocery-summary card. Dropping it
+  // outright would lose real functionality with nothing to replace it, so
+  // it's kept stacked below Chores in that same middle column instead.
   async function buildTodayPanel(panel) {
     panel.innerHTML =
       '<div class="today-content">' +
@@ -187,24 +205,38 @@
           '<div class="kicker" id="today-date"></div>' +
           '<h1 id="today-h1">You&rsquo;re clear</h1>' +
         '</div>' +
-        '<div id="needs-you-band"></div>' +
-        '<div id="today-dinner-card" class="dinner-card" hidden></div>' +
-        '<div class="shell-card chores-card">' +
-          '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
-          '<div id="chores-list"></div>' +
-        '</div>' +
-        '<div class="shell-card grocery-summary-card">' +
-          '<div class="grocery-summary-text">' +
-            '<div class="grocery-summary-title">Grocery run</div>' +
-            '<div class="grocery-summary-sub" id="grocery-summary-sub">Loading&hellip;</div>' +
+        '<div class="today-body">' +
+          '<div id="needs-you-band" class="today-area-needsyou"></div>' +
+          '<div id="today-dinner-card" class="dinner-card today-area-dinner" hidden></div>' +
+          '<div class="today-area-chores">' +
+            '<div class="shell-card chores-card">' +
+              '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
+              '<div id="chores-list"></div>' +
+            '</div>' +
+            '<div class="shell-card grocery-summary-card">' +
+              '<div class="grocery-summary-text">' +
+                '<div class="grocery-summary-title">Grocery run</div>' +
+                '<div class="grocery-summary-sub" id="grocery-summary-sub">Loading&hellip;</div>' +
+              '</div>' +
+              '<button type="button" class="btn-sand" id="grocery-summary-open">Open</button>' +
+            '</div>' +
           '</div>' +
-          '<button type="button" class="btn-sand" id="grocery-summary-open">Open</button>' +
+          '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
+            '<div class="ask-messages" id="today-ask-messages"></div>' +
+            '<div class="ask-chips" id="today-ask-chips"></div>' +
+            '<form id="today-ask-composer" class="ask-composer-bar">' +
+              '<input id="today-ask-input" class="ask-composer-input" type="text" placeholder="Ask or add anything&hellip;" autocomplete="off" />' +
+              '<button type="submit" id="today-ask-send-btn" class="ask-composer-send" aria-label="Send">&uarr;</button>' +
+            '</form>' +
+          '</div>' +
         '</div>' +
       '</div>';
 
     panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
 
     panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
+
+    setupAskColumn(panel);
 
     await Promise.all([
       loadNeedsYou(panel),
@@ -825,19 +857,46 @@
     return options[Math.floor(Math.random() * options.length)];
   }
 
+  // Step 6, §7: "The ask sheet only exists below 1024px. Above it, the ask
+  // column replaces it." Both surfaces show the *same* conversation — one
+  // shared history, rendered into whichever of the two message-list
+  // elements currently exist in the DOM (the sheet's #ask-messages always
+  // exists once the page loads; the column's #today-ask-messages only
+  // exists once Today's panel has been built). Sending/receiving writes
+  // into all of them at once rather than picking one "active" surface, so
+  // resizing across the 1024px breakpoint never leaves the other one
+  // stale or empty.
+  function askMessageTargets() {
+    var t = [askMessagesEl, document.getElementById('today-ask-messages')];
+    return t.filter(function (el) { return !!el; });
+  }
+  function askChipTargets() {
+    var t = [askChipsEl, document.getElementById('today-ask-chips')];
+    return t.filter(function (el) { return !!el; });
+  }
+  function askInputTargets() {
+    var t = [
+      { input: askInput, btn: askSendBtn },
+      { input: document.getElementById('today-ask-input'), btn: document.getElementById('today-ask-send-btn') }
+    ];
+    return t.filter(function (pair) { return !!pair.input; });
+  }
+
   function ensureAskSheetBuilt() {
     if (askBuilt) return;
     askBuilt = true;
-    askChipsEl.innerHTML = QUICK_ACTIONS.map(function (q, i) {
-      return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
-    }).join('');
-    askChipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
-      chip.addEventListener('click', function () { sendAskMessage(QUICK_ACTIONS[Number(chip.dataset.i)].msg); });
+    askChipTargets().forEach(function (chipsEl) {
+      chipsEl.innerHTML = QUICK_ACTIONS.map(function (q, i) {
+        return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
+      }).join('');
+      chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () { sendAskMessage(QUICK_ACTIONS[Number(chip.dataset.i)].msg); });
+      });
     });
     addAskMessage('assistant', 'Hi! I’m your home manager. Tap a suggestion below, or just tell me what you need.');
   }
 
-  function addAskMessage(role, text, actions) {
+  function buildAskMessageEl(role, text, actions) {
     var wrap = document.createElement('div');
     wrap.className = 'ask-msg ' + role;
     var bubble = document.createElement('div');
@@ -861,9 +920,26 @@
       });
       wrap.appendChild(card);
     });
-    askMessagesEl.appendChild(wrap);
-    askMessagesEl.scrollTop = askMessagesEl.scrollHeight;
     return wrap;
+  }
+
+  function addAskMessage(role, text, actions) {
+    // Returns one element per surface that received it (0-2), so the
+    // caller (sendAskMessage's loading bubble) can remove/update all of
+    // them together — see the multi-target comment above.
+    return askMessageTargets().map(function (target) {
+      var el = buildAskMessageEl(role, text, actions);
+      target.appendChild(el);
+      target.scrollTop = target.scrollHeight;
+      return el;
+    });
+  }
+
+  function setAskInputsDisabled(disabled) {
+    askInputTargets().forEach(function (pair) {
+      pair.input.disabled = disabled;
+      pair.btn.disabled = disabled;
+    });
   }
 
   async function sendAskMessage(message) {
@@ -871,10 +947,9 @@
     ensureAskSheetBuilt();
     addAskMessage('user', message);
     askSending = true;
-    askInput.disabled = true;
-    askSendBtn.disabled = true;
-    var loadingWrap = addAskMessage('assistant', pickLoadingPhrase(message));
-    loadingWrap.querySelector('.ask-bubble').classList.add('loading');
+    setAskInputsDisabled(true);
+    var loadingWraps = addAskMessage('assistant', pickLoadingPhrase(message));
+    loadingWraps.forEach(function (w) { w.querySelector('.ask-bubble').classList.add('loading'); });
 
     try {
       var res = await fetch('/api/chat', {
@@ -882,7 +957,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: askSessionId, message: message })
       });
-      loadingWrap.remove();
+      loadingWraps.forEach(function (w) { w.remove(); });
       if (!res.ok) {
         var detail = '';
         try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
@@ -891,18 +966,36 @@
       var data = await res.json();
       addAskMessage('assistant', data.reply, data.actions);
     } catch (err) {
-      loadingWrap.remove();
+      loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);
     } finally {
       askSending = false;
-      askInput.disabled = false;
-      askSendBtn.disabled = false;
-      askInput.focus();
+      setAskInputsDisabled(false);
+      // Only focus the surface that's actually visible right now — focusing
+      // a hidden input scrolls nothing into view but is still a stray
+      // side-effect (and on mobile, would fight the (still-hidden) sheet's
+      // own focus below).
+      var activePair = window.matchMedia('(min-width: 1024px)').matches
+        ? { input: document.getElementById('today-ask-input') }
+        : { input: askInput };
+      if (activePair.input) activePair.input.focus();
     }
+  }
+
+  // On desktop the Ask column is always visible — "opening" it just means
+  // focusing (and optionally pre-filling) its composer, no sheet to show.
+  function isDesktopAsk() {
+    return window.matchMedia('(min-width: 1024px)').matches && !!document.getElementById('today-ask-input');
   }
 
   function openAskSheet(prefill) {
     ensureAskSheetBuilt();
+    if (isDesktopAsk()) {
+      var col = document.getElementById('today-ask-input');
+      if (prefill) col.value = prefill;
+      col.focus();
+      return;
+    }
     askScrim.hidden = false;
     askSheet.hidden = false;
     if (prefill) {
@@ -926,6 +1019,24 @@
     askInput.value = '';
     sendAskMessage(message);
   });
+
+  // Wires up Today's permanent desktop Ask column (§7) — same
+  // ensureAskSheetBuilt/sendAskMessage the sheet uses, just a second entry
+  // point. Called once per Today-panel build (buildTodayPanel), which only
+  // happens once (the panel is built lazily, the first time Today is
+  // shown, and reused after that) — so this never double-wires the form.
+  function setupAskColumn(panel) {
+    ensureAskSheetBuilt(); // populates greeting + chips into the column too, even before it's ever "opened"
+    var composer = panel.querySelector('#today-ask-composer');
+    var input = panel.querySelector('#today-ask-input');
+    composer.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var message = input.value.trim();
+      if (!message) return;
+      input.value = '';
+      sendAskMessage(message);
+    });
+  }
 
   // ---------- First-run onboarding check ----------
   // Runs at the top level (not inside a per-tab panel) so a first-time
