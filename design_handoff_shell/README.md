@@ -1,0 +1,309 @@
+# Home Manager — app shell + weekly menu redesign
+
+Visual source of truth: `Home Manager Prototype.dc.html` (open it in a browser — it is clickable).
+Design reference for alternatives considered: `Home Manager Layout Options.dc.html`, sections `#3a` / `#3c`.
+
+This replaces the current `static/index.html` flow (chat box as the home screen, nav as a
+run of text links) with a persistent app shell. It is the **3a shell + 3c needs-you band**
+direction, which we picked over pure-chat (3b) and pure-queue (3c).
+
+---
+
+## 1. What we are fixing
+
+Audited from the live app. Each fix is non-negotiable; the layout details below are how we do them.
+
+1. **Nav is a sentence.** Six destinations as 0.85rem inline links in a subtitle paragraph, no
+   current-page marker → **persistent nav: 4 bottom tabs on mobile, left rail on desktop.**
+2. **Home shows no state.** Landing screen is an empty chat box; you must type to learn what's for
+   dinner → **Today answers before you ask.**
+3. **Setup and daily use compete.** "Set up chores" sits next to "This week's chores" in one flat
+   row of seven buttons → **setup folded into Kitchen → "What we know".**
+4. **Every page is a dead end.** Grocery / Cooker / Inventory / Memory are separate full-page loads
+   with no way back and no assistant → **shell persists on every route; ask bar always reachable.**
+5. **No "today".** → **Today is the default route.**
+6. **Two doors to the same facts.** "Edit household setup" and "What we know" both edit household
+   truth → **one door: Kitchen → What we know.**
+
+---
+
+## 2. Information architecture
+
+Four destinations, in this order. These are the only top-level routes.
+
+| Tab | Route | Contains |
+| --- | --- | --- |
+| Today | `/` | Needs-you band, tonight's dinner, my chores, grocery summary |
+| Week | `/week` | The weekly menu (breakfast / lunch / dinner, 7 days) |
+| Grocery | `/grocery` | Existing grocery list (redesign 13a), grouped by store |
+| Kitchen | `/kitchen` | Cook mode, running low, **What we know** (absorbs onboarding + memory) |
+
+Retired as top-level destinations: `/onboarding` (→ Kitchen › What we know), `/memory`
+(→ same), `/cooker` (→ Kitchen), the chat home (→ ask bar / ask sheet).
+Keep the old routes alive as redirects for a release.
+
+The **ask bar is not a destination** — it is docked on every screen and opens a sheet over the
+current screen. The user never leaves what they were looking at to ask something.
+
+---
+
+## 3. Tokens
+
+Already in `static/theme.css` unless noted. Do not hardcode; add the missing ones to `:root`.
+
+```
+--plum:        #66304e   brand surface, active nav, primary button
+--plum-ink:    #3a1f2e   headings, body ink
+--gold:        #f0b429   accent on plum, primary CTA on dark
+--gold-ink:    #3a2a0a   text on gold
+--cream:       #f6efe1   app background
+--card:        #ffffff   card surface
+--menu-paper:  #fffdf6   menu card surface            (new)
+--menu-rule:   #e7dcc4   menu card border / rules     (new)
+--menu-ink:    #a8825c   menu meta, course labels     (new)
+--sand:        #ecdfc8   secondary button, soft card
+--rule:        #f1e8da   list separators
+--muted:       #6b5a63   secondary text
+--faded:       #a3939b   completed text
+--urgent:      #e8562a   needs-a-decision
+--warn:        #f0b429 / ink #b98a12   time-boxed
+--good:        #6fb84c / ink #4d8a33   done, your turn
+```
+
+Type: **Quicksand 700** for headings and dish-level emphasis, **Karla** for everything else.
+Karla 800 + `letter-spacing:.1em` + uppercase for kickers.
+
+Radii: cards 18px, buttons/pills 12px, chips 22px, sheet 26px top corners.
+Minimum body text 15px. **Minimum tap target 44px** — this is used one-handed while cooking.
+
+---
+
+## 4. Mobile (390pt baseline, build fluid 320–480)
+
+### Shell
+
+```
+status bar
+┌───────────────────────────────┐
+│ scrolling screen content      │  flex:1, overflow-y:auto
+│                               │  padding: 6px 20px 8px
+└───────────────────────────────┘
+│ docked ask bar                │  flex-shrink:0, padding 4px 18px 8px
+│ tab bar                       │  flex-shrink:0, white, 1px top rule --rule
+```
+
+**Ask bar (docked, every screen):** white, `2px solid --plum`, radius 16, 14px 18px padding.
+Placeholder "Ask or add anything…" in `--muted` 16px. 36px sand square with `↑` on the right.
+Tapping anywhere on it opens the ask sheet.
+
+**Tab bar:** `display:grid; grid-template-columns:repeat(4,1fr)`, padding `8px 12px 20px`
+(bottom padding is the home-indicator safe area). Each tab: 24px rounded chip + 13px Karla 700
+label, stacked, centered. Active chip `--plum` / label `--plum`; inactive chip `#d8c8b4` /
+label `--muted`. **Badge:** when a tab is *not* active and has open items, a `--urgent` pill
+(11px, white, 1px 6px) at top-right of that tab. Today is the only tab with a badge for now
+(count = open needs-you cards).
+
+Icons: the prototype uses rounded squares as placeholders. Ship real icons — calendar-day,
+calendar-week, cart, pot. Same 24px box, `currentColor`.
+
+### Today
+
+Order top to bottom:
+
+1. **Heading** — "Tuesday, Aug 25" (Karla 700, 13px, uppercase, `.1em`, `--muted`) then a
+   Quicksand 700 29px H1 whose text is derived: `0 → "You're clear"`, `1 → "1 thing needs you"`,
+   `n → "n things need you"`.
+2. **Needs-you band** — 0–3 cards, only while unresolved. White card, radius 18, padding
+   `16px 17px`, **`border-top:4px solid`** in the card's urgency color. Structure: kicker (12px
+   Karla 800 uppercase, colored) → Quicksand 700 21px title → the resolution controls *inline*.
+   - *Dinner decision* (`--urgent`): two option rows on `--cream`, radius 12, `13px 16px`,
+     dish + minutes on the left, "Pick" in `--plum` on the right. Tapping one resolves the card.
+   - *Shop run* (`--warn`): 4-item summary line + `Shop now` (plum bg / gold text → Grocery) and
+     `Later` (sand bg / plum text → dismiss until tomorrow evening).
+   - Cards animate in/out (`popIn`, 220ms) and **disappear when resolved** — the band shrinking is
+     the reward. On resolve, show a toast (see §6).
+3. **Tonight's dinner** — the one plum card on the screen. Kicker gold "Tonight · 6:30 · 35 min",
+   Quicksand 700 23px white title, then `Cook mode` (gold) + `Swap` (1.5px white-40% outline).
+   `Swap` opens the ask sheet pre-filled with "Swap tonight for something faster".
+4. **Your chores** — white card. Header row: "Your chores" + "1 of 3" in `--good`. Rows 52px,
+   26px checkbox (2px `#c4b09c` border; checked = `--good` fill + white ✓), name strikes through
+   and goes `--faded` when done. Whole row is the tap target. Optimistic toggle.
+5. **Grocery summary** — white card, "Grocery run" + derived subtitle
+   (`n items · needed before Thursday`, or "All picked up"), `Open` sand button → Grocery tab.
+
+Only *my* chores here, not the household's. Household view lives in a later pass.
+
+### Week — the menu (see §5, this is the piece with the most new design)
+
+### Grocery
+
+Keep the shipped 13a redesign as-is; it now renders **inside the shell** (scroll area + docked ask
+bar + tabs) instead of as a standalone page. Header: "2 stores" kicker + "Grocery" H1 + derived
+`n of m got` counter in `--good`. One white card per store with the store name, a meta line
+("before Thursday" / "on the way home"), and 50px item rows: 24px checkbox, name, and a
+`#9c8b93` 14px reason on the right ("Thu dinner", "low", "tikka") that disappears once got.
+
+### Kitchen
+
+1. Plum card — "Cooking tonight" kicker, dish, `Start step 1` (gold) + `Ingredients` (outline).
+2. **Running low** — white card, 50px rows, right-side action that flips `Add to list` → `Added ✓`
+   after tapping (and actually adds to the grocery list).
+3. **What we know about you** — white card. One prose paragraph of household truth
+   ("4 people · no pork · Sam won't eat peppers · Thursdays are tee-ball · Costco every other
+   Saturday") + a plum `Correct or add something` link that opens the ask sheet. This is the *only*
+   door to household setup — onboarding writes here, memory reads from here.
+4. Sand card — one nudge ("Scan a fridge photo so I stop suggesting what you already have").
+
+### Ask sheet
+
+Full-screen scrim `rgba(58,31,46,.4)` (tap to dismiss) + bottom sheet: white, radius 26 top,
+`max-height:76%`, `animation: sheetUp 240ms cubic-bezier(.2,.8,.2,1)`, 44×5px grab handle.
+
+- Message list scrolls. User bubbles: plum bg, white, radius `16 16 4 16`, right-aligned, max 88%.
+  Assistant bubbles: `#f4f0e6`, plum ink, radius `16 16 16 4`, left-aligned.
+- **Every assistant reply that changed something emits an action card** below the bubble: white,
+  `1.5px solid #e0d3bf`, radius 14 — green 12px uppercase kicker ("Week updated"), the change
+  ("Thu · Turkey rice bowls"), and `View` on the right that **navigates to the tab that changed**.
+  This is the fix for dead-end answers: an answer always offers the screen it affected.
+- Suggestion chips above the input, `--cream` bg, plum 700 15px, radius 22.
+- Composer: `--cream` bg, 2px plum border, radius 16, plus a 40px plum/gold send button.
+  Enter sends. Sheet stays open after sending.
+
+---
+
+## 5. The weekly menu (Week tab)
+
+Treat this as a printed restaurant menu, not a table. It carries the brand's warmth and it is the
+screen people will screenshot and share.
+
+**Data model change — this is the one backend ask.** The week currently stores one dinner per day.
+It needs **three slots per day**: `breakfast`, `lunch`, `dinner`, each nullable, each with
+`{ title, meta, source }` where `meta` is the short right-hand note ("15 min", "reheat",
+"packed", "takeout", "6:30") and `source` says whether it came from the plan, leftovers, or
+takeout. Nullable matters: an empty slot is what drives the needs-you card and the "Pick" row.
+
+### Mobile
+
+1. **Menu header card** — `--menu-paper` bg, `1px solid --menu-rule`, radius 18,
+   `box-shadow:0 2px 0 #efe4cf` (the "stacked paper" edge), centered contents:
+   - rule — `EST. 2019` (Karla 800, 11px, `letter-spacing:.28em`, `--menu-ink`) — rule
+   - household name, Quicksand 700 31px ("The Dalphy House")
+   - italic Karla 15px `--menu-ink` subtitle: "menu for the week of August 24"
+   - rule — three 5px `#c9a24a` dots — rule
+   - one derived status line ("Thursday is tee-ball night. Dinner still needs a decision.")
+2. **Seven day cards**, one per day, same paper treatment, `padding:15px 18px 13px`,
+   `position:relative; overflow:hidden`, **`flex-shrink:0`** (see §8), with a 4px top ribbon:
+   plum = tonight, `--urgent` = has an empty slot, `--good` = just changed by the assistant,
+   transparent otherwise.
+   - Day header row: Quicksand 700 19px day name, `--menu-ink` 14px date, a hairline rule filling
+     the remaining space, then an 11px Karla 800 `.14em` uppercase status
+     (`Served` / `Tonight` / `Updated` / `Needs you`).
+   - Three course rows (Breakfast, Lunch, Dinner) — **dish, dotted leader, meta**:
+     dish 16px (Dinner is Karla 700, the other two 400), then a `1.5px dotted --menu-rule` filler
+     that eats the slack, then the meta right-aligned in `--menu-ink` 700 14px. Course label sits
+     *below* the dish in 10px Karla 800 `.18em` uppercase `--menu-ink` — the dish leads, the label
+     annotates.
+   - **Empty slot:** dish text becomes italic `--urgent` copy that says why it's open
+     ("Choose a dinner — tee-ball night"), meta becomes `Pick` in `--urgent`, and the row is
+     tappable → Today (where the decision card resolves it). Nothing else on the menu is tappable.
+3. Footer card: "Tell me what's happening this week and I'll rebuild the plan." → opens ask sheet.
+
+Past days grey to `--faded`; do not hide them — the week reads as a whole.
+
+### Desktop
+
+Same paper, laid out as one menu card instead of seven:
+
+- One `--menu-paper` sheet, max-width 1100px, centered, with the same rules/dots header scaled up
+  (household name Quicksand 700 ~40px).
+- Body is a **7-column grid** (`grid-template-columns:repeat(7,1fr)`) with **three rows**:
+  Breakfast, Lunch, Dinner. Day names are the column heads (Quicksand 700 18px + date beneath);
+  a left gutter column carries the three course labels, rotated off — plain uppercase Karla 800
+  10px `.18em`, right-aligned. Hairline `--menu-rule` between rows and columns; no dotted leaders
+  at this width (the grid does the aligning), meta drops under the dish in `--menu-ink` 13px.
+- Today's column gets a `--menu-paper`-on-plum tint (`rgba(102,48,78,.06)`) and a 3px plum top
+  edge. Empty slots keep the italic `--urgent` copy + `Pick`.
+- Below 1100px, fall back to the mobile stack of day cards. Do not try to squeeze 7 columns
+  into a tablet.
+
+---
+
+## 6. Interactions and derived state
+
+Nothing on these screens is decoration — every count and heading is derived, never typed.
+
+| Thing | Derived from |
+| --- | --- |
+| Today H1 | number of unresolved needs-you cards |
+| Today badge | same count; hidden when Today is the active tab |
+| "1 of 3" chores | `chores.filter(done).length / chores.length` |
+| Grocery subtitle + "n of m got" | items not yet got |
+| Menu status line | first unresolved conflict this week |
+| Day ribbon / status | is-today, has-empty-slot, changed-in-last-session |
+
+- **Resolving a dinner decision** sets the slot, removes the card, shows a toast, and marks that
+  menu day `Updated` — and if the pick displaces something (salmon → Saturday), the menu shows
+  both moves. Cascades must be visible, not silent.
+- **Toast:** `--plum-ink` bg, white, radius 14, `14px 17px`, 16px above the tab bar,
+  auto-dismiss 2.2s. Used for resolutions and adds only. Never for errors.
+- **Optimistic everything** (checkboxes, picks, adds) with rollback + a red inline note on failure.
+- **Assistant replies** must always come back with (a) plain-language confirmation of what changed
+  and (b) an action card pointing at the tab that changed.
+- Animations: `popIn` 200–220ms for cards/toasts, `sheetUp` 240ms for the sheet. Nothing else moves.
+
+---
+
+## 7. Desktop shell (the rest of it)
+
+Breakpoint at 1024px. Same components, rearranged — no new screens.
+
+- **Left rail**, 230px, `--plum`, full height: "Home Manager" wordmark, then Today / This Week /
+  Grocery / Kitchen (18px chip + Karla 16px label, 14px 22px padding). Active row:
+  `background:rgba(240,180,41,.18)`, white 700 label, gold chip. Needs-you count as a `--urgent`
+  pill on the right of the Today row. A hairline divider, then `What we know`. Bottom:
+  outlined `Share meal plan`.
+- **Today**, 3 columns in `36px` gutters on `--cream`: the plum dinner card spans the top full
+  width (dish left, `Cook mode` / `Swap` right); below it a 1.5fr / 1fr / 1fr grid — needs-you
+  cards (here with a `border-left:5px` instead of a top ribbon, controls right-aligned inside the
+  card), then Chores, then **Ask** as a *permanent third column*, not a sheet: the message list
+  plus the composer pinned to the bottom of that column.
+- **Week**: §5 desktop menu, full width.
+- **Grocery / Kitchen**: two-column card grids inside the same rail; no new content.
+- The ask sheet only exists below 1024px. Above it, the ask column replaces it.
+
+---
+
+## 8. Implementation notes (things that bit us)
+
+- Same stack as the rest of `static/`: plain HTML, vanilla JS, `fetch`, no build step, no framework.
+- The scroll area is a `flex-direction:column` container; **every card in it needs
+  `flex-shrink:0`** or cards with `overflow:hidden` (the menu day cards) collapse to a few pixels
+  and clip their own content instead of scrolling. This broke the menu once already.
+- Scroll area, ask bar, and tab bar: `flex:1` / `flex-shrink:0` / `flex-shrink:0`. Hide the
+  scrollbar (`::-webkit-scrollbar{width:0}`), keep momentum scrolling.
+- Bottom padding on the tab bar must respect `env(safe-area-inset-bottom)`.
+- Tab switching must not reload the page — the shell persists, only the scroll area swaps. This is
+  the whole point of the redesign.
+- Preserve every behavior the current pages have (grocery filters, exclude/include, inline edit,
+  store assignment, cooker steps, memory edits). Inventory them before you move them.
+
+---
+
+## 9. Build order
+
+1. **Shell** — routes, persistent tabs/rail, scroll area, docked ask bar. Grocery and Kitchen just
+   render their existing markup inside it. Nothing else changes. Ship this first; it alone fixes
+   problems 1, 4 and 6.
+2. **Today** — heading, dinner card, chores, grocery summary. No needs-you band yet.
+3. **Ask sheet + action cards** — chat moves off the home screen and into the sheet on every route.
+4. **Menu** — the three-slot data model, then the mobile menu, then the desktop grid.
+5. **Needs-you band** — last, because it needs the prioritisation rules (what counts as needing a
+   decision, and in what order). Start with two hardcoded rules: an empty dinner slot within 48
+   hours, and a shop run whose items are needed before the next planned meal.
+6. **Desktop** — rail + Today three-column + menu grid.
+
+## 10. Out of scope
+
+Household/other-people's chores, notifications, sharing beyond the existing share page,
+fridge-photo scanning (the nudge is copy only), and any new endpoint other than the three-slot
+meal plan.
