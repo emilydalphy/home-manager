@@ -110,6 +110,11 @@ class ChoreStatusRequest(BaseModel):
     status: str = "done"  # 'done' | 'pending'
 
 
+class ResolveDinnerRequest(BaseModel):
+    date: str
+    meal: str
+
+
 class MemoryEditRequest(BaseModel):
     field: str  # notes | cooking_time_preference | cuisine_preferences | protein_preferences | dislikes | usual_stores | goals
     value: object  # str, list[str], or dict depending on field
@@ -610,6 +615,36 @@ def week_menu(weekly_plan_id: int | None = None):
         logger.exception("Week-menu lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return menu
+
+
+@app.get("/api/needs-you")
+def needs_you():
+    """
+    The Today screen's needs-you band (design_handoff_shell/README.md §4,
+    Step 5 of the app-shell build order) — up to a couple of cards for
+    things that need a decision right now: an undecided dinner within 48
+    hours, and a shop run needed before an upcoming meal. New endpoint,
+    same deviation-from-§10 category as /api/chores/today (Step 2) —
+    flagged to you before building, approved. See tools.get_needs_you_items
+    for the two hardcoded rules this starts with.
+    """
+    try:
+        items = tools.get_needs_you_items()
+    except Exception as e:
+        logger.exception("Needs-you lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": items}
+
+
+@app.post("/api/needs-you/dinner")
+def resolve_needs_you_dinner(req: ResolveDinnerRequest):
+    """Resolve a needs-you dinner-decision card by planning the picked meal (via tools.plan_meal), then return the refreshed needs-you list."""
+    try:
+        items = tools.resolve_needs_you_dinner(req.date, req.meal)
+    except Exception as e:
+        logger.exception("Needs-you dinner resolve failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"items": items}
 
 
 @app.post("/api/recipe-feedback")

@@ -456,6 +456,55 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
 5. **Needs-you band** — last, because it needs the prioritisation rules (what counts as needing a
    decision, and in what order). Start with two hardcoded rules: an empty dinner slot within 48
    hours, and a shop run whose items are needed before the next planned meal.
+
+   **✅ Done.** New backend surface (deviation from §10, same category as Step 2's chores
+   endpoints — flagged to you before building, approved): `tools.get_needs_you_items()` /
+   `GET /api/needs-you`, and `tools.resolve_needs_you_dinner()` / `POST /api/needs-you/dinner`.
+
+   **The two rules, as actually implemented (judgment calls documented in the functions'
+   docstrings too):**
+   - **Dinner decision:** the soonest of tonight's/tomorrow's dinner slots that's still empty.
+     Comes with up to two quick-recipe suggestions (excludes disliked/temporarily-excluded
+     recipes, ordered by known prep+cook time ascending) so the card's "Pick" rows have something
+     real to resolve to — the whole card is skipped if there isn't even one recipe saved yet,
+     since a decision card with nothing to pick from is worse than no card. At most one dinner
+     card at a time (the soonest empty slot), not one per empty day.
+   - **Shop run:** there are ungathered grocery items (`status='needed'`, not excluded from the
+     list) *and* something's actually planned in the next 48 hours that hasn't been cooked yet.
+     There's no ingredient-to-grocery-item link in this schema to check "these specific items
+     block that specific meal," so this is a proxy — "you have a shop to do, and something's
+     coming up soon" — rather than a precise per-ingredient match.
+
+   **Resolving a dinner decision** calls the existing `plan_meal()`, attached to the household's
+   current weekly plan (if one exists) so it also shows up correctly in the Week tab. The endpoint
+   returns the refreshed needs-you list so the card can just re-render from the response, per §6's
+   "cascades must be visible."
+
+   **Frontend:** `shell.js`'s Today panel now has a real needs-you band between the heading and
+   the dinner card — 0–2 cards for now (0–3 is the spec's headroom for future rules), dinner-
+   decision cards with tappable inline option rows, shop-run cards with `Shop now` (→ Grocery) /
+   `Later`. The H1 count and the Today tab's badge (mobile tab bar *and* desktop rail pill — both
+   already had the CSS hooks from Step 1, just never driven by real data) are now derived from
+   this same list instead of hardcoded to 0. Added the shared toast component §6 describes
+   (`#toast` in `shell.html`), shown when a dinner decision resolves.
+
+   **`Later`'s judgment call:** dismisses the shop-run card "until tomorrow evening" via
+   `localStorage` (a fixed ~6pm the next day) rather than a backend write — there's no
+   signed-in-member/session concept in this app to hang a server-side per-household dismissal on,
+   and it's genuinely ephemeral UI state, so a same-device local dismissal is the reasonable
+   scope rather than a wasted backend round-trip.
+
+   Sandbox-verified against a fresh seeded household: `get_needs_you_items()`/
+   `resolve_needs_you_dinner()` exercised directly (empty state with no recipes/groceries, dinner
+   suggestions ordered correctly by time, resolving today's dinner correctly surfaces tomorrow's
+   as the next candidate, shop-run only appearing when both conditions hold) — then the same
+   through the real HTTP endpoints. In-browser via Playwright: both cards render together with the
+   right urgency colors/kickers, picking a dinner option shows the toast, dismisses that card, and
+   correctly reveals the next real needs-you state (verified this reflects real changing data, not
+   a static mock); "Later" dismisses the shop-run card and the dismissal survives a full page
+   reload; the mobile tab badge and desktop rail pill both update to the live count; the "You're
+   clear" zero-state renders correctly once everything's resolved.
+
 6. **Desktop** — rail + Today three-column + menu grid.
 
 ## 10. Out of scope

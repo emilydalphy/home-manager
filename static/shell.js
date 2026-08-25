@@ -34,6 +34,14 @@
   the three-slot {title, meta, source} data model and its derivation
   judgment calls). See the "Week (Step 4)" section below for the UI-side
   judgment calls (day status, ribbon, empty-slot copy).
+
+  Step 5: the needs-you band is real now, backed by two new endpoints
+  (GET /api/needs-you, POST /api/needs-you/dinner — see
+  app/tools.get_needs_you_items/resolve_needs_you_dinner for the two
+  hardcoded rules this starts with). Today's H1/badge count and the Today
+  tab's mobile-badge/rail-pill are all derived from that same list now,
+  not hardcoded to 0. Also adds the shared toast (§6) used when a dinner
+  decision resolves.
 */
 (function () {
   'use strict';
@@ -165,10 +173,13 @@
   window.addEventListener('popstate', function () { activateTab(currentTabKey(), false); });
 
   // ---------- Today ----------
-  // README §4: heading, tonight's dinner, chores, grocery summary. No
-  // needs-you band yet (Step 5) — needsYouCount is hardcoded to 0 for now,
-  // but the heading is still *derived* from that count, same as it will be
-  // once the band exists and starts setting it for real.
+  // README §4: heading, needs-you band, tonight's dinner, chores, grocery
+  // summary. Step 5: the needs-you band is real now, backed by
+  // GET /api/needs-you (see app/tools.get_needs_you_items for the two
+  // hardcoded rules it starts with — an undecided dinner within 48h, and a
+  // shop run needed before an upcoming meal). The heading count, and the
+  // Today tab's badge (mobile tab bar + desktop rail), are both derived
+  // from that same list — see setTodayBadge/renderNeedsYou below.
   async function buildTodayPanel(panel) {
     panel.innerHTML =
       '<div class="today-content">' +
@@ -176,6 +187,7 @@
           '<div class="kicker" id="today-date"></div>' +
           '<h1 id="today-h1">You&rsquo;re clear</h1>' +
         '</div>' +
+        '<div id="needs-you-band"></div>' +
         '<div id="today-dinner-card" class="dinner-card" hidden></div>' +
         '<div class="shell-card chores-card">' +
           '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
@@ -190,19 +202,179 @@
         '</div>' +
       '</div>';
 
-    var needsYouCount = 0; // Step 5 will replace this with the real needs-you band count.
-    var h1 = panel.querySelector('#today-h1');
-    h1.textContent = needsYouCount === 0 ? "You're clear" : (needsYouCount === 1 ? '1 thing needs you' : needsYouCount + ' things need you');
-
     panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
 
     panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
 
     await Promise.all([
+      loadNeedsYou(panel),
       loadTonightsDinner(panel),
       loadChores(panel),
       loadGrocerySummary(panel)
     ]);
+  }
+
+  function setTodayHeading(panel, count) {
+    var h1 = panel.querySelector('#today-h1');
+    h1.textContent = count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you');
+    setTodayBadge(count);
+  }
+
+  function setTodayBadge(count) {
+    var tabBtn = document.querySelector('.tab-btn[data-tab="today"]');
+    var railRow = document.querySelector('.rail-row[data-tab="today"]');
+    [[tabBtn, '.tab-badge'], [railRow, '.rail-badge']].forEach(function (pair) {
+      var el = pair[0];
+      if (!el) return;
+      el.classList.toggle('has-badge', count > 0);
+      var badge = el.querySelector(pair[1]);
+      if (badge) badge.textContent = String(count);
+    });
+  }
+
+  // ---------- Needs-you band (Step 5, README §4/§6) ----------
+  // "Start with two hardcoded rules" per §9's build order: an undecided
+  // dinner within 48h (with up to two quick-recipe suggestions to pick
+  // from inline) and a shop run needed before an upcoming meal. At most
+  // one card per rule for now (0-3 is the spec's headroom for later
+  // rules). "Later" on the shop-run card is a same-device, until-tomorrow-
+  // evening dismissal — there's no per-user account concept in this app to
+  // hang a server-side dismissal on, so localStorage is the reasonable
+  // judgment call rather than a wasted backend round-trip for something
+  // this ephemeral.
+  var SHOP_RUN_SNOOZE_KEY = 'hm_shop_run_snoozed_until';
+
+  function isShopRunSnoozed() {
+    try {
+      var until = Number(localStorage.getItem(SHOP_RUN_SNOOZE_KEY) || 0);
+      return Date.now() < until;
+    } catch (e) { return false; }
+  }
+
+  function snoozeShopRunUntilTomorrowEvening() {
+    try {
+      var d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(18, 0, 0, 0); // "tomorrow evening" ~6pm, a reasonable stand-in for a real per-household evening time
+      localStorage.setItem(SHOP_RUN_SNOOZE_KEY, String(d.getTime()));
+    } catch (e) { /* localStorage unavailable — the card just won't stay dismissed, not fatal */ }
+  }
+
+  async function loadNeedsYou(panel) {
+    try {
+      var res = await fetch('/api/needs-you');
+      if (!res.ok) throw new Error('needs-you lookup failed');
+      var data = await res.json();
+      renderNeedsYou(panel, data.items || []);
+    } catch (err) {
+      console.warn('Needs-you lookup failed:', err);
+      setTodayHeading(panel, 0);
+      panel.querySelector('#needs-you-band').innerHTML = '';
+    }
+  }
+
+  function needsYouCardHtml(item) {
+    if (item.type === 'dinner_decision') {
+      return (
+        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_decision">' +
+          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          '<div class="ny-options">' +
+            item.options.map(function (opt, i) {
+              return (
+                '<div class="ny-option" data-date="' + escapeHtml(item.date) + '" data-meal="' + escapeHtml(opt.meal) + '" data-index="' + i + '">' +
+                  '<span class="ny-option-dish">' + escapeHtml(opt.meal) + (opt.minutes ? ' &middot; ' + opt.minutes + ' min' : '') + '</span>' +
+                  '<span class="ny-option-pick">Pick</span>' +
+                '</div>'
+              );
+            }).join('') +
+          '</div>' +
+        '</div>'
+      );
+    }
+    if (item.type === 'shop_run') {
+      var summary = item.sample_items.slice(0, 4).join(', ') + (item.count > item.sample_items.length ? ', and more' : '');
+      return (
+        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="shop_run">' +
+          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          '<div class="ny-summary">' + escapeHtml(item.count + (item.count === 1 ? ' item' : ' items')) + (summary ? ': ' + escapeHtml(summary) : '') + '</div>' +
+          '<div class="ny-actions">' +
+            '<button type="button" class="btn-gold ny-shop-now">Shop now</button>' +
+            '<button type="button" class="btn-sand ny-later">Later</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    return '';
+  }
+
+  function renderNeedsYou(panel, items) {
+    var visible = items.filter(function (it) { return !(it.type === 'shop_run' && isShopRunSnoozed()); });
+    setTodayHeading(panel, visible.length);
+
+    var band = panel.querySelector('#needs-you-band');
+    band.innerHTML = visible.map(needsYouCardHtml).join('');
+
+    band.querySelectorAll('[data-card-type="dinner_decision"] .ny-option').forEach(function (row) {
+      row.addEventListener('click', function () {
+        resolveDinnerDecision(panel, row.dataset.date, row.dataset.meal, row.closest('.needs-you-card'));
+      });
+    });
+    band.querySelectorAll('[data-card-type="shop_run"] .ny-shop-now').forEach(function (btn) {
+      btn.addEventListener('click', function () { activateTab('grocery', true); });
+    });
+    band.querySelectorAll('[data-card-type="shop_run"] .ny-later').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        snoozeShopRunUntilTomorrowEvening();
+        var card = btn.closest('.needs-you-card');
+        dismissNeedsYouCard(panel, card, items.filter(function (it) { return it.type !== 'shop_run'; }));
+      });
+    });
+  }
+
+  function dismissNeedsYouCard(panel, cardEl, remainingItems) {
+    if (cardEl) {
+      cardEl.classList.add('pop-out');
+      setTimeout(function () { renderNeedsYou(panel, remainingItems); }, 180);
+    } else {
+      renderNeedsYou(panel, remainingItems);
+    }
+  }
+
+  async function resolveDinnerDecision(panel, mealDate, meal, cardEl) {
+    try {
+      var res = await fetch('/api/needs-you/dinner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: mealDate, meal: meal })
+      });
+      if (!res.ok) throw new Error('dinner resolve failed');
+      var data = await res.json();
+      showToast(meal + ' is on the plan.');
+      dismissNeedsYouCard(panel, cardEl, data.items || []);
+      // The dinner card and (if it's today) the Week menu both just
+      // changed — refresh what's already on screen rather than requiring
+      // a manual reload, same "cascades must be visible" spirit as §6.
+      loadTonightsDinner(panel);
+    } catch (err) {
+      console.warn('Dinner resolve failed:', err);
+      alert('Could not save that pick right now — try again in a moment.');
+    }
+  }
+
+  // ---------- Toast (§6: "used for resolutions and adds only, never errors") ----------
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function showToast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.hidden = false;
+    toastEl.classList.remove('pop-in');
+    void toastEl.offsetWidth; // restart the animation if a toast is already showing
+    toastEl.classList.add('pop-in');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
   }
 
   async function loadTonightsDinner(panel) {

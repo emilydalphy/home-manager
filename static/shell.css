@@ -131,6 +131,94 @@ html, body {
   box-shadow: var(--shadow-card);
 }
 
+/* ---------- Needs-you band (Step 5, README §4/§6) ---------- */
+#needs-you-band {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.needs-you-card {
+  padding: 16px 17px;
+  border-top: 4px solid transparent;
+  flex-shrink: 0;
+  animation: popIn .2s ease;
+}
+.needs-you-card.pop-out {
+  animation: popOut .18s ease forwards;
+}
+.needs-you-card.urgency-urgent { border-top-color: var(--urgent); }
+.needs-you-card.urgency-warn { border-top-color: var(--warn); }
+.ny-kicker {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.needs-you-card.urgency-urgent .ny-kicker { color: var(--urgent); }
+.needs-you-card.urgency-warn .ny-kicker { color: var(--warn); }
+.ny-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 21px;
+  color: var(--plum-ink);
+  margin: 2px 0 10px;
+}
+.ny-options { display: flex; flex-direction: column; gap: 8px; }
+.ny-option {
+  background: var(--cream);
+  border-radius: 12px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.ny-option:hover { background: #f3e9d6; }
+.ny-option-dish {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--plum-ink);
+}
+.ny-option-pick {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--plum);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+.ny-summary {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.ny-actions { display: flex; gap: 10px; }
+.ny-actions .btn-gold, .ny-actions .btn-sand { flex: 1; text-align: center; }
+
+/* ---------- Toast (§6) ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--plum-ink);
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 17px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  z-index: 50;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.toast.pop-in { animation: popIn .2s ease; }
+@keyframes popOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.96); } }
+
 /* Tonight's dinner — the one plum card on Today. */
 .dinner-card {
   flex-shrink: 0;
@@ -595,6 +683,9 @@ html, body {
 
   #ask-bar-dock { padding: 14px 32px; max-width: 720px; }
   .today-content { max-width: 640px; padding: 24px 32px; }
+
+  /* No tab bar at this breakpoint — sit just above the docked ask bar instead. */
+  .toast { bottom: 96px; }
 }
 
 /* ---------- Week — the weekly menu (Step 4, README §5) ---------- */

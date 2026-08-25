@@ -1831,6 +1831,142 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     }
 
 
+def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
+    """
+    A couple of fast, currently-in-rotation recipes to offer as one-tap
+    picks for an undecided dinner (see get_needs_you_items) — not a real
+    recommendation engine, just "what's quick and not off the table right
+    now." Excludes disliked and temporarily-excluded recipes; orders by
+    known prep+cook time ascending (recipes with no timing info sort last,
+    since we can't call them "quick"). Returns [] if there are no recipes
+    saved yet — the needs-you card skips the suggestion rows rather than
+    inventing options in that case.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT name, prep_time_minutes, cook_time_minutes
+        FROM recipes
+        WHERE household_id = ? AND rating != 'disliked' AND temporarily_excluded = 0
+        ORDER BY
+            (prep_time_minutes IS NULL AND cook_time_minutes IS NULL) ASC,
+            (COALESCE(prep_time_minutes, 0) + COALESCE(cook_time_minutes, 0)) ASC
+        LIMIT ?
+        """,
+        (HOUSEHOLD_ID, limit),
+    ).fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        total = (r["prep_time_minutes"] or 0) + (r["cook_time_minutes"] or 0)
+        out.append({"meal": r["name"], "minutes": total or None})
+    return out
+
+
+def get_needs_you_items() -> list[dict]:
+    """
+    The Today screen's needs-you band (design_handoff_shell/README.md §4,
+    §9 Step 5) — 0-3 cards for things that need a decision right now.
+    Starting with the two rules the README calls out explicitly rather
+    than a general prioritisation engine (that's future work):
+
+      1. **Dinner decision** — the soonest of tonight's/tomorrow's dinner
+         slots that's still empty (the "within 48 hours" window from the
+         spec). Comes with up to two quick-recipe suggestions (see
+         _suggest_quick_dinners) so the card's "Pick" rows have something
+         real to offer — the card is omitted entirely if there isn't even
+         one recipe saved yet, since a decision card with nothing to pick
+         is worse than no card.
+      2. **Shop run** — there are ungathered grocery items *and* something
+         is actually planned (any slot, any meal) in the next 48 hours
+         that hasn't been cooked yet. There's no ingredient-to-grocery-item
+         link in this schema to check "these specific items block that
+         specific meal," so this is a proxy: "you have a shop to do, and
+         something's coming up soon" rather than a precise per-ingredient
+         match — documented here rather than pretending it's exact.
+
+    Returns at most one card per rule (max 2 for now, out of the spec's
+    0-3 headroom) in the order the mock shows them: dinner decision first,
+    then shop run.
+    """
+    conn = get_conn()
+    today = date.today()
+    horizon_end = today + timedelta(days=2)  # today, tomorrow, day-after exclusive edge -> "within 48h" covers today+tomorrow
+
+    items: list[dict] = []
+
+    # ---- Rule 1: dinner decision ----
+    dinner_rows = conn.execute(
+        "SELECT date FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
+        (HOUSEHOLD_ID, today.isoformat(), horizon_end.isoformat()),
+    ).fetchall()
+    planned_dinner_dates = {r["date"] for r in dinner_rows}
+    for offset in (0, 1):
+        candidate = (today + timedelta(days=offset)).isoformat()
+        if candidate in planned_dinner_dates:
+            continue
+        options = _suggest_quick_dinners()
+        if not options:
+            break  # no recipes to suggest at all -- nothing later in the loop will differ, so stop
+        when = "Tonight" if offset == 0 else "Tomorrow"
+        items.append({
+            "type": "dinner_decision",
+            "kicker": "DINNER",
+            "title": when + " needs a dinner",
+            "urgency": "urgent",
+            "date": candidate,
+            "slot": "dinner",
+            "options": options,
+        })
+        break  # only the soonest empty dinner becomes a card
+
+    # ---- Rule 2: shop run ----
+    # Same "needed, not excluded from the list" filter list_grocery_list
+    # uses for the normal shopping list, so this count matches what the
+    # Grocery tab itself would show.
+    needed_count = conn.execute(
+        "SELECT COUNT(*) AS n FROM grocery_items WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0",
+        (HOUSEHOLD_ID,),
+    ).fetchone()["n"]
+
+    # cooked_status uses 'pending', not 'cooked' — see meal_plan_entries schema.
+    upcoming_meal = conn.execute(
+        "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE household_id = ? AND date >= ? AND date < ? AND cooked_status = 'pending'",
+        (HOUSEHOLD_ID, today.isoformat(), horizon_end.isoformat()),
+    ).fetchone()["n"]
+
+    if needed_count > 0 and upcoming_meal > 0:
+        sample = conn.execute(
+            "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0 ORDER BY id ASC LIMIT 4",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+        items.append({
+            "type": "shop_run",
+            "kicker": "SHOP RUN",
+            "title": "Grocery run needed",
+            "urgency": "warn",
+            "count": needed_count,
+            "sample_items": [s["item"] for s in sample],
+        })
+
+    conn.close()
+    return items
+
+
+def resolve_needs_you_dinner(meal_date: str, meal: str) -> list[dict]:
+    """
+    Resolve a needs-you dinner-decision card by planning the picked meal —
+    thin wrapper around plan_meal that also attaches it to the household's
+    current weekly plan (if one exists) so it shows up correctly in the
+    Week tab's menu, then returns the refreshed needs-you list so the
+    Today screen can just re-render from the response.
+    """
+    plan = get_weekly_plan()
+    weekly_plan_id = plan.get("weekly_plan_id")
+    plan_meal(meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id)
+    return get_needs_you_items()
+
+
 def approve_weekly_plan(weekly_plan_id: int) -> dict:
     """Mark a weekly plan as approved/reviewed by the Planner."""
     conn = get_conn()
