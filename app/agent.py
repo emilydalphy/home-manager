@@ -1451,10 +1451,18 @@ household_memory's breakfasts_per_week and lunches_per_week (1-7, default 7 each
 same way, independently, for those meals — each is its own count of days to plan that meal, \
 spread across the week rather than clustered, with no entry at all on the other days. Snack \
 isn't governed by any of these three numbers — plan snacks every day as usual regardless.
-- household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb") is a \
-style/goal every meal this week should genuinely follow, not just a soft nudge — if it's set \
-and non-empty, let it actually shape ingredient and recipe choices across every slot, not \
-only dinner. If it's blank, ignore it.
+- household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
+specific list of foods someone says they should be eating) is a hard constraint, treated with \
+the exact same "without exception" rigor as a dietary restriction/allergy above — not a soft \
+style nudge. If it reads as a general style label ("keto," "high-protein, low-carb"), every \
+ingredient in every recipe this week must fit that style. If it reads as an explicit list of \
+specific allowed foods/ingredients (e.g. "the only things I should be having are chicken, fish, \
+eggs, vegetables..."), treat that as a strict allow-list: every ingredient in every recipe this \
+week — main dish AND every side ingredient, garnish, cooking fat, or flavoring — must come from \
+that list, full stop, even if something else would genuinely taste better or round the dish out \
+more traditionally. When in doubt about whether an ingredient is covered by the list, leave it \
+out rather than assume it's a reasonable addition. This applies to every slot, not only dinner. \
+If eating_style is blank, ignore this entirely.
 - For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
 saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
@@ -1650,9 +1658,16 @@ protein rated 1 shouldn't appear at all, and 4-5 should show up more than once a
 protein items. (Older saved data may still have a frequency phrase instead of a number — \
 treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "rarely"≈2, "avoid"≈1.)
 - Honor any per-week constraints in constraints_notes exactly.
-- household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb") is a \
-style/goal the whole pool should genuinely follow if it's set and non-empty — let it shape \
-ingredient and item choices across every category, not just proteins. If it's blank, ignore it.
+- household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
+specific list of foods someone says they should be eating) is a hard constraint, treated with \
+the exact same "without exception" rigor as a dietary restriction/allergy above — not a soft \
+style nudge. If it reads as a general style label, every ingredient in every item in the pool \
+must fit that style. If it reads as an explicit list of specific allowed foods/ingredients, \
+treat that as a strict allow-list: every ingredient in every item — main component AND any \
+side ingredient, garnish, cooking fat, or flavoring — must come from that list, full stop, even \
+if something else would genuinely round the dish out more traditionally. When in doubt whether \
+an ingredient is covered, leave it out rather than assume it's fine. This applies across every \
+category in the pool, not just proteins. If eating_style is blank, ignore this entirely.
 - For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \
 the exact meal_name.

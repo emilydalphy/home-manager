@@ -152,6 +152,22 @@ with one token ingredient bolted on. If a named style isn't one it can do justic
 meant to fall back to a broader cuisine label instead of naming something specific and
 getting it thin.
 
+**Eating style (`eating_style` in What We Know) is enforced as a hard constraint**, the same
+"without exception" rigor as a per-person dietary restriction/allergy — not a soft nudge that
+just leans the week in a direction. This covers two different shapes of input: a general style
+label ("keto," "high-protein, low-carb") means every ingredient in every recipe that week has to
+fit that style; a specific list of allowed foods ("the only things I should be having are
+chicken, fish, eggs, vegetables...") is treated as a strict allow-list — every ingredient in
+every recipe, including sides, garnishes, cooking fat, and flavoring, has to come from that list,
+with no "it'll taste better this way" exceptions. This was tightened after a generated recipe
+used coconut milk despite an eating_style allow-list that didn't include coconut — the earlier
+prompt wording treated eating_style as something that should merely "shape" choices, which wasn't
+strong enough for an explicit allow-list the way "avoid every listed dislike" is for dislikes. If
+you're relying on eating_style for something you genuinely can't have (not just prefer to avoid),
+it's still worth also adding the specific ingredient to Dislikes as a second line of defense —
+belt and suspenders, since eating_style is freeform text the model has to interpret, while
+dislikes get simple, direct exclusion instructions.
+
 The assistant also picks up on feedback about specific recipes as soon as you
 mention it — "we loved that chicken dish," "that pasta was too bland," "make
 that again sometime" — and saves a liked/disliked rating plus any freeform
