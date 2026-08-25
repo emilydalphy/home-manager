@@ -289,6 +289,161 @@ html, body {
   font-size: 17px;
 }
 
+/* ---------- Ask sheet (Step 3) ---------- */
+@keyframes sheetUp { from { transform: translateY(102%); } to { transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+#ask-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(58,31,46,.4);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#ask-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 76%;
+  background: var(--card);
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -8px 30px rgba(58,31,46,.18);
+  padding: 10px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#ask-scrim[hidden], #ask-sheet[hidden] { display: none; }
+.ask-sheet-handle {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: #e3d7c4;
+  margin: 0 auto;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.ask-messages {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 80px;
+}
+.ask-msg { display: flex; flex-direction: column; gap: 8px; }
+.ask-msg.user { align-items: flex-end; }
+.ask-msg.assistant { align-items: flex-start; }
+.ask-bubble {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 14px 18px;
+  max-width: 88%;
+  white-space: pre-wrap;
+}
+.ask-msg.user .ask-bubble { background: var(--plum); color: #fff; border-radius: 16px 16px 4px 16px; }
+.ask-msg.assistant .ask-bubble { background: #f4f0e6; color: var(--plum-ink); border-radius: 16px 16px 16px 4px; }
+.ask-bubble.loading { font-style: italic; color: var(--muted); background: #f4f0e6; animation: loading-pulse 1.3s ease-in-out infinite; }
+@keyframes loading-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+
+/* Markdown-lite tables inside an assistant bubble (see renderMarkdownLite in shell.js) */
+.ask-msg-table { display: block; overflow-x: auto; max-width: 100%; border-collapse: collapse; margin: 6px 0; font-size: .85rem; background: #fff; border-radius: 10px; }
+.ask-msg-table thead, .ask-msg-table tbody { display: table; width: 100%; table-layout: auto; }
+.ask-msg-table th, .ask-msg-table td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.ask-msg-table th { font-family: var(--font-heading); font-weight: 700; color: var(--plum-ink); background: var(--cream); }
+.ask-msg-table tbody tr:last-child td { border-bottom: none; }
+
+/* Action card — the fix for chat replies that dead-end: every reply that
+   changed something gets one of these, pointing at what changed. */
+.ask-action-card {
+  align-self: stretch;
+  background: var(--card);
+  border: 1.5px solid #e0d3bf;
+  border-radius: 14px;
+  padding: 15px 17px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  animation: popIn .2s ease;
+}
+.ask-action-card:hover { background: #fffdf8; }
+.ask-action-card .ask-action-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ask-action-card .ask-action-kicker {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--good-ink);
+  margin-bottom: 5px;
+}
+.ask-action-card .ask-action-change { font-family: var(--font-body); font-size: 16px; color: var(--plum-ink); }
+.ask-action-card .ask-action-view { flex-shrink: 0; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--plum); }
+
+.ask-chips { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.ask-chip {
+  background: var(--cream);
+  color: var(--plum);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 11px 15px;
+  border-radius: 22px;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+.ask-chip:hover { background: #efe4cf; }
+
+#ask-composer {
+  background: var(--cream);
+  border: 2px solid var(--plum);
+  border-radius: 16px;
+  padding: 6px 8px 6px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#ask-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--plum-ink);
+  padding: 10px 0;
+}
+#ask-send-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--plum);
+  color: var(--gold);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  cursor: pointer;
+}
+#ask-send-btn:disabled { opacity: .5; cursor: default; }
+
+@media (min-width: 480px) {
+  #ask-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 440px; }
+}
+
 /* ---------- Mobile tab bar ---------- */
 #tab-bar {
   flex-shrink: 0;

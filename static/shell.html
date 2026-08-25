@@ -47,6 +47,17 @@
 
   </div>
 
+  <div id="ask-scrim" hidden></div>
+  <div id="ask-sheet" hidden role="dialog" aria-label="Ask Home Manager">
+    <div class="ask-sheet-handle" id="ask-sheet-handle"></div>
+    <div class="ask-messages" id="ask-messages"></div>
+    <div class="ask-chips" id="ask-chips"></div>
+    <form id="ask-composer">
+      <input id="ask-input" type="text" placeholder="Ask or add anything&hellip;" autocomplete="off" />
+      <button type="submit" id="ask-send-btn" aria-label="Send">&uarr;</button>
+    </form>
+  </div>
+
   <script src="/static/shell.js"></script>
 </body>
 </html>

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 import base64
 import datetime
+import json
 import logging
 import os
 
@@ -32,8 +33,24 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class ChatAction(BaseModel):
+    """
+    One "this changed, go look" action card under an assistant reply — the
+    app-shell redesign's fix for chat answers that dead-end (README problem
+    #4 / Step 3). Exactly one of `tab` (a shell tab key: today/week/grocery/
+    kitchen — client-side route, no reload) or `href` (a real page, for
+    changes that don't land on one of the four shell tabs yet, e.g.
+    household info still living at /memory) is set.
+    """
+    kicker: str
+    change: str
+    tab: str | None = None
+    href: str | None = None
+
+
 class ChatResponse(BaseModel):
     reply: str
+    actions: list[ChatAction] = []
 
 
 class MemberInput(BaseModel):
@@ -1015,6 +1032,150 @@ def add_member_share_note(token: str, req: MemberNoteRequest):
     return view
 
 
+# ---------- Chat action cards (app-shell redesign, Step 3) ----------
+# Maps a tool the agent actually called during a turn to the shell tab (or,
+# for things the shell doesn't have a tab for yet, a real page href) that
+# now reflects the change — this is what lets an assistant reply in the
+# ask sheet offer "View" instead of dead-ending (README problem #4).
+# Read-only get_*/list_* tools never appear here since they don't change
+# anything. Anything NOT listed falls back to the household-info href
+# (see _categorize_tool) rather than being silently dropped, since a write
+# tool we haven't explicitly categorized is still something that changed.
+_CHORE_TOOLS = {"add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan"}
+_KITCHEN_TOOLS = {
+    "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
+    "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
+    "resolve_attention_item", "update_inventory", "update_inventory_items", "remove_inventory_item",
+}
+_GROCERY_TOOLS = {
+    "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "clear_stale_grocery_items",
+    "clear_grocery_list", "mark_grocery_item", "update_grocery_item", "remove_grocery_item",
+    "exclude_grocery_item", "include_grocery_item", "mark_grocery_item_already_have_reviewed", "set_item_store",
+}
+# Household/member/preferences/setup — no shell tab shows this yet (Kitchen's
+# "What we know" absorbs it in a later step), so these point at the real
+# /memory page instead of a tab that wouldn't actually reflect the change.
+_MEMORY_HREF_TOOLS = {
+    "add_member", "set_member_dietary_restrictions", "set_member_age_group", "set_household_goals", "add_pet",
+    "set_household_meal_preferences", "add_food_dislikes", "add_usual_stores", "add_store_typical_items",
+    "remove_store_typical_item", "set_chores_profile", "edit_preference", "delete_preference",
+    "get_or_create_member_share_link", "revoke_member_share_link", "regenerate_member_share_link",
+}
+_CATEGORY_KICKERS = {
+    "today": "Chores updated",
+    "week": "Week updated",
+    "kitchen": "Kitchen updated",
+    "grocery": "Grocery updated",
+    "memory": "Household info updated",
+}
+_VERB_PREFIXES = [
+    ("add_", "Added"), ("remove_", "Removed"), ("complete_", "Completed"), ("check_off_", "Marked done:"),
+    ("swap_", "Swapped in"), ("update_", "Updated"), ("set_", "Updated"), ("mark_", "Updated"),
+    ("generate_", "Generated"), ("approve_", "Approved"), ("exclude_", "Excluded"), ("include_", "Added back"),
+    ("clear_", "Cleared"), ("consolidate_", "Consolidated"), ("resolve_", "Resolved"), ("flag_", "Flagged"),
+    ("log_", "Logged"), ("plan_", "Planned"), ("schedule_", "Scheduled"),
+]
+_CHANGE_TEXT_FIELDS = ["name", "item", "chore", "meal", "recipe_name", "dish", "message", "store", "field"]
+
+
+def _categorize_tool(tool_name: str) -> tuple[str, str | None, str | None]:
+    """Returns (category_key, tab, href) for a successfully-called write tool. Read-only tools should never reach this."""
+    if tool_name in _CHORE_TOOLS:
+        return "today", "today", None
+    if tool_name in _WEEK_TOOLS:
+        return "week", "week", None
+    if tool_name in _KITCHEN_TOOLS:
+        return "kitchen", "kitchen", None
+    if tool_name in _GROCERY_TOOLS:
+        return "grocery", "grocery", None
+    # Explicit household/memory tools, and the catch-all for any write tool
+    # not yet categorized above — better to point at the closest real page
+    # than to silently produce no action card at all.
+    return "memory", None, "/memory"
+
+
+def _humanize_change(tool_name: str, args: dict, result) -> str:
+    """Best-effort human-readable line for an action card, e.g. "Added milk" —
+    built from the tool call's own arguments (usually the readable part;
+    results are often just ids/status) with a small verb guessed from the
+    tool name's prefix. Falls back to the category kicker if nothing usable
+    is found, which still reads fine on its own."""
+    noun = None
+    for field in _CHANGE_TEXT_FIELDS:
+        v = args.get(field) if isinstance(args, dict) else None
+        if isinstance(v, str) and v.strip():
+            noun = v.strip()
+            break
+    if noun is None and isinstance(result, dict):
+        for field in _CHANGE_TEXT_FIELDS:
+            v = result.get(field)
+            if isinstance(v, str) and v.strip():
+                noun = v.strip()
+                break
+    if noun is None:
+        return None
+    if len(noun) > 60:
+        noun = noun[:57] + "..."
+    verb = "Updated"
+    for prefix, v in _VERB_PREFIXES:
+        if tool_name.startswith(prefix):
+            verb = v
+            break
+    return f"{verb} {noun}"
+
+
+_READ_ONLY_PREFIXES = ("get_", "list_")
+
+
+def summarize_chat_actions(before_history: list, after_history: list) -> list[ChatAction]:
+    """
+    Look at everything the agent actually did this turn (before_history vs.
+    after_history from run_agent_turn) and produce the action card(s) for
+    it — one per distinct shell area that changed, using the last matching
+    tool call's own change text if more than one tool hit the same area.
+    """
+    new_entries = after_history[len(before_history):]
+
+    tool_names_by_id: dict[str, tuple] = {}  # tool_use_id -> (name, args)
+    for entry in new_entries:
+        if entry.get("role") != "assistant":
+            continue
+        for block in entry.get("content", []):
+            block_type = getattr(block, "type", None) or (block.get("type") if isinstance(block, dict) else None)
+            if block_type != "tool_use":
+                continue
+            name = getattr(block, "name", None) or block.get("name")
+            block_id = getattr(block, "id", None) or block.get("id")
+            args = getattr(block, "input", None)
+            if args is None and isinstance(block, dict):
+                args = block.get("input")
+            tool_names_by_id[block_id] = (name, args or {})
+
+    by_category: dict[str, ChatAction] = {}
+    for entry in new_entries:
+        if entry.get("role") != "user":
+            continue
+        content = entry.get("content")
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
+                continue
+            name, args = tool_names_by_id.get(block.get("tool_use_id"), (None, None))
+            if not name or name.startswith(_READ_ONLY_PREFIXES):
+                continue
+            try:
+                result = json.loads(block.get("content") or "{}")
+            except Exception:
+                result = None
+            category, tab, href = _categorize_tool(name)
+            change = _humanize_change(name, args, result) or _CATEGORY_KICKERS[category]
+            by_category[category] = ChatAction(kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href)
+
+    return list(by_category.values())
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     history = SESSIONS.get(req.session_id, [])
@@ -1034,12 +1195,20 @@ def chat(req: ChatRequest):
         # common cause is a missing/invalid ANTHROPIC_API_KEY.
         logger.exception("Chat turn failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    try:
+        actions = summarize_chat_actions(history, updated_history)
+    except Exception:
+        # Action cards are a nice-to-have on top of the reply, not load-
+        # bearing — never let a bug in summarizing them turn into a 500 for
+        # what was otherwise a perfectly good chat turn.
+        logger.exception("Summarizing chat actions failed; returning reply with no action cards")
+        actions = []
     # Cap stored history so a long-lived browser tab (no logout, "default"
     # session id) can't grow this — and the full payload re-sent to Claude
     # every turn — without bound. See trim_conversation for why this is
     # safe to cut mid-list without breaking tool_use/tool_result pairing.
     SESSIONS[req.session_id] = trim_conversation(updated_history)
-    return ChatResponse(reply=reply)
+    return ChatResponse(reply=reply, actions=actions)
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")

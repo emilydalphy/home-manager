@@ -18,6 +18,15 @@
   No needs-you band yet (that's Step 5), so the heading always reads
   "You're clear" for now — it's still deriving from a real count, that
   count is just always 0 until the band exists.
+
+  Step 3: chat lives in the ask sheet now, reachable from every screen via
+  the docked ask bar. /api/chat returns `actions` (see app/main.py) — one
+  per shell area a reply actually changed — and every action renders as a
+  card under the assistant's bubble with a "View" that jumps straight to
+  that tab (or, for household info that isn't on a tab yet, to /memory).
+  static/index.html's chat is untouched and still works standalone, but
+  nothing in the shell links to it as of this step — the sheet fully
+  replaces it as the way to reach the assistant from the app.
 */
 (function () {
   'use strict';
@@ -57,15 +66,6 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-  }
-
-  // The real ask sheet is Step 3. Interim: anything that should "open the
-  // assistant" instead does a real navigation to the existing chat page —
-  // it's the one place the assistant still fully works end to end until
-  // the sheet exists (README problem #4: the assistant should stay
-  // reachable from anywhere, not just from Today).
-  function openAssistant() {
-    window.location.href = '/static/index.html';
   }
 
   var scrollEl = document.getElementById('shell-scroll');
@@ -224,10 +224,9 @@
           '<button type="button" class="btn-outline-light" id="dinner-swap">Swap</button>' +
         '</div>';
       card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('kitchen', true); });
-      // Swap should open the ask sheet pre-filled with "Swap tonight for
-      // something faster" — the sheet doesn't exist yet (Step 3), so this
-      // is the same interim escape hatch as the docked ask bar for now.
-      card.querySelector('#dinner-swap').addEventListener('click', openAssistant);
+      card.querySelector('#dinner-swap').addEventListener('click', function () {
+        openAskSheet('Swap tonight for something faster');
+      });
     } catch (err) {
       console.warn('Tonight\'s dinner lookup failed:', err);
       card.hidden = true;
@@ -325,7 +324,7 @@
   // ---------- Docked ask bar ----------
   var askBar = document.getElementById('ask-bar');
   if (askBar) {
-    askBar.addEventListener('click', openAssistant);
+    askBar.addEventListener('click', function () { openAskSheet(); });
   }
 
   // ---------- Rail: share meal plan ----------
@@ -348,6 +347,193 @@
       }
     });
   }
+
+  // ---------- Ask sheet (Step 3) ----------
+  // README §4 "Ask sheet": chat moves off the home screen into a sheet
+  // reachable from every route. Ported from static/index.html: the
+  // markdown-lite renderer (bold/bullets/tables in a reply) and the
+  // loading-phrase picker, so replies still look the same as they always
+  // did. NOT ported: voice dictation (the mic button) — index.html still
+  // has it standalone; wiring it into this composer too is a reasonable
+  // follow-up but out of scope for "move chat into the sheet."
+  var askScrim = document.getElementById('ask-scrim');
+  var askSheet = document.getElementById('ask-sheet');
+  var askMessagesEl = document.getElementById('ask-messages');
+  var askChipsEl = document.getElementById('ask-chips');
+  var askComposer = document.getElementById('ask-composer');
+  var askInput = document.getElementById('ask-input');
+  var askSendBtn = document.getElementById('ask-send-btn');
+  var askSessionId = 'default'; // same shared backend session static/index.html always used
+  var askBuilt = false;
+  var askSending = false;
+
+  // Same seven quick actions static/index.html always offered — preserved
+  // here rather than trimmed, per README §8 ("preserve every behavior the
+  // current pages have").
+  var QUICK_ACTIONS = [
+    { label: 'Set up chores', msg: 'Let’s set up chores for our household.' },
+    { label: 'This week’s chores', msg: 'What chores are coming up this week?' },
+    { label: 'Add a chore', msg: 'Add a chore.' },
+    { label: 'Set up meal planning', msg: 'Let’s set up meal planning — ask me about dietary restrictions and what we like to eat.' },
+    { label: 'This week’s meals', msg: 'What’s the meal plan for this week?' },
+    { label: 'Add a recipe', msg: 'I want to save a recipe.' },
+    { label: 'Grocery list', msg: 'What’s on the grocery list?' }
+  ];
+
+  function splitTableRow(line) {
+    var cells = line.split('|');
+    if (cells.length && cells[0].trim() === '') cells.shift();
+    if (cells.length && cells[cells.length - 1].trim() === '') cells.pop();
+    return cells.map(function (c) { return c.trim(); });
+  }
+  var TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
+  var TABLE_SEPARATOR_RE = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
+  function renderMarkdownLite(text) {
+    var escaped = escapeHtml(text);
+    var bolded = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    var lines = bolded.split('\n');
+    var out = [];
+    var i = 0;
+    while (i < lines.length) {
+      if (TABLE_ROW_RE.test(lines[i]) && i + 1 < lines.length && TABLE_SEPARATOR_RE.test(lines[i + 1])) {
+        var headerCells = splitTableRow(lines[i]);
+        var j = i + 2;
+        var rows = [];
+        while (j < lines.length && TABLE_ROW_RE.test(lines[j])) { rows.push(splitTableRow(lines[j])); j++; }
+        out.push(
+          '<table class="ask-msg-table"><thead><tr>' +
+          headerCells.map(function (c) { return '<th>' + c + '</th>'; }).join('') +
+          '</tr></thead><tbody>' +
+          rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') +
+          '</tbody></table>'
+        );
+        i = j;
+      } else {
+        out.push(lines[i].replace(/^(\s*)[-*]\s+/, '$1&bull;&nbsp;'));
+        i++;
+      }
+    }
+    return out.join('\n');
+  }
+
+  var LOADING_PHRASES = {
+    grocery: ['Cooking up your list...', 'Sorting the aisles...', 'Filling the cart...'],
+    meal: ['Cooking up a plan...', 'Simmering on your week...', 'Plating up some ideas...', 'Preheating the ideas oven...'],
+    chore: ['Sweeping up the details...', 'Tidying up your schedule...', 'Dusting things off...'],
+    default: ['Whipping this up...', 'Stirring up an answer...', 'Cooking something up...', 'Simmering on it...']
+  };
+  function pickLoadingPhrase(message) {
+    var m = (message || '').toLowerCase();
+    var bucket = 'default';
+    if (/grocer|shopping list|\bcart\b/.test(m)) bucket = 'grocery';
+    else if (/meal|dinner|breakfast|lunch|recipe|\bplan\b|cook|\beat\b/.test(m)) bucket = 'meal';
+    else if (/chore|clean|tidy|vacuum|dust|laundry/.test(m)) bucket = 'chore';
+    var options = LOADING_PHRASES[bucket];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  function ensureAskSheetBuilt() {
+    if (askBuilt) return;
+    askBuilt = true;
+    askChipsEl.innerHTML = QUICK_ACTIONS.map(function (q, i) {
+      return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
+    }).join('');
+    askChipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () { sendAskMessage(QUICK_ACTIONS[Number(chip.dataset.i)].msg); });
+    });
+    addAskMessage('assistant', 'Hi! I’m your home manager. Tap a suggestion below, or just tell me what you need.');
+  }
+
+  function addAskMessage(role, text, actions) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ask-msg ' + role;
+    var bubble = document.createElement('div');
+    bubble.className = 'ask-bubble';
+    bubble.innerHTML = renderMarkdownLite(text);
+    wrap.appendChild(bubble);
+    (actions || []).forEach(function (action) {
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'ask-action-card';
+      card.innerHTML =
+        '<span class="ask-action-text">' +
+          '<span class="ask-action-kicker">' + escapeHtml(action.kicker) + '</span>' +
+          '<span class="ask-action-change">' + escapeHtml(action.change) + '</span>' +
+        '</span>' +
+        '<span class="ask-action-view">View</span>';
+      card.addEventListener('click', function () {
+        closeAskSheet();
+        if (action.tab) activateTab(action.tab, true);
+        else if (action.href) window.location.href = action.href;
+      });
+      wrap.appendChild(card);
+    });
+    askMessagesEl.appendChild(wrap);
+    askMessagesEl.scrollTop = askMessagesEl.scrollHeight;
+    return wrap;
+  }
+
+  async function sendAskMessage(message) {
+    if (!message || askSending) return;
+    ensureAskSheetBuilt();
+    addAskMessage('user', message);
+    askSending = true;
+    askInput.disabled = true;
+    askSendBtn.disabled = true;
+    var loadingWrap = addAskMessage('assistant', pickLoadingPhrase(message));
+    loadingWrap.querySelector('.ask-bubble').classList.add('loading');
+
+    try {
+      var res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: askSessionId, message: message })
+      });
+      loadingWrap.remove();
+      if (!res.ok) {
+        var detail = '';
+        try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
+        throw new Error(detail || ('Request failed (' + res.status + ' ' + res.statusText + ')'));
+      }
+      var data = await res.json();
+      addAskMessage('assistant', data.reply, data.actions);
+    } catch (err) {
+      loadingWrap.remove();
+      addAskMessage('assistant', 'Error: ' + err.message);
+    } finally {
+      askSending = false;
+      askInput.disabled = false;
+      askSendBtn.disabled = false;
+      askInput.focus();
+    }
+  }
+
+  function openAskSheet(prefill) {
+    ensureAskSheetBuilt();
+    askScrim.hidden = false;
+    askSheet.hidden = false;
+    if (prefill) {
+      askInput.value = prefill;
+      askInput.focus();
+    } else {
+      askInput.focus();
+    }
+  }
+  function closeAskSheet() {
+    askScrim.hidden = true;
+    askSheet.hidden = true;
+  }
+
+  askScrim.addEventListener('click', closeAskSheet);
+  document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet);
+  askComposer.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var message = askInput.value.trim();
+    if (!message) return;
+    askInput.value = '';
+    sendAskMessage(message);
+  });
 
   // ---------- First-run onboarding check ----------
   // Runs at the top level (not inside a per-tab panel) so a first-time

@@ -359,6 +359,43 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
    hatch round-trips to chat and back via the new link.
 
 3. **Ask sheet + action cards** — chat moves off the home screen and into the sheet on every route.
+
+   **✅ Done.** `#ask-scrim` + `#ask-sheet` in `shell.html`, styled/behaviored in `shell.css`/
+   `shell.js`: scrim-to-dismiss, grab-handle, `sheetUp` animation, plum/cream bubbles, suggestion
+   chips, and a composer — all matching §4's spec values. The docked ask bar and the dinner
+   card's "Swap" button (Step 2's interim escape hatches to `/static/index.html`) now open this
+   sheet instead — `Swap` pre-fills "Swap tonight for something faster" as specified. Ported the
+   markdown-lite renderer (bold/bullets/tables) and loading-phrase picker from `index.html` so
+   replies look and feel the same; all seven original quick-action chips carried over too (§8:
+   preserve existing behavior). `index.html` itself is untouched and still works standalone if
+   visited directly, but nothing in the shell links to it anymore — the sheet fully replaces it.
+
+   **Action cards, the actual "no dead end" mechanism:** `POST /api/chat` now also returns
+   `actions: [{kicker, change, tab|href}]` (`app/main.py`) — built by diffing the conversation
+   before/after `run_agent_turn` for which tools the agent actually called (successful, non-`get_
+   `/`list_` ones only), categorizing each into one of the four shell tabs or, for household/
+   member/preference tools with no tab of their own yet, a real `/memory` href — never a made-up
+   destination that wouldn't actually reflect the change. Change text is pulled from the tool
+   call's own arguments (`item`/`name`/`chore`/etc. — usually the readable part; results are
+   often just ids) with a verb guessed from the tool name's prefix, e.g. `add_grocery_item` →
+   "Added milk"; anything not cleanly extractable falls back to the category kicker itself rather
+   than showing nothing. Multiple tool calls hitting the same area in one turn collapse to a
+   single card (last one wins); different areas each get their own card. This is a genuinely new
+   piece of backend logic, not a spec-mandated endpoint, so it's called out rather than assumed.
+
+   **Known gap:** voice dictation (the mic button) was not ported into the sheet's composer —
+   `index.html` still has it standalone. Typing works fully in the sheet; carrying dictation over
+   is a reasonable follow-up but wasn't part of "move chat into the sheet."
+
+   Sandbox-verified: `summarize_chat_actions` unit-tested directly (single action, multi-tool
+   dedup-by-category, error/read-only tool calls correctly excluded, the `/memory` href path) —
+   this logic has no UI, so it needed testing on its own rather than only by eyeballing a screen.
+   In-browser (with `/api/chat` mocked, since this sandbox has no real Anthropic key): sheet
+   opens from the ask bar and from Swap (with the prefill), closes on scrim/handle tap, a reply
+   with a markdown table and an action card both render correctly, clicking the action card
+   closes the sheet and switches to the tab it named, and quick-action chips send their message.
+   Checked at both the mobile and desktop breakpoints.
+
 4. **Menu** — the three-slot data model, then the mobile menu, then the desktop grid.
 5. **Needs-you band** — last, because it needs the prioritisation rules (what counts as needing a
    decision, and in what order). Start with two hardcoded rules: an empty dinner slot within 48
