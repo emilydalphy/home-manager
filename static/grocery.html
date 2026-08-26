@@ -193,6 +193,7 @@
   .ah-btn { border: none; border-radius: 10px; padding: 8px 12px; min-height: 40px; font-family: var(--font-body); font-weight: 700; font-size: 0.8rem; cursor: pointer; }
   .ah-btn.remove-btn { background: var(--electric-coral); color: #fff; }
   .ah-btn.keep-btn { background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet); }
+  .ah-btn.have-btn { background: rgba(111,184,76,.18); color: var(--leaf-dark); }
   .ah-btn:disabled { opacity: 0.6; cursor: default; }
 
   .all-done-state { padding: 12px 0; }
@@ -730,6 +731,7 @@ async function renderAlreadyHaveBanner() {
             — tracking ${escapeHtml(it.inventory_quantity || 'some')}${it.inventory_location ? ' in the ' + escapeHtml(it.inventory_location) : ''}
           </div>
           <div class="actions">
+            <button class="ah-btn have-btn">Already have it</button>
             <button class="ah-btn keep-btn">Keep it, I need it</button>
             <button class="ah-btn remove-btn">Remove from list</button>
           </div>
@@ -737,13 +739,20 @@ async function renderAlreadyHaveBanner() {
     </div>`;
   banner.querySelectorAll('.already-have-row').forEach(row => {
     const itemId = row.getAttribute('data-item-id');
+    const haveBtn = row.querySelector('.have-btn');
     const keepBtn = row.querySelector('.keep-btn');
     const removeBtn = row.querySelector('.remove-btn');
     async function act(endpoint) {
-      keepBtn.disabled = true; removeBtn.disabled = true;
+      haveBtn.disabled = true; keepBtn.disabled = true; removeBtn.disabled = true;
       try { await postEmpty('/api/grocery-list/' + itemId + endpoint); refreshCurrentScreen(); }
-      catch (err) { keepBtn.disabled = false; removeBtn.disabled = false; alert("Couldn't update that — try again."); }
+      catch (err) { haveBtn.disabled = false; keepBtn.disabled = false; removeBtn.disabled = false; alert("Couldn't update that — try again."); }
     }
+    // Confirms the inventory match is right and adds it straight to
+    // pantry/fridge inventory (same endpoint as the "Have it" action on a
+    // normal list row), then removes it from the grocery list — one tap
+    // instead of "keep it" (does nothing to inventory) followed by a
+    // separate manual inventory entry.
+    haveBtn.addEventListener('click', () => act('/already-have'));
     keepBtn.addEventListener('click', () => act('/keep'));
     removeBtn.addEventListener('click', () => act('/remove'));
   });

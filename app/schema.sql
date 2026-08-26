@@ -325,6 +325,32 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Per-meal ledger of exactly which grocery_items line (and how much of it)
+-- a given meal_plan_entries row contributed, recorded at plan_meal() time
+-- whenever a recipe's ingredients get auto-added to the grocery list. This
+-- is what makes swap_meal_in_plan/swap_component_in_plan able to *remove*
+-- the old meal's ingredients precisely instead of only ever adding the new
+-- meal's on top — without it there's no way to tell "half of this 3 lbs
+-- chicken breast line came from the meal being replaced" apart from "all of
+-- it did," since same-name ingredients from different meals consolidate
+-- onto one grocery_items row. See _reverse_meal_grocery_contributions.
+-- ON DELETE CASCADE on both foreign keys: meal_plan_entries and
+-- grocery_items rows both get hard-deleted elsewhere in the app (a swap,
+-- consolidate_grocery_list, clear_stale_grocery_items, remove_grocery_item,
+-- ...) independently of this ledger, and PRAGMA foreign_keys=ON (see
+-- db.get_conn) would otherwise block those deletes once a link row points
+-- at them. A cascaded link row is just a stale ledger entry with nothing
+-- left to reverse — harmless.
+CREATE TABLE IF NOT EXISTS meal_plan_grocery_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    meal_plan_entry_id INTEGER NOT NULL REFERENCES meal_plan_entries(id) ON DELETE CASCADE,
+    grocery_item_id INTEGER NOT NULL REFERENCES grocery_items(id) ON DELETE CASCADE,
+    item TEXT NOT NULL, -- item name at the time of add, for logging/debugging
+    quantity TEXT NOT NULL DEFAULT '', -- exactly what THIS meal contributed, pre-merge
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Remembered default store per item name (Phase 3, household coordination) —
 -- so once someone says "we get paper towels at Costco," every future add of
 -- that item is pre-assigned there instead of asking again. One row per

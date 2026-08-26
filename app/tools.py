@@ -1336,11 +1336,24 @@ def plan_meal(
             if ing["item"].strip().lower() in have_names:
                 already_have.append(ing["item"])
                 continue
-            add_grocery_item(
+            add_result = add_grocery_item(
                 ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai",
                 source_weekly_plan_id=weekly_plan_id,
             )
             added_items.append(ing["item"])
+            # Record exactly what THIS entry contributed to that grocery
+            # line, before it got merged with anything else already there —
+            # see _reverse_meal_grocery_contributions, which is what lets
+            # swap_meal_in_plan/swap_component_in_plan take this back out
+            # precisely if the meal is later swapped for something else.
+            link_conn = get_conn()
+            link_conn.execute(
+                "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (HOUSEHOLD_ID, entry_id, add_result["item_id"], ing["item"], _strip_prep_descriptor(ing.get("qty", "") or "")),
+            )
+            link_conn.commit()
+            link_conn.close()
 
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]
     return {
@@ -1989,8 +2002,21 @@ def swap_meal_in_plan(
     """
     Replace the meal on one day/slot of an already-generated weekly plan,
     without regenerating or touching the rest of the plan. new_meal can be
-    a saved recipe name or a freeform description, same as plan_meal.
+    a saved recipe name or a freeform description, same as plan_meal. The
+    old meal's auto-added grocery ingredients are removed first (trimmed or
+    deleted, whatever the amount it contributed calls for — see
+    _reverse_meal_grocery_contributions) so the grocery list reflects only
+    the new meal afterward instead of carrying both.
     """
+    conn = get_conn()
+    old_entries = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
+        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+    ).fetchall()
+    conn.close()
+    for row in old_entries:
+        _reverse_meal_grocery_contributions(row["id"])
+
     conn = get_conn()
     conn.execute(
         "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
@@ -2024,21 +2050,29 @@ def swap_component_in_plan(
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     week_start_date = week_start_date["week_start_date"]
 
-    deleted = conn.execute(
+    match = conn.execute(
         """
-        DELETE FROM meal_plan_entries WHERE id IN (
-            SELECT mpe.id FROM meal_plan_entries mpe
-            LEFT JOIN recipes r ON r.id = mpe.recipe_id
-            WHERE mpe.weekly_plan_id = ? AND mpe.component_category = ? AND mpe.household_id = ?
-              AND COALESCE(r.name, mpe.freeform_meal) = ?
-            LIMIT 1
-        )
+        SELECT mpe.id FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.component_category = ? AND mpe.household_id = ?
+          AND COALESCE(r.name, mpe.freeform_meal) = ?
+        LIMIT 1
         """,
         (weekly_plan_id, component_category, HOUSEHOLD_ID, old_meal),
-    )
-    conn.commit()
-    removed = deleted.rowcount
+    ).fetchone()
     conn.close()
+    if not match:
+        removed = 0
+    else:
+        # Reverse the old item's grocery contribution first (see
+        # swap_meal_in_plan) so replacing one component actually swaps its
+        # ingredients on the list rather than piling the new ones on top.
+        _reverse_meal_grocery_contributions(match["id"])
+        conn = get_conn()
+        deleted = conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (match["id"],))
+        conn.commit()
+        removed = deleted.rowcount
+        conn.close()
     if not removed:
         raise ValueError(f"Couldn't find '{old_meal}' under category '{component_category}' in that plan.")
     return plan_meal(
@@ -3767,6 +3801,80 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
         return _format_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]), True
     return f"{existing_qty} + {new_qty}", False
+
+
+def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
+    """
+    The inverse of _try_consolidate_quantity — used when a meal that
+    contributed some amount to a grocery line is being un-planned (see
+    _reverse_meal_grocery_contributions) and that amount needs to come back
+    out. Returns (resulting_quantity_string, fully_removed). When both sides
+    parse with the same unit, subtracts normally, treating a non-positive
+    remainder as "nothing left" (fully_removed=True, resulting string
+    blank). When they can't be reconciled (freeform text, mismatched units)
+    but the two strings are identical, that means this contribution *is*
+    the whole line (nothing else merged into it), so it's still safe to
+    remove entirely. Otherwise nothing is guessed — the line is left
+    exactly as-is (fully_removed=False, resulting string unchanged) rather
+    than risk deleting an amount still needed for something else.
+    """
+    current_qty = _strip_prep_descriptor((current_qty or "").strip())
+    remove_qty = _strip_prep_descriptor((remove_qty or "").strip())
+    if not current_qty:
+        return "", True
+    if not remove_qty or current_qty == remove_qty:
+        return "", True
+    current_parsed = _parse_quantity(current_qty)
+    remove_parsed = _parse_quantity(remove_qty)
+    if current_parsed and remove_parsed and current_parsed[1] == remove_parsed[1]:
+        remainder = current_parsed[0] - remove_parsed[0]
+        if remainder <= 0.0001:
+            return "", True
+        return _format_quantity(remainder, current_parsed[1]), False
+    return current_qty, False
+
+
+def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
+    """
+    Undo whatever a meal_plan_entries row added to the grocery list, via the
+    meal_plan_grocery_links ledger recorded at plan_meal() time — called
+    right before that entry is deleted (see swap_meal_in_plan/
+    swap_component_in_plan) so changing a planned meal actually replaces its
+    ingredients on the grocery list instead of only ever piling the new
+    meal's ingredients on top of the old ones. For each linked grocery line,
+    subtracts back out exactly the amount this meal contributed (see
+    _subtract_quantity) — removing the line entirely if nothing's left,
+    trimming it if something is, or leaving it untouched if the amounts
+    can't be safely reconciled. A line already moved to in_cart/purchased is
+    left alone regardless — the shopper has already acted on it, so this
+    won't yank something out of a cart mid-trip. Always clears the ledger
+    rows for this entry afterward, whether or not anything was adjusted.
+    """
+    conn = get_conn()
+    links = conn.execute(
+        "SELECT id, grocery_item_id, item, quantity FROM meal_plan_grocery_links "
+        "WHERE household_id = ? AND meal_plan_entry_id = ?",
+        (HOUSEHOLD_ID, entry_id),
+    ).fetchall()
+    removed_items = []
+    trimmed_items = []
+    for link in links:
+        grocery_row = conn.execute(
+            "SELECT id, item, quantity, status FROM grocery_items WHERE id = ? AND household_id = ?",
+            (link["grocery_item_id"], HOUSEHOLD_ID),
+        ).fetchone()
+        if grocery_row and grocery_row["status"] == "needed":
+            new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
+            if fully_removed:
+                conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
+                removed_items.append(grocery_row["item"])
+            elif new_qty != (grocery_row["quantity"] or ""):
+                conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
+                trimmed_items.append(grocery_row["item"])
+    conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (HOUSEHOLD_ID, entry_id))
+    conn.commit()
+    conn.close()
+    return {"removed_items": removed_items, "trimmed_items": trimmed_items}
 
 
 def add_grocery_item(

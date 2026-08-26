@@ -598,6 +598,41 @@ This closes the build order in §9 — all six steps are done.
   no-op, confirmed fresh multi-add chains for both patterns now merge cleanly from the start instead
   of concatenating, and confirmed ordinary quantities/incompatible-unit lines are left untouched —
   then the same through the live `/api/grocery-list` endpoint.
+- **Swapping a planned meal now removes its old ingredients, not just adds the new ones.**
+  `swap_meal_in_plan`/`swap_component_in_plan` (`app/tools.py`) used to delete the old
+  `meal_plan_entries` row and call `plan_meal` for the replacement, but never touched what that old
+  meal had already added to the grocery list — so changing Tuesday's dinner from tacos to salmon left
+  the taco ingredients sitting on the list forever, on top of salmon's. The tricky part: two different
+  meals' ingredients of the same name (e.g. "chicken breast" from both a taco night and a stir-fry
+  night) consolidate onto one grocery line, so there was no way to tell how much of that line to take
+  back out for just the one meal being replaced. Fixed with a new ledger table,
+  `meal_plan_grocery_links` (`app/schema.sql`), recording exactly what each `meal_plan_entries` row
+  contributed to which grocery line, at the moment `plan_meal` adds it. Swapping a meal now looks up
+  that meal's ledger rows first and reverses them (`_reverse_meal_grocery_contributions`/
+  `_subtract_quantity` in `app/tools.py`) — trimming the shared line down if something else still
+  needs part of it, deleting it outright if nothing does, or leaving it untouched if the amounts can't
+  be safely reconciled (freeform quantities, mismatched units) — before deleting the old plan entry and
+  adding the new meal's ingredients. An item already moved to `in_cart`/`purchased` is left alone
+  either way, so this never yanks something out of an in-progress shopping trip. Both foreign keys on
+  the new table cascade on delete, since grocery items and plan entries both get hard-deleted
+  elsewhere in the app independently of this ledger. Sandbox-verified: planned two recipes that both
+  needed chicken breast (2 lbs + 1 lb, consolidating to "3 lbs"), swapped the first for a new recipe,
+  confirmed the list dropped to "1 lb" chicken breast (exactly the swapped-out meal's share), fully
+  removed a same-meal ingredient nothing else needed (tortillas), and added the new meal's ingredients
+  — then swapped the second meal too and confirmed chicken breast disappeared entirely once nothing
+  needed it. Also confirmed deleting a linked grocery item directly (`remove_grocery_item`) no longer
+  hits a foreign-key error now that the cascade is in place.
+- **"Already have it" button added to the Grocery List's "Already have this?" review section.**
+  That section (powered by `get_grocery_already_have_items`) flags items on the list that inventory
+  suggests are already on hand, but only ever offered "Keep it, I need it" or "Remove from list" —
+  no way to confirm the match and actually get it into tracked inventory in one step, unlike the
+  "Have it" action already available on every normal list row. Added a third button reusing that same
+  `/api/grocery-list/{id}/already-have` endpoint (`tools.move_grocery_item_to_inventory` — merges into
+  matching inventory, then removes from the grocery list), so triaging this section can resolve an
+  item straight to inventory without leaving the review flow. Sandbox-verified via Playwright:
+  flagged an item with matching inventory, clicked the new button, confirmed it disappeared from the
+  review section and the grocery list, and landed merged into inventory ("1 bag" + "1 bag" →
+  "2 bag").
 
 ## 10. Out of scope
 
