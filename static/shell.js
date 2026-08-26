@@ -71,7 +71,10 @@
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.calendarDay, real: true },
     { key: 'week', path: '/week', label: 'Week', railLabel: 'This Week', icon: ICONS.calendarWeek, week: true },
     { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, embed: '/static/grocery.html' },
-    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, embed: '/static/cooker.html' }
+    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, embed: '/static/cooker.html', quickLinks: [
+        { label: 'Inventory', href: '/inventory' },
+        { label: 'What we know', href: '/memory' }
+      ] }
   ];
 
   function currentTabKey() {
@@ -103,6 +106,25 @@
       // Lazy: the iframe's src is set the first time this tab is activated,
       // so switching to Grocery/Kitchen doesn't load both pages up front.
       panel.dataset.embed = tab.embed;
+      // Fix: /inventory and /memory (and the fridge/pantry/receipt photo
+      // scanning that lives on /inventory) used to be reachable from
+      // index.html's old nav bar; nothing in the new shell replaced that
+      // for mobile, and only /memory got a desktop-only rail link (Step
+      // 1) — /inventory had no path in from the new shell chrome at all.
+      // A real redesigned Kitchen tab (README §4's "Running low" / "What
+      // we know about you" / scan-nudge cards) would be the eventual home
+      // for this, but that's real, unbuilt work, not part of any of the 6
+      // build-order steps — this is a lightweight restore, not that
+      // redesign. Real page navigation (not a shell route), same as the
+      // links index.html always had.
+      if (tab.quickLinks) {
+        var links = document.createElement('div');
+        links.className = 'embed-quicklinks';
+        links.innerHTML = tab.quickLinks.map(function (l) {
+          return '<a href="' + l.href + '">' + escapeHtml(l.label) + '</a>';
+        }).join('');
+        panel.appendChild(links);
+      }
     } else if (tab.placeholder) {
       var box = document.createElement('div');
       box.className = 'tab-placeholder';

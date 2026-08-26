@@ -1101,7 +1101,7 @@ _KITCHEN_TOOLS = {
     "resolve_attention_item", "update_inventory", "update_inventory_items", "remove_inventory_item",
 }
 _GROCERY_TOOLS = {
-    "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "clear_stale_grocery_items",
+    "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "repair_grocery_quantities", "clear_stale_grocery_items",
     "clear_grocery_list", "mark_grocery_item", "update_grocery_item", "remove_grocery_item",
     "exclude_grocery_item", "include_grocery_item", "mark_grocery_item_already_have_reviewed", "set_item_store",
 }

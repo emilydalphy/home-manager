@@ -3691,11 +3691,30 @@ _UNIT_ALIASES = {
 _QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]*)$")
 
 
+def _strip_prep_descriptor(qty: str) -> str:
+    """
+    A recipe ingredient's quantity sometimes carries a prep instruction
+    after a comma — "3, diced", "4.75 cups, sliced into planks" — useful
+    in a recipe's own ingredient list, but not something that belongs on a
+    grocery list (nobody buys "3, diced tomatoes"; they buy 3 tomatoes).
+    Keep only the purchase amount before the first comma. This also fixes
+    quantity *consolidation*: "3, diced" and "1, diced" used to each fail
+    to parse (the comma broke the number/unit match below) and so
+    "merged" by literally concatenating the raw strings instead of adding
+    them — repeated across a few weeks of the same ingredient, that's how
+    a line like "3, diced + 1, diced + 1, diced + ..." happens. Stripped
+    first, both sides parse as plain numbers and add normally.
+    """
+    if not qty:
+        return qty
+    return qty.split(",", 1)[0].strip()
+
+
 def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
     """Parse a freeform quantity string into (amount, normalized_unit_or_None). Returns None if unparseable (e.g. blank, or freeform text like 'a bunch')."""
     if not qty or not qty.strip():
         return None
-    match = _QTY_RE.match(qty.strip().lower())
+    match = _QTY_RE.match(_strip_prep_descriptor(qty.strip()).lower())
     if not match:
         return None
     amount_str, unit_str = match.group(1), match.group(2).strip()
@@ -3737,9 +3756,11 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     are kept together on one line so the shopper sees both rather than a
     silently wrong conversion.
     """
-    if not (existing_qty or "").strip():
+    existing_qty = _strip_prep_descriptor((existing_qty or "").strip())
+    new_qty = _strip_prep_descriptor((new_qty or "").strip())
+    if not existing_qty:
         return new_qty, True
-    if not (new_qty or "").strip():
+    if not new_qty:
         return existing_qty, True
     existing_parsed = _parse_quantity(existing_qty)
     new_parsed = _parse_quantity(new_qty)
@@ -3772,6 +3793,7 @@ def add_grocery_item(
     clear_stale_grocery_items can tell a current week's ingredients apart
     from an old week's leftovers.
     """
+    quantity = _strip_prep_descriptor(quantity or "")
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' AND LOWER(item) = LOWER(?)",
@@ -3952,6 +3974,46 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     conn.commit()
     conn.close()
     return {"lines_merged_away": merged_count}
+
+
+def repair_grocery_quantities(status: str = "needed") -> dict:
+    """
+    One-time cleanup for grocery lines whose quantity got stuck as an
+    ugly, concatenated "+"-joined string from the prep-descriptor
+    consolidation bug (see _strip_prep_descriptor) — e.g. "3, diced + 1,
+    diced + 1, diced" instead of a clean "5", or "4.75 cups, sliced + 1/4
+    cup, sliced" instead of "5 cups". Re-parses each "+"-joined segment
+    (stripping any prep descriptor first) and re-sums same-unit segments
+    into one clean total, using the same logic add_grocery_item now uses
+    automatically for new additions. A segment that still can't be
+    reconciled (mixed incompatible units, or genuinely non-numeric text
+    like "a bunch") is left joined with " + " exactly as that same fallback
+    would produce today — so this is safe to run more than once. The
+    underlying bug is fixed at the source now (see _strip_prep_descriptor),
+    so this is purely for repairing lines that already got mangled before
+    that fix existed; it isn't something that needs to run automatically
+    going forward.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity FROM grocery_items WHERE household_id = ? AND status = ?",
+        (HOUSEHOLD_ID, status),
+    ).fetchall()
+    fixed = []
+    for r in rows:
+        qty = r["quantity"] or ""
+        if " + " not in qty and "," not in qty:
+            continue  # nothing to clean on this line
+        segments = [s.strip() for s in qty.split(" + ") if s.strip()]
+        cleaned = ""
+        for seg in segments:
+            cleaned, _ = _try_consolidate_quantity(cleaned, seg)
+        if cleaned != qty:
+            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (cleaned, r["id"]))
+            fixed.append({"item": r["item"], "before": qty, "after": cleaned})
+    conn.commit()
+    conn.close()
+    return {"fixed_count": len(fixed), "fixed": fixed}
 
 
 def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict:

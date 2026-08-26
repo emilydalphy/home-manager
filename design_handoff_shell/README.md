@@ -561,6 +561,44 @@ Breakpoint at 1024px. Same components, rearranged — no new screens.
 
 This closes the build order in §9 — all six steps are done.
 
+## 9a. Post-launch fixes (found after Step 6, outside the numbered build order)
+
+- **Inventory/photo-scan reachability restored.** `static/index.html`'s old nav bar linked to
+  `/onboarding`, `/memory`, `/cooker`, `/inventory`, `/grocery`, and Share. The new shell only ever
+  carried four of those forward (Today/Week/Grocery/Kitchen tabs) plus a desktop-only rail link to
+  `/memory` — `/inventory` (and the receipt/fridge/pantry photo-scan inputs that live only on that
+  page) had no path in from the new shell chrome at all, on either breakpoint. Fixed by adding a
+  matching `Inventory` rail row next to `What we know` (desktop), and a small quick-links bar
+  (`Inventory` / `What we know`) above the embedded Kitchen iframe for mobile, where there's no
+  rail. Both are real page navigation, same as the links `index.html` always had — not new shell
+  routes. A real redesigned Kitchen tab (README §4's "Running low" / "What we know about you" /
+  scan-nudge cards) would be the eventual proper home for this, but that's unbuilt work outside any
+  of the 6 steps; this is a lightweight restore, not that redesign. Sandbox-verified: both links
+  render and resolve to `/inventory` (confirmed its 3 photo-scan `<input type=file>` elements are
+  still there and functional) and `/memory` on mobile and desktop; full tab-switching regression
+  re-run to confirm nothing else broke.
+- **Grocery quantities merging into concatenated junk.** Recipe ingredient quantities sometimes
+  carry a prep instruction after a comma (e.g. `"3, diced"`, `"4.75 cups, sliced into planks"`) —
+  fine in a recipe's own ingredient list, but the grocery-quantity consolidation logic
+  (`add_grocery_item`/`_try_consolidate_quantity` in `app/tools.py`) couldn't parse a quantity with
+  trailing text like that, so instead of adding same-item amounts together it fell back to literally
+  concatenating the raw strings — repeated across a few weeks of the same ingredient, that's how a
+  line ends up reading `"3, diced + 1, diced + 1, diced + 1, diced + 1, diced"` instead of a clean
+  `"7"`. Fixed at the source with `_strip_prep_descriptor()` (keeps only the amount before the first
+  comma) applied before every parse/store, so grocery quantities are always in "the format you'd
+  typically buy it" — a plain purchase amount, not a recipe instruction — and same-unit amounts
+  merge correctly going forward. Added `repair_grocery_quantities()` (new chat tool, same
+  `AskUserQuestion`-free "safe cleanup" pattern as the existing `consolidate_grocery_list`) to fix
+  lines that already got mangled before this fix existed — ask "clean up my grocery quantities" (or
+  point out a junk-looking line) and it re-parses and re-sums each `"+"`-joined segment. It's
+  idempotent and leaves genuinely-incompatible-unit lines (e.g. `"2 cups flour + 1 lb flour"`)
+  exactly as add_grocery_item's own fallback would today, so it's safe to run more than once.
+  Sandbox-verified: unit-tested the exact two examples from your screenshot (tomatoes → `"7"`,
+  strawberries → `"6 cups"`) via `repair_grocery_quantities()` directly, confirmed a second run is a
+  no-op, confirmed fresh multi-add chains for both patterns now merge cleanly from the start instead
+  of concatenating, and confirmed ordinary quantities/incompatible-unit lines are left untouched —
+  then the same through the live `/api/grocery-list` endpoint.
+
 ## 10. Out of scope
 
 Household/other-people's chores, notifications, sharing beyond the existing share page,

@@ -351,7 +351,10 @@ reviewing the grocery list with the user, use get_grocery_list_by_section (group
 rather than list_grocery_list's flat view. If get_grocery_list_by_section ever shows the same \
 item name more than once (leftover from before consolidation applied, or any other way it \
 happens), just call consolidate_grocery_list right away — don't ask permission first, this is \
-a safe cleanup, not a destructive one.
+a safe cleanup, not a destructive one. If any line's quantity looks like concatenated junk \
+instead of a normal buy-amount (e.g. "3, diced + 1, diced + 1, diced" instead of a clean "5") — \
+leftover from an old quantity-parsing bug — call repair_grocery_quantities right away too, same \
+safe-cleanup reasoning.
 - If the Shopper says they'll get something elsewhere instead of on the regular grocery trip (a \
 butcher, a farmers market, a specialty store) — not that they don't need it at all — use \
 exclude_grocery_item rather than remove_grocery_item. This hides it from the normal list without \
@@ -1156,6 +1159,14 @@ TOOL_DEFINITIONS = [
     {
         "name": "consolidate_grocery_list",
         "description": "Merge any duplicate lines for the same item into one, combining quantities. Call this immediately (don't just ask permission) if you notice the same item listed more than once when reviewing the grocery list, or if the user asks to clean up/consolidate it.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
+        },
+    },
+    {
+        "name": "repair_grocery_quantities",
+        "description": "Fix grocery lines whose quantity got mangled into an ugly '+'-joined string by an old bug (e.g. '3, diced + 1, diced' instead of a clean '4') by re-parsing and re-summing them. Call this if the user points out a grocery quantity that looks like concatenated junk instead of a normal buy-amount, or asks to clean up/fix the grocery quantities.",
         "input_schema": {
             "type": "object",
             "properties": {"status": {"type": "string", "enum": ["needed", "in_cart", "purchased", "all"]}},
@@ -2267,6 +2278,7 @@ TOOL_FUNCTIONS = {
     "list_grocery_list": tools.list_grocery_list,
     "get_grocery_list_by_section": tools.get_grocery_list_by_section,
     "consolidate_grocery_list": tools.consolidate_grocery_list,
+    "repair_grocery_quantities": tools.repair_grocery_quantities,
     "clear_stale_grocery_items": tools.clear_stale_grocery_items,
     "clear_grocery_list": tools.clear_grocery_list,
     "mark_grocery_item": tools.mark_grocery_item,

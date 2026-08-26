@@ -62,6 +62,33 @@ html, body {
   background: var(--cream);
 }
 
+/* Quick links above an embedded legacy page (Kitchen only, for now) — see
+   the quickLinks comment in shell.js for why this exists: restores paths
+   to /inventory and /memory that the old index.html nav had and the new
+   shell chrome otherwise drops, especially on mobile (no rail). */
+.embed-quicklinks {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--cream);
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+}
+.embed-quicklinks a {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--plum);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--card);
+  white-space: nowrap;
+}
+.embed-quicklinks a:hover { background: #fff; }
+
 /* Placeholder content (Week, and anything not yet embedded) */
 .tab-placeholder {
   flex-shrink: 0;
