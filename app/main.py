@@ -882,6 +882,22 @@ def get_people_view():
     return {"people": result}
 
 
+class ShoppingTripCloseRequest(BaseModel):
+    store: str
+    item_count: int = 0
+
+
+@app.post("/api/shopping-trips/close")
+def close_shopping_trip_view(req: ShoppingTripCloseRequest):
+    """Record a shopping stop as finished — desktop Shopping mode's 'Done shopping'/'Next store' actions (design_handoff_home_manager §9)."""
+    try:
+        result = tools.close_shopping_trip(req.store, item_count=req.item_count)
+    except Exception as e:
+        logger.exception("Shopping trip close failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.post("/api/grocery-list/{item_id}/update")
 def update_grocery_list_item(item_id: int, req: GroceryUpdateRequest):
     """Correct an already-listed item's quantity/category directly from the Grocery List view."""

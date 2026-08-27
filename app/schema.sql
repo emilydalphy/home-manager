@@ -392,6 +392,24 @@ CREATE TABLE IF NOT EXISTS stores (
     UNIQUE(household_id, name)
 );
 
+-- design_handoff_home_manager Phase 3: closed when "Done shopping"/"Next
+-- store" wraps up a stop in desktop Shopping mode (option 5g). Deliberately
+-- minimal — no itemIds column, since nothing in this phase's UI reads trip
+-- history back yet (no past-trips list is spec'd). item_count is captured
+-- at close time for a future "N items" summary without re-deriving it from
+-- grocery_items (whose statuses keep changing after the trip closes).
+-- Per-item inventory promotion already happens at checkoff time (marking a
+-- grocery item purchased calls _add_to_inventory), so closing a trip here
+-- is bookkeeping, not another promotion pass.
+CREATE TABLE IF NOT EXISTS shopping_trips (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    store TEXT NOT NULL,
+    item_count INTEGER NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL DEFAULT (datetime('now')),
+    finished_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
 -- list — this is "what we currently have", captured primarily via chat
 -- mention ("picked up a rotisserie chicken", "used the last of the

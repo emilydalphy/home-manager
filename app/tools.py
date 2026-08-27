@@ -2995,6 +2995,27 @@ def get_household_people() -> list[dict]:
     return out
 
 
+def close_shopping_trip(store: str, item_count: int = 0) -> dict:
+    """
+    Record that a shopping stop at `store` just wrapped up — desktop
+    Shopping mode's (design_handoff_home_manager Phase 3, option 5g)
+    "Done shopping" / "Next store" actions call this once per store as the
+    household finishes there. Deliberately minimal (see schema.sql's
+    comment on shopping_trips): per-item inventory promotion already
+    happened when each item was marked purchased, so this is just a closed
+    record of the stop, not another promotion pass. Nothing reads trip
+    history back yet — this is forward-compatible bookkeeping.
+    """
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO shopping_trips (household_id, store, item_count) VALUES (?, ?, ?)",
+        (HOUSEHOLD_ID, store, item_count),
+    )
+    conn.commit()
+    conn.close()
+    return {"store": store, "item_count": item_count}
+
+
 def get_grocery_already_have_items() -> list[dict]:
     """
     Cross-reference the 'needed' grocery list against tracked inventory to

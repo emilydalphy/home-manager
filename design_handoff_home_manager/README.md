@@ -246,6 +246,14 @@ Same 1280×800 box, **plum `#66304E` background** — the whole-screen colour ch
 - Footer: 8px progress track `rgba(255,255,255,.18)` with `#6FB84C` fill at `got/total`; note "{Other store} next · N items" or "Last stop of the trip"; button "Next store" → switches store, or "Back to list" when nothing is left elsewhere.
 - "Done shopping" returns to the list and toasts "Trip saved — I'll remember what you bought where".
 
+**✅ Built (Phase 3).** Sandbox-verified end to end (fresh DB, real endpoints, Playwright at 1280×900): heading tracks the first unfinished aisle and switches to "Everything's in the cart" once every row is checked; the counter and progress-bar fill match got/total; "Next store" hands off to the next store with remaining needed items and becomes "Back to list" once none are left; "Done shopping" returns to the desktop Grocery list with the trip toast. Entry point is the desktop Grocery trip panel's "Start shopping {Store}" only — the phone's existing in-store screen (design 13a, predates this package) is completely untouched, matching section 4's note that triage/review/in-store mode "live on desktop" in v1.
+
+Deliberate scope calls:
+- Rows reuse the existing needed↔`in_cart` toggle the phone shop screen already had — checking a row here is the same state the phone's shop screen uses, so nothing forks.
+- **Inventory promotion happens per item at checkoff**, not batched at trip close: marking a grocery item purchased already calls the app's existing inventory-add logic. "Done shopping"/"Next store" batch-flip `in_cart` → `purchased` (which triggers that same per-item promotion) and then record a closed `shopping_trips` row — bookkeeping, not a second promotion pass.
+- **Trip** is now a real table (`shopping_trips`: store, item_count, started_at, finished_at) rather than the fuller entity DATA_AND_API.md sketches (no `itemIds` list) — nothing in this phase's UI shows trip history back, so there was nothing to read it into yet. A future phase could extend it if a "past trips" view gets designed.
+- "COVERS THESE MEALS" region from the trip panel (section 8) still isn't shown here either, for the same reason it was skipped in Phase 2 — no link from a grocery item back to the meal it came from exists yet.
+
 ### 10. Cook mode
 
 See `Kitchen Cooker Redesign.dc.html` — step-by-step, hands-free, and per-step feedback flows are already built there in both phone and desktop form. Entry: Today's "Cook mode", Kitchen's "Start step 1", the week card's "Cook this".

@@ -351,6 +351,45 @@
   body.dg-active #app-shell { max-width: 1180px; margin: 0 auto; background: transparent; }
   body.dg-active #desktop-grocery { display: grid; }
   body.dg-active #screen-buy, body.dg-active .mic-btn, body.dg-active #already-have-banner { display: none !important; }
+
+  /* ===========================================================
+     Desktop Shopping mode (option 5g) — full-screen plum, ≥1024px
+     only, entered from the desktop Grocery trip panel's "Start
+     shopping {Store}". Phone's existing in-store screen (predates
+     this package — design 13a) is untouched at narrow widths.
+     =========================================================== */
+  #desktop-shopping { display: none; min-height: 100vh; background: var(--midnight-violet); color: #fff; }
+  body.ds-active #app-shell { max-width: none; margin: 0; background: transparent; }
+  body.ds-active #screen-shop, body.ds-active .mic-btn { display: none !important; }
+  body.ds-active #desktop-shopping { display: block; }
+  body.ds-active { background: var(--midnight-violet); }
+  .ds-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 30px 40px 18px; max-width: 1180px; margin: 0 auto; }
+  .ds-kicker { font-family: var(--font-body); font-weight: 800; font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--turmeric-gold); margin: 0 0 6px; }
+  .ds-heading { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; color: #fff; margin: 0; }
+  .ds-counter { font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; color: #fff; }
+  .ds-counter .ds-counter-total { color: rgba(255,255,255,.5); font-size: 1.25rem; }
+  .ds-right { display: flex; align-items: center; gap: 18px; }
+  .ds-done-btn { background: transparent; border: 1.5px solid rgba(255,255,255,.4); color: #fff; border-radius: 999px; padding: 13px 22px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); height: 50px; }
+  .ds-body { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1180px; margin: 0 auto; padding: 10px 40px 40px; }
+  .ds-aisle-card { background: var(--oat-cream); border-radius: 22px; padding: 20px 26px 12px; }
+  .ds-aisle-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #E2D7C4; padding-bottom: 10px; margin-bottom: 4px; }
+  .ds-aisle-name { font-family: var(--font-body); font-weight: 800; font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: #A8825C; }
+  .ds-aisle-left { margin-left: auto; font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: #8A7A82; }
+  .ds-row { display: flex; align-items: center; gap: 16px; padding: 18px 0; border-bottom: 1px solid #F1E8DA; cursor: pointer; }
+  .ds-row:last-child { border-bottom: none; }
+  .ds-row-box { width: 34px; height: 34px; border-radius: 10px; border: 2.5px solid #C4B09C; flex: none; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+  .ds-row.got .ds-row-box { background: var(--vivid-leaf); border-color: var(--vivid-leaf); }
+  .ds-row-name { font-family: var(--font-body); font-weight: 600; font-size: 1.35rem; color: var(--ink); flex: 1; }
+  .ds-row.got .ds-row-name { color: #8A7A82; text-decoration: line-through; opacity: 0.5; }
+  .ds-row-qty { font-family: var(--font-body); font-size: 1rem; color: #8A7A82; }
+  .ds-row.got .ds-row-qty { opacity: 0.5; }
+  .ds-empty { text-align: center; color: rgba(255,255,255,.7); font-family: var(--font-body); padding: 60px 20px; grid-column: 1 / -1; }
+  .ds-footer { max-width: 1180px; margin: 0 auto; padding: 0 40px 40px; }
+  .ds-progress-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,.18); overflow: hidden; margin-bottom: 14px; }
+  .ds-progress-fill { height: 100%; background: var(--vivid-leaf); border-radius: 999px; }
+  .ds-footer-row { display: flex; align-items: center; justify-content: space-between; }
+  .ds-footer-note { font-family: var(--font-body); font-size: 0.92rem; color: rgba(255,255,255,.8); }
+  .ds-next-btn { background: var(--turmeric-gold); color: #3A2A0A; border: none; border-radius: 13px; padding: 15px 26px; font-weight: 700; font-size: 0.95rem; cursor: pointer; font-family: var(--font-body); }
 </style>
 </head>
 <body>
@@ -416,6 +455,27 @@
       <div id="dg-store-list"></div>
     </div>
     <div class="dg-trip" id="dg-trip"></div>
+  </div>
+
+  <div id="desktop-shopping">
+    <div class="ds-header">
+      <div>
+        <p class="ds-kicker" id="ds-kicker">Shopping</p>
+        <h1 class="ds-heading" id="ds-heading">Loading…</h1>
+      </div>
+      <div class="ds-right">
+        <div class="ds-counter" id="ds-counter">0<span class="ds-counter-total">/0</span></div>
+        <button class="ds-done-btn" id="ds-done-btn">Done shopping</button>
+      </div>
+    </div>
+    <div class="ds-body" id="ds-body"></div>
+    <div class="ds-footer">
+      <div class="ds-progress-track"><div class="ds-progress-fill" id="ds-progress-fill" style="width:0%"></div></div>
+      <div class="ds-footer-row">
+        <span class="ds-footer-note" id="ds-footer-note"></span>
+        <button class="ds-next-btn" id="ds-next-btn">Next store</button>
+      </div>
+    </div>
   </div>
 
   <div id="screen-plan" style="display:none">
@@ -583,16 +643,23 @@ function setScreen(screen) {
   applyGroceryLayoutMode();
   refreshCurrentScreen();
 }
-// Desktop Grocery (option 5f) only replaces the "To buy" screen — Plan/Shop/
-// Review still use the phone-style overlays even at a wide viewport, since
-// Shopping mode's real redesign is Phase 3 scope. Toggled purely in JS (not
-// a CSS breakpoint) so it can react to both window width and which screen
-// is active.
+// Desktop Grocery (option 5f) replaces the "To buy" screen; desktop
+// Shopping mode (option 5g, Phase 3) replaces "Shop". Plan/Review still
+// use the phone-style overlays even at a wide viewport — nothing in the
+// package redesigns them for desktop. Toggled purely in JS (not a CSS
+// breakpoint) so it can react to both window width and which screen is
+// active.
 function isDesktopGroceryMode() { return window.innerWidth >= 1024 && currentScreen === 'buy'; }
+function isDesktopShoppingMode() { return window.innerWidth >= 1024 && currentScreen === 'shop'; }
 function applyGroceryLayoutMode() {
   document.body.classList.toggle('dg-active', isDesktopGroceryMode());
+  document.body.classList.toggle('ds-active', isDesktopShoppingMode());
 }
-window.addEventListener('resize', () => { applyGroceryLayoutMode(); if (lastGroceryData) renderDesktopGrocery(lastGroceryData); });
+window.addEventListener('resize', () => {
+  applyGroceryLayoutMode();
+  if (lastGroceryData) renderDesktopGrocery(lastGroceryData);
+  if (lastGroceryData) renderDesktopShopping(lastGroceryData);
+});
 document.getElementById('tab-buy').addEventListener('click', () => setScreen('buy'));
 document.getElementById('tab-plan').addEventListener('click', () => setScreen('plan'));
 document.getElementById('tab-review').addEventListener('click', () => setScreen('review'));
@@ -609,6 +676,7 @@ async function refreshCurrentScreen() {
     else if (currentScreen === 'review') renderReviewScreen(data);
     if (currentScreen === 'buy') renderAlreadyHaveBanner();
     if (currentScreen === 'buy') renderDesktopGrocery(data);
+    if (currentScreen === 'shop') renderDesktopShopping(data);
   } catch (err) {
     const targetId = currentScreen === 'buy' ? 'buy-content' : currentScreen === 'plan' ? 'plan-content' : currentScreen === 'shop' ? 'shop-content' : 'review-content';
     const el = document.getElementById(targetId);
@@ -1081,6 +1149,147 @@ document.getElementById('dg-add-btn').addEventListener('click', async () => {
     itemInput.value = ''; qtyInput.value = '';
     refreshCurrentScreen();
   } catch (err) { alert("Couldn't add that — try again."); }
+});
+
+function showDgToast(message) {
+  let el = document.getElementById('dg-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dg-toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#3A1F2E;color:#FFFDF6;font-family:var(--font-body);font-size:0.88rem;font-weight:600;padding:12px 22px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:opacity .2s ease;';
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.style.opacity = '1';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 3200);
+}
+
+// ======================================================================
+// Desktop Shopping mode (option 5g, Phase 3) — full-screen plum, oversized
+// rows, aisle cards, progress footer, next-store handoff. Entered only
+// from the desktop Grocery trip panel's "Start shopping {Store}"; phone's
+// existing in-store screen (design 13a, predates this package) is left
+// completely alone. Rows reuse the same needed↔in_cart toggle the phone
+// shop screen already uses; "Done shopping"/"Next store" batch-promote
+// in_cart → purchased (which is what actually adds items to inventory —
+// see mark_grocery_item/_add_to_inventory) and record a closed
+// shopping_trips row (see README's "Grocery — desktop" Phase 3 notes for
+// the reasoning: promotion already happens per item at checkoff, so trip
+// close is bookkeeping, not a second promotion pass).
+// ======================================================================
+function dsAisleColorForName(aisleName) {
+  const cat = Object.keys(CATEGORY_TO_AISLE).find(k => CATEGORY_TO_AISLE[k] === aisleName);
+  return aisleColor(cat || 'other');
+}
+
+function dsStoresWithRemainingNeeded(data, excludeStore) {
+  return Object.keys(data.stores).filter(n => n !== 'Unassigned' && n !== excludeStore && neededCountForStore(data.stores[n]) > 0);
+}
+
+function renderDesktopShopping(data) {
+  if (!isDesktopShoppingMode()) return;
+  if (!shopStore || !data.stores[shopStore]) {
+    document.getElementById('ds-heading').textContent = 'Pick a store first';
+    document.getElementById('ds-body').innerHTML = '<p class="ds-empty">Head back to the list and choose a store to shop.</p>';
+    return;
+  }
+  const s = data.stores[shopStore];
+  const items = [];
+  for (const sec of s.sections) for (const it of sec.items) items.push({ ...it, __aisle: aisleForCategory(sec.section), __got: false });
+  for (const it of s.inCart) items.push({ ...it, __aisle: aisleForCategory(it.category), __got: true });
+
+  const neededItems = items.filter(it => !it.__got);
+  const gotCount = s.inCart.length;
+  const total = neededItems.length + gotCount;
+
+  document.getElementById('ds-kicker').textContent = `Shopping · ${shopStore}`;
+  const firstUnfinishedAisle = AISLE_ORDER.find(a => neededItems.some(it => it.__aisle === a));
+  document.getElementById('ds-heading').textContent = firstUnfinishedAisle ? `${firstUnfinishedAisle} first` : "Everything's in the cart";
+  document.getElementById('ds-counter').innerHTML = `${gotCount}<span class="ds-counter-total">/${total}</span>`;
+
+  const body = document.getElementById('ds-body');
+  let html = '';
+  for (const aisle of AISLE_ORDER) {
+    const inAisle = items.filter(it => it.__aisle === aisle);
+    if (!inAisle.length) continue;
+    const left = inAisle.filter(it => !it.__got).length;
+    html += `<div class="ds-aisle-card">
+      <div class="ds-aisle-header">
+        <span class="dg-rail-dot" style="background:${dsAisleColorForName(aisle)}"></span>
+        <span class="ds-aisle-name">${aisle} &middot; ${inAisle.length} item${inAisle.length === 1 ? '' : 's'}</span>
+        <span class="ds-aisle-left">${left} left</span>
+      </div>`;
+    for (const it of inAisle) {
+      html += `<div class="ds-row ${it.__got ? 'got' : ''}" data-ds-item-id="${it.id}" data-ds-got="${it.__got ? '1' : '0'}">
+        <div class="ds-row-box">${it.__got ? '&check;' : ''}</div>
+        <span class="ds-row-name">${escapeHtml(it.item)}</span>
+        ${it.quantity ? `<span class="ds-row-qty">${escapeHtml(it.quantity)}</span>` : ''}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  body.innerHTML = html || '<p class="ds-empty">Nothing here — head back to the list.</p>';
+  body.querySelectorAll('[data-ds-item-id]').forEach(row => {
+    row.addEventListener('click', async () => {
+      const itemId = row.getAttribute('data-ds-item-id');
+      const wasGot = row.getAttribute('data-ds-got') === '1';
+      try { await postJSON('/api/grocery-list/' + itemId + '/status', { status: wasGot ? 'needed' : 'in_cart' }); refreshCurrentScreen(); }
+      catch (err) { alert("Couldn't update that — try again."); }
+    });
+  });
+
+  const pct = total ? Math.round((gotCount / total) * 100) : 0;
+  document.getElementById('ds-progress-fill').style.width = pct + '%';
+
+  const otherStores = dsStoresWithRemainingNeeded(data, shopStore);
+  const footerNote = document.getElementById('ds-footer-note');
+  const nextBtn = document.getElementById('ds-next-btn');
+  if (otherStores.length) {
+    const nextStore = otherStores[0];
+    const nextCount = neededCountForStore(data.stores[nextStore]);
+    footerNote.textContent = `${nextStore} next · ${nextCount} item${nextCount === 1 ? '' : 's'}`;
+    nextBtn.textContent = 'Next store';
+  } else {
+    footerNote.textContent = 'Last stop of the trip';
+    nextBtn.textContent = 'Back to list';
+  }
+}
+
+async function dsFinishStore(store) {
+  const data = lastGroceryData || await loadAllData();
+  const s = data.stores[store];
+  const inCartItems = s ? s.inCart : [];
+  await Promise.all(inCartItems.map(it => postJSON('/api/grocery-list/' + it.id + '/status', { status: 'purchased' })));
+  try { await postJSON('/api/shopping-trips/close', { store, item_count: inCartItems.length }); } catch (err) { /* bookkeeping only — never block the flow on it */ }
+}
+
+document.getElementById('ds-done-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('ds-done-btn');
+  btn.disabled = true;
+  try {
+    await dsFinishStore(shopStore);
+    setScreen('buy');
+    showDgToast("Trip saved — I'll remember what you bought where");
+  } catch (err) { btn.disabled = false; alert("Couldn't finish this stop — try again."); }
+});
+
+document.getElementById('ds-next-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('ds-next-btn');
+  btn.disabled = true;
+  try {
+    const data = lastGroceryData || await loadAllData();
+    const otherStores = dsStoresWithRemainingNeeded(data, shopStore);
+    await dsFinishStore(shopStore);
+    if (otherStores.length) {
+      shopStore = otherStores[0];
+      btn.disabled = false;
+      refreshCurrentScreen();
+    } else {
+      setScreen('buy');
+      showDgToast("Trip saved — I'll remember what you bought where");
+    }
+  } catch (err) { btn.disabled = false; alert("Couldn't finish this stop — try again."); }
 });
 
 // ======================================================================
