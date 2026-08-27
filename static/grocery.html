@@ -284,6 +284,13 @@
   .confirm-btn { display: block; width: 100%; background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 999px; padding: 17px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 6px; }
   .confirm-btn:disabled { opacity: 0.6; cursor: default; }
   .all-clear-note { font-family: var(--font-body); color: var(--leaf-dark); background: rgba(111,184,76,.14); border-radius: 16px; padding: 12px 16px; font-size: 0.88rem; margin-bottom: 14px; }
+  .plan-stops-cta {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--midnight-violet); color: #fff; border-radius: 16px;
+    padding: 14px 18px; margin-bottom: 14px; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700; font-size: 0.92rem;
+  }
+  .plan-stops-cta-arrow { font-size: 1.3rem; flex-shrink: 0; }
 
   /* ===========================================================
      Desktop Grocery (option 5f) — 3-column layout, ≥1024px only.
@@ -416,7 +423,7 @@
       </div>
       <div class="gl-tabs">
         <button class="gl-tab active" id="tab-buy" data-screen="buy">To buy</button>
-        <button class="gl-tab" id="tab-plan" data-screen="plan">By store</button>
+        <button class="gl-tab" id="tab-plan" data-screen="plan">Plan stops</button>
         <button class="gl-tab" id="tab-review" data-screen="review">Review</button>
       </div>
     </div>
@@ -1559,6 +1566,14 @@ function renderReviewScreen(data) {
   const duplicates = Object.values(dupeGroups).filter(g => g.length > 1);
 
   let html = '';
+  // Always-visible forward link to Plan stops — the "Confirm list" button
+  // at the bottom of this screen returns to To buy, so without this, the
+  // only way into Plan stops was noticing the separate tab up top
+  // (feedback: it was too easy to miss coming from Review).
+  html += `<div class="plan-stops-cta" data-goto-plan="1">
+    <span class="plan-stops-cta-text">Ready to shop? Plan your stops by store next.</span>
+    <span class="plan-stops-cta-arrow">&rsaquo;</span>
+  </div>`;
   if (!missingQty.length && !noStore.length && !duplicates.length) {
     html += `<div class="all-clear-note">Nothing flagged — this list is ready to shop.</div>`;
   }

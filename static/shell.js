@@ -69,7 +69,7 @@
 
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.calendarDay, real: true },
-    { key: 'week', path: '/week', label: 'Week', railLabel: 'This Week', icon: ICONS.calendarWeek, week: true },
+    { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.calendarWeek, week: true },
     { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, embed: '/static/grocery.html' },
     // Phase 4: the Kitchen tab now embeds the new hub (design_handoff_home_manager
     // §5) instead of landing straight on the old prep/cook-this-week list —
@@ -620,16 +620,11 @@
             '</div>' +
             '<button type="button" class="btn-sand">Open</button>' +
           '</div>' +
-          '<div class="week-ask-row shell-card" id="week-ask-row">' +
-            '<p>Tell me what&rsquo;s happening this week and I&rsquo;ll rebuild the plan.</p>' +
-            '<button type="button" class="btn-sand">Ask</button>' +
-          '</div>' +
         '</div>' +
         '<div class="week-grid" id="week-grid" hidden></div>' +
       '</div>';
 
     panel.querySelector('#whole-week-row').addEventListener('click', function () { openWeekSheet(); });
-    panel.querySelector('#week-ask-row').addEventListener('click', function () { openAskSheet(); });
 
     await loadWeekMenu(panel);
 
@@ -692,7 +687,7 @@
     panel.querySelector('#week-framing').innerHTML =
       '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Home Manager') +
         ' · week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
-      '<h1>This week</h1>';
+      '<h1>Meals</h1>';
   }
 
   function renderDayRail(panel, days) {
@@ -841,7 +836,7 @@
         '<div class="menu-dots">&bull;&bull;&bull;</div>' +
         '<div class="menu-status">Ask Home Manager to plan your week to get started.</div>';
       mobileEl.querySelector('#week-framing').innerHTML =
-        '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Home Manager') + '</div><h1>This week</h1>';
+        '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Home Manager') + '</div><h1>Meals</h1>';
       mobileEl.querySelector('#day-rail').innerHTML = '';
       mobileEl.querySelector('#day-card-wrap').innerHTML =
         '<div class="wk-day-card"><div class="wk-title" style="margin:0">No meal plan yet</div>' +
@@ -1050,6 +1045,15 @@
   var askSessionId = 'default'; // same shared backend session static/index.html always used
   var askBuilt = false;
   var askSending = false;
+  var askConversationStarted = false;
+
+  // Once the household has actually said something, the "tap a suggestion"
+  // chips no longer make sense sitting above an ongoing conversation —
+  // hide them for the rest of this session rather than leaving them
+  // dangling under real messages.
+  function hideAskChips() {
+    askChipTargets().forEach(function (chipsEl) { chipsEl.innerHTML = ''; chipsEl.hidden = true; });
+  }
 
   // Same seven quick actions static/index.html always offered — preserved
   // here rather than trimmed, per README §8 ("preserve every behavior the
@@ -1206,6 +1210,10 @@
     if (!message || askSending) return;
     ensureAskSheetBuilt();
     addAskMessage('user', message);
+    if (!askConversationStarted) {
+      askConversationStarted = true;
+      hideAskChips();
+    }
     askSending = true;
     setAskInputsDisabled(true);
     var loadingWraps = addAskMessage('assistant', pickLoadingPhrase(message));
