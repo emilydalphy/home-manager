@@ -64,6 +64,31 @@
     </form>
   </div>
 
+  <!-- This Week's "whole week" bottom sheet (design_handoff_home_manager
+       option 6a) — same scrim/sheet pattern as the ask sheet above, kept at
+       body level for the same reason (position:fixed needs to sit outside
+       the tab-panel's own stacking/scroll context). -->
+  <div id="week-sheet-scrim" hidden></div>
+  <div id="week-sheet" hidden role="dialog" aria-label="The whole week">
+    <div class="ask-sheet-handle" id="week-sheet-handle"></div>
+    <div class="week-sheet-title-row">
+      <span class="week-sheet-title">The whole week</span>
+      <span class="week-sheet-hairline"></span>
+      <span class="week-sheet-range" id="week-sheet-range"></span>
+    </div>
+    <div class="week-sheet-cols">
+      <span class="week-sheet-col-spacer"></span>
+      <span class="week-sheet-col-head">Breakfast</span>
+      <span class="week-sheet-col-head">Lunch</span>
+      <span class="week-sheet-col-head week-sheet-col-dinner">Dinner</span>
+    </div>
+    <div class="week-sheet-rows" id="week-sheet-rows"></div>
+    <div class="week-sheet-footer">
+      <button type="button" class="btn-outline-plum" id="week-sheet-share">Share</button>
+      <button type="button" class="btn-gold" id="week-sheet-back">Back</button>
+    </div>
+  </div>
+
   <script src="/static/shell.js"></script>
 </body>
 </html>

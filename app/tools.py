@@ -1781,12 +1781,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     if plan["planning_mode"] == "component_based":
         by_date = {d["date"]: d for d in plan["menu"]}
         days = []
+        today_str = date.today().isoformat()
+        suggestions = None
         for d in dates:
             row = by_date.get(d, {})
             day = {"date": d}
             for s in slots:
                 title = row.get(s)
                 day[s] = {"title": title, "meta": None, "source": "plan"} if title else None
+            if day["dinner"] is None and d >= today_str:
+                if suggestions is None:
+                    suggestions = _suggest_quick_dinners()
+                day["dinner_suggestions"] = suggestions
             days.append(day)
         return {
             "weekly_plan_id": plan["weekly_plan_id"],
@@ -1834,6 +1840,20 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         {"date": d, **{s: by_date_slot.get((d, s)) for s in slots}}
         for d in dates
     ]
+
+    # This Week's day card (design_handoff_home_manager option 6a) shows the
+    # same two-quick-dinner "Pick" rows on ANY day's empty dinner slot, not
+    # just the one nearest gap get_needs_you_items flags for the Today band —
+    # so a day beyond that 48h window still has something to tap instead of
+    # a dead end. Only for today-or-future days: a past day's empty dinner
+    # is just "not planned," nothing to suggest into it.
+    today_str = date.today().isoformat()
+    suggestions = None
+    for day in days:
+        if day["dinner"] is None and day["date"] >= today_str:
+            if suggestions is None:
+                suggestions = _suggest_quick_dinners()
+            day["dinner_suggestions"] = suggestions
 
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
