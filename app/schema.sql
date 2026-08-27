@@ -15,6 +15,11 @@ CREATE TABLE IF NOT EXISTS members (
     name TEXT NOT NULL,
     age_group TEXT NOT NULL DEFAULT '', -- freeform, e.g. "adult", "teen", "child", "toddler"
     dietary_restrictions_json TEXT NOT NULL DEFAULT '[]', -- e.g. ["vegetarian", "peanut allergy"]
+    -- design_handoff_home_manager Phase 2: an adult's avatar color for the
+    -- "who added it" avatars on desktop grocery rows (README's People
+    -- token: Emily #66304E, Marcus #4D8A33). Blank until backfilled — see
+    -- db._backfill_member_colors, run once when this column is first added.
+    color TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -362,6 +367,29 @@ CREATE TABLE IF NOT EXISTS item_store_preferences (
     store TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(household_id, item)
+);
+
+-- design_handoff_home_manager Phase 2: real metadata for a store the
+-- household shops at — habit ("every other Saturday"), role ("bulk" /
+-- "fresh"), and a per-store aisle order (Phase 4's "what you get where"
+-- Stores tab will let this be edited; for now it just carries the default
+-- fixed order so the row exists to extend later). Keyed by NAME, not id —
+-- grocery_items.store and item_store_preferences.store are both already
+-- free-text store names throughout the app; adding a real stores.id FK
+-- everywhere would be a much larger, riskier migration for no Phase-2
+-- payoff, so this table hangs off the same name convention instead. A
+-- store only gets a row here once something explicitly sets its habit/
+-- role/aisle_order (see tools.get_stores, which fills in defaults for any
+-- store name it finds on the grocery list with no row here yet).
+CREATE TABLE IF NOT EXISTS stores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    name TEXT NOT NULL,
+    habit TEXT NOT NULL DEFAULT '',
+    role TEXT NOT NULL DEFAULT '',
+    aisle_order_json TEXT NOT NULL DEFAULT '["Produce","Bakery","Dairy","Meat","Frozen","Pantry","Household"]',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, name)
 );
 
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery

@@ -77,7 +77,30 @@ _MIGRATIONS = [
     ("meal_preferences", "dinners_per_week", "INTEGER NOT NULL DEFAULT 7"),
     ("meal_preferences", "breakfasts_per_week", "INTEGER NOT NULL DEFAULT 7"),
     ("meal_preferences", "lunches_per_week", "INTEGER NOT NULL DEFAULT 7"),
+    # design_handoff_home_manager Phase 2: adult avatar color for "who
+    # added it" on desktop grocery rows. Backfilled once, below, the same
+    # run this column is first added.
+    ("members", "color", "TEXT NOT NULL DEFAULT ''"),
 ]
+
+# First two adults (by id, i.e. creation order) get the exact two colors
+# design_handoff_home_manager's README specifies for the household's people
+# token — Emily #66304E (the household's own plum), Marcus #4D8A33 (the
+# household's own leaf green). Any adult beyond a second gets no color (the
+# design only names two); a household with no adults marked yet (age_group
+# not set to "adult") gets none either — it just runs again harmlessly next
+# startup once someone is marked adult, since it only touches blank colors.
+_ADULT_COLORS = ["#66304E", "#4D8A33"]
+
+
+def _backfill_member_colors(conn):
+    rows = conn.execute(
+        "SELECT id FROM members WHERE age_group = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC"
+    ).fetchall()
+    for i, row in enumerate(rows):
+        if i >= len(_ADULT_COLORS):
+            break
+        conn.execute("UPDATE members SET color = ? WHERE id = ?", (_ADULT_COLORS[i], row["id"]))
 
 
 def _run_migrations(conn):
@@ -85,6 +108,11 @@ def _run_migrations(conn):
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
         if column not in existing:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+    # Run every startup, not just when the column is first added — a
+    # second adult marked later (or the age_group changed to "adult" after
+    # the fact) should still pick up a color next time the app starts.
+    # Idempotent: only ever touches rows whose color is still blank.
+    _backfill_member_colors(conn)
 
 
 def init_db():

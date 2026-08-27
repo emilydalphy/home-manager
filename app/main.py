@@ -201,6 +201,11 @@ class GroceryAddRequest(BaseModel):
     item: str
     quantity: str = ""
     category: str = "other"
+    # design_handoff_home_manager Phase 2: which household adult added this,
+    # from the client-side identity switcher (see static/grocery.html) —
+    # optional and defaults to the old unattributed "user" so every existing
+    # caller of this endpoint keeps working unchanged.
+    added_by: str = "user"
 
 
 class GroceryUpdateRequest(BaseModel):
@@ -848,11 +853,33 @@ def set_grocery_list_item_store(item_id: int, req: GroceryStoreRequest):
 def add_grocery_list_item(req: GroceryAddRequest):
     """Add an item to the grocery list directly from the Grocery List view (not via chat)."""
     try:
-        result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by="user")
+        result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by=req.added_by)
     except Exception as e:
         logger.exception("Grocery list add failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+@app.get("/api/stores")
+def get_stores_view():
+    """Every store the household's grocery list currently references, with real habit/role/aisle-order metadata where it exists — powers the desktop Grocery view's left-rail STORES filter (design_handoff_home_manager §8)."""
+    try:
+        result = tools.get_stores()
+    except Exception as e:
+        logger.exception("Store list lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"stores": result}
+
+
+@app.get("/api/people")
+def get_people_view():
+    """The household's adults with their avatar initial/color — powers the desktop Grocery view's identity switcher and per-row 'added by' avatars (design_handoff_home_manager §8)."""
+    try:
+        result = tools.get_household_people()
+    except Exception as e:
+        logger.exception("People lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"people": result}
 
 
 @app.post("/api/grocery-list/{item_id}/update")

@@ -284,6 +284,73 @@
   .confirm-btn { display: block; width: 100%; background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 999px; padding: 17px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 6px; }
   .confirm-btn:disabled { opacity: 0.6; cursor: default; }
   .all-clear-note { font-family: var(--font-body); color: var(--leaf-dark); background: rgba(111,184,76,.14); border-radius: 16px; padding: 12px 16px; font-size: 0.88rem; margin-bottom: 14px; }
+
+  /* ===========================================================
+     Desktop Grocery (option 5f) — 3-column layout, ≥1024px only.
+     Phone screens above stay completely untouched; this is an
+     additive layout swapped in/out purely by JS (applyGroceryLayoutMode),
+     not a CSS breakpoint, because it only replaces the "To buy" screen —
+     Plan/Shop/Review stay as the existing phone-style overlays even on
+     a wide viewport (Shopping mode is Phase 3 scope). See README.md
+     "Grocery — desktop" for the write-up and deviations.
+     =========================================================== */
+  #desktop-grocery { display: none; max-width: 1180px; margin: 0 auto; grid-template-columns: 220px 1fr 280px; min-height: 100vh; }
+  .dg-rail { padding: 28px 16px; border-right: 1px solid rgba(0,0,0,.08); }
+  .dg-rail-title { font-family: var(--font-display); font-weight: 700; color: var(--midnight-violet); font-size: 1.3rem; margin: 0 0 18px; }
+  .dg-rail-row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; cursor: pointer; font-family: var(--font-body); font-size: 0.94rem; color: var(--ink); }
+  .dg-rail-row:hover { background: rgba(0,0,0,.04); }
+  .dg-rail-row.active { background: var(--midnight-violet); color: var(--oat-cream); }
+  .dg-rail-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .dg-rail-name { flex: 1; }
+  .dg-rail-count { font-size: 0.8rem; opacity: 0.75; }
+  .dg-rail-toggle { display: flex; align-items: center; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,.08); font-family: var(--font-body); font-size: 0.85rem; color: var(--ink-muted); cursor: pointer; }
+  .dg-rail-note { font-family: var(--font-body); font-size: 0.78rem; color: var(--ink-muted); margin-top: 14px; line-height: 1.4; }
+
+  .dg-center { padding: 28px 28px 60px; overflow-y: auto; }
+  .dg-center-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+  .dg-title { font-family: var(--font-display); font-weight: 700; color: var(--midnight-violet); font-size: 1.6rem; margin: 0; }
+  .dg-sub { font-family: var(--font-body); color: var(--ink-muted); margin: 4px 0 0; font-size: 0.92rem; }
+  .dg-people { display: flex; gap: 6px; }
+  .dg-person { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.82rem; cursor: pointer; border: 2px solid transparent; font-family: var(--font-body); }
+  .dg-person.active { border-color: var(--midnight-violet); }
+  .dg-add-row { display: flex; gap: 8px; margin: 16px 0 22px; }
+  .dg-add-row input { font-family: var(--font-body); border: 1px solid rgba(0,0,0,.15); border-radius: 10px; padding: 10px 12px; font-size: 0.9rem; }
+  .dg-add-row input#dg-add-item { flex: 1; }
+  .dg-add-row input#dg-add-qty { width: 90px; }
+  .dg-add-row button { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+
+  .dg-unassigned { background: rgba(240,180,41,.14); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; }
+  .dg-unassigned-title { font-family: var(--font-body); font-weight: 700; color: var(--ink); font-size: 0.88rem; margin: 0 0 10px; }
+  .dg-unassigned-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
+  .dg-unassigned-name { font-family: var(--font-body); font-size: 0.9rem; flex: 1; min-width: 90px; }
+  .dg-store-pill { font-family: var(--font-body); font-size: 0.78rem; background: #fff; border: 1px solid rgba(0,0,0,.15); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+
+  .dg-store-card { background: var(--oat-cream); border: 1px solid rgba(0,0,0,.08); border-radius: 16px; padding: 18px 20px; margin-bottom: 18px; }
+  .dg-store-card-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; color: var(--midnight-violet); font-size: 1.05rem; margin: 0 0 10px; }
+  .dg-aisle-label { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-muted); margin: 14px 0 6px; }
+  .dg-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0,0,0,.06); }
+  .dg-row.dg-row-got .dg-row-name { text-decoration: line-through; color: var(--ink-muted); }
+  .dg-row-name { font-family: var(--font-body); font-size: 0.92rem; flex: 1; }
+  .dg-row-qty { font-family: var(--font-body); font-size: 0.8rem; color: var(--ink-muted); }
+  .dg-row-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.68rem; font-weight: 700; flex: none; }
+  .dg-row-ah { background: none; border: none; color: var(--midnight-violet); font-family: var(--font-body); font-size: 0.78rem; text-decoration: underline; cursor: pointer; padding: 0; }
+  .dg-row-got-btn { font-family: var(--font-body); font-size: 0.78rem; font-weight: 700; border: 1px solid var(--vivid-leaf); color: var(--leaf-dark); background: rgba(111,184,76,.14); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .dg-empty-state { text-align: center; padding: 60px 20px; font-family: var(--font-body); color: var(--ink-muted); }
+
+  .dg-trip { border-left: 1px solid rgba(0,0,0,.08); padding: 28px 20px; }
+  .dg-trip-title { font-family: var(--font-display); font-weight: 700; color: var(--midnight-violet); font-size: 1.05rem; margin: 0 0 4px; }
+  .dg-trip-sub { font-family: var(--font-body); color: var(--ink-muted); font-size: 0.82rem; margin: 0 0 16px; }
+  .dg-trip-aisle-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-family: var(--font-body); font-size: 0.86rem; color: var(--ink); }
+  .dg-trip-aisle-row.zero { color: var(--ink-muted); opacity: 0.6; }
+  .dg-trip-meals { font-family: var(--font-body); font-size: 0.82rem; color: var(--ink-muted); margin-top: 14px; line-height: 1.5; }
+  .dg-trip-note { font-family: var(--font-body); font-size: 0.78rem; color: var(--ink-muted); margin-top: 18px; line-height: 1.4; font-style: italic; }
+  .dg-trip-cta { display: block; width: 100%; background: var(--electric-coral); color: #fff; border: none; border-radius: 999px; padding: 13px; font-weight: 700; font-size: 0.92rem; cursor: pointer; margin-top: 18px; }
+  .dg-trip-empty { font-family: var(--font-body); color: var(--ink-muted); font-size: 0.88rem; line-height: 1.5; }
+
+  body.dg-active { max-width: none; background: var(--page, #EFE6D6); }
+  body.dg-active #app-shell { max-width: 1180px; margin: 0 auto; background: transparent; }
+  body.dg-active #desktop-grocery { display: grid; }
+  body.dg-active #screen-buy, body.dg-active .mic-btn, body.dg-active #already-have-banner { display: none !important; }
 </style>
 </head>
 <body>
@@ -328,6 +395,27 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="desktop-grocery">
+    <div class="dg-rail" id="dg-rail"></div>
+    <div class="dg-center">
+      <div class="dg-center-header">
+        <div>
+          <h1 class="dg-title">Grocery List</h1>
+          <p class="dg-sub" id="dg-sub">Loading…</p>
+        </div>
+        <div class="dg-people" id="dg-people"></div>
+      </div>
+      <div class="dg-add-row">
+        <input type="text" id="dg-add-item" placeholder="Add an item…" />
+        <input type="text" id="dg-add-qty" placeholder="Qty" />
+        <button id="dg-add-btn">Add</button>
+      </div>
+      <div id="dg-unassigned"></div>
+      <div id="dg-store-list"></div>
+    </div>
+    <div class="dg-trip" id="dg-trip"></div>
   </div>
 
   <div id="screen-plan" style="display:none">
@@ -492,21 +580,35 @@ function setScreen(screen) {
   document.getElementById('screen-shop').style.display = screen === 'shop' ? '' : 'none';
   document.getElementById('screen-review').style.display = screen === 'review' ? '' : 'none';
   document.querySelectorAll('.gl-tab').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  applyGroceryLayoutMode();
   refreshCurrentScreen();
 }
+// Desktop Grocery (option 5f) only replaces the "To buy" screen — Plan/Shop/
+// Review still use the phone-style overlays even at a wide viewport, since
+// Shopping mode's real redesign is Phase 3 scope. Toggled purely in JS (not
+// a CSS breakpoint) so it can react to both window width and which screen
+// is active.
+function isDesktopGroceryMode() { return window.innerWidth >= 1024 && currentScreen === 'buy'; }
+function applyGroceryLayoutMode() {
+  document.body.classList.toggle('dg-active', isDesktopGroceryMode());
+}
+window.addEventListener('resize', () => { applyGroceryLayoutMode(); if (lastGroceryData) renderDesktopGrocery(lastGroceryData); });
 document.getElementById('tab-buy').addEventListener('click', () => setScreen('buy'));
 document.getElementById('tab-plan').addEventListener('click', () => setScreen('plan'));
 document.getElementById('tab-review').addEventListener('click', () => setScreen('review'));
 document.getElementById('shop-back-btn').addEventListener('click', () => setScreen('plan'));
 
+let lastGroceryData = null;
 async function refreshCurrentScreen() {
   try {
     const data = await loadAllData();
+    lastGroceryData = data;
     if (currentScreen === 'buy') renderBuyScreen(data);
     else if (currentScreen === 'plan') renderPlanScreen(data);
     else if (currentScreen === 'shop') renderShopScreen(data);
     else if (currentScreen === 'review') renderReviewScreen(data);
     if (currentScreen === 'buy') renderAlreadyHaveBanner();
+    if (currentScreen === 'buy') renderDesktopGrocery(data);
   } catch (err) {
     const targetId = currentScreen === 'buy' ? 'buy-content' : currentScreen === 'plan' ? 'plan-content' : currentScreen === 'shop' ? 'shop-content' : 'review-content';
     const el = document.getElementById(targetId);
@@ -757,6 +859,229 @@ async function renderAlreadyHaveBanner() {
     removeBtn.addEventListener('click', () => act('/remove'));
   });
 }
+
+// ======================================================================
+// Desktop Grocery (option 5f) — left rail / center aisle-grouped store
+// cards / right "this trip" panel. Additive: reuses the same data shape
+// and the same endpoints as the phone screens (add, store, already-have,
+// status). See README.md "Grocery — desktop" for judgment calls:
+//   - Store is metadata keyed by name (app/schema.sql `stores` table), not
+//     a real FK on grocery_items, so nothing here changes how items are
+//     stored — it just reads /api/stores for habit/role/aisle_order.
+//   - "Already have it" reuses the existing inventory-promoting endpoint
+//     (moves the item into Kitchen inventory) rather than the simpler
+//     soft-remove the raw spec text describes — a superset, not a swap.
+//   - Full soft-delete/undo and the Trip entity are deferred; "Got it"
+//     here is the existing purchased/needed status toggle.
+// ======================================================================
+const AISLE_ORDER = ["Produce", "Bakery", "Dairy", "Meat", "Frozen", "Pantry", "Household"];
+const CATEGORY_TO_AISLE = { produce: "Produce", dairy: "Dairy", "meat/seafood": "Meat", frozen: "Frozen", pantry: "Pantry", other: "Household" };
+function aisleForCategory(cat) { return CATEGORY_TO_AISLE[cat] || "Household"; }
+
+let dgSelectedStore = null; // null = "Everything"
+let dgShowAlreadyGot = false;
+let dgPeople = [];
+let dgCurrentPerson = 'user';
+let dgStoresMeta = [];
+
+async function dgLoadPeople() {
+  try {
+    const res = await fetch('/api/people');
+    if (!res.ok) return;
+    dgPeople = (await res.json()).people || [];
+    if (dgPeople.length && dgCurrentPerson === 'user') dgCurrentPerson = dgPeople[0].name;
+    if (lastGroceryData) renderDesktopGrocery(lastGroceryData);
+  } catch (err) { /* identity switcher is a nicety, not load-bearing */ }
+}
+async function dgLoadStoresMeta() {
+  try {
+    const res = await fetch('/api/stores');
+    if (res.ok) dgStoresMeta = (await res.json()).stores || [];
+  } catch (err) { /* store metadata (habit/role) isn't shown yet — safe to skip */ }
+}
+
+function dgPersonColor(name) {
+  const p = dgPeople.find(p => p.name === name);
+  return p ? p.color : '#8A7A83';
+}
+function dgPersonInitial(name) {
+  const p = dgPeople.find(p => p.name === name);
+  if (p) return p.initial;
+  return (name || '?').trim()[0].toUpperCase();
+}
+
+function renderDesktopGrocery(data) {
+  if (!isDesktopGroceryMode()) return;
+  const storeNames = Object.keys(data.stores).filter(n => n !== 'Unassigned');
+  const unassigned = (data.stores['Unassigned'] ? data.stores['Unassigned'].sections : []).reduce((acc, s) => acc.concat(s.items), []);
+  let totalNeeded = 0;
+  storeNames.forEach(n => totalNeeded += neededCountForStore(data.stores[n]));
+  totalNeeded += unassigned.length;
+
+  // ---- Left rail ----
+  const rail = document.getElementById('dg-rail');
+  let railHtml = `<p class="dg-rail-title">Stores</p>`;
+  railHtml += `<div class="dg-rail-row ${dgSelectedStore === null ? 'active' : ''}" data-dg-store="">
+    <span class="dg-rail-name">Everything</span><span class="dg-rail-count">${totalNeeded}</span>
+  </div>`;
+  if (unassigned.length) {
+    railHtml += `<div class="dg-rail-row ${dgSelectedStore === 'Unassigned' ? 'active' : ''}" data-dg-store="Unassigned">
+      <span class="dg-rail-dot" style="background:${storeColor('Unassigned')}"></span>
+      <span class="dg-rail-name">Unassigned</span><span class="dg-rail-count">${unassigned.length}</span>
+    </div>`;
+  }
+  for (const name of storeNames) {
+    const needed = neededCountForStore(data.stores[name]);
+    if (needed === 0 && !dgShowAlreadyGot) continue;
+    railHtml += `<div class="dg-rail-row ${dgSelectedStore === name ? 'active' : ''}" data-dg-store="${escapeHtml(name)}">
+      <span class="dg-rail-dot" style="background:${storeColor(name)}"></span>
+      <span class="dg-rail-name">${escapeHtml(name)}</span><span class="dg-rail-count">${needed}</span>
+    </div>`;
+  }
+  railHtml += `<div class="dg-rail-toggle" id="dg-already-got-toggle">
+    <input type="checkbox" id="dg-already-got-check" ${dgShowAlreadyGot ? 'checked' : ''} /> Already got
+  </div>`;
+  railHtml += `<p class="dg-rail-note">Shared list — anything you or your partner adds shows up here for both of you.</p>`;
+  rail.innerHTML = railHtml;
+  rail.querySelectorAll('[data-dg-store]').forEach(el => {
+    el.addEventListener('click', () => { dgSelectedStore = el.getAttribute('data-dg-store') || null; renderDesktopGrocery(lastGroceryData); });
+  });
+  const agToggle = document.getElementById('dg-already-got-check');
+  if (agToggle) agToggle.addEventListener('change', () => { dgShowAlreadyGot = agToggle.checked; renderDesktopGrocery(lastGroceryData); });
+
+  // ---- Center: header sub, people switcher ----
+  document.getElementById('dg-sub').textContent = `${totalNeeded} item${totalNeeded === 1 ? '' : 's'} to go`;
+  const peopleWrap = document.getElementById('dg-people');
+  peopleWrap.innerHTML = dgPeople.map(p => `<div class="dg-person ${dgCurrentPerson === p.name ? 'active' : ''}" style="background:${p.color}" data-dg-person="${escapeHtml(p.name)}" title="Adding as ${escapeHtml(p.name)}">${escapeHtml(p.initial)}</div>`).join('');
+  peopleWrap.querySelectorAll('[data-dg-person]').forEach(el => {
+    el.addEventListener('click', () => { dgCurrentPerson = el.getAttribute('data-dg-person'); renderDesktopGrocery(lastGroceryData); });
+  });
+
+  // ---- Center: unassigned triage ----
+  const unassignedWrap = document.getElementById('dg-unassigned');
+  if (!unassigned.length) {
+    unassignedWrap.innerHTML = '';
+  } else {
+    unassignedWrap.innerHTML = `<p class="dg-unassigned-title">Unassigned &middot; assign to a store</p>
+      ${unassigned.map(it => `<div class="dg-unassigned-row">
+        <span class="dg-unassigned-name">${escapeHtml(it.item)}${it.quantity ? ' — ' + escapeHtml(it.quantity) : ''}</span>
+        ${storeNames.map(n => `<button class="dg-store-pill" data-dg-assign="${it.id}" data-dg-assign-store="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')}
+      </div>`).join('')}`;
+    unassignedWrap.querySelectorAll('[data-dg-assign]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try { await postJSON('/api/grocery-list/' + btn.getAttribute('data-dg-assign') + '/store', { store: btn.getAttribute('data-dg-assign-store') }); refreshCurrentScreen(); }
+        catch (err) { btn.disabled = false; alert("Couldn't assign that — try again."); }
+      });
+    });
+  }
+
+  // ---- Center: aisle-grouped store card(s) ----
+  const listWrap = document.getElementById('dg-store-list');
+  const namesToShow = dgSelectedStore === null ? storeNames : (dgSelectedStore === 'Unassigned' ? [] : [dgSelectedStore]);
+  let listHtml = '';
+  for (const name of namesToShow) {
+    const s = data.stores[name];
+    if (!s) continue; // store no longer has any needed/purchased/in-cart items at all
+    const needed = neededCountForStore(s);
+    if (needed === 0 && !dgShowAlreadyGot) continue;
+    const items = [];
+    for (const sec of s.sections) for (const it of sec.items) items.push({ ...it, __aisle: aisleForCategory(sec.section) });
+    if (dgShowAlreadyGot) for (const it of s.purchased) items.push({ ...it, __aisle: aisleForCategory(it.category), __got: true });
+    if (!items.length) continue;
+    listHtml += `<div class="dg-store-card"><p class="dg-store-card-title"><span class="dg-rail-dot" style="background:${storeColor(name)}"></span>${escapeHtml(storeLabel(name))}</p>`;
+    for (const aisle of AISLE_ORDER) {
+      const inAisle = items.filter(it => it.__aisle === aisle);
+      if (!inAisle.length) continue;
+      listHtml += `<p class="dg-aisle-label">${aisle}</p>`;
+      for (const it of inAisle) listHtml += dgRowHtml(it);
+    }
+    listHtml += `</div>`;
+  }
+  if (dgSelectedStore === 'Unassigned') {
+    listHtml = '';
+  }
+  if (!listHtml) {
+    listHtml = `<div class="dg-empty-state">${totalNeeded === 0 ? "You're all set — nothing left to buy." : 'Nothing here yet.'}</div>`;
+  }
+  listWrap.innerHTML = listHtml;
+  wireDgRowActions(listWrap);
+
+  // ---- Right: this trip ----
+  renderDgTripPanel(data, storeNames);
+}
+
+function dgRowHtml(it) {
+  const got = !!it.__got;
+  return `<div class="dg-row ${got ? 'dg-row-got' : ''}" data-dg-item-id="${it.id}">
+    <div class="dg-row-avatar" style="background:${dgPersonColor(it.added_by)}">${escapeHtml(dgPersonInitial(it.added_by))}</div>
+    <span class="dg-row-name">${escapeHtml(it.item)}</span>
+    ${it.quantity ? `<span class="dg-row-qty">${escapeHtml(it.quantity)}</span>` : ''}
+    ${got
+      ? `<button class="dg-row-got-btn" data-dg-action="unget" data-dg-item-id="${it.id}">Got it &check;</button>`
+      : `<button class="dg-row-ah" data-dg-action="already-have" data-dg-item-id="${it.id}">Already have it</button>
+         <button class="dg-row-got-btn" data-dg-action="got" data-dg-item-id="${it.id}">Got it</button>`}
+  </div>`;
+}
+function wireDgRowActions(wrap) {
+  wrap.querySelectorAll('[data-dg-action="got"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await postJSON('/api/grocery-list/' + btn.getAttribute('data-dg-item-id') + '/status', { status: 'purchased' }); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't update that — try again."); }
+    });
+  });
+  wrap.querySelectorAll('[data-dg-action="unget"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await postJSON('/api/grocery-list/' + btn.getAttribute('data-dg-item-id') + '/status', { status: 'needed' }); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't update that — try again."); }
+    });
+  });
+  wrap.querySelectorAll('[data-dg-action="already-have"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await postEmpty('/api/grocery-list/' + btn.getAttribute('data-dg-item-id') + '/already-have'); refreshCurrentScreen(); }
+      catch (err) { btn.disabled = false; alert("Couldn't move that to inventory — try again."); }
+    });
+  });
+}
+
+function renderDgTripPanel(data, storeNames) {
+  const panel = document.getElementById('dg-trip');
+  if (dgSelectedStore === null || dgSelectedStore === 'Unassigned') {
+    panel.innerHTML = `<p class="dg-trip-title">This trip</p>
+      <p class="dg-trip-empty">Pick a store on the left to see what's in this trip and start shopping.</p>`;
+    return;
+  }
+  const s = data.stores[dgSelectedStore];
+  if (!s) { panel.innerHTML = ''; return; }
+  const items = [];
+  for (const sec of s.sections) for (const it of sec.items) items.push({ ...it, __aisle: aisleForCategory(sec.section) });
+  const counts = {};
+  AISLE_ORDER.forEach(a => counts[a] = 0);
+  items.forEach(it => counts[it.__aisle] = (counts[it.__aisle] || 0) + 1);
+
+  panel.innerHTML = `<p class="dg-trip-title">${escapeHtml(dgSelectedStore)}</p>
+    <p class="dg-trip-sub">${items.length} item${items.length === 1 ? '' : 's'} on this trip</p>
+    ${AISLE_ORDER.map(a => `<div class="dg-trip-aisle-row ${counts[a] ? '' : 'zero'}"><span class="dg-rail-dot" style="background:${aisleColor(Object.keys(CATEGORY_TO_AISLE).find(k => CATEGORY_TO_AISLE[k] === a) || 'other')}"></span>${a} &middot; ${counts[a]}</div>`).join('')}
+    <p class="dg-trip-note">Shared with your household — anything checked off here updates for everyone.</p>
+    <button class="dg-trip-cta" id="dg-trip-cta">Start shopping ${escapeHtml(dgSelectedStore)}</button>`;
+  const cta = document.getElementById('dg-trip-cta');
+  if (cta) cta.addEventListener('click', () => { shopStore = dgSelectedStore; setScreen('shop'); });
+}
+
+document.getElementById('dg-add-btn').addEventListener('click', async () => {
+  const itemInput = document.getElementById('dg-add-item');
+  const qtyInput = document.getElementById('dg-add-qty');
+  const item = itemInput.value.trim();
+  if (!item) return;
+  try {
+    await postJSON('/api/grocery-list/add', { item, quantity: qtyInput.value.trim(), category: 'other', added_by: dgCurrentPerson });
+    itemInput.value = ''; qtyInput.value = '';
+    refreshCurrentScreen();
+  } catch (err) { alert("Couldn't add that — try again."); }
+});
 
 // ======================================================================
 // Screen 2 — Plan your stops
@@ -1264,9 +1589,12 @@ function startShopperVoiceSession() {
 }
 document.getElementById('voice-toggle-btn').addEventListener('click', startShopperVoiceSession);
 
+applyGroceryLayoutMode();
 refreshCurrentScreen();
 loadUsualStores();
 loadItemStorePrefs();
+dgLoadPeople();
+dgLoadStoresMeta();
 </script>
 </body>
 </html>

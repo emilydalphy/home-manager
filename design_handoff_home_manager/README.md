@@ -130,6 +130,8 @@ Layout: `padding: 6px 20px 8px`, `gap: 13px`.
 - One white card per store, `radius: 18px`, `padding: 16px 19px 12px`. Store name `Quicksand 700 19px`, meta `Karla 700 14px #6B5A63` ("before Thursday" / "on the way home").
 - Item rows 50px, `border-bottom: 1px solid #F1E8DA`: 24px checkbox `radius: 7px`, name `Karla 400 16px`, trailing reason `Karla 400 14px #9C8B93`. Checked: `#6FB84C` fill, white `✓`, name `#A3939B` + line-through, reason cleared.
 
+**✅ Built (Phase 2).** The existing four-screen "To buy / By store / Shop / Review" phone build (design 13a) already covers this state and was left as-is — it already does everything section 4 describes (store cards, checkbox rows, "Already have it") and predates this package. No phone changes were needed this phase; phone-side Phase 2 work was the backend only (per-item `added_by` now flows through from the add form, and the new `stores`/`people` metadata tables exist for the desktop build below).
+
 ### 5. Kitchen (hub)
 
 - Header kicker "Recipes · inventory · what we know", heading "Kitchen" `Quicksand 700 29px`.
@@ -224,6 +226,15 @@ White bottom sheet, `padding: 16px 20px 22px`, `gap: 14px`.
 - "COVERS THESE MEALS" — `#F6EFE1`, `radius: 16px`: "Tue tikka · Thu turkey bowls · Fri salmon".
 - "SHARED LIST" — `#ECDFC8`, `radius: 16px`: "Emily and Marcus both add here. Initials show who asked for what."
 - Bottom CTA "Start shopping {Store}" — `#F0B429` bg, `#3A2A0A` ink, 52px, `radius: 13px`, hover `#FFC63D`.
+
+**✅ Built (Phase 2).** Sandbox-verified end to end (fresh DB, real endpoints, Playwright at 1280×900): left rail with live counts, an Unassigned triage block that folds into the list and disappears at zero, aisle-grouped store cards in the fixed aisle order, the "Got it" pill distinct from the "Already have it" text action, per-row avatars, the "Already got" toggle, the empty-state card, and the "This trip" panel with aisle counts and "Start shopping {Store}". Matches BUILD_ORDER.md's Phase 2 check exactly: assigning an unassigned item moves it into the right store/aisle and the block disappears at zero; "Already have it" removes the row entirely; "Got it" keeps it struck through, hidden unless "Already got" is on; an empty filter shows the empty-state card. Toggled purely by JS (window width + which phone-tab is active), not a CSS breakpoint, so Plan/Shop/Review stay on the existing phone-style overlays even at a wide viewport — matches the file table's Phase 2/3 split (Shopping mode is Phase 3).
+
+Deliberate scope calls, to flag rather than silently absorb:
+- **Store** is a name-keyed metadata table (`app/schema.sql` `stores`), not a real foreign key on `grocery_items` — avoids migrating every existing call site that already uses free-text store names. `habit`/`role`/custom aisle order exist in the schema but aren't editable from the UI yet.
+- **"Already have it"** reuses the existing inventory-promoting endpoint (moves the item into Kitchen inventory), not the simpler soft-remove this section's raw text describes — a superset of the spec, not a swap.
+- **Full soft-delete/undo** and the **Trip** entity are deferred — nothing in this phase's UI needs them; Trip belongs to Phase 3 (Shopping mode) where it's actually load-bearing.
+- **"Covers these meals"** is left out — nothing currently links a grocery item back to the meal it came from, so it would be fabricated rather than derived.
+- The identity switcher (header avatars) is desktop-only, per the spec's own scoping — the phone "Add an item" form still adds unattributed.
 
 ### 9. Shopping mode — desktop/tablet (option 5g, approved)
 

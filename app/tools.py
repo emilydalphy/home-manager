@@ -2918,6 +2918,83 @@ def get_item_store_preferences() -> dict:
     return {r["item"]: r["store"] for r in rows}
 
 
+_DEFAULT_AISLE_ORDER = ["Produce", "Bakery", "Dairy", "Meat", "Frozen", "Pantry", "Household"]
+
+
+def get_stores() -> list[dict]:
+    """
+    Every store the household currently has grocery items assigned to
+    (design_handoff_home_manager Phase 2, §8's left-rail "STORES" filter
+    list), each with its real metadata row from the `stores` table when one
+    exists (habit/role/aisle_order — see schema.sql), or just the default
+    aisle order when it doesn't. A store only gets a real `stores` row once
+    something sets its habit/role (Phase 4's Stores tab) — until then it's
+    just a name the grocery list already knows about, listed here with
+    defaults so the rail filter still works. Does NOT include "Unassigned"
+    (storeId-null items) — that's a separate, always-present filter the UI
+    adds itself, not a real store.
+    """
+    conn = get_conn()
+    names = [
+        r["store"] for r in conn.execute(
+            "SELECT DISTINCT store FROM grocery_items WHERE household_id = ? AND store != '' AND status != 'removed'",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    ]
+    meta_rows = conn.execute(
+        "SELECT name, habit, role, aisle_order_json FROM stores WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchall()
+    conn.close()
+    meta_by_name = {r["name"]: r for r in meta_rows}
+    # Union in any store that has real metadata but currently has no items
+    # on the list (e.g. between shopping trips) — it's still a store the
+    # household shops at.
+    for name in meta_by_name:
+        if name not in names:
+            names.append(name)
+    return [
+        {
+            "name": name,
+            "habit": meta_by_name[name]["habit"] if name in meta_by_name else "",
+            "role": meta_by_name[name]["role"] if name in meta_by_name else "",
+            "aisle_order": json.loads(meta_by_name[name]["aisle_order_json"]) if name in meta_by_name else list(_DEFAULT_AISLE_ORDER),
+        }
+        for name in names
+    ]
+
+
+def get_household_people() -> list[dict]:
+    """
+    The household's adults, each with the avatar initial + color the
+    design_handoff_home_manager package uses for "who added it" on desktop
+    grocery rows (README's People token: first adult plum #66304E, second
+    green #4D8A33 — see db._backfill_member_colors). Powers the identity
+    switcher (there's no real login in this app — see FIRST_RUN.md's
+    "two adult accounts" note and the Phase 2 judgment call to use a
+    lightweight, no-password picker instead) and the avatar rendered next
+    to whichever name a grocery item's added_by holds.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT name, color FROM members WHERE household_id = ? AND age_group = 'adult' ORDER BY id ASC",
+        (HOUSEHOLD_ID,),
+    ).fetchall()
+    conn.close()
+    # A color stored on the row (set by db._backfill_member_colors at the
+    # next app restart after this adult was added) always wins; a
+    # not-yet-backfilled adult still gets the right color *this* request by
+    # falling back to its ordinal position among adults, not a flat
+    # default — otherwise a second adult added since the last restart would
+    # incorrectly show Emily's own plum instead of the household's second
+    # color.
+    fallback_colors = ["#66304E", "#4D8A33"]
+    out = []
+    for i, r in enumerate(rows):
+        color = r["color"] or (fallback_colors[i] if i < len(fallback_colors) else "#8A7A82")
+        out.append({"name": r["name"], "initial": (r["name"].strip()[:1] or "?").upper(), "color": color})
+    return out
+
+
 def get_grocery_already_have_items() -> list[dict]:
     """
     Cross-reference the 'needed' grocery list against tracked inventory to
@@ -3994,19 +4071,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     conn = get_conn()
     if status == "excluded":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
             (HOUSEHOLD_ID,),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
             (HOUSEHOLD_ID,),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
             (HOUSEHOLD_ID, status),
         ).fetchall()
