@@ -4,961 +4,362 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>What We Know — Home Manager</title>
-<link rel="manifest" href="/static/manifest.json" />
-<link rel="icon" href="/static/icons/icon-192.png" />
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#66304E" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>What we know — Home Manager</title>
 <style>
-  :root { color-scheme: light; }
-  body {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-  p.subtitle { margin-top: 0; }
-  p.subtitle a { color: var(--midnight-violet); font-weight: 700; }
+  /* What we know (design_handoff_home_manager §7, option 5d, approved).
+     Replaces the old pre-redesign memory.html page entirely — see
+     README's Phase 4 notes for the People/Taste/Rhythm-vs-structured-data
+     judgment call and what happened to the old field-by-field editor. */
+  * { box-sizing: border-box; }
+  body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, #EFE6D6); }
+  .wwk-header { padding: 20px 20px 6px; }
+  .wwk-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--midnight-violet); text-decoration: none; display: block; margin-bottom: 8px; }
+  .wwk-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0 0 16px; }
 
-  .card { padding: 20px; margin-bottom: 16px; }
-  .card h2 { font-size: 17px; margin: 0 0 4px; }
-  .card .hint { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 14px; }
+  .wwk-tabs { display: flex; gap: 6px; padding: 0 16px 12px; }
+  .wwk-tab { flex: 1; padding: 11px 0; border-radius: 10px; border: none; font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; cursor: pointer; background: #fff; color: #6B5A63; }
+  .wwk-tab.active { background: var(--midnight-violet); color: var(--oat-cream); font-weight: 800; }
 
-  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--violet-soft);
-    color: var(--midnight-violet);
-    border: 1px solid var(--card-border);
-    padding: 8px 6px 8px 14px;
-    border-radius: var(--radius-pill);
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  /* Delete affordances are visually compact chips/icons, but the clickable
-     hit area is expanded to the brand guide's 44x44 minimum via the
-     ::after overlay below, without inflating the visual design. */
-  .remove-chip, .remove-store-item, .store-remove {
-    position: relative;
-    background: none;
-    border: none;
-    color: var(--midnight-violet);
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    padding: 4px 6px;
-    border-radius: 50%;
-  }
-  .remove-chip::after, .remove-store-item::after, .store-remove::after {
-    content: "";
-    position: absolute;
-    inset: -12px;
-  }
-  .remove-chip:hover, .remove-store-item:hover, .store-remove:hover {
-    background: #fff;
-    color: var(--electric-coral);
-  }
+  .wwk-content { padding: 0 20px 20px; }
+  .wwk-card { background: #fff; border-radius: 18px; padding: 17px 19px 11px; margin-bottom: 16px; }
+  .wwk-intro { font-family: var(--font-body); font-size: 0.94rem; color: #6B5A63; margin: 0 0 6px; }
+  .wwk-fact-row { padding: 11px 0; border-top: 1px solid #F1E8DA; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .wwk-fact-text { font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; color: var(--ink); flex: 1; }
+  .wwk-fact-edit { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: #A8825C; flex: none; }
+  .wwk-add-row { padding: 11px 0; border-top: 1px solid #F1E8DA; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); cursor: pointer; }
 
-  .empty-state { font-size: 0.9rem; padding: 0.5rem 0; }
+  .wwk-editor { border-top: 1px solid #F1E8DA; padding: 11px 0; }
+  .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 12px; background: #FFFDF6; font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
+  .wwk-editor-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+  .wwk-save-btn { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 11px; padding: 12px 18px; font-weight: 700; font-family: var(--font-body); cursor: pointer; }
+  .wwk-cancel-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: #8A7A82; cursor: pointer; }
+  .wwk-delete-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: #C0431E; cursor: pointer; margin-left: auto; }
 
-  .add-row { display: flex; gap: 8px; margin-top: 4px; }
-  input[type=text], textarea, select {
-    flex: 1;
-    padding: 11px 12px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-size: 0.95rem;
-    background: #fff;
-    color: var(--text-body);
-    font-family: var(--font-body);
-    min-height: 44px;
-    box-sizing: border-box;
-  }
-  input::placeholder, textarea::placeholder { color: var(--text-muted); }
-  textarea { width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box; }
+  .wwk-footer-card { background: #ECDFC8; border-radius: 16px; padding: 14px 17px; margin-bottom: 16px; }
+  .wwk-footer-text { font-family: var(--font-body); font-size: 0.86rem; color: #4A3A2A; margin: 0; line-height: 1.4; }
 
-  button.action {
-    padding: 11px 18px;
-    min-height: 44px;
-    border-radius: var(--radius-control);
-    border: none;
-    background: var(--turmeric-gold);
-    color: var(--midnight-violet);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  button.action:hover { background: var(--gold-hover); }
-  button.action.secondary {
-    background: transparent;
-    color: var(--midnight-violet);
-    border: 1px solid var(--midnight-violet);
-  }
-  button.action.secondary:hover { background: var(--violet-soft); }
+  /* Stores tab extra */
+  .wwk-store-block { border-top: 1px solid #F1E8DA; padding: 13px 0; }
+  .wwk-store-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .wwk-store-name { font-family: var(--font-body); font-weight: 700; font-size: 1rem; color: var(--ink); }
+  .wwk-store-count { font-family: var(--font-body); font-size: 0.82rem; color: #9C8B93; margin-left: auto; }
+  .wwk-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .wwk-chip { display: inline-flex; align-items: center; gap: 8px; background: #F6EFE1; border-radius: 20px; padding: 9px 8px 9px 13px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
+  .wwk-chip-x { width: 22px; height: 22px; border-radius: 12px; background: #E6DBC6; color: var(--midnight-violet); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .wwk-chip-add { border: 1.5px dashed #C4B09C; border-radius: 20px; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); padding: 9px 15px; cursor: pointer; }
+  .wwk-chip-input-row { display: flex; gap: 6px; align-items: center; }
+  .wwk-chip-input { border: 2px solid var(--midnight-violet); border-radius: 20px; padding: 9px 15px; font-family: var(--font-body); font-size: 0.9rem; }
+  .wwk-import-row { background: #F6EFE1; border-radius: 14px; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; cursor: pointer; }
+  .wwk-import-title { font-family: var(--font-body); font-weight: 700; font-size: 0.94rem; color: var(--ink); margin: 0; }
+  .wwk-import-sub { font-family: var(--font-body); font-size: 0.8rem; color: #8A7A82; margin: 2px 0 0; }
+  .wwk-import-open { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--midnight-violet); }
 
-  .save-row { display: flex; gap: 8px; margin-top: 10px; }
-  .protein-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 0; min-height: 44px; gap: 12px; flex-wrap: wrap;
-    border-bottom: 1px solid var(--card-border);
-  }
-  .protein-row:last-child { border-bottom: none; }
-  .protein-row > span:first-child { font-weight: 500; color: var(--text-body); }
-  .protein-slider-wrap {
-    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 220px;
-  }
-  input[type=range].protein-edit,
-  input[type=range]#new-protein-value {
-    flex: 1;
-    min-width: 100px;
-    height: 44px;
-    accent-color: var(--midnight-violet);
-    cursor: pointer;
-    background: transparent;
-    padding: 0;
-    border: none;
-  }
-  .protein-rating-label {
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.8rem;
-    color: var(--midnight-violet);
-    background: var(--violet-soft);
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    white-space: nowrap;
-    min-width: 76px;
-    text-align: center;
-  }
-  .member { padding: 10px 0; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .member:last-child { border-bottom: none; }
-  .member .name { font-weight: 700; color: var(--text-body); }
-  .member .restrictions { color: var(--text-muted); font-size: 0.85rem; }
-  .invite-link-btn {
-    background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet);
-    font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
-    padding: 8px 12px; min-height: 38px; border-radius: var(--radius-control); cursor: pointer;
-    white-space: nowrap;
-  }
-  .invite-link-btn:hover { background: var(--violet-soft); }
-  .invite-link-btn.copied { background: var(--vivid-leaf); border-color: var(--vivid-leaf); color: #fff; }
+  /* Import sheet */
+  #wwk-scrim { position: fixed; inset: 0; background: rgba(58,31,46,.42); display: none; z-index: 998; }
+  #wwk-scrim.open { display: block; }
+  #wwk-import-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: #fff; border-radius: 26px 26px 0 0; padding: 16px 20px 22px; z-index: 999; display: none; }
+  #wwk-import-sheet.open { display: block; }
+  .wwk-store-picker { display: flex; gap: 8px; margin: 14px 0; }
+  .wwk-store-picker button { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid #E0D3BF; background: #fff; font-family: var(--font-body); cursor: pointer; }
+  .wwk-store-picker button.selected { background: #F4E7EF; border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
+  #wwk-import-textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 14px; height: 120px; resize: none; font-family: var(--font-body); font-size: 0.94rem; padding: 12px 14px; margin-bottom: 14px; }
+  .wwk-import-footer { display: flex; gap: 10px; }
+  .wwk-import-footer button { flex: 1; padding: 15px; border-radius: 13px; font-weight: 700; font-family: var(--font-body); cursor: pointer; border: none; }
+  .wwk-import-cancel { background: transparent; border: 1.5px solid var(--midnight-violet) !important; color: var(--midnight-violet); }
+  .wwk-import-save { background: var(--midnight-violet); color: var(--oat-cream); }
 
-  .stepper-wrap { display: flex; align-items: center; gap: 10px; }
-  .stepper-mini-btn {
-    width: 38px; height: 38px; border-radius: 50%;
-    border: 1px solid var(--midnight-violet); background: #fff;
-    color: var(--midnight-violet); font-size: 1.1rem; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-  .stepper-mini-btn:hover { background: var(--violet-soft); }
-  .stepper-mini-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.2rem; color: var(--midnight-violet); min-width: 26px; text-align: center; }
-
-  .growth-pill-row { margin: 0 0 16px; }
-
-  /* Context completeness card — "how well do I know your household yet"
-     status, tiered rather than a bare percentage, plus the highest-value
-     things still missing. See get_context_completeness in tools.py. */
-  .completeness-card { margin-bottom: 20px; padding: 16px; }
-  .completeness-top { display: flex; align-items: center; gap: 14px; }
-  .completeness-ring {
-    width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0;
-    background: conic-gradient(var(--vivid-leaf) 0 var(--pct, 0%), var(--violet-soft) var(--pct, 0%) 100%);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .completeness-ring-inner {
-    width: 46px; height: 46px; border-radius: 50%; background: #fff;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .completeness-score { font-family: var(--font-heading); font-weight: 700; font-size: 0.95rem; color: var(--midnight-violet); }
-  .completeness-text { flex: 1; }
-  .completeness-tier { font-family: var(--font-heading); font-weight: 700; font-size: 1.05rem; color: var(--midnight-violet); margin: 0 0 2px; }
-  .completeness-blurb { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
-  .completeness-missing { margin-top: 14px; border-top: 1px solid var(--card-border); padding-top: 12px; }
-  .completeness-missing.empty { display: none; }
-  .completeness-missing-label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 8px; }
-  .completeness-item { display: flex; gap: 8px; padding: 6px 0; font-size: 0.85rem; align-items: baseline; }
-  .completeness-item .dot { color: var(--turmeric-gold); flex-shrink: 0; }
-  .completeness-item .item-label { font-weight: 600; color: var(--text-body); }
-  .completeness-item .item-why { color: var(--text-muted); }
-
-  .section-heading {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: var(--midnight-violet);
-    margin: 24px 0 10px;
-  }
-  .section-heading:first-of-type { margin-top: 8px; }
-
-  .confirm-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(43, 21, 33, 0.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    padding: 24px;
-  }
-  .confirm-overlay.visible { display: flex; }
-  .confirm-box {
-    background: #fff;
-    border-radius: var(--radius-card);
-    padding: 22px;
-    max-width: 340px;
-    width: 100%;
-    box-shadow: 0 10px 30px rgba(43, 21, 33, 0.25);
-  }
-  .confirm-text {
-    margin: 0 0 18px;
-    font-size: 0.95rem;
-    color: var(--text-body);
-    text-align: center;
-  }
-  .confirm-actions { display: flex; gap: 10px; }
-  .confirm-actions .action { flex: 1; }
-  .confirm-remove-btn {
-    background: var(--electric-coral) !important;
-    color: #fff !important;
-    border: none !important;
-  }
-
-  #status {
-    position: fixed;
-    left: 50%;
-    bottom: 24px;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--vivid-leaf);
-    color: #fff;
-    padding: 12px 22px;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 700;
-    box-shadow: 0 4px 14px rgba(102, 48, 78, 0.2);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    z-index: 1000;
-  }
-  #status.error { background: var(--electric-coral); }
-  #status.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .store-block {
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    margin-bottom: 10px;
-    overflow: hidden;
-    background: var(--oat-cream);
-  }
-  .store-header {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 6px;
-    background: var(--violet-soft);
-  }
-  .store-toggle {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    background: none;
-    border: none;
-    color: var(--midnight-violet);
-    cursor: pointer;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.9rem;
-    padding: 10px 8px;
-    min-height: 44px;
-    text-align: left;
-  }
-  .store-remove { font-size: 1.1rem; }
-  .store-items-panel { padding: 12px 14px 14px; border-top: 1px solid var(--card-border); }
-  .store-items-panel .hint { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 10px; }
+  #wwk-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #3A1F2E; color: #FFFDF6; font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  #wwk-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
-  <h1>What we know</h1>
-  <p class="subtitle">Everything saved about your household's meal preferences. <a href="/">&larr; Back to chat</a></p>
-  <p class="growth-pill-row"><span class="pill pill-success" id="growth-pill" style="display:none;"></span></p>
-  <div id="status"></div>
 
-  <div class="card completeness-card" id="completeness-card">
-    <div class="completeness-top">
-      <div class="completeness-ring" id="completeness-ring">
-        <div class="completeness-ring-inner">
-          <span class="completeness-score" id="completeness-score">0%</span>
-        </div>
-      </div>
-      <div class="completeness-text">
-        <p class="completeness-tier" id="completeness-tier">Just met</p>
-        <p class="completeness-blurb" id="completeness-blurb"></p>
-      </div>
-    </div>
-    <div class="completeness-missing" id="completeness-missing"></div>
+<div class="wwk-header">
+  <a class="wwk-back" href="/kitchen">&larr; Kitchen</a>
+  <h1 class="wwk-title">What we know</h1>
+</div>
+
+<div class="wwk-tabs" id="wwk-tabs">
+  <button class="wwk-tab active" data-tab="people">People</button>
+  <button class="wwk-tab" data-tab="taste">Taste</button>
+  <button class="wwk-tab" data-tab="rhythm">Rhythm</button>
+  <button class="wwk-tab" data-tab="stores">Stores</button>
+</div>
+
+<div class="wwk-content" id="wwk-content"><p style="text-align:center;color:#8A7A82;font-family:var(--font-body)">Loading…</p></div>
+
+<div id="wwk-scrim"></div>
+<div id="wwk-import-sheet">
+  <p style="font-family:var(--font-body);font-weight:800;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#A8825C;margin:0">What you usually buy</p>
+  <h2 style="font-family:var(--font-heading);font-weight:700;font-size:1.4rem;color:var(--ink);margin:6px 0 0">Import a list</h2>
+  <p style="font-family:var(--font-body);font-size:0.9rem;color:#6B5A63;margin:12px 0 0">These items belong to</p>
+  <div class="wwk-store-picker" id="wwk-import-store-picker"></div>
+  <textarea id="wwk-import-textarea" placeholder="Paste or type one per line — rotisserie chicken, frozen berries, coffee beans…"></textarea>
+  <div class="wwk-import-footer">
+    <button class="wwk-import-cancel" id="wwk-import-cancel">Cancel</button>
+    <button class="wwk-import-save" id="wwk-import-save">Save</button>
   </div>
+</div>
 
-  <div class="confirm-overlay" id="confirm-overlay">
-    <div class="confirm-box">
-      <p class="confirm-text">Remove this? You can always tell me again.</p>
-      <div class="confirm-actions">
-        <button class="action secondary" id="confirm-cancel">Cancel</button>
-        <button class="action confirm-remove-btn" id="confirm-remove">Remove</button>
-      </div>
-    </div>
-  </div>
-
-  <h2 class="section-heading">Household members</h2>
-  <div class="card">
-    <p class="hint">Members and their dietary restrictions — edit these from the onboarding flow. Each person can also get their own link to add preferences and feedback directly.</p>
-    <div id="members"></div>
-  </div>
-
-  <h2 class="section-heading">General / Household</h2>
-
-  <div class="card">
-    <h2>Goals</h2>
-    <textarea id="goals" placeholder="e.g. stay on top of chores, eat healthier"></textarea>
-    <div class="save-row">
-      <button class="action" onclick="saveGoals()">Save</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Dislikes</h2>
-    <p class="hint">Foods to avoid in suggestions — not allergies, just preference.</p>
-    <div class="chip-row" id="dislikes"></div>
-    <div class="add-row">
-      <input type="text" id="new-dislike" placeholder="Add a dislike..." onkeydown="if(event.key==='Enter')addDislike()" />
-      <button class="action" onclick="addDislike()">Add</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Usual stores</h2>
-    <p class="hint">Stores/chains this household usually shops at — used as suggestions when tagging a store on the grocery list. Tap a store to add what you typically get there, so it can be suggested in the By Store view for you to confirm.</p>
-    <div id="usual-stores"></div>
-    <div class="add-row">
-      <input type="text" id="new-usual-store" placeholder="Add a store..." onkeydown="if(event.key==='Enter')addUsualStore()" />
-      <button class="action" onclick="addUsualStore()">Add</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Favorite cuisines</h2>
-    <div class="chip-row" id="cuisines"></div>
-    <div class="add-row">
-      <input type="text" id="new-cuisine" placeholder="Add a cuisine..." onkeydown="if(event.key==='Enter')addCuisine()" />
-      <button class="action" onclick="addCuisine()">Add</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Protein preferences</h2>
-    <p class="hint">Rate how much the household likes each protein, 1-5 — I'll use it to decide how often to include it.</p>
-    <div id="proteins"></div>
-    <div class="add-row" style="align-items:center;">
-      <input type="text" id="new-protein-name" placeholder="Protein (e.g. chicken)" style="flex:1.4" />
-      <div class="protein-slider-wrap">
-        <input type="range" id="new-protein-value" min="1" max="5" step="1" value="3" oninput="updateProteinSliderLabel(this)" />
-        <span class="protein-rating-label" id="new-protein-value-label">Occasionally</span>
-      </div>
-      <button class="action" onclick="addProtein()">Add</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Cooking time preference</h2>
-    <p class="hint" id="cooking-time-insight"></p>
-    <div class="add-row">
-      <input type="text" id="cooking-time" placeholder="e.g. quick, moderate, no preference" />
-      <button class="action" onclick="saveCookingTime()">Save</button>
-      <button class="action secondary" onclick="openConfirm(clearCookingTime)">Clear</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Recipe variety</h2>
-    <p class="hint">How often new recipes get surfaced when a week gets planned — even the lowest setting still includes at least one new recipe.</p>
-    <p class="hint" id="recipe-variety-insight"></p>
-    <div class="add-row">
-      <select id="novelty-preference" style="flex:1"></select>
-      <button class="action" onclick="saveNovelty()">Save</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Eating style</h2>
-    <p class="hint">A diet or style your meals should follow — keto, high-protein, low-carb, whatever fits. Leave blank if there isn't one.</p>
-    <textarea id="eating-style" rows="3" placeholder="e.g. high-protein, low-carb"></textarea>
-    <div class="save-row">
-      <button class="action" onclick="saveEatingStyle()">Save</button>
-      <button class="action secondary" onclick="openConfirm(clearEatingStyle)">Clear</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Breakfasts per week</h2>
-    <p class="hint">How many breakfasts a typical week should actually plan.</p>
-    <div class="add-row" style="align-items:center;">
-      <div class="stepper-wrap">
-        <button type="button" class="stepper-mini-btn" id="breakfasts-minus">&minus;</button>
-        <span class="stepper-mini-value" id="breakfasts-value">7</span>
-        <button type="button" class="stepper-mini-btn" id="breakfasts-plus">+</button>
-      </div>
-      <button class="action" onclick="saveBreakfastsPerWeek()">Save</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Lunches per week</h2>
-    <p class="hint">How many lunches a typical week should actually plan.</p>
-    <div class="add-row" style="align-items:center;">
-      <div class="stepper-wrap">
-        <button type="button" class="stepper-mini-btn" id="lunches-minus">&minus;</button>
-        <span class="stepper-mini-value" id="lunches-value">7</span>
-        <button type="button" class="stepper-mini-btn" id="lunches-plus">+</button>
-      </div>
-      <button class="action" onclick="saveLunchesPerWeek()">Save</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Dinners per week</h2>
-    <p class="hint">How many dinners a typical week should actually plan — the rest of the week is yours.</p>
-    <div class="add-row" style="align-items:center;">
-      <div class="stepper-wrap">
-        <button type="button" class="stepper-mini-btn" id="dinners-minus">&minus;</button>
-        <span class="stepper-mini-value" id="dinners-value">7</span>
-        <button type="button" class="stepper-mini-btn" id="dinners-plus">+</button>
-      </div>
-      <button class="action" onclick="saveDinnersPerWeek()">Save</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Notes</h2>
-    <p class="hint">Freeform — anything else worth remembering.</p>
-    <textarea id="notes" placeholder="Anything else to remember..."></textarea>
-    <div class="save-row">
-      <button class="action" onclick="saveNotes()">Save</button>
-      <button class="action secondary" onclick="openConfirm(clearNotes)">Clear</button>
-    </div>
-  </div>
+<div id="wwk-toast"></div>
 
 <script>
-let memory = {};
-let statusTimer = null;
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function showToast(message) {
+  const el = document.getElementById('wwk-toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
 
-// Protein preferences are a 1-5 "how much do they like it" rating — the
-// assistant translates that into how often the protein shows up in a
-// generated plan (see agent.py), rather than the household picking a
-// frequency phrase directly.
-const PROTEIN_RATING_LABELS = { 1: 'Avoid', 2: 'Rarely', 3: 'Occasionally', 4: 'Often', 5: 'Favorite' };
-
-// Households that set protein preferences before the slider existed have
-// old frequency phrases saved (e.g. "several times a week") — map those
-// to their closest rating so existing data still displays sensibly
-// instead of breaking. Any other freeform text (e.g. said in chat) falls
-// back to the neutral middle rating.
-const LEGACY_FREQUENCY_TO_RATING = {
-  'several times a week': 5,
-  '1-2 times a week': 4,
-  'occasionally': 3,
-  'rarely': 2,
-  'avoid': 1,
+const TAB_META = {
+  people: { intro: "Who I'm planning for, and what nobody will eat.", footer: "Tap any line to correct it. I'll re-check this week's plan against changes." },
+  taste: { intro: 'What tends to work, so suggestions land the first time.', footer: "The more of these you fix, the fewer swaps you'll have to make." },
+  rhythm: { intro: 'The shape of your week — I plan around these.', footer: "Tell me about a one-off week in the ask bar instead — these are the standing patterns." },
+  stores: { intro: 'Where things come from and what a week usually costs.', footer: 'I use these to decide which list an item lands on.' },
 };
 
-function proteinRating(val) {
-  if (typeof val === 'number' && !Number.isNaN(val)) return Math.min(5, Math.max(1, Math.round(val)));
-  const asNum = Number(val);
-  if (val !== '' && val !== null && val !== undefined && !Number.isNaN(asNum)) {
-    return Math.min(5, Math.max(1, Math.round(asNum)));
-  }
-  return LEGACY_FREQUENCY_TO_RATING[String(val).toLowerCase().trim()] || 3;
-}
+let activeTab = 'people';
+let openEditorId = null; // fact id being edited, or 'new'
+let memoryCache = null;
 
-function proteinRatingLabel(rating) {
-  return PROTEIN_RATING_LABELS[rating] || 'Occasionally';
-}
-
-function updateProteinSliderLabel(input) {
-  const label = input.nextElementSibling;
-  if (label && label.classList.contains('protein-rating-label')) {
-    label.textContent = proteinRatingLabel(Number(input.value));
-  }
-}
-
-const NOVELTY_OPTIONS = [
-  { value: 'mostly_favorites', label: 'Mostly favorites' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'surprise_me_often', label: 'Surprise me often' },
-];
-
-function noveltyOptions(selected) {
-  return NOVELTY_OPTIONS.map(o =>
-    `<option value="${o.value}" ${o.value === selected ? 'selected' : ''}>${o.label}</option>`
-  ).join('');
-}
-
-function setStatus(msg, isError) {
-  const el = document.getElementById('status');
-  clearTimeout(statusTimer);
-  el.textContent = msg || '';
-  el.classList.toggle('error', !!isError);
-  el.classList.toggle('visible', !!msg);
-  if (msg) {
-    statusTimer = setTimeout(() => { el.classList.remove('visible'); }, 2200);
-  }
-}
-
-async function loadMemory() {
-  try {
-    const res = await fetch('/api/memory');
-    if (!res.ok) throw new Error('Failed to load');
-    memory = await res.json();
-    render();
-  } catch (e) {
-    setStatus('Couldn\'t load — try refreshing', true);
-  }
-}
-
-function render() {
-  const membersEl = document.getElementById('members');
-  membersEl.innerHTML = (memory.members || []).length
-    ? memory.members.map(m => `
-        <div class="member">
-          <div>
-            <div class="name">${escapeHtml(m.name)}${m.age_group ? ' <span class="restrictions">(' + escapeHtml(m.age_group) + ')</span>' : ''}</div>
-            <div class="restrictions">${m.dietary_restrictions && m.dietary_restrictions.length ? escapeHtml(m.dietary_restrictions.join(', ')) : 'No restrictions noted'}</div>
-          </div>
-          <button type="button" class="invite-link-btn" data-invite="${escapeHtml(m.name)}">Get their link</button>
-        </div>`).join('')
-    : '<p class="empty-state">I\'m still getting to know your household — add members from onboarding and I\'ll keep track.</p>';
-
-  const completeness = memory.context_completeness;
-  if (completeness) {
-    document.getElementById('completeness-ring').style.setProperty('--pct', completeness.score + '%');
-    document.getElementById('completeness-score').textContent = completeness.score + '%';
-    document.getElementById('completeness-tier').textContent = completeness.tier_label;
-    document.getElementById('completeness-blurb').textContent = completeness.tier_blurb;
-    const missingEl = document.getElementById('completeness-missing');
-    const missing = (completeness.missing || []).slice(0, 3);
-    if (missing.length) {
-      missingEl.classList.remove('empty');
-      missingEl.innerHTML = '<p class="completeness-missing-label">Would help the most right now</p>' +
-        missing.map(item => `
-          <div class="completeness-item">
-            <span class="dot">&#9679;</span>
-            <span><span class="item-label">${escapeHtml(item.label)}</span> — <span class="item-why">${escapeHtml(item.why)}</span></span>
-          </div>`).join('');
-    } else {
-      missingEl.classList.add('empty');
-      missingEl.innerHTML = '';
-    }
-  }
-
-  const growthPill = document.getElementById('growth-pill');
-  const growthCount = memory.growth_count_this_month || 0;
-  if (growthCount > 0) {
-    growthPill.textContent = `You've taught me ${growthCount} thing${growthCount === 1 ? '' : 's'} this month`;
-    growthPill.style.display = 'inline-block';
-  } else {
-    growthPill.style.display = 'none';
-  }
-
-  document.getElementById('goals').value = memory.goals || '';
-  document.getElementById('cooking-time').value = memory.cooking_time_preference || '';
-  const ctInsight = document.getElementById('cooking-time-insight');
-  if (memory.cooking_time_insight) {
-    const avg = memory.cooking_time_insight.avg_minutes;
-    const n = memory.cooking_time_insight.meal_count;
-    ctInsight.textContent = `This month's plans have averaged ${avg} min (prep + cook) across ${n} meal${n === 1 ? '' : 's'}.`;
-    ctInsight.style.display = '';
-  } else {
-    ctInsight.style.display = 'none';
-  }
-  document.getElementById('novelty-preference').innerHTML = noveltyOptions(memory.novelty_preference || 'balanced');
-  const rvInsight = document.getElementById('recipe-variety-insight');
-  if (memory.recipe_variety_insight) {
-    const { new_count, repeat_count } = memory.recipe_variety_insight;
-    rvInsight.textContent = `This month: ${new_count} new recipe${new_count === 1 ? '' : 's'}, ${repeat_count} repeat${repeat_count === 1 ? '' : 's'}.`;
-    rvInsight.style.display = '';
-  } else {
-    rvInsight.style.display = 'none';
-  }
-  document.getElementById('notes').value = memory.notes || '';
-  document.getElementById('eating-style').value = memory.eating_style || '';
-  dinnersPerWeek = memory.dinners_per_week || 7;
-  document.getElementById('dinners-value').textContent = dinnersPerWeek;
-  breakfastsPerWeek = memory.breakfasts_per_week || 7;
-  document.getElementById('breakfasts-value').textContent = breakfastsPerWeek;
-  lunchesPerWeek = memory.lunches_per_week || 7;
-  document.getElementById('lunches-value').textContent = lunchesPerWeek;
-
-  const dislikesEl = document.getElementById('dislikes');
-  dislikesEl.innerHTML = (memory.dislikes || []).length
-    ? memory.dislikes.map(d => chip('dislikes', d)).join('')
-    : '<p class="empty-state">No dislikes yet — tell me what to avoid and I\'ll remember.</p>';
-
-  const usualStoresEl = document.getElementById('usual-stores');
-  usualStoresEl.innerHTML = (memory.usual_stores || []).length
-    ? memory.usual_stores.map(s => storeBlock(s)).join('')
-    : '<p class="empty-state">No usual stores yet — add one and I\'ll suggest it while you shop.</p>';
-
-  const cuisinesEl = document.getElementById('cuisines');
-  cuisinesEl.innerHTML = (memory.cuisine_preferences || []).length
-    ? memory.cuisine_preferences.map(c => chip('cuisine_preferences', c)).join('')
-    : '<p class="empty-state">No favorite cuisines yet — tell me what you love.</p>';
-
-  const proteinsEl = document.getElementById('proteins');
-  const proteinEntries = Object.entries(memory.protein_preferences || {});
-  proteinsEl.innerHTML = proteinEntries.length
-    ? proteinEntries.map(([name, val]) => {
-        const rating = proteinRating(val);
-        return `
-        <div class="protein-row">
-          <span>${escapeHtml(name)}</span>
-          <div class="protein-slider-wrap">
-            <input type="range" class="protein-edit" min="1" max="5" step="1" value="${rating}"
-              data-name="${escapeHtml(name)}" oninput="updateProteinSliderLabel(this)" />
-            <span class="protein-rating-label">${proteinRatingLabel(rating)}</span>
-            <button class="action secondary remove-chip" style="padding:4px 10px;" data-field="protein_preferences" data-item="${escapeHtml(name)}">Remove</button>
-          </div>
-        </div>`;
-      }).join('')
-    : '<p class="empty-state">No protein preferences yet — add one to guide suggestions.</p>';
-}
-
-function chip(field, label) {
-  return `<span class="chip">${escapeHtml(label)} <button class="remove-chip" data-field="${escapeHtml(field)}" data-item="${escapeHtml(label)}">&times;</button></span>`;
-}
-
-// Which store panels are currently expanded — kept outside `memory` so it
-// survives a re-render (e.g. after adding a typical item) instead of
-// collapsing everything back shut every time.
-const expandedStores = new Set();
-
-function storeTypicalChip(store, label) {
-  return `<span class="chip">${escapeHtml(label)} <button class="remove-store-item" data-store="${escapeHtml(store)}" data-item="${escapeHtml(label)}">&times;</button></span>`;
-}
-
-function storeBlock(store) {
-  const items = (memory.store_typical_items || {})[store] || [];
-  const expanded = expandedStores.has(store);
-  return `
-    <div class="store-block">
-      <div class="store-header">
-        <button class="store-toggle" data-store="${escapeHtml(store)}">${expanded ? '&#9662;' : '&#9656;'} ${escapeHtml(store)}${items.length ? ' (' + items.length + ')' : ''}</button>
-        <span style="flex:1;"></span>
-        <button class="store-remove remove-chip" data-field="usual_stores" data-item="${escapeHtml(store)}" title="Remove store">&times;</button>
-      </div>
-      ${expanded ? `
-        <div class="store-items-panel">
-          <p class="hint">What you usually get here — suggested (for you to confirm) in the grocery list's By Store view.</p>
-          <div class="chip-row">${items.length ? items.map(i => storeTypicalChip(store, i)).join('') : '<p class="empty-state">Nothing saved here yet — add what you usually get.</p>'}</div>
-          <div class="add-row">
-            <input type="text" class="new-store-item" data-store="${escapeHtml(store)}" placeholder="Add an item..." />
-            <button class="action add-store-item-btn" data-store="${escapeHtml(store)}">Add</button>
-          </div>
-        </div>
-      ` : ''}
-    </div>`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-// Warm confirm-before-remove step (Phase 6 §4.1/§4.3 — none existed before;
-// every destructive action in this view routes through here rather than
-// deleting immediately on click) — "Remove this? You can always tell me
-// again." with a Cancel/Remove choice, not a native confirm() dialog.
-let pendingConfirmAction = null;
-function openConfirm(action) {
-  pendingConfirmAction = action;
-  document.getElementById('confirm-overlay').classList.add('visible');
-}
-function closeConfirm() {
-  pendingConfirmAction = null;
-  document.getElementById('confirm-overlay').classList.remove('visible');
-}
-document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
-document.getElementById('confirm-remove').addEventListener('click', () => {
-  const action = pendingConfirmAction;
-  closeConfirm();
-  if (action) action();
-});
-document.getElementById('confirm-overlay').addEventListener('click', (e) => {
-  if (e.target.id === 'confirm-overlay') closeConfirm();
-});
-
-// Event delegation for all remove buttons rendered above — avoids ever
-// embedding user-entered text inside an inline onclick attribute, which
-// breaks (or worse, injects) if the text contains quote characters.
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.remove-chip');
+document.getElementById('wwk-tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.wwk-tab');
   if (!btn) return;
-  openConfirm(() => removeItem(btn.dataset.field, btn.dataset.item));
-});
-
-// Dragging a protein's rating slider edits it in place, no need to
-// remove and re-add. Saves on 'change' (release), not every 'input'
-// tick, so it's not firing a save per pixel of drag.
-document.addEventListener('change', (e) => {
-  const sel = e.target.closest('.protein-edit');
-  if (!sel) return;
-  const updated = { ...(memory.protein_preferences || {}) };
-  updated[sel.dataset.name] = Number(sel.value);
-  editField('protein_preferences', updated);
-});
-
-// Expand/collapse a store's typical-items panel.
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.store-toggle');
-  if (!btn) return;
-  const store = btn.dataset.store;
-  if (expandedStores.has(store)) expandedStores.delete(store);
-  else expandedStores.add(store);
+  activeTab = btn.getAttribute('data-tab');
+  openEditorId = null;
+  document.querySelectorAll('.wwk-tab').forEach(t => t.classList.toggle('active', t === btn));
   render();
 });
 
-// Remove a single typical item from a store's list.
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.remove-store-item');
-  if (!btn) return;
-  openConfirm(() => removeStoreItem(btn.dataset.store, btn.dataset.item));
-});
+async function render() {
+  if (activeTab === 'stores') return renderStoresTab();
+  return renderFactsTab(activeTab);
+}
 
-// Add a typical item to a store's list — click the Add button or press Enter.
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.add-store-item-btn');
-  if (!btn) return;
-  addStoreItem(btn.dataset.store);
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  const input = e.target.closest('.new-store-item');
-  if (!input) return;
-  addStoreItem(input.dataset.store);
-});
-
-async function addStoreItem(store) {
-  const input = document.querySelector(`.new-store-item[data-store="${CSS.escape(store)}"]`);
-  const val = (input && input.value.trim()) || '';
-  if (!val) return;
+async function renderFactsTab(category) {
+  const content = document.getElementById('wwk-content');
   try {
-    const res = await fetch('/api/memory/store-items/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ store, item: val }),
+    const res = await fetch('/api/facts?category=' + category);
+    const facts = res.ok ? (await res.json()).facts || [] : [];
+    const meta = TAB_META[category];
+    let html = `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
+    facts.forEach(f => {
+      if (openEditorId === f.id) {
+        html += `<div class="wwk-editor">
+          <textarea id="wwk-editor-textarea" autofocus>${escapeHtml(f.text)}</textarea>
+          <div class="wwk-editor-actions">
+            <button class="wwk-save-btn" data-save-fact="${f.id}">Save</button>
+            <button class="wwk-cancel-btn" data-cancel-fact="${f.id}">Cancel</button>
+            <button class="wwk-delete-btn" data-delete-fact="${f.id}">Delete</button>
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="wwk-fact-row" data-open-fact="${f.id}">
+          <span class="wwk-fact-text">${escapeHtml(f.text)}</span>
+          <span class="wwk-fact-edit">Edit</span>
+        </div>`;
+      }
     });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to save');
-    memory = await res.json();
-    expandedStores.add(store);
-    render();
-    setStatus('✓ Saved');
-  } catch (e) {
-    setStatus(e.message || 'Something went wrong — try again', true);
-  }
-}
-
-async function removeStoreItem(store, item) {
-  try {
-    const res = await fetch('/api/memory/store-items/remove', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ store, item }),
-    });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to remove');
-    memory = await res.json();
-    expandedStores.add(store);
-    render();
-    setStatus('✓ Removed');
-  } catch (e) {
-    setStatus(e.message || 'Something went wrong — try again', true);
-  }
-}
-
-async function removeItem(field, item) {
-  try {
-    const res = await fetch('/api/memory/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ field, item }),
-    });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to remove');
-    memory = await res.json();
-    render();
-    setStatus('✓ Removed');
-  } catch (e) {
-    setStatus(e.message || 'Something went wrong — try again', true);
-  }
-}
-
-async function editField(field, value) {
-  try {
-    const res = await fetch('/api/memory/edit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ field, value }),
-    });
-    if (!res.ok) throw new Error((await res.json()).detail || 'Failed to save');
-    memory = await res.json();
-    render();
-    setStatus('✓ Saved');
-  } catch (e) {
-    setStatus(e.message || 'Something went wrong — try again', true);
-  }
-}
-
-function addDislike() {
-  const input = document.getElementById('new-dislike');
-  const val = input.value.trim();
-  if (!val) return;
-  const updated = [...new Set([...(memory.dislikes || []), val])];
-  editField('dislikes', updated);
-  input.value = '';
-}
-
-function addUsualStore() {
-  const input = document.getElementById('new-usual-store');
-  const val = input.value.trim();
-  if (!val) return;
-  const updated = [...new Set([...(memory.usual_stores || []), val])];
-  editField('usual_stores', updated);
-  input.value = '';
-}
-
-function addCuisine() {
-  const input = document.getElementById('new-cuisine');
-  const val = input.value.trim();
-  if (!val) return;
-  const updated = [...new Set([...(memory.cuisine_preferences || []), val])];
-  editField('cuisine_preferences', updated);
-  input.value = '';
-}
-
-function addProtein() {
-  const nameInput = document.getElementById('new-protein-name');
-  const valueInput = document.getElementById('new-protein-value');
-  const name = nameInput.value.trim();
-  if (!name) return;
-  const updated = { ...(memory.protein_preferences || {}) };
-  updated[name] = Number(valueInput.value);
-  editField('protein_preferences', updated);
-  nameInput.value = '';
-  valueInput.value = 3;
-  updateProteinSliderLabel(valueInput);
-}
-
-function saveCookingTime() {
-  editField('cooking_time_preference', document.getElementById('cooking-time').value.trim());
-}
-function clearCookingTime() {
-  removeItem('cooking_time_preference', null);
-  document.getElementById('cooking-time').value = '';
-}
-function saveNovelty() {
-  editField('novelty_preference', document.getElementById('novelty-preference').value);
-}
-function saveNotes() {
-  editField('notes', document.getElementById('notes').value.trim());
-}
-function clearNotes() {
-  removeItem('notes', null);
-  document.getElementById('notes').value = '';
-}
-function saveGoals() {
-  editField('goals', document.getElementById('goals').value.trim());
-}
-
-function saveEatingStyle() {
-  editField('eating_style', document.getElementById('eating-style').value.trim());
-}
-function clearEatingStyle() {
-  removeItem('eating_style', null);
-  document.getElementById('eating-style').value = '';
-}
-
-// Dinners-per-week stepper — mirrors the onboarding flow's Q7 stepper and
-// the Cooker view's serving-size stepper. Local value only changes on
-// +/- taps; the actual save is an explicit button press like every other
-// field on this page.
-let dinnersPerWeek = 7;
-document.getElementById('dinners-minus').addEventListener('click', () => {
-  dinnersPerWeek = Math.max(1, dinnersPerWeek - 1);
-  document.getElementById('dinners-value').textContent = dinnersPerWeek;
-});
-document.getElementById('dinners-plus').addEventListener('click', () => {
-  dinnersPerWeek = Math.min(7, dinnersPerWeek + 1);
-  document.getElementById('dinners-value').textContent = dinnersPerWeek;
-});
-function saveDinnersPerWeek() {
-  editField('dinners_per_week', dinnersPerWeek);
-}
-
-let breakfastsPerWeek = 7;
-document.getElementById('breakfasts-minus').addEventListener('click', () => {
-  breakfastsPerWeek = Math.max(1, breakfastsPerWeek - 1);
-  document.getElementById('breakfasts-value').textContent = breakfastsPerWeek;
-});
-document.getElementById('breakfasts-plus').addEventListener('click', () => {
-  breakfastsPerWeek = Math.min(7, breakfastsPerWeek + 1);
-  document.getElementById('breakfasts-value').textContent = breakfastsPerWeek;
-});
-function saveBreakfastsPerWeek() {
-  editField('breakfasts_per_week', breakfastsPerWeek);
-}
-
-let lunchesPerWeek = 7;
-document.getElementById('lunches-minus').addEventListener('click', () => {
-  lunchesPerWeek = Math.max(1, lunchesPerWeek - 1);
-  document.getElementById('lunches-value').textContent = lunchesPerWeek;
-});
-document.getElementById('lunches-plus').addEventListener('click', () => {
-  lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
-  document.getElementById('lunches-value').textContent = lunchesPerWeek;
-});
-function saveLunchesPerWeek() {
-  editField('lunches_per_week', lunchesPerWeek);
-}
-
-// Resurfacing the invite-at-reveal offer (Phase onboarding-redesign §8):
-// skipping it during the first-plan reveal shouldn't mean losing it for
-// good, so every household member gets a persistent "Get their link"
-// button here that fetches (or creates, on first use) their self-service
-// share link and copies it to the clipboard.
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('.invite-link-btn');
-  if (!btn) return;
-  const name = btn.dataset.invite;
-  const original = btn.textContent;
-  try {
-    const res = await fetch('/api/members/' + encodeURIComponent(name) + '/share-link');
-    if (!res.ok) throw new Error('Could not get link');
-    const data = await res.json();
-    await navigator.clipboard.writeText(data.link).catch(() => {});
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2200);
+    if (openEditorId === 'new') {
+      html += `<div class="wwk-editor">
+        <textarea id="wwk-editor-textarea" placeholder="What should I know?" autofocus></textarea>
+        <div class="wwk-editor-actions">
+          <button class="wwk-save-btn" data-save-fact="new">Save</button>
+          <button class="wwk-cancel-btn" data-cancel-fact="new">Cancel</button>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="wwk-add-row" id="wwk-add-row">+ Add something to this list</div>`;
+    }
+    html += `</div>`;
+    html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
+    content.innerHTML = html;
+    wireFactsActions(category);
   } catch (err) {
-    btn.textContent = "Couldn't get link";
-    setTimeout(() => { btn.textContent = original; }, 2200);
+    content.innerHTML = '<p style="text-align:center;color:#8A7A82;font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
+}
+
+function wireFactsActions(category) {
+  const content = document.getElementById('wwk-content');
+  content.querySelectorAll('[data-open-fact]').forEach(row => {
+    row.addEventListener('click', () => { openEditorId = parseInt(row.getAttribute('data-open-fact'), 10); render(); });
+  });
+  const addRow = document.getElementById('wwk-add-row');
+  if (addRow) addRow.addEventListener('click', () => { openEditorId = 'new'; render(); });
+  content.querySelectorAll('[data-save-fact]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.getAttribute('data-save-fact');
+      const text = document.getElementById('wwk-editor-textarea').value.trim();
+      if (!text) { openEditorId = null; render(); return; } // abandoned empty fact never persists
+      btn.disabled = true;
+      try {
+        if (key === 'new') await fetch('/api/facts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category, text }) });
+        else await fetch(`/api/facts/${key}/update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+        openEditorId = null;
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-cancel-fact]').forEach(btn => {
+    btn.addEventListener('click', () => { openEditorId = null; render(); }); // switching tabs/cancelling drops any empty draft — nothing was saved yet
+  });
+  content.querySelectorAll('[data-delete-fact]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-delete-fact');
+      btn.disabled = true;
+      try { await fetch(`/api/facts/${id}/delete`, { method: 'POST' }); openEditorId = null; render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't delete that — try again."); }
+    });
+  });
+  const textarea = document.getElementById('wwk-editor-textarea');
+  if (textarea) {
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); content.querySelector('[data-save-fact]').click(); }
+    });
+  }
+}
+
+async function renderStoresTab() {
+  const content = document.getElementById('wwk-content');
+  try {
+    const res = await fetch('/api/memory');
+    const memory = res.ok ? await res.json() : { usual_stores: [], store_typical_items: {} };
+    memoryCache = memory;
+    const meta = TAB_META.stores;
+    const stores = memory.usual_stores || [];
+    const typical = memory.store_typical_items || {};
+    let html = `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
+    if (!stores.length) {
+      html += `<p style="font-family:var(--font-body);font-size:0.9rem;color:#8A7A82;padding:10px 0">No usual stores saved yet — mention one in chat (e.g. "we usually shop at Trader Joe's") and it'll show up here.</p>`;
+    }
+    for (const store of stores) {
+      const items = typical[store] || [];
+      html += `<div class="wwk-store-block">
+        <div class="wwk-store-header"><span class="wwk-store-name">${escapeHtml(store)}</span><span class="wwk-store-count">${items.length} item${items.length === 1 ? '' : 's'}</span></div>
+        <div class="wwk-chips" data-store-chips="${escapeHtml(store)}">
+          ${items.map(it => `<span class="wwk-chip" data-move-item="${escapeHtml(it)}" data-from-store="${escapeHtml(store)}"><span>${escapeHtml(it)}</span><span class="wwk-chip-x" data-forget-item="${escapeHtml(it)}" data-forget-store="${escapeHtml(store)}">&times;</span></span>`).join('')}
+          <button class="wwk-chip-add" data-add-chip-store="${escapeHtml(store)}">+ Add</button>
+        </div>
+      </div>`;
+    }
+    html += `<div class="wwk-import-row" id="wwk-open-import"><div><p class="wwk-import-title">Import a whole list</p><p class="wwk-import-sub">Paste your notes app, or photograph a receipt</p></div><span class="wwk-import-open">Open</span></div>`;
+    html += `</div>`;
+    html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
+    content.innerHTML = html;
+    wireStoresActions(stores);
+  } catch (err) {
+    content.innerHTML = '<p style="text-align:center;color:#8A7A82;font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
+  }
+}
+
+function wireStoresActions(stores) {
+  const content = document.getElementById('wwk-content');
+  // Tap a chip label to move it to the other store (only meaningful with exactly 2 usual stores, per the design's toggle framing)
+  content.querySelectorAll('[data-move-item]').forEach(chip => {
+    chip.querySelector('span').addEventListener('click', async (e) => {
+      const item = chip.getAttribute('data-move-item');
+      const fromStore = chip.getAttribute('data-from-store');
+      const otherStore = stores.find(s => s !== fromStore);
+      if (!otherStore) return;
+      try {
+        await fetch('/api/memory/store-items/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store: fromStore, item }) });
+        await fetch('/api/memory/store-items/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store: otherStore, item }) });
+        showToast(`${item} → ${otherStore}`);
+        renderStoresTab();
+      } catch (err) { alert("Couldn't move that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-forget-item]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const item = btn.getAttribute('data-forget-item');
+      const store = btn.getAttribute('data-forget-store');
+      try { await fetch('/api/memory/store-items/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store, item }) }); renderStoresTab(); }
+      catch (err) { alert("Couldn't remove that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-add-chip-store]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const store = btn.getAttribute('data-add-chip-store');
+      const wrap = document.querySelector(`[data-store-chips="${CSS.escape(store)}"]`);
+      const row = document.createElement('div');
+      row.className = 'wwk-chip-input-row';
+      row.innerHTML = `<input type="text" class="wwk-chip-input" placeholder="e.g. Rotisserie chicken" /><button class="wwk-chip-add" data-confirm-add="${escapeHtml(store)}">Add</button>`;
+      btn.replaceWith(row);
+      const input = row.querySelector('input');
+      input.focus();
+      async function commit() {
+        const val = input.value.trim();
+        if (val) {
+          try { await fetch('/api/memory/store-items/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store, item: val }) }); } catch (err) { /* ignore, re-render will just not show it */ }
+        }
+        renderStoresTab();
+      }
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+      row.querySelector('[data-confirm-add]').addEventListener('click', commit);
+    });
+  });
+  const openImport = document.getElementById('wwk-open-import');
+  if (openImport) openImport.addEventListener('click', () => openImportSheet(stores));
+}
+
+function openImportSheet(stores) {
+  const picker = document.getElementById('wwk-import-store-picker');
+  picker.innerHTML = stores.map((s, i) => `<button data-store="${escapeHtml(s)}" class="${i === 0 ? 'selected' : ''}">${escapeHtml(s)}</button>`).join('');
+  picker.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    picker.querySelectorAll('button').forEach(x => x.classList.remove('selected'));
+    b.classList.add('selected');
+  }));
+  document.getElementById('wwk-import-textarea').value = '';
+  document.getElementById('wwk-scrim').classList.add('open');
+  document.getElementById('wwk-import-sheet').classList.add('open');
+}
+function closeImportSheet() {
+  document.getElementById('wwk-scrim').classList.remove('open');
+  document.getElementById('wwk-import-sheet').classList.remove('open');
+}
+document.getElementById('wwk-scrim').addEventListener('click', closeImportSheet);
+document.getElementById('wwk-import-cancel').addEventListener('click', closeImportSheet);
+document.getElementById('wwk-import-save').addEventListener('click', async () => {
+  const picker = document.getElementById('wwk-import-store-picker');
+  const selected = picker.querySelector('button.selected');
+  const store = selected ? selected.getAttribute('data-store') : null;
+  if (!store) { closeImportSheet(); return; }
+  const raw = document.getElementById('wwk-import-textarea').value;
+  // Split on newlines and commas, strip leading bullets/numbering, trim, drop
+  // entries <=1 char, drop case-insensitive duplicates already on that store's list.
+  const existing = new Set(((memoryCache && memoryCache.store_typical_items && memoryCache.store_typical_items[store]) || []).map(s => s.trim().toLowerCase()));
+  const parts = raw.split(/[\n,]/).map(s => s.replace(/^[-•\s\d.]+/, '').trim()).filter(s => s.length > 1);
+  const toAdd = [];
+  const seen = new Set();
+  for (const p of parts) {
+    const key = p.toLowerCase();
+    if (existing.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    toAdd.push(p);
+  }
+  const btn = document.getElementById('wwk-import-save');
+  btn.disabled = true;
+  try {
+    for (const item of toAdd) {
+      await fetch('/api/memory/store-items/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ store, item }) });
+    }
+    btn.disabled = false;
+    closeImportSheet();
+    showToast(`Added ${toAdd.length} item${toAdd.length === 1 ? '' : 's'} to ${store}`);
+    renderStoresTab();
+  } catch (err) { btn.disabled = false; alert("Couldn't import that — try again."); }
 });
 
-loadMemory();
+render();
 </script>
 </body>
 </html>

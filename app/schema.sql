@@ -410,6 +410,47 @@ CREATE TABLE IF NOT EXISTS shopping_trips (
     finished_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- design_handoff_home_manager Phase 4: freeform household facts for the
+-- "What we know" screen's People/Taste/Rhythm tabs (option 5d) — add any
+-- note, edit it inline, delete it. Deliberately a SEPARATE layer from the
+-- existing structured preference fields (members.dietary_restrictions_json,
+-- meal_preferences' cuisine/protein/dislikes/cooking_time/etc.), which
+-- already drive meal-plan generation and stay exactly as they were,
+-- editable via chat as before. Forcing those disparate fixed-shape fields
+-- (a dict, a few single-value settings, per-member lists) into one uniform
+-- add/edit/delete freeform list would have meant either a risky rewrite of
+-- generation logic or an awkward half-mapping — see README's "Kitchen —
+-- What we know" Phase 4 notes. The Stores tab does NOT use this table; it
+-- already had a natural fit in usual_stores_json/store_typical_items_json
+-- (meal_preferences) and keeps using those.
+CREATE TABLE IF NOT EXISTS facts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    category TEXT NOT NULL, -- 'people' | 'taste' | 'rhythm'
+    text TEXT NOT NULL,
+    hard INTEGER NOT NULL DEFAULT 0, -- true for allergy-type facts, per DATA_AND_API.md's Fact.hard
+    author TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- design_handoff_home_manager Phase 5 (NOTIFICATIONS.md): this app has no
+-- push infrastructure (no service-worker push handler, no VAPID keys, no
+-- background scheduler process on the Railway deployment) — see README's
+-- Phase 5 notes for why real OS-level push for the 4 notification types
+-- was descoped to a live, in-app "what needs your attention" feed instead.
+-- This table is just what that live feed needs to not re-nag: a
+-- dismissed key stays dismissed until its underlying condition changes
+-- (a new dinner gap gets a new date-keyed row, so dismissing today's
+-- doesn't hide tomorrow's).
+CREATE TABLE IF NOT EXISTS notification_dismissals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    key TEXT NOT NULL,
+    dismissed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, key)
+);
+
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
 -- list — this is "what we currently have", captured primarily via chat
 -- mention ("picked up a rotisserie chicken", "used the last of the

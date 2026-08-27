@@ -747,6 +747,133 @@ def remove_inventory_view_item(item_id: int):
     return result
 
 
+class InventoryQuantityStepRequest(BaseModel):
+    delta: float = 1
+
+
+class InventoryLocationRequest(BaseModel):
+    location: str
+
+
+class InventoryExpirationStepRequest(BaseModel):
+    delta_days: int = 1
+
+
+@app.post("/api/inventory/{item_id}/quantity")
+def step_inventory_quantity_view(item_id: int, req: InventoryQuantityStepRequest):
+    """Nudge an inventory item's quantity — the item detail sheet's +/- stepper (design_handoff_home_manager §6)."""
+    try:
+        result = tools.step_inventory_quantity(item_id, req.delta)
+    except Exception as e:
+        logger.exception("Inventory quantity step failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/inventory/{item_id}/location")
+def set_inventory_location_view(item_id: int, req: InventoryLocationRequest):
+    """Move an inventory item to a different storage location — the item detail sheet's location picker (design_handoff_home_manager §6)."""
+    try:
+        result = tools.set_inventory_location(item_id, req.location)
+    except Exception as e:
+        logger.exception("Inventory location change failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/inventory/{item_id}/expiration")
+def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepRequest):
+    """Shift an inventory item's best-before date by one day per tap (design_handoff_home_manager §6)."""
+    try:
+        result = tools.step_inventory_expiration(item_id, req.delta_days)
+    except Exception as e:
+        logger.exception("Inventory expiration step failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+class FactAddRequest(BaseModel):
+    category: str
+    text: str
+    hard: bool = False
+    author: str = ""
+
+
+class FactUpdateRequest(BaseModel):
+    text: str | None = None
+    hard: bool | None = None
+
+
+@app.get("/api/facts")
+def get_facts_view(category: str | None = None):
+    """Household facts for the What We Know screen (design_handoff_home_manager §7), optionally filtered to one tab's category."""
+    try:
+        result = tools.get_facts(category=category)
+    except Exception as e:
+        logger.exception("Facts lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"facts": result}
+
+
+@app.post("/api/facts/add")
+def add_fact_view(req: FactAddRequest):
+    """Add one freeform fact — What We Know's '+ Add something to this list'."""
+    try:
+        result = tools.add_fact(req.category, req.text, hard=req.hard, author=req.author)
+    except Exception as e:
+        logger.exception("Fact add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/facts/{fact_id}/update")
+def update_fact_view(fact_id: int, req: FactUpdateRequest):
+    """Edit a fact's text/hard flag in place — What We Know's inline editor."""
+    try:
+        result = tools.update_fact(fact_id, text=req.text, hard=req.hard)
+    except Exception as e:
+        logger.exception("Fact update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/facts/{fact_id}/delete")
+def delete_fact_view(fact_id: int):
+    """Delete a fact outright."""
+    try:
+        result = tools.delete_fact(fact_id)
+    except Exception as e:
+        logger.exception("Fact delete failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+class NotificationDismissRequest(BaseModel):
+    key: str
+
+
+@app.get("/api/notifications")
+def get_notifications_view():
+    """Live 'what needs your attention' feed — powers the shell's notification bell (design_handoff_home_manager Phase 5 / NOTIFICATIONS.md)."""
+    try:
+        result = tools.get_active_notifications()
+    except Exception as e:
+        logger.exception("Notifications lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"notifications": result}
+
+
+@app.post("/api/notifications/dismiss")
+def dismiss_notification_view(req: NotificationDismissRequest):
+    """Dismiss one notification by key so it stops showing until its underlying condition changes."""
+    try:
+        result = tools.dismiss_notification(req.key)
+    except Exception as e:
+        logger.exception("Notification dismiss failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.get("/api/grocery-list")
 def get_grocery_list_view(status: str = "needed"):
     """

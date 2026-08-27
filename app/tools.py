@@ -13,7 +13,7 @@ import json
 import os
 import re
 import secrets
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from .db import get_conn
 
 HOUSEHOLD_ID = 1
@@ -3016,6 +3016,255 @@ def close_shopping_trip(store: str, item_count: int = 0) -> dict:
     return {"store": store, "item_count": item_count}
 
 
+# ---------- What we know: freeform facts (Phase 4, option 5d) ----------
+# See schema.sql's comment on the `facts` table for why this is a separate
+# layer from the structured meal_preferences/members fields.
+
+def get_facts(category: str | None = None) -> list[dict]:
+    """List household facts for the What We Know screen, optionally filtered to one category (people/taste/rhythm)."""
+    conn = get_conn()
+    if category:
+        rows = conn.execute(
+            "SELECT id, category, text, hard, author, updated_at FROM facts WHERE household_id = ? AND category = ? ORDER BY id ASC",
+            (HOUSEHOLD_ID, category),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT id, category, text, hard, author, updated_at FROM facts WHERE household_id = ? ORDER BY category, id ASC",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> dict:
+    """Add one freeform fact to a What We Know tab. An empty/whitespace-only text is refused — the UI's own rule is that an abandoned empty fact never persists."""
+    text = (text or "").strip()
+    if not text:
+        return {"added": False}
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",
+        (HOUSEHOLD_ID, category, text, 1 if hard else 0, author),
+    )
+    conn.commit()
+    fact_id = cur.lastrowid
+    conn.close()
+    return {"added": True, "id": fact_id, "category": category, "text": text, "hard": hard}
+
+
+def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None) -> dict:
+    """Edit an existing fact's text and/or hard flag in place."""
+    conn = get_conn()
+    row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, HOUSEHOLD_ID)).fetchone()
+    if not row:
+        conn.close()
+        return {"id": fact_id, "found": False}
+    new_text = text.strip() if text is not None else row["text"]
+    new_hard = (1 if hard else 0) if hard is not None else row["hard"]
+    conn.execute(
+        "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') WHERE id = ?",
+        (new_text, new_hard, fact_id),
+    )
+    conn.commit()
+    conn.close()
+    return {"id": fact_id, "found": True, "text": new_text, "hard": bool(new_hard)}
+
+
+def delete_fact(fact_id: int) -> dict:
+    """Delete one fact outright."""
+    conn = get_conn()
+    conn.execute("DELETE FROM facts WHERE id = ? AND household_id = ?", (fact_id, HOUSEHOLD_ID))
+    conn.commit()
+    conn.close()
+    return {"id": fact_id, "deleted": True}
+
+
+# ---------- Inventory item detail sheet (Phase 4, option 5a) ----------
+
+_LEADING_NUM_RE = re.compile(r"^\s*([\d.]+)\s*(.*)$")
+
+
+def _step_quantity_text(quantity: str, delta: float) -> str:
+    """
+    Nudge a freeform inventory quantity string by delta, e.g. "3 gal" -1 ->
+    "2 gal". If there's no leading number to step (a bare descriptor like
+    "some" or "a bag"), a '+' tap starts a count at 1 and keeps the
+    descriptor as a suffix ("a bag" -> "1 a bag" is odd but rare — most
+    inventory rows already carry a numeric quantity from the grocery
+    checkoff or chat capture that created them); a '-' tap on a
+    non-numeric quantity is a no-op. Floors at 0, never goes negative.
+    """
+    quantity = (quantity or "").strip()
+    m = _LEADING_NUM_RE.match(quantity)
+    if m and m.group(1):
+        try:
+            amount = float(m.group(1))
+        except ValueError:
+            amount = 0.0
+        suffix = m.group(2).strip()
+    else:
+        if delta <= 0:
+            return quantity  # nothing numeric to decrement
+        amount = 0.0
+        suffix = quantity
+    amount = max(0.0, amount + delta)
+    amount_str = f"{amount:g}"
+    return f"{amount_str} {suffix}".strip() if suffix else amount_str
+
+
+def step_inventory_quantity(item_id: int, delta: float) -> dict:
+    """Nudge one inventory item's quantity by delta (e.g. +1/-1 from the item detail sheet's stepper)."""
+    conn = get_conn()
+    row = conn.execute("SELECT quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)).fetchone()
+    if not row:
+        conn.close()
+        return {"item_id": item_id, "found": False}
+    new_qty = _step_quantity_text(row["quantity"], delta)
+    conn.execute("UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?", (new_qty, item_id))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "found": True, "quantity": new_qty}
+
+
+def set_inventory_location(item_id: int, location: str) -> dict:
+    """Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately."""
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, HOUSEHOLD_ID))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "location": location}
+
+
+def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
+    """Shift one inventory item's best-before date by delta_days (one tap = one day). Starts from today if the item has no date set yet."""
+    conn = get_conn()
+    row = conn.execute("SELECT expiration_date FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)).fetchone()
+    if not row:
+        conn.close()
+        return {"item_id": item_id, "found": False}
+    base = row["expiration_date"]
+    try:
+        base_date = date.fromisoformat(base) if base else date.today()
+    except ValueError:
+        base_date = date.today()
+    new_date = (base_date + timedelta(days=delta_days)).isoformat()
+    conn.execute("UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?", (new_date, item_id))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "found": True, "expiration_date": new_date}
+
+
+# ---------- Notifications (Phase 5, NOTIFICATIONS.md) ----------
+# Live, in-app "what needs your attention" feed — see schema.sql's comment
+# on notification_dismissals for why this isn't real scheduled push.
+# Covers 3 of the 4 spec'd types (dinner nudge, expiring soon, weekly plan
+# ready); the 4th ("the other adult changed something") is not computed
+# here — see README's Phase 5 notes for why.
+
+def _dismissed_keys(conn) -> set:
+    rows = conn.execute("SELECT key FROM notification_dismissals WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchall()
+    return {r["key"] for r in rows}
+
+
+def get_active_notifications() -> list[dict]:
+    """
+    Compute the household's current notifications live (not scheduled —
+    see schema.sql's notification_dismissals comment). Each has a stable
+    `key` so dismissing one doesn't hide a future, different occurrence of
+    the same type (e.g. dismissing today's dinner-gap nudge doesn't
+    suppress tomorrow's). Powers the shell's notification bell.
+    """
+    conn = get_conn()
+    dismissed = _dismissed_keys(conn)
+    conn.close()
+    out = []
+
+    # 1. Dinner decision nudge (NOTIFICATIONS.md #1) — reuses the same
+    # dinner-gap detection the Today needs-you band already uses, so the
+    # notification and the band never disagree about what's open.
+    for item in get_needs_you_items():
+        if item.get("type") != "dinner_decision":
+            continue
+        key = f"dinner_gap:{item['date']}"
+        if key in dismissed:
+            continue
+        day_label = "Tonight" if item["date"] == date.today().isoformat() else "tomorrow"
+        first_option = (item.get("options") or [{}])[0].get("name") if item.get("options") else None
+        out.append({
+            "key": key, "type": "dinner_decision",
+            "title": item["title"],
+            "body": f"The quickest option is {first_option}." if first_option else "Nothing planned yet — take a look at tonight's options.",
+            "tab": "today", "action_label": "Show options",
+        })
+        break
+
+    # 2. Expiring soon (NOTIFICATIONS.md #2) — 2-day window per spec (the
+    # Kitchen/Inventory badge itself uses 4 days; this notification is
+    # deliberately tighter, matching the spec's own trigger).
+    expiring = get_expiring_soon(days=2)
+    if expiring:
+        today_iso = date.today().isoformat()
+        key = f"expiring:{today_iso}"
+        if key not in dismissed:
+            if len(expiring) == 1:
+                it = expiring[0]
+                title = f"{it['item']} needs using soon"
+                body = f"{it['quantity']}. Want it in a dinner this week?" if it["quantity"] else "Want it in a dinner this week?"
+            else:
+                names = ", ".join(e["item"] for e in expiring[:3])
+                title = f"{len(expiring)} things to use this week"
+                body = f"{names} are all near their date."
+            out.append({
+                "key": key, "type": "expiring_soon", "title": title, "body": body,
+                "href": "/inventory", "action_label": "Plan a meal with it",
+            })
+
+    # 3. Weekly plan ready (NOTIFICATIONS.md #3) — a plan for a week that
+    # hasn't started yet, generated recently, with at least 2 dinners (the
+    # spec's own "don't notify for an empty plan" suppression rule).
+    conn = get_conn()
+    plan_row = conn.execute(
+        "SELECT id, week_start_date, created_at FROM weekly_plans WHERE household_id = ? AND week_start_date > ? ORDER BY created_at DESC LIMIT 1",
+        (HOUSEHOLD_ID, date.today().isoformat()),
+    ).fetchone()
+    if plan_row:
+        created = plan_row["created_at"]
+        recent = False
+        try:
+            created_dt = datetime.fromisoformat(created.replace(" ", "T"))
+            recent = (datetime.utcnow() - created_dt) <= timedelta(hours=24)
+        except ValueError:
+            recent = False
+        if recent:
+            dinner_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ? AND slot = 'dinner'",
+                (plan_row["id"],),
+            ).fetchone()["n"]
+            key = f"weekly_plan:{plan_row['id']}"
+            if dinner_count >= 2 and key not in dismissed:
+                out.append({
+                    "key": key, "type": "weekly_plan_ready",
+                    "title": "Next week's plan is ready",
+                    "body": f"{dinner_count} dinners planned.",
+                    "tab": "week", "action_label": "Looks good",
+                })
+    conn.close()
+    return out
+
+
+def dismiss_notification(key: str) -> dict:
+    """Mark one notification key dismissed so it stops showing until its underlying condition changes (a new date/plan id)."""
+    conn = get_conn()
+    conn.execute(
+        "INSERT OR IGNORE INTO notification_dismissals (household_id, key) VALUES (?, ?)",
+        (HOUSEHOLD_ID, key),
+    )
+    conn.commit()
+    conn.close()
+    return {"key": key, "dismissed": True}
+
+
 def get_grocery_already_have_items() -> list[dict]:
     """
     Cross-reference the 'needed' grocery list against tracked inventory to
@@ -4656,7 +4905,7 @@ def get_inventory() -> list[dict]:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, item, quantity, source, expiration_date, category, location FROM inventory_items WHERE household_id = ? ORDER BY item",
+        "SELECT id, item, quantity, source, expiration_date, category, location, created_at FROM inventory_items WHERE household_id = ? ORDER BY item",
         (HOUSEHOLD_ID,),
     ).fetchall()
     conn.close()

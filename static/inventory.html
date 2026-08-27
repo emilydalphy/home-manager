@@ -4,698 +4,389 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Inventory — Home Manager</title>
-<link rel="manifest" href="/static/manifest.json" />
-<link rel="icon" href="/static/icons/icon-192.png" />
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#66304E" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Home Manager" />
 <style>
+  /* Inventory (design_handoff_home_manager §6, option 5a, approved). This
+     replaces the old pre-redesign page (section toggle, scan buttons,
+     plain rows) entirely — see README's Phase 4 notes for what that page
+     used to do and what happened to receipt/fridge/pantry scanning. */
   * { box-sizing: border-box; }
-  body {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 24px;
-  }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--midnight-violet); margin-bottom: 4px; }
-  p.subtitle { color: var(--text-muted); margin-top: 0; font-size: 0.9rem; }
-  p.subtitle a { color: var(--midnight-violet); font-weight: 700; text-decoration: none; }
-  p.subtitle a:hover { text-decoration: underline; }
-  h2.section-title { font-family: var(--font-heading); font-weight: 600; font-size: 1.05rem; margin: 20px 0 8px; color: var(--midnight-violet); text-transform: capitalize; }
-  h3.category-subheading { font-family: var(--font-body); font-weight: 700; font-size: 0.75rem; margin: 0; padding: 10px 0 4px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-  h3.category-subheading:first-child { padding-top: 4px; }
-  .card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 4px 16px;
-    margin-bottom: 10px;
-  }
-  .item-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--card-border);
-  }
-  .item-row:last-child { border-bottom: none; }
-  .item-info { flex: 1; min-width: 0; }
-  .item-name { font-family: var(--font-body); font-weight: 500; color: var(--text-body); margin: 0; }
-  .item-meta { color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0; }
-  .qty-input {
-    width: 90px;
-    min-height: 40px;
-    padding: 5px 8px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-family: var(--font-body);
-    font-size: 0.85rem;
-    background: #fff;
-    color: var(--text-body);
-  }
-  .cat-select {
-    width: 118px;
-    min-height: 40px;
-    padding: 5px 6px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    background: #fff;
-    color: var(--text-body);
-  }
-  .cat-select:disabled { opacity: 0.6; }
-  .loc-select {
-    width: 100px;
-    min-height: 40px;
-    padding: 5px 6px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    background: #fff;
-    color: var(--text-body);
-  }
-  .loc-select:disabled { opacity: 0.6; }
-  @media (max-width: 520px) {
-    .item-row { flex-wrap: wrap; }
-    .cat-select, .loc-select, .qty-input { flex: 1; min-width: 100px; }
-  }
-  .view-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
-  button.toggle-btn {
-    min-height: 44px;
-    padding: 6px 16px;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--midnight-violet);
-    background: transparent;
-    color: var(--midnight-violet);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  button.toggle-btn:hover { background: var(--violet-soft); }
-  button.toggle-btn.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
-  .duplicates-banner {
-    border-radius: var(--radius-card);
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-size: 0.88rem;
-    background: var(--violet-soft);
-    border: 1px solid var(--card-border);
-    color: var(--midnight-violet);
-  }
-  .duplicates-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 0.95rem; margin: 0 0 8px; color: inherit; }
-  .duplicates-banner ul { margin: 0; padding-left: 20px; }
-  .duplicates-banner li { margin-bottom: 5px; }
-  .duplicates-banner .tag { font-weight: 700; }
-  .duplicates-banner .locs { color: var(--text-muted); }
-  .icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.05rem;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 4px 7px;
-    border-radius: var(--radius-control);
-    color: var(--text-muted);
-  }
-  .icon-btn:hover { background: var(--violet-soft); }
-  .icon-btn.save { color: var(--vivid-leaf); }
-  .icon-btn.remove { color: var(--electric-coral); }
-  .empty { color: var(--text-muted); font-size: 0.9rem; font-style: italic; padding: 8px 0; }
-  .error { color: var(--electric-coral); font-size: 0.9rem; }
-  .add-card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 14px 16px;
-    margin-top: 20px;
-  }
-  .add-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 10px; color: var(--midnight-violet); }
-  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .add-row input[type=text] {
-    min-height: 44px;
-    padding: 8px 10px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    background: #fff;
-    color: var(--text-body);
-  }
-  #add-item { flex: 2; min-width: 140px; }
-  #add-qty { flex: 1; min-width: 90px; }
-  select#add-category {
-    flex: 1;
-    min-width: 120px;
-    min-height: 44px;
-    padding: 8px 10px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    background: #fff;
-    color: var(--text-body);
-  }
-  button.action {
-    min-height: 44px;
-    padding: 8px 18px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--midnight-violet);
-    background: transparent;
-    color: var(--midnight-violet);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  button.action:hover:not(:disabled) { background: var(--violet-soft); }
-  button.action:disabled { opacity: 0.6; cursor: default; }
-  /* The "Add" button is the single primary call-to-action on this screen —
-     Turmeric Gold fill, per brand rule of one CTA max per screen. */
-  #add-btn.action {
-    border: none;
-    background: var(--turmeric-gold);
-    color: var(--midnight-violet);
-  }
-  #add-btn.action:hover:not(:disabled) { background: var(--gold-hover); }
-  .expiring-banner {
-    border-radius: var(--radius-card);
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-size: 0.88rem;
-  }
-  .expiring-banner.has-expired { background: #FBE1D8; border: 1px solid var(--electric-coral); color: #8A2E15; }
-  .expiring-banner.soon-only { background: #FCEADF; border: 1px solid #F0A987; color: #8A3B1F; }
-  .expiring-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 0.95rem; margin: 0 0 8px; color: inherit; }
-  .expiring-banner ul { margin: 0; padding-left: 20px; }
-  .expiring-banner li { margin-bottom: 3px; }
-  .expiring-banner .tag { font-weight: 700; }
-  .scan-card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 14px 16px;
-    margin-bottom: 16px;
-  }
-  .scan-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
-  .scan-card p.hint { color: var(--text-muted); font-size: 0.82rem; margin: 0 0 10px; }
-  .scan-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  button.scan-btn {
-    min-height: 44px;
-    padding: 8px 16px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--midnight-violet);
-    background: transparent;
-    color: var(--midnight-violet);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.88rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  button.scan-btn:hover:not(:disabled) { background: var(--violet-soft); }
-  button.scan-btn:disabled { opacity: 0.6; cursor: default; }
-  .review-card {
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 14px 16px;
-    margin-bottom: 16px;
-  }
-  .review-card h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
-  .review-card p.hint { color: var(--text-muted); font-size: 0.82rem; margin: 0 0 10px; }
-  .review-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--card-border);
-    flex-wrap: wrap;
-  }
-  .review-row:last-child { border-bottom: none; }
-  .review-row input[type=checkbox] {
-    flex: 0 0 auto;
-    width: 20px;
-    height: 20px;
-    margin: 12px;
-    accent-color: var(--vivid-leaf);
-  }
-  .review-row input[type=text].review-name { flex: 2; min-width: 110px; min-height: 40px; padding: 6px 8px; border-radius: var(--radius-control); border: 1px solid var(--card-border); font-family: var(--font-body); font-size: 0.85rem; color: var(--text-body); }
-  .review-row input[type=text].review-qty { flex: 1; min-width: 80px; min-height: 40px; padding: 6px 8px; border-radius: var(--radius-control); border: 1px solid var(--card-border); font-family: var(--font-body); font-size: 0.85rem; color: var(--text-body); }
-  .review-row select.review-cat, .review-row select.review-loc { flex: 1; min-width: 100px; min-height: 40px; padding: 6px 6px; border-radius: var(--radius-control); border: 1px solid var(--card-border); font-family: var(--font-body); font-size: 0.8rem; background: #fff; color: var(--text-body); }
-  .low-conf-badge {
-    background: var(--electric-coral);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 0.7rem;
-    padding: 3px 9px;
-    flex: 0 0 auto;
-  }
-  .review-actions { display: flex; gap: 8px; margin-top: 12px; }
-  #review-cancel-btn.icon-btn { width: auto; padding: 4px 14px; font-size: 0.85rem; font-family: var(--font-body); font-weight: 700; color: var(--midnight-violet); }
+  body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, #EFE6D6); }
+  .inv-header { padding: 20px 20px 6px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .inv-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--midnight-violet); text-decoration: none; display: block; margin-bottom: 8px; }
+  .inv-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0; }
+  .inv-summary { font-family: var(--font-body); font-size: 0.84rem; color: #6B5A63; text-align: right; white-space: nowrap; padding-top: 8px; }
+
+  .inv-content { padding: 6px 20px 20px; }
+  .inv-card { background: #fff; border-radius: 18px; padding: 16px 18px 10px; margin-bottom: 16px; }
+  .inv-card-header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #F1E8DA; padding-bottom: 10px; margin-bottom: 4px; }
+  .inv-card-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.2rem; color: var(--midnight-violet); margin: 0; }
+  .inv-card-count { font-family: var(--font-body); font-size: 0.84rem; color: #9C8B93; }
+  .inv-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F1E8DA; cursor: pointer; }
+  .inv-row:last-child { border-bottom: none; }
+  .inv-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #C4B09C; }
+  .inv-dot.soon { background: #E8562A; }
+  .inv-dot.low { background: #F0B429; }
+  .inv-name { font-family: var(--font-body); font-size: 1rem; color: var(--ink); flex: 1; }
+  .inv-qty { font-family: var(--font-body); font-size: 0.92rem; color: #8A7A82; }
+  .inv-flag { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+  .inv-flag.soon { color: #C0431E; background: rgba(232,86,42,.12); }
+  .inv-flag.low { color: #B98A12; background: rgba(240,180,41,.14); }
+  .inv-empty { text-align: center; padding: 60px 20px; font-family: var(--font-body); color: #8A7A82; }
+
+  .inv-add-card { background: #fff; border-radius: 18px; padding: 16px 18px; }
+  .inv-add-title { font-family: var(--font-body); font-weight: 700; color: var(--ink); font-size: 0.9rem; margin: 0 0 10px; }
+  .inv-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .inv-add-row input, .inv-add-row select { font-family: var(--font-body); border: 1px solid rgba(0,0,0,.15); border-radius: 10px; padding: 10px 12px; font-size: 0.88rem; }
+  .inv-add-row input#inv-add-item { flex: 1; min-width: 120px; }
+  .inv-add-row button { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+
+  /* Item detail sheet */
+  #inv-scrim { position: fixed; inset: 0; background: rgba(58,31,46,.42); display: none; z-index: 998; animation: invFadeIn .18s ease; }
+  #inv-scrim.open { display: block; }
+  #inv-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: #fff; border-radius: 26px 26px 0 0; padding: 16px 20px 26px; z-index: 999; display: none; max-height: 88vh; overflow-y: auto; animation: invSheetUp .24s cubic-bezier(.2,.8,.2,1); }
+  #inv-sheet.open { display: block; }
+  @keyframes invFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes invSheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .inv-sheet-handle { width: 44px; height: 5px; border-radius: 999px; background: #E0D3BF; margin: 0 auto 14px; cursor: pointer; }
+  .inv-sheet-kicker { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #A8825C; margin: 0 0 4px; }
+  .inv-sheet-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink); margin: 0 0 18px; }
+  .inv-sheet-label { font-family: var(--font-body); font-size: 0.92rem; color: #6B5A63; margin: 0 0 8px; }
+  .inv-stepper-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 20px; }
+  .inv-stepper-btn { width: 44px; height: 44px; border-radius: 12px; background: #F6EFE1; border: none; font-family: var(--font-body); font-weight: 800; font-size: 20px; color: var(--midnight-violet); cursor: pointer; }
+  .inv-stepper-btn:hover { background: #EFE4CF; }
+  .inv-stepper-value { width: 120px; text-align: center; font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; }
+  .inv-location-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  .inv-location-btn { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid #E0D3BF; background: #fff; font-family: var(--font-body); font-weight: 400; color: var(--ink); cursor: pointer; text-align: center; }
+  .inv-location-btn.selected { background: #F4E7EF; border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
+  .inv-bb-card { background: #F6EFE1; border-radius: 14px; padding: 13px 13px 13px 17px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .inv-bb-left .inv-bb-title { font-family: var(--font-body); font-size: 0.96rem; color: var(--ink); margin: 0; }
+  .inv-bb-left .inv-bb-relative { font-family: var(--font-body); font-size: 0.84rem; margin: 2px 0 0; color: #3A1F2E; }
+  .inv-bb-left .inv-bb-relative.soon { color: #C0431E; }
+  .inv-bb-right { display: flex; align-items: center; gap: 8px; }
+  .inv-bb-btn { width: 38px; height: 38px; border-radius: 10px; background: #fff; border: none; font-weight: 800; font-family: var(--font-body); font-size: 18px; color: var(--midnight-violet); cursor: pointer; }
+  .inv-bb-date { width: 90px; text-align: center; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; }
+  .inv-sheet-actions { display: flex; flex-direction: column; gap: 10px; }
+  .inv-action-btn { padding: 15px; border-radius: 13px; font-weight: 700; font-size: 0.94rem; cursor: pointer; font-family: var(--font-body); border: none; }
+  .inv-action-add { background: var(--midnight-violet); color: var(--oat-cream); }
+  .inv-action-add.on-list { background: #F0F7EA; color: #4D8A33; cursor: default; }
+  .inv-action-used { background: transparent; border: 1.5px solid var(--midnight-violet); color: var(--midnight-violet); }
+
+  #inv-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #3A1F2E; color: #FFFDF6; font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  #inv-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 
-<h1>Inventory</h1>
-<p class="subtitle">What's actually on hand — pantry, fridge, and freezer. <a href="/">&larr; Back to chat</a></p>
-
-<div id="expiring-banner"></div>
-<div id="duplicates-banner"></div>
-
-<div class="scan-card">
-  <h2>Scan instead of typing</h2>
-  <p class="hint">Photograph a grocery receipt, your fridge, or your pantry, and review what's detected before it's added.</p>
-  <div class="scan-row">
-    <button class="scan-btn" id="scan-receipt-btn">📷 Scan a receipt</button>
-    <button class="scan-btn" id="scan-fridge-btn">📷 Scan fridge</button>
-    <button class="scan-btn" id="scan-pantry-btn">📷 Scan pantry</button>
+<div class="inv-header">
+  <div>
+    <a class="inv-back" href="/kitchen">&larr; Kitchen</a>
+    <h1 class="inv-title">Inventory</h1>
   </div>
-  <input type="file" id="scan-receipt-input" accept="image/*" capture="environment" style="display:none" />
-  <input type="file" id="scan-fridge-input" accept="image/*" capture="environment" style="display:none" />
-  <input type="file" id="scan-pantry-input" accept="image/*" capture="environment" style="display:none" />
+  <p class="inv-summary" id="inv-summary">Loading…</p>
 </div>
 
-<div id="review-container"></div>
+<div class="inv-content" id="inv-content"><p class="inv-empty">Loading…</p></div>
 
-<div class="view-toggle">
-  <button class="toggle-btn active" id="view-section-btn">By store section</button>
-  <button class="toggle-btn" id="view-location-btn">By fridge/pantry</button>
-</div>
-
-<div id="content">
-  <p class="empty">Loading...</p>
-</div>
-
-<div class="add-card">
-  <h2>Add or update an item</h2>
-  <div class="add-row">
-    <input type="text" id="add-item" placeholder="Item, e.g. ground beef" />
-    <input type="text" id="add-qty" placeholder="Quantity, e.g. 2 lbs" />
-    <select id="add-category">
-      <option value="produce">Produce</option>
-      <option value="dairy">Dairy</option>
-      <option value="meat/seafood">Meat/seafood</option>
-      <option value="pantry">Pantry</option>
-      <option value="frozen">Frozen</option>
-      <option value="other" selected>Other</option>
-    </select>
-    <select id="add-location">
-      <option value="">Location (auto)</option>
-      <option value="fridge">Fridge</option>
-      <option value="freezer">Freezer</option>
-      <option value="pantry">Pantry</option>
-    </select>
-    <button class="action" id="add-btn">Add</button>
+<div class="inv-content" style="padding-top:0">
+  <div class="inv-add-card">
+    <p class="inv-add-title">Add to inventory</p>
+    <div class="inv-add-row">
+      <input type="text" id="inv-add-item" placeholder="Item, e.g. ground beef" />
+      <input type="text" id="inv-add-qty" placeholder="Qty" style="width:70px" />
+      <select id="inv-add-location">
+        <option value="fridge">Fridge</option>
+        <option value="freezer">Freezer</option>
+        <option value="pantry" selected>Pantry</option>
+      </select>
+      <button id="inv-add-btn">Add</button>
+    </div>
   </div>
 </div>
+
+<div id="inv-scrim"></div>
+<div id="inv-sheet">
+  <div class="inv-sheet-handle" id="inv-sheet-close"></div>
+  <p class="inv-sheet-kicker" id="inv-sheet-kicker">Location · added this month</p>
+  <h2 class="inv-sheet-name" id="inv-sheet-name">Item</h2>
+
+  <p class="inv-sheet-label">How much is left</p>
+  <div class="inv-stepper-row">
+    <button class="inv-stepper-btn" id="inv-qty-minus">&minus;</button>
+    <span class="inv-stepper-value" id="inv-qty-value">0</span>
+    <button class="inv-stepper-btn" id="inv-qty-plus">+</button>
+  </div>
+
+  <p class="inv-sheet-label">Where it lives</p>
+  <div class="inv-location-row" id="inv-location-row">
+    <button class="inv-location-btn" data-loc="fridge">Fridge</button>
+    <button class="inv-location-btn" data-loc="freezer">Freezer</button>
+    <button class="inv-location-btn" data-loc="pantry">Pantry</button>
+  </div>
+
+  <div class="inv-bb-card">
+    <div class="inv-bb-left">
+      <p class="inv-bb-title">Best before</p>
+      <p class="inv-bb-relative" id="inv-bb-relative">—</p>
+    </div>
+    <div class="inv-bb-right">
+      <button class="inv-bb-btn" id="inv-bb-minus">&minus;</button>
+      <span class="inv-bb-date" id="inv-bb-date">—</span>
+      <button class="inv-bb-btn" id="inv-bb-plus">+</button>
+    </div>
+  </div>
+
+  <div class="inv-sheet-actions">
+    <button class="inv-action-btn inv-action-add" id="inv-add-to-grocery">Add to grocery list</button>
+    <button class="inv-action-btn inv-action-used" id="inv-used-up">Used it up</button>
+  </div>
+</div>
+
+<div id="inv-toast"></div>
 
 <script>
 function escapeHtml(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-
-const CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
-function categoryOptions(current) {
-  return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c === 'meat/seafood' ? 'Meat/seafood' : c[0].toUpperCase() + c.slice(1)}</option>`).join('');
-}
-
-const LOCATIONS = ['fridge', 'freezer', 'pantry'];
+const LOCATION_ORDER = ['fridge', 'freezer', 'pantry'];
 const LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
-function locationOptions(current) {
-  return LOCATIONS.map(l => `<option value="${l}" ${l === current ? 'selected' : ''}>${LOCATION_LABELS[l]}</option>`).join('');
+
+let currentItem = null;
+let neededItemNames = new Set();
+
+function isLow(quantity) {
+  const m = /^\s*([\d.]+)/.exec(quantity || '');
+  return !!m && parseFloat(m[1]) <= 1;
 }
 
-let currentView = 'section'; // 'section' | 'location'
-
-function itemRowHtml(it) {
-  return `<div class="item-row" data-item-id="${it.id}">
-    <div class="item-info">
-      <p class="item-name">${escapeHtml(it.item)}</p>
-      ${it.expiration_date ? `<p class="item-meta">Exp ${escapeHtml(it.expiration_date)}</p>` : ''}
-    </div>
-    <select class="cat-select" data-item-name="${escapeHtml(it.item)}" data-loc="${escapeHtml(it.location || '')}">${categoryOptions(it.category)}</select>
-    <select class="loc-select" data-item-name="${escapeHtml(it.item)}" data-cat="${escapeHtml(it.category)}">${locationOptions(it.location)}</select>
-    <input type="text" class="qty-input" value="${escapeHtml(it.quantity || '')}" data-item-name="${escapeHtml(it.item)}" data-category="${escapeHtml(it.category)}" data-location="${escapeHtml(it.location || '')}" />
-    <button class="icon-btn save" title="Save quantity">&check;</button>
-    <button class="icon-btn remove" title="Remove" data-item-id="${it.id}">&times;</button>
-  </div>`;
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + 'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+function relativeWording(days) {
+  if (days == null) return null;
+  if (days < 0) return `${-days} day${-days === 1 ? '' : 's'} past`;
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  if (days <= 7) return `in ${days} days`;
+  if (days <= 60) { const w = Math.round(days / 7); return `in ${w} week${w === 1 ? '' : 's'}`; }
+  const mo = Math.round(days / 30); return `in ${mo} month${mo === 1 ? '' : 's'}`;
 }
 
-function categorySubgroups(items) {
-  // Within a location group, still break items out by category (produce,
-  // dairy, etc.) rather than one flat list — location answers "where is
-  // it" but category still matters for scanning a list quickly.
-  const byCat = {};
-  for (const it of items) {
-    const cat = it.category || 'other';
-    byCat[cat] = byCat[cat] || [];
-    byCat[cat].push(it);
-  }
-  return CATEGORIES.filter(c => byCat[c] && byCat[c].length).map(c => ({ label: CATEGORY_LABELS[c], items: byCat[c] }));
-}
-
-function render(view) {
-  const content = document.getElementById('content');
-  const groups = currentView === 'location'
-    ? (view.locations || []).map(g => ({ label: LOCATION_LABELS[g.location] || g.location, items: g.items }))
-    : (view.sections || []).map(g => ({ label: g.section, items: g.items }));
-
-  if (!groups.length) {
-    content.innerHTML = '<p class="empty">Nothing tracked yet — mention what you have in chat ("picked up a rotisserie chicken"), or add items below.</p>';
-    return;
-  }
-
-  let html = '';
-  for (const g of groups) {
-    html += `<h2 class="section-title">${escapeHtml(g.label)}</h2><div class="card">`;
-    if (currentView === 'location') {
-      for (const sub of categorySubgroups(g.items)) {
-        html += `<h3 class="category-subheading">${escapeHtml(sub.label)}</h3>`;
-        for (const it of sub.items) {
-          html += itemRowHtml(it);
-        }
-      }
-    } else {
-      for (const it of g.items) {
-        html += itemRowHtml(it);
-      }
-    }
-    html += `</div>`;
-  }
-  content.innerHTML = html;
-
-  function currentRowValues(row) {
-    const catSelect = row.querySelector('.cat-select');
-    const locSelect = row.querySelector('.loc-select');
-    const qtyInput = row.querySelector('.qty-input');
-    return {
-      item: catSelect.getAttribute('data-item-name'),
-      quantity: qtyInput.value,
-      category: catSelect.value,
-      location: locSelect.value,
-    };
-  }
-
-  async function saveRow(row, disableEl) {
-    disableEl.disabled = true;
-    try {
-      const res = await fetch('/api/inventory/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...currentRowValues(row), action: 'set' }),
-      });
-      if (!res.ok) throw new Error('failed');
-      render(await res.json());
-      refreshBanner();
-      refreshDuplicates();
-    } catch (err) {
-      disableEl.disabled = false;
-      alert("Couldn't save that — try again.");
-    }
-  }
-
-  content.querySelectorAll('.cat-select, .loc-select').forEach(sel => {
-    sel.addEventListener('change', () => saveRow(sel.closest('.item-row'), sel));
-  });
-
-  content.querySelectorAll('.icon-btn.save').forEach(btn => {
-    btn.addEventListener('click', () => saveRow(btn.closest('.item-row'), btn));
-  });
-
-  content.querySelectorAll('.icon-btn.remove').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      try {
-        const res = await fetch('/api/inventory/' + btn.getAttribute('data-item-id') + '/remove', { method: 'POST' });
-        if (!res.ok) throw new Error('failed');
-        render(await res.json());
-        refreshBanner();
-        refreshDuplicates();
-      } catch (err) {
-        btn.disabled = false;
-        alert("Couldn't remove that — try again.");
-      }
-    });
-  });
-}
-
-async function refreshBanner() {
+async function loadNeededItemNames() {
   try {
-    const res = await fetch('/api/inventory/expiring');
-    if (res.ok) renderExpiringBanner((await res.json()).items);
-  } catch (err) { /* non-critical, ignore */ }
+    // status=all, filtered to 'needed' client-side — status=needed alone
+    // hides anything currently caught by the "Already have this?" cross-
+    // reference banner (see app/main.py's get_grocery_list_view), which
+    // would otherwise make an inventory item's own "Add to grocery list"
+    // button flip back to un-checked the moment it's added, since that's
+    // exactly the case that banner exists to catch.
+    const res = await fetch('/api/grocery-list?status=all');
+    if (!res.ok) return;
+    const data = await res.json();
+    neededItemNames = new Set();
+    (data.sections || []).forEach(s => s.items.forEach(it => { if (it.status === 'needed') neededItemNames.add(it.item.trim().toLowerCase()); }));
+  } catch (err) { /* non-critical */ }
 }
 
-function renderExpiringBanner(items) {
-  const banner = document.getElementById('expiring-banner');
-  if (!items || !items.length) {
-    banner.innerHTML = '';
-    return;
-  }
-  const hasExpired = items.some(i => i.status === 'expired');
-  banner.innerHTML = `
-    <div class="expiring-banner ${hasExpired ? 'has-expired' : 'soon-only'}">
-      <h2>${hasExpired ? 'Some items have gone bad' : 'Going bad soon'}</h2>
-      <ul>
-        ${items.map(i => `<li><span class="tag">${escapeHtml(i.item)}</span>${i.quantity ? ' (' + escapeHtml(i.quantity) + ')' : ''} — ${i.status === 'expired' ? 'expired' : 'expires'} ${escapeHtml(i.expiration_date)}</li>`).join('')}
-      </ul>
-    </div>
-  `;
-}
-
-async function refreshDuplicates() {
+async function loadInventory() {
+  const content = document.getElementById('inv-content');
   try {
-    const res = await fetch('/api/inventory/duplicates');
-    if (res.ok) renderDuplicatesBanner((await res.json()).duplicates);
-  } catch (err) { /* non-critical, ignore */ }
-}
-
-function renderDuplicatesBanner(duplicates) {
-  const banner = document.getElementById('duplicates-banner');
-  if (!duplicates || !duplicates.length) {
-    banner.innerHTML = '';
-    return;
-  }
-  banner.innerHTML = `
-    <div class="duplicates-banner">
-      <h2>Tracked in more than one place</h2>
-      <ul>
-        ${duplicates.map(d => `<li><span class="tag">${escapeHtml(d.item)}</span> — <span class="locs">${d.entries.map(e => `${LOCATION_LABELS[e.location] || e.location}${e.quantity ? ' (' + escapeHtml(e.quantity) + ')' : ''}`).join(' and ')}</span>. Worth using up the opened one before buying more.</li>`).join('')}
-      </ul>
-    </div>
-  `;
-}
-
-async function load() {
-  const content = document.getElementById('content');
-  try {
-    const invUrl = currentView === 'location' ? '/api/inventory/by-location' : '/api/inventory';
-    const [invRes, expRes, dupRes] = await Promise.all([
-      fetch(invUrl),
-      fetch('/api/inventory/expiring'),
-      fetch('/api/inventory/duplicates'),
-    ]);
-    if (!invRes.ok) throw new Error('Could not load');
-    render(await invRes.json());
-    if (expRes.ok) {
-      renderExpiringBanner((await expRes.json()).items);
-    }
-    if (dupRes.ok) {
-      renderDuplicatesBanner((await dupRes.json()).duplicates);
-    }
-  } catch (err) {
-    content.innerHTML = '<p class="error">Couldn\'t load inventory right now — try refreshing.</p>';
-  }
-}
-
-document.getElementById('view-section-btn').addEventListener('click', () => {
-  if (currentView === 'section') return;
-  currentView = 'section';
-  document.getElementById('view-section-btn').classList.add('active');
-  document.getElementById('view-location-btn').classList.remove('active');
-  load();
-});
-
-document.getElementById('view-location-btn').addEventListener('click', () => {
-  if (currentView === 'location') return;
-  currentView = 'location';
-  document.getElementById('view-location-btn').classList.add('active');
-  document.getElementById('view-section-btn').classList.remove('active');
-  load();
-});
-
-document.getElementById('add-btn').addEventListener('click', async () => {
-  const itemInput = document.getElementById('add-item');
-  const qtyInput = document.getElementById('add-qty');
-  const catSelect = document.getElementById('add-category');
-  const locSelect = document.getElementById('add-location');
-  const btn = document.getElementById('add-btn');
-  const name = itemInput.value.trim();
-  if (!name) return;
-  btn.disabled = true;
-  try {
-    const res = await fetch('/api/inventory/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item: name, action: 'set', quantity: qtyInput.value, category: catSelect.value, location: locSelect.value || null }),
-    });
+    await loadNeededItemNames();
+    const res = await fetch('/api/inventory/by-location');
     if (!res.ok) throw new Error('failed');
-    render(await res.json());
-    refreshBanner();
-    refreshDuplicates();
-    itemInput.value = '';
-    qtyInput.value = '';
-    catSelect.value = 'other';
-    locSelect.value = '';
-  } catch (err) {
-    alert("Couldn't add that — try again.");
-  } finally {
-    btn.disabled = false;
-  }
-});
+    const data = await res.json();
+    const locations = data.locations || [];
+    const totalItems = locations.reduce((n, l) => n + l.items.length, 0);
+    let soonCount = 0, lowCount = 0;
+    locations.forEach(l => l.items.forEach(it => {
+      const d = daysUntil(it.expiration_date);
+      if (d != null && d <= 4) soonCount++;
+      if (isLow(it.quantity)) lowCount++;
+    }));
+    document.getElementById('inv-summary').textContent = `${soonCount} to use soon · ${lowCount} running low`;
 
-const CATEGORY_LABELS = { produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat/seafood', pantry: 'Pantry', frozen: 'Frozen', other: 'Other' };
-function reviewCategoryOptions(current) {
-  return CATEGORIES.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${CATEGORY_LABELS[c]}</option>`).join('');
-}
-
-function reviewLocationOptions(current) {
-  const opts = [`<option value="" ${!current ? 'selected' : ''}>Location (auto)</option>`];
-  for (const l of LOCATIONS) {
-    opts.push(`<option value="${l}" ${l === current ? 'selected' : ''}>${LOCATION_LABELS[l]}</option>`);
-  }
-  return opts.join('');
-}
-
-function renderReview(items, kind) {
-  const container = document.getElementById('review-container');
-  if (!items || !items.length) {
-    container.innerHTML = `<div class="review-card"><h2>Nothing detected</h2><p class="hint">Couldn't make out any items in that photo — try again with better lighting, or add items directly below.</p></div>`;
-    return;
-  }
-  const titles = { receipt: 'Review scanned receipt', fridge: 'Review scanned fridge photo', pantry: 'Review scanned pantry photo' };
-  container.innerHTML = `
-    <div class="review-card">
-      <h2>${titles[kind] || 'Review scanned photo'}</h2>
-      <p class="hint">Uncheck anything that's wrong, fix names/quantities/categories/locations as needed, then add the rest to inventory.</p>
-      <div id="review-rows"></div>
-      <div class="review-actions">
-        <button class="action" id="review-confirm-btn">Add to inventory</button>
-        <button class="icon-btn" id="review-cancel-btn">Cancel</button>
-      </div>
-    </div>
-  `;
-  const rowsDiv = document.getElementById('review-rows');
-  rowsDiv.innerHTML = items.map((it, idx) => `
-    <div class="review-row" data-idx="${idx}">
-      <input type="checkbox" class="review-include" checked />
-      <input type="text" class="review-name" value="${escapeHtml(it.item || '')}" />
-      <input type="text" class="review-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" />
-      <select class="review-cat">${reviewCategoryOptions(it.category || 'other')}</select>
-      <select class="review-loc">${reviewLocationOptions(it.location || '')}</select>
-      ${it.confidence === 'low' ? '<span class="low-conf-badge">double-check</span>' : ''}
-    </div>
-  `).join('');
-
-  document.getElementById('review-cancel-btn').addEventListener('click', () => {
-    container.innerHTML = '';
-  });
-
-  document.getElementById('review-confirm-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('review-confirm-btn');
-    const rows = rowsDiv.querySelectorAll('.review-row');
-    const confirmed = [];
-    rows.forEach(row => {
-      if (!row.querySelector('.review-include').checked) return;
-      const name = row.querySelector('.review-name').value.trim();
-      if (!name) return;
-      confirmed.push({
-        item: name,
-        quantity: row.querySelector('.review-qty').value.trim(),
-        category: row.querySelector('.review-cat').value,
-        location: row.querySelector('.review-loc').value || null,
-      });
-    });
-    if (!confirmed.length) {
-      container.innerHTML = '';
+    if (!totalItems) {
+      content.innerHTML = '<p class="inv-empty">Nothing tracked yet — add something below, or it fills in automatically as you check off the grocery list.</p>';
       return;
     }
-    btn.disabled = true;
-    try {
-      const res = await fetch('/api/inventory/confirm-scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: confirmed }),
-      });
-      if (!res.ok) throw new Error('failed');
-      render(await res.json());
-      refreshBanner();
-      refreshDuplicates();
-      container.innerHTML = `<div class="review-card"><h2>Added</h2><p class="hint">${confirmed.length} item(s) added to inventory.</p></div>`;
-      setTimeout(() => { container.innerHTML = ''; }, 2500);
-    } catch (err) {
-      btn.disabled = false;
-      alert("Couldn't save those items — try again.");
-    }
-  });
-}
 
-function wireScanInput(buttonId, inputId, endpoint, kind) {
-  const btn = document.getElementById(buttonId);
-  const input = document.getElementById(inputId);
-  btn.addEventListener('click', () => input.click());
-  input.addEventListener('change', async () => {
-    const file = input.files[0];
-    input.value = '';
-    if (!file) return;
-    const container = document.getElementById('review-container');
-    container.innerHTML = `<div class="review-card"><h2>Reading photo...</h2><p class="hint">This can take a few seconds.</p></div>`;
-    btn.disabled = true;
-    try {
-      const formData = new FormData();
-      formData.append('photo', file);
-      const res = await fetch(endpoint, { method: 'POST', body: formData });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Scan failed');
+    let html = '';
+    for (const loc of LOCATION_ORDER) {
+      const group = locations.find(l => l.location === loc);
+      if (!group || !group.items.length) continue;
+      html += `<div class="inv-card">
+        <div class="inv-card-header">
+          <p class="inv-card-name">${LOCATION_LABELS[loc]}</p>
+          <span class="inv-card-count">${group.items.length} item${group.items.length === 1 ? '' : 's'}</span>
+        </div>`;
+      for (const it of group.items) {
+        const d = daysUntil(it.expiration_date);
+        const soon = d != null && d <= 4;
+        const low = !soon && isLow(it.quantity);
+        const dotClass = soon ? 'soon' : (low ? 'low' : '');
+        html += `<div class="inv-row" data-item-id="${it.id}">
+          <span class="inv-dot ${dotClass}"></span>
+          <span class="inv-name">${escapeHtml(it.item)}</span>
+          <span class="inv-qty">${escapeHtml(it.quantity || '')}</span>
+          ${soon ? '<span class="inv-flag soon">use soon</span>' : (low ? '<span class="inv-flag low">low</span>' : '')}
+        </div>`;
       }
-      const data = await res.json();
-      renderReview(data.items, kind);
-    } catch (err) {
-      container.innerHTML = `<div class="review-card"><h2>Couldn't read that photo</h2><p class="hint">${escapeHtml(err.message || 'Try again.')}</p></div>`;
-    } finally {
-      btn.disabled = false;
+      html += `</div>`;
     }
-  });
+    content.innerHTML = html;
+    content.querySelectorAll('[data-item-id]').forEach(row => {
+      row.addEventListener('click', () => openItemSheet(parseInt(row.getAttribute('data-item-id'), 10), locations));
+    });
+  } catch (err) {
+    content.innerHTML = '<p class="inv-empty">Couldn\'t load inventory right now — try refreshing.</p>';
+  }
 }
 
-wireScanInput('scan-receipt-btn', 'scan-receipt-input', '/api/inventory/scan-receipt', 'receipt');
-wireScanInput('scan-fridge-btn', 'scan-fridge-input', '/api/inventory/scan-fridge', 'fridge');
-wireScanInput('scan-pantry-btn', 'scan-pantry-input', '/api/inventory/scan-pantry', 'pantry');
+function showToast(message) {
+  const el = document.getElementById('inv-toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
 
-load();
+function openItemSheet(itemId, locations) {
+  let item = null;
+  for (const l of locations) { const found = l.items.find(it => it.id === itemId); if (found) item = found; }
+  if (!item) return;
+  currentItem = item;
+  renderSheet();
+  document.getElementById('inv-scrim').classList.add('open');
+  document.getElementById('inv-sheet').classList.add('open');
+}
+function closeItemSheet() {
+  document.getElementById('inv-scrim').classList.remove('open');
+  document.getElementById('inv-sheet').classList.remove('open');
+  currentItem = null;
+}
+document.getElementById('inv-scrim').addEventListener('click', closeItemSheet);
+document.getElementById('inv-sheet-close').addEventListener('click', closeItemSheet);
+
+function renderSheet() {
+  const it = currentItem;
+  const created = it.created_at ? new Date(it.created_at.replace(' ', 'T')) : null;
+  const now = new Date();
+  const sameMonth = created && created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+  const kickerLoc = LOCATION_LABELS[it.location] || 'Pantry';
+  document.getElementById('inv-sheet-kicker').textContent = `${kickerLoc} · ${sameMonth ? 'added this month' : 'added ' + (created ? created.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'earlier')}`;
+  document.getElementById('inv-sheet-name').textContent = it.item;
+
+  const m = /^\s*([\d.]+)/.exec(it.quantity || '');
+  const qtyValue = m ? m[1] : (it.quantity ? '1' : '0');
+  document.getElementById('inv-qty-value').textContent = it.quantity || '0';
+
+  document.querySelectorAll('.inv-location-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-loc') === it.location);
+  });
+
+  const d = daysUntil(it.expiration_date);
+  const rel = relativeWording(d);
+  const relEl = document.getElementById('inv-bb-relative');
+  relEl.textContent = rel || 'not set';
+  relEl.classList.toggle('soon', d != null && d <= 4);
+  document.getElementById('inv-bb-date').textContent = it.expiration_date
+    ? new Date(it.expiration_date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : '—';
+
+  const onList = neededItemNames.has((it.item || '').trim().toLowerCase());
+  const addBtn = document.getElementById('inv-add-to-grocery');
+  addBtn.textContent = onList ? 'On the list ✓' : 'Add to grocery list';
+  addBtn.classList.toggle('on-list', onList);
+  addBtn.disabled = onList;
+}
+
+async function refreshAfterSheetChange() {
+  await loadInventory();
+  if (currentItem) {
+    const res = await fetch('/api/inventory/by-location');
+    if (res.ok) {
+      const data = await res.json();
+      const locations = data.locations || [];
+      let item = null;
+      for (const l of locations) { const found = l.items.find(it => it.id === currentItem.id); if (found) item = found; }
+      if (item) { currentItem = item; renderSheet(); } else { closeItemSheet(); }
+    }
+  }
+}
+
+document.getElementById('inv-qty-minus').addEventListener('click', async () => {
+  if (!currentItem) return;
+  try { await fetch(`/api/inventory/${currentItem.id}/quantity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }); await refreshAfterSheetChange(); }
+  catch (err) { alert("Couldn't update that — try again."); }
+});
+document.getElementById('inv-qty-plus').addEventListener('click', async () => {
+  if (!currentItem) return;
+  try { await fetch(`/api/inventory/${currentItem.id}/quantity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) }); await refreshAfterSheetChange(); }
+  catch (err) { alert("Couldn't update that — try again."); }
+});
+document.getElementById('inv-location-row').addEventListener('click', async (e) => {
+  const btn = e.target.closest('.inv-location-btn');
+  if (!btn || !currentItem) return;
+  try { await fetch(`/api/inventory/${currentItem.id}/location`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: btn.getAttribute('data-loc') }) }); await refreshAfterSheetChange(); }
+  catch (err) { alert("Couldn't move that — try again."); }
+});
+document.getElementById('inv-bb-minus').addEventListener('click', async () => {
+  if (!currentItem) return;
+  try { await fetch(`/api/inventory/${currentItem.id}/expiration`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta_days: -1 }) }); await refreshAfterSheetChange(); }
+  catch (err) { alert("Couldn't update that — try again."); }
+});
+document.getElementById('inv-bb-plus').addEventListener('click', async () => {
+  if (!currentItem) return;
+  try { await fetch(`/api/inventory/${currentItem.id}/expiration`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta_days: 1 }) }); await refreshAfterSheetChange(); }
+  catch (err) { alert("Couldn't update that — try again."); }
+});
+document.getElementById('inv-add-to-grocery').addEventListener('click', async () => {
+  if (!currentItem) return;
+  const btn = document.getElementById('inv-add-to-grocery');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    await fetch('/api/grocery-list/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: currentItem.item, category: currentItem.category || 'other' }) });
+    await loadNeededItemNames();
+    renderSheet();
+  } catch (err) { btn.disabled = false; alert("Couldn't add that — try again."); }
+});
+document.getElementById('inv-used-up').addEventListener('click', async () => {
+  if (!currentItem) return;
+  const name = currentItem.item;
+  const btn = document.getElementById('inv-used-up');
+  btn.disabled = true;
+  try {
+    await fetch(`/api/inventory/${currentItem.id}/remove`, { method: 'POST' });
+    closeItemSheet();
+    showToast(`${name} marked used up`);
+    loadInventory();
+  } catch (err) { btn.disabled = false; alert("Couldn't remove that — try again."); }
+});
+
+document.getElementById('inv-add-btn').addEventListener('click', async () => {
+  const itemInput = document.getElementById('inv-add-item');
+  const qtyInput = document.getElementById('inv-add-qty');
+  const locSelect = document.getElementById('inv-add-location');
+  const item = itemInput.value.trim();
+  if (!item) return;
+  try {
+    await fetch('/api/inventory/update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item, action: 'add', quantity: qtyInput.value.trim(), location: locSelect.value }),
+    });
+    itemInput.value = ''; qtyInput.value = '';
+    loadInventory();
+  } catch (err) { alert("Couldn't add that — try again."); }
+});
+
+loadInventory();
 </script>
 </body>
 </html>

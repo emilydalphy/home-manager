@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Kitchen — Home Manager</title>
+<style>
+  /* Kitchen hub (design_handoff_home_manager §5) — the Kitchen tab's
+     landing content. Inventory and What we know are separate pages
+     (pushed views were considered but full navigation matches the
+     existing Grocery/Kitchen embed pattern — see README's Phase 4
+     notes); Cook mode is the already-built cooker.html. */
+  * { box-sizing: border-box; }
+  body { max-width: 480px; margin: 0 auto; padding: 0 0 32px; background: var(--page, #EFE6D6); }
+  .kh-wrap { padding: 22px 20px 8px; }
+  .kh-kicker { font-family: var(--font-body); font-weight: 800; font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: #A8825C; margin: 0 0 4px; }
+  .kh-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0 0 18px; }
+
+  .kh-card { border-radius: 18px; padding: 18px 20px; margin-bottom: 14px; }
+  .kh-cook-card { background: var(--midnight-violet); color: #fff; }
+  .kh-cook-dish { font-family: var(--font-heading); font-weight: 700; font-size: 1.35rem; color: #fff; margin: 0 0 14px; }
+  .kh-cook-actions { display: flex; gap: 10px; }
+  .kh-btn-gold { background: var(--turmeric-gold); color: #3A2A0A; border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
+  .kh-btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,.5); color: #fff; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
+  .kh-cook-empty { font-family: var(--font-body); color: rgba(255,255,255,.85); font-size: 0.92rem; margin: 0; }
+
+  .kh-row-card { background: #fff; display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; }
+  .kh-row-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; color: var(--midnight-violet); margin: 0 0 4px; }
+  .kh-row-sub { font-family: var(--font-body); font-size: 0.86rem; color: #6B5A63; margin: 0; }
+  .kh-row-open { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--midnight-violet); flex: none; }
+
+  .kh-worth-card { background: #ECDFC8; }
+  .kh-worth-text { font-family: var(--font-body); font-size: 0.9rem; color: #4A3A2A; margin: 0; line-height: 1.45; }
+</style>
+</head>
+<body>
+<div class="kh-wrap">
+  <p class="kh-kicker">Recipes · inventory · what we know</p>
+  <h1 class="kh-title">Kitchen</h1>
+
+  <div class="kh-card kh-cook-card" id="kh-cook-card">
+    <p class="kh-cook-empty">Loading…</p>
+  </div>
+
+  <div class="kh-card kh-row-card" id="kh-inventory-row">
+    <div>
+      <p class="kh-row-title">Inventory</p>
+      <p class="kh-row-sub" id="kh-inventory-sub">Loading…</p>
+    </div>
+    <span class="kh-row-open">Open</span>
+  </div>
+
+  <div class="kh-card kh-row-card" id="kh-memory-row">
+    <div>
+      <p class="kh-row-title">What we know about you</p>
+      <p class="kh-row-sub">People · Taste · Rhythm · Stores</p>
+    </div>
+    <span class="kh-row-open">Open</span>
+  </div>
+
+  <div class="kh-card kh-worth-card" id="kh-worth-card">
+    <p class="kh-worth-text">Worth doing sometime: scan a fridge photo so I stop suggesting what you already have.</p>
+  </div>
+</div>
+
+<script>
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+document.getElementById('kh-inventory-row').addEventListener('click', () => { window.location.href = '/inventory'; });
+document.getElementById('kh-memory-row').addEventListener('click', () => { window.location.href = '/memory'; });
+document.getElementById('kh-worth-card').addEventListener('click', () => {
+  alert("Open your camera roll and I'll read the fridge photo — not built yet, this is just an entry point.");
+});
+
+async function loadCookingTonight() {
+  const card = document.getElementById('kh-cook-card');
+  try {
+    const res = await fetch('/api/cooker-view');
+    if (!res.ok) throw new Error('failed');
+    const data = await res.json();
+    const today = new Date().toISOString().slice(0, 10);
+    const meal = (data.meals || []).find(m => m.date === today && m.slot === 'dinner');
+    if (!meal) {
+      card.innerHTML = '<p class="kh-cook-empty">Nothing planned to cook tonight yet.</p>';
+      return;
+    }
+    card.innerHTML = `
+      <p class="kh-cook-dish">${escapeHtml(meal.meal || 'Dinner')}</p>
+      <div class="kh-cook-actions">
+        <button class="kh-btn-gold" id="kh-start-step">Start step 1</button>
+        <button class="kh-btn-outline" id="kh-ingredients">Ingredients</button>
+      </div>`;
+    const goCook = () => { window.location.href = '/static/cooker.html'; };
+    document.getElementById('kh-start-step').addEventListener('click', goCook);
+    document.getElementById('kh-ingredients').addEventListener('click', goCook);
+  } catch (err) {
+    card.innerHTML = '<p class="kh-cook-empty">Couldn\'t load tonight\'s plan.</p>';
+  }
+}
+
+// "N to use soon · N running low" — use-soon comes from the real
+// expiring-within-4-days endpoint; "running low" has no stored threshold
+// in this app, so it's a light client-side heuristic (leading quantity
+// number ≤ 1) rather than a fabricated stat. Documented in README.
+async function loadInventorySummary() {
+  const sub = document.getElementById('kh-inventory-sub');
+  try {
+    const [expiringRes, allRes] = await Promise.all([
+      fetch('/api/inventory/expiring?days=4'),
+      fetch('/api/inventory'),
+    ]);
+    const expiring = expiringRes.ok ? (await expiringRes.json()).items || [] : [];
+    let lowCount = 0;
+    if (allRes.ok) {
+      const sections = (await allRes.json()).sections || [];
+      sections.forEach(s => s.items.forEach(it => {
+        const m = /^\s*([\d.]+)/.exec(it.quantity || '');
+        if (m && parseFloat(m[1]) <= 1) lowCount++;
+      }));
+    }
+    sub.textContent = `${expiring.length} to use soon · ${lowCount} running low`;
+  } catch (err) {
+    sub.textContent = 'Open to see what\'s on hand';
+  }
+}
+
+loadCookingTonight();
+loadInventorySummary();
+</script>
+</body>
+</html>

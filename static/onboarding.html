@@ -712,7 +712,7 @@ document.querySelectorAll('[data-back]').forEach(el => {
 });
 
 // ---------- Post-reveal: chores (optional) ----------
-document.getElementById('reveal-done-btn').onclick = () => { window.location.href = '/'; };
+document.getElementById('reveal-done-btn').onclick = () => { window.location.href = '/week?firstplan=1'; };
 document.getElementById('reveal-chores-btn').onclick = () => {
   buildChoresQStep();
   showStep('chores-q');
@@ -897,7 +897,7 @@ document.getElementById('chores-q-next').onclick = async () => {
   try {
     await saveHouseholdExtras();
     await saveChoresProfile();
-    window.location.href = '/';
+    window.location.href = '/week?firstplan=1';
   } catch (err) {
     alert('Could not save: ' + err.message);
   } finally {
@@ -916,7 +916,7 @@ document.getElementById('finish-btn').onclick = async () => {
     alert('Could not save chores: ' + err.message);
     return;
   }
-  window.location.href = '/';
+  window.location.href = '/week?firstplan=1';
 };
 
 document.getElementById('chores-q-back').addEventListener('click', () => showStep('reveal'));

@@ -53,6 +53,24 @@
 
   <div id="toast" class="toast" hidden></div>
 
+  <!-- Notifications bell (design_handoff_home_manager Phase 5 /
+       NOTIFICATIONS.md) — a live in-app feed, not real scheduled push
+       (see README's Phase 5 notes for why). Fixed at body level so it
+       floats above both the mobile tab-bar layout and the desktop rail
+       layout without needing separate breakpoint placement. -->
+  <button type="button" id="notif-bell" class="notif-bell" hidden aria-label="Notifications">
+    <span class="notif-bell-icon">&#128276;</span>
+    <span class="notif-badge" id="notif-badge" hidden></span>
+  </button>
+  <div id="notif-scrim" hidden></div>
+  <div id="notif-panel" hidden role="dialog" aria-label="Notifications">
+    <div class="notif-panel-header">
+      <span class="notif-panel-title">Notifications</span>
+      <button type="button" id="notif-panel-close" class="notif-panel-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="notif-panel-list"></div>
+  </div>
+
   <div id="ask-scrim" hidden></div>
   <div id="ask-sheet" hidden role="dialog" aria-label="Ask Home Manager">
     <div class="ask-sheet-handle" id="ask-sheet-handle"></div>

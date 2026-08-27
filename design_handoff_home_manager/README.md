@@ -142,6 +142,10 @@ Layout: `padding: 6px 20px 8px`, `gap: 13px`.
 
 Both sub-screens are pushed views inside the Kitchen tab with a `‹ Kitchen` back affordance (`Karla 700 14px #66304E`); the tab bar and ask bar stay put.
 
+**✅ Built (Phase 4).** New `static/kitchen.html` replaces the old "prep this week" list as the Kitchen tab's default embed (see shell.js). Sandbox-verified: the Cooking tonight card reads the real tonight's-dinner data (same source as Today's dinner card), Inventory/What we know rows link out and show live summary stats. "Worth doing sometime" toasts its entry-point message rather than pretending a capture flow exists.
+
+Deliberate scope call: Inventory and What We Know are real page navigations (`/inventory`, `/memory`), **not** true pushed views inside the Kitchen tab's own scroll area — the existing Grocery/Kitchen tabs already use the same "separate page, not a shell route" pattern (see shell.js's own comment predating this package), and building genuine SPA-style push/pop navigation into the shell was a bigger structural change than this phase's screens needed. The back arrow reads "‹ Kitchen" and returns there either way; the difference is invisible unless you're watching the URL bar. "Cook mode" entry points (Today's dinner card, Week's "Cook this") now pass `forceEmbedSrc` to `activateTab` so they jump straight past the new hub into the already-built Cook mode (cooker.html) instead of landing on the hub first.
+
 ### 6. Inventory (option 5a, approved)
 
 **Purpose:** what's in the house, organised the way you look for food.
@@ -165,6 +169,13 @@ White sheet, `radius: 26px 26px 0 0`, `padding: 16px 20px 22px`, `gap: 14px`, sa
 - **Actions** — "Add to grocery list" (plum/gold, becomes "On the list ✓" and inert once present) + "Used it up" (outlined plum; removes the item, closes the sheet, toasts "{Name} marked used up"). Both 52px, `radius: 13px`.
 
 Relative-date wording rules: `<0` → "N days past"; `0` → "today"; `1` → "tomorrow"; `≤7` → "in N days"; `≤60` → "in N weeks"; else "in N months".
+
+**✅ Built (Phase 4).** `static/inventory.html` rewritten from scratch — three fixed-order location cards, status dots/flags, and the full item detail sheet (quantity stepper, location picker with immediate re-grouping, best-before stepper with the exact relative-wording thresholds above, "Add to grocery list" → "On the list ✓", "Used it up"). Sandbox-verified via Playwright: stepping quantity, changing location, stepping best-before, the add-to-grocery inert state, and used-it-up's toast + removal all work against the real endpoints.
+
+Deliberate scope calls:
+- **Quantity stepper** operates on the existing freeform quantity string (e.g. "3 gal"), not a clean number+unit model — this app's inventory has always stored quantity as text (so "1 half bag" or "a splash" stay representable). A tap nudges the leading number by 1 and keeps whatever text follows it; a `-` tap on a non-numeric quantity ("some") is a no-op rather than guessing. Documented in `app/tools._step_quantity_text`.
+- **"Running low"** has no stored threshold anywhere in this app (no min-quantity field exists) — it's a light client-side heuristic (leading quantity number ≤ 1), not a fabricated stat. A future phase could add a real per-item threshold if this turns out to matter.
+- **Receipt/fridge/pantry photo scanning**, present on the old pre-redesign inventory page, is not part of this design package's spec for option 5a and was dropped from this page — the backend endpoints (`/api/inventory/scan-*`) are untouched and still work for the assistant/chat path, just not linked from this view anymore.
 
 ### 7. What we know (option 5d, approved)
 
@@ -196,6 +207,14 @@ White bottom sheet, `padding: 16px 20px 22px`, `gap: 14px`.
 - Parser: split on newlines **and** commas, strip leading bullets/numbering (`^[-•\s\d.]+`), trim, drop entries ≤1 character, drop case-insensitive duplicates already on that store's list. Toast "Added N items to {Store}".
 - "Photograph a receipt instead" row → *entry point only*; currently toasts "Open your camera roll and I'll read the receipt". Implement as camera/library capture + OCR, or hide until that exists.
 - Footer: "Cancel" (outlined) + "Save to {Store}" (plum/gold), 52px.
+
+**✅ Built (Phase 4).** `static/memory.html` rewritten from scratch — four tabs, per-tab intro/footer copy from COPY.md, inline textarea edit/add/delete, and the Stores tab's chips (tap to move between stores, × to forget, "+ Add" inline input) plus the import sheet with the exact parser rules above (newline/comma split, bullet-strip, dedup, toast). Sandbox-verified via Playwright: adding a fact, cancelling an empty draft (confirmed it never persists), and adding a store chip all round-trip against real endpoints.
+
+Deliberate scope calls, the largest of this phase:
+- **People/Taste/Rhythm facts are a new, separate `facts` table** (see schema.sql's comment), not a UI on top of the existing structured preference fields (`members.dietary_restrictions_json`, `meal_preferences`' cuisine/protein/dislikes/cooking-time/etc.). Those structured fields already drive meal-plan generation and are untouched — still editable via chat exactly as before. DATA_AND_API.md's uniform freeform-list `Fact` model doesn't map cleanly onto that mix of a dict, several single-value settings, and per-member lists; forcing it would have meant either a risky rewrite of generation logic or an awkward partial mapping. So What We Know's People/Taste/Rhythm tabs are an additive **notes layer** — genuinely useful (anything typed there is saved and shown back), but not yet read by meal generation. A future phase could point generation at facts instead, but that's a planning-logic change, not a UI build.
+- The **Stores tab** is the exception — it already had a natural, existing home (`usual_stores_json`/`store_typical_items_json`) and uses that real data directly, so "move to the other store" and the import sheet actually affect what the assistant knows.
+- **"Photograph a receipt instead"** in the import sheet is left out — same reasoning as Inventory's dropped scan buttons; no OCR flow exists to hand it off to.
+- `Fact.hard` (the allergy flag) exists as a column but isn't yet surfaced in the UI or read by anything — no editor control for it was in scope this phase, and nothing enforces it server-side yet either.
 
 ### 8. Grocery — desktop (option 5f, approved)
 
@@ -257,6 +276,23 @@ Deliberate scope calls:
 ### 10. Cook mode
 
 See `Kitchen Cooker Redesign.dc.html` — step-by-step, hands-free, and per-step feedback flows are already built there in both phone and desktop form. Entry: Today's "Cook mode", Kitchen's "Start step 1", the week card's "Cook this".
+
+---
+
+## Phase 5 — Assistant patch contract, First run, Notifications
+
+**✅ Assistant patch contract (DATA_AND_API.md).** No new code needed here. The spec's `{ reply, card?, patch }` shape — "every patch that changes data produces a card whose View lands on the changed tab" — is already satisfied by the existing `ChatAction`/`summarize_chat_actions()` mechanism (built earlier in this app's history, predating this design package). Rather than a hand-authored patch object, each assistant turn's card is derived from the *actual tool calls the agent executed* that turn, deduped by category, each carrying a kicker/change line and a tab-or-href destination — arguably a more reliable version of the same guarantee, since the card can never claim a change the backend didn't really make. No changes made; documenting this as already-satisfied rather than rebuilding it.
+
+**✅ First run (FIRST_RUN.md), partial.** `static/onboarding.html` (from an earlier design package) already covers most of the spec's intent: household/members/dietary-restrictions/meal-preferences steps, then a real call to `/api/onboarding/generate-first-plan` that generates and reveals an actual first week inline — not a placeholder. Given FIRST_RUN.md's own stated philosophy ("everything else in What We Know gets learned over time through the ask bar and through corrections"), this pass made only the highest-value, lowest-risk change: onboarding's three completion redirects now go to `/week?firstplan=1` instead of `/`, and This Week shows a one-time toast ("Here's a first pass — change anything and I'll re-plan around it.") on arrival, then cleans the query string. **Deliberately deferred:** a "where you shop" onboarding step and a "name one thing that's fixed" step (both real gaps — the new What We Know Stores/Rhythm tabs from Phase 4 now provide a legitimate post-onboarding path to the same data instead); a two-adult email-invite flow (no auth/multi-user infrastructure exists to build this on); and "leave one dinner deliberately open" as an explicit first-plan generation behavior (not verified either way in the existing generator).
+
+**✅ Notifications (NOTIFICATIONS.md), 3 of 4 types, live feed instead of push.** No push infrastructure exists anywhere in this codebase — no service worker push handler, no VAPID keys, no background scheduler process — and standing that up (browser Push API + service worker + a persistent scheduler running on Railway) is its own multi-day subsystem, out of scope for this pass. Built instead: a bell icon (shell-level, floats above both phone and desktop layouts) that opens a small popover panel of **live, on-demand-computed** notifications — the same underlying detections the app already uses elsewhere, just surfaced as a feed:
+
+- **#1 Dinner decision nudge** — reuses the existing needs-you dinner-gap detection.
+- **#2 Expiring soon** — reuses `get_expiring_soon(days=2)`, batched into one notification with singular/plural copy matching COPY.md's pattern.
+- **#3 Weekly plan ready** — a plan for a not-yet-started week, created within the last 24h, with ≥2 dinners (the spec's own "don't notify for an empty plan" rule).
+- **#4 "The other adult changed something" — not built.** This needs an activity-log/attribution system (who made which change) that doesn't exist for meal-plan or shopping-trip mutations; there's currently no concept of "the other adult" distinct from "you" at the data layer.
+
+Each notification has a stable `key` so dismissing one doesn't suppress a *different* future occurrence of the same type (e.g. dismissing today's expiring-soon nudge doesn't hide tomorrow's), backed by a new `notification_dismissals` table. Because this is a live-computed feed rather than scheduled push, most of NOTIFICATIONS.md's "Rules across all four" section doesn't apply and wasn't implemented: quiet hours, the 2-per-day cap, and the permission-ask flow are all about *when a push arrives on a lock screen* — there's no delivery moment to gate when the bell just reflects current state on demand. The one rule that *does* carry over — no badge-only notifications, everything is a sentence — is preserved.
 
 ---
 

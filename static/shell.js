@@ -71,10 +71,13 @@
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.calendarDay, real: true },
     { key: 'week', path: '/week', label: 'Week', railLabel: 'This Week', icon: ICONS.calendarWeek, week: true },
     { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, embed: '/static/grocery.html' },
-    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, embed: '/static/cooker.html', quickLinks: [
-        { label: 'Inventory', href: '/inventory' },
-        { label: 'What we know', href: '/memory' }
-      ] }
+    // Phase 4: the Kitchen tab now embeds the new hub (design_handoff_home_manager
+    // §5) instead of landing straight on the old prep/cook-this-week list —
+    // the hub's own Inventory/What we know rows (linking to the redesigned
+    // /inventory and /memory pages) and "Cooking tonight" card (into
+    // cooker.html — see activateTab's forceEmbedSrc) replace the old
+    // quickLinks restore.
+    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, embed: '/static/kitchen.html' }
   ];
 
   function currentTabKey() {
@@ -164,7 +167,7 @@
     railRowsEl.appendChild(row);
   });
 
-  function activateTab(key, pushHistory) {
+  function activateTab(key, pushHistory, opts) {
     var tab = TABS.filter(function (t) { return t.key === key; })[0];
     if (!tab) return;
 
@@ -179,12 +182,22 @@
     });
 
     var panel = panels[key];
-    // Lazy-load the embedded page the first time its tab is shown.
+    // Lazy-load the embedded page the first time its tab is shown. Kitchen's
+    // hub (kitchen.html) is the default landing; "Cook mode" entry points
+    // (Today's dinner card, Week's "Cook this") pass forceEmbedSrc to jump
+    // straight past the hub into the already-built Cook mode
+    // (cooker.html — design_handoff_home_manager §10) instead.
+    var forcedSrc = opts && opts.forceEmbedSrc;
     if (panel && panel.dataset.embed && !panel.querySelector('iframe')) {
       var iframe = document.createElement('iframe');
-      iframe.src = panel.dataset.embed;
+      iframe.src = forcedSrc || panel.dataset.embed;
       iframe.title = tab.label;
       panel.appendChild(iframe);
+    } else if (panel && forcedSrc) {
+      var existingIframe = panel.querySelector('iframe');
+      if (existingIframe && existingIframe.getAttribute('src') !== forcedSrc) {
+        existingIframe.setAttribute('src', forcedSrc);
+      }
     }
     // Lazy-build Today's real content the first time it's shown.
     if (tab.real && !panel.dataset.built) {
@@ -457,7 +470,7 @@
           '<button type="button" class="btn-gold" id="dinner-cook-mode">Cook mode</button>' +
           '<button type="button" class="btn-outline-light" id="dinner-swap">Swap</button>' +
         '</div>';
-      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('kitchen', true); });
+      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('kitchen', true, { forceEmbedSrc: '/static/cooker.html' }); });
       card.querySelector('#dinner-swap').addEventListener('click', function () {
         openAskSheet('Swap tonight for something faster');
       });
@@ -619,6 +632,16 @@
     panel.querySelector('#week-ask-row').addEventListener('click', function () { openAskSheet(); });
 
     await loadWeekMenu(panel);
+
+    // FIRST_RUN.md step 5: onboarding redirects here with ?firstplan=1
+    // right after generating the household's first real week — land on
+    // This Week (already the case) and show the arrival toast once, then
+    // scrub the param so a refresh doesn't re-show it.
+    if (window.location.search.indexOf('firstplan=1') !== -1) {
+      showToast("Here's a first pass — change anything and I'll re-plan around it.");
+      var cleanUrl = window.location.pathname;
+      window.history.replaceState({ tab: 'week' }, '', cleanUrl);
+    }
   }
 
   async function loadWeekMenu(panel) {
@@ -769,7 +792,7 @@
       btn.addEventListener('click', function () { fillWeekDinner(panel, btn.dataset.date, btn.dataset.meal); });
     });
     var cookBtn = wrap.querySelector('#wk-cook-this');
-    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('kitchen', true); });
+    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('kitchen', true, { forceEmbedSrc: '/static/cooker.html' }); });
     var swapBtn = wrap.querySelector('#wk-swap-it');
     if (swapBtn) swapBtn.addEventListener('click', function () {
       openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s dinner for something else');
@@ -1276,6 +1299,79 @@
     });
   }
 
+  // ---------- Notifications (Phase 5 / NOTIFICATIONS.md) ----------
+  // Live in-app feed, not real scheduled push — see README's Phase 5
+  // notes and schema.sql's notification_dismissals comment for why.
+  var notifBell = document.getElementById('notif-bell');
+  var notifBadge = document.getElementById('notif-badge');
+  var notifScrim = document.getElementById('notif-scrim');
+  var notifPanel = document.getElementById('notif-panel');
+  var notifList = document.getElementById('notif-panel-list');
+  var latestNotifications = [];
+
+  function renderNotifPanel() {
+    if (!latestNotifications.length) {
+      notifList.innerHTML = '<div class="notif-empty">Nothing needs your attention right now.</div>';
+      return;
+    }
+    notifList.innerHTML = latestNotifications.map(function (n) {
+      return '<div class="notif-row" data-notif-key="' + escapeHtml(n.key) + '">' +
+        '<p class="notif-row-title">' + escapeHtml(n.title) + '</p>' +
+        '<p class="notif-row-body">' + escapeHtml(n.body) + '</p>' +
+        '<div class="notif-row-actions">' +
+          '<button type="button" class="notif-row-action" data-notif-action="' + escapeHtml(n.key) + '">' + escapeHtml(n.action_label || 'View') + '</button>' +
+          '<button type="button" class="notif-row-dismiss" data-notif-dismiss="' + escapeHtml(n.key) + '">Dismiss</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    notifList.querySelectorAll('[data-notif-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-notif-action');
+        var n = latestNotifications.filter(function (x) { return x.key === key; })[0];
+        closeNotifPanel();
+        if (!n) return;
+        if (n.tab) activateTab(n.tab, true);
+        else if (n.href) window.location.href = n.href;
+      });
+    });
+    notifList.querySelectorAll('[data-notif-dismiss]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var key = btn.getAttribute('data-notif-dismiss');
+        try { await fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }); } catch (err) { /* best-effort */ }
+        await loadNotifications();
+      });
+    });
+  }
+
+  function openNotifPanel() {
+    notifScrim.hidden = false;
+    notifPanel.hidden = false;
+    renderNotifPanel();
+  }
+  function closeNotifPanel() {
+    notifScrim.hidden = true;
+    notifPanel.hidden = true;
+  }
+  if (notifBell) notifBell.addEventListener('click', openNotifPanel);
+  if (notifScrim) notifScrim.addEventListener('click', closeNotifPanel);
+  var notifPanelClose = document.getElementById('notif-panel-close');
+  if (notifPanelClose) notifPanelClose.addEventListener('click', closeNotifPanel);
+
+  async function loadNotifications() {
+    try {
+      var res = await fetch('/api/notifications');
+      if (!res.ok) throw new Error('failed');
+      var data = await res.json();
+      latestNotifications = data.notifications || [];
+      notifBell.hidden = latestNotifications.length === 0;
+      notifBadge.hidden = latestNotifications.length === 0;
+      if (latestNotifications.length === 0) closeNotifPanel();
+      if (!notifPanel.hidden) renderNotifPanel();
+    } catch (err) {
+      console.warn('Notifications lookup failed:', err);
+    }
+  }
+
   // ---------- First-run onboarding check ----------
   // Runs at the top level (not inside a per-tab panel) so a first-time
   // visitor with zero household members is redirected to /onboarding
@@ -1292,5 +1388,6 @@
       console.warn('Onboarding status check failed:', err);
     }
     activateTab(currentTabKey(), false);
+    loadNotifications();
   })();
 })();
