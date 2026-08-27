@@ -151,6 +151,26 @@
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+// The Kitchen hub (kitchen.html) links here as a "pushed view" inside its
+// own iframe (window.location.href = '/inventory', not a real shell
+// navigation) — see design_handoff_home_manager README's Kitchen hub note.
+// The "‹ Kitchen" back link's plain href="/kitchen" doesn't know that: when
+// this page is itself running inside that iframe, following it loads the
+// full shell.html (rail + tab bar + ask bar) a second time nested inside
+// the already-small Kitchen tab panel, stacked under the real outer shell —
+// confirmed via a sandbox screenshot, not a hypothetical. Fixed by
+// detecting the iframe case and going back to the hub's own embed src
+// instead, which stays inside the same iframe with no nested shell. When
+// this page is reached directly (the rail's standalone "Inventory" link,
+// which is NOT inside an iframe), the plain '/kitchen' navigation is
+// correct as-is and left alone.
+(function () {
+  var backLink = document.querySelector('.inv-back');
+  if (backLink && window.self !== window.top) {
+    backLink.setAttribute('href', '/static/kitchen.html');
+  }
+})();
 const LOCATION_ORDER = ['fridge', 'freezer', 'pantry'];
 const LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
 
