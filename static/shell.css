@@ -1328,21 +1328,34 @@ html, body {
    Fixed top-right, above both mobile and desktop layouts.
    =========================================================== */
 .notif-bell {
+  /* Matches the app's real icon system (shell.js's ICONS.* line-SVGs in
+     the tab bar/rail, not the design_handoff package's older "type and
+     CSS shapes only" note) and the active-tab chip's plum-bg/gold-ink
+     treatment, rather than a plain neutral circle with a generic emoji. */
   position: fixed;
   top: calc(14px + env(safe-area-inset-top, 0px));
   right: 16px;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--oat-cream, #F6EFE1);
-  border: 1px solid var(--card-border, #E7DCC8);
-  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--plum, #66304E);
+  border: none;
+  box-shadow: 0 2px 8px rgba(58,31,46,.25);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 60;
-  font-size: 18px;
+  color: var(--gold, #F0B429);
+}
+.notif-bell-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-bell-icon svg {
+  width: 20px;
+  height: 20px;
 }
 .notif-badge {
   position: absolute;

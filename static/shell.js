@@ -1390,4 +1390,33 @@
     activateTab(currentTabKey(), false);
     loadNotifications();
   })();
+
+  // ---------- Service worker registration ----------
+  // This used to live only in static/index.html, which registered it the
+  // first time anyone loaded the app. The app-shell redesign moved the
+  // real entry point to this file's shell.html ("/", "/week", etc. all
+  // serve shell.html now — see app/main.py's index()); index.html is no
+  // longer loaded by normal navigation, so a device that installs the app
+  // fresh after this redesign never registers a service worker at all,
+  // silently losing the offline-install behavior service-worker.js is
+  // built for. Registering it here restores that for new installs. (An
+  // already-installed old service worker from before this redesign stays
+  // active regardless of what registers it going forward — that one gets
+  // fixed by the service-worker.js content change itself, which the
+  // browser detects and updates to automatically.)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/static/service-worker.js').then(function (reg) {
+        reg.update();
+      }).catch(function (err) {
+        console.warn('Service worker registration failed:', err);
+      });
+      var reloadedForNewWorker = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (reloadedForNewWorker) return;
+        reloadedForNewWorker = true;
+        window.location.reload();
+      });
+    });
+  }
 })();

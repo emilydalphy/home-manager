@@ -1076,6 +1076,51 @@ TOOL_DEFINITIONS = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "get_facts",
+        "description": "List freeform household facts backing the What We Know screen's People/Taste/Rhythm tabs — things like \"Sam is allergic to peanuts\", \"we do pizza night every Friday\", \"Mia won't eat anything green\". These are separate from the structured preference fields (dietary_restrictions, cuisine/protein preferences, etc.) that get_household_memory/edit_preference manage — use get_household_memory for those, and get_facts/add_fact/update_fact/delete_fact only for the People/Taste/Rhythm notes. Optionally filter to one category.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "enum": ["people", "taste", "rhythm"], "description": "Omit to list facts across all three categories."},
+            },
+        },
+    },
+    {
+        "name": "add_fact",
+        "description": "Add one freeform fact to the What We Know screen. Use 'people' for who's-who and allergies/restrictions phrased as a note (e.g. \"Sam is allergic to peanuts\") rather than the structured dietary_restrictions field when the user is just telling you something in passing to remember, not filling out a form; 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true only for allergy/must-avoid-type facts (mirrors the UI's visual flag for those). This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "enum": ["people", "taste", "rhythm"]},
+                "text": {"type": "string"},
+                "hard": {"type": "boolean", "description": "True for an allergy/must-avoid-type fact. Defaults to false."},
+            },
+            "required": ["category", "text"],
+        },
+    },
+    {
+        "name": "update_fact",
+        "description": "Edit an existing What We Know fact's text and/or hard flag in place. Get the fact_id from get_facts.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "fact_id": {"type": "integer"},
+                "text": {"type": "string"},
+                "hard": {"type": "boolean"},
+            },
+            "required": ["fact_id"],
+        },
+    },
+    {
+        "name": "delete_fact",
+        "description": "Delete one What We Know fact outright. Get the fact_id from get_facts.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"fact_id": {"type": "integer"}},
+            "required": ["fact_id"],
+        },
+    },
+    {
         "name": "edit_preference",
         "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
@@ -2271,6 +2316,10 @@ TOOL_FUNCTIONS = {
     "regenerate_member_share_link": tools.regenerate_member_share_link,
     "get_member_notes": tools.get_member_notes,
     "get_household_memory": tools.get_household_memory,
+    "get_facts": tools.get_facts,
+    "add_fact": tools.add_fact,
+    "update_fact": tools.update_fact,
+    "delete_fact": tools.delete_fact,
     "edit_preference": tools.edit_preference,
     "delete_preference": tools.delete_preference,
     "add_grocery_item": tools.add_grocery_item,

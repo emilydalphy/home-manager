@@ -1298,7 +1298,7 @@ _VERB_PREFIXES = [
     ("clear_", "Cleared"), ("consolidate_", "Consolidated"), ("resolve_", "Resolved"), ("flag_", "Flagged"),
     ("log_", "Logged"), ("plan_", "Planned"), ("schedule_", "Scheduled"),
 ]
-_CHANGE_TEXT_FIELDS = ["name", "item", "chore", "meal", "recipe_name", "dish", "message", "store", "field"]
+_CHANGE_TEXT_FIELDS = ["name", "item", "chore", "meal", "recipe_name", "dish", "message", "store", "field", "text"]
 
 
 def _categorize_tool(tool_name: str) -> tuple[str, str | None, str | None]:
