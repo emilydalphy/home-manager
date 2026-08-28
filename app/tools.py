@@ -1489,6 +1489,39 @@ def set_planning_mode(mode: str) -> dict:
     return {"planning_mode": mode}
 
 
+def _current_weekly_plan_row(conn):
+    """
+    Resolve "the household's current plan" the way every plan-scoped tool
+    means it when weekly_plan_id is omitted: the plan whose week actually
+    contains today, so a chat answer about "this week's plan" always
+    matches the same days the Meals tab is showing. Falls back to the
+    most-recently-created plan when none covers today — a household with
+    no plan at all still correctly resolves to None either way.
+
+    This used to just be "most recently created plan" everywhere, which
+    silently drifted away from "this week" the moment any other plan
+    existed (a leftover from last week that was never cleared, or one
+    generated ahead of time for next week) — the assistant would describe
+    that other plan's meals while the Meals tab, which only ever shows the
+    real current calendar week, correctly showed nothing. That's the exact
+    "the chat knows about a meal plan the app doesn't show" report this
+    fixes at the source, instead of just in one call site.
+    """
+    today = date.today().isoformat()
+    plan = conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? "
+        "AND date(week_start_date) <= date(?) AND date(week_start_date, '+6 days') >= date(?) "
+        "ORDER BY created_at DESC, id DESC LIMIT 1",
+        (HOUSEHOLD_ID, today, today),
+    ).fetchone()
+    if plan:
+        return plan
+    return conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+
+
 def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = None) -> dict:
     """
     Set/update the one-off constraints for a specific week's plan (e.g. "3
@@ -1504,10 +1537,7 @@ def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = No
     """
     conn = get_conn()
     if weekly_plan_id is None:
-        row = conn.execute(
-            "SELECT id FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
-            (HOUSEHOLD_ID,),
-        ).fetchone()
+        row = _current_weekly_plan_row(conn)
         if not row:
             conn.close()
             raise ValueError("No weekly plan exists yet — generate one first, or pass constraints_notes to generate_weekly_plan directly.")
@@ -1656,14 +1686,14 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     """
     conn = get_conn()
     if weekly_plan_id is None:
-        # id DESC as a tiebreaker matters: two plans created within the same
-        # second (created_at has only second-level resolution) would
-        # otherwise resolve non-deterministically, which broke
-        # clear_stale_grocery_items identifying the actual newest plan.
-        plan = conn.execute(
-            "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
-            (HOUSEHOLD_ID,),
-        ).fetchone()
+        # Resolves to the plan whose week actually contains today when one
+        # exists, falling back to the most-recently-created plan otherwise
+        # — see _current_weekly_plan_row. id DESC as a tiebreaker still
+        # matters within that: two plans created within the same second
+        # (created_at has only second-level resolution) would otherwise
+        # resolve non-deterministically, which broke clear_stale_grocery_items
+        # identifying the actual newest plan.
+        plan = _current_weekly_plan_row(conn)
     else:
         plan = conn.execute(
             "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -2500,10 +2530,7 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
     """Get the generated prep-task schedule for a plan (see generate_prep_schedule). Omit weekly_plan_id for the household's current/most recent plan."""
     conn = get_conn()
     if weekly_plan_id is None:
-        row = conn.execute(
-            "SELECT id FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
-            (HOUSEHOLD_ID,),
-        ).fetchone()
+        row = _current_weekly_plan_row(conn)
         if not row:
             conn.close()
             return []
