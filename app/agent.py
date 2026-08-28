@@ -1380,6 +1380,13 @@ TOOL_DEFINITIONS = [
             "properties": {"item_id": {"type": "integer"}},
             "required": ["item_id"],
         },
+        # Prompt-caching breakpoint: TOOL_DEFINITIONS is ~15k tokens and
+        # identical on every single call (every tool-calling round within a
+        # turn, and every turn across a session) — this list never changes
+        # per-request. Marking the LAST tool caches the whole list as one
+        # unit; Anthropic looks backward from this breakpoint, so it must
+        # stay on whichever tool is last if more get added later.
+        "cache_control": {"type": "ephemeral"},
     },
 ]
 
@@ -2450,11 +2457,30 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
     # "this week" style requests (or fill in a week_start_date for
     # generate_weekly_plan) without being told the actual date each turn.
     today = datetime.date.today()
-    system_with_date = (
-        f"{SYSTEM_PROMPT}\n\nToday's date is {today.isoformat()} ({today.strftime('%A')}). "
-        "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
-        "\"next Monday\" yourself — never ask the user what today's date is."
-    )
+
+    # Prompt-caching: SYSTEM_PROMPT is ~7k tokens and word-for-word identical
+    # on every call, so it gets its own cached block. The date line changes
+    # daily and must NOT be cached inside that same block — if it were
+    # concatenated into one string, a new cache entry would have to be
+    # written every single day (and briefly on the boundary, mid-request).
+    # Keeping it as a separate, small, uncached block after the breakpoint
+    # means the big block is reused untouched while only this few-token
+    # line is sent/priced fresh each time.
+    system_with_date = [
+        {
+            "type": "text",
+            "text": SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},
+        },
+        {
+            "type": "text",
+            "text": (
+                f"Today's date is {today.isoformat()} ({today.strftime('%A')}). "
+                "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
+                "\"next Monday\" yourself — never ask the user what today's date is."
+            ),
+        },
+    ]
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps
