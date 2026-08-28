@@ -261,6 +261,9 @@
             '<div class="ask-chips" id="today-ask-chips"></div>' +
             '<form id="today-ask-composer" class="ask-composer-bar">' +
               '<input id="today-ask-input" class="ask-composer-input" type="text" placeholder="Ask or add anything&hellip;" autocomplete="off" />' +
+              '<button type="button" id="today-ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">' +
+                '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>' +
+              '</button>' +
               '<button type="submit" id="today-ask-send-btn" class="ask-composer-send" aria-label="Send">&uarr;</button>' +
             '</form>' +
           '</div>' +
@@ -1199,6 +1202,31 @@
     });
   }
 
+  // A chat turn that changes the plan (generate/swap/approve a week, etc.)
+  // is tagged by the backend as a "week" action (see app/main.py's
+  // _categorize_tool/summarize_chat_actions). Meals/Week only ever fetches
+  // its data once per page load (buildWeekPanel's dataset.built guard,
+  // same pattern Grocery/Kitchen's iframes use) — so if that tab was
+  // already open in this browser tab *before* the chat made the change,
+  // it keeps showing whatever it loaded at that point, even after
+  // switching away and back, until a full page reload. This is the
+  // "made a plan with the assistant but This Week/Meals doesn't show it"
+  // report — confirmed by testing, not assumed. Rather than requiring a
+  // reload, proactively refresh any already-built tab a chat action just
+  // touched, the same way fillWeekDinner already refreshes Today when a
+  // week-sheet dinner-pick affects it.
+  function refreshStaleTabsFromActions(actions) {
+    (actions || []).forEach(function (action) {
+      if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
+        loadWeekMenu(panels.week);
+      } else if (action.tab === 'today' && panels.today && panels.today.dataset.built) {
+        loadNeedsYou(panels.today);
+        loadTonightsDinner(panels.today);
+        loadGrocerySummary(panels.today);
+      }
+    });
+  }
+
   function setAskInputsDisabled(disabled) {
     askInputTargets().forEach(function (pair) {
       pair.input.disabled = disabled;
@@ -1233,6 +1261,7 @@
       }
       var data = await res.json();
       addAskMessage('assistant', data.reply, data.actions);
+      refreshStaleTabsFromActions(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);
@@ -1289,6 +1318,97 @@
     sendAskMessage(message);
   });
 
+  // ---------- Voice dictation (restored per testing feedback) ----------
+  // Ported from static/index.html's mic button, which the ask-sheet's
+  // Step 3 rewrite explicitly left out at the time ("a reasonable follow-
+  // up but out of scope"). Two very different situations:
+  // - Android Chrome / desktop Chrome expose the Web Speech API, so a mic
+  //   button can drive in-page transcription directly.
+  // - iOS Safari does NOT expose it at all — dictation there only exists
+  //   as the mic key built into the native keyboard on any text field,
+  //   which already works with zero code. The button can't trigger that
+  //   programmatically, so on iOS it just focuses the input and points at
+  //   the keyboard mic once.
+  // Set up once per input/mic-button pair so the sheet's composer and
+  // Today's permanent desktop composer (§7) each dictate independently —
+  // index.html only ever had one composer to worry about, this shell has
+  // two.
+  var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function setupDictation(input, micBtn) {
+    if (!input || !micBtn) return;
+    var originalPlaceholder = input.placeholder;
+    var recognition = null;
+    var recognizing = false;
+    var dictationBaseValue = '';
+
+    if (SpeechRecognitionCtor) {
+      recognition = new SpeechRecognitionCtor();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = function (e) {
+        var finalText = '';
+        var interimText = '';
+        for (var i = 0; i < e.results.length; i++) {
+          var result = e.results[i];
+          if (result.isFinal) finalText += result[0].transcript;
+          else interimText += result[0].transcript;
+        }
+        var spoken = (finalText + interimText).trim();
+        input.value = dictationBaseValue ? (dictationBaseValue + ' ' + spoken) : spoken;
+      };
+      recognition.onerror = function (e) {
+        recognizing = false;
+        micBtn.classList.remove('active');
+        input.placeholder = originalPlaceholder;
+        if (e.error === 'aborted') return; // user-initiated stop, not a real error
+        var messages = {
+          'not-allowed': "Microphone access is blocked for this site — check your browser's site settings (usually the icon left of the address bar) and allow the microphone, then try again.",
+          'service-not-allowed': "Microphone access is blocked for this site — check your browser's site settings (usually the icon left of the address bar) and allow the microphone, then try again.",
+          'audio-capture': 'No microphone found — check that one\'s connected and selected as your input device.',
+          'no-speech': "Didn't catch anything — try again and speak right after tapping the mic.",
+          'network': 'Voice dictation needs an internet connection — check your connection and try again.'
+        };
+        showToast(messages[e.error] || ('Voice dictation error: ' + e.error));
+      };
+      recognition.onend = function () {
+        recognizing = false;
+        micBtn.classList.remove('active');
+        input.placeholder = originalPlaceholder;
+        input.focus();
+      };
+
+      micBtn.addEventListener('click', function () {
+        if (recognizing) {
+          recognition.stop();
+          return;
+        }
+        dictationBaseValue = input.value.trim();
+        recognizing = true;
+        micBtn.classList.add('active');
+        input.placeholder = 'Listening... tap the mic again to stop';
+        try {
+          recognition.start();
+        } catch (err) {
+          recognizing = false;
+          micBtn.classList.remove('active');
+          input.placeholder = originalPlaceholder;
+          showToast('Could not start voice dictation: ' + err.message);
+        }
+      });
+    } else {
+      micBtn.addEventListener('click', function () {
+        input.focus();
+        if (!micBtn.dataset.hinted) {
+          showToast('Tap the microphone icon on your keyboard to dictate your message.');
+          micBtn.dataset.hinted = '1';
+        }
+      });
+    }
+  }
+  setupDictation(askInput, document.getElementById('ask-mic-btn'));
+
   // Wires up Today's permanent desktop Ask column (§7) — same
   // ensureAskSheetBuilt/sendAskMessage the sheet uses, just a second entry
   // point. Called once per Today-panel build (buildTodayPanel), which only
@@ -1305,6 +1425,7 @@
       input.value = '';
       sendAskMessage(message);
     });
+    setupDictation(input, panel.querySelector('#today-ask-mic-btn'));
   }
 
   // ---------- Notifications (Phase 5 / NOTIFICATIONS.md) ----------

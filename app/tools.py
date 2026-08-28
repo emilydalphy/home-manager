@@ -10,6 +10,7 @@ instead of the constant.
 from __future__ import annotations  # lets `str | None` etc. work on Python 3.9
 
 import json
+import math
 import os
 import re
 import secrets
@@ -4087,6 +4088,13 @@ _UNIT_ALIASES = {
     "kg": "kg", "kilogram": "kg", "kilograms": "kg",
     "ml": "ml", "milliliter": "ml", "milliliters": "ml",
     "l": "l", "liter": "l", "liters": "l",
+    # Size descriptors ("1 large" onion) aren't real units of measure — map
+    # them to "" (normalized to None below) so "1 large" and "1/2" (no
+    # unit) are recognized as the same kind of quantity and merge into a
+    # single count instead of falling through to literal "1 large + 1/2"
+    # concatenation. See _try_consolidate_quantity / the grocery-quantity
+    # bug this fixes (onion showing as "1 large + 1/2" instead of "2").
+    "large": "", "medium": "", "small": "", "whole": "", "jumbo": "", "xl": "",
 }
 
 _QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]*)$")
@@ -4147,6 +4155,80 @@ def _format_quantity(amount: float, unit: str | None) -> str:
     return f"{amount_str} {display_unit}"
 
 
+# Unit groups for shopping-list "roll up to a bigger unit" conversion, each
+# mapping unit -> how many of the group's smallest unit it equals. Used only
+# for grocery-list display (see _humanize_grocery_quantity) — recipe
+# scaling (scale_recipe) calls _format_quantity directly and is left in
+# whatever unit the recipe was written in, since a cook following a recipe
+# wants "12 tbsp", not a shopper's "3/4 cup".
+_VOLUME_TO_TSP = {"tsp": 1.0, "tbsp": 3.0, "cup": 48.0}
+_WEIGHT_TO_OZ = {"oz": 1.0, "lb": 16.0}
+_MASS_TO_G = {"g": 1.0, "kg": 1000.0}
+_METRIC_VOL_TO_ML = {"ml": 1.0, "l": 1000.0}
+_UNIT_CONVERSION_GROUPS = [_VOLUME_TO_TSP, _WEIGHT_TO_OZ, _MASS_TO_G, _METRIC_VOL_TO_ML]
+
+_NICE_FRACTIONS = (0.0, 0.25, 0.5, 0.75, 1.0)
+
+
+def _roll_up_unit(amount: float, unit: str) -> tuple[float, str]:
+    """
+    Convert amount/unit up to the largest unit in its conversion group that
+    it comfortably fits — e.g. 52 tbsp -> ~3.25 cups instead of staying in
+    a unit nobody actually measures a shopping quantity in.
+    """
+    for group in _UNIT_CONVERSION_GROUPS:
+        if unit not in group:
+            continue
+        base_amount = amount * group[unit]
+        for candidate_unit, factor in sorted(group.items(), key=lambda kv: -kv[1]):
+            if base_amount >= factor - 1e-9:
+                return base_amount / factor, candidate_unit
+        smallest_unit = min(group, key=group.get)
+        return base_amount / group[smallest_unit], smallest_unit
+    return amount, unit
+
+
+def _round_to_nice_fraction(amount: float) -> float:
+    """Round to the nearest quarter — friendlier for a shopping list than a repeating decimal."""
+    whole = math.floor(amount + 1e-9)
+    frac = amount - whole
+    best = min(_NICE_FRACTIONS, key=lambda f: abs(f - frac))
+    return whole + best if best < 1.0 else whole + 1.0
+
+
+def _humanize_grocery_quantity(amount: float, unit: str | None) -> str:
+    """
+    Format a quantity for the grocery list the way a shopper actually buys
+    it: unit=None or a discrete descriptor ("clove", "can", or a size
+    adjective normalized away in _UNIT_ALIASES) rounds UP to a whole number
+    — you can't buy 1.5 onions at the store — while a measurable unit
+    (volume/weight) is rolled up to the largest sensible unit and rounded
+    to the nearest quarter, so "52 tbsp" becomes "3.25 cups" instead of a
+    number nobody would actually measure out.
+    """
+    if unit not in {u for group in _UNIT_CONVERSION_GROUPS for u in group}:
+        whole = math.ceil(amount - 1e-9)
+        return _format_quantity(max(whole, 1) if amount > 0 else whole, unit)
+    rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
+    nice_amount = _round_to_nice_fraction(rolled_amount)
+    if nice_amount <= 0 and amount > 0:
+        nice_amount = 0.25
+    return _format_quantity(nice_amount, rolled_unit)
+
+
+def _normalize_grocery_quantity(qty: str) -> str:
+    """
+    Reformat a raw quantity string for shopper-friendly display (see
+    _humanize_grocery_quantity). Freeform text that doesn't parse as a
+    number+unit (e.g. "a bunch", "to taste") is left exactly as-is.
+    """
+    stripped = _strip_prep_descriptor((qty or "").strip())
+    parsed = _parse_quantity(stripped)
+    if not parsed:
+        return stripped
+    return _humanize_grocery_quantity(parsed[0], parsed[1])
+
+
 def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
     """
     Try to merge two quantity strings for the same grocery item. Returns
@@ -4166,7 +4248,7 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     existing_parsed = _parse_quantity(existing_qty)
     new_parsed = _parse_quantity(new_qty)
     if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
-        return _format_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]), True
+        return _humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]), True
     return f"{existing_qty} + {new_qty}", False
 
 
@@ -4197,7 +4279,7 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
         remainder = current_parsed[0] - remove_parsed[0]
         if remainder <= 0.0001:
             return "", True
-        return _format_quantity(remainder, current_parsed[1]), False
+        return _humanize_grocery_quantity(remainder, current_parsed[1]), False
     return current_qty, False
 
 
@@ -4268,7 +4350,7 @@ def add_grocery_item(
     clear_stale_grocery_items can tell a current week's ingredients apart
     from an old week's leftovers.
     """
-    quantity = _strip_prep_descriptor(quantity or "")
+    quantity = _normalize_grocery_quantity(quantity or "")
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' AND LOWER(item) = LOWER(?)",

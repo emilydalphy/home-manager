@@ -565,6 +565,37 @@ html, body {
 }
 .ask-composer-send:disabled { opacity: .5; cursor: default; }
 
+/* Voice dictation mic button — restored per testing feedback (see
+   design_handoff_home_manager README's Phase 5 note on why this was
+   originally dropped when chat moved into the ask sheet). Sits between
+   the input and the send button, matching the composer's own chip sizing
+   rather than index.html's old outline-button styling. */
+.ask-composer-mic {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--plum);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ask-composer-mic svg { width: 18px; height: 18px; }
+.ask-composer-mic:hover { background: var(--violet-soft, #F4E7EF); }
+.ask-composer-mic.active {
+  background: var(--urgent, #E8562A);
+  color: #fff;
+  animation: askMicPulse 1.4s ease-in-out infinite;
+}
+.ask-composer-mic:disabled { opacity: .5; cursor: default; animation: none; }
+@keyframes askMicPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 86, 42, .45); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 86, 42, 0); }
+}
+
 @media (min-width: 480px) {
   #ask-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 440px; }
 }
