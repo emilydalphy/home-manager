@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Home Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700;800&family=Quicksand:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#66304E" />
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: var(--oat-cream);
+  }
+  .login-card {
+    width: 100%;
+    max-width: 360px;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .login-card h1 {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    color: var(--midnight-violet);
+    margin: 0;
+  }
+  .login-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  form { display: flex; flex-direction: column; gap: 14px; }
+  label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  input[type="password"] {
+    font-family: var(--font-body);
+    font-size: 16px; /* 16px keeps iOS Safari from zooming the page on focus */
+    color: var(--text-body);
+    background: var(--oat-cream);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-control);
+    padding: 13px 14px;
+    width: 100%;
+  }
+  input[type="password"]:focus-visible,
+  button:focus-visible {
+    outline: 3px solid var(--turmeric-gold);
+    outline-offset: 2px;
+  }
+  .error {
+    background: #FBE6DF;
+    color: #B23B16;
+    border-radius: var(--radius-control);
+    padding: 10px 12px;
+    font-size: 14.5px;
+  }
+</style>
+</head>
+<body>
+  <main class="login-card">
+    <h1>Home Manager</h1>
+    <p>This one's just for the household. Enter the password to pick up where you left off.</p>
+    <!--ERROR-->
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="__NEXT__" />
+      <div>
+        <label for="password">Household password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" autofocus required />
+      </div>
+      <button type="submit" class="btn-primary">Let me in</button>
+    </form>
+  </main>
+</body>
+</html>

@@ -4,16 +4,23 @@ FastAPI backend for the Home Manager chat app.
 Run with:  uvicorn app.main:app --reload
 Then open: http://localhost:8000
 """
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, Form, Request, UploadFile
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+)
 from pydantic import BaseModel
 import base64
 import datetime
 import json
 import logging
 import os
+import time
 
+from . import ratelimit, security
 from .db import init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
 from . import tools
@@ -22,10 +29,69 @@ logger = logging.getLogger("home_manager")
 
 app = FastAPI(title="Home Manager")
 
-# In-memory session store: session_id -> conversation history.
-# Fine for V1 (single household, one browser tab). Swap for a real
-# session/DB-backed store before this becomes multi-user.
+# Shared-password gate over every non-public route. Registered before the
+# routes below so it wraps all of them, including the /static mount.
+app.middleware("http")(security.auth_middleware)
+
+
+@app.middleware("http")
+async def no_index_headers(request: Request, call_next):
+    """
+    Keep the app out of search results. It holds the household's dietary
+    notes and members, and even behind a password there is no reason for
+    any of it to be crawled or cached by an index.
+    """
+    response = await call_next(request)
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    return response
+
+
+# In-memory chat history: session_id -> conversation.
+#
+# The session id is minted server-side and carried in the signed login
+# cookie (see security.issue_session). It used to come straight off the
+# request body with a default of "default", which meant any caller could
+# both read and append to the household's conversation, and could grow this
+# dict without bound by inventing new ids. Neither is possible now, but the
+# TTL and cap below stay as a second line of defence — and they also stop a
+# long-lived deploy accumulating history for browsers that never come back.
 SESSIONS: dict[str, list[dict]] = {}
+SESSION_TOUCHED: dict[str, float] = {}
+_SESSION_TTL = 7 * 24 * 60 * 60  # a week without a message and it's dropped
+_MAX_SESSIONS = 50
+
+
+def _prune_sessions() -> None:
+    now = time.time()
+    stale = [sid for sid, seen in SESSION_TOUCHED.items() if now - seen > _SESSION_TTL]
+    for sid in stale:
+        SESSIONS.pop(sid, None)
+        SESSION_TOUCHED.pop(sid, None)
+    # Still over the cap (many devices, all active): drop least-recent first.
+    while len(SESSIONS) > _MAX_SESSIONS:
+        oldest = min(SESSION_TOUCHED, key=SESSION_TOUCHED.get)
+        SESSIONS.pop(oldest, None)
+        SESSION_TOUCHED.pop(oldest, None)
+
+
+def _chat_session_id(request: Request) -> str:
+    """
+    The conversation key for this caller, taken from the signed cookie.
+
+    Falls back to a single shared local session when no password is
+    configured, which is the `uvicorn --reload` case on a laptop — there is
+    exactly one user there and nothing to separate.
+    """
+    return security.read_session(request.cookies.get(security.COOKIE_NAME)) or "local-dev"
+
+
+def _enforce_rate_limit(request: Request, bucket: str) -> None:
+    wait = ratelimit.check(bucket, ratelimit.caller_id(request))
+    if wait:
+        raise HTTPException(
+            status_code=429,
+            detail=f"That's a lot of requests at once — give it about {wait} seconds and try again.",
+        )
 
 
 class ChatRequest(BaseModel):
@@ -1113,13 +1179,14 @@ async def _read_scan_image(photo: UploadFile) -> tuple[str, str]:
 
 
 @app.post("/api/inventory/scan-receipt")
-async def scan_receipt(photo: UploadFile = File(...)):
+async def scan_receipt(request: Request, photo: UploadFile = File(...)):
     """
     Phase 4, §4.3: photograph a grocery receipt and get back a draft list of
     detected items — nothing is saved yet, the Inventory view shows this as
     an editable review step before /api/inventory/confirm-scan actually
     writes anything.
     """
+    _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_receipt_image(image_b64, media_type)
@@ -1133,7 +1200,7 @@ async def scan_receipt(photo: UploadFile = File(...)):
 
 
 @app.post("/api/inventory/scan-fridge")
-async def scan_fridge(photo: UploadFile = File(...)):
+async def scan_fridge(request: Request, photo: UploadFile = File(...)):
     """
     Phase 4, §4.3: photograph fridge shelves and get back a draft list of
     detected items for an initial stock-take or re-sync — same
@@ -1143,6 +1210,7 @@ async def scan_fridge(photo: UploadFile = File(...)):
     visibly in a freezer compartment) so it lands in the right place
     without extra manual work.
     """
+    _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_fridge_photo(image_b64, media_type)
@@ -1156,11 +1224,12 @@ async def scan_fridge(photo: UploadFile = File(...)):
 
 
 @app.post("/api/inventory/scan-pantry")
-async def scan_pantry(photo: UploadFile = File(...)):
+async def scan_pantry(request: Request, photo: UploadFile = File(...)):
     """
     Phase 4, §4.3 follow-up: photograph pantry/cupboard shelves — same flow
     as scan-fridge, but every returned item is pre-tagged location='pantry'.
     """
+    _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
         items = scan_pantry_photo(image_b64, media_type)
@@ -1399,8 +1468,13 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    history = SESSIONS.get(req.session_id, [])
+def chat(req: ChatRequest, request: Request):
+    # req.session_id is accepted and ignored — the clients still send it and
+    # there is no reason to break them, but the real key comes from the
+    # signed cookie so a caller can't choose whose history they land in.
+    _enforce_rate_limit(request, "chat")
+    session_id = _chat_session_id(request)
+    history = SESSIONS.get(session_id, [])
     try:
         reply, updated_history = run_agent_turn(history, req.message)
     except AssistantUnavailableError as e:
@@ -1429,7 +1503,9 @@ def chat(req: ChatRequest):
     # session id) can't grow this — and the full payload re-sent to Claude
     # every turn — without bound. See trim_conversation for why this is
     # safe to cut mid-list without breaking tool_use/tool_result pairing.
-    SESSIONS[req.session_id] = trim_conversation(updated_history)
+    SESSIONS[session_id] = trim_conversation(updated_history)
+    SESSION_TOUCHED[session_id] = time.time()
+    _prune_sessions()
     return ChatResponse(reply=reply, actions=actions)
 
 
@@ -1506,3 +1582,69 @@ def member_share_page(token: str):
     """Public member self-service page — no auth check here (member-share.html calls
     /api/member-share/{token} and shows a not-found state if the token is invalid/revoked)."""
     return FileResponse(os.path.join(static_dir, "member-share.html"))
+
+
+# ---------- Sign-in (see app/security.py for why this exists) ----------
+
+
+def _render_login(next_path: str, error: str = "") -> HTMLResponse:
+    html = open(os.path.join(static_dir, "login.html"), encoding="utf-8").read()
+    # The template carries a placeholder rather than building the markup in
+    # Python, so the page stays editable as a normal static file.
+    banner = f'<p class="error">{error}</p>' if error else ""
+    html = html.replace("<!--ERROR-->", banner)
+    html = html.replace("__NEXT__", security.sanitize_next(next_path))
+    return HTMLResponse(html, status_code=401 if error else 200)
+
+
+def _is_https(request: Request) -> bool:
+    # Railway terminates TLS at its proxy, so the app itself sees http —
+    # X-Forwarded-Proto is what says whether the browser is on https.
+    forwarded = request.headers.get("x-forwarded-proto", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip() == "https"
+    return request.url.scheme == "https"
+
+
+@app.get("/login")
+def login_page(request: Request, next: str = "/"):
+    if security.read_session(request.cookies.get(security.COOKIE_NAME)):
+        return RedirectResponse(url=security.sanitize_next(next), status_code=303)
+    return _render_login(next)
+
+
+@app.post("/login")
+def login_submit(request: Request, password: str = Form(""), next: str = Form("/")):
+    _enforce_rate_limit(request, "login")
+    if not security.check_password(password):
+        logger.warning("Failed sign-in attempt from %s", ratelimit.caller_id(request))
+        return _render_login(next, "That password didn't match. Try again.")
+    response = RedirectResponse(url=security.sanitize_next(next), status_code=303)
+    response.set_cookie(
+        security.COOKIE_NAME,
+        security.issue_session(),
+        max_age=security.COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=_is_https(request),
+        path="/",
+    )
+    return response
+
+
+@app.get("/logout")
+def logout():
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(security.COOKIE_NAME, path="/")
+    return response
+
+
+@app.get("/healthz")
+def healthz():
+    """Unauthenticated liveness check for the hosting platform. Says nothing about the household."""
+    return {"status": "ok"}
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots():
+    return "User-agent: *\nDisallow: /\n"
