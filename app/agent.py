@@ -1380,13 +1380,6 @@ TOOL_DEFINITIONS = [
             "properties": {"item_id": {"type": "integer"}},
             "required": ["item_id"],
         },
-        # Prompt-caching breakpoint: TOOL_DEFINITIONS is ~15k tokens and
-        # identical on every single call (every tool-calling round within a
-        # turn, and every turn across a session) — this list never changes
-        # per-request. Marking the LAST tool caches the whole list as one
-        # unit; Anthropic looks backward from this breakpoint, so it must
-        # stay on whichever tool is last if more get added later.
-        "cache_control": {"type": "ephemeral"},
     },
 ]
 
@@ -1834,6 +1827,30 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
         "fresh_perishable_inventory": tools.get_fresh_perishable_inventory(),
     }
 
+    # Run the actual generation call BEFORE creating the weekly_plans row.
+    # This used to be the other way around — create the plan, then generate
+    # — which meant any failure or empty result from the LLM call (a
+    # truncated max_tokens response, an API error, a rate limit) left a
+    # permanently empty plan row already committed to the database. Because
+    # the household's "current week" plan is resolved by matching
+    # week_start_date (see tools._current_weekly_plan_row), that empty shell
+    # then WAS the current week's plan from then on — the Meals tab
+    # correctly showed nothing, but so did every future "what's my plan"
+    # answer, with no obvious sign anything had gone wrong short of noticing
+    # the week was blank. Generating first and only persisting once there's
+    # real content to save means a failed generation raises a clear error
+    # and leaves no trace, instead of silently planting an empty week.
+    is_component_based = household_memory.get("planning_mode") == "component_based"
+    if is_component_based:
+        items = generate_component_plan_llm(context)
+    else:
+        items = generate_weekly_plan_llm(context)
+    if not items:
+        raise ValueError(
+            "Generating this week's plan didn't come back with any meals — the model call may "
+            "have been cut off or hit an error. Nothing was saved; try generating the week again."
+        )
+
     plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
     plan_id = plan["weekly_plan_id"]
 
@@ -1864,8 +1881,7 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
                     advance_prep_step_indices=item.get("advance_prep_step_indices", []),
                 )
 
-    if household_memory.get("planning_mode") == "component_based":
-        items = generate_component_plan_llm(context)
+    if is_component_based:
         for item in items:
             meal_name = item.get("meal_name")
             category = item.get("category")
@@ -1881,8 +1897,7 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
                 reasoning=item.get("reasoning", ""),
             )
     else:
-        days = generate_weekly_plan_llm(context)
-        for day in days:
+        for day in items:
             meal_name = day.get("meal_name")
             if not meal_name:
                 continue
@@ -2457,30 +2472,11 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
     # "this week" style requests (or fill in a week_start_date for
     # generate_weekly_plan) without being told the actual date each turn.
     today = datetime.date.today()
-
-    # Prompt-caching: SYSTEM_PROMPT is ~7k tokens and word-for-word identical
-    # on every call, so it gets its own cached block. The date line changes
-    # daily and must NOT be cached inside that same block — if it were
-    # concatenated into one string, a new cache entry would have to be
-    # written every single day (and briefly on the boundary, mid-request).
-    # Keeping it as a separate, small, uncached block after the breakpoint
-    # means the big block is reused untouched while only this few-token
-    # line is sent/priced fresh each time.
-    system_with_date = [
-        {
-            "type": "text",
-            "text": SYSTEM_PROMPT,
-            "cache_control": {"type": "ephemeral"},
-        },
-        {
-            "type": "text",
-            "text": (
-                f"Today's date is {today.isoformat()} ({today.strftime('%A')}). "
-                "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
-                "\"next Monday\" yourself — never ask the user what today's date is."
-            ),
-        },
-    ]
+    system_with_date = (
+        f"{SYSTEM_PROMPT}\n\nToday's date is {today.isoformat()} ({today.strftime('%A')}). "
+        "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
+        "\"next Monday\" yourself — never ask the user what today's date is."
+    )
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps
