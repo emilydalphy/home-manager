@@ -110,7 +110,11 @@
   .gl-row:last-child { border-bottom: none; }
   .gl-row:hover { background: rgba(176,97,154,.07); }
   .gl-row.tall { min-height: 58px; gap: 14px; }
+  /* A real <button role="checkbox"> now — it was a <div> inside a clickable
+     row, so the list could only be checked off with a mouse. Background and
+     padding are reset so it renders exactly as before. */
   .gl-box {
+    padding: 0; background: none; appearance: none; cursor: pointer;
     width: 26px; height: 26px; border-radius: 8px; border: 2px solid rgba(176,97,154,.5);
     flex-shrink: 0; display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
   }
@@ -419,12 +423,12 @@
           <h1 class="gl-title">Grocery List</h1>
           <p class="gl-sub" id="gl-sub">Loading…</p>
         </div>
-        <button class="gl-refresh" id="refresh-btn" title="Reload the latest list">&#8635;</button>
+        <button type="button" class="gl-refresh" id="refresh-btn" title="Reload the latest list" aria-label="Reload the latest list">&#8635;</button>
       </div>
       <div class="gl-tabs">
-        <button class="gl-tab active" id="tab-buy" data-screen="buy">To buy</button>
-        <button class="gl-tab" id="tab-plan" data-screen="plan">Plan stops</button>
-        <button class="gl-tab" id="tab-review" data-screen="review">Review</button>
+        <button type="button" class="gl-tab active" id="tab-buy" data-screen="buy" role="tab" aria-selected="true">To buy</button>
+        <button type="button" class="gl-tab" id="tab-plan" data-screen="plan" role="tab" aria-selected="false">Plan stops</button>
+        <button type="button" class="gl-tab" id="tab-review" data-screen="review" role="tab" aria-selected="false">Review</button>
       </div>
     </div>
 
@@ -435,8 +439,8 @@
       <div class="add-card">
         <div class="add-card-title"><span class="add-chip">+</span><span>Add an item</span></div>
         <div class="add-row">
-          <input type="text" id="add-item" placeholder="Item, e.g. ground beef" />
-          <input type="text" class="add-qty-input" id="add-qty" placeholder="Qty" />
+          <input type="text" id="add-item" placeholder="Item, e.g. ground beef" aria-label="Item to add to the list" />
+          <input type="text" class="add-qty-input" id="add-qty" placeholder="Qty" aria-label="Quantity" />
           <button class="add-btn" id="add-btn">Add</button>
         </div>
       </div>
@@ -454,8 +458,8 @@
         <div class="dg-people" id="dg-people"></div>
       </div>
       <div class="dg-add-row">
-        <input type="text" id="dg-add-item" placeholder="Add an item…" />
-        <input type="text" id="dg-add-qty" placeholder="Qty" />
+        <input type="text" id="dg-add-item" placeholder="Add an item…" aria-label="Item to add to the list" />
+        <input type="text" id="dg-add-qty" placeholder="Qty" aria-label="Quantity" />
         <button id="dg-add-btn">Add</button>
       </div>
       <div id="dg-unassigned"></div>
@@ -521,7 +525,7 @@
       <div class="add-card">
         <div class="add-card-title"><span class="add-chip">+</span><span>Add anything missing</span></div>
         <div class="add-row">
-          <input type="text" id="review-add-item" placeholder="Item, e.g. ground beef" />
+          <input type="text" id="review-add-item" placeholder="Item, e.g. ground beef" aria-label="Item to add to the list" />
           <button class="add-btn" id="review-add-btn">Add</button>
         </div>
       </div>
@@ -529,7 +533,7 @@
     </div>
   </div>
 
-  <button class="mic-btn" id="voice-toggle-btn" title="Hands-free: check off, add, or ask about items by voice">&#127908;</button>
+  <button type="button" class="mic-btn" id="voice-toggle-btn" title="Hands-free: check off, add, or ask about items by voice" aria-label="Hands-free voice mode">&#127908;</button>
 </div>
 
 <script src="/static/voice-session.js"></script>
@@ -646,7 +650,11 @@ function setScreen(screen) {
   document.getElementById('screen-plan').style.display = screen === 'plan' ? '' : 'none';
   document.getElementById('screen-shop').style.display = screen === 'shop' ? '' : 'none';
   document.getElementById('screen-review').style.display = screen === 'review' ? '' : 'none';
-  document.querySelectorAll('.gl-tab').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  document.querySelectorAll('.gl-tab').forEach(b => {
+    const isActive = b.dataset.screen === screen;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
   applyGroceryLayoutMode();
   refreshCurrentScreen();
 }
@@ -771,15 +779,15 @@ function renderBuyScreen(data) {
 function buyRowHtml(it) {
   const menuOpen = openRowMenuId === it.id;
   return `<div class="gl-row" data-item-id="${it.id}" data-action="check-off">
-      <div class="gl-box"></div>
+      <button type="button" class="gl-box" role="checkbox" aria-checked="false" aria-label="Got ${escapeHtml(it.item)}"></button>
       <p class="gl-name">${escapeHtml(it.item)}</p>
       ${it.quantity ? `<span class="gl-qty-chip">${escapeHtml(it.quantity)}</span>` : ''}
-      <button class="gl-overflow-btn" data-action="toggle-menu" data-item-id="${it.id}" title="More">&#8942;</button>
+      <button type="button" class="gl-overflow-btn" data-action="toggle-menu" data-item-id="${it.id}" title="More" aria-label="More options for ${escapeHtml(it.item)}" aria-expanded="${menuOpen}">&#8942;</button>
     </div>
     <div class="gl-row-actions ${menuOpen ? 'open' : ''}" data-menu-for="${it.id}">
-      <input type="text" class="row-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" />
-      <select class="row-cat">${categoryOptions(it.category)}</select>
-      <input type="text" class="row-store" value="${escapeHtml(it.store || '')}" placeholder="Store" />
+      <input type="text" class="row-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Quantity" aria-label="Quantity of ${escapeHtml(it.item)}" />
+      <select class="row-cat" aria-label="Section for ${escapeHtml(it.item)}">${categoryOptions(it.category)}</select>
+      <input type="text" class="row-store" value="${escapeHtml(it.store || '')}" placeholder="Store" aria-label="Store for ${escapeHtml(it.item)}" />
       <button class="mini-save" data-action="save-row" data-item-id="${it.id}">Save</button>
       <button class="mini-have" data-action="already-have" data-item-id="${it.id}">Have it</button>
       <button class="mini-elsewhere" data-action="exclude" data-item-id="${it.id}">Elsewhere</button>
@@ -789,7 +797,7 @@ function buyRowHtml(it) {
 
 function doneRowHtml(it) {
   return `<div class="gl-row done" data-item-id="${it.id}" data-action="uncheck">
-    <div class="gl-box checked">&check;</div>
+    <button type="button" class="gl-box checked" role="checkbox" aria-checked="true" aria-label="Put ${escapeHtml(it.item)} back on the list">&check;</button>
     <p class="gl-name">${escapeHtml(it.item)}</p>
     ${it.quantity ? `<span class="gl-qty-chip">${escapeHtml(it.quantity)}</span>` : ''}
   </div>`;
@@ -1014,7 +1022,7 @@ function renderDesktopGrocery(data) {
     </div>`;
   }
   railHtml += `<div class="dg-rail-toggle" id="dg-already-got-toggle">
-    <input type="checkbox" id="dg-already-got-check" ${dgShowAlreadyGot ? 'checked' : ''} /> Already got
+    <input type="checkbox" id="dg-already-got-check" ${dgShowAlreadyGot ? 'checked' : ''} /> <label for="dg-already-got-check">Already got</label>
   </div>`;
   railHtml += `<p class="dg-rail-note">Shared list — anything you or your partner adds shows up here for both of you.</p>`;
   rail.innerHTML = railHtml;
@@ -1040,7 +1048,7 @@ function renderDesktopGrocery(data) {
     unassignedWrap.innerHTML = `<p class="dg-unassigned-title">Unassigned &middot; assign to a store</p>
       ${unassigned.map(it => `<div class="dg-unassigned-row">
         <span class="dg-unassigned-name">${escapeHtml(it.item)}${it.quantity ? ' — ' + escapeHtml(it.quantity) : ''}</span>
-        ${storeNames.map(n => `<button class="dg-store-pill" data-dg-assign="${it.id}" data-dg-assign-store="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')}
+        ${storeNames.map(n => `<button type="button" class="dg-store-pill" data-dg-assign="${it.id}" data-dg-assign-store="${escapeHtml(n)}" aria-label="Buy ${escapeHtml(it.item)} at ${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')}
       </div>`).join('')}`;
     unassignedWrap.querySelectorAll('[data-dg-assign]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -1328,8 +1336,8 @@ function renderPlanScreen(data) {
           <span class="to-sort-caret">${isOpen ? '⌄' : '›'}</span>
         </div>
         <div class="store-pills ${isOpen ? 'open' : ''}" data-pills-for="${it.id}">
-          ${Array.from(new Set([...Object.keys(data.stores).filter(n => n !== 'Unassigned'), ...usualStores])).map(n => `<button class="store-pill" data-assign-store="${escapeHtml(n)}" data-item-id="${it.id}">${escapeHtml(n)}</button>`).join('')}
-          <button class="store-pill" data-assign-store="" data-item-id="${it.id}">Any</button>
+          ${Array.from(new Set([...Object.keys(data.stores).filter(n => n !== 'Unassigned'), ...usualStores])).map(n => `<button type="button" class="store-pill" data-assign-store="${escapeHtml(n)}" data-item-id="${it.id}" aria-label="Buy ${escapeHtml(it.item)} at ${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')}
+          <button type="button" class="store-pill" data-assign-store="" data-item-id="${it.id}" aria-label="No particular store for ${escapeHtml(it.item)}">Any</button>
         </div>
       </div>`;
     }
@@ -1589,7 +1597,7 @@ function renderReviewScreen(data) {
       <div class="flag-detail ${open ? 'open' : ''}">
         ${missingQty.map(it => `<div class="flag-fix-row" data-fix-qty="${it.id}">
           <span>${escapeHtml(it.item)}</span>
-          <input type="text" class="fix-qty-input" placeholder="Add a quantity" />
+          <input type="text" class="fix-qty-input" placeholder="Add a quantity" aria-label="Quantity for ${escapeHtml(it.item)}" />
           <button data-save-qty="${it.id}">Save</button>
         </div>`).join('')}
       </div>

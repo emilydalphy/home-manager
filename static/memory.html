@@ -48,7 +48,9 @@
   .wwk-store-count { font-family: var(--font-body); font-size: 0.82rem; color: #9C8B93; margin-left: auto; }
   .wwk-chips { display: flex; flex-wrap: wrap; gap: 7px; }
   .wwk-chip { display: inline-flex; align-items: center; gap: 8px; background: #F6EFE1; border-radius: 20px; padding: 9px 8px 9px 13px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
-  .wwk-chip-x { width: 22px; height: 22px; border-radius: 12px; background: #E6DBC6; color: var(--midnight-violet); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  /* A real <button> now — it was a <span>, so it could only be clicked,
+     never tabbed to. Padding/border reset to keep it looking identical. */
+  .wwk-chip-x { padding: 0; border: none; appearance: none; width: 22px; height: 22px; border-radius: 12px; background: #E6DBC6; color: var(--midnight-violet); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .wwk-chip-add { border: 1.5px dashed #C4B09C; border-radius: 20px; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); padding: 9px 15px; cursor: pointer; }
   .wwk-chip-input-row { display: flex; gap: 6px; align-items: center; }
   .wwk-chip-input { border: 2px solid var(--midnight-violet); border-radius: 20px; padding: 9px 15px; font-family: var(--font-body); font-size: 0.9rem; }
@@ -82,29 +84,29 @@
   <h1 class="wwk-title">What we know</h1>
 </div>
 
-<div class="wwk-tabs" id="wwk-tabs">
-  <button class="wwk-tab active" data-tab="people">People</button>
-  <button class="wwk-tab" data-tab="taste">Taste</button>
-  <button class="wwk-tab" data-tab="rhythm">Rhythm</button>
-  <button class="wwk-tab" data-tab="stores">Stores</button>
+<div class="wwk-tabs" id="wwk-tabs" role="tablist" aria-label="What we know">
+  <button type="button" class="wwk-tab active" data-tab="people" role="tab" aria-selected="true" aria-controls="wwk-content">People</button>
+  <button type="button" class="wwk-tab" data-tab="taste" role="tab" aria-selected="false" aria-controls="wwk-content">Taste</button>
+  <button type="button" class="wwk-tab" data-tab="rhythm" role="tab" aria-selected="false" aria-controls="wwk-content">Rhythm</button>
+  <button type="button" class="wwk-tab" data-tab="stores" role="tab" aria-selected="false" aria-controls="wwk-content">Stores</button>
 </div>
 
-<div class="wwk-content" id="wwk-content"><p style="text-align:center;color:#8A7A82;font-family:var(--font-body)">Loading…</p></div>
+<div class="wwk-content" id="wwk-content" role="tabpanel" aria-live="polite"><p style="text-align:center;color:#8A7A82;font-family:var(--font-body)">Loading…</p></div>
 
-<div id="wwk-scrim"></div>
-<div id="wwk-import-sheet">
+<div id="wwk-scrim" aria-hidden="true"></div>
+<div id="wwk-import-sheet" role="dialog" aria-modal="true" aria-labelledby="wwk-import-heading">
   <p style="font-family:var(--font-body);font-weight:800;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#A8825C;margin:0">What you usually buy</p>
-  <h2 style="font-family:var(--font-heading);font-weight:700;font-size:1.4rem;color:var(--ink);margin:6px 0 0">Import a list</h2>
+  <h2 id="wwk-import-heading" style="font-family:var(--font-heading);font-weight:700;font-size:1.4rem;color:var(--ink);margin:6px 0 0">Import a list</h2>
   <p style="font-family:var(--font-body);font-size:0.9rem;color:#6B5A63;margin:12px 0 0">These items belong to</p>
-  <div class="wwk-store-picker" id="wwk-import-store-picker"></div>
-  <textarea id="wwk-import-textarea" placeholder="Paste or type one per line — rotisserie chicken, frozen berries, coffee beans…"></textarea>
+  <div class="wwk-store-picker" id="wwk-import-store-picker" role="group" aria-label="These items belong to"></div>
+  <textarea id="wwk-import-textarea" aria-label="Items, one per line" placeholder="Paste or type one per line — rotisserie chicken, frozen berries, coffee beans…"></textarea>
   <div class="wwk-import-footer">
     <button class="wwk-import-cancel" id="wwk-import-cancel">Cancel</button>
     <button class="wwk-import-save" id="wwk-import-save">Save</button>
   </div>
 </div>
 
-<div id="wwk-toast"></div>
+<div id="wwk-toast" role="status" aria-live="polite"></div>
 
 <script>
 function escapeHtml(s) {
@@ -147,7 +149,11 @@ document.getElementById('wwk-tabs').addEventListener('click', (e) => {
   if (!btn) return;
   activeTab = btn.getAttribute('data-tab');
   openEditorId = null;
-  document.querySelectorAll('.wwk-tab').forEach(t => t.classList.toggle('active', t === btn));
+  document.querySelectorAll('.wwk-tab').forEach(t => {
+    const isActive = t === btn;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
   render();
 });
 
@@ -166,7 +172,7 @@ async function renderFactsTab(category) {
     facts.forEach(f => {
       if (openEditorId === f.id) {
         html += `<div class="wwk-editor">
-          <textarea id="wwk-editor-textarea" autofocus>${escapeHtml(f.text)}</textarea>
+          <textarea id="wwk-editor-textarea" aria-label="Edit what we know" autofocus>${escapeHtml(f.text)}</textarea>
           <div class="wwk-editor-actions">
             <button class="wwk-save-btn" data-save-fact="${f.id}">Save</button>
             <button class="wwk-cancel-btn" data-cancel-fact="${f.id}">Cancel</button>
@@ -182,7 +188,7 @@ async function renderFactsTab(category) {
     });
     if (openEditorId === 'new') {
       html += `<div class="wwk-editor">
-        <textarea id="wwk-editor-textarea" placeholder="What should I know?" autofocus></textarea>
+        <textarea id="wwk-editor-textarea" placeholder="What should I know?" aria-label="Add something we should know" autofocus></textarea>
         <div class="wwk-editor-actions">
           <button class="wwk-save-btn" data-save-fact="new">Save</button>
           <button class="wwk-cancel-btn" data-cancel-fact="new">Cancel</button>
@@ -258,8 +264,8 @@ async function renderStoresTab() {
       html += `<div class="wwk-store-block">
         <div class="wwk-store-header"><span class="wwk-store-name">${escapeHtml(store)}</span><span class="wwk-store-count">${items.length} item${items.length === 1 ? '' : 's'}</span></div>
         <div class="wwk-chips" data-store-chips="${escapeHtml(store)}">
-          ${items.map(it => `<span class="wwk-chip" data-move-item="${escapeHtml(it)}" data-from-store="${escapeHtml(store)}"><span>${escapeHtml(it)}</span><span class="wwk-chip-x" data-forget-item="${escapeHtml(it)}" data-forget-store="${escapeHtml(store)}">&times;</span></span>`).join('')}
-          <button class="wwk-chip-add" data-add-chip-store="${escapeHtml(store)}">+ Add</button>
+          ${items.map(it => `<span class="wwk-chip" data-move-item="${escapeHtml(it)}" data-from-store="${escapeHtml(store)}"><span>${escapeHtml(it)}</span><button type="button" class="wwk-chip-x" data-forget-item="${escapeHtml(it)}" data-forget-store="${escapeHtml(store)}" aria-label="Forget ${escapeHtml(it)} at ${escapeHtml(store)}">&times;</button></span>`).join('')}
+          <button type="button" class="wwk-chip-add" data-add-chip-store="${escapeHtml(store)}" aria-label="Add an item you usually buy at ${escapeHtml(store)}">+ Add</button>
         </div>
       </div>`;
     }
@@ -305,7 +311,7 @@ function wireStoresActions(stores) {
       const wrap = document.querySelector(`[data-store-chips="${CSS.escape(store)}"]`);
       const row = document.createElement('div');
       row.className = 'wwk-chip-input-row';
-      row.innerHTML = `<input type="text" class="wwk-chip-input" placeholder="e.g. Rotisserie chicken" /><button class="wwk-chip-add" data-confirm-add="${escapeHtml(store)}">Add</button>`;
+      row.innerHTML = `<input type="text" class="wwk-chip-input" placeholder="e.g. Rotisserie chicken" aria-label="Item you usually buy at ${escapeHtml(store)}" /><button type="button" class="wwk-chip-add" data-confirm-add="${escapeHtml(store)}">Add</button>`;
       btn.replaceWith(row);
       const input = row.querySelector('input');
       input.focus();
@@ -326,10 +332,14 @@ function wireStoresActions(stores) {
 
 function openImportSheet(stores) {
   const picker = document.getElementById('wwk-import-store-picker');
-  picker.innerHTML = stores.map((s, i) => `<button data-store="${escapeHtml(s)}" class="${i === 0 ? 'selected' : ''}">${escapeHtml(s)}</button>`).join('');
+  picker.innerHTML = stores.map((s, i) => `<button type="button" data-store="${escapeHtml(s)}" class="${i === 0 ? 'selected' : ''}" aria-pressed="${i === 0}">${escapeHtml(s)}</button>`).join('');
   picker.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    picker.querySelectorAll('button').forEach(x => x.classList.remove('selected'));
+    picker.querySelectorAll('button').forEach(x => {
+      x.classList.remove('selected');
+      x.setAttribute('aria-pressed', 'false');
+    });
     b.classList.add('selected');
+    b.setAttribute('aria-pressed', 'true');
   }));
   document.getElementById('wwk-import-textarea').value = '';
   document.getElementById('wwk-scrim').classList.add('open');

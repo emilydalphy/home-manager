@@ -90,7 +90,10 @@
   #inv-sheet.open { display: block; }
   @keyframes invFadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes invSheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .inv-sheet-handle { width: 44px; height: 5px; border-radius: 999px; background: #E0D3BF; margin: 0 auto 14px; cursor: pointer; }
+  /* A real <button> now (it closes the sheet, and was previously a <div>
+     that only a mouse could use) — reset the UA button styling so it
+     still renders as the same grab handle. */
+  .inv-sheet-handle { display: block; width: 44px; height: 5px; padding: 0; border: none; appearance: none; border-radius: 999px; background: #E0D3BF; margin: 0 auto 14px; cursor: pointer; }
   .inv-sheet-kicker { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #A8825C; margin: 0 0 4px; }
   .inv-sheet-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink); margin: 0 0 18px; }
   .inv-sheet-label { font-family: var(--font-body); font-size: 0.92rem; color: #6B5A63; margin: 0 0 8px; }
@@ -125,16 +128,16 @@
     <a class="inv-back" href="/kitchen">&larr; Kitchen</a>
     <h1 class="inv-title">Inventory</h1>
   </div>
-  <p class="inv-summary" id="inv-summary">Loading…</p>
+  <p class="inv-summary" id="inv-summary" role="status">Loading…</p>
 </div>
 
 <div class="inv-content" style="padding-bottom:0">
   <div class="inv-add-card">
     <p class="inv-add-title">Add to inventory</p>
     <div class="inv-add-row">
-      <input type="text" id="inv-add-item" placeholder="Item, e.g. ground beef" />
-      <input type="text" id="inv-add-qty" placeholder="Qty" style="width:70px" />
-      <select id="inv-add-location">
+      <input type="text" id="inv-add-item" placeholder="Item, e.g. ground beef" aria-label="Item to add to inventory" />
+      <input type="text" id="inv-add-qty" placeholder="Qty" style="width:70px" aria-label="Quantity" />
+      <select id="inv-add-location" aria-label="Where it lives">
         <option value="fridge">Fridge</option>
         <option value="freezer">Freezer</option>
         <option value="pantry" selected>Pantry</option>
@@ -163,34 +166,34 @@
 
 <div class="inv-loc-nav" id="inv-loc-nav"></div>
 
-<div class="inv-content" id="inv-content" style="padding-top:0"><p class="inv-empty">Loading…</p></div>
+<div class="inv-content" id="inv-content" style="padding-top:0" role="status"><p class="inv-empty">Loading…</p></div>
 
-<div id="inv-scan-scrim" class="inv-scan-scrim-el"></div>
-<div id="inv-scan-sheet">
-  <div class="inv-sheet-handle" id="inv-scan-sheet-close"></div>
+<div id="inv-scan-scrim" class="inv-scan-scrim-el" aria-hidden="true"></div>
+<div id="inv-scan-sheet" role="dialog" aria-modal="true" aria-labelledby="inv-scan-title">
+  <button type="button" class="inv-sheet-handle" id="inv-scan-sheet-close" aria-label="Close"></button>
   <h2 class="inv-scan-title" id="inv-scan-title">Reading your photo&hellip;</h2>
   <p class="inv-scan-sub" id="inv-scan-sub">This can take a few seconds.</p>
-  <div id="inv-scan-content"><div class="inv-scan-loading">Looking closely&hellip;</div></div>
+  <div id="inv-scan-content" role="status"><div class="inv-scan-loading">Looking closely&hellip;</div></div>
 </div>
 
-<div id="inv-scrim"></div>
-<div id="inv-sheet">
-  <div class="inv-sheet-handle" id="inv-sheet-close"></div>
+<div id="inv-scrim" aria-hidden="true"></div>
+<div id="inv-sheet" role="dialog" aria-modal="true" aria-labelledby="inv-sheet-name">
+  <button type="button" class="inv-sheet-handle" id="inv-sheet-close" aria-label="Close"></button>
   <p class="inv-sheet-kicker" id="inv-sheet-kicker">Location · added this month</p>
   <h2 class="inv-sheet-name" id="inv-sheet-name">Item</h2>
 
   <p class="inv-sheet-label">How much is left</p>
   <div class="inv-stepper-row">
-    <button class="inv-stepper-btn" id="inv-qty-minus">&minus;</button>
-    <span class="inv-stepper-value" id="inv-qty-value">0</span>
-    <button class="inv-stepper-btn" id="inv-qty-plus">+</button>
+    <button type="button" class="inv-stepper-btn" id="inv-qty-minus" aria-label="Less of this item">&minus;</button>
+    <span class="inv-stepper-value" id="inv-qty-value" role="status" aria-label="Amount left">0</span>
+    <button type="button" class="inv-stepper-btn" id="inv-qty-plus" aria-label="More of this item">+</button>
   </div>
 
   <p class="inv-sheet-label">Where it lives</p>
-  <div class="inv-location-row" id="inv-location-row">
-    <button class="inv-location-btn" data-loc="fridge">Fridge</button>
-    <button class="inv-location-btn" data-loc="freezer">Freezer</button>
-    <button class="inv-location-btn" data-loc="pantry">Pantry</button>
+  <div class="inv-location-row" id="inv-location-row" role="group" aria-label="Where it lives">
+    <button type="button" class="inv-location-btn" data-loc="fridge" aria-pressed="false">Fridge</button>
+    <button type="button" class="inv-location-btn" data-loc="freezer" aria-pressed="false">Freezer</button>
+    <button type="button" class="inv-location-btn" data-loc="pantry" aria-pressed="false">Pantry</button>
   </div>
 
   <div class="inv-bb-card">
@@ -199,9 +202,9 @@
       <p class="inv-bb-relative" id="inv-bb-relative">—</p>
     </div>
     <div class="inv-bb-right">
-      <button class="inv-bb-btn" id="inv-bb-minus">&minus;</button>
-      <span class="inv-bb-date" id="inv-bb-date">—</span>
-      <button class="inv-bb-btn" id="inv-bb-plus">+</button>
+      <button type="button" class="inv-bb-btn" id="inv-bb-minus" aria-label="Best before one day earlier">&minus;</button>
+      <span class="inv-bb-date" id="inv-bb-date" role="status" aria-label="Best before date">—</span>
+      <button type="button" class="inv-bb-btn" id="inv-bb-plus" aria-label="Best before one day later">+</button>
     </div>
   </div>
 
@@ -211,7 +214,7 @@
   </div>
 </div>
 
-<div id="inv-toast"></div>
+<div id="inv-toast" role="status" aria-live="polite"></div>
 
 <script>
 function escapeHtml(s) {
@@ -394,9 +397,17 @@ function renderSheet() {
   const m = /^\s*([\d.]+)/.exec(it.quantity || '');
   const qtyValue = m ? m[1] : (it.quantity ? '1' : '0');
   document.getElementById('inv-qty-value').textContent = it.quantity || '0';
+  // Name the steppers after the item they're adjusting, so a screen reader
+  // says "Less of ground beef" rather than "minus, button".
+  document.getElementById('inv-qty-minus').setAttribute('aria-label', `Less of ${it.item}`);
+  document.getElementById('inv-qty-plus').setAttribute('aria-label', `More of ${it.item}`);
 
   document.querySelectorAll('.inv-location-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.getAttribute('data-loc') === it.location);
+    const selected = btn.getAttribute('data-loc') === it.location;
+    btn.classList.toggle('selected', selected);
+    // The "selected" styling is the only signal a sighted user needs;
+    // aria-pressed carries the same state to everyone else.
+    btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
   });
 
   const d = daysUntil(it.expiration_date);
@@ -542,8 +553,8 @@ function renderScanReview() {
   content.innerHTML = scanDraftItems.map((it, i) => `
     <div class="inv-scan-item" data-idx="${i}">
       <div class="inv-scan-item-row1">
-        <input type="text" class="inv-scan-name" value="${escapeHtml(it.item)}" placeholder="Item name" />
-        <input type="text" class="inv-scan-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Qty" />
+        <input type="text" class="inv-scan-name" value="${escapeHtml(it.item)}" placeholder="Item name" aria-label="Item name" />
+        <input type="text" class="inv-scan-qty" value="${escapeHtml(it.quantity || '')}" placeholder="Qty" aria-label="Quantity" />
       </div>
       <div class="inv-scan-item-row2">
         <select class="inv-scan-category">
@@ -553,7 +564,7 @@ function renderScanReview() {
           ${LOCATION_ORDER.map(l => `<option value="${l}" ${l === it.location ? 'selected' : ''}>${LOCATION_LABELS[l]}</option>`).join('')}
         </select>
         ${it.confidence === 'low' ? '<span class="inv-scan-low-badge">double-check</span>' : ''}
-        <button type="button" class="inv-scan-remove" data-remove="${i}" aria-label="Remove">&times;</button>
+        <button type="button" class="inv-scan-remove" data-remove="${i}" aria-label="Remove ${escapeHtml(it.item)}">&times;</button>
       </div>
     </div>
   `).join('') + `
