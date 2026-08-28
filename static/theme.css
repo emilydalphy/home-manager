@@ -220,3 +220,59 @@ a { color: var(--midnight-violet); }
   font-weight: 700;
 }
 .app-nav a:hover { text-decoration: underline; }
+
+/* ---------- Focus visibility ---------- */
+
+/*
+  Until now there was exactly one :focus rule in the whole frontend and no
+  :focus-visible at all, and the ask composer explicitly set outline:none
+  with nothing replacing it — so anyone navigating by keyboard had no way to
+  tell where they were.
+
+  :focus-visible rather than :focus so the ring appears for keyboard and
+  assistive-tech users without drawing a box around every mouse click. Gold
+  reads clearly on both the cream page background and the plum surfaces, and
+  it's already the palette's attention colour.
+*/
+/*
+  !important is deliberate here, and is the one place in this file that uses
+  it. theme.css loads BEFORE each page's own <style> block (see the note at
+  the top), so without it any page could silently outrank this rule — and
+  two pages already did exactly that with their own outline:none. A visible
+  focus ring is a floor, not a default to be overridden.
+*/
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--turmeric-gold) !important;
+  outline-offset: 2px !important;
+}
+
+/* On gold surfaces a gold ring would vanish — switch to plum there. */
+.btn-primary:focus-visible,
+.btn-gold:focus-visible,
+.kh-btn-gold:focus-visible {
+  outline-color: var(--midnight-violet) !important;
+}
+
+/* ---------- Motion ---------- */
+
+/*
+  The shell animates tab transitions, the ask sheet, the week sheet and
+  toasts. Honour the OS-level request to cut that down: elements still
+  appear and disappear, they just stop sliding and fading.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

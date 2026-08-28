@@ -541,6 +541,8 @@ html, body {
   flex: 1;
   min-width: 0;
   border: none;
+  /* No resting outline, but the keyboard focus ring in theme.css still
+     applies — :focus-visible is defined after this file loads. */
   outline: none;
   background: transparent;
   font-family: var(--font-body);
