@@ -1,5 +1,13 @@
-fastapi
-uvicorn[standard]
-anthropic
-pydantic
-python-multipart
+# Pinned deliberately. These were unpinned bare names, which meant every
+# Railway rebuild resolved to whatever was newest that day — so a redeploy
+# months later could build a materially different app than the one running,
+# and a breakage was impossible to attribute to a commit.
+#
+# To upgrade: bump a version here on purpose, run the tests, deploy. Don't
+# unpin.
+anthropic==1.2.0
+fastapi==0.141.1
+pydantic==2.13.4
+python-multipart==0.0.32
+starlette==1.6.0
+uvicorn[standard]==0.52.4

@@ -4,3 +4,15 @@ app/home_manager.db
 app/home_manager.db-journal
 .git
 .env
+.DS_Store
+
+# Docs and design source — none of it is read at runtime, and it was adding
+# several MB to every image build.
+README.md
+*.md
+*.pdf
+design_handoff_home_manager/
+design_handoff_shell/
+tests/
+requirements-dev.txt
+.github/
