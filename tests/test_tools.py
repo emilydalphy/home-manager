@@ -1,0 +1,163 @@
+"""
+Smoke tests over the core data paths in app/tools.py.
+
+Not coverage — a thin line through the flows everything else is built on,
+so a refactor that breaks planning, groceries or inventory fails here
+instead of on someone's phone. These are the paths worth having green
+before splitting tools.py into a package.
+"""
+import datetime
+
+from app import tools
+
+
+def _today(offset_days: int = 0) -> str:
+    return (datetime.date.today() + datetime.timedelta(days=offset_days)).isoformat()
+
+
+def _week_start() -> str:
+    """Monday of the current week — what create_weekly_plan expects."""
+    today = datetime.date.today()
+    return (today - datetime.timedelta(days=today.weekday())).isoformat()
+
+
+# ---------- household ----------
+
+def test_add_and_list_members():
+    tools.add_member("Emily")
+    tools.add_member("Marcus")
+    names = [m["name"] for m in tools.list_members()]
+    assert names == ["Emily", "Marcus"]
+
+
+def test_dietary_restrictions_round_trip():
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["no shellfish"])
+    emily = next(m for m in tools.list_members() if m["name"] == "Emily")
+    assert "no shellfish" in emily["dietary_restrictions"]
+
+
+def test_dislikes_accumulate_without_duplicating():
+    tools.add_food_dislikes(["olives"])
+    tools.add_food_dislikes(["olives", "beetroot"])
+    dislikes = tools.get_meal_planning_setup_status()["dislikes"]
+    assert sorted(dislikes) == ["beetroot", "olives"]
+
+
+# ---------- groceries ----------
+
+def test_add_grocery_item_appears_on_the_list():
+    tools.add_grocery_item("milk", quantity="1 L", category="dairy")
+    items = tools.list_grocery_list()
+    assert [i["item"] for i in items] == ["milk"]
+
+
+def test_same_item_consolidates_instead_of_duplicating():
+    """The quantity-concatenation bug this guards against was a real one."""
+    tools.add_grocery_item("flour", quantity="2 cups", category="pantry")
+    tools.add_grocery_item("flour", quantity="1 cup", category="pantry")
+    items = tools.list_grocery_list()
+    assert len(items) == 1, "one line per item, not two"
+    assert "3" in items[0]["quantity"]
+
+
+def test_marking_an_item_purchased_removes_it_from_needed():
+    tools.add_grocery_item("eggs", category="dairy")
+    item_id = tools.list_grocery_list()[0]["id"]
+    tools.mark_grocery_item(item_id, status="purchased")
+    assert tools.list_grocery_list(status="needed") == []
+
+
+def test_grocery_list_groups_into_store_sections():
+    tools.add_grocery_item("spinach", category="produce")
+    tools.add_grocery_item("chicken thighs", category="meat/seafood")
+    sections = tools.get_grocery_list_by_section()
+    assert any(s for s in sections.values() if s), "sections should not all be empty"
+
+
+# ---------- recipes and planning ----------
+
+def test_planning_a_saved_recipe_adds_its_ingredients_to_the_grocery_list():
+    tools.add_recipe(
+        "Tomato pasta",
+        ingredients=[{"item": "pasta", "qty": "500 g"}, {"item": "passata", "qty": "1 jar"}],
+        food_groups=["carb", "vegetable"],
+    )
+    tools.plan_meal(_today(1), "Tomato pasta", slot="dinner")
+    on_list = [i["item"] for i in tools.list_grocery_list()]
+    assert "pasta" in on_list and "passata" in on_list
+
+
+def test_planned_meal_shows_up_in_the_plan():
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(1), "Chili", slot="dinner")
+    planned = [e["meal"] for e in tools.get_meal_plan(days_ahead=7)]
+    assert "Chili" in planned
+
+
+def test_checking_a_meal_off_records_it_as_cooked():
+    """Plan a week, cook one dinner, and see the plan's progress move."""
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.plan_meal(_today(), "Soup", slot="dinner", weekly_plan_id=plan_id)
+
+    entry = tools.get_cooker_view(plan_id)["meals"][0]
+    assert entry["cooked_status"] == "pending"
+
+    tools.check_off_meal(entry["entry_id"], status="done")
+    assert tools.get_cooker_view(plan_id)["meals"][0]["cooked_status"] == "done"
+    assert tools.get_plan_progress(plan_id)["meals_done"] == 1
+
+
+def test_scaling_a_recipe_doubles_its_quantities():
+    tools.add_recipe(
+        "Rice bowl",
+        ingredients=[{"item": "rice", "qty": "2 cups"}],
+        default_servings=4,
+    )
+    scaled = tools.scale_recipe("Rice bowl", target_servings=8)
+    assert scaled["base_servings"] == 4
+    assert scaled["target_servings"] == 8
+    rice = next(i for i in scaled["scaled_ingredients"] if i["item"] == "rice")
+    assert "4" in rice["qty"], f"2 cups doubled should read as 4, got {rice['qty']!r}"
+
+
+# ---------- inventory ----------
+
+def test_adding_and_using_up_inventory():
+    tools.update_inventory("rotisserie chicken", action="add", quantity="1", location="fridge")
+    assert any(i["item"] == "rotisserie chicken" for i in tools.get_inventory())
+    tools.update_inventory("rotisserie chicken", action="use")
+    remaining = [i for i in tools.get_inventory() if i["item"] == "rotisserie chicken"]
+    assert not remaining or float(remaining[0].get("quantity") or 0) == 0
+
+
+def test_inventory_groups_by_location():
+    tools.update_inventory("peas", action="add", quantity="1 bag", location="freezer")
+    groups = tools.get_inventory_by_location()["locations"]
+    freezer = next(g for g in groups if g["location"] == "freezer")
+    assert [i["item"] for i in freezer["items"]] == ["peas"]
+
+
+# ---------- facts and memory ----------
+
+def test_facts_can_be_added_and_removed():
+    fact = tools.add_fact("general", "We eat late on Fridays")
+    assert any(f["text"] == "We eat late on Fridays" for f in tools.get_facts())
+    tools.delete_fact(fact["id"])
+    assert not any(f["text"] == "We eat late on Fridays" for f in tools.get_facts())
+
+
+# ---------- share links ----------
+
+def test_share_link_is_stable_and_unguessable():
+    first = tools.get_or_create_share_link()
+    second = tools.get_or_create_share_link()
+    assert first["token"] == second["token"], "the household's link should not rotate on every call"
+    assert len(first["token"]) >= 20, "token must be long enough not to be guessable"
+
+
+def test_member_share_link_resolves_to_that_member():
+    tools.add_member("Marcus")
+    link = tools.get_or_create_member_share_link("Marcus")
+    assert tools.resolve_member_share_link(link["token"])["member_name"] == "Marcus"

@@ -1,0 +1,28 @@
+name: Tests
+
+# Runs on every push and pull request. The point is that a change which
+# breaks planning, groceries, inventory or the password gate fails here
+# rather than on someone's phone after a deploy.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"  # matches the Dockerfile
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        # No ANTHROPIC_API_KEY here on purpose — the suite must never make a
+        # real API call. If a test starts needing one, that test is wrong.
+        run: pytest -q

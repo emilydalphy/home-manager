@@ -3,3 +3,6 @@ __pycache__/
 app/home_manager.db
 app/home_manager.db-journal
 .env
+
+# Test artifacts
+.pytest_cache/
