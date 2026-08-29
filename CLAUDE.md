@@ -91,11 +91,63 @@ Push to `main` on GitHub; Railway auto-deploys from there. There's no CI
 gate on `main` yet (the smoke-test-suite-in-CI work is on `hardening`,
 unmerged).
 
+**Before `hardening` (or anything with `app/security.py`) ever deploys, confirm
+in Railway's variables — this was flagged by the review that produced the
+`hardening` branch and is easy to miss:**
+
+- `HOME_MANAGER_PASSWORD` and `SESSION_SECRET` — required, or the app fails
+  closed to all remote traffic by design.
+- `DB_PATH=/data/home_manager.db` **with an actual volume mounted at `/data`.**
+  If `DB_PATH` isn't set (or the volume isn't mounted), every redeploy
+  silently wipes the household's database. This is a real data-loss risk,
+  not a theoretical one — verify it before merging `hardening`, not after.
+- `PUBLIC_BASE_URL` — used for share links.
+- A **spend cap on the Anthropic API key** in the console. Rate limiting
+  (`app/ratelimit.py`) caps the request rate, not total spend — they're not
+  the same protection.
+
+## A full code review already exists — read it before doing more hardening work
+
+A 17-finding review of the whole codebase was done alongside the `hardening`
+branch (findings ranked, with which are fixed and which aren't):
+https://claude.ai/code/artifact/0d42e9f3-4e71-401d-a4c0-1a1f1983dbf2
+
+Findings 1/2/3/5/6/7/12/13/17 are fixed on `hardening` (see its 5 commits).
+**Still open, in case you're deciding what to work on next:**
+
+- **#8** — `app/tools.py` is 5,143 lines with 188 `HOUSEHOLD_ID` references.
+  Split it into a package by domain *before* doing real auth/multi-tenancy
+  work — the smoke test suite on `hardening` makes this safe to do now.
+- **#9** — the shell's tabs are iframes; navigation workarounds (see the
+  Kitchen back-link bug fixed earlier) are accumulating as a result.
+- **#10** — no shared `api.js`; ~26 hand-written `fetch('/api/...')` call
+  sites, and pages carry 30–60 KB of inline CSS/JS each that can't be
+  cached separately from the page.
+- **#11** — three overlapping color vocabularies in `theme.css`.
+- **#14** — "What we know" effectively asks the household to do data entry;
+  autosave and collapse would help.
+- **#15** — loading states are bare "Loading…" against a design system that
+  otherwise commits to warm, first-person copy.
+- **#16** — two navigation systems (client-side tabs vs. full page loads)
+  that look identical but behave differently.
+
+That review's own notes also flag: it verified the backend against a real
+uvicorn server, but **never actually saw the frontend rendered** — the
+Railway domain wasn't reachable from that sandbox. This Cowork session *did*
+verify frontend behavior visually (via screenshots the household sent
+directly, and one direct fetch of the live `/api/week-menu` JSON) for the
+bugs in the sections above — but broad visual/screen-reader verification of
+the whole app is still an open gap either way.
+
 ## Immediate open items
 
-1. Set `HOME_MANAGER_PASSWORD` and `SESSION_SECRET` in Railway, then merge
-   `hardening` into `main` when ready to ship the password gate.
+1. Confirm the Railway env vars above (especially `DB_PATH` + the volume —
+   this one can cause real data loss if missed) before merging `hardening`
+   into `main`.
 2. Voice dictation, the current-week plan fix, and the grocery quantity
    humanization fix are all on `main` and deployed. If dictation still
    doesn't appear on a device after that, it's very likely the PWA cache
    issue above, not a missing deploy.
+3. Once `hardening` is ready to ship, consider tackling review finding #8
+   (splitting `tools.py`) before layering more auth/multi-tenancy work on
+   top of it.
