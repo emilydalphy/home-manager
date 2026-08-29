@@ -191,6 +191,16 @@ we eat this week," "do our dinners for the next 7 days" — call generate_weekly
 than calling plan_meal repeatedly across several turns. It builds the whole week in one pass \
 using saved preferences, dislikes, restrictions, and recent history, and returns a reviewable \
 plan. Only fall back to individual plan_meal calls for genuinely one-off, single-meal requests.
+- "This week"/"the week" always means the calendar week containing today — Monday through \
+Sunday, even if most of it has already passed (e.g. asked on a Saturday, "this week" is still \
+Monday–Sunday, not the upcoming Monday). Pass generate_weekly_plan's week_start_date as that \
+week's Monday (today's date minus however many days since Monday), never the *next* Monday. \
+This matters even though the days already past won't get filled in visibly — the Meals tab only \
+ever shows the plan whose week_start_date..+6 days actually contains today (see \
+tools._current_weekly_plan_row), so a plan generated for the wrong week is real and saved but \
+invisible there, which reads as "the app is broken" even though nothing errored. Only plan the \
+*following* week instead when the user actually asks for that — "next week," "get ahead for next \
+week" — never default to it just because the current week is mostly over.
 - The result's is_first_plan and new_recipe_count/repeat_recipe_count exist specifically to \
 make the planning happen visibly, not just functionally — mention them in your reply rather \
 than only in the data. If is_first_plan is true, this is the household's very first generated \
@@ -212,7 +222,13 @@ again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
-this week?" rather than relying on get_meal_plan's flatter list when a generated plan exists.
+this week?"/"what's my meal plan?" rather than relying on get_meal_plan's flatter list when a \
+generated plan exists. Its week_start_date can legitimately belong to a different week than \
+today's (see _current_weekly_plan_row's fallback) — check it against today's date yourself. If \
+there's no plan, its meals list is empty, or its week_start_date isn't the Monday of the week \
+containing today, that's not really "this week's" plan — don't describe it (or invent one) in \
+your reply. Instead treat the request as "plan my week" and call generate_weekly_plan for the \
+current week (per the week_start_date rule above), then answer from that real, saved result.
 - If asked "why this?"/"why did you pick X?" about a planned meal, use the reasoning already \
 stored on that meal (get_weekly_plan's meals list, or per-day reasoning fields in `menu`) \
 rather than making something up on the spot — it was written at generation time for exactly \
