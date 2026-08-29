@@ -19,18 +19,24 @@ Railway, auto-deploying from `main` on push. Live at
 
 ## Branch state (as of this handoff)
 
-- **`main`** — the deployed baseline. Currently at commit `a825ed8`.
-- **`hardening`** — an in-progress branch (started by a separate Claude Code
-  session) doing a security/quality pass: household password gate + rate
-  limiting, pinned dependencies + CI, a smoke test suite, accessibility
-  fixes (focus visibility, reduced motion, accessible names). **Not yet
-  merged into `main` and not yet deployed.** It must NOT be merged until
-  `HOME_MANAGER_PASSWORD` and `SESSION_SECRET` are set as Railway env vars
-  first — the password gate fails closed with no password configured, so
-  merging without those set would lock the live site for everyone.
-- If you're picking this repo up fresh: check `git log --oneline main..hardening`
-  before doing anything with branches — there may be more commits on
-  `hardening` by the time you read this than are listed above.
+- **`hardening` has been merged into `main`** (fast-forward, both branches
+  point at `cc23802`) and pushed to `origin/main` — so it's deployed, or
+  about to be, on Railway. The household confirmed `HOME_MANAGER_PASSWORD`,
+  `SESSION_SECRET`, and `DB_PATH` (with its volume) were all set in Railway
+  *before* this merge happened, so the password gate going live should be
+  safe rather than a lockout/data-loss incident — but if the live site is
+  behaving unexpectedly after this point, start by checking those three
+  Railway variables are actually in effect, not just saved.
+- The security/quality pass that's now live: household password gate + rate
+  limiting (`app/security.py`, `app/ratelimit.py`), pinned dependencies, a
+  smoke test suite + GitHub Actions CI, accessibility fixes (focus
+  visibility, reduced motion, accessible names), and a `robots.txt` +
+  `X-Robots-Tag` (this also means external fetch tools that respect
+  `robots.txt` — including this session's own web-fetch tool — can no
+  longer read the live site directly; that's expected, not a bug).
+- If you're picking this repo up fresh: run `git log --oneline -10` to
+  confirm this is still accurate — there may be new branches or commits by
+  the time you read this.
 
 ## Working style established so far
 
@@ -87,37 +93,37 @@ Railway, auto-deploying from `main` on push. Live at
 
 ## Deploying
 
-Push to `main` on GitHub; Railway auto-deploys from there. There's no CI
-gate on `main` yet (the smoke-test-suite-in-CI work is on `hardening`,
-unmerged).
+Push to `main` on GitHub; Railway auto-deploys from there. CI now runs the
+smoke test suite on every push (added in the `hardening` work, now on `main`).
 
-**Before `hardening` (or anything with `app/security.py`) ever deploys, confirm
-in Railway's variables — this was flagged by the review that produced the
-`hardening` branch and is easy to miss:**
+**Required Railway variables — confirmed set as of the `hardening` merge, but
+worth re-checking if the live site ever misbehaves:**
 
 - `HOME_MANAGER_PASSWORD` and `SESSION_SECRET` — required, or the app fails
   closed to all remote traffic by design.
 - `DB_PATH=/data/home_manager.db` **with an actual volume mounted at `/data`.**
   If `DB_PATH` isn't set (or the volume isn't mounted), every redeploy
   silently wipes the household's database. This is a real data-loss risk,
-  not a theoretical one — verify it before merging `hardening`, not after.
+  not a theoretical one.
 - `PUBLIC_BASE_URL` — used for share links.
-- A **spend cap on the Anthropic API key** in the console. Rate limiting
-  (`app/ratelimit.py`) caps the request rate, not total spend — they're not
-  the same protection.
+- A **spend cap on the Anthropic API key** in the console — worth
+  double-checking this is actually in place, since it can't be verified from
+  the repo. Rate limiting (`app/ratelimit.py`) caps the request rate, not
+  total spend — they're not the same protection.
 
 ## A full code review already exists — read it before doing more hardening work
 
 A 17-finding review of the whole codebase was done alongside the `hardening`
-branch (findings ranked, with which are fixed and which aren't):
+work (findings ranked, with which are fixed and which aren't):
 https://claude.ai/code/artifact/0d42e9f3-4e71-401d-a4c0-1a1f1983dbf2
 
-Findings 1/2/3/5/6/7/12/13/17 are fixed on `hardening` (see its 5 commits).
+Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
 **Still open, in case you're deciding what to work on next:**
 
 - **#8** — `app/tools.py` is 5,143 lines with 188 `HOUSEHOLD_ID` references.
   Split it into a package by domain *before* doing real auth/multi-tenancy
-  work — the smoke test suite on `hardening` makes this safe to do now.
+  work — the smoke test suite (now running in CI on every push) makes this
+  safe to do now.
 - **#9** — the shell's tabs are iframes; navigation workarounds (see the
   Kitchen back-link bug fixed earlier) are accumulating as a result.
 - **#10** — no shared `api.js`; ~26 hand-written `fetch('/api/...')` call
@@ -141,13 +147,14 @@ the whole app is still an open gap either way.
 
 ## Immediate open items
 
-1. Confirm the Railway env vars above (especially `DB_PATH` + the volume —
-   this one can cause real data loss if missed) before merging `hardening`
-   into `main`.
-2. Voice dictation, the current-week plan fix, and the grocery quantity
-   humanization fix are all on `main` and deployed. If dictation still
-   doesn't appear on a device after that, it's very likely the PWA cache
-   issue above, not a missing deploy.
-3. Once `hardening` is ready to ship, consider tackling review finding #8
-   (splitting `tools.py`) before layering more auth/multi-tenancy work on
-   top of it.
+1. Voice dictation, the current-week plan fix, the grocery quantity
+   humanization fix, and the full `hardening` security/quality pass are all
+   on `main` and deployed (or deploying). If dictation still doesn't appear
+   on a device, it's very likely the PWA cache issue above, not a missing
+   deploy.
+2. Consider tackling review finding #8 (splitting `tools.py`) next, now that
+   it's safely testable — before layering more auth/multi-tenancy work on
+   top of the current 5,143-line file.
+3. The still-open findings (#9–#11, #14–#16 above) are real but not urgent —
+   good candidates for "what should we work on next" rather than anything
+   blocking.
