@@ -166,9 +166,23 @@ async function renderFactsTab(category) {
   const content = document.getElementById('wwk-content');
   try {
     const res = await fetch('/api/facts?category=' + category);
-    const facts = res.ok ? (await res.json()).facts || [] : [];
+    const data = res.ok ? await res.json() : {};
+    const facts = data.facts || [];
+    const onboarding = data.onboarding;
     const meta = TAB_META[category];
-    let html = `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
+    let html = '';
+    if (onboarding && (onboarding.members || []).length) {
+      html += `<div class="wwk-card"><p class="wwk-intro">From onboarding — tell me in chat if anything's changed.</p>`;
+      onboarding.members.forEach(m => {
+        const restrictions = (m.dietary_restrictions || []).join(', ');
+        html += `<div class="wwk-fact-row"><span class="wwk-fact-text">${escapeHtml(m.name)}${restrictions ? ' — ' + escapeHtml(restrictions) : ''}</span></div>`;
+      });
+      if ((onboarding.household_dislikes || []).length) {
+        html += `<div class="wwk-fact-row"><span class="wwk-fact-text">Won't eat: ${escapeHtml(onboarding.household_dislikes.join(', '))}</span></div>`;
+      }
+      html += `</div>`;
+    }
+    html += `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     facts.forEach(f => {
       if (openEditorId === f.id) {
         html += `<div class="wwk-editor">

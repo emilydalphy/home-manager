@@ -872,13 +872,26 @@ class FactUpdateRequest(BaseModel):
 
 @app.get("/api/facts")
 def get_facts_view(category: str | None = None):
-    """Household facts for the What We Know screen (design_handoff_home_manager §7), optionally filtered to one tab's category."""
+    """
+    Household facts for the What We Know screen (design_handoff_home_manager
+    §7), optionally filtered to one tab's category. For the People tab
+    specifically, also includes `onboarding` -- household members and
+    dietary dislikes captured during onboarding, which live in the
+    members/meal_preferences tables, not the freeform `facts` table this
+    route otherwise reads. Without this, People only ever showed things a
+    user had separately told the chat assistant to "remember" -- never what
+    onboarding already collected.
+    """
     try:
         result = tools.get_facts(category=category)
+        onboarding = None
+        if category == "people":
+            setup = tools.get_meal_planning_setup_status()
+            onboarding = {"members": setup["members"], "household_dislikes": setup["dislikes"]}
     except Exception as e:
         logger.exception("Facts lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"facts": result}
+    return {"facts": result, "onboarding": onboarding}
 
 
 @app.post("/api/facts/add")
