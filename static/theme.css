@@ -259,6 +259,47 @@ summary:focus-visible,
   outline-color: var(--midnight-violet) !important;
 }
 
+/* ---------- Voice dictation button ---------- */
+/*
+  Shared inline mic icon for a single text input/textarea, wired via
+  static/dictation.js's setupDictation(). Lives in theme.css (not
+  shell.css) so grocery.html/inventory.html/memory.html — standalone
+  pages that only link theme.css — can use it too. Distinct from
+  grocery.html's own .mic-btn, which is an unrelated floating
+  hands-free-voice-session toggle, not a per-field dictation button.
+*/
+.dictate-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--plum);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.dictate-btn svg { width: 16px; height: 16px; }
+.dictate-btn:hover { background: var(--violet-soft); }
+.dictate-btn.active {
+  background: var(--urgent);
+  color: #fff;
+  animation: dictateBtnPulse 1.4s ease-in-out infinite;
+}
+.dictate-btn:disabled { opacity: .5; cursor: default; animation: none; }
+@keyframes dictateBtnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 86, 42, .45); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 86, 42, 0); }
+}
+/* A textarea (multi-line) paired with a dictate button sits in its own
+   row rather than inline with other fields — the textarea shrinks to
+   make room via flex, instead of the button overlapping its text. */
+.dictate-row { display: flex; align-items: flex-start; gap: 8px; }
+.dictate-row textarea { flex: 1; min-width: 0; }
+.dictate-row .dictate-btn { margin-top: 2px; }
+
 /* ---------- Motion ---------- */
 
 /*

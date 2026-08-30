@@ -6,3 +6,6 @@ app/home_manager.db-journal
 
 # Test artifacts
 .pytest_cache/
+
+# Local verification venv (Python 3.11 — the app requires 3.10+)
+.venv-verify/

@@ -99,7 +99,12 @@
   <h2 id="wwk-import-heading" style="font-family:var(--font-heading);font-weight:700;font-size:1.4rem;color:var(--ink);margin:6px 0 0">Import a list</h2>
   <p style="font-family:var(--font-body);font-size:0.9rem;color:#6B5A63;margin:12px 0 0">These items belong to</p>
   <div class="wwk-store-picker" id="wwk-import-store-picker" role="group" aria-label="These items belong to"></div>
-  <textarea id="wwk-import-textarea" aria-label="Items, one per line" placeholder="Paste or type one per line — rotisserie chicken, frozen berries, coffee beans…"></textarea>
+  <div class="dictate-row">
+    <textarea id="wwk-import-textarea" aria-label="Items, one per line" placeholder="Paste or type one per line — rotisserie chicken, frozen berries, coffee beans…"></textarea>
+    <button type="button" class="dictate-btn" id="wwk-import-mic-btn" aria-label="Dictate" title="Dictate">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+    </button>
+  </div>
   <div class="wwk-import-footer">
     <button class="wwk-import-cancel" id="wwk-import-cancel">Cancel</button>
     <button class="wwk-import-save" id="wwk-import-save">Save</button>
@@ -108,6 +113,7 @@
 
 <div id="wwk-toast" role="status" aria-live="polite"></div>
 
+<script src="/static/dictation.js"></script>
 <script>
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -186,7 +192,12 @@ async function renderFactsTab(category) {
     facts.forEach(f => {
       if (openEditorId === f.id) {
         html += `<div class="wwk-editor">
-          <textarea id="wwk-editor-textarea" aria-label="Edit what we know" autofocus>${escapeHtml(f.text)}</textarea>
+          <div class="dictate-row">
+            <textarea id="wwk-editor-textarea" aria-label="Edit what we know" autofocus>${escapeHtml(f.text)}</textarea>
+            <button type="button" class="dictate-btn" id="wwk-editor-mic-btn" aria-label="Dictate" title="Dictate">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+            </button>
+          </div>
           <div class="wwk-editor-actions">
             <button class="wwk-save-btn" data-save-fact="${f.id}">Save</button>
             <button class="wwk-cancel-btn" data-cancel-fact="${f.id}">Cancel</button>
@@ -202,7 +213,12 @@ async function renderFactsTab(category) {
     });
     if (openEditorId === 'new') {
       html += `<div class="wwk-editor">
-        <textarea id="wwk-editor-textarea" placeholder="What should I know?" aria-label="Add something we should know" autofocus></textarea>
+        <div class="dictate-row">
+          <textarea id="wwk-editor-textarea" placeholder="What should I know?" aria-label="Add something we should know" autofocus></textarea>
+          <button type="button" class="dictate-btn" id="wwk-editor-mic-btn" aria-label="Dictate" title="Dictate">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+          </button>
+        </div>
         <div class="wwk-editor-actions">
           <button class="wwk-save-btn" data-save-fact="new">Save</button>
           <button class="wwk-cancel-btn" data-cancel-fact="new">Cancel</button>
@@ -257,6 +273,7 @@ function wireFactsActions(category) {
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); content.querySelector('[data-save-fact]').click(); }
     });
+    setupDictation(textarea, document.getElementById('wwk-editor-mic-btn'), { onMessage: showToast });
   }
 }
 
@@ -271,7 +288,7 @@ async function renderStoresTab() {
     const typical = memory.store_typical_items || {};
     let html = `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     if (!stores.length) {
-      html += `<p style="font-family:var(--font-body);font-size:0.9rem;color:#8A7A82;padding:10px 0">No usual stores saved yet — mention one in chat (e.g. "we usually shop at Trader Joe's") and it'll show up here.</p>`;
+      html += `<p style="font-family:var(--font-body);font-size:0.9rem;color:#8A7A82;padding:10px 0">No usual stores saved yet — add one below, or mention it in chat (e.g. "we usually shop at Trader Joe's").</p>`;
     }
     for (const store of stores) {
       const items = typical[store] || [];
@@ -283,7 +300,10 @@ async function renderStoresTab() {
         </div>
       </div>`;
     }
-    html += `<div class="wwk-import-row" id="wwk-open-import"><div><p class="wwk-import-title">Import a whole list</p><p class="wwk-import-sub">Paste your notes app, or photograph a receipt</p></div><span class="wwk-import-open">Open</span></div>`;
+    html += `<div class="wwk-add-row" id="wwk-add-store-row">+ Add a store</div>`;
+    if (stores.length) {
+      html += `<div class="wwk-import-row" id="wwk-open-import"><div><p class="wwk-import-title">Import a whole list</p><p class="wwk-import-sub">Paste your notes app, or photograph a receipt</p></div><span class="wwk-import-open">Open</span></div>`;
+    }
     html += `</div>`;
     html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
     content.innerHTML = html;
@@ -342,6 +362,38 @@ function wireStoresActions(stores) {
   });
   const openImport = document.getElementById('wwk-open-import');
   if (openImport) openImport.addEventListener('click', () => openImportSheet(stores));
+
+  const addStoreRow = document.getElementById('wwk-add-store-row');
+  if (addStoreRow) {
+    addStoreRow.addEventListener('click', () => {
+      const row = document.createElement('div');
+      row.className = 'wwk-chip-input-row';
+      row.innerHTML = `<input type="text" class="wwk-chip-input" id="wwk-new-store-input" placeholder="e.g. Trader Joe's" aria-label="Store name" />` +
+        `<button type="button" class="dictate-btn" id="wwk-new-store-mic-btn" aria-label="Dictate" title="Dictate">` +
+        `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg></button>` +
+        `<button type="button" class="wwk-chip-add" id="wwk-confirm-new-store">Add</button>`;
+      addStoreRow.replaceWith(row);
+      const input = row.querySelector('#wwk-new-store-input');
+      input.focus();
+      setupDictation(input, row.querySelector('#wwk-new-store-mic-btn'), { onMessage: showToast });
+      async function commit() {
+        const name = input.value.trim();
+        if (!name) { renderStoresTab(); return; }
+        // Case-insensitive dedupe against stores already saved — matches
+        // add_usual_stores' own merge behavior (app/tools.py) so this button
+        // and mentioning a store in chat can't diverge on what "duplicate" means.
+        const already = stores.some(s => s.toLowerCase() === name.toLowerCase());
+        if (already) { showToast(`${name} is already on your list`); renderStoresTab(); return; }
+        try {
+          await fetch('/api/memory/edit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ field: 'usual_stores', value: [...stores, name] }) });
+          showToast(`Added ${name}`);
+        } catch (err) { alert("Couldn't add that store — try again."); }
+        renderStoresTab();
+      }
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+      row.querySelector('#wwk-confirm-new-store').addEventListener('click', commit);
+    });
+  }
 }
 
 function openImportSheet(stores) {
@@ -395,6 +447,8 @@ document.getElementById('wwk-import-save').addEventListener('click', async () =>
     renderStoresTab();
   } catch (err) { btn.disabled = false; alert("Couldn't import that — try again."); }
 });
+
+setupDictation(document.getElementById('wwk-import-textarea'), document.getElementById('wwk-import-mic-btn'), { onMessage: showToast });
 
 render();
 </script>

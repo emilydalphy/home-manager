@@ -440,6 +440,9 @@
         <div class="add-card-title"><span class="add-chip">+</span><span>Add an item</span></div>
         <div class="add-row">
           <input type="text" id="add-item" placeholder="Item, e.g. ground beef" aria-label="Item to add to the list" />
+          <button type="button" class="dictate-btn" id="add-item-mic-btn" aria-label="Dictate item" title="Dictate item">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+          </button>
           <input type="text" class="add-qty-input" id="add-qty" placeholder="Qty" aria-label="Quantity" />
           <button class="add-btn" id="add-btn">Add</button>
         </div>
@@ -459,6 +462,9 @@
       </div>
       <div class="dg-add-row">
         <input type="text" id="dg-add-item" placeholder="Add an item…" aria-label="Item to add to the list" />
+        <button type="button" class="dictate-btn" id="dg-add-item-mic-btn" aria-label="Dictate item" title="Dictate item">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+        </button>
         <input type="text" id="dg-add-qty" placeholder="Qty" aria-label="Quantity" />
         <button id="dg-add-btn">Add</button>
       </div>
@@ -526,6 +532,9 @@
         <div class="add-card-title"><span class="add-chip">+</span><span>Add anything missing</span></div>
         <div class="add-row">
           <input type="text" id="review-add-item" placeholder="Item, e.g. ground beef" aria-label="Item to add to the list" />
+          <button type="button" class="dictate-btn" id="review-add-item-mic-btn" aria-label="Dictate item" title="Dictate item">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+          </button>
           <button class="add-btn" id="review-add-btn">Add</button>
         </div>
       </div>
@@ -537,6 +546,7 @@
 </div>
 
 <script src="/static/voice-session.js"></script>
+<script src="/static/dictation.js"></script>
 <script>
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
@@ -1820,6 +1830,10 @@ function startShopperVoiceSession() {
   updateVoiceButton();
 }
 document.getElementById('voice-toggle-btn').addEventListener('click', startShopperVoiceSession);
+
+setupDictation(document.getElementById('add-item'), document.getElementById('add-item-mic-btn'));
+setupDictation(document.getElementById('dg-add-item'), document.getElementById('dg-add-item-mic-btn'));
+setupDictation(document.getElementById('review-add-item'), document.getElementById('review-add-item-mic-btn'));
 
 applyGroceryLayoutMode();
 refreshCurrentScreen();
