@@ -4135,6 +4135,8 @@ _CONTAINER_UNIT_PLURALS = {
     "bag": "bags", "box": "boxes", "can": "cans", "jar": "jars",
     "bottle": "bottles", "block": "blocks", "bunch": "bunches",
     "head": "heads", "pint": "pints", "clove": "cloves",
+    "tub": "tubs", "container": "containers", "pack": "packs",
+    "loaf": "loaves", "stick": "sticks",
 }
 _CONTAINER_UNIT_SINGULARS = {plural: singular for singular, plural in _CONTAINER_UNIT_PLURALS.items()}
 
