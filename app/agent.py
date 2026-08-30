@@ -1572,7 +1572,23 @@ so it needs to read like a shopping list line, not a recipe measurement — any 
 amount (how much of that head actually gets used) belongs in the instructions text instead \
 ("shred half the head"), not in qty. Round up to the smallest sensible whole \
 unit a store actually sells (a head, a bunch, a bag, a lb, a dozen, a can) rather than a \
-fractional recipe amount.
+fractional recipe amount. The same discipline applies to the ingredient's item name itself, not \
+just qty — write it as the plain grocery-list name ("Baby spinach", "Carrots"), never with a \
+prep descriptor tacked on ("Baby spinach, chopped", "Carrots, julienned"). This matters beyond \
+phrasing: the grocery list merges lines by exact item name, so "Baby spinach" in one recipe and \
+"Baby spinach, chopped" in another become two separate lines that never combine — quietly \
+doubling what the household is told to buy. Prep instructions belong in the recipe's \
+instructions text, never in the ingredient name.
+- Ingredients used in only a small amount per recipe, where a single store-bought unit obviously \
+covers many uses across a whole week — spices, dried herbs, cooking oil, vinegar, soy sauce and \
+similar condiments, salt, pepper, sugar — should only carry a real qty on the FIRST recipe this \
+week that uses them; still list the ingredient (with its category) on every later recipe that \
+uses it too, but leave qty blank on those. Each recipe independently writing "1 jar"/"1 bottle" \
+for the same staple is exactly how a week's list ends up asking the household to buy 11 jars of \
+garlic powder or 9 bottles of olive oil — technically correct per recipe, absurd summed \
+together. This does NOT apply to ingredients genuinely consumed in real per-recipe portions even \
+when pantry-sourced — canned beans, rice, pasta, broth, flour for baking — those need their own \
+real qty every time they're used, since each use is an actual portion, not a pinch.
 - current_inventory lists what's already on hand. For an ingredient already covered there in a \
 comparable quantity, still include it in the recipe's ingredients list (the recipe should stay \
 accurate/reusable), but leave its category as normal — the household already has it, so it \
@@ -1755,8 +1771,10 @@ near-expiring inventory, novelty_preference), never generic filler.
 dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs/butter/tofu \
 are dairy; fresh vegetables/herbs are produce.
 - Write each ingredient's qty as how it's actually bought at the store (a head, a bunch, a bag, \
-a lb, a dozen, a can), not how much ends up used once prepped — see the day-based prompt's \
-guidance on this, same rule applies here.
+a lb, a dozen, a can), not how much ends up used once prepped, and keep the item name itself \
+free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") — see the day-based \
+prompt's guidance on this and on not re-adding a fresh unit of a staple (spices, oil, condiments) \
+on every item that uses it, same rules apply here.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
 recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
 - near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
