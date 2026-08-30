@@ -453,7 +453,7 @@
       var res = await fetch('/api/cooker-view');
       if (!res.ok) throw new Error('cooker-view failed');
       var data = await res.json();
-      var today = new Date().toISOString().slice(0, 10);
+      var today = todayLocalStr();
       var meal = (data.meals || []).filter(function (m) { return m.date === today && m.slot === 'dinner'; })[0];
       if (!meal) {
         // No dinner planned/plannable for tonight (or the household is on a
@@ -660,6 +660,16 @@
     return d.toLocaleDateString('en-US', opts);
   }
 
+  function todayLocalStr() {
+    // Build today's date from local fields, not toISOString() (which is UTC) —
+    // otherwise "today" is wrong for anyone whose local date has already rolled
+    // over past midnight while UTC's date hasn't yet.
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
   function classifyDay(day, todayStr) {
     var hasEmpty = WEEK_SLOTS.some(function (s) { return !day[s]; });
     var isToday = day.date === todayStr;
@@ -850,7 +860,7 @@
       return;
     }
 
-    var todayStr = new Date().toISOString().slice(0, 10);
+    var todayStr = todayLocalStr();
     var days = data.days.map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
     weekState.days = days;
     var emptyAheadCount = days.filter(function (d) { return d.needsDecision; }).length;
