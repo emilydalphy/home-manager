@@ -2487,12 +2487,26 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
     # The model has no live clock, so it can't answer "today"/"tomorrow"/
     # "this week" style requests (or fill in a week_start_date for
     # generate_weekly_plan) without being told the actual date each turn.
+    #
+    # Split into two blocks rather than one interpolated f-string so the
+    # frozen SYSTEM_PROMPT can carry its own prompt-caching breakpoint
+    # (cache_control below) without the daily-changing date busting it —
+    # a single combined block would invalidate the cache once every day
+    # instead of staying stable indefinitely. Tool definitions render
+    # before system in the request, so this one breakpoint on the last
+    # (stable) system block also covers TOOL_DEFINITIONS.
     today = datetime.date.today()
-    system_with_date = (
-        f"{SYSTEM_PROMPT}\n\nToday's date is {today.isoformat()} ({today.strftime('%A')}). "
-        "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
-        "\"next Monday\" yourself — never ask the user what today's date is."
-    )
+    system_blocks = [
+        {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
+        {
+            "type": "text",
+            "text": (
+                f"Today's date is {today.isoformat()} ({today.strftime('%A')}). "
+                "Use this to resolve relative dates like \"today\", \"tomorrow\", \"this week\", or "
+                "\"next Monday\" yourself — never ask the user what today's date is."
+            ),
+        },
+    ]
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps
@@ -2525,9 +2539,21 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
             # was treating as a normal finish, producing a silently empty
             # reply. Bumped to give real summaries room to breathe.
             max_tokens=4096,
-            system=system_with_date,
+            system=system_blocks,
             tools=TOOL_DEFINITIONS,
             messages=conversation,
+            # Automatically caches the last cacheable block in `messages` —
+            # on top of the explicit breakpoint on system_blocks[0] above,
+            # this lets the growing conversation history itself be read
+            # from cache turn-over-turn within a single chat session,
+            # instead of only the shared system+tools prefix.
+            cache_control={"type": "ephemeral"},
+        )
+
+        logger.info(
+            "run_agent_turn round %d usage: input=%d cache_read=%d cache_creation=%d output=%d",
+            rounds, response.usage.input_tokens, response.usage.cache_read_input_tokens,
+            response.usage.cache_creation_input_tokens, response.usage.output_tokens,
         )
 
         conversation.append({"role": "assistant", "content": response.content})
