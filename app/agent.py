@@ -2532,13 +2532,15 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
 
         response = _create_with_retry(client,
             model=MODEL,
-            # Was 1024 — too tight once tool calls like generate_weekly_plan
-            # come back with a full week's worth of meals to summarize; the
-            # model would hit max_tokens mid-response (sometimes before
-            # writing any text at all), which our stop_reason check below
-            # was treating as a normal finish, producing a silently empty
-            # reply. Bumped to give real summaries room to breathe.
-            max_tokens=4096,
+            # Was 1024, then 4096 — still too tight once a single turn needs
+            # a run of individual tool calls (e.g. replacing every meal slot
+            # across a week, one plan_meal/swap_meal_in_plan call per slot)
+            # plus real prose after them; the model would hit max_tokens
+            # mid-response (sometimes before writing any text at all), which
+            # our stop_reason check below was treating as a normal finish,
+            # producing a silently empty reply. Bumped to give multi-call
+            # turns with real summaries room to breathe.
+            max_tokens=8192,
             system=system_blocks,
             tools=TOOL_DEFINITIONS,
             messages=conversation,

@@ -25,6 +25,14 @@ from .db import init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
 from . import tools
 
+
+# Nothing else in the app configures logging, and an unconfigured logger
+# only surfaces WARNING and above (Python's "handler of last resort") — so
+# without this, every logger.info() call in this app (including the
+# per-round token/cache usage in agent.run_agent_turn) is silently dropped
+# instead of reaching the terminal.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
 logger = logging.getLogger("home_manager")
 
 app = FastAPI(title="Home Manager")
