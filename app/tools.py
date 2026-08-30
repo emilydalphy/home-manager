@@ -4124,7 +4124,37 @@ _UNIT_ALIASES = {
     "large": "", "medium": "", "small": "", "whole": "", "jumbo": "", "xl": "",
 }
 
-_QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]*)$")
+# Package/container words that can appear as a unit on their own ("1 head")
+# or as the second word of a compound unit ("1 lb bag"). Singular is the
+# canonical parsed form; _format_quantity pluralizes only for display
+# ("2 lb bags"), and _normalize_container_word below undoes that pluralization
+# on the way back in — otherwise re-parsing an already-merged "2 lb bags" to
+# add a third "1 lb bag" would see "bags" != "bag" and fail to match, falling
+# back to concatenation again (the exact bug this whole fix is for).
+_CONTAINER_UNIT_PLURALS = {
+    "bag": "bags", "box": "boxes", "can": "cans", "jar": "jars",
+    "bottle": "bottles", "block": "blocks", "bunch": "bunches",
+    "head": "heads", "pint": "pints", "clove": "cloves",
+}
+_CONTAINER_UNIT_SINGULARS = {plural: singular for singular, plural in _CONTAINER_UNIT_PLURALS.items()}
+
+
+def _normalize_container_word(unit_str: str) -> str:
+    """Singularize a trailing container word ("lb bags" -> "lb bag") so a
+    previously-pluralized display string parses back to the same canonical
+    unit as a fresh singular one. Leaves everything else untouched."""
+    if not unit_str:
+        return unit_str
+    words = unit_str.split(" ")
+    words[-1] = _CONTAINER_UNIT_SINGULARS.get(words[-1], words[-1])
+    return " ".join(words)
+
+
+# Unit is normally one word ("lb", "cup"), but a store-purchase quantity
+# sometimes carries a package word too ("1 lb bag", "12 oz can") — allow one
+# optional second word so these parse instead of falling through to the
+# "unparseable, concatenate raw strings" fallback in _try_consolidate_quantity.
+_QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]+(?:\s+[a-zA-Z]+)?)?$")
 
 
 def _strip_prep_descriptor(qty: str) -> str:
@@ -4153,7 +4183,7 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
     match = _QTY_RE.match(_strip_prep_descriptor(qty.strip()).lower())
     if not match:
         return None
-    amount_str, unit_str = match.group(1), match.group(2).strip()
+    amount_str, unit_str = match.group(1), (match.group(2) or "").strip()
     try:
         if "/" in amount_str:
             parts = amount_str.split(" ")
@@ -4168,7 +4198,7 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
             amount = float(amount_str)
     except (ValueError, ZeroDivisionError):
         return None
-    return amount, (_UNIT_ALIASES.get(unit_str, unit_str) or None)
+    return amount, (_UNIT_ALIASES.get(unit_str, _normalize_container_word(unit_str)) or None)
 
 
 _UNIT_PLURALS = {"cup": "cups", "lb": "lbs"}
@@ -4178,8 +4208,15 @@ def _format_quantity(amount: float, unit: str | None) -> str:
     amount_str = f"{amount:g}"
     if not unit:
         return amount_str
-    display_unit = _UNIT_PLURALS.get(unit, unit) if amount != 1 else unit
-    return f"{amount_str} {display_unit}"
+    if amount == 1:
+        return f"{amount_str} {unit}"
+    if unit in _UNIT_PLURALS:
+        return f"{amount_str} {_UNIT_PLURALS[unit]}"
+    prefix, _, last_word = unit.rpartition(" ")
+    if last_word in _CONTAINER_UNIT_PLURALS:
+        display_unit = f"{prefix} {_CONTAINER_UNIT_PLURALS[last_word]}" if prefix else _CONTAINER_UNIT_PLURALS[last_word]
+        return f"{amount_str} {display_unit}"
+    return f"{amount_str} {unit}"
 
 
 # Unit groups for shopping-list "roll up to a bigger unit" conversion, each
