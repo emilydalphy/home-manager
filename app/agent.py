@@ -2532,15 +2532,15 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
 
         response = _create_with_retry(client,
             model=MODEL,
-            # Was 1024, then 4096 — still too tight once a single turn needs
-            # a run of individual tool calls (e.g. replacing every meal slot
-            # across a week, one plan_meal/swap_meal_in_plan call per slot)
-            # plus real prose after them; the model would hit max_tokens
-            # mid-response (sometimes before writing any text at all), which
-            # our stop_reason check below was treating as a normal finish,
-            # producing a silently empty reply. Bumped to give multi-call
-            # turns with real summaries room to breathe.
-            max_tokens=8192,
+            # Was 1024, then 4096, then 8192 — a turn that rebuilds several
+            # full recipes (add_recipe's ingredients/instructions/etc, built
+            # out in full per SYSTEM_PROMPT/the tool's own instructions) AND
+            # reassigns a week's worth of meal slots in the same round can
+            # still outrun 8192. Matches generate_weekly_plan_llm's cap
+            # below, which does comparably large output. The stop_reason ==
+            # "max_tokens" branch further down retries instead of bailing
+            # out if even this isn't enough for a given turn.
+            max_tokens=16000,
             system=system_blocks,
             tools=TOOL_DEFINITIONS,
             messages=conversation,
@@ -2568,16 +2568,20 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
             # tool_use block before it's "chosen" as the finishing reason.
             # The Anthropic API requires every tool_use block to be followed
             # by a matching tool_result in the very next message — if we
-            # returned here without one, this half-finished assistant
-            # message would be saved into the persisted session history
-            # as-is, and EVERY future turn on this session would then fail
-            # immediately with a 400 (tool_use ids found without paired
-            # tool_result). Since this app pins every browser tab to the
-            # same "default" session id, that one bad turn would silently
-            # brick chat for everyone until the server restarted. Closing
-            # out any stray tool_use blocks with a synthetic error result
-            # keeps the saved history always well-formed, no matter how a
-            # response gets cut off.
+            # left one dangling, this half-finished assistant message would
+            # be saved into the persisted session history as-is, and EVERY
+            # future turn on this session would then fail immediately with
+            # a 400 (tool_use ids found without paired tool_result). Since
+            # this app pins every browser tab to the same "default" session
+            # id, that one bad turn would silently brick chat for everyone
+            # until the server restarted. Closing out any stray tool_use
+            # blocks with a synthetic error result keeps the saved history
+            # always well-formed, no matter how a response gets cut off.
+            # Only reachable here (never on the normal stop_reason ==
+            # "tool_use" path below, which resolves each tool_use block with
+            # its real result instead — resolving them twice would leave
+            # two tool_result blocks for the same id and break the API's
+            # strict user/assistant alternation).
             stray_tool_use = [b for b in response.content if b.type == "tool_use"]
             if stray_tool_use:
                 logger.warning(
@@ -2597,6 +2601,28 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
                         for b in stray_tool_use
                     ],
                 })
+
+            if response.stop_reason == "max_tokens":
+                # The model was cut off mid-generation, not genuinely done —
+                # a request that touches a lot of meal slots/recipes in one
+                # turn can need more output than even a generous max_tokens
+                # covers. Rather than dead-ending the turn on a canned
+                # apology, having closed out any stray tool_use above, loop
+                # back around so the model gets another round to pick up
+                # where it left off (retry the cut-off call, keep building
+                # out the rest of the plan). MAX_TOOL_ROUNDS below still
+                # bounds this so a truly runaway turn can't loop forever.
+                if not stray_tool_use:
+                    # Cut off mid-text with no tool call in flight — nothing
+                    # to pair as a tool_result, but the API still requires
+                    # the next message to be role=user before it will
+                    # generate again, so give it an explicit nudge instead.
+                    conversation.append({
+                        "role": "user",
+                        "content": "Your last response got cut off before it finished — please continue.",
+                    })
+                logger.warning("run_agent_turn hit max_tokens (round %d) — continuing the turn", rounds)
+                continue
 
             text = "".join(block.text for block in response.content if block.type == "text")
             if not text.strip():
