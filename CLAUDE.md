@@ -1,11 +1,14 @@
 # Home Manager — project context for Claude Code
 
 This file is read automatically at the start of every Claude Code session in
-this repo. It's a status briefing, not the full history — for the detailed
-decision log (every design tradeoff, every bug root-caused, every judgment
-call made and why), read `design_handoff_home_manager/README.md` before
-making non-trivial changes. That file has been kept current section-by-section
-through the whole build and is the real memory of this project.
+this repo. It's a status briefing, not the full history — for engineering
+decisions and root-caused bugs, see **Decision log** below; append to it as
+you go, in the same terse style (fact, then why). The `design_handoff_home_manager/`
+and `design_handoff_shell/` directories are UI/design-system handoff docs from
+two separate redesign efforts (screens, tokens, copy, interaction specs) —
+useful for "why does this screen look like this," but they are **not** an
+engineering decision log, despite an earlier version of this file claiming
+otherwise.
 
 ## What this is
 
@@ -17,36 +20,26 @@ inventory, and answers "what we know" about the household. Deployed to
 Railway, auto-deploying from `main` on push. Live at
 `home-manager-production-4949.up.railway.app`.
 
-## Branch state (as of this handoff)
+## Current state (as of 2026-08-30)
 
-- **`hardening` has been merged into `main`** (fast-forward, both branches
-  point at `cc23802`) and pushed to `origin/main` — so it's deployed, or
-  about to be, on Railway. The household confirmed `HOME_MANAGER_PASSWORD`,
-  `SESSION_SECRET`, and `DB_PATH` (with its volume) were all set in Railway
-  *before* this merge happened, so the password gate going live should be
-  safe rather than a lockout/data-loss incident — but if the live site is
-  behaving unexpectedly after this point, start by checking those three
-  Railway variables are actually in effect, not just saved.
-- The security/quality pass that's now live: household password gate + rate
-  limiting (`app/security.py`, `app/ratelimit.py`), pinned dependencies, a
-  smoke test suite + GitHub Actions CI, accessibility fixes (focus
-  visibility, reduced motion, accessible names), and a `robots.txt` +
-  `X-Robots-Tag` (this also means external fetch tools that respect
-  `robots.txt` — including this session's own web-fetch tool — can no
-  longer read the live site directly; that's expected, not a bug).
-- If you're picking this repo up fresh: run `git log --oneline -10` to
-  confirm this is still accurate — there may be new branches or commits by
-  the time you read this.
+`main` is live on Railway with no other active branches. Recent work has been
+incremental bug fixes and chat-agent reliability improvements — see Decision
+log below for specifics. If you're picking this repo up fresh, run
+`git log --oneline -15` to confirm this is still accurate.
 
 ## Working style established so far
 
 - **Sandbox-verify everything before calling it done.** Fresh/reset SQLite
   DB, real `uvicorn` process, Playwright with `/opt/pw-browsers/chromium`
   for anything UI-facing. Don't trust a fix until it's actually been run.
-- **Keep `design_handoff_home_manager/README.md` updated** section-by-section
-  documenting every scope deviation, bug root-caused, and judgment call —
-  honestly, including things that were tried and didn't work. This is what
-  makes the project legible to the next session (human or Claude).
+  For chat-agent behavior specifically, a real API call reproduction (stub
+  `TOOL_FUNCTIONS` to bypass DB state if needed) beats reasoning from code
+  alone — see the max_tokens entry in the Decision log for an example.
+- **Keep the Decision log below updated** — every scope deviation, bug
+  root-caused, and judgment call, honestly including things that were tried
+  and didn't work. This is what makes the project legible to the next
+  session (human or Claude), replacing the broken pointer this file used to
+  have.
 - A recurring local sandbox quirk (may or may not reproduce in your
   environment): `pkill -f uvicorn` and combined multi-step heredoc bash
   commands intermittently return exit 144 while silently not completing.
@@ -55,6 +48,16 @@ Railway, auto-deploying from `main` on push. Live at
 
 ## Known architectural gotchas (don't re-discover these the hard way)
 
+- **A single chat turn's `max_tokens` cap can be outrun by open-ended
+  multi-tool work.** A request that touches many meal slots/recipes in one
+  turn (e.g. rebuild a week's dinners with new recipes) can need more output
+  than any fixed cap — reproduced needing 8+ unresolved tool_use blocks at
+  16000 output tokens. `run_agent_turn` (agent.py) now retries the round
+  instead of returning a dead-end apology when `stop_reason == "max_tokens"`,
+  bounded by `MAX_TOOL_ROUNDS`. If you add another single-shot LLM call
+  elsewhere in this file (there are several, each with their own
+  `max_tokens`), consider whether it needs the same retry-on-truncation
+  treatment rather than just a bigger fixed number.
 - **Tab panels build once per page load.** `static/shell.js`'s
   `buildWeekPanel`/`buildTodayPanel`/etc. are guarded by
   `panel.dataset.built`, so switching tabs away and back does NOT refetch
@@ -83,6 +86,9 @@ Railway, auto-deploying from `main` on push. Live at
   oz/lb, g/kg, ml/l) roll up to the largest sensible unit. `scale_recipe`'s
   own scaling is intentionally NOT run through this — that's for cooking,
   not shopping, and wants precise amounts in the recipe's original unit.
+  Multi-word container units ("1 lb bag") and prep-descriptor-bearing
+  ingredient names ("Baby spinach, chopped") have both bitten this before —
+  see Decision log.
 - Service worker (`static/service-worker.js`) is network-first for
   navigations/`.html`/`.js`/`.css`, cache-first only for icons/manifest —
   this was a real stale-cache bug once (`CACHE_NAME` bumped to `v3` to
@@ -90,11 +96,60 @@ Railway, auto-deploying from `main` on push. Live at
   this before suspecting the code — especially on an installed iOS
   Home-Screen PWA, which is slower to pick up service worker updates than a
   normal browser tab.
+- **`home_manager` logger's INFO output was silently dropped** until
+  `main.py` added `logging.basicConfig(level=logging.INFO, ...)`. Nothing
+  else in the app configures logging, and Python's default "handler of last
+  resort" only surfaces WARNING and above — so any new `logger.info(...)`
+  call anywhere in this app will actually show up now, but double-check
+  this basicConfig call is still there if logging output ever goes quiet
+  again.
+
+## Decision log (root-caused bugs, judgment calls — append here as you go)
+
+Newest first. Keep entries terse: one line of fact, one line of why. Full
+detail lives in the commit that made the change (`git log --oneline` /
+`git show <hash>`) — this log is for surfacing *that something happened and
+why*, not duplicating the diff.
+
+- **2026-08-30 — Grocery list over-counted staples and fragmented
+  near-duplicate ingredient names.** Every recipe using a small-use staple
+  (garlic powder, olive oil) independently added a full store-bought unit
+  (10 recipes → 10 jars); prep-descriptor differences ("chopped" vs not)
+  blocked exact-name merging. Fixed by only writing a real quantity on a
+  staple's first use per week, and stripping prep descriptors before
+  merging names.
+- **2026-08-30 — Chat turn could dead-end on `stop_reason == "max_tokens"`.**
+  See the Known architectural gotchas entry above — root cause and fix are
+  the same thing.
+- **2026-08-30 — Prompt caching was not enabled on the main chat loop.**
+  System prompt (~7.6K tokens) + tool defs (~15K tokens) were resent
+  uncached every single turn. Split the system prompt into a frozen,
+  cache-marked block plus a small uncached "today's date" block (kept
+  separate so the date changing daily doesn't bust the cache), and added
+  top-level automatic caching so the growing conversation history is also
+  read from cache turn-over-turn. Verified with live `cache_read`/
+  `cache_creation` numbers, not just by reading the code — see the
+  `home_manager` logger fix above for why that verification wasn't visible
+  before.
+- **2026-08-30 — Voice dictation was chat-only; Stores tab had no way to add
+  a store directly.** Extracted dictation into a shared
+  `static/dictation.js` (Grocery/Inventory/Memory are separate iframed
+  documents that can't reach `shell.js`'s copy). Added a "+ Add a store"
+  control — the Stores tab is the documented onboarding replacement for
+  "where do you shop" but previously had no add path of its own.
+- **2026-08-29 — "This week" planning could target the wrong week late in
+  the week.** Asked on a Thursday/Friday/Saturday, the chat agent would
+  generate a plan starting *next* Monday instead of filling the current
+  week — a real, saved plan the Meals tab then never shows, since it only
+  displays the plan whose week actually contains today. Same failure class
+  as an earlier "chat describes a plan the tab doesn't show" bug, just
+  reached via the agent choosing the wrong week to generate for in the
+  first place.
 
 ## Deploying
 
-Push to `main` on GitHub; Railway auto-deploys from there. CI now runs the
-smoke test suite on every push (added in the `hardening` work, now on `main`).
+Push to `main` on GitHub; Railway auto-deploys from there. CI runs the smoke
+test suite on every push (added in the `hardening` work).
 
 **Required Railway variables — confirmed set as of the `hardening` merge, but
 worth re-checking if the live site ever misbehaves:**
@@ -120,9 +175,9 @@ https://claude.ai/code/artifact/0d42e9f3-4e71-401d-a4c0-1a1f1983dbf2
 Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
 **Still open, in case you're deciding what to work on next:**
 
-- **#8** — `app/tools.py` is 5,143 lines with 188 `HOUSEHOLD_ID` references.
+- **#8** — `app/tools.py` is 5,143+ lines with 188+ `HOUSEHOLD_ID` references.
   Split it into a package by domain *before* doing real auth/multi-tenancy
-  work — the smoke test suite (now running in CI on every push) makes this
+  work — the smoke test suite (running in CI on every push) makes this
   safe to do now.
 - **#9** — the shell's tabs are iframes; navigation workarounds (see the
   Kitchen back-link bug fixed earlier) are accumulating as a result.
@@ -138,23 +193,20 @@ Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
   that look identical but behave differently.
 
 That review's own notes also flag: it verified the backend against a real
-uvicorn server, but **never actually saw the frontend rendered** — the
-Railway domain wasn't reachable from that sandbox. This Cowork session *did*
-verify frontend behavior visually (via screenshots the household sent
-directly, and one direct fetch of the live `/api/week-menu` JSON) for the
-bugs in the sections above — but broad visual/screen-reader verification of
-the whole app is still an open gap either way.
+uvicorn server, but never actually saw the frontend rendered — broad
+visual/screen-reader verification of the whole app is still an open gap.
 
 ## Immediate open items
 
-1. Voice dictation, the current-week plan fix, the grocery quantity
-   humanization fix, and the full `hardening` security/quality pass are all
-   on `main` and deployed (or deploying). If dictation still doesn't appear
-   on a device, it's very likely the PWA cache issue above, not a missing
-   deploy.
-2. Consider tackling review finding #8 (splitting `tools.py`) next, now that
-   it's safely testable — before layering more auth/multi-tenancy work on
-   top of the current 5,143-line file.
+1. **Recommendation enforcement** (in progress as of 2026-08-30): the chat
+   agent's proactive-suggestion tools (`get_attention_items`,
+   `get_expiring_soon`, feedback nudges, etc.) currently rely on the system
+   prompt saying "call this when relevant," which a model can let slide in
+   a long conversation. Moving the highest-value checks into code that runs
+   automatically rather than trusting the prompt is the next piece of work.
+2. Consider tackling code-review finding #8 (splitting `tools.py`) next,
+   now that it's safely testable — before layering more auth/multi-tenancy
+   work on top of the current single-file size.
 3. The still-open findings (#9–#11, #14–#16 above) are real but not urgent —
    good candidates for "what should we work on next" rather than anything
    blocking.
