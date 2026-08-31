@@ -856,6 +856,47 @@ def generate_week(week_start: str, req: WeekGenerateRequest):
     return plan
 
 
+class WeekSlotRequest(BaseModel):
+    date: str
+    slot: str = "dinner"
+    choice: str
+
+
+@app.post("/api/week/{week_start}/slot")
+def resolve_week_slot(week_start: str, req: WeekSlotRequest):
+    """
+    Settle one slot — an open night the app handed back, or a swap. In a
+    draft this leaves the shopping list alone; in an approved week it keeps
+    the list in step, same rule as a swap.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    if req.slot not in tools.WEEK_SLOTS:
+        raise HTTPException(status_code=400, detail=f"slot must be one of {', '.join(tools.WEEK_SLOTS)}.")
+    try:
+        return tools.resolve_open_slot(plan_id, req.date, req.slot, req.choice)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Slot resolution failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/reopen")
+def reopen_week(week_start: str):
+    """
+    Reopen an approved week for editing (DECISIONS.md #2). Never removes
+    anything from the shopping list — re-approving only adds what's new.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.reopen_weekly_plan(plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Week reopen failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/week/{week_start}/approve")
 def approve_week(week_start: str, req: WeekApproveRequest):
     """

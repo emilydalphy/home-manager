@@ -696,6 +696,164 @@ def test_an_open_slot_must_name_the_constraint_that_caused_it():
         tools.plan_slot_open(plan_id, "2026-09-07", "dinner", "   ")
 
 
+# ---------- Plan the Week: the draft screen ----------
+
+def test_the_menu_carries_each_slots_state_and_reason():
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(week, "Chili", slot="dinner", weekly_plan_id=plan_id, reasoning="beef is a favourite")
+    tools.plan_slot_empty(plan_id, week, "lunch", "You’re out — I’ve planned nothing and bought nothing.")
+    tools.plan_slot_open(
+        plan_id, week, "breakfast",
+        "Monday I’d rather ask than guess: everything quick repeats Sunday.",
+        options=[{"label": "Toast", "meta": "5 min"}],
+    )
+
+    day = next(d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == week)
+
+    assert day["dinner"]["state"] == "planned"
+    assert day["dinner"]["reason"] == "beef is a favourite"
+    assert day["lunch"]["state"] == "planned_empty"
+    assert day["lunch"]["title"] == "Out — nothing to cook"
+    assert day["breakfast"]["state"] == "open"
+    assert day["breakfast"]["title"] == "I’d like your call on this one"
+    assert day["breakfast"]["options"] == [{"label": "Toast", "meta": "5 min"}]
+
+
+def test_the_headline_names_the_one_decision_waiting():
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.plan_slot_open(plan_id, week, "dinner", "Monday I’d rather ask than guess: nothing under 20 minutes is new.")
+
+    assert "one night I’d like your call on" in tools.get_week_menu(plan_id)["headline"]
+
+
+def test_the_headline_says_once_when_the_tags_leave_fewer_dinners():
+    """
+    DECISIONS.md #1: the week's tags win, and the app says so once rather
+    than shorting the household silently. Not a question — asking would turn
+    a tagging screen into a negotiation whose answer is nearly always "yes,
+    obviously".
+    """
+    week = _week_start()
+    friday = tools._week_dates(week)[4]
+    tools.save_week_intake(week, night_tags={friday: ["out"]})
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.attach_intake_to_plan(plan_id, tools.get_week_intake(week)["intake_id"])
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    for day in tools._week_dates(week):
+        if day == friday:
+            tools.plan_slot_empty(plan_id, day, "dinner", "You’re out — I’ve planned nothing and bought nothing.")
+        else:
+            tools.plan_meal(day, "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    headline = tools.get_week_menu(plan_id)["headline"]
+
+    assert headline == "That’s 6 dinners you’ll cook this week rather than 7 — you’re out Friday."
+
+
+def test_the_headline_stays_quiet_on_a_week_with_nothing_to_say():
+    """
+    The baseline is the seven nights, not the household's dinner COUNT —
+    that count means distinct dinners, so comparing it against nights cooked
+    would fire on weeks with nothing wrong with them.
+    """
+    week = _week_start()
+    tools.edit_preference("dinners_per_week", 4)
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    for day in tools._week_dates(week):
+        tools.plan_meal(day, "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    assert tools.get_week_menu(plan_id)["headline"] == "Your week’s here."
+
+
+def test_settling_an_open_slot_turns_it_into_a_real_meal():
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_slot_open(plan_id, week, "dinner", "Monday I’d rather ask than guess: nothing quick is new.")
+
+    result = tools.resolve_open_slot(plan_id, week, "dinner", "Chili")
+
+    assert result["was_open"] is True
+    day = next(d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == week)
+    assert day["dinner"]["state"] == "planned"
+    assert day["dinner"]["title"] == "Chili"
+    # One row per slot — settling replaces the question, it doesn't stack a
+    # second entry beside it.
+    assert tools.audit_plan_slots(plan_id)["present"] == 1
+
+
+def test_settling_a_slot_in_a_draft_leaves_the_shopping_list_alone():
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_slot_open(plan_id, week, "dinner", "Monday I’d rather ask than guess: nothing quick is new.")
+
+    tools.resolve_open_slot(plan_id, week, "dinner", "Chili")
+
+    assert tools.list_grocery_list() == [], "a draft is still not a yes"
+
+
+def test_settling_a_slot_in_an_approved_week_keeps_the_list_in_step():
+    """
+    Otherwise the shopping list quietly lacks the one meal the household
+    chose by hand — the worst possible item to be missing.
+    """
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_slot_open(plan_id, week, "dinner", "Monday I’d rather ask than guess: nothing quick is new.")
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    tools.resolve_open_slot(plan_id, week, "dinner", "Chili")
+
+    assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
+
+
+def test_reopening_a_week_never_takes_anything_off_the_shopping_list():
+    """
+    DECISIONS.md #2. Removing items somebody may already have bought is
+    worse than a slightly long list, and a true reversal would need "was
+    this actually bought?" tracking that doesn't exist.
+    """
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(week, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    assert len(tools.list_grocery_list()) == 1
+
+    result = tools.reopen_weekly_plan(plan_id)
+
+    assert result["was_approved"] is True
+    assert tools.get_weekly_plan(plan_id)["status"] == "draft"
+    assert len(tools.list_grocery_list()) == 1, "reopening removes nothing"
+    # The receipt is cleared, because it no longer describes a settled week.
+    assert tools.get_weekly_plan(plan_id)["approved_by"] == ""
+
+
+def test_re_approving_after_a_reopen_adds_only_what_is_new():
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 l"}])
+    tools.plan_meal(week, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    tools.reopen_weekly_plan(plan_id)
+    tools.plan_meal(week, "Soup", slot="lunch", weekly_plan_id=plan_id)
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Marcus")
+
+    assert result["groceries_added"] == ["stock"], "only the new meal's ingredients"
+    assert sorted(i["item"] for i in tools.list_grocery_list()) == ["beans", "stock"]
+    # A reopened week can be settled by the other adult — this IS a real
+    # transition into approved, so the receipt names them.
+    assert result["approved_by"] == "Marcus"
+
+
 def test_a_plan_remembers_the_answers_it_came_from():
     week = "2026-09-07"
     intake = tools.save_week_intake(week, night_tags={"2026-09-09": ["rush"]})

@@ -2007,6 +2007,150 @@ def get_week_planning_nudge() -> dict:
     }
 
 
+def _week_headline(plan: dict, days: list[dict], intake: dict | None) -> str:
+    """
+    The one line above the draft. One line, no recap — the per-slot reasons
+    carry the detail, and the assistant never lists what it did.
+
+    It says at most two things, in priority order:
+
+    1. That there's a decision waiting. An open slot is the only thing on
+       this screen the household has to act on, so it outranks everything.
+    2. DECISIONS.md #1 — when the week's tags leave fewer dinners than the
+       household's usual count, the tags win, and the app says so ONCE
+       rather than shorting them silently. Not a question: asking would
+       turn a tagging screen into a negotiation whose answer is nearly
+       always "yes, obviously".
+
+    With neither, it just says the week is here. There is deliberately no
+    third clause: a headline that grows a sentence per feature is the recap
+    this rule exists to prevent.
+    """
+    open_days = [
+        date.fromisoformat(d["date"]).strftime("%A")
+        for d in days
+        for slot in WEEK_SLOTS
+        if (d.get(slot) or {}).get("state") == "open"
+    ]
+    if len(open_days) == 1:
+        return f"Your week’s here — there’s one night I’d like your call on."
+    if open_days:
+        return f"Your week’s here — there are {len(open_days)} slots I’d like your call on."
+
+    # The baseline is the seven nights of the week, NOT
+    # preferences_snapshot's dinner count: since that count means how many
+    # DISTINCT dinners to plan rather than how many nights to plan one,
+    # comparing it against nights cooked would be comparing two different
+    # things and would fire on weeks with nothing wrong with them.
+    #
+    # And this only speaks when the week's TAGS caused the reduction, which
+    # is the case DECISIONS.md #1 is actually about. A household that set
+    # its own counts to zero already knows; being told about it is not news.
+    night_tags = (intake or {}).get("night_tags") or {}
+    because = []
+    for day, tags in sorted(night_tags.items()):
+        weekday = date.fromisoformat(day).strftime("%A")
+        if "out" in tags:
+            because.append(f"you’re out {weekday}")
+        elif "left" in tags:
+            because.append(f"it’s leftovers {weekday}")
+    cooked = sum(1 for d in days if (d.get("dinner") or {}).get("state") == "planned")
+    if because and cooked and cooked < len(days):
+        return (
+            f"That’s {cooked} dinners you’ll cook this week rather than {len(days)}"
+            f" — {' and '.join(because[:2])}."
+        )
+    return "Your week’s here."
+
+
+def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: str) -> dict:
+    """
+    Settle a slot the app handed back. `choice` is what the household
+    picked — one of the offered options, or anything they typed instead.
+
+    The open row is replaced by a real planned meal, so the slot moves from
+    'open' to 'planned' rather than accumulating two rows for one slot. Its
+    provenance records that a person settled it, which is worth keeping:
+    "the app asked and they answered" is a different thing from "the app
+    chose", and only one of them is evidence about the household's taste.
+
+    A choice that declines to plan anything at all ("Takeout, don't plan
+    it") is honoured as exactly that — a planned takeout entry, not a
+    silent gap and not a slot left open forever.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, slot_state, open_reason FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ? LIMIT 1",
+        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+    ).fetchone()
+    conn.close()
+    if not row:
+        raise ValueError(f"No {slot} slot on {meal_date} in that plan.")
+    if not (choice or "").strip():
+        raise ValueError("A choice is needed to settle this slot.")
+
+    was_open = row["slot_state"] == "open"
+    # Reverse anything the outgoing entry contributed before deleting it —
+    # the same care swap_meal_in_plan takes. An open slot has contributed
+    # nothing, but this also serves the "change my mind about an already
+    # planned slot" path.
+    _reverse_meal_grocery_contributions(row["id"])
+    conn = get_conn()
+    conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (row["id"],))
+    conn.commit()
+    conn.close()
+
+    result = plan_meal(
+        meal_date, choice.strip(), slot=slot, weekly_plan_id=weekly_plan_id,
+        # Mirrors the plan's approved state, exactly as a swap does: settling
+        # a slot in a draft leaves the shopping list alone, settling one in
+        # an already-approved week keeps the list in step. Otherwise the
+        # list would quietly lack the one meal the household chose by hand.
+        add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
+        reasoning="you chose this one",
+        derived_from={"constraint": "settled_by_household", "answered": row["open_reason"] or ""},
+    )
+    return {**result, "was_open": was_open}
+
+
+def reopen_weekly_plan(weekly_plan_id: int) -> dict:
+    """
+    Reopen an approved week so it can be edited again — DECISIONS.md #2.
+
+    It never removes anything from the shopping list. Groceries already
+    added stay, and re-approving only adds what's new. That's deliberate:
+    taking items off a list somebody may already have bought is worse than
+    a slightly long list, and a true reversal would need "was this item
+    actually bought?" tracking that doesn't exist.
+
+    The approval receipt is cleared, because it no longer describes a
+    settled week — but the grocery links are untouched, which is what makes
+    the re-approval add only the difference.
+    """
+    conn = get_conn()
+    plan = conn.execute(
+        "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchone()
+    if not plan:
+        conn.close()
+        raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+    conn.execute(
+        "UPDATE weekly_plans SET status = 'draft', approved_by = '', approved_at = NULL, "
+        "approved_grocery_added = 0, approved_grocery_skipped = 0, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+    return {
+        "weekly_plan_id": weekly_plan_id,
+        "status": "draft",
+        "was_approved": plan["status"] == "approved",
+    }
+
+
 def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     """
     Record which revision of the household's answers produced this plan.
@@ -2523,8 +2667,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                COALESCE(r.name, mpe.freeform_meal) AS meal,
+               mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
                r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -2535,19 +2680,40 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     conn.close()
 
     def build_slot(row) -> dict | None:
+        # The three states a slot can be in. Only a slot that is genuinely
+        # absent returns None — and after a generation through
+        # _finish_week_slots there shouldn't be any.
+        if row["slot_state"] == "planned_empty":
+            return {
+                "title": "Out — nothing to cook", "meta": None, "source": "empty",
+                "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
+            }
+        if row["slot_state"] == "open":
+            derived = json.loads(row["derived_from_json"] or "{}")
+            return {
+                "title": "I’d like your call on this one", "meta": None, "source": "open",
+                "state": "open", "open_reason": row["open_reason"],
+                "options": derived.get("options") or [], "entry_id": row["id"],
+            }
         title = row["meal"]
         if not title:
             return None
+        # The 4-9 word "why" shown under the meal name. Generated with the
+        # plan (see meal_plan_entries.reasoning) rather than improvised on
+        # demand, so it can't contradict the actual reason.
+        common = {
+            "state": "planned", "reason": row["reasoning"] or None, "entry_id": row["id"],
+        }
         text = (row["freeform_meal"] or "").lower()
         if re.search(r"leftovers?\b", text):
-            return {"title": title, "meta": "reheat", "source": "leftovers"}
+            return {"title": title, "meta": "reheat", "source": "leftovers", **common}
         if re.search(r"take[\s-]?out|delivery|order in", text):
-            return {"title": title, "meta": "takeout", "source": "takeout"}
+            return {"title": title, "meta": "takeout", "source": "takeout", **common}
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
         total = prep + cook
         meta = f"{total} min" if total else None
-        return {"title": title, "meta": meta, "source": "plan"}
+        return {"title": title, "meta": meta, "source": "plan", **common}
 
     by_date_slot = {}
     for r in rows:
@@ -2573,12 +2739,15 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 suggestions = _suggest_quick_dinners()
             day["dinner_suggestions"] = suggestions
 
+    intake = get_week_intake(plan["week_start_date"])
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
         "week_start_date": plan["week_start_date"],
+        "week_label": _format_week_range(plan["week_start_date"]),
         "household_name": household_name,
         "days": days,
         "menu_is_suggested": False,
+        "headline": _week_headline(plan, days, intake),
         **approval,
     }
 

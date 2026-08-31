@@ -809,6 +809,10 @@
         // both breakpoints, and #week-header is desktop-only. Sits above
         // the reset row: approving the week is the primary thing to do
         // here, starting over is the last resort.
+        // The one place an open slot is answered — see renderOpenSlots.
+        // Above Approve because it's the only thing on this screen the
+        // household actually has to act on.
+        '<div id="week-open-row"></div>' +
         '<div id="week-approve-row"></div>' +
         // The permanent way into the two question screens — see
         // renderPlanWeekEntry. Below Approve because approving the week
@@ -871,12 +875,19 @@
   }
 
   function classifyDay(day, todayStr) {
+    // A slot with no entry at all, which after a real generation shouldn't
+    // happen — every slot is planned, planned_empty or open. It still has
+    // to be handled: plenty of weeks predate the guarantee.
     var hasEmpty = WEEK_SLOTS.some(function (s) { return !day[s]; });
+    // A slot the app deliberately handed back. This is a decision even
+    // though the slot isn't empty — and a planned_empty night is NOT one,
+    // which is the whole point of it being its own state.
+    var hasOpen = WEEK_SLOTS.some(function (s) { return day[s] && day[s].state === 'open'; });
     var isToday = day.date === todayStr;
     var isPast = day.date < todayStr;
     // A past day's empty slot isn't an open decision any more — don't flag
     // it urgent or offer "Pick" for something that already happened.
-    var needsDecision = !isPast && hasEmpty;
+    var needsDecision = !isPast && (hasEmpty || hasOpen);
     var status = isToday ? 'Tonight' : (isPast ? 'Served' : (needsDecision ? 'Needs you' : ''));
     var ribbon = isToday ? 'today' : (needsDecision ? 'urgent' : '');
     return { hasEmpty: hasEmpty, needsDecision: needsDecision, isToday: isToday, isPast: isPast, status: status, ribbon: ribbon };
@@ -897,10 +908,17 @@
   }
 
   function renderWeekFraming(panel, data) {
+    // One line above the plan, and no recap: the per-slot reasons carry the
+    // detail. A headline that grows a sentence per feature is exactly the
+    // narration this rule exists to prevent, so `headline` is computed
+    // server-side and says at most one thing.
     panel.querySelector('#week-framing').innerHTML =
       '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Home Manager') +
         ' · week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
-      '<h1>Meals</h1>';
+      '<h1>Meals</h1>' +
+      (data.status !== 'approved' && data.headline
+        ? '<div class="week-headline">' + escapeHtml(data.headline) + '</div>'
+        : '');
   }
 
   function renderDayRail(panel, days) {
@@ -926,14 +944,42 @@
 
   function courseHtml(day, slot) {
     var entry = day[slot];
-    var badgeLabel = slot === 'dinner' ? (entry ? 'Dinner ★' : 'Dinner') : SLOT_LABELS[slot];
+    var badgeLabel = slot === 'dinner' ? (entry && entry.state === 'planned' ? 'Dinner ★' : 'Dinner') : SLOT_LABELS[slot];
     var badge = '<span class="wk-badge wk-badge-' + slot + '">' + badgeLabel + '</span>';
+
+    // The one deliberately empty slot in a week. It is a statement, not a
+    // gap and not a question — muted styling is reserved for exactly this
+    // case, and nothing else in the week is ever blank.
+    if (entry && entry.state === 'planned_empty') {
+      return (
+        '<div class="wk-course">' + badge +
+          '<span class="wk-dish wk-dish-out">' + escapeHtml(entry.title) + '</span>' +
+          (entry.reason ? '<span class="wk-reason">' + escapeHtml(entry.reason) + '</span>' : '') +
+        '</div>'
+      );
+    }
+
+    // A decision handed back. The question and its answers live in one
+    // place only — the amber card in #week-open-row, which shows at both
+    // breakpoints (this day card is display:none on desktop, and the grid
+    // cell is far too small for a full question). Here the slot just says
+    // what it is, so reading down the day still tells the truth about it.
+    if (entry && entry.state === 'open') {
+      return (
+        '<div class="wk-course">' + badge +
+          '<span class="wk-dish wk-dish-open">' + escapeHtml(entry.title) + '</span>' +
+        '</div>'
+      );
+    }
 
     if (entry) {
       return (
         '<div class="wk-course">' + badge +
           '<span class="wk-dish' + (slot === 'dinner' ? ' wk-dish-dinner' : '') + '">' + escapeHtml(entry.title) + '</span>' +
           (slot === 'dinner' && entry.meta ? '<span class="wk-meta">on the table' + (entry.meta ? ' · ' + escapeHtml(entry.meta) : '') + '</span>' : '') +
+          // The 4-9 word "why", generated with the plan rather than
+          // improvised, so it can't contradict the actual reason.
+          (entry.reason ? '<span class="wk-reason">' + escapeHtml(entry.reason) + '</span>' : '') +
         '</div>'
       );
     }
@@ -962,7 +1008,11 @@
   function renderDayCard(panel, day) {
     var title = day.isToday ? "Today&rsquo;s Table" : (day.isPast ? 'Already served' : 'The table');
     var actionsHtml = '';
-    if (day.dinner && !day.isPast) {
+    // Only a genuinely planned dinner gets "Cook this"/"Swap it". A night
+    // nobody is home needs no decision and must never be offered as one —
+    // offering to swap it is exactly the thing planned_empty exists to
+    // prevent. An open slot is answered in its own card, not here.
+    if (day.dinner && day.dinner.state === 'planned' && !day.isPast) {
       if (day.isToday) {
         actionsHtml =
           '<div class="wk-actions">' +
@@ -1029,6 +1079,83 @@
 
   function renderWholeWeekRow(panel, days) {
     panel.querySelector('#whole-week-sub').textContent = computeWeekGapSummary(days);
+  }
+
+  // ---------- Settling a slot the app handed back ----------
+
+  // The one place an open slot is answered, shown at both breakpoints —
+  // the mobile day card is display:none on desktop, and a grid cell is far
+  // too small to carry a real question. Amber, and the reason names the
+  // CONSTRAINT that caused it, so the ask reads as diligence rather than
+  // failure.
+  function renderOpenSlots(panel, data) {
+    var row = panel.querySelector('#week-open-row');
+    if (!row) return;
+    var open = [];
+    (data.days || []).forEach(function (day) {
+      WEEK_SLOTS.forEach(function (slot) {
+        if (day[slot] && day[slot].state === 'open') {
+          open.push({ date: day.date, slot: slot, entry: day[slot] });
+        }
+      });
+    });
+    if (!open.length) { row.innerHTML = ''; return; }
+
+    row.innerHTML = open.map(function (o) {
+      return (
+        '<div class="shell-card week-open-card" data-open-date="' + o.date + '" data-open-slot="' + o.slot + '">' +
+          '<div class="week-open-reason">' + escapeHtml(o.entry.open_reason || '') + '</div>' +
+          (o.entry.options && o.entry.options.length
+            ? '<div class="week-open-options">' + o.entry.options.map(function (opt) {
+                return '<button type="button" class="week-open-option" data-choice="' + escapeHtml(opt.label) + '">' +
+                  '<span class="week-open-option-label">' + escapeHtml(opt.label) + '</span>' +
+                  '<span class="week-open-option-meta">' + escapeHtml(opt.meta || '—') + '</span>' +
+                '</button>';
+              }).join('') + '</div>'
+            // No options offered — chat is the escape hatch for anything
+            // the screens can't express, rather than a dead end.
+            : '<button type="button" class="week-open-talk">Tell me what you’d like instead →</button>') +
+        '</div>'
+      );
+    }).join('');
+    wireOpenSlotOptions(panel, row);
+  }
+
+  function wireOpenSlotOptions(panel, scope) {
+    scope.querySelectorAll('.week-open-card').forEach(function (cardEl) {
+      cardEl.querySelectorAll('.week-open-option').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          resolveOpenSlot(panel, cardEl.dataset.openDate, cardEl.dataset.openSlot, btn.dataset.choice);
+        });
+      });
+      var talk = cardEl.querySelector('.week-open-talk');
+      if (talk) talk.addEventListener('click', function () {
+        openAskSheet('For ' + dayName(cardEl.dataset.openDate, { weekday: 'long' }) + '’s ' +
+          cardEl.dataset.openSlot + ', I’d like ');
+      });
+    });
+  }
+
+  async function resolveOpenSlot(panel, date, slot, choice) {
+    var data = weekState.data;
+    if (!data || !data.week_start_date) return;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: date, slot: slot, choice: choice })
+      });
+      if (!res.ok) throw new Error('slot resolve failed');
+      await res.json();
+      showToast(dayName(date, { weekday: 'long' }) + '’s settled — thank you.');
+      // Settling a slot in an already-approved week writes to the shopping
+      // list, so anything showing that list is now stale.
+      if (data.status === 'approved') refreshGrocerySurfaces();
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Open slot resolution failed:', err);
+      alert('Could not save that choice right now — try again in a moment.');
+    }
   }
 
   // ---------- Approve the week (design_handoff_plan_the_week) ----------
@@ -1120,16 +1247,91 @@
         '<div class="shell-card week-receipt-card">' +
           '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
           '<div class="week-receipt-body">' + escapeHtml(receiptBodyText(data)) + '</div>' +
+          // Not "un-approve". Reopening lets the week be edited again and
+          // never takes anything off the shopping list — re-approving only
+          // adds what's new. Removing items somebody may already have
+          // bought is worse than a slightly long list.
+          '<button type="button" class="week-reopen-btn" id="week-reopen-btn">Reopen the week</button>' +
         '</div>';
+      row.querySelector('#week-reopen-btn').addEventListener('click', function () { reopenWeek(panel, data); });
       return;
     }
 
+    var openCount = countOpenSlots(data);
     row.innerHTML =
       '<div class="shell-card week-approve-card">' +
         '<div class="week-approve-promise">' + escapeHtml(groceryPromiseText(data.grocery_preview)) + '</div>' +
-        '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">Approve the week</button>' +
+        // Approving with a slot still open is allowed, but named — never a
+        // silent shortfall.
+        '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+          (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve the week') +
+        '</button>' +
+        // DECISIONS.md #3: two actions, because they're different needs.
+        // One button labelled "Redo" can only be one of them, and would be
+        // the wrong one half the time.
+        '<div class="week-redo-row">' +
+          '<button type="button" class="week-redo-btn" id="week-try-again">Try again</button>' +
+          '<button type="button" class="week-redo-btn" id="week-change-answers">Change my answers</button>' +
+        '</div>' +
       '</div>';
     row.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
+    row.querySelector('#week-try-again').addEventListener('click', function () { tryAgain(panel, data); });
+    row.querySelector('#week-change-answers').addEventListener('click', function () {
+      startPlanningWeek(data.week_start_date);
+    });
+  }
+
+  function countOpenSlots(data) {
+    var n = 0;
+    (data.days || []).forEach(function (day) {
+      WEEK_SLOTS.forEach(function (s) { if (day[s] && day[s].state === 'open') n++; });
+    });
+    return n;
+  }
+
+  function approveWithOpenLabel(data, openCount) {
+    if (openCount > 1) return 'Approve — leave ' + openCount + ' slots open';
+    var openDay = null;
+    (data.days || []).forEach(function (day) {
+      WEEK_SLOTS.forEach(function (s) { if (day[s] && day[s].state === 'open' && !openDay) openDay = day.date; });
+    });
+    return 'Approve — leave ' + dayName(openDay, { weekday: 'long' }) + ' open';
+  }
+
+  async function tryAgain(panel, data) {
+    // "Same inputs, a different week" — regenerate from the answers already
+    // on record, without asking them again. The other half of Redo,
+    // "Change my answers", goes back to Q1 with everything prefilled.
+    var btn = panel.querySelector('#week-try-again');
+    if (btn) { btn.disabled = true; btn.textContent = 'Rebuilding…'; }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (!res.ok) throw new Error('regenerate failed');
+      await res.json();
+      showToast('Same answers, a different week.');
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Regenerating the week failed:', err);
+      if (btn) { btn.disabled = false; btn.textContent = 'Try again'; }
+      alert('Could not rebuild the week right now — try again in a moment.');
+    }
+  }
+
+  async function reopenWeek(panel, data) {
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', { method: 'POST' });
+      if (!res.ok) throw new Error('reopen failed');
+      await res.json();
+      showToast('Open again. Nothing has come off your shopping list.');
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Reopening the week failed:', err);
+      alert('Could not reopen the week right now — try again in a moment.');
+    }
   }
 
   // The permanent entry into the two question screens. The Sunday nudge on
@@ -1225,6 +1427,7 @@
         '<div class="wk-meta">Ask Home Manager to plan your week to get started.</div></div>';
       mobileEl.querySelector('#whole-week-sub').textContent = '';
       gridEl.innerHTML = '';
+      renderOpenSlots(panel, data);
       renderWeekApproval(panel, data);
       renderPlanWeekEntry(panel, data);
       weekState.days = [];
@@ -1235,9 +1438,16 @@
     var days = data.days.map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
     weekState.days = days;
     var emptyAheadCount = days.filter(function (d) { return d.needsDecision; }).length;
-    var statusLine = emptyAheadCount === 0
-      ? 'Your week is set.'
-      : (emptyAheadCount === 1 ? 'One meal still needs a decision.' : emptyAheadCount + ' meals still need a decision.');
+    // The desktop header carries the same one line the mobile framing does
+    // — #week-framing lives inside #week-mobile, which is display:none at
+    // this breakpoint, so without this the headline simply wouldn't exist
+    // on desktop and the two layouts would say different things about the
+    // same week.
+    var statusLine = (data.status !== 'approved' && data.headline)
+      ? data.headline
+      : (emptyAheadCount === 0
+          ? 'Your week is set.'
+          : (emptyAheadCount === 1 ? 'One meal still needs a decision.' : emptyAheadCount + ' meals still need a decision.'));
 
     headerEl.innerHTML =
       '<div class="menu-rule-line">EST. 2019</div>' +
@@ -1259,6 +1469,7 @@
     renderDayRail(panel, days);
     renderDayCard(panel, days[weekState.selectedIndex]);
     renderWholeWeekRow(panel, days);
+    renderOpenSlots(panel, data);
     renderWeekApproval(panel, data);
     renderPlanWeekEntry(panel, data);
     renderWeekSheetRows(days);
@@ -1282,6 +1493,24 @@
               days.map(function (day, i) {
                 var entry = day[slot];
                 var cellClass = 'wg-cell wg-slot' + (i === todayIndex ? ' wg-today' : '');
+                if (entry && entry.state === 'planned_empty') {
+                  return (
+                    '<div class="' + cellClass + '">' +
+                      '<span class="wg-dish wg-dish-blank">' + escapeHtml(entry.title) + '</span>' +
+                    '</div>'
+                  );
+                }
+                if (entry && entry.state === 'open') {
+                  // Tapping through to the day card is where the options
+                  // live — the grid cell is too small to answer in, and a
+                  // truncated question is worse than a pointer to it.
+                  return (
+                    '<div class="' + cellClass + ' wg-slot-open" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
+                      '<span class="wg-dish wg-dish-open">Your call</span>' +
+                      '<span class="wg-meta">Answer</span>' +
+                    '</div>'
+                  );
+                }
                 if (!entry) {
                   if (day.isPast) {
                     return '<div class="' + cellClass + '"><span class="wg-dish wg-dish-blank">Not planned</span></div>';
@@ -1297,6 +1526,7 @@
                   '<div class="' + cellClass + '">' +
                     '<span class="wg-dish">' + escapeHtml(entry.title) + '</span>' +
                     (entry.meta ? '<span class="wg-meta">' + escapeHtml(entry.meta) + '</span>' : '') +
+                    (entry.reason ? '<span class="wg-reason">' + escapeHtml(entry.reason) + '</span>' : '') +
                   '</div>'
                 );
               }).join('')
@@ -1313,6 +1543,19 @@
     // "Pick" rows (courseHtml, above) fill inline instead via fillWeekDinner.
     panel.querySelectorAll('.wg-slot-empty').forEach(function (el) {
       var go = function () { activateTab('today', true); };
+      el.addEventListener('click', go);
+      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
+
+    // An open slot on the grid selects that day and scrolls the day card
+    // into view — the question and its options are too long to answer in a
+    // grid cell, and a truncated question is worse than a pointer to it.
+    panel.querySelectorAll('.wg-slot-open').forEach(function (el) {
+      var go = function () {
+        var card = panel.querySelector('.week-open-card[data-open-date="' + el.dataset.date +
+          '"][data-open-slot="' + el.dataset.slot + '"]');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
       el.addEventListener('click', go);
       el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
     });
@@ -1333,7 +1576,12 @@
     document.getElementById('week-sheet-range').textContent = range;
 
     document.getElementById('week-sheet-rows').innerHTML = days.map(function (day, i) {
-      var hasGap = !day.isPast && WEEK_SLOTS.some(function (s) { return !day[s]; });
+      // An open slot is a gap in the sense that matters here — something
+      // waiting on the household. A planned_empty night is not: it needs
+      // no decision, which is exactly why it's its own state.
+      var hasGap = !day.isPast && WEEK_SLOTS.some(function (s) {
+        return !day[s] || day[s].state === 'open';
+      });
       var rowClass = 'week-sheet-row' +
         (i === weekState.selectedIndex ? ' selected' : '') +
         (day.isPast ? ' past' : '') +
@@ -1344,6 +1592,12 @@
           WEEK_SLOTS.map(function (slot) {
             var entry = day[slot];
             var cellClass = 'week-sheet-cell' + (slot === 'dinner' ? ' dinner' : '');
+            if (entry && entry.state === 'planned_empty') {
+              return '<span class="' + cellClass + ' blank">' + escapeHtml(entry.title) + '</span>';
+            }
+            if (entry && entry.state === 'open') {
+              return '<span class="' + cellClass + ' empty">Your call</span>';
+            }
             if (entry) return '<span class="' + cellClass + '">' + escapeHtml(entry.title) + '</span>';
             if (day.isPast) return '<span class="' + cellClass + ' blank">Not planned</span>';
             return '<span class="' + cellClass + ' empty">Open' + (slot === 'dinner' ? '' : '') + '</span>';
