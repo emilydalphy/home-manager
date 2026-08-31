@@ -23,6 +23,17 @@ def _week_start() -> str:
     return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 
+def _add_adult(name: str) -> None:
+    """
+    An adult, spelled the way onboarding actually spells it — "Adult",
+    capitalised. Worth going through the real two calls rather than an
+    INSERT: the casing is the whole point of
+    test_adults_are_found_whatever_the_casing_of_age_group.
+    """
+    tools.add_member(name)
+    tools.set_member_age_group(name, "Adult")
+
+
 # ---------- household ----------
 
 def test_add_and_list_members():
@@ -348,3 +359,169 @@ def test_reset_preview_counts_what_would_go():
     assert preview["meal_count"] == 1
     # "beans" from the plan plus the directly-added "dish soap"
     assert preview["grocery_count"] == 2
+
+
+# ---------- Plan the Week: approval, the receipt, and the promise ----------
+# design_handoff_plan_the_week/BUILD_ORDER.md stage 1. The "a draft adds
+# nothing / approval adds once / a second approval adds nothing" tests
+# already live further up this file; these cover what stage 1 adds on top —
+# who approved, when, and the two numbers the draft promises and the receipt
+# then reports.
+
+def test_approval_records_who_said_yes_and_when():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert result["approved_by"] == "Emily"
+    assert result["approved_at"]
+    plan = tools.get_weekly_plan(plan_id)
+    assert plan["approved_by"] == "Emily"
+    assert plan["approved_at"]
+
+
+def test_a_draft_has_no_approver_recorded():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    plan = tools.get_weekly_plan(plan_id)
+    assert plan["status"] == "draft"
+    assert plan["approved_by"] == ""
+    assert plan["approved_at"] is None
+
+
+def test_re_approving_keeps_the_original_approver():
+    """
+    The receipt names whoever actually settled the week. A second, no-op
+    approval must not quietly re-attribute it to whoever tapped last.
+    """
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Marcus")
+
+    assert result["was_already_approved"] is True
+    assert result["approved_by"] == "Emily"
+    assert tools.get_weekly_plan(plan_id)["approved_by"] == "Emily"
+
+
+def test_the_draft_promise_matches_what_approval_actually_adds():
+    """
+    The number the draft screen promises ("22 items") and the number the
+    receipt reports have to be the same number — they come from one shared
+    query on purpose. Two recipes wanting the same ingredient count once,
+    since the grocery list merges them onto a single line.
+    """
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}, {"item": "onions", "qty": "2"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "onions", "qty": "1"}, {"item": "stock", "qty": "1 l"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_today(1), "Soup", slot="dinner", weekly_plan_id=plan_id)
+
+    preview = tools.preview_plan_grocery_impact(plan_id)
+    assert preview["would_add_count"] == 3, "beans, onions, stock — onions counted once"
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    assert result["groceries_added_count"] == preview["would_add_count"]
+    assert len(tools.list_grocery_list()) == 3
+
+
+def test_the_promise_counts_kitchen_items_separately_and_writes_nothing():
+    tools.update_inventory("beans", action="add", quantity="2 tins", location="pantry")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}, {"item": "onions", "qty": "2"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    preview = tools.preview_plan_grocery_impact(plan_id)
+
+    assert preview["would_add_count"] == 1
+    assert preview["already_have_count"] == 1
+    assert tools.list_grocery_list() == [], "previewing must never write to the list"
+
+
+def test_the_receipt_counts_survive_a_reload():
+    """
+    Neither number is recoverable after the fact, so approval persists both
+    — otherwise the receipt starts lying the moment the page is refreshed.
+    """
+    tools.update_inventory("beans", action="add", quantity="2 tins", location="pantry")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}, {"item": "onions", "qty": "2"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    plan = tools.get_weekly_plan(plan_id)
+    assert plan["approved_grocery_added"] == 1
+    assert plan["approved_grocery_skipped"] == 1
+
+
+def test_the_meals_screen_gets_the_approval_state_it_needs():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    draft = tools.get_week_menu()
+    assert draft["status"] == "draft"
+    assert draft["grocery_preview"]["would_add_count"] == 1
+
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    approved = tools.get_week_menu()
+    assert approved["status"] == "approved"
+    assert approved["approved_by"] == "Emily"
+    assert approved["approved_grocery_added"] == 1
+    # No preview once approved — the number would always be zero, and reads
+    # as a promise of nothing.
+    assert approved["grocery_preview"] is None
+
+
+def test_the_other_adult_is_who_the_receipt_names():
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "Child")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert tools.get_week_menu()["other_adults"] == ["Marcus"]
+
+
+def test_adults_are_found_whatever_the_casing_of_age_group():
+    """
+    age_group is freeform and onboarding writes "Adult", not "adult". The
+    exact-match query this used to do found nobody in the real database —
+    no avatar colours anywhere, and an empty identity switcher.
+    """
+    _add_adult("Emily")          # onboarding's own casing
+    tools.add_member("Marcus")
+    tools.set_member_age_group("Marcus", "adult")
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "Child")
+
+    names = [p["name"] for p in tools.get_household_people()]
+    assert names == ["Emily", "Marcus"]
+
+
+def test_a_week_resolves_to_its_own_plan_not_merely_the_current_one():
+    """
+    The week-scoped endpoints are keyed by date. Approving Sep 1-7 has to
+    approve Sep 1-7, even when a different week is the household's current
+    plan.
+    """
+    this_week = _week_start()
+    next_week = (datetime.date.fromisoformat(this_week) + datetime.timedelta(days=7)).isoformat()
+    this_id = tools.create_weekly_plan(this_week)["weekly_plan_id"]
+    next_id = tools.create_weekly_plan(next_week)["weekly_plan_id"]
+
+    assert tools.get_plan_id_for_week(this_week) == this_id
+    assert tools.get_plan_id_for_week(next_week) == next_id
+    assert tools.get_plan_id_for_week("1999-01-04") is None
+
+
+def test_a_week_is_named_the_way_the_copy_writes_it():
+    assert tools._format_week_range("2026-09-01") == "Sep 1–7"
+    assert tools._format_week_range("2026-08-30") == "Aug 30–Sep 5"

@@ -176,6 +176,27 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- later (e.g. "earliest plan row"), so it stays correct through
     -- backfills, edits, or re-onboarding. Powers the first-run intro banner.
     is_first_plan INTEGER NOT NULL DEFAULT 0,
+    -- design_handoff_plan_the_week: who said yes to this week, and when.
+    -- Approval is what builds the grocery list (see approve_weekly_plan),
+    -- so these two are the receipt the Meals screen renders — "APPROVED BY
+    -- EMILY · 9:41AM" — and the record of which adult carried it. Stored as
+    -- a NAME, not a members.id FK, to match how the rest of this app
+    -- attributes adult actions (grocery_items.added_by, removed_by): there
+    -- is no per-person login, just the lightweight adult picker from
+    -- get_household_people, so a name is the only identity that actually
+    -- exists at this layer. Blank/null until approved.
+    approved_by TEXT NOT NULL DEFAULT '',
+    approved_at TEXT,
+    -- What that approval actually did to the shopping list, captured at the
+    -- moment it happened. The receipt ("I've put 22 items on your shopping
+    -- list — 6 were already in your kitchen, so I left those off") has to
+    -- survive a page reload, and neither number is recoverable afterwards:
+    -- the added count blurs as the household edits the list, and nothing
+    -- anywhere records which ingredients were skipped for already being in
+    -- the kitchen. Two integers is cheaper than a receipt that quietly
+    -- starts lying a day later.
+    approved_grocery_added INTEGER NOT NULL DEFAULT 0,
+    approved_grocery_skipped INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

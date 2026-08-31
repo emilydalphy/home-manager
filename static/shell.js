@@ -487,6 +487,52 @@
     });
   }
 
+  // ---------- "Who's approving?" picker ----------
+  // Resolves to an adult's name, or null if they backed out. Same
+  // scrim/dialog treatment as the reset and ingredients confirms.
+  var approveWhoScrim = document.getElementById('approve-who-scrim');
+  var approveWhoDialog = document.getElementById('approve-who-dialog');
+  var approveWhoResolve = null;
+
+  function closeApproveWho(answer) {
+    if (!approveWhoScrim) return;
+    approveWhoScrim.hidden = true;
+    approveWhoDialog.hidden = true;
+    var resolve = approveWhoResolve;
+    approveWhoResolve = null;
+    if (resolve) resolve(answer);
+  }
+
+  function askWhoIsApproving(people) {
+    // No dialog in the document (an older cached shell.html) — approve
+    // without a name rather than blocking the action on a missing picker.
+    // The receipt drops the name; it never invents one.
+    if (!approveWhoDialog) return Promise.resolve('');
+    closeAskSheet();
+    closeWeekSheet();
+    var optionsEl = document.getElementById('approve-who-options');
+    optionsEl.innerHTML = people.map(function (name) {
+      return '<button type="button" class="btn-outline-plum approve-who-option" data-name="' +
+        escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
+    }).join('');
+    optionsEl.querySelectorAll('.approve-who-option').forEach(function (btn) {
+      btn.addEventListener('click', function () { closeApproveWho(btn.dataset.name); });
+    });
+    approveWhoScrim.hidden = false;
+    approveWhoDialog.hidden = false;
+    var first = optionsEl.querySelector('.approve-who-option');
+    if (first) first.focus();
+    return new Promise(function (resolve) { approveWhoResolve = resolve; });
+  }
+
+  if (approveWhoScrim) {
+    approveWhoScrim.addEventListener('click', function () { closeApproveWho(null); });
+    document.getElementById('approve-who-cancel').addEventListener('click', function () { closeApproveWho(null); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !approveWhoDialog.hidden) closeApproveWho(null);
+    });
+  }
+
   // ---------- Toast (§6: "used for resolutions and adds only, never errors") ----------
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
@@ -679,6 +725,13 @@
           '</div>' +
         '</div>' +
         '<div class="week-grid" id="week-grid" hidden></div>' +
+        // Approve / approved receipt (design_handoff_plan_the_week).
+        // Sibling of #week-mobile and #week-grid for the same reason the
+        // reset row below is one — the single entry point has to show at
+        // both breakpoints, and #week-header is desktop-only. Sits above
+        // the reset row: approving the week is the primary thing to do
+        // here, starting over is the last resort.
+        '<div id="week-approve-row"></div>' +
         // Self-service reset entry point. Outside #week-mobile/#week-grid so
         // the one row shows at both breakpoints — see .week-reset-row in
         // shell.css for why it can't live in #week-header (desktop-only).
@@ -896,6 +949,147 @@
     panel.querySelector('#whole-week-sub').textContent = computeWeekGapSummary(days);
   }
 
+  // ---------- Approve the week (design_handoff_plan_the_week) ----------
+  // Approval is the one thing that puts a week's ingredients on the
+  // shopping list, and it is a BUTTON — not a sentence the assistant has to
+  // remember to offer. Everything below is the Meals screen's half of that:
+  // the promise while the week is a draft, and the receipt once it isn't.
+
+  function approvedAtLabel(approvedAt) {
+    // approved_at is SQLite's datetime('now') — UTC, no zone marker. Told
+    // explicitly that it's UTC ('Z'), so it renders in the household's own
+    // local time rather than an hours-off "9:41AM" that never matches when
+    // they actually tapped it.
+    if (!approvedAt) return '';
+    var d = new Date(approvedAt.replace(' ', 'T') + 'Z');
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, '').toUpperCase();
+  }
+
+  function groceryPromiseText(preview) {
+    var n = (preview && preview.would_add_count) || 0;
+    // The spec's promise names a real number. When that number is zero
+    // there is nothing to promise, and the verbatim line would read "0
+    // items" — so this case gets its own honest sentence instead. It is
+    // not hypothetical: a week planned before approval gated the list
+    // already has its ingredients on there (see DECISIONS.md's closing
+    // note), and approving it genuinely adds nothing.
+    if (!n) {
+      return 'Everything this week needs is already on your shopping list. Approving won’t add anything to it.';
+    }
+    return 'I haven’t put anything on your shopping list yet. Approve the week and I’ll build it — ' +
+      n + (n === 1 ? ' item' : ' items') + ', less whatever’s already in your kitchen.';
+  }
+
+  function receiptBodyText(data) {
+    var added = data.approved_grocery_added || 0;
+    var skipped = data.approved_grocery_skipped || 0;
+    var others = data.other_adults || [];
+    var text;
+    if (!added) {
+      // Same reason as groceryPromiseText's zero case — "I've put 0 items
+      // on your shopping list" is worse than saying what actually happened.
+      text = 'All set. Your shopping list already had everything this week needs, so I left it as it was.';
+    } else {
+      text = 'All set. I’ve put ' + added + (added === 1 ? ' item' : ' items') + ' on your shopping list';
+      // The "already in your kitchen" clause only earns its place when
+      // something was actually left off. Writing "0 were already in your
+      // kitchen" is noise.
+      text += skipped
+        ? ' — ' + skipped + (skipped === 1 ? ' was' : ' were') + ' already in your kitchen, so I left ' +
+          (skipped === 1 ? 'that' : 'those') + ' off.'
+        : '.';
+    }
+    // "Marcus has been told the week is settled" is only written when there
+    // IS another adult, and it is true when written: approving raises a
+    // household-wide "N approved the week" notification (see
+    // tools.get_active_notifications #4) the other adult sees on their next
+    // visit. A one-adult household gets no sentence about nobody.
+    if (others.length) {
+      text += ' ' + others.join(' and ') + (others.length === 1 ? ' has' : ' have') + ' been told the week is settled.';
+    }
+    return text;
+  }
+
+  function refreshGrocerySurfaces() {
+    // Grocery is an iframed document, not a panel this script renders, so
+    // it can't be re-rendered from here — reloading its src is the only
+    // handle available. Today's grocery-summary card is ours, though, and
+    // is refreshed directly.
+    var groceryPanel = panels['grocery'];
+    if (groceryPanel) {
+      var frame = groceryPanel.querySelector('iframe');
+      if (frame && frame.getAttribute('src')) frame.setAttribute('src', frame.getAttribute('src'));
+    }
+    var todayPanel = panels['today'];
+    if (todayPanel && todayPanel.dataset.built) loadGrocerySummary(todayPanel);
+  }
+
+  function renderWeekApproval(panel, data) {
+    var row = panel.querySelector('#week-approve-row');
+    if (!row) return;
+    if (!data.weekly_plan_id) { row.innerHTML = ''; return; }
+
+    if (data.status === 'approved') {
+      var who = (data.approved_by || '').trim();
+      var time = approvedAtLabel(data.approved_at);
+      var eyebrow = '✓ APPROVED' + (who ? ' BY ' + who.toUpperCase() : '') + (time ? ' · ' + time : '');
+      row.innerHTML =
+        '<div class="shell-card week-receipt-card">' +
+          '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
+          '<div class="week-receipt-body">' + escapeHtml(receiptBodyText(data)) + '</div>' +
+        '</div>';
+      return;
+    }
+
+    row.innerHTML =
+      '<div class="shell-card week-approve-card">' +
+        '<div class="week-approve-promise">' + escapeHtml(groceryPromiseText(data.grocery_preview)) + '</div>' +
+        '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">Approve the week</button>' +
+      '</div>';
+    row.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
+  }
+
+  async function approveWeek(panel, data) {
+    // Who is approving. There is no per-person login in this app (see
+    // tools.get_household_people), so with two adults on record the only
+    // honest way to name one on the receipt is to ask which one is here —
+    // a single tap, and it is also the household's confirm step. One adult
+    // (or none) needs no question: approve straight away.
+    var people = (data.other_adults || []);
+    var approvedBy = '';
+    if (people.length > 1) {
+      approvedBy = await askWhoIsApproving(people);
+      if (approvedBy === null) return;
+    } else if (people.length === 1) {
+      approvedBy = people[0];
+    }
+
+    var btn = panel.querySelector('#week-approve-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved_by: approvedBy })
+      });
+      if (!res.ok) throw new Error('approve failed');
+      await res.json();
+      showToast('Approved. I’ll get your list together.');
+      // Approving is the one action in this app that writes to the grocery
+      // list wholesale, so anything already showing that list is stale the
+      // moment it succeeds — the same staleness
+      // refreshStaleTabsFromActions handles for chat-driven changes, just
+      // reached by a button instead of a sentence.
+      refreshGrocerySurfaces();
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Week approval failed:', err);
+      if (btn) { btn.disabled = false; btn.textContent = 'Approve the week'; }
+      alert('Could not approve the week right now — try again in a moment.');
+    }
+  }
+
   function renderWeekMenu(panel, data) {
     var headerEl = panel.querySelector('#week-header');
     var mobileEl = panel.querySelector('#week-mobile');
@@ -917,6 +1111,7 @@
         '<div class="wk-meta">Ask Home Manager to plan your week to get started.</div></div>';
       mobileEl.querySelector('#whole-week-sub').textContent = '';
       gridEl.innerHTML = '';
+      renderWeekApproval(panel, data);
       weekState.days = [];
       return;
     }
@@ -949,6 +1144,7 @@
     renderDayRail(panel, days);
     renderDayCard(panel, days[weekState.selectedIndex]);
     renderWholeWeekRow(panel, days);
+    renderWeekApproval(panel, data);
     renderWeekSheetRows(days);
 
     var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);

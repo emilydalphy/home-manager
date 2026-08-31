@@ -5,9 +5,17 @@ Each one corresponds to a way it was open before: any caller could read and
 write every /api route, drive the Claude-backed endpoints, and choose which
 chat session they landed in.
 """
+import datetime
+
 import pytest
 
 from app import ratelimit, security
+
+
+def _week_start() -> str:
+    """Monday of the current week — what create_weekly_plan expects."""
+    today = datetime.date.today()
+    return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 
 # ---------- the gate itself ----------
@@ -182,3 +190,55 @@ def test_reset_preview_refuses_anonymous_callers(client):
 
 def test_reset_with_nothing_selected_is_rejected(signed_in):
     assert signed_in.post("/api/reset", json={}).status_code == 400
+
+
+# ---------- approving a week ----------
+# The route that writes the household's shopping list in bulk. Behind the
+# gate like everything else, and honest about a week that doesn't exist
+# rather than reporting a cheerful approval of nothing.
+
+def test_approving_a_week_refuses_anonymous_callers(client):
+    res = client.post("/api/week/2026-09-07/approve", json={"approved_by": "Emily"})
+    assert res.status_code == 401
+
+
+def test_approving_a_week_with_no_plan_is_a_404(signed_in):
+    assert signed_in.post("/api/week/1999-01-04/approve", json={}).status_code == 404
+
+
+def test_approving_a_week_rejects_a_date_that_is_not_a_date(signed_in):
+    assert signed_in.post("/api/week/not-a-date/approve", json={}).status_code == 400
+
+
+def test_approving_a_week_builds_the_list_once(signed_in):
+    """
+    BUILD_ORDER.md stage 1's own acceptance test, end to end through the
+    route the button actually calls: a draft's ingredients are not on the
+    list, approving puts them there, and approving again adds nothing.
+    """
+    from app import tools
+
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(week, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    assert tools.list_grocery_list() == []
+
+    first = signed_in.post(f"/api/week/{week}/approve", json={"approved_by": "Emily"})
+    assert first.status_code == 200
+    body = first.json()
+    assert body["status"] == "approved"
+    assert body["approved_by"] == "Emily"
+    assert body["groceries_added"] == 1
+    assert body["was_already_approved"] is False
+    assert len(tools.list_grocery_list()) == 1
+
+    second = signed_in.post(f"/api/week/{week}/approve", json={"approved_by": "Marcus"})
+    assert second.status_code == 200
+    assert second.json()["was_already_approved"] is True
+    assert second.json()["approved_by"] == "Emily", "the receipt keeps naming who actually settled it"
+    # The counts describe the week's receipt, not this request — they stay
+    # the original approval's rather than resetting to zero because someone
+    # tapped again. was_already_approved is what says nothing happened.
+    assert second.json()["groceries_added"] == 1
+    assert len(tools.list_grocery_list()) == 1, "approving twice must not double the list"

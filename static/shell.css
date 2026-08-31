@@ -1489,6 +1489,62 @@ html, body {
   color: var(--muted, #6B5A63);
 }
 
+/* ---------- Approve the week / approved receipt ----------
+   design_handoff_plan_the_week. Two states of one slot: the promise plus
+   the button while the week is a draft, and the green receipt once it has
+   been approved. A sibling of #week-mobile/#week-grid for the same reason
+   .week-reset-row below is one — the entry point has to exist at both
+   breakpoints, and #week-header is desktop-only. */
+.week-approve-card,
+.week-receipt-card {
+  padding: 17px 19px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  flex-shrink: 0;
+}
+.week-approve-promise {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.week-approve-btn {
+  /* Full-width: this is the primary action of the whole screen, and the
+     brand guide's one-gold-CTA-per-screen rule means nothing else on Meals
+     competes with it. */
+  width: 100%;
+  min-height: 46px;
+  font-size: 16px;
+}
+.week-approve-btn:disabled { opacity: .6; cursor: default; }
+
+/* The receipt reads as a settled, positive state — green rule and green
+   eyebrow, matching the "I'll…" acknowledgement colour used through the
+   rest of this flow (--good-ink, #4d8a33). */
+.week-receipt-card {
+  border-top: 4px solid var(--good);
+  gap: 7px;
+}
+.week-receipt-eyebrow {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .09em;
+  color: var(--good-ink);
+}
+.week-receipt-body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--plum-ink);
+}
+
+/* "Who's approving?" picker — one button per adult, stacked. Uses the
+   shared dialog scrim/panel styling defined with the reset dialog below. */
+.approve-who-options { display: flex; flex-direction: column; gap: 9px; margin-top: 2px; }
+.approve-who-options .approve-who-option { width: 100%; min-height: 44px; font-size: 16px; }
+
 /* ---------- "Start over" row + confirm dialog (self-service reset) ----------
    The row is a sibling of #week-mobile and #week-grid inside .week-content,
    not part of either, so the one entry point shows at both breakpoints —
@@ -1512,14 +1568,14 @@ html, body {
 .week-reset-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
 .week-reset-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
 
-#reset-scrim, #dinner-confirm-scrim {
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   position: fixed;
   inset: 0;
   background: rgba(58,31,46,.45);
   animation: fadeIn .18s ease;
   z-index: 50;
 }
-#reset-dialog, #dinner-confirm-dialog {
+#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog {
   position: fixed;
   z-index: 51;
   left: 50%;
@@ -1538,7 +1594,8 @@ html, body {
   animation: sheetUp .2s cubic-bezier(.2,.8,.2,1);
 }
 #reset-scrim[hidden], #reset-dialog[hidden],
-#dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden] { display: none; }
+#dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden],
+#approve-who-scrim[hidden], #approve-who-dialog[hidden] { display: none; }
 .dinner-confirm-meal {
   font-family: var(--font-body);
   font-size: 15px;

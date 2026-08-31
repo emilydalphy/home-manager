@@ -84,6 +84,15 @@ _MIGRATIONS = [
     # PRE_SHOP_CHECK.md's "Drop it" — soft-remove attribution, see
     # schema.sql's comment on grocery_items.removed_by.
     ("grocery_items", "removed_by", "TEXT NOT NULL DEFAULT ''"),
+    # design_handoff_plan_the_week: who approved the week and when — the
+    # two fields the approved receipt renders. See schema.sql's comment on
+    # weekly_plans.approved_by for why this is a name, not a member id.
+    ("weekly_plans", "approved_by", "TEXT NOT NULL DEFAULT ''"),
+    ("weekly_plans", "approved_at", "TEXT"),
+    # What the approval did to the shopping list, so the receipt survives a
+    # reload — see schema.sql's comment on approved_grocery_added.
+    ("weekly_plans", "approved_grocery_added", "INTEGER NOT NULL DEFAULT 0"),
+    ("weekly_plans", "approved_grocery_skipped", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the exact two colors
@@ -98,7 +107,14 @@ _ADULT_COLORS = ["#66304E", "#4D8A33"]
 
 def _backfill_member_colors(conn):
     rows = conn.execute(
-        "SELECT id FROM members WHERE age_group = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC"
+        # LOWER(): members.age_group is documented as freeform ("adult",
+        # "teen", "child"), and onboarding actually writes it capitalized
+        # ("Adult"). An exact-match 'adult' therefore found nobody in the
+        # real database — no adult ever got a color, and
+        # tools.get_household_people (same comparison, same bug) returned an
+        # empty list, so the desktop grocery identity switcher had no one in
+        # it. Compare case-insensitively rather than trusting the casing.
+        "SELECT id FROM members WHERE LOWER(TRIM(age_group)) = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC"
     ).fetchall()
     for i, row in enumerate(rows):
         if i >= len(_ADULT_COLORS):

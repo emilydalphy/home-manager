@@ -1493,6 +1493,46 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     }
 
 
+def get_plan_id_for_week(week_start_date: str) -> int | None:
+    """
+    The weekly_plans row id for one specific week's Monday, or None if that
+    week has no plan yet. The week-scoped endpoints
+    (design_handoff_plan_the_week/DATA_AND_API.md) are keyed by date, not
+    plan id, so they need this to get back to a row.
+
+    Deliberately NOT _current_weekly_plan_row: that answers "which plan is
+    the household's current one," a different and week-agnostic question.
+    Asking to approve Sep 1–7 must approve Sep 1–7 even if the current plan
+    is a different week. Picks the most recently created row if a week
+    somehow has more than one, which shouldn't happen but shouldn't 500
+    either.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
+        "ORDER BY created_at DESC, id DESC LIMIT 1",
+        (HOUSEHOLD_ID, week_start_date),
+    ).fetchone()
+    conn.close()
+    return row["id"] if row else None
+
+
+def _format_week_range(week_start_date: str) -> str:
+    """
+    A week as the design writes it: "Sep 1–7", or "Aug 30–Sep 5" when the
+    seven days straddle a month. En dash, no padded day numbers, matching
+    design_handoff_plan_the_week/COPY.md's own eyebrow strings. Used
+    wherever a week has to be named in a sentence rather than shown as a
+    grid — the Sunday nudge, the approval notification, the draft eyebrow.
+    """
+    start = date.fromisoformat(week_start_date)
+    end = start + timedelta(days=6)
+    start_month = start.strftime("%b")
+    if start.month == end.month:
+        return f"{start_month} {start.day}–{end.day}"
+    return f"{start_month} {start.day}–{end.strftime('%b')} {end.day}"
+
+
 def set_planning_mode(mode: str) -> dict:
     """
     Set the household's standing weekly-planning mode: 'day_based' (default
@@ -1762,6 +1802,12 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         "weekly_plan_id": plan["id"],
         "week_start_date": plan["week_start_date"],
         "status": plan["status"],
+        # Who said yes to this week and when — the approved receipt's own
+        # two fields. Blank/None while the plan is still a draft.
+        "approved_by": plan["approved_by"],
+        "approved_at": plan["approved_at"],
+        "approved_grocery_added": plan["approved_grocery_added"],
+        "approved_grocery_skipped": plan["approved_grocery_skipped"],
         "constraints_notes": plan["constraints_notes"],
         "planning_mode": plan["planning_mode"],
         "is_first_plan": bool(plan["is_first_plan"]),
@@ -1836,6 +1882,31 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     if not plan.get("weekly_plan_id"):
         return {"weekly_plan_id": None, "week_start_date": None, "household_name": household_name, "days": [], "menu_is_suggested": False}
 
+    # design_handoff_plan_the_week: the Meals screen is where a week is
+    # approved, so it needs both halves of that state — whether this plan
+    # is still a draft (and what approving it would cost the grocery list),
+    # and, once approved, who settled it and when. The preview is computed
+    # for a draft only: an approved plan has already contributed, so its
+    # number would always be zero and reads as a promise of nothing.
+    approval = {
+        "status": plan["status"],
+        "approved_by": plan["approved_by"],
+        "approved_at": plan["approved_at"],
+        "approved_grocery_added": plan["approved_grocery_added"],
+        "approved_grocery_skipped": plan["approved_grocery_skipped"],
+        "grocery_preview": None,
+    }
+    if plan["status"] != "approved":
+        approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
+    # Every adult but the one who approved — the receipt's "{Other adult}
+    # has been told the week is settled." Empty for a one-adult household,
+    # which is what keeps that sentence from being written at all rather
+    # than written about nobody.
+    approval["other_adults"] = [
+        p["name"] for p in get_household_people()
+        if p["name"].strip().lower() != (plan["approved_by"] or "").strip().lower()
+    ]
+
     slots = ("breakfast", "lunch", "dinner")
     start = date.fromisoformat(plan["week_start_date"])
     dates = [(start + timedelta(days=i)).isoformat() for i in range(7)]
@@ -1862,6 +1933,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "household_name": household_name,
             "days": days,
             "menu_is_suggested": True,
+            **approval,
         }
 
     conn = get_conn()
@@ -1923,6 +1995,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "household_name": household_name,
         "days": days,
         "menu_is_suggested": False,
+        **approval,
     }
 
 
@@ -2089,10 +2162,96 @@ def _weekly_plan_is_approved(weekly_plan_id: int | None) -> bool:
     return bool(row) and row["status"] == "approved"
 
 
-def approve_weekly_plan(weekly_plan_id: int) -> dict:
+def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
+    """
+    The plan's meal entries whose ingredients have NOT yet been recorded as
+    contributing to the grocery list — i.e. exactly what an approval would
+    add. Shared by approve_weekly_plan (which then adds them) and
+    preview_plan_grocery_impact (which only counts them), so the number the
+    draft screen promises and the number approval actually delivers come
+    from one query rather than two that can drift apart.
+    """
+    return conn.execute(
+        """
+        SELECT mpe.id, r.ingredients_json
+        FROM meal_plan_entries mpe
+        JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
+          AND NOT EXISTS (
+              SELECT 1 FROM meal_plan_grocery_links mpgl
+              WHERE mpgl.meal_plan_entry_id = mpe.id AND mpgl.household_id = mpe.household_id
+          )
+        ORDER BY mpe.date ASC, mpe.id ASC
+        """,
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchall()
+
+
+def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
+    """
+    What approving this plan WOULD put on the grocery list, without putting
+    anything there. Writes nothing at all.
+
+    This is what makes the draft screen's promise a real number rather than
+    a guess: "I haven't put anything on your shopping list yet. Approve the
+    week and I'll build it — 22 items, less whatever's already in your
+    kitchen." (design_handoff_plan_the_week/COPY.md → Draft).
+
+    Mirrors _add_recipe_ingredients_to_grocery_list's own two rules exactly
+    — entries that already contributed are skipped, and an ingredient whose
+    name matches a tracked inventory item with a real quantity counts as
+    already-in-the-kitchen rather than as something to buy. Deliberately
+    counts DISTINCT ingredient names, not raw rows: two recipes both
+    wanting onions consolidate onto one grocery line (add_grocery_item
+    merges by name), so counting rows would promise more items than
+    approval actually creates.
+    """
+    conn = get_conn()
+    plan = conn.execute(
+        "SELECT id, status FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchone()
+    if not plan:
+        conn.close()
+        raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+    have_names = {
+        row["item"].strip().lower()
+        for row in conn.execute(
+            "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    }
+    conn.close()
+
+    would_add: set[str] = set()
+    already_have: set[str] = set()
+    for entry in entries:
+        for ing in json.loads(entry["ingredients_json"]):
+            name = ing["item"].strip()
+            if name.lower() in have_names:
+                already_have.add(name.lower())
+            else:
+                would_add.add(name.lower())
+    return {
+        "weekly_plan_id": weekly_plan_id,
+        "would_add_count": len(would_add),
+        "already_have_count": len(already_have),
+    }
+
+
+def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     """
     Approve a weekly plan — and, in the same step, put its meals'
     ingredients on the grocery list.
+
+    `approved_by` is an adult's name (see schema.sql on
+    weekly_plans.approved_by for why a name and not a member id). It's
+    recorded with the approval time so the Meals screen can render the
+    receipt the design calls for — "APPROVED BY EMILY · 9:41AM" — and so
+    the other adult can be told who settled the week. Optional: an approval
+    with no name still approves, and the receipt just drops the name rather
+    than inventing one.
 
     Approving used to only flip a status flag; the grocery list had
     already been filled in during generation, whether or not the household
@@ -2131,34 +2290,47 @@ def approve_weekly_plan(weekly_plan_id: int) -> dict:
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     was_already_approved = existing["status"] == "approved"
+    # A re-approval never overwrites the original approver/time — the
+    # receipt names who actually settled the week, and the first yes is the
+    # one that built the list. Only a genuine transition into 'approved'
+    # (including a re-approval after a reopen, which clears these back out)
+    # writes them.
     conn.execute(
         "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (weekly_plan_id, HOUSEHOLD_ID),
     )
+    if not was_already_approved:
+        conn.execute(
+            "UPDATE weekly_plans SET approved_by = ?, approved_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (approved_by.strip(), weekly_plan_id, HOUSEHOLD_ID),
+        )
     conn.commit()
     if was_already_approved:
+        receipt = conn.execute(
+            "SELECT approved_by, approved_at, approved_grocery_added, approved_grocery_skipped "
+            "FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, HOUSEHOLD_ID),
+        ).fetchone()
         conn.close()
         return {
             "weekly_plan_id": weekly_plan_id,
             "status": "approved",
             "groceries_added": [],
             "already_have_skipped": [],
+            # The counts stay the ORIGINAL approval's — this call added
+            # nothing, and the receipt still describes the yes that built
+            # the list.
+            "groceries_added_count": receipt["approved_grocery_added"] if receipt else 0,
+            "already_have_skipped_count": receipt["approved_grocery_skipped"] if receipt else 0,
             "was_already_approved": True,
+            "approved_by": receipt["approved_by"] if receipt else "",
+            "approved_at": receipt["approved_at"] if receipt else None,
         }
-    entries = conn.execute(
-        """
-        SELECT mpe.id, r.ingredients_json
-        FROM meal_plan_entries mpe
-        JOIN recipes r ON r.id = mpe.recipe_id
-        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
-          AND NOT EXISTS (
-              SELECT 1 FROM meal_plan_grocery_links mpgl
-              WHERE mpgl.meal_plan_entry_id = mpe.id AND mpgl.household_id = mpe.household_id
-          )
-        ORDER BY mpe.date ASC, mpe.id ASC
-        """,
+    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+    approved_at = conn.execute(
+        "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",
         (weekly_plan_id, HOUSEHOLD_ID),
-    ).fetchall()
+    ).fetchone()["approved_at"]
     conn.close()
 
     added_items = []
@@ -2170,12 +2342,32 @@ def approve_weekly_plan(weekly_plan_id: int) -> dict:
         added_items.extend(added)
         already_have.extend(have)
 
+    # Counted as distinct names, matching preview_plan_grocery_impact, so
+    # the number the draft promised and the number the receipt reports are
+    # the same number rather than two different ways of counting the same
+    # groceries. Persisted because neither is recoverable later — see
+    # schema.sql on approved_grocery_added.
+    added_count = len({n.strip().lower() for n in added_items})
+    skipped_count = len({n.strip().lower() for n in already_have})
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET approved_grocery_added = ?, approved_grocery_skipped = ? "
+        "WHERE id = ? AND household_id = ?",
+        (added_count, skipped_count, weekly_plan_id, HOUSEHOLD_ID),
+    )
+    conn.commit()
+    conn.close()
+
     return {
         "weekly_plan_id": weekly_plan_id,
         "status": "approved",
         "groceries_added": added_items,
         "already_have_skipped": already_have,
+        "groceries_added_count": added_count,
+        "already_have_skipped_count": skipped_count,
         "was_already_approved": False,
+        "approved_by": approved_by.strip(),
+        "approved_at": approved_at,
     }
 
 
@@ -3274,7 +3466,11 @@ def get_household_people() -> list[dict]:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT name, color FROM members WHERE household_id = ? AND age_group = 'adult' ORDER BY id ASC",
+        # LOWER(TRIM(...)): age_group is freeform and onboarding writes
+        # "Adult", not "adult", so the exact match this used to do returned
+        # an empty list for a real household — see db._backfill_member_colors
+        # for the same fix and the fuller note.
+        "SELECT name, color FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult' ORDER BY id ASC",
         (HOUSEHOLD_ID,),
     ).fetchall()
     conn.close()
@@ -3547,6 +3743,42 @@ def get_active_notifications() -> list[dict]:
                     "body": f"{dinner_count} dinners planned.",
                     "tab": "week", "action_label": "Looks good",
                 })
+
+    # 4. The other adult settled the week (NOTIFICATIONS.md #4 — the type
+    # that was previously left uncomputed for want of any per-adult
+    # identity). Approval now records WHO said yes (weekly_plans.approved_by
+    # — see design_handoff_plan_the_week), which is enough to make this
+    # real. It is still household-wide rather than addressed to one person:
+    # there is no per-adult session to deliver it to, so the honest version
+    # is a shared "Emily approved it" the other adult sees when they next
+    # open the app. That is exactly what the approved receipt's "{Other
+    # adult} has been told the week is settled" is promising — so the
+    # sentence describes something that actually happens.
+    approved_row = conn.execute(
+        "SELECT id, week_start_date, approved_by, approved_at FROM weekly_plans "
+        "WHERE household_id = ? AND status = 'approved' AND TRIM(approved_by) != '' AND approved_at IS NOT NULL "
+        "ORDER BY approved_at DESC LIMIT 1",
+        (HOUSEHOLD_ID,),
+    ).fetchone()
+    if approved_row:
+        # Keyed by plan id AND approval time, so reopening and re-approving
+        # a week raises a fresh notification rather than being silenced by
+        # the earlier approval's dismissal.
+        key = f"week_approved:{approved_row['id']}:{approved_row['approved_at']}"
+        recent = False
+        try:
+            approved_dt = datetime.fromisoformat(approved_row["approved_at"].replace(" ", "T"))
+            recent = (datetime.utcnow() - approved_dt) <= timedelta(hours=48)
+        except (ValueError, AttributeError):
+            recent = False
+        if recent and key not in dismissed:
+            week_label = _format_week_range(approved_row["week_start_date"])
+            out.append({
+                "key": key, "type": "week_approved",
+                "title": f"{approved_row['approved_by']} approved the week",
+                "body": f"{week_label} is settled, and the shopping list is built.",
+                "tab": "week", "action_label": "Take a look",
+            })
     conn.close()
     return out
 

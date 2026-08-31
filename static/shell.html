@@ -155,6 +155,19 @@
     <button type="button" class="dialog-cancel-link" id="dinner-confirm-cancel">Never mind</button>
   </div>
 
+  <!-- Approving the week: who is here? There is no per-person login in
+       this app, so with two adults on record this one tap is the only
+       honest way to put a name on the approved receipt — and it doubles as
+       the confirm step for the action that builds the shopping list. Skipped
+       entirely for a household with fewer than two adults. -->
+  <div id="approve-who-scrim" hidden></div>
+  <div id="approve-who-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="approve-who-title">
+    <h2 class="reset-title" id="approve-who-title">Who&rsquo;s approving?</h2>
+    <p class="reset-note" id="approve-who-note">I&rsquo;ll put your name on the week so the other of you knows who settled it.</p>
+    <div class="approve-who-options" id="approve-who-options"></div>
+    <button type="button" class="dialog-cancel-link" id="approve-who-cancel">Not just yet</button>
+  </div>
+
   <script src="/static/shell.js"></script>
 </body>
 </html>

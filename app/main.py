@@ -723,6 +723,68 @@ def week_menu(weekly_plan_id: int | None = None):
     return menu
 
 
+# ---------- Plan the Week (design_handoff_plan_the_week) ----------
+# Week-scoped routes, keyed by the week's Monday rather than by plan id,
+# per DATA_AND_API.md's endpoint table. A week is the thing the household
+# talks about ("Sep 1–7"); the plan id is an implementation detail the
+# screens shouldn't have to carry around.
+
+class WeekApproveRequest(BaseModel):
+    approved_by: str = ""
+
+
+def _plan_id_for_week(week_start: str) -> int:
+    """
+    Resolve a week's Monday to its weekly_plans row id, 404ing if that week
+    has no plan. Kept here rather than in each route so every week-scoped
+    endpoint fails the same way for the same reason.
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    plan_id = tools.get_plan_id_for_week(week_start)
+    if plan_id is None:
+        raise HTTPException(status_code=404, detail=f"No plan for the week of {week_start}.")
+    return plan_id
+
+
+@app.post("/api/week/{week_start}/approve")
+def approve_week(week_start: str, req: WeekApproveRequest):
+    """
+    Approve a week — the button that IS the yes. Approval is what builds
+    the grocery list (tools.approve_weekly_plan); nothing reaches that list
+    before it.
+
+    The two counts describe THIS WEEK'S RECEIPT, not what this particular
+    request did: how many items the approval put on the shopping list, and
+    how many it left off as already in the household's kitchen. On a
+    re-approval (which adds nothing — see approve_weekly_plan's guards)
+    they are still the original approval's numbers, because that is what
+    the receipt on screen says and it should not reset to zero just
+    because someone tapped again. `was_already_approved` is the field that
+    says whether this call actually did anything.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        result = tools.approve_weekly_plan(plan_id, approved_by=req.approved_by)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Week approval failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {
+        "week_start": week_start,
+        "weekly_plan_id": result["weekly_plan_id"],
+        "status": result["status"],
+        "approved_by": result["approved_by"],
+        "approved_at": result["approved_at"],
+        "was_already_approved": result["was_already_approved"],
+        "groceries_added": result["groceries_added_count"],
+        "already_have_skipped": result["already_have_skipped_count"],
+    }
+
+
 @app.get("/api/reset/preview")
 def reset_preview():
     """
