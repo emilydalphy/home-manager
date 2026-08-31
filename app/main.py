@@ -1594,6 +1594,7 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, request: Request):
+    request_started = time.perf_counter()
     # req.session_id is accepted and ignored — the clients still send it and
     # there is no reason to break them, but the real key comes from the
     # signed cookie so a caller can't choose whose history they land in.
@@ -1632,6 +1633,9 @@ def chat(req: ChatRequest, request: Request):
     SESSIONS[session_id] = trim_conversation(updated_history)
     SESSION_TOUCHED[session_id] = time.time()
     _prune_sessions()
+    logger.info(
+        "/api/chat request took %.2fs end to end", time.perf_counter() - request_started
+    )
     return ChatResponse(reply=reply, actions=actions)
 
 

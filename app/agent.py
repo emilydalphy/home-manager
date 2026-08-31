@@ -35,7 +35,32 @@ class AssistantUnavailableError(RuntimeError):
     """
 
 
-def _create_with_retry(client: "Anthropic", *, max_attempts: int = 3, **kwargs):
+def _log_llm_call_timing(label: str, seconds: float, response) -> None:
+    """
+    Log how long one Anthropic API call actually took, next to what it
+    produced.
+
+    Token counts alone (which is all this app used to log) can't tell the
+    three plausible causes of a slow reply apart — time spent thinking,
+    time spent generating a long answer, and time spent on stacked
+    sequential round trips all look identical in a usage line. Seconds
+    plus output tokens plus the call's label separate them: a long call
+    with few output tokens is thinking, a long call with many is
+    generation, and several ordinary calls in one turn is round trips
+    (see run_agent_turn's summary line).
+    """
+    usage = getattr(response, "usage", None)
+    logger.info(
+        "llm call %s took %.2fs (output=%s input=%s cache_read=%s)",
+        label,
+        seconds,
+        getattr(usage, "output_tokens", "?"),
+        getattr(usage, "input_tokens", "?"),
+        getattr(usage, "cache_read_input_tokens", "?"),
+    )
+
+
+def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts: int = 3, **kwargs):
     """
     Thin wrapper around client.messages.create that quietly retries a
     handful of times (short exponential backoff) when the failure is
@@ -50,7 +75,10 @@ def _create_with_retry(client: "Anthropic", *, max_attempts: int = 3, **kwargs):
     last_error: Exception | None = None
     for attempt in range(1, max_attempts + 1):
         try:
-            return client.messages.create(**kwargs)
+            started = time.perf_counter()
+            response = client.messages.create(**kwargs)
+            _log_llm_call_timing(label, time.perf_counter() - started, response)
+            return response
         except (APIConnectionError, APITimeoutError) as e:
             last_error = e
         except APIStatusError as e:
@@ -221,6 +249,11 @@ saved recipe detail, ask in chat" — the user gave you the idea once and should
 again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
+- A freshly generated week is a DRAFT, and none of its ingredients are on the grocery list \
+yet. So when you present a new plan, close by offering to approve it (e.g. "happy with this? \
+I'll approve it and get the shopping list ready") — there is no approve button on any screen, \
+this chat is the only place the household can say yes. On a yes: run check_plan_conflicts, then \
+approve_weekly_plan, then tell them what went onto the grocery list.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
 this week?"/"what's my meal plan?" rather than relying on get_meal_plan's flatter list when a \
 generated plan exists. Its week_start_date can legitimately belong to a different week than \
@@ -345,8 +378,15 @@ General guidelines:
 - Be concise and practical, and keep the warm/cheery tone described above — this is a \
 household utility, not a chat companion, so don't ramble, but a short reply can still sound \
 glad to help rather than flat or robotic.
-- When a user plans a meal from a saved recipe, ingredients are automatically added to \
-the grocery list — mention this briefly, don't over-explain.
+- Nothing ever reaches the grocery list without the household saying so — there are exactly \
+two ways it happens, and both are explicit. (1) A generated weekly plan's ingredients go on the \
+list when the plan is approved (approve_weekly_plan), never while it is still a draft. (2) A \
+one-off meal planned in chat ("put tacos on Thursday") means ASKING whether to add its \
+ingredients — a short "want me to put the ingredients on the grocery list?" — and passing \
+plan_meal's add_ingredients_to_grocery_list according to the answer. Never pass that flag true \
+on your own initiative, and never work around it by calling add_grocery_items with a recipe's \
+ingredients instead. Once something has been added, briefly say what landed on the list; don't \
+over-explain.
 - Grocery list items persist until purchased — nothing expires at the end of the week, so \
 just adding items is how the list is "remembered." Whenever the user mentions wanting to buy \
 something, in passing or directly ("add milk and eggs", "we're out of paper towels"), call \
@@ -422,8 +462,8 @@ tracked in more than one place (an opened one in the fridge, an unopened one sti
 pantry) is worth flagging on its own (use up the opened one first) and worth checking before \
 adding something to the grocery list (they may already have one, just not where they'd expect).
 - The same category rules apply when saving a recipe's ingredients via add_recipe — set \
-category per ingredient there too, since that's what gets used automatically when the recipe \
-is planned and its ingredients are auto-added to the grocery list. Don't leave it blank; a \
+category per ingredient there too, since that's what gets used when the recipe's ingredients \
+reach the grocery list. Don't leave it blank; a \
 blank category defaults to 'other' with no chance to fix it until the item's actually on the \
 list.
 - When suggesting meal plans or chore rotations, ask for missing preferences rather than \
@@ -828,14 +868,17 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "plan_meal",
-        "description": "Schedule a meal (recipe name or freeform description) for a date/slot. Auto-adds ingredients to grocery list and food_groups if it's a saved recipe. Returns food_groups_missing so you can optionally, gently, suggest rounding it out. For the user's own dish idea (not a vague placeholder like 'leftovers'), call add_recipe first to build it into a real, cookable recipe, then pass that saved name here — see the system prompt's weekly-planning guidance for when a freeform string vs. a saved recipe is appropriate.",
+        "description": "Schedule a meal (recipe name or freeform description) for a date/slot. Does NOT put anything on the grocery list unless you pass add_ingredients_to_grocery_list=true — ask the user first and pass their answer (see the grocery-list rule in your instructions). Fills in food_groups automatically if it's a saved recipe. Returns food_groups_missing so you can optionally, gently, suggest rounding it out. For the user's own dish idea (not a vague placeholder like 'leftovers'), call add_recipe first to build it into a real, cookable recipe, then pass that saved name here — see the system prompt's weekly-planning guidance for when a freeform string vs. a saved recipe is appropriate.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "meal_date": {"type": "string", "description": "YYYY-MM-DD"},
                 "meal": {"type": "string"},
                 "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
-                "add_ingredients_to_grocery_list": {"type": "boolean"},
+                "add_ingredients_to_grocery_list": {
+                    "type": "boolean",
+                    "description": "Defaults to false. Pass true only when the user has actually said yes to putting this meal's ingredients on the grocery list — for a one-off meal, ask them first. Leave it out when planning meals into a generated week: approve_weekly_plan adds that whole week's ingredients at approval time.",
+                },
                 "food_groups": {
                     "type": "array",
                     "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
@@ -918,7 +961,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "approve_weekly_plan",
-        "description": "Mark a weekly plan as approved/reviewed by the Planner.",
+        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities.",
         "input_schema": {
             "type": "object",
             "properties": {"weekly_plan_id": {"type": "integer"}},
@@ -1637,6 +1680,7 @@ Call submit_weekly_plan with the result."""
     # dinner-only (4x the entries per day, even though breakfast/lunch/
     # snack are individually lighter-weight than dinner).
     response = _create_with_retry(client,
+        label="generate_weekly_plan_llm",
         model=MODEL,
         max_tokens=16000,
         tools=[_GENERATE_WEEKLY_PLAN_TOOL],
@@ -1811,6 +1855,7 @@ prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-
 Call submit_component_plan with the result."""
 
     response = _create_with_retry(client,
+        label="generate_component_plan_llm",
         model=MODEL,
         max_tokens=8192,
         tools=[_GENERATE_COMPONENT_PLAN_TOOL],
@@ -1922,6 +1967,9 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
             if not meal_name or not category:
                 continue
             _ensure_recipe_saved(meal_name, item)
+            # No add_ingredients_to_grocery_list here on purpose: a
+            # generated week is a draft, and nothing reaches the grocery
+            # list until the household approves it (tools.approve_weekly_plan).
             tools.plan_meal(
                 meal_date=week_start_date,  # placeholder — component items aren't tied to a specific day
                 meal=meal_name,
@@ -1936,6 +1984,8 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
             if not meal_name:
                 continue
             _ensure_recipe_saved(meal_name, day)
+            # Draft — see the component branch above; approval is what puts
+            # this week's ingredients on the grocery list.
             tools.plan_meal(
                 meal_date=day.get("date"),
                 meal=meal_name,
@@ -2020,6 +2070,7 @@ a specific way for another may still warrant separate tasks; use judgment).
 Call submit_prep_schedule with the result."""
 
     response = _create_with_retry(client,
+        label="generate_prep_schedule_llm",
         model=MODEL,
         max_tokens=4096,
         tools=[_GENERATE_PREP_SCHEDULE_TOOL],
@@ -2131,6 +2182,7 @@ same as the recipe's current value unless it's obviously wrong for the ingredien
 Call submit_recipe_detail with the result."""
 
     response = _create_with_retry(client,
+        label="generate_recipe_detail_llm",
         model=MODEL,
         max_tokens=2048,
         tools=[_FILL_RECIPE_DETAIL_TOOL],
@@ -2210,6 +2262,7 @@ _SCAN_ITEMS_TOOL = {
 def _scan_image_for_items(image_b64: str, media_type: str, instructions: str) -> list[dict]:
     client = _client()
     response = _create_with_retry(client,
+        label="_scan_image_for_items",
         model=MODEL,
         max_tokens=4096,
         tools=[_SCAN_ITEMS_TOOL],
@@ -2479,6 +2532,7 @@ conceivable task.
 Call submit_chore_recommendations with the result."""
 
     response = _create_with_retry(client,
+        label="generate_chore_recommendations",
         model=MODEL,
         max_tokens=2048,
         tools=[_RECOMMEND_CHORES_TOOL],
@@ -2608,6 +2662,21 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     MAX_TOOL_ROUNDS = 25
     rounds = 0
 
+    # Wall-clock accounting for the whole turn, split three ways: time
+    # waiting on Claude, time running our own tools (SQLite work), and
+    # whatever's left. Without this split a slow turn is unattributable —
+    # see _log_llm_call_timing.
+    turn_started = time.perf_counter()
+    api_seconds = 0.0
+    tool_seconds = 0.0
+
+    def _log_turn_timing():
+        total = time.perf_counter() - turn_started
+        logger.info(
+            "run_agent_turn finished: total=%.2fs api=%.2fs tools=%.2fs other=%.2fs rounds=%d",
+            total, api_seconds, tool_seconds, total - api_seconds - tool_seconds, rounds,
+        )
+
     while True:
         rounds += 1
         if rounds > MAX_TOOL_ROUNDS:
@@ -2616,33 +2685,48 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                 "Sorry, that got stuck in a loop on my end — could you try again, maybe broken "
                 "into a couple smaller requests?"
             )
+            _log_turn_timing()
             return text, conversation
 
-        response = _create_with_retry(client,
-            model=MODEL,
-            # Was 1024, then 4096, then 8192 — a turn that rebuilds several
-            # full recipes (add_recipe's ingredients/instructions/etc, built
-            # out in full per SYSTEM_PROMPT/the tool's own instructions) AND
-            # reassigns a week's worth of meal slots in the same round can
-            # still outrun 8192. Matches generate_weekly_plan_llm's cap
-            # below, which does comparably large output. The stop_reason ==
-            # "max_tokens" branch further down retries instead of bailing
-            # out if even this isn't enough for a given turn.
-            max_tokens=16000,
-            system=system_blocks,
-            tools=TOOL_DEFINITIONS,
-            messages=conversation,
-            # Automatically caches the last cacheable block in `messages` —
-            # on top of the explicit breakpoint on system_blocks[0] above,
-            # this lets the growing conversation history itself be read
-            # from cache turn-over-turn within a single chat session,
-            # instead of only the shared system+tools prefix.
-            cache_control={"type": "ephemeral"},
-        )
+        round_started = time.perf_counter()
+        try:
+            response = _create_with_retry(client,
+                label="run_agent_turn",
+                model=MODEL,
+                # Was 1024, then 4096, then 8192 — a turn that rebuilds several
+                # full recipes (add_recipe's ingredients/instructions/etc, built
+                # out in full per SYSTEM_PROMPT/the tool's own instructions) AND
+                # reassigns a week's worth of meal slots in the same round can
+                # still outrun 8192. Matches generate_weekly_plan_llm's cap
+                # below, which does comparably large output. The stop_reason ==
+                # "max_tokens" branch further down retries instead of bailing
+                # out if even this isn't enough for a given turn.
+                max_tokens=16000,
+                system=system_blocks,
+                tools=TOOL_DEFINITIONS,
+                messages=conversation,
+                # Automatically caches the last cacheable block in `messages` —
+                # on top of the explicit breakpoint on system_blocks[0] above,
+                # this lets the growing conversation history itself be read
+                # from cache turn-over-turn within a single chat session,
+                # instead of only the shared system+tools prefix.
+                cache_control={"type": "ephemeral"},
+            )
+        except Exception:
+            # The turn is over, just not successfully — and this is the
+            # single most interesting case for the timing log, since
+            # _create_with_retry only gets here after burning its full
+            # backoff. Log the summary on the way out rather than losing
+            # the slowest turns from the numbers entirely.
+            api_seconds += time.perf_counter() - round_started
+            _log_turn_timing()
+            raise
+        round_seconds = time.perf_counter() - round_started
+        api_seconds += round_seconds
 
         logger.info(
-            "run_agent_turn round %d usage: input=%d cache_read=%d cache_creation=%d output=%d",
-            rounds, response.usage.input_tokens, response.usage.cache_read_input_tokens,
+            "run_agent_turn round %d took %.2fs, usage: input=%d cache_read=%d cache_creation=%d output=%d",
+            rounds, round_seconds, response.usage.input_tokens, response.usage.cache_read_input_tokens,
             response.usage.cache_creation_input_tokens, response.usage.output_tokens,
         )
 
@@ -2723,8 +2807,10 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                     "Sorry, I hit a snag putting that response together — could you try asking "
                     "again, maybe a bit more specifically?"
                 )
+            _log_turn_timing()
             return text, conversation
 
+        tools_started = time.perf_counter()
         tool_results = []
         for block in response.content:
             if block.type != "tool_use":
@@ -2746,6 +2832,7 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                 }
             )
 
+        tool_seconds += time.perf_counter() - tools_started
         conversation.append({"role": "user", "content": tool_results})
 
 
