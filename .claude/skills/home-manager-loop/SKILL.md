@@ -212,29 +212,64 @@ a separate, explicit next step (like the "fix the high priority tickets" request
 
 ## Automation rules (unattended/scheduled runs only)
 
-If this project is ever worked by a **scheduled or unattended** run (not a live conversation
-with Emily) — per her 2026-08-30 decision, that run must **only investigate tickets and
-update them with findings on the Notion board. No code changes, no commits, no pushes.**
-Leave implementation for a live session where she's present to make the calls this skill
-says are hers to make. This restriction is specifically about *unattended* runs — a live
-conversation with Emily can write and commit code as described above.
+Per Emily's 2026-08-30 decision, a **scheduled or unattended** run (not a live conversation
+with her) started out investigate-only: findings written to Notion, no code touched. On
+**2026-08-31**, after seeing that first night's investigations hold up, she asked for the
+next step: the overnight routine may now also **write and test small fixes**, but on an
+isolated side branch it creates itself, and it must never touch `main` directly, never
+commit or push to `main`, and never merge — that stays Emily's call every time, exactly like
+a live session's push/merge approval above. The instruction to a fresh live session is still
+different in spirit: a live session works *with* Emily in the room, so it can commit to a
+branch she's watching and ask directly; an unattended run has nobody to ask, so the side
+branch + "Ready to merge" report is how it gets a human decision without being able to wait
+for one mid-run.
 
 **The actual overnight routine** ("Home Manager Loop - overnight," runs nightly at 2am
 America/Toronto, created 2026-08-30 via `RemoteTrigger`/the `schedule` skill) is a cloud
 agent, not a process on Emily's Mac — it clones `https://github.com/emilydalphy/home-manager`
-fresh each run and has Notion MCP access attached directly, so it doesn't depend on this
-machine being on. Its `allowed_tools` are `Bash`/`Read`/`Glob`/`Grep` only — Write/Edit are
-structurally absent, not just disallowed by instruction, so it cannot modify repo files even
-if it tried. Manage it (pause, change time/count, check recent runs) via `RemoteTrigger`
-using its id `trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to https://claude.ai/code/routines.
+fresh each run (starting detached from `main`'s current commit; it runs `git checkout main`
+first) and has Notion MCP access attached directly, so it doesn't depend on this machine
+being on. As of 2026-08-31 its `allowed_tools` include `Write`/`Edit` (previously absent by
+design, when it was investigate-only) — the safety boundary is no longer "physically cannot
+touch files," it's the branch-isolation + never-touch-main rule in its prompt instead, which
+is a real but softer guarantee than a missing tool. Manage it (pause, change time/count,
+check recent runs, read the exact current prompt) via `RemoteTrigger` using its id
+`trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to https://claude.ai/code/routines.
 
-**Queue logic:** if any "Work Tonight"-checked cards exist, that's the entire night's queue,
-uncapped — Emily's explicit picks are never limited by a batch size. Only when nothing's
-checked does it fall back to auto-picking ordinary "Not started" cards by priority, capped
-at 5. Either way it skips anything already carrying a "## Investigated overnight" (or
-equivalent) section, so it doesn't redo work — this is why a night can process fewer cards
-than the queue suggests (e.g. 2026-08-31: 5 were checked, 3 already had write-ups from
-earlier that same evening, so only the genuinely new 2 got investigated).
+**Queue logic (fixed 2026-08-31 — the first version had two real bugs):**
+1. If any cards have "Work Tonight" checked, **that's the queue, regardless of Status**
+   (except Done/Archived, which just get the checkbox cleared as an assumed mistake) —
+   uncapped, ordered by Priority then oldest createdTime. The original version filtered to
+   `Status = 'Not started'` only, which **silently dropped** a checked box on an `In
+   progress` card with no explanation — exactly the confusing case where Emily flags an
+   already-investigated ticket wanting an actual fix attempt now. Fixed to include every
+   checked card regardless of Status.
+2. "Work Tonight" is unchecked for **every** card the moment it's pulled into the queue, up
+   front — not conditionally deep inside per-card handling. The original version only
+   unchecked cards it actually took final action on, so a card skipped for already being
+   investigated kept its box checked forever, looking permanently "still queued" on the
+   board. Fixed to always clear it immediately.
+3. Only when zero cards are checked does it fall back to auto-picking ordinary "Not started"
+   cards with no investigation history yet, by priority, capped at 5.
+4. A card already carrying investigation findings is **not** automatically skipped anymore —
+   it may now be eligible for an actual fix attempt it didn't get before. Skip (no action) is
+   now reserved for a card that already has a "## Overnight fix attempt" section (a fix was
+   already tried) or Status = 'Done'.
+
+**Deciding whether to attempt a fix, per card:** only when it's Type Bug or a small
+well-contained Improvement (never a Feature), the fix is small/well-scoped (no new screen, no
+redesign, no multi-file architecture change), and nothing requires a product/design/wording
+judgment call. Otherwise it stays investigate-only. When it does attempt one: fresh branch off
+main (`overnight/<slug>`), set up a throwaway venv (`.venv` is git-ignored so a fresh clone
+never has one — `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt -r
+requirements-dev.txt`, needs Python 3.10+), write the smallest correct fix, run the real test
+suite, and — same as everywhere else in this skill — verify with a fresh sub-agent against
+the actual diff before trusting it. Any failure at any step (no Python 3.10+, tests fail,
+sub-agent flags a real concern) aborts the fix attempt and falls back to investigate-only
+with the reason noted, rather than pushing something shaky. Only on success: commit, push
+just that branch (never main, never a merge, never even a PR — Emily handles the merge
+herself), mark the ticket "In progress" with a "## Overnight fix attempt" write-up, and set
+"Needs Your Call" (merging is inherently her call).
 
 **Needs Your Call (added 2026-08-31):** a checkbox property, separate from "Work Tonight,"
 for the *output* side of the loop — set (by the overnight routine, or by a live session per
