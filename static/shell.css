@@ -1672,6 +1672,25 @@ html, body {
 .week-redo-btn:hover:not(:disabled) { color: var(--plum); }
 .week-redo-btn:disabled { opacity: .6; cursor: default; }
 
+/* The way into the revisitable setup screen, offered both on the approved
+   receipt (when a week's shortcomings are freshest) and standing on Meals
+   (so reaching your own settings never requires approving something). */
+.week-setup-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--plum);
+  cursor: pointer;
+  padding: 10px 19px 4px;
+}
+#week-plan-row > .week-setup-link { padding-top: 12px; }
+.week-receipt-card .week-setup-link { padding: 6px 0 0; }
+.week-setup-link:hover { text-decoration: underline; }
+
 .week-reopen-btn {
   align-self: flex-start;
   background: none;

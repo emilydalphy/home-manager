@@ -1948,6 +1948,47 @@ def plan_slot_open(
     }
 
 
+def get_meal_planning_preferences() -> dict:
+    """
+    Everything the revisitable setup screen shows: the per-category meal
+    counts, and every preference the household has told the app so far,
+    each in a shape the screen can edit inline.
+
+    The point of this screen is that nothing is locked in from when they
+    signed up. So this deliberately returns the FULL set rather than only
+    what onboarding happened to ask — a preference the app is acting on but
+    won't show is one the household can't correct.
+    """
+    conn = get_conn()
+    prefs = conn.execute(
+        "SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+    ).fetchone()
+    conn.close()
+
+    def field(name, default):
+        return prefs[name] if prefs else default
+
+    return {
+        "meal_counts": {
+            "breakfasts_per_week": field("breakfasts_per_week", 7),
+            "lunches_per_week": field("lunches_per_week", 7),
+            "dinners_per_week": field("dinners_per_week", 7),
+        },
+        "dislikes": json.loads(field("dislikes_json", "[]")),
+        "protein_preferences": json.loads(field("protein_preferences_json", "{}")),
+        "cuisine_preferences": json.loads(field("cuisine_preferences_json", "[]")),
+        "kitchen_kit": json.loads(field("kitchen_kit_json", "[]")),
+        "repeats_tolerance": field("repeats_tolerance", ""),
+        "weeknight_max_minutes": field("weeknight_max_minutes", 0),
+        "cooking_time_preference": field("cooking_time_preference", ""),
+        "table_style": field("table_style", ""),
+        "eating_style": field("eating_style", ""),
+        "novelty_preference": field("novelty_preference", "balanced"),
+        "typical_week": field("typical_week", ""),
+        "notes": field("notes", ""),
+    }
+
+
 def get_week_planning_nudge() -> dict:
     """
     Whether to offer to plan a week, and which one — the Sunday nudge on
@@ -5204,19 +5245,77 @@ def edit_preference(field: str, value) -> dict:
     freeform — a diet/eating style the household's meals should follow,
     e.g. "keto" or "high-protein, low-carb"; distinct from hard dietary
     restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week'
-    (each int, 1-7 — how many days a typical week should actually plan
-    that meal). To remove a
+    (each int, 0-7 — how many DISTINCT meals of that kind a typical week
+    should plan, spread across the seven days; 0 means "none, thanks" and
+    leaves that meal unplanned all week), 'kitchen_kit' (list of str — what
+    the household has to cook with, e.g. ["slow_cooker", "air_fryer"];
+    recipes are limited to what their kitchen can actually make),
+    'repeats_tolerance' (str: 'cook_once_eat_twice', 'one_a_week' or
+    'all_different' — this one changes the shape of every week built),
+    'weeknight_max_minutes' (int — a real cap on Mon-Fri dinners; 0 means no
+    cap), 'table_style' (str), 'typical_week'/'next_week_notes' (str,
+    freeform, kept in the household's own words). To remove a
     single item from a list rather than replacing
     it wholesale, use delete_preference instead.
     """
+    # Straightforward column writes with no merging or special casing —
+    # a table rather than another chain of ifs alongside the ones below.
+    simple_text_columns = {
+        "repeats_tolerance": "repeats_tolerance",
+        "table_style": "table_style",
+        "typical_week": "typical_week",
+        "next_week_notes": "next_week_notes",
+    }
     valid_fields = {
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
         "dislikes", "novelty_preference", "usual_stores", "eating_style",
         "dinners_per_week", "breakfasts_per_week", "lunches_per_week",
+        "kitchen_kit", "weeknight_max_minutes", *simple_text_columns,
     }
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
+
+    # Validated rather than trusted, because nothing else enforces the range
+    # and it genuinely matters: the floor is 0, not 1 — "none, thanks" is a
+    # real answer to the setup screen's stepper — and a value above 7 would
+    # be a count of distinct meals larger than the week itself.
+    if field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
+        try:
+            count = int(value)
+        except (TypeError, ValueError):
+            raise ValueError(f"{field} must be a whole number from 0 to 7.")
+        if not 0 <= count <= 7:
+            raise ValueError(f"{field} must be from 0 to 7, not {count}.")
+        value = count
+    if field == "weeknight_max_minutes":
+        try:
+            minutes = int(value)
+        except (TypeError, ValueError):
+            raise ValueError("weeknight_max_minutes must be a whole number of minutes (0 for no cap).")
+        if minutes < 0:
+            raise ValueError("weeknight_max_minutes can't be negative.")
+        value = minutes
+    if field == "repeats_tolerance" and value not in ("", "cook_once_eat_twice", "one_a_week", "all_different"):
+        raise ValueError("repeats_tolerance must be 'cook_once_eat_twice', 'one_a_week' or 'all_different'.")
+
     _log_preference_event(field, "write")
+    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes"):
+        column = {
+            "kitchen_kit": "kitchen_kit_json",
+            "weeknight_max_minutes": "weeknight_max_minutes",
+            **simple_text_columns,
+        }[field]
+        stored = json.dumps(value) if field == "kitchen_kit" else value
+        conn = get_conn()
+        conn.execute(
+            f"INSERT INTO meal_preferences (household_id, {column}, updated_at) "
+            f"VALUES (?, ?, datetime('now')) "
+            f"ON CONFLICT(household_id) DO UPDATE SET {column} = excluded.{column}, updated_at = datetime('now')",
+            (HOUSEHOLD_ID, stored),
+        )
+        conn.commit()
+        conn.close()
+        return {field: value}
     if field == "dislikes":
         conn = get_conn()
         conn.execute(

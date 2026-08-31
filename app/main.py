@@ -771,6 +771,41 @@ def _plan_id_for_week(week_start: str) -> int:
     return plan_id
 
 
+class MealPlanningPreferenceRequest(BaseModel):
+    """One field at a time — the setup screen saves each control as it's
+    touched, so nothing is lost by leaving the page."""
+    field: str
+    value: object
+
+
+@app.get("/api/preferences/meal-planning")
+def meal_planning_preferences():
+    """Everything the revisitable setup screen shows and can edit."""
+    try:
+        return tools.get_meal_planning_preferences()
+    except Exception as e:
+        logger.exception("Meal planning preference lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.patch("/api/preferences/meal-planning")
+def update_meal_planning_preferences(req: MealPlanningPreferenceRequest):
+    """
+    Change one preference. Routed through tools.edit_preference, the same
+    entry point chat uses, so a change made on this screen and a change made
+    by talking to the assistant are the same write with the same validation
+    and the same preference-event log line.
+    """
+    try:
+        tools.edit_preference(req.field, req.value)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Meal planning preference update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return tools.get_meal_planning_preferences()
+
+
 @app.get("/api/week/plan-nudge")
 def week_plan_nudge():
     """
@@ -1921,6 +1956,16 @@ def plan_week_page():
     would only invite leaving half-answered. Takes ?week=<Monday>.
     """
     return FileResponse(os.path.join(static_dir, "plan-week.html"))
+
+
+@app.get("/meal-setup")
+def meal_setup_page():
+    """
+    The revisitable meal-planning setup (design_handoff_plan_the_week §7).
+    Everything onboarding asked, editable afterwards without going through
+    chat — plus an embedded chat for the things a stepper can't express.
+    """
+    return FileResponse(os.path.join(static_dir, "meal-setup.html"))
 
 
 @app.get("/memory")

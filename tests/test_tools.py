@@ -696,6 +696,76 @@ def test_an_open_slot_must_name_the_constraint_that_caused_it():
         tools.plan_slot_open(plan_id, "2026-09-07", "dinner", "   ")
 
 
+# ---------- Plan the Week: the revisitable setup screen ----------
+
+def test_meal_counts_accept_none_thanks():
+    """
+    The floor is 0, not 1. "None, thanks" is a valid answer to the setup
+    screen's stepper, and the old 1-7 range made it unsayable.
+    """
+    tools.edit_preference("breakfasts_per_week", 0)
+    assert tools.get_meal_planning_preferences()["meal_counts"]["breakfasts_per_week"] == 0
+
+
+def test_meal_counts_refuse_a_number_that_is_not_a_week():
+    for bad in (-1, 8, "lots"):
+        with pytest.raises(ValueError):
+            tools.edit_preference("dinners_per_week", bad)
+
+
+def test_the_setup_screen_shows_everything_it_can_change():
+    """
+    A preference the app acts on but won't show is one the household can't
+    correct — which is the whole job of this screen.
+    """
+    tools.edit_preference("kitchen_kit", ["slow_cooker", "air_fryer"])
+    tools.edit_preference("repeats_tolerance", "one_a_week")
+    tools.edit_preference("weeknight_max_minutes", 40)
+    tools.edit_preference("table_style", "everyone_same")
+    tools.edit_preference("typical_week", "Tuesdays are tee-ball so we eat at 5.")
+    tools.add_food_dislikes(["olives"])
+
+    prefs = tools.get_meal_planning_preferences()
+
+    assert prefs["kitchen_kit"] == ["slow_cooker", "air_fryer"]
+    assert prefs["repeats_tolerance"] == "one_a_week"
+    assert prefs["weeknight_max_minutes"] == 40
+    assert prefs["table_style"] == "everyone_same"
+    assert prefs["typical_week"].startswith("Tuesdays are tee-ball")
+    assert prefs["dislikes"] == ["olives"]
+
+
+def test_the_new_setup_fields_reach_the_generator():
+    """
+    Collecting a preference the generator never sees is worse than not
+    asking — it makes a promise the plans don't keep.
+    """
+    tools.edit_preference("kitchen_kit", ["slow_cooker"])
+    tools.edit_preference("repeats_tolerance", "cook_once_eat_twice")
+    tools.edit_preference("weeknight_max_minutes", 30)
+
+    memory = tools.get_household_memory()
+
+    assert memory["kitchen_kit"] == ["slow_cooker"]
+    assert memory["repeats_tolerance"] == "cook_once_eat_twice"
+    assert memory["weeknight_max_minutes"] == 30
+
+
+def test_an_unknown_repeats_answer_is_refused():
+    with pytest.raises(ValueError):
+        tools.edit_preference("repeats_tolerance", "whenever")
+
+
+def test_a_setup_change_is_the_same_write_chat_makes():
+    """
+    The screen and the assistant go through one entry point, so a change
+    made either way lands identically — same validation, same log line.
+    """
+    before = tools.count_preference_events_this_month()
+    tools.edit_preference("dinners_per_week", 4)
+    assert tools.count_preference_events_this_month() == before + 1
+
+
 # ---------- Plan the Week: the draft screen ----------
 
 def test_the_menu_carries_each_slots_state_and_reason():

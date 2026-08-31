@@ -1247,6 +1247,12 @@
         '<div class="shell-card week-receipt-card">' +
           '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
           '<div class="week-receipt-body">' + escapeHtml(receiptBodyText(data)) + '</div>' +
+          // The receipt is the moment a household is most likely to notice
+          // the week wasn't quite right, so the way to fix that permanently
+          // is offered right here rather than only on the settings screen
+          // they'd have to go looking for.
+          '<button type="button" class="week-setup-link" id="week-setup-link">' +
+            'Weeks not landing how you’d like? Let’s adjust your setup →</button>' +
           // Not "un-approve". Reopening lets the week be edited again and
           // never takes anything off the shopping list — re-approving only
           // adds what's new. Removing items somebody may already have
@@ -1254,6 +1260,7 @@
           '<button type="button" class="week-reopen-btn" id="week-reopen-btn">Reopen the week</button>' +
         '</div>';
       row.querySelector('#week-reopen-btn').addEventListener('click', function () { reopenWeek(panel, data); });
+      row.querySelector('#week-setup-link').addEventListener('click', openMealSetup);
       return;
     }
 
@@ -1350,8 +1357,20 @@
           '<div class="week-plan-sub">Two rounds of questions, then I’ll draft it. Nothing gets bought until you approve.</div>' +
         '</div>' +
         '<button type="button" class="btn-outline-plum" id="week-plan-btn">Let’s plan</button>' +
-      '</div>';
+      '</div>' +
+      // The standing way in to the setup screen. The receipt offers it too,
+      // at the moment a week has just landed and its shortcomings are
+      // freshest — but a household shouldn't have to approve something to
+      // reach its own settings.
+      '<button type="button" class="week-setup-link" id="week-setup-standing">' +
+        'Weeks not landing how you’d like? Let’s adjust your setup →</button>';
     row.querySelector('#week-plan-btn').addEventListener('click', function () { startPlanningWeek(weekStart); });
+    row.querySelector('#week-setup-standing').addEventListener('click', openMealSetup);
+  }
+
+  function openMealSetup() {
+    // A full page, like /plan-week and /onboarding — see app/main.py.
+    window.location.href = '/meal-setup';
   }
 
   function nextWeekStartLocal() {
