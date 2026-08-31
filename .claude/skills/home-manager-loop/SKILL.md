@@ -198,7 +198,9 @@ continuing on to a fix without her:
 4. Before writing up the conclusion, verify it with a fresh sub-agent per "Sub-agents"
    below — don't skip this because the finding feels obvious.
 5. Update the ticket's page content with what was found — root cause, relevant code, and
-   either a concrete fix direction or an explicit open question if it's a real decision.
+   either a concrete fix direction or an explicit open question if it's a real decision. If
+   it's a real open question, also check "Needs Your Call" (added 2026-08-31) so it surfaces
+   consistently whether this ticket was worked live or overnight.
 6. Report back to Emily in plain language: what ticket, what was found, and what (if
    anything) needs her input next.
 
@@ -221,11 +223,28 @@ conversation with Emily can write and commit code as described above.
 America/Toronto, created 2026-08-30 via `RemoteTrigger`/the `schedule` skill) is a cloud
 agent, not a process on Emily's Mac — it clones `https://github.com/emilydalphy/home-manager`
 fresh each run and has Notion MCP access attached directly, so it doesn't depend on this
-machine being on. It works through **up to 5 cards a night**: any "Work Tonight"-checked
-cards first (in priority order), then it fills remaining slots by priority among the rest,
-skipping anything already carrying a "## Investigated overnight" (or equivalent) section so
-it doesn't redo work. Its `allowed_tools` are `Bash`/`Read`/`Glob`/`Grep` only — Write/Edit
-are structurally absent, not just disallowed by instruction, so it cannot modify repo files
-even if it tried. Manage it (pause, change time/count, check recent runs) via `RemoteTrigger`
-using its id `trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to
-https://claude.ai/code/routines.
+machine being on. Its `allowed_tools` are `Bash`/`Read`/`Glob`/`Grep` only — Write/Edit are
+structurally absent, not just disallowed by instruction, so it cannot modify repo files even
+if it tried. Manage it (pause, change time/count, check recent runs) via `RemoteTrigger`
+using its id `trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to https://claude.ai/code/routines.
+
+**Queue logic:** if any "Work Tonight"-checked cards exist, that's the entire night's queue,
+uncapped — Emily's explicit picks are never limited by a batch size. Only when nothing's
+checked does it fall back to auto-picking ordinary "Not started" cards by priority, capped
+at 5. Either way it skips anything already carrying a "## Investigated overnight" (or
+equivalent) section, so it doesn't redo work — this is why a night can process fewer cards
+than the queue suggests (e.g. 2026-08-31: 5 were checked, 3 already had write-ups from
+earlier that same evening, so only the genuinely new 2 got investigated).
+
+**Needs Your Call (added 2026-08-31):** a checkbox property, separate from "Work Tonight,"
+for the *output* side of the loop — set (by the overnight routine, or by a live session per
+"Running the loop" above) on any ticket whose investigation surfaced a real open
+question/decision only Emily can make, not just "a fix exists and could be built." Leave
+unchecked when a finding is fully resolved or just confirms an existing plan. Emily (or
+whoever addresses the decision) unchecks it once handled — same self-clearing pattern as
+"Work Tonight." The overnight routine's summary/push notification leads with a "Needs your
+call" section listing these explicitly, separate from a "no action needed" list, so Emily
+can scan just the decisions rather than reading every ticket. She confirmed (2026-08-31) she
+does receive the push notification each morning — that's the working "how do I know what to
+review" mechanism; a routine can't wait overnight for her reply, so the loop is: it surfaces
+clearly, she reads/replies, building starts the moment she does.
