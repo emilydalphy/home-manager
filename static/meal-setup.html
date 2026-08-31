@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Your meal planning setup — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#66304E" />
+<style>
+  /*
+    design_handoff_plan_the_week §7 — the revisitable setup screen.
+
+    The division that keeps this from feeling like two apps bolted together:
+    STEPPERS AND CHIPS OWN NUMBERS AND SETS. CHAT OWNS SENTENCES. The
+    embedded chat at the bottom is scoped honestly to what the controls
+    above genuinely can't express ("we're travelling half of September"),
+    rather than being a general-purpose assistant parked on a settings page.
+
+    Every control saves the moment it's touched. There is no Save button on
+    purpose: a settings screen that can be left in an unsaved state is a
+    settings screen that quietly discards corrections, and correcting the
+    app is the entire job of this page.
+  */
+  :root {
+    color-scheme: light;
+    --plum-panel: #F3E6EE;
+    --ack-green: #4D8A33;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+    background: var(--oat-cream);
+    color: var(--text-body);
+  }
+  .back-link {
+    display: inline-flex; align-items: center; min-height: 44px;
+    font-family: var(--font-body); font-size: 0.88rem; font-weight: 700;
+    color: var(--text-muted); text-decoration: none;
+  }
+  .back-link:hover { color: var(--midnight-violet); }
+  .eyebrow {
+    font-family: var(--font-body); font-weight: 700; font-size: 0.72rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+    margin: 6px 0 6px;
+  }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--midnight-violet); margin: 0 0 8px; }
+  .intro { font-size: 0.92rem; line-height: 1.55; color: var(--text-muted); margin: 0 0 24px; }
+
+  section.block { margin-bottom: 28px; }
+  .block-label {
+    font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--midnight-violet);
+    margin-bottom: 5px;
+  }
+  .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--text-muted); margin: 0 0 14px; }
+
+  .card {
+    background: #fff; border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 4px 16px;
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 13px 0;
+    border-top: 1px solid var(--oat-cream-dark);
+  }
+  .row:first-child { border-top: none; }
+  .row-label { font-size: 0.95rem; color: var(--text-body); }
+  .row-value { font-size: 0.92rem; color: var(--text-muted); text-align: right; }
+
+  .stepper { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .stepper button {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border-radius: 9px; border: 1px solid var(--midnight-violet);
+    background: #fff; color: var(--midnight-violet);
+    font-size: 1.15rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
+  }
+  .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper output { min-width: 32px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--midnight-violet); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
+  .chip {
+    padding: 9px 15px; min-height: 42px;
+    display: inline-flex; align-items: center;
+    font-family: var(--font-body); font-size: 0.85rem;
+    border-radius: var(--radius-pill); border: 1px solid var(--card-border);
+    background: #fff; color: var(--text-body); cursor: pointer;
+  }
+  .chip:hover { border-color: var(--midnight-violet); }
+  .chip.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+
+  .stack { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
+  .option {
+    text-align: left; width: 100%;
+    padding: 13px 15px; min-height: 46px;
+    border-radius: 12px; border: 1px solid var(--card-border);
+    background: #fff; color: var(--text-body);
+    font-family: var(--font-body); font-size: 0.92rem; cursor: pointer;
+  }
+  .option:hover { border-color: var(--midnight-violet); }
+  .option.on { background: var(--violet-soft); border-color: var(--midnight-violet); color: var(--midnight-violet); font-weight: 700; }
+
+  .editable {
+    width: 100%; padding: 11px 12px;
+    border-radius: var(--radius-control); border: 1px solid var(--card-border);
+    font-family: var(--font-body); font-size: 0.92rem;
+    background: #fff; color: var(--text-body); min-height: 44px;
+  }
+  .editable:focus { border-color: var(--midnight-violet); outline: none; }
+  .editable::placeholder { color: var(--text-muted); }
+  textarea.editable { min-height: 72px; resize: vertical; }
+
+  .list-chips { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 0 0; }
+  .list-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 8px 7px 13px; border-radius: var(--radius-pill);
+    background: var(--violet-soft); border: 1px solid var(--card-border);
+    color: var(--midnight-violet); font-size: 0.82rem;
+  }
+  .list-chip button {
+    background: none; border: none; color: inherit; cursor: pointer;
+    font-size: 1rem; line-height: 1; padding: 3px 4px;
+  }
+  .list-add { display: flex; gap: 8px; padding: 10px 0 12px; }
+  .list-add .editable { flex: 1; }
+  .list-add button {
+    flex-shrink: 0; padding: 0 16px; min-height: 44px;
+    border-radius: var(--radius-control); border: 1px solid var(--midnight-violet);
+    background: #fff; color: var(--midnight-violet);
+    font-family: var(--font-body); font-weight: 700; font-size: 0.85rem; cursor: pointer;
+  }
+  .list-add button:hover { background: var(--violet-soft); }
+
+  /* Saved, said once and quietly. Not a toast per keystroke — the point is
+     that corrections stick, not that the app is busy. */
+  .saved {
+    color: var(--ack-green); font-size: 0.82rem; font-weight: 700;
+    min-height: 18px; padding: 0 0 10px;
+  }
+  .saved:empty { padding: 0; }
+
+  /* The embedded chat, scoped honestly to what the controls can't express. */
+  .chat-card { background: var(--plum-panel); border-radius: 14px; padding: 16px; }
+  .chat-card h2 { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--midnight-violet); margin: 0 0 5px; }
+  .chat-card p { font-size: 0.88rem; line-height: 1.5; color: var(--midnight-violet); margin: 0 0 12px; }
+  .chat-form { display: flex; gap: 8px; }
+  .chat-form input {
+    flex: 1; padding: 12px 13px; min-height: 46px;
+    border-radius: var(--radius-control); border: 1px solid #DFC7D5;
+    font-family: var(--font-body); font-size: 0.92rem; background: #fff; color: var(--text-body);
+  }
+  .chat-form input:focus { border-color: var(--midnight-violet); outline: none; }
+  .chat-form button {
+    flex-shrink: 0; padding: 0 18px; min-height: 46px;
+    border-radius: var(--radius-control); border: none;
+    background: var(--midnight-violet); color: #fff;
+    font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; cursor: pointer;
+  }
+  .chat-form button:disabled { opacity: .6; cursor: default; }
+  .chat-reply { font-size: 0.9rem; line-height: 1.55; color: var(--midnight-violet); margin-top: 12px; }
+  .chat-reply:empty { display: none; }
+
+  .loading, .failed { color: var(--text-muted); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="/week">&larr; Back to Meals</a>
+
+<div id="loading" class="loading">One moment&hellip;</div>
+<div id="failed" class="failed" hidden>I couldn&rsquo;t load your setup just now. Try again in a moment.</div>
+
+<main id="setup" hidden>
+  <div class="eyebrow">Your meal planning setup</div>
+  <h1>What I&rsquo;m working with</h1>
+  <p class="intro">
+    Change anything here and I&rsquo;ll follow it from next week onwards. Nothing is locked in from
+    when you signed up.
+  </p>
+
+  <section class="block">
+    <div class="block-label">How many meals shall I plan?</div>
+    <p class="block-body">
+      One breakfast a week is a perfectly good answer &mdash; I&rsquo;d rather plan four things you
+      cook than seven you don&rsquo;t. These are how many <em>different</em> meals I&rsquo;ll come up
+      with; I&rsquo;ll still put something in every slot.
+    </p>
+    <div class="card" id="counts"></div>
+    <div class="saved" id="counts-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">Your kitchen</div>
+    <p class="block-body">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
+    <div class="chip-row" id="kit"></div>
+    <div class="saved" id="kit-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">How do you feel about repeats?</div>
+    <p class="block-body">
+      This one changes a lot &mdash; it decides whether I cook once and stretch it, or give you
+      seven different dinners.
+    </p>
+    <div class="stack" id="repeats"></div>
+    <div class="saved" id="repeats-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">On a weeknight</div>
+    <p class="block-body">The most I&rsquo;ll spend on a Monday-to-Friday dinner, start to finish.</p>
+    <div class="card">
+      <div class="row">
+        <span class="row-label" id="minutes-label">No cap</span>
+        <span class="stepper" id="minutes"></span>
+      </div>
+    </div>
+    <div class="saved" id="minutes-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">Won&rsquo;t eat</div>
+    <p class="block-body">Everything you&rsquo;ve told me to keep off the table. Correct me any time &mdash; I&rsquo;d rather know.</p>
+    <div class="list-chips" id="dislikes"></div>
+    <div class="list-add">
+      <input class="editable" id="dislike-input" type="text" placeholder="Something else you&rsquo;d rather not see" />
+      <button type="button" id="dislike-add">Add</button>
+    </div>
+    <div class="saved" id="dislikes-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">Cuisines</div>
+    <p class="block-body">What I lean on when nothing else is asked for.</p>
+    <div class="list-chips" id="cuisines"></div>
+    <div class="list-add">
+      <input class="editable" id="cuisine-input" type="text" placeholder="Another cuisine you like" />
+      <button type="button" id="cuisine-add">Add</button>
+    </div>
+    <div class="saved" id="cuisines-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">At the table</div>
+    <p class="block-body">Whether everyone eats the same thing.</p>
+    <div class="stack" id="table-style"></div>
+    <div class="saved" id="table-style-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="block-label">A normal week at yours</div>
+    <p class="block-body">
+      The single most useful thing you can tell me. A week I understand needs almost no correcting
+      later.
+    </p>
+    <textarea class="editable" id="typical-week" placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout. One of us travels most other weeks."></textarea>
+    <div class="saved" id="typical-week-saved"></div>
+  </section>
+
+  <section class="block">
+    <div class="chat-card">
+      <h2>Easier to just tell me?</h2>
+      <p>Some things don&rsquo;t fit in a stepper. Describe the shape of it and I&rsquo;ll set all of this for you.</p>
+      <form class="chat-form" id="chat-form">
+        <input type="text" id="chat-input" placeholder="&ldquo;We&rsquo;re travelling half of September&rdquo;" autocomplete="off" />
+        <button type="submit" id="chat-send">Tell me</button>
+      </form>
+      <div class="chat-reply" id="chat-reply"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var prefs = null;
+
+  var KIT = [
+    { key: 'slow_cooker', label: 'Slow cooker' },
+    { key: 'air_fryer', label: 'Air fryer' },
+    { key: 'grill', label: 'Grill' },
+    { key: 'instant_pot', label: 'Instant Pot' },
+    { key: 'stand_mixer', label: 'Stand mixer' },
+    { key: 'blender', label: 'Blender' },
+    { key: 'cast_iron', label: 'Cast iron' },
+    { key: 'no_dishwasher', label: 'No dishwasher' }
+  ];
+  var REPEATS = [
+    { key: 'cook_once_eat_twice', label: 'Cook once, eat twice — I like the shortcut' },
+    { key: 'one_a_week', label: 'One repeat a week is fine' },
+    { key: 'all_different', label: 'Something different every night' }
+  ];
+  var TABLE_STYLES = [
+    { key: 'everyone_same', label: 'Everyone eats the same thing' },
+    { key: 'kids_differ', label: 'The children often eat something else' },
+    { key: 'plate_your_own', label: 'We put it out and everyone plates their own' }
+  ];
+  var COUNTS = [
+    { field: 'breakfasts_per_week', label: 'Breakfasts' },
+    { field: 'lunches_per_week', label: 'Lunches' },
+    { field: 'dinners_per_week', label: 'Dinners' }
+  ];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+
+  function saidSaved(id, message) {
+    var el = $(id);
+    el.textContent = message || 'Noted — I’ll start from that next week too.';
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function () { el.textContent = ''; }, 4000);
+  }
+
+  // Every control saves the moment it's touched — see the note at the top
+  // of this file for why there's no Save button.
+  async function save(field, value, savedId, message) {
+    try {
+      var res = await fetch('/api/preferences/meal-planning', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: field, value: value })
+      });
+      if (!res.ok) throw new Error('save failed');
+      prefs = await res.json();
+      saidSaved(savedId, message);
+    } catch (err) {
+      console.warn('Saving ' + field + ' failed:', err);
+      // Re-render from what's actually stored rather than leaving the
+      // control showing a value the app didn't keep.
+      alert('I couldn’t save that just now — try again in a moment.');
+      await load();
+    }
+  }
+
+  async function load() {
+    try {
+      var res = await fetch('/api/preferences/meal-planning');
+      if (!res.ok) throw new Error('prefs failed');
+      prefs = await res.json();
+    } catch (err) {
+      console.warn('Setup load failed:', err);
+      $('loading').hidden = true; $('failed').hidden = false;
+      return;
+    }
+    $('loading').hidden = true;
+    $('setup').hidden = false;
+    renderCounts();
+    renderKit();
+    renderRepeats();
+    renderMinutes();
+    renderList('dislikes', 'dislikes', 'dislikes-saved');
+    renderList('cuisines', 'cuisine_preferences', 'cuisines-saved');
+    renderTableStyle();
+    $('typical-week').value = prefs.typical_week || '';
+  }
+
+  // ---------- meal counts ----------
+  function renderCounts() {
+    $('counts').innerHTML = COUNTS.map(function (c) {
+      return (
+        '<div class="row">' +
+          '<span class="row-label">' + esc(c.label) + '</span>' +
+          '<span class="stepper" data-field="' + c.field + '">' +
+            '<button type="button" data-delta="-1" aria-label="Fewer ' + esc(c.label) + '">&minus;</button>' +
+            '<output>' + prefs.meal_counts[c.field] + '</output>' +
+            '<button type="button" data-delta="1" aria-label="More ' + esc(c.label) + '">+</button>' +
+          '</span>' +
+        '</div>'
+      );
+    }).join('');
+
+    $('counts').querySelectorAll('.stepper').forEach(function (stepper) {
+      paintStepper(stepper, prefs.meal_counts[stepper.dataset.field], 0, 7);
+      stepper.querySelectorAll('button').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var field = stepper.dataset.field;
+          // The floor is 0, not 1 — "none, thanks" is a real answer.
+          var next = Math.min(7, Math.max(0, prefs.meal_counts[field] + Number(btn.dataset.delta)));
+          if (next === prefs.meal_counts[field]) return;
+          prefs.meal_counts[field] = next;
+          stepper.querySelector('output').textContent = next;
+          paintStepper(stepper, next, 0, 7);
+          save(field, next, 'counts-saved', countAck(field, next));
+        });
+      });
+    });
+  }
+
+  function countAck(field, n) {
+    var noun = field === 'dinners_per_week' ? 'dinner' : (field === 'lunches_per_week' ? 'lunch' : 'breakfast');
+    var plural = field === 'lunches_per_week' ? 'lunches' : noun + 's';
+    if (n === 0) return 'I’ll leave ' + plural + ' to you from next week.';
+    if (n === 1) return 'I’ll plan one ' + noun + ' and carry it through the week.';
+    return 'I’ll come up with ' + n + ' different ' + plural + ' and spread them across the week.';
+  }
+
+  function paintStepper(stepper, value, min, max) {
+    stepper.querySelectorAll('button').forEach(function (btn) {
+      btn.disabled = Number(btn.dataset.delta) < 0 ? value <= min : value >= max;
+    });
+  }
+
+  // ---------- kitchen kit ----------
+  function renderKit() {
+    $('kit').innerHTML = KIT.map(function (k) {
+      var on = (prefs.kitchen_kit || []).indexOf(k.key) !== -1;
+      return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-key="' + k.key + '">' + esc(k.label) + '</button>';
+    }).join('');
+    $('kit').querySelectorAll('.chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var kit = (prefs.kitchen_kit || []).slice();
+        var i = kit.indexOf(chip.dataset.key);
+        if (i === -1) kit.push(chip.dataset.key); else kit.splice(i, 1);
+        chip.classList.toggle('on');
+        save('kitchen_kit', kit, 'kit-saved', 'I’ll only suggest recipes your kitchen can actually make.');
+      });
+    });
+  }
+
+  // ---------- repeats / table style ----------
+  function renderOptions(containerId, options, current, field, savedId, ackFor) {
+    $(containerId).innerHTML = options.map(function (o) {
+      return '<button type="button" class="option' + (o.key === current ? ' on' : '') + '" data-key="' + o.key + '">' + esc(o.label) + '</button>';
+    }).join('');
+    $(containerId).querySelectorAll('.option').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        $(containerId).querySelectorAll('.option').forEach(function (b) { b.classList.remove('on'); });
+        btn.classList.add('on');
+        save(field, btn.dataset.key, savedId, ackFor(btn.dataset.key));
+      });
+    });
+  }
+
+  function renderRepeats() {
+    renderOptions('repeats', REPEATS, prefs.repeats_tolerance, 'repeats_tolerance', 'repeats-saved', function (key) {
+      if (key === 'cook_once_eat_twice') return 'I’ll build in a few nights that eat the night before’s cooking.';
+      if (key === 'one_a_week') return 'I’ll plan exactly one repeat a week.';
+      return 'I’ll give you seven different dinners.';
+    });
+  }
+
+  function renderTableStyle() {
+    renderOptions('table-style', TABLE_STYLES, prefs.table_style, 'table_style', 'table-style-saved', function (key) {
+      if (key === 'kids_differ') return 'I’ll keep the children’s plates in mind separately.';
+      if (key === 'plate_your_own') return 'I’ll lean toward things that put out well and get plated at the table.';
+      return 'I’ll plan one thing for everybody.';
+    });
+  }
+
+  // ---------- weeknight minutes ----------
+  function renderMinutes() {
+    var stepper = $('minutes');
+    stepper.innerHTML =
+      '<button type="button" data-delta="-10" aria-label="Ten minutes less">&minus;</button>' +
+      '<output>' + (prefs.weeknight_max_minutes || 0) + '</output>' +
+      '<button type="button" data-delta="10" aria-label="Ten minutes more">+</button>';
+    paintMinutes();
+    stepper.querySelectorAll('button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var next = Math.min(120, Math.max(0, (prefs.weeknight_max_minutes || 0) + Number(btn.dataset.delta)));
+        if (next === prefs.weeknight_max_minutes) return;
+        prefs.weeknight_max_minutes = next;
+        stepper.querySelector('output').textContent = next;
+        paintMinutes();
+        save('weeknight_max_minutes', next, 'minutes-saved',
+          next ? 'I’ll keep weeknight dinners under ' + next + ' minutes.' : 'I’ll stop capping weeknight dinners.');
+      });
+    });
+  }
+
+  function paintMinutes() {
+    var n = prefs.weeknight_max_minutes || 0;
+    // 0 is a real setting, not an empty one — it means "no cap", and the
+    // label has to say so rather than showing a bare zero.
+    $('minutes-label').textContent = n ? n + ' minutes at most' : 'No cap';
+    paintStepper($('minutes'), n, 0, 120);
+  }
+
+  // ---------- editable lists ----------
+  function renderList(containerId, field, savedId) {
+    var values = (field === 'dislikes' ? prefs.dislikes : prefs.cuisine_preferences) || [];
+    $(containerId).innerHTML = values.length
+      ? values.map(function (v) {
+          return '<span class="list-chip">' + esc(v) +
+            '<button type="button" data-value="' + esc(v) + '" aria-label="Remove ' + esc(v) + '">&times;</button></span>';
+        }).join('')
+      : '<span class="row-value">Nothing yet.</span>';
+    $(containerId).querySelectorAll('button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var next = values.filter(function (v) { return v !== btn.dataset.value; });
+        save(field, next, savedId, 'Noted — I’ve taken that off.').then(function () {
+          renderList(containerId, field, savedId);
+        });
+      });
+    });
+  }
+
+  function wireAdd(inputId, buttonId, containerId, field, savedId) {
+    var add = function () {
+      var input = $(inputId);
+      var value = input.value.trim();
+      if (!value) return;
+      var values = ((field === 'dislikes' ? prefs.dislikes : prefs.cuisine_preferences) || []).slice();
+      if (values.some(function (v) { return v.toLowerCase() === value.toLowerCase(); })) { input.value = ''; return; }
+      values.push(value);
+      input.value = '';
+      save(field, values, savedId, 'Noted — I’ll remember that.').then(function () {
+        renderList(containerId, field, savedId);
+      });
+    };
+    $(buttonId).addEventListener('click', add);
+    $(inputId).addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); add(); }
+    });
+  }
+
+  wireAdd('dislike-input', 'dislike-add', 'dislikes', 'dislikes', 'dislikes-saved');
+  wireAdd('cuisine-input', 'cuisine-add', 'cuisines', 'cuisine_preferences', 'cuisines-saved');
+
+  // ---------- typical week ----------
+  // Saved on blur rather than per keystroke: this is a paragraph, and a
+  // write per character would be noise in the preference-event log the
+  // Memory view counts.
+  $('typical-week').addEventListener('blur', function () {
+    var value = $('typical-week').value.trim();
+    if (value === (prefs.typical_week || '')) return;
+    save('typical_week', value, 'typical-week-saved', 'Noted — that shapes every week I build.');
+  });
+
+  // ---------- the embedded chat ----------
+  // Scoped to what the controls above can't express. Goes to the same
+  // assistant as everywhere else, which is what lets it actually set these
+  // preferences rather than just talk about them.
+  $('chat-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var input = $('chat-input');
+    var message = input.value.trim();
+    if (!message) return;
+    var btn = $('chat-send');
+    btn.disabled = true;
+    $('chat-reply').textContent = 'One moment…';
+    try {
+      var res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: 'meal-setup', message: message })
+      });
+      if (!res.ok) throw new Error('chat failed');
+      var data = await res.json();
+      $('chat-reply').textContent = data.reply || '';
+      input.value = '';
+      // Whatever it just changed should be visible here immediately —
+      // otherwise the screen and the assistant disagree about the same
+      // household until a reload.
+      await load();
+    } catch (err) {
+      console.warn('Setup chat failed:', err);
+      $('chat-reply').textContent = 'I couldn’t reach my notes just now — try again in a moment.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

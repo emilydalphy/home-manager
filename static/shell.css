@@ -1489,6 +1489,289 @@ html, body {
   color: var(--muted, #6B5A63);
 }
 
+/* The chat sheet says what it's for. An unlabelled sheet said nothing, and
+   "Tell me what to change" is the invitation the design asks for — it names
+   the thing worth typing rather than leaving a bare field. */
+.ask-sheet-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--plum-ink);
+  padding: 2px 20px 10px;
+  flex-shrink: 0;
+}
+
+/* ---------- The offer to plan a week (Today) ----------
+   design_handoff_plan_the_week §2. Plum top rule rather than the
+   needs-you band's amber/coral: this is an offer with no deadline, and it
+   should not read as urgent alongside cards that genuinely are. */
+/* Removed outright, not merely blanked, when there's no offer — an empty
+   flex child would otherwise leave its gap behind above the day's cards. */
+.today-area-nudge:empty { display: none; }
+.plan-nudge-card {
+  padding: 16px 17px;
+  border-top: 4px solid var(--plum);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan-nudge-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plan-nudge-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .05em;
+  color: var(--plum);
+}
+.plan-nudge-dismiss {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 2px;
+  flex-shrink: 0;
+}
+.plan-nudge-dismiss:hover { color: var(--plum); }
+.plan-nudge-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--plum-ink);
+}
+.plan-nudge-body { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--muted); }
+.plan-nudge-cta { width: 100%; min-height: 46px; font-size: 16px; margin-top: 2px; }
+.plan-nudge-dismissed { border-top-color: var(--rule); }
+.plan-nudge-link {
+  background: none;
+  border: none;
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--plum);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.plan-nudge-link:hover { text-decoration: underline; }
+
+/* The permanent entry point on Meals — same row shape as .week-reset-row
+   below, which is what makes "it'll be waiting for you under Meals" a
+   promise the screen actually keeps. */
+.week-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 19px;
+  flex-shrink: 0;
+}
+.week-plan-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.week-plan-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--plum-ink);
+}
+.week-plan-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
+.week-plan-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
+
+/* ---------- The draft: headline, per-slot reasons, open slots ---------- */
+
+/* One line above the plan, no recap — the per-slot reasons carry the
+   detail. Only ever shown on a draft; once approved the receipt speaks
+   instead. */
+.week-headline {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* The 4-9 word "why" under a meal name. Small and quiet: it explains, it
+   doesn't compete with the meal itself. */
+.wk-reason, .wg-reason {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--menu-ink);
+  font-style: italic;
+  margin-top: 3px;
+}
+
+/* Muted styling is reserved for the ONE deliberately empty slot in a week —
+   a dinner on a night nobody is home. Nothing else in the week is ever
+   blank, so this treatment stays meaningful. */
+.wk-dish-out { color: #B0A3A9; font-weight: 400; }
+.wk-dish-open { color: var(--warn-ink); font-weight: 600; }
+.wg-dish-open { color: var(--warn-ink); }
+.wg-slot-open { cursor: pointer; }
+.wg-slot-open:hover { background: var(--menu-paper); }
+
+/* The question itself. Amber card with a 4px left rule, per the design —
+   distinct from the coral of a needs-you card, because this is the app
+   asking rather than something going wrong. */
+#week-open-row { display: flex; flex-direction: column; gap: 12px; }
+#week-open-row:empty { display: none; }
+.week-open-card {
+  padding: 16px 17px;
+  border-left: 4px solid #E8A33A;
+  background: #FDF0DC;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.week-open-reason {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--plum-ink);
+}
+.week-open-options { display: flex; flex-direction: column; gap: 8px; }
+.week-open-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #EBD5AE;
+  border-radius: 12px;
+  padding: 13px 15px;
+  min-height: 46px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.week-open-option:hover { border-color: var(--warn-ink); }
+.week-open-option-label { font-weight: 600; font-size: 15px; color: var(--plum-ink); }
+.week-open-option-meta { font-size: 14px; color: var(--muted); flex-shrink: 0; }
+.week-open-talk {
+  background: none;
+  border: none;
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--plum);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.week-open-talk:hover { text-decoration: underline; }
+
+/* Redo, split in two — "Try again" (same answers, a different week) and
+   "Change my answers" (back to the questions, prefilled). One button
+   labelled "Redo" could only be one of them, and would be the wrong one
+   half the time. */
+.week-redo-row { display: flex; gap: 10px; }
+.week-redo-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px 4px;
+  min-height: 40px;
+}
+.week-redo-btn:hover:not(:disabled) { color: var(--plum); }
+.week-redo-btn:disabled { opacity: .6; cursor: default; }
+
+/* The way into the revisitable setup screen, offered both on the approved
+   receipt (when a week's shortcomings are freshest) and standing on Meals
+   (so reaching your own settings never requires approving something). */
+.week-setup-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--plum);
+  cursor: pointer;
+  padding: 10px 19px 4px;
+}
+#week-plan-row > .week-setup-link { padding-top: 12px; }
+.week-receipt-card .week-setup-link { padding: 6px 0 0; }
+.week-setup-link:hover { text-decoration: underline; }
+
+.week-reopen-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px 0 0;
+}
+.week-reopen-btn:hover { color: var(--plum); }
+
+/* ---------- Approve the week / approved receipt ----------
+   design_handoff_plan_the_week. Two states of one slot: the promise plus
+   the button while the week is a draft, and the green receipt once it has
+   been approved. A sibling of #week-mobile/#week-grid for the same reason
+   .week-reset-row below is one — the entry point has to exist at both
+   breakpoints, and #week-header is desktop-only. */
+.week-approve-card,
+.week-receipt-card {
+  padding: 17px 19px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  flex-shrink: 0;
+}
+.week-approve-promise {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.week-approve-btn {
+  /* Full-width: this is the primary action of the whole screen, and the
+     brand guide's one-gold-CTA-per-screen rule means nothing else on Meals
+     competes with it. */
+  width: 100%;
+  min-height: 46px;
+  font-size: 16px;
+}
+.week-approve-btn:disabled { opacity: .6; cursor: default; }
+
+/* The receipt reads as a settled, positive state — green rule and green
+   eyebrow, matching the "I'll…" acknowledgement colour used through the
+   rest of this flow (--good-ink, #4d8a33). */
+.week-receipt-card {
+  border-top: 4px solid var(--good);
+  gap: 7px;
+}
+.week-receipt-eyebrow {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .09em;
+  color: var(--good-ink);
+}
+.week-receipt-body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--plum-ink);
+}
+
+/* "Who's approving?" picker — one button per adult, stacked. Uses the
+   shared dialog scrim/panel styling defined with the reset dialog below. */
+.approve-who-options { display: flex; flex-direction: column; gap: 9px; margin-top: 2px; }
+.approve-who-options .approve-who-option { width: 100%; min-height: 44px; font-size: 16px; }
+
 /* ---------- "Start over" row + confirm dialog (self-service reset) ----------
    The row is a sibling of #week-mobile and #week-grid inside .week-content,
    not part of either, so the one entry point shows at both breakpoints —
@@ -1512,14 +1795,14 @@ html, body {
 .week-reset-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
 .week-reset-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
 
-#reset-scrim, #dinner-confirm-scrim {
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   position: fixed;
   inset: 0;
   background: rgba(58,31,46,.45);
   animation: fadeIn .18s ease;
   z-index: 50;
 }
-#reset-dialog, #dinner-confirm-dialog {
+#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog {
   position: fixed;
   z-index: 51;
   left: 50%;
@@ -1538,7 +1821,8 @@ html, body {
   animation: sheetUp .2s cubic-bezier(.2,.8,.2,1);
 }
 #reset-scrim[hidden], #reset-dialog[hidden],
-#dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden] { display: none; }
+#dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden],
+#approve-who-scrim[hidden], #approve-who-dialog[hidden] { display: none; }
 .dinner-confirm-meal {
   font-family: var(--font-body);
   font-size: 15px;

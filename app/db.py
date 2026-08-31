@@ -84,6 +84,33 @@ _MIGRATIONS = [
     # PRE_SHOP_CHECK.md's "Drop it" — soft-remove attribution, see
     # schema.sql's comment on grocery_items.removed_by.
     ("grocery_items", "removed_by", "TEXT NOT NULL DEFAULT ''"),
+    # design_handoff_plan_the_week: who approved the week and when — the
+    # two fields the approved receipt renders. See schema.sql's comment on
+    # weekly_plans.approved_by for why this is a name, not a member id.
+    ("weekly_plans", "approved_by", "TEXT NOT NULL DEFAULT ''"),
+    ("weekly_plans", "approved_at", "TEXT"),
+    # What the approval did to the shopping list, so the receipt survives a
+    # reload — see schema.sql's comment on approved_grocery_added.
+    ("weekly_plans", "approved_grocery_added", "INTEGER NOT NULL DEFAULT 0"),
+    ("weekly_plans", "approved_grocery_skipped", "INTEGER NOT NULL DEFAULT 0"),
+    # design_handoff_plan_the_week/DATA_MODEL.md: the intake a plan came
+    # from, and the per-slot state + provenance. See schema.sql's comments
+    # on week_intake and meal_plan_entries.slot_state for what each is for.
+    # No REFERENCES clause on intake_id here: SQLite cannot add a foreign
+    # key via ALTER TABLE, so an existing database gets the plain column and
+    # a newly-created one gets the constrained version from schema.sql.
+    ("weekly_plans", "intake_id", "INTEGER"),
+    ("meal_plan_entries", "slot_state", "TEXT NOT NULL DEFAULT 'planned'"),
+    ("meal_plan_entries", "open_reason", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_plan_entries", "derived_from_json", "TEXT NOT NULL DEFAULT '{}'"),
+    # The preference fields the revisitable setup screen owns and the two
+    # onboarding steps collect — see schema.sql on meal_preferences.
+    ("meal_preferences", "kitchen_kit_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("meal_preferences", "repeats_tolerance", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_preferences", "weeknight_max_minutes", "INTEGER NOT NULL DEFAULT 0"),
+    ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the exact two colors
@@ -98,7 +125,14 @@ _ADULT_COLORS = ["#66304E", "#4D8A33"]
 
 def _backfill_member_colors(conn):
     rows = conn.execute(
-        "SELECT id FROM members WHERE age_group = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC"
+        # LOWER(): members.age_group is documented as freeform ("adult",
+        # "teen", "child"), and onboarding actually writes it capitalized
+        # ("Adult"). An exact-match 'adult' therefore found nobody in the
+        # real database — no adult ever got a color, and
+        # tools.get_household_people (same comparison, same bug) returned an
+        # empty list, so the desktop grocery identity switcher had no one in
+        # it. Compare case-insensitively rather than trusting the casing.
+        "SELECT id FROM members WHERE LOWER(TRIM(age_group)) = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC"
     ).fetchall()
     for i, row in enumerate(rows):
         if i >= len(_ADULT_COLORS):

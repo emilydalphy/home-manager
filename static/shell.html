@@ -41,7 +41,7 @@
 
       <div id="ask-bar-dock">
         <button type="button" id="ask-bar">
-          <span class="ask-placeholder">Ask or add anything&hellip;</span>
+          <span class="ask-placeholder">The more you tell me, the less you&rsquo;ll swap&hellip;</span>
           <span class="ask-send">&uarr;</span>
         </button>
       </div>
@@ -74,10 +74,11 @@
   <div id="ask-scrim" hidden></div>
   <div id="ask-sheet" hidden role="dialog" aria-label="Ask Home Manager">
     <div class="ask-sheet-handle" id="ask-sheet-handle"></div>
+    <div class="ask-sheet-title">Tell me what to change</div>
     <div class="ask-messages" id="ask-messages"></div>
     <div class="ask-chips" id="ask-chips"></div>
     <form id="ask-composer" class="ask-composer-bar">
-      <input id="ask-input" class="ask-composer-input" type="text" placeholder="Ask or add anything&hellip;" autocomplete="off" />
+      <input id="ask-input" class="ask-composer-input" type="text" placeholder="The more you tell me, the less you&rsquo;ll swap&hellip;" autocomplete="off" />
       <button type="button" id="ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
       </button>
@@ -153,6 +154,19 @@
       <button type="button" class="btn-gold" id="dinner-confirm-add">Add ingredients</button>
     </div>
     <button type="button" class="dialog-cancel-link" id="dinner-confirm-cancel">Never mind</button>
+  </div>
+
+  <!-- Approving the week: who is here? There is no per-person login in
+       this app, so with two adults on record this one tap is the only
+       honest way to put a name on the approved receipt — and it doubles as
+       the confirm step for the action that builds the shopping list. Skipped
+       entirely for a household with fewer than two adults. -->
+  <div id="approve-who-scrim" hidden></div>
+  <div id="approve-who-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="approve-who-title">
+    <h2 class="reset-title" id="approve-who-title">Who&rsquo;s approving?</h2>
+    <p class="reset-note" id="approve-who-note">I&rsquo;ll put your name on the week so the other of you knows who settled it.</p>
+    <div class="approve-who-options" id="approve-who-options"></div>
+    <button type="button" class="dialog-cancel-link" id="approve-who-cancel">Not just yet</button>
   </div>
 
   <script src="/static/shell.js"></script>

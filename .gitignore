@@ -9,3 +9,6 @@ app/home_manager.db-journal
 
 # Local verification venv (Python 3.11 — the app requires 3.10+)
 .venv-verify/
+
+# Local venv (each worktree gets its own — see .claude/skills/home-manager-loop)
+.venv/

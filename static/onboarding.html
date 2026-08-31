@@ -71,6 +71,27 @@
   }
   .add-btn:hover { background: var(--violet-soft); }
   label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--midnight-violet); display: block; margin: 1rem 0 6px; }
+  /* design_handoff_plan_the_week: every question carries one of these,
+     naming the specific failure the answer prevents. Not decoration — if
+     you can't name that failure, the question shouldn't be asked. */
+  .why-panel {
+    background: #F3E6EE;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--midnight-violet);
+    margin: 0 0 18px;
+  }
+  /* Skipping is a real, honest answer on both added steps — the app says so
+     rather than making it look like a failure to complete something. */
+  .skip-link {
+    display: inline-flex; align-items: center; min-height: 44px;
+    margin-left: 4px;
+    font-family: var(--font-body); font-size: 0.85rem;
+    color: var(--text-muted); cursor: pointer;
+  }
+  .skip-link:hover { color: var(--midnight-violet); }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 16px;
@@ -288,9 +309,52 @@
     <span class="stepper-value" id="dinners-value">5</span>
     <button class="stepper-btn" type="button" id="dinners-plus" aria-label="More">+</button>
   </div>
-  <p class="stepper-hint">1 to 7 days each.</p>
-  <div><button class="next-btn" id="dinners-next" type="button">Build my first week</button></div>
+  <p class="stepper-hint">How many <em>different</em> meals I&rsquo;ll come up with &mdash; 0 to 7 each. I&rsquo;ll still put something in every slot.</p>
+  <div><button class="next-btn" id="dinners-next" type="button">Continue</button></div>
   <span class="back-link" data-back="excited-about">&larr; Back</span>
+</div>
+
+<!-- Step A: a normal week (design_handoff_plan_the_week §8).
+     The single highest-value thing a household can tell the app, and it was
+     not being asked at all. Both fields are free text and both are
+     skippable — a starter chip appends an example sentence rather than
+     leaving a blank page. -->
+<div id="step-typical-week" style="display:none">
+  <h1>What does a normal week look like at yours?</h1>
+  <div class="why-panel">
+    <b>Why I&rsquo;m asking:</b> this is the single most useful thing you can tell me. A week I
+    understand needs almost no correcting later &mdash; and it means your very first plan
+    isn&rsquo;t a guess.
+  </div>
+  <label class="field-label" for="typical-week">A normal week at yours</label>
+  <textarea id="typical-week" rows="4" placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout. One of us travels most other weeks."></textarea>
+  <div class="chip-row" id="typical-week-chips" style="margin-top:10px"></div>
+  <label class="field-label" for="next-week-notes">Next week specifically</label>
+  <p class="subtitle" style="margin:0 0 6px">Anything already in the diary? I&rsquo;ll build your very first week around it rather than guessing.</p>
+  <textarea id="next-week-notes" rows="2" placeholder="My parents are here Thursday to Sunday."></textarea>
+  <div><button class="next-btn" id="typical-week-next" type="button">Continue</button></div>
+  <span class="skip-link" id="typical-week-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
+  <span class="back-link" data-back="dinners">&larr; Back</span>
+</div>
+
+<!-- Step B: kit and repeats. The kit question prevents impossible
+     suggestions outright; the repeats answer changes the structure of every
+     week the app builds. -->
+<div id="step-kit-repeats" style="display:none">
+  <h1>Two more and I&rsquo;ll leave you alone</h1>
+  <div class="why-panel">
+    <b>Why I&rsquo;m asking:</b> your kit decides which recipes are even possible, and your
+    feeling about repeats decides the shape of every week I build.
+  </div>
+  <label class="field-label">What you&rsquo;ve got to cook with</label>
+  <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
+  <div class="chip-row" id="kit-chips"></div>
+  <label class="field-label">How do you feel about repeats?</label>
+  <p class="subtitle" style="margin:0 0 8px">This one changes a lot &mdash; it decides whether I cook once and stretch it, or give you seven different dinners.</p>
+  <div class="chip-row" id="repeats-chips"></div>
+  <div><button class="next-btn" id="kit-repeats-next" type="button">That&rsquo;s me done</button></div>
+  <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
+  <span class="back-link" data-back="typical-week">&larr; Back</span>
 </div>
 
 <!-- First-plan reveal -->
@@ -509,8 +573,11 @@ let lunchesPerWeek = 7;
 function renderDinnersValue() { document.getElementById('dinners-value').textContent = dinnersPerWeek; }
 function renderBreakfastsValue() { document.getElementById('breakfasts-value').textContent = breakfastsPerWeek; }
 function renderLunchesValue() { document.getElementById('lunches-value').textContent = lunchesPerWeek; }
+// Floor of 0, not 1, on all three: "none, thanks" is a real answer, and
+// above zero these are counts of DISTINCT meals spread across the week
+// rather than a number of days to plan (see the setup screen's copy).
 document.getElementById('dinners-minus').addEventListener('click', () => {
-  dinnersPerWeek = Math.max(1, dinnersPerWeek - 1);
+  dinnersPerWeek = Math.max(0, dinnersPerWeek - 1);
   renderDinnersValue();
 });
 document.getElementById('dinners-plus').addEventListener('click', () => {
@@ -518,7 +585,7 @@ document.getElementById('dinners-plus').addEventListener('click', () => {
   renderDinnersValue();
 });
 document.getElementById('breakfasts-minus').addEventListener('click', () => {
-  breakfastsPerWeek = Math.max(1, breakfastsPerWeek - 1);
+  breakfastsPerWeek = Math.max(0, breakfastsPerWeek - 1);
   renderBreakfastsValue();
 });
 document.getElementById('breakfasts-plus').addEventListener('click', () => {
@@ -526,7 +593,7 @@ document.getElementById('breakfasts-plus').addEventListener('click', () => {
   renderBreakfastsValue();
 });
 document.getElementById('lunches-minus').addEventListener('click', () => {
-  lunchesPerWeek = Math.max(1, lunchesPerWeek - 1);
+  lunchesPerWeek = Math.max(0, lunchesPerWeek - 1);
   renderLunchesValue();
 });
 document.getElementById('lunches-plus').addEventListener('click', () => {
@@ -536,6 +603,106 @@ document.getElementById('lunches-plus').addEventListener('click', () => {
 renderDinnersValue();
 renderBreakfastsValue();
 renderLunchesValue();
+
+// ---------- Step A: a normal week ----------
+// Starter chips APPEND an example sentence rather than setting a value —
+// the point is to avoid a blank page, not to turn free text into a
+// multiple choice. Each one is a real sentence someone might have written.
+const TYPICAL_WEEK_STARTERS = [
+  { label: 'One night is takeout', sentence: 'One night a week is usually takeout.' },
+  { label: 'Someone travels', sentence: 'One of us travels most weeks.' },
+  { label: 'Kids eat early', sentence: 'The children eat earlier than we do.' },
+  { label: 'Weekends are slower', sentence: 'Weekends are slower — we cook properly then.' }
+];
+function buildTypicalWeekStarters() {
+  const wrap = document.getElementById('typical-week-chips');
+  wrap.innerHTML = '';
+  TYPICAL_WEEK_STARTERS.forEach(s => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip small';
+    btn.textContent = s.label;
+    btn.addEventListener('click', () => {
+      const field = document.getElementById('typical-week');
+      const existing = field.value.trim();
+      if (existing.includes(s.sentence)) return;
+      field.value = existing ? existing + ' ' + s.sentence : s.sentence;
+      field.focus();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+// ---------- Step B: kit and repeats ----------
+const KIT_OPTIONS = [
+  { key: 'slow_cooker', label: 'Slow cooker' }, { key: 'air_fryer', label: 'Air fryer' },
+  { key: 'grill', label: 'Grill' }, { key: 'instant_pot', label: 'Instant Pot' },
+  { key: 'stand_mixer', label: 'Stand mixer' }, { key: 'blender', label: 'Blender' },
+  { key: 'cast_iron', label: 'Cast iron' }, { key: 'no_dishwasher', label: 'No dishwasher' }
+];
+const REPEAT_OPTIONS = [
+  { key: 'cook_once_eat_twice', label: 'Cook once, eat twice — I like the shortcut' },
+  { key: 'one_a_week', label: 'One repeat a week is fine' },
+  { key: 'all_different', label: 'Something different every night' }
+];
+let kitchenKit = [];
+let repeatsTolerance = '';
+function buildKitRepeatsStep() {
+  const kitWrap = document.getElementById('kit-chips');
+  kitWrap.innerHTML = '';
+  KIT_OPTIONS.forEach(k => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip' + (kitchenKit.includes(k.key) ? ' active' : '');
+    btn.textContent = k.label;
+    btn.addEventListener('click', () => {
+      const i = kitchenKit.indexOf(k.key);
+      if (i === -1) kitchenKit.push(k.key); else kitchenKit.splice(i, 1);
+      btn.classList.toggle('active');
+    });
+    kitWrap.appendChild(btn);
+  });
+  const repeatsWrap = document.getElementById('repeats-chips');
+  repeatsWrap.innerHTML = '';
+  REPEAT_OPTIONS.forEach(r => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip' + (repeatsTolerance === r.key ? ' active' : '');
+    btn.textContent = r.label;
+    btn.addEventListener('click', () => {
+      repeatsTolerance = r.key;
+      repeatsWrap.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    repeatsWrap.appendChild(btn);
+  });
+}
+
+// Saved one field at a time through the same endpoint the setup screen
+// uses, so an answer given here and the same answer corrected later are
+// the same write. Failures are swallowed on purpose: these two steps are
+// skippable by design, and losing one of them must never block a household
+// from reaching their first week.
+async function savePlanTheWeekAnswers() {
+  const writes = [];
+  const typical = document.getElementById('typical-week').value.trim();
+  const nextWeek = document.getElementById('next-week-notes').value.trim();
+  if (typical) writes.push(['typical_week', typical]);
+  if (nextWeek) writes.push(['next_week_notes', nextWeek]);
+  if (kitchenKit.length) writes.push(['kitchen_kit', kitchenKit]);
+  if (repeatsTolerance) writes.push(['repeats_tolerance', repeatsTolerance]);
+  for (const [field, value] of writes) {
+    try {
+      await fetch('/api/preferences/meal-planning', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, value })
+      });
+    } catch (err) {
+      console.warn('Saving ' + field + ' during onboarding failed:', err);
+    }
+  }
+}
 
 // ---------- Save the 7-question answer set ----------
 async function saveOnboardingAnswers() {
@@ -654,14 +821,14 @@ async function generateFirstPlanAndReveal(answers) {
 }
 
 // ---------- Navigation ----------
-const ALL_STEPS = ['household', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'reveal', 'chores-q', 'chores-review'];
+const ALL_STEPS = ['household', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal', 'chores-q', 'chores-review'];
 
 function renderProgress() {
   const progress = document.getElementById('progress');
   progress.innerHTML = '';
   // Only show dots for the fixed pre-reveal question steps — chores is a
   // separate, optional tail the dots don't need to represent.
-  const questionSteps = ['household', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners'];
+  const questionSteps = ['household', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats'];
   const idx = questionSteps.indexOf(currentStep);
   questionSteps.forEach((key, i) => {
     const dot = document.createElement('div');
@@ -692,18 +859,48 @@ document.getElementById('wont-eat-next').onclick = () => {
 };
 document.getElementById('excited-next').onclick = () => showStep('dinners');
 
-document.getElementById('dinners-next').onclick = async () => {
-  const btn = document.getElementById('dinners-next');
-  btn.disabled = true;
+// The two added steps (design_handoff_plan_the_week §8) sit between the
+// meal counts and the first-week reveal, so the very first plan is built
+// from real answers rather than a guess.
+document.getElementById('dinners-next').onclick = () => {
+  buildTypicalWeekStarters();
+  showStep('typical-week');
+};
+document.getElementById('typical-week-next').onclick = () => {
+  buildKitRepeatsStep();
+  showStep('kit-repeats');
+};
+document.getElementById('typical-week-skip').onclick = () => {
+  buildKitRepeatsStep();
+  showStep('kit-repeats');
+};
+
+// Both added steps are genuinely skippable — "Skip, I'll tell you as we go"
+// is true, and it keeps the flow honest. Skipping goes through the same
+// finish path so the rest of onboarding is saved either way; it just has
+// nothing of its own to write.
+async function finishSetupAndReveal(btn) {
+  if (btn) btn.disabled = true;
   try {
     const answers = await saveOnboardingAnswers();
+    await savePlanTheWeekAnswers();
     showStep('reveal');
     await generateFirstPlanAndReveal(answers);
   } catch (err) {
     alert('Could not save: ' + err.message);
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
+}
+
+document.getElementById('kit-repeats-next').onclick = () =>
+  finishSetupAndReveal(document.getElementById('kit-repeats-next'));
+document.getElementById('kit-repeats-skip').onclick = () => {
+  // A skip means "don't record these two" — clear anything half-tapped so
+  // a partial answer isn't saved as though it were considered.
+  kitchenKit = [];
+  repeatsTolerance = '';
+  finishSetupAndReveal(null);
 };
 
 document.querySelectorAll('[data-back]').forEach(el => {

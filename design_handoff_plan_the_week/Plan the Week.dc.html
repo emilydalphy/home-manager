@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9e4d8;font-family:Karla,sans-serif}
+a{color:#66304e}a:hover{color:#8a4a6e}
+@keyframes popIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sheetUp{from{transform:translateY(102%)}to{transform:translateY(0)}}
+.hm-scroll::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;gap:44px;padding:44px 40px;background:#e9e4d8;box-sizing:border-box">
+
+  <div style="width:330px;display:flex;flex-direction:column;gap:15px;flex-shrink:0;padding-top:8px">
+    <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#66304e">Plan the week · v2</div>
+    <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:27px;color:#3a1f2e;line-height:1.2">I ask, you decide, then I go and do it</div>
+    <div style="font-family:Karla,sans-serif;font-size:15px;color:#6b5a63;line-height:1.6">Every question says what it buys you before you answer it. Two rounds of questions, a full week you can see and approve in one go, and a shopping list I only build once you&rsquo;ve said yes.</div>
+    <div style="height:1px;background:#d8cdb9"></div>
+    <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63">Walk it</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="7">
+        <div onClick="{{ s.go }}" style="display:flex;gap:11px;align-items:baseline;padding:9px 12px;border-radius:11px;background:{{ s.bg }};cursor:pointer" style-hover="background:#e2d8c4">
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;color:{{ s.numColor }};width:14px;flex-shrink:0">{{ s.num }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:{{ s.color }};line-height:1.3">{{ s.label }}</div>
+            <div style="font-family:Karla,sans-serif;font-size:13px;color:#8a7a82;line-height:1.4">{{ s.note }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div onClick="{{ reset }}" style="align-self:flex-start;background:#ecdfc8;color:#66304e;font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:12px 18px;border-radius:12px;cursor:pointer" style-hover="background:#e2d2b6">Reset prototype</div>
+  </div>
+
+  <div data-screen-label="plan the week phone" style="width:390px;height:844px;background:#f6efe1;border-radius:34px;box-shadow:0 18px 50px rgba(58,31,46,.22);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0">
+
+    <div style="height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;flex-shrink:0">
+      <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#3a1f2e">9:41</div>
+      <div style="display:flex;gap:5px;align-items:center"><div style="width:17px;height:11px;border-radius:2px;background:#3a1f2e"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #3a1f2e"></div></div>
+    </div>
+
+    <sc-if value="{{ isNudge }}" hint-placeholder-val="{{ true }}">
+      <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:6px 20px 8px;display:flex;flex-direction:column;gap:13px">
+        <div>
+          <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Sunday, Aug 30</div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:29px;color:#3a1f2e">Quiet one today.</div>
+        </div>
+
+        <sc-if value="{{ nudgeOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border-radius:18px;padding:17px 18px;border-top:4px solid #66304e;animation:popIn .22s ease">
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:9px">
+              <div style="flex:1;font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#66304e">Next week · whenever suits you</div>
+              <div onClick="{{ dismissNudge }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#9c8b93;cursor:pointer;flex-shrink:0;padding:0 2px" style-hover="color:#66304e">Not now</div>
+            </div>
+            <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:22px;color:#3a1f2e;line-height:1.28;margin-bottom:7px">Shall I put Sep 1&ndash;7 together for you?</div>
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#6b5a63;margin-bottom:14px">Two rounds of questions from me &mdash; about five minutes &mdash; then I&rsquo;ll draft the week and you tell me what to change. Nothing gets bought until you approve it.</div>
+            <div onClick="{{ startFlow }}" style="background:#66304e;color:#fff;font-family:Karla,sans-serif;font-weight:700;font-size:17px;padding:15px 0;border-radius:14px;text-align:center;cursor:pointer" style-hover="background:#7c3d5e">Let&rsquo;s plan the week</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ nudgeGone }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#efe6d4;border-radius:16px;padding:15px 17px;animation:popIn .2s ease">
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#6b5a63;margin-bottom:11px">Of course. It&rsquo;ll be waiting for you under Meals &mdash; I won&rsquo;t ask again this week.</div>
+            <div onClick="{{ startFlow }}" style="display:inline-block;font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer" style-hover="color:#8a4a6e">Plan the week &rarr;</div>
+          </div>
+        </sc-if>
+
+        <div style="background:#fff;border-radius:18px;padding:16px 17px">
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:8px">Tonight</div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#3a1f2e;line-height:1.3;margin-bottom:4px">Sheet-pan chicken &amp; sweet potatoes</div>
+          <div style="font-family:Karla,sans-serif;font-size:15px;color:#6b5a63">40 minutes, and you have everything for it</div>
+        </div>
+
+        <div style="background:#fff;border-radius:18px;padding:16px 17px">
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:8px">Worth using up</div>
+          <div style="font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e;line-height:1.5">Your baby spinach turns in two days, and there are two cups of chili in the freezer. I&rsquo;ll work both into next week if you&rsquo;d like.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isQ1 }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:4px 20px 12px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div onClick="{{ backToday }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">&larr;</div>
+            <div style="flex:1;display:flex;gap:5px">
+              <div style="flex:1;height:4px;border-radius:2px;background:#66304e"></div>
+              <div style="flex:1;height:4px;border-radius:2px;background:#dcd0bb"></div>
+            </div>
+            <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;color:#9c8b93">1 of 2</div>
+          </div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:26px;color:#3a1f2e;line-height:1.22;margin-bottom:7px">Which nights should I work around?</div>
+          <div style="background:#f3e6ee;border-radius:12px;padding:12px 14px">
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#66304e"><strong>Why I&rsquo;m asking:</strong> this is what stops me putting a 50-minute braise on the night you&rsquo;re at tee-ball. Every night you tag, I plan differently &mdash; and I&rsquo;ll tell you how.</div>
+          </div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 20px 12px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+            <div style="background:#fff;border-radius:15px;padding:12px 14px 13px">
+              <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:9px">
+                <div style="font-family:Karla,sans-serif;font-weight:700;font-size:16px;color:#3a1f2e;width:38px;flex-shrink:0">{{ d.label }}</div>
+                <div style="flex:1;font-family:Karla,sans-serif;font-size:14px;color:{{ d.hintColor }};line-height:1.4">{{ d.hint }}</div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <sc-for list="{{ d.tags }}" as="t" hint-placeholder-count="5">
+                  <div onClick="{{ t.toggle }}" style="background:{{ t.bg }};color:{{ t.fg }};border:1.5px solid {{ t.border }};font-family:Karla,sans-serif;font-weight:700;font-size:13px;padding:9px 12px;border-radius:10px;cursor:pointer;min-height:36px;box-sizing:border-box;display:flex;align-items:center">{{ t.label }}</div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ d.showEffect }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px;font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#4d8a33"><strong>I&rsquo;ll </strong>{{ d.effect }}</div>
+              </sc-if>
+              <sc-if value="{{ d.showGuests }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:11px;background:#f6efe1;border-radius:12px;padding:12px 13px;animation:popIn .18s ease">
+                  <div style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#3a1f2e;margin-bottom:3px">Who&rsquo;s joining you?</div>
+                  <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:4px">Adults and children eat differently, so I need both numbers &mdash; it changes the portions and what I&rsquo;d suggest cooking.</div>
+                  <sc-for list="{{ d.guestRows }}" as="g" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #e8dfcc">
+                      <div style="flex:1;font-family:Karla,sans-serif;font-weight:600;font-size:16px;color:#3a1f2e">{{ g.label }}</div>
+                      <div onClick="{{ g.dec }}" style="width:40px;height:40px;border-radius:12px;background:#fff;color:#66304e;font-family:Karla,sans-serif;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">&minus;</div>
+                      <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#3a1f2e;min-width:24px;text-align:center;flex-shrink:0">{{ g.n }}</div>
+                      <div onClick="{{ g.inc }}" style="width:40px;height:40px;border-radius:12px;background:#fff;color:#66304e;font-family:Karla,sans-serif;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">+</div>
+                    </div>
+                  </sc-for>
+                  <div style="margin-top:9px;font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#4d8a33"><strong>I&rsquo;ll </strong>{{ d.guestNote }}</div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+
+          <div style="background:#fff;border-radius:15px;padding:14px 15px;margin-top:2px">
+            <div style="font-family:Karla,sans-serif;font-weight:700;font-size:16px;color:#3a1f2e;margin-bottom:3px">Which lunches leave the house?</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:12px">I&rsquo;ll plan every lunch either way. Tap the days someone takes it with them and I&rsquo;ll keep those to things that travel cold and hold up till noon.</div>
+            <div style="display:flex;gap:5px">
+              <sc-for list="{{ lunchDays }}" as="l" hint-placeholder-count="7">
+                <div onClick="{{ l.toggle }}" style="flex:1;text-align:center;background:{{ l.bg }};color:{{ l.fg }};border:1.5px solid {{ l.border }};font-family:Karla,sans-serif;font-weight:700;font-size:13px;padding:11px 0;border-radius:10px;cursor:pointer;min-height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">{{ l.label }}</div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ lunchAny }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:11px;font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#4d8a33"><strong>I&rsquo;ll </strong>{{ lunchEffect }}</div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="padding:8px 20px 20px;flex-shrink:0;background:#f6efe1">
+          <div onClick="{{ toQ2 }}" style="background:#66304e;color:#fff;font-family:Karla,sans-serif;font-weight:700;font-size:17px;padding:16px 0;border-radius:14px;text-align:center;cursor:pointer" style-hover="background:#7c3d5e">{{ q1Cta }}</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isQ2 }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:4px 20px 12px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div onClick="{{ toQ1 }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">&larr;</div>
+            <div style="flex:1;display:flex;gap:5px">
+              <div style="flex:1;height:4px;border-radius:2px;background:#66304e"></div>
+              <div style="flex:1;height:4px;border-radius:2px;background:#66304e"></div>
+            </div>
+            <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;color:#9c8b93">2 of 2</div>
+          </div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:26px;color:#3a1f2e;line-height:1.22;margin-bottom:7px">What would you like this week?</div>
+          <div style="background:#f3e6ee;border-radius:12px;padding:12px 14px">
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#66304e"><strong>Why I&rsquo;m asking:</strong> your setup tells me what you&rsquo;ll eat. This tells me what you actually want right now &mdash; it&rsquo;s the difference between a correct week and a week you look forward to.</div>
+          </div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 20px 12px;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#fff;border-radius:16px;padding:15px 16px">
+            <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">In the mood for</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:11px">Pick as many as you like &mdash; I&rsquo;ll lean the week this way without making every night the same.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
+              <sc-for list="{{ moods }}" as="m" hint-placeholder-count="6">
+                <div onClick="{{ m.toggle }}" style="background:{{ m.bg }};color:{{ m.fg }};border:1.5px solid {{ m.border }};font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:10px 14px;border-radius:20px;cursor:pointer">{{ m.label }}</div>
+              </sc-for>
+            </div>
+            <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Cuisines you fancy</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:11px">The ones you&rsquo;ve told me you like, from what we know about your household. Whatever you tap wins over your usual rotation this week.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ cuisines }}" as="c" hint-placeholder-count="8">
+                <div onClick="{{ c.toggle }}" style="background:{{ c.bg }};color:{{ c.fg }};border:1.5px solid {{ c.border }};font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:10px 14px;border-radius:20px;cursor:pointer">{{ c.label }}</div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#fff;border-radius:16px;padding:15px 16px">
+            <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Anything else you want to share for this week?</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:11px">Anything at all &mdash; and if there&rsquo;s a meal you&rsquo;ve already decided on, tell me here. I won&rsquo;t plan over it, and I&rsquo;ll still shop for it so you&rsquo;re not short on the night.</div>
+            <textarea onChange="{{ onDecided }}" value="{{ decided }}" placeholder="Friday is pizza night. Sam has a friend over Saturday. I want to use the lamb in the freezer." style="width:100%;box-sizing:border-box;min-height:96px;resize:none;background:#f6efe1;border:1.5px solid #dcd0bb;border-radius:12px;outline:none;font-family:Karla,sans-serif;font-size:16px;line-height:1.5;color:#3a1f2e;padding:13px 14px"></textarea>
+          </div>
+
+        </div>
+        <div style="padding:8px 20px 20px;flex-shrink:0;background:#f6efe1">
+          <div onClick="{{ build }}" style="background:#66304e;color:#fff;font-family:Karla,sans-serif;font-weight:700;font-size:17px;padding:16px 0;border-radius:14px;text-align:center;cursor:pointer" style-hover="background:#7c3d5e">That&rsquo;s everything &mdash; draft my week</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDraft }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:4px 20px 10px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="flex:1;font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#66304e">Your draft · Sep 1&ndash;7</div>
+            <div onClick="{{ openChat }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#66304e;cursor:pointer" style-hover="color:#8a4a6e">Talk it through</div>
+          </div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:22px;color:#3a1f2e;line-height:1.3">{{ headline }}</div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:2px 20px 12px;display:flex;flex-direction:column;gap:9px">
+          <div style="background:#fff;border-radius:15px;padding:12px 14px 13px;display:flex;gap:6px;align-items:flex-end">
+            <sc-for list="{{ weekDots }}" as="w" hint-placeholder-count="7">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
+                <sc-for list="{{ w.dots }}" as="t" hint-placeholder-count="3">
+                  <div style="width:100%;height:7px;border-radius:3px;background:{{ t.bg }}"></div>
+                </sc-for>
+                <div style="font-family:Karla,sans-serif;font-weight:{{ w.weight }};font-size:11px;color:{{ w.ink }};margin-top:1px">{{ w.letter }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+            <div style="background:{{ d.cardBg }};border-radius:16px;padding:12px 15px 9px;border-left:4px solid {{ d.accent }}">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:18px;color:#3a1f2e">{{ d.dayName }}</div>
+                <div style="font-family:Karla,sans-serif;font-weight:700;font-size:12px;color:#c9b8a4">{{ d.dayNum }}</div>
+                <div style="flex:1;height:1px;background:#eee2cf"></div>
+                <sc-if value="{{ d.hasNote }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-family:Karla,sans-serif;font-style:italic;font-size:13px;color:#a8825c;flex-shrink:0">{{ d.note }}</div>
+                </sc-if>
+              </div>
+              <sc-for list="{{ d.slots }}" as="sl" hint-placeholder-count="3">
+                <div style="padding:8px 0 7px;display:flex;align-items:baseline;gap:10px">
+                  <div style="width:64px;flex-shrink:0;font-family:Karla,sans-serif;font-weight:800;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:{{ sl.cap }}">{{ sl.slot }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:Karla,sans-serif;font-weight:{{ sl.weight }};font-size:16px;color:{{ sl.color }};line-height:1.3">{{ sl.meal }}</div>
+                    <sc-if value="{{ sl.hasWhy }}" hint-placeholder-val="{{ true }}">
+                      <div style="font-family:Karla,sans-serif;font-style:italic;font-size:13px;color:#9c8b93;line-height:1.4;margin-top:2px">{{ sl.why }}</div>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ sl.swappable }}" hint-placeholder-val="{{ true }}">
+                    <div onClick="{{ sl.swap }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;color:#8a7a82;cursor:pointer;flex-shrink:0;padding:3px 2px" style-hover="color:#66304e">Swap</div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ sl.isGap }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin:2px 0 10px;background:#fff;border-radius:12px;padding:12px 13px">
+                    <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.45;color:#5c4a53;margin-bottom:11px">{{ sl.gapReason }}</div>
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <sc-for list="{{ sl.gapOpts }}" as="g" hint-placeholder-count="3">
+                        <div onClick="{{ g.pick }}" style="background:#f6efe1;border-radius:11px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:44px;box-sizing:border-box" style-hover="background:#efe4cf">
+                          <div style="flex:1;font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#3a1f2e">{{ g.label }}</div>
+                          <div style="font-family:Karla,sans-serif;font-size:14px;color:#8a7a82;flex-shrink:0">{{ g.note }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </sc-for>
+            </div>
+          </sc-for>
+
+          <div style="background:#efe6d4;border-radius:15px;padding:14px 16px;margin-top:2px">
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#6b5a63">I haven&rsquo;t put anything on your shopping list yet. Approve the week and I&rsquo;ll build it &mdash; <strong style="color:#3a1f2e">{{ groceryCount }} items</strong>, less whatever&rsquo;s already in your kitchen.</div>
+          </div>
+        </div>
+        <div style="padding:10px 20px 20px;flex-shrink:0;background:#f6efe1;display:flex;gap:9px">
+          <div onClick="{{ approve }}" style="flex:1;background:#66304e;color:#fff;font-family:Karla,sans-serif;font-weight:700;font-size:17px;padding:16px 0;border-radius:14px;text-align:center;cursor:pointer" style-hover="background:#7c3d5e">{{ approveLabel }}</div>
+          <div onClick="{{ toQ1 }}" style="background:transparent;border:1.5px solid #c9bda9;color:#66304e;font-family:Karla,sans-serif;font-weight:700;font-size:16px;padding:16px 17px;border-radius:14px;text-align:center;cursor:pointer;flex-shrink:0;box-sizing:border-box" style-hover="background:#efe4cf">Redo</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isApproved }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:4px 20px 10px;flex-shrink:0">
+          <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Meals</div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:27px;color:#3a1f2e">Sep 1&ndash;7</div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:2px 20px 12px;display:flex;flex-direction:column;gap:10px">
+          <div style="background:#e4ecd9;border-radius:16px;padding:15px 17px;animation:popIn .22s ease">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">
+              <div style="width:22px;height:22px;border-radius:11px;background:#4d8a33;color:#fff;font-family:Karla,sans-serif;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">✓</div>
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#3d5c2a">Approved by you &middot; 9:41am</div>
+            </div>
+            <div style="font-family:Karla,sans-serif;font-size:16px;line-height:1.5;color:#3d5c2a">All set. I&rsquo;ve put {{ groceryCount }} items on your shopping list &mdash; six were already in your kitchen, so I left those off. Marcus has been told the week is settled.</div>
+          </div>
+          <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+            <div style="background:#fff;border-radius:16px;padding:12px 15px 9px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:18px;color:#3a1f2e">{{ d.dayName }}</div>
+                <div style="font-family:Karla,sans-serif;font-weight:700;font-size:12px;color:#c9b8a4">{{ d.dayNum }}</div>
+                <div style="flex:1;height:1px;background:#eee2cf"></div>
+                <sc-if value="{{ d.hasNote }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-family:Karla,sans-serif;font-style:italic;font-size:13px;color:#a8825c;flex-shrink:0">{{ d.note }}</div>
+                </sc-if>
+              </div>
+              <sc-for list="{{ d.slots }}" as="sl" hint-placeholder-count="3">
+                <div style="padding:8px 0 7px;display:flex;align-items:baseline;gap:10px">
+                  <div style="width:64px;flex-shrink:0;font-family:Karla,sans-serif;font-weight:800;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:{{ sl.cap }}">{{ sl.slot }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-family:Karla,sans-serif;font-weight:{{ sl.weight }};font-size:16px;color:{{ sl.color }};line-height:1.3">{{ sl.meal }}</div>
+                    <sc-if value="{{ sl.hasWhy }}" hint-placeholder-val="{{ true }}">
+                      <div style="font-family:Karla,sans-serif;font-style:italic;font-size:13px;color:#9c8b93;line-height:1.4;margin-top:2px">{{ sl.why }}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+          <div onClick="{{ goPrefs }}" style="background:#efe6d4;border-radius:15px;padding:14px 16px;cursor:pointer" style-hover="background:#e7dcc6">
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#6b5a63">Weeks not landing how you&rsquo;d like? <strong style="color:#66304e">Let&rsquo;s adjust your setup &rarr;</strong></div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPrefs }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:4px 20px 10px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:9px">
+            <div onClick="{{ backApproved }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">&larr;</div>
+            <div style="flex:1;font-family:Karla,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63">Your meal planning setup</div>
+          </div>
+          <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#6b5a63">Change anything here and I&rsquo;ll follow it from next week onwards. Nothing is locked in from when you signed up.</div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:8px 20px 12px;display:flex;flex-direction:column;gap:11px">
+          <div style="background:#fff;border-radius:16px;padding:15px 16px">
+            <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:4px">How many meals shall I plan?</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:12px">One breakfast a week is a perfectly good answer &mdash; I&rsquo;d rather plan four things you cook than seven you don&rsquo;t.</div>
+            <sc-for list="{{ counts }}" as="c" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid #f2ebdd">
+                <div style="flex:1;font-family:Karla,sans-serif;font-weight:600;font-size:17px;color:#3a1f2e">{{ c.label }}</div>
+                <div onClick="{{ c.dec }}" style="width:40px;height:40px;border-radius:12px;background:#f6efe1;color:#66304e;font-family:Karla,sans-serif;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" style-hover="background:#efe4cf">&minus;</div>
+                <div style="width:26px;text-align:center;font-family:Quicksand,sans-serif;font-weight:700;font-size:20px;color:#3a1f2e;flex-shrink:0">{{ c.n }}</div>
+                <div onClick="{{ c.inc }}" style="width:40px;height:40px;border-radius:12px;background:#f6efe1;color:#66304e;font-family:Karla,sans-serif;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" style-hover="background:#efe4cf">+</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#fff;border-radius:16px;padding:15px 16px">
+            <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:4px">What I&rsquo;m working with</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:4px">Everything you&rsquo;ve told me so far. Correct me any time &mdash; I&rsquo;d rather know.</div>
+            <sc-for list="{{ savedPrefs }}" as="s" hint-placeholder-count="6">
+              <div style="border-top:1px solid #f2ebdd;padding:12px 0 11px;display:flex;align-items:flex-start;gap:12px">
+                <div style="width:96px;flex-shrink:0;font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#8a7a82;line-height:1.35">{{ s.label }}</div>
+                <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e;line-height:1.45">{{ s.value }}</div>
+                <div onClick="{{ s.edit }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#66304e;cursor:pointer;flex-shrink:0;padding:2px" style-hover="color:#8a4a6e">Edit</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#f3e6ee;border:1px solid #e4cede;border-radius:16px;padding:15px 16px">
+            <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#66304e;line-height:1.3;margin-bottom:5px">Easier to just tell me?</div>
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#7d6a74;margin-bottom:12px">Some things don&rsquo;t fit in a stepper. Describe the shape of it and I&rsquo;ll set all of this for you.</div>
+            <div onClick="{{ openChat }}" style="background:#fffdf6;border:1.5px solid #66304e;border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:10px;cursor:pointer">
+              <div style="flex:1;font-family:Karla,sans-serif;font-size:15px;color:#9c8b93">&ldquo;We&rsquo;re travelling half of September&rdquo;</div>
+              <div style="width:34px;height:34px;border-radius:11px;background:#66304e;color:#f0b429;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">↑</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:4px 20px 12px;flex-shrink:0">
+          <div style="display:flex;gap:5px;margin-bottom:14px">
+            <sc-for list="{{ onbDots }}" as="o" hint-placeholder-count="6">
+              <div style="flex:1;height:4px;border-radius:2px;background:{{ o.bg }}"></div>
+            </sc-for>
+          </div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:25px;color:#3a1f2e;line-height:1.22;margin-bottom:7px">{{ onbTitle }}</div>
+          <div style="background:#f3e6ee;border-radius:12px;padding:12px 14px">
+            <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:#66304e"><strong>Why I&rsquo;m asking:</strong> {{ onbWhy }}</div>
+          </div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 20px 12px;display:flex;flex-direction:column;gap:12px">
+          <sc-if value="{{ onbIsWeek }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff;border-radius:16px;padding:15px 16px">
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:10px">A normal week at yours</div>
+              <textarea onChange="{{ onTypical }}" value="{{ typical }}" placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout. One of us travels most other weeks." style="width:100%;box-sizing:border-box;min-height:108px;resize:none;background:#f6efe1;border:1.5px solid #dcd0bb;border-radius:12px;outline:none;font-family:Karla,sans-serif;font-size:16px;line-height:1.5;color:#3a1f2e;padding:13px 14px"></textarea>
+              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:11px">
+                <sc-for list="{{ typicalChips }}" as="t" hint-placeholder-count="4">
+                  <div onClick="{{ t.add }}" style="background:#f6efe1;color:#66304e;border:1.5px solid #e2d8c4;font-family:Karla,sans-serif;font-weight:700;font-size:14px;padding:9px 13px;border-radius:18px;cursor:pointer" style-hover="background:#efe4cf">{{ t.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:16px;padding:15px 16px">
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:4px">Next week specifically</div>
+              <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:10px">Anything already in the diary? I&rsquo;ll build your very first week around it rather than guessing.</div>
+              <textarea onChange="{{ onNext }}" value="{{ nextWeek }}" placeholder="My parents are here Thursday to Sunday." style="width:100%;box-sizing:border-box;min-height:72px;resize:none;background:#f6efe1;border:1.5px solid #dcd0bb;border-radius:12px;outline:none;font-family:Karla,sans-serif;font-size:16px;line-height:1.5;color:#3a1f2e;padding:13px 14px"></textarea>
+            </div>
+          </sc-if>
+          <sc-if value="{{ onbIsKitchen }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border-radius:16px;padding:15px 16px">
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">What you&rsquo;ve got to cook with</div>
+              <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:11px">I&rsquo;ll only suggest recipes your kitchen can actually make.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                <sc-for list="{{ kit }}" as="k" hint-placeholder-count="8">
+                  <div onClick="{{ k.toggle }}" style="background:{{ k.bg }};color:{{ k.fg }};border:1.5px solid {{ k.border }};font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:10px 14px;border-radius:20px;cursor:pointer">{{ k.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:16px;padding:15px 16px">
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">How do you feel about repeats?</div>
+              <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.45;color:#8a7a82;margin-bottom:11px">This one changes a lot &mdash; it decides whether I cook once and stretch it, or give you seven different dinners.</div>
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <sc-for list="{{ repeats }}" as="r" hint-placeholder-count="3">
+                  <div onClick="{{ r.pick }}" style="background:{{ r.bg }};border:1.5px solid {{ r.border }};border-radius:12px;padding:12px 14px;cursor:pointer;min-height:44px;box-sizing:border-box">
+                    <div style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:{{ r.fg }};line-height:1.35">{{ r.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="padding:8px 20px 20px;flex-shrink:0;background:#f6efe1;display:flex;flex-direction:column;gap:9px">
+          <div onClick="{{ onbNext }}" style="background:#f0b429;color:#3a1f2e;font-family:Karla,sans-serif;font-weight:800;font-size:17px;padding:16px 0;border-radius:14px;text-align:center;cursor:pointer" style-hover="background:#e5a91d">{{ onbCta }}</div>
+          <div onClick="{{ onbNext }}" style="text-align:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#9c8b93;cursor:pointer;padding:4px 0" style-hover="color:#66304e">Skip &mdash; I&rsquo;ll tell you as we go</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ chatOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:0;right:0;bottom:0;top:150px;background:#fffdf6;border-radius:26px 26px 0 0;box-shadow:0 -14px 40px rgba(58,31,46,.2);display:flex;flex-direction:column;animation:sheetUp .24s ease">
+        <div style="padding:16px 20px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div style="flex:1;font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#3a1f2e">Tell me what to change</div>
+          <div onClick="{{ closeChat }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#9c8b93;cursor:pointer;padding:2px 4px" style-hover="color:#66304e">Done</div>
+        </div>
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 20px 12px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="2">
+            <div style="align-self:{{ m.align }};max-width:82%;background:{{ m.bg }};color:{{ m.fg }};border-radius:16px;padding:12px 15px;font-family:Karla,sans-serif;font-size:16px;line-height:1.5">{{ m.text }}</div>
+          </sc-for>
+        </div>
+        <div style="padding:6px 20px 20px;flex-shrink:0;display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <sc-for list="{{ chatChips }}" as="c" hint-placeholder-count="3">
+              <div onClick="{{ c.send }}" style="background:#f6efe1;color:#66304e;font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:10px 14px;border-radius:20px;cursor:pointer" style-hover="background:#efe4cf">{{ c.label }}</div>
+            </sc-for>
+          </div>
+          <div style="background:#f6efe1;border:2px solid #66304e;border-radius:16px;padding:6px 8px 6px 15px;display:flex;align-items:center;gap:10px">
+            <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKey }}" placeholder="The more you tell me, the less you&rsquo;ll swap…" style="flex:1;border:none;outline:none;background:transparent;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e;padding:10px 0;min-width:0"></input>
+            <div onClick="{{ send }}" style="width:40px;height:40px;border-radius:11px;background:#66304e;color:#f0b429;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:18px;cursor:pointer">↑</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:20px;right:20px;bottom:26px;background:#3a1f2e;color:#fff;border-radius:14px;padding:14px 17px;font-family:Karla,sans-serif;font-weight:600;font-size:15px;animation:popIn .2s ease">{{ toast }}</div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:850,&quot;height&quot;:980}}">
+const DAYS = [
+  { key: "Mon", label: "Mon", date: "Mon 1", hint: "Nothing on the calendar" },
+  { key: "Tue", label: "Tue", date: "Tue 2", hint: "Tee-ball — you eat at 5" },
+  { key: "Wed", label: "Wed", date: "Wed 3", hint: "Nothing on the calendar" },
+  { key: "Thu", label: "Thu", date: "Thu 4", hint: "Nothing on the calendar" },
+  { key: "Fri", label: "Fri", date: "Fri 5", hint: "Takeout four weeks running" },
+  { key: "Sat", label: "Sat", date: "Sat 6", hint: "Nothing on the calendar" },
+  { key: "Sun", label: "Sun", date: "Sun 7", hint: "You usually cook properly" }
+];
+
+const TAGS = [
+  { key: "normal", label: "Regular night", effect: "plan a normal dinner you cook that evening." },
+  { key: "out", label: "Nobody home", effect: "plan nothing and buy nothing for this night." },
+  { key: "rush", label: "Short on time", effect: "keep it under 20 minutes, or make the night before stretch to cover it." },
+  { key: "guests", label: "Hosting guests", effect: "scale the recipe and the shopping to the bigger table." },
+  { key: "left", label: "Leftovers", effect: "cook enough the night before instead of planning something new." }
+];
+
+const MOODS = ["Something warm", "Lighter than usual", "On the grill", "Comfort food", "Something new", "Keep it cheap"];
+const CUISINES = ["Thai", "Indian", "Italian", "Mexican", "Greek", "Japanese"];
+const KIT = ["Slow cooker", "Air fryer", "Grill", "Instant Pot", "Stand mixer", "Blender", "Cast iron", "No dishwasher"];
+
+const REPEATS = [
+  { key: "stretch", label: "Cook once, eat twice — I like the shortcut" },
+  { key: "some", label: "One repeat a week is fine" },
+  { key: "never", label: "Something different every night" }
+];
+
+const ONB = [
+  {
+    key: "week",
+    title: "What does a normal week look like at yours?",
+    why: "this is the single most useful thing you can tell me. A week I understand needs almost no correcting later — and it means your very first plan isn’t a guess.",
+    cta: "Continue"
+  },
+  {
+    key: "kitchen",
+    title: "Two more and I’ll leave you alone",
+    why: "your kit decides which recipes are even possible, and your feeling about repeats decides the shape of every week I build.",
+    cta: "That’s me done"
+  }
+];
+
+const BASE = {
+  step: "nudge",
+  nudge: "open",
+  tags: { Tue: ["rush"], Fri: ["out"], Sat: ["guests"] },
+  guests: { Sat: { adults: 2, kids: 0 } },
+  lunches: ["Mon", "Tue", "Wed"],
+  moods: ["Comfort food"],
+  cuisines: ["Thai"],
+  decided: "Friday is pizza night",
+  gap: null,
+  chatOpen: false,
+  draft: "",
+  msgs: [{ role: "bot", text: "Tell me what you’d like different and I’ll rework it — no need to be polite about it." }],
+  toast: "",
+  counts: { Breakfasts: 1, Lunches: 3, Dinners: 6 },
+  typical: "",
+  nextWeek: "",
+  onb: 0,
+  kit: ["Slow cooker", "Air fryer"],
+  repeat: "some"
+};
+
+const STEPS = [
+  ["nudge", "Sunday nudge", "Dismissible, on Today"],
+  ["q1", "Question 1", "Nights, guests, lunches"],
+  ["q2", "Question 2", "Mood, cuisines, anything else"],
+  ["draft", "The draft", "Whole week, one open slot"],
+  ["approved", "Approved", "Whole week, list built"],
+  ["prefs", "Setup screen", "Revisitable, chat inside"],
+  ["onboard", "Onboarding", "Week, kitchen, repeats"]
+];
+
+class Component extends DCLogic {
+  state = { ...BASE };
+
+  flash(t) {
+    this.setState({ toast: t });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: "" }), 2800);
+  }
+
+  go(step) { this.setState({ step, chatOpen: false }); }
+
+  buildWeek() {
+    const s = this.state;
+    const breakfastFor = {
+      Mon: ["Overnight oats", "Four jars made Sunday — grab and go"],
+      Tue: ["Overnight oats", "Second of the four jars"],
+      Wed: ["Scrambled eggs on toast", "Ten minutes, and the eggs are in"],
+      Thu: ["Overnight oats", "Last of the jars"],
+      Fri: ["Yogurt, granola and berries", "No cooking on a Friday morning"],
+      Sat: ["Bacon sandwiches", "Slower morning, so something worth it"],
+      Sun: ["Buttermilk pancakes", "The morning you have time for them"]
+    };
+    const lunchFor = {
+      Mon: ["Chili in a thermos", "Straight from tonight’s batch"],
+      Tue: ["Chicken salad wraps", "Sunday’s roast, second life"],
+      Wed: ["Halloumi and couscous", "Packs cold, no reheating needed"],
+      Thu: ["Green curry, leftover portion", "I’ve made Thursday’s dinner stretch"],
+      Fri: ["Ploughman’s plate", "Cheese and pickles you already have"],
+      Sat: ["Toasties and soup", "Everyone’s home, so something hot"],
+      Sun: ["Roast chicken sandwiches", "Ahead of the big dinner"]
+    };
+    const dinnerFor = {
+      Mon: ["Turkey chili", "Big batch on purpose — Tuesday eats the rest"],
+      Tue: ["Monday’s chili, reheated", "You’re back from tee-ball at 5, so nothing to cook"],
+      Wed: [null, null],
+      Thu: ["Thai green curry", "You said Thai, and it’s 25 minutes"],
+      Fri: [null, "You’re out — I’ve planned nothing and bought nothing"],
+      Sat: ["Slow-cooker pork shoulder", "Bigger table, so something that scales"],
+      Sun: ["Roast chicken", "The night you like to cook properly"]
+    };
+    return DAYS.map(d => {
+      const tags = s.tags[d.key] || [];
+      const slots = [];
+      const [bm, bw] = breakfastFor[d.key];
+      slots.push({ slot: "Breakfast", meal: bm, why: bw });
+      const [lm, lw] = lunchFor[d.key];
+      slots.push({
+        slot: "Lunch",
+        meal: lm,
+        why: s.lunches.includes(d.key) ? lw + " — packed" : lw
+      });
+      const [meal, why] = dinnerFor[d.key];
+      if (tags.includes("out")) {
+        slots.push({ slot: "Dinner", meal: "Out — nothing to cook", why: why || "", muted: true });
+      } else if (d.key === "Wed" && !s.gap) {
+        slots.push({ slot: "Dinner", meal: "I’d like your call on this one", why: "", gap: true });
+      } else if (d.key === "Wed") {
+        slots.push({ slot: "Dinner", meal: s.gap.meal, why: s.gap.why });
+      } else {
+        slots.push({ slot: "Dinner", meal, why });
+      }
+      const g = s.guests[d.key];
+      let note = "";
+      if (tags.includes("guests") && g) note = (4 + g.adults + g.kids) + " at the table";
+      else if (tags.includes("rush")) note = "Short on time";
+      else if (tags.includes("out")) note = "Nobody home";
+      else if (tags.includes("left")) note = "Leftovers night";
+      return { key: d.key, label: d.date, note, slots };
+    });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const chip = (isOn) => ({
+      bg: isOn ? "#66304e" : "#f6efe1",
+      fg: isOn ? "#fff" : "#6b5a63",
+      border: isOn ? "#66304e" : "#e2d8c4"
+    });
+
+    const days = DAYS.map(d => {
+      const picked = s.tags[d.key] || [];
+      const guests = s.guests[d.key] || { adults: 2, kids: 0 };
+      const total = 4 + guests.adults + guests.kids;
+      const effects = TAGS.filter(t => picked.includes(t.key) && t.key !== "normal").map(t => t.effect);
+      return {
+        label: d.label,
+        hint: d.hint,
+        hintColor: d.hint === "Nothing on the calendar" ? "#b0a3a9" : "#8a7a82",
+        showEffect: effects.length > 0,
+        effect: effects.join(" And I’ll "),
+        tags: TAGS.map(t => {
+          const isOn = picked.includes(t.key);
+          return {
+            label: t.label,
+            ...chip(isOn),
+            toggle: () => {
+              let next;
+              if (t.key === "normal") next = isOn ? [] : ["normal"];
+              else if (isOn) next = picked.filter(x => x !== t.key);
+              else next = [...picked.filter(x => x !== "normal"), t.key];
+              this.setState({ tags: { ...s.tags, [d.key]: next } });
+            }
+          };
+        }),
+        showGuests: picked.includes("guests"),
+        guestNote: "cook for " + total + " — " + (2 + guests.adults) + " adults and " + (2 + guests.kids) + " children — and shop for that.",
+        guestRows: [["Extra adults", "adults"], ["Extra children", "kids"]].map(([label, k]) => ({
+          label,
+          n: guests[k],
+          inc: () => this.setState({ guests: { ...s.guests, [d.key]: { ...guests, [k]: Math.min(10, guests[k] + 1) } } }),
+          dec: () => this.setState({ guests: { ...s.guests, [d.key]: { ...guests, [k]: Math.max(0, guests[k] - 1) } } })
+        }))
+      };
+    });
+
+    const tagged = DAYS.filter(d => (s.tags[d.key] || []).length).length;
+
+    const lunchDays = DAYS.map(d => {
+      const isOn = s.lunches.includes(d.key);
+      return {
+        label: d.label.slice(0, 1) + (d.key === "Sun" ? "u" : d.key === "Sat" ? "a" : d.key === "Tue" ? "u" : d.key === "Thu" ? "h" : ""),
+        ...chip(isOn),
+        toggle: () => this.setState({ lunches: isOn ? s.lunches.filter(x => x !== d.key) : [...s.lunches, d.key] })
+      };
+    });
+
+    const week = this.buildWeek().map(d => ({
+      label: d.label,
+      dayName: d.label.split(" ")[0],
+      dayNum: d.label.split(" ")[1],
+      note: d.note,
+      hasNote: !!d.note,
+      cardBg: d.slots.some(sl => sl.gap) ? "#fdf0dc" : "#fff",
+      accent: d.slots.some(sl => sl.gap) ? "#e8a33a" : "transparent",
+      slots: d.slots.map(sl => ({
+        slot: sl.slot,
+        meal: sl.meal,
+        why: sl.why,
+        hasWhy: !!sl.why,
+        muted: !!sl.muted,
+        cap: sl.gap ? "#c0431e" : sl.slot === "Dinner" ? "#c0431e" : sl.slot === "Lunch" ? "#7a8a4a" : "#a8825c",
+        color: sl.gap ? "#a8621e" : sl.muted ? "#b0a3a9" : "#3a1f2e",
+        weight: sl.slot === "Dinner" ? 700 : 600,
+        swappable: !sl.muted && !sl.gap,
+        swap: () => this.flash("I’ll offer you three alternatives here — not wired in this pass"),
+        isGap: !!sl.gap,
+        gapReason: "Wednesday I’d rather ask than guess: after Monday’s chili, everything I have under 20 minutes repeats something you’ve just eaten. Which of these would you prefer?",
+        gapOpts: [
+          { label: "Breakfast for dinner", note: "12 min", why: "You chose it — and the eggs are in" },
+          { label: "Chili one more night", note: "0 min", why: "You chose it — third night of chili" },
+          { label: "Takeout, don’t plan it", note: "—", why: "You chose not to cook Wednesday" }
+        ].map(g => ({
+          label: g.label,
+          note: g.note,
+          pick: () => { this.setState({ gap: { meal: g.label, why: g.why } }); this.flash("Wednesday’s settled — thank you."); }
+        }))
+      }))
+    }));
+
+    const msgs = s.msgs.map(m => ({
+      text: m.text,
+      align: m.role === "me" ? "flex-end" : "flex-start",
+      bg: m.role === "me" ? "#66304e" : "#f6efe1",
+      fg: m.role === "me" ? "#fff" : "#3a1f2e"
+    }));
+
+    const reply = (text) => {
+      this.setState({ msgs: [...s.msgs, { role: "me", text }], draft: "" });
+      setTimeout(() => this.setState(p => ({
+        msgs: [...p.msgs, { role: "bot", text: "Understood — I’ve saved that and I’ll start from it next week too." }]
+      })), 420);
+    };
+
+    const onb = ONB[s.onb];
+
+    return {
+      steps: STEPS.map(([key, label, note], i) => ({
+        num: i + 1, label, note,
+        bg: s.step === key ? "#ecdfc8" : "transparent",
+        color: s.step === key ? "#66304e" : "#3a1f2e",
+        numColor: s.step === key ? "#66304e" : "#b0a3a9",
+        go: () => this.go(key)
+      })),
+      reset: () => this.setState({ ...BASE }),
+
+      isNudge: s.step === "nudge",
+      isQ1: s.step === "q1",
+      isQ2: s.step === "q2",
+      isDraft: s.step === "draft",
+      isApproved: s.step === "approved",
+      isPrefs: s.step === "prefs",
+      isOnboard: s.step === "onboard",
+
+      nudgeOpen: s.nudge === "open",
+      nudgeGone: s.nudge === "gone",
+      dismissNudge: () => this.setState({ nudge: "gone" }),
+      startFlow: () => this.go("q1"),
+      backToday: () => this.go("nudge"),
+      toQ1: () => this.go("q1"),
+      toQ2: () => this.go("q2"),
+      build: () => { this.go("draft"); this.flash("Here’s your draft — nothing bought yet."); },
+      q1Cta: tagged ? "Next — " + tagged + " nights noted" : "Next — every night is a regular one",
+
+      days,
+      lunchDays,
+      lunchAny: s.lunches.length > 0,
+      lunchEffect: "keep those " + s.lunches.length + " to things that travel cold, and plan the rest as hot lunches at home.",
+
+      moods: MOODS.map(m => {
+        const isOn = s.moods.includes(m);
+        return { label: m, ...chip(isOn), toggle: () => this.setState({ moods: isOn ? s.moods.filter(x => x !== m) : [...s.moods, m] }) };
+      }),
+      cuisines: CUISINES.map(c => {
+        const isOn = s.cuisines.includes(c);
+        return { label: c, ...chip(isOn), toggle: () => this.setState({ cuisines: isOn ? s.cuisines.filter(x => x !== c) : [...s.cuisines, c] }) };
+      }),
+      decided: s.decided,
+      onDecided: (e) => this.setState({ decided: e.target.value }),
+
+      week,
+      weekDots: this.buildWeek().map((d, i) => ({
+        letter: d.label.split(" ")[0].slice(0, 1),
+        weight: 700,
+        ink: d.slots.some(sl => sl.gap) ? "#c0431e" : "#8a7a82",
+        dots: d.slots.map(sl => ({
+          bg: sl.gap ? "#e8a33a" : sl.muted ? "#e6dcc8" : sl.slot === "Dinner" ? "#c0431e" : sl.slot === "Lunch" ? "#7a8a4a" : "#d8bb8e"
+        }))
+      })),
+      headline: s.gap
+        ? "Your week, built around tee-ball Tuesday, pizza Friday and six at the table Saturday."
+        : "Your week’s here — there’s one night I’d like your call on.",
+      groceryCount: 22,
+      approveLabel: s.gap ? "Approve the week" : "Approve — leave Wednesday open",
+      approve: () => { this.go("approved"); this.flash("Approved. I’ll get your list together."); },
+      goPrefs: () => this.go("prefs"),
+      backApproved: () => this.go("approved"),
+
+      counts: Object.keys(s.counts).map(k => ({
+        label: k, n: s.counts[k],
+        inc: () => this.setState({ counts: { ...s.counts, [k]: Math.min(7, s.counts[k] + 1) } }),
+        dec: () => this.setState({ counts: { ...s.counts, [k]: Math.max(0, s.counts[k] - 1) } })
+      })),
+      savedPrefs: [
+        ["Won’t eat", "Olives, blue cheese, anything with fennel"],
+        ["Protein", "Chicken twice, fish once, red meat rarely"],
+        ["On a weeknight", "Under 40 minutes"],
+        ["Cuisines", "Thai, Indian, Italian, Mexican, Greek, Japanese"],
+        ["Repeats", "One repeat a week is fine"],
+        ["Your kitchen", "Slow cooker, air fryer"],
+        ["At the table", "Everyone eats the same thing"]
+      ].map(([label, value]) => ({
+        label, value,
+        edit: () => this.flash("Inline edit for “" + label + "” — not wired in this pass")
+      })),
+
+      onbDots: [0, 1, 2, 3, 4, 5].map(i => ({ bg: i <= 3 + s.onb ? "#66304e" : "#dcd0bb" })),
+      onbTitle: onb.title,
+      onbWhy: onb.why,
+      onbCta: onb.cta,
+      onbIsWeek: onb.key === "week",
+      onbIsKitchen: onb.key === "kitchen",
+      onbNext: () => {
+        if (s.onb < ONB.length - 1) this.setState({ onb: s.onb + 1 });
+        else { this.go("q1"); this.flash("Thank you — that’s plenty to start with."); }
+      },
+      typical: s.typical,
+      nextWeek: s.nextWeek,
+      onTypical: (e) => this.setState({ typical: e.target.value }),
+      onNext: (e) => this.setState({ nextWeek: e.target.value }),
+      typicalChips: ["One night is takeout", "Someone travels", "Kids eat early", "Weekends are slower"].map(label => ({
+        label,
+        add: () => this.setState({ typical: (s.typical ? s.typical.trim() + ". " : "") + label })
+      })),
+      kit: KIT.map(k => {
+        const isOn = s.kit.includes(k);
+        return { label: k, ...chip(isOn), toggle: () => this.setState({ kit: isOn ? s.kit.filter(x => x !== k) : [...s.kit, k] }) };
+      }),
+      repeats: REPEATS.map(r => {
+        const isOn = s.repeat === r.key;
+        return {
+          label: r.label,
+          bg: isOn ? "#66304e" : "#f6efe1",
+          fg: isOn ? "#fff" : "#3a1f2e",
+          border: isOn ? "#66304e" : "#e2d8c4",
+          pick: () => this.setState({ repeat: r.key })
+        };
+      }),
+
+      chatOpen: s.chatOpen,
+      openChat: () => this.setState({ chatOpen: true }),
+      closeChat: () => this.setState({ chatOpen: false }),
+      msgs,
+      chatChips: ["Too much chicken", "Wednesday should be leftovers", "Cut it to four dinners"].map(label => ({
+        label, send: () => reply(label)
+      })),
+      draft: s.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      onKey: (e) => { if (e.key === "Enter" && s.draft.trim()) reply(s.draft.trim()); },
+      send: () => { if (s.draft.trim()) reply(s.draft.trim()); },
+
+      toast: s.toast
+    };
+  }
+}
+
+</script>
+</body>
+</html>

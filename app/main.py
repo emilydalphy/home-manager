@@ -723,6 +723,251 @@ def week_menu(weekly_plan_id: int | None = None):
     return menu
 
 
+# ---------- Plan the Week (design_handoff_plan_the_week) ----------
+# Week-scoped routes, keyed by the week's Monday rather than by plan id,
+# per DATA_AND_API.md's endpoint table. A week is the thing the household
+# talks about ("Sep 1–7"); the plan id is an implementation detail the
+# screens shouldn't have to carry around.
+
+class WeekApproveRequest(BaseModel):
+    approved_by: str = ""
+
+
+class WeekIntakeRequest(BaseModel):
+    """
+    Whichever answers this screen collected. Every field is optional and
+    None means "not this screen's business" — Q1 sends nights, guests and
+    packed lunches; Q2 sends moods, cuisines and the freeform share. Each
+    saves a new intake revision without clobbering the other's half. See
+    tools.save_week_intake.
+    """
+    night_tags: dict | None = None
+    guest_counts: dict | None = None
+    packed_lunch_days: list | None = None
+    moods: list | None = None
+    cuisines: list | None = None
+    freeform: str | None = None
+    created_by: str = ""
+
+
+class WeekGenerateRequest(BaseModel):
+    intake_id: int | None = None
+    constraints_notes: str = ""
+
+
+def _plan_id_for_week(week_start: str) -> int:
+    """
+    Resolve a week's Monday to its weekly_plans row id, 404ing if that week
+    has no plan. Kept here rather than in each route so every week-scoped
+    endpoint fails the same way for the same reason.
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    plan_id = tools.get_plan_id_for_week(week_start)
+    if plan_id is None:
+        raise HTTPException(status_code=404, detail=f"No plan for the week of {week_start}.")
+    return plan_id
+
+
+class MealPlanningPreferenceRequest(BaseModel):
+    """One field at a time — the setup screen saves each control as it's
+    touched, so nothing is lost by leaving the page."""
+    field: str
+    value: object
+
+
+@app.get("/api/preferences/meal-planning")
+def meal_planning_preferences():
+    """Everything the revisitable setup screen shows and can edit."""
+    try:
+        return tools.get_meal_planning_preferences()
+    except Exception as e:
+        logger.exception("Meal planning preference lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.patch("/api/preferences/meal-planning")
+def update_meal_planning_preferences(req: MealPlanningPreferenceRequest):
+    """
+    Change one preference. Routed through tools.edit_preference, the same
+    entry point chat uses, so a change made on this screen and a change made
+    by talking to the assistant are the same write with the same validation
+    and the same preference-event log line.
+    """
+    try:
+        tools.edit_preference(req.field, req.value)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Meal planning preference update failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return tools.get_meal_planning_preferences()
+
+
+@app.get("/api/week/plan-nudge")
+def week_plan_nudge():
+    """
+    Whether to offer to plan a week on Today, and which one. Dismissing it
+    goes through the existing /api/notifications/dismiss with the returned
+    dismiss_key — the key is the week itself, so "I won't ask again this
+    week" is literally true and next week's offer isn't silenced with it.
+    """
+    try:
+        return tools.get_week_planning_nudge()
+    except Exception as e:
+        logger.exception("Week planning nudge lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/week/{week_start}/intake")
+def week_intake_prefill(week_start: str):
+    """
+    Everything the two question screens need to open already knowing what
+    the app knows: each day's hint from What We Know and observed history,
+    the household's own saved cuisines, its composition for the guest
+    maths, and any intake already in flight for this week (so the second
+    adult to start joins the first one's answers instead of a blank set).
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    try:
+        return tools.get_week_intake_prefill(week_start)
+    except Exception as e:
+        logger.exception("Week intake prefill failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/intake")
+def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
+    """
+    Save the household's answers as a NEW intake revision. Append-only —
+    see tools.save_week_intake for why nothing is ever updated in place.
+    """
+    try:
+        return tools.save_week_intake(
+            week_start,
+            night_tags=req.night_tags,
+            guest_counts=req.guest_counts,
+            packed_lunch_days=req.packed_lunch_days,
+            moods=req.moods,
+            cuisines=req.cuisines,
+            freeform=req.freeform,
+            created_by=req.created_by,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Week intake save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/generate")
+def generate_week(week_start: str, req: WeekGenerateRequest):
+    """
+    Draft a week from the household's answers. Adds NOTHING to the grocery
+    list — a draft is not a yes; approving is (see approve_week).
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    try:
+        plan = generate_weekly_plan(
+            week_start,
+            constraints_notes=req.constraints_notes,
+            intake_id=req.intake_id,
+        )
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Week generation failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return plan
+
+
+class WeekSlotRequest(BaseModel):
+    date: str
+    slot: str = "dinner"
+    choice: str
+
+
+@app.post("/api/week/{week_start}/slot")
+def resolve_week_slot(week_start: str, req: WeekSlotRequest):
+    """
+    Settle one slot — an open night the app handed back, or a swap. In a
+    draft this leaves the shopping list alone; in an approved week it keeps
+    the list in step, same rule as a swap.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    if req.slot not in tools.WEEK_SLOTS:
+        raise HTTPException(status_code=400, detail=f"slot must be one of {', '.join(tools.WEEK_SLOTS)}.")
+    try:
+        return tools.resolve_open_slot(plan_id, req.date, req.slot, req.choice)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Slot resolution failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/reopen")
+def reopen_week(week_start: str):
+    """
+    Reopen an approved week for editing (DECISIONS.md #2). Never removes
+    anything from the shopping list — re-approving only adds what's new.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.reopen_weekly_plan(plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Week reopen failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/approve")
+def approve_week(week_start: str, req: WeekApproveRequest):
+    """
+    Approve a week — the button that IS the yes. Approval is what builds
+    the grocery list (tools.approve_weekly_plan); nothing reaches that list
+    before it.
+
+    The two counts describe THIS WEEK'S RECEIPT, not what this particular
+    request did: how many items the approval put on the shopping list, and
+    how many it left off as already in the household's kitchen. On a
+    re-approval (which adds nothing — see approve_weekly_plan's guards)
+    they are still the original approval's numbers, because that is what
+    the receipt on screen says and it should not reset to zero just
+    because someone tapped again. `was_already_approved` is the field that
+    says whether this call actually did anything.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        result = tools.approve_weekly_plan(plan_id, approved_by=req.approved_by)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Week approval failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {
+        "week_start": week_start,
+        "weekly_plan_id": result["weekly_plan_id"],
+        "status": result["status"],
+        "approved_by": result["approved_by"],
+        "approved_at": result["approved_at"],
+        "was_already_approved": result["was_already_approved"],
+        "groceries_added": result["groceries_added_count"],
+        "already_have_skipped": result["already_have_skipped_count"],
+    }
+
+
 @app.get("/api/reset/preview")
 def reset_preview():
     """
@@ -1700,6 +1945,27 @@ def cooker_page():
 @app.get("/onboarding")
 def onboarding_page():
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
+
+
+@app.get("/plan-week")
+def plan_week_page():
+    """
+    The two question screens (design_handoff_plan_the_week). A standalone
+    page rather than a tab in the shell, for the same reason /onboarding is
+    one: a focused sequence with a beginning and an end, which tab chrome
+    would only invite leaving half-answered. Takes ?week=<Monday>.
+    """
+    return FileResponse(os.path.join(static_dir, "plan-week.html"))
+
+
+@app.get("/meal-setup")
+def meal_setup_page():
+    """
+    The revisitable meal-planning setup (design_handoff_plan_the_week §7).
+    Everything onboarding asked, editable afterwards without going through
+    chat — plus an embedded chat for the things a stepper can't express.
+    """
+    return FileResponse(os.path.join(static_dir, "meal-setup.html"))
 
 
 @app.get("/memory")

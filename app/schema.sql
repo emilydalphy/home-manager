@@ -66,6 +66,28 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     breakfasts_per_week INTEGER NOT NULL DEFAULT 7,
     lunches_per_week INTEGER NOT NULL DEFAULT 7,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
+    -- design_handoff_plan_the_week. The settings the revisitable setup
+    -- screen owns and the two onboarding steps collect. They are separate
+    -- columns rather than notes text because generation reads them as
+    -- constraints, and because week_intake.preferences_snapshot_json has to
+    -- capture them as structured values.
+    --
+    -- What the household has to cook with. The highest-value question the
+    -- app wasn't asking: it prevents impossible suggestions outright.
+    kitchen_kit_json TEXT NOT NULL DEFAULT '[]', -- ["slow_cooker", "air_fryer"]
+    -- How they feel about eating the same thing twice. This single answer
+    -- changes the structure of every week the app builds — whether it cooks
+    -- once and stretches it, or gives seven different dinners.
+    repeats_tolerance TEXT NOT NULL DEFAULT '', -- cook_once_eat_twice | one_a_week | all_different
+    -- A real number of minutes, distinct from cooking_time_preference's
+    -- freeform "quick"/"moderate". 0 means unset — no cap.
+    weeknight_max_minutes INTEGER NOT NULL DEFAULT 0,
+    -- Whether everyone eats the same thing, or plates differ.
+    table_style TEXT NOT NULL DEFAULT '', -- everyone_same | kids_differ | plate_your_own
+    -- Onboarding step A, both free text and both skippable. Kept verbatim:
+    -- "a week I understand needs almost no correcting later."
+    typical_week TEXT NOT NULL DEFAULT '',
+    next_week_notes TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -158,6 +180,73 @@ CREATE TABLE IF NOT EXISTS recipe_notes (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- design_handoff_plan_the_week/DATA_MODEL.md: the ANSWERS a week was built
+-- from, as a first-class object rather than as chat history. Three things
+-- become impossible to add later if this isn't stored with provenance:
+-- "Try again" (regenerate from the same answers), "why did it plan that?",
+-- and any learning from what the household actually cooked.
+--
+-- APPEND-ONLY. A row is never updated in place. Redo, or any chat
+-- instruction that changes an *answer* ("cut it to four dinners", "actually
+-- Wednesday should be leftovers"), copies the current revision, applies the
+-- change, and inserts it as revision+1, stamping superseded_at on the old
+-- one. The current intake for a week is the highest revision with
+-- superseded_at IS NULL. The trap this closes: if chat edited only the plan
+-- and not the intake, regenerating would silently revert everything the
+-- household just said in chat.
+--
+-- Rule of thumb for whether something is a new revision: would this answer
+-- have changed if they'd said it during the questions? Instructions that
+-- only affect one slot ("swap Thursday") change the plan, not the intake.
+CREATE TABLE IF NOT EXISTS week_intake (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    week_start TEXT NOT NULL,       -- ISO date, the Monday of the target week
+    revision INTEGER NOT NULL DEFAULT 1,
+    created_by TEXT NOT NULL DEFAULT '', -- adult's name, same convention as weekly_plans.approved_by
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    superseded_at TEXT,             -- null while this is the current revision
+
+    -- Q1. Keyed by ISO DATE, never by weekday ("2026-09-02", not "Tue") —
+    -- weekday keys break the moment you plan two weeks, look at history, or
+    -- cross a month boundary.
+    night_tags_json TEXT NOT NULL DEFAULT '{}',        -- {"2026-09-02": ["rush"]}
+    -- Stores the EXTRAS the guest steppers collect; the base household is in
+    -- household_snapshot. Portions need the total, and household composition
+    -- changes (a child ages, someone moves in), so the total has to be
+    -- reconstructible from what was true that week rather than from today's
+    -- What We Know.
+    guest_counts_json TEXT NOT NULL DEFAULT '{}',      -- {"2026-09-06": {"adults": 2, "children": 0}}
+    packed_lunch_days_json TEXT NOT NULL DEFAULT '[]', -- ["2026-09-01"]
+
+    -- Q2.
+    moods_json TEXT NOT NULL DEFAULT '[]',
+    cuisines_json TEXT NOT NULL DEFAULT '[]',
+    -- Stored verbatim and never parsed destructively. Whatever the model
+    -- extracts from it goes in the slots' derived_from; the household's own
+    -- words survive.
+    freeform TEXT NOT NULL DEFAULT '',
+
+    household_snapshot_json TEXT NOT NULL DEFAULT '{}', -- {"adults": 2, "children": 2}
+    -- A COPY, not a reference. This is the one people skip and regret: if a
+    -- plan only points at live preferences, then the day someone edits
+    -- "won't eat", every past plan's reasoning becomes unreadable and
+    -- unreproducible — you can no longer tell whether a strange choice was a
+    -- bug or a preference that has since changed.
+    preferences_snapshot_json TEXT NOT NULL DEFAULT '{}'
+);
+
+-- UNIQUE, not just an index. save_week_intake reads the current revision,
+-- then supersedes it and inserts revision+1 — three statements with no lock
+-- between them. Two adults saving at the same moment (the exact case
+-- DATA_MODEL.md says will actually happen, on a Sunday evening) both read
+-- revision 1 and both write revision 2, leaving two live rows and silently
+-- losing one adult's answers. This constraint turns that into a failed
+-- insert, which save_week_intake retries — a lost answer becomes a slower
+-- save instead of a wrong week.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_week_intake_revision
+    ON week_intake (household_id, week_start, revision);
+
 -- A single-pass generated week of meals, reviewable/editable as one artifact
 -- rather than living implicitly in chat history. The Eater share link (later
 -- phase) always points at whichever plan is most recent for the household.
@@ -176,6 +265,32 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- later (e.g. "earliest plan row"), so it stays correct through
     -- backfills, edits, or re-onboarding. Powers the first-run intro banner.
     is_first_plan INTEGER NOT NULL DEFAULT 0,
+    -- design_handoff_plan_the_week: who said yes to this week, and when.
+    -- Approval is what builds the grocery list (see approve_weekly_plan),
+    -- so these two are the receipt the Meals screen renders — "APPROVED BY
+    -- EMILY · 9:41AM" — and the record of which adult carried it. Stored as
+    -- a NAME, not a members.id FK, to match how the rest of this app
+    -- attributes adult actions (grocery_items.added_by, removed_by): there
+    -- is no per-person login, just the lightweight adult picker from
+    -- get_household_people, so a name is the only identity that actually
+    -- exists at this layer. Blank/null until approved.
+    approved_by TEXT NOT NULL DEFAULT '',
+    approved_at TEXT,
+    -- What that approval actually did to the shopping list, captured at the
+    -- moment it happened. The receipt ("I've put 22 items on your shopping
+    -- list — 6 were already in your kitchen, so I left those off") has to
+    -- survive a page reload, and neither number is recoverable afterwards:
+    -- the added count blurs as the household edits the list, and nothing
+    -- anywhere records which ingredients were skipped for already being in
+    -- the kitchen. Two integers is cheaper than a receipt that quietly
+    -- starts lying a day later.
+    approved_grocery_added INTEGER NOT NULL DEFAULT 0,
+    approved_grocery_skipped INTEGER NOT NULL DEFAULT 0,
+    -- Which week_intake revision this plan was generated from, so "the week
+    -- you had before you redid it" stays recoverable and "why did it plan
+    -- that?" stays answerable. Null for plans made before the intake flow
+    -- existed, and for anything planned meal-by-meal outside it.
+    intake_id INTEGER REFERENCES week_intake(id),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -214,6 +329,36 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- planned before this was tracked, or added one-off via plan_meal
     -- without a reasoning argument.
     reasoning TEXT NOT NULL DEFAULT '',
+    -- design_handoff_plan_the_week/DATA_MODEL.md → Open slots. A slot is
+    -- NEVER absent. It is exactly one of three states, and slot_state is
+    -- what says which, so "planned nothing" and "forgot to plan" can't be
+    -- confused for each other — a null-null slot is the silent-empty-slot
+    -- bug in stored form.
+    --   'planned'       recipe_id or freeform_meal is set. The normal case.
+    --   'planned_empty' nobody is home. Needs no decision and must NEVER be
+    --                   offered to the household as one — this is the only
+    --                   deliberately empty slot in a week.
+    --   'open'          open_reason holds a full sentence naming the
+    --                   CONSTRAINT that caused it, so the ask reads as
+    --                   diligence rather than failure.
+    -- Enforced in code (see tools._validate_slot_state) rather than as a
+    -- table CHECK: this column arrives by ALTER TABLE on existing
+    -- databases, and SQLite cannot add a table-level constraint that way.
+    slot_state TEXT NOT NULL DEFAULT 'planned',
+    open_reason TEXT NOT NULL DEFAULT '',
+    -- Which inputs produced this slot. Nearly free to record at generation
+    -- time and impossible to backfill. Three payoffs, in the order you'll
+    -- want them: the per-slot "why" line is generated from this rather than
+    -- improvised (so it can't contradict the actual reason); a wrong plan
+    -- can be traced to the input that caused it — a bad tag, a stale
+    -- preference, or the model; and later, cross-referencing against what
+    -- was actually cooked ("every rush night you didn't cook" is a finding
+    -- you can only get if the tags are attached to the slots).
+    --   {"tags": ["rush"], "constraint": "max_minutes:20",
+    --    "inputs": ["cuisines:thai", "mood:comfort_food"],
+    --    "freeform": "I want to use the lamb in the freezer",
+    --    "inventory": ["lamb_shoulder"], "links_to": "entry_id:8842"}
+    derived_from_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

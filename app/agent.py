@@ -103,16 +103,47 @@ SYSTEM_PROMPT = """You are a helpful home manager assistant for a household — 
 presence that makes the day feel a little lighter, not another thing to manage. You manage \
 the cleaning/maintenance chore schedule, meal planning, and the grocery list.
 
-Tone & personality: warm, cheery, and genuinely positive — someone people are glad to check in \
-with, not a neutral utility. Default to an upbeat, encouraging register ("Got it, adding those \
-now!" beats "Added."), and let a little personality show (a light "nice choice" on a good meal \
-pick, real enthusiasm when a chore streak or a full pantry is worth celebrating) without ever \
-tipping into forced or over-the-top. At the same time, stay clear and concise, no fluff: short \
-sentences, no padding, no repeating information back at length, no hedging filler ("I think \
-maybe possibly..."). Warmth is in the word choice and energy, not in length — a cheerful reply \
-can still be one line. When something's gone wrong or needs the user's attention (a failed \
-save, a conflict, an allergy risk), stay direct and clear first — reassuring tone should never \
-soften or bury something that actually needs their attention.
+VOICE — read this before writing any reply. Your words sit directly beside the app's own copy \
+on every screen, and there must be no seam between the two.
+
+The stance: you are in the household's service. Not a peer, not a chatbot with a personality, \
+not a coach. The closest human model is a very good private chef or house manager: it knows \
+the household well, it does the work, it asks when a decision is genuinely the client's to \
+make, and it never makes them feel managed.
+
+Five rules:
+1. Offer, don't instruct. "Shall I put Sep 1-7 together for you?" — not "Plan your week." \
+"I'd like your call on this one" — not "Action needed."
+2. First person singular, and you do the work. "I'll keep it under 20 minutes." "I've put 22 \
+items on your list." You carry the load; the household decides.
+3. Every question states what it buys them, before they answer it. Never a bare field.
+4. Every answer is acknowledged with its consequence. That's how personalisation becomes \
+visible rather than claimed.
+5. Deference without servility. "Of course. It'll be waiting under Meals." Never apologetic, \
+never eager, never cute. No exclamation marks. No "Oops."
+   This holds hardest exactly where it's tempting to break it: when the household tells you \
+you've got something wrong. Do NOT open with "You're right, my apologies" or "Sorry about \
+that" — take the correction and act on it. "Noted — fish is off for good, and I've taken it \
+out of Wednesday and Saturday." Apologising invites them to reassure you, which puts the work \
+back on them; a good house manager simply fixes it and says what changed.
+
+Words to avoid: should, need to, don't forget, let's, oops, great!, you haven't yet, action \
+required. Words that work: shall I, I'd suggest, if you'd like, I'll leave that to you, noted, \
+of course.
+
+Instead of "Plan your week" -> "Shall I put next week together for you?". Instead of "No \
+dinner set for Wednesday" -> "Wednesday I'd rather ask than guess". Instead of "Grocery list \
+updated" -> "I've put 22 items on your list — six were already in your kitchen, so I left \
+those off". Instead of "Dismissed" -> "Of course. It'll be waiting under Meals — I won't ask \
+again this week". Instead of "Tell me anything" -> "The more you tell me, the less you'll \
+swap". Instead of "Preferences saved" -> "Noted — I'll start from that next week too".
+
+Length: one line above the plan, no recap. "Your week's here — there's one night I'd like your \
+call on." Detail lives in per-slot reasons of 4-9 words, not in prose. Never list what you \
+did. Stay clear and concise throughout: short sentences, no padding, no repeating information \
+back at length, no hedging filler ("I think maybe possibly..."). When something has gone wrong \
+or genuinely needs their attention (a failed save, a conflict, an allergy risk), say it \
+plainly and first — deference must never soften or bury it.
 
 Formatting a week of meals: when summarizing several days at once (a "week at a glance," a \
 weekly plan overview), format it as a markdown table — Day | Breakfast | Lunch | Dinner (add a \
@@ -169,23 +200,25 @@ add_chore.
 schedule, then show them what's on deck for the next couple weeks.
 - If onboarding_complete is true, skip straight to helping with whatever they asked.
 
-Meal planning onboarding (do this the first time meal planning, recipes, or groceries come \
-up in a conversation — check silently):
-- Call get_meal_planning_setup_status. If onboarding_complete is false, ask a couple of \
-questions before diving in:
-  1. Any dietary restrictions or allergies, per person? Use set_member_dietary_restrictions \
-for each household member with replace=true (an empty list is a fine answer) — this is their \
-complete list as of right now, including on a redo of onboarding, so anything not mentioned \
-should be dropped rather than merged with stale entries.
-  2. Protein preferences — how often they want each protein (chicken, beef, pork, fish, \
-plant-based, eggs), e.g. 'several times a week', '1-2 times a week', 'occasionally', 'rarely', \
-'avoid' — preference, health, and budget can all factor in. Favorite cuisines and typical \
-cooking time too — save with set_household_meal_preferences \
-(protein_preferences, cuisine_preferences, cooking_time_preference, notes for anything else). \
-Call it even if answers are brief — it marks onboarding complete.
-- If onboarding_complete is true, skip straight to helping with whatever they asked.
+Meal planning setup — you no longer conduct this as an interview. The onboarding wizard and \
+the two question screens own it, and the setup screen at /meal-setup lets any of it be \
+changed afterwards. There used to be a conversational duplicate of those questions here; two \
+paths asking the same things could only contradict each other, and the flow can no longer be \
+skipped into. So:
+- Do NOT walk someone through dietary restrictions, protein preferences, cuisines and cooking \
+time as a series of questions. If get_meal_planning_setup_status shows onboarding_complete is \
+false, help with what they actually asked, and point them at the setup screen once — "there's \
+a screen where you can set all of this at once, if you'd rather" — rather than starting an \
+interview they didn't ask for.
 - Use saved dietary restrictions and preferences to inform meal suggestions and recipe tags \
 going forward, without re-asking every time.
+- You still own everything the screens can't express: recipe choice, the per-slot reasons, \
+the explanation for a slot left open, and anything typed to you in chat.
+- When someone tells you something in chat that WOULD HAVE CHANGED an answer on those question \
+screens ("cut it to four dinners", "actually Wednesday should be leftovers"), save it as a \
+preference or a new week intake, not just as a change to the plan in front of you. Otherwise \
+regenerating the week silently reverts what they just said. Changing one slot ("swap \
+Thursday") is a plan change, not an answer change.
 
 Remembering preferences said in passing (important — do this every time, not just onboarding):
 - If the user mentions liking, disliking, or wanting to avoid a specific food or ingredient \
@@ -249,11 +282,24 @@ saved recipe detail, ask in chat" — the user gave you the idea once and should
 again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
+- Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
+  * 'planned' — a real meal. Normal.
+  * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
+night, or the household asked for none of that meal). This needs no decision and you must \
+NEVER offer it as one. Do not ask whether to fill it, do not call it a gap, do not describe \
+the week as incomplete because of it. If it comes up at all, state it the way the plan does: \
+"you're out Friday, so I've planned nothing and bought nothing for it."
+  * 'open' — a decision genuinely handed back, and open_reason names the constraint that \
+caused it. This one IS worth raising, and the household answers it on the Meals screen or by \
+telling you.
+  A slot with no entry at all is a real gap and worth mentioning. A planned_empty one is not.
 - A freshly generated week is a DRAFT, and none of its ingredients are on the grocery list \
-yet. So when you present a new plan, close by offering to approve it (e.g. "happy with this? \
-I'll approve it and get the shopping list ready") — there is no approve button on any screen, \
-this chat is the only place the household can say yes. On a yes: run check_plan_conflicts, then \
-approve_weekly_plan, then tell them what went onto the grocery list.
+yet. Never say or imply otherwise — the list is not updated, and will not be, until the week \
+is approved. There IS an "Approve the week" button on the Meals screen now, so approval no \
+longer depends on you remembering to offer it: when you present a new plan, point at it \
+("it's under Meals whenever you'd like to approve it — nothing gets bought until you do") \
+rather than making the offer the only way through. If they say yes to you directly, run \
+check_plan_conflicts, then approve_weekly_plan, then say what went onto the list.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
 this week?"/"what's my meal plan?" rather than relying on get_meal_plan's flatter list when a \
 generated plan exists. Its week_start_date can legitimately belong to a different week than \
@@ -1456,8 +1502,41 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                     "properties": {
                         "date": {"type": "string", "description": "ISO date, e.g. 2026-08-10."},
                         "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
-                        "meal_name": {"type": "string", "description": "Recipe name, existing or new."},
+                        "meal_name": {"type": "string", "description": "Recipe name, existing or new. Leave blank ONLY when slot_state is 'open'."},
                         "is_new_recipe": {"type": "boolean"},
+                        "slot_state": {
+                            "type": "string",
+                            "enum": ["planned", "open"],
+                            "description": "'planned' (the normal case — you chose a meal) or 'open' (you genuinely could not choose one without guessing, and are handing the decision back). Defaults to 'planned'. Do NOT use 'open' for a night the household is out; those slots are handled outside this call and must never be offered as a decision.",
+                        },
+                        "open_reason": {
+                            "type": "string",
+                            "description": "Required when slot_state is 'open'. A full sentence naming the CONSTRAINT that caused it, so the ask reads as diligence rather than failure — e.g. \"Wednesday I'd rather ask than guess: after Monday's chili, everything I have under 20 minutes repeats something you've just eaten.\" Never an apology, never 'I couldn't think of anything'.",
+                        },
+                        "open_options": {
+                            "type": "array",
+                            "description": "Only with slot_state 'open': two or three concrete answers the household can tap, each with its real time cost. The last one may be an honest 'Takeout, don't plan it'.",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {"type": "string", "description": "e.g. 'Breakfast for dinner'"},
+                                    "meta": {"type": "string", "description": "e.g. '12 min', '0 min', or '' for takeout."},
+                                },
+                                "required": ["label"],
+                            },
+                        },
+                        "derived_from": {
+                            "type": "object",
+                            "description": "Which inputs actually produced this slot. Record what genuinely drove it, not everything that was in context — this is what makes 'why did it plan that?' answerable later, and a wrong plan traceable to the input that caused it.",
+                            "properties": {
+                                "tags": {"type": "array", "items": {"type": "string"}, "description": "Night tags that applied to this day, e.g. ['rush']."},
+                                "constraint": {"type": "string", "description": "The BINDING constraint, if any, e.g. 'max_minutes:20', 'packed_lunch', 'guests:6'."},
+                                "inputs": {"type": "array", "items": {"type": "string"}, "description": "e.g. ['cuisines:thai', 'mood:comfort_food']."},
+                                "freeform": {"type": "string", "description": "The quoted span of the household's own words that drove this slot, if any."},
+                                "inventory": {"type": "array", "items": {"type": "string"}, "description": "Stock items this slot was chosen to use up."},
+                                "links_to": {"type": "string", "description": "For a leftovers night: the earlier date/slot whose batch this eats, e.g. '2026-09-02:dinner'."},
+                            },
+                        },
                         "ingredients": {
                             "type": "array",
                             "description": "Required if is_new_recipe is true; omit/empty for an existing saved recipe.",
@@ -1516,6 +1595,10 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     filtered from a fixed catalog, per the product's moat thesis.
     """
     client = _client()
+    # Named rather than inlined so the prompt, the "I'll..." acknowledgement
+    # copy and the draft screen's per-slot reasons can't drift to different
+    # numbers — see tools.RUSH_MAX_MINUTES.
+    rush_max = tools.RUSH_MAX_MINUTES
     prompt = f"""Household context (JSON):
 {json.dumps(context, indent=2)}
 
@@ -1523,7 +1606,15 @@ Generate a full week's menu (7 days unless day_count says otherwise) for this ho
 breakfast, lunch, dinner, AND a snack every day, not dinner alone, so the week reads as a real \
 day-by-day menu rather than just a dinner list. That means 4 separate entries per day (same \
 date, different slot), unless constraints_notes says otherwise (e.g. "just dinners this week" \
-means skip breakfast/lunch/snack entirely for the week — honor that exactly). Guidelines:
+means skip breakfast/lunch/snack entirely for the week — honor that exactly).
+
+THE ONE RULE THAT IS NOT NEGOTIABLE: every breakfast, lunch and dinner of every day must come \
+back with an entry — 21 entries minimum, before snacks. A slot you leave out is a bug, not a \
+plan: the household approves the WEEK, and a week with holes in it isn't approvable. If you \
+genuinely cannot choose a meal without guessing, send that slot with slot_state='open' and a \
+real reason — never send nothing. (Dinners on nights the household is out are the one \
+exception, and they are handled outside this call: `skip_dinner_dates` below lists them, and \
+you must not send an entry for those.) Guidelines:
 - Dinner gets full treatment same as always: a real, specific recipe with complete ingredients \
 and instructions. Breakfast, lunch, and snack should be genuinely real meals too, but \
 lower-effort by nature (a bowl of oatmeal, a sandwich, yogurt with fruit, hummus and veggies) — \
@@ -1558,14 +1649,67 @@ treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "r
 "avoid"≈1.) Weigh this alongside — not instead of — the variety rules above.
 - Honor any per-week constraints in constraints_notes exactly (e.g. "out Thursday/Friday" \
 means don't plan those days; "under 30 minutes on weeknights" means quick weeknight meals).
-- household_memory's dinners_per_week (1-7, default 7) is how many nights this household \
-actually wants a dinner planned — if it's less than 7, only plan dinner for that many days, \
-spread across the week rather than clustered (e.g. 4 means skip dinner entirely on the other \
-3 days — leave no dinner entry for those dates at all, don't plan a lighter one as a stand-in). \
-household_memory's breakfasts_per_week and lunches_per_week (1-7, default 7 each) work the \
-same way, independently, for those meals — each is its own count of days to plan that meal, \
-spread across the week rather than clustered, with no entry at all on the other days. Snack \
-isn't governed by any of these three numbers — plan snacks every day as usual regardless.
+- `intake` is the household's own answers to this week's two question screens, and it outranks \
+their standing preferences wherever the two disagree — standing preferences say what they'll \
+eat, the intake says what they want THIS week. Each night tag has exactly one consequence, and \
+you must actually deliver it, because the household was told what each one would do:
+  * `rush` on a date — that dinner is capped at {rush_max} MINUTES of prep+cook, hard. The \
+alternative the household was offered is equally good and often better: scale the PREVIOUS \
+night's dinner up and make this one eat its leftovers. Either satisfies the tag; a 45-minute \
+braise does not.
+  * `guests` on a date — scale that dinner's recipe and its ingredient quantities to the whole \
+table (`intake.guest_totals` gives the real number of adults and children for that date, \
+household plus extras), and if children are at the table, shift the choice toward something \
+they will actually eat. Both halves matter: portions AND the shopping.
+  * `left` on a date — plan NO new dinner for it. Instead, increase the previous night's batch \
+and set this date's meal to a leftovers entry naming what it's eating, with \
+derived_from.links_to pointing at that earlier date's dinner.
+  * `normal` on a date — an affirmed ordinary night. Not a constraint, but not noise either: \
+the household explicitly said this one is fine as-is, so don't get clever with it.
+  * `out` on a date — you will not see these; they're removed before you're asked.
+- `intake.packed_lunch_days` does NOT decide whether a lunch is planned. Every lunch is \
+planned either way. Those specific days are constrained to food that genuinely travels cold \
+and holds up till noon — no reheating, nothing that wilts or goes soggy in a bag. Say so in \
+that slot's reasoning.
+- household_memory's `kitchen_kit` is what this household actually owns to cook with. Only \
+suggest recipes their kitchen can make: no air-fryer recipe for a household without one, no \
+slow-cooker night if there's no slow cooker. If "no_dishwasher" is listed, keep an eye on how \
+many pans a weeknight dinner dirties. An empty list means unknown, not "nothing" — don't \
+constrain on it at all in that case.
+- household_memory's `repeats_tolerance` decides the SHAPE of the week, so honour it \
+structurally rather than as a preference: "cook_once_eat_twice" means deliberately build in \
+two or three cook-once-eat-twice pairs (a bigger batch one night, its leftovers the next); \
+"one_a_week" means exactly one such pair; "all_different" means seven distinct dinners and no \
+leftovers nights at all unless a night tag explicitly asks for one. Blank means unknown — use \
+your normal judgement.
+- household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
+dinners in prep+cook minutes. A `rush` tag overrides it downwards, never upwards.
+- `intake.moods` lean the week without making every night the same — a lean, not a theme. \
+`intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
+`intake.freeform` is their own words: honour it exactly, including anything they say they've \
+already decided on — plan that meal where they said, don't plan over it, and still include its \
+ingredients so they aren't short on the night.
+- When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
+night" and also tagged Friday as a night nobody is home — the TAG wins, and you must say so \
+rather than quietly working around it. Move the meal to the nearest sensible night and let that \
+slot's reasoning name what happened ("moved from Friday — you're out"), or leave it unplanned \
+and say why. What you must never do is put it on a different day and describe it as though it \
+were on the day they asked for: a slot whose reasoning says "Friday" while sitting on Sunday is \
+a plan that lies about itself, and the household loses the ability to trust any of the other \
+reasons.
+- Set `derived_from` on every entry: which tags applied, the binding constraint if there was \
+one, which mood/cuisine inputs drove it, the quoted span of their freeform text if that's what \
+drove it, and any inventory it was chosen to use up. Record what actually drove the choice, \
+not everything you were shown.
+- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week (0-7) are counts \
+of DISTINCT meals, not counts of days to plan. Every day still gets all three meals. "4 \
+breakfasts" means four different breakfast ideas spread across the seven mornings, repeating \
+as needed to fill the week — it does NOT mean three mornings with nothing. This is what the \
+setup screen promises the household in so many words: "I'd rather plan four things you cook \
+than seven you don't," and "one breakfast a week is a perfectly good answer" — one idea, eaten \
+all week, not one morning fed and six ignored. A count of 0 is handled outside this call; if \
+you see it, still plan that meal normally and it will be dealt with afterwards. Snack isn't \
+governed by any of these numbers.
 - household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
 specific list of foods someone says they should be eating) is a hard constraint, treated with \
 the exact same "without exception" rigor as a dietary restriction/allergy above — not a soft \
@@ -1668,6 +1812,20 @@ that are the advance prep (e.g. instructions = ["Preheat oven...", "Make marinad
 chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours ahead" should set \
 advance_prep_step_indices to [2]) — this lets the Cooker view show a clear "do ahead" vs "day of" \
 split instead of one flat numbered list. Leave it empty whenever advance_prep_notes is empty.
+
+- The per-slot `reasoning` line is read directly under the meal name on the draft screen, so \
+keep it to roughly 4-9 words — a phrase, not a sentence: "packs cold, no reheating needed", \
+"ten minutes, and the eggs are in", "after Monday's chili, something lighter". It must agree \
+with what you put in derived_from; the two are the same explanation, one short and one \
+structured.
+- Leaving a slot `open` is a real option, not a failure mode — but it is a LAST resort, and it \
+has to be earned. Use it only when every choice you can see would break something the \
+household told you (repeat a meal they just ate, blow a `rush` cap, ignore a dislike), so \
+choosing one would mean guessing at which rule they'd rather you broke. That's a decision \
+that is genuinely theirs. When you do: name the constraint that caused it in open_reason, and \
+offer two or three concrete answers in open_options with their real time costs. At most ONE \
+open slot in a week — two means you gave up, and a week full of questions isn't a plan. Never \
+use it for breakfast or lunch.
 
 Call submit_weekly_plan with the result."""
 
@@ -1870,7 +2028,49 @@ Call submit_component_plan with the result."""
     return []
 
 
-def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_count: int = 7) -> dict:
+def _intake_generation_context(intake: dict) -> dict:
+    """
+    Reshape a week_intake row into what the generator actually needs to
+    reason with. Two things are computed here rather than left to the model:
+
+    - `guest_totals` — the intake stores EXTRAS (what the steppers collect),
+      but portions need the whole table. Adding household_snapshot to the
+      extras here means the model is handed a real number of adults and
+      children per date instead of an arithmetic problem it can get wrong.
+    - `skip_dinner_dates` — `out` nights are removed from the model's job
+      entirely. A night nobody is home needs no decision, and the surest way
+      to stop it being offered as one is to never mention it.
+    """
+    household = intake.get("household_snapshot") or {}
+    base_adults = household.get("adults", 0)
+    base_children = household.get("children", 0)
+    night_tags = intake.get("night_tags") or {}
+
+    guest_totals = {}
+    for day, extras in (intake.get("guest_counts") or {}).items():
+        guest_totals[day] = {
+            "adults": base_adults + extras.get("adults", 0),
+            "children": base_children + extras.get("children", 0),
+        }
+    return {
+        "night_tags": {d: t for d, t in night_tags.items() if "out" not in t},
+        "skip_dinner_dates": sorted(d for d, t in night_tags.items() if "out" in t),
+        "guest_extras": intake.get("guest_counts") or {},
+        "guest_totals": guest_totals,
+        "packed_lunch_days": intake.get("packed_lunch_days") or [],
+        "moods": intake.get("moods") or [],
+        "cuisines": intake.get("cuisines") or [],
+        "freeform": intake.get("freeform") or "",
+        "household": household,
+    }
+
+
+def generate_weekly_plan(
+    week_start_date: str,
+    constraints_notes: str = "",
+    day_count: int = 7,
+    intake_id: int | None = None,
+) -> dict:
     """
     Generate and save a full week's meal plan in one pass: gathers current
     household memory, saved recipes, and recent meal history, asks Claude
@@ -1883,13 +2083,30 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
     instead of day-based if that's the household's current planning_mode
     (see set_planning_mode) — the caller doesn't need to know which mode
     is active, this handles both.
+
+    Pass intake_id to generate from a specific set of the household's
+    answers (design_handoff_plan_the_week). When omitted, the current
+    intake for that week is used if one exists — so a week planned through
+    the question screens and then re-generated from chat still respects
+    what the household said, rather than quietly reverting to a blank
+    slate. The plan records which intake revision produced it.
     """
     household_memory = tools.get_household_memory()
+    if intake_id is not None:
+        intake = next(
+            (i for i in tools.get_week_intake_history(week_start_date) if i["intake_id"] == intake_id),
+            None,
+        )
+        if intake is None:
+            raise ValueError(f"No week intake with id {intake_id} for the week of {week_start_date}.")
+    else:
+        intake = tools.get_week_intake(week_start_date)
     context = {
         "week_start_date": week_start_date,
         "day_count": day_count,
         "constraints_notes": constraints_notes,
         "household_memory": household_memory,
+        "intake": _intake_generation_context(intake) if intake else None,
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
         # here at the source rather than relying on a prompt instruction, so
         # they're never even a candidate for suggestion.
@@ -1980,6 +2197,23 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
             )
     else:
         for day in items:
+            slot = day.get("slot", "dinner")
+            meal_date = day.get("date")
+            if not meal_date:
+                continue
+            # A slot the model genuinely couldn't decide without guessing.
+            # Recorded as a real slot carrying the constraint that caused
+            # it, never as an absence — see tools.plan_slot_open.
+            if day.get("slot_state") == "open" and (day.get("open_reason") or "").strip():
+                tools.plan_slot_open(
+                    weekly_plan_id=plan_id,
+                    meal_date=meal_date,
+                    slot=slot,
+                    open_reason=day["open_reason"].strip(),
+                    options=day.get("open_options") or [],
+                    derived_from=day.get("derived_from") or {},
+                )
+                continue
             meal_name = day.get("meal_name")
             if not meal_name:
                 continue
@@ -1987,15 +2221,111 @@ def generate_weekly_plan(week_start_date: str, constraints_notes: str = "", day_
             # Draft — see the component branch above; approval is what puts
             # this week's ingredients on the grocery list.
             tools.plan_meal(
-                meal_date=day.get("date"),
+                meal_date=meal_date,
                 meal=meal_name,
-                slot=day.get("slot", "dinner"),
+                slot=slot,
                 food_groups=day.get("food_groups"),
                 weekly_plan_id=plan_id,
                 reasoning=day.get("reasoning", ""),
+                derived_from=day.get("derived_from") or {},
+            )
+        _finish_week_slots(plan_id, week_start_date, intake, household_memory, day_count)
+
+    if intake:
+        tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+    return tools.get_weekly_plan(plan_id)
+
+
+def _finish_week_slots(
+    plan_id: int, week_start_date: str, intake: dict | None,
+    household_memory: dict, day_count: int = 7,
+) -> None:
+    """
+    Make the 21-slot guarantee true rather than merely asked for.
+
+    The prompt tells the model every slot must come back; this is what
+    happens when it doesn't. "Week generation silently leaves random meal
+    slots empty" is a real reported bug, and its shape is precisely that
+    nothing downstream ever checked. Three passes, in order:
+
+    1. `out` nights become planned_empty dinners. These were deliberately
+       hidden from the model, so they have to be written here — and as
+       planned_empty, never as open: a night nobody is home needs no
+       decision and must never be offered as one.
+    2. A meal category the household asked for ZERO of becomes
+       planned_empty for the whole week. "None, thanks" is a valid answer
+       to the setup screen's stepper, and this is what honouring it looks
+       like in stored form. (A count above zero means DISTINCT meals, not
+       days — see the generation prompt — so it never empties a slot.)
+    3. Anything still missing is filled as an open slot naming what
+       actually happened. This is the honest failure mode: the household
+       sees a question rather than a blank, and the reason says plainly
+       that the app couldn't settle it rather than inventing a constraint
+       it didn't have.
+    """
+    dates = tools._week_dates(week_start_date)[:day_count]
+    night_tags = (intake or {}).get("night_tags") or {}
+    for day, tags in night_tags.items():
+        if "out" not in tags or day not in dates:
+            continue
+        # CLEAR FIRST. The model is told not to send a dinner for these
+        # nights, but being told is not the same as being prevented: if it
+        # sends one anyway, writing the empty row beside it leaves two
+        # entries for one slot, and approval buys ingredients for a night
+        # the household was promised nothing would be bought for. The tag
+        # wins over the model, and this is what makes that true rather than
+        # merely requested.
+        tools.clear_plan_slot(plan_id, day, "dinner")
+        tools.plan_slot_empty(
+            weekly_plan_id=plan_id,
+            meal_date=day,
+            slot="dinner",
+            reason="You’re out — I’ve planned nothing and bought nothing.",
+            derived_from={"tags": ["out"], "constraint": "nobody_home"},
+        )
+
+    zero_counts = {
+        "breakfast": household_memory.get("breakfasts_per_week"),
+        "lunch": household_memory.get("lunches_per_week"),
+        "dinner": household_memory.get("dinners_per_week"),
+    }
+    for slot, count in zero_counts.items():
+        if count != 0:
+            continue
+        for day in dates:
+            if slot == "dinner" and "out" in night_tags.get(day, []):
+                continue  # already written as an out night, above
+            # Same reason as the out nights: a household that asked for no
+            # breakfasts must not be sold breakfast ingredients because the
+            # model planned some anyway.
+            tools.clear_plan_slot(plan_id, day, slot)
+            tools.plan_slot_empty(
+                weekly_plan_id=plan_id,
+                meal_date=day,
+                slot=slot,
+                reason=f"You’ve asked me not to plan {slot}s — I’ve left this to you.",
+                derived_from={"constraint": f"{slot}s_per_week:0"},
             )
 
-    return tools.get_weekly_plan(plan_id)
+    audit = tools.audit_plan_slots(plan_id, day_count=day_count)
+    for gap in audit["missing"]:
+        day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
+        tools.plan_slot_open(
+            weekly_plan_id=plan_id,
+            meal_date=gap["date"],
+            slot=gap["slot"],
+            open_reason=(
+                f"{day_name} I’d rather ask than guess: I couldn’t settle this "
+                f"{gap['slot']} without guessing at what you’d want. What would you prefer?"
+            ),
+            derived_from={"constraint": "generation_gap"},
+        )
+    if audit["missing"]:
+        logger.warning(
+            "Week %s came back missing %d of %d slots; filled them as open questions: %s",
+            week_start_date, len(audit["missing"]), audit["expected"],
+            ", ".join(f"{g['date']} {g['slot']}" for g in audit["missing"]),
+        )
 
 
 _GENERATE_PREP_SCHEDULE_TOOL = {
