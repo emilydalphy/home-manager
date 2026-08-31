@@ -156,6 +156,71 @@ def test_a_nobody_home_night_is_planned_empty_and_never_asked_about(recipe, stub
     assert links == [], "nothing for an out night reaches the shopping list"
 
 
+def test_an_out_night_buys_nothing_even_when_the_model_plans_one_anyway(recipe, stub_model):
+    """
+    The failure the original test missed by stubbing the dinner out: the
+    model is TOLD not to send a dinner for a night nobody is home, but being
+    told is not being prevented. If it sends one, the deliberate empty row
+    must REPLACE it, not land beside it — otherwise the slot holds two
+    entries and approving buys ingredients for a night the household was
+    promised nothing would be bought for.
+    """
+    week = _week_start()
+    friday = tools._week_dates(week)[4]
+    intake = tools.save_week_intake(week, night_tags={friday: ["out"]})
+    # A disobedient model: a complete week INCLUDING the out night.
+    stub_model(_full_week(week))
+
+    plan = agent.generate_weekly_plan(week, intake_id=intake["intake_id"])
+    plan_id = plan["weekly_plan_id"]
+
+    audit = tools.audit_plan_slots(plan_id)
+    assert audit["duplicated"] == [], "one slot holds exactly one entry"
+    assert audit["complete"] is True
+
+    slot = _slots_for(plan_id)[(friday, "dinner")]
+    assert slot["slot_state"] == "planned_empty", "the tag wins over the model"
+
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    assert _grocery_links_for_date(plan_id, friday, "dinner") == [], \
+        "nothing is bought for a night nobody is home"
+
+
+def test_a_meal_count_of_zero_buys_nothing_even_when_the_model_plans_one(recipe, stub_model):
+    """Same rule, reached the other way: an explicit "none, thanks"."""
+    week = _week_start()
+    tools.edit_preference("breakfasts_per_week", 0)
+    stub_model(_full_week(week))
+
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+
+    assert tools.audit_plan_slots(plan_id)["duplicated"] == []
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    for day in tools._week_dates(week):
+        assert _grocery_links_for_date(plan_id, day, "breakfast") == []
+
+
+def test_a_short_week_does_not_invent_questions_about_days_nobody_asked_for(recipe, stub_model):
+    """
+    generate_weekly_plan takes day_count, and chat can ask for a short week.
+    Auditing five requested days against seven produced six spurious "what
+    would you prefer?" questions about a Saturday and Sunday nobody asked to
+    have planned.
+    """
+    week = _week_start()
+    five_days = tools._week_dates(week)[:5]
+    stub_model([d for d in _full_week(week) if d["date"] in five_days])
+
+    plan = agent.generate_weekly_plan(week, day_count=5)
+
+    slots = _slots_for(plan["weekly_plan_id"])
+    assert len(slots) == 15
+    assert not any(s["slot_state"] == "open" for s in slots.values()), \
+        "no questions about days that were never requested"
+    assert tools.audit_plan_slots(plan["weekly_plan_id"], day_count=5)["complete"] is True
+
+
 def test_a_rush_night_reaches_the_generator_as_a_real_cap(recipe, stub_model):
     """
     Whether the model then honours the cap is a prompt matter and can't be

@@ -14,6 +14,7 @@ import math
 import os
 import re
 import secrets
+import sqlite3  # for IntegrityError — see save_week_intake's retry loop
 from datetime import date, datetime, timedelta
 from .db import get_conn
 
@@ -1682,8 +1683,20 @@ def save_week_intake(
     was true when that answer was given.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
+    week_days = set(_week_dates(week_start))
     for day, tags in (night_tags or {}).items():
         date.fromisoformat(day)  # keyed by ISO date, never by weekday
+        # A tag on a date outside the week it's being saved for would
+        # produce a planned_empty entry stranded outside the seven days —
+        # visible nowhere, and impossible to clear from any screen.
+        if day not in week_days:
+            raise ValueError(f"{day} isn't in the week starting {week_start}.")
+        # A bare string here would iterate its characters and report
+        # "Unknown night tag(s): r, u, s, h"; a None would raise a TypeError
+        # and surface as a 500. Both are only reachable by hand-written API
+        # calls, and both should read as the client error they are.
+        if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
+            raise ValueError(f"Tags for {day} must be a list of tag names.")
         unknown = [t for t in tags if t not in NIGHT_TAGS]
         if unknown:
             raise ValueError(f"Unknown night tag(s): {', '.join(unknown)}.")
@@ -1693,50 +1706,68 @@ def save_week_intake(
         if "normal" in tags and len(tags) > 1:
             raise ValueError("'normal' is exclusive — a regular night can't also carry another tag.")
 
-    conn = get_conn()
-    current = _current_intake_row(conn, week_start)
-    base = _intake_row_to_dict(current) if current else {
-        "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
-        "moods": [], "cuisines": [], "freeform": "",
-    }
+    # Read-modify-write, retried. Two adults saving at the same moment both
+    # read the same current revision and both try to write revision+1; the
+    # UNIQUE index on (household_id, week_start, revision) makes the loser's
+    # insert fail rather than letting it land as a second live row with the
+    # first one's answers silently lost. Re-reading and retrying merges the
+    # loser's answers on top of the winner's — which is what "the second
+    # adult joins the first one's intake" has to mean when they arrive
+    # together rather than an hour apart.
+    for attempt in range(5):
+        conn = get_conn()
+        try:
+            current = _current_intake_row(conn, week_start)
+            base = _intake_row_to_dict(current) if current else {
+                "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
+                "moods": [], "cuisines": [], "freeform": "",
+            }
 
-    def pick(new, key):
-        return base[key] if new is None else new
+            def pick(new, key, _base=base):
+                return _base[key] if new is None else new
 
-    household_snapshot = _household_composition()
-    preferences_snapshot = _build_preferences_snapshot(conn)
-    revision = (current["revision"] + 1) if current else 1
-    if current:
-        conn.execute(
-            "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?", (current["id"],)
-        )
-    cursor = conn.execute(
-        """
-        INSERT INTO week_intake (
-            household_id, week_start, revision, created_by,
-            night_tags_json, guest_counts_json, packed_lunch_days_json,
-            moods_json, cuisines_json, freeform,
-            household_snapshot_json, preferences_snapshot_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            HOUSEHOLD_ID, week_start, revision,
-            (created_by or (current["created_by"] if current else "")).strip(),
-            json.dumps(pick(night_tags, "night_tags")),
-            json.dumps(pick(guest_counts, "guest_counts")),
-            json.dumps(pick(packed_lunch_days, "packed_lunch_days")),
-            json.dumps(pick(moods, "moods")),
-            json.dumps(pick(cuisines, "cuisines")),
-            pick(freeform, "freeform"),
-            json.dumps(household_snapshot),
-            json.dumps(preferences_snapshot),
-        ),
-    )
-    conn.commit()
-    intake_id = cursor.lastrowid
-    row = conn.execute("SELECT * FROM week_intake WHERE id = ?", (intake_id,)).fetchone()
-    conn.close()
-    return _intake_row_to_dict(row)
+            household_snapshot = _household_composition()
+            preferences_snapshot = _build_preferences_snapshot(conn)
+            revision = (current["revision"] + 1) if current else 1
+            if current:
+                conn.execute(
+                    "UPDATE week_intake SET superseded_at = datetime('now') WHERE id = ?",
+                    (current["id"],),
+                )
+            cursor = conn.execute(
+                """
+                INSERT INTO week_intake (
+                    household_id, week_start, revision, created_by,
+                    night_tags_json, guest_counts_json, packed_lunch_days_json,
+                    moods_json, cuisines_json, freeform,
+                    household_snapshot_json, preferences_snapshot_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    HOUSEHOLD_ID, week_start, revision,
+                    (created_by or (current["created_by"] if current else "")).strip(),
+                    json.dumps(pick(night_tags, "night_tags")),
+                    json.dumps(pick(guest_counts, "guest_counts")),
+                    json.dumps(pick(packed_lunch_days, "packed_lunch_days")),
+                    json.dumps(pick(moods, "moods")),
+                    json.dumps(pick(cuisines, "cuisines")),
+                    pick(freeform, "freeform"),
+                    json.dumps(household_snapshot),
+                    json.dumps(preferences_snapshot),
+                ),
+            )
+            conn.commit()
+            intake_id = cursor.lastrowid
+            row = conn.execute("SELECT * FROM week_intake WHERE id = ?", (intake_id,)).fetchone()
+            return _intake_row_to_dict(row)
+        except sqlite3.IntegrityError:
+            # Somebody took this revision number between our read and our
+            # write. Undo our supersede and start again from what they left.
+            conn.rollback()
+            if attempt == 4:
+                raise
+        finally:
+            conn.close()
 
 
 def _observed_day_patterns(week_start: str) -> dict:
@@ -1869,11 +1900,47 @@ def get_week_intake_prefill(week_start: str) -> dict:
         "intake": intake,
         "in_flight": in_flight,
         "plan_exists": bool(plan),
+        "plan_id": plan["id"] if plan else None,
         "plan_status": plan["status"] if plan else None,
     }
 
 
 WEEK_SLOTS = ("breakfast", "lunch", "dinner")
+
+
+def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
+    """
+    Remove whatever is currently occupying one slot of a plan, reversing any
+    grocery contribution it made first. Returns how many entries went.
+
+    Exists because a slot must hold exactly ONE entry. The generator can be
+    told not to plan a dinner for a night nobody is home and plan one
+    anyway; without clearing first, the deliberate `planned_empty` row lands
+    *beside* the model's meal rather than instead of it, and approval then
+    buys ingredients for a night the household was promised nothing would be
+    bought for. Which of the two rows a screen happens to show is incidental
+    — the shopping list is the part that isn't.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? "
+        "AND household_id = ? AND component_category IS NULL",
+        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+    ).fetchall()
+    conn.close()
+    for row in rows:
+        # Same care swap_meal_in_plan takes — anything this entry put on the
+        # list comes back off, and anything already in a cart is left alone.
+        _reverse_meal_grocery_contributions(row["id"])
+    if rows:
+        conn = get_conn()
+        conn.execute(
+            "DELETE FROM meal_plan_entries WHERE id IN (%s)" % ",".join("?" * len(rows)),
+            tuple(r["id"] for r in rows),
+        )
+        conn.commit()
+        conn.close()
+    return len(rows)
 
 
 def plan_slot_empty(
@@ -2130,6 +2197,16 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
         raise ValueError(f"No {slot} slot on {meal_date} in that plan.")
     if not (choice or "").strip():
         raise ValueError("A choice is needed to settle this slot.")
+    # A deliberately empty slot is not a question, and settling one would
+    # mean planning — and buying — for a night the household said they're
+    # out. The screens never offer it; this makes that true of the API too,
+    # rather than of the UI alone. Changing your mind about being out is a
+    # change to the week's ANSWERS, so it belongs in the questions, not here.
+    if row["slot_state"] == "planned_empty":
+        raise ValueError(
+            f"That {slot} is deliberately empty — nothing is planned or bought for it. "
+            "Change the night's answer if you're in after all."
+        )
 
     was_open = row["slot_state"] == "open"
     # Reverse anything the outgoing entry contributed before deleting it —
@@ -2208,17 +2285,26 @@ def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     return {"weekly_plan_id": weekly_plan_id, "intake_id": intake_id}
 
 
-def audit_plan_slots(weekly_plan_id: int) -> dict:
+def audit_plan_slots(weekly_plan_id: int, day_count: int = 7) -> dict:
     """
     Check a generated week against the one rule it can't be allowed to
-    break: every one of the 21 slots exists, and each is planned,
-    planned_empty, or open — never absent, and never a row carrying no
-    meal, no emptiness and no question.
+    break: every slot exists, and each is planned, planned_empty, or open —
+    never absent, and never a row carrying no meal, no emptiness and no
+    question.
 
     "Week generation silently leaves random meal slots empty" is a real
     reported bug, and its shape is exactly this: nothing anywhere asserted
     that a slot had to be there. Returns the offenders rather than raising,
     so the generator can fill them rather than fail the whole week over one.
+
+    `day_count` is how many days were actually asked for — normally 7, but
+    generate_weekly_plan takes it as a parameter and chat can ask for a
+    short week. Auditing a 5-day request against 7 days would invent
+    questions about Saturday and Sunday nobody asked to have planned.
+
+    Duplicates matter as much as gaps: two rows for one slot is how a night
+    nobody is home ends up with groceries bought for it. They're reported
+    separately from `missing` because they need the opposite fix.
     """
     conn = get_conn()
     plan = conn.execute(
@@ -2235,28 +2321,44 @@ def audit_plan_slots(weekly_plan_id: int) -> dict:
     ).fetchall()
     conn.close()
 
-    present = {(r["date"], r["slot"]) for r in rows}
+    dates = _week_dates(plan["week_start_date"])[:day_count]
+    # Only the three real meals, and only within the days actually asked
+    # for. Snacks ride along in the same table but aren't part of the
+    # guarantee, and counting them made `present` exceed `expected` and
+    # would have reported a duplicate snack as a broken week.
+    in_scope = set(dates)
+    seen: dict[tuple, int] = {}
+    for r in rows:
+        if r["slot"] not in WEEK_SLOTS or r["date"] not in in_scope:
+            continue
+        key = (r["date"], r["slot"])
+        seen[key] = seen.get(key, 0) + 1
     missing = [
         {"date": d, "slot": s}
-        for d in _week_dates(plan["week_start_date"])
+        for d in dates
         for s in WEEK_SLOTS
-        if (d, s) not in present
+        if (d, s) not in seen
+    ]
+    duplicated = [
+        {"date": d, "slot": s, "count": n} for (d, s), n in sorted(seen.items()) if n > 1
     ]
     # A row that claims to be planned but holds no meal, or claims to be
     # open but names no reason. Stored form of the same bug.
     hollow = [
         {"date": r["date"], "slot": r["slot"], "slot_state": r["slot_state"]}
         for r in rows
-        if (r["slot_state"] == "planned" and not (r["recipe_id"] or r["freeform_meal"]))
-        or (r["slot_state"] == "open" and not (r["open_reason"] or "").strip())
+        if r["slot"] in WEEK_SLOTS and r["date"] in in_scope
+        and ((r["slot_state"] == "planned" and not (r["recipe_id"] or r["freeform_meal"]))
+             or (r["slot_state"] == "open" and not (r["open_reason"] or "").strip()))
     ]
     return {
         "weekly_plan_id": weekly_plan_id,
-        "expected": len(_week_dates(plan["week_start_date"])) * len(WEEK_SLOTS),
-        "present": len(present),
+        "expected": len(dates) * len(WEEK_SLOTS),
+        "present": len(seen),
         "missing": missing,
+        "duplicated": duplicated,
         "hollow": hollow,
-        "complete": not missing and not hollow,
+        "complete": not missing and not hollow and not duplicated,
     }
 
 
@@ -2680,10 +2782,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # has been told the week is settled." Empty for a one-adult household,
     # which is what keeps that sentence from being written at all rather
     # than written about nobody.
+    #
+    # Also empty when nobody is recorded as having approved. An approval
+    # with no name raises no notification (see get_active_notifications #4,
+    # which requires one), so nobody WAS told — and every plan approved
+    # before this flow existed has a blank approved_by. Listing all the
+    # adults there would put a claim on screen that is simply untrue, to a
+    # reader who may be among those supposedly told.
+    approver = (plan["approved_by"] or "").strip()
     approval["other_adults"] = [
         p["name"] for p in get_household_people()
-        if p["name"].strip().lower() != (plan["approved_by"] or "").strip().lower()
-    ]
+        if p["name"].strip().lower() != approver.lower()
+    ] if approver else []
 
     slots = ("breakfast", "lunch", "dinner")
     start = date.fromisoformat(plan["week_start_date"])
@@ -2699,7 +2809,14 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             day = {"date": d}
             for s in slots:
                 title = row.get(s)
-                day[s] = {"title": title, "meta": None, "source": "plan"} if title else None
+                # `state` matters even here, where every slot is "planned"
+                # by construction: the Meals screen keys "Cook this" /
+                # "Swap it" and the dinner star off it, so omitting it made
+                # those disappear for component-based households.
+                day[s] = (
+                    {"title": title, "meta": None, "source": "plan", "state": "planned", "reason": None}
+                    if title else None
+                )
             if day["dinner"] is None and d >= today_str:
                 if suggestions is None:
                     suggestions = _suggest_quick_dinners()

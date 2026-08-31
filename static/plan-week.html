@@ -653,7 +653,11 @@
       });
       if (!res.ok) throw new Error('generate failed');
       await res.json();
-      location.href = '/week?drafted=1';
+      // Land on the week that was just drafted, by name. Without the week
+      // in the URL, Meals asks for "the current plan" and gets whichever
+      // week contains today — so planning NEXT week ended with the freshly
+      // drafted week invisible behind this one.
+      location.href = '/week?drafted=' + encodeURIComponent(weekStart);
     } catch (err) {
       console.warn('Plan-the-week step failed:', err);
       btn.disabled = false;

@@ -833,14 +833,28 @@
     panel.querySelector('#whole-week-row').addEventListener('click', function () { openWeekSheet(); });
     panel.querySelector('#week-reset-btn').addEventListener('click', function () { openResetDialog(); });
 
+    // /plan-week hands back with ?drafted=<Monday>. Without honouring it,
+    // Meals asks for "the current plan" and gets whichever week contains
+    // TODAY — so drafting next week ended with the week just built
+    // invisible behind this one, along with its headline and its Approve
+    // card. Same failure class as the "chat plans a week the tab doesn't
+    // show" bug in CLAUDE.md's decision log.
+    var drafted = new URLSearchParams(window.location.search).get('drafted');
+    if (drafted) weekState.showWeekStart = drafted;
+
     await loadWeekMenu(panel);
 
+    if (drafted) {
+      showToast('Here’s your week — change anything before you approve it.');
+    }
     // FIRST_RUN.md step 5: onboarding redirects here with ?firstplan=1
     // right after generating the household's first real week — land on
     // This Week (already the case) and show the arrival toast once, then
     // scrub the param so a refresh doesn't re-show it.
     if (window.location.search.indexOf('firstplan=1') !== -1) {
       showToast("Here's a first pass — change anything and I'll re-plan around it.");
+    }
+    if (drafted || window.location.search.indexOf('firstplan=1') !== -1) {
       var cleanUrl = window.location.pathname;
       window.history.replaceState({ tab: 'week' }, '', cleanUrl);
     }
@@ -848,13 +862,36 @@
 
   async function loadWeekMenu(panel) {
     try {
-      var res = await fetch('/api/week-menu');
+      // weekState.showWeekStart pins Meals to one specific week rather than
+      // "whichever contains today" — set when /plan-week hands back a week
+      // it just drafted. It survives reloads of the panel (a swap, an
+      // approval) so the household stays on the week they're working on.
+      var url = '/api/week-menu';
+      if (weekState.showWeekStart) {
+        var planId = await planIdForWeek(weekState.showWeekStart);
+        if (planId) url += '?weekly_plan_id=' + encodeURIComponent(planId);
+      }
+      var res = await fetch(url);
       if (!res.ok) throw new Error('week-menu lookup failed');
       var data = await res.json();
       renderWeekMenu(panel, data);
     } catch (err) {
       console.warn('Week menu lookup failed:', err);
       panel.querySelector('#week-header').innerHTML = '<div class="menu-loading">Couldn\'t load your menu right now.</div>';
+    }
+  }
+
+  async function planIdForWeek(weekStart) {
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake');
+      if (!res.ok) return null;
+      var prefill = await res.json();
+      return prefill.plan_id || null;
+    } catch (err) {
+      // Falling back to "the current week" is a worse view, not a broken
+      // one — better than failing the whole panel over which week to show.
+      console.warn('Week lookup failed:', err);
+      return null;
     }
   }
 

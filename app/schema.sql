@@ -236,7 +236,15 @@ CREATE TABLE IF NOT EXISTS week_intake (
     preferences_snapshot_json TEXT NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_week_intake_current
+-- UNIQUE, not just an index. save_week_intake reads the current revision,
+-- then supersedes it and inserts revision+1 — three statements with no lock
+-- between them. Two adults saving at the same moment (the exact case
+-- DATA_MODEL.md says will actually happen, on a Sunday evening) both read
+-- revision 1 and both write revision 2, leaving two live rows and silently
+-- losing one adult's answers. This constraint turns that into a failed
+-- insert, which save_week_intake retries — a lost answer becomes a slower
+-- save instead of a wrong week.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_week_intake_revision
     ON week_intake (household_id, week_start, revision);
 
 -- A single-pass generated week of meals, reviewable/editable as one artifact

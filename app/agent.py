@@ -2229,14 +2229,17 @@ def generate_weekly_plan(
                 reasoning=day.get("reasoning", ""),
                 derived_from=day.get("derived_from") or {},
             )
-        _finish_week_slots(plan_id, week_start_date, intake, household_memory)
+        _finish_week_slots(plan_id, week_start_date, intake, household_memory, day_count)
 
     if intake:
         tools.attach_intake_to_plan(plan_id, intake["intake_id"])
     return tools.get_weekly_plan(plan_id)
 
 
-def _finish_week_slots(plan_id: int, week_start_date: str, intake: dict | None, household_memory: dict) -> None:
+def _finish_week_slots(
+    plan_id: int, week_start_date: str, intake: dict | None,
+    household_memory: dict, day_count: int = 7,
+) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
 
@@ -2260,16 +2263,26 @@ def _finish_week_slots(plan_id: int, week_start_date: str, intake: dict | None, 
        that the app couldn't settle it rather than inventing a constraint
        it didn't have.
     """
+    dates = tools._week_dates(week_start_date)[:day_count]
     night_tags = (intake or {}).get("night_tags") or {}
     for day, tags in night_tags.items():
-        if "out" in tags:
-            tools.plan_slot_empty(
-                weekly_plan_id=plan_id,
-                meal_date=day,
-                slot="dinner",
-                reason="You’re out — I’ve planned nothing and bought nothing.",
-                derived_from={"tags": ["out"], "constraint": "nobody_home"},
-            )
+        if "out" not in tags or day not in dates:
+            continue
+        # CLEAR FIRST. The model is told not to send a dinner for these
+        # nights, but being told is not the same as being prevented: if it
+        # sends one anyway, writing the empty row beside it leaves two
+        # entries for one slot, and approval buys ingredients for a night
+        # the household was promised nothing would be bought for. The tag
+        # wins over the model, and this is what makes that true rather than
+        # merely requested.
+        tools.clear_plan_slot(plan_id, day, "dinner")
+        tools.plan_slot_empty(
+            weekly_plan_id=plan_id,
+            meal_date=day,
+            slot="dinner",
+            reason="You’re out — I’ve planned nothing and bought nothing.",
+            derived_from={"tags": ["out"], "constraint": "nobody_home"},
+        )
 
     zero_counts = {
         "breakfast": household_memory.get("breakfasts_per_week"),
@@ -2279,9 +2292,13 @@ def _finish_week_slots(plan_id: int, week_start_date: str, intake: dict | None, 
     for slot, count in zero_counts.items():
         if count != 0:
             continue
-        for day in tools._week_dates(week_start_date):
+        for day in dates:
             if slot == "dinner" and "out" in night_tags.get(day, []):
                 continue  # already written as an out night, above
+            # Same reason as the out nights: a household that asked for no
+            # breakfasts must not be sold breakfast ingredients because the
+            # model planned some anyway.
+            tools.clear_plan_slot(plan_id, day, slot)
             tools.plan_slot_empty(
                 weekly_plan_id=plan_id,
                 meal_date=day,
@@ -2290,7 +2307,7 @@ def _finish_week_slots(plan_id: int, week_start_date: str, intake: dict | None, 
                 derived_from={"constraint": f"{slot}s_per_week:0"},
             )
 
-    audit = tools.audit_plan_slots(plan_id)
+    audit = tools.audit_plan_slots(plan_id, day_count=day_count)
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
         tools.plan_slot_open(

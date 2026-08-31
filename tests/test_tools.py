@@ -583,6 +583,21 @@ def test_an_unknown_tag_is_refused():
         tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["busy"]})
 
 
+def test_malformed_tags_read_as_client_errors_not_crashes():
+    """
+    A bare string used to iterate its characters ("Unknown night tag(s): r,
+    u, s, h"); a None raised a TypeError and surfaced as a 500. And a tag on
+    a date outside the week would strand a planned_empty entry outside the
+    seven days, visible nowhere and clearable from no screen.
+    """
+    with pytest.raises(ValueError):
+        tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": "rush"})
+    with pytest.raises(ValueError):
+        tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": [None]})
+    with pytest.raises(ValueError):
+        tools.save_week_intake("2026-09-07", night_tags={"2026-10-20": ["rush"]})
+
+
 def test_the_preferences_snapshot_is_a_copy_not_a_pointer():
     """
     The one people skip and regret. If a plan only points at live
@@ -606,6 +621,31 @@ def test_the_household_snapshot_records_the_table_as_it_was():
     _add_adult("Marcus")
     intake = tools.save_week_intake("2026-09-07", moods=["Comfort food"])
     assert intake["household_snapshot"] == {"adults": 2, "children": 0}
+
+
+def test_two_revisions_cannot_share_a_number():
+    """
+    save_week_intake reads the current revision, then supersedes it and
+    inserts revision+1 — three statements with no lock. Two adults saving at
+    the same moment both read revision 1 and both write revision 2, which
+    left two live rows and silently lost one adult's answers. The database
+    now refuses the second one, and save_week_intake retries onto what the
+    winner wrote.
+
+    Asserted against the constraint directly rather than by racing threads:
+    a timing test that passes because it got lucky is worse than no test.
+    """
+    import sqlite3
+    from app.db import get_conn
+
+    tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["rush"]})
+    conn = get_conn()
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute(
+            "INSERT INTO week_intake (household_id, week_start, revision) VALUES (?, ?, ?)",
+            (tools.HOUSEHOLD_ID, "2026-09-07", 1),
+        )
+    conn.close()
 
 
 def test_the_second_adult_joins_the_first_ones_intake():
@@ -808,6 +848,26 @@ def test_the_assistant_can_tell_a_settled_slot_from_a_missing_one():
     assert meals["dinner"]["slot_state"] == "planned_empty"
     assert meals["lunch"]["slot_state"] == "open"
     assert meals["lunch"]["open_reason"].startswith("Monday I’d rather ask")
+
+
+def test_a_component_based_week_still_says_its_slots_are_planned():
+    """
+    The Meals screen keys "Cook this" / "Swap it" and the dinner star off
+    slot state. The component branch built its slots without one, so those
+    controls silently vanished for a component-based household.
+    """
+    tools.set_planning_mode("component_based")
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(week, "Chili", weekly_plan_id=plan_id, component_category="protein")
+
+    menu = tools.get_week_menu(plan_id)
+
+    assert menu["menu_is_suggested"] is True
+    filled = [d[s] for d in menu["days"] for s in tools.WEEK_SLOTS if d[s]]
+    assert filled, "the suggested spread should fill something"
+    assert all(slot["state"] == "planned" for slot in filled)
 
 
 def test_the_headline_names_the_one_decision_waiting():
