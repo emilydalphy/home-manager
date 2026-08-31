@@ -1245,11 +1245,74 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     return {"name": recipe_name, "temporarily_excluded": excluded}
 
 
+def _add_recipe_ingredients_to_grocery_list(
+    entry_id: int, recipe_ingredients: list[dict], weekly_plan_id: int | None
+) -> tuple[list[str], list[str]]:
+    """
+    Put one planned meal's recipe ingredients onto the grocery list and
+    record what it contributed, returning (added_items, already_have).
+
+    Deliberately never called from anywhere the household hasn't said yes
+    — see plan_meal (opt-in flag, default off) and approve_weekly_plan
+    (the yes for a whole generated week). Shared by both so a meal's
+    ingredients land on the list identically whether it was planned
+    one-off in chat or arrived with an approved week.
+    """
+    # Skip adding anything already tracked in pantry/fridge inventory (with
+    # a non-blank quantity) — this is the "accounts for logged inventory"
+    # behavior for the plan-approval path. For a direct chat-driven add
+    # ("add flour to the list"), the agent checks get_inventory itself and
+    # asks first instead (see system prompt) since there's a person there
+    # to actually ask.
+    inv_conn = get_conn()
+    have_names = {
+        row["item"].strip().lower()
+        for row in inv_conn.execute(
+            "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
+            (HOUSEHOLD_ID,),
+        ).fetchall()
+    }
+    inv_conn.close()
+
+    added_items: list[str] = []
+    already_have: list[str] = []
+    # Routed through add_grocery_item (its own connection per call) rather
+    # than a raw insert here, so quantities consolidate with anything
+    # already on the list instead of creating duplicate lines. Tagged
+    # with source_weekly_plan_id when this meal belongs to a generated
+    # week (not an ad hoc one-off), so a later week's generation can
+    # tell this ingredient apart from a genuine standing want and clear
+    # it out once it's stale — see clear_stale_grocery_items.
+    for ing in recipe_ingredients:
+        if ing["item"].strip().lower() in have_names:
+            already_have.append(ing["item"])
+            continue
+        add_result = add_grocery_item(
+            ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai",
+            source_weekly_plan_id=weekly_plan_id,
+        )
+        added_items.append(ing["item"])
+        # Record exactly what THIS entry contributed to that grocery
+        # line, before it got merged with anything else already there —
+        # see _reverse_meal_grocery_contributions, which is what lets
+        # swap_meal_in_plan/swap_component_in_plan take this back out
+        # precisely if the meal is later swapped for something else.
+        link_conn = get_conn()
+        link_conn.execute(
+            "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (HOUSEHOLD_ID, entry_id, add_result["item_id"], ing["item"], _strip_prep_descriptor(ing.get("qty", "") or "")),
+        )
+        link_conn.commit()
+        link_conn.close()
+    return added_items, already_have
+
+
 def plan_meal(
     meal_date: str,
     meal: str,
     slot: str = "dinner",
-    add_ingredients_to_grocery_list: bool = True,
+    add_ingredients_to_grocery_list: bool = False,
     food_groups: list[str] | None = None,
     weekly_plan_id: int | None = None,
     component_category: str | None = None,
@@ -1257,9 +1320,19 @@ def plan_meal(
 ) -> dict:
     """
     Schedule a meal for a date. `meal` can be a saved recipe name or a
-    freeform description (e.g. "leftovers", "tacos"). If it matches a saved
-    recipe and add_ingredients_to_grocery_list is true, its ingredients are
-    auto-added to the grocery list (skipping anything already tracked in
+    freeform description (e.g. "leftovers", "tacos").
+
+    Ingredients only reach the grocery list when
+    add_ingredients_to_grocery_list is passed true. It defaults to FALSE
+    on purpose: the grocery list is never written to without the household
+    saying so. For a generated week the yes is approving the plan — see
+    approve_weekly_plan, which is what puts that week's ingredients on the
+    list. For a one-off meal planned in chat the yes is the person
+    answering when asked (see the system prompt); pass the flag according
+    to their answer.
+
+    When the flag is true and the meal matches a saved recipe, its
+    ingredients are added to the grocery list (skipping anything already tracked in
     pantry/fridge inventory with a quantity on hand — see update_inventory —
     reported back as already_have_skipped rather than silently vanishing),
     and its food_groups are used automatically. For a freeform meal, pass
@@ -1310,51 +1383,9 @@ def plan_meal(
     added_items = []
     already_have = []
     if recipe and add_ingredients_to_grocery_list:
-        # Skip auto-adding anything already tracked in pantry/fridge
-        # inventory (with a non-blank quantity) — this is the "accounts for
-        # logged inventory" behavior for the automated plan-generation path.
-        # For a direct chat-driven add ("add flour to the list"), the agent
-        # checks get_inventory itself and asks first instead (see system
-        # prompt) since there's a person there to actually ask.
-        inv_conn = get_conn()
-        have_names = {
-            row["item"].strip().lower()
-            for row in inv_conn.execute(
-                "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
-                (HOUSEHOLD_ID,),
-            ).fetchall()
-        }
-        inv_conn.close()
-
-        # Routed through add_grocery_item (its own connection per call) rather
-        # than a raw insert here, so quantities consolidate with anything
-        # already on the list instead of creating duplicate lines. Tagged
-        # with source_weekly_plan_id when this meal belongs to a generated
-        # week (not an ad hoc one-off), so a later week's generation can
-        # tell this ingredient apart from a genuine standing want and clear
-        # it out once it's stale — see clear_stale_grocery_items.
-        for ing in recipe_ingredients:
-            if ing["item"].strip().lower() in have_names:
-                already_have.append(ing["item"])
-                continue
-            add_result = add_grocery_item(
-                ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai",
-                source_weekly_plan_id=weekly_plan_id,
-            )
-            added_items.append(ing["item"])
-            # Record exactly what THIS entry contributed to that grocery
-            # line, before it got merged with anything else already there —
-            # see _reverse_meal_grocery_contributions, which is what lets
-            # swap_meal_in_plan/swap_component_in_plan take this back out
-            # precisely if the meal is later swapped for something else.
-            link_conn = get_conn()
-            link_conn.execute(
-                "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (HOUSEHOLD_ID, entry_id, add_result["item_id"], ing["item"], _strip_prep_descriptor(ing.get("qty", "") or "")),
-            )
-            link_conn.commit()
-            link_conn.close()
+        added_items, already_have = _add_recipe_ingredients_to_grocery_list(
+            entry_id, recipe_ingredients, weekly_plan_id
+        )
 
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]
     return {
@@ -2017,30 +2048,135 @@ def get_needs_you_items() -> list[dict]:
     return items
 
 
-def resolve_needs_you_dinner(meal_date: str, meal: str) -> list[dict]:
+def resolve_needs_you_dinner(
+    meal_date: str, meal: str, add_ingredients_to_grocery_list: bool = False
+) -> dict:
     """
     Resolve a needs-you dinner-decision card by planning the picked meal —
     thin wrapper around plan_meal that also attaches it to the household's
     current weekly plan (if one exists) so it shows up correctly in the
     Week tab's menu, then returns the refreshed needs-you list so the
     Today screen can just re-render from the response.
+
+    add_ingredients_to_grocery_list carries the answer the card's confirm
+    step collected. It is a real question asked of a real person, which is
+    what makes this an explicit yes and not a silent write — the same
+    standard chat is held to (see plan_meal). It defaults to False so a
+    caller that forgets to ask adds nothing.
     """
     plan = get_weekly_plan()
     weekly_plan_id = plan.get("weekly_plan_id")
-    plan_meal(meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id)
-    return get_needs_you_items()
+    result = plan_meal(
+        meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
+        add_ingredients_to_grocery_list=add_ingredients_to_grocery_list,
+    )
+    return {
+        "items": get_needs_you_items(),
+        "groceries_added": result["groceries_added"],
+        "already_have_skipped": result["already_have_skipped"],
+    }
+
+
+def _weekly_plan_is_approved(weekly_plan_id: int | None) -> bool:
+    """Whether a plan is approved — i.e. whether its ingredients are already on the grocery list."""
+    if weekly_plan_id is None:
+        return False
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?", (weekly_plan_id, HOUSEHOLD_ID)
+    ).fetchone()
+    conn.close()
+    return bool(row) and row["status"] == "approved"
 
 
 def approve_weekly_plan(weekly_plan_id: int) -> dict:
-    """Mark a weekly plan as approved/reviewed by the Planner."""
+    """
+    Approve a weekly plan — and, in the same step, put its meals'
+    ingredients on the grocery list.
+
+    Approving used to only flip a status flag; the grocery list had
+    already been filled in during generation, whether or not the household
+    ever agreed to that plan. Ingredients from drafts that were changed,
+    abandoned or never approved piled up on the real shopping list as a
+    result. Now generation adds nothing (see plan_meal, whose
+    add_ingredients_to_grocery_list defaults to False) and approval is
+    what populates the list, so the list only ever reflects a week the
+    household actually said yes to.
+
+    Safe to call more than once. Two separate guards, because they cover
+    different things:
+
+    - Re-approving an ALREADY-approved plan adds nothing at all. The
+      grocery work happens on the transition into 'approved', not on every
+      call. Without this, an entry whose ingredients were all skipped as
+      already-in-the-pantry leaves no trace that it was ever considered
+      (the ledger only records what was actually added), so a later
+      re-approve would add them for real once the pantry had emptied — a
+      surprise write to the list nobody asked for.
+    - Within a single approval, an entry whose contributions are already
+      recorded in meal_plan_grocery_links is skipped, so a plan whose
+      meals already put their ingredients on the list another way (a swap,
+      or plan_meal called with the flag) doesn't double up its quantities.
+
+    Raises ValueError for a weekly_plan_id that doesn't exist, rather than
+    reporting a cheerful approval of nothing — same as clear_weekly_plan
+    and swap_component_in_plan.
+    """
     conn = get_conn()
+    existing = conn.execute(
+        "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchone()
+    if not existing:
+        conn.close()
+        raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+    was_already_approved = existing["status"] == "approved"
     conn.execute(
         "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (weekly_plan_id, HOUSEHOLD_ID),
     )
     conn.commit()
+    if was_already_approved:
+        conn.close()
+        return {
+            "weekly_plan_id": weekly_plan_id,
+            "status": "approved",
+            "groceries_added": [],
+            "already_have_skipped": [],
+            "was_already_approved": True,
+        }
+    entries = conn.execute(
+        """
+        SELECT mpe.id, r.ingredients_json
+        FROM meal_plan_entries mpe
+        JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
+          AND NOT EXISTS (
+              SELECT 1 FROM meal_plan_grocery_links mpgl
+              WHERE mpgl.meal_plan_entry_id = mpe.id AND mpgl.household_id = mpe.household_id
+          )
+        ORDER BY mpe.date ASC, mpe.id ASC
+        """,
+        (weekly_plan_id, HOUSEHOLD_ID),
+    ).fetchall()
     conn.close()
-    return {"weekly_plan_id": weekly_plan_id, "status": "approved"}
+
+    added_items = []
+    already_have = []
+    for entry in entries:
+        added, have = _add_recipe_ingredients_to_grocery_list(
+            entry["id"], json.loads(entry["ingredients_json"]), weekly_plan_id
+        )
+        added_items.extend(added)
+        already_have.extend(have)
+
+    return {
+        "weekly_plan_id": weekly_plan_id,
+        "status": "approved",
+        "groceries_added": added_items,
+        "already_have_skipped": already_have,
+        "was_already_approved": False,
+    }
 
 
 def swap_meal_in_plan(
@@ -2075,7 +2211,15 @@ def swap_meal_in_plan(
     )
     conn.commit()
     conn.close()
-    return plan_meal(meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id)
+    return plan_meal(
+        meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
+        # Only put the new meal's ingredients on the list if this week has
+        # already been approved — approval is what put the old meal's
+        # ingredients there in the first place, and the reversal above just
+        # took them back off. Swapping inside a still-unapproved draft
+        # leaves the grocery list alone, exactly as generating it did.
+        add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
+    )
 
 
 def swap_component_in_plan(
@@ -2129,6 +2273,8 @@ def swap_component_in_plan(
     return plan_meal(
         week_start_date, new_meal, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
         component_category=component_category,
+        # See swap_meal_in_plan — mirrors the plan's approved state.
+        add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
     )
 
 

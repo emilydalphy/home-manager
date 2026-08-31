@@ -8,6 +8,8 @@ before splitting tools.py into a package.
 """
 import datetime
 
+import pytest
+
 from app import tools
 
 
@@ -77,15 +79,133 @@ def test_grocery_list_groups_into_store_sections():
 
 # ---------- recipes and planning ----------
 
-def test_planning_a_saved_recipe_adds_its_ingredients_to_the_grocery_list():
+def test_planning_a_meal_does_not_touch_the_grocery_list_on_its_own():
+    """Nothing reaches the shopping list unless the household said so."""
     tools.add_recipe(
         "Tomato pasta",
         ingredients=[{"item": "pasta", "qty": "500 g"}, {"item": "passata", "qty": "1 jar"}],
         food_groups=["carb", "vegetable"],
     )
     tools.plan_meal(_today(1), "Tomato pasta", slot="dinner")
+    assert tools.list_grocery_list() == []
+
+
+def test_planning_a_meal_adds_ingredients_when_asked_to():
+    """The one-off case: the person said yes, so the ingredients go on."""
+    tools.add_recipe(
+        "Tomato pasta",
+        ingredients=[{"item": "pasta", "qty": "500 g"}, {"item": "passata", "qty": "1 jar"}],
+        food_groups=["carb", "vegetable"],
+    )
+    tools.plan_meal(_today(1), "Tomato pasta", slot="dinner", add_ingredients_to_grocery_list=True)
     on_list = [i["item"] for i in tools.list_grocery_list()]
     assert "pasta" in on_list and "passata" in on_list
+
+
+def test_approving_a_plan_is_what_fills_the_grocery_list():
+    """A draft week leaves the list alone; approving it is the yes."""
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    assert tools.list_grocery_list() == [], "an unapproved draft must not put anything on the list"
+
+    result = tools.approve_weekly_plan(plan_id)
+
+    assert result["groceries_added"] == ["beans"]
+    assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
+
+
+def test_approving_a_plan_twice_does_not_double_the_quantities():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    assert tools.approve_weekly_plan(plan_id)["groceries_added"] == []
+    beans = [i for i in tools.list_grocery_list() if i["item"] == "beans"]
+    assert len(beans) == 1
+    assert "2" not in beans[0]["quantity"], f"quantity should still be one tin, got {beans[0]['quantity']!r}"
+
+
+def test_approving_a_plan_skips_what_is_already_in_the_kitchen():
+    tools.update_inventory("beans", action="add", quantity="2 tins", location="pantry")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    result = tools.approve_weekly_plan(plan_id)
+
+    assert result["already_have_skipped"] == ["beans"]
+    assert tools.list_grocery_list() == []
+
+
+def test_re_approving_does_not_add_what_was_skipped_as_already_owned():
+    """
+    The subtle one: an ingredient skipped because it was in the pantry
+    leaves no record of having been considered. Re-approving later, once
+    the pantry has emptied, must not quietly add it after all.
+    """
+    tools.update_inventory("beans", action="add", quantity="2 tins", location="pantry")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+    tools.update_inventory("beans", action="remove")  # ate them
+
+    result = tools.approve_weekly_plan(plan_id)
+
+    assert result["was_already_approved"] is True
+    assert result["groceries_added"] == []
+    assert tools.list_grocery_list() == [], "a second approve must not write to the list"
+
+
+def test_approving_a_plan_that_does_not_exist_is_an_error():
+    with pytest.raises(ValueError):
+        tools.approve_weekly_plan(4242)
+
+
+def test_picking_tonights_dinner_only_adds_groceries_when_asked_to():
+    """
+    The Today card's dinner pick is a tap, not a conversation — the card
+    asks first, and passes the answer through. Both answers plan the meal.
+    """
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+
+    said_no = tools.resolve_needs_you_dinner(_today(), "Chili")
+    assert said_no["groceries_added"] == []
+    assert tools.list_grocery_list() == []
+    assert "Chili" in [e["meal"] for e in tools.get_meal_plan(days_ahead=7)]
+
+    said_yes = tools.resolve_needs_you_dinner(
+        _today(1), "Chili", add_ingredients_to_grocery_list=True
+    )
+    assert said_yes["groceries_added"] == ["beans"]
+    assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
+
+
+def test_swapping_a_meal_in_an_unapproved_draft_leaves_the_list_alone():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    tools.swap_meal_in_plan(plan_id, _today(), "Soup", slot="dinner")
+
+    assert tools.list_grocery_list() == []
+
+
+def test_swapping_a_meal_in_an_approved_plan_swaps_it_on_the_list_too():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
+
+    tools.swap_meal_in_plan(plan_id, _today(), "Soup", slot="dinner")
+
+    on_list = [i["item"] for i in tools.list_grocery_list()]
+    assert "stock" in on_list, "the new meal's ingredients should replace the old ones"
+    assert "beans" not in on_list, "the swapped-out meal's ingredients should come off"
 
 
 def test_planned_meal_shows_up_in_the_plan():
@@ -170,6 +290,7 @@ def test_clearing_the_week_takes_its_ingredients_off_the_grocery_list():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Tomato pasta", ingredients=[{"item": "passata", "qty": "1 jar"}])
     tools.plan_meal(_today(), "Tomato pasta", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)  # approving is what puts the plan's ingredients on the list
     tools.add_grocery_item("dish soap", category="other")  # asked for directly, not by the plan
 
     result = tools.clear_weekly_plan()
@@ -199,6 +320,7 @@ def test_clearing_the_week_leaves_an_already_purchased_item_alone():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
     tools.plan_meal(_today(), "Soup", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
     stock_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "stock")
     tools.mark_grocery_item(stock_id, status="purchased")
 
@@ -217,6 +339,7 @@ def test_reset_preview_counts_what_would_go():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id)
     tools.add_grocery_item("dish soap", category="other")
 
     preview = tools.get_reset_preview()

@@ -1512,14 +1512,14 @@ html, body {
 .week-reset-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
 .week-reset-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
 
-#reset-scrim {
+#reset-scrim, #dinner-confirm-scrim {
   position: fixed;
   inset: 0;
   background: rgba(58,31,46,.45);
   animation: fadeIn .18s ease;
   z-index: 50;
 }
-#reset-dialog {
+#reset-dialog, #dinner-confirm-dialog {
   position: fixed;
   z-index: 51;
   left: 50%;
@@ -1537,7 +1537,27 @@ html, body {
   padding: 22px 22px 20px;
   animation: sheetUp .2s cubic-bezier(.2,.8,.2,1);
 }
-#reset-scrim[hidden], #reset-dialog[hidden] { display: none; }
+#reset-scrim[hidden], #reset-dialog[hidden],
+#dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden] { display: none; }
+.dinner-confirm-meal {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--plum-ink);
+  margin: 0 0 6px;
+}
+.dialog-cancel-link {
+  display: block;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
 .reset-title {
   font-family: var(--font-heading);
   font-weight: 700;
