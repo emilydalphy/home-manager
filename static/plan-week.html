@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Plan the week — Home Manager</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#66304E" />
+<style>
+  /*
+    design_handoff_plan_the_week — the two question screens.
+
+    A standalone page rather than a tab in the shell, for the same reason
+    onboarding.html is one: this is a focused sequence with a beginning and
+    an end, and tab chrome invites leaving it half-answered. It hands back
+    to /week when it's done.
+
+    Two devices carry the voice on every screen here, and both are load-
+    bearing rather than decorative (VOICE.md):
+      .why   — the plum panel naming the specific failure the answer
+               prevents. If you can't name that failure, the question
+               shouldn't be asked.
+      .ack   — the green "I'll…" line, appearing the moment an answer is
+               given, stating the concrete change it caused. This is how
+               personalisation becomes visible instead of claimed.
+  */
+  :root {
+    color-scheme: light;
+    --plum-panel: #F3E6EE;  /* the "Why I'm asking" fill */
+    --ack-green: #4D8A33;   /* = theme.css --good-ink */
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 20px 140px;   /* room for the fixed footer */
+    background: var(--oat-cream);
+    color: var(--text-body);
+  }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.55rem; color: var(--midnight-violet); margin: 0 0 12px; line-height: 1.25; }
+  .eyebrow {
+    font-family: var(--font-body); font-weight: 700; font-size: 0.72rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .progress { display: flex; gap: 6px; margin-bottom: 18px; }
+  .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
+  .dot.done { background: var(--midnight-violet); }
+
+  .why {
+    background: var(--plum-panel);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--midnight-violet);
+    margin-bottom: 22px;
+  }
+  .why b { font-weight: 700; }
+
+  .ack {
+    color: var(--ack-green);
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.45;
+    margin-top: 8px;
+  }
+  .ack:empty { display: none; }
+
+  section.block { margin-bottom: 26px; }
+  .block-label {
+    font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--midnight-violet);
+    margin-bottom: 5px;
+  }
+  .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--text-muted); margin: 0 0 12px; }
+
+  /* ---- Day rows (Q1) ---- */
+  .day {
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px 15px;
+    margin-bottom: 10px;
+  }
+  .day-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px; }
+  .day-name { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; color: var(--midnight-violet); }
+  .day-date { font-size: 0.8rem; color: var(--text-muted); }
+  /* What the app already knows about this day, so the household isn't
+     re-answering something it has been told. Grey on purpose: it's context,
+     not an answer. */
+  .day-hint { font-size: 0.82rem; color: var(--text-muted); font-style: italic; margin-bottom: 10px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag {
+    padding: 8px 13px; min-height: 38px;
+    display: inline-flex; align-items: center;
+    font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--card-border);
+    background: #fff; color: var(--text-body);
+    cursor: pointer;
+  }
+  .tag:hover { border-color: var(--midnight-violet); }
+  .tag.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+
+  /* ---- Guest follow-up ---- */
+  .guests {
+    margin-top: 12px; padding: 13px 14px;
+    background: var(--oat-cream); border-radius: 12px;
+  }
+  .guests h3 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: var(--midnight-violet); margin: 0 0 4px; }
+  .guests p { font-size: 0.83rem; line-height: 1.45; color: var(--text-muted); margin: 0 0 11px; }
+  .stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .stepper-label { font-size: 0.88rem; color: var(--text-body); }
+  .stepper { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .stepper button {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 9px; border: 1px solid var(--midnight-violet);
+    background: #fff; color: var(--midnight-violet);
+    font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
+  }
+  .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 0.98rem; color: var(--midnight-violet); }
+
+  /* ---- Chips (lunches, moods, cuisines) ---- */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 10px 16px; min-height: 44px;
+    display: inline-flex; align-items: center;
+    font-family: var(--font-body); font-size: 0.85rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--card-border);
+    background: #fff; color: var(--text-body);
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--midnight-violet); }
+  .chip.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+
+  .card {
+    background: #fff; border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 15px 16px;
+  }
+
+  textarea {
+    width: 100%; min-height: 96px; resize: vertical;
+    padding: 12px 13px; border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-family: var(--font-body); font-size: 0.92rem; line-height: 1.5;
+    background: #fff; color: var(--text-body);
+  }
+  textarea:focus { border-color: var(--midnight-violet); outline: none; }
+  textarea::placeholder { color: var(--text-muted); }
+
+  /* ---- Footer ---- */
+  /* Fixed rather than in flow: the CTA states what's been noted so far
+     ("Next — 3 nights noted"), which is only useful if it's visible while
+     the household is still tagging. */
+  .footer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--oat-cream);
+    border-top: 1px solid var(--oat-cream-dark);
+    padding: 13px 20px calc(13px + env(safe-area-inset-bottom, 0px));
+  }
+  .footer-inner { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .cta {
+    width: 100%; font-family: var(--font-body); font-weight: 700;
+    background: var(--turmeric-gold); color: var(--midnight-violet);
+    border: none; padding: 14px 22px; min-height: 50px;
+    border-radius: var(--radius-control); font-size: 0.98rem; cursor: pointer;
+  }
+  .cta:hover:not(:disabled) { background: var(--gold-hover); }
+  .cta:disabled { opacity: .6; cursor: default; }
+  .back {
+    background: none; border: none; color: var(--text-muted);
+    font-family: var(--font-body); font-size: 0.85rem; cursor: pointer;
+    min-height: 40px; align-self: center;
+  }
+  .back:hover { color: var(--midnight-violet); }
+
+  /* Somebody else already started this week — DATA_MODEL.md's soft lock. */
+  .joined {
+    background: var(--plum-panel); border-radius: 12px;
+    padding: 12px 14px; font-size: 0.88rem; line-height: 1.5;
+    color: var(--midnight-violet); margin-bottom: 18px;
+  }
+  .loading, .failed { color: var(--text-muted); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading">One moment&hellip;</div>
+<div id="failed" class="failed" hidden>I couldn&rsquo;t load your week just now. Try again in a moment.</div>
+
+<main id="flow" hidden>
+  <div class="eyebrow" id="eyebrow"></div>
+  <div class="progress"><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div></div>
+
+  <div class="joined" id="joined" hidden></div>
+
+  <!-- ---------- Question 1 of 2 ---------- -->
+  <section id="q1">
+    <h1>Which nights should I work around?</h1>
+    <div class="why">
+      <b>Why I&rsquo;m asking:</b> this is what stops me putting a 50-minute braise on the night
+      you&rsquo;re at tee-ball. Every night you tag, I plan differently &mdash; and I&rsquo;ll tell you how.
+    </div>
+
+    <div id="days"></div>
+
+    <section class="block" style="margin-top:26px">
+      <div class="card">
+        <div class="block-label">Which lunches leave the house?</div>
+        <p class="block-body">
+          I&rsquo;ll plan every lunch either way. Tap the days someone takes it with them and I&rsquo;ll
+          keep those to things that travel cold and hold up till noon.
+        </p>
+        <div class="chip-row" id="lunch-days"></div>
+        <div class="ack" id="lunch-ack"></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ---------- Question 2 of 2 ---------- -->
+  <section id="q2" hidden>
+    <h1>What would you like this week?</h1>
+    <div class="why">
+      <b>Why I&rsquo;m asking:</b> your setup tells me what you&rsquo;ll eat. This tells me what you
+      actually want right now &mdash; it&rsquo;s the difference between a correct week and a week you
+      look forward to.
+    </div>
+
+    <section class="block">
+      <div class="block-label">In the mood for</div>
+      <p class="block-body">Pick as many as you like &mdash; I&rsquo;ll lean the week this way without making every night the same.</p>
+      <div class="chip-row" id="moods"></div>
+      <div class="ack" id="mood-ack"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-label">Cuisines you fancy</div>
+      <p class="block-body" id="cuisine-body"></p>
+      <div class="chip-row" id="cuisines"></div>
+      <div class="ack" id="cuisine-ack"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-label">Anything else you want to share for this week?</div>
+      <p class="block-body">
+        Anything at all &mdash; and if there&rsquo;s a meal you&rsquo;ve already decided on, tell me here.
+        I won&rsquo;t plan over it, and I&rsquo;ll still shop for it so you&rsquo;re not short on the night.
+      </p>
+      <textarea id="freeform" placeholder="Friday is pizza night. Sam has a friend over Saturday. I want to use the lamb in the freezer."></textarea>
+    </section>
+  </section>
+</main>
+
+<div class="footer" id="footer" hidden>
+  <div class="footer-inner">
+    <button type="button" class="cta" id="cta"></button>
+    <button type="button" class="back" id="back" hidden>Back to the nights</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- state ----------
+  var weekStart = new URLSearchParams(location.search).get('week') || '';
+  var who = new URLSearchParams(location.search).get('who') || '';
+  var data = null;                 // the prefill payload
+  var step = 1;
+  var answers = {
+    night_tags: {},                // { "2026-09-02": ["rush"] }
+    guest_counts: {},              // { "2026-09-06": { adults, children } }
+    packed_lunch_days: [],
+    moods: [],
+    cuisines: []
+  };
+
+  // Each tag's consequence, stated in the household's own terms the moment
+  // it's tapped. COPY.md → Acknowledgements. Always a bare "I'll…" — never
+  // "So I'll", which reads as the app justifying itself rather than getting
+  // on with it.
+  var TAGS = [
+    { key: 'normal', label: 'Regular night', ack: 'plan a normal dinner you cook that evening.' },
+    { key: 'out',    label: 'Nobody home',   ack: 'plan nothing and buy nothing for this night.' },
+    { key: 'rush',   label: 'Short on time', ack: 'keep it under 20 minutes, or make the night before stretch to cover it.' },
+    { key: 'guests', label: 'Hosting guests', ack: 'scale the recipe and the shopping to the bigger table.' },
+    { key: 'left',   label: 'Leftovers',     ack: 'cook enough the night before instead of planning something new.' }
+  ];
+  var MOODS = ['Something warm', 'Lighter than usual', 'On the grill', 'Comfort food', 'Something new', 'Keep it cheap'];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- load ----------
+  async function load() {
+    if (!weekStart) { $('loading').hidden = true; $('failed').hidden = false; return; }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake');
+      if (!res.ok) throw new Error('prefill failed');
+      data = await res.json();
+    } catch (err) {
+      console.warn('Plan-the-week prefill failed:', err);
+      $('loading').hidden = true; $('failed').hidden = false;
+      return;
+    }
+
+    // The soft lock. Both adults are nudged on Sunday, so both can start;
+    // the second to arrive carries on from the first one's answers rather
+    // than opening a blank set and racing them to generate the same week.
+    if (data.in_flight && data.intake) {
+      var by = (data.intake.created_by || '').trim();
+      $('joined').hidden = false;
+      $('joined').textContent = by
+        ? by + ' started this ' + relativeTime(data.intake.created_at) + ' — I’ve carried on from where they got to.'
+        : 'I’ve carried on from the answers already saved for this week.';
+      answers.night_tags = data.intake.night_tags || {};
+      answers.guest_counts = data.intake.guest_counts || {};
+      answers.packed_lunch_days = data.intake.packed_lunch_days || [];
+      answers.moods = data.intake.moods || [];
+      answers.cuisines = data.intake.cuisines || [];
+      $('freeform').value = data.intake.freeform || '';
+    }
+
+    $('loading').hidden = true;
+    $('flow').hidden = false;
+    $('footer').hidden = false;
+    renderDays();
+    renderLunchDays();
+    renderMoods();
+    renderCuisines();
+    showStep(1);
+  }
+
+  function relativeTime(iso) {
+    if (!iso) return 'earlier';
+    var then = new Date(String(iso).replace(' ', 'T') + 'Z');
+    if (isNaN(then.getTime())) return 'earlier';
+    var mins = Math.round((Date.now() - then.getTime()) / 60000);
+    if (mins < 2) return 'just now';
+    if (mins < 60) return mins + ' minutes ago';
+    var hours = Math.round(mins / 60);
+    if (hours < 24) return hours === 1 ? 'an hour ago' : hours + ' hours ago';
+    return 'yesterday';
+  }
+
+  // ---------- Q1: the nights ----------
+  function renderDays() {
+    $('days').innerHTML = data.days.map(function (day) {
+      return (
+        '<div class="day" data-date="' + day.date + '">' +
+          '<div class="day-head">' +
+            '<span class="day-name">' + esc(day.weekday) + '</span>' +
+            '<span class="day-date">' + day.day_of_month + '</span>' +
+          '</div>' +
+          '<div class="day-hint">' + esc(day.hint || 'Nothing on the calendar') + '</div>' +
+          '<div class="tag-row">' +
+            TAGS.map(function (t) {
+              return '<button type="button" class="tag" data-tag="' + t.key + '">' + esc(t.label) + '</button>';
+            }).join('') +
+          '</div>' +
+          '<div class="ack"></div>' +
+          '<div class="guests" hidden></div>' +
+        '</div>'
+      );
+    }).join('');
+
+    $('days').querySelectorAll('.day').forEach(function (dayEl) {
+      dayEl.querySelectorAll('.tag').forEach(function (btn) {
+        btn.addEventListener('click', function () { toggleTag(dayEl, btn.dataset.tag); });
+      });
+      paintDay(dayEl);
+    });
+  }
+
+  function toggleTag(dayEl, tag) {
+    var d = dayEl.dataset.date;
+    var current = answers.night_tags[d] || [];
+    if (current.indexOf(tag) !== -1) {
+      current = current.filter(function (t) { return t !== tag; });
+    } else if (tag === 'normal') {
+      // "Regular night" is exclusive — selecting it clears the others. It
+      // exists so someone working down the list can AFFIRM a night rather
+      // than skip it: an affirmed night is data, a skipped one is a guess.
+      current = ['normal'];
+    } else {
+      current = current.filter(function (t) { return t !== 'normal'; }).concat([tag]);
+    }
+    if (current.length) answers.night_tags[d] = current;
+    else delete answers.night_tags[d];
+    if (current.indexOf('guests') === -1) delete answers.guest_counts[d];
+    paintDay(dayEl);
+    paintCta();
+  }
+
+  function paintDay(dayEl) {
+    var d = dayEl.dataset.date;
+    var tags = answers.night_tags[d] || [];
+    dayEl.querySelectorAll('.tag').forEach(function (btn) {
+      btn.classList.toggle('on', tags.indexOf(btn.dataset.tag) !== -1);
+    });
+    // Multiple tags join with "And I'll " — one sentence per consequence,
+    // so two answers read as two things happening rather than one blurred
+    // promise.
+    var acks = TAGS.filter(function (t) { return tags.indexOf(t.key) !== -1; }).map(function (t) { return t.ack; });
+    dayEl.querySelector('.ack').textContent = acks.length
+      ? 'I’ll ' + acks.join(' And I’ll ')
+      : '';
+    renderGuests(dayEl, tags.indexOf('guests') !== -1);
+  }
+
+  // ---------- the guest follow-up ----------
+  function renderGuests(dayEl, show) {
+    var box = dayEl.querySelector('.guests');
+    box.hidden = !show;
+    if (!show) { box.innerHTML = ''; return; }
+    if (box.dataset.built === '1') { paintGuests(dayEl); return; }
+    box.dataset.built = '1';
+
+    // Two steppers, never one count plus an "adults / adults + kids"
+    // toggle: a single number can't say how many of EACH, which is exactly
+    // what portions and quantities need.
+    //
+    // When nobody's age group is on record the app can't add extras to a
+    // household it doesn't know, so the panel asks for the whole table
+    // instead — rather than confidently stating a wrong total.
+    var whole = !data.household_known;
+    box.innerHTML =
+      '<h3>' + (whole ? 'How many will there be?' : 'Who’s joining you?') + '</h3>' +
+      '<p>' + (whole
+        ? 'I don’t know your household’s make-up yet, so tell me the whole table — adults and children eat differently, and it changes the portions and what I’d suggest cooking.'
+        : 'Adults and children eat differently, so I need both numbers — it changes the portions and what I’d suggest cooking.') + '</p>' +
+      stepperHtml('adults', whole ? 'Adults at the table' : 'Extra adults') +
+      stepperHtml('children', whole ? 'Children at the table' : 'Extra children') +
+      '<div class="ack"></div>';
+
+    box.querySelectorAll('.stepper button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var d = dayEl.dataset.date;
+        var counts = answers.guest_counts[d] || { adults: 0, children: 0 };
+        var next = counts[btn.dataset.field] + Number(btn.dataset.delta);
+        counts[btn.dataset.field] = Math.min(10, Math.max(0, next));
+        answers.guest_counts[d] = counts;
+        paintGuests(dayEl);
+      });
+    });
+    paintGuests(dayEl);
+  }
+
+  function stepperHtml(field, label) {
+    return (
+      '<div class="stepper-row">' +
+        '<span class="stepper-label">' + esc(label) + '</span>' +
+        '<span class="stepper">' +
+          '<button type="button" data-field="' + field + '" data-delta="-1" aria-label="One fewer ' + esc(label) + '">&minus;</button>' +
+          '<output data-out="' + field + '">0</output>' +
+          '<button type="button" data-field="' + field + '" data-delta="1" aria-label="One more ' + esc(label) + '">+</button>' +
+        '</span>' +
+      '</div>'
+    );
+  }
+
+  function paintGuests(dayEl) {
+    var d = dayEl.dataset.date;
+    var box = dayEl.querySelector('.guests');
+    var counts = answers.guest_counts[d] || { adults: 0, children: 0 };
+    box.querySelectorAll('output').forEach(function (out) { out.textContent = counts[out.dataset.out]; });
+    box.querySelectorAll('.stepper button').forEach(function (btn) {
+      var value = counts[btn.dataset.field];
+      btn.disabled = Number(btn.dataset.delta) < 0 ? value <= 0 : value >= 10;
+    });
+
+    var base = data.household_known ? data.household : { adults: 0, children: 0 };
+    var adults = base.adults + counts.adults;
+    var children = base.children + counts.children;
+    var total = adults + children;
+    // The acknowledgement states the resulting TABLE, not just a total, so
+    // a wrong tap is visible immediately.
+    box.querySelector('.ack').textContent = total
+      ? 'I’ll cook for ' + total + ' — ' + adults + (adults === 1 ? ' adult' : ' adults') +
+        ' and ' + children + (children === 1 ? ' child' : ' children') + ' — and shop for that.'
+      : '';
+  }
+
+  // ---------- lunches ----------
+  function renderLunchDays() {
+    // One compact control, not a per-day tag: every lunch gets planned
+    // either way, so the only question is which ones LEAVE THE HOUSE.
+    // Folding it into the day grid would double the tapping to collect
+    // one fact.
+    $('lunch-days').innerHTML = data.days.map(function (day) {
+      return '<button type="button" class="chip" data-date="' + day.date + '">' + esc(day.short) + '</button>';
+    }).join('');
+    $('lunch-days').querySelectorAll('.chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var d = chip.dataset.date;
+        var i = answers.packed_lunch_days.indexOf(d);
+        if (i === -1) answers.packed_lunch_days.push(d);
+        else answers.packed_lunch_days.splice(i, 1);
+        paintLunchDays();
+      });
+    });
+    paintLunchDays();
+  }
+
+  function paintLunchDays() {
+    $('lunch-days').querySelectorAll('.chip').forEach(function (chip) {
+      chip.classList.toggle('on', answers.packed_lunch_days.indexOf(chip.dataset.date) !== -1);
+    });
+    var n = answers.packed_lunch_days.length;
+    $('lunch-ack').textContent = n
+      ? 'I’ll keep those ' + n + ' to things that travel cold, and plan the rest as hot lunches at home.'
+      : '';
+  }
+
+  // ---------- Q2 ----------
+  function renderMoods() {
+    $('moods').innerHTML = MOODS.map(function (m) {
+      return '<button type="button" class="chip" data-value="' + esc(m) + '">' + esc(m) + '</button>';
+    }).join('');
+    wireChips($('moods'), answers.moods, function () {
+      $('mood-ack').textContent = answers.moods.length
+        ? 'I’ll lean the week this way without making every night the same.' : '';
+    });
+  }
+
+  function renderCuisines() {
+    // Read from What We Know, never a fixed global list — the household
+    // never re-answers a question it has already answered, and the screen
+    // visibly reflects its own stored profile. The fallback only appears
+    // when nothing is saved yet, and taps on it are written back.
+    $('cuisine-body').textContent = data.cuisines_are_fallback
+      ? 'You haven’t told me your cuisines yet, so here’s a starting point — whatever you tap I’ll remember for next time too.'
+      : 'The ones you’ve told me you like, from what we know about your household. Whatever you tap wins over your usual rotation this week.';
+    $('cuisines').innerHTML = data.cuisines.map(function (c) {
+      return '<button type="button" class="chip" data-value="' + esc(c) + '">' + esc(c) + '</button>';
+    }).join('');
+    wireChips($('cuisines'), answers.cuisines, function () {
+      $('cuisine-ack').textContent = answers.cuisines.length
+        ? 'I’ll put these ahead of your usual rotation this week.' : '';
+    });
+  }
+
+  function wireChips(container, list, onChange) {
+    container.querySelectorAll('.chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var v = chip.dataset.value;
+        var i = list.indexOf(v);
+        if (i === -1) list.push(v); else list.splice(i, 1);
+        paintChips(container, list);
+        onChange();
+      });
+    });
+    paintChips(container, list);
+    onChange();
+  }
+
+  function paintChips(container, list) {
+    container.querySelectorAll('.chip').forEach(function (chip) {
+      chip.classList.toggle('on', list.indexOf(chip.dataset.value) !== -1);
+    });
+  }
+
+  // ---------- steps ----------
+  function showStep(n) {
+    step = n;
+    $('q1').hidden = n !== 1;
+    $('q2').hidden = n !== 2;
+    $('back').hidden = n !== 2;
+    $('eyebrow').textContent = 'Question ' + n + ' of 2 · ' + (data.week_label || '');
+    $('dot-1').classList.toggle('done', n >= 1);
+    $('dot-2').classList.toggle('done', n >= 2);
+    window.scrollTo(0, 0);
+    paintCta();
+  }
+
+  function paintCta() {
+    if (step === 1) {
+      // The CTA reflects what's been noted so far. "Every night is a
+      // regular one" is a real, valid answer — not an empty state.
+      var n = Object.keys(answers.night_tags).filter(function (d) {
+        return (answers.night_tags[d] || []).indexOf('normal') === -1;
+      }).length;
+      $('cta').textContent = n
+        ? 'Next — ' + n + (n === 1 ? ' night noted' : ' nights noted')
+        : 'Next — every night is a regular one';
+    } else {
+      $('cta').textContent = 'That’s everything — draft my week';
+    }
+  }
+
+  async function saveIntake(payload) {
+    var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ created_by: who }, payload))
+    });
+    if (!res.ok) throw new Error('intake save failed');
+    return res.json();
+  }
+
+  $('cta').addEventListener('click', async function () {
+    var btn = $('cta');
+    btn.disabled = true;
+    try {
+      if (step === 1) {
+        // Q1 saves its own half as its own revision, so the answers exist
+        // for the other adult to join before Q2 is even opened.
+        await saveIntake({
+          night_tags: answers.night_tags,
+          guest_counts: answers.guest_counts,
+          packed_lunch_days: answers.packed_lunch_days
+        });
+        btn.disabled = false;
+        showStep(2);
+        return;
+      }
+
+      btn.textContent = 'Drafting your week…';
+      var saved = await saveIntake({
+        moods: answers.moods,
+        cuisines: answers.cuisines,
+        freeform: $('freeform').value.trim()
+      });
+      // A tap on the fallback cuisine list is an answer to "what do you
+      // like", not just to "what about this week" — write it back so the
+      // question is never asked cold again.
+      if (data.cuisines_are_fallback && answers.cuisines.length) {
+        await fetch('/api/memory/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ field: 'cuisine_preferences', value: answers.cuisines })
+        }).catch(function () { /* the week still plans correctly without this */ });
+      }
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intake_id: saved.intake_id })
+      });
+      if (!res.ok) throw new Error('generate failed');
+      await res.json();
+      location.href = '/week?drafted=1';
+    } catch (err) {
+      console.warn('Plan-the-week step failed:', err);
+      btn.disabled = false;
+      paintCta();
+      alert('I couldn’t save that just now — try again in a moment.');
+    }
+  });
+
+  $('back').addEventListener('click', function () { showStep(1); });
+
+  load();
+})();
+</script>
+</body>
+</html>

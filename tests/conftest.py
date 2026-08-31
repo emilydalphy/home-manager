@@ -25,7 +25,9 @@ from app.main import app  # noqa: E402
 # Tables are wiped between tests rather than the file being recreated, so
 # the schema and migrations run once and each test still starts clean.
 _TABLES = [
-    "meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans",
+    # week_intake comes after weekly_plans: a plan references the intake it
+    # was generated from, so the referencing rows go first.
+    "meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "week_intake",
     "grocery_items", "inventory_items", "recipe_notes", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "facts",

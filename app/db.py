@@ -93,6 +93,24 @@ _MIGRATIONS = [
     # reload — see schema.sql's comment on approved_grocery_added.
     ("weekly_plans", "approved_grocery_added", "INTEGER NOT NULL DEFAULT 0"),
     ("weekly_plans", "approved_grocery_skipped", "INTEGER NOT NULL DEFAULT 0"),
+    # design_handoff_plan_the_week/DATA_MODEL.md: the intake a plan came
+    # from, and the per-slot state + provenance. See schema.sql's comments
+    # on week_intake and meal_plan_entries.slot_state for what each is for.
+    # No REFERENCES clause on intake_id here: SQLite cannot add a foreign
+    # key via ALTER TABLE, so an existing database gets the plain column and
+    # a newly-created one gets the constrained version from schema.sql.
+    ("weekly_plans", "intake_id", "INTEGER"),
+    ("meal_plan_entries", "slot_state", "TEXT NOT NULL DEFAULT 'planned'"),
+    ("meal_plan_entries", "open_reason", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_plan_entries", "derived_from_json", "TEXT NOT NULL DEFAULT '{}'"),
+    # The preference fields the revisitable setup screen owns and the two
+    # onboarding steps collect — see schema.sql on meal_preferences.
+    ("meal_preferences", "kitchen_kit_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("meal_preferences", "repeats_tolerance", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_preferences", "weeknight_max_minutes", "INTEGER NOT NULL DEFAULT 0"),
+    ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
+    ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the exact two colors

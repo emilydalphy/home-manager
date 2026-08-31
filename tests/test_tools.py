@@ -525,3 +525,183 @@ def test_a_week_resolves_to_its_own_plan_not_merely_the_current_one():
 def test_a_week_is_named_the_way_the_copy_writes_it():
     assert tools._format_week_range("2026-09-01") == "Sep 1–7"
     assert tools._format_week_range("2026-08-30") == "Aug 30–Sep 5"
+
+
+# ---------- Plan the Week: the intake ----------
+# DATA_MODEL.md. Append-only revisions, the two snapshots, and the soft
+# lock. These are the parts with no visible UI, and the parts that cannot be
+# retrofitted once weeks have been planned without them.
+
+def test_the_first_answers_are_revision_one():
+    intake = tools.save_week_intake(
+        "2026-09-07", night_tags={"2026-09-09": ["rush"]}, created_by="Emily"
+    )
+    assert intake["revision"] == 1
+    assert intake["night_tags"] == {"2026-09-09": ["rush"]}
+    assert tools.get_week_intake("2026-09-07")["intake_id"] == intake["intake_id"]
+
+
+def test_changing_an_answer_writes_a_new_revision_and_keeps_the_old_one():
+    first = tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["rush"]})
+    second = tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["left"]})
+
+    assert second["revision"] == 2
+    assert second["intake_id"] != first["intake_id"]
+    assert tools.get_week_intake("2026-09-07")["night_tags"] == {"2026-09-09": ["left"]}
+    # The old row is still there — "the week you had before you redid it".
+    history = tools.get_week_intake_history("2026-09-07")
+    assert [h["revision"] for h in history] == [1, 2]
+    assert history[0]["night_tags"] == {"2026-09-09": ["rush"]}
+
+
+def test_each_screen_saves_its_own_half_without_clobbering_the_other():
+    """
+    Q1 sends nights, Q2 sends moods and cuisines. Neither restates the
+    other's answers, and neither may wipe them.
+    """
+    tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["rush"]}, packed_lunch_days=["2026-09-07"])
+    tools.save_week_intake("2026-09-07", moods=["Comfort food"], cuisines=["Thai"], freeform="Friday is pizza night.")
+
+    current = tools.get_week_intake("2026-09-07")
+    assert current["night_tags"] == {"2026-09-09": ["rush"]}
+    assert current["packed_lunch_days"] == ["2026-09-07"]
+    assert current["moods"] == ["Comfort food"]
+    assert current["freeform"] == "Friday is pizza night."
+
+
+def test_a_regular_night_cannot_also_carry_another_tag():
+    """
+    Affirming a night and constraining it are different answers. Holding
+    both would leave the generator with no way to tell which was meant.
+    """
+    with pytest.raises(ValueError):
+        tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["normal", "rush"]})
+
+
+def test_an_unknown_tag_is_refused():
+    with pytest.raises(ValueError):
+        tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["busy"]})
+
+
+def test_the_preferences_snapshot_is_a_copy_not_a_pointer():
+    """
+    The one people skip and regret. If a plan only points at live
+    preferences then editing "won't eat" later makes every past plan's
+    reasoning unreadable — you can no longer tell whether a strange choice
+    was a bug or a preference that has since changed.
+    """
+    tools.add_food_dislikes(["olives"])
+    intake = tools.save_week_intake("2026-09-07", moods=["Comfort food"])
+    assert intake["preferences_snapshot"]["wont_eat"] == ["olives"]
+
+    tools.add_food_dislikes(["fennel"])
+
+    unchanged = tools.get_week_intake("2026-09-07")
+    assert unchanged["preferences_snapshot"]["wont_eat"] == ["olives"], \
+        "the snapshot records what was true when the answer was given"
+
+
+def test_the_household_snapshot_records_the_table_as_it_was():
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    intake = tools.save_week_intake("2026-09-07", moods=["Comfort food"])
+    assert intake["household_snapshot"] == {"adults": 2, "children": 0}
+
+
+def test_the_second_adult_joins_the_first_ones_intake():
+    """
+    DATA_MODEL.md → One intake in flight. Both adults are nudged, so both
+    can start; two intakes racing to generate the same week is the one
+    concurrency case that will actually happen.
+    """
+    tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["rush"]}, created_by="Emily")
+
+    prefill = tools.get_week_intake_prefill("2026-09-07")
+
+    assert prefill["in_flight"] is True
+    assert prefill["intake"]["created_by"] == "Emily"
+    assert prefill["intake"]["night_tags"] == {"2026-09-09": ["rush"]}
+
+
+def test_q2_reads_cuisines_from_what_we_know_rather_than_a_fixed_list():
+    tools.edit_preference("cuisine_preferences", ["Thai", "Greek"])
+
+    prefill = tools.get_week_intake_prefill("2026-09-07")
+
+    assert prefill["cuisines"] == ["Thai", "Greek"]
+    assert prefill["cuisines_are_fallback"] is False
+
+
+def test_q2_falls_back_to_the_onboarding_list_when_nothing_is_saved():
+    prefill = tools.get_week_intake_prefill("2026-09-07")
+    assert prefill["cuisines"] == tools.ONBOARDING_CUISINES
+    assert prefill["cuisines_are_fallback"] is True
+
+
+def test_the_guest_panel_knows_when_it_cannot_do_the_maths():
+    """
+    Guest steppers collect EXTRAS, added to the household. With no
+    composition on record the panel has to ask for the whole table instead
+    — otherwise the acknowledgement confidently states a wrong number.
+    """
+    assert tools.get_week_intake_prefill("2026-09-07")["household_known"] is False
+
+    _add_adult("Emily")
+    assert tools.get_week_intake_prefill("2026-09-07")["household_known"] is True
+
+
+# ---------- Plan the Week: no slot is ever silently missing ----------
+
+def test_a_week_has_all_twenty_one_slots_or_says_which_are_missing():
+    week = "2026-09-07"
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    audit = tools.audit_plan_slots(plan_id)
+    assert audit["expected"] == 21
+    assert audit["complete"] is False
+    assert len(audit["missing"]) == 21
+
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    for day in tools._week_dates(week):
+        for slot in tools.WEEK_SLOTS:
+            tools.plan_meal(day, "Chili", slot=slot, weekly_plan_id=plan_id)
+
+    assert tools.audit_plan_slots(plan_id)["complete"] is True
+
+
+def test_the_three_slot_states_are_all_real_slots():
+    week = "2026-09-07"
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+
+    tools.plan_meal(week, "Chili", slot="breakfast", weekly_plan_id=plan_id)
+    tools.plan_slot_empty(plan_id, week, "lunch", "You’re out — I’ve planned nothing and bought nothing.")
+    tools.plan_slot_open(
+        plan_id, week, "dinner",
+        "Monday I’d rather ask than guess: everything under 20 minutes repeats Sunday.",
+        options=[{"label": "Breakfast for dinner", "meta": "12 min"}],
+    )
+
+    audit = tools.audit_plan_slots(plan_id)
+    assert audit["present"] == 3
+    assert audit["hollow"] == [], "each of the three states is a real slot, not a hollow row"
+
+
+def test_an_open_slot_must_name_the_constraint_that_caused_it():
+    """
+    A slot handed back without a reason reads as failure. The reason is
+    what makes it read as diligence.
+    """
+    plan_id = tools.create_weekly_plan("2026-09-07")["weekly_plan_id"]
+    with pytest.raises(ValueError):
+        tools.plan_slot_open(plan_id, "2026-09-07", "dinner", "   ")
+
+
+def test_a_plan_remembers_the_answers_it_came_from():
+    week = "2026-09-07"
+    intake = tools.save_week_intake(week, night_tags={"2026-09-09": ["rush"]})
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+
+    tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+
+    prefill = tools.get_week_intake_prefill(week)
+    assert prefill["in_flight"] is False, "answers already turned into a plan aren't still in flight"

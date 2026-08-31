@@ -1489,6 +1489,83 @@ html, body {
   color: var(--muted, #6B5A63);
 }
 
+/* ---------- The offer to plan a week (Today) ----------
+   design_handoff_plan_the_week §2. Plum top rule rather than the
+   needs-you band's amber/coral: this is an offer with no deadline, and it
+   should not read as urgent alongside cards that genuinely are. */
+/* Removed outright, not merely blanked, when there's no offer — an empty
+   flex child would otherwise leave its gap behind above the day's cards. */
+.today-area-nudge:empty { display: none; }
+.plan-nudge-card {
+  padding: 16px 17px;
+  border-top: 4px solid var(--plum);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plan-nudge-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plan-nudge-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .05em;
+  color: var(--plum);
+}
+.plan-nudge-dismiss {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 2px;
+  flex-shrink: 0;
+}
+.plan-nudge-dismiss:hover { color: var(--plum); }
+.plan-nudge-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--plum-ink);
+}
+.plan-nudge-body { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--muted); }
+.plan-nudge-cta { width: 100%; min-height: 46px; font-size: 16px; margin-top: 2px; }
+.plan-nudge-dismissed { border-top-color: var(--rule); }
+.plan-nudge-link {
+  background: none;
+  border: none;
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--plum);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.plan-nudge-link:hover { text-decoration: underline; }
+
+/* The permanent entry point on Meals — same row shape as .week-reset-row
+   below, which is what makes "it'll be waiting for you under Meals" a
+   promise the screen actually keeps. */
+.week-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 19px;
+  flex-shrink: 0;
+}
+.week-plan-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.week-plan-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--plum-ink);
+}
+.week-plan-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
+.week-plan-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
+
 /* ---------- Approve the week / approved receipt ----------
    design_handoff_plan_the_week. Two states of one slot: the promise plus
    the button while the week is a draft, and the green receipt once it has

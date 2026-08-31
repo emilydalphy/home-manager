@@ -733,6 +733,28 @@ class WeekApproveRequest(BaseModel):
     approved_by: str = ""
 
 
+class WeekIntakeRequest(BaseModel):
+    """
+    Whichever answers this screen collected. Every field is optional and
+    None means "not this screen's business" — Q1 sends nights, guests and
+    packed lunches; Q2 sends moods, cuisines and the freeform share. Each
+    saves a new intake revision without clobbering the other's half. See
+    tools.save_week_intake.
+    """
+    night_tags: dict | None = None
+    guest_counts: dict | None = None
+    packed_lunch_days: list | None = None
+    moods: list | None = None
+    cuisines: list | None = None
+    freeform: str | None = None
+    created_by: str = ""
+
+
+class WeekGenerateRequest(BaseModel):
+    intake_id: int | None = None
+    constraints_notes: str = ""
+
+
 def _plan_id_for_week(week_start: str) -> int:
     """
     Resolve a week's Monday to its weekly_plans row id, 404ing if that week
@@ -747,6 +769,91 @@ def _plan_id_for_week(week_start: str) -> int:
     if plan_id is None:
         raise HTTPException(status_code=404, detail=f"No plan for the week of {week_start}.")
     return plan_id
+
+
+@app.get("/api/week/plan-nudge")
+def week_plan_nudge():
+    """
+    Whether to offer to plan a week on Today, and which one. Dismissing it
+    goes through the existing /api/notifications/dismiss with the returned
+    dismiss_key — the key is the week itself, so "I won't ask again this
+    week" is literally true and next week's offer isn't silenced with it.
+    """
+    try:
+        return tools.get_week_planning_nudge()
+    except Exception as e:
+        logger.exception("Week planning nudge lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/week/{week_start}/intake")
+def week_intake_prefill(week_start: str):
+    """
+    Everything the two question screens need to open already knowing what
+    the app knows: each day's hint from What We Know and observed history,
+    the household's own saved cuisines, its composition for the guest
+    maths, and any intake already in flight for this week (so the second
+    adult to start joins the first one's answers instead of a blank set).
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    try:
+        return tools.get_week_intake_prefill(week_start)
+    except Exception as e:
+        logger.exception("Week intake prefill failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/intake")
+def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
+    """
+    Save the household's answers as a NEW intake revision. Append-only —
+    see tools.save_week_intake for why nothing is ever updated in place.
+    """
+    try:
+        return tools.save_week_intake(
+            week_start,
+            night_tags=req.night_tags,
+            guest_counts=req.guest_counts,
+            packed_lunch_days=req.packed_lunch_days,
+            moods=req.moods,
+            cuisines=req.cuisines,
+            freeform=req.freeform,
+            created_by=req.created_by,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Week intake save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/generate")
+def generate_week(week_start: str, req: WeekGenerateRequest):
+    """
+    Draft a week from the household's answers. Adds NOTHING to the grocery
+    list — a draft is not a yes; approving is (see approve_week).
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    try:
+        plan = generate_weekly_plan(
+            week_start,
+            constraints_notes=req.constraints_notes,
+            intake_id=req.intake_id,
+        )
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Week generation failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return plan
 
 
 @app.post("/api/week/{week_start}/approve")
@@ -1762,6 +1869,17 @@ def cooker_page():
 @app.get("/onboarding")
 def onboarding_page():
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
+
+
+@app.get("/plan-week")
+def plan_week_page():
+    """
+    The two question screens (design_handoff_plan_the_week). A standalone
+    page rather than a tab in the shell, for the same reason /onboarding is
+    one: a focused sequence with a beginning and an end, which tab chrome
+    would only invite leaving half-answered. Takes ?week=<Monday>.
+    """
+    return FileResponse(os.path.join(static_dir, "plan-week.html"))
 
 
 @app.get("/memory")

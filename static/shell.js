@@ -240,6 +240,14 @@
           '<div class="kicker" id="today-date"></div>' +
           '<h1 id="today-h1">You&rsquo;re clear</h1>' +
         '</div>' +
+        // The offer to plan a week. Outside .today-body, not inside it:
+        // .today-body is a named-area grid on desktop, and an area whose
+        // only child is display:none still leaves its row's gap behind. As
+        // a child of the flex column instead, it disappears completely when
+        // there's no offer to make. Above everything because it is an
+        // offer, not a demand — it can be read and ignored, rather than
+        // mixed in with things that genuinely need a decision today.
+        '<div id="plan-week-nudge" class="today-area-nudge"></div>' +
         '<div class="today-body">' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-dinner-card" class="dinner-card today-area-dinner" hidden></div>' +
@@ -277,11 +285,81 @@
     setupAskColumn(panel);
 
     await Promise.all([
+      loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
       loadTonightsDinner(panel),
       loadChores(panel),
       loadGrocerySummary(panel)
     ]);
+  }
+
+  // ---------- The offer to plan a week ----------
+  // design_handoff_plan_the_week §2. Dismissible, and the dismissal is
+  // scoped to the week itself, so "I won't ask again this week" is
+  // literally true rather than approximately true.
+
+  async function loadPlanWeekNudge(panel) {
+    var wrap = panel.querySelector('#plan-week-nudge');
+    if (!wrap) return;
+    try {
+      var res = await fetch('/api/week/plan-nudge');
+      if (!res.ok) throw new Error('nudge lookup failed');
+      var nudge = await res.json();
+      renderPlanWeekNudge(wrap, nudge);
+    } catch (err) {
+      // An offer is the most skippable thing on this screen — if it can't
+      // be fetched, show nothing rather than an error about a suggestion.
+      console.warn('Plan-week nudge lookup failed:', err);
+      wrap.innerHTML = '';
+    }
+  }
+
+  function renderPlanWeekNudge(wrap, nudge) {
+    if (!nudge || !nudge.show) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML =
+      '<div class="shell-card plan-nudge-card">' +
+        '<div class="plan-nudge-top">' +
+          '<span class="plan-nudge-eyebrow">' +
+            (nudge.is_current_week ? 'THIS WEEK' : 'NEXT WEEK') + ' &middot; WHENEVER SUITS YOU</span>' +
+          '<button type="button" class="plan-nudge-dismiss" id="plan-nudge-dismiss">Not now</button>' +
+        '</div>' +
+        '<div class="plan-nudge-title">Shall I put ' + escapeHtml(nudge.week_label) + ' together for you?</div>' +
+        '<div class="plan-nudge-body">Two rounds of questions from me — about five minutes — then I’ll ' +
+          'draft the week and you tell me what to change. Nothing gets bought until you approve it.</div>' +
+        '<button type="button" class="btn-gold plan-nudge-cta" id="plan-nudge-go">Let’s plan the week</button>' +
+      '</div>';
+
+    wrap.querySelector('#plan-nudge-go').addEventListener('click', function () {
+      startPlanningWeek(nudge.week_start);
+    });
+    wrap.querySelector('#plan-nudge-dismiss').addEventListener('click', async function () {
+      // Say what dismissing means, and where the offer went — the entry
+      // point on Meals is permanent, so nothing is actually lost.
+      wrap.innerHTML =
+        '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
+          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Meals — I won’t ask again this week.</div>' +
+          '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
+        '</div>';
+      wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
+        startPlanningWeek(nudge.week_start);
+      });
+      try {
+        await fetch('/api/notifications/dismiss', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: nudge.dismiss_key })
+        });
+      } catch (err) {
+        console.warn('Dismissing the plan-week nudge failed:', err);
+      }
+    });
+  }
+
+  function startPlanningWeek(weekStart) {
+    // A full page rather than a tab — see /plan-week in app/main.py for
+    // why. Leaving the shell entirely is the point: the flow has a
+    // beginning and an end, and comes back to Meals when it's done.
+    window.location.href = '/plan-week?week=' + encodeURIComponent(weekStart);
   }
 
   function setTodayHeading(panel, count) {
@@ -732,6 +810,10 @@
         // the reset row: approving the week is the primary thing to do
         // here, starting over is the last resort.
         '<div id="week-approve-row"></div>' +
+        // The permanent way into the two question screens — see
+        // renderPlanWeekEntry. Below Approve because approving the week
+        // you already have comes before planning the next one.
+        '<div id="week-plan-row"></div>' +
         // Self-service reset entry point. Outside #week-mobile/#week-grid so
         // the one row shows at both breakpoints — see .week-reset-row in
         // shell.css for why it can't live in #week-header (desktop-only).
@@ -1050,6 +1132,38 @@
     row.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
   }
 
+  // The permanent entry into the two question screens. The Sunday nudge on
+  // Today is dismissible and week-scoped; this one never goes away, which
+  // is what makes "it'll be waiting for you under Meals" true.
+  function renderPlanWeekEntry(panel, data) {
+    var row = panel.querySelector('#week-plan-row');
+    if (!row) return;
+    var weekStart = nextWeekStartLocal();
+    var alreadyPlanned = data.weekly_plan_id && data.week_start_date === weekStart;
+    row.innerHTML =
+      '<div class="shell-card week-plan-row">' +
+        '<div class="week-plan-text">' +
+          '<div class="week-plan-title">' +
+            (alreadyPlanned ? 'Plan another week' : 'Plan next week') + '</div>' +
+          '<div class="week-plan-sub">Two rounds of questions, then I’ll draft it. Nothing gets bought until you approve.</div>' +
+        '</div>' +
+        '<button type="button" class="btn-outline-plum" id="week-plan-btn">Let’s plan</button>' +
+      '</div>';
+    row.querySelector('#week-plan-btn').addEventListener('click', function () { startPlanningWeek(weekStart); });
+  }
+
+  function nextWeekStartLocal() {
+    // The Monday after this one, built from local date fields for the same
+    // reason todayLocalStr is — toISOString() is UTC and gets the day
+    // wrong either side of midnight.
+    var d = new Date();
+    var daysSinceMonday = (d.getDay() + 6) % 7;   // JS weeks start on Sunday
+    d.setDate(d.getDate() - daysSinceMonday + 7);
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
   async function approveWeek(panel, data) {
     // Who is approving. There is no per-person login in this app (see
     // tools.get_household_people), so with two adults on record the only
@@ -1112,6 +1226,7 @@
       mobileEl.querySelector('#whole-week-sub').textContent = '';
       gridEl.innerHTML = '';
       renderWeekApproval(panel, data);
+      renderPlanWeekEntry(panel, data);
       weekState.days = [];
       return;
     }
@@ -1145,6 +1260,7 @@
     renderDayCard(panel, days[weekState.selectedIndex]);
     renderWholeWeekRow(panel, days);
     renderWeekApproval(panel, data);
+    renderPlanWeekEntry(panel, data);
     renderWeekSheetRows(days);
 
     var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
