@@ -1489,6 +1489,18 @@ html, body {
   color: var(--muted, #6B5A63);
 }
 
+/* The chat sheet says what it's for. An unlabelled sheet said nothing, and
+   "Tell me what to change" is the invitation the design asks for — it names
+   the thing worth typing rather than leaving a bare field. */
+.ask-sheet-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--plum-ink);
+  padding: 2px 20px 10px;
+  flex-shrink: 0;
+}
+
 /* ---------- The offer to plan a week (Today) ----------
    design_handoff_plan_the_week §2. Plum top rule rather than the
    needs-you band's amber/coral: this is an offer with no deadline, and it

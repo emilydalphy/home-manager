@@ -791,6 +791,25 @@ def test_the_menu_carries_each_slots_state_and_reason():
     assert day["breakfast"]["options"] == [{"label": "Toast", "meta": "5 min"}]
 
 
+def test_the_assistant_can_tell_a_settled_slot_from_a_missing_one():
+    """
+    The assistant reads get_weekly_plan's meals. Without slot_state, a
+    nobody-home dinner looks exactly like a missing meal — and it offered to
+    fill one in a real chat turn, which is precisely what planned_empty
+    exists to prevent.
+    """
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.plan_slot_empty(plan_id, week, "dinner", "You’re out — I’ve planned nothing and bought nothing.")
+    tools.plan_slot_open(plan_id, week, "lunch", "Monday I’d rather ask than guess: nothing quick is new.")
+
+    meals = {m["slot"]: m for m in tools.get_weekly_plan(plan_id)["meals"]}
+
+    assert meals["dinner"]["slot_state"] == "planned_empty"
+    assert meals["lunch"]["slot_state"] == "open"
+    assert meals["lunch"]["open_reason"].startswith("Monday I’d rather ask")
+
+
 def test_the_headline_names_the_one_decision_waiting():
     week = _week_start()
     plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]

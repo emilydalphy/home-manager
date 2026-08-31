@@ -2544,7 +2544,8 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     meals = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
-               mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning
+               mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
+               mpe.slot_state, mpe.open_reason
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -2561,6 +2562,14 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
             "component_category": m["component_category"],
             "cooked_status": m["cooked_status"],
             "reasoning": m["reasoning"] or None,
+            # The assistant reads this list, so it has to be able to tell a
+            # slot that needs no decision from one that does. Without it, a
+            # nobody-home dinner looks exactly like a missing meal and gets
+            # offered back as a question — which is precisely the thing
+            # planned_empty exists to prevent. Caught in a real chat turn,
+            # not by reading the code.
+            "slot_state": m["slot_state"],
+            "open_reason": m["open_reason"] or None,
         }
         for m in meals
     ]
@@ -4497,12 +4506,18 @@ def get_active_notifications() -> list[dict]:
         if key not in dismissed:
             if len(expiring) == 1:
                 it = expiring[0]
-                title = f"{it['item']} needs using soon"
-                body = f"{it['quantity']}. Want it in a dinner this week?" if it["quantity"] else "Want it in a dinner this week?"
+                # COPY.md's use-it-up rewrite: name what's happening and
+                # what I'll do about it, rather than reporting a date and
+                # leaving the household to work out the implication.
+                title = f"Your {it['item'].lower()} turns soon"
+                body = (
+                    f"{it['quantity']} — I’ll work it into this week if you’d like."
+                    if it["quantity"] else "I’ll work it into this week if you’d like."
+                )
             else:
                 names = ", ".join(e["item"] for e in expiring[:3])
                 title = f"{len(expiring)} things to use this week"
-                body = f"{names} are all near their date."
+                body = f"{names} all turn soon — I’ll work them into this week if you’d like."
             out.append({
                 "key": key, "type": "expiring_soon", "title": title, "body": body,
                 "href": "/inventory", "action_label": "Plan a meal with it",
