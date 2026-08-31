@@ -1979,7 +1979,10 @@
         chip.addEventListener('click', function () { sendAskMessage(QUICK_ACTIONS[Number(chip.dataset.i)].msg); });
       });
     });
-    addAskMessage('assistant', 'Hi! I’m your home manager. Tap a suggestion below, or just tell me what you need.');
+    // No exclamation mark, and an offer rather than an instruction — this
+    // is the first thing the assistant ever says, and it has to sit beside
+    // the same voice as the rest of the app.
+    addAskMessage('assistant', 'Tell me what you’d like different and I’ll rework it — no need to be polite about it.');
   }
 
   function buildAskMessageEl(role, text, actions) {

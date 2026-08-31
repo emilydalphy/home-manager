@@ -156,6 +156,42 @@ def test_a_nobody_home_night_is_planned_empty_and_never_asked_about(recipe, stub
     assert links == [], "nothing for an out night reaches the shopping list"
 
 
+def test_a_rush_night_reaches_the_generator_as_a_real_cap(recipe, stub_model):
+    """
+    Whether the model then honours the cap is a prompt matter and can't be
+    asserted against a stub. What CAN be asserted, and is worth guarding, is
+    that the tag and the number actually reach it — a silently dropped tag
+    would look exactly like a model that ignored it.
+    """
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    intake = tools.save_week_intake(week, night_tags={wednesday: ["rush"]})
+    seen = stub_model(_full_week(week))
+
+    agent.generate_weekly_plan(week, intake_id=intake["intake_id"])
+
+    assert seen["context"]["intake"]["night_tags"][wednesday] == ["rush"]
+    assert tools.RUSH_MAX_MINUTES == 20
+
+
+def test_packed_lunch_days_reach_the_generator_without_unplanning_lunch(recipe, stub_model):
+    """
+    Packed-lunch days don't decide WHETHER a lunch is planned — every lunch
+    is planned either way. They constrain those days to food that travels
+    cold.
+    """
+    week = _week_start()
+    days = tools._week_dates(week)[:3]
+    intake = tools.save_week_intake(week, packed_lunch_days=days)
+    seen = stub_model(_full_week(week))
+
+    plan = agent.generate_weekly_plan(week, intake_id=intake["intake_id"])
+
+    assert seen["context"]["intake"]["packed_lunch_days"] == days
+    slots = _slots_for(plan["weekly_plan_id"])
+    assert all(slots[(d, "lunch")]["slot_state"] == "planned" for d in tools._week_dates(week))
+
+
 def test_the_generator_is_told_the_whole_table_not_just_the_extra_guests(recipe, stub_model):
     """
     The steppers collect extras; portions need the total. Doing that sum
