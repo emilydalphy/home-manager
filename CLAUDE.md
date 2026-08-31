@@ -111,6 +111,33 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-08-30 — Proactive checks (`get_attention_items`, `get_expiring_soon`)
+  moved from a system-prompt instruction to code.** They previously relied on
+  the model remembering to call them "near the start of a conversation," a
+  soft instruction easy to let slide. `run_agent_turn` now takes a
+  `proactive_check` flag; `main.py` sets it when a session's last message was
+  4+ hours ago, and `agent._build_proactive_check_block()` runs both checks
+  and injects anything genuinely pending as a system block before the model
+  ever sees the turn. Verified live: a seeded expiring item got worked into
+  the reply unprompted. Not yet pushed to origin/main as of this entry —
+  check `git log origin/main..HEAD` before assuming it's deployed.
+- **2026-08-30 — "Start over" (self-service reset) added to the Meals tab.**
+  Wiping a week's plan or the grocery list previously meant chat, or
+  `reset_household.py` — an admin script that wipes *everything*
+  (recipes, chores, members) and is not meant for regular use. New
+  `tools.clear_weekly_plan()` loops the existing per-meal
+  `_reverse_meal_grocery_contributions()` over the plan's entries rather
+  than reinventing the grocery-side logic, and empties the `weekly_plans`
+  row instead of deleting it so the week's dates/constraints survive and
+  `_current_weekly_plan_row` isn't left choosing between an orphan and a
+  new plan. Two judgment calls worth knowing: the entry point is a row in
+  `.week-content` (a sibling of `#week-mobile`/`#week-grid`), because
+  `#week-header` is desktop-only and would have hidden the button on the
+  phone PWA; and with both resets selected the plan runs first, so the
+  toast names "the grocery list" rather than a count — the count would
+  read "1 grocery item" for a list that just went from 9 to 0, since the
+  plan's own reversal already took the other 8.
+
 - **2026-08-30 — Grocery list over-counted staples and fragmented
   near-duplicate ingredient names.** Every recipe using a small-use staple
   (garlic powder, olive oil) independently added a full store-bought unit
@@ -198,12 +225,11 @@ visual/screen-reader verification of the whole app is still an open gap.
 
 ## Immediate open items
 
-1. **Recommendation enforcement** (in progress as of 2026-08-30): the chat
-   agent's proactive-suggestion tools (`get_attention_items`,
-   `get_expiring_soon`, feedback nudges, etc.) currently rely on the system
-   prompt saying "call this when relevant," which a model can let slide in
-   a long conversation. Moving the highest-value checks into code that runs
-   automatically rather than trusting the prompt is the next piece of work.
+1. **Recommendation enforcement** — `get_attention_items`/`get_expiring_soon`
+   now code-enforced at session start (see Decision log). Not yet pushed to
+   `origin/main`. Still prompt-only, and candidates for the same treatment
+   if it proves valuable: `get_cross_location_duplicates`, the feedback
+   nudge's own re-surfacing cadence.
 2. Consider tackling code-review finding #8 (splitting `tools.py`) next,
    now that it's safely testable — before layering more auth/multi-tenancy
    work on top of the current single-file size.
