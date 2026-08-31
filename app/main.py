@@ -301,6 +301,14 @@ class GroceryStoreRequest(BaseModel):
     store: str = ""
 
 
+class GroceryPreShopRequest(BaseModel):
+    decision: str  # "keep" | "drop"
+    # Which household adult made the call, from the same client-side
+    # identity switcher GroceryAddRequest.added_by uses — see
+    # tools.drop_grocery_item_pre_shop.
+    author: str = "user"
+
+
 class ResetRequest(BaseModel):
     """
     Which of the two self-service resets to run — see POST /api/reset.
@@ -1030,15 +1038,15 @@ def get_grocery_list_view(status: str = "needed"):
     """
     Grocery list grouped by store section — powers the dedicated Grocery
     List view page. status: needed | in_cart | purchased | excluded | all.
-    For 'needed', items flagged by get_grocery_already_have_items (not yet
-    reviewed) are left out here too — they're shown separately in the
-    view's "Already have this?" review section instead, so nothing appears
-    twice.
+    For 'needed', items flagged by get_pre_shop_flags (not yet reviewed)
+    are left out here too — they're shown separately in the Grocery
+    screen's pinned "Maybe already home" pre-shop check instead, so
+    nothing appears twice.
     """
     try:
         result = tools.get_grocery_list_by_section(status=status)
         if status == "needed":
-            already_have_ids = {it["item_id"] for it in tools.get_grocery_already_have_items()}
+            already_have_ids = {it["itemId"] for it in tools.get_pre_shop_flags()}
             if already_have_ids:
                 result = {
                     "sections": [
@@ -1058,14 +1066,14 @@ def get_grocery_list_view(status: str = "needed"):
 def get_grocery_list_by_store_view(status: str = "needed"):
     """
     Grocery list split into store groups (see set_item_store) — powers the
-    Grocery List view's 'By store' toggle. Same already-have filtering as
+    Grocery List view's 'By store' toggle. Same pre-shop-flag filtering as
     the main /api/grocery-list endpoint for status='needed', so a flagged
-    item doesn't show here while also sitting in the review section.
+    item doesn't show here while also sitting in the pre-shop check block.
     """
     try:
         result = tools.get_grocery_list_by_store(status=status)
         if status == "needed":
-            already_have_ids = {it["item_id"] for it in tools.get_grocery_already_have_items()}
+            already_have_ids = {it["itemId"] for it in tools.get_pre_shop_flags()}
             if already_have_ids:
                 stores = []
                 for store in result["stores"]:
@@ -1083,15 +1091,15 @@ def get_grocery_list_by_store_view(status: str = "needed"):
     return result
 
 
-@app.get("/api/grocery-list/already-have")
-def get_grocery_already_have_view():
-    """Items on the 'needed' list that may already be covered by tracked inventory — powers the Grocery List view's 'Already have this?' review section."""
+@app.get("/api/grocery-list/pre-shop-flags")
+def get_pre_shop_flags_view():
+    """Items on the 'needed' list that may already be covered by tracked inventory, humanised into a one-sentence comparison each — powers the Grocery screen's pinned 'Maybe already home' pre-shop check (PRE_SHOP_CHECK.md)."""
     try:
-        result = tools.get_grocery_already_have_items()
+        result = tools.get_pre_shop_flags()
     except Exception as e:
-        logger.exception("Grocery already-have lookup failed")
+        logger.exception("Pre-shop flags lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"items": result}
+    return {"flags": result}
 
 
 @app.get("/api/grocery-list/store-preferences")
@@ -1105,13 +1113,45 @@ def get_grocery_item_store_preferences():
     return {"preferences": prefs}
 
 
-@app.post("/api/grocery-list/{item_id}/keep")
-def keep_grocery_list_item(item_id: int):
-    """Confirm an already-have-flagged item is still needed — moves it back into the normal To-buy list."""
+@app.post("/api/grocery-list/{item_id}/pre-shop")
+def resolve_pre_shop_flag(item_id: int, req: GroceryPreShopRequest):
+    """
+    Resolve one pre-shop flag (PRE_SHOP_CHECK.md): decision 'keep' ("Buy it
+    anyway") confirms the item is still needed and stops it being flagged
+    again; decision 'drop' ("Drop it") soft-removes it (status: removed,
+    reversible via /pre-shop-undo). Idempotent per item.
+    """
+    if req.decision not in ("keep", "drop"):
+        raise HTTPException(status_code=400, detail="decision must be 'keep' or 'drop'")
     try:
-        result = tools.mark_grocery_item_already_have_reviewed(item_id)
+        if req.decision == "keep":
+            result = tools.mark_grocery_item_already_have_reviewed(item_id)
+        else:
+            result = tools.drop_grocery_item_pre_shop(item_id, author=req.author)
     except Exception as e:
-        logger.exception("Grocery already-have review failed")
+        logger.exception("Pre-shop decision failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/pre-shop-undo")
+def undo_pre_shop_flag(item_id: int):
+    """Undo a pre-shop 'Drop it' — restores the item to the list without re-flagging it this trip."""
+    try:
+        result = tools.undo_pre_shop_drop(item_id)
+    except Exception as e:
+        logger.exception("Pre-shop undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/pre-shop/keep-all")
+def keep_all_pre_shop_flags_view():
+    """'Keep all {n}' — resolves every currently flagged pre-shop item as keep, in one write."""
+    try:
+        result = tools.keep_all_pre_shop_flags()
+    except Exception as e:
+        logger.exception("Pre-shop keep-all failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 

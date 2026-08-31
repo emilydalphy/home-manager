@@ -185,20 +185,42 @@
   .voice-status .voice-log li { padding: 2px 0; border-top: 1px solid var(--card-border); }
   .voice-status .voice-log li:first-child { border-top: none; }
 
-  /* ---------- Already-have banner (kept from prior release) ---------- */
-  .already-have-banner { border-radius: 16px; padding: 12px 16px; margin: 14px 0; font-size: 0.88rem; background: var(--violet-soft); border: 1px solid var(--card-border); color: var(--text-body); }
-  .already-have-banner h2 { font-family: var(--font-heading); font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--midnight-violet); }
-  .already-have-banner p.hint { margin: 0 0 10px; color: var(--text-muted); font-size: 0.82rem; }
-  .already-have-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--card-border); flex-wrap: wrap; }
-  .already-have-row:last-child { border-bottom: none; }
-  .already-have-row .info { flex: 1; min-width: 160px; }
-  .already-have-row .tag { font-weight: 700; color: var(--text-body); }
-  .already-have-row .actions { display: flex; gap: 6px; flex-shrink: 0; }
-  .ah-btn { border: none; border-radius: 10px; padding: 8px 12px; min-height: 40px; font-family: var(--font-body); font-weight: 700; font-size: 0.8rem; cursor: pointer; }
-  .ah-btn.remove-btn { background: var(--electric-coral); color: #fff; }
-  .ah-btn.keep-btn { background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet); }
-  .ah-btn.have-btn { background: rgba(111,184,76,.18); color: var(--leaf-dark); }
-  .ah-btn:disabled { opacity: 0.6; cursor: default; }
+  /* ---------- Pre-shop check — "Maybe already home" (PRE_SHOP_CHECK.md, option 1a) ----------
+     Replaces the old three-action "Already have this?" banner entirely.
+     Shared .ps-* rules below are the phone layout; the #dg-pre-shop
+     overrides further down restyle the same markup pattern (rendered by a
+     separate desktop template function) into the desktop row shape. */
+  .ps-card { background: #F3E6EE; border: 1px solid #E4CEDE; border-radius: 18px; padding: 16px 18px 8px; margin: 0 0 13px; overflow: hidden; }
+  .ps-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .ps-title { font-family: var(--font-heading); font-weight: 700; font-size: 19px; color: var(--midnight-violet); margin: 0; }
+  .ps-keep-all { background: none; border: none; padding: 0; font-family: var(--font-body); font-weight: 700; font-size: 14px; color: #8A4A6E; cursor: pointer; flex-shrink: 0; min-height: 44px; }
+  .ps-keep-all:hover { color: var(--midnight-violet); }
+  .ps-helper { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: #7D6A74; margin: 4px 0 6px; }
+  .ps-row { border-top: 1px solid #E7D4E1; padding: 13px 0 12px; }
+  .ps-row:first-of-type { border-top: none; }
+  .ps-name { font-family: var(--font-body); font-weight: 700; font-size: 17px; color: var(--ink); margin: 0 0 2px; }
+  .ps-sentence { font-family: var(--font-body); font-size: 15px; line-height: 1.45; color: #7D6A74; margin: 0 0 10px; }
+  .ps-actions { display: flex; gap: 8px; }
+  .ps-btn { flex: 1; min-height: 44px; border-radius: 12px; font-family: var(--font-body); font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; }
+  .ps-btn:disabled { opacity: 0.6; cursor: default; }
+  .ps-btn-buy { background: var(--midnight-violet); border: none; color: #fff; }
+  .ps-btn-buy:hover { background: #7C3D5E; }
+  .ps-btn-drop { background: transparent; border: 1.5px solid #C9B3C1; color: var(--midnight-violet); }
+  .ps-btn-drop:hover { background: #ECDBE6; }
+  .ps-more { display: block; background: none; border: none; padding: 6px 0 2px; font-family: var(--font-body); font-weight: 700; font-size: 14px; color: #8A4A6E; cursor: pointer; text-align: left; min-height: 32px; }
+  .ps-more:hover { color: var(--midnight-violet); }
+
+  /* Desktop shape: one-line header, and each row goes name/sentence/pill-buttons
+     in a single flex row instead of phone's stacked layout. */
+  @keyframes psPopIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  #dg-pre-shop .ps-card { border-radius: 20px; padding: 18px 22px 10px; margin: 0 0 20px; animation: psPopIn .2s ease; }
+  #dg-pre-shop .ps-header { align-items: center; }
+  #dg-pre-shop .ps-helper { flex: 1; margin: 0; color: #9C8B93; }
+  #dg-pre-shop .ps-row { display: flex; align-items: center; min-height: 58px; gap: 16px; padding: 0; }
+  #dg-pre-shop .ps-name { min-width: 130px; flex-shrink: 0; margin: 0; }
+  #dg-pre-shop .ps-sentence { flex: 1; font-size: 16px; margin: 0; }
+  #dg-pre-shop .ps-actions { flex-shrink: 0; }
+  #dg-pre-shop .ps-btn { flex: none; min-height: 40px; border-radius: 20px; padding: 10px 17px; }
 
   .all-done-state { padding: 12px 0; }
   .all-done-state .pill { display: inline-block; margin-bottom: 8px; background: #6FB84C; color: #fff; font-weight: 700; font-size: 13px; padding: 5px 12px; border-radius: 999px; }
@@ -361,7 +383,7 @@
   body.dg-active { max-width: none; background: var(--page, #EFE6D6); }
   body.dg-active #app-shell { max-width: 1180px; margin: 0 auto; background: transparent; }
   body.dg-active #desktop-grocery { display: grid; }
-  body.dg-active #screen-buy, body.dg-active .mic-btn, body.dg-active #already-have-banner { display: none !important; }
+  body.dg-active #screen-buy, body.dg-active .mic-btn, body.dg-active #pre-shop-block { display: none !important; }
 
   /* ===========================================================
      Desktop Shopping mode (option 5g) — full-screen plum, ≥1024px
@@ -433,7 +455,7 @@
     </div>
 
     <div class="gl-content content-pad">
-      <div id="already-have-banner"></div>
+      <div id="pre-shop-block"></div>
       <div id="voice-status" class="voice-status"></div>
       <div id="buy-content"><p class="empty">Loading…</p></div>
       <div class="add-card">
@@ -469,6 +491,7 @@
         <button id="dg-add-btn">Add</button>
       </div>
       <div id="dg-unassigned"></div>
+      <div id="dg-pre-shop"></div>
       <div id="dg-store-list"></div>
     </div>
     <div class="dg-trip" id="dg-trip"></div>
@@ -699,7 +722,7 @@ async function refreshCurrentScreen() {
     else if (currentScreen === 'plan') renderPlanScreen(data);
     else if (currentScreen === 'shop') renderShopScreen(data);
     else if (currentScreen === 'review') renderReviewScreen(data);
-    if (currentScreen === 'buy') renderAlreadyHaveBanner();
+    if (currentScreen === 'buy') renderPreShopBlock();
     if (currentScreen === 'buy') renderDesktopGrocery(data);
     if (currentScreen === 'shop') renderDesktopShopping(data);
   } catch (err) {
@@ -907,50 +930,141 @@ function wireBuyScreenActions(content) {
   });
 }
 
-async function renderAlreadyHaveBanner() {
-  const banner = document.getElementById('already-have-banner');
-  let items = [];
+// ======================================================================
+// Pre-shop check — "Maybe already home" (PRE_SHOP_CHECK.md, option 1a).
+// Replaces the old three-action "Already have this?" banner. One data
+// source (GET /api/grocery-list/pre-shop-flags — server does the stock
+// compare and the humanising, see tools.get_pre_shop_flags) rendered by
+// two templates that share the same row markup, decision/undo/keep-all
+// plumbing, and toast below: renderPreShopBlock (phone, #pre-shop-block)
+// and renderDgPreShop (desktop, #dg-pre-shop, called from
+// renderDesktopGrocery). Never shown in shopping mode — both screens that
+// mode replaces (#screen-buy / #desktop-grocery) are the only callers.
+// ======================================================================
+const PS_CAP = 5;
+let psExpanded = false;
+let dgPsExpanded = false;
+
+async function fetchPreShopFlags() {
   try {
-    const res = await fetch('/api/grocery-list/already-have');
-    if (res.ok) items = (await res.json()).items || [];
-  } catch (err) { /* non-critical */ }
-  if (!items.length) { banner.innerHTML = ''; return; }
-  banner.innerHTML = `
-    <div class="already-have-banner">
-      <h2>Already have this?</h2>
-      <p class="hint">These are on the list, but inventory shows some already on hand — a quick check before shopping.</p>
-      ${items.map(it => `
-        <div class="already-have-row" data-item-id="${it.item_id}">
-          <div class="info">
-            <span class="tag">${escapeHtml(it.item)}</span>${it.quantity ? ' (' + escapeHtml(it.quantity) + ' wanted)' : ''}
-            — tracking ${escapeHtml(it.inventory_quantity || 'some')}${it.inventory_location ? ' in the ' + escapeHtml(it.inventory_location) : ''}
-          </div>
-          <div class="actions">
-            <button class="ah-btn have-btn">Already have it</button>
-            <button class="ah-btn keep-btn">Keep it, I need it</button>
-            <button class="ah-btn remove-btn">Remove from list</button>
-          </div>
-        </div>`).join('')}
-    </div>`;
-  banner.querySelectorAll('.already-have-row').forEach(row => {
-    const itemId = row.getAttribute('data-item-id');
-    const haveBtn = row.querySelector('.have-btn');
-    const keepBtn = row.querySelector('.keep-btn');
-    const removeBtn = row.querySelector('.remove-btn');
-    async function act(endpoint) {
-      haveBtn.disabled = true; keepBtn.disabled = true; removeBtn.disabled = true;
-      try { await postEmpty('/api/grocery-list/' + itemId + endpoint); refreshCurrentScreen(); }
-      catch (err) { haveBtn.disabled = false; keepBtn.disabled = false; removeBtn.disabled = false; alert("Couldn't update that — try again."); }
-    }
-    // Confirms the inventory match is right and adds it straight to
-    // pantry/fridge inventory (same endpoint as the "Have it" action on a
-    // normal list row), then removes it from the grocery list — one tap
-    // instead of "keep it" (does nothing to inventory) followed by a
-    // separate manual inventory entry.
-    haveBtn.addEventListener('click', () => act('/already-have'));
-    keepBtn.addEventListener('click', () => act('/keep'));
-    removeBtn.addEventListener('click', () => act('/remove'));
+    const res = await fetch('/api/grocery-list/pre-shop-flags');
+    if (!res.ok) return [];
+    return (await res.json()).flags || [];
+  } catch (err) { return []; }
+}
+
+function psRowHtml(f) {
+  const title = f.onHandLocation ? `In the ${f.onHandLocation}` : '';
+  return `<div class="ps-row" data-ps-item-id="${f.itemId}">
+    <p class="ps-name">${escapeHtml(f.name)}</p>
+    <p class="ps-sentence"${title ? ` title="${escapeHtml(title)}"` : ''}>${escapeHtml(f.sentence)}</p>
+    <div class="ps-actions">
+      <button type="button" class="ps-btn ps-btn-buy" data-ps-action="keep" data-ps-item-id="${f.itemId}">Buy it anyway</button>
+      <button type="button" class="ps-btn ps-btn-drop" data-ps-action="drop" data-ps-item-id="${f.itemId}">Drop it</button>
+    </div>
+  </div>`;
+}
+
+function wirePreShopActions(root, getAuthor) {
+  root.querySelectorAll('[data-ps-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = btn.getAttribute('data-ps-item-id');
+      const decision = btn.getAttribute('data-ps-action');
+      const row = btn.closest('.ps-row');
+      const name = row.querySelector('.ps-name').textContent;
+      row.querySelectorAll('button').forEach(b => b.disabled = true);
+      try {
+        await postJSON('/api/grocery-list/' + itemId + '/pre-shop', { decision, author: getAuthor ? getAuthor() : 'user' });
+        if (decision === 'keep') showPreShopToast(`${name} stays on the list`);
+        else showPreShopToast(`${name} off the list — you have enough`, () => undoPreShopDrop(itemId));
+        refreshCurrentScreen();
+      } catch (err) {
+        row.querySelectorAll('button').forEach(b => b.disabled = false);
+        alert("Couldn't update that — try again.");
+      }
+    });
   });
+}
+
+async function undoPreShopDrop(itemId) {
+  try { await postEmpty('/api/grocery-list/' + itemId + '/pre-shop-undo'); refreshCurrentScreen(); }
+  catch (err) { alert("Couldn't undo that — try again."); }
+}
+
+async function keepAllPreShop() {
+  try {
+    await postEmpty('/api/grocery-list/pre-shop/keep-all');
+    showPreShopToast('Kept all — nothing dropped');
+    refreshCurrentScreen();
+  } catch (err) { alert("Couldn't update those — try again."); }
+}
+
+function showPreShopToast(message, onUndo) {
+  let el = document.getElementById('ps-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ps-toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#3A1F2E;color:#FFFDF6;font-family:var(--font-body);font-size:0.88rem;font-weight:600;padding:12px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:opacity .2s ease;display:flex;align-items:center;gap:14px;white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  if (onUndo) {
+    const undoBtn = document.createElement('button');
+    undoBtn.type = 'button';
+    undoBtn.textContent = 'Undo';
+    undoBtn.style.cssText = 'background:none;border:none;color:#F0B429;font-weight:700;font-family:var(--font-body);font-size:0.88rem;cursor:pointer;padding:0;';
+    undoBtn.addEventListener('click', () => { el.style.opacity = '0'; onUndo(); });
+    el.appendChild(undoBtn);
+  }
+  el.style.opacity = '1';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 5000);
+}
+
+function preShopRowsHtml(flags, expanded) {
+  const shown = expanded ? flags : flags.slice(0, PS_CAP);
+  const remaining = flags.length - shown.length;
+  return shown.map(psRowHtml).join('') +
+    (remaining > 0 ? `<button type="button" class="ps-more" data-ps-more>+${remaining} more like this</button>` : '');
+}
+
+async function renderPreShopBlock() {
+  const wrap = document.getElementById('pre-shop-block');
+  const flags = await fetchPreShopFlags();
+  if (!flags.length) { wrap.innerHTML = ''; psExpanded = false; return; }
+  // Phone: title + "Keep all" on one line, helper on its own line below.
+  wrap.innerHTML = `<div class="ps-card">
+    <div class="ps-header">
+      <h2 class="ps-title">Maybe already home</h2>
+      <button type="button" class="ps-keep-all" data-ps-keep-all>Keep all ${flags.length}</button>
+    </div>
+    <p class="ps-helper">Inventory thinks these are in the kitchen. Dropping one takes it off today's list.</p>
+    ${preShopRowsHtml(flags, psExpanded)}
+  </div>`;
+  wirePreShopActions(wrap);
+  wrap.querySelector('[data-ps-keep-all]').addEventListener('click', keepAllPreShop);
+  const moreBtn = wrap.querySelector('[data-ps-more]');
+  if (moreBtn) moreBtn.addEventListener('click', () => { psExpanded = true; renderPreShopBlock(); });
+}
+
+async function renderDgPreShop() {
+  const wrap = document.getElementById('dg-pre-shop');
+  if (!wrap) return;
+  const flags = await fetchPreShopFlags();
+  if (!flags.length) { wrap.innerHTML = ''; dgPsExpanded = false; return; }
+  // Desktop: title, helper (fills the middle), "Keep all" — one line.
+  wrap.innerHTML = `<div class="ps-card">
+    <div class="ps-header">
+      <h2 class="ps-title">Maybe already home</h2>
+      <p class="ps-helper">Inventory thinks these are in the kitchen. Dropping one takes it off this trip.</p>
+      <button type="button" class="ps-keep-all" data-ps-keep-all>Keep all ${flags.length}</button>
+    </div>
+    ${preShopRowsHtml(flags, dgPsExpanded)}
+  </div>`;
+  wirePreShopActions(wrap, () => dgCurrentPerson);
+  wrap.querySelector('[data-ps-keep-all]').addEventListener('click', keepAllPreShop);
+  const moreBtn = wrap.querySelector('[data-ps-more]');
+  if (moreBtn) moreBtn.addEventListener('click', () => { dgPsExpanded = true; renderDgPreShop(); });
 }
 
 // ======================================================================
@@ -1068,6 +1182,9 @@ function renderDesktopGrocery(data) {
       });
     });
   }
+
+  // ---- Center: pre-shop check ("Maybe already home", PRE_SHOP_CHECK.md) ----
+  renderDgPreShop();
 
   // ---- Center: aisle-grouped store card(s) ----
   const listWrap = document.getElementById('dg-store-list');

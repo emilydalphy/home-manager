@@ -297,7 +297,7 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     quantity TEXT,
     category TEXT DEFAULT 'other', -- produce | dairy | meat | pantry | household | other
     added_by TEXT DEFAULT 'ai', -- 'ai' if auto-added from meal plan, else member name
-    status TEXT NOT NULL DEFAULT 'needed', -- needed | in_cart | purchased
+    status TEXT NOT NULL DEFAULT 'needed', -- needed | in_cart | purchased | removed (soft, see removed_by)
     -- Which generated weekly_plan this item's ingredients came from, if any.
     -- NULL means it's a standing item (added directly by a person, or from
     -- an ad hoc one-off meal) and should never be auto-cleared. Lets
@@ -310,6 +310,13 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- store for everything else). '' means unassigned/default. Populated
     -- automatically from item_store_preferences when set — see set_item_store.
     store TEXT NOT NULL DEFAULT '',
+    -- Which household member made a pre-shop "Drop it" decision
+    -- (PRE_SHOP_CHECK.md) — blank until dropped. Not yet used to drive a
+    -- live cross-device notification (see get_pre_shop_flags/
+    -- drop_grocery_item_pre_shop): NOTIFICATIONS.md #4 documents that this
+    -- codebase has no concept of "the other adult" distinct from "you" at
+    -- the data layer, and that gap applies here too.
+    removed_by TEXT NOT NULL DEFAULT '',
     -- Phase 4, §4.5: hide this item from the normal shown/shopped list
     -- without deleting it — for something the Shopper will get elsewhere
     -- (a butcher, a farmers market) rather than on the regular trip. Stays
