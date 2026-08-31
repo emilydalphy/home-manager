@@ -1488,3 +1488,100 @@ html, body {
   font-size: 0.88rem;
   color: var(--muted, #6B5A63);
 }
+
+/* ---------- "Start over" row + confirm dialog (self-service reset) ----------
+   The row is a sibling of #week-mobile and #week-grid inside .week-content,
+   not part of either, so the one entry point shows at both breakpoints —
+   #week-header is desktop-only (see its rule above) and the 6a mobile
+   layout has no header to hang it off. It sits last in the column on
+   purpose: a destructive action shouldn't compete with the menu itself. */
+.week-reset-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 19px;
+  flex-shrink: 0;
+}
+.week-reset-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.week-reset-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--plum-ink);
+}
+.week-reset-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
+.week-reset-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
+
+#reset-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(58,31,46,.45);
+  animation: fadeIn .18s ease;
+  z-index: 50;
+}
+#reset-dialog {
+  position: fixed;
+  z-index: 51;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 36px);
+  max-width: 400px;
+  max-height: 86%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--menu-paper);
+  border: 1px solid var(--menu-rule);
+  border-radius: 22px;
+  box-shadow: 0 18px 44px rgba(58,31,46,.28);
+  padding: 22px 22px 20px;
+  animation: sheetUp .2s cubic-bezier(.2,.8,.2,1);
+}
+#reset-scrim[hidden], #reset-dialog[hidden] { display: none; }
+.reset-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 23px;
+  color: var(--plum-ink);
+  margin: 0 0 14px;
+}
+.reset-options { display: flex; flex-direction: column; gap: 10px; }
+.reset-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--menu-rule);
+  border-radius: 14px;
+  cursor: pointer;
+}
+.reset-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--plum);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+/* A reset with nothing to remove stays visible and explains itself rather
+   than disappearing — "nothing planned this week" is the answer to why the
+   button did nothing, and hiding the row would just raise the question. */
+.reset-option.is-empty { opacity: .55; cursor: default; }
+.reset-option.is-empty input[type="checkbox"] { cursor: not-allowed; }
+.reset-option-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.reset-option-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--plum-ink);
+}
+.reset-option-sub { font-family: var(--font-body); font-size: 13px; color: var(--muted); }
+.reset-note {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--muted);
+  margin: 13px 2px 0;
+}
+.reset-actions { display: flex; gap: 10px; margin-top: 18px; }
+.reset-actions button { flex: 1; min-height: 48px; border-radius: 13px; }
+.reset-actions button[disabled] { opacity: .5; cursor: not-allowed; }

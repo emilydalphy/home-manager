@@ -110,6 +110,39 @@
     </div>
   </div>
 
+  <!-- "Start over" confirm (Meals tab) — the self-service reset for a week
+       that needs a do-over, backed by GET /api/reset/preview and
+       POST /api/reset. Deliberately a two-checkbox dialog rather than a
+       bare confirm: the two resets are independent, and each line names
+       how much it would actually remove before anything happens. Body
+       level for the same reason as the sheets above (position:fixed needs
+       to sit outside the tab-panel's stacking/scroll context). -->
+  <div id="reset-scrim" hidden></div>
+  <div id="reset-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="reset-dialog-title">
+    <h2 class="reset-title" id="reset-dialog-title">Start over?</h2>
+    <div class="reset-options" id="reset-options">
+      <label class="reset-option">
+        <input type="checkbox" id="reset-meal-plan" checked />
+        <span class="reset-option-text">
+          <span class="reset-option-label">Clear this week&rsquo;s meal plan</span>
+          <span class="reset-option-sub" id="reset-meal-plan-sub">Checking&hellip;</span>
+        </span>
+      </label>
+      <label class="reset-option">
+        <input type="checkbox" id="reset-grocery-list" checked />
+        <span class="reset-option-text">
+          <span class="reset-option-label">Clear the grocery list</span>
+          <span class="reset-option-sub" id="reset-grocery-list-sub">Checking&hellip;</span>
+        </span>
+      </label>
+    </div>
+    <p class="reset-note">Recipes, chores and everything else stay as they are. This can&rsquo;t be undone.</p>
+    <div class="reset-actions">
+      <button type="button" class="btn-outline-plum" id="reset-cancel">Cancel</button>
+      <button type="button" class="btn-gold" id="reset-confirm">Start over</button>
+    </div>
+  </div>
+
   <script src="/static/shell.js"></script>
 </body>
 </html>

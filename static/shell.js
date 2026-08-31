@@ -625,9 +625,20 @@
           '</div>' +
         '</div>' +
         '<div class="week-grid" id="week-grid" hidden></div>' +
+        // Self-service reset entry point. Outside #week-mobile/#week-grid so
+        // the one row shows at both breakpoints — see .week-reset-row in
+        // shell.css for why it can't live in #week-header (desktop-only).
+        '<div class="week-reset-row shell-card" id="week-reset-row">' +
+          '<div class="week-reset-text">' +
+            '<div class="week-reset-title">Need a do-over?</div>' +
+            '<div class="week-reset-sub">Clear this week\'s meals, the grocery list, or both.</div>' +
+          '</div>' +
+          '<button type="button" class="btn-outline-plum" id="week-reset-btn">Start over</button>' +
+        '</div>' +
       '</div>';
 
     panel.querySelector('#whole-week-row').addEventListener('click', function () { openWeekSheet(); });
+    panel.querySelector('#week-reset-btn').addEventListener('click', function () { openResetDialog(); });
 
     await loadWeekMenu(panel);
 
@@ -1012,6 +1023,169 @@
     document.getElementById('week-sheet-handle').addEventListener('click', closeWeekSheet);
     document.getElementById('week-sheet-back').addEventListener('click', closeWeekSheet);
     document.getElementById('week-sheet-share').addEventListener('click', shareWeekPlan);
+  }
+
+  // ---------- Start over (self-service reset) ----------
+  // Backed by GET /api/reset/preview (counts, so the dialog names real
+  // numbers before anything is deleted) and POST /api/reset (the two
+  // independent clears). Scoped to the meal plan and the grocery list and
+  // nothing else — recipes/chores/members/inventory are untouched, which
+  // the dialog says out loud, because the only other "reset" this app has
+  // is reset_household.py, which wipes all of it.
+  //
+  // Judgment calls:
+  //   - Both boxes start checked (the common case is "this week needs a
+  //     do-over"), but a reset with nothing to remove starts unchecked and
+  //     disabled rather than silently doing nothing.
+  //   - Deleting is not undoable here, so the confirm button reads
+  //     "Start over" only while something is actually selected, and the
+  //     dialog stays open (button re-enabled) if the request fails —
+  //     closing it would leave you unsure whether anything happened.
+  var resetScrim = document.getElementById('reset-scrim');
+  var resetDialog = document.getElementById('reset-dialog');
+  var resetMealCb = document.getElementById('reset-meal-plan');
+  var resetGroceryCb = document.getElementById('reset-grocery-list');
+  var resetConfirmBtn = document.getElementById('reset-confirm');
+  var resetSubmitting = false;
+
+  function plural(n, one, many) {
+    return n + ' ' + (n === 1 ? one : many);
+  }
+
+  function setResetOptionState(cb, subEl, count, emptyText, filledText) {
+    var row = cb.closest('.reset-option');
+    var isEmpty = !count;
+    row.classList.toggle('is-empty', isEmpty);
+    cb.disabled = isEmpty;
+    cb.checked = !isEmpty;
+    subEl.textContent = isEmpty ? emptyText : filledText;
+  }
+
+  function syncResetConfirmBtn() {
+    if (!resetConfirmBtn) return;
+    resetConfirmBtn.disabled = resetSubmitting || (!resetMealCb.checked && !resetGroceryCb.checked);
+  }
+
+  async function openResetDialog() {
+    if (!resetDialog) return;
+    closeAskSheet();
+    closeWeekSheet();
+    resetSubmitting = false;
+    resetConfirmBtn.textContent = 'Start over';
+    var mealSub = document.getElementById('reset-meal-plan-sub');
+    var grocerySub = document.getElementById('reset-grocery-list-sub');
+    mealSub.textContent = 'Checking…';
+    grocerySub.textContent = 'Checking…';
+    resetMealCb.disabled = true;
+    resetGroceryCb.disabled = true;
+    resetConfirmBtn.disabled = true;
+    resetScrim.hidden = false;
+    resetDialog.hidden = false;
+
+    try {
+      var res = await fetch('/api/reset/preview');
+      if (!res.ok) throw new Error('reset preview failed');
+      var data = await res.json();
+      setResetOptionState(
+        resetMealCb, mealSub, data.meal_count,
+        'Nothing planned this week.',
+        'Removes ' + plural(data.meal_count, 'planned meal', 'planned meals') + ' and the groceries they added.'
+      );
+      setResetOptionState(
+        resetGroceryCb, grocerySub, data.grocery_count,
+        'The list is already empty.',
+        'Removes ' + plural(data.grocery_count, 'item', 'items') + ' still to buy.'
+      );
+    } catch (err) {
+      console.warn('Reset preview failed:', err);
+      // Don't offer a delete we couldn't size up — the counts are the whole
+      // point of confirming, so fail closed rather than guessing.
+      mealSub.textContent = "Couldn't check right now.";
+      grocerySub.textContent = "Couldn't check right now.";
+      resetMealCb.checked = false;
+      resetGroceryCb.checked = false;
+    }
+    syncResetConfirmBtn();
+  }
+
+  function closeResetDialog() {
+    if (!resetScrim) return;
+    resetScrim.hidden = true;
+    resetDialog.hidden = true;
+  }
+
+  async function runReset() {
+    if (resetSubmitting) return;
+    var doMealPlan = resetMealCb.checked;
+    var doGroceryList = resetGroceryCb.checked;
+    if (!doMealPlan && !doGroceryList) return;
+    resetSubmitting = true;
+    resetConfirmBtn.textContent = 'Starting over…';
+    syncResetConfirmBtn();
+    try {
+      var res = await fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal_plan: doMealPlan, grocery_list: doGroceryList })
+      });
+      if (!res.ok) throw new Error('reset failed');
+      var data = await res.json();
+      closeResetDialog();
+      refreshAfterReset(doMealPlan, doGroceryList);
+      // Counting both clears separately would under-report the list: with
+      // both selected the plan goes first, so its ingredients are already
+      // gone by the time the list clear runs and only whatever a person had
+      // added themselves is left for it to remove ("4 meals and 1 grocery
+      // item" for a list that just went from 9 to 0). Name the list rather
+      // than a number when both ran.
+      var summary;
+      if (data.meal_plan && data.grocery_list) {
+        summary = 'Cleared ' + plural(data.meal_plan.meals_cleared, 'meal', 'meals') + ' and the grocery list';
+      } else if (data.meal_plan) {
+        summary = 'Cleared ' + plural(data.meal_plan.meals_cleared, 'meal', 'meals');
+      } else {
+        summary = 'Cleared ' + plural(data.grocery_list.removed_count, 'grocery item', 'grocery items');
+      }
+      showToast(summary + '. Fresh start.');
+    } catch (err) {
+      console.warn('Reset failed:', err);
+      resetConfirmBtn.textContent = "Couldn't do that — try again";
+    } finally {
+      resetSubmitting = false;
+      syncResetConfirmBtn();
+    }
+  }
+
+  // Every surface that could now be showing meals or groceries that no
+  // longer exist. Same staleness problem refreshStaleTabsFromActions()
+  // solves for chat-driven changes (tab panels build once per page load),
+  // reached from a button instead of a chat turn — plus the Grocery tab,
+  // which that function never had to handle because it's a separate
+  // iframed document, so it gets reloaded rather than re-rendered.
+  function refreshAfterReset(clearedMealPlan, clearedGroceryList) {
+    if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
+    if (panels.today && panels.today.dataset.built) {
+      if (clearedMealPlan) {
+        loadNeedsYou(panels.today);
+        loadTonightsDinner(panels.today);
+      }
+      loadGrocerySummary(panels.today);
+    }
+    if (clearedGroceryList || clearedMealPlan) {
+      var groceryFrame = panels.grocery && panels.grocery.querySelector('iframe');
+      if (groceryFrame) groceryFrame.contentWindow.location.reload();
+    }
+  }
+
+  if (resetScrim) {
+    resetScrim.addEventListener('click', closeResetDialog);
+    document.getElementById('reset-cancel').addEventListener('click', closeResetDialog);
+    resetConfirmBtn.addEventListener('click', runReset);
+    resetMealCb.addEventListener('change', syncResetConfirmBtn);
+    resetGroceryCb.addEventListener('change', syncResetConfirmBtn);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !resetDialog.hidden) closeResetDialog();
+    });
   }
 
   // ---------- Docked ask bar ----------

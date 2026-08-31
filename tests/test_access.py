@@ -164,3 +164,21 @@ def test_caller_is_read_from_the_forwarded_header():
         client = None
 
     assert ratelimit.caller_id(FakeRequest()) == "203.0.113.9"
+
+
+# ---------- self-service reset ----------
+# The one in-app route that deletes household data in bulk. It must be
+# behind the gate like everything else, and must not delete anything on an
+# empty/malformed body.
+
+def test_reset_refuses_anonymous_callers(client):
+    res = client.post("/api/reset", json={"meal_plan": True, "grocery_list": True})
+    assert res.status_code == 401
+
+
+def test_reset_preview_refuses_anonymous_callers(client):
+    assert client.get("/api/reset/preview").status_code == 401
+
+
+def test_reset_with_nothing_selected_is_rejected(signed_in):
+    assert signed_in.post("/api/reset", json={}).status_code == 400

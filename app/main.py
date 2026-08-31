@@ -301,6 +301,16 @@ class GroceryStoreRequest(BaseModel):
     store: str = ""
 
 
+class ResetRequest(BaseModel):
+    """
+    Which of the two self-service resets to run — see POST /api/reset.
+    Both default to False so a malformed or empty body deletes nothing;
+    the route rejects "neither" rather than treating it as "both".
+    """
+    meal_plan: bool = False
+    grocery_list: bool = False
+
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -700,6 +710,54 @@ def week_menu(weekly_plan_id: int | None = None):
         logger.exception("Week-menu lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return menu
+
+
+@app.get("/api/reset/preview")
+def reset_preview():
+    """
+    Counts for the Meals tab's "Start over" confirm dialog — how many
+    planned meals and how many still-needed grocery items a reset would
+    remove — so the dialog can name real numbers and grey out a choice
+    that would do nothing. Read-only; see tools.get_reset_preview.
+    """
+    try:
+        return tools.get_reset_preview()
+    except Exception as e:
+        logger.exception("Reset preview failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/reset")
+def reset(req: ResetRequest):
+    """
+    The self-service reset behind the Meals tab's "Start over" dialog:
+    clear this week's meal plan, clear the grocery list, or both. Narrow on
+    purpose — it touches nothing else the household owns (recipes, chores,
+    members, inventory, memory). Wiping all of that is reset_household.py,
+    an admin script with no in-app entry point.
+
+    Order matters when both are asked for: the plan goes first, so its
+    per-meal grocery reversals (tools.clear_weekly_plan) are already
+    reflected in what the list clear then removes — the other way round
+    would reverse contributions against rows that no longer exist.
+    """
+    if not req.meal_plan and not req.grocery_list:
+        raise HTTPException(status_code=400, detail="Nothing selected to reset.")
+    result = {"meal_plan": None, "grocery_list": None}
+    try:
+        if req.meal_plan:
+            result["meal_plan"] = tools.clear_weekly_plan()
+        if req.grocery_list:
+            result["grocery_list"] = tools.clear_grocery_list(status="needed")
+    except Exception as e:
+        logger.exception("Reset failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    logger.info(
+        "Self-service reset: meal_plan=%s grocery_list=%s",
+        result["meal_plan"] and result["meal_plan"]["meals_cleared"],
+        result["grocery_list"] and result["grocery_list"]["removed_count"],
+    )
+    return result
 
 
 @app.get("/api/needs-you")

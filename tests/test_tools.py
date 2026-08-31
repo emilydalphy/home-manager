@@ -161,3 +161,67 @@ def test_member_share_link_resolves_to_that_member():
     tools.add_member("Marcus")
     link = tools.get_or_create_member_share_link("Marcus")
     assert tools.resolve_member_share_link(link["token"])["member_name"] == "Marcus"
+
+
+# ---------- self-service reset ----------
+
+def test_clearing_the_week_takes_its_ingredients_off_the_grocery_list():
+    """The whole point of the reset: no orphaned ingredients left behind."""
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Tomato pasta", ingredients=[{"item": "passata", "qty": "1 jar"}])
+    tools.plan_meal(_today(), "Tomato pasta", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("dish soap", category="other")  # asked for directly, not by the plan
+
+    result = tools.clear_weekly_plan()
+
+    assert result["meals_cleared"] == 1
+    assert tools.get_meal_plan(days_ahead=7) == []
+    on_list = [i["item"] for i in tools.list_grocery_list()]
+    assert "passata" not in on_list, "the plan's ingredient should have come off with it"
+    assert "dish soap" in on_list, "an item a person added must survive a plan reset"
+
+
+def test_clearing_the_week_keeps_the_plan_itself():
+    """Emptied, not deleted — the week's dates and constraints survive."""
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.set_week_constraints("out Thursday", weekly_plan_id=plan_id)
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    assert tools.clear_weekly_plan()["weekly_plan_id"] == plan_id
+    plan = tools.get_weekly_plan()
+    assert plan["weekly_plan_id"] == plan_id
+    assert plan["constraints_notes"] == "out Thursday"
+
+
+def test_clearing_the_week_leaves_an_already_purchased_item_alone():
+    """Reversal must not yank something the shopper has already bought."""
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.plan_meal(_today(), "Soup", slot="dinner", weekly_plan_id=plan_id)
+    stock_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "stock")
+    tools.mark_grocery_item(stock_id, status="purchased")
+
+    tools.clear_weekly_plan()
+
+    assert [i["item"] for i in tools.list_grocery_list(status="purchased")] == ["stock"]
+
+
+def test_clearing_the_week_with_no_plan_is_a_no_op():
+    result = tools.clear_weekly_plan()
+    assert result["weekly_plan_id"] is None
+    assert result["meals_cleared"] == 0
+
+
+def test_reset_preview_counts_what_would_go():
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("dish soap", category="other")
+
+    preview = tools.get_reset_preview()
+
+    assert preview["weekly_plan_id"] == plan_id
+    assert preview["meal_count"] == 1
+    # "beans" from the plan plus the directly-added "dish soap"
+    assert preview["grocery_count"] == 2
