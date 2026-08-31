@@ -2491,13 +2491,79 @@ Call submit_chore_recommendations with the result."""
     return []
 
 
-def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, list[dict]]:
+def _build_proactive_check_block() -> dict | None:
+    """
+    Run the household's highest-value "worth a heads-up" checks in code and
+    return a system block summarizing anything pending, or None if there's
+    nothing to say.
+
+    This used to be purely a system-prompt instruction ("call
+    get_attention_items/get_expiring_soon near the start of a
+    conversation") — reasonable in principle, but a soft instruction like
+    that is exactly the kind of thing a model can let slide once the system
+    prompt is a few hundred lines long and the conversation has real
+    content to react to. Running it here makes it happen every time
+    run_agent_turn is called with proactive_check=True, instead of relying
+    on the model to remember. The corresponding tools stay defined and the
+    prompt still tells the model to call them mid-conversation (e.g. if
+    asked "what's about to expire") — this only replaces the "at the start
+    of a session" case with something code-enforced.
+
+    Wrapped defensively: a DB hiccup here should never break an otherwise
+    normal chat turn, just silently skip the heads-up for this turn.
+    """
+    try:
+        attention_items = tools.get_attention_items()
+    except Exception:
+        logger.exception("Proactive get_attention_items check failed; skipping")
+        attention_items = []
+    try:
+        expiring_items = tools.get_expiring_soon()
+    except Exception:
+        logger.exception("Proactive get_expiring_soon check failed; skipping")
+        expiring_items = []
+
+    lines = [f"- {item['summary']}" for item in attention_items]
+    # Cap how many expiring items get spelled out individually — a messy
+    # real-world inventory could have a dozen; the point is a low-key
+    # heads-up, not a full inventory dump into the prompt.
+    MAX_EXPIRING_LISTED = 6
+    for item in expiring_items[:MAX_EXPIRING_LISTED]:
+        when = "already past its date" if item["status"] == "expired" else f"expiring {item['expiration_date']}"
+        lines.append(f"- {item['item']} is {when} — consider working it into a meal soon.")
+    if len(expiring_items) > MAX_EXPIRING_LISTED:
+        lines.append(f"- ...and {len(expiring_items) - MAX_EXPIRING_LISTED} more expiring/expired item(s); call get_expiring_soon for the full list.")
+
+    if not lines:
+        return None
+
+    return {
+        "type": "text",
+        "text": (
+            "Proactive heads-up, auto-checked for the start of this session "
+            "(no need to call get_attention_items or get_expiring_soon again "
+            "yourself right now):\n" + "\n".join(lines) + "\n\n"
+            "Work whatever's genuinely worth mentioning into your reply in one "
+            "low-key way — not an interrogation checklist, and not all of it if "
+            "several things are pending. Use resolve_attention_item once a real "
+            "attention_items id (not the feedback-nudge, which has none) gets "
+            "handled."
+        ),
+    }
+
+
+def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_check: bool = False) -> tuple[str, list[dict]]:
     """
     Run one user turn through Claude, executing any tool calls it makes,
     looping until it produces a final text response.
 
     `conversation` is the running message history (list of role/content
     dicts, Anthropic Messages API format). Returns (assistant_text, updated_conversation).
+
+    `proactive_check`: pass True when this is (heuristically) the start of
+    a new sitting at the app — see _build_proactive_check_block. False for
+    an ordinary mid-conversation turn, so this doesn't re-run on every
+    single message.
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
@@ -2525,6 +2591,10 @@ def run_agent_turn(conversation: list[dict], user_message: str) -> tuple[str, li
             ),
         },
     ]
+    if proactive_check:
+        proactive_block = _build_proactive_check_block()
+        if proactive_block:
+            system_blocks.append(proactive_block)
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps

@@ -67,6 +67,12 @@ SESSIONS: dict[str, list[dict]] = {}
 SESSION_TOUCHED: dict[str, float] = {}
 _SESSION_TTL = 7 * 24 * 60 * 60  # a week without a message and it's dropped
 _MAX_SESSIONS = 50
+# Gap since the last message after which the next one counts as "the start
+# of a new sitting" for run_agent_turn's proactive_check (see agent.py) —
+# long enough that it doesn't re-fire mid-conversation, short enough to
+# catch "opened the app again this morning" within the same still-live
+# 7-day session, not just a session's literal first-ever message.
+_NEW_SITTING_GAP = 4 * 60 * 60
 
 
 def _prune_sessions() -> None:
@@ -1496,8 +1502,9 @@ def chat(req: ChatRequest, request: Request):
     _enforce_rate_limit(request, "chat")
     session_id = _chat_session_id(request)
     history = SESSIONS.get(session_id, [])
+    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
     try:
-        reply, updated_history = run_agent_turn(history, req.message)
+        reply, updated_history = run_agent_turn(history, req.message, proactive_check=is_new_sitting)
     except AssistantUnavailableError as e:
         # Claude's API itself was down/overloaded even after retrying inside
         # run_agent_turn — str(e) is already a warm, customer-facing
