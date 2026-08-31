@@ -2048,26 +2048,33 @@ def get_needs_you_items() -> list[dict]:
     return items
 
 
-def resolve_needs_you_dinner(meal_date: str, meal: str) -> list[dict]:
+def resolve_needs_you_dinner(
+    meal_date: str, meal: str, add_ingredients_to_grocery_list: bool = False
+) -> dict:
     """
     Resolve a needs-you dinner-decision card by planning the picked meal —
     thin wrapper around plan_meal that also attaches it to the household's
     current weekly plan (if one exists) so it shows up correctly in the
     Week tab's menu, then returns the refreshed needs-you list so the
     Today screen can just re-render from the response.
+
+    add_ingredients_to_grocery_list carries the answer the card's confirm
+    step collected. It is a real question asked of a real person, which is
+    what makes this an explicit yes and not a silent write — the same
+    standard chat is held to (see plan_meal). It defaults to False so a
+    caller that forgets to ask adds nothing.
     """
     plan = get_weekly_plan()
     weekly_plan_id = plan.get("weekly_plan_id")
-    # Deliberately does NOT add ingredients to the grocery list. This used
-    # to (plan_meal's old default), but the household rule is that nothing
-    # reaches the list without an explicit yes — and this is a tap on a
-    # Today-screen card, with no conversation in which to ask. Picking
-    # tonight's dinner is also the case least likely to need a shopping
-    # trip. OPEN QUESTION for Emily: if picking a meal here should still
-    # offer to add its ingredients, that needs a confirm step in the card's
-    # UI (a design decision), not a silent re-add here.
-    plan_meal(meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id)
-    return get_needs_you_items()
+    result = plan_meal(
+        meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
+        add_ingredients_to_grocery_list=add_ingredients_to_grocery_list,
+    )
+    return {
+        "items": get_needs_you_items(),
+        "groceries_added": result["groceries_added"],
+        "already_have_skipped": result["already_have_skipped"],
+    }
 
 
 def _weekly_plan_is_approved(weekly_plan_id: int | None) -> bool:

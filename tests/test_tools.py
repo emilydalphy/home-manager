@@ -164,6 +164,25 @@ def test_approving_a_plan_that_does_not_exist_is_an_error():
         tools.approve_weekly_plan(4242)
 
 
+def test_picking_tonights_dinner_only_adds_groceries_when_asked_to():
+    """
+    The Today card's dinner pick is a tap, not a conversation — the card
+    asks first, and passes the answer through. Both answers plan the meal.
+    """
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+
+    said_no = tools.resolve_needs_you_dinner(_today(), "Chili")
+    assert said_no["groceries_added"] == []
+    assert tools.list_grocery_list() == []
+    assert "Chili" in [e["meal"] for e in tools.get_meal_plan(days_ahead=7)]
+
+    said_yes = tools.resolve_needs_you_dinner(
+        _today(1), "Chili", add_ingredients_to_grocery_list=True
+    )
+    assert said_yes["groceries_added"] == ["beans"]
+    assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
+
+
 def test_swapping_a_meal_in_an_unapproved_draft_leaves_the_list_alone():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])

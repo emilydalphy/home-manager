@@ -413,15 +413,21 @@
   }
 
   async function resolveDinnerDecision(panel, mealDate, meal, cardEl) {
+    // Ask before touching the grocery list. Planning a meal used to add its
+    // ingredients silently; the household rule now is that nothing reaches
+    // the list without an explicit yes, and a card tap has no conversation
+    // in which to ask — so the card asks for itself.
+    var addIngredients = await askAboutIngredients(meal);
+    if (addIngredients === null) return;  // "Never mind" — nothing planned
     try {
       var res = await fetch('/api/needs-you/dinner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: mealDate, meal: meal })
+        body: JSON.stringify({ date: mealDate, meal: meal, add_ingredients: addIngredients })
       });
       if (!res.ok) throw new Error('dinner resolve failed');
       var data = await res.json();
-      showToast(meal + ' is on the plan.');
+      showToast(dinnerPlannedToast(meal, data));
       dismissNeedsYouCard(panel, cardEl, data.items || []);
       // The dinner card and (if it's today) the Week menu both just
       // changed — refresh what's already on screen rather than requiring
@@ -431,6 +437,54 @@
       console.warn('Dinner resolve failed:', err);
       alert('Could not save that pick right now — try again in a moment.');
     }
+  }
+
+  // ---------- "Add the ingredients?" confirm ----------
+  // Resolves to true (add them), false (just plan it), or null (cancelled,
+  // plan nothing). Same scrim/dialog treatment as the reset dialog, and the
+  // same "only one open at a time" rule as the sheets.
+  var dinnerConfirmScrim = document.getElementById('dinner-confirm-scrim');
+  var dinnerConfirmDialog = document.getElementById('dinner-confirm-dialog');
+  var dinnerConfirmResolve = null;
+
+  function closeDinnerConfirm(answer) {
+    if (!dinnerConfirmScrim) return;
+    dinnerConfirmScrim.hidden = true;
+    dinnerConfirmDialog.hidden = true;
+    var resolve = dinnerConfirmResolve;
+    dinnerConfirmResolve = null;
+    if (resolve) resolve(answer);
+  }
+
+  function askAboutIngredients(meal) {
+    // No dialog in the document (an older cached shell.html) — fail closed
+    // and add nothing rather than silently writing to the grocery list.
+    if (!dinnerConfirmDialog) return Promise.resolve(false);
+    closeAskSheet();
+    closeWeekSheet();
+    document.getElementById('dinner-confirm-meal').textContent =
+      meal + ' — want its ingredients on your grocery list?';
+    dinnerConfirmScrim.hidden = false;
+    dinnerConfirmDialog.hidden = false;
+    document.getElementById('dinner-confirm-add').focus();
+    return new Promise(function (resolve) { dinnerConfirmResolve = resolve; });
+  }
+
+  function dinnerPlannedToast(meal, data) {
+    var added = (data && data.groceries_added) || [];
+    if (!added.length) return meal + ' is on the plan.';
+    return meal + ' is on the plan. ' + added.length +
+      (added.length === 1 ? ' ingredient' : ' ingredients') + ' added to the list.';
+  }
+
+  if (dinnerConfirmScrim) {
+    dinnerConfirmScrim.addEventListener('click', function () { closeDinnerConfirm(null); });
+    document.getElementById('dinner-confirm-cancel').addEventListener('click', function () { closeDinnerConfirm(null); });
+    document.getElementById('dinner-confirm-skip').addEventListener('click', function () { closeDinnerConfirm(false); });
+    document.getElementById('dinner-confirm-add').addEventListener('click', function () { closeDinnerConfirm(true); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !dinnerConfirmDialog.hidden) closeDinnerConfirm(null);
+    });
   }
 
   // ---------- Toast (§6: "used for resolutions and adds only, never errors") ----------
@@ -811,14 +865,18 @@
   }
 
   async function fillWeekDinner(panel, mealDate, meal) {
+    // Same confirm as the Today card — see resolveDinnerDecision.
+    var addIngredients = await askAboutIngredients(meal);
+    if (addIngredients === null) return;
     try {
       var res = await fetch('/api/needs-you/dinner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: mealDate, meal: meal })
+        body: JSON.stringify({ date: mealDate, meal: meal, add_ingredients: addIngredients })
       });
       if (!res.ok) throw new Error('dinner resolve failed');
-      showToast(meal + ' is on the plan.');
+      var fillData = await res.json();
+      showToast(dinnerPlannedToast(meal, fillData));
       // Today's needs-you band / tonight card may cover this same date —
       // if Today has already been built this session, refresh it too so
       // the two tabs never show stale, contradictory states side by side.

@@ -193,6 +193,9 @@ class ChoreStatusRequest(BaseModel):
 class ResolveDinnerRequest(BaseModel):
     date: str
     meal: str
+    # The answer to the card's "want the ingredients on your grocery list?"
+    # step. False when the person said no — never a silent default yes.
+    add_ingredients: bool = False
 
 
 class MemoryEditRequest(BaseModel):
@@ -789,13 +792,22 @@ def needs_you():
 
 @app.post("/api/needs-you/dinner")
 def resolve_needs_you_dinner(req: ResolveDinnerRequest):
-    """Resolve a needs-you dinner-decision card by planning the picked meal (via tools.plan_meal), then return the refreshed needs-you list."""
+    """
+    Resolve a needs-you dinner-decision card by planning the picked meal
+    (via tools.plan_meal), then return the refreshed needs-you list.
+
+    req.add_ingredients carries the answer to the card's confirm step, so
+    the grocery list is only written to when the person actually said yes
+    — same rule the assistant follows in chat.
+    """
     try:
-        items = tools.resolve_needs_you_dinner(req.date, req.meal)
+        result = tools.resolve_needs_you_dinner(
+            req.date, req.meal, add_ingredients_to_grocery_list=req.add_ingredients
+        )
     except Exception as e:
         logger.exception("Needs-you dinner resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"items": items}
+    return result
 
 
 @app.post("/api/recipe-feedback")

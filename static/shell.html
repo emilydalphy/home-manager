@@ -143,6 +143,18 @@
     </div>
   </div>
 
+  <div id="dinner-confirm-scrim" hidden></div>
+  <div id="dinner-confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="dinner-confirm-title">
+    <h2 class="reset-title" id="dinner-confirm-title">Add the ingredients?</h2>
+    <p class="dinner-confirm-meal" id="dinner-confirm-meal"></p>
+    <p class="reset-note" id="dinner-confirm-note">It goes on the plan either way &mdash; this is just about your grocery list.</p>
+    <div class="reset-actions">
+      <button type="button" class="btn-outline-plum" id="dinner-confirm-skip">Just plan it</button>
+      <button type="button" class="btn-gold" id="dinner-confirm-add">Add ingredients</button>
+    </div>
+    <button type="button" class="dialog-cancel-link" id="dinner-confirm-cancel">Never mind</button>
+  </div>
+
   <script src="/static/shell.js"></script>
 </body>
 </html>
