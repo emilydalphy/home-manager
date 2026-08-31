@@ -757,24 +757,16 @@
       // would (see the judgment-call note above buildWeekPanel).
       return '<div class="wk-course">' + badge + '<span class="wk-dish wk-dish-blank">Not planned yet</span></div>';
     }
-    var suggestions = day.dinner_suggestions || [];
+    // Quick-dinner-pick suggestions (day.dinner_suggestions, from
+    // _suggest_quick_dinners) are turned off for now per household
+    // feedback — the "Nothing yet" empty state stays, just without the
+    // inline pick rows. Backend/data plumbing (get_week_menu's
+    // dinner_suggestions field, /api/needs-you/dinner) is untouched, so
+    // this is easy to turn back on later if wanted.
     return (
       '<div class="wk-course">' + badge +
         '<span class="wk-dish wk-dish-empty">Nothing yet</span>' +
-        '<span class="wk-meta">pick one and I&rsquo;ll sort the shopping</span>' +
-        (suggestions.length ? (
-          '<div class="wk-suggestions">' +
-            suggestions.map(function (opt, i) {
-              return (
-                '<button type="button" class="wk-suggest-row" data-date="' + escapeHtml(day.date) + '" data-meal="' + escapeHtml(opt.meal) + '" data-index="' + i + '">' +
-                  '<span class="wk-suggest-dish">' + escapeHtml(opt.meal) + (opt.minutes ? ' &middot; ' + opt.minutes + ' min' : '') + '</span>' +
-                  '<span class="wk-suggest-pick">Pick</span>' +
-                '</button>'
-              );
-            }).join('') +
-          '</div>'
-        ) : '')
-      + '</div>'
+      '</div>'
     );
   }
 
