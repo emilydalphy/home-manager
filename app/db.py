@@ -81,6 +81,9 @@ _MIGRATIONS = [
     # added it" on desktop grocery rows. Backfilled once, below, the same
     # run this column is first added.
     ("members", "color", "TEXT NOT NULL DEFAULT ''"),
+    # PRE_SHOP_CHECK.md's "Drop it" — soft-remove attribution, see
+    # schema.sql's comment on grocery_items.removed_by.
+    ("grocery_items", "removed_by", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the exact two colors
