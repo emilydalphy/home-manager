@@ -185,9 +185,13 @@ When Emily says something like "run the loop," "work through the tickets," or "p
 next ticket," this is a manual trigger — do the following, and **stop there** rather than
 continuing on to a fix without her:
 
-1. Query the Loop Board for cards with Status = "Not started."
-2. Pick one: the highest-priority one (High > Medium > Low) unless she named a specific
-   ticket. If several tie on priority, pick the oldest/least-recently-touched one.
+1. Query the Loop Board for cards with Status = "Not started." Check the "Work Tonight"
+   checkbox property first (added 2026-08-30) — any card Emily checked the day before goes
+   ahead of normal priority order.
+2. Pick one: a "Work Tonight"-checked card first if any exist, otherwise the
+   highest-priority one (High > Medium > Low) — unless she named a specific ticket. If
+   several tie, pick the oldest/least-recently-touched one. Uncheck "Work Tonight" once
+   that card's been handled, so it doesn't linger as still-queued.
 3. Investigate it per the "Working a ticket" steps 1-2 above: read the real code, find the
    actual root cause or the real current state, cite file:line. Do not write or change any
    code in this pass, even if the fix looks obvious.
@@ -212,3 +216,16 @@ update them with findings on the Notion board. No code changes, no commits, no p
 Leave implementation for a live session where she's present to make the calls this skill
 says are hers to make. This restriction is specifically about *unattended* runs — a live
 conversation with Emily can write and commit code as described above.
+
+**The actual overnight routine** ("Home Manager Loop - overnight," runs nightly at 2am
+America/Toronto, created 2026-08-30 via `RemoteTrigger`/the `schedule` skill) is a cloud
+agent, not a process on Emily's Mac — it clones `https://github.com/emilydalphy/home-manager`
+fresh each run and has Notion MCP access attached directly, so it doesn't depend on this
+machine being on. It works through **up to 5 cards a night**: any "Work Tonight"-checked
+cards first (in priority order), then it fills remaining slots by priority among the rest,
+skipping anything already carrying a "## Investigated overnight" (or equivalent) section so
+it doesn't redo work. Its `allowed_tools` are `Bash`/`Read`/`Glob`/`Grep` only — Write/Edit
+are structurally absent, not just disallowed by instruction, so it cannot modify repo files
+even if it tried. Manage it (pause, change time/count, check recent runs) via `RemoteTrigger`
+using its id `trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to
+https://claude.ai/code/routines.
