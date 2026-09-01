@@ -303,6 +303,28 @@ check recent runs, read the exact current prompt) via `RemoteTrigger` using its 
    now reserved for a card that already has a "## Overnight fix attempt" section (a fix was
    already tried) or Status = 'Done'.
 
+**Reconciling merged fixes (added 2026-09-01):** before building tonight's queue, the routine
+should also check every ticket currently Status = "In progress" that carries an "## Overnight
+fix attempt" or "## Fix built" section naming a branch — if that branch's commit is now
+reachable from `main` (`git merge-base --is-ancestor <branch> main`, or `git log main
+--oneline | grep <branch-name-or-slug>`), Emily has merged it herself. Mark that ticket
+**Done**, add a one-line "merged into main, closing out" note, and uncheck "Needs Your Call"
+if still set. This is the routine's side of the same rule live sessions already follow
+(step 6 above) — a ticket shouldn't need her to remember to come back and manually close it
+after the fact.
+
+**Known gap (found 2026-09-01): GitHub push can fail with a 403.** A run hit `"Claude
+doesn't have GitHub access to emilydalphy/home-manager for your organization"` on `git push`
+— both the git CLI and the `mcp__github` tool refused with the same permission error. When
+this happens, the branch/commit are NOT lost (they exist in that run's own cloud checkout),
+but they never reach GitHub and vanish when the sandbox is torn down at the end of the run —
+unless someone happens to reopen that exact session and retry once access is fixed. **Any
+run whose `git push` fails must not report the fix as "Ready to merge"** — say plainly that
+it was built and tested but couldn't be published, and point Emily to
+https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1 (reconnect) or
+https://github.com/apps/claude/installations/select_target (org admin installs the Claude
+GitHub App) to fix it, same as this doc tells any session to do.
+
 **Deciding whether to attempt a fix, per card:** only when it's Type Bug or a small
 well-contained Improvement (never a Feature), the fix is small/well-scoped (no new screen, no
 redesign, no multi-file architecture change), and nothing requires a product/design/wording
