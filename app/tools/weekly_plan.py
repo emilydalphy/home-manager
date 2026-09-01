@@ -7,7 +7,7 @@ import json
 import re
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
@@ -36,7 +36,7 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
     rows = conn.execute(
         "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? "
         "AND household_id = ? AND component_category IS NULL",
-        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+        (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
     conn.close()
     for row in rows:
@@ -77,7 +77,7 @@ def plan_slot_empty(
     cur = conn.execute(
         "INSERT INTO meal_plan_entries (household_id, date, slot, weekly_plan_id, slot_state, reasoning, derived_from_json) "
         "VALUES (?, ?, ?, ?, 'planned_empty', ?, ?)",
-        (HOUSEHOLD_ID, meal_date, slot, weekly_plan_id, reason, json.dumps(derived_from or {})),
+        (household_id(), meal_date, slot, weekly_plan_id, reason, json.dumps(derived_from or {})),
     )
     conn.commit()
     entry_id = cur.lastrowid
@@ -113,7 +113,7 @@ def plan_slot_open(
         "INSERT INTO meal_plan_entries (household_id, date, slot, weekly_plan_id, slot_state, open_reason, derived_from_json) "
         "VALUES (?, ?, ?, ?, 'open', ?, ?)",
         (
-            HOUSEHOLD_ID, meal_date, slot, weekly_plan_id, open_reason,
+            household_id(), meal_date, slot, weekly_plan_id, open_reason,
             json.dumps({**(derived_from or {}), "options": options or []}),
         ),
     )
@@ -139,7 +139,7 @@ def get_meal_planning_preferences() -> dict:
     """
     conn = get_conn()
     prefs = conn.execute(
-        "SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     conn.close()
 
@@ -201,7 +201,7 @@ def get_week_planning_nudge() -> dict:
     planned = {
         row["week_start_date"]
         for row in conn.execute(
-            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ?", (HOUSEHOLD_ID,)
+            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ?", (household_id(),)
         ).fetchall()
     }
     conn.close()
@@ -301,7 +301,7 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
     row = conn.execute(
         "SELECT id, slot_state, open_reason FROM meal_plan_entries "
         "WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ? LIMIT 1",
-        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+        (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchone()
     conn.close()
     if not row:
@@ -360,7 +360,7 @@ def reopen_weekly_plan(weekly_plan_id: int) -> dict:
     conn = get_conn()
     plan = conn.execute(
         "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchone()
     if not plan:
         conn.close()
@@ -369,7 +369,7 @@ def reopen_weekly_plan(weekly_plan_id: int) -> dict:
         "UPDATE weekly_plans SET status = 'draft', approved_by = '', approved_at = NULL, "
         "approved_grocery_added = 0, approved_grocery_skipped = 0, updated_at = datetime('now') "
         "WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -389,7 +389,7 @@ def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE weekly_plans SET intake_id = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (intake_id, weekly_plan_id, HOUSEHOLD_ID),
+        (intake_id, weekly_plan_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -420,7 +420,7 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7) -> dict:
     conn = get_conn()
     plan = conn.execute(
         "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchone()
     if not plan:
         conn.close()
@@ -428,7 +428,7 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7) -> dict:
     rows = conn.execute(
         "SELECT date, slot, slot_state, recipe_id, freeform_meal, open_reason "
         "FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchall()
     conn.close()
 
@@ -491,7 +491,7 @@ def get_plan_id_for_week(week_start_date: str) -> int | None:
     row = conn.execute(
         "SELECT id FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
         "ORDER BY created_at DESC, id DESC LIMIT 1",
-        (HOUSEHOLD_ID, week_start_date),
+        (household_id(), week_start_date),
     ).fetchone()
     conn.close()
     return row["id"] if row else None
@@ -533,7 +533,7 @@ def set_planning_mode(mode: str) -> dict:
         VALUES (?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET planning_mode = excluded.planning_mode, updated_at = datetime('now')
         """,
-        (HOUSEHOLD_ID, mode),
+        (household_id(), mode),
     )
     conn.commit()
     conn.close()
@@ -563,13 +563,13 @@ def _current_weekly_plan_row(conn):
         "SELECT * FROM weekly_plans WHERE household_id = ? "
         "AND date(week_start_date) <= date(?) AND date(week_start_date, '+6 days') >= date(?) "
         "ORDER BY created_at DESC, id DESC LIMIT 1",
-        (HOUSEHOLD_ID, today, today),
+        (household_id(), today, today),
     ).fetchone()
     if plan:
         return plan
     return conn.execute(
         "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
 
 
@@ -595,7 +595,7 @@ def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = No
         weekly_plan_id = row["id"]
     conn.execute(
         "UPDATE weekly_plans SET constraints_notes = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (constraints_notes, weekly_plan_id, HOUSEHOLD_ID),
+        (constraints_notes, weekly_plan_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -699,7 +699,7 @@ def _compute_freshness(meal_dicts: list[dict], plan_created_at: str) -> dict:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT name, created_at FROM recipes WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT name, created_at FROM recipes WHERE household_id = ?", (household_id(),)
     ).fetchall()
     conn.close()
     created_by_name = {r["name"].lower(): r["created_at"] for r in rows}
@@ -748,7 +748,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     else:
         plan = conn.execute(
             "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
-            (weekly_plan_id, HOUSEHOLD_ID),
+            (weekly_plan_id, household_id()),
         ).fetchone()
     if not plan:
         conn.close()
@@ -864,7 +864,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     """
     conn = get_conn()
     household = conn.execute(
-        "SELECT name FROM households WHERE id = ?", (HOUSEHOLD_ID,)
+        "SELECT name FROM households WHERE id = ?", (household_id(),)
     ).fetchone()
     conn.close()
     household_name = household["name"] if household else ""
@@ -1052,7 +1052,7 @@ def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
             (COALESCE(prep_time_minutes, 0) + COALESCE(cook_time_minutes, 0)) ASC
         LIMIT ?
         """,
-        (HOUSEHOLD_ID, limit),
+        (household_id(), limit),
     ).fetchall()
     conn.close()
     out = []
@@ -1097,7 +1097,7 @@ def get_needs_you_items() -> list[dict]:
     # ---- Rule 1: dinner decision ----
     dinner_rows = conn.execute(
         "SELECT date FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
-        (HOUSEHOLD_ID, today.isoformat(), horizon_end.isoformat()),
+        (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
     planned_dinner_dates = {r["date"] for r in dinner_rows}
     for offset in (0, 1):
@@ -1125,19 +1125,19 @@ def get_needs_you_items() -> list[dict]:
     # Grocery tab itself would show.
     needed_count = conn.execute(
         "SELECT COUNT(*) AS n FROM grocery_items WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()["n"]
 
     # cooked_status uses 'pending', not 'cooked' — see meal_plan_entries schema.
     upcoming_meal = conn.execute(
         "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE household_id = ? AND date >= ? AND date < ? AND cooked_status = 'pending'",
-        (HOUSEHOLD_ID, today.isoformat(), horizon_end.isoformat()),
+        (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchone()["n"]
 
     if needed_count > 0 and upcoming_meal > 0:
         sample = conn.execute(
             "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0 ORDER BY id ASC LIMIT 4",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
         items.append({
             "type": "shop_run",
@@ -1187,7 +1187,7 @@ def _weekly_plan_is_approved(weekly_plan_id: int | None) -> bool:
         return False
     conn = get_conn()
     row = conn.execute(
-        "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?", (weekly_plan_id, HOUSEHOLD_ID)
+        "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?", (weekly_plan_id, household_id())
     ).fetchone()
     conn.close()
     return bool(row) and row["status"] == "approved"
@@ -1214,7 +1214,7 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
           )
         ORDER BY mpe.date ASC, mpe.id ASC
         """,
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchall()
 
 
@@ -1240,7 +1240,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     conn = get_conn()
     plan = conn.execute(
         "SELECT id, status FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchone()
     if not plan:
         conn.close()
@@ -1250,7 +1250,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
         row["item"].strip().lower()
         for row in conn.execute(
             "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     }
     conn.close()
@@ -1315,7 +1315,7 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     conn = get_conn()
     existing = conn.execute(
         "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchone()
     if not existing:
         conn.close()
@@ -1328,19 +1328,19 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     # writes them.
     conn.execute(
         "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     )
     if not was_already_approved:
         conn.execute(
             "UPDATE weekly_plans SET approved_by = ?, approved_at = datetime('now') WHERE id = ? AND household_id = ?",
-            (approved_by.strip(), weekly_plan_id, HOUSEHOLD_ID),
+            (approved_by.strip(), weekly_plan_id, household_id()),
         )
     conn.commit()
     if was_already_approved:
         receipt = conn.execute(
             "SELECT approved_by, approved_at, approved_grocery_added, approved_grocery_skipped "
             "FROM weekly_plans WHERE id = ? AND household_id = ?",
-            (weekly_plan_id, HOUSEHOLD_ID),
+            (weekly_plan_id, household_id()),
         ).fetchone()
         conn.close()
         return {
@@ -1360,7 +1360,7 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
     approved_at = conn.execute(
         "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchone()["approved_at"]
     conn.close()
 
@@ -1384,7 +1384,7 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     conn.execute(
         "UPDATE weekly_plans SET approved_grocery_added = ?, approved_grocery_skipped = ? "
         "WHERE id = ? AND household_id = ?",
-        (added_count, skipped_count, weekly_plan_id, HOUSEHOLD_ID),
+        (added_count, skipped_count, weekly_plan_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -1421,7 +1421,7 @@ def swap_meal_in_plan(
     conn = get_conn()
     old_entries = conn.execute(
         "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
-        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+        (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
     conn.close()
     for row in old_entries:
@@ -1430,7 +1430,7 @@ def swap_meal_in_plan(
     conn = get_conn()
     conn.execute(
         "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
-        (weekly_plan_id, meal_date, slot, HOUSEHOLD_ID),
+        (weekly_plan_id, meal_date, slot, household_id()),
     )
     conn.commit()
     conn.close()
@@ -1461,7 +1461,7 @@ def swap_component_in_plan(
     conn = get_conn()
     week_start_date = conn.execute(
         "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchone()
     if not week_start_date:
         conn.close()
@@ -1476,7 +1476,7 @@ def swap_component_in_plan(
           AND COALESCE(r.name, mpe.freeform_meal) = ?
         LIMIT 1
         """,
-        (weekly_plan_id, component_category, HOUSEHOLD_ID, old_meal),
+        (weekly_plan_id, component_category, household_id(), old_meal),
     ).fetchone()
     conn.close()
     if not match:

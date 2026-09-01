@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import household as _household
 from . import memory as _memory
 
@@ -20,15 +20,15 @@ def get_meal_planning_setup_status() -> dict:
     """
     conn = get_conn()
     members = conn.execute(
-        "SELECT name, dietary_restrictions_json FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT name, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
     ).fetchall()
     prefs = conn.execute(
         "SELECT notes, protein_preferences_json, cuisine_preferences_json, dislikes_json, cooking_time_preference, onboarding_complete "
         "FROM meal_preferences WHERE household_id = ?",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     recipe_count = conn.execute(
-        "SELECT COUNT(*) AS c FROM recipes WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT COUNT(*) AS c FROM recipes WHERE household_id = ?", (household_id(),)
     ).fetchone()["c"]
     conn.close()
     return {
@@ -57,7 +57,7 @@ def add_food_dislikes(items: list[str]) -> dict:
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT dislikes_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT dislikes_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     current = json.loads(existing["dislikes_json"]) if existing else []
     merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
@@ -67,7 +67,7 @@ def add_food_dislikes(items: list[str]) -> dict:
         VALUES (?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
         """,
-        (HOUSEHOLD_ID, json.dumps(merged)),
+        (household_id(), json.dumps(merged)),
     )
     conn.commit()
     conn.close()
@@ -85,7 +85,7 @@ def add_usual_stores(items: list[str]) -> dict:
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     current = json.loads(existing["usual_stores_json"]) if existing else []
     merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
@@ -95,7 +95,7 @@ def add_usual_stores(items: list[str]) -> dict:
         VALUES (?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
         """,
-        (HOUSEHOLD_ID, json.dumps(merged)),
+        (household_id(), json.dumps(merged)),
     )
     conn.commit()
     conn.close()
@@ -117,7 +117,7 @@ def add_store_typical_items(store: str, items: list[str]) -> dict:
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     current = json.loads(existing["store_typical_items_json"]) if existing else {}
     store_items = list(dict.fromkeys(current.get(store, []) + [i.strip() for i in items if i.strip()]))
@@ -128,7 +128,7 @@ def add_store_typical_items(store: str, items: list[str]) -> dict:
         VALUES (?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET store_typical_items_json = excluded.store_typical_items_json, updated_at = datetime('now')
         """,
-        (HOUSEHOLD_ID, json.dumps(current)),
+        (household_id(), json.dumps(current)),
     )
     conn.commit()
     conn.close()
@@ -140,14 +140,14 @@ def remove_store_typical_item(store: str, item: str) -> dict:
     """Remove a single item from a store's typical-items list (case-insensitive match). Leaves the store itself (in usual_stores) untouched."""
     conn = get_conn()
     existing = conn.execute(
-        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     current = json.loads(existing["store_typical_items_json"]) if existing else {}
     store_items = [i for i in current.get(store, []) if i.lower() != (item or "").lower()]
     current[store] = store_items
     conn.execute(
         "UPDATE meal_preferences SET store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-        (json.dumps(current), HOUSEHOLD_ID),
+        (json.dumps(current), household_id()),
     )
     conn.commit()
     conn.close()
@@ -189,7 +189,7 @@ def set_household_meal_preferences(
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
 
     merged_notes = notes if notes else (existing["notes"] if existing else "")
@@ -231,7 +231,7 @@ def set_household_meal_preferences(
             updated_at = datetime('now')
         """,
         (
-            HOUSEHOLD_ID,
+            household_id(),
             merged_notes,
             json.dumps(merged_proteins),
             json.dumps(merged_cuisines),
@@ -319,7 +319,7 @@ def save_onboarding_answers(
         VALUES (?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
         """,
-        (HOUSEHOLD_ID, json.dumps(wont_eat)),
+        (household_id(), json.dumps(wont_eat)),
     )
     conn.commit()
     conn.close()

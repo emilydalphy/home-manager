@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import household as _household
 from . import preferences as _preferences
 
@@ -19,12 +19,12 @@ def get_facts(category: str | None = None) -> list[dict]:
     if category:
         rows = conn.execute(
             "SELECT id, category, text, hard, author, updated_at FROM facts WHERE household_id = ? AND category = ? ORDER BY id ASC",
-            (HOUSEHOLD_ID, category),
+            (household_id(), category),
         ).fetchall()
     else:
         rows = conn.execute(
             "SELECT id, category, text, hard, author, updated_at FROM facts WHERE household_id = ? ORDER BY category, id ASC",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -38,7 +38,7 @@ def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> 
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, category, text, 1 if hard else 0, author),
+        (household_id(), category, text, 1 if hard else 0, author),
     )
     conn.commit()
     fact_id = cur.lastrowid
@@ -49,7 +49,7 @@ def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> 
 def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None) -> dict:
     """Edit an existing fact's text and/or hard flag in place."""
     conn = get_conn()
-    row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, HOUSEHOLD_ID)).fetchone()
+    row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id())).fetchone()
     if not row:
         conn.close()
         return {"id": fact_id, "found": False}
@@ -67,7 +67,7 @@ def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None)
 def delete_fact(fact_id: int) -> dict:
     """Delete one fact outright."""
     conn = get_conn()
-    conn.execute("DELETE FROM facts WHERE id = ? AND household_id = ?", (fact_id, HOUSEHOLD_ID))
+    conn.execute("DELETE FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id()))
     conn.commit()
     conn.close()
     return {"id": fact_id, "deleted": True}
@@ -92,11 +92,11 @@ def get_household_memory() -> dict:
     enough data this month to say anything meaningful.
     """
     conn = get_conn()
-    prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
+    prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
     members = conn.execute(
-        "SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
     ).fetchall()
-    household = conn.execute("SELECT goals FROM households WHERE id = ?", (HOUSEHOLD_ID,)).fetchone()
+    household = conn.execute("SELECT goals FROM households WHERE id = ?", (household_id(),)).fetchone()
 
     # Cooking-time insight: average actual prep+cook time across this
     # month's planned meals (recipe-backed entries only, and only where
@@ -111,7 +111,7 @@ def get_household_memory() -> dict:
         WHERE e.household_id = ? AND strftime('%Y-%m', e.created_at) = strftime('%Y-%m', 'now')
           AND r.prep_time_minutes IS NOT NULL AND r.cook_time_minutes IS NOT NULL
         """,
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     cooking_time_insight = (
         {"avg_minutes": round(time_row["avg_minutes"]), "meal_count": time_row["n"]}
@@ -130,7 +130,7 @@ def get_household_memory() -> dict:
         FROM meal_plan_entries e JOIN recipes r ON r.id = e.recipe_id
         WHERE e.household_id = ? AND strftime('%Y-%m', e.created_at) = strftime('%Y-%m', 'now')
         """,
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     total_variety = (variety_row["new_count"] or 0) + (variety_row["repeat_count"] or 0) if variety_row else 0
     recipe_variety_insight = (
@@ -147,11 +147,11 @@ def get_household_memory() -> dict:
     # regular memory payload.
     recipes_rated_row = conn.execute(
         "SELECT COUNT(*) AS c FROM recipes WHERE household_id = ? AND rating IN ('liked', 'disliked')",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     meals_cooked_row = conn.execute(
         "SELECT COUNT(*) AS c FROM meal_plan_entries WHERE household_id = ? AND cooked_status = 'done'",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     conn.close()
 
@@ -387,7 +387,7 @@ def edit_preference(field: str, value) -> dict:
             f"INSERT INTO meal_preferences (household_id, {column}, updated_at) "
             f"VALUES (?, ?, datetime('now')) "
             f"ON CONFLICT(household_id) DO UPDATE SET {column} = excluded.{column}, updated_at = datetime('now')",
-            (HOUSEHOLD_ID, stored),
+            (household_id(), stored),
         )
         conn.commit()
         conn.close()
@@ -400,7 +400,7 @@ def edit_preference(field: str, value) -> dict:
             VALUES (?, ?, datetime('now'))
             ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
             """,
-            (HOUSEHOLD_ID, json.dumps(value)),
+            (household_id(), json.dumps(value)),
         )
         conn.commit()
         conn.close()
@@ -413,7 +413,7 @@ def edit_preference(field: str, value) -> dict:
             VALUES (?, ?, datetime('now'))
             ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
             """,
-            (HOUSEHOLD_ID, json.dumps(value)),
+            (household_id(), json.dumps(value)),
         )
         conn.commit()
         conn.close()
@@ -448,7 +448,7 @@ def delete_preference(field: str, item: str | None = None) -> dict:
     each reset to the default of 7.
     """
     conn = get_conn()
-    existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchone()
+    existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
     if not existing:
         conn.close()
         raise ValueError("No saved preferences yet.")
@@ -457,13 +457,13 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         updated = [d for d in json.loads(existing["dislikes_json"]) if d.lower() != (item or "").lower()]
         conn.execute(
             "UPDATE meal_preferences SET dislikes_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), HOUSEHOLD_ID),
+            (json.dumps(updated), household_id()),
         )
     elif field == "cuisine_preferences":
         updated = [c for c in json.loads(existing["cuisine_preferences_json"]) if c.lower() != (item or "").lower()]
         conn.execute(
             "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), HOUSEHOLD_ID),
+            (json.dumps(updated), household_id()),
         )
     elif field == "usual_stores":
         updated = [s for s in json.loads(existing["usual_stores_json"]) if s.lower() != (item or "").lower()]
@@ -474,43 +474,43 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
         conn.execute(
             "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), json.dumps(store_items), HOUSEHOLD_ID),
+            (json.dumps(updated), json.dumps(store_items), household_id()),
         )
     elif field == "protein_preferences":
         current = dict(json.loads(existing["protein_preferences_json"]))
         current.pop(item, None)
         conn.execute(
             "UPDATE meal_preferences SET protein_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(current), HOUSEHOLD_ID),
+            (json.dumps(current), household_id()),
         )
     elif field == "notes":
         conn.execute(
-            "UPDATE meal_preferences SET notes = '', updated_at = datetime('now') WHERE household_id = ?", (HOUSEHOLD_ID,)
+            "UPDATE meal_preferences SET notes = '', updated_at = datetime('now') WHERE household_id = ?", (household_id(),)
         )
     elif field == "cooking_time_preference":
         conn.execute(
             "UPDATE meal_preferences SET cooking_time_preference = '', updated_at = datetime('now') WHERE household_id = ?",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         )
     elif field == "eating_style":
         conn.execute(
             "UPDATE meal_preferences SET eating_style = '', updated_at = datetime('now') WHERE household_id = ?",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         )
     elif field == "dinners_per_week":
         conn.execute(
             "UPDATE meal_preferences SET dinners_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         )
     elif field == "breakfasts_per_week":
         conn.execute(
             "UPDATE meal_preferences SET breakfasts_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         )
     elif field == "lunches_per_week":
         conn.execute(
             "UPDATE meal_preferences SET lunches_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         )
     else:
         conn.close()

@@ -4,7 +4,7 @@ The grocery list: adding, merging, marking, clearing and repairing items.
 from __future__ import annotations
 
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import inventory as _inventory
 from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
@@ -84,14 +84,14 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     links = conn.execute(
         "SELECT id, grocery_item_id, item, quantity FROM meal_plan_grocery_links "
         "WHERE household_id = ? AND meal_plan_entry_id = ?",
-        (HOUSEHOLD_ID, entry_id),
+        (household_id(), entry_id),
     ).fetchall()
     removed_items = []
     trimmed_items = []
     for link in links:
         grocery_row = conn.execute(
             "SELECT id, item, quantity, status FROM grocery_items WHERE id = ? AND household_id = ?",
-            (link["grocery_item_id"], HOUSEHOLD_ID),
+            (link["grocery_item_id"], household_id()),
         ).fetchone()
         if grocery_row and grocery_row["status"] == "needed":
             new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
@@ -101,7 +101,7 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
             elif new_qty != (grocery_row["quantity"] or ""):
                 conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
                 trimmed_items.append(grocery_row["item"])
-    conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (HOUSEHOLD_ID, entry_id))
+    conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
     conn.commit()
     conn.close()
     return {"removed_items": removed_items, "trimmed_items": trimmed_items}
@@ -135,11 +135,11 @@ def add_grocery_item(
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' AND LOWER(item) = LOWER(?)",
-        (HOUSEHOLD_ID, item),
+        (household_id(), item),
     ).fetchone()
     pref = conn.execute(
         "SELECT store FROM item_store_preferences WHERE household_id = ? AND item = ?",
-        (HOUSEHOLD_ID, item.strip().lower()),
+        (household_id(), item.strip().lower()),
     ).fetchone()
     preferred_store = pref["store"] if pref else ""
     if existing:
@@ -155,7 +155,7 @@ def add_grocery_item(
 
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, item, quantity, category, added_by, source_weekly_plan_id, preferred_store),
+        (household_id(), item, quantity, category, added_by, source_weekly_plan_id, preferred_store),
     )
     conn.commit()
     item_id = cur.lastrowid
@@ -206,19 +206,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
         rows = conn.execute(
             "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
             "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
             "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
-            (HOUSEHOLD_ID, status),
+            (household_id(), status),
         ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -239,7 +239,7 @@ def exclude_grocery_item(item_id: int) -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE grocery_items SET excluded_from_list = 1 WHERE id = ? AND household_id = ?",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -251,7 +251,7 @@ def include_grocery_item(item_id: int) -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE grocery_items SET excluded_from_list = 0 WHERE id = ? AND household_id = ?",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -291,7 +291,7 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, category FROM grocery_items WHERE household_id = ? AND status = ? ORDER BY id",
-        (HOUSEHOLD_ID, status),
+        (household_id(), status),
     ).fetchall()
 
     groups: dict[str, list[dict]] = {}
@@ -335,7 +335,7 @@ def repair_grocery_quantities(status: str = "needed") -> dict:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity FROM grocery_items WHERE household_id = ? AND status = ?",
-        (HOUSEHOLD_ID, status),
+        (household_id(), status),
     ).fetchall()
     fixed = []
     for r in rows:
@@ -377,13 +377,13 @@ def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict
         rows = conn.execute(
             "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
             "AND source_weekly_plan_id IS NOT NULL",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
             "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
             "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
-            (HOUSEHOLD_ID, current_id),
+            (household_id(), current_id),
         ).fetchall()
     removed = [r["item"] for r in rows]
     if rows:
@@ -406,12 +406,12 @@ def clear_grocery_list(status: str = "needed") -> dict:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
-        (HOUSEHOLD_ID, status, status),
+        (household_id(), status, status),
     ).fetchall()
     count = len(rows)
     conn.execute(
         "DELETE FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
-        (HOUSEHOLD_ID, status, status),
+        (household_id(), status, status),
     )
     conn.commit()
     conn.close()
@@ -427,11 +427,11 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+        "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     conn.execute(
         "UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ?",
-        (status, item_id, HOUSEHOLD_ID),
+        (status, item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -452,7 +452,7 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     conn = get_conn()
     row = conn.execute(
         "SELECT id, item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     ).fetchone()
     if not row:
         conn.close()
@@ -471,7 +471,7 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
 def remove_grocery_item(item_id: int) -> dict:
     """Delete an item from the grocery list."""
     conn = get_conn()
-    conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID))
+    conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()
     return {"item_id": item_id, "deleted": True}
@@ -493,7 +493,7 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
     conn = get_conn()
     row = conn.execute(
         "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     ).fetchone()
     conn.close()
     if not row:

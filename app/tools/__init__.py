@@ -3,9 +3,12 @@ Tool functions the AI agent can call. Each function talks directly to
 SQLite and returns plain dicts/lists (JSON-serializable) so they can be
 handed straight back to Claude as tool results.
 
-HOUSEHOLD_ID is hardcoded to 1 for V1 (single household, single user).
-When this becomes multi-tenant, thread a real household_id through here
-instead of the constant.
+Which household a call operates on is request-scoped: `household_id()`
+(from `_shared`) reads a ContextVar the web layer sets per request from the
+signed session cookie, defaulting to household 1 for scripts and tests.
+See `_shared.py` for why it's a ContextVar rather than an argument. Tool
+functions therefore take no household parameter — the model never gets to
+choose one.
 
 This is a package: the tool functions live in domain modules alongside
 this file (recipes, grocery, inventory, chores, ...). Everything they
@@ -15,9 +18,13 @@ define is re-exported here, so `from app import tools` and
 from __future__ import annotations
 
 from ._shared import (  # noqa: F401
-    HOUSEHOLD_ID,
+    DEFAULT_HOUSEHOLD_ID,
     PUBLIC_BASE_URL,
     _absolute_url,
+    household_id,
+    set_current_household_id,
+    reset_current_household_id,
+    use_household,
 )
 from .attention import (  # noqa: F401
     add_attention_item,

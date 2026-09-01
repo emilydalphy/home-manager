@@ -4,7 +4,7 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 from __future__ import annotations
 
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import attention as _attention
 from . import inventory as _inventory
 from . import quantities as _quantities
@@ -72,7 +72,7 @@ def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
     """Deplete a specific, already-identified inventory row by id (not by name lookup) — used by deplete_inventory_for_meal once a match has already been resolved, so there's no risk of a second, different row matching the same name."""
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+        "SELECT id, item, quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if not row:
         conn.close()
@@ -129,7 +129,7 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         "SELECT mpe.id, mpe.recipe_id, COALESCE(r.name, mpe.freeform_meal) AS meal_name "
         "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         "WHERE mpe.id = ? AND mpe.household_id = ?",
-        (entry_id, HOUSEHOLD_ID),
+        (entry_id, household_id()),
     ).fetchone()
     conn.close()
     if not entry or not entry["recipe_id"]:
@@ -221,7 +221,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.id = ? AND mpe.household_id = ?
         """,
-        (entry_id, HOUSEHOLD_ID),
+        (entry_id, household_id()),
     ).fetchone()
     linked_ids = [entry_id]
     if row and row["weekly_plan_id"] is not None:
@@ -235,7 +235,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
                 WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ?
                   AND LOWER(COALESCE(r.name, mpe.freeform_meal)) = LOWER(?)
                 """,
-                (HOUSEHOLD_ID, row["weekly_plan_id"], row["meal"]),
+                (household_id(), row["weekly_plan_id"], row["meal"]),
             ).fetchall()
             if siblings:
                 linked_ids = [r["id"] for r in siblings]
@@ -243,7 +243,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     cooked_at = "datetime('now')" if status == "done" else "NULL"
     conn.executemany(
         f"UPDATE meal_plan_entries SET cooked_status = ?, cooked_at = {cooked_at} WHERE id = ? AND household_id = ?",
-        [(status, eid, HOUSEHOLD_ID) for eid in linked_ids],
+        [(status, eid, household_id()) for eid in linked_ids],
     )
     conn.commit()
     conn.close()
@@ -260,7 +260,7 @@ def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE prep_tasks SET status = ? WHERE id = ? AND household_id = ?",
-        (status, prep_task_id, HOUSEHOLD_ID),
+        (status, prep_task_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -279,7 +279,7 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
     rows = conn.execute(
         "SELECT id, task_date, description, related_meal, status FROM prep_tasks "
         "WHERE weekly_plan_id = ? AND household_id = ? ORDER BY task_date ASC, id ASC",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -293,13 +293,13 @@ def save_prep_tasks(weekly_plan_id: int, tasks: list[dict]) -> dict:
     supersedes, rather than appending duplicates).
     """
     conn = get_conn()
-    conn.execute("DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?", (weekly_plan_id, HOUSEHOLD_ID))
+    conn.execute("DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?", (weekly_plan_id, household_id()))
     for t in tasks:
         if not t.get("task_date") or not t.get("description"):
             continue
         conn.execute(
             "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal) VALUES (?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, weekly_plan_id, t["task_date"], t["description"], t.get("related_meal", "")),
+            (household_id(), weekly_plan_id, t["task_date"], t["description"], t.get("related_meal", "")),
         )
     conn.commit()
     conn.close()

@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import household as _household
 
 
@@ -54,7 +54,7 @@ def set_chores_profile(
             updated_at = datetime('now')
         """,
         (
-            HOUSEHOLD_ID, home_type, bedrooms, bathrooms, 1 if has_yard else 0, standard,
+            household_id(), home_type, bedrooms, bathrooms, 1 if has_yard else 0, standard,
             json.dumps(rotation_members or []), existing_help, existing_help_frequency,
             include_notes, exclude_notes,
         ),
@@ -68,7 +68,7 @@ def get_chores_profile() -> dict:
     """Get saved chores context (home type, yard, standard, etc.), if any was recorded. Empty fields mean it wasn't collected yet."""
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM chores_profile WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT * FROM chores_profile WHERE household_id = ?", (household_id(),)
     ).fetchone()
     conn.close()
     if not row:
@@ -108,7 +108,7 @@ def add_chore(
     cur = conn.execute(
         "INSERT INTO chores (household_id, name, category, frequency, default_assignee_id, rotation_member_ids_json) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, name, category, frequency, default_id, json.dumps(rotation_ids)),
+        (household_id(), name, category, frequency, default_id, json.dumps(rotation_ids)),
     )
     conn.commit()
     chore_id = cur.lastrowid
@@ -128,8 +128,8 @@ def list_chore_definitions(active_only: bool = True) -> list[dict]:
     query = "SELECT c.id, c.name, c.category, c.frequency, c.active, c.rotation_member_ids_json FROM chores c WHERE c.household_id = ?"
     if active_only:
         query += " AND c.active = 1"
-    rows = conn.execute(query, (HOUSEHOLD_ID,)).fetchall()
-    member_rows = conn.execute("SELECT id, name FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchall()
+    rows = conn.execute(query, (household_id(),)).fetchall()
+    member_rows = conn.execute("SELECT id, name FROM members WHERE household_id = ?", (household_id(),)).fetchall()
     names_by_id = {m["id"]: m["name"] for m in member_rows}
     conn.close()
     result = []
@@ -158,18 +158,18 @@ def update_chore(
     """Update an existing chore's frequency, category, assigned rotation, or active status."""
     conn = get_conn()
     if frequency is not None:
-        conn.execute("UPDATE chores SET frequency = ? WHERE id = ? AND household_id = ?", (frequency, chore_id, HOUSEHOLD_ID))
+        conn.execute("UPDATE chores SET frequency = ? WHERE id = ? AND household_id = ?", (frequency, chore_id, household_id()))
     if category is not None:
-        conn.execute("UPDATE chores SET category = ? WHERE id = ? AND household_id = ?", (category, chore_id, HOUSEHOLD_ID))
+        conn.execute("UPDATE chores SET category = ? WHERE id = ? AND household_id = ?", (category, chore_id, household_id()))
     if assignee_names is not None:
         rotation_ids = [_household._get_or_create_member(conn, n) for n in assignee_names]
         default_id = rotation_ids[0] if rotation_ids else None
         conn.execute(
             "UPDATE chores SET rotation_member_ids_json = ?, default_assignee_id = ? WHERE id = ? AND household_id = ?",
-            (json.dumps(rotation_ids), default_id, chore_id, HOUSEHOLD_ID),
+            (json.dumps(rotation_ids), default_id, chore_id, household_id()),
         )
     if active is not None:
-        conn.execute("UPDATE chores SET active = ? WHERE id = ? AND household_id = ?", (1 if active else 0, chore_id, HOUSEHOLD_ID))
+        conn.execute("UPDATE chores SET active = ? WHERE id = ? AND household_id = ?", (1 if active else 0, chore_id, household_id()))
     conn.commit()
     conn.close()
     return {"chore_id": chore_id, "updated": True}
@@ -186,7 +186,7 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
     """
     conn = get_conn()
     chores = conn.execute(
-        "SELECT * FROM chores WHERE household_id = ? AND active = 1 AND frequency != 'once'", (HOUSEHOLD_ID,)
+        "SELECT * FROM chores WHERE household_id = ? AND active = 1 AND frequency != 'once'", (household_id(),)
     ).fetchall()
 
     created = []
@@ -224,7 +224,7 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
                     assignee_id = chore["default_assignee_id"]
                 cur = conn.execute(
                     "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date) VALUES (?, ?, ?, ?)",
-                    (HOUSEHOLD_ID, chore["id"], assignee_id, next_due.isoformat()),
+                    (household_id(), chore["id"], assignee_id, next_due.isoformat()),
                 )
                 created.append({"chore": chore["name"], "due_date": next_due.isoformat(), "instance_id": cur.lastrowid})
             next_due += timedelta(days=interval)
@@ -238,7 +238,7 @@ def schedule_chore_instance(chore_name: str, due_date: str, assignee_name: str |
     """Schedule a one-off occurrence of a chore for a specific date (YYYY-MM-DD)."""
     conn = get_conn()
     chore = conn.execute(
-        "SELECT * FROM chores WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, chore_name)
+        "SELECT * FROM chores WHERE household_id = ? AND name = ?", (household_id(), chore_name)
     ).fetchone()
     if not chore:
         conn.close()
@@ -250,7 +250,7 @@ def schedule_chore_instance(chore_name: str, due_date: str, assignee_name: str |
 
     cur = conn.execute(
         "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date) VALUES (?, ?, ?, ?)",
-        (HOUSEHOLD_ID, chore["id"], assignee_id, due_date),
+        (household_id(), chore["id"], assignee_id, due_date),
     )
     conn.commit()
     instance_id = cur.lastrowid
@@ -273,7 +273,7 @@ def list_chores(status: str = "pending", days_ahead: int = 14) -> list[dict]:
           AND ci.due_date <= ?
         ORDER BY ci.due_date ASC
         """,
-        (HOUSEHOLD_ID, status, status, end_date),
+        (household_id(), status, status, end_date),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -284,7 +284,7 @@ def complete_chore(instance_id: int) -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE chore_instances SET status = 'done', completed_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (instance_id, HOUSEHOLD_ID),
+        (instance_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -299,7 +299,7 @@ def get_chores_due_today() -> list[dict]:
     "x of y done" count rather than only the still-open ones.
 
     Household-wide, not filtered to a signed-in member: there's no
-    per-user login concept yet (see HOUSEHOLD_ID above), so this can't
+    per-user login concept yet (see household_id() above), so this can't
     actually distinguish "my chores" from anyone else's the way the
     redesign's Today spec describes. Noted as a known gap in the README
     rather than silently faked.
@@ -315,7 +315,7 @@ def get_chores_due_today() -> list[dict]:
         WHERE ci.household_id = ? AND ci.due_date = ? AND ci.status != 'skipped'
         ORDER BY ci.id ASC
         """,
-        (HOUSEHOLD_ID, today),
+        (household_id(), today),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -331,7 +331,7 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
     completed_at_sql = "datetime('now')" if status == "done" else "NULL"
     conn.execute(
         f"UPDATE chore_instances SET status = ?, completed_at = {completed_at_sql} WHERE id = ? AND household_id = ?",
-        (status, instance_id, HOUSEHOLD_ID),
+        (status, instance_id, household_id()),
     )
     conn.commit()
     conn.close()

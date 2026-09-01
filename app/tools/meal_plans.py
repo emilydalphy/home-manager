@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import recipes as _recipes
 
 
@@ -64,7 +64,7 @@ def plan_meal(
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT * FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, meal)
+        "SELECT * FROM recipes WHERE household_id = ? AND name = ?", (household_id(), meal)
     ).fetchone()
 
     recipe_id = recipe["id"] if recipe else None
@@ -74,7 +74,7 @@ def plan_meal(
     cur = conn.execute(
         "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, food_groups_json, weekly_plan_id, component_category, reasoning, slot_state, derived_from_json) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'planned', ?)",
-        (HOUSEHOLD_ID, meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id, component_category, reasoning, json.dumps(derived_from or {})),
+        (household_id(), meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id, component_category, reasoning, json.dumps(derived_from or {})),
     )
     conn.commit()
     entry_id = cur.lastrowid
@@ -122,7 +122,7 @@ def get_meal_plan(days_ahead: int = 7) -> list[dict]:
         WHERE mpe.household_id = ? AND mpe.date >= date('now') AND mpe.date <= ?
         ORDER BY mpe.date ASC
         """,
-        (HOUSEHOLD_ID, end_date),
+        (household_id(), end_date),
     ).fetchall()
     conn.close()
     return [
@@ -149,7 +149,7 @@ def get_recent_meal_history(weeks: int = 3) -> list[dict]:
         WHERE mpe.household_id = ? AND mpe.date >= ?
         ORDER BY mpe.date DESC
         """,
-        (HOUSEHOLD_ID, start_date),
+        (household_id(), start_date),
     ).fetchall()
     conn.close()
     return [
@@ -173,7 +173,7 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     """
     conn = get_conn()
     prefs = conn.execute(
-        "SELECT planning_mode FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT planning_mode FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     planning_mode = prefs["planning_mode"] if prefs else "day_based"
     # Determined once, atomically, right here at creation — not re-derived
@@ -181,12 +181,12 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     # be fragile against backfills/edits/re-onboarding (see db.py's
     # is_first_plan migration comment).
     existing_plan_count = conn.execute(
-        "SELECT COUNT(*) AS n FROM weekly_plans WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT COUNT(*) AS n FROM weekly_plans WHERE household_id = ?", (household_id(),)
     ).fetchone()["n"]
     is_first_plan = existing_plan_count == 0
     cur = conn.execute(
         "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes, planning_mode, is_first_plan) VALUES (?, ?, ?, ?, ?)",
-        (HOUSEHOLD_ID, week_start_date, constraints_notes, planning_mode, int(is_first_plan)),
+        (household_id(), week_start_date, constraints_notes, planning_mode, int(is_first_plan)),
     )
     conn.commit()
     plan_id = cur.lastrowid

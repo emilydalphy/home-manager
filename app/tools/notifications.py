@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import inventory as _inventory
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
@@ -17,7 +17,7 @@ from . import weekly_plan as _weekly_plan
 # ready); the 4th ("the other adult changed something") is not computed
 # here — see README's Phase 5 notes for why.
 def _dismissed_keys(conn) -> set:
-    rows = conn.execute("SELECT key FROM notification_dismissals WHERE household_id = ?", (HOUSEHOLD_ID,)).fetchall()
+    rows = conn.execute("SELECT key FROM notification_dismissals WHERE household_id = ?", (household_id(),)).fetchall()
     return {r["key"] for r in rows}
 
 
@@ -86,7 +86,7 @@ def get_active_notifications() -> list[dict]:
     conn = get_conn()
     plan_row = conn.execute(
         "SELECT id, week_start_date, created_at FROM weekly_plans WHERE household_id = ? AND week_start_date > ? ORDER BY created_at DESC LIMIT 1",
-        (HOUSEHOLD_ID, date.today().isoformat()),
+        (household_id(), date.today().isoformat()),
     ).fetchone()
     if plan_row:
         created = plan_row["created_at"]
@@ -124,7 +124,7 @@ def get_active_notifications() -> list[dict]:
         "SELECT id, week_start_date, approved_by, approved_at FROM weekly_plans "
         "WHERE household_id = ? AND status = 'approved' AND TRIM(approved_by) != '' AND approved_at IS NOT NULL "
         "ORDER BY approved_at DESC LIMIT 1",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     if approved_row:
         # Keyed by plan id AND approval time, so reopening and re-approving
@@ -154,7 +154,7 @@ def dismiss_notification(key: str) -> dict:
     conn = get_conn()
     conn.execute(
         "INSERT OR IGNORE INTO notification_dismissals (household_id, key) VALUES (?, ?)",
-        (HOUSEHOLD_ID, key),
+        (household_id(), key),
     )
     conn.commit()
     conn.close()
@@ -177,7 +177,7 @@ def get_learning_summary() -> dict:
     conn = get_conn()
     deviation_notes = conn.execute(
         "SELECT COUNT(*) AS c FROM recipe_notes WHERE household_id = ? AND note_type = 'deviation'",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()["c"]
     conn.close()
     return {

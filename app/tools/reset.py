@@ -4,7 +4,7 @@ Self-service reset: starting a week's plan or the grocery list over.
 from __future__ import annotations
 
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import grocery as _grocery
 from . import weekly_plan as _weekly_plan
 
@@ -44,7 +44,7 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     else:
         plan = conn.execute(
             "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
-            (weekly_plan_id, HOUSEHOLD_ID),
+            (weekly_plan_id, household_id()),
         ).fetchone()
         if not plan:
             conn.close()
@@ -60,7 +60,7 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     entry_ids = [
         row["id"] for row in conn.execute(
             "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
-            (weekly_plan_id, HOUSEHOLD_ID),
+            (weekly_plan_id, household_id()),
         ).fetchall()
     ]
     conn.close()
@@ -75,16 +75,16 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     conn = get_conn()
     conn.execute(
         "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     )
     prep = conn.execute(
         "DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     )
     prep_tasks_cleared = prep.rowcount
     conn.execute(
         "UPDATE weekly_plans SET status = 'draft', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, HOUSEHOLD_ID),
+        (weekly_plan_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -116,11 +116,11 @@ def get_reset_preview() -> dict:
     if plan:
         meal_count = conn.execute(
             "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
-            (plan["id"], HOUSEHOLD_ID),
+            (plan["id"], household_id()),
         ).fetchone()["n"]
     grocery_count = conn.execute(
         "SELECT COUNT(*) AS n FROM grocery_items WHERE household_id = ? AND status = 'needed'",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()["n"]
     conn.close()
     return {

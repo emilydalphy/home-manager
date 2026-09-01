@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
 
@@ -45,7 +45,7 @@ def _step_quantity_text(quantity: str, delta: float) -> str:
 def step_inventory_quantity(item_id: int, delta: float) -> dict:
     """Nudge one inventory item's quantity by delta (e.g. +1/-1 from the item detail sheet's stepper)."""
     conn = get_conn()
-    row = conn.execute("SELECT quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)).fetchone()
+    row = conn.execute("SELECT quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())).fetchone()
     if not row:
         conn.close()
         return {"item_id": item_id, "found": False}
@@ -59,7 +59,7 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
 def set_inventory_location(item_id: int, location: str) -> dict:
     """Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately."""
     conn = get_conn()
-    conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, HOUSEHOLD_ID))
+    conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
     conn.commit()
     conn.close()
     return {"item_id": item_id, "location": location}
@@ -68,7 +68,7 @@ def set_inventory_location(item_id: int, location: str) -> dict:
 def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
     """Shift one inventory item's best-before date by delta_days (one tap = one day). Starts from today if the item has no date set yet."""
     conn = get_conn()
-    row = conn.execute("SELECT expiration_date FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)).fetchone()
+    row = conn.execute("SELECT expiration_date FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())).fetchone()
     if not row:
         conn.close()
         return {"item_id": item_id, "found": False}
@@ -132,12 +132,12 @@ def _add_to_inventory(
         existing = conn.execute(
             "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
             "WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
-            (HOUSEHOLD_ID, item, location),
+            (household_id(), item, location),
         ).fetchone()
     else:
         existing = conn.execute(
             "SELECT id, quantity, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (HOUSEHOLD_ID, item),
+            (household_id(), item),
         ).fetchone()
     if existing:
         merged_qty, _ = _grocery._try_consolidate_quantity(existing["quantity"] or "", quantity)
@@ -162,7 +162,7 @@ def _add_to_inventory(
         item_location = _quantities._resolve_location(location, item_category)
         cur = conn.execute(
             "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, item, quantity, source, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_category, item_location),
+            (household_id(), item, quantity, source, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_category, item_location),
         )
         conn.commit()
         item_id = cur.lastrowid
@@ -217,12 +217,12 @@ def update_inventory(
         if location:
             existing = conn.execute(
                 "SELECT id, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
-                (HOUSEHOLD_ID, item, location),
+                (household_id(), item, location),
             ).fetchone()
         else:
             existing = conn.execute(
                 "SELECT id, category, expiration_date, location FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-                (HOUSEHOLD_ID, item),
+                (household_id(), item),
             ).fetchone()
         if existing:
             fields = "quantity = ?, updated_at = datetime('now')"
@@ -246,7 +246,7 @@ def update_inventory(
             item_location = _quantities._resolve_location(location, item_category)
             cur = conn.execute(
                 "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location) VALUES (?, ?, ?, 'chat', ?, ?, ?)",
-                (HOUSEHOLD_ID, item, quantity, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location),
+                (household_id(), item, quantity, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -258,7 +258,7 @@ def update_inventory(
         if location:
             existing = conn.execute(
                 "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ?",
-                (HOUSEHOLD_ID, item, location),
+                (household_id(), item, location),
             ).fetchone()
         else:
             # No location given and this item might exist in more than one
@@ -268,7 +268,7 @@ def update_inventory(
             # avoid the ambiguity.
             existing = conn.execute(
                 "SELECT id, quantity FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-                (HOUSEHOLD_ID, item),
+                (household_id(), item),
             ).fetchone()
         if not existing:
             conn.close()
@@ -337,7 +337,7 @@ def get_inventory() -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, source, expiration_date, category, location, created_at FROM inventory_items WHERE household_id = ? ORDER BY item",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchall()
     conn.close()
     items = [dict(r) for r in rows]
@@ -426,7 +426,7 @@ def get_expiring_soon(days: int = 4) -> list[dict]:
         "SELECT id, item, quantity, category, expiration_date FROM inventory_items "
         "WHERE household_id = ? AND expiration_date IS NOT NULL AND expiration_date != '' AND expiration_date <= ? "
         "ORDER BY expiration_date ASC",
-        (HOUSEHOLD_ID, cutoff),
+        (household_id(), cutoff),
     ).fetchall()
     conn.close()
     result = []
@@ -456,7 +456,7 @@ def get_fresh_perishable_inventory(near_expiring_days: int = 4) -> list[dict]:
         "WHERE household_id = ? AND category IN ('produce', 'dairy', 'meat/seafood') "
         "AND (expiration_date IS NULL OR expiration_date = '' OR expiration_date > ?) "
         "ORDER BY CASE WHEN expiration_date IS NULL OR expiration_date = '' THEN 1 ELSE 0 END, expiration_date ASC",
-        (HOUSEHOLD_ID, cutoff),
+        (household_id(), cutoff),
     ).fetchall()
     conn.close()
     return [
@@ -468,7 +468,7 @@ def get_fresh_perishable_inventory(near_expiring_days: int = 4) -> list[dict]:
 def remove_inventory_item(item_id: int) -> dict:
     """Remove a single inventory item outright (e.g. it spoiled, or was added by mistake) — used by the Inventory view's delete control."""
     conn = get_conn()
-    conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID))
+    conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()
     return {"item_id": item_id, "removed": True}

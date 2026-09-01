@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import secrets
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID, _absolute_url
+from ._shared import household_id, _absolute_url
 from . import household as _household
 from . import weekly_plan as _weekly_plan
 
@@ -22,7 +22,7 @@ def get_or_create_share_link() -> dict:
     conn = get_conn()
     row = conn.execute(
         "SELECT token FROM share_links WHERE household_id = ? ORDER BY created_at ASC LIMIT 1",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     if row:
         token = row["token"]
@@ -30,7 +30,7 @@ def get_or_create_share_link() -> dict:
         token = secrets.token_urlsafe(16)
         conn.execute(
             "INSERT INTO share_links (household_id, token) VALUES (?, ?)",
-            (HOUSEHOLD_ID, token),
+            (household_id(), token),
         )
         conn.commit()
     conn.close()
@@ -80,7 +80,7 @@ def get_or_create_member_share_link(member_name: str) -> dict:
     conn = get_conn()
     member = conn.execute(
         "SELECT id, name FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (HOUSEHOLD_ID, member_name),
+        (household_id(), member_name),
     ).fetchone()
     if not member:
         conn.close()
@@ -88,7 +88,7 @@ def get_or_create_member_share_link(member_name: str) -> dict:
     row = conn.execute(
         "SELECT token FROM member_share_links WHERE household_id = ? AND member_id = ? AND revoked = 0 "
         "ORDER BY created_at DESC LIMIT 1",
-        (HOUSEHOLD_ID, member["id"]),
+        (household_id(), member["id"]),
     ).fetchone()
     if row:
         token = row["token"]
@@ -96,7 +96,7 @@ def get_or_create_member_share_link(member_name: str) -> dict:
         token = secrets.token_urlsafe(16)
         conn.execute(
             "INSERT INTO member_share_links (household_id, member_id, token) VALUES (?, ?, ?)",
-            (HOUSEHOLD_ID, member["id"], token),
+            (household_id(), member["id"], token),
         )
         conn.commit()
     conn.close()
@@ -108,14 +108,14 @@ def revoke_member_share_link(member_name: str) -> dict:
     conn = get_conn()
     member = conn.execute(
         "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (HOUSEHOLD_ID, member_name),
+        (household_id(), member_name),
     ).fetchone()
     if not member:
         conn.close()
         raise ValueError(f"No household member named '{member_name}'.")
     conn.execute(
         "UPDATE member_share_links SET revoked = 1 WHERE household_id = ? AND member_id = ? AND revoked = 0",
-        (HOUSEHOLD_ID, member["id"]),
+        (household_id(), member["id"]),
     )
     conn.commit()
     conn.close()
@@ -194,7 +194,7 @@ def eater_add_note(token: str, note: str) -> dict:
         raise ValueError("This link isn't valid.")
     conn.execute(
         "INSERT INTO member_notes (household_id, member_id, note) VALUES (?, ?, ?)",
-        (HOUSEHOLD_ID, link["member_id"], note),
+        (household_id(), link["member_id"], note),
     )
     conn.commit()
     conn.close()
@@ -214,14 +214,14 @@ def get_member_notes(member_name: str | None = None) -> list[dict]:
             "SELECT m.name, n.note, n.created_at FROM member_notes n "
             "JOIN members m ON m.id = n.member_id "
             "WHERE n.household_id = ? AND LOWER(m.name) = LOWER(?) ORDER BY n.created_at DESC",
-            (HOUSEHOLD_ID, member_name),
+            (household_id(), member_name),
         ).fetchall()
     else:
         rows = conn.execute(
             "SELECT m.name, n.note, n.created_at FROM member_notes n "
             "JOIN members m ON m.id = n.member_id "
             "WHERE n.household_id = ? ORDER BY n.created_at DESC",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     conn.close()
     return [{"member_name": r["name"], "note": r["note"], "created_at": r["created_at"]} for r in rows]

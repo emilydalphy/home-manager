@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
 
@@ -23,20 +23,20 @@ def set_item_store(item: str, store: str) -> dict:
         conn.execute(
             "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
             "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
-            (HOUSEHOLD_ID, item.strip().lower(), store),
+            (household_id(), item.strip().lower(), store),
         )
         conn.execute(
             "UPDATE grocery_items SET store = ? WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (store, HOUSEHOLD_ID, item),
+            (store, household_id(), item),
         )
     else:
         conn.execute(
             "DELETE FROM item_store_preferences WHERE household_id = ? AND item = ?",
-            (HOUSEHOLD_ID, item.strip().lower()),
+            (household_id(), item.strip().lower()),
         )
         conn.execute(
             "UPDATE grocery_items SET store = '' WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (HOUSEHOLD_ID, item),
+            (household_id(), item),
         )
     conn.commit()
     conn.close()
@@ -57,11 +57,11 @@ def is_multi_store_household() -> bool:
     """
     conn = get_conn()
     prefs = conn.execute(
-        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     usual = set(json.loads(prefs["usual_stores_json"])) if prefs else set()
     tagged_rows = conn.execute(
-        "SELECT DISTINCT store FROM grocery_items WHERE household_id = ? AND store != ''", (HOUSEHOLD_ID,)
+        "SELECT DISTINCT store FROM grocery_items WHERE household_id = ? AND store != ''", (household_id(),)
     ).fetchall()
     conn.close()
     tagged = {r["store"] for r in tagged_rows}
@@ -116,7 +116,7 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, HOUSEHOLD_ID)
+        "SELECT id, item FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if not row:
         conn.close()
@@ -127,7 +127,7 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
         conn.execute(
             "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
             "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
-            (HOUSEHOLD_ID, row["item"].strip().lower(), store),
+            (household_id(), row["item"].strip().lower(), store),
         )
         remembered = True
     conn.commit()
@@ -146,7 +146,7 @@ def get_item_store_preferences() -> dict:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT item, store FROM item_store_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT item, store FROM item_store_preferences WHERE household_id = ?", (household_id(),)
     ).fetchall()
     conn.close()
     return {r["item"]: r["store"] for r in rows}
@@ -172,11 +172,11 @@ def get_stores() -> list[dict]:
     names = [
         r["store"] for r in conn.execute(
             "SELECT DISTINCT store FROM grocery_items WHERE household_id = ? AND store != '' AND status != 'removed'",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     ]
     meta_rows = conn.execute(
-        "SELECT name, habit, role, aisle_order_json FROM stores WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT name, habit, role, aisle_order_json FROM stores WHERE household_id = ?", (household_id(),)
     ).fetchall()
     conn.close()
     meta_by_name = {r["name"]: r for r in meta_rows}
@@ -211,7 +211,7 @@ def close_shopping_trip(store: str, item_count: int = 0) -> dict:
     conn = get_conn()
     conn.execute(
         "INSERT INTO shopping_trips (household_id, store, item_count) VALUES (?, ?, ?)",
-        (HOUSEHOLD_ID, store, item_count),
+        (household_id(), store, item_count),
     )
     conn.commit()
     conn.close()

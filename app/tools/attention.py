@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import coordination as _coordination
 from . import inventory as _inventory
 
@@ -26,14 +26,14 @@ def add_attention_item(kind: str, summary: str, detail: dict | None = None) -> d
     conn = get_conn()
     existing = conn.execute(
         "SELECT id FROM attention_items WHERE household_id = ? AND kind = ? AND summary = ? AND status = 'pending'",
-        (HOUSEHOLD_ID, kind, summary),
+        (household_id(), kind, summary),
     ).fetchone()
     if existing:
         conn.close()
         return {"id": existing["id"], "created": False}
     cur = conn.execute(
         "INSERT INTO attention_items (household_id, kind, summary, detail_json) VALUES (?, ?, ?, ?)",
-        (HOUSEHOLD_ID, kind, summary, json.dumps(detail or {})),
+        (household_id(), kind, summary, json.dumps(detail or {})),
     )
     conn.commit()
     item_id = cur.lastrowid
@@ -46,7 +46,7 @@ def resolve_attention_item(item_id: int, status: str = "resolved") -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE attention_items SET status = ?, resolved_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (status, item_id, HOUSEHOLD_ID),
+        (status, item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -71,7 +71,7 @@ def record_attention_item_usage(item_id: int, amount_used: str = "") -> dict:
     conn = get_conn()
     row = conn.execute(
         "SELECT id, detail_json FROM attention_items WHERE id = ? AND household_id = ? AND status = 'pending'",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     ).fetchone()
     if not row:
         conn.close()
@@ -82,7 +82,7 @@ def record_attention_item_usage(item_id: int, amount_used: str = "") -> dict:
     if candidate_item_id is not None:
         inv_row = conn.execute(
             "SELECT id, item, quantity FROM inventory_items WHERE id = ? AND household_id = ?",
-            (candidate_item_id, HOUSEHOLD_ID),
+            (candidate_item_id, household_id()),
         ).fetchone()
     conn.close()
 
@@ -134,7 +134,7 @@ def get_attention_items() -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, kind, summary, detail_json, created_at FROM attention_items WHERE household_id = ? AND status = 'pending' ORDER BY created_at ASC",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchall()
     conn.close()
     for r in rows:

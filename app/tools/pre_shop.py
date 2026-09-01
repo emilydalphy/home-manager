@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import cooker as _cooker
 from . import grocery as _grocery
 from . import inventory as _inventory
@@ -113,7 +113,7 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ? "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
-        (author or "", item_id, HOUSEHOLD_ID),
+        (author or "", item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -131,7 +131,7 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     conn.execute(
         "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1 "
         "WHERE id = ? AND household_id = ?",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -145,7 +145,7 @@ def keep_all_pre_shop_flags() -> dict:
     for f in flags:
         conn.execute(
             "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
-            (f["itemId"], HOUSEHOLD_ID),
+            (f["itemId"], household_id()),
         )
     conn.commit()
     conn.close()
@@ -162,7 +162,7 @@ def mark_grocery_item_already_have_reviewed(item_id: int) -> dict:
     conn = get_conn()
     conn.execute(
         "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
-        (item_id, HOUSEHOLD_ID),
+        (item_id, household_id()),
     )
     conn.commit()
     conn.close()

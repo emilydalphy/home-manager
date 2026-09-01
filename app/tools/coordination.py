@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import household as _household
 from . import memory as _memory
 from . import recipes as _recipes
@@ -113,7 +113,7 @@ def get_feedback_nudge() -> dict:
           AND (SELECT rating FROM recipes WHERE id = mpe.recipe_id) = ''
         ORDER BY mpe.cooked_at DESC LIMIT 1
         """,
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     conn.close()
     if not row:
@@ -139,7 +139,7 @@ def get_household_people() -> list[dict]:
         # an empty list for a real household — see db._backfill_member_colors
         # for the same fix and the fuller note.
         "SELECT name, color FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult' ORDER BY id ASC",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchall()
     conn.close()
     # A color stored on the row (set by db._backfill_member_colors at the

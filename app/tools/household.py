@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 
 
 # Junk "no answer" values that sometimes get written into a restrictions
@@ -24,16 +24,16 @@ def get_household_setup_status() -> dict:
     """
     conn = get_conn()
     members = conn.execute(
-        "SELECT id, name, age_group FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT id, name, age_group FROM members WHERE household_id = ?", (household_id(),)
     ).fetchall()
     pets = conn.execute(
-        "SELECT id, name, pet_type FROM pets WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT id, name, pet_type FROM pets WHERE household_id = ?", (household_id(),)
     ).fetchall()
     household = conn.execute(
-        "SELECT goals FROM households WHERE id = ?", (HOUSEHOLD_ID,)
+        "SELECT goals FROM households WHERE id = ?", (household_id(),)
     ).fetchone()
     chore_count = conn.execute(
-        "SELECT COUNT(*) AS c FROM chores WHERE household_id = ? AND active = 1", (HOUSEHOLD_ID,)
+        "SELECT COUNT(*) AS c FROM chores WHERE household_id = ? AND active = 1", (household_id(),)
     ).fetchone()["c"]
     conn.close()
     return {
@@ -59,7 +59,7 @@ def list_members() -> list[dict]:
     """List all household members, including any saved dietary restrictions."""
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
     ).fetchall()
     conn.close()
     return [
@@ -126,7 +126,7 @@ def set_member_age_group(name: str, age_group: str) -> dict:
 def set_household_goals(goals: str) -> dict:
     """Save freeform household goals for using this app (e.g. 'stay on top of chores, eat healthier, waste less food')."""
     conn = get_conn()
-    conn.execute("UPDATE households SET goals = ? WHERE id = ?", (goals, HOUSEHOLD_ID))
+    conn.execute("UPDATE households SET goals = ? WHERE id = ?", (goals, household_id()))
     conn.commit()
     conn.close()
     _log_preference_event("goals", "write")
@@ -147,7 +147,7 @@ def _log_preference_event(field: str, action: str) -> None:
     conn = get_conn()
     conn.execute(
         "INSERT INTO preference_events (household_id, field, action) VALUES (?, ?, ?)",
-        (HOUSEHOLD_ID, field, action),
+        (household_id(), field, action),
     )
     conn.commit()
     conn.close()
@@ -159,7 +159,7 @@ def count_preference_events_this_month() -> int:
     row = conn.execute(
         "SELECT COUNT(*) AS n FROM preference_events "
         "WHERE household_id = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
-        (HOUSEHOLD_ID,),
+        (household_id(),),
     ).fetchone()
     conn.close()
     return row["n"]
@@ -170,7 +170,7 @@ def add_pet(name: str, pet_type: str) -> dict:
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO pets (household_id, name, pet_type) VALUES (?, ?, ?)",
-        (HOUSEHOLD_ID, name, pet_type),
+        (household_id(), name, pet_type),
     )
     conn.commit()
     pet_id = cur.lastrowid
@@ -182,7 +182,7 @@ def list_pets() -> list[dict]:
     """List all household pets."""
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, name, pet_type FROM pets WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT id, name, pet_type FROM pets WHERE household_id = ?", (household_id(),)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
@@ -195,10 +195,10 @@ def _get_or_create_member(conn, name: str) -> int:
     # "alex" vs. "Alex") silently create a duplicate member row instead of
     # attaching to the existing person (Phase 4, §4.1 Fix 1).
     row = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (HOUSEHOLD_ID, name)
+        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (household_id(), name)
     ).fetchone()
     if row:
         return row["id"]
-    cur = conn.execute("INSERT INTO members (household_id, name) VALUES (?, ?)", (HOUSEHOLD_ID, name))
+    cur = conn.execute("INSERT INTO members (household_id, name) VALUES (?, ?)", (household_id(), name))
     conn.commit()
     return cur.lastrowid

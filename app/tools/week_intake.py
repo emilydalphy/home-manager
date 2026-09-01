@@ -9,7 +9,7 @@ import re
 import sqlite3  # for IntegrityError -- see save_week_intake's retry loop
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import weekly_plan as _weekly_plan
 
 
@@ -58,7 +58,7 @@ def _household_composition() -> dict:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT age_group FROM members WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT age_group FROM members WHERE household_id = ?", (household_id(),)
     ).fetchall()
     conn.close()
     adults = children = 0
@@ -81,7 +81,7 @@ def _build_preferences_snapshot(conn) -> dict:
     changed. A few hundred bytes buys that.
     """
     prefs = conn.execute(
-        "SELECT * FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     if not prefs:
         return {}
@@ -133,7 +133,7 @@ def _current_intake_row(conn, week_start: str):
     return conn.execute(
         "SELECT * FROM week_intake WHERE household_id = ? AND week_start = ? AND superseded_at IS NULL "
         "ORDER BY revision DESC LIMIT 1",
-        (HOUSEHOLD_ID, week_start),
+        (household_id(), week_start),
     ).fetchone()
 
 
@@ -158,7 +158,7 @@ def get_week_intake_history(week_start: str) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT * FROM week_intake WHERE household_id = ? AND week_start = ? ORDER BY revision ASC",
-        (HOUSEHOLD_ID, week_start),
+        (household_id(), week_start),
     ).fetchall()
     conn.close()
     return [_intake_row_to_dict(r) for r in rows]
@@ -256,7 +256,7 @@ def save_week_intake(
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    HOUSEHOLD_ID, week_start, revision,
+                    household_id(), week_start, revision,
                     (created_by or (current["created_by"] if current else "")).strip(),
                     json.dumps(pick(night_tags, "night_tags")),
                     json.dumps(pick(guest_counts, "guest_counts")),
@@ -301,7 +301,7 @@ def _observed_day_patterns(week_start: str) -> dict:
 
     conn = get_conn()
     facts = conn.execute(
-        "SELECT text FROM facts WHERE household_id = ? AND category = 'rhythm'", (HOUSEHOLD_ID,)
+        "SELECT text FROM facts WHERE household_id = ? AND category = 'rhythm'", (household_id(),)
     ).fetchall()
     lookback_start = (date.fromisoformat(week_start) - timedelta(days=28)).isoformat()
     history = conn.execute(
@@ -312,7 +312,7 @@ def _observed_day_patterns(week_start: str) -> dict:
         WHERE mpe.household_id = ? AND mpe.slot = 'dinner'
           AND mpe.date >= ? AND mpe.date < ?
         """,
-        (HOUSEHOLD_ID, lookback_start, week_start),
+        (household_id(), lookback_start, week_start),
     ).fetchall()
     conn.close()
 
@@ -372,12 +372,12 @@ def get_week_intake_prefill(week_start: str) -> dict:
     household = _household_composition()
     conn = get_conn()
     prefs = conn.execute(
-        "SELECT cuisine_preferences_json FROM meal_preferences WHERE household_id = ?", (HOUSEHOLD_ID,)
+        "SELECT cuisine_preferences_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
     ).fetchone()
     plan = conn.execute(
         "SELECT id, status, intake_id FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
         "ORDER BY created_at DESC, id DESC LIMIT 1",
-        (HOUSEHOLD_ID, week_start),
+        (household_id(), week_start),
     ).fetchone()
     intake_row = _current_intake_row(conn, week_start)
     conn.close()

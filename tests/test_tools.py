@@ -643,7 +643,7 @@ def test_two_revisions_cannot_share_a_number():
     with pytest.raises(sqlite3.IntegrityError):
         conn.execute(
             "INSERT INTO week_intake (household_id, week_start, revision) VALUES (?, ?, ?)",
-            (tools.HOUSEHOLD_ID, "2026-09-07", 1),
+            (tools.household_id(), "2026-09-07", 1),
         )
     conn.close()
 

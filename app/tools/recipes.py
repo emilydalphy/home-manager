@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import HOUSEHOLD_ID
+from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
 
@@ -58,7 +58,7 @@ def add_recipe(
         "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
-            HOUSEHOLD_ID, name, notes, json.dumps(ingredients), json.dumps(tags or []),
+            household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
             json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
             advance_prep_notes, json.dumps(advance_prep_step_indices or []),
@@ -102,7 +102,7 @@ def update_recipe_details(
     conn = get_conn()
     existing = conn.execute(
         "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (HOUSEHOLD_ID, recipe_name),
+        (household_id(), recipe_name),
     ).fetchone()
     if not existing:
         conn.close()
@@ -160,7 +160,7 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
         """.format(exclusion_clause="" if include_temporarily_excluded else "AND temporarily_excluded = 0")
-    rows = conn.execute(query, (HOUSEHOLD_ID,)).fetchall()
+    rows = conn.execute(query, (household_id(),)).fetchall()
 
     recipe_ids = [r["id"] for r in rows]
     notes_by_recipe: dict[int, list[str]] = {}
@@ -274,7 +274,7 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     conn = get_conn()
     recipe = conn.execute(
         "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND name = ?",
-        (HOUSEHOLD_ID, recipe_name),
+        (household_id(), recipe_name),
     ).fetchone()
     if not recipe:
         conn.close()
@@ -310,14 +310,14 @@ def log_recipe_note(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, recipe_name)
+        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (household_id(), recipe_name)
     ).fetchone()
     if not recipe:
         conn.close()
         raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
     conn.execute(
         "INSERT INTO recipe_notes (household_id, recipe_id, note_type, note) VALUES (?, ?, 'feedback', ?)",
-        (HOUSEHOLD_ID, recipe["id"], note),
+        (household_id(), recipe["id"], note),
     )
     conn.commit()
     conn.close()
@@ -337,14 +337,14 @@ def log_cooking_deviation(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, recipe_name)
+        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (household_id(), recipe_name)
     ).fetchone()
     if not recipe:
         conn.close()
         raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
     conn.execute(
         "INSERT INTO recipe_notes (household_id, recipe_id, note_type, note) VALUES (?, ?, 'deviation', ?)",
-        (HOUSEHOLD_ID, recipe["id"], note),
+        (household_id(), recipe["id"], note),
     )
     conn.commit()
     conn.close()
@@ -363,7 +363,7 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (HOUSEHOLD_ID, recipe_name)
+        "SELECT id FROM recipes WHERE household_id = ? AND name = ?", (household_id(), recipe_name)
     ).fetchone()
     if not recipe:
         conn.close()
@@ -401,7 +401,7 @@ def _add_recipe_ingredients_to_grocery_list(
         row["item"].strip().lower()
         for row in inv_conn.execute(
             "SELECT item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
-            (HOUSEHOLD_ID,),
+            (household_id(),),
         ).fetchall()
     }
     inv_conn.close()
@@ -433,7 +433,7 @@ def _add_recipe_ingredients_to_grocery_list(
         link_conn.execute(
             "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
             "VALUES (?, ?, ?, ?, ?)",
-            (HOUSEHOLD_ID, entry_id, add_result["item_id"], ing["item"], _quantities._strip_prep_descriptor(ing.get("qty", "") or "")),
+            (household_id(), entry_id, add_result["item_id"], ing["item"], _quantities._strip_prep_descriptor(ing.get("qty", "") or "")),
         )
         link_conn.commit()
         link_conn.close()
