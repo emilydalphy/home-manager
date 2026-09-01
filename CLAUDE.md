@@ -15,7 +15,7 @@ otherwise.
 A household assistant app: FastAPI + SQLite backend (`app/`), vanilla
 HTML/CSS/JS frontend (`static/`), no build step, no framework. An
 Anthropic-Claude chat agent (`app/agent.py`, tool-calling against
-`app/tools.py`) plans meals, manages a grocery list, tracks kitchen
+`app/tools/`) plans meals, manages a grocery list, tracks kitchen
 inventory, and answers "what we know" about the household. Deployed to
 Railway, auto-deploying from `main` on push. Live at
 `home-manager-production-4949.up.railway.app`.
@@ -53,6 +53,24 @@ accurate.
 
 ## Known architectural gotchas (don't re-discover these the hard way)
 
+- **`app/tools/` is a package, and `app/tools/__init__.py` is its public
+  face.** Every tool function is defined in a domain module
+  (`recipes.py`, `grocery.py`, `weekly_plan.py`, …) and re-exported from
+  `__init__.py`, so `from app import tools` / `tools.add_recipe(...)` works
+  exactly as it did when this was one file. **If you add a new tool
+  function, add it to `__init__.py`'s re-export list too** — otherwise
+  `agent.py` and `main.py` won't see it.
+  Two conventions hold the package together: `HOUSEHOLD_ID` (and
+  `PUBLIC_BASE_URL`/`_absolute_url`) come from `_shared.py` and are
+  defined nowhere else, and a call into *another* domain module is written
+  `_grocery.add_grocery_item(...)` after `from . import grocery as
+  _grocery`. The alias is not decoration: the domains are genuinely
+  circular (grocery ↔ inventory ↔ pre-shop ↔ weekly plan), and importing
+  the *module* rather than the *name* is what lets those cycles resolve at
+  call time instead of exploding at import time. Underscore-prefixed
+  aliases also keep the module name from colliding with the many local
+  variables called `inventory`, `grocery`, `stores`, etc.
+
 - **A single chat turn's `max_tokens` cap can be outrun by open-ended
   multi-tool work.** A request that touches many meal slots/recipes in one
   turn (e.g. rebuild a week's dinners with new recipes) can need more output
@@ -71,7 +89,8 @@ accurate.
   see `refreshStaleTabsFromActions()` in shell.js, which now does this for
   chat-driven changes by reading each turn's `actions[].tab` field.
 - **"Current week" plan resolution** is centralized in
-  `tools._current_weekly_plan_row()` — it prefers the plan whose week
+  `tools._current_weekly_plan_row()` (`app/tools/weekly_plan.py`) — it
+  prefers the plan whose week
   actually contains today, falling back to most-recently-created only if
   none does. This used to be "just pick whichever plan has the latest
   `created_at`" everywhere, which silently drifted from "this week" the
@@ -86,7 +105,8 @@ accurate.
   loop's existing per-tool `try/except` surfaces back to the model as a
   normal tool error).
 - **Grocery quantity merging/display** goes through
-  `_humanize_grocery_quantity()` (tools.py) — discrete items round up to a
+  `_humanize_grocery_quantity()` (`app/tools/quantities.py`) — discrete
+  items round up to a
   whole number (can't buy 1.5 onions), measurable units (tsp/tbsp/cup,
   oz/lb, g/kg, ml/l) roll up to the largest sensible unit. `scale_recipe`'s
   own scaling is intentionally NOT run through this — that's for cooking,
@@ -146,6 +166,27 @@ Newest first. Keep entries terse: one line of fact, one line of why. Full
 detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
+
+- **2026-09-01 — `app/tools.py` (6,895 lines) became the `app/tools/`
+  package: 20 domain modules plus `_shared.py`.** Code-review finding #8,
+  done now because the multi-household work is next and would otherwise
+  have had to edit one enormous file. Deliberately a *pure* refactor — no
+  behaviour was changed, and that was verified rather than asserted: all
+  216 definitions are AST-identical to the originals once the cross-module
+  qualification is normalised away, the 120-test suite passes unchanged,
+  and an 83-step end-to-end flow (plan a week → grocery → inventory →
+  pre-shop → cook mode → notifications) produces byte-identical output run
+  against the old file and the new package. Two judgment calls worth
+  knowing: the module boundaries follow the file's own
+  `# ---------- section ----------` comments *except* where those markers
+  had drifted from reality (the grocery CRUD functions sat under the
+  pre-shop marker), and the split does **not** attempt multi-tenancy —
+  `HOUSEHOLD_ID` is still the constant 1, just imported from `_shared.py`
+  instead of being defined next to the code that uses it, so threading a
+  real household id through later is a change to one file's worth of
+  imports rather than a 249-site sweep. The only namespace change is that
+  `tools.json` / `tools.os` / `tools.get_conn` (incidental imports that
+  were never API and that nothing referenced) no longer exist.
 
 - **2026-08-31 — Plan the Week shipped (PR #3), built in the five stages in
   `design_handoff_plan_the_week/BUILD_ORDER.md`.** Approval is now a button
@@ -283,10 +324,9 @@ https://claude.ai/code/artifact/0d42e9f3-4e71-401d-a4c0-1a1f1983dbf2
 Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
 **Still open, in case you're deciding what to work on next:**
 
-- **#8** — `app/tools.py` is 5,143+ lines with 188+ `HOUSEHOLD_ID` references.
-  Split it into a package by domain *before* doing real auth/multi-tenancy
-  work — the smoke test suite (running in CI on every push) makes this
-  safe to do now.
+- ~~**#8** — split `app/tools.py` into a package by domain.~~ **Done
+  2026-09-01** (see Decision log) — `app/tools/` is now 20 domain modules
+  and the auth/multi-tenancy work it was blocking can start.
 - **#9** — the shell's tabs are iframes; navigation workarounds (see the
   Kitchen back-link bug fixed earlier) are accumulating as a result.
 - **#10** — no shared `api.js`; ~26 hand-written `fetch('/api/...')` call
@@ -317,10 +357,10 @@ visual/screen-reader verification of the whole app is still an open gap.
    render fine; they just look different from a freshly generated week.
    No migration was written for this on purpose — backfilling a "why" the
    app never actually reasoned would be inventing history.
-3. **`tools.py` is now well over 5,500 lines.** Code-review finding #8
-   (splitting it into a package by domain) got more pressing, not less —
-   this work added the intake, slot-state and setup-preference surfaces to
-   it. The suite is 120 tests now, so the split is safer than ever.
+3. **The `tools.py` split is done** (2026-09-01, see Decision log) — this
+   item is closed. The thing it was clearing the way for, real
+   auth/multi-tenancy, is now the next structural piece: `HOUSEHOLD_ID`
+   is isolated in `app/tools/_shared.py` and nowhere else.
 4. **Two-adult identity is still a lightweight picker, not a login.**
    Approving asks which adult is present because nothing else knows. The
    "other adult was told" notification is household-wide rather than

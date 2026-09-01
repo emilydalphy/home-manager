@@ -1,0 +1,272 @@
+"""
+Tool functions the AI agent can call. Each function talks directly to
+SQLite and returns plain dicts/lists (JSON-serializable) so they can be
+handed straight back to Claude as tool results.
+
+HOUSEHOLD_ID is hardcoded to 1 for V1 (single household, single user).
+When this becomes multi-tenant, thread a real household_id through here
+instead of the constant.
+
+This is a package: the tool functions live in domain modules alongside
+this file (recipes, grocery, inventory, chores, ...). Everything they
+define is re-exported here, so `from app import tools` and
+`tools.add_recipe(...)` keep working exactly as before.
+"""
+from __future__ import annotations
+
+from ._shared import (  # noqa: F401
+    HOUSEHOLD_ID,
+    PUBLIC_BASE_URL,
+    _absolute_url,
+)
+from .attention import (  # noqa: F401
+    add_attention_item,
+    get_attention_items,
+    record_attention_item_usage,
+    resolve_attention_item,
+)
+from .chores import (  # noqa: F401
+    _FREQUENCY_DAYS,
+    add_chore,
+    complete_chore,
+    generate_chore_schedule,
+    get_chores_due_today,
+    get_chores_profile,
+    list_chore_definitions,
+    list_chores,
+    schedule_chore_instance,
+    set_chore_instance_status,
+    set_chores_profile,
+    update_chore,
+)
+from .cooker import (  # noqa: F401
+    _find_inventory_match,
+    _singularize,
+    _use_inventory_row_by_id,
+    check_off_meal,
+    check_off_prep_step,
+    deplete_inventory_for_meal,
+    get_cooker_view,
+    get_plan_progress,
+    get_prep_schedule,
+    save_prep_tasks,
+)
+from .coordination import (  # noqa: F401
+    check_plan_conflicts,
+    explain_meal_choice,
+    get_feedback_nudge,
+    get_household_people,
+)
+from .grocery import (  # noqa: F401
+    _reverse_meal_grocery_contributions,
+    _subtract_quantity,
+    _try_consolidate_quantity,
+    add_grocery_item,
+    add_grocery_items,
+    clear_grocery_list,
+    clear_stale_grocery_items,
+    consolidate_grocery_list,
+    exclude_grocery_item,
+    get_grocery_list_by_section,
+    include_grocery_item,
+    list_grocery_list,
+    mark_grocery_item,
+    move_grocery_item_to_inventory,
+    remove_grocery_item,
+    repair_grocery_quantities,
+    update_grocery_item,
+)
+from .household import (  # noqa: F401
+    _NON_RESTRICTION_VALUES,
+    _get_or_create_member,
+    _log_preference_event,
+    add_member,
+    add_pet,
+    count_preference_events_this_month,
+    get_household_setup_status,
+    list_members,
+    list_pets,
+    set_household_goals,
+    set_member_age_group,
+    set_member_dietary_restrictions,
+)
+from .inventory import (  # noqa: F401
+    _LEADING_NUM_RE,
+    _add_to_inventory,
+    _step_quantity_text,
+    _try_subtract_quantity,
+    get_cross_location_duplicates,
+    get_expiring_soon,
+    get_fresh_perishable_inventory,
+    get_inventory,
+    get_inventory_by_location,
+    get_inventory_by_section,
+    remove_inventory_item,
+    set_inventory_location,
+    step_inventory_expiration,
+    step_inventory_quantity,
+    update_inventory,
+    update_inventory_items,
+)
+from .meal_plans import (  # noqa: F401
+    create_weekly_plan,
+    get_meal_plan,
+    get_recent_meal_history,
+    plan_meal,
+)
+from .memory import (  # noqa: F401
+    _CONTEXT_SIGNALS,
+    _build_context_completeness,
+    add_fact,
+    delete_fact,
+    delete_preference,
+    edit_preference,
+    get_facts,
+    get_household_memory,
+    update_fact,
+)
+from .notifications import (  # noqa: F401
+    _dismissed_keys,
+    dismiss_notification,
+    get_active_notifications,
+    get_learning_summary,
+)
+from .pre_shop import (  # noqa: F401
+    _PRE_SHOP_FRACTION_LEAD,
+    _PRE_SHOP_FRACTION_TAIL,
+    _pre_shop_amount_words,
+    _pre_shop_humanize_label,
+    _pre_shop_pluralize,
+    drop_grocery_item_pre_shop,
+    get_grocery_already_have_items,
+    get_pre_shop_flags,
+    keep_all_pre_shop_flags,
+    mark_grocery_item_already_have_reviewed,
+    undo_pre_shop_drop,
+)
+from .preferences import (  # noqa: F401
+    add_food_dislikes,
+    add_store_typical_items,
+    add_usual_stores,
+    get_meal_planning_setup_status,
+    remove_store_typical_item,
+    save_onboarding_answers,
+    set_household_meal_preferences,
+)
+from .quantities import (  # noqa: F401
+    _CONTAINER_UNIT_PLURALS,
+    _CONTAINER_UNIT_SINGULARS,
+    _DEFAULT_LOCATION_BY_CATEGORY,
+    _DEFAULT_SHELF_LIFE_DAYS,
+    _GROCERY_CATEGORY_ALIASES,
+    _GROCERY_SECTION_ORDER,
+    _ITEM_SHELF_LIFE_DAYS,
+    _LOCATION_ORDER,
+    _MASS_TO_G,
+    _METRIC_VOL_TO_ML,
+    _NICE_FRACTIONS,
+    _QTY_RE,
+    _UNIT_ALIASES,
+    _UNIT_CONVERSION_GROUPS,
+    _UNIT_PLURALS,
+    _VOLUME_TO_TSP,
+    _WEIGHT_TO_OZ,
+    _display_location,
+    _estimate_expiration_date,
+    _format_quantity,
+    _humanize_grocery_quantity,
+    _lookup_item_shelf_life_days,
+    _normalize_container_word,
+    _normalize_grocery_quantity,
+    _parse_quantity,
+    _resolve_location,
+    _resolved_expiration_update,
+    _roll_up_unit,
+    _round_to_nice_fraction,
+    _strip_prep_descriptor,
+)
+from .recipes import (  # noqa: F401
+    _add_recipe_ingredients_to_grocery_list,
+    add_recipe,
+    flag_recipe_temporary,
+    get_recipe,
+    list_recipes,
+    log_cooking_deviation,
+    log_recipe_note,
+    mark_recipe_feedback,
+    scale_recipe,
+    update_recipe_details,
+)
+from .reset import (  # noqa: F401
+    clear_weekly_plan,
+    get_reset_preview,
+)
+from .sharing import (  # noqa: F401
+    eater_add_dietary_restriction,
+    eater_add_note,
+    get_member_notes,
+    get_or_create_member_share_link,
+    get_or_create_share_link,
+    get_shared_weekly_plan,
+    regenerate_member_share_link,
+    resolve_member_share_link,
+    revoke_member_share_link,
+)
+from .stores import (  # noqa: F401
+    _DEFAULT_AISLE_ORDER,
+    close_shopping_trip,
+    get_grocery_list_by_store,
+    get_item_store_preferences,
+    get_stores,
+    is_multi_store_household,
+    set_grocery_item_store,
+    set_item_store,
+)
+from .week_intake import (  # noqa: F401
+    NIGHT_TAGS,
+    ONBOARDING_CUISINES,
+    RUSH_MAX_MINUTES,
+    _build_preferences_snapshot,
+    _current_intake_row,
+    _household_composition,
+    _intake_row_to_dict,
+    _observed_day_patterns,
+    _week_dates,
+    get_week_intake,
+    get_week_intake_history,
+    get_week_intake_prefill,
+    save_week_intake,
+)
+from .weekly_plan import (  # noqa: F401
+    WEEK_SLOTS,
+    _COMPONENT_CATEGORY_ORDER,
+    _build_day_based_menu,
+    _build_suggested_schedule,
+    _compute_freshness,
+    _current_weekly_plan_row,
+    _format_week_range,
+    _plan_grocery_candidate_entries,
+    _suggest_quick_dinners,
+    _week_headline,
+    _weekly_plan_is_approved,
+    approve_weekly_plan,
+    attach_intake_to_plan,
+    audit_plan_slots,
+    clear_plan_slot,
+    get_meal_planning_preferences,
+    get_needs_you_items,
+    get_plan_id_for_week,
+    get_week_menu,
+    get_week_planning_nudge,
+    get_weekly_plan,
+    plan_slot_empty,
+    plan_slot_open,
+    preview_plan_grocery_impact,
+    reopen_weekly_plan,
+    resolve_needs_you_dinner,
+    resolve_open_slot,
+    set_planning_mode,
+    set_week_constraints,
+    swap_component_in_plan,
+    swap_meal_in_plan,
+)
