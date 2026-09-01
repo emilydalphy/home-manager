@@ -6,6 +6,7 @@ use. This is intentionally simple/explicit rather than using the full
 Agent SDK, since our tool set is small and we want full control over the
 loop for a product we may eventually ship.
 """
+import contextvars
 import datetime
 import logging
 import os
@@ -15,6 +16,19 @@ from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutE
 from . import tools
 
 logger = logging.getLogger("home_manager")
+
+# What the turn that just ran actually cost, for the caller to record.
+#
+# run_agent_turn already computed all of this for its log lines and then
+# threw it away, which is why "how many turns does one job take, and what
+# does the job cost" was unanswerable — the numbers existed for exactly
+# one log line each and were never aggregated. A ContextVar rather than a
+# return value because run_agent_turn's signature is depended on by the
+# route and by tests, and rather than a module global because Starlette
+# runs sync routes in worker threads: anyio copies the context per
+# request, so concurrent turns can't read each other's totals. Same
+# reasoning as tools._shared.household_id.
+LAST_TURN_USAGE: contextvars.ContextVar[dict] = contextvars.ContextVar("last_turn_usage")
 
 MODEL = "claude-sonnet-5"
 
@@ -2992,6 +3006,13 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     MAX_TOOL_ROUNDS = 25
     rounds = 0
 
+    # Start this turn's usage tally (see LAST_TURN_USAGE). Reset here rather
+    # than accumulated across turns so a caller always reads the turn it
+    # just ran, never a stale one from an earlier request.
+    usage = {"rounds": 0, "input_tokens": 0, "cache_read_tokens": 0,
+             "cache_write_tokens": 0, "output_tokens": 0, "seconds": 0.0}
+    LAST_TURN_USAGE.set(usage)
+
     # Wall-clock accounting for the whole turn, split three ways: time
     # waiting on Claude, time running our own tools (SQLite work), and
     # whatever's left. Without this split a slow turn is unattributable —
@@ -3002,6 +3023,8 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
 
     def _log_turn_timing():
         total = time.perf_counter() - turn_started
+        usage["rounds"] = rounds
+        usage["seconds"] = total
         logger.info(
             "run_agent_turn finished: total=%.2fs api=%.2fs tools=%.2fs other=%.2fs rounds=%d",
             total, api_seconds, tool_seconds, total - api_seconds - tool_seconds, rounds,
@@ -3059,6 +3082,12 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
             rounds, round_seconds, response.usage.input_tokens, response.usage.cache_read_input_tokens,
             response.usage.cache_creation_input_tokens, response.usage.output_tokens,
         )
+        # Same numbers as the line above, kept as a running total for the
+        # turn so the cost of a whole job can be added up later.
+        usage["input_tokens"] += response.usage.input_tokens
+        usage["cache_read_tokens"] += response.usage.cache_read_input_tokens
+        usage["cache_write_tokens"] += response.usage.cache_creation_input_tokens
+        usage["output_tokens"] += response.usage.output_tokens
 
         conversation.append({"role": "assistant", "content": response.content})
 
@@ -3151,6 +3180,32 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                 content = json.dumps(result, default=str)
                 is_error = False
             except Exception as e:
+                # Log it. Without this line a tool crash is completely
+                # invisible: the error is packaged into the tool_result
+                # below, the model absorbs it and writes a smooth apology,
+                # and the request finishes 200 with nothing in the logs.
+                # None of the tool modules log anything themselves, so this
+                # is the only place a tool failure can ever be observed —
+                # and it observed nothing. A tool broken for every
+                # household looked exactly like a working app, which is
+                # why "the week generated twice" could not be diagnosed
+                # from its own logs.
+                #
+                # Argument NAMES only, never their values. Tools like
+                # add_fact, log_recipe_note and
+                # set_member_dietary_restrictions carry freeform household
+                # detail, and logging a failing call's arguments would put
+                # exactly the personal content this app is careful with
+                # into stdout logs — while chat_turns deliberately stores
+                # no message content at all. The tool name plus which
+                # arguments were present is what actually identifies the
+                # failure; the values are recoverable from the traceback's
+                # own context if a specific case ever needs chasing.
+                logger.exception(
+                    "Tool %s failed (args: %s)",
+                    block.name,
+                    ", ".join(sorted(block.input)) if isinstance(block.input, dict) else "?",
+                )
                 content = json.dumps({"error": str(e)})
                 is_error = True
             tool_results.append(

@@ -668,6 +668,29 @@ CREATE TABLE IF NOT EXISTS household_credentials (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- One row per chat turn. Deliberately NO message content -- this exists to
+-- answer "is the household actually using the app, and what does a turn
+-- cost", not to keep a transcript. Chat history itself lives only in
+-- memory (app/main.py SESSIONS) and is wiped on every restart, so before
+-- this table there was no way to answer either question, and no way to
+-- answer them retroactively either: an unrecorded turn is gone.
+--
+-- rounds is the number the cost work never had -- a cheaper call that
+-- needs more rounds to finish the job is not actually cheaper, so cost per
+-- completed job needs this alongside the tokens. All of it was already
+-- computed for agent.py's log lines and thrown away.
+CREATE TABLE IF NOT EXISTS chat_turns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    rounds INTEGER NOT NULL DEFAULT 0,
+    input_tokens INTEGER NOT NULL DEFAULT 0,
+    cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+    cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    seconds REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

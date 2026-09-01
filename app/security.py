@@ -45,6 +45,7 @@ import os
 import secrets
 import time
 
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
 
 from .tools._shared import (
@@ -52,6 +53,7 @@ from .tools._shared import (
     reset_current_household_id,
     set_current_household_id,
 )
+from .tools import usage as _usage
 
 logger = logging.getLogger("home_manager")
 
@@ -271,6 +273,17 @@ async def _call_as_household(household_id: int, call_next, request):
     """
     token = set_current_household_id(household_id)
     try:
+        # Note that they're here. Throttled to one write per household per
+        # 15 minutes inside touch_household_active, and it never raises —
+        # a bookkeeping column must not be able to fail a real request.
+        #
+        # Off the event loop: this middleware is async, and SQLite writes
+        # block. get_conn sets no busy timeout, so under write contention
+        # a direct call could stall the loop thread — and therefore every
+        # concurrent request — waiting on a lock, for a column read at day
+        # granularity. Rare enough that it would only ever bite in the
+        # exact conditions nobody could reproduce.
+        await run_in_threadpool(_usage.touch_household_active, household_id)
         return await call_next(request)
     finally:
         reset_current_household_id(token)
