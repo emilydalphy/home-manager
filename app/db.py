@@ -111,6 +111,15 @@ _MIGRATIONS = [
     ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),
+    # When this household last made an authenticated request. Nothing else
+    # answers "are they still using it": every other timestamp records a
+    # household *doing* something (planning, cooking, shopping), so a
+    # household that signs in daily and only reads their week looks
+    # identical to one that has quietly stopped. That's the single most
+    # important beta signal and the one testers never self-report.
+    # Touched in security._call_as_household — see there for why it isn't
+    # a write on every single request.
+    ("households", "last_active_at", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the exact two colors

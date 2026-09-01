@@ -229,6 +229,11 @@ from .stores import (  # noqa: F401
     set_grocery_item_store,
     set_item_store,
 )
+from .usage import (  # noqa: F401
+    get_usage_summary,
+    record_chat_turn,
+    touch_household_active,
+)
 from .week_intake import (  # noqa: F401
     NIGHT_TAGS,
     ONBOARDING_CUISINES,

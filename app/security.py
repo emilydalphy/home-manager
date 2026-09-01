@@ -52,6 +52,10 @@ from .tools._shared import (
     reset_current_household_id,
     set_current_household_id,
 )
+# Imported as a module, not `from .tools import ...`: this file is imported
+# by main.py before the tools package is fully wired, and the indirection
+# keeps that import order from mattering.
+from .tools import usage as _usage
 
 logger = logging.getLogger("home_manager")
 
@@ -271,6 +275,10 @@ async def _call_as_household(household_id: int, call_next, request):
     """
     token = set_current_household_id(household_id)
     try:
+        # Note that they're here. Throttled to one write per household per
+        # 15 minutes inside touch_household_active, and it never raises —
+        # a bookkeeping column must not be able to fail a real request.
+        _usage.touch_household_active(household_id)
         return await call_next(request)
     finally:
         reset_current_household_id(token)

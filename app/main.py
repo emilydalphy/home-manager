@@ -20,7 +20,7 @@ import logging
 import os
 import time
 
-from . import households, ratelimit, security
+from . import agent, households, ratelimit, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
 from . import tools
@@ -1903,6 +1903,12 @@ def chat(req: ChatRequest, request: Request):
     SESSIONS[session_id] = trim_conversation(updated_history)
     SESSION_TOUCHED[session_id] = time.time()
     _prune_sessions()
+    # The only durable record that this turn ever happened. SESSIONS above
+    # is memory-only and dies with the process, so without this line a
+    # restart erases every trace of how much the app was used — and unlike
+    # most gaps, it can't be backfilled later. No message content is
+    # stored; see schema.sql on chat_turns.
+    tools.record_chat_turn(**agent.LAST_TURN_USAGE.get({}))
     logger.info(
         "/api/chat request took %.2fs end to end", time.perf_counter() - request_started
     )
