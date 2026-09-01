@@ -20,12 +20,17 @@ inventory, and answers "what we know" about the household. Deployed to
 Railway, auto-deploying from `main` on push. Live at
 `home-manager-production-4949.up.railway.app`.
 
-## Current state (as of 2026-08-30)
+## Current state (as of 2026-08-31)
 
-`main` is live on Railway with no other active branches. Recent work has been
-incremental bug fixes and chat-agent reliability improvements — see Decision
-log below for specifics. If you're picking this repo up fresh, run
-`git log --oneline -15` to confirm this is still accurate.
+`main` is live on Railway. The big recent change is the **Plan the Week**
+flow (PR #3), built from the handover package now in
+`design_handoff_plan_the_week/` — read that directory before touching
+weekly planning, approval, or the assistant's voice. Building a week is no
+longer an open-ended chat: it's a nudge, two question screens
+(`/plan-week`), a 21-slot draft on Meals, and an Approve button. There is
+also a revisitable setup screen at `/meal-setup`. If you're picking this
+repo up fresh, run `git log --oneline -15` to confirm this is still
+accurate.
 
 ## Working style established so far
 
@@ -89,6 +94,37 @@ log below for specifics. If you're picking this repo up fresh, run
   Multi-word container units ("1 lb bag") and prep-descriptor-bearing
   ingredient names ("Baby spinach, chopped") have both bitten this before —
   see Decision log.
+- **A meal slot is never absent — it's one of three states.** Since Plan
+  the Week, `meal_plan_entries.slot_state` is `planned`, `planned_empty`
+  (nobody home, or the household asked for none of that meal) or `open`
+  (a decision genuinely handed back, carrying an `open_reason` sentence).
+  A `planned_empty` slot **must never be offered as a decision** — not as
+  "Swap it", not as a gap in a chat summary, not through the slot API.
+  Three separate bugs have already come from code treating it as a missing
+  meal. `tools.audit_plan_slots()` asserts the whole week, and reports
+  DUPLICATES as well as gaps: two rows for one slot is how a night nobody
+  is home ends up with groceries bought for it.
+- **Telling the generator something is not the same as preventing it.**
+  The prompt says not to plan a dinner for a night the household is out;
+  it sometimes does anyway. `agent._finish_week_slots` therefore *clears*
+  the slot (`tools.clear_plan_slot`) before writing the deliberate empty
+  row, instead of writing beside whatever is there. Any new rule of the
+  form "the tag wins over the model" needs the same treatment — a prompt
+  instruction is a request, not a guarantee.
+- **`week_intake` is append-only, and that's load-bearing.** Never update a
+  row in place; `tools.save_week_intake` copies the current revision,
+  applies the change, and inserts revision+1. Anything that would have
+  changed a Q1/Q2 answer — including a chat instruction like "cut it to
+  four dinners" — must go through it, or regenerating silently reverts what
+  the household just said. The revision is UNIQUE per
+  `(household, week_start)` and the save retries on conflict; without that,
+  two adults saving at the same moment lost one of their answer sets.
+- **Per-category meal counts mean DISTINCT MEALS, not days planned.**
+  `dinners_per_week: 4` is four different dinners spread across seven
+  nights, not four nights fed and three blank. This changed with Plan the
+  Week (it used to mean days) and it is what lets "every slot is filled"
+  and the setup screen's "I'd rather plan four things you cook than seven
+  you don't" both be true. 0 still means none at all, all week.
 - Service worker (`static/service-worker.js`) is network-first for
   navigations/`.html`/`.js`/`.css`, cache-first only for icons/manifest —
   this was a real stale-cache bug once (`CACHE_NAME` bumped to `v3` to
@@ -111,6 +147,51 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-08-31 — Plan the Week shipped (PR #3), built in the five stages in
+  `design_handoff_plan_the_week/BUILD_ORDER.md`.** Approval is now a button
+  on Meals rather than a sentence the assistant had to remember to offer;
+  the week's answers are a first-class append-only object; the draft shows
+  all 21 slots with per-slot reasons. Three product calls worth knowing,
+  all made by Emily rather than assumed: the six `DECISIONS.md`
+  recommendations were accepted as written; per-category meal counts now
+  mean distinct meals rather than days planned (see the gotcha above — the
+  spec required both "all 21 slots filled" and "four things you cook, not
+  seven you don't", which only reconcile this way); and a household with no
+  composition on record gets asked for the whole table in the guest panel
+  rather than for extras added to a base of zero.
+- **2026-08-31 — `VOICE.md` replaced the assistant's tone instruction
+  app-wide, not just in this flow.** The old prompt asked for "warm,
+  cheery... real enthusiasm"; the new copy is written to "never apologetic,
+  never eager, never cute. No exclamation marks." Two voices on one screen
+  would have shown exactly the seam the design exists to remove, so the old
+  one went rather than being blended. Emily reviewed real chat replies
+  before this shipped. One follow-up was needed: told it had got something
+  wrong, the assistant opened with "You're right, my apologies" — an
+  apology invites the household to reassure the app, which hands the work
+  back to them, so there's now an explicit rule to take the correction and
+  say what changed instead.
+- **2026-08-31 — The conversational meal-planning interview was deleted from
+  `agent.py`.** The wizard and the two question screens own those questions
+  now. Two paths asking the same things could only contradict each other,
+  and the flow can no longer be skipped into.
+- **2026-08-31 — An independent review agent found nine issues on the branch
+  before it was pushed; all were fixed.** Worth reading the commit
+  (`5a70496`) — the serious one was that a night nobody is home could still
+  put food on the shopping list, because the deliberate empty row was
+  written *beside* a dinner the model planned against instructions rather
+  than replacing it. The existing test missed it by stubbing the model into
+  behaving, i.e. it tested the case that was never the risk. Two of the
+  nine were regressions introduced by this same work (component-based
+  households lost their day-card controls; drafting next week landed you on
+  this week). This is the strongest evidence so far for the sub-agent
+  verification step in `.claude/skills/home-manager-loop` — the author had
+  browser-verified all of it and still shipped those.
+- **2026-08-31 — `get_household_people()` and `db._backfill_member_colors`
+  matched `age_group = 'adult'` exactly, but onboarding writes "Adult".**
+  Neither found anybody in the real database: no adult ever got an avatar
+  colour, and the desktop grocery identity switcher was permanently empty.
+  Found incidentally while building the approval receipt, which needed to
+  name an adult. Both compare case-insensitively now.
 - **2026-08-30 — Proactive checks (`get_attention_items`, `get_expiring_soon`)
   moved from a system-prompt instruction to code.** They previously relied on
   the model remembering to call them "near the start of a conversation," a
@@ -225,14 +306,31 @@ visual/screen-reader verification of the whole app is still an open gap.
 
 ## Immediate open items
 
-1. **Recommendation enforcement** — `get_attention_items`/`get_expiring_soon`
-   now code-enforced at session start (see Decision log). Not yet pushed to
-   `origin/main`. Still prompt-only, and candidates for the same treatment
-   if it proves valuable: `get_cross_location_duplicates`, the feedback
-   nudge's own re-surfacing cadence.
-2. Consider tackling code-review finding #8 (splitting `tools.py`) next,
-   now that it's safely testable — before layering more auth/multi-tenancy
-   work on top of the current single-file size.
-3. The still-open findings (#9–#11, #14–#16 above) are real but not urgent —
-   good candidates for "what should we work on next" rather than anything
-   blocking.
+1. **Live the Plan the Week flow for a real week before extending it.** It
+   shipped verified but not yet *used* — nobody has actually answered the
+   five minutes of questions on a Sunday and cooked the result. The things
+   most likely to be wrong are pacing and question wording, and neither
+   shows up in a test.
+2. **Old plans predate the 21-slot guarantee.** Weeks generated before
+   2026-08-31 can have genuinely missing slots and long full-sentence
+   `reasoning` values (the draft screen expects 4–9 word phrases). Both
+   render fine; they just look different from a freshly generated week.
+   No migration was written for this on purpose — backfilling a "why" the
+   app never actually reasoned would be inventing history.
+3. **`tools.py` is now well over 5,500 lines.** Code-review finding #8
+   (splitting it into a package by domain) got more pressing, not less —
+   this work added the intake, slot-state and setup-preference surfaces to
+   it. The suite is 120 tests now, so the split is safer than ever.
+4. **Two-adult identity is still a lightweight picker, not a login.**
+   Approving asks which adult is present because nothing else knows. The
+   "other adult was told" notification is household-wide rather than
+   addressed to a person, for the same reason. Real per-person accounts
+   would clean up the receipt, the notification and the intake lock at once.
+5. **Recommendation enforcement** — `get_attention_items`/`get_expiring_soon`
+   code-enforced at session start (see Decision log). Still prompt-only, and
+   candidates for the same treatment if it proves valuable:
+   `get_cross_location_duplicates`, the feedback nudge's re-surfacing cadence.
+6. The still-open review findings (#9–#11, #14–#16 above) are real but not
+   urgent — good candidates for "what should we work on next" rather than
+   anything blocking. Note #15 (bare "Loading…" states) is now more visible
+   next to copy written to `VOICE.md`.
