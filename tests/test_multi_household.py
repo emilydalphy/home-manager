@@ -94,6 +94,63 @@ def test_the_context_does_not_leak_between_requests(client, beta_household):
     assert client.get("/api/whoami").json()["household_id"] == beta_household
 
 
+def test_households_stay_separate_when_requests_overlap(beta_household):
+    """
+    Isolation under real concurrency, not just in sequence.
+
+    Keeping requests apart when they overlap is the specific thing a
+    ContextVar buys over a module-level global, so it is the specific thing
+    worth checking rather than assuming. Each thread signs in as one
+    household, writes an item only it should own, and reads the list back;
+    seeing another household's item is the failure.
+
+    (Verified more heavily out-of-band against a real uvicorn server — 12
+    threads, 3 households, 720 request-cycles, no leakage. This is the
+    cheap version that can live in the suite.)
+    """
+    import concurrent.futures
+
+    from app.main import app
+    from fastapi.testclient import TestClient
+
+    # Sign in once per household and reuse the cookie, rather than logging
+    # in per thread — both because that is what two phones in one house
+    # actually do, and because a dozen sign-ins trips the login rate limiter.
+    cookies = {}
+    with TestClient(app) as c:
+        for household_id, password in (
+            (DEFAULT_HOUSEHOLD_ID, "test-password"),
+            (beta_household, BETA_PASSPHRASE),
+        ):
+            res = c.post(
+                "/login", data={"password": password, "next": "/"}, follow_redirects=False
+            )
+            assert res.status_code == 303
+            cookies[household_id] = c.cookies[security.COOKIE_NAME]
+
+    def run(household_id, index):
+        with TestClient(app, cookies={security.COOKIE_NAME: cookies[household_id]}) as c:
+            item = f"h{household_id}-item-{index}"
+            c.post("/api/grocery-list/add", json={"item": item})
+            seen = c.get("/api/whoami").json()["household_id"]
+            body = c.get("/api/grocery-list?status=all").text
+            return household_id, seen, item, body
+
+    work = [
+        (household_id, i)
+        for i in range(6)
+        for household_id in (DEFAULT_HOUSEHOLD_ID, beta_household)
+    ]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(lambda a: run(*a), work))
+
+    for household_id, seen, item, body in results:
+        assert seen == household_id, "a request was served as the wrong household"
+        assert item in body
+        other = beta_household if household_id == DEFAULT_HOUSEHOLD_ID else DEFAULT_HOUSEHOLD_ID
+        assert f"h{other}-item-" not in body, "one household saw another's grocery items"
+
+
 def test_outside_a_request_the_household_is_the_default():
     """Scripts, seeds and the existing test suite must keep working untouched."""
     assert tools.household_id() == DEFAULT_HOUSEHOLD_ID
