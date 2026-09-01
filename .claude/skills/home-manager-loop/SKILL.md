@@ -29,7 +29,9 @@ every interaction this skill covers, not just onboarding:
 - **She approves before anything ships.** Code can be written, tested, and committed locally
   as part of working a ticket, but **pushing to GitHub needs her explicit go-ahead** each
   time (per her 2026-08-30 decision — see Automation rules below for the stricter
-  unattended-run version of this).
+  unattended-run version of this). Her approval to merge *is* the approval: once something
+  is on `main`, close its ticket rather than asking her to confirm the same decision twice
+  (see "Working a ticket" step 6).
 - **Teach along the way.** When something technical comes up (why a bug happened, what a
   piece of the stack does), a short, concrete explanation is welcome — that's part of the
   point of this project for her. Don't over-explain unprompted, but don't skip the "why"
@@ -92,9 +94,17 @@ priority is fine"):
    reason.
 5. **Commit with a clear message**; don't push without asking (see Automation rules for the
    stricter unattended version).
-6. **Update the ticket**: append findings/fix details to the page content, and set Status to
-   "In progress" once a fix is written and tested — leave "Done" for Emily to set herself
-   after she's reviewed it, don't mark it Done on the assistant's own authority.
+6. **Update the ticket**: append findings/fix details to the page content, and set Status by
+   where the work has actually got to (Emily's call, 2026-08-31):
+   - **Done** — the fix is merged to `main`. Merging is already Emily's own decision, so by
+     the time code is on `main` she has approved it; making her then go and tick a second box
+     is bookkeeping, not a check. Mark it Done yourself in the same pass as the write-up.
+   - **In progress** — written and tested but sitting on a branch or in an open PR, i.e.
+     anything an unattended run produced (which never merges — see Automation rules), or a
+     live session's branch Emily hasn't merged yet.
+   - Anything genuinely still open, or investigate-only, stays as it was.
+   Don't mark a *related* ticket Done because the work brushed against it. If a ticket is
+   only advanced rather than closed, leave its status alone and add a "Related" note (step 7).
 7. **Cross-link related tickets** when a new one shares a theme with an existing one (e.g.
    several tone/wording tickets, several onboarding-data tickets) — add a short "related
    tickets" or "broader goal" note on each rather than leaving the connection implicit.
