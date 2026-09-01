@@ -60,7 +60,7 @@ accurate.
   exactly as it did when this was one file. **If you add a new tool
   function, add it to `__init__.py`'s re-export list too** — otherwise
   `agent.py` and `main.py` won't see it.
-  Two conventions hold the package together: `HOUSEHOLD_ID` (and
+  Two conventions hold the package together: `household_id()` (and
   `PUBLIC_BASE_URL`/`_absolute_url`) come from `_shared.py` and are
   defined nowhere else, and a call into *another* domain module is written
   `_grocery.add_grocery_item(...)` after `from . import grocery as
@@ -71,6 +71,30 @@ accurate.
   aliases also keep the module name from colliding with the many local
   variables called `inventory`, `grocery`, `stores`, etc.
 
+- **The household is request-scoped, and there is no `HOUSEHOLD_ID`
+  constant any more.** `app/tools/_shared.py` defines `household_id()`,
+  which reads a `ContextVar` that `security.auth_middleware` sets per
+  request from the signed session cookie. The default is 1, so scripts,
+  seeds and tests keep working unchanged. Three things to know before
+  touching this:
+  - **Never reintroduce a module-level household constant, and never
+    capture `household_id()` at import time** (default argument, class
+    attribute, module-level `X = household_id()`). It must be called
+    *inside* the function, at request time. The constant was deliberately
+    deleted rather than aliased so a missed call site raises NameError
+    instead of silently reading household 1 — a loud failure instead of a
+    cross-household data leak.
+  - **A new public (unauthenticated) route has no cookie and therefore no
+    bound household.** Whatever identifies the caller there — today, a
+    share token — must bind it explicitly with `tools.use_household(...)`.
+    This is exactly where the old code was wrong: `get_shared_weekly_plan`
+    read the token's household to fetch its *name*, then served the
+    hardcoded household's plan underneath.
+  - The ContextVar reaching a `def` route depends on Starlette/anyio
+    copying the context into the worker thread. That is verified, not
+    assumed: `tests/test_multi_household.py` asserts it through a real
+    request, so a dependency upgrade that broke it would go red rather
+    than silently serving every household as household 1.
 - **A single chat turn's `max_tokens` cap can be outrun by open-ended
   multi-tool work.** A request that touches many meal slots/recipes in one
   turn (e.g. rebuild a week's dinners with new recipes) can need more output
@@ -167,6 +191,31 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-01 — Multiple households, on the branch
+  `multi-household-beta` (not yet merged).** The friend beta needs her own
+  household with her own data, so signing in now establishes *which*
+  household a session is, rather than only that the caller is allowed in.
+  Each household has one shared passphrase (`app/households.py`, PBKDF2
+  hash in the new `household_credentials` table); `HOME_MANAGER_PASSWORD`
+  still signs into household 1 so Emily's deployment needed no migration
+  and nobody was logged out. The household id rides inside the signed
+  cookie (tampering breaks the HMAC and is rejected, rather than falling
+  back to household 1), `auth_middleware` binds it for the request, and
+  every query reads it via `household_id()` — so a route cannot forget to
+  scope itself, because scoping is not something a route does.
+  Deliberately **not** an account system: no users, no sign-up, no
+  account UI. Household #2 is created by `create_household.py`, a script,
+  because one trusted friend does not need a flow. Three latent bugs were
+  fixed on the way, all invisible with one household and all real with
+  two: the share link served the hardcoded household's plan under the
+  token household's *name*; the eater self-service write re-resolved the
+  member *by name* in the wrong household (an allergy could land on a
+  same-named person in another family) and stamped the wrong household
+  onto the note row; and `db._backfill_member_colors` picked "the first
+  two adults" globally rather than per household. The isolation tests
+  were checked by mutation rather than by being green — breaking
+  `household_id()` fails 10 of the 21, and reverting only the share-link
+  fix fails exactly the 2 share tests.
 - **2026-09-01 — `app/tools.py` (6,895 lines) became the `app/tools/`
   package: 20 domain modules plus `_shared.py`.** Code-review finding #8,
   done now because the multi-household work is next and would otherwise
@@ -304,7 +353,12 @@ test suite on every push (added in the `hardening` work).
 worth re-checking if the live site ever misbehaves:**
 
 - `HOME_MANAGER_PASSWORD` and `SESSION_SECRET` — required, or the app fails
-  closed to all remote traffic by design.
+  closed to all remote traffic by design. Since the multi-household branch,
+  `HOME_MANAGER_PASSWORD` is specifically *household 1's* passphrase (i.e.
+  Emily's); other households get their own, stored hashed in the database
+  by `create_household.py`. `SESSION_SECRET` matters more than it did:
+  the household id is inside the signed cookie, so losing the secret logs
+  every household out, not just Emily.
 - `DB_PATH=/data/home_manager.db` **with an actual volume mounted at `/data`.**
   If `DB_PATH` isn't set (or the volume isn't mounted), every redeploy
   silently wipes the household's database. This is a real data-loss risk,
@@ -357,10 +411,12 @@ visual/screen-reader verification of the whole app is still an open gap.
    render fine; they just look different from a freshly generated week.
    No migration was written for this on purpose — backfilling a "why" the
    app never actually reasoned would be inventing history.
-3. **The `tools.py` split is done** (2026-09-01, see Decision log) — this
-   item is closed. The thing it was clearing the way for, real
-   auth/multi-tenancy, is now the next structural piece: `HOUSEHOLD_ID`
-   is isolated in `app/tools/_shared.py` and nowhere else.
+3. **Multi-household is built but not merged** (branch
+   `multi-household-beta`, 2026-09-01, see Decision log). What it does
+   *not* do, on purpose, and what Emily still has to decide: what the
+   second household's first run looks like, and how the passphrase
+   actually reaches the beta tester. The mechanism is there; the product
+   answers are open questions on the Loop Board ticket.
 4. **Two-adult identity is still a lightweight picker, not a login.**
    Approving asks which adult is present because nothing else knows. The
    "other adult was told" notification is household-wide rather than
