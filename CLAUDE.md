@@ -214,8 +214,19 @@ why*, not duplicating the diff.
   onto the note row; and `db._backfill_member_colors` picked "the first
   two adults" globally rather than per household. The isolation tests
   were checked by mutation rather than by being green — breaking
-  `household_id()` fails 10 of the 21, and reverting only the share-link
-  fix fails exactly the 2 share tests.
+  `household_id()` fails 11 of them, and reverting only the share-link fix
+  fails exactly the 2 share tests. An independent review agent then found
+  two more holes, both now fixed and pinned by tests: a household could be
+  created with `HOME_MANAGER_PASSWORD` itself (the collision guard checked
+  stored credentials, and household 1's credential is the env var — so
+  that household's users would have landed in Emily's, seeing her data,
+  while their own became unreachable), and `plan_meal` took a
+  caller-supplied `weekly_plan_id` without checking it belonged to the
+  household. **Any new "which household does this passphrase open?" logic
+  must go through `households.resolve_passphrase`, which mirrors the login
+  route's env-var-first order — that mismatch was the whole of the first
+  bug.** Same lesson as the Plan the Week review: the author had verified
+  all of it and still shipped those.
 - **2026-09-01 — `app/tools.py` (6,895 lines) became the `app/tools/`
   package: 20 domain modules plus `_shared.py`.** Code-review finding #8,
   done now because the multi-household work is next and would otherwise
