@@ -650,6 +650,24 @@ CREATE TABLE IF NOT EXISTS preference_events (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- One access credential per household: the beta's "how does a second
+-- household get in" answer, and deliberately not an account system. There
+-- are no usernames and no per-person logins -- a household has one shared
+-- passphrase, exactly like the single HOME_MANAGER_PASSWORD did, except it
+-- now identifies *which* household is signing in rather than just proving
+-- someone may. See app/households.py for the hashing and the lookup.
+--
+-- Household 1 needs no row here: HOME_MANAGER_PASSWORD keeps signing Emily
+-- in, unchanged, so her existing deployment and her existing cookie carry
+-- on working without anything being set up.
+CREATE TABLE IF NOT EXISTS household_credentials (
+    household_id INTEGER PRIMARY KEY REFERENCES households(id),
+    -- pbkdf2_sha256$<iterations>$<salt-hex>$<hash-hex>. Never the passphrase.
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

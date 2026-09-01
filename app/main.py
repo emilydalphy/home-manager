@@ -20,8 +20,8 @@ import logging
 import os
 import time
 
-from . import ratelimit, security
-from .db import init_db
+from . import households, ratelimit, security
+from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
 from . import tools
 
@@ -92,11 +92,24 @@ def _chat_session_id(request: Request) -> str:
     """
     The conversation key for this caller, taken from the signed cookie.
 
+    Prefixed with the household so chat context is isolated too, not just
+    stored data. Session ids are random per sign-in and so could not
+    collide across households anyway — but the fallback key below is a
+    fixed string, and one shared chat history between two households would
+    leak one household's dinners into the other's conversation just as
+    surely as a bad SQL query would. The prefix makes that structurally
+    impossible rather than merely improbable.
+
     Falls back to a single shared local session when no password is
     configured, which is the `uvicorn --reload` case on a laptop — there is
     exactly one user there and nothing to separate.
     """
-    return security.read_session(request.cookies.get(security.COOKIE_NAME)) or "local-dev"
+    cookie = request.cookies.get(security.COOKIE_NAME)
+    parts = security.read_session_parts(cookie)
+    if parts:
+        sid, household_id = parts
+        return f"h{household_id}:{sid}"
+    return f"h{tools.household_id()}:local-dev"
 
 
 def _enforce_rate_limit(request: Request, bucket: str) -> None:
@@ -2021,16 +2034,41 @@ def login_page(request: Request, next: str = "/"):
     return _render_login(next)
 
 
+def _household_for_password(password: str) -> int | None:
+    """
+    Which household does this passphrase open? None if it opens none.
+
+    Two accepted credentials, checked in this order:
+
+    1. `HOME_MANAGER_PASSWORD` — household 1, i.e. Emily's. Unchanged from
+       before multi-household existed, so her deployment keeps working with
+       nothing to set up and nobody logged out.
+    2. A passphrase stored in `household_credentials` — how the beta
+       tester's household gets in. See `app/households.py`.
+
+    The env var is checked first so household 1 costs one constant-time
+    compare rather than a pbkdf2 pass per household.
+    """
+    if security.check_password(password):
+        return households.DEFAULT_HOUSEHOLD_ID
+    return households.authenticate(password)
+
+
 @app.post("/login")
 def login_submit(request: Request, password: str = Form(""), next: str = Form("/")):
     _enforce_rate_limit(request, "login")
-    if not security.check_password(password):
+    household_id = _household_for_password(password)
+    if household_id is None:
+        # Deliberately does not say whether the passphrase was wrong or
+        # merely belonged to no household — those are the same failure to
+        # anyone who should not be here.
         logger.warning("Failed sign-in attempt from %s", ratelimit.caller_id(request))
         return _render_login(next, "That password didn't match. Try again.")
+    logger.info("Sign-in for household %s", household_id)
     response = RedirectResponse(url=security.sanitize_next(next), status_code=303)
     response.set_cookie(
         security.COOKIE_NAME,
-        security.issue_session(),
+        security.issue_session(household_id),
         max_age=security.COOKIE_MAX_AGE,
         httponly=True,
         samesite="lax",
@@ -2045,6 +2083,26 @@ def logout():
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie(security.COOKIE_NAME, path="/")
     return response
+
+
+@app.get("/api/whoami")
+def whoami():
+    """
+    Which household is this session in? Authenticated like any other API
+    route, and returns only the household's own id and name — nothing about
+    any other household, and no way to ask about one.
+
+    Small but load-bearing: it is the one place the household binding is
+    observable from outside, which is what lets the isolation tests assert
+    on the real request path rather than on internal state. It also gives
+    the beta tester a way to confirm she is in her own household rather
+    than inferring it from the data looking unfamiliar.
+    """
+    current = tools.household_id()
+    conn = get_conn()
+    row = conn.execute("SELECT name FROM households WHERE id = ?", (current,)).fetchone()
+    conn.close()
+    return {"household_id": current, "household_name": row["name"] if row else ""}
 
 
 @app.get("/healthz")

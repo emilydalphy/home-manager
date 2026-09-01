@@ -7,15 +7,25 @@ public URL that stops being true — every /api route, including the ones
 that write and the ones that spend money calling Claude, is reachable by
 anyone who has (or guesses) the hostname.
 
-This is deliberately NOT the multi-tenant auth system described in the
-README's "Path to a sellable product". It's a single shared password in
-front of the whole app, which is the right shape for a household tool with
-one household in it, and it can be deleted wholesale when real accounts
-arrive. What it buys is that the app stops being world-readable today.
+This is still deliberately NOT the multi-tenant auth system described in
+the README's "Path to a sellable product" — there are no user accounts, no
+usernames, and no per-person logins. It is one shared passphrase per
+*household*, which can be deleted wholesale when real accounts arrive.
+
+What changed for the beta: signing in now establishes **which household**
+the session belongs to, not merely that the caller is allowed in. The
+household id travels in the signed cookie, and `auth_middleware` binds it
+for the request so every query underneath is scoped to it. See
+`app/households.py` for where household passphrases are stored, and
+`app/tools/_shared.py` for how the binding reaches the queries.
 
 Two env vars:
 
-  HOME_MANAGER_PASSWORD  the shared password. If unset, the app still runs
+  HOME_MANAGER_PASSWORD  household 1's passphrase — i.e. Emily's. Kept
+                         exactly as it was, so her deployment needs no
+                         migration and no new secret; a second household
+                         gets a stored passphrase instead (see
+                         `app/households.py`). If unset, the app still runs
                          but only answers requests from localhost — so
                          `uvicorn --reload` on your laptop keeps working
                          with no setup, while a deploy that forgot to set
@@ -36,6 +46,12 @@ import secrets
 import time
 
 from starlette.responses import JSONResponse, RedirectResponse
+
+from .tools._shared import (
+    DEFAULT_HOUSEHOLD_ID,
+    reset_current_household_id,
+    set_current_household_id,
+)
 
 logger = logging.getLogger("home_manager")
 
@@ -102,31 +118,57 @@ def _unb64(text: str) -> bytes:
     return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
 
 
-def issue_session() -> str:
+def issue_session(household_id: int = DEFAULT_HOUSEHOLD_ID) -> str:
     """
-    Mint a signed cookie value: <session-id>.<issued-at>.<hmac>.
+    Mint a signed cookie value: <session-id>.<household-id>.<issued-at>.<hmac>.
 
     The session id is what /api/chat keys its conversation history on, so it
     has to be unguessable and server-generated — the bug this replaces was
     taking that id from the request body, where anyone could send the
     literal string "default" and land in the household's history.
+
+    The household id rides in the same signed payload. That is what makes
+    this session *belong to* a household rather than merely proving the
+    caller knew a password. It cannot be tampered with: the HMAC covers the
+    whole payload, so editing the household id invalidates the signature
+    and the cookie stops being accepted at all — it does not fall back to
+    some other household.
     """
     sid = secrets.token_urlsafe(18)
     issued = str(int(time.time()))
-    payload = f"{sid}.{issued}"
+    payload = f"{sid}.{int(household_id)}.{issued}"
     sig = hmac.new(_secret(), payload.encode("utf-8"), hashlib.sha256).digest()
     return f"{payload}.{_b64(sig)}"
 
 
-def read_session(cookie: str | None) -> str | None:
-    """Return the session id if the cookie is validly signed and unexpired, else None."""
+def read_session_parts(cookie: str | None) -> tuple[str, int] | None:
+    """
+    Return `(session_id, household_id)` for a validly signed, unexpired
+    cookie, else None.
+
+    Accepts the older three-part `<sid>.<issued>.<hmac>` cookie and reads it
+    as household 1. Those cookies were all minted when the app had exactly
+    one household, so household 1 is what they actually mean — and honouring
+    them means Emily (and anyone else already signed in) is not silently
+    logged out by this change. They are still signature-checked, so this is
+    a format fallback, not an authentication one.
+    """
     if not cookie:
         return None
     parts = cookie.split(".")
-    if len(parts) != 3:
+    if len(parts) == 3:
+        sid, issued, sig = parts
+        household_id = DEFAULT_HOUSEHOLD_ID
+        payload = f"{sid}.{issued}"
+    elif len(parts) == 4:
+        sid, raw_household, issued, sig = parts
+        payload = f"{sid}.{raw_household}.{issued}"
+        try:
+            household_id = int(raw_household)
+        except ValueError:
+            return None
+    else:
         return None
-    sid, issued, sig = parts
-    payload = f"{sid}.{issued}"
     expected = hmac.new(_secret(), payload.encode("utf-8"), hashlib.sha256).digest()
     try:
         if not hmac.compare_digest(expected, _unb64(sig)):
@@ -135,7 +177,19 @@ def read_session(cookie: str | None) -> str | None:
             return None
     except (ValueError, TypeError):
         return None
-    return sid
+    return sid, household_id
+
+
+def read_session(cookie: str | None) -> str | None:
+    """Return the session id if the cookie is validly signed and unexpired, else None."""
+    parts = read_session_parts(cookie)
+    return parts[0] if parts else None
+
+
+def read_session_household(cookie: str | None) -> int | None:
+    """Return the household this cookie belongs to, or None if it isn't valid."""
+    parts = read_session_parts(cookie)
+    return parts[1] if parts else None
 
 
 def check_password(candidate: str) -> bool:
@@ -156,12 +210,24 @@ def _is_local(client_host: str | None) -> bool:
 
 async def auth_middleware(request, call_next):
     """
-    Gate every non-public route behind the shared password.
+    Gate every non-public route behind the household's passphrase, and bind
+    the request to the household that passphrase signed into.
 
     An unauthenticated request gets a redirect if it's a browser asking for
     a page, and a plain 401 JSON body if it's a fetch() — so the app's own
     API calls fail readably instead of receiving a login page where they
     expected data.
+
+    Binding the household here, rather than in each route, is what makes
+    isolation the default: a route cannot forget to scope itself, because
+    scoping is not something a route does. Every query underneath reads
+    `tools.household_id()`, which reads the ContextVar this sets.
+
+    Public paths are deliberately left unbound. Those are the share links,
+    where the share *token* identifies the household — resolved in
+    `tools/sharing.py`, which binds the household itself for the duration
+    of the lookup. Binding the default here would be the bug: a household-2
+    share link would render household 1's dinners.
     """
     path = request.url.path
 
@@ -169,10 +235,11 @@ async def auth_middleware(request, call_next):
         return await call_next(request)
 
     # No password configured: local development. Serve localhost, refuse
-    # everything else rather than falling open on a real deployment.
+    # everything else rather than falling open on a real deployment. There
+    # is one household on a laptop, so the default is the right one.
     if not _password():
         if _is_local(request.client.host if request.client else None):
-            return await call_next(request)
+            return await _call_as_household(DEFAULT_HOUSEHOLD_ID, call_next, request)
         logger.error(
             "Refusing a remote request because HOME_MANAGER_PASSWORD is not set. "
             "Set it in the hosting platform's environment variables."
@@ -182,13 +249,31 @@ async def auth_middleware(request, call_next):
             status_code=503,
         )
 
-    if read_session(request.cookies.get(COOKIE_NAME)):
-        return await call_next(request)
+    session = read_session_parts(request.cookies.get(COOKIE_NAME))
+    if session:
+        return await _call_as_household(session[1], call_next, request)
 
     wants_html = "text/html" in request.headers.get("accept", "")
     if wants_html and request.method == "GET":
         return RedirectResponse(url=f"/login?next={_safe_next(path)}", status_code=303)
     return JSONResponse({"detail": "Please sign in again."}, status_code=401)
+
+
+async def _call_as_household(household_id: int, call_next, request):
+    """
+    Run the rest of the request with the household bound, unbinding after.
+
+    The reset in `finally` is not decoration: the middleware and the
+    endpoint share one context, and a server that leaked the value past the
+    end of a request could hand the next caller the previous caller's
+    household. `tests/test_multi_household.py` interleaves requests from
+    two households against exactly this.
+    """
+    token = set_current_household_id(household_id)
+    try:
+        return await call_next(request)
+    finally:
+        reset_current_household_id(token)
 
 
 def _safe_next(path: str) -> str:

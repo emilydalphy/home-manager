@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import secrets
 from ..db import get_conn
-from ._shared import household_id, _absolute_url
+from ._shared import household_id, use_household, _absolute_url
 from . import household as _household
 from . import weekly_plan as _weekly_plan
 
@@ -44,6 +44,18 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     caller can 404 rather than leak whether a token almost matched. Only
     meal-plan data is returned — no other household info (dietary details,
     chores, etc.) is exposed through this path.
+
+    The token *is* the household here. This route is public — no cookie, no
+    sign-in — so nothing else has established which household is being
+    asked about, and `use_household` binds the one the token belongs to for
+    the duration of the read.
+
+    This used to look the household id up and then throw it away, calling
+    `get_weekly_plan()` against the single hardcoded household while
+    pasting the token's household *name* on top of it. With one household
+    that was inert. With two it would have served household 1's dinners to
+    every share-link holder, labelled with someone else's household name —
+    the exact leak this ticket exists to prevent.
     """
     conn = get_conn()
     row = conn.execute("SELECT household_id FROM share_links WHERE token = ?", (token,)).fetchone()
@@ -55,7 +67,8 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     conn.close()
     if not row:
         return None
-    plan = _weekly_plan.get_weekly_plan()
+    with use_household(row["household_id"]):
+        plan = _weekly_plan.get_weekly_plan()
     plan["household_name"] = household["name"] if household else ""
     return plan
 
@@ -139,20 +152,27 @@ def resolve_member_share_link(token: str) -> dict | None:
     """
     conn = get_conn()
     link = conn.execute(
-        "SELECT member_id FROM member_share_links WHERE token = ? AND revoked = 0", (token,)
+        "SELECT member_id, household_id FROM member_share_links WHERE token = ? AND revoked = 0",
+        (token,),
     ).fetchone()
     if not link:
         conn.close()
         return None
+    # household_id is redundant against member_id alone (a member belongs to
+    # exactly one household), and it is filtered on anyway: a token that
+    # somehow named a member of another household should resolve to nothing
+    # rather than to that member.
     member = conn.execute(
-        "SELECT name, dietary_restrictions_json FROM members WHERE id = ?", (link["member_id"],)
+        "SELECT name, dietary_restrictions_json FROM members WHERE id = ? AND household_id = ?",
+        (link["member_id"], link["household_id"]),
     ).fetchone()
     if not member:
         conn.close()
         return None
     notes = conn.execute(
-        "SELECT note, created_at FROM member_notes WHERE member_id = ? ORDER BY created_at DESC LIMIT 10",
-        (link["member_id"],),
+        "SELECT note, created_at FROM member_notes WHERE member_id = ? AND household_id = ? "
+        "ORDER BY created_at DESC LIMIT 10",
+        (link["member_id"], link["household_id"]),
     ).fetchall()
     conn.close()
     return {
@@ -168,33 +188,51 @@ def eater_add_dietary_restriction(token: str, restrictions: list[str]) -> dict:
     token — merges with whatever they already have (never a destructive
     replace, since this is a one-off self-edit, not a full-list
     resubmission). Raises ValueError for an invalid/revoked token.
+
+    This is a public, unauthenticated *write*, so the household it lands in
+    has to come from the token and nothing else. It resolves the member by
+    id, then hands off by *name* to `set_member_dietary_restrictions`,
+    which re-resolves the name within the current household — so the write
+    happens inside `use_household`. Without that binding an eater in the
+    beta tester's household editing their own allergies would have written
+    them onto whoever happened to share their first name in Emily's.
     """
     conn = get_conn()
     link = conn.execute(
-        "SELECT member_id FROM member_share_links WHERE token = ? AND revoked = 0", (token,)
+        "SELECT member_id, household_id FROM member_share_links WHERE token = ? AND revoked = 0",
+        (token,),
     ).fetchone()
     if not link:
         conn.close()
         raise ValueError("This link isn't valid.")
-    member = conn.execute("SELECT name FROM members WHERE id = ?", (link["member_id"],)).fetchone()
+    member = conn.execute(
+        "SELECT name FROM members WHERE id = ? AND household_id = ?",
+        (link["member_id"], link["household_id"]),
+    ).fetchone()
     conn.close()
     if not member:
         raise ValueError("This link isn't valid.")
-    return _household.set_member_dietary_restrictions(member["name"], restrictions)
+    with use_household(link["household_id"]):
+        return _household.set_member_dietary_restrictions(member["name"], restrictions)
 
 
 def eater_add_note(token: str, note: str) -> dict:
     """Leave a freeform preference/feedback note as the member behind this self-service token. Raises ValueError for an invalid/revoked token."""
     conn = get_conn()
     link = conn.execute(
-        "SELECT member_id FROM member_share_links WHERE token = ? AND revoked = 0", (token,)
+        "SELECT member_id, household_id FROM member_share_links WHERE token = ? AND revoked = 0",
+        (token,),
     ).fetchone()
     if not link:
         conn.close()
         raise ValueError("This link isn't valid.")
+    # The household comes from the link, not from the ambient context: this
+    # route is public, so there is no session to have bound one. Stamping
+    # the default here (as this line used to) would file a beta tester's
+    # note under Emily's household alongside a member id that isn't hers.
     conn.execute(
         "INSERT INTO member_notes (household_id, member_id, note) VALUES (?, ?, ?)",
-        (household_id(), link["member_id"], note),
+        (link["household_id"], link["member_id"], note),
     )
     conn.commit()
     conn.close()

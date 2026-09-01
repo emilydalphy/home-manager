@@ -124,20 +124,37 @@ _ADULT_COLORS = ["#66304E", "#4D8A33"]
 
 
 def _backfill_member_colors(conn):
-    rows = conn.execute(
-        # LOWER(): members.age_group is documented as freeform ("adult",
-        # "teen", "child"), and onboarding actually writes it capitalized
-        # ("Adult"). An exact-match 'adult' therefore found nobody in the
-        # real database — no adult ever got a color, and
-        # tools.get_household_people (same comparison, same bug) returned an
-        # empty list, so the desktop grocery identity switcher had no one in
-        # it. Compare case-insensitively rather than trusting the casing.
-        "SELECT id FROM members WHERE LOWER(TRIM(age_group)) = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC"
-    ).fetchall()
-    for i, row in enumerate(rows):
-        if i >= len(_ADULT_COLORS):
-            break
-        conn.execute("UPDATE members SET color = ? WHERE id = ?", (_ADULT_COLORS[i], row["id"]))
+    # Per household, not globally. The two colors are "the first adult" and
+    # "the second adult" *of a household* — a single global ORDER BY id
+    # would hand both to whichever household was created first and leave
+    # every later household's adults colorless. This ran unscoped while
+    # there was only ever one household, which hid the bug completely.
+    households = conn.execute("SELECT id FROM households ORDER BY id ASC").fetchall()
+    for household in households:
+        rows = conn.execute(
+            # LOWER(): members.age_group is documented as freeform ("adult",
+            # "teen", "child"), and onboarding actually writes it capitalized
+            # ("Adult"). An exact-match 'adult' therefore found nobody in the
+            # real database — no adult ever got a color, and
+            # tools.get_household_people (same comparison, same bug) returned an
+            # empty list, so the desktop grocery identity switcher had no one in
+            # it. Compare case-insensitively rather than trusting the casing.
+            "SELECT id FROM members WHERE household_id = ? "
+            "AND LOWER(TRIM(age_group)) = 'adult' AND (color IS NULL OR color = '') ORDER BY id ASC",
+            (household["id"],),
+        ).fetchall()
+        # Colors already taken by this household's other adults, so a second
+        # adult added later doesn't get handed the first one's color.
+        taken = {
+            r["color"]
+            for r in conn.execute(
+                "SELECT color FROM members WHERE household_id = ? AND color != ''",
+                (household["id"],),
+            ).fetchall()
+        }
+        available = [c for c in _ADULT_COLORS if c not in taken]
+        for color, row in zip(available, rows):
+            conn.execute("UPDATE members SET color = ? WHERE id = ?", (color, row["id"]))
 
 
 def _run_migrations(conn):

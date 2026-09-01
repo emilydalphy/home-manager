@@ -51,6 +51,17 @@ def clean_state():
             conn.execute(f"DELETE FROM {table}")
         except Exception:
             pass  # a table this build doesn't have yet is not a test failure
+    # Households themselves are wiped too, except the seeded id=1 that
+    # schema.sql creates and every existing test implicitly runs against.
+    # Without this, a test that creates a second household leaks it into
+    # every test that runs after it in the session — and an isolation test
+    # that silently shares state with its neighbours is worse than none,
+    # because it still passes.
+    try:
+        conn.execute("DELETE FROM household_credentials WHERE household_id != 1")
+        conn.execute("DELETE FROM households WHERE id != 1")
+    except Exception:
+        pass
     conn.execute("PRAGMA foreign_keys = ON")
     conn.commit()
     conn.close()
