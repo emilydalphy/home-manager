@@ -11,6 +11,7 @@ import datetime
 import logging
 import os
 import json
+import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import tools
@@ -320,8 +321,14 @@ generated plan exists. Its week_start_date can legitimately belong to a differen
 today's (see _current_weekly_plan_row's fallback) — check it against today's date yourself. If \
 there's no plan, its meals list is empty, or its week_start_date isn't the Monday of the week \
 containing today, that's not really "this week's" plan — don't describe it (or invent one) in \
-your reply. Instead treat the request as "plan my week" and call generate_weekly_plan for the \
-current week (per the week_start_date rule above), then answer from that real, saved result.
+your reply, and don't quietly present last week's dinners as tonight's. \
+But do NOT silently generate a new week either: say plainly that the plan you have is from \
+another week (or that there isn't one yet), offer to build this week's, and WAIT for them to \
+say yes before calling generate_weekly_plan. Building a week takes the better part of a \
+minute and costs real money, so it is not something to spend on someone's behalf off the back \
+of a question as small as "what's for dinner tonight?" — same rule as the grocery list, where \
+nothing happens until they say yes. Once they do say yes, generate for the current week (per \
+the week_start_date rule above) and answer from that real, saved result.
 - If asked "why this?"/"why did you pick X?" about a planned meal, use the reasoning already \
 stored on that meal (get_weekly_plan's meals list, or per-day reasoning fields in `menu`) \
 rather than making something up on the spot — it was written at generation time for exactly \
@@ -2079,7 +2086,68 @@ def _intake_generation_context(intake: dict) -> dict:
     }
 
 
+# One generation per household per week at a time.
+#
+# There are three ways in -- the chat tool, the onboarding first-plan
+# route, and the plan screen's generate button -- and nothing stopped two
+# of them running for the same week at once. That is a ~40-second, ~9-cent
+# operation, so a double-tap or a chat request racing a screen request
+# produced two full generations and two plans for one real week, with no
+# error anywhere. Keyed per household so one household can never block
+# another. The dict grows by one entry per week per household and is
+# never pruned; at 52 weeks a year that is not worth managing.
+_WEEK_GENERATION_LOCKS: dict[tuple, threading.Lock] = {}
+_WEEK_GENERATION_LOCKS_GUARD = threading.Lock()
+
+
+def _week_generation_lock(key: tuple) -> threading.Lock:
+    with _WEEK_GENERATION_LOCKS_GUARD:
+        return _WEEK_GENERATION_LOCKS.setdefault(key, threading.Lock())
+
+
 def generate_weekly_plan(
+    week_start_date: str,
+    constraints_notes: str = "",
+    day_count: int = 7,
+    intake_id: int | None = None,
+) -> dict:
+    """
+    Generate and save a full week's meal plan in one pass. See
+    _generate_weekly_plan for what that involves; this wrapper exists to
+    make sure only one generation for a given household and week runs at
+    a time.
+
+    A caller that had to wait for another generation gets that
+    generation's plan handed back instead of starting a second one --
+    which is what someone who asked twice at once actually wanted, and
+    saves both the money and the duplicate week. A caller that didn't
+    wait generates normally, so an intentional re-plan still works.
+    """
+    lock = _week_generation_lock((tools.household_id(), week_start_date))
+    waited = not lock.acquire(blocking=False)
+    if waited:
+        lock.acquire()
+    try:
+        if waited:
+            existing = tools.get_plan_id_for_week(week_start_date)
+            if existing is not None:
+                logger.warning(
+                    "Skipped a duplicate generation for the week of %s; returning the plan "
+                    "the concurrent request just produced (id %s)",
+                    week_start_date, existing,
+                )
+                return tools.get_weekly_plan(existing)
+        return _generate_weekly_plan(
+            week_start_date,
+            constraints_notes=constraints_notes,
+            day_count=day_count,
+            intake_id=intake_id,
+        )
+    finally:
+        lock.release()
+
+
+def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
     day_count: int = 7,
@@ -2164,90 +2232,120 @@ def generate_weekly_plan(
     plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
     plan_id = plan["weekly_plan_id"]
 
-    # Clears out any 'needed' grocery items still sourced from the PREVIOUS
-    # plan before this week's ingredients get added below — otherwise
-    # quantities from old, already-superseded weeks silently keep stacking
-    # onto the same line forever. Passing plan_id explicitly rather than
-    # letting it re-derive "current" avoids any ambiguity if two plans get
-    # created within the same second.
-    tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
+    # Everything from here on is the plan's actual content. If any of it
+    # fails, the empty weekly_plans row created above must not survive:
+    # the household's current plan is resolved by date, so a shell row
+    # with no meals in it becomes "this week" for anything that finds it,
+    # and it silently suppresses the nudge that would offer to plan the
+    # week properly. Generating BEFORE creating the row (above) was meant
+    # to prevent exactly this, and it does prevent the empty-generation
+    # case -- but it can't help once the row exists and a later step
+    # throws. This closes that half of the gap. Observed for real on
+    # 2026-08-31: an orphan plan with zero meals, alongside a good one for
+    # the same week.
+    completed = False
+    try:
 
-    def _ensure_recipe_saved(meal_name, item):
-        if item.get("is_new_recipe") and item.get("ingredients"):
-            existing = next((r for r in tools.list_recipes() if r["name"] == meal_name), None)
-            if not existing:
-                tools.add_recipe(
-                    name=meal_name,
-                    ingredients=item.get("ingredients", []),
-                    tags=item.get("tags", []),
-                    food_groups=item.get("food_groups", []),
-                    cuisine=item.get("cuisine", ""),
-                    main_protein=item.get("main_protein", ""),
-                    instructions=item.get("instructions", []),
-                    default_servings=item.get("default_servings") or 4,
-                    prep_time_minutes=item.get("prep_time_minutes"),
-                    cook_time_minutes=item.get("cook_time_minutes"),
-                    advance_prep_notes=item.get("advance_prep_notes", ""),
-                    advance_prep_step_indices=item.get("advance_prep_step_indices", []),
-                )
+        # Clears out any 'needed' grocery items still sourced from the PREVIOUS
+        # plan before this week's ingredients get added below — otherwise
+        # quantities from old, already-superseded weeks silently keep stacking
+        # onto the same line forever. Passing plan_id explicitly rather than
+        # letting it re-derive "current" avoids any ambiguity if two plans get
+        # created within the same second.
+        tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
 
-    if is_component_based:
-        for item in items:
-            meal_name = item.get("meal_name")
-            category = item.get("category")
-            if not meal_name or not category:
-                continue
-            _ensure_recipe_saved(meal_name, item)
-            # No add_ingredients_to_grocery_list here on purpose: a
-            # generated week is a draft, and nothing reaches the grocery
-            # list until the household approves it (tools.approve_weekly_plan).
-            tools.plan_meal(
-                meal_date=week_start_date,  # placeholder — component items aren't tied to a specific day
-                meal=meal_name,
-                food_groups=item.get("food_groups"),
-                weekly_plan_id=plan_id,
-                component_category=category,
-                reasoning=item.get("reasoning", ""),
-            )
-    else:
-        for day in items:
-            slot = day.get("slot", "dinner")
-            meal_date = day.get("date")
-            if not meal_date:
-                continue
-            # A slot the model genuinely couldn't decide without guessing.
-            # Recorded as a real slot carrying the constraint that caused
-            # it, never as an absence — see tools.plan_slot_open.
-            if day.get("slot_state") == "open" and (day.get("open_reason") or "").strip():
-                tools.plan_slot_open(
+        def _ensure_recipe_saved(meal_name, item):
+            if item.get("is_new_recipe") and item.get("ingredients"):
+                existing = next((r for r in tools.list_recipes() if r["name"] == meal_name), None)
+                if not existing:
+                    tools.add_recipe(
+                        name=meal_name,
+                        ingredients=item.get("ingredients", []),
+                        tags=item.get("tags", []),
+                        food_groups=item.get("food_groups", []),
+                        cuisine=item.get("cuisine", ""),
+                        main_protein=item.get("main_protein", ""),
+                        instructions=item.get("instructions", []),
+                        default_servings=item.get("default_servings") or 4,
+                        prep_time_minutes=item.get("prep_time_minutes"),
+                        cook_time_minutes=item.get("cook_time_minutes"),
+                        advance_prep_notes=item.get("advance_prep_notes", ""),
+                        advance_prep_step_indices=item.get("advance_prep_step_indices", []),
+                    )
+
+        if is_component_based:
+            for item in items:
+                meal_name = item.get("meal_name")
+                category = item.get("category")
+                if not meal_name or not category:
+                    continue
+                _ensure_recipe_saved(meal_name, item)
+                # No add_ingredients_to_grocery_list here on purpose: a
+                # generated week is a draft, and nothing reaches the grocery
+                # list until the household approves it (tools.approve_weekly_plan).
+                tools.plan_meal(
+                    meal_date=week_start_date,  # placeholder — component items aren't tied to a specific day
+                    meal=meal_name,
+                    food_groups=item.get("food_groups"),
                     weekly_plan_id=plan_id,
+                    component_category=category,
+                    reasoning=item.get("reasoning", ""),
+                )
+        else:
+            for day in items:
+                slot = day.get("slot", "dinner")
+                meal_date = day.get("date")
+                if not meal_date:
+                    continue
+                # A slot the model genuinely couldn't decide without guessing.
+                # Recorded as a real slot carrying the constraint that caused
+                # it, never as an absence — see tools.plan_slot_open.
+                if day.get("slot_state") == "open" and (day.get("open_reason") or "").strip():
+                    tools.plan_slot_open(
+                        weekly_plan_id=plan_id,
+                        meal_date=meal_date,
+                        slot=slot,
+                        open_reason=day["open_reason"].strip(),
+                        options=day.get("open_options") or [],
+                        derived_from=day.get("derived_from") or {},
+                    )
+                    continue
+                meal_name = day.get("meal_name")
+                if not meal_name:
+                    continue
+                _ensure_recipe_saved(meal_name, day)
+                # Draft — see the component branch above; approval is what puts
+                # this week's ingredients on the grocery list.
+                tools.plan_meal(
                     meal_date=meal_date,
+                    meal=meal_name,
                     slot=slot,
-                    open_reason=day["open_reason"].strip(),
-                    options=day.get("open_options") or [],
+                    food_groups=day.get("food_groups"),
+                    weekly_plan_id=plan_id,
+                    reasoning=day.get("reasoning", ""),
                     derived_from=day.get("derived_from") or {},
                 )
-                continue
-            meal_name = day.get("meal_name")
-            if not meal_name:
-                continue
-            _ensure_recipe_saved(meal_name, day)
-            # Draft — see the component branch above; approval is what puts
-            # this week's ingredients on the grocery list.
-            tools.plan_meal(
-                meal_date=meal_date,
-                meal=meal_name,
-                slot=slot,
-                food_groups=day.get("food_groups"),
-                weekly_plan_id=plan_id,
-                reasoning=day.get("reasoning", ""),
-                derived_from=day.get("derived_from") or {},
-            )
-        _finish_week_slots(plan_id, week_start_date, intake, household_memory, day_count)
+            _finish_week_slots(plan_id, week_start_date, intake, household_memory, day_count)
 
-    if intake:
-        tools.attach_intake_to_plan(plan_id, intake["intake_id"])
-    return tools.get_weekly_plan(plan_id)
+        if intake:
+            tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+        completed = True
+        return tools.get_weekly_plan(plan_id)
+    finally:
+        if not completed:
+            # discard_failed_plan swallows its own errors, but this second
+            # guard is not redundant: this runs inside a `finally` while
+            # another exception is on its way up, so anything raised here
+            # — including from the call itself — would REPLACE the real
+            # error with a rollback error. Losing the actual cause is the
+            # precise failure this whole area is being fixed for, so the
+            # guarantee shouldn't rest on the helper's internals alone.
+            try:
+                tools.discard_failed_plan(plan_id)
+            except Exception:
+                logger.exception(
+                    "Rolling back weekly plan %s failed; keeping the original error", plan_id
+                )
 
 
 def _finish_week_slots(

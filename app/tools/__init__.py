@@ -117,6 +117,7 @@ from .inventory import (  # noqa: F401
 )
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
+    discard_failed_plan,
     get_meal_plan,
     get_recent_meal_history,
     plan_meal,

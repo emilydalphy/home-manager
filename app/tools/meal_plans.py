@@ -4,6 +4,7 @@ Putting a recipe into a meal slot, and reading back what was planned.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
@@ -216,3 +217,54 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
         "planning_mode": planning_mode,
         "is_first_plan": is_first_plan,
     }
+
+
+def discard_failed_plan(weekly_plan_id: int) -> dict:
+    """
+    Undo a weekly plan whose generation failed partway through.
+
+    Called only from generate_weekly_plan's failure path, on a plan row it
+    created moments earlier in the same call -- never on a plan the
+    household has been shown. That's what makes deleting rows the right
+    move here rather than a dangerous one: this is a rollback of work that
+    never finished, not the removal of anything anyone has seen.
+
+    It matters because the household's current plan is resolved by date.
+    A half-built row left behind becomes "this week" for whatever finds
+    it, and an empty one also registers the week as planned, silently
+    suppressing the nudge that would have offered to plan it properly --
+    so the failure presents as a week that quietly went missing rather
+    than as an error.
+
+    Never raises. It runs while another exception is already propagating,
+    and a failure here would replace that original error with this one --
+    hiding the thing that actually went wrong, which is the exact problem
+    this whole area is being fixed for.
+    """
+    removed = {"weekly_plan_id": weekly_plan_id, "meals_removed": 0, "plan_removed": False}
+    conn = None
+    try:
+        conn = get_conn()
+        cur = conn.execute(
+            "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        )
+        removed["meals_removed"] = cur.rowcount
+        cur = conn.execute(
+            "DELETE FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        )
+        removed["plan_removed"] = cur.rowcount > 0
+        conn.commit()
+        logging.getLogger("home_manager").warning(
+            "Rolled back weekly plan %s after a failed generation (%s meals removed)",
+            weekly_plan_id, removed["meals_removed"],
+        )
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "Could not roll back weekly plan %s after a failed generation", weekly_plan_id
+        )
+    finally:
+        if conn is not None:
+            conn.close()
+    return removed
