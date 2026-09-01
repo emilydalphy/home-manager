@@ -1908,7 +1908,16 @@ def chat(req: ChatRequest, request: Request):
     # restart erases every trace of how much the app was used — and unlike
     # most gaps, it can't be backfilled later. No message content is
     # stored; see schema.sql on chat_turns.
-    tools.record_chat_turn(**agent.LAST_TURN_USAGE.get({}))
+    #
+    # Passed as one dict rather than **unpacked: unpacking happens at the
+    # call site, *before* record_chat_turn's own error handling can catch
+    # anything, so a single unexpected key in the tally — someone adding
+    # usage["thinking_tokens"] in agent.py and forgetting this end — would
+    # raise TypeError here and turn every chat turn into a 500, after
+    # Claude had already been paid for and the reply was in hand. The
+    # whole point of this line is that it cannot break the turn it
+    # records.
+    tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
     logger.info(
         "/api/chat request took %.2fs end to end", time.perf_counter() - request_started
     )

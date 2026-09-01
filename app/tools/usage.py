@@ -25,32 +25,36 @@ from ..db import get_conn
 from ._shared import household_id
 
 
-def record_chat_turn(
-    rounds: int = 0,
-    input_tokens: int = 0,
-    cache_read_tokens: int = 0,
-    cache_write_tokens: int = 0,
-    output_tokens: int = 0,
-    seconds: float = 0.0,
-) -> None:
+_TURN_FIELDS = ("rounds", "input_tokens", "cache_read_tokens",
+                "cache_write_tokens", "output_tokens", "seconds")
+
+
+def record_chat_turn(usage: dict | None = None) -> None:
     """
     Record that a chat turn happened, and what it cost. No message content
     -- see schema.sql on chat_turns for why.
 
-    Never raises: this is bookkeeping attached to a chat turn that has
-    already succeeded, and a failure to write a stats row must not turn a
-    good reply into an error for the person waiting on it. A broken write
-    now shows up in the logs instead (agent.py's tool-failure logging is
-    the same principle -- silence is the thing being fixed).
+    Takes one dict rather than keyword arguments on purpose. The caller
+    hands over whatever agent.run_agent_turn tallied, and anything this
+    table doesn't have a column for is ignored here rather than raising at
+    the call site -- where it would be outside this function's own error
+    handling and would 500 a chat turn that had already succeeded. Adding
+    a new measure in agent.py can therefore never break chat; it just
+    isn't stored until a column exists for it.
+
+    Never raises, for the same reason: this is bookkeeping attached to a
+    reply that already worked, and it must not be what fails. A broken
+    write shows up in the logs instead -- agent.py's tool-failure logging
+    is the same principle, since silence is the thing being fixed.
     """
+    values = usage or {}
     conn = None
     try:
         conn = get_conn()
         conn.execute(
             "INSERT INTO chat_turns (household_id, rounds, input_tokens, cache_read_tokens, "
             "cache_write_tokens, output_tokens, seconds) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (household_id(), rounds, input_tokens, cache_read_tokens,
-             cache_write_tokens, output_tokens, seconds),
+            (household_id(), *(values.get(f, 0) for f in _TURN_FIELDS)),
         )
         conn.commit()
     except Exception:
@@ -86,7 +90,6 @@ def touch_household_active(household: int) -> None:
     now = time.time()
     if now - _last_touched.get(household, 0.0) < _ACTIVE_TOUCH_INTERVAL_SECONDS:
         return
-    _last_touched[household] = now
     conn = None
     try:
         conn = get_conn()
@@ -95,6 +98,11 @@ def touch_household_active(household: int) -> None:
             (household,),
         )
         conn.commit()
+        # Marked as done only once it actually succeeded. Recording the
+        # attempt up front would mean a single transient failure (a locked
+        # database) silently costs a full interval of activity tracking,
+        # for a household that was in fact active.
+        _last_touched[household] = now
     except Exception:
         import logging
         logging.getLogger("home_manager").exception("Touching last_active_at failed")
@@ -113,10 +121,22 @@ def get_usage_summary(days: int = 7) -> dict:
     variant here, because that would be the one query in the app that
     reads across the isolation boundary.
     """
+    # Clamped, not just cast. A negative value would build
+    # datetime('now', '--7 days'), which SQLite returns as NULL rather than
+    # erroring -- every comparison against NULL is false, so the answer
+    # comes back as a household that did nothing at all. Reporting an
+    # active household as dead is the one wrong answer this function must
+    # never give.
+    days = max(1, int(days))
+    since = f"-{days} days"
     conn = get_conn()
-    hid = household_id()
-    since = f"-{int(days)} days"
+    try:
+        return _summarize(conn, household_id(), days, since)
+    finally:
+        conn.close()
 
+
+def _summarize(conn, hid: int, days: int, since: str) -> dict:
     def _count(sql: str) -> int:
         return conn.execute(sql, (hid,)).fetchone()[0]
 
@@ -131,11 +151,15 @@ def get_usage_summary(days: int = 7) -> dict:
         (hid,),
     ).fetchone()
 
+    household_row = conn.execute(
+        "SELECT last_active_at FROM households WHERE id = ?", (hid,)
+    ).fetchone()
+
     summary = {
         "days": int(days),
-        "last_active_at": conn.execute(
-            "SELECT last_active_at FROM households WHERE id = ?", (hid,)
-        ).fetchone()["last_active_at"],
+        # A household row that isn't there is a caller error, not a crash:
+        # returning None reads as "never seen", which is the truth.
+        "last_active_at": (household_row["last_active_at"] if household_row else None),
         "chat_turns": chat["turns"],
         "chat_rounds": chat["rounds"],
         "chat_seconds": round(chat["seconds"], 1),
@@ -176,5 +200,4 @@ def get_usage_summary(days: int = 7) -> dict:
         and summary["meals_cooked"] == 0
         and summary["plans_generated"] == 0
     )
-    conn.close()
     return summary

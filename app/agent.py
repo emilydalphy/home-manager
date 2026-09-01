@@ -3190,7 +3190,22 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                 # household looked exactly like a working app, which is
                 # why "the week generated twice" could not be diagnosed
                 # from its own logs.
-                logger.exception("Tool %s failed (args=%r)", block.name, block.input)
+                #
+                # Argument NAMES only, never their values. Tools like
+                # add_fact, log_recipe_note and
+                # set_member_dietary_restrictions carry freeform household
+                # detail, and logging a failing call's arguments would put
+                # exactly the personal content this app is careful with
+                # into stdout logs — while chat_turns deliberately stores
+                # no message content at all. The tool name plus which
+                # arguments were present is what actually identifies the
+                # failure; the values are recoverable from the traceback's
+                # own context if a specific case ever needs chasing.
+                logger.exception(
+                    "Tool %s failed (args: %s)",
+                    block.name,
+                    ", ".join(sorted(block.input)) if isinstance(block.input, dict) else "?",
+                )
                 content = json.dumps({"error": str(e)})
                 is_error = True
             tool_results.append(
