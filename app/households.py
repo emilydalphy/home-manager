@@ -84,12 +84,12 @@ def authenticate(passphrase: str) -> int | None:
     which household matched, and the loop is two iterations long — there is
     no reason to take that trade.
 
-    Note this is inherently a "the passphrase identifies the household"
-    model: if two households ever chose the same passphrase, the
-    lower-numbered one would win and the other could never sign in. At beta
-    scale the passphrases are handed out by Emily, so this is avoidable by
-    construction rather than by code — see `create_household`, which
-    refuses a passphrase already in use.
+    This checks *stored* credentials only. It is deliberately not the whole
+    answer to "which household does this passphrase open?", because
+    household 1 signs in via the HOME_MANAGER_PASSWORD env var and has no
+    stored row. Use `resolve_passphrase` for that question — and note the
+    login route checks the env var first, so anything written here can be
+    shadowed by it.
     """
     if not passphrase:
         return None
@@ -105,9 +105,35 @@ def authenticate(passphrase: str) -> int | None:
     return matched
 
 
+def resolve_passphrase(passphrase: str) -> int | None:
+    """
+    Which household would this passphrase actually sign into? None if none.
+
+    This must mirror `main._household_for_password` exactly, env var
+    included. It is what the collision guards below are checked against,
+    and getting it wrong is not a cosmetic bug: because the login route
+    tries HOME_MANAGER_PASSWORD *first*, a household created with Emily's
+    env password would send its users into **household 1, seeing Emily's
+    data**, while their own household became permanently unreachable. That
+    was a real hole here — the guards originally consulted stored
+    credentials only, so the one household whose credential lives outside
+    the table was exactly the one they could not see.
+    """
+    if not passphrase:
+        return None
+    # Imported here rather than at module scope: security imports from
+    # tools._shared, and this keeps households.py free of an import cycle
+    # if security ever needs anything from here.
+    from . import security
+
+    if security.check_password(passphrase):
+        return DEFAULT_HOUSEHOLD_ID
+    return authenticate(passphrase)
+
+
 def passphrase_in_use(passphrase: str) -> bool:
-    """True if some household already uses this passphrase."""
-    return authenticate(passphrase) is not None
+    """True if this passphrase would already sign into some household."""
+    return resolve_passphrase(passphrase) is not None
 
 
 def household_exists(household_id: int) -> bool:
@@ -142,12 +168,10 @@ def list_households() -> list[dict]:
 def set_passphrase(household_id: int, passphrase: str) -> None:
     """Set or replace a household's passphrase."""
     _validate_passphrase(passphrase)
-    existing = authenticate(passphrase)
+    existing = resolve_passphrase(passphrase)
     if existing is not None and existing != int(household_id):
         raise ValueError(
-            f"That passphrase already belongs to household {existing}. Pick a different one — "
-            "the passphrase is what tells the app which household is signing in, so two "
-            "households cannot share one."
+            _collision_message(existing)
         )
     conn = get_conn()
     conn.execute(
@@ -173,10 +197,9 @@ def create_household(name: str, passphrase: str) -> int:
     if not name:
         raise ValueError("A household needs a name.")
     _validate_passphrase(passphrase)
-    if passphrase_in_use(passphrase):
-        raise ValueError(
-            "That passphrase is already in use by another household. Pick a different one."
-        )
+    clash = resolve_passphrase(passphrase)
+    if clash is not None:
+        raise ValueError(_collision_message(clash))
     conn = get_conn()
     cur = conn.execute("INSERT INTO households (name) VALUES (?)", (name,))
     household_id = cur.lastrowid
@@ -185,6 +208,25 @@ def create_household(name: str, passphrase: str) -> int:
     set_passphrase(household_id, passphrase)
     logger.info("Created household %s (%r)", household_id, name)
     return household_id
+
+
+def _collision_message(existing: int) -> str:
+    """
+    Say plainly what would have gone wrong, because the consequence is not
+    obvious from "that's taken" and the operator is the only safeguard.
+    """
+    if existing == DEFAULT_HOUSEHOLD_ID:
+        return (
+            "That is already the passphrase for household 1 (the HOME_MANAGER_PASSWORD "
+            "env var). If a household were given it, everyone signing in with it would "
+            "land in household 1 and see its data, and the new household would be "
+            "unreachable. Pick a different passphrase."
+        )
+    return (
+        f"That passphrase already signs into household {existing}. The passphrase is what "
+        "tells the app which household is signing in, so two households cannot share one. "
+        "Pick a different passphrase."
+    )
 
 
 def _validate_passphrase(passphrase: str) -> None:
@@ -203,6 +245,7 @@ __all__ = [
     "household_exists",
     "list_households",
     "passphrase_in_use",
+    "resolve_passphrase",
     "set_passphrase",
     "verify_passphrase",
 ]

@@ -207,6 +207,60 @@ def test_two_households_cannot_share_a_passphrase(beta_household):
         households.create_household("Impostors", BETA_PASSPHRASE)
 
 
+def test_a_household_cannot_be_given_emilys_env_passphrase(client):
+    """
+    Found by independent review, and the worst failure this file guards.
+
+    The login route tries HOME_MANAGER_PASSWORD *first*. So a household
+    created with Emily's env password would send its users into household
+    1 — seeing her family's data — while its own household became
+    permanently unreachable. The collision guard originally consulted
+    stored credentials only, and household 1 is exactly the household
+    whose credential is not stored.
+    """
+    env_password = "test-password"
+    assert households.resolve_passphrase(env_password) == DEFAULT_HOUSEHOLD_ID
+
+    with pytest.raises(ValueError) as created:
+        households.create_household("Impostors", env_password)
+    assert "household 1" in str(created.value)
+
+    beta = households.create_household("Beta", "a-safe-distinct-passphrase")
+    with pytest.raises(ValueError):
+        households.set_passphrase(beta, env_password)
+
+    # And the beta household still signs into itself, not into Emily's.
+    _sign_in(client, "a-safe-distinct-passphrase")
+    assert client.get("/api/whoami").json()["household_id"] == beta
+
+
+def test_a_meal_cannot_be_planned_into_another_households_week(beta_household):
+    """
+    Also found by independent review. `plan_meal` stamps the caller's
+    household on the row but took `weekly_plan_id` verbatim, and several
+    readers resolve a plan's entries by weekly_plan_id alone — so one
+    household could write a meal into another's week. Not reachable over
+    HTTP, but `plan_meal` is a chat tool and the model supplies its
+    arguments.
+    """
+    with tools.use_household(beta_household):
+        beta_plan = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+
+    with tools.use_household(DEFAULT_HOUSEHOLD_ID):
+        with pytest.raises(ValueError):
+            tools.plan_meal(
+                _week_start(), "INJECTED", slot="dinner", weekly_plan_id=beta_plan
+            )
+
+    with tools.use_household(beta_household):
+        assert "INJECTED" not in str(tools.get_weekly_plan())
+
+    # The legitimate case still works.
+    with tools.use_household(DEFAULT_HOUSEHOLD_ID):
+        own_plan = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        tools.plan_meal(_week_start(), "Chili", slot="dinner", weekly_plan_id=own_plan)
+
+
 def test_a_new_household_starts_empty(beta, beta_household):
     """Nothing is copied across from household 1."""
     with tools.use_household(DEFAULT_HOUSEHOLD_ID):

@@ -63,6 +63,24 @@ def plan_meal(
     user asking for it.
     """
     conn = get_conn()
+    # weekly_plan_id arrives from the caller — including, potentially, from
+    # the chat model, whose tool input is passed through as **kwargs. The
+    # row itself is stamped with the current household below, but several
+    # readers (weekly_plan.get_weekly_plan, the cooker view, the plan
+    # notifications) look entries up by weekly_plan_id alone, trusting that
+    # a plan's entries belong to the plan's household. So an unchecked id
+    # would let one household write a meal into another household's week.
+    # Not reachable over HTTP today — no route passes this through — but it
+    # is one added parameter away from being, and the check is one query.
+    if weekly_plan_id is not None:
+        owner = conn.execute(
+            "SELECT id FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        if not owner:
+            conn.close()
+            raise ValueError(f"No weekly plan {weekly_plan_id} in this household.")
+
     recipe = conn.execute(
         "SELECT * FROM recipes WHERE household_id = ? AND name = ?", (household_id(), meal)
     ).fetchone()
