@@ -29,7 +29,9 @@ every interaction this skill covers, not just onboarding:
 - **She approves before anything ships.** Code can be written, tested, and committed locally
   as part of working a ticket, but **pushing to GitHub needs her explicit go-ahead** each
   time (per her 2026-08-30 decision — see Automation rules below for the stricter
-  unattended-run version of this).
+  unattended-run version of this). Her approval to merge *is* the approval: once something
+  is on `main`, close its ticket rather than asking her to confirm the same decision twice
+  (see "Working a ticket" step 6).
 - **Teach along the way.** When something technical comes up (why a bug happened, what a
   piece of the stack does), a short, concrete explanation is welcome — that's part of the
   point of this project for her. Don't over-explain unprompted, but don't skip the "why"
@@ -92,9 +94,17 @@ priority is fine"):
    reason.
 5. **Commit with a clear message**; don't push without asking (see Automation rules for the
    stricter unattended version).
-6. **Update the ticket**: append findings/fix details to the page content, and set Status to
-   "In progress" once a fix is written and tested — leave "Done" for Emily to set herself
-   after she's reviewed it, don't mark it Done on the assistant's own authority.
+6. **Update the ticket**: append findings/fix details to the page content, and set Status by
+   where the work has actually got to (Emily's call, 2026-08-31):
+   - **Done** — the fix is merged to `main`. Merging is already Emily's own decision, so by
+     the time code is on `main` she has approved it; making her then go and tick a second box
+     is bookkeeping, not a check. Mark it Done yourself in the same pass as the write-up.
+   - **In progress** — written and tested but sitting on a branch or in an open PR, i.e.
+     anything an unattended run produced (which never merges — see Automation rules), or a
+     live session's branch Emily hasn't merged yet.
+   - Anything genuinely still open, or investigate-only, stays as it was.
+   Don't mark a *related* ticket Done because the work brushed against it. If a ticket is
+   only advanced rather than closed, leave its status alone and add a "Related" note (step 7).
 7. **Cross-link related tickets** when a new one shares a theme with an existing one (e.g.
    several tone/wording tickets, several onboarding-data tickets) — add a short "related
    tickets" or "broader goal" note on each rather than leaving the connection implicit.
@@ -185,9 +195,13 @@ When Emily says something like "run the loop," "work through the tickets," or "p
 next ticket," this is a manual trigger — do the following, and **stop there** rather than
 continuing on to a fix without her:
 
-1. Query the Loop Board for cards with Status = "Not started."
-2. Pick one: the highest-priority one (High > Medium > Low) unless she named a specific
-   ticket. If several tie on priority, pick the oldest/least-recently-touched one.
+1. Query the Loop Board for cards with Status = "Not started." Check the "Work Tonight"
+   checkbox property first (added 2026-08-30) — any card Emily checked the day before goes
+   ahead of normal priority order.
+2. Pick one: a "Work Tonight"-checked card first if any exist, otherwise the
+   highest-priority one (High > Medium > Low) — unless she named a specific ticket. If
+   several tie, pick the oldest/least-recently-touched one. Uncheck "Work Tonight" once
+   that card's been handled, so it doesn't linger as still-queued.
 3. Investigate it per the "Working a ticket" steps 1-2 above: read the real code, find the
    actual root cause or the real current state, cite file:line. Do not write or change any
    code in this pass, even if the fix looks obvious.
@@ -212,3 +226,23 @@ update them with findings on the Notion board. No code changes, no commits, no p
 Leave implementation for a live session where she's present to make the calls this skill
 says are hers to make. This restriction is specifically about *unattended* runs — a live
 conversation with Emily can write and commit code as described above.
+
+**The actual overnight routine** ("Home Manager Loop - overnight," runs nightly at 2am
+America/Toronto, created 2026-08-30 via `RemoteTrigger`/the `schedule` skill) is a cloud
+agent, not a process on Emily's Mac — it clones `https://github.com/emilydalphy/home-manager`
+fresh each run and has Notion MCP access attached directly, so it doesn't depend on this
+machine being on. It works through **up to 5 cards a night**: any "Work Tonight"-checked
+cards first (in priority order), then it fills remaining slots by priority among the rest,
+skipping anything already carrying a "## Investigated overnight" (or equivalent) section so
+it doesn't redo work. Its `allowed_tools` are `Bash`/`Read`/`Write`/`Edit`/`Glob`/`Grep` —
+**it can write and test real code**, and does (verified against the live trigger config
+2026-09-01, not just against this file). The guardrail is NOT a missing capability, so don't
+reason as though it were: it's that every fix it writes goes on a fresh `overnight/<slug>`
+side branch, and it never commits or pushes to `main`, never merges, and never even opens a
+PR. **Merging into `main` is Emily's confirmation, every time** — that single rule is the
+whole safety boundary, which makes it worth stating precisely rather than approximately.
+Practical consequence when picking up its work: a branch it pushed contains real, untested-by-
+you changes that nobody has merged. Review the diff, don't assume the file is untouched.
+Manage it (pause, change time/count, check recent runs, read its exact current prompt) via
+`RemoteTrigger` using its id `trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to
+https://claude.ai/code/routines.
