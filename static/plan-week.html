@@ -334,6 +334,31 @@
       answers.moods = data.intake.moods || [];
       answers.cuisines = data.intake.cuisines || [];
       $('freeform').value = data.intake.freeform || '';
+    } else if (data.plan_exists) {
+      // DECISIONS.md #4 — re-planning a week that already has a plan is
+      // allowed, but the household is told what it means BEFORE answering
+      // five minutes of questions, not after. The approved case is the one
+      // that matters: the shopping list has already been built from it, and
+      // the rule is the same as reopening — anything new gets added, and
+      // nothing is taken off, because removing something somebody may
+      // already have bought is worse than a slightly long list.
+      $('joined').hidden = false;
+      $('joined').textContent = data.plan_status === 'approved'
+        ? data.week_label + ' is already approved and on your shopping list. If we re-plan it ' +
+          'I’ll add anything new — I won’t take anything off.'
+        : data.week_label + ' already has a draft. Answering again replaces it, and nothing ' +
+          'has reached your shopping list yet either way.';
+      // The answers that produced that plan, so this reads as a revision
+      // rather than starting from nothing — "Change my answers" is the same
+      // door, and it would be strange for one to prefill and the other not.
+      if (data.intake) {
+        answers.night_tags = data.intake.night_tags || {};
+        answers.guest_counts = data.intake.guest_counts || {};
+        answers.packed_lunch_days = data.intake.packed_lunch_days || [];
+        answers.moods = data.intake.moods || [];
+        answers.cuisines = data.intake.cuisines || [];
+        $('freeform').value = data.intake.freeform || '';
+      }
     }
 
     $('loading').hidden = true;
