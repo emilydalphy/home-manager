@@ -1384,16 +1384,33 @@
   function renderPlanWeekEntry(panel, data) {
     var row = panel.querySelector('#week-plan-row');
     if (!row) return;
-    var weekStart = nextWeekStartLocal();
-    var alreadyPlanned = data.weekly_plan_id && data.week_start_date === weekStart;
+    // Both weeks, named by their real dates. This used to offer NEXT week
+    // and only next week, which left no discoverable way to plan or
+    // re-plan the week you're actually living in — the nudge could reach
+    // it, but the nudge is dismissible and disappears once the week has any
+    // plan at all. An entry point that can only reach one week isn't a
+    // permanent entry point, it's the nudge with extra steps.
+    var weeks = [
+      { start: thisWeekStartLocal(), label: 'This week' },
+      { start: nextWeekStartLocal(), label: 'Next week' }
+    ];
     row.innerHTML =
       '<div class="shell-card week-plan-row">' +
         '<div class="week-plan-text">' +
-          '<div class="week-plan-title">' +
-            (alreadyPlanned ? 'Plan another week' : 'Plan next week') + '</div>' +
+          '<div class="week-plan-title">Plan a week</div>' +
           '<div class="week-plan-sub">Two rounds of questions, then I’ll draft it. Nothing gets bought until you approve.</div>' +
         '</div>' +
-        '<button type="button" class="btn-outline-plum" id="week-plan-btn">Let’s plan</button>' +
+        '<div class="week-plan-buttons">' +
+          weeks.map(function (w) {
+            // "Re-plan" rather than "Plan" when that week already has one,
+            // so the button never understates what it's about to do.
+            var planned = weekIsPlanned(data, w.start);
+            return '<button type="button" class="btn-outline-plum week-plan-btn" data-week="' + w.start + '">' +
+              '<span class="week-plan-btn-label">' + (planned ? 'Re-plan ' : 'Plan ') + w.label.toLowerCase() + '</span>' +
+              '<span class="week-plan-btn-dates">' + escapeHtml(weekRangeLabel(w.start)) + '</span>' +
+            '</button>';
+          }).join('') +
+        '</div>' +
       '</div>' +
       // The standing way in to the setup screen. The receipt offers it too,
       // at the moment a week has just landed and its shortcomings are
@@ -1401,8 +1418,41 @@
       // reach its own settings.
       '<button type="button" class="week-setup-link" id="week-setup-standing">' +
         'Weeks not landing how you’d like? Let’s adjust your setup →</button>';
-    row.querySelector('#week-plan-btn').addEventListener('click', function () { startPlanningWeek(weekStart); });
+    row.querySelectorAll('.week-plan-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week); });
+    });
     row.querySelector('#week-setup-standing').addEventListener('click', openMealSetup);
+  }
+
+  function weekIsPlanned(data, weekStart) {
+    // Only the week currently on screen is known for certain from this
+    // payload. For the other one the button says "Plan", and /plan-week
+    // itself states what it found when it opens — better an understated
+    // button than a second lookup on every Meals render.
+    return !!(data.weekly_plan_id && data.week_start_date === weekStart);
+  }
+
+  function weekRangeLabel(weekStart) {
+    // "Aug 31–Sep 6". Same shape as the server's _format_week_range, kept
+    // in step deliberately — the two are read side by side.
+    var start = new Date(weekStart + 'T00:00:00');
+    var end = new Date(start.getTime());
+    end.setDate(end.getDate() + 6);
+    var startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+    if (start.getMonth() === end.getMonth()) {
+      return startMonth + ' ' + start.getDate() + '–' + end.getDate();
+    }
+    return startMonth + ' ' + start.getDate() + '–' +
+      end.toLocaleDateString('en-US', { month: 'short' }) + ' ' + end.getDate();
+  }
+
+  function thisWeekStartLocal() {
+    var d = new Date();
+    var daysSinceMonday = (d.getDay() + 6) % 7;   // JS weeks start on Sunday
+    d.setDate(d.getDate() - daysSinceMonday);
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
   }
 
   function openMealSetup() {
