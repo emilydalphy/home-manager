@@ -184,10 +184,25 @@ GitHub issue sync) comes up later.
 
 ## Roadmap (current priority)
 
-**Meal planning** is the current focus — nail down its features and experience before moving
-on. **Chores** is the defined next major module after that (it has a working backend already,
-just no first-class screen yet). Don't jump ahead to Chores work unless Emily says meal
-planning has wrapped up.
+A full product roadmap was set with Emily on 2026-09-01 (artifact:
+https://claude.ai/code/artifact/712fb549-1355-42cc-88b7-7bf25e7128a3). The Loop Board now
+has a **Phase** select property mirroring it — use it when picking work:
+
+- **Phase 0 — Beta-ready** is the active focus: core-loop bugs, the tools.py split →
+  multi-household chain, API cost, and the beta-safety pass. This is what unblocks the
+  friend beta (which ships on the PWA, not the App Store).
+- **Phase 1 — Beta** (first-impression polish + the brand/redesign program) and
+  **Phase 2 — Chores** run next; per Emily's explicit call, Chores scoping/building may
+  proceed **in parallel with** the beta — the old "don't touch Chores until meal planning
+  wraps" rule is superseded. The beta tester's app stays meals-only until Chores is
+  validated.
+- **Phase 3 — App Store** and **Phase 4 — Flywheel** are later; **Parked** tickets are
+  deliberately out of rotation — don't pick them up without Emily asking.
+
+Two standing product decisions (2026-09-01): the core job is meals **on the table** (plan →
+grocery list → prep → cook — all core), and **inventory is deferred as policy** — it stays
+lightweight background, gets no new investment, and no user should ever have to do
+inventory work to complete the core loop.
 
 ## Running the loop
 
@@ -199,8 +214,9 @@ continuing on to a fix without her:
    checkbox property first (added 2026-08-30) — any card Emily checked the day before goes
    ahead of normal priority order.
 2. Pick one: a "Work Tonight"-checked card first if any exist, otherwise the
-   highest-priority one (High > Medium > Low) — unless she named a specific ticket. If
-   several tie, pick the oldest/least-recently-touched one. Uncheck "Work Tonight" once
+   highest-priority one (High > Medium > Low), preferring an earlier-Phase card when
+   priorities tie (Phase 0 before Phase 1, etc.; never auto-pick a "Parked" card) — unless
+   she named a specific ticket. If still tied, pick the oldest/least-recently-touched one. Uncheck "Work Tonight" once
    that card's been handled, so it doesn't linger as still-queued.
 3. Investigate it per the "Working a ticket" steps 1-2 above: read the real code, find the
    actual root cause or the real current state, cite file:line. Do not write or change any
