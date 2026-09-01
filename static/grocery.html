@@ -230,6 +230,12 @@
 
   /* ---------- Screen 2: Plan your stops ---------- */
   .plan-header { padding: 22px 20px 4px; }
+  /* The way out of Plan and Review. Both screens hide the tab row (it
+     lives inside #screen-buy), so without this there is no way back to
+     the list at all short of a browser back button the PWA doesn't show.
+     Styled like .shop-back but in ink, since these headers sit on the
+     page background rather than the coloured shop header. */
+  .screen-back { background: none; border: none; color: var(--ink-muted); font-family: var(--font-body); font-size: 13px; font-weight: 700; cursor: pointer; padding: 0; margin: 0 0 10px; min-height: 32px; }
   .plan-title { font-family: var(--font-heading); font-weight: 700; font-size: 23px; color: var(--midnight-violet); margin: 0; }
   .plan-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-muted); margin: 4px 0 0; }
 
@@ -520,6 +526,7 @@
 
   <div id="screen-plan" style="display:none">
     <div class="plan-header">
+      <button class="screen-back" id="plan-back-btn">&larr; Back to the list</button>
       <h1 class="plan-title">Plan your stops</h1>
       <p class="plan-sub">Tap an item to send it to a store</p>
     </div>
@@ -546,6 +553,7 @@
 
   <div id="screen-review" style="display:none">
     <div class="plan-header">
+      <button class="screen-back" id="review-back-btn">&larr; Back to the list</button>
       <h1 class="review-title">Everything look right?</h1>
       <p class="review-sub" id="review-sub">Confirm before you shop</p>
     </div>
@@ -726,6 +734,8 @@ document.getElementById('tab-buy').addEventListener('click', () => setScreen('bu
 document.getElementById('tab-plan').addEventListener('click', () => setScreen('plan'));
 document.getElementById('tab-review').addEventListener('click', () => setScreen('review'));
 document.getElementById('shop-back-btn').addEventListener('click', () => setScreen('plan'));
+document.getElementById('plan-back-btn').addEventListener('click', () => setScreen('buy'));
+document.getElementById('review-back-btn').addEventListener('click', () => setScreen('buy'));
 
 let lastGroceryData = null;
 async function refreshCurrentScreen() {
@@ -891,7 +901,12 @@ function wireBuyScreenActions(content) {
   content.querySelectorAll('[data-action="toggle-menu"]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const id = btn.getAttribute('data-item-id');
+      // Number(), because getAttribute always hands back a string while
+      // the id it's compared against (it.id, straight from the API) is a
+      // number. "1" === 1 is false, so without this the menu could never
+      // open: the markup was rendered, the class was never applied, and
+      // the edit fields stayed hidden with nothing appearing to be wrong.
+      const id = Number(btn.getAttribute('data-item-id'));
       openRowMenuId = openRowMenuId === id ? null : id;
       refreshCurrentScreen();
     });
