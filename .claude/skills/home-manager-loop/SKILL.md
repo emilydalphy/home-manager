@@ -27,11 +27,12 @@ every interaction this skill covers, not just onboarding:
   something should look/feel) gets flagged as an open question for her — never guessed at
   silently, even when the "obvious" answer seems clear.
 - **She approves before anything ships.** Code can be written, tested, and committed locally
-  as part of working a ticket, but **pushing to GitHub needs her explicit go-ahead** each
-  time (per her 2026-08-30 decision — see Automation rules below for the stricter
-  unattended-run version of this). Her approval to merge *is* the approval: once something
-  is on `main`, close its ticket rather than asking her to confirm the same decision twice
-  (see "Working a ticket" step 6).
+  as part of working a ticket — but **always on its own branch, never on `main`** (her
+  2026-09-01 decision, applying to every session type; see "Working a ticket" step 3) — and
+  **pushing to GitHub needs her explicit go-ahead** each time (per her 2026-08-30 decision —
+  see Automation rules below for the stricter unattended-run version of this). Her approval
+  to merge *is* the approval: once something is on `main`, close its ticket rather than
+  asking her to confirm the same decision twice (see "Working a ticket" step 6).
 - **Teach along the way.** When something technical comes up (why a bug happened, what a
   piece of the stack does), a short, concrete explanation is welcome — that's part of the
   point of this project for her. Don't over-explain unprompted, but don't skip the "why"
@@ -75,25 +76,37 @@ priority is fine"):
    the ticket (wording, exact UX flow, which of several valid approaches), write it as an
    explicit open question in the ticket rather than picking one. If it's a pure technical
    fix with no real judgment call, it's fine to just fix it.
-3. **When actually fixing code**: first check `git worktree list` / recent activity for signs
-   another session is active in this same project folder (multiple Claude Code sessions on
-   this app is normal, not a hypothetical — see Worktrees below). If so, or as a general
-   habit for any real code change, use `EnterWorktree` first so this session's edits can't
-   collide with another session's — this project hit exactly that collision on 2026-08-30
-   (`Repos/.claude/launch.json` got overwritten mid-edit by a concurrent session). Then write
-   the fix, run the existing test suite (`.venv/bin/python -m pytest -q`), and verify live in
-   the browser when the change is visually/behaviorally observable (see Dev environment
-   below). Don't claim something works without having checked, and per "Sub-agents" below,
-   have a fresh sub-agent independently verify the fix and test results before calling it
-   done.
+3. **When actually fixing code — always on a branch, never on `main`.** Per Emily's
+   2026-09-01 decision, **every** code change is built on its own branch, in every kind of
+   session: a live conversation with her, an unattended overnight run, all of it. Nothing
+   gets written or committed directly on `main`, ever. `main` changes only when Emily merges
+   it, which is the same approval gate as everything else here — this just makes it
+   structural instead of something a session has to remember not to do. Concretely: branch
+   first (`git checkout -b <ticket-topic-slug>`, e.g. `fix-grocery-menu-bug`), then work.
+
+   Also check `git worktree list` / recent activity for signs another session is active in
+   this same project folder (multiple Claude Code sessions on this app is normal, not a
+   hypothetical — see Worktrees below). If so, or as a general habit for any real code
+   change, use `EnterWorktree` — which gives the branch *and* its own working directory, so
+   this session's edits can't collide with another session's. This project hit exactly that
+   collision on 2026-08-30 (`Repos/.claude/launch.json` got overwritten mid-edit by a
+   concurrent session).
+
+   Then write the fix, run the existing test suite (`.venv/bin/python -m pytest -q`), and
+   verify live in the browser when the change is visually/behaviorally observable (see Dev
+   environment below). Don't claim something works without having checked, and per
+   "Sub-agents" below, have a fresh sub-agent independently verify the fix and test results
+   before calling it done.
 4. **Clean up after yourself.** The local dev database (`app/home_manager.db`) holds Emily's
    real household data — if you add test data to verify something, remove it afterward
    (direct SQL delete of just what you added; the local dev DB is git-ignored so it's safe to
    touch, but it's still real data, not a throwaway fixture). Never run `reset_household.py`
    non-interactively — it wipes everything and needs a typed "RESET" confirmation for a
    reason.
-5. **Commit with a clear message**; don't push without asking (see Automation rules for the
-   stricter unattended version).
+5. **Commit with a clear message — to the branch from step 3, never to `main`.** Don't push
+   without asking, and don't merge at all: merging is Emily's, every time (see Automation
+   rules for the stricter unattended version). If a change somehow got made on `main` by
+   mistake, move it onto a branch before committing rather than committing it there.
 6. **Update the ticket**: append findings/fix details to the page content, and set Status by
    where the work has actually got to (Emily's call, 2026-08-31):
    - **Done** — the fix is merged to `main`. Merging is already Emily's own decision, so by
@@ -137,13 +150,20 @@ a live one). Without isolation, two sessions editing files at once can silently 
 other's work, which is exactly what happened on 2026-08-30: one session's edit to
 `Repos/.claude/launch.json` was overwritten mid-task by another session.
 
+A branch is the floor here, not the ceiling: every code change goes on one ("Working a
+ticket" step 3), but a branch alone still means two sessions sharing one working directory,
+which is what actually got clobbered on 2026-08-30. A worktree gives each session its own
+copy of the files as well as its own branch.
+
 **Use `EnterWorktree` before making any real code change** (not needed for read-only
 investigation, like a "run the loop" pass that only updates a Notion ticket). This project
 qualifies as an explicit project instruction to do so, per `EnterWorktree`'s own rule that
 it should only be used when the user or project instructions say to. Concretely:
 
 1. Call `EnterWorktree` (a name like the ticket's topic is fine, e.g. `fix-grocery-menu-bug`)
-   before editing any file for a real fix.
+   before editing any file for a real fix. It creates the branch too, so this satisfies the
+   never-work-on-`main` rule as well as the isolation one — if you're working without a
+   worktree for some reason, you still branch first.
 2. Do the work, test it, commit inside the worktree as normal.
 3. When done, use `ExitWorktree` — `action: "keep"` if Emily still needs to review/merge it,
    `"remove"` for a clean throwaway (e.g. an experiment that didn't pan out).
@@ -244,11 +264,12 @@ with her) started out investigate-only: findings written to Notion, no code touc
 next step: the overnight routine may now also **write and test small fixes**, but on an
 isolated side branch it creates itself, and it must never touch `main` directly, never
 commit or push to `main`, and never merge — that stays Emily's call every time, exactly like
-a live session's push/merge approval above. The instruction to a fresh live session is still
-different in spirit: a live session works *with* Emily in the room, so it can commit to a
-branch she's watching and ask directly; an unattended run has nobody to ask, so the side
-branch + "Ready to merge" report is how it gets a human decision without being able to wait
-for one mid-run.
+a live session's push/merge approval above. **As of 2026-09-01 the branch part is no longer
+what separates the two** — every session type builds on its own branch and leaves `main`
+alone ("Working a ticket" step 3). What still differs is only how the human decision gets
+made: a live session works *with* Emily in the room, so it can ask her directly; an
+unattended run has nobody to ask, so the branch + "Ready to merge" report is how it gets a
+human decision without being able to wait for one mid-run.
 
 **The actual overnight routine** ("Home Manager Loop - overnight," runs nightly at 2am
 America/Toronto, created 2026-08-30 via `RemoteTrigger`/the `schedule` skill) is a cloud
