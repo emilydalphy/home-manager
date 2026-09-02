@@ -471,10 +471,28 @@ def onboarding_generate_first_plan():
     cooking-time preferences). Called once, right after meal-preferences
     onboarding is saved, so the wizard can show a plan that visibly reflects
     what the person just told it instead of ending on a generic confirmation
-    screen. Starts the week today.
+    screen. The week is keyed to its Monday, like every other week in the
+    app.
+
+    This used to start the week on whatever day onboarding happened, which
+    was the only place in the codebase writing a non-Monday key. A week is
+    not a rolling seven days here — it is a specific Monday, and the front
+    end computes that key by subtracting the weekday from today. So a
+    household onboarding on a Wednesday got a plan filed under Wednesday
+    while every screen went looking for Monday: the Meals tab offered to
+    "Plan this week" for a week it was already showing, taking that offer
+    created a second overlapping plan, and chat judged the plan stale and
+    wanted to rebuild it.
+
+    Someone onboarding late in the week therefore sees meals against days
+    that have already passed. That is the accepted cost of the simple fix
+    (Emily's call, 2026-09-02) — a genuine part-week filed under Monday is
+    real work, since the generator can only fill a week from the front and
+    the slot audit has no concept of "past". It has its own ticket.
     """
     try:
-        week_start = datetime.date.today().isoformat()
+        today = datetime.date.today()
+        week_start = (today - datetime.timedelta(days=today.weekday())).isoformat()
         plan = generate_weekly_plan(week_start)
     except AssistantUnavailableError as e:
         logger.warning("First-plan generation hit a transient Claude API failure: %s", e)
