@@ -80,7 +80,7 @@
 <body>
 
 <div class="wwk-header">
-  <a class="wwk-back" href="/kitchen">&larr; Kitchen</a>
+  <a class="wwk-back" data-shell-back="/static/kitchen.html" href="/kitchen">&larr; Kitchen</a>
   <h1 class="wwk-title">What we know</h1>
 </div>
 
@@ -118,18 +118,6 @@
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-
-// Same nested-shell fix as inventory.html's back link — see its comment
-// for the full explanation. This page is reachable both as a Kitchen hub
-// "pushed view" (inside kitchen.html's iframe) and as the rail's standalone
-// "What we know" link (a real top-level page, not iframed); only the
-// former needs the fix.
-(function () {
-  var backLink = document.querySelector('.wwk-back');
-  if (backLink && window.self !== window.top) {
-    backLink.setAttribute('href', '/static/kitchen.html');
-  }
-})();
 
 function showToast(message) {
   const el = document.getElementById('wwk-toast');
@@ -452,5 +440,6 @@ setupDictation(document.getElementById('wwk-import-textarea'), document.getEleme
 
 render();
 </script>
+<script src="/static/embedded-page.js"></script>
 </body>
 </html>

@@ -125,7 +125,7 @@
 
 <div class="inv-header">
   <div>
-    <a class="inv-back" href="/kitchen">&larr; Kitchen</a>
+    <a class="inv-back" data-shell-back="/static/kitchen.html" href="/kitchen">&larr; Kitchen</a>
     <h1 class="inv-title">Inventory</h1>
   </div>
   <p class="inv-summary" id="inv-summary" role="status">Loading…</p>
@@ -238,12 +238,6 @@ function escapeHtml(s) {
 // this page is reached directly (the rail's standalone "Inventory" link,
 // which is NOT inside an iframe), the plain '/kitchen' navigation is
 // correct as-is and left alone.
-(function () {
-  var backLink = document.querySelector('.inv-back');
-  if (backLink && window.self !== window.top) {
-    backLink.setAttribute('href', '/static/kitchen.html');
-  }
-})();
 const LOCATION_ORDER = ['fridge', 'freezer', 'pantry'];
 const LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
 
@@ -667,5 +661,6 @@ setupDictation(document.getElementById('inv-add-item'), document.getElementById(
 
 loadInventory();
 </script>
+<script src="/static/embedded-page.js"></script>
 </body>
 </html>
