@@ -4,6 +4,7 @@ Putting a recipe into a meal slot, and reading back what was planned.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
@@ -216,3 +217,115 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
         "planning_mode": planning_mode,
         "is_first_plan": is_first_plan,
     }
+
+
+def discard_failed_plan(weekly_plan_id: int) -> dict:
+    """
+    Undo a weekly plan whose generation failed partway through.
+
+    Called only from generate_weekly_plan's failure path, on a plan row it
+    created moments earlier in the same call -- never on a plan the
+    household has been shown. That's what makes deleting rows the right
+    move here rather than a dangerous one: this is a rollback of work that
+    never finished, not the removal of anything anyone has seen.
+
+    It matters because the household's current plan is resolved by date.
+    A half-built row left behind becomes "this week" for whatever finds
+    it, and an empty one also registers the week as planned, silently
+    suppressing the nudge that would have offered to plan it properly --
+    so the failure presents as a week that quietly went missing rather
+    than as an error.
+
+    Never raises. It runs while another exception is already propagating,
+    and a failure here would replace that original error with this one --
+    hiding the thing that actually went wrong, which is the exact problem
+    this whole area is being fixed for.
+    """
+    removed = {"weekly_plan_id": weekly_plan_id, "meals_removed": 0, "plan_removed": False}
+    conn = None
+    try:
+        conn = get_conn()
+        cur = conn.execute(
+            "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        )
+        removed["meals_removed"] = cur.rowcount
+        cur = conn.execute(
+            "DELETE FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        )
+        removed["plan_removed"] = cur.rowcount > 0
+        conn.commit()
+        logging.getLogger("home_manager").warning(
+            "Rolled back weekly plan %s after a failed generation (%s meals removed)",
+            weekly_plan_id, removed["meals_removed"],
+        )
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "Could not roll back weekly plan %s after a failed generation", weekly_plan_id
+        )
+    finally:
+        if conn is not None:
+            conn.close()
+    return removed
+
+
+def snapshot_recipe_cook_counters() -> dict:
+    """
+    The `times_cooked` / `last_cooked_date` of every recipe, so a failed
+    week generation can put them back.
+
+    plan_meal bumps both when it attaches a meal to a plan. That is fine
+    when the plan survives -- but when a generation fails partway and is
+    rolled back, deleting the meal rows does not undo the counters, so
+    every recipe the abandoned attempt touched is left looking recently
+    cooked. Those two fields feed the variety and rotation rules in the
+    generation prompt, so the residue quietly biases the NEXT week's plan
+    away from meals the household never actually ate.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, times_cooked, last_cooked_date FROM recipes WHERE household_id = ?",
+        (household_id(),),
+    ).fetchall()
+    conn.close()
+    return {r["id"]: (r["times_cooked"], r["last_cooked_date"]) for r in rows}
+
+
+def restore_recipe_cook_counters(snapshot: dict) -> int:
+    """
+    Put the counters back to what snapshot_recipe_cook_counters recorded.
+
+    Only touches recipes whose values actually moved, and only ones that
+    were in the snapshot -- a recipe created during the failed attempt has
+    no "before" to return to, and is left alone rather than guessed at.
+
+    Never raises: like discard_failed_plan, this runs while another
+    exception is propagating, and must not replace the real error.
+    """
+    restored = 0
+    conn = None
+    try:
+        conn = get_conn()
+        current = conn.execute(
+            "SELECT id, times_cooked, last_cooked_date FROM recipes WHERE household_id = ?",
+            (household_id(),),
+        ).fetchall()
+        for row in current:
+            was = snapshot.get(row["id"])
+            if was is None or (row["times_cooked"], row["last_cooked_date"]) == was:
+                continue
+            conn.execute(
+                "UPDATE recipes SET times_cooked = ?, last_cooked_date = ? WHERE id = ? AND household_id = ?",
+                (was[0], was[1], row["id"], household_id()),
+            )
+            restored += 1
+        conn.commit()
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "Could not restore recipe cook counters after a failed generation"
+        )
+    finally:
+        if conn is not None:
+            conn.close()
+    return restored
