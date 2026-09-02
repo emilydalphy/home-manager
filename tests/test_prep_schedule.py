@@ -81,12 +81,18 @@ def test_a_broken_prep_schedule_does_not_lose_the_week(monkeypatch):
     )
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken"))
 
+    fired = []
+
     def explode(plan_id):
+        fired.append(plan_id)
         raise RuntimeError("the prep model call blew up")
 
     monkeypatch.setattr(agent, "generate_prep_schedule", explode)
 
     plan = agent.generate_weekly_plan("2026-08-31")
+    # Without this the test passes against a hook that never runs at all,
+    # which would make it a test of nothing.
+    assert fired, "the prep hook must actually have been called"
     assert plan["weekly_plan_id"], "the week still saved"
     assert tools.get_weekly_plan(plan["weekly_plan_id"])["meals"], "and still has its meals"
 
@@ -109,3 +115,61 @@ def test_the_onboarding_route_gets_a_prep_schedule_too(monkeypatch, signed_in):
 
     assert res.status_code == 200
     assert len(calls) == 1, "a plan generated outside chat should still get its prep schedule"
+
+
+def test_the_plan_screen_route_gets_a_prep_schedule_too(monkeypatch, signed_in):
+    """
+    The third and busiest entry point. The other two are covered above;
+    this one had nothing guarding it, and "works from every entry point"
+    is the whole claim.
+    """
+    tools.add_recipe(
+        "Marinated chicken",
+        ingredients=[{"item": "chicken", "qty": "1 kg"}],
+        advance_prep_notes="Marinate at least 4 hours ahead",
+    )
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken"))
+    calls = _prep_calls(monkeypatch)
+
+    res = signed_in.post("/api/week/2026-08-31/generate", json={})
+
+    assert res.status_code == 200
+    assert len(calls) == 1
+
+
+def test_a_caller_handed_someone_elses_plan_does_not_redo_its_prep(monkeypatch):
+    """
+    Two requests race, one waits and is handed the other's plan. It must
+    not then pay for a second prep generation of the same week.
+
+    This depends on the early return sitting inside the lock's try block —
+    exactly the kind of detail a later refactor moves without noticing,
+    and it would double-charge silently.
+    """
+    import threading
+    import time
+
+    tools.add_recipe(
+        "Marinated chicken",
+        ingredients=[{"item": "chicken", "qty": "1 kg"}],
+        advance_prep_notes="Marinate overnight",
+    )
+
+    def slow(ctx):
+        time.sleep(0.4)
+        return _week("Marinated chicken")
+
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", slow)
+    calls = _prep_calls(monkeypatch)
+
+    def go():
+        agent.generate_weekly_plan("2026-08-31")
+
+    first, second = threading.Thread(target=go), threading.Thread(target=go)
+    first.start()
+    time.sleep(0.1)
+    second.start()
+    first.join(timeout=15)
+    second.join(timeout=15)
+
+    assert len(calls) == 1, "the waiting caller must not pay for a second prep generation"
