@@ -1225,8 +1225,14 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
 
     This is what makes the draft screen's promise a real number rather than
     a guess: "I haven't put anything on your shopping list yet. Approve the
-    week and I'll build it — 22 items, less whatever's already in your
-    kitchen." (design_handoff_plan_the_week/COPY.md → Draft).
+    week and I'll build it — 22 items." (design_handoff_plan_the_week/COPY.md
+    → Draft).
+
+    Note that would_add_count is already NET of the kitchen — an ingredient
+    lands in exactly one of the two buckets below, never both. The promise
+    line used to end "less whatever's already in your kitchen", which
+    offered that subtraction as though it were still to come; it now names
+    already_have_count separately, and only when it is non-zero.
 
     Mirrors _add_recipe_ingredients_to_grocery_list's own two rules exactly
     — entries that already contributed are skipped, and an ingredient whose

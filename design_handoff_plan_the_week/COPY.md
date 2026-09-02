@@ -77,7 +77,7 @@ Multiple tags join with \`And I'll \`.
 | Chat link | \`Talk it through\` |
 | Headline (gap open) | \`Your week's here — there's one night I'd like your call on.\` |
 | Headline (resolved) | \`Your week, built around tee-ball Tuesday, pizza Friday and six at the table Saturday.\` |
-| Grocery promise | \`I haven't put anything on your shopping list yet. Approve the week and I'll build it — {n} items, less whatever's already in your kitchen.\` |
+| Grocery promise | \`I haven't put anything on your shopping list yet. Approve the week and I'll build it — {n} items.\` Plus, only when {have} > 0: \`{have} more were already in your kitchen, so I've left those off.\` |
 | Approve (complete) | \`Approve the week\` |
 | Approve (gap open) | \`Approve — leave Wednesday open\` |
 | Secondary | \`Redo\` |

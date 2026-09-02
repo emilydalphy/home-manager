@@ -192,7 +192,14 @@ so the ask reads as diligence rather than failure.
 
 **The grocery promise sits in the draft:**
 > I haven't put anything on your shopping list yet. Approve the week and I'll build it — **22
-> items**, less whatever's already in your kitchen.
+> items**.
+
+When something genuinely was left off, and only then, it says so — matching the receipt's shape:
+> ...I'll build it — **22 items**. 3 more were already in your kitchen, so I've left those off.
+
+The original line ended "less whatever's already in your kitchen", which promised a subtraction
+that had already been applied: the count is what remains *after* the kitchen is checked, never
+before. Corrected 2026-09-02.
 
 ---
 
