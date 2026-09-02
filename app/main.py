@@ -81,7 +81,7 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
     bucket was hit; everything below 500 is an ordinary client answer
     (401 not signed in, 404, a rejected input) and is not breakage.
     """
-    if exc.status_code >= 500:
+    if exc.status_code >= 500 and _has_bound_household(request):
         # The status code, never the message. 83 routes build their detail
         # as f"Server error: {e}", and {e} is unbounded application text —
         # 27 places in app/tools raise exceptions that interpolate
@@ -115,27 +115,32 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     # from every household was filed against Emily's. The beta tester's
     # hard failures are exactly the class this feature exists to surface,
     # and they were landing in the wrong report and missing from theirs.
-    household = None
-    try:
-        parts = security.read_session_parts(request.cookies.get(security.COOKIE_NAME))
-        household = parts[1] if parts else None
-    except Exception:
-        household = None
-
-    def _record():
-        # SQLite writes block. These handlers are async, so a direct call
-        # would run on the event loop thread and stall every concurrent
-        # request under write contention — the same reason
-        # security._call_as_household routes its bookkeeping write through
-        # the threadpool.
-        if household is None:
-            tools.record_error("server", where=where, detail=type(exc).__name__)
-        else:
-            with tools.use_household(household):
-                tools.record_error("server", where=where, detail=type(exc).__name__)
-
+    #
+    # On a public path there is no cookie to recover it from and no binding
+    # to recover — see _has_bound_household. A crash there is logged and
+    # not recorded, rather than recorded against whoever household 1 is.
     where = _route_pattern(request)
-    await run_in_threadpool(_record)
+    household = None
+    if _has_bound_household(request):
+        try:
+            parts = security.read_session_parts(request.cookies.get(security.COOKIE_NAME))
+            household = parts[1] if parts else None
+        except Exception:
+            household = None
+
+        def _record():
+            # SQLite writes block. These handlers are async, so a direct
+            # call would run on the event loop thread and stall every
+            # concurrent request under write contention — the same reason
+            # security._call_as_household routes its bookkeeping write
+            # through the threadpool.
+            if household is None:
+                tools.record_error("server", where=where, detail=type(exc).__name__)
+            else:
+                with tools.use_household(household):
+                    tools.record_error("server", where=where, detail=type(exc).__name__)
+
+        await run_in_threadpool(_record)
 
     logger.exception("Unhandled error on %s", where)
     # Return the response rather than re-raising. Starlette's
@@ -267,15 +272,16 @@ def _enforce_rate_limit(request: Request, bucket: str, record: bool = True) -> N
     # Always logged: a rejection is worth seeing whoever caused it.
     logger.warning("Rate limit hit on %s (retry in %ss)", bucket, wait)
 
-    # Recorded only for a signed-in caller, and never for the error
-    # reporter's own bucket. Both halves matter:
+    # Recorded only where a household is actually bound, and never for the
+    # error reporter's own bucket. Both halves matter:
     #
-    # - `/login` is a public path, so an anonymous caller hits this with no
-    #   household bound and household_id() falls back to 1. Recording there
-    #   let anyone on the internet write rows into Emily's table as fast as
-    #   they could be refused — the limiter causing the exact resource
-    #   consumption it exists to prevent, with no ceiling. Failed sign-ins
-    #   are still logged, which is where that signal belongs.
+    # - `/login` is a public path, so it reaches here unbound and
+    #   household_id() falls back to 1. Recording there let a caller write
+    #   rows into Emily's table as fast as they could be refused — the
+    #   limiter causing the exact resource consumption it exists to
+    #   prevent. See _has_bound_household for why the test is the path and
+    #   not the cookie. Failed sign-ins are still logged, which is where
+    #   that signal belongs.
     # - Recording the reporter's own rejections replaced each dropped
     #   client-error row with a rate_limit row, so the flood protection
     #   reduced nothing; it just made the flood less informative.
@@ -289,11 +295,34 @@ def _enforce_rate_limit(request: Request, bucket: str, record: bool = True) -> N
 
 
 def _has_bound_household(request: Request) -> bool:
-    """Is this a signed-in caller, i.e. does the row have a real owner?"""
-    try:
-        return security.read_session_parts(request.cookies.get(security.COOKIE_NAME)) is not None
-    except Exception:
-        return False
+    """
+    Is there a household these errors honestly belong to?
+
+    Only on a non-public path. `auth_middleware` binds the household from
+    the signed cookie there and *nowhere else* — a public path (`/login`, a
+    share link, a static file) is deliberately left unbound, so it reaches
+    the error handlers with `household_id()` sitting on its default of 1,
+    i.e. Emily's.
+
+    This asks about the path and not about the cookie, and the difference
+    was a real hole rather than a tidiness point. A cookie check answers
+    "is this caller signed in?", which is true for the beta tester on every
+    path — including the public ones where her household is not bound. So
+    she (or anyone holding her passphrase) could POST wrong passphrases at
+    `/login` and every rejection wrote a row into *household 1's* table,
+    with no ceiling but request rate: 25 rows from 25 requests, measured.
+    At `_KEEP_ROWS` the prune starts evicting Emily's genuine errors — the
+    same eviction attack the public reporting endpoint opened, now needing
+    one valid cookie instead of none. It also fired by accident: a tester
+    mistyping her passphrase ten times filed ten rows into Emily's morning
+    report.
+
+    Public-path failures are still logged, and a 5xx there still returns a
+    500 as it always did. They are just not written down, because there is
+    no true answer to "whose?" and a confident wrong answer sends Emily
+    hunting through her own share links for somebody else's bug.
+    """
+    return not security.is_public_path(request.url.path)
 
 
 class ChatRequest(BaseModel):
@@ -2360,6 +2389,62 @@ def _redact_share_token(where: str) -> str:
     return _SHARE_PATH_RE.sub(r"\1/<token>", where or "")
 
 
+# What a browser is allowed to put in the table, enforced here rather than
+# trusted from the sender.
+#
+# The other three sources are structurally incapable of carrying household
+# text: a server 5xx records "HTTP 500", an unhandled crash records an
+# exception class name, a rate-limit records a bucket. This was the fourth,
+# and it stored whatever the browser sent, which is the one end of this
+# system the server does not control.
+#
+# That mattered twice over. Today's reporter sends `err.message` from
+# window.onerror and `reason.message` from a rejected promise
+# (static/error-reporter.js:96,104), so any frontend change that surfaces a
+# server message into a thrown Error puts household text on the wire — and
+# app/tools raises 27 messages that interpolate exactly that ("No saved
+# recipe named '...'", "No household member named '...'"). And these
+# strings are printed into a Claude agent's context by
+# observability_report.py, under an instruction to act on what it reads;
+# free text from an untrusted end arriving there is an injection channel,
+# not just a privacy question.
+#
+# So the server keeps the *shape* and discards the prose. A recognisable JS
+# error class survives, because "TypeError on /grocery" is the useful part
+# of the signal; the sentence after the colon does not, because there is no
+# way to tell a browser's own wording from an interpolated recipe name.
+_JS_ERROR_CLASS_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]{0,38}(?:Error|Exception))\b")
+# The reporter's own fixed phrases, which it builds itself from a
+# same-origin URL rather than from anything a person typed.
+_RESOURCE_FAIL_RE = re.compile(r"^failed to load [A-Za-z0-9._:/\-]{1,80}$")
+_SAFE_LITERALS = frozenset({"unhandled rejection"})
+# A path, and only a path: no query string, no spaces, no prose. Covers
+# both shapes the reporter sends: "/grocery" and "shell.js:42".
+_PATH_SHAPE_RE = re.compile(r"^[A-Za-z0-9/._:<>\-]{0,120}$")
+
+_MAX_CLIENT_DETAIL = 200
+_MAX_CLIENT_WHERE = 120
+
+
+def _safe_client_detail(detail: str) -> str:
+    text = " ".join(str(detail or "").split())[:_MAX_CLIENT_DETAIL]
+    if not text:
+        return "unspecified"
+    if text in _SAFE_LITERALS or _RESOURCE_FAIL_RE.match(text):
+        return text
+    m = _JS_ERROR_CLASS_RE.match(text)
+    if m:
+        return m.group(1)
+    # Something else entirely. That a browser error happened here is still
+    # worth a row; its wording is not worth the risk of carrying.
+    return "browser error"
+
+
+def _safe_client_where(where: str) -> str:
+    text = _redact_share_token(" ".join(str(where or "").split())[:_MAX_CLIENT_WHERE])
+    return text if _PATH_SHAPE_RE.match(text) else "(unrecognised)"
+
+
 class ClientErrorRequest(BaseModel):
     where: str = ""
     detail: str = ""
@@ -2387,7 +2472,9 @@ def report_client_error(request: Request, req: ClientErrorRequest):
         _enforce_rate_limit(request, "client_error", record=False)
     except HTTPException:
         return Response(status_code=204)
-    tools.record_error("client", where=_redact_share_token(req.where), detail=req.detail)
+    tools.record_error(
+        "client", where=_safe_client_where(req.where), detail=_safe_client_detail(req.detail)
+    )
     return Response(status_code=204)
 
 

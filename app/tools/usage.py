@@ -267,6 +267,14 @@ def record_error(kind: str, where: str = "", detail: str = "") -> None:
     conn = None
     try:
         conn = get_conn()
+        # Give up on a locked database quickly instead of waiting out
+        # sqlite3's 5s default. This runs on an error path, and the case
+        # that matters is the database *being* the thing that broke: then
+        # every 500 would park a threadpool worker for five seconds, in the
+        # same pool the app's sync routes run in, and error-recording would
+        # help convert one failure into an outage. A missed row is the
+        # cheaper loss.
+        conn.execute("PRAGMA busy_timeout = 500")
         hid = household_id()
         conn.execute(
             "INSERT INTO error_events (household_id, kind, where_, detail) VALUES (?, ?, ?, ?)",
