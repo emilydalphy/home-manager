@@ -293,3 +293,28 @@ def test_onboarding_and_the_plan_screen_lock_against_each_other(monkeypatch):
     assert agent._week_lock_key(monday) == monday
     # A date that won't parse locks on itself rather than raising.
     assert agent._week_lock_key("not-a-date") == "not-a-date"
+
+
+def test_tonights_dinner_is_still_on_the_plan_late_in_the_evening():
+    """
+    The meal plan's date window used to mix two clocks: a local end date
+    and SQLite's UTC `date('now')` as the start. From 8pm Eastern, UTC has
+    already rolled over, so "today" excluded today and tonight's dinner
+    vanished from the plan — during dinner, for an app whose whole job is
+    answering "what's for dinner tonight". It fixed itself by morning,
+    which is why it went unnoticed for so long.
+
+    This test only fails during the affected window, so it is written to
+    fail everywhere: it plans a meal for the local today and asserts it
+    comes back, whatever UTC currently thinks the date is.
+    """
+    from datetime import date as _date
+
+    local_today = _date.today().isoformat()
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(meal_date=local_today, meal="Chili", slot="dinner")
+
+    planned = tools.get_meal_plan(days_ahead=7)
+    assert local_today in [e["date"] for e in planned], (
+        "a meal planned for today must appear on the plan no matter what time it is"
+    )

@@ -132,16 +132,32 @@ def plan_meal(
 def get_meal_plan(days_ahead: int = 7) -> list[dict]:
     """Get the upcoming meal plan, including which food groups (protein/carb/vegetable) each planned meal covers, where known."""
     conn = get_conn()
+    # Both ends of this range come from the same clock. They used not to:
+    # the end date was Python's local `date.today()` while the start was
+    # SQLite's `date('now')`, which is UTC. For a household in North
+    # America those disagree every evening — from 8pm Eastern, UTC has
+    # already rolled over to tomorrow — so `mpe.date >= date('now')`
+    # started excluding TODAY, and the meal plan silently dropped tonight's
+    # dinner. During dinner. For an app whose whole job is answering
+    # "what's for dinner tonight", that is the worst possible hour to be
+    # wrong, and it corrected itself by morning, which is exactly why it
+    # could go unnoticed.
+    #
+    # `date.today()` is the server's local date, which is right for a
+    # single-timezone household and wrong for one in another timezone —
+    # the honest fix for that is storing a household's timezone, not
+    # reaching for UTC, which is nobody's local midnight.
+    today = date.today().isoformat()
     end_date = (date.today() + timedelta(days=days_ahead)).isoformat()
     rows = conn.execute(
         """
         SELECT mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.food_groups_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
-        WHERE mpe.household_id = ? AND mpe.date >= date('now') AND mpe.date <= ?
+        WHERE mpe.household_id = ? AND mpe.date >= ? AND mpe.date <= ?
         ORDER BY mpe.date ASC
         """,
-        (household_id(), end_date),
+        (household_id(), today, end_date),
     ).fetchall()
     conn.close()
     return [
