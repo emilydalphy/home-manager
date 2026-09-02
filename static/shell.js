@@ -1122,7 +1122,14 @@
   function dinnerHeroHtml(day) {
     var entry = day.dinner;
     var tag = day.status
-      ? '<span class="hero-tag' + (day.needsDecision ? ' hero-tag-urgent' : '') + '">' + escapeHtml(day.status) + '</span>'
+      // Apricot only when the tag itself says a decision is wanted. Keying
+      // this off day.needsDecision instead put an apricot "TONIGHT" on any
+      // day that merely had an unplanned breakfast — colouring the word
+      // "Tonight" as urgent when the urgency belonged to a different slot,
+      // and putting a third apricot fill on a screen whose one primary
+      // action is Approve. classifyDay only ever writes 'Needs you' on a
+      // future day that genuinely wants one (shell.js, classifyDay).
+      ? '<span class="hero-tag' + (day.status === 'Needs you' ? ' hero-tag-urgent' : '') + '">' + escapeHtml(day.status) + '</span>'
       : '';
     var top =
       '<div class="hero-top">' +
