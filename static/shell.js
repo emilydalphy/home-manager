@@ -64,7 +64,20 @@
     cart:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/><path d="M2.5 3h2.4l2.1 11.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7.5H6.2"/></svg>',
     pot:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-4Z"/><path d="M2 11h20M8 3.5c0 1-1 1-1 2s1 1.5 1 2M13 3.5c0 1-1 1-1 2s1 1.5 1 2"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-4Z"/><path d="M2 11h20M8 3.5c0 1-1 1-1 2s1 1.5 1 2M13 3.5c0 1-1 1-1 2s1 1.5 1 2"/></svg>',
+    // Pomona (InnToday/InnMeals): the hero's flame tile, the prep tile's
+    // clock, the grocery tile's bag, and the arrow that ends a primary
+    // action. Line icons, 2px, round caps — the brand guide's one icon
+    // style; they inherit currentColor so the same markup works on spruce
+    // and on ivory.
+    flame:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.2 2.8 5 5.4 5 8.4a5 5 0 0 1-10 0c0-1.6.8-3 2-4.2 0 1.6.8 2.4 1.6 2.4 1 0 1.6-.9 1.6-2.4 0-1.4-.4-2.8-.2-4.2z"/><path d="M6 21h12"/></svg>',
+    clock:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 1.6"/><path d="M9 2.5h6"/></svg>',
+    bag:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
+    arrow:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12.5 6l6 6-6 6"/></svg>'
   };
 
   var TABS = [
@@ -236,9 +249,18 @@
   async function buildTodayPanel(panel) {
     panel.innerHTML =
       '<div class="today-content">' +
+        // Pomona: the greeting, with the date as an eyebrow that runs into a
+        // hairline (InnToday). The needs-you count kept its element and its
+        // id — it is just no longer the H1, because the screen's H1 is now
+        // the greeting and the blueprint allows exactly one hero, which is
+        // the dinner panel below.
         '<div class="today-heading">' +
-          '<div class="kicker" id="today-date"></div>' +
-          '<h1 id="today-h1">You&rsquo;re clear</h1>' +
+          '<div class="today-datestrip">' +
+            '<span class="today-date" id="today-date"></span>' +
+            '<span class="today-hairline"></span>' +
+          '</div>' +
+          '<h1 class="today-greeting" id="today-greeting"></h1>' +
+          '<div class="today-status" id="today-h1">You&rsquo;re clear</div>' +
         '</div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
         // .today-body is a named-area grid on desktop, and an area whose
@@ -248,20 +270,29 @@
         // offer, not a demand — it can be read and ignored, rather than
         // mixed in with things that genuinely need a decision today.
         '<div id="plan-week-nudge" class="today-area-nudge"></div>' +
+        // The hero, and the only one on this screen. A direct child of
+        // .today-content rather than of .today-body, because it bleeds the
+        // full width of the panel while everything else sits inside the
+        // 20px gutter — a grid child cannot escape its parent's padding.
+        '<div id="today-dinner-card" class="dinner-hero today-area-dinner" hidden></div>' +
         '<div class="today-body">' +
+          // "Break the uniform card stack": a two-up pair of small tiles,
+          // then the wider attention cards, then the quiet chores list.
+          // auto-fit means the pair collapses to one full-width tile when
+          // there is no prep task, rather than leaving a lonely half-tile.
+          '<div class="today-tiles today-area-tiles">' +
+            '<div class="today-tile tile-prep" id="today-prep-tile" hidden></div>' +
+            '<button type="button" class="today-tile tile-grocery" id="grocery-summary-open">' +
+              '<span class="tile-icon">' + ICONS.bag + '</span>' +
+              '<span class="tile-eyebrow">Grocery run</span>' +
+              '<span class="tile-body" id="grocery-summary-sub">Loading&hellip;</span>' +
+            '</button>' +
+          '</div>' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
-          '<div id="today-dinner-card" class="dinner-card today-area-dinner" hidden></div>' +
           '<div class="today-area-chores">' +
             '<div class="shell-card chores-card">' +
               '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
               '<div id="chores-list"></div>' +
-            '</div>' +
-            '<div class="shell-card grocery-summary-card">' +
-              '<div class="grocery-summary-text">' +
-                '<div class="grocery-summary-title">Grocery run</div>' +
-                '<div class="grocery-summary-sub" id="grocery-summary-sub">Loading&hellip;</div>' +
-              '</div>' +
-              '<button type="button" class="btn-sand" id="grocery-summary-open">Open</button>' +
             '</div>' +
           '</div>' +
           '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
@@ -279,6 +310,7 @@
       '</div>';
 
     panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
+    panel.querySelector('#today-greeting').textContent = greetingForNow();
 
     panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
 
@@ -362,9 +394,41 @@
     window.location.href = '/plan-week?week=' + encodeURIComponent(weekStart);
   }
 
+  // Display type has to survive real titles. A component-based household's
+  // "dinner" is a concatenation of that day's components ("Herb-Roasted
+  // Chicken with Roasted Root Vegetables with Hummus and Veggie Sticks"), and
+  // day-based weeks carry the odd long recipe name too — either will run to
+  // six or seven lines at the hero's 31px. Stepping the size down keeps the
+  // whole name readable, which truncating it would not: what is for dinner is
+  // the one thing this panel exists to answer.
+  function dishSizeClass(title) {
+    var n = String(title || '').length;
+    if (n > 78) return ' hero-dish-xs';
+    if (n > 42) return ' hero-dish-sm';
+    return '';
+  }
+
+  function greetingForNow() {
+    // The mockup greets by first name ("Good evening, Emily"). This app has
+    // no per-person identity — see CLAUDE.md's open item 4: approving a week
+    // has to *ask* which adult is present, because nothing else knows. A
+    // name here would therefore be a guess, and wrong half the time in a
+    // two-adult household, so the greeting is time-of-day only and the date
+    // eyebrow above it carries the specificity instead.
+    var h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   function setTodayHeading(panel, count) {
-    var h1 = panel.querySelector('#today-h1');
-    h1.textContent = count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you');
+    // Same sentence, same source, quieter place: this is the line under the
+    // greeting now rather than the H1. The count still drives the tab badge.
+    var line = panel.querySelector('#today-h1');
+    if (line) {
+      line.textContent = count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you');
+      line.classList.toggle('is-clear', count === 0);
+    }
     setTodayBadge(count);
   }
 
@@ -625,32 +689,55 @@
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
   }
 
+  // ---------- The hero: tonight's dinner (InnToday) ----------
+  // Same endpoint, same fields, same two actions as before — this is the
+  // Pomona presentation of them. Every chip is a real value or absent:
+  //   35 min      prep_time_minutes + cook_time_minutes
+  //   Serves 4    default_servings
+  //   accent line the plan's own `reasoning` (the 4-9 word "why")
+  // The mockup's celadon "All in the fridge" chip has no binding anywhere in
+  // this app — nothing on Today checks a recipe's ingredients against the
+  // kitchen — so it is not drawn. Same for its "on the table by a quarter
+  // past seven": there is no serve-time field, and the reasoning line is the
+  // real sentence that belongs in that Newsreader italic slot.
   async function loadTonightsDinner(panel) {
     var card = panel.querySelector('#today-dinner-card');
     try {
       var res = await fetch('/api/cooker-view');
       if (!res.ok) throw new Error('cooker-view failed');
       var data = await res.json();
+      renderPrepNudge(panel, data.prep_tasks || []);
       var today = todayLocalStr();
       var meal = (data.meals || []).filter(function (m) { return m.date === today && m.slot === 'dinner'; })[0];
       if (!meal) {
         // No dinner planned/plannable for tonight (or the household is on a
         // component-based plan, which has no per-day dinner at all). The
         // real "no plan yet, decide now" affordance is the needs-you band —
-        // Step 5. For now this card just doesn't show, rather than showing
-        // something broken or inventing a decision flow ahead of schedule.
+        // Step 5. Still just doesn't show, deliberately: a spruce panel
+        // reading "nothing planned tonight" would be a flat lie to a
+        // component-based household, which has a full week and no per-day
+        // dinner rows for it to be read out of.
         card.hidden = true;
         return;
       }
       var minutes = (meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0);
+      var chips = '';
+      if (minutes) chips += '<span class="hero-chip">' + minutes + ' min</span>';
+      if (meal.default_servings) chips += '<span class="hero-chip">Serves ' + escapeHtml(meal.default_servings) + '</span>';
       card.hidden = false;
       card.innerHTML =
-        '<div class="dinner-kicker">Tonight' + (minutes ? ' &middot; ' + minutes + ' min' : '') + '</div>' +
-        '<div class="dinner-title">' + escapeHtml(meal.meal || 'Dinner') + '</div>' +
-        '<div class="dinner-actions">' +
-          '<button type="button" class="btn-gold" id="dinner-cook-mode">Cook mode</button>' +
-          '<button type="button" class="btn-outline-light" id="dinner-swap">Swap</button>' +
-        '</div>';
+        '<div class="hero-top">' +
+          '<span class="hero-badge">Tonight&rsquo;s dinner</span>' +
+          '<span class="hero-rule"></span>' +
+          '<span class="hero-icon">' + ICONS.flame + '</span>' +
+        '</div>' +
+        '<div class="hero-dish' + dishSizeClass(meal.meal) + '">' + escapeHtml(meal.meal || 'Dinner') + '</div>' +
+        (meal.reasoning ? '<div class="hero-accent">' + escapeHtml(meal.reasoning) + '</div>' : '') +
+        (chips ? '<div class="hero-chips">' + chips + '</div>' : '') +
+        '<button type="button" class="hero-action" id="dinner-cook-mode">' +
+          '<span>Start cooking</span>' + ICONS.arrow +
+        '</button>' +
+        '<button type="button" class="hero-quiet" id="dinner-swap">Swap tonight for something else</button>';
       card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('kitchen', true, { forceEmbedSrc: '/static/cooker.html' }); });
       card.querySelector('#dinner-swap').addEventListener('click', function () {
         openAskSheet('Swap tonight for something faster');
@@ -658,7 +745,33 @@
     } catch (err) {
       console.warn('Tonight\'s dinner lookup failed:', err);
       card.hidden = true;
+      renderPrepNudge(panel, []);
     }
+  }
+
+  // ---------- The prep tile (InnToday's "Before bed" card) ----------
+  // The design asks for a prep nudge and the panel had none — but the data
+  // is real and already in hand: /api/cooker-view returns the plan's
+  // prep_tasks (tools.get_prep_schedule), which Today was fetching and
+  // discarding. Read-only, exactly like the mockup's tile: no new endpoint,
+  // and no check-off control invented for it (prep is ticked off in Cook
+  // mode, which owns that flow). Only a task dated today and still pending
+  // is shown — a task for Thursday is not a nudge on Tuesday, and a done one
+  // is not a nudge at all.
+  function renderPrepNudge(panel, tasks) {
+    var tile = panel.querySelector('#today-prep-tile');
+    if (!tile) return;
+    var today = todayLocalStr();
+    var task = (tasks || []).filter(function (t) {
+      return t.task_date === today && t.status !== 'done';
+    })[0];
+    if (!task) { tile.hidden = true; tile.innerHTML = ''; return; }
+    tile.hidden = false;
+    tile.innerHTML =
+      '<span class="tile-icon">' + ICONS.clock + '</span>' +
+      '<span class="tile-eyebrow">Prep today</span>' +
+      '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
+      (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : '');
   }
 
   async function loadChores(panel) {
@@ -814,20 +927,18 @@
         // household actually has to act on.
         '<div id="week-open-row"></div>' +
         '<div id="week-approve-row"></div>' +
+        // InnMeals pairs the apricot "Approve this week" with a quiet
+        // italic "or start over" immediately under it — so the reset entry
+        // point moves up here from the bottom of the screen. Same button,
+        // same handler, same dialog; it is the last resort presented as one
+        // rather than as another card competing with the primary action.
+        '<div class="week-reset-row" id="week-reset-row">' +
+          '<button type="button" class="week-reset-link" id="week-reset-btn">or start over</button>' +
+        '</div>' +
         // The permanent way into the two question screens — see
         // renderPlanWeekEntry. Below Approve because approving the week
         // you already have comes before planning the next one.
         '<div id="week-plan-row"></div>' +
-        // Self-service reset entry point. Outside #week-mobile/#week-grid so
-        // the one row shows at both breakpoints — see .week-reset-row in
-        // shell.css for why it can't live in #week-header (desktop-only).
-        '<div class="week-reset-row shell-card" id="week-reset-row">' +
-          '<div class="week-reset-text">' +
-            '<div class="week-reset-title">Need a do-over?</div>' +
-            '<div class="week-reset-sub">Clear this week\'s meals, the grocery list, or both.</div>' +
-          '</div>' +
-          '<button type="button" class="btn-outline-plum" id="week-reset-btn">Start over</button>' +
-        '</div>' +
       '</div>';
 
     panel.querySelector('#whole-week-row').addEventListener('click', function () { openWeekSheet(); });
@@ -944,28 +1055,50 @@
     return countLabel + ' · ' + dayName(first.date, { weekday: 'long' }) + ' ' + SLOT_LABELS[first.slot].toLowerCase();
   }
 
-  function renderWeekFraming(panel, data) {
-    // One line above the plan, and no recap: the per-slot reasons carry the
-    // detail. A headline that grows a sentence per feature is exactly the
-    // narration this rule exists to prevent, so `headline` is computed
-    // server-side and says at most one thing.
+  function renderWeekFraming(panel, data, statusLine) {
+    // InnMeals: "This week" with the week's dates as an apricot badge beside
+    // it, and one freshness note under it. Still one line and no recap — the
+    // per-slot reasons carry the detail, and `headline` is computed
+    // server-side so it says at most one thing.
+    //
+    // The note is the same sentence the desktop header has always shown
+    // (the draft's server headline, else the "N meals still need a decision"
+    // count), passed in rather than recomputed so the two can't drift.
+    var range = data.week_label || (data.week_start_date ? weekRangeLabel(data.week_start_date) : '');
     panel.querySelector('#week-framing').innerHTML =
-      '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Pomona') +
-        ' · week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
-      '<h1>Meals</h1>' +
-      (data.status !== 'approved' && data.headline
-        ? '<div class="week-headline">' + escapeHtml(data.headline) + '</div>'
+      '<div class="week-head">' +
+        '<h1>This week</h1>' +
+        (range ? '<span class="week-badge">' + escapeHtml(range) + '</span>' : '') +
+      '</div>' +
+      (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
+      // A component-based household has no real day mapping underneath —
+      // get_week_menu spreads its component pool across seven days so this
+      // screen has something to show, and flags it. Saying so on mobile too:
+      // it used to be desktop-header-only, so the phone (which is where this
+      // screen actually lives) presented a suggested arrangement as if it
+      // were a schedule.
+      (data.menu_is_suggested
+        ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
         : '');
   }
 
   function renderDayRail(panel, days) {
+    // The notched moment (InnMeals): seven day tiles bottom-aligned, and the
+    // selected one grows taller, fills spruce and squares off its bottom
+    // corners so it pours into the hero panel directly beneath instead of
+    // floating above it. The date number is new here and is real —
+    // day.date's own day-of-month; the strip used to show weekday letters
+    // alone, which made "which week am I looking at" unanswerable.
     panel.querySelector('#day-rail').innerHTML = days.map(function (day, i) {
       var cls = 'day-rail-cell' +
         (i === weekState.selectedIndex ? ' selected' : '') +
+        (day.isToday ? ' is-today' : '') +
+        (day.isPast ? ' is-past' : '') +
         (day.needsDecision ? ' needs-decision' : '');
       return (
-        '<button type="button" class="' + cls + '" data-index="' + i + '">' +
+        '<button type="button" class="' + cls + '" data-index="' + i + '" aria-pressed="' + (i === weekState.selectedIndex) + '">' +
           '<span class="day-rail-label">' + dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase() + '</span>' +
+          '<span class="day-rail-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
           '<span class="day-rail-dot"></span>' +
         '</button>'
       );
@@ -979,99 +1112,106 @@
     });
   }
 
-  function courseHtml(day, slot) {
-    var entry = day[slot];
-    var badgeLabel = slot === 'dinner' ? (entry && entry.state === 'planned' ? 'Dinner ★' : 'Dinner') : SLOT_LABELS[slot];
-    var badge = '<span class="wk-badge wk-badge-' + slot + '">' + badgeLabel + '</span>';
+  // ---------- The selected day, split in two (InnMeals) ----------
+  // Dinner is the hero: a spruce panel joined to the day strip above it.
+  // Breakfast and lunch are subordinate rows in a plain card below — same
+  // entries, same three states, deliberately much quieter, because "one
+  // hero moment per screen" means the other two slots must not compete
+  // with it. Every state courseHtml handled is handled here; the difference
+  // is where it renders and how loudly.
+  function dinnerHeroHtml(day) {
+    var entry = day.dinner;
+    var tag = day.status
+      ? '<span class="hero-tag' + (day.needsDecision ? ' hero-tag-urgent' : '') + '">' + escapeHtml(day.status) + '</span>'
+      : '';
+    var top =
+      '<div class="hero-top">' +
+        '<span class="hero-eyebrow">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + ' dinner</span>' +
+        '<span class="hero-rule"></span>' + tag +
+      '</div>';
 
-    // The one deliberately empty slot in a week. It is a statement, not a
-    // gap and not a question — muted styling is reserved for exactly this
-    // case, and nothing else in the week is ever blank.
+    // The one deliberately empty slot in a week. A statement, not a gap and
+    // not a question — it gets the hero's quiet voice and no action at all,
+    // because offering to change it is exactly what planned_empty exists to
+    // prevent.
     if (entry && entry.state === 'planned_empty') {
-      return (
-        '<div class="wk-course">' + badge +
-          '<span class="wk-dish wk-dish-out">' + escapeHtml(entry.title) + '</span>' +
-          (entry.reason ? '<span class="wk-reason">' + escapeHtml(entry.reason) + '</span>' : '') +
-        '</div>'
-      );
+      return top +
+        '<div class="hero-dish hero-dish-out">' + escapeHtml(entry.title) + '</div>' +
+        (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '');
     }
 
-    // A decision handed back. The question and its answers live in one
-    // place only — the amber card in #week-open-row, which shows at both
-    // breakpoints (this day card is display:none on desktop, and the grid
-    // cell is far too small for a full question). Here the slot just says
-    // what it is, so reading down the day still tells the truth about it.
+    // A decision handed back. The question and its answers still live in one
+    // place only — the card in #week-open-row below — so the hero says what
+    // the slot is and points at it rather than carrying a second copy.
     if (entry && entry.state === 'open') {
-      return (
-        '<div class="wk-course">' + badge +
-          '<span class="wk-dish wk-dish-open">' + escapeHtml(entry.title) + '</span>' +
-        '</div>'
-      );
+      return top +
+        '<div class="hero-dish hero-dish-open">' + escapeHtml(entry.title) + '</div>' +
+        (entry.open_reason ? '<div class="hero-accent">' + escapeHtml(entry.open_reason) + '</div>' : '');
     }
 
     if (entry) {
-      return (
-        '<div class="wk-course">' + badge +
-          '<span class="wk-dish' + (slot === 'dinner' ? ' wk-dish-dinner' : '') + '">' + escapeHtml(entry.title) + '</span>' +
-          (slot === 'dinner' && entry.meta ? '<span class="wk-meta">on the table' + (entry.meta ? ' · ' + escapeHtml(entry.meta) : '') + '</span>' : '') +
-          // The 4-9 word "why", generated with the plan rather than
-          // improvised, so it can't contradict the actual reason.
-          (entry.reason ? '<span class="wk-reason">' + escapeHtml(entry.reason) + '</span>' : '') +
-        '</div>'
-      );
+      return top +
+        '<div class="hero-dish' + dishSizeClass(entry.title) + '">' + escapeHtml(entry.title) + '</div>' +
+        (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '') +
+        '<div class="hero-chips">' +
+          (entry.meta ? '<span class="hero-chip">' + escapeHtml(entry.meta) + '</span>' : '') +
+          '<span class="hero-chips-spacer"></span>' +
+          dayActionsHtml(day) +
+        '</div>';
     }
-    if (day.isPast) {
-      return '<div class="wk-course">' + badge + '<span class="wk-dish wk-dish-blank">Not planned</span></div>';
-    }
-    if (slot !== 'dinner') {
-      // No fill flow designed for breakfast/lunch anywhere in this package
-      // — plain, non-interactive, so it never dead-ends like a fake "Pick"
-      // would (see the judgment-call note above buildWeekPanel).
-      return '<div class="wk-course">' + badge + '<span class="wk-dish wk-dish-blank">Not planned yet</span></div>';
-    }
-    // Quick-dinner-pick suggestions (day.dinner_suggestions, from
-    // _suggest_quick_dinners) are turned off for now per household
-    // feedback — the "Nothing yet" empty state stays, just without the
-    // inline pick rows. Backend/data plumbing (get_week_menu's
-    // dinner_suggestions field, /api/needs-you/dinner) is untouched, so
-    // this is easy to turn back on later if wanted.
-    return (
-      '<div class="wk-course">' + badge +
-        '<span class="wk-dish wk-dish-empty">Nothing yet</span>' +
-      '</div>'
-    );
+
+    return top +
+      '<div class="hero-dish hero-dish-' + (day.isPast ? 'blank' : 'empty') + '">' +
+        (day.isPast ? 'Not planned' : 'Nothing yet') +
+      '</div>';
   }
 
-  function renderDayCard(panel, day) {
-    var title = day.isToday ? "Today&rsquo;s Table" : (day.isPast ? 'Already served' : 'The table');
-    var actionsHtml = '';
-    // Only a genuinely planned dinner gets "Cook this"/"Swap it". A night
-    // nobody is home needs no decision and must never be offered as one —
-    // offering to swap it is exactly the thing planned_empty exists to
-    // prevent. An open slot is answered in its own card, not here.
-    if (day.dinner && day.dinner.state === 'planned' && !day.isPast) {
-      if (day.isToday) {
-        actionsHtml =
-          '<div class="wk-actions">' +
-            '<button type="button" class="btn-gold" id="wk-cook-this">Cook this</button>' +
-            '<button type="button" class="btn-outline-plum" id="wk-swap-it">Swap it</button>' +
-          '</div>';
-      } else {
-        // No per-date cook-mode destination exists yet — "Swap it" alone
-        // rather than a "Cook this" that would open today's steps instead
-        // of this day's. See the judgment-call note above buildWeekPanel.
-        actionsHtml = '<div class="wk-actions"><button type="button" class="btn-outline-plum" id="wk-swap-it" style="flex:1">Swap it</button></div>';
-      }
+  // Unchanged rules, restyled: only a genuinely planned dinner gets actions,
+  // and "Cook this" only on today, because cook mode can only start tonight's
+  // meal — a future day gets "Swap it" alone rather than a button that would
+  // open the wrong day's steps.
+  function dayActionsHtml(day) {
+    if (!(day.dinner && day.dinner.state === 'planned' && !day.isPast)) return '';
+    if (day.isToday) {
+      return '<button type="button" class="hero-go" id="wk-cook-this">' +
+        '<span>Cook this</span>' + ICONS.arrow + '</button>' +
+        '<button type="button" class="hero-swap" id="wk-swap-it" aria-label="Swap it">Swap</button>';
     }
+    return '<button type="button" class="hero-swap" id="wk-swap-it">Swap it</button>';
+  }
 
+  function sideCourseHtml(day, slot) {
+    var entry = day[slot];
+    var label = '<span class="side-label">' + SLOT_LABELS[slot] + '</span>';
+    var body;
+    if (entry && entry.state === 'planned_empty') {
+      body = '<span class="side-dish side-dish-out">' + escapeHtml(entry.title) + '</span>';
+    } else if (entry && entry.state === 'open') {
+      body = '<span class="side-dish side-dish-open">' + escapeHtml(entry.title) + '</span>';
+    } else if (entry) {
+      body = '<span class="side-dish">' + escapeHtml(entry.title) + '</span>';
+    } else {
+      // No fill flow was ever designed for breakfast/lunch — plain and
+      // non-interactive, so it never dead-ends like a fake "Pick" would.
+      body = '<span class="side-dish side-dish-blank">' +
+        (day.isPast ? 'Not planned' : 'Not planned yet') + '</span>';
+    }
+    return '<div class="side-row">' + label + body + '</div>';
+  }
+
+  // Quick-dinner-pick suggestions (day.dinner_suggestions, from
+  // _suggest_quick_dinners) remain turned off per household feedback: the
+  // "Nothing yet" empty state stays, without the inline pick rows. The
+  // backend plumbing (get_week_menu's dinner_suggestions, POST
+  // /api/needs-you/dinner) and fillWeekDinner below are untouched, so this
+  // is still easy to turn back on.
+
+  function renderDayCard(panel, day) {
     panel.querySelector('#day-card-wrap').innerHTML =
-      '<div class="wk-day-card">' +
-        '<div class="wk-stamp">' + dayName(day.date, { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase() + '</div>' +
-        '<div class="wk-title">' + title + '</div>' +
-        WEEK_SLOTS.map(function (s, i) {
-          return courseHtml(day, s) + (i < WEEK_SLOTS.length - 1 ? '<div class="wk-sep"></div>' : '');
-        }).join('') +
-        actionsHtml +
+      '<div class="day-hero">' + dinnerHeroHtml(day) + '</div>' +
+      '<div class="day-sides shell-card">' +
+        WEEK_SLOTS.filter(function (s) { return s !== 'dinner'; })
+          .map(function (s) { return sideCourseHtml(day, s); }).join('') +
       '</div>';
 
     var wrap = panel.querySelector('#day-card-wrap');
@@ -1543,11 +1683,18 @@
         '<div class="menu-dots">&bull;&bull;&bull;</div>' +
         '<div class="menu-status">Ask Pomona to plan your week to get started.</div>';
       mobileEl.querySelector('#week-framing').innerHTML =
-        '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Pomona') + '</div><h1>Meals</h1>';
+        '<div class="week-head"><h1>This week</h1></div>' +
+        '<div class="week-note">No meal plan yet.</div>';
       mobileEl.querySelector('#day-rail').innerHTML = '';
+      // The empty state keeps the screen's shape — a spruce hero with
+      // nothing in it rather than a missing hero — so "no plan yet" reads
+      // as a state of this screen instead of as a broken one.
       mobileEl.querySelector('#day-card-wrap').innerHTML =
-        '<div class="wk-day-card"><div class="wk-title" style="margin:0">No meal plan yet</div>' +
-        '<div class="wk-meta">Ask Pomona to plan your week to get started.</div></div>';
+        '<div class="day-hero">' +
+          '<div class="hero-top"><span class="hero-eyebrow">This week</span><span class="hero-rule"></span></div>' +
+          '<div class="hero-dish hero-dish-empty">No meal plan yet</div>' +
+          '<div class="hero-accent">Ask Pomona to plan your week to get started.</div>' +
+        '</div>';
       mobileEl.querySelector('#whole-week-sub').textContent = '';
       gridEl.innerHTML = '';
       renderOpenSlots(panel, data);
@@ -1588,7 +1735,7 @@
       weekState.selectedIndex = todayIndexForSelect >= 0 ? todayIndexForSelect : 0;
     }
 
-    renderWeekFraming(panel, data);
+    renderWeekFraming(panel, data, statusLine);
     renderDayRail(panel, days);
     renderDayCard(panel, days[weekState.selectedIndex]);
     renderWholeWeekRow(panel, days);

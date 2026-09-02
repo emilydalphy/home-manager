@@ -122,50 +122,136 @@ html, body {
   margin: 0;
 }
 
-/* ---------- Today (Step 2) ---------- */
+/* ---------- Today (Pomona — InnToday) ----------
+   Three bands: a greeting inside the gutter, a hero that bleeds the full
+   width of the panel, then a body back inside the gutter. NavBlueprint §03:
+   "The 20px gutter never moves" — which is exactly why the hero cannot be a
+   child of a padded container, and isn't. .today-content carries no side
+   padding at all; each band declares its own. */
 .today-content {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 13px;
-  padding: 6px 20px 8px;
+  padding: 0 0 8px;
 }
 
-/* §7 Step 6: same cards, rearranged by breakpoint via grid-template-areas
-   rather than by duplicating markup — see the desktop override below. */
+.today-heading { padding: 24px 20px 18px; }
+.today-datestrip { display: flex; align-items: center; gap: 10px; }
+.today-date {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+  white-space: nowrap;
+}
+.today-hairline { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
+.today-greeting {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 7px 0 0;
+}
+/* The needs-you count. It used to be the H1; the greeting is the H1 now and
+   the dinner panel is the hero, so this is a supporting line — same
+   sentence, same source, far less shouting. */
+.today-status {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--urgent-label);
+  margin-top: 5px;
+}
+.today-status.is-clear { color: var(--ink-secondary); }
+
+.today-area-nudge { padding: 0 20px; }
+.today-area-nudge:not(:empty) { padding-bottom: 14px; }
+
 .today-body {
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  gap: 12px;
+  padding: 16px 20px 0;
 }
-.today-area-chores { display: flex; flex-direction: column; gap: 13px; }
+.today-area-chores { display: flex; flex-direction: column; gap: 12px; }
 .today-area-ask { display: none; } /* the Ask column only exists at >=1024px — see §7 */
 
-.today-heading .kicker {
+/* "Break the uniform card stack" (NavBlueprint §03): a two-up pair of short
+   tiles, then the wider attention cards, then a plain list. auto-fit means a
+   single tile — no prep task today — fills the row rather than leaving a
+   lonely half-width card next to a hole. */
+.today-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.today-tile {
+  min-height: 112px;
+  box-sizing: border-box;
+  border-radius: var(--radius-card);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  font: inherit;
+}
+.today-tile[hidden] { display: none; }
+.tile-icon { display: block; width: 22px; height: 22px; }
+.tile-icon svg { display: block; width: 22px; height: 22px; }
+.tile-eyebrow {
   font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .1em;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 3px;
 }
-.today-heading h1 {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 29px;
-  color: var(--plum-ink);
-  margin: 0;
+.tile-body {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.35;
 }
+.tile-foot {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--celadon-label);
+  margin-top: -4px;
+}
+/* Prep is celadon — the accent that reassures. Nothing on this tile is
+   urgent and it is deliberately not a control: prep gets ticked off in Cook
+   mode, which owns that flow. */
+.tile-prep {
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  color: var(--ink-on-celadon);
+}
+.tile-prep .tile-icon,
+.tile-prep .tile-eyebrow { color: var(--celadon-label); }
+/* Grocery is the tile that goes somewhere, so it is the one that is a
+   button. */
+.tile-grocery {
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
+}
+.tile-grocery:hover { background: #fff; border-color: var(--hairline-strong); }
+.tile-grocery .tile-icon { color: var(--apricot-deep); }
+.tile-grocery .tile-eyebrow { color: var(--ink-muted); }
 
 /* Named .shell-card, not .card — theme.css already defines .card with a
    cream fill for older pages; this is deliberately a distinct white-card
    look for shell content and shouldn't be confused with (or silently
    override) that one. */
 .shell-card {
-  background: var(--card);
-  border-radius: 18px;
-  box-shadow: var(--shadow-card);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
 }
 
 /* ---------- Needs-you band (Step 5, README §4/§6) ---------- */
@@ -174,44 +260,62 @@ html, body {
   flex-direction: column;
   gap: 12px;
 }
+/* InnToday's "Worth a second" card: a coloured status dot and a 10px
+   eyebrow, then the question in Bricolage, then the answers. The 4px top
+   ribbon is gone — a card is a hairline in this system, and the urgency now
+   reads off the dot instead of a slab of colour. */
 .needs-you-card {
-  padding: 16px 17px;
-  border-top: 4px solid transparent;
+  padding: 15px 16px;
   flex-shrink: 0;
   animation: popIn .2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
 }
 .needs-you-card.pop-out {
   animation: popOut .18s ease forwards;
 }
-.needs-you-card.urgency-urgent { border-top-color: var(--urgent); }
-.needs-you-card.urgency-warn { border-top-color: var(--warn); }
 .ny-kicker {
   font-family: var(--font-body);
   font-weight: 800;
-  font-size: 12px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: .14em;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
-.needs-you-card.urgency-urgent .ny-kicker { color: var(--urgent); }
-.needs-you-card.urgency-warn .ny-kicker { color: var(--warn); }
+.ny-kicker::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--apricot-deep);
+}
+.needs-you-card.urgency-urgent .ny-kicker::before { background: var(--urgent); }
 .ny-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 21px;
-  color: var(--plum-ink);
-  margin: 2px 0 10px;
+  letter-spacing: -0.028em;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
 }
-.ny-options { display: flex; flex-direction: column; gap: 8px; }
+.ny-options { display: flex; flex-direction: column; gap: 10px; }
 .ny-option {
-  background: var(--cream);
-  border-radius: 12px;
+  background: var(--ground);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-control);
   padding: 13px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
 }
-.ny-option:hover { background: #f3ebdc; }
+.ny-option:hover { border-color: var(--hairline-strong); background: var(--sand); }
 .ny-option-dish {
   font-family: var(--font-body);
   font-weight: 600;
@@ -232,8 +336,24 @@ html, body {
   color: var(--muted);
   margin-bottom: 12px;
 }
-.ny-actions { display: flex; gap: 10px; }
-.ny-actions .btn-gold, .ny-actions .btn-sand { flex: 1; text-align: center; }
+.ny-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* One apricot fill per screen, and on Today that is "Start cooking" in the
+   hero — so this card's primary is spruce and its secondary is an outline.
+   Scoped here rather than changed on .btn-gold itself, which is still the
+   apricot primary on Meals and inside the dialogs. */
+.ny-actions .btn-gold, .ny-actions .btn-sand {
+  text-align: center;
+  height: 46px;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  font-size: 14px;
+}
+.ny-actions .btn-gold { background: var(--spruce); color: var(--ivory-ink); }
+.ny-actions .btn-gold:hover { background: var(--spruce-raised); }
+.ny-actions .btn-sand { background: none; border: 1.5px solid var(--hairline-strong); color: var(--ink-secondary); }
+.ny-actions .btn-sand:hover { background: var(--sand); }
+.ny-option-dish { font-weight: 600; }
 
 /* ---------- Toast (§6) ---------- */
 .toast {
@@ -256,31 +376,198 @@ html, body {
 .toast.pop-in { animation: popIn .2s ease; }
 @keyframes popOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.96); } }
 
-/* Tonight's dinner — the one plum card on Today. */
-.dinner-card {
+/* ---------- The hero panel — shared by Today and Meals ----------
+   NavBlueprint §03: "Each screen answers one question first, in the
+   full-bleed spruce panel at the top… Exactly one. A second hero is a
+   demotion of the first." On Today that question is tonight's dinner; on
+   Meals it is the selected day. Square at the top, generously rounded at the
+   bottom: on Meals the top edge is where the selected day tile pours into
+   it. Shadow is allowed here and on the apricot action, and nowhere else. */
+.dinner-hero, .day-hero {
   flex-shrink: 0;
-  background: var(--plum);
-  border-radius: 18px;
-  padding: 20px;
+  background: var(--spruce);
+  border-radius: 0 0 var(--radius-hero) var(--radius-hero);
+  padding: 22px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  box-shadow: var(--shadow-hero);
 }
-.dinner-kicker {
+.dinner-hero[hidden] { display: none; }
+
+.hero-top { display: flex; align-items: center; gap: 10px; }
+.hero-badge, .hero-tag {
+  height: 26px;
+  padding: 0 11px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-badge-sm);
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-body);
   font-weight: 800;
-  font-size: 13px;
-  letter-spacing: .1em;
+  font-size: 10px;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 8px;
+  white-space: nowrap;
+  color: var(--on-accent-ink);   /* RULE ONE: dark ink on a light accent */
 }
-.dinner-title {
-  font-family: var(--font-heading);
+.hero-badge { background: var(--apricot); }
+.hero-tag { background: var(--celadon); padding: 0 10px; letter-spacing: .1em; }
+.hero-tag-urgent { background: var(--apricot); }
+.hero-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--apricot-light);
+  white-space: nowrap;
+}
+/* The only divider that may appear on spruce. */
+.hero-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--apricot-rule); }
+.hero-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-badge);
+  background: var(--spruce-raised);
+  color: var(--apricot-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-icon svg { width: 17px; height: 17px; }
+
+.hero-dish {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 22px;
-  color: #fff;
-  line-height: 1.28;
-  margin-bottom: 14px;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.03;
+  color: var(--ivory-ink);
 }
-.dinner-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Long titles step down rather than being cut — see dishSizeClass in
+   shell.js for why truncation is the wrong trade here. */
+.hero-dish-sm { font-size: 26px; letter-spacing: -0.032em; line-height: 1.08; }
+.hero-dish-xs { font-size: 22px; letter-spacing: -0.026em; line-height: 1.15; }
+
+/* A night nobody is home, a slot handed back, a slot with nothing in it:
+   three different quiets, none of them the headline voice. */
+.hero-dish-out, .hero-dish-blank {
+  font-size: 25px;
+  font-weight: 400;
+  color: rgba(246, 238, 225, .58);
+}
+.hero-dish-open { font-size: 26px; color: var(--apricot-light); }
+.hero-dish-empty { font-size: 26px; color: rgba(246, 238, 225, .72); }
+
+/* The one Newsreader italic per screen (theme.css: "two lines and it
+   becomes a serif brand"). Carries the plan's own 4-9 word reason. */
+.hero-accent {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--apricot-light);
+  margin-top: -7px;
+  /* One accent line, never a paragraph: theme.css warns that "two lines and
+     it becomes a serif brand". Weeks generated before 2026-08-31 carry
+     full-sentence `reasoning` values rather than the 4-9 word phrases the
+     current generator writes (CLAUDE.md, open item 2) — so this clamps
+     rather than trusting the data to be short. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.hero-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hero-chips-spacer { flex: 1 1 auto; }
+.hero-chip {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-chip);
+  background: var(--spruce-raised);
+  color: var(--ivory-ink-muted);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* The screen's single primary action. */
+.hero-action {
+  height: 54px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: var(--shadow-action);
+}
+.hero-action svg { width: 18px; height: 18px; }
+.hero-action:hover { background: var(--apricot-light); }
+
+/* Meals' compact version of it, sitting at the end of the chips row. */
+.hero-go {
+  height: 44px;
+  padding: 0 15px;
+  border: none;
+  border-radius: var(--radius-tile);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.hero-go svg { width: 17px; height: 17px; }
+.hero-go:hover { background: var(--apricot-light); }
+
+/* Secondary on spruce is an outline, never a second fill. */
+.hero-swap {
+  height: 44px;
+  padding: 0 15px;
+  border-radius: var(--radius-tile);
+  border: 1.5px solid var(--apricot-rule);
+  background: none;
+  color: var(--ivory-ink-muted);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.hero-swap:hover { background: var(--spruce-raised); }
+.hero-quiet {
+  align-self: center;
+  margin-top: -4px;
+  padding: 2px 0 0;
+  background: none;
+  border: none;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--apricot-light);
+  opacity: .85;
+  cursor: pointer;
+}
+.hero-quiet:hover { opacity: 1; }
 .btn-gold, .btn-outline-light, .btn-sand {
   font-family: var(--font-body);
   font-weight: 700;
@@ -299,7 +586,16 @@ html, body {
 .btn-sand:hover { background: #e6d9c4; }
 
 /* Your chores */
-.chores-card { padding: 16px 19px 8px; }
+/* Chores are the quiet line at the bottom of Today: a list, not a third
+   rounded rectangle. Dropping the card is the "vary width, height and fill
+   weight" half of breaking the uniform stack. */
+.chores-card {
+  background: none;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  border-radius: 0;
+  padding: 14px 2px 0;
+}
 .chores-header {
   display: flex;
   align-items: baseline;
@@ -307,17 +603,21 @@ html, body {
   margin-bottom: 4px;
 }
 .chores-header h2 {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 19px;
-  color: var(--plum-ink);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
   margin: 0;
 }
 .chores-count {
   font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--good);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
 }
 .chores-count.all-done { color: var(--good-ink); }
 .chore-row {
@@ -377,16 +677,23 @@ html, body {
 .grocery-summary-card .btn-sand { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
 
 /* ---------- Docked ask bar (every screen) ---------- */
+/* InnToday/InnMeals draw this identically on both screens, which is the
+   point — NavBlueprint §01: "it never scrolls away, it never changes per
+   screen". Ivory, one hairline, a spruce send tile. The placeholder string
+   itself is left alone: the mockups shorten it to "Ask or add anything",
+   and the blueprint calls that "a copy decision, not a layout one". */
 #ask-bar-dock {
   flex-shrink: 0;
-  padding: 4px 18px 8px;
+  padding: 12px 20px 10px;
 }
 #ask-bar {
   width: 100%;
-  background: var(--card);
-  border: 2px solid var(--plum);
-  border-radius: 16px;
-  padding: 14px 18px;
+  height: 54px;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-ask);
+  padding: 0 8px 0 16px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -394,19 +701,25 @@ html, body {
   font: inherit;
   text-align: left;
 }
+#ask-bar:hover { border-color: var(--ink-placeholder); }
 #ask-bar .ask-placeholder {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-body);
-  font-size: 16px;
-  color: var(--muted);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink-placeholder);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #ask-bar .ask-send {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--sand);
-  color: var(--plum);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-send);
+  background: var(--spruce);
+  color: var(--apricot-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -603,58 +916,63 @@ html, body {
 }
 
 /* ---------- Mobile tab bar ---------- */
+/* Bare line icons on the ground, no chips: the nav is a hairline and four
+   labels. Same four tabs, same handlers — only the paint changed. */
 #tab-bar {
   flex-shrink: 0;
-  background: var(--card);
-  border-top: 1px solid var(--rule);
+  background: var(--ground);
+  border-top: 1.5px solid var(--hairline);
   padding: 8px 12px calc(20px + env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
 }
 .tab-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
-  padding: 8px 0;
-  min-height: 44px;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 0;
+  min-height: 54px;
   background: none;
   border: none;
   cursor: pointer;
   position: relative;
   font: inherit;
+  color: var(--ink-inactive);
 }
 .tab-btn .tab-chip {
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  background: #e6d9c4;
-  color: var(--muted);
+  width: 23px;
+  height: 23px;
+  border-radius: 0;
+  background: none;
+  color: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.tab-btn .tab-chip svg { width: 16px; height: 16px; }
+.tab-btn .tab-chip svg { width: 23px; height: 23px; }
 .tab-btn .tab-label {
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: -0.01em;
+  color: inherit;
 }
-.tab-btn.active .tab-chip { background: var(--plum); color: #fff; }
-.tab-btn.active .tab-label { color: var(--plum); }
+.tab-btn.active { color: var(--spruce); }
+.tab-btn.active .tab-label { font-weight: 800; }
 .tab-btn .tab-badge {
   display: none;
   position: absolute;
   top: 2px;
-  right: 14px;
+  right: 12px;
   font-family: var(--font-body);
   font-weight: 800;
   font-size: 11px;
-  color: #fff;
+  color: var(--urgent-ink);
   background: var(--urgent);
-  border-radius: 10px;
+  border-radius: var(--radius-badge);
   padding: 1px 6px;
 }
 .tab-btn.has-badge:not(.active) .tab-badge { display: block; }
@@ -756,25 +1074,37 @@ html, body {
      open up here; Today's Ask column (below) is the replacement. */
   #ask-bar-dock { display: none; }
 
-  .today-content { max-width: 960px; padding: 24px 32px; }
+  /* Desktop keeps the mobile design's shape rather than replacing it: the
+     hero still bleeds the full width of the content column, and the bands
+     above and below it still sit in a gutter — just a wider one. The
+     content column is capped and centred so the hero doesn't become a
+     letterbox on a 27" screen. */
+  .today-content { max-width: 1040px; margin: 0 auto; padding: 0 0 24px; width: 100%; }
+  .today-heading { padding: 32px 32px 20px; }
+  .today-area-nudge { padding: 0 32px; }
+  .dinner-hero { border-radius: var(--radius-hero); margin: 0 32px; padding: 26px 28px 24px; }
+  .dinner-hero .hero-dish { font-size: 38px; }
+  .dinner-hero .hero-dish-sm { font-size: 30px; }
+  .dinner-hero .hero-dish-xs { font-size: 25px; }
+  /* Wide enough for the hero's action to stop being a full-width slab. */
+  .dinner-hero .hero-action { align-self: flex-start; padding: 0 28px; }
+  .dinner-hero .hero-quiet { align-self: flex-start; }
 
-  /* §7 Step 6: dinner card spans the full width on its own row, then a
-     1.5fr/1fr/1fr row of needs-you / chores(+grocery) / Ask. Judgment
-     call: the spec's 3-column row only names needs-you/chores/Ask — the
-     grocery-summary card has no named column of its own, so it stays
-     stacked under Chores (see .today-area-chores) rather than being
-     dropped with nothing to replace it. */
+  /* Step 6's three-column body, re-cut for the tiles: the two-up pair joins
+     needs-you in the left column (they are the same "things wanting doing"
+     material), chores keep the middle, Ask keeps the right. */
   .today-body {
     display: grid;
     grid-template-columns: 1.5fr 1fr 1fr;
     grid-template-areas:
-      "dinner dinner dinner"
+      "tiles chores ask"
       "needsyou chores ask";
     gap: 24px;
     align-items: start;
+    padding: 24px 32px 0;
   }
+  .today-area-tiles { grid-area: tiles; }
   .today-area-needsyou { grid-area: needsyou; }
-  .today-area-dinner { grid-area: dinner; margin: 0; }
   .today-area-chores { grid-area: chores; }
   .today-area-ask {
     grid-area: ask;
@@ -786,13 +1116,11 @@ html, body {
   }
   .today-area-ask .ask-messages { flex: 1; min-height: 0; }
 
-  /* Needs-you cards: border-left instead of a top ribbon, controls
-     right-aligned inside the card, per §7. */
-  .needs-you-card { border-top: none; border-left: 5px solid transparent; }
-  .needs-you-card.urgency-urgent { border-left-color: var(--urgent); }
-  .needs-you-card.urgency-warn { border-left-color: var(--warn); }
-  .ny-actions { justify-content: flex-end; }
-  .ny-actions .btn-gold, .ny-actions .btn-sand { flex: 0 0 auto; padding-left: 22px; padding-right: 22px; }
+  /* §7 put the controls at the right-hand end of a needs-you card on a wide
+     screen. The top ribbon it also called for is gone system-wide (a card is
+     a hairline now), so only the alignment survives. */
+  .ny-actions { grid-template-columns: auto auto; justify-content: flex-end; }
+  .ny-actions .btn-gold, .ny-actions .btn-sand { padding-left: 22px; padding-right: 22px; }
 
   /* No tab bar (and, per above, no docked ask bar) at this breakpoint — a
      plain safe margin off the bottom of the viewport is enough. */
@@ -805,16 +1133,25 @@ html, body {
    its own, distinct from the 1024px shell breakpoint above) is one paper
    sheet laid out as a 7-column x 3-row grid. Both are built by shell.js
    from the same fetch and switched purely by this CSS. */
+/* Same gutter rule as Today: the container carries none, because the hero
+   panel and the selected day tile above it must reach the panel's edges.
+   Every other row below re-declares the 20px itself. */
 .week-content {
   max-width: 640px;
   margin: 0 auto;
-  padding: 18px 16px 28px;
+  padding: 0 0 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   box-sizing: border-box;
   width: 100%;
 }
+#week-header,
+#week-grid,
+#week-open-row,
+#week-approve-row,
+#week-plan-row,
+.week-reset-row { padding-left: 20px; padding-right: 20px; }
 
 /* #week-header (the big paper "EST. 2019 / household name" menu header) is
    desktop-only now — the new mobile This Week (option 6a, below) has its
@@ -1068,8 +1405,7 @@ html, body {
   .wg-slot-empty { cursor: pointer; }
   .wg-slot-empty .course-dish-empty { font-size: 15px; display: block; }
   .wg-slot-empty .course-meta-empty { font-size: 13px; display: block; }
-  #week-header { display: block; }
-  .week-mobile { display: none; }
+  #week-header { display: none; }
 }
 
 /* ---------- This Week — mobile (design_handoff_home_manager option 6a) ----------
@@ -1078,150 +1414,160 @@ html, body {
    existing grid already serves "see the whole week at a glance" on a big
    screen). Day rail + one day's card in full, with the rest reachable via
    the "whole week" sheet below. */
-.week-framing {
-  text-align: center;
-  padding: 4px 4px 0;
-}
-.week-framing-line {
-  font-family: var(--font-body);
-  font-style: italic;
-  font-size: 15px;
-  color: #7c7161;
-}
-.week-framing h1 {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 29px;
-  color: var(--plum-ink);
-  margin: 2px 0 0;
-}
-
-.day-rail {
-  display: flex;
-  gap: 5px;
-  padding: 0 2px 2px;
-  flex-shrink: 0;
-}
-.day-rail-cell {
-  flex: 1;
-  padding: 9px 0;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  background: none;
-  cursor: pointer;
-  text-align: center;
-  font: inherit;
-}
-.day-rail-label {
-  display: block;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: .06em;
-  color: #7e7360;
-}
-.day-rail-dot {
-  display: block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #c6bca9;
-  margin: 5px auto 0;
-}
-.day-rail-cell.selected {
-  background: var(--gold);
-  transform: rotate(-2deg);
-}
-.day-rail-cell.selected .day-rail-label { color: var(--gold-ink); font-weight: 800; }
-.day-rail-cell.selected .day-rail-dot { background: var(--gold-ink); }
-.day-rail-cell.needs-decision {
-  border: 1px dashed var(--urgent);
-}
-.day-rail-cell.needs-decision .day-rail-label { color: #8f2c17; }
-.day-rail-cell.needs-decision .day-rail-dot { background: var(--urgent); }
-
-.wk-day-card {
-  background: var(--menu-paper);
-  border: 1px solid var(--menu-rule);
-  border-radius: 20px;
-  box-shadow: 0 2px 0 #f3ebdc;
-  padding: 22px 22px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  flex-shrink: 0;
-}
-.wk-stamp {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: #7e7360;
-}
-.wk-title {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 21px;
-  color: var(--plum-ink);
-  margin: 6px 0 16px;
-}
-.wk-course { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-.wk-badge {
-  display: inline-block;
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  padding: 6px 12px;
-  border-radius: 20px;
-}
-.wk-badge-breakfast { background: var(--sand); color: var(--plum); transform: rotate(-2deg); }
-.wk-badge-lunch { background: var(--good); color: var(--on-accent-ink); transform: rotate(2deg); }
-.wk-badge-dinner { background: var(--urgent); color: #fff; transform: rotate(-2deg); }
-.wk-dish {
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--plum-ink);
-  line-height: 1.35;
-  max-width: 280px;
-}
-.wk-dish-dinner { font-size: 19px; line-height: 1.4; }
-.wk-dish-empty { font-style: italic; color: var(--urgent); }
-.wk-dish-blank { font-style: italic; color: var(--faded); }
-.wk-meta {
-  font-family: var(--font-body);
-  font-style: italic;
-  font-size: 14px;
-  color: #7c7161;
-  margin-top: 2px;
-}
-.wk-sep { height: 1px; background: var(--urgent); opacity: .2; width: 36px; margin: 16px 0; }
-
-.wk-suggestions { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-.wk-suggest-row {
+/* ---------- Meals (Pomona — InnMeals) ---------- */
+.week-framing { padding: 22px 20px 12px; text-align: left; }
+.week-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: var(--cream);
-  border-radius: 12px;
-  padding: 13px 16px;
-  cursor: pointer;
-  text-align: left;
-  border: none;
-  width: 100%;
-  font: inherit;
 }
-.wk-suggest-row:hover { background: #f3ebdc; }
-.wk-suggest-dish { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--plum-ink); }
-.wk-suggest-pick { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--plum); flex-shrink: 0; }
+.week-head h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+.week-badge {
+  height: 30px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-badge);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+/* The freshness note: the same server headline / decision count the desktop
+   header has always carried, now on the phone too. */
+.week-note {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+  margin-top: 6px;
+}
+.week-suggested-note {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--apricot-label);
+  margin-top: 4px;
+}
 
-.wk-actions { display: flex; gap: 10px; width: 100%; margin-top: 18px; }
-.wk-actions button { flex: 1; height: 50px; border-radius: 13px; }
+/* The day strip, bottom-aligned so the selected tile can be taller. */
+.day-rail {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  align-items: end;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.day-rail-cell {
+  min-height: 56px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-tile);
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--ink-inactive);
+}
+.day-rail-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: inherit;
+}
+.day-rail-num {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink-secondary);
+}
+.day-rail-dot { width: 5px; height: 5px; border-radius: 50%; background: none; }
+.day-rail-cell.is-past { opacity: .5; }
+.day-rail-cell.needs-decision .day-rail-dot { background: var(--apricot-deep); }
+
+/* The notched moment: the selected tile grows, fills spruce and squares off
+   its bottom corners so it runs straight into the hero panel beneath it
+   instead of floating above it. This is the screen's signature. */
+.day-rail-cell.selected {
+  min-height: 68px;
+  opacity: 1;
+  background: var(--spruce);
+  border-radius: var(--radius-action) var(--radius-action) 0 0;
+  color: var(--apricot-light);
+}
+.day-rail-cell.selected .day-rail-num {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ivory-ink);
+}
+.day-rail-cell.selected .day-rail-dot {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--apricot);
+}
+
+/* Breakfast and lunch: subordinate rows in a plain card under the hero.
+   Same three slot states as ever, rendered deliberately quietly — "one hero
+   moment per screen" means these must not compete with dinner. */
+.day-sides {
+  margin: 16px 20px 0;
+  padding: 2px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.side-row {
+  min-height: 46px;
+  padding: 11px 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.side-row + .side-row { border-top: 1.5px solid var(--hairline); }
+.side-label {
+  width: 72px;
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.side-dish {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.side-dish-out { font-weight: 400; font-style: italic; color: var(--ink-done); }
+.side-dish-open { color: var(--apricot-label); }
+.side-dish-blank { font-weight: 400; font-style: italic; color: var(--ink-inactive); }
 .btn-outline-plum {
   font-family: var(--font-body);
   font-weight: 700;
@@ -1236,17 +1582,21 @@ html, body {
 .btn-outline-plum:hover { background: var(--violet-soft); }
 
 .whole-week-row {
-  padding: 17px 19px;
+  margin: 12px 20px 0;
+  padding: 15px 17px;
   display: flex;
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  cursor: pointer;
 }
+.whole-week-row:hover { border-color: var(--hairline-strong); }
 .whole-week-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 18px;
-  color: var(--plum-ink);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 .whole-week-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .whole-week-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
@@ -1359,6 +1709,21 @@ html, body {
    Notifications bell (design_handoff_home_manager Phase 5).
    Fixed top-right, above both mobile and desktop layouts.
    =========================================================== */
+/* The bell is fixed in the top-right corner, above whatever the active
+   screen draws there — and since the Pomona rebuild that corner holds real
+   content: Today's date rule, Meals' week-range badge. So the two headers
+   reserve it.
+   Unconditionally, deliberately: shell.js sets `notifBell.hidden` when there
+   are no notifications, but `.notif-bell`'s own `display: flex` (below)
+   overrides the hidden attribute, so the button is in fact always on screen.
+   That is a pre-existing bug and NOT fixed here — whether an empty bell
+   should disappear or stay as the way into the panel is Emily's call, not a
+   layout decision. Reserving the space unconditionally matches what is
+   actually rendered today; if the bell is ever made to hide, this becomes
+   `body.has-notif-bell` and the space comes back. */
+.today-datestrip,
+.week-head { padding-right: 52px; }
+
 .notif-bell {
   /* Matches the app's real icon system (shell.js's ICONS.* line-SVGs in
      the tab bar/rail, not the design_handoff package's older "type and
@@ -1509,20 +1874,23 @@ html, body {
    flex child would otherwise leave its gap behind above the day's cards. */
 .today-area-nudge:empty { display: none; }
 .plan-nudge-card {
-  padding: 16px 17px;
-  border-top: 4px solid var(--plum);
+  padding: 15px 16px;
+  /* Was a 4px spruce slab across the top. Against .shell-card's hairline and
+     20px radius that read as a stray dark arc floating above the card — and
+     the slab is off-system anyway now that a card is defined by its hairline.
+     The eyebrow still carries the "this is an offer, not a demand" colour. */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 .plan-nudge-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .plan-nudge-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
-  font-size: 12px;
-  letter-spacing: .05em;
-  color: var(--plum);
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--ink-muted);
 }
 .plan-nudge-dismiss {
   background: none;
@@ -1536,14 +1904,25 @@ html, body {
 }
 .plan-nudge-dismiss:hover { color: var(--plum); }
 .plan-nudge-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 20px;
-  line-height: 1.25;
-  color: var(--plum-ink);
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  line-height: 1.2;
+  color: var(--ink);
 }
 .plan-nudge-body { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--muted); }
-.plan-nudge-cta { width: 100%; min-height: 46px; font-size: 16px; margin-top: 2px; }
+.plan-nudge-cta {
+  width: 100%;
+  height: 50px;
+  min-height: 50px;
+  margin-top: 2px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
 .plan-nudge-dismissed { border-top-color: var(--rule); }
 .plan-nudge-link {
   background: none;
@@ -1742,9 +2121,22 @@ html, body {
    been approved. A sibling of #week-mobile/#week-grid for the same reason
    .week-reset-row below is one — the entry point has to exist at both
    breakpoints, and #week-header is desktop-only. */
-.week-approve-card,
+/* The draft's promise is plain copy on the ground, not another card — it
+   is the sentence above the button, and boxing it made a third rounded
+   rectangle out of one line of text. The receipt stays a card, because a
+   receipt is an object. */
+.week-approve-card {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  flex-shrink: 0;
+}
 .week-receipt-card {
-  padding: 17px 19px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 13px;
@@ -1754,31 +2146,41 @@ html, body {
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--ink-secondary);
 }
+/* The one primary action on Meals (NavBlueprint §03). */
 .week-approve-btn {
-  /* Full-width: this is the primary action of the whole screen, and the
-     brand guide's one-gold-CTA-per-screen rule means nothing else on Meals
-     competes with it. */
   width: 100%;
-  min-height: 46px;
-  font-size: 16px;
+  height: 54px;
+  min-height: 54px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: var(--shadow-action);
 }
+.week-approve-btn:hover:not(:disabled) { background: var(--apricot-light); }
 .week-approve-btn:disabled { opacity: .6; cursor: default; }
 
 /* The receipt reads as a settled, positive state — green rule and green
    eyebrow, matching the "I'll…" acknowledgement colour used through the
    rest of this flow (--good-ink, #4f6b5b). */
 .week-receipt-card {
-  border-top: 4px solid var(--good);
+  border-color: var(--celadon-edge);
+  background: var(--celadon-tint);
   gap: 7px;
 }
 .week-receipt-eyebrow {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: .09em;
-  color: var(--good-ink);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--celadon-label);
 }
 .week-receipt-body {
   font-family: var(--font-body);
@@ -1801,19 +2203,26 @@ html, body {
 .week-reset-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 15px 19px;
+  justify-content: center;
+  min-height: 44px;
   flex-shrink: 0;
 }
-.week-reset-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.week-reset-title {
-  font-family: var(--font-heading);
-  font-weight: 700;
+/* "or start over" — the quiet text action that pairs with Approve. The
+   dialog it opens still names exactly what each reset would remove, which
+   is where that explanation belongs; it never needed a card of its own. */
+.week-reset-link {
+  background: none;
+  border: none;
+  border-bottom: 1.5px solid var(--hairline-strong);
+  padding: 0 0 2px;
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
   font-size: 17px;
-  color: var(--plum-ink);
+  color: var(--ink-secondary);
+  cursor: pointer;
 }
-.week-reset-sub { font-family: var(--font-body); font-size: 14px; color: var(--muted); }
-.week-reset-row .btn-outline-plum { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
+.week-reset-link:hover { color: var(--ink); border-bottom-color: var(--ink-secondary); }
 
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   position: fixed;
@@ -1909,3 +2318,37 @@ html, body {
 .reset-actions { display: flex; gap: 10px; margin-top: 18px; }
 .reset-actions button { flex: 1; min-height: 48px; border-radius: 13px; }
 .reset-actions button[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* ---------- Desktop Meals (>=1100px) ----------
+   Deliberately at the end of the file. These override the base (phone) Meals
+   rules further up, and a media query adds NO specificity — so placed beside
+   the desktop grid block above, every one of them lost to the later
+   single-class rule it was meant to beat.
+
+   The desktop Meals screen used to *replace* the phone one: #week-mobile went
+   display:none and the paper grid stood alone, so the day strip, the hero and
+   the approve promise all vanished on a wide screen — desktop got a strictly
+   worse version of the same screen. Now the phone layout is the primary
+   column here too, capped and centred, with the 7x3 grid underneath it as the
+   whole-week overview it always was. Both are built from the same fetch, so
+   nothing new is rendered and every handler on the grid still works. */
+@media (min-width: 1100px) {
+  .week-content { max-width: 1040px; }
+  .week-framing { padding: 32px 32px 14px; }
+  .week-head h1 { font-size: 38px; }
+  .day-rail { padding: 0 32px; }
+  .day-hero { margin: 0 32px; padding: 26px 28px 24px; }
+  .day-hero .hero-dish { font-size: 38px; }
+  .day-hero .hero-dish-sm { font-size: 30px; }
+  .day-hero .hero-dish-xs { font-size: 25px; }
+  .day-sides { margin: 18px 32px 0; }
+  #week-grid,
+  #week-open-row,
+  #week-approve-row,
+  #week-plan-row,
+  .week-reset-row { padding-left: 32px; padding-right: 32px; }
+  /* The "whole week" sheet is the phone's way to see all 21 meals. The grid
+     below already is that on a wide screen, so the row that opens it would
+     be a second door into the same room. */
+  .whole-week-row { display: none; }
+}
