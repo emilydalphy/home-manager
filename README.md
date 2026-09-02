@@ -681,10 +681,11 @@ assistant checks for this proactively in chat too, the same way it checks for ne
 ### Pantry & fridge inventory
 
 Separate from the grocery list — this tracks what you actually *have*, not what you
-still need. It's chat-only, on purpose: mention it the same way you'd mention a
+still need. Chat is the easiest way in: mention it the same way you'd mention a
 preference ("picked up a rotisserie chicken," "used the last of the spinach," "I've
-got about 2 lbs of ground beef left") and it's saved immediately, no manual-entry
-screen. Checking an item off the grocery list also adds it to inventory
+got about 2 lbs of ground beef left") and it's saved immediately. The Inventory
+screen also has an add form and photo scanning (receipt, fridge, pantry) for when
+you'd rather enter things directly. Checking an item off the grocery list also adds it to inventory
 automatically. When generating a weekly plan, ingredients already tracked in
 inventory are skipped when auto-adding to the grocery list instead of piling on
 top of what you already have.

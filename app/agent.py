@@ -1426,7 +1426,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "update_inventory",
-        "description": "Update pantry/fridge inventory from a chat mention (buying, using, running out of something). Call this proactively any time the user mentions inventory-related info, the same way preferences get captured proactively — there's no manual-entry screen, chat is the only way this gets tracked.",
+        "description": "Update pantry/fridge inventory from a chat mention (buying, using, running out of something). Call this proactively any time the user mentions inventory-related info, the same way preferences get captured proactively — the Inventory screen can add items by hand too, but chat is the only thing that catches what gets mentioned in passing.",
         "input_schema": {
             "type": "object",
             "properties": {
