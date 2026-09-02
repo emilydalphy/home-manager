@@ -69,7 +69,19 @@ async def no_index_headers(request: Request, call_next):
 SESSIONS: dict[str, list[dict]] = {}
 SESSION_TOUCHED: dict[str, float] = {}
 _SESSION_TTL = 7 * 24 * 60 * 60  # a week without a message and it's dropped
-_MAX_SESSIONS = 50
+# Per household, deliberately — not across all of them. A single shared cap
+# meant one household's busy evening evicted another household's live
+# conversation, so the beta tester's assistant could forget mid-conversation
+# because Emily happened to be chatting at the same time. Nothing about one
+# household's usage should be able to reach into another's. Total sessions
+# are now bounded by households x this, which is the intended shape: the cap
+# is a per-household guard rail, not a global memory budget. That trade is
+# deliberate and fine while households are counted on one hand — but it does
+# remove the only global ceiling, and a conversation holds up to 40 turns
+# including full tool_result payloads, so it is not small. Revisit and add a
+# global backstop (well above this number) if the app ever carries more than
+# roughly ten households.
+_MAX_SESSIONS_PER_HOUSEHOLD = 50
 # Gap since the last message after which the next one counts as "the start
 # of a new sitting" for run_agent_turn's proactive_check (see agent.py) —
 # long enough that it doesn't re-fire mid-conversation, short enough to
@@ -78,17 +90,45 @@ _MAX_SESSIONS = 50
 _NEW_SITTING_GAP = 4 * 60 * 60
 
 
+def _session_household(session_key: str) -> str:
+    """
+    The household part of a chat session key.
+
+    Keys are built by _chat_session_id below as "h<household>:<session id>",
+    so the household is everything before the first colon. A key in any
+    other shape falls back to itself, which puts it in a bucket of its own
+    rather than silently sharing one household's allowance with another —
+    the failure mode this split exists to prevent.
+    """
+    prefix, sep, _ = session_key.partition(":")
+    return prefix if sep else session_key
+
+
 def _prune_sessions() -> None:
     now = time.time()
-    stale = [sid for sid, seen in SESSION_TOUCHED.items() if now - seen > _SESSION_TTL]
+    # Both sweeps below walk a snapshot (list(...)) rather than the live
+    # dict. /api/chat is a `def` route, so Starlette runs it in a
+    # threadpool and two households chatting at once really do mutate
+    # these dicts underneath a walk — which raises "dictionary changed
+    # size during iteration" and 500s somebody's message.
+    stale = [sid for sid, seen in list(SESSION_TOUCHED.items()) if now - seen > _SESSION_TTL]
     for sid in stale:
         SESSIONS.pop(sid, None)
         SESSION_TOUCHED.pop(sid, None)
-    # Still over the cap (many devices, all active): drop least-recent first.
-    while len(SESSIONS) > _MAX_SESSIONS:
-        oldest = min(SESSION_TOUCHED, key=SESSION_TOUCHED.get)
-        SESSIONS.pop(oldest, None)
-        SESSION_TOUCHED.pop(oldest, None)
+    # Still over the cap (many devices, all active): drop least-recent
+    # first, within each household separately. Bucketing by household is
+    # the whole point — see _MAX_SESSIONS_PER_HOUSEHOLD above.
+    by_household: dict[str, list[str]] = {}
+    for sid in list(SESSIONS):
+        by_household.setdefault(_session_household(sid), []).append(sid)
+    for keys in by_household.values():
+        over = len(keys) - _MAX_SESSIONS_PER_HOUSEHOLD
+        if over <= 0:
+            continue
+        keys.sort(key=lambda sid: SESSION_TOUCHED.get(sid, 0.0))
+        for sid in keys[:over]:
+            SESSIONS.pop(sid, None)
+            SESSION_TOUCHED.pop(sid, None)
 
 
 def _chat_session_id(request: Request) -> str:
