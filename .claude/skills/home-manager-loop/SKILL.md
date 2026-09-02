@@ -296,8 +296,14 @@ check recent runs, read the exact current prompt) via `RemoteTrigger` using its 
    unchecked cards it actually took final action on, so a card skipped for already being
    investigated kept its box checked forever, looking permanently "still queued" on the
    board. Fixed to always clear it immediately.
-3. Only when zero cards are checked does it fall back to auto-picking ordinary "Not started"
-   cards with no investigation history yet, by priority, capped at 5.
+3. Every remaining ordinary "Not started" card goes on the end of the queue, same ordering —
+   whether or not anything was checked. **Updated 2026-09-02: this is no longer a capped
+   fallback.** It was "only when zero cards are checked, capped at 5"; the queue is now the
+   whole backlog, and the run works through as much of it as it can rather than a sample,
+   stopping only when it genuinely runs low on room and saying in its summary how much is
+   left. A card is skipped only if it already has an `## Overnight fix attempt` section or
+   is Done — a prior `## Investigated overnight` no longer disqualifies it, since an
+   investigated ticket is often exactly the one now ready for a real fix attempt.
 4. A card already carrying investigation findings is **not** automatically skipped anymore —
    it may now be eligible for an actual fix attempt it didn't get before. Skip (no action) is
    now reserved for a card that already has a "## Overnight fix attempt" section (a fix was
