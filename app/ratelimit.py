@@ -22,6 +22,11 @@ LIMITS = {
     "scan": [(10, 60), (60, 3600)],
     # Sign-in attempts, so the shared password can't be brute-forced.
     "login": [(8, 300), (40, 3600)],
+    # Browser error reports. A page stuck in an error loop can fire these
+    # as fast as it renders, and one broken screen must not be able to
+    # fill the error table with the same row. Generous enough that a real
+    # burst of distinct failures still gets through.
+    "client_error": [(20, 60), (200, 3600)],
 }
 
 _lock = threading.Lock()

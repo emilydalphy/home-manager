@@ -16,6 +16,14 @@ are beta questions first and cost questions second:
 - **Cost.** Judged per *completed job*, not per request -- a cheaper call
   that needs more rounds to finish isn't cheaper. That's why chat_turns
   stores `rounds` next to the tokens.
+
+- **Breakage.** Did anything go wrong, and can anyone find out without
+  waiting for the tester to mention it? Errors already reach the logs; what
+  they could not do is be read back. The overnight routine that reports
+  each morning runs in the cloud with the repo and Notion -- not with the
+  running app's stdout -- so a log it cannot open is, for the purpose of
+  anybody hearing about it, no record at all. record_error puts a row in
+  the database instead, and get_recent_errors reads it out.
 """
 from __future__ import annotations
 
@@ -201,3 +209,83 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         and summary["plans_generated"] == 0
     )
     return summary
+
+
+# ---------- errors, so somebody finds out ----------
+
+# What a single error row is allowed to say. Deliberately narrow: a class
+# name or short reason, and a route or tool name. NO request bodies, no
+# tool arguments, no tracebacks, no user text -- the same rule chat_turns
+# follows, and for the same reason. A table of everything that went wrong,
+# holding the content of what people typed, would quietly become the most
+# sensitive thing in the database.
+_MAX_DETAIL = 200
+_MAX_WHERE = 120
+
+
+def record_error(kind: str, where: str = "", detail: str = "") -> None:
+    """
+    Record that something broke. Never raises.
+
+    Called from error paths, so it cannot be allowed to fail there -- an
+    exception here would replace a handled 500 with an unhandled one, and
+    turn "something went wrong" into "something went wrong twice, and the
+    second one is ours". Everything is best-effort and swallowed.
+    """
+    conn = None
+    try:
+        conn = get_conn()
+        conn.execute(
+            "INSERT INTO error_events (household_id, kind, where_, detail) VALUES (?, ?, ?, ?)",
+            (household_id(), str(kind)[:40], str(where)[:_MAX_WHERE], str(detail)[:_MAX_DETAIL]),
+        )
+        conn.commit()
+    except Exception:
+        import logging
+
+        logging.getLogger("home_manager").exception("Recording an error event failed")
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
+    """
+    What broke for this household recently — the part of the morning
+    report that leads, when there is anything to lead with.
+
+    Returns counts by kind plus the most recent rows, newest first, so a
+    report can say "11 tool failures" without printing eleven lines.
+    """
+    days = max(1, int(days))
+    limit = max(1, min(int(limit), 200))
+    since = f"-{days} days"
+    conn = get_conn()
+    try:
+        hid = household_id()
+        by_kind = {
+            r["kind"]: r["n"]
+            for r in conn.execute(
+                "SELECT kind, COUNT(*) AS n FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "GROUP BY kind ORDER BY n DESC",
+                (hid,),
+            ).fetchall()
+        }
+        recent = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT kind, where_ AS location, detail, created_at FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "ORDER BY id DESC LIMIT ?",
+                (hid, limit),
+            ).fetchall()
+        ]
+        return {
+            "days": days,
+            "total": sum(by_kind.values()),
+            "by_kind": by_kind,
+            "recent": recent,
+        }
+    finally:
+        conn.close()

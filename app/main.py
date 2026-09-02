@@ -11,6 +11,7 @@ from fastapi.responses import (
     HTMLResponse,
     PlainTextResponse,
     RedirectResponse,
+    Response,
 )
 from pydantic import BaseModel
 import asyncio
@@ -22,6 +23,8 @@ import os
 import time
 
 from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exception_handlers import http_exception_handler
 
 from . import agent, backup, households, ratelimit, security
 from .db import get_conn, init_db
@@ -43,6 +46,39 @@ app = FastAPI(title="Home Manager")
 # Shared-password gate over every non-public route. Registered before the
 # routes below so it wraps all of them, including the /static mount.
 app.middleware("http")(security.auth_middleware)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def record_server_errors(request: Request, exc: StarletteHTTPException):
+    """
+    Record any 5xx before it leaves the building.
+
+    Hooked here rather than in each route's except block on purpose: there
+    are 84 of those, they already log a traceback, and the thing that keeps
+    going wrong is that a *new* one forgets. A handler at the app level
+    covers routes nobody has written yet.
+
+    429s are recorded by _enforce_rate_limit itself, which knows which
+    bucket was hit; everything below 500 is an ordinary client answer
+    (401 not signed in, 404, a rejected input) and is not breakage.
+    """
+    if exc.status_code >= 500:
+        tools.record_error("server", where=request.url.path, detail=str(exc.detail)[:200])
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def record_unhandled_errors(request: Request, exc: Exception):
+    """
+    The genuinely unhandled case — an exception no route caught.
+
+    These are the worst kind to lose, because there is no friendly message
+    and no ticket: the browser just gets a bare 500. Recorded by exception
+    class name only; the traceback goes to the log as it always did.
+    """
+    tools.record_error("server", where=request.url.path, detail=type(exc).__name__)
+    logger.exception("Unhandled error on %s", request.url.path)
+    raise exc
 
 
 @app.middleware("http")
@@ -158,6 +194,14 @@ def _chat_session_id(request: Request) -> str:
 def _enforce_rate_limit(request: Request, bucket: str) -> None:
     wait = ratelimit.check(bucket, ratelimit.caller_id(request))
     if wait:
+        # Recorded as well as logged. A household hitting the chat limit
+        # sees a refusal and usually says nothing about it; before this,
+        # nothing anywhere recorded that it had happened, so "is the
+        # tester bouncing off the rate limiter?" had no answer. The
+        # caller id is deliberately not stored — the household is already
+        # the row's owner, and per-device detail buys nothing here.
+        logger.warning("Rate limit hit on %s (retry in %ss)", bucket, wait)
+        tools.record_error("rate_limit", where=bucket, detail=f"retry_after={wait}s")
         raise HTTPException(
             status_code=429,
             detail=f"That's a lot of requests at once — give it about {wait} seconds and try again.",
@@ -2214,6 +2258,59 @@ def logout():
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie(security.COOKIE_NAME, path="/")
     return response
+
+
+class ClientErrorRequest(BaseModel):
+    where: str = ""
+    detail: str = ""
+
+
+@app.post("/api/client-error")
+def report_client_error(request: Request, req: ClientErrorRequest):
+    """
+    Something broke in the browser. Recorded so it can be read back.
+
+    Before this, the front end reported nothing, ever: a screen that failed
+    to load wrote a console.warn nobody sees and in places rendered a
+    silently blank section. So when the tester says "it was just empty",
+    there was no way to tell whether the server errored, the network
+    dropped, or there was genuinely nothing to show — three very different
+    problems with one appearance.
+
+    Rate-limited with the ordinary buckets, because a page stuck in an
+    error loop would otherwise write a row per frame. Deliberately returns
+    204 and never an error of its own: a failure to report a failure must
+    not become a second failure on a page that is already having a bad
+    time.
+    """
+    try:
+        _enforce_rate_limit(request, "client_error")
+    except HTTPException:
+        return Response(status_code=204)
+    tools.record_error("client", where=req.where, detail=req.detail)
+    return Response(status_code=204)
+
+
+@app.get("/api/observability")
+def observability(days: int = 1):
+    """
+    The morning report's source: what broke, and whether the app is being
+    used. Errors first, because that is what the report leads with when
+    there is anything to lead with (Emily's call, 2026-09-01 — no
+    email-on-error, it rides the notification she already reads).
+
+    Household-scoped like everything else. Run it per household rather than
+    asking for an all-households view, which would be the one query in the
+    app reading across the isolation boundary.
+    """
+    try:
+        return {
+            "errors": tools.get_recent_errors(days=days),
+            "usage": tools.get_usage_summary(days=max(days, 7)),
+        }
+    except Exception as e:
+        logger.exception("Observability summary failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/api/whoami")
