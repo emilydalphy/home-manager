@@ -950,7 +950,7 @@
     // narration this rule exists to prevent, so `headline` is computed
     // server-side and says at most one thing.
     panel.querySelector('#week-framing').innerHTML =
-      '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Home Manager') +
+      '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Pomona') +
         ' · week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
       '<h1>Meals</h1>' +
       (data.status !== 'approved' && data.headline
@@ -1538,16 +1538,16 @@
     if (!data.weekly_plan_id || !data.days.length) {
       headerEl.innerHTML =
         '<div class="menu-rule-line">EST. 2019</div>' +
-        '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Home Manager') + '</h1>' +
+        '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Pomona') + '</h1>' +
         '<div class="menu-subtitle">No meal plan yet</div>' +
         '<div class="menu-dots">&bull;&bull;&bull;</div>' +
-        '<div class="menu-status">Ask Home Manager to plan your week to get started.</div>';
+        '<div class="menu-status">Ask Pomona to plan your week to get started.</div>';
       mobileEl.querySelector('#week-framing').innerHTML =
-        '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Home Manager') + '</div><h1>Meals</h1>';
+        '<div class="week-framing-line">' + escapeHtml(data.household_name || 'Pomona') + '</div><h1>Meals</h1>';
       mobileEl.querySelector('#day-rail').innerHTML = '';
       mobileEl.querySelector('#day-card-wrap').innerHTML =
         '<div class="wk-day-card"><div class="wk-title" style="margin:0">No meal plan yet</div>' +
-        '<div class="wk-meta">Ask Home Manager to plan your week to get started.</div></div>';
+        '<div class="wk-meta">Ask Pomona to plan your week to get started.</div></div>';
       mobileEl.querySelector('#whole-week-sub').textContent = '';
       gridEl.innerHTML = '';
       renderOpenSlots(panel, data);
@@ -1574,7 +1574,7 @@
 
     headerEl.innerHTML =
       '<div class="menu-rule-line">EST. 2019</div>' +
-      '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Home Manager') + '</h1>' +
+      '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Pomona') + '</h1>' +
       '<div class="menu-subtitle">menu for the week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
       '<div class="menu-dots">&bull;&bull;&bull;</div>' +
       '<div class="menu-status">' + escapeHtml(statusLine) + '</div>' +

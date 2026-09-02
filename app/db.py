@@ -122,14 +122,20 @@ _MIGRATIONS = [
     ("households", "last_active_at", "TEXT"),
 ]
 
-# First two adults (by id, i.e. creation order) get the exact two colors
-# design_handoff_home_manager's README specifies for the household's people
-# token — Emily #66304E (the household's own plum), Marcus #4D8A33 (the
-# household's own leaf green). Any adult beyond a second gets no color (the
-# design only names two); a household with no adults marked yet (age_group
-# not set to "adult") gets none either — it just runs again harmlessly next
-# startup once someone is marked adult, since it only touches blank colors.
-_ADULT_COLORS = ["#66304E", "#4D8A33"]
+# First two adults (by id, i.e. creation order) get the household's two people
+# colors. Repainted for Pomona (2026-09-02): spruce and deep apricot, the two
+# most distinguishable anchors in the palette — previously plum #66304E and
+# leaf green #4D8A33, both from the retired palette. Any adult beyond a second
+# gets no color (the design only names two); a household with no adults marked
+# yet (age_group not set to "adult") gets none either — it just runs again
+# harmlessly next startup once someone is marked adult, since it only touches
+# blank colors.
+#
+# NOTE: this only colors adults whose color is still blank. Members already
+# carrying an old-palette color keep it until someone deliberately clears it —
+# there is no migration here on purpose, because overwriting a color a
+# household may have chosen is not a repaint's business.
+_ADULT_COLORS = ["#1B3328", "#C4703C"]
 
 
 def _backfill_member_colors(conn):

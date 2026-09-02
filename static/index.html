@@ -4,17 +4,17 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Home Manager</title>
+<title>Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#66304E" />
+<meta name="theme-color" content="#1B3328" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<meta name="apple-mobile-web-app-title" content="Pomona" />
 <style>
   body {
     max-width: 720px;
@@ -68,7 +68,7 @@
     background: var(--oat-cream);
   }
   .msg-table tbody tr:last-child td { border-bottom: none; }
-  .msg-table tbody tr:nth-child(even) { background: rgba(102, 48, 78, 0.04); }
+  .msg-table tbody tr:nth-child(even) { background: rgba(27, 51, 40, 0.04); }
   form { display: flex; gap: 8px; }
   input[type=text] {
     flex: 1;
@@ -132,16 +132,16 @@
   #mic-btn.active { background: var(--electric-coral); border-color: var(--electric-coral); color: #fff; animation: mic-pulse 1.4s ease-in-out infinite; }
   #mic-btn:disabled { opacity: 0.5; cursor: default; animation: none; }
   @keyframes mic-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(232, 86, 42, 0.45); }
-    50% { box-shadow: 0 0 0 6px rgba(232, 86, 42, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(178, 58, 34, 0.45); }
+    50% { box-shadow: 0 0 0 6px rgba(178, 58, 34, 0); }
   }
   .bubble.loading { font-style: italic; color: var(--text-muted); animation: loading-pulse 1.3s ease-in-out infinite; }
   @keyframes loading-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 </style>
 </head>
 <body>
-  <p class="subtitle app-nav"><a href="/">&larr; Back to Home Manager</a></p>
-  <h1>Home Manager</h1>
+  <p class="subtitle app-nav"><a href="/">&larr; Back to Pomona</a></p>
+  <h1>Pomona</h1>
   <p class="subtitle app-nav">Chores, meal plan, groceries — ask it anything. <a href="/onboarding">Edit household setup</a> &middot; <a href="/memory">What we know</a> &middot; <a href="/cooker">Cooker view</a> &middot; <a href="/inventory">Inventory</a> &middot; <a href="/grocery">Grocery list</a> &middot; <a href="#" id="share-link">Share meal plan</a></p>
   <div id="chat"></div>
   <div id="quick-actions">

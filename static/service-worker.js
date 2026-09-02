@@ -26,7 +26,16 @@
 // CACHE_NAME again clears any v2 cache (and the stale shell.js/css inside
 // it) on next activate for anyone already affected.
 
-const CACHE_NAME = "home-manager-shell-v3";
+// v3 -> v4 (Pomona repaint, 2026-09-02): this bump matters more than the
+// previous two, because the things that changed are precisely the ones this
+// worker still serves CACHE-FIRST. icon-192.png, icon-512.png and
+// manifest.json all kept their URLs while their *contents* changed
+// completely — new apricot-on-spruce app icon, new name, new theme/background
+// colours. Without a bump, an already-installed PWA would go on serving the
+// old plum icon and the old "Home Manager" manifest from cache forever, since
+// nothing about the request would tell it to re-fetch. The name changed too,
+// not just the digit, so there is no chance of colliding with a stale entry.
+const CACHE_NAME = "pomona-shell-v4";
 const SHELL_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",

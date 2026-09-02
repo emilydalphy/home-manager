@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Kitchen — Home Manager</title>
+<title>Kitchen — Pomona</title>
 <style>
   /* Kitchen hub (design_handoff_home_manager §5) — the Kitchen tab's
      landing content. Inventory and What we know are separate pages
@@ -15,25 +15,25 @@
      existing Grocery/Kitchen embed pattern — see README's Phase 4
      notes); Cook mode is the already-built cooker.html. */
   * { box-sizing: border-box; }
-  body { max-width: 480px; margin: 0 auto; padding: 0 0 32px; background: var(--page, #EFE6D6); }
+  body { max-width: 480px; margin: 0 auto; padding: 0 0 32px; background: var(--page, #F3EBDC); }
   .kh-wrap { padding: 22px 20px 8px; }
-  .kh-kicker { font-family: var(--font-body); font-weight: 800; font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: #A8825C; margin: 0 0 4px; }
+  .kh-kicker { font-family: var(--font-body); font-weight: 800; font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: #A2582F; margin: 0 0 4px; }
   .kh-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0 0 18px; }
 
   .kh-card { border-radius: 18px; padding: 18px 20px; margin-bottom: 14px; }
   .kh-cook-card { background: var(--midnight-violet); color: #fff; }
   .kh-cook-dish { font-family: var(--font-heading); font-weight: 700; font-size: 1.35rem; color: #fff; margin: 0 0 14px; }
   .kh-cook-actions { display: flex; gap: 10px; }
-  .kh-btn-gold { background: var(--turmeric-gold); color: #3A2A0A; border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
+  .kh-btn-gold { background: var(--turmeric-gold); color: #1B3328; border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
   .kh-btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,.5); color: #fff; border-radius: 999px; padding: 12px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: var(--font-body); }
   .kh-cook-empty { font-family: var(--font-body); color: rgba(255,255,255,.85); font-size: 0.92rem; margin: 0; }
 
   .kh-row-card { background: #fff; display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; }
   .kh-row-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; color: var(--midnight-violet); margin: 0 0 4px; }
-  .kh-row-sub { font-family: var(--font-body); font-size: 0.86rem; color: #6B5A63; margin: 0; }
+  .kh-row-sub { font-family: var(--font-body); font-size: 0.86rem; color: #7C7161; margin: 0; }
   .kh-row-open { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--midnight-violet); flex: none; }
 
-  .kh-worth-card { background: #ECDFC8; }
+  .kh-worth-card { background: #E6D9C4; }
   .kh-worth-text { font-family: var(--font-body); font-size: 0.9rem; color: #4A3A2A; margin: 0; line-height: 1.45; }
 </style>
 </head>

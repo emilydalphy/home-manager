@@ -3,92 +3,258 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Home Manager</title>
+<title>Pomona</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700;800&family=Quicksand:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#66304E" />
+<meta name="theme-color" content="#1B3328" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
+  /*
+    Sign-in — built to the SignInPomona design. This is a reskin only: the
+    form's action, method, field names and the __NEXT__ / <!--ERROR-->
+    placeholders that app/main.py:_render_login substitutes into are
+    unchanged, so the auth behaviour is exactly what it was.
+
+    The one screen in the app that is spruce-ground rather than ivory: it is
+    the front door, so it gets the anchor colour and the apricot glow.
+  */
   body {
     margin: 0;
     min-height: 100dvh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: var(--oat-cream);
-  }
-  .login-card {
-    width: 100%;
-    max-width: 360px;
-    background: #fff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: 32px 28px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
-  }
-  .login-card h1 {
-    font-family: var(--font-heading);
-    font-size: 28px;
-    color: var(--midnight-violet);
-    margin: 0;
-  }
-  .login-card p {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 15px;
-    line-height: 1.5;
-  }
-  form { display: flex; flex-direction: column; gap: 14px; }
-  label {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  input[type="password"] {
+    box-sizing: border-box;
+    background-color: var(--spruce);
+    background-image: radial-gradient(132% 60% at 50% 3%,
+      rgba(224, 145, 92, 0.17) 0%,
+      rgba(224, 145, 92, 0.05) 44%,
+      rgba(27, 51, 40, 0) 74%);
+    color: var(--ivory-ink);
     font-family: var(--font-body);
-    font-size: 16px; /* 16px keeps iOS Safari from zooming the page on focus */
-    color: var(--text-body);
-    background: var(--oat-cream);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-control);
-    padding: 13px 14px;
+  }
+
+  /* ---- the mark ---- */
+  .signin-top {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding: 96px 26px 40px;
+    box-sizing: border-box;
+  }
+  .signin-plaque {
+    width: 66px;
+    height: 66px;
+    flex: 0 0 auto;
+    border-radius: 22px;
+    background: rgba(246, 238, 225, 0.05);
+    border: 1.5px solid rgba(169, 196, 176, 0.34);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--apricot);
+  }
+  .signin-mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .signin-wordmark {
+    font-family: var(--font-display);
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    color: var(--ivory-ink);
+    margin: 0;
+  }
+  .signin-rule {
+    width: 46px;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(224, 145, 92, 0.62);
+  }
+
+  /* ---- the two lines of copy ---- */
+  .signin-copy {
+    max-width: 296px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    text-align: center;
+  }
+  /* The one Newsreader italic line on this screen — the brand's exhale.
+     One per screen; a second would make this a serif brand. */
+  .signin-line {
+    font-family: var(--font-accent);
+    font-style: italic;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--apricot-light);
+    margin: 0;
+  }
+  .signin-sub {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: rgba(246, 238, 225, 0.7);
+    margin: 0;
+  }
+
+  /* ---- the form ---- */
+  .signin-bottom {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 26px 44px;
+  }
+  .signin-bottom form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+  }
+
+  /* The field is drawn on the wrapper so the key icon can sit inside it;
+     the input itself is transparent and unstyled. */
+  .signin-field {
+    height: 56px;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: var(--spruce-raised);
+    border: 1.5px solid #2E5240;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 0 16px;
+  }
+  .signin-field:focus-within { border-color: var(--celadon); }
+  .signin-field svg {
+    flex: 0 0 auto;
+    color: var(--celadon);
+  }
+  .signin-field input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-body);
+    /* 16px keeps iOS Safari from zooming the page on focus */
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ivory-ink);
+  }
+  .signin-field input::placeholder {
+    color: rgba(246, 238, 225, 0.48);
+    font-weight: 600;
+  }
+
+  /* Visually hidden, still read aloud — the design shows a placeholder
+     only, but a field with no label is not a field for everybody. */
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Apricot fill, dark spruce ink — rule one. Extends theme.css's
+     .btn-primary (which also keeps the focus ring spruce, since an apricot
+     ring on an apricot button would vanish). */
+  .signin-btn {
+    height: 56px;
     width: 100%;
+    border-radius: 18px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-size: 18px;
+    box-shadow: 0 18px 30px -18px rgba(224, 145, 92, 0.8);
   }
-  input[type="password"]:focus-visible,
-  button:focus-visible {
-    outline: 3px solid var(--turmeric-gold);
-    outline-offset: 2px;
+
+  .signin-helper {
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 6px;
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    color: rgba(246, 238, 225, 0.44);
   }
+
+  /* Error banner — app/main.py injects exactly <p class="error">…</p>. */
   .error {
-    background: #FBE6DF;
-    color: #B23B16;
-    border-radius: var(--radius-control);
-    padding: 10px 12px;
+    margin: 0;
+    background: rgba(178, 58, 34, 0.24);
+    border: 1.5px solid rgba(224, 145, 92, 0.34);
+    color: var(--ivory-ink);
+    border-radius: 14px;
+    padding: 11px 14px;
     font-size: 14.5px;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  /* Short screens (landscape phones, small laptops): let the mark shrink
+     rather than pushing the form off the bottom. */
+  @media (max-height: 640px) {
+    .signin-top { padding-top: 40px; gap: 16px; }
+    .signin-wordmark { font-size: 48px; }
   }
 </style>
 </head>
 <body>
-  <main class="login-card">
-    <h1>Home Manager</h1>
-    <p>This one&rsquo;s just for your household. Enter your passphrase to come in.</p>
+  <main class="signin-top">
+    <div class="signin-plaque" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg>
+    </div>
+
+    <div class="signin-mark">
+      <h1 class="signin-wordmark">Pomona</h1>
+      <span class="signin-rule" aria-hidden="true"></span>
+    </div>
+
+    <div class="signin-copy">
+      <p class="signin-line">This one&rsquo;s just for your household.</p>
+      <p class="signin-sub">Enter your passphrase to come in.</p>
+    </div>
+  </main>
+
+  <div class="signin-bottom">
     <!--ERROR-->
     <form method="post" action="/login">
       <input type="hidden" name="next" value="__NEXT__" />
-      <div>
-        <label for="password">Household passphrase</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" autofocus required />
+      <div class="signin-field">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="12" r="4"></circle><path d="M12.5 12h8"></path><path d="M17.5 12v3.4"></path><path d="M20.5 12v2.4"></path></svg>
+        <label class="sr-only" for="password">Household passphrase</label>
+        <input id="password" name="password" type="password" placeholder="Passphrase" autocomplete="current-password" autofocus required />
       </div>
-      <button type="submit" class="btn-primary">Let me in</button>
+      <button type="submit" class="btn-primary signin-btn">
+        <span>Come in</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg>
+      </button>
     </form>
-  </main>
+    <p class="signin-helper">Ask your household settings owner for the passphrase.</p>
+  </div>
 </body>
 </html>

@@ -4,36 +4,36 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Cooker View — Home Manager</title>
+<title>Cooker View — Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#66304E" />
+<meta name="theme-color" content="#1B3328" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Home Manager" />
+<meta name="apple-mobile-web-app-title" content="Pomona" />
 <link rel="stylesheet" href="/static/theme.css">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
-    font-family: var(--font-body, "Karla", sans-serif);
+    font-family: var(--font-body, "Figtree", sans-serif);
     max-width: 720px;
     margin: 0 auto;
     padding: 24px;
-    background: var(--oat-cream, #F6EFE1);
-    color: var(--text-body, #3A2E33);
+    background: var(--oat-cream, #FBF6EE);
+    color: var(--text-body, #23302A);
   }
-  h1 { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.7rem; font-weight: 700; color: var(--midnight-violet, #66304E); margin-bottom: 4px; }
-  p.subtitle { color: var(--text-muted, #8A7F6E); margin-top: 0; font-size: 0.9rem; }
-  p.subtitle a { color: var(--midnight-violet, #66304E); font-weight: 700; }
+  h1 { font-family: var(--font-heading, "Bricolage Grotesque", sans-serif); font-size: 1.7rem; font-weight: 700; color: var(--midnight-violet, #1B3328); margin-bottom: 4px; }
+  p.subtitle { color: var(--text-muted, #7C7161); margin-top: 0; font-size: 0.9rem; }
+  p.subtitle a { color: var(--midnight-violet, #1B3328); font-weight: 700; }
   /* Meals-cooked / prep-done progress — a positive/complete signal, so it
      leans on Vivid Leaf rather than the neutral violet. */
   .progress-bar-wrap {
     background: #fff;
-    border: 1px solid var(--card-border, #E7DCC8);
+    border: 1px solid var(--card-border, #EEE3D0);
     border-radius: var(--radius-card, 14px);
     padding: 14px 16px;
     margin-bottom: 16px;
@@ -42,16 +42,16 @@
     flex-wrap: wrap;
   }
   .progress-stat { flex: 1; min-width: 140px; }
-  .progress-stat .label { color: var(--text-muted, #8A7F6E); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 3px; font-weight: 500; }
-  .progress-stat .value { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.3rem; font-weight: 700; margin: 0; color: var(--midnight-violet, #66304E); }
-  .progress-track { background: var(--oat-cream-dark, #EDE2CC); border-radius: 6px; height: 6px; overflow: hidden; margin-top: 6px; }
-  .progress-fill { background: var(--vivid-leaf, #6FB84C); height: 100%; border-radius: 6px; transition: width 0.3s ease; }
-  h2.section-title { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.05rem; font-weight: 700; margin: 20px 0 8px; color: var(--midnight-violet, #66304E); }
+  .progress-stat .label { color: var(--text-muted, #7C7161); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; margin: 0 0 3px; font-weight: 500; }
+  .progress-stat .value { font-family: var(--font-heading, "Bricolage Grotesque", sans-serif); font-size: 1.3rem; font-weight: 700; margin: 0; color: var(--midnight-violet, #1B3328); }
+  .progress-track { background: var(--oat-cream-dark, #E6D9C4); border-radius: 6px; height: 6px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { background: var(--vivid-leaf, #A9C4B0); height: 100%; border-radius: 6px; transition: width 0.3s ease; }
+  h2.section-title { font-family: var(--font-heading, "Bricolage Grotesque", sans-serif); font-size: 1.05rem; font-weight: 700; margin: 20px 0 8px; color: var(--midnight-violet, #1B3328); }
   .card {
     background: #fff;
-    border: 1px solid var(--card-border, #E7DCC8);
+    border: 1px solid var(--card-border, #EEE3D0);
     border-radius: var(--radius-card, 14px);
-    box-shadow: var(--shadow-card, 0 1px 2px rgba(102, 48, 78, 0.06));
+    box-shadow: var(--shadow-card, 0 1px 2px rgba(27, 51, 40, 0.06));
     padding: 14px 16px;
     margin-bottom: 10px;
   }
@@ -65,10 +65,10 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    border: 2px solid var(--card-border, #E7DCC8);
+    border: 2px solid var(--card-border, #EEE3D0);
     background: #fff;
     cursor: pointer;
-    color: var(--vivid-leaf, #6FB84C);
+    color: var(--vivid-leaf, #A9C4B0);
     font-size: 1rem;
     display: flex;
     align-items: center;
@@ -76,18 +76,18 @@
     padding: 0;
     margin: -4px 0;
   }
-  .check-toggle.checked { background: var(--vivid-leaf, #6FB84C); border-color: var(--vivid-leaf, #6FB84C); color: #fff; }
+  .check-toggle.checked { background: var(--vivid-leaf, #A9C4B0); border-color: var(--vivid-leaf, #A9C4B0); color: var(--on-accent-ink); }
   .card-body { flex: 1; min-width: 0; }
-  .meal-name { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 1.1rem; font-weight: 600; color: var(--midnight-violet, #66304E); margin: 0; }
+  .meal-name { font-family: var(--font-heading, "Bricolage Grotesque", sans-serif); font-size: 1.1rem; font-weight: 600; color: var(--midnight-violet, #1B3328); margin: 0; }
   .meal-name.done { text-decoration: line-through; }
-  .meal-meta { color: var(--text-muted, #8A7F6E); font-size: 0.78rem; margin: 2px 0 0; text-transform: capitalize; }
+  .meal-meta { color: var(--text-muted, #7C7161); font-size: 0.78rem; margin: 2px 0 0; text-transform: capitalize; }
   /* "Why this?" — small, muted, deliberately not competing with the main
      card content (per screen-spec guidance for this affordance). */
   .why-toggle {
     background: none;
     border: none;
-    color: var(--text-muted, #8A7F6E);
-    font-family: var(--font-body, "Karla", sans-serif);
+    color: var(--text-muted, #7C7161);
+    font-family: var(--font-body, "Figtree", sans-serif);
     font-size: 0.76rem;
     font-weight: 500;
     text-decoration: underline;
@@ -99,8 +99,8 @@
     align-items: center;
   }
   .why-text {
-    color: var(--text-muted, #8A7F6E);
-    font-family: var(--font-body, "Karla", sans-serif);
+    color: var(--text-muted, #7C7161);
+    font-family: var(--font-body, "Figtree", sans-serif);
     font-size: 0.82rem;
     font-style: italic;
     margin: 0 0 4px;
@@ -109,9 +109,9 @@
   /* "Advance prep" highlight — soft Turmeric Gold tag, not a button. */
   .badge {
     display: inline-block;
-    background: rgba(240, 180, 41, 0.22);
-    color: #7a5209;
-    border: 1px solid rgba(240, 180, 41, 0.55);
+    background: rgba(224, 145, 92, 0.22);
+    color: #a2582f;
+    border: 1px solid rgba(224, 145, 92, 0.55);
     border-radius: 12px;
     padding: 2px 9px;
     font-size: 0.72rem;
@@ -122,19 +122,19 @@
      meal-uses into one batch (see get_cooker_view); Vivid Leaf rather than
      the gold "advance prep" tag so the two aren't confused at a glance. */
   .badge.batch-badge {
-    background: rgba(111, 184, 76, 0.2);
-    color: #3F7A29;
-    border-color: rgba(111, 184, 76, 0.55);
+    background: rgba(169, 196, 176, 0.2);
+    color: #4F6B5B;
+    border-color: rgba(169, 196, 176, 0.55);
   }
   .batch-note {
-    font-family: var(--font-body, "Karla", sans-serif);
+    font-family: var(--font-body, "Figtree", sans-serif);
     font-size: 0.8rem;
-    color: var(--text-muted, #8A7F6E);
+    color: var(--text-muted, #7C7161);
     margin: 2px 0 4px;
   }
   .instr-group-label {
     display: inline-block;
-    font-family: var(--font-body, "Karla", sans-serif);
+    font-family: var(--font-body, "Figtree", sans-serif);
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.03em;
@@ -146,12 +146,12 @@
   .instr-group-label:first-of-type { margin-top: 4px; }
   /* "Do ahead" — the advance-prep highlight, Turmeric Gold tag.
      "Day of" — the regular/neutral step group, Midnight Violet tag. */
-  h5.instr-group-label:nth-of-type(1) { background: rgba(240, 180, 41, 0.22); color: #7a5209; }
-  h5.instr-group-label:nth-of-type(2) { background: var(--violet-soft, #F1E4EC); color: var(--midnight-violet, #66304E); }
+  h5.instr-group-label:nth-of-type(1) { background: rgba(224, 145, 92, 0.22); color: #a2582f; }
+  h5.instr-group-label:nth-of-type(2) { background: var(--violet-soft, #E2EDE5); color: var(--midnight-violet, #1B3328); }
   .detail-toggle {
     background: none;
     border: none;
-    color: var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
     font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
@@ -168,47 +168,47 @@
     margin: 4px 0 2px;
   }
   .serving-label {
-    font-family: var(--font-body, "Karla", sans-serif);
+    font-family: var(--font-body, "Figtree", sans-serif);
     font-size: 0.78rem;
     font-weight: 500;
-    color: var(--text-muted, #8A7F6E);
+    color: var(--text-muted, #7C7161);
   }
   .serving-btn {
     min-width: 44px;
     min-height: 44px;
     border-radius: 50%;
-    border: 1px solid var(--midnight-violet, #66304E);
+    border: 1px solid var(--midnight-violet, #1B3328);
     background: transparent;
-    color: var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
     font-size: 1.1rem;
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
   }
-  .serving-btn:hover { background: var(--violet-soft, #F1E4EC); }
+  .serving-btn:hover { background: var(--violet-soft, #E2EDE5); }
   .serving-count {
-    font-family: var(--font-heading, "Quicksand", sans-serif);
+    font-family: var(--font-heading, "Bricolage Grotesque", sans-serif);
     font-weight: 700;
     font-size: 1rem;
-    color: var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
     min-width: 1.4em;
     text-align: center;
   }
   .unscaled-note {
-    color: var(--text-muted, #8A7F6E);
+    color: var(--text-muted, #7C7161);
     font-size: 0.78rem;
     font-style: italic;
     margin: 4px 0 0;
   }
-  .detail h4 { font-family: var(--font-heading, "Quicksand", sans-serif); margin: 10px 0 4px; font-size: 0.82rem; font-weight: 600; color: var(--midnight-violet, #66304E); text-transform: uppercase; letter-spacing: 0.02em; }
+  .detail h4 { font-family: var(--font-heading, "Bricolage Grotesque", sans-serif); margin: 10px 0 4px; font-size: 0.82rem; font-weight: 600; color: var(--midnight-violet, #1B3328); text-transform: uppercase; letter-spacing: 0.02em; }
   .detail h4:first-child { margin-top: 0; }
   .detail ul, .detail ol { margin: 0; padding-left: 20px; }
   .detail li { margin-bottom: 4px; }
-  .no-recipe { color: var(--text-muted, #8A7F6E); font-style: italic; font-size: 0.85rem; margin-top: 8px; }
+  .no-recipe { color: var(--text-muted, #7C7161); font-style: italic; font-size: 0.85rem; margin-top: 8px; }
   .fill-recipe-btn {
     background: transparent;
-    color: var(--midnight-violet, #66304E);
-    border: 1px solid var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
+    border: 1px solid var(--midnight-violet, #1B3328);
     border-radius: var(--radius-control, 10px);
     padding: 11px 16px;
     min-height: 44px;
@@ -216,25 +216,25 @@
     font-size: 0.85rem;
     cursor: pointer;
   }
-  .fill-recipe-btn:hover:not(:disabled) { background: var(--violet-soft, #F1E4EC); }
+  .fill-recipe-btn:hover:not(:disabled) { background: var(--violet-soft, #E2EDE5); }
   .fill-recipe-btn:disabled { opacity: 0.6; cursor: default; }
   .prep-task { display: flex; align-items: center; gap: 12px; }
   .prep-task .desc { flex: 1; }
-  .prep-task .date { color: var(--text-muted, #8A7F6E); font-weight: 500; font-size: 0.78rem; text-transform: none; margin: 0 0 2px; }
-  .prep-task.done .desc-text { text-decoration: line-through; color: var(--text-muted, #8A7F6E); }
-  .empty { color: var(--text-muted, #8A7F6E); font-size: 0.9rem; font-style: italic; padding: 8px 0; }
-  .error { color: var(--electric-coral, #E8562A); font-size: 0.9rem; font-weight: 500; }
+  .prep-task .date { color: var(--text-muted, #7C7161); font-weight: 500; font-size: 0.78rem; text-transform: none; margin: 0 0 2px; }
+  .prep-task.done .desc-text { text-decoration: line-through; color: var(--text-muted, #7C7161); }
+  .empty { color: var(--text-muted, #7C7161); font-size: 0.9rem; font-style: italic; padding: 8px 0; }
+  .error { color: var(--electric-coral, #B23A22); font-size: 0.9rem; font-weight: 500; }
   /* Advisory banner — soft gold-tinted highlight, not a CTA. */
   .attention-banner {
     border-radius: var(--radius-card, 14px);
     padding: 12px 16px;
     margin-bottom: 16px;
     font-size: 0.88rem;
-    background: rgba(240, 180, 41, 0.15);
-    border: 1px solid rgba(240, 180, 41, 0.45);
-    color: var(--text-body, #3A2E33);
+    background: rgba(224, 145, 92, 0.15);
+    border: 1px solid rgba(224, 145, 92, 0.45);
+    color: var(--text-body, #23302A);
   }
-  .attention-banner h2 { font-family: var(--font-heading, "Quicksand", sans-serif); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--midnight-violet, #66304E); }
+  .attention-banner h2 { font-family: var(--font-heading, "Bricolage Grotesque", sans-serif); font-size: 0.95rem; font-weight: 700; margin: 0 0 8px; color: var(--midnight-violet, #1B3328); }
   .attention-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; }
   .attention-item .summary { flex: 1; }
   .attention-item .attn-actions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -246,51 +246,51 @@
     min-width: 44px;
     min-height: 44px;
     border-radius: 8px;
-    color: var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
   }
-  .attn-btn.resolve:hover { background: rgba(111, 184, 76, 0.18); color: #3f7a29; }
-  .attn-btn.dismiss:hover { background: rgba(232, 86, 42, 0.15); color: var(--electric-coral, #E8562A); }
+  .attn-btn.resolve:hover { background: rgba(169, 196, 176, 0.18); color: #4f6b5b; }
+  .attn-btn.dismiss:hover { background: rgba(178, 58, 34, 0.15); color: var(--electric-coral, #B23A22); }
   .attention-item.feedback-item { flex-direction: column; align-items: stretch; }
   .attention-item .feedback-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
   /* Feedback rating — Vivid Leaf for "liked", Electric Coral for "not a
      hit", used sparingly as the buttons' outline/hover only. */
   .attention-item .feedback-row .fb-btn {
     background: #fff;
-    border: 1px solid var(--card-border, #E7DCC8);
+    border: 1px solid var(--card-border, #EEE3D0);
     border-radius: var(--radius-control, 10px);
     padding: 9px 12px;
     min-height: 44px;
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--text-body, #3A2E33);
+    color: var(--text-body, #23302A);
     cursor: pointer;
   }
-  .attention-item .feedback-row .fb-btn.liked:hover { border-color: var(--vivid-leaf, #6FB84C); color: #3f7a29; background: rgba(111, 184, 76, 0.1); }
-  .attention-item .feedback-row .fb-btn.disliked:hover { border-color: var(--electric-coral, #E8562A); color: var(--electric-coral, #E8562A); background: rgba(232, 86, 42, 0.08); }
+  .attention-item .feedback-row .fb-btn.liked:hover { border-color: var(--vivid-leaf, #A9C4B0); color: #4f6b5b; background: rgba(169, 196, 176, 0.1); }
+  .attention-item .feedback-row .fb-btn.disliked:hover { border-color: var(--electric-coral, #B23A22); color: var(--electric-coral, #B23A22); background: rgba(178, 58, 34, 0.08); }
   .attention-item .feedback-row .fb-btn:disabled { opacity: 0.6; cursor: default; }
   .attention-item .feedback-row .fb-notes {
     flex: 1;
     min-width: 120px;
     min-height: 44px;
-    border: 1px solid var(--card-border, #E7DCC8);
+    border: 1px solid var(--card-border, #EEE3D0);
     border-radius: var(--radius-control, 10px);
     padding: 5px 10px;
     font-size: 0.85rem;
-    font-family: var(--font-body, "Karla", sans-serif);
+    font-family: var(--font-body, "Figtree", sans-serif);
   }
   .attention-item.usage-item { flex-direction: column; align-items: stretch; }
   .attention-item .usage-row { display: flex; gap: 8px; margin-top: 6px; }
   .attention-item .usage-row input {
     flex: 1;
     min-height: 44px;
-    border: 1px solid var(--card-border, #E7DCC8);
+    border: 1px solid var(--card-border, #EEE3D0);
     border-radius: var(--radius-control, 10px);
     padding: 5px 10px;
     font-size: 0.85rem;
-    font-family: var(--font-body, "Karla", sans-serif);
+    font-family: var(--font-body, "Figtree", sans-serif);
   }
   .attention-item .usage-row button.log-btn {
-    background: var(--midnight-violet, #66304E);
+    background: var(--midnight-violet, #1B3328);
     color: #fff;
     border: none;
     border-radius: var(--radius-control, 10px);
@@ -301,12 +301,12 @@
     cursor: pointer;
     flex-shrink: 0;
   }
-  .attention-item .usage-row button.log-btn:hover:not(:disabled) { background: var(--violet-hover, #542640); }
+  .attention-item .usage-row button.log-btn:hover:not(:disabled) { background: var(--violet-hover, #24402F); }
   .attention-item .usage-row button.log-btn:disabled { opacity: 0.6; cursor: default; }
   .attention-item .usage-row button.skip-btn {
     background: none;
     border: none;
-    color: var(--text-muted, #8A7F6E);
+    color: var(--text-muted, #7C7161);
     font-size: 0.82rem;
     min-height: 44px;
     cursor: pointer;
@@ -315,26 +315,26 @@
   .header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .refresh-btn {
     background: transparent;
-    border: 1px solid var(--midnight-violet, #66304E);
+    border: 1px solid var(--midnight-violet, #1B3328);
     border-radius: var(--radius-control, 10px);
     padding: 10px 14px;
     min-height: 44px;
     font-weight: 700;
     font-size: 0.85rem;
-    color: var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
     cursor: pointer;
     flex-shrink: 0;
   }
-  .refresh-btn:hover:not(:disabled) { background: var(--violet-soft, #F1E4EC); }
+  .refresh-btn:hover:not(:disabled) { background: var(--violet-soft, #E2EDE5); }
   .refresh-btn:disabled { opacity: 0.6; cursor: default; }
   /* Hands-free mic entry point — the single most important action on this
      screen, so it gets the reserved Turmeric Gold hero treatment (the one
      exception called out in the screen spec). Listening/active state
      switches to a Vivid Leaf pulsing ring with a readable label instead. */
   .voice-btn {
-    background: var(--turmeric-gold, #F0B429);
+    background: var(--turmeric-gold, #E0915C);
     border: none;
-    color: var(--midnight-violet, #66304E);
+    color: var(--midnight-violet, #1B3328);
     border-radius: var(--radius-control, 10px);
     padding: 10px 16px;
     min-height: 44px;
@@ -343,17 +343,17 @@
     cursor: pointer;
     margin: 6px 0;
   }
-  .voice-btn:hover:not(.active) { background: var(--gold-hover, #DDA224); }
+  .voice-btn:hover:not(.active) { background: var(--gold-hover, #C4703C); }
   .voice-btn.active {
-    background: var(--vivid-leaf, #6FB84C);
-    color: #fff;
-    box-shadow: 0 0 0 0 rgba(111, 184, 76, 0.6);
+    background: var(--vivid-leaf, #A9C4B0);
+    color: var(--on-accent-ink);
+    box-shadow: 0 0 0 0 rgba(169, 196, 176, 0.6);
     animation: voice-pulse-ring 1.6s ease-out infinite;
   }
   @keyframes voice-pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(111, 184, 76, 0.55); }
-    70% { box-shadow: 0 0 0 10px rgba(111, 184, 76, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(111, 184, 76, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(169, 196, 176, 0.55); }
+    70% { box-shadow: 0 0 0 10px rgba(169, 196, 176, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(169, 196, 176, 0); }
   }
   /* Listening panel — lives under the same Vivid Leaf "active" language as
      the mic button itself. */
@@ -363,16 +363,16 @@
     padding: 10px 14px;
     margin-bottom: 14px;
     font-size: 0.85rem;
-    background: rgba(111, 184, 76, 0.12);
-    border: 1px solid rgba(111, 184, 76, 0.4);
-    color: var(--text-body, #3A2E33);
+    background: rgba(169, 196, 176, 0.12);
+    border: 1px solid rgba(169, 196, 176, 0.4);
+    color: var(--text-body, #23302A);
   }
   .voice-status.showing { display: block; }
-  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--vivid-leaf, #6FB84C); margin-right: 6px; animation: voice-pulse-dot 1.2s ease-in-out infinite; }
+  .voice-status .voice-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--vivid-leaf, #A9C4B0); margin-right: 6px; animation: voice-pulse-dot 1.2s ease-in-out infinite; }
   @keyframes voice-pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-  .voice-status .voice-note { display: block; margin-top: 6px; color: var(--text-muted, #8A7F6E); font-size: 0.78rem; }
+  .voice-status .voice-note { display: block; margin-top: 6px; color: var(--text-muted, #7C7161); font-size: 0.78rem; }
   .voice-status .voice-log { margin: 6px 0 0; padding: 0; list-style: none; }
-  .voice-status .voice-log li { padding: 3px 0; border-top: 1px solid rgba(111, 184, 76, 0.3); }
+  .voice-status .voice-log li { padding: 3px 0; border-top: 1px solid rgba(169, 196, 176, 0.3); }
   .voice-status .voice-log li:first-child { border-top: none; }
 </style>
 </head>
@@ -535,7 +535,7 @@ function updateVoiceButtons() {
     const isThisOne = !!(voiceSession && voiceSession.isActive() && voiceContext &&
       voiceContext.type === ctxType && (ctxType !== 'meal' || String(voiceContext.idx) === btnIdx));
     btn.classList.toggle('active', isThisOne);
-    btn.innerHTML = isThisOne ? '&#127908; Stop hands-free' : '&#127908; Hands-free';
+    btn.innerHTML = isThisOne ? '&#4F6B5B; Stop hands-free' : '&#4F6B5B; Hands-free';
   });
 }
 
@@ -730,7 +730,7 @@ function render(view) {
 
   if (view.prep_tasks && view.prep_tasks.length) {
     html += '<h2 class="section-title">Prep schedule</h2>';
-    html += `<button class="voice-btn" data-ctx="prep" title="Hands-free: check off prep steps by voice">&#127908; Hands-free</button>`;
+    html += `<button class="voice-btn" data-ctx="prep" title="Hands-free: check off prep steps by voice">&#4F6B5B; Hands-free</button>`;
     for (const t of view.prep_tasks) {
       const isDone = t.status === 'done';
       html += `<div class="card prep-task ${isDone ? 'done' : ''}">
@@ -776,7 +776,7 @@ function render(view) {
     if (m.has_full_recipe) {
       html += `<button class="detail-toggle" data-toggle="${idx}">Show recipe &darr;</button>
         <div class="detail" id="detail-${idx}">
-          <button class="voice-btn" data-ctx="meal" data-idx="${idx}" title="Hands-free: check off, ask about ingredients/steps, log a substitution, by voice">&#127908; Hands-free</button>
+          <button class="voice-btn" data-ctx="meal" data-idx="${idx}" title="Hands-free: check off, ask about ingredients/steps, log a substitution, by voice">&#4F6B5B; Hands-free</button>
           ${m.default_servings ? `
           <div class="serving-stepper" data-idx="${idx}" data-recipe="${escapeHtml(m.meal || '')}" data-base="${m.default_servings}">
             <span class="serving-label">Serves</span>

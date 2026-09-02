@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>This week's meals</title>
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#66304E" />
+<meta name="theme-color" content="#1B3328" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
   /*
@@ -36,15 +36,15 @@
     font-family: var(--font-body);
     font-weight: 700;
     font-size: 0.78rem;
-    color: #fff;
+    color: var(--on-accent-ink);
     background: var(--vivid-leaf);
     border-radius: var(--radius-pill);
     padding: 3px 11px;
   }
   .first-run-banner {
-    background: rgba(111, 184, 76, 0.14);
+    background: rgba(169, 196, 176, 0.14);
     color: #2f5a1f;
-    border: 1px solid rgba(111, 184, 76, 0.4);
+    border: 1px solid rgba(169, 196, 176, 0.4);
     border-radius: var(--radius-card);
     padding: 0.8rem 1rem;
     font-family: var(--font-body);
@@ -72,7 +72,7 @@
     margin-bottom: 14px;
   }
   .sidebar {
-    background: #66304E;
+    background: #1B3328;
     width: 52px;
     flex-shrink: 0;
     display: flex;
@@ -81,10 +81,10 @@
     gap: 12px;
   }
   .sidebar-tab {
-    font-family: 'Karla', sans-serif;
+    font-family: "Figtree", sans-serif;
     font-weight: 700;
     font-size: 11px;
-    color: #F6EFE1;
+    color: #FBF6EE;
     opacity: 0.5;
     text-align: center;
     padding: 7px 0;
@@ -93,38 +93,38 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-  .sidebar-tab:hover:not(.active) { opacity: 1; background: rgba(240, 180, 41, 0.25); }
+  .sidebar-tab:hover:not(.active) { opacity: 1; background: rgba(224, 145, 92, 0.25); }
   .sidebar-tab.rot-l:hover:not(.active) { transform: rotate(-3deg); }
   .sidebar-tab.rot-r:hover:not(.active) { transform: rotate(3deg); }
   .sidebar-tab.active {
-    background: #F0B429;
-    color: #3A2A0A;
+    background: #E0915C;
+    color: #1B3328;
     opacity: 1;
     font-weight: 800;
     cursor: default;
   }
   .content-col {
-    background: #F6EFE1;
+    background: #FBF6EE;
     flex: 1;
     padding: 26px 28px;
     min-width: 0;
   }
   .content-header { text-align: center; margin-bottom: 20px; }
   .day-eyebrow {
-    font-family: 'Karla', sans-serif;
+    font-family: "Figtree", sans-serif;
     font-weight: 700;
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #8A7A83;
+    color: #7E7360;
     margin-bottom: 4px;
   }
-  .day-title { font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 21px; color: #3A1F2E; }
+  .day-title { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 21px; color: #23302A; }
   .meal-block { text-align: center; margin-bottom: 16px; }
   .meal-block:last-child { margin-bottom: 0; }
   .meal-badge {
     display: inline-block;
-    font-family: 'Karla', sans-serif;
+    font-family: "Figtree", sans-serif;
     font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.06em;
@@ -133,12 +133,12 @@
     border-radius: 20px;
     margin-bottom: 7px;
   }
-  .meal-badge.breakfast { background: #ECDFC8; color: #66304E; transform: rotate(-2deg); }
-  .meal-badge.lunch { background: #6FB84C; color: #fff; transform: rotate(2deg); }
-  .meal-badge.dinner { background: #E8562A; color: #fff; transform: rotate(-2deg); }
-  .meal-badge.snack { background: #F0B429; color: #3A2A0A; transform: rotate(2deg); }
-  .meal-name { font-family: 'Quicksand', sans-serif; font-weight: 600; font-size: 14.5px; color: #3A1F2E; line-height: 1.4; }
-  .meal-divider { height: 1px; background: #E8562A; opacity: 0.2; width: 36px; margin: 0 auto 16px; }
+  .meal-badge.breakfast { background: #E6D9C4; color: #1B3328; transform: rotate(-2deg); }
+  .meal-badge.lunch { background: #A9C4B0; color: var(--on-accent-ink); transform: rotate(2deg); }
+  .meal-badge.dinner { background: #B23A22; color: #fff; transform: rotate(-2deg); }
+  .meal-badge.snack { background: #E0915C; color: #1B3328; transform: rotate(2deg); }
+  .meal-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 14.5px; color: #23302A; line-height: 1.4; }
+  .meal-divider { height: 1px; background: #B23A22; opacity: 0.2; width: 36px; margin: 0 auto 16px; }
 
   .empty, .error { color: var(--text-muted); font-size: 0.95rem; padding: 1rem 0; }
   .pool-toggle {
