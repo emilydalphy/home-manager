@@ -85,9 +85,10 @@ def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
 
 
 # Real tracked baseline of what's currently on hand, distinct from the
-# grocery list (what's still needed). Chat mention is the only capture
-# method this phase — no manual-entry form, no photo recognition (both
-# pushed to a later phase once this simpler path is proven out).
+# grocery list (what's still needed). Captured three ways: chat mention,
+# the Inventory screen's own add form, and the photo scanners (receipt,
+# fridge, pantry) behind /api/inventory/scan-*. Chat is still the one that
+# catches what gets said in passing rather than typed in deliberately.
 def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | None, bool]:
     """
     Try to subtract minus_qty from existing_qty for the same inventory item.
