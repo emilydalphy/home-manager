@@ -908,11 +908,28 @@ document.querySelectorAll('[data-back]').forEach(el => {
 });
 
 // ---------- Post-reveal: chores (optional) ----------
+// The friend beta is meals-only by decision (Emily, 2026-09-01), so the
+// first thing a new household sees after their week shouldn't be an offer
+// to go and set up a different module. Flip this back to true when chores
+// are part of what's being tested; nothing else needs changing, and the
+// whole chores flow below stays wired up and working in the meantime.
+const OFFER_CHORES_AFTER_REVEAL = false;
+
 document.getElementById('reveal-done-btn').onclick = () => { window.location.href = '/week?firstplan=1'; };
 document.getElementById('reveal-chores-btn').onclick = () => {
   buildChoresQStep();
   showStep('chores-q');
 };
+if (!OFFER_CHORES_AFTER_REVEAL) {
+  document.getElementById('reveal-chores-btn').style.display = 'none';
+  // With the offer gone this is the only way on, so it shouldn't still be
+  // styled as the lesser of two choices.
+  document.getElementById('reveal-done-btn').classList.remove('secondary');
+  // Its wording is left exactly as-is deliberately. It currently reads
+  // "I'm all set — take me to chat" while actually navigating to /week,
+  // which is worth fixing — but copy is Emily's call, not something to
+  // change quietly on the way past. Raised on the beta-safety ticket.
+}
 
 const petsDiv = document.getElementById('pets');
 function addPetRow() {

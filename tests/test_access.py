@@ -55,7 +55,12 @@ def test_signed_in_caller_reaches_the_api(signed_in):
 def test_login_page_renders(client):
     res = client.get("/login")
     assert res.status_code == 200
-    assert "Household password" in res.text
+    # The form itself, rather than the surrounding copy — the wording here
+    # is deliberately being revisited for the beta (it used to greet a
+    # first-time tester with "pick up where you left off"), and a smoke
+    # test shouldn't fail every time someone improves a sentence.
+    assert 'name="password"' in res.text
+    assert "passphrase" in res.text.lower()
 
 
 def test_wrong_password_does_not_sign_you_in(client):
