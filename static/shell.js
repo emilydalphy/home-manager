@@ -1223,8 +1223,25 @@
     if (!n) {
       return 'Everything this week needs is already on your shopping list. Approving won’t add anything to it.';
     }
-    return 'I haven’t put anything on your shopping list yet. Approve the week and I’ll build it — ' +
-      n + (n === 1 ? ' item' : ' items') + ', less whatever’s already in your kitchen.';
+    // The spec's line ended ", less whatever's already in your kitchen",
+    // which promised a subtraction that has in fact already happened: n is
+    // the count AFTER the kitchen was checked (see
+    // preview_plan_grocery_impact, which puts each ingredient in exactly
+    // one of the two buckets). So it read as "n items, and then fewer than
+    // that" when the truth is "n items, which is what's left".
+    //
+    // Now it says what actually happened, in the same shape as the receipt
+    // below — and says nothing at all when nothing was subtracted, which is
+    // every household that hasn't done the inventory intake.
+    // (Emily's call, 2026-09-02. COPY.md and SPEC.md updated to match.)
+    var have = (preview && preview.already_have_count) || 0;
+    var line = 'I haven’t put anything on your shopping list yet. Approve the week and I’ll build it — ' +
+      n + (n === 1 ? ' item' : ' items') + '.';
+    if (have) {
+      line += ' ' + have + (have === 1 ? ' more was' : ' more were') +
+        ' already in your kitchen, so I’ve left ' + (have === 1 ? 'that' : 'those') + ' off.';
+    }
+    return line;
   }
 
   function receiptBodyText(data) {
