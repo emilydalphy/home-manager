@@ -10,6 +10,52 @@ from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
 
 
+def _merge_key(name: str) -> str:
+    """
+    The name two grocery lines have to share to be the same thing.
+
+    Case and spacing were already ignored; number was not, so "Bell
+    pepper" and "Bell peppers" sat on the list as two separate lines --
+    the shopper's problem, since it reads as two things to buy and the
+    quantities never combine.
+
+    Only the LAST word is singularised. In an English food name the
+    trailing word is the thing itself and the leading words describe it
+    ("bell pepper", "spring onion", "chicken thigh"), so that is where
+    number lives; touching the earlier words would start collapsing names
+    that genuinely differ.
+
+    Deliberately narrow. It handles the plural spellings that actually
+    turn up on a shopping list rather than trying to be a general
+    inflector: getting "tomatoes" and "berries" right matters, and
+    anything cleverer risks merging two things a person meant to buy
+    separately -- a wrong merge is worse than a duplicate line, because a
+    duplicate is visible and a silent merge is not.
+    """
+    cleaned = " ".join((name or "").strip().lower().split())
+    if not cleaned:
+        return ""
+    words = cleaned.split(" ")
+    words[-1] = _singular_word(words[-1])
+    return " ".join(words)
+
+
+def _singular_word(word: str) -> str:
+    # Short words are left alone: "oats" and "peas" are how people write
+    # them, and there is no singular anyone would type instead.
+    if len(word) <= 4 or not word.endswith("s"):
+        return word
+    if word.endswith("ss"):          # "watercress", "asparagus" is handled below
+        return word
+    if word.endswith("ies"):         # berries -> berry
+        return word[:-3] + "y"
+    if word.endswith("oes"):         # tomatoes -> tomato, potatoes -> potato
+        return word[:-2]
+    if word.endswith(("ches", "shes", "xes", "zes")):   # peaches -> peach
+        return word[:-2]
+    return word[:-1]                 # peppers -> pepper
+
+
 def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
     """
     Try to merge two quantity strings for the same grocery item. Returns
@@ -133,10 +179,16 @@ def add_grocery_item(
     """
     quantity = _quantities._normalize_grocery_quantity(quantity or "")
     conn = get_conn()
-    existing = conn.execute(
-        "SELECT id, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' AND LOWER(item) = LOWER(?)",
-        (household_id(), item),
-    ).fetchone()
+    # Compared in Python rather than SQL because the comparison is a
+    # normalised key, not a column value. The 'needed' list is a shopping
+    # list -- tens of rows -- so reading it to find one match is cheaper
+    # than it looks and far clearer than encoding the rule in SQL.
+    candidates = conn.execute(
+        "SELECT id, item, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' ORDER BY id",
+        (household_id(),),
+    ).fetchall()
+    wanted = _merge_key(item)
+    existing = next((r for r in candidates if _merge_key(r["item"]) == wanted), None)
     pref = conn.execute(
         "SELECT store FROM item_store_preferences WHERE household_id = ? AND item = ?",
         (household_id(), item.strip().lower()),
@@ -150,8 +202,12 @@ def add_grocery_item(
         )
         conn.commit()
         item_id = existing["id"]
+        # The name already on the list, not the one just asked for: the
+        # row keeps its own wording, so saying "item" back means the line
+        # the shopper will actually see.
+        item_name = existing["item"]
         conn.close()
-        return {"item_id": item_id, "item": item, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
+        return {"item_id": item_id, "item": item_name, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
 
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -279,8 +335,9 @@ def get_grocery_list_by_section(status: str = "needed") -> dict:
 
 def consolidate_grocery_list(status: str = "needed") -> dict:
     """
-    Merge any duplicate lines already on the list (same item name,
-    case-insensitive) into one line each, combining quantities with the
+    Merge any duplicate lines already on the list (the same item name
+    ignoring case and singular/plural) into one line each, combining
+    quantities with the
     same logic add_grocery_item uses automatically for new additions.
     Call this if the user asks to clean up/consolidate the list, or if you
     notice the same item appears more than once — items added since
@@ -296,7 +353,7 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
 
     groups: dict[str, list[dict]] = {}
     for r in rows:
-        groups.setdefault(r["item"].strip().lower(), []).append(dict(r))
+        groups.setdefault(_merge_key(r["item"]), []).append(dict(r))
 
     merged_count = 0
     for entries in groups.values():
