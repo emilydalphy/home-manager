@@ -2094,15 +2094,40 @@ def _intake_generation_context(intake: dict) -> dict:
 # operation, so a double-tap or a chat request racing a screen request
 # produced two full generations and two plans for one real week, with no
 # error anywhere. Keyed per household so one household can never block
-# another. The dict grows by one entry per week per household and is
+# another. The dicts grow by one entry per week per household and are
 # never pruned; at 52 weeks a year that is not worth managing.
 _WEEK_GENERATION_LOCKS: dict[tuple, threading.Lock] = {}
 _WEEK_GENERATION_LOCKS_GUARD = threading.Lock()
+# What the last SUCCESSFUL generation for a key produced: a counter, the
+# plan it made, and the arguments it was asked for. Only ever written
+# while holding that key's lock.
+_WEEK_GENERATION_RESULTS: dict[tuple, dict] = {}
 
 
 def _week_generation_lock(key: tuple) -> threading.Lock:
     with _WEEK_GENERATION_LOCKS_GUARD:
         return _WEEK_GENERATION_LOCKS.setdefault(key, threading.Lock())
+
+
+def _week_lock_key(week_start_date: str) -> str:
+    """
+    The Monday of whatever week this date falls in.
+
+    Normalised because the entry points disagree about what a week is
+    keyed by: onboarding passes today's date (app/main.py), while chat and
+    the plan screen pass the week's Monday. Locking on the raw string
+    would put those in different buckets on six days out of seven, so the
+    two callers most likely to overlap during a household's first hour
+    would not have serialized against each other at all -- which is the
+    exact thing this lock exists to prevent. A date that won't parse locks
+    on itself rather than raising; refusing to plan a week because its
+    lock key was odd would be worse than a slightly coarse lock.
+    """
+    try:
+        d = datetime.date.fromisoformat(week_start_date)
+    except (TypeError, ValueError):
+        return str(week_start_date)
+    return (d - datetime.timedelta(days=d.weekday())).isoformat()
 
 
 def generate_weekly_plan(
@@ -2113,36 +2138,53 @@ def generate_weekly_plan(
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass. See
-    _generate_weekly_plan for what that involves; this wrapper exists to
-    make sure only one generation for a given household and week runs at
-    a time.
+    _generate_weekly_plan for what that involves; this wrapper exists so
+    that only one generation for a given household and week runs at a
+    time.
 
-    A caller that had to wait for another generation gets that
-    generation's plan handed back instead of starting a second one --
-    which is what someone who asked twice at once actually wanted, and
-    saves both the money and the duplicate week. A caller that didn't
-    wait generates normally, so an intentional re-plan still works.
+    A caller that had to wait is handed the other one's plan ONLY when
+    that generation actually succeeded and was asked for the same thing.
+    Both conditions matter: if the first attempt failed, handing back
+    whatever plan happens to exist for that week would report a
+    pre-existing plan as a fresh one and swallow the failure entirely --
+    the household taps "plan my week" twice, generation dies, and the
+    screen simply re-renders the week they were trying to replace. And if
+    the two requests asked for different things (a constraint like "no
+    fish this week", a different intake), the second caller's request is a
+    real request, not a duplicate to swallow. In either case this
+    generates properly instead.
     """
-    lock = _week_generation_lock((tools.household_id(), week_start_date))
+    key = (tools.household_id(), _week_lock_key(week_start_date))
+    signature = (constraints_notes, day_count, intake_id)
+    lock = _week_generation_lock(key)
+    # Read before blocking, so "did a generation finish while I waited"
+    # can be answered by comparison rather than by guessing.
+    before = _WEEK_GENERATION_RESULTS.get(key, {}).get("seq", 0)
     waited = not lock.acquire(blocking=False)
     if waited:
         lock.acquire()
     try:
         if waited:
-            existing = tools.get_plan_id_for_week(week_start_date)
-            if existing is not None:
+            done = _WEEK_GENERATION_RESULTS.get(key, {})
+            if done.get("seq", 0) > before and done.get("signature") == signature:
                 logger.warning(
-                    "Skipped a duplicate generation for the week of %s; returning the plan "
-                    "the concurrent request just produced (id %s)",
-                    week_start_date, existing,
+                    "Skipped a duplicate generation for the week of %s; returning plan %s, "
+                    "which the concurrent request just produced",
+                    week_start_date, done.get("plan_id"),
                 )
-                return tools.get_weekly_plan(existing)
-        return _generate_weekly_plan(
+                return tools.get_weekly_plan(done["plan_id"])
+        plan = _generate_weekly_plan(
             week_start_date,
             constraints_notes=constraints_notes,
             day_count=day_count,
             intake_id=intake_id,
         )
+        _WEEK_GENERATION_RESULTS[key] = {
+            "seq": _WEEK_GENERATION_RESULTS.get(key, {}).get("seq", 0) + 1,
+            "plan_id": plan.get("weekly_plan_id"),
+            "signature": signature,
+        }
+        return plan
     finally:
         lock.release()
 
@@ -2244,15 +2286,10 @@ def _generate_weekly_plan(
     # 2026-08-31: an orphan plan with zero meals, alongside a good one for
     # the same week.
     completed = False
+    # Captured before anything is written, so a rollback can undo more
+    # than the rows it deletes -- see snapshot_recipe_cook_counters.
+    counters_before = tools.snapshot_recipe_cook_counters()
     try:
-
-        # Clears out any 'needed' grocery items still sourced from the PREVIOUS
-        # plan before this week's ingredients get added below — otherwise
-        # quantities from old, already-superseded weeks silently keep stacking
-        # onto the same line forever. Passing plan_id explicitly rather than
-        # letting it re-derive "current" avoids any ambiguity if two plans get
-        # created within the same second.
-        tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
 
         def _ensure_recipe_saved(meal_name, item):
             if item.get("is_new_recipe") and item.get("ingredients"):
@@ -2329,6 +2366,24 @@ def _generate_weekly_plan(
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+
+        # Clear out any 'needed' grocery items still sourced from the
+        # PREVIOUS plan, so quantities from already-superseded weeks don't
+        # silently keep stacking onto the same line forever. Passing
+        # plan_id explicitly rather than letting it re-derive "current"
+        # avoids ambiguity if two plans are created within the same second.
+        #
+        # LAST, not first. This is a hard DELETE and nothing restores it,
+        # so running it up front meant a generation that died partway
+        # through emptied the household's grocery list of everything from
+        # last week and then failed — an error message, no new plan, and a
+        # shopping list quietly missing items they still needed, with no
+        # way to get them back. Nothing earlier in this function adds to
+        # the grocery list (a generated week is a draft; approval is what
+        # fills the list), so there is nothing to clear ahead of, and
+        # deferring it costs nothing.
+        tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
+
         completed = True
         return tools.get_weekly_plan(plan_id)
     finally:
@@ -2342,6 +2397,7 @@ def _generate_weekly_plan(
             # guarantee shouldn't rest on the helper's internals alone.
             try:
                 tools.discard_failed_plan(plan_id)
+                tools.restore_recipe_cook_counters(counters_before)
             except Exception:
                 logger.exception(
                     "Rolling back weekly plan %s failed; keeping the original error", plan_id

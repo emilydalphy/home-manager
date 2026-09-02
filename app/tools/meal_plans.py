@@ -268,3 +268,64 @@ def discard_failed_plan(weekly_plan_id: int) -> dict:
         if conn is not None:
             conn.close()
     return removed
+
+
+def snapshot_recipe_cook_counters() -> dict:
+    """
+    The `times_cooked` / `last_cooked_date` of every recipe, so a failed
+    week generation can put them back.
+
+    plan_meal bumps both when it attaches a meal to a plan. That is fine
+    when the plan survives -- but when a generation fails partway and is
+    rolled back, deleting the meal rows does not undo the counters, so
+    every recipe the abandoned attempt touched is left looking recently
+    cooked. Those two fields feed the variety and rotation rules in the
+    generation prompt, so the residue quietly biases the NEXT week's plan
+    away from meals the household never actually ate.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, times_cooked, last_cooked_date FROM recipes WHERE household_id = ?",
+        (household_id(),),
+    ).fetchall()
+    conn.close()
+    return {r["id"]: (r["times_cooked"], r["last_cooked_date"]) for r in rows}
+
+
+def restore_recipe_cook_counters(snapshot: dict) -> int:
+    """
+    Put the counters back to what snapshot_recipe_cook_counters recorded.
+
+    Only touches recipes whose values actually moved, and only ones that
+    were in the snapshot -- a recipe created during the failed attempt has
+    no "before" to return to, and is left alone rather than guessed at.
+
+    Never raises: like discard_failed_plan, this runs while another
+    exception is propagating, and must not replace the real error.
+    """
+    restored = 0
+    conn = None
+    try:
+        conn = get_conn()
+        current = conn.execute(
+            "SELECT id, times_cooked, last_cooked_date FROM recipes WHERE household_id = ?",
+            (household_id(),),
+        ).fetchall()
+        for row in current:
+            was = snapshot.get(row["id"])
+            if was is None or (row["times_cooked"], row["last_cooked_date"]) == was:
+                continue
+            conn.execute(
+                "UPDATE recipes SET times_cooked = ?, last_cooked_date = ? WHERE id = ? AND household_id = ?",
+                (was[0], was[1], row["id"], household_id()),
+            )
+            restored += 1
+        conn.commit()
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "Could not restore recipe cook counters after a failed generation"
+        )
+    finally:
+        if conn is not None:
+            conn.close()
+    return restored
