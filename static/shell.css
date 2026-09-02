@@ -568,7 +568,7 @@ html, body {
   cursor: pointer;
 }
 .hero-quiet:hover { opacity: 1; }
-.btn-gold, .btn-outline-light, .btn-sand {
+.btn-gold, .btn-sand {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 16px;
@@ -580,8 +580,6 @@ html, body {
 }
 .btn-gold { background: var(--gold); color: var(--gold-ink); }
 .btn-gold:hover { background: #e0915c; }
-.btn-outline-light { background: none; border: 1.5px solid rgba(255,255,255,.4); color: #fff; }
-.btn-outline-light:hover { background: rgba(255,255,255,.12); }
 .btn-sand { background: var(--sand); color: var(--plum); }
 .btn-sand:hover { background: #e6d9c4; }
 
@@ -654,27 +652,6 @@ html, body {
   color: var(--muted);
   padding: 14px 0;
 }
-
-/* Grocery summary */
-.grocery-summary-card {
-  padding: 17px 19px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.grocery-summary-title {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 19px;
-  color: var(--plum-ink);
-}
-.grocery-summary-sub {
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--muted);
-}
-.grocery-summary-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.grocery-summary-card .btn-sand { flex-shrink: 0; padding: 10px 16px; font-size: 15px; min-height: 40px; }
 
 /* ---------- Docked ask bar (every screen) ---------- */
 /* InnToday/InnMeals draw this identically on both screens, which is the
@@ -1981,18 +1958,11 @@ html, body {
 
 /* One line above the plan, no recap — the per-slot reasons carry the
    detail. Only ever shown on a draft; once approved the receipt speaks
-   instead. */
-.week-headline {
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--muted);
-  margin-top: 6px;
-}
+   instead. It renders as .week-note now — see the Meals section below. */
 
 /* The 4-9 word "why" under a meal name. Small and quiet: it explains, it
    doesn't compete with the meal itself. */
-.wk-reason, .wg-reason {
+.wg-reason {
   display: block;
   font-family: var(--font-body);
   font-size: 12.5px;
@@ -2005,8 +1975,6 @@ html, body {
 /* Muted styling is reserved for the ONE deliberately empty slot in a week —
    a dinner on a night nobody is home. Nothing else in the week is ever
    blank, so this treatment stays meaningful. */
-.wk-dish-out { color: #A29886; font-weight: 400; }
-.wk-dish-open { color: var(--warn-ink); font-weight: 600; }
 .wg-dish-open { color: var(--warn-ink); }
 .wg-slot-open { cursor: pointer; }
 .wg-slot-open:hover { background: var(--menu-paper); }
