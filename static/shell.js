@@ -1147,13 +1147,19 @@
         (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '');
     }
 
-    // A decision handed back. The question and its answers still live in one
-    // place only — the card in #week-open-row below — so the hero says what
-    // the slot is and points at it rather than carrying a second copy.
+    // A decision handed back. The question and its answers live in one place
+    // only — the card in #week-open-row below — so the hero says what the
+    // slot IS and nothing more.
+    //
+    // The open_reason deliberately does NOT repeat here. It read well in
+    // isolation, but the reason also renders in .week-open-reason a few
+    // hundred pixels down the same unscrolled screen, so the household was
+    // asked the same question twice in one glance. Same rule the pre-Pomona
+    // day card followed (it showed the bare title too) — restored after the
+    // independent verification pass caught the duplicate.
     if (entry && entry.state === 'open') {
       return top +
-        '<div class="hero-dish hero-dish-open">' + escapeHtml(entry.title) + '</div>' +
-        (entry.open_reason ? '<div class="hero-accent">' + escapeHtml(entry.open_reason) + '</div>' : '');
+        '<div class="hero-dish hero-dish-open">' + escapeHtml(entry.title) + '</div>';
     }
 
     if (entry) {
