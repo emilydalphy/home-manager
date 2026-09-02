@@ -2078,7 +2078,7 @@ def login_submit(request: Request, password: str = Form(""), next: str = Form("/
         # merely belonged to no household — those are the same failure to
         # anyone who should not be here.
         logger.warning("Failed sign-in attempt from %s", ratelimit.caller_id(request))
-        return _render_login(next, "That password didn't match. Try again.")
+        return _render_login(next, "That passphrase didn't match. Try again.")
     logger.info("Sign-in for household %s", household_id)
     response = RedirectResponse(url=security.sanitize_next(next), status_code=303)
     response.set_cookie(
