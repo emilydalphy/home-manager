@@ -525,7 +525,7 @@ function setVoiceStatus(text) {
   el.classList.add('showing');
   el.innerHTML = `<span class="voice-dot"></span>Listening…` +
     `<ul class="voice-log">${voiceLog.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` +
-    `<span class="voice-note">Say "hey home manager" plus a command, or tap Hands-free again to stop.</span>`;
+    `<span class="voice-note">Say "hey Pomona" plus a command, or tap Hands-free again to stop.</span>`;
 }
 
 function updateVoiceButtons() {

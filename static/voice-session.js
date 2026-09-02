@@ -5,7 +5,7 @@
 // Design, matching the PRD's resolved decisions:
 // - Session-based activation (deliberate tap to start/stop), NOT
 //   always-on/wake-word — see PRD §6.
-// - An in-session trigger phrase ("hey home manager") distinguishes a real
+// - An in-session trigger phrase ("hey pomona") distinguishes a real
 //   command from ambient conversation, rather than treating everything
 //   heard as an instruction — see PRD §4.1.
 // - recognition.continuous is deliberately left FALSE, with the engine
@@ -29,7 +29,15 @@
 // page surface a heads-up about this rather than have the feature just
 // silently fail with no explanation.
 
-const VOICE_TRIGGER_PHRASE = 'hey home manager';
+// The phrase people are told to say, and the one shown in every status line.
+const VOICE_TRIGGER_PHRASE = 'hey pomona';
+// Everything the engine will ACCEPT as the trigger, earliest match wins.
+// "hey home manager" is kept deliberately: the app was called that until the
+// Pomona rebrand, and this phrase is spoken mid-cook with hands covered in
+// something. Dropping it would strand anyone's muscle memory, and would also
+// leave no fallback if a speech engine transcribes an uncommon proper noun
+// badly. Accepting both costs nothing — it is strictly more permissive.
+const VOICE_TRIGGER_PHRASES = [VOICE_TRIGGER_PHRASE, 'hey home manager'];
 const VOICE_SESSION_TIMEOUT_MS = 5 * 60 * 1000; // end session after 5 min of no recognized command
 
 // Shared spoken-number parser — commands are matched permissively (see
@@ -101,9 +109,21 @@ function createVoiceSession(opts) {
 
   function stripTrigger(transcript) {
     const t = transcript.trim().toLowerCase();
-    const idx = t.indexOf(VOICE_TRIGGER_PHRASE);
+    // Earliest match across all accepted phrases, so that whichever trigger
+    // the speaker used, the command is whatever follows it. Picking the
+    // earliest (not the first phrase that happens to match) keeps the
+    // behaviour identical to the old single-phrase indexOf.
+    let idx = -1;
+    let matched = '';
+    for (const phrase of VOICE_TRIGGER_PHRASES) {
+      const at = t.indexOf(phrase);
+      if (at !== -1 && (idx === -1 || at < idx)) {
+        idx = at;
+        matched = phrase;
+      }
+    }
     if (idx === -1) return null; // no trigger phrase heard — ambient talk, ignore entirely
-    let rest = t.slice(idx + VOICE_TRIGGER_PHRASE.length).trim();
+    let rest = t.slice(idx + matched.length).trim();
     rest = rest.replace(/^[,.\s]+/, '');
     return rest;
   }
@@ -134,7 +154,7 @@ function createVoiceSession(opts) {
       // mis-transcription or an unsupported phrasing is visible rather than
       // flashing by and leaving no trace of what went wrong — this was the
       // gap that made "everything fails" hard to diagnose.
-      opts.onStatus && opts.onStatus('Didn’t recognize: "' + command + '" — try rephrasing after "hey home manager".');
+      opts.onStatus && opts.onStatus('Didn’t recognize: "' + command + '" — try rephrasing after "hey Pomona".');
     }
   }
 
@@ -200,7 +220,7 @@ function createVoiceSession(opts) {
     resetInactivityTimer();
     startRecognitionInstance();
     opts.onListeningChange && opts.onListeningChange(true);
-    speak('Hands-free on. Say hey home manager, then a command.');
+    speak('Hands-free on. Say hey Pomona, then a command.');
     return true;
   }
 

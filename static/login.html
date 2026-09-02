@@ -14,9 +14,15 @@
 <style>
   /*
     Sign-in — built to the SignInPomona design. This is a reskin only: the
-    form's action, method, field names and the __NEXT__ / <!--ERROR-->
-    placeholders that app/main.py:_render_login substitutes into are
+    form's action, method, field names and the two placeholders that
+    app/main.py:_render_login substitutes into (the next-path value on the
+    hidden input, and the error-banner comment just above the form) are
     unchanged, so the auth behaviour is exactly what it was.
+
+    Do not write either placeholder's literal token anywhere else in this
+    file, including in a comment: _render_login does a plain global
+    str.replace, so a second copy would get substituted too — the error
+    banner would be injected into this comment as well as into the page.
 
     The one screen in the app that is spruce-ground rather than ivory: it is
     the front door, so it gets the anchor colour and the apricot glow.
