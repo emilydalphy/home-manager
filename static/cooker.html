@@ -407,6 +407,62 @@ function formatDate(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
+function todayIso() {
+  // Local date, not toISOString() — that converts to UTC and hands back
+  // yesterday for anyone west of Greenwich in the evening, which is
+  // exactly when this screen gets used.
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+// Which meal this screen should open on.
+//
+// The whole week renders at once, so without this you arrive at Monday
+// breakfast and scroll past everything to reach what you're actually
+// cooking. This answers "where am I today".
+//
+// Driven by the clock rather than by what's been checked off, deliberately.
+// "The next meal nobody has ticked" sounds right and isn't: households
+// reliably forget to check breakfast off, so that rule parks the screen on
+// breakfast all day — worse than not scrolling at all. The time of day is
+// the one signal that's true whether or not anyone kept the checkboxes tidy.
+//
+// Among today's meals it takes the current slot or the next one after it,
+// preferring an uncooked one; if today is entirely behind you, the last
+// meal of today, so it still lands on today rather than the start of the
+// week. Null when the plan has nothing for today, and then nothing moves.
+const SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+function currentSlotIndex(hour) {
+  if (hour < 11) return 0;   // breakfast
+  if (hour < 16) return 1;   // lunch
+  return 2;                  // dinner
+}
+
+function todaysMealIndex(meals, nowHour) {
+  const iso = todayIso();
+  const hour = typeof nowHour === 'number' ? nowHour : new Date().getHours();
+  const from = currentSlotIndex(hour);
+
+  const slotRank = m => {
+    const i = SLOT_ORDER.indexOf(m.slot || '');
+    return i === -1 ? 99 : i;
+  };
+  const todays = (meals || [])
+    .map((m, i) => ({ m, i }))
+    .filter(x => x.m.date === iso)
+    .sort((a, b) => slotRank(a.m) - slotRank(b.m));
+  if (!todays.length) return null;
+
+  const fromNow = todays.filter(x => slotRank(x.m) >= from);
+  const uncooked = fromNow.filter(x => x.m.cooked_status !== 'done');
+  if (uncooked.length) return uncooked[0].i;
+  if (fromNow.length) return fromNow[0].i;
+  return todays[todays.length - 1].i;
+}
+
 // When a recipe has advance_prep_step_indices (1-based positions within
 // `instructions` that are the make-ahead steps), split the instructions
 // into a "Do ahead" group and a "Day of" group with their own step
@@ -435,6 +491,11 @@ function renderInstructions(m) {
 
 let cache = null;
 let openDetailIdx = null;
+// Set once, the first time a plan renders — see render()'s auto-focus.
+let autoFocusedToday = false;
+// Where render() wants the page scrolled, applied by load() after the
+// attention banner has had its say. See applyPendingScroll.
+let pendingScrollIdx = null;
 
 // ---------- Phase 5: hands-free voice (Cooker case, §4.1/§4.3) ----------
 // One session active at a time, scoped either to the prep schedule or to a
@@ -701,7 +762,7 @@ function render(view) {
       metaBits.push(bits.join(' + '));
     }
 
-    html += `<div class="card ${isDone ? 'done' : ''}">
+    html += `<div class="card ${isDone ? 'done' : ''}" id="meal-card-${idx}">
       <div class="card-top">
         <button class="check-toggle ${isDone ? 'checked' : ''}" data-entry-id="${m.entry_id}" data-next="${isDone ? 'pending' : 'done'}">${isDone ? '&check;' : ''}</button>
         <div class="card-body">
@@ -736,6 +797,22 @@ function render(view) {
 
     html += `</div></div></div>`;
   });
+
+  // First render only: land on today rather than on Monday breakfast.
+  // Guarded so it happens once — re-rendering after checking a meal off
+  // must not yank the page away from whatever the cook was looking at,
+  // and must not reopen a recipe they deliberately closed.
+  let scrollToIdx = null;
+  if (!autoFocusedToday) {
+    autoFocusedToday = true;
+    const todayIdx = todaysMealIndex(view.meals);
+    if (todayIdx !== null) {
+      scrollToIdx = todayIdx;
+      if (openDetailIdx === null && view.meals[todayIdx].has_full_recipe) {
+        openDetailIdx = todayIdx;
+      }
+    }
+  }
 
   content.innerHTML = html;
 
@@ -863,6 +940,27 @@ function render(view) {
       }
     });
   });
+
+  // Hand the scroll to load(), which performs it once the attention
+  // banner has rendered. Scrolling here instead looks right and lands
+  // wrong: the banner is inserted ABOVE #content afterwards, so it pushes
+  // the target down by its own height and the page settles a couple of
+  // meals short of today.
+  pendingScrollIdx = scrollToIdx;
+}
+
+function applyPendingScroll() {
+  if (pendingScrollIdx === null) return;
+  // By id, not by .card position — prep tasks are .card too, so an index
+  // into all cards would land N meals early.
+  const target = document.getElementById('meal-card-' + pendingScrollIdx);
+  pendingScrollIdx = null;
+  if (!target || !target.scrollIntoView) return;
+  // 'auto' rather than 'smooth': arriving already there beats watching the
+  // page travel, and it doesn't fight a cook who starts scrolling straight
+  // away. 'start' puts the meal name at the top rather than centring a
+  // card that can be taller than the screen.
+  target.scrollIntoView({ behavior: 'auto', block: 'start' });
 }
 
 function renderAttentionBanner(items) {
@@ -1059,6 +1157,8 @@ async function load() {
     if (attnRes.ok) {
       renderAttentionBanner((await attnRes.json()).items);
     }
+    // Last, so the page is its final height before anything is scrolled to.
+    applyPendingScroll();
   } catch (err) {
     content.innerHTML = '<p class="error">Couldn\'t load the Cooker view right now — try refreshing.</p>';
   }
