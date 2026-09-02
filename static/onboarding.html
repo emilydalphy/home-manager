@@ -238,8 +238,8 @@
 
 <!-- Q1 + Q2: household size and names -->
 <div id="step-household">
-  <h1>Who's cooking for, exactly?</h1>
-  <p class="subtitle">Just names for now — we'll get to the details in a sec.</p>
+  <h1>Who am I cooking for, exactly?</h1>
+  <p class="subtitle">Just names for now — I'll get to the details in a sec.</p>
   <div id="members"></div>
   <button class="add-btn" id="add-member" type="button">+ Add person</button>
   <div><button class="next-btn" id="household-next" type="button">Continue</button></div>
@@ -247,8 +247,8 @@
 
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
-  <h1>Anyone we need to cook carefully around?</h1>
-  <p class="subtitle">Allergies, restrictions, or approaches we should always follow — and whose.</p>
+  <h1>Anyone I need to cook carefully around?</h1>
+  <p class="subtitle">Allergies, restrictions, or approaches I'll always follow — and whose.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
   <span class="back-link" data-back="household">&larr; Back</span>
@@ -266,7 +266,7 @@
 <!-- Q5: won't eat -->
 <div id="step-wont-eat" style="display:none">
   <h1>Anything the house just won't eat, no matter what?</h1>
-  <p class="subtitle">We'll steer clear of it completely.</p>
+  <p class="subtitle">I'll steer clear of it completely.</p>
   <div class="chip-row" id="wont-eat-chips"></div>
   <div class="row" style="margin-top:10px">
     <input type="text" id="wont-eat-input" placeholder="Type something and press Enter" />
@@ -289,7 +289,7 @@
 
 <!-- Q7: meals per week -->
 <div id="step-dinners" style="display:none">
-  <h1>How many meals should we plan in a typical week?</h1>
+  <h1>How many meals shall I plan in a typical week?</h1>
   <p class="subtitle">The rest of the week is yours — leftovers, takeout, whatever works.</p>
   <p class="stepper-hint" style="margin-top:0">Breakfasts</p>
   <div class="stepper">
@@ -362,19 +362,19 @@
   <div class="reveal-band">
     <p class="eyebrow">Your first week</p>
     <h1 id="reveal-title">Here's your first week.</h1>
-    <p class="subtitle" id="reveal-subtitle">Building a real week of meals from what you just told us...</p>
+    <p class="subtitle" id="reveal-subtitle">Building a real week of meals from what you just told me...</p>
   </div>
   <p class="loading-note" id="reveal-loading">This can take up to 30 seconds.</p>
   <div id="reveal-days"></div>
   <div id="invite-section"></div>
   <div class="action-row" id="reveal-actions" style="display:none">
     <button class="next-btn" id="reveal-chores-btn" type="button">Set up chores too</button>
-    <button class="next-btn secondary" id="reveal-done-btn" type="button">I'm all set — take me to chat</button>
+    <button class="next-btn secondary" id="reveal-done-btn" type="button">I'm all set — show me my week</button>
   </div>
 </div>
 
 <div id="step-chores-q" style="display:none">
-  <h1>A few more things, then we're done</h1>
+  <h1>A few more things, then you're done</h1>
   <p class="subtitle">Pets, what you're hoping this app helps with, and a couple quick questions about your home — you'll review and can change anything before it's saved.</p>
 
   <label class="field-label">Any pets?</label>
@@ -428,7 +428,7 @@
 </div>
 
 <div id="step-chores-review" style="display:none">
-  <h1>Here's what we'd recommend</h1>
+  <h1>Here's what I'd suggest</h1>
   <p class="subtitle">Uncheck anything you don't want, edit frequency or who's responsible, or add your own below.</p>
 
   <div id="chore-list"></div>
@@ -757,7 +757,7 @@ function buildRevealCopy(answers) {
   if (answers.wont_eat && answers.wont_eat.length) {
     return `Built around what you told us — steering clear of ${escapeHtmlLocal(answers.wont_eat[0])}, exactly like you asked.`;
   }
-  return "Built from exactly what you just told us — not a generic starter.";
+  return "Built from exactly what you just told me — not a generic starter.";
 }
 
 async function renderInviteOffer(memberNames) {
@@ -801,7 +801,7 @@ async function generateFirstPlanAndReveal(answers) {
   const actions = document.getElementById('reveal-actions');
   const daysDiv = document.getElementById('reveal-days');
   title.textContent = 'Here\'s your first week.';
-  subtitle.textContent = 'Building a real week of meals from what you just told us...';
+  subtitle.textContent = 'Building a real week of meals from what you just told me...';
   loading.style.display = 'block';
   actions.style.display = 'none';
   daysDiv.innerHTML = '';
@@ -925,10 +925,10 @@ if (!OFFER_CHORES_AFTER_REVEAL) {
   // With the offer gone this is the only way on, so it shouldn't still be
   // styled as the lesser of two choices.
   document.getElementById('reveal-done-btn').classList.remove('secondary');
-  // Its wording is left exactly as-is deliberately. It currently reads
-  // "I'm all set — take me to chat" while actually navigating to /week,
-  // which is worth fixing — but copy is Emily's call, not something to
-  // change quietly on the way past. Raised on the beta-safety ticket.
+  // Its wording now matches where it actually goes (/week). It used to
+  // read "take me to chat" while navigating to the week screen — the last
+  // thing a new household read before landing somewhere else. Emily chose
+  // to fix the words rather than the destination, 2026-09-02.
 }
 
 const petsDiv = document.getElementById('pets');
