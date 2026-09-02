@@ -10,50 +10,89 @@ from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
 
 
+# Single-word names where the plural is a DIFFERENT product, not more of
+# the same one. "Pepper" is the black pepper in the cupboard; "peppers"
+# are the bell peppers in the fridge. Merging those puts a pantry staple
+# under Produce and it never gets bought -- silently, which is the whole
+# failure this normalisation is supposed to avoid.
+#
+# Only applies to a bare one-word name, because that is where the
+# ambiguity lives. "Bell peppers" and "chocolate chips" say which thing
+# they are, so they still merge with their singulars normally.
+_NUMBER_CHANGES_MEANING = {
+    "pepper", "peppers",
+    "chili", "chilis", "chilli", "chillies", "chile", "chiles",
+    "green", "greens",
+    "chip", "chips", "crisp", "crisps",
+    "ground", "grounds",
+    "sprout", "sprouts",
+    "grit", "grits",
+    "bitter", "bitters",
+    # Uncountables people only ever write one way; the "singular" is not a
+    # word anyone would type on a list.
+    "oat", "oats", "pea", "peas", "grape", "grapes",
+}
+
+# Plurals that are just the word plus an "s", where the general rules
+# would guess wrong: "cookies" is cookie+s, not cooky, and "quiches" is
+# quiche+s, not quich. English has no reliable way to tell these from
+# "berries" and "peaches" by spelling alone, so the honest fix is to name
+# the ones that actually turn up on a shopping list.
+_JUST_ADD_S = {
+    "cookies", "brownies", "smoothies", "veggies", "pies", "quiches",
+    "brioches", "cupcakes", "pastries",
+}
+
+
 def _merge_key(name: str) -> str:
     """
     The name two grocery lines have to share to be the same thing.
 
     Case and spacing were already ignored; number was not, so "Bell
-    pepper" and "Bell peppers" sat on the list as two separate lines --
-    the shopper's problem, since it reads as two things to buy and the
-    quantities never combine.
+    pepper" and "Bell peppers" sat on the list as two separate lines whose
+    quantities never combined -- which reads to whoever is shopping as two
+    different things to buy.
 
     Only the LAST word is singularised. In an English food name the
     trailing word is the thing itself and the leading words describe it
     ("bell pepper", "spring onion", "chicken thigh"), so that is where
-    number lives; touching the earlier words would start collapsing names
-    that genuinely differ.
+    number lives; touching earlier words would start collapsing names that
+    genuinely differ.
 
-    Deliberately narrow. It handles the plural spellings that actually
-    turn up on a shopping list rather than trying to be a general
-    inflector: getting "tomatoes" and "berries" right matters, and
-    anything cleverer risks merging two things a person meant to buy
-    separately -- a wrong merge is worse than a duplicate line, because a
-    duplicate is visible and a silent merge is not.
+    Deliberately conservative, and it fails toward leaving two lines
+    rather than combining two things. A duplicate line is visible and
+    mildly annoying; a wrong merge is invisible and means something never
+    gets bought.
     """
     cleaned = " ".join((name or "").strip().lower().split())
     if not cleaned:
         return ""
     words = cleaned.split(" ")
+    # A bare ambiguous noun is left exactly as written, so "Pepper" and
+    # "Peppers" stay the two different things they are.
+    if len(words) == 1 and words[0] in _NUMBER_CHANGES_MEANING:
+        return cleaned
     words[-1] = _singular_word(words[-1])
     return " ".join(words)
 
 
 def _singular_word(word: str) -> str:
-    # Short words are left alone: "oats" and "peas" are how people write
-    # them, and there is no singular anyone would type instead.
-    if len(word) <= 4 or not word.endswith("s"):
+    if len(word) <= 3 or not word.endswith("s"):
         return word
-    if word.endswith("ss"):          # "watercress", "asparagus" is handled below
+    if word.endswith("ss"):                  # glass, cress, watercress
         return word
-    if word.endswith("ies"):         # berries -> berry
+    if word in _JUST_ADD_S:
+        return word[:-1]
+    if word.endswith("ies"):                 # berries -> berry
         return word[:-3] + "y"
-    if word.endswith("oes"):         # tomatoes -> tomato, potatoes -> potato
+    if word.endswith("oes"):                 # tomatoes -> tomato
         return word[:-2]
     if word.endswith(("ches", "shes", "xes", "zes")):   # peaches -> peach
         return word[:-2]
-    return word[:-1]                 # peppers -> pepper
+    # Everything else drops the s. Words like "asparagus" and "hummus"
+    # come out mangled ("asparagu") but consistently so, which is all a
+    # matching key needs -- they only ever have to equal themselves.
+    return word[:-1]
 
 
 def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
@@ -184,21 +223,39 @@ def add_grocery_item(
     # list -- tens of rows -- so reading it to find one match is cheaper
     # than it looks and far clearer than encoding the rule in SQL.
     candidates = conn.execute(
-        "SELECT id, item, quantity FROM grocery_items WHERE household_id = ? AND status = 'needed' ORDER BY id",
+        "SELECT id, item, quantity, source_weekly_plan_id FROM grocery_items "
+        "WHERE household_id = ? AND status = 'needed' ORDER BY id",
         (household_id(),),
     ).fetchall()
     wanted = _merge_key(item)
     existing = next((r for r in candidates if _merge_key(r["item"]) == wanted), None)
-    pref = conn.execute(
-        "SELECT store FROM item_store_preferences WHERE household_id = ? AND item = ?",
-        (household_id(), item.strip().lower()),
-    ).fetchone()
+    # Matched on the same key the list itself merges on. Otherwise a
+    # preference saved for "bell peppers" never applies to the line that
+    # won the merge under the name "Bell pepper": the app confirms the
+    # preference and it silently never takes effect.
+    prefs = conn.execute(
+        "SELECT item, store FROM item_store_preferences WHERE household_id = ?",
+        (household_id(),),
+    ).fetchall()
+    pref = next((p for p in prefs if _merge_key(p["item"]) == _merge_key(item)), None)
     preferred_store = pref["store"] if pref else ""
     if existing:
         merged_qty, merged = _try_consolidate_quantity(existing["quantity"] or "", quantity)
+        # A row with no source_weekly_plan_id is something a person asked
+        # for directly, and clear_stale_grocery_items is required to leave
+        # those alone forever. Stamping this week's plan id onto it during
+        # a merge would quietly convert a standing want into a line the
+        # next generation deletes -- so a plan can add quantity to a
+        # hand-added item, but it cannot take ownership of it.
+        keep_standing = existing["source_weekly_plan_id"] is None
         conn.execute(
-            "UPDATE grocery_items SET quantity = ?, category = ?, source_weekly_plan_id = ? WHERE id = ?",
-            (merged_qty, category, source_weekly_plan_id, existing["id"]),
+            "UPDATE grocery_items SET quantity = ?, category = ?, "
+            "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE ? END, "
+            # Fills in a store the row doesn't have yet, without
+            # overwriting one already chosen for this line.
+            "store = CASE WHEN store = '' THEN ? ELSE store END WHERE id = ?",
+            (merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
+             preferred_store, existing["id"]),
         )
         conn.commit()
         item_id = existing["id"]
@@ -346,8 +403,14 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     through.
     """
     conn = get_conn()
+    # excluded_from_list rows are hidden from the list on purpose ("we get
+    # those at the market"). Folding a visible line into a hidden one --
+    # which happened whenever the hidden row had the lower id -- made the
+    # visible line disappear and parked its quantity somewhere nobody can
+    # see. They are left out of consolidation entirely instead.
     rows = conn.execute(
-        "SELECT id, item, quantity, category FROM grocery_items WHERE household_id = ? AND status = ? ORDER BY id",
+        "SELECT id, item, quantity, category FROM grocery_items "
+        "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY id",
         (household_id(), status),
     ).fetchall()
 
@@ -363,9 +426,15 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
         merged_qty = keep["quantity"] or ""
         for extra in entries[1:]:
             merged_qty, _ = _try_consolidate_quantity(merged_qty, extra["quantity"] or "")
-            conn.execute("DELETE FROM grocery_items WHERE id = ?", (extra["id"],))
+            conn.execute(
+                "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
+                (extra["id"], household_id()),
+            )
             merged_count += 1
-        conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (merged_qty, keep["id"]))
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+            (merged_qty, keep["id"], household_id()),
+        )
     conn.commit()
     conn.close()
     return {"lines_merged_away": merged_count}

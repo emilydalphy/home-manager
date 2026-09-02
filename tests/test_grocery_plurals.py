@@ -21,6 +21,14 @@ from app.tools import grocery
     ("Peach", "Peaches"),
     ("carrot", "Carrots"),
     ("Chicken thigh", "chicken thighs"),
+    ("Egg", "Eggs"),            # on almost every list
+    ("Cookie", "Cookies"),      # cookie+s, not "cooky"
+    ("Quiche", "Quiches"),      # quiche+s, not "quich"
+    ("Onion", "Onions"),
+    # Qualified names are unambiguous, so they merge even when the bare
+    # noun would not.
+    ("Bell pepper", "Bell peppers"),
+    ("Chocolate chip", "Chocolate chips"),
 ])
 def test_singular_and_plural_are_the_same_item(a, b):
     tools.add_grocery_item(a, quantity="2")
@@ -31,6 +39,16 @@ def test_singular_and_plural_are_the_same_item(a, b):
 
 
 @pytest.mark.parametrize("a,b", [
+    # The dangerous ones: a bare noun whose plural is a different product.
+    # "Pepper" is what's in the cupboard; "Peppers" are in the fridge.
+    # Merging those files a pantry staple under Produce and it never gets
+    # bought — silently, which is the failure this must never cause.
+    ("Pepper", "Peppers"),
+    ("Green", "Greens"),
+    ("Chili", "Chilis"),
+    ("Chip", "Chips"),
+    ("Ground", "Grounds"),
+    # And names that simply aren't the same thing.
     ("Chicken breast", "Chicken broth"),
     ("Green beans", "Green onions"),
     ("Cream", "Creamer"),
@@ -101,3 +119,71 @@ def test_the_key_itself_behaves():
     assert grocery._merge_key("Oats") == "oats"
     # Consistent with itself is what matters for an odd word like this.
     assert grocery._merge_key("Asparagus") == grocery._merge_key("asparagus")
+
+
+def test_a_plan_cannot_take_over_something_you_asked_for_yourself():
+    """
+    An item added by hand has no plan attached, and clear_stale_grocery_items
+    is required to leave those alone forever. If a merge stamped this
+    week's plan onto it, generating next week would delete a standing want
+    the household had explicitly added — and the plural matching makes that
+    collision far more likely than an exact-name one did.
+    """
+    tools.add_grocery_item("Bell pepper", quantity="2")          # by hand
+    tools.add_grocery_item("Bell peppers", quantity="3", source_weekly_plan_id=99)
+
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT item, source_weekly_plan_id FROM grocery_items WHERE household_id = 1"
+    ).fetchone()
+    conn.close()
+
+    assert row["source_weekly_plan_id"] is None, (
+        "a plan may add quantity to a hand-added item, but must not take ownership of it"
+    )
+
+
+def test_a_store_preference_still_applies_after_a_merge():
+    """
+    The preference is saved under the name the household said; the line
+    keeps whichever name got there first. Looking them up differently
+    meant the app confirmed a preference that then never took effect.
+    """
+    tools.add_grocery_item("Bell pepper", quantity="1")
+    tools.set_item_store("bell peppers", "Costco")
+
+    tools.add_grocery_item("Bell peppers", quantity="2")
+
+    conn = get_conn()
+    stores = [r["store"] for r in conn.execute(
+        "SELECT store FROM grocery_items WHERE household_id = 1"
+    ).fetchall()]
+    conn.close()
+    assert stores == ["Costco"], f"the preference should reach the merged line, got {stores}"
+
+
+def test_consolidation_never_hides_a_visible_line_inside_an_excluded_one():
+    """
+    An excluded row is deliberately hidden ("we get those at the market").
+    Folding a visible line into a hidden one made the visible line vanish
+    and parked its quantity where nobody can see it.
+    """
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO grocery_items (household_id, item, quantity, category, status, excluded_from_list) "
+        "VALUES (1, 'Bell pepper', '2', 'produce', 'needed', 1)"
+    )
+    conn.execute(
+        "INSERT INTO grocery_items (household_id, item, quantity, category, status, excluded_from_list) "
+        "VALUES (1, 'Bell peppers', '3', 'produce', 'needed', 0)"
+    )
+    conn.commit()
+    conn.close()
+
+    visible_before = [i["item"] for i in tools.list_grocery_list()]
+    tools.consolidate_grocery_list()
+    visible_after = [i["item"] for i in tools.list_grocery_list()]
+
+    assert visible_after == visible_before, (
+        "consolidation must not make a visible line disappear into a hidden one"
+    )
