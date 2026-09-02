@@ -1336,13 +1336,28 @@ def get_facts_view(category: str | None = None):
     try:
         result = tools.get_facts(category=category)
         onboarding = None
+        preferences = None
         if category == "people":
             setup = tools.get_meal_planning_setup_status()
             onboarding = {"members": setup["members"], "household_dislikes": setup["dislikes"]}
+        if category == "taste":
+            # Eating style and the cuisines someone said they were excited
+            # about are collected during onboarding and then drive every
+            # week the app plans — but until now they were editable
+            # nowhere at all, and not even shown. Chat could change them;
+            # nothing else could. They live in meal_preferences rather than
+            # the freeform `facts` table this route otherwise reads, which
+            # is the same reason the People tab needs its `onboarding`
+            # block above.
+            memory = tools.get_household_memory()
+            preferences = {
+                "eating_style": memory.get("eating_style") or "",
+                "cuisines": memory.get("cuisine_preferences") or [],
+            }
     except Exception as e:
         logger.exception("Facts lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"facts": result, "onboarding": onboarding}
+    return {"facts": result, "onboarding": onboarding, "preferences": preferences}
 
 
 @app.post("/api/facts/add")
