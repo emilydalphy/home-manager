@@ -86,13 +86,6 @@ _PUBLIC_EXACT = frozenset({
     "/static/theme.css",
     "/static/manifest.json",
     "/static/service-worker.js",
-    # The share pages are public, so the error reporter and the endpoint it
-    # posts to have to be reachable signed-out — otherwise the two screens
-    # a beta tester can reach without an account are the only two that
-    # report nothing, which is exactly backwards. See
-    # report_client_error for how the share token is kept out of the row.
-    "/static/error-reporter.js",
-    "/api/client-error",
 })
 
 _LOCAL_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})

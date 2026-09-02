@@ -230,15 +230,19 @@ _MAX_WHERE = 120
 _KEEP_ROWS = 1000
 _KEEP_DAYS = 30
 _PRUNE_EVERY = 50
-_since_prune = 0
+# Counted PER HOUSEHOLD, not globally. A single shared counter meant the
+# prune fired for whichever household happened to make the 50th call, so
+# two households interleaving left one of them permanently unpruned —
+# measured at ~3x the cap and still climbing. A dict keyed by household is
+# the smallest thing that makes the cap mean what it says.
+_since_prune: dict[int, int] = {}
 
 
 def _prune(conn, hid: int) -> None:
-    global _since_prune
-    _since_prune += 1
-    if _since_prune < _PRUNE_EVERY:
+    _since_prune[hid] = _since_prune.get(hid, 0) + 1
+    if _since_prune[hid] < _PRUNE_EVERY:
         return
-    _since_prune = 0
+    _since_prune[hid] = 0
     conn.execute(
         f"DELETE FROM error_events WHERE household_id = ? "
         f"AND created_at < datetime('now', '-{_KEEP_DAYS} days')",

@@ -49,6 +49,24 @@ app = FastAPI(title="Home Manager")
 app.middleware("http")(security.auth_middleware)
 
 
+def _route_pattern(request: Request) -> str:
+    """
+    The matched route's pattern, not the URL that was requested.
+
+    "/api/members/{name}/share-link", never
+    "/api/members/Sophia Rodriguez/share-link"; "/api/share/{token}",
+    never the live token. Every piece of household data a URL can carry is
+    a path parameter, so taking the pattern removes all of them at once —
+    including the ones nobody has thought of yet. Redacting known shapes
+    individually would mean catching each new route by hand, and missing
+    one is how a member's name or a working share link ends up in a table
+    whose schema comment promises neither.
+    """
+    route = request.scope.get("route")
+    pattern = getattr(route, "path", None)
+    return pattern or "(unmatched)"
+
+
 @app.exception_handler(StarletteHTTPException)
 async def record_server_errors(request: Request, exc: StarletteHTTPException):
     """
@@ -73,7 +91,9 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         # storing the message would violate this table's stated
         # no-user-content rule by construction rather than by accident.
         # The path is already in where_; the message is in the log.
-        tools.record_error("server", where=request.url.path, detail=f"HTTP {exc.status_code}")
+        await run_in_threadpool(
+            tools.record_error, "server", _route_pattern(request), f"HTTP {exc.status_code}"
+        )
     return await http_exception_handler(request, exc)
 
 
@@ -102,19 +122,30 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     except Exception:
         household = None
 
-    if household is None:
-        tools.record_error("server", where=request.url.path, detail=type(exc).__name__)
-    else:
-        with tools.use_household(household):
-            tools.record_error("server", where=request.url.path, detail=type(exc).__name__)
+    def _record():
+        # SQLite writes block. These handlers are async, so a direct call
+        # would run on the event loop thread and stall every concurrent
+        # request under write contention — the same reason
+        # security._call_as_household routes its bookkeeping write through
+        # the threadpool.
+        if household is None:
+            tools.record_error("server", where=where, detail=type(exc).__name__)
+        else:
+            with tools.use_household(household):
+                tools.record_error("server", where=where, detail=type(exc).__name__)
 
-    logger.exception("Unhandled error on %s", request.url.path)
+    where = _route_pattern(request)
+    await run_in_threadpool(_record)
+
+    logger.exception("Unhandled error on %s", where)
     # Return the response rather than re-raising. Starlette's
-    # ServerErrorMiddleware expects a response back and only sends one if
-    # the handler returns; raising from here skipped that, so uvicorn's
-    # protocol-level fallback answered instead — same 500 and same body,
-    # but the keep-alive connection was dropped every time and the
-    # no-index header never got applied.
+    # ServerErrorMiddleware expects one back and only sends it if the
+    # handler returns; raising from here skipped that, so uvicorn's
+    # protocol-level fallback answered instead — same status and body, but
+    # the keep-alive connection was dropped on every 500. (The no-index
+    # header still isn't applied either way: no_index_headers is a user
+    # middleware and sits inside this one, so it never sees this response.
+    # A 500 body carries nothing worth not indexing.)
     return PlainTextResponse("Internal Server Error", status_code=500)
 
 

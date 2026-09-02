@@ -303,33 +303,54 @@ def test_the_error_reporters_own_throttling_does_not_write_rows(signed_in):
     assert len(_rows()) < 60, f"60 reports wrote {len(_rows())} rows; the limiter reduced nothing"
 
 
-def test_a_share_token_never_reaches_the_table(client):
+def test_the_error_reporter_is_not_reachable_without_signing_in(client):
     """
-    Share pages are public and their URL carries a live credential. The
-    reporter sends location.pathname, so without redaction the token would
-    be recorded — a working key sitting in the morning report, outliving
-    the error that carried it.
-    """
-    res = client.post(
-        "/api/client-error",
-        json={"where": "/share/SECRETTOKEN123", "detail": "fetch failed"},
-    )
-    assert res.status_code == 204, "public share pages must be able to report at all"
-    row = [r for r in _rows() if r["kind"] == "client"][-1]
-    assert "SECRETTOKEN123" not in row["where_"], f"token leaked: {row['where_']}"
-    assert row["where_"] == "/share/<token>"
+    The endpoint writes rows, and a write anyone on the internet can reach
+    is a way to fill the household's database — measured at 500 rows from
+    500 anonymous requests when this was briefly public, with the rate
+    limiter bypassed by rotating a header the caller controls. Worse, the
+    row cap then evicted the household's *real* errors: 10 genuine
+    failures seeded, 1500 junk reports sent, 0 real errors left.
 
-
-def test_the_public_pages_can_actually_report(client):
+    The cost of closing it is that the two public share pages report
+    nothing. That is the accepted trade (2026-09-02) and has its own
+    ticket — a share link breaking is something the person you sent it to
+    will tell you about; a stranger emptying your error table is not.
     """
-    The reporter script and its endpoint must be reachable signed-out, or
-    the two screens a tester can see without an account are the only two
-    that report nothing — which is exactly backwards.
-    """
-    assert client.get("/static/error-reporter.js").status_code == 200
     assert client.post(
         "/api/client-error", json={"where": "/share/x", "detail": "boom"}
+    ).status_code == 401, "the error endpoint is writable without a password"
+    assert client.get("/static/error-reporter.js").status_code == 401
+
+
+def test_a_client_error_is_filed_against_the_household_that_hit_it(client, beta_household_for_errors):
+    """
+    Being behind auth is also what binds the household. While the endpoint
+    was public, auth_middleware never ran for it, so household_id() fell
+    back to 1 and every browser error from every household filed under
+    Emily's — the exact misattribution this feature exists to avoid.
+    """
+    res = client.post(
+        "/login", data={"password": "error-isolation-passphrase", "next": "/"},
+        follow_redirects=False,
+    )
+    assert res.status_code == 303
+    assert client.post(
+        "/api/client-error", json={"where": "/kitchen", "detail": "TypeError"}
     ).status_code == 204
+
+    conn = get_conn()
+    try:
+        row = dict(conn.execute(
+            "SELECT household_id, where_ FROM error_events ORDER BY id DESC LIMIT 1"
+        ).fetchone())
+    finally:
+        conn.close()
+    assert row["where_"] == "/kitchen"
+    assert row["household_id"] == beta_household_for_errors, (
+        f"a household-{beta_household_for_errors} browser error filed under "
+        f"household {row['household_id']}"
+    )
 
 
 def test_a_500_never_records_the_exception_message(signed_in, monkeypatch):
@@ -429,7 +450,61 @@ def test_a_crash_is_filed_against_the_household_that_hit_it(client, beta_househo
     finally:
         conn.close()
 
-    assert row["where_"] == "/__crash"
+    # "(unmatched)" because this synthetic request never went through
+    # routing — the point of the test is which household it lands on.
+    assert row["where_"] == "(unmatched)"
     assert row["household_id"] == beta_household_for_errors, (
         f"the crash was filed against household {row['household_id']}, not the one that hit it"
+    )
+
+
+def test_a_url_never_puts_household_data_in_the_table(signed_in, monkeypatch):
+    """
+    where_ used to be the requested URL, and URLs carry household data:
+    /api/members/Sophia Rodriguez/share-link put a real person's name in
+    the table, and a 500 inside /api/share/{token} put a live, working
+    share credential there. Storing the route PATTERN removes every path
+    parameter at once, including the ones nobody has thought of yet.
+    """
+    from app import main
+
+    monkeypatch.setattr(
+        main.tools, "get_member_share_link",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")),
+        raising=False,
+    )
+    signed_in.post("/api/members/Sophia Rodriguez/share-link")
+
+    for row in _rows():
+        assert "Sophia" not in row["where_"], f"a member's name reached the table: {row['where_']}"
+
+
+def test_each_household_is_pruned_on_its_own_count(signed_in):
+    """
+    The counter was global, so the prune fired for whichever household made
+    the 50th call. Two households interleaving left one of them never
+    pruned — measured at ~3x the cap and still climbing.
+    """
+    from app import households
+    from app.tools import usage
+
+    other = households.create_household("Prune Test", "prune-test-passphrase")
+    # Household 2 keeps taking the turn that used to trigger the shared
+    # counter, while household 1 does the bulk of the writing.
+    for i in range(usage._KEEP_ROWS + 400):
+        tools.record_error("client", where=f"h1-{i}", detail="x")
+        if i % 3 == 0:
+            with tools.use_household(other):
+                tools.record_error("client", where=f"h2-{i}", detail="x")
+
+    conn = get_conn()
+    try:
+        n = conn.execute(
+            "SELECT COUNT(*) FROM error_events WHERE household_id = 1"
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert n <= usage._KEEP_ROWS + usage._PRUNE_EVERY, (
+        f"household 1 holds {n} rows against a cap of {usage._KEEP_ROWS} — "
+        f"its prune never fired because another household kept taking the turn"
     )

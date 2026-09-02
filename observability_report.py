@@ -27,10 +27,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 
 from app import tools
-from app.db import get_conn
+from app.db import DB_PATH, get_conn
 
 
 def _households() -> list[tuple[int, str]]:
@@ -39,6 +40,16 @@ def _households() -> list[tuple[int, str]]:
         return [(r["id"], r["name"]) for r in conn.execute(
             "SELECT id, name FROM households ORDER BY id"
         ).fetchall()]
+    except sqlite3.OperationalError as e:
+        # Pointed at a database that isn't there — the overnight routine's
+        # clone has no Railway volume, so this is the ordinary mistake, not
+        # an exceptional one. Say which file and stop, rather than a
+        # traceback about a missing table.
+        raise SystemExit(
+            f"No household data at {DB_PATH} ({e}).\n"
+            f"Set DB_PATH to the database you want, e.g. "
+            f"DB_PATH=/data/home_manager.db on Railway."
+        )
     finally:
         conn.close()
 
