@@ -6,8 +6,30 @@ from __future__ import annotations
 import json
 from ..db import get_conn
 from ._shared import household_id
+from .grocery import _merge_key
 from . import grocery as _grocery
 from . import quantities as _quantities
+
+
+def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
+    """
+    Set the store on whichever line the list is actually holding.
+
+    Matched on the grocery list's own merge key rather than the exact
+    name: a preference saved for "bell peppers" has to reach the line
+    that ended up called "Bell pepper", or the app cheerfully confirms a
+    preference that never takes effect.
+    """
+    wanted = _merge_key(item)
+    rows = conn.execute(
+        "SELECT id, item FROM grocery_items WHERE household_id = ?", (household_id(),)
+    ).fetchall()
+    for row in rows:
+        if _merge_key(row["item"]) == wanted:
+            conn.execute(
+                "UPDATE grocery_items SET store = ? WHERE id = ? AND household_id = ?",
+                (store, row["id"], household_id()),
+            )
 
 
 def set_item_store(item: str, store: str) -> dict:
@@ -25,19 +47,13 @@ def set_item_store(item: str, store: str) -> dict:
             "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
             (household_id(), item.strip().lower(), store),
         )
-        conn.execute(
-            "UPDATE grocery_items SET store = ? WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (store, household_id(), item),
-        )
+        _apply_store_to_matching_rows(conn, item, store)
     else:
         conn.execute(
             "DELETE FROM item_store_preferences WHERE household_id = ? AND item = ?",
             (household_id(), item.strip().lower()),
         )
-        conn.execute(
-            "UPDATE grocery_items SET store = '' WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-            (household_id(), item),
-        )
+        _apply_store_to_matching_rows(conn, item, "")
     conn.commit()
     conn.close()
     return {"item": item, "store": store}
