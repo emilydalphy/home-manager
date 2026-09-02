@@ -16,3 +16,8 @@ app/home_manager.db-journal
 # Worktrees live inside the repo, so without this every parallel session's
 # working copy shows up as untracked noise in `git status` on main.
 .claude/worktrees/
+
+# Local database snapshots (see app/backup.py). Real household data —
+# never in git, same as the database itself.
+backups/
+app/backups/

@@ -14,6 +14,9 @@ os.environ["DB_PATH"] = _TMP_DB
 os.environ["HOME_MANAGER_PASSWORD"] = "test-password"
 os.environ["SESSION_SECRET"] = "test-session-secret"
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-not-used")
+# The daily backup loop is real behaviour, not test behaviour — tests that
+# want it exercise app.backup directly (see test_backup.py).
+os.environ["DISABLE_BACKUPS"] = "1"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
