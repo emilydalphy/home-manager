@@ -434,7 +434,7 @@
 <body>
 
 <div id="app-shell">
-  <div id="back-to-chat" style="padding: 12px 20px 0;">
+  <div id="back-to-chat" data-shell-back="hide" style="padding: 12px 20px 0;">
     <a class="back-link" href="/">&larr; Back to chat</a>
   </div>
 
@@ -579,20 +579,6 @@
 <script src="/static/voice-session.js"></script>
 <script src="/static/dictation.js"></script>
 <script>
-// The shell (shell.html) embeds this page in an iframe for the Grocery tab,
-// and every top-level route -- including "/" -- serves shell.html. So inside
-// the shell, "Back to chat" would navigate the *iframe* to a second copy of
-// the whole app shell, stacking two ask bars and two tab bars on screen.
-// Embedded, the shell's own tab bar is already the way back, so hide the
-// link; opened standalone (/grocery.html direct) it still works as before.
-// Same fix as inventory.html and memory.html (commit af91870).
-(function () {
-  var backWrap = document.getElementById('back-to-chat');
-  if (backWrap && window.self !== window.top) {
-    backWrap.style.display = 'none';
-  }
-})();
-
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -1988,5 +1974,6 @@ loadItemStorePrefs();
 dgLoadPeople();
 dgLoadStoresMeta();
 </script>
+<script src="/static/embedded-page.js"></script>
 </body>
 </html>

@@ -382,7 +382,7 @@
   <h1>Cooker View</h1>
   <button class="refresh-btn" id="refresh-btn" title="Reload latest plan/inventory data">&#8635; Refresh</button>
 </div>
-<p class="subtitle" id="subtitle">This week's plan, ready to cook. <a id="back-to-chat" href="/">&larr; Back to chat</a></p>
+<p class="subtitle" id="subtitle">This week's plan, ready to cook. <a id="back-to-chat" data-shell-back="hide" href="/">&larr; Back to chat</a></p>
 
 <div id="voice-status" class="voice-status"></div>
 <div id="attention-banner"></div>
@@ -394,19 +394,6 @@
 <script src="/static/voice-session.js"></script>
 
 <script>
-// Cook mode is opened inside the shell's Kitchen tab iframe (shell.js's
-// forceEmbedSrc, and kitchen.html's "Cook mode" button). Since "/" serves
-// shell.html, "Back to chat" would load a second app shell inside that
-// iframe -- two ask bars and two tab bars stacked. Embedded, the shell's
-// tab bar is already the way back, so hide the link; standalone /cooker
-// still has it. Same fix as inventory.html and memory.html (commit af91870).
-(function () {
-  var backLink = document.getElementById('back-to-chat');
-  if (backLink && window.self !== window.top) {
-    backLink.style.display = 'none';
-  }
-})();
-
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -1092,5 +1079,6 @@ refreshBtn.addEventListener('click', async () => {
 
 load();
 </script>
+<script src="/static/embedded-page.js"></script>
 </body>
 </html>
