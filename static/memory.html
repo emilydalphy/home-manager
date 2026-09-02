@@ -30,6 +30,23 @@
   .wwk-fact-text { font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; color: var(--ink); flex: 1; }
   .wwk-fact-edit { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: #A8825C; flex: none; }
   .wwk-add-row { padding: 11px 0; border-top: 1px solid #F1E8DA; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); cursor: pointer; }
+  /* Setup answers on the Taste tab. Styled as part of the same list as the
+     freeform facts rather than as a separate widget — they're the same kind
+     of thing to the household, and only differ in where they're stored. */
+  .wwk-pref-label { font-family: var(--font-body); font-weight: 700; color: var(--midnight-violet); }
+  .wwk-pref-empty { color: #A8998F; font-style: italic; }
+  .wwk-pref-chips-row { cursor: default; }
+  .wwk-pref-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 4px; }
+  .wwk-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--violet-soft, #F1E4EC); color: var(--midnight-violet);
+    border-radius: 999px; padding: 6px 8px 6px 14px;
+    font-family: var(--font-body); font-size: 0.86rem;
+  }
+  .wwk-chip button {
+    background: none; border: none; color: inherit; cursor: pointer;
+    font-size: 1.05rem; line-height: 1; padding: 6px; min-width: 32px; min-height: 32px;
+  }
 
   .wwk-editor { border-top: 1px solid #F1E8DA; padding: 11px 0; }
   .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 12px; background: #FFFDF6; font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
@@ -148,6 +165,10 @@ const TAB_META = {
 
 let activeTab = 'people';
 let openEditorId = null; // fact id being edited, or 'new'
+// Which preference field's editor is open ('eating_style' | 'cuisines' | null).
+// Separate from openEditorId because that one is keyed by fact id, and these
+// aren't facts — they live in meal_preferences.
+let openPrefEditor = null;
 let memoryCache = null;
 
 document.getElementById('wwk-tabs').addEventListener('click', (e) => {
@@ -175,6 +196,7 @@ async function renderFactsTab(category) {
     const data = res.ok ? await res.json() : {};
     const facts = data.facts || [];
     const onboarding = data.onboarding;
+    const preferences = data.preferences;
     const meta = TAB_META[category];
     let html = '';
     if (onboarding && (onboarding.members || []).length) {
@@ -187,6 +209,9 @@ async function renderFactsTab(category) {
         html += `<div class="wwk-fact-row"><span class="wwk-fact-text">Won't eat: ${escapeHtml(onboarding.household_dislikes.join(', '))}</span></div>`;
       }
       html += `</div>`;
+    }
+    if (preferences) {
+      html += renderPreferenceCard(preferences);
     }
     html += `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     facts.forEach(f => {
@@ -231,9 +256,118 @@ async function renderFactsTab(category) {
     html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
     content.innerHTML = html;
     wireFactsActions(category);
+    if (preferences) wirePreferenceActions(preferences);
   } catch (err) {
     content.innerHTML = '<p style="text-align:center;color:#8A7A82;font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
+}
+
+// The two onboarding answers that drive every generated week and were,
+// until now, editable nowhere in the app — not here, not on the meal-setup
+// screen. Only chat could change them, and only if you thought to ask.
+function renderPreferenceCard(prefs) {
+  let html = `<div class="wwk-card"><p class="wwk-intro">From your setup answers — these shape every week I plan.</p>`;
+
+  // Eating style: freeform text, one value.
+  if (openPrefEditor === 'eating_style') {
+    html += `<div class="wwk-editor">
+      <textarea id="wwk-pref-textarea" aria-label="Edit eating style"
+        placeholder="e.g. high-protein, low-carb — in your own words">${escapeHtml(prefs.eating_style)}</textarea>
+      <div class="wwk-editor-actions">
+        <button class="wwk-save-btn" data-save-pref="eating_style">Save</button>
+        <button class="wwk-cancel-btn" data-cancel-pref="1">Cancel</button>
+      </div>
+    </div>`;
+  } else {
+    const shown = prefs.eating_style
+      ? escapeHtml(prefs.eating_style)
+      : '<span class="wwk-pref-empty">Nothing set — tap to add one</span>';
+    html += `<div class="wwk-fact-row" data-open-pref="eating_style">
+      <span class="wwk-fact-text"><span class="wwk-pref-label">Eating style</span> ${shown}</span>
+      <span class="wwk-fact-edit">Edit</span>
+    </div>`;
+  }
+
+  // Cuisines: a list, so each one removes individually rather than making
+  // someone retype the others to drop one.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Excited about</span></span>
+  </div>`;
+  html += `<div class="wwk-pref-chips">`;
+  if ((prefs.cuisines || []).length) {
+    prefs.cuisines.forEach(c => {
+      html += `<span class="wwk-chip">${escapeHtml(c)}<button type="button" aria-label="Remove ${escapeHtml(c)}" data-remove-cuisine="${escapeHtml(c)}">&times;</button></span>`;
+    });
+  } else {
+    html += `<span class="wwk-pref-empty">Nothing yet</span>`;
+  }
+  html += `</div>`;
+  if (openPrefEditor === 'cuisines') {
+    html += `<div class="wwk-editor">
+      <textarea id="wwk-pref-textarea" aria-label="Add a cuisine" placeholder="One cuisine, e.g. Sichuan"></textarea>
+      <div class="wwk-editor-actions">
+        <button class="wwk-save-btn" data-save-pref="cuisines">Add</button>
+        <button class="wwk-cancel-btn" data-cancel-pref="1">Cancel</button>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="wwk-add-row" data-open-pref="cuisines">+ Add a cuisine</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function wirePreferenceActions(prefs) {
+  const content = document.getElementById('wwk-content');
+  content.querySelectorAll('[data-open-pref]').forEach(el => {
+    el.addEventListener('click', () => { openPrefEditor = el.getAttribute('data-open-pref'); render(); });
+  });
+  content.querySelectorAll('[data-cancel-pref]').forEach(btn => {
+    btn.addEventListener('click', () => { openPrefEditor = null; render(); });
+  });
+  content.querySelectorAll('[data-save-pref]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const which = btn.getAttribute('data-save-pref');
+      const text = document.getElementById('wwk-pref-textarea').value.trim();
+      btn.disabled = true;
+      try {
+        if (which === 'eating_style') {
+          // Empty is a real answer here — it clears the style rather than
+          // being an abandoned edit, unlike a blank freeform fact.
+          await savePreference('eating_style', text);
+        } else {
+          if (!text) { openPrefEditor = null; render(); return; }
+          const next = (prefs.cuisines || []).slice();
+          if (!next.some(c => c.toLowerCase() === text.toLowerCase())) next.push(text);
+          await savePreference('cuisine_preferences', next);
+        }
+        openPrefEditor = null;
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-remove-cuisine]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/memory/delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ field: 'cuisine_preferences', item: btn.getAttribute('data-remove-cuisine') }),
+        });
+        if (!res.ok) throw new Error('failed');
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't remove that — try again."); }
+    });
+  });
+}
+
+async function savePreference(field, value) {
+  const res = await fetch('/api/memory/edit', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ field, value }),
+  });
+  if (!res.ok) throw new Error('failed');
 }
 
 function wireFactsActions(category) {
