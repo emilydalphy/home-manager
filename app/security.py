@@ -261,6 +261,22 @@ async def auth_middleware(request, call_next):
     return JSONResponse({"detail": "Please sign in again."}, status_code=401)
 
 
+# Reading the app is not using the app.
+#
+# Every authenticated request stamps `last_active_at`, which exists for one
+# purpose in this codebase: the morning report's "Last active" line. Once
+# that report started reading over HTTP it signed in and stamped the column
+# it was about to print — so after one overnight run, "the beta tester
+# hasn't opened this since August 20" was gone for good and the line could
+# never again say anything but "a few seconds ago". A monitor that destroys
+# the signal it monitors is worse than no monitor.
+#
+# Kept as a path set rather than a header the caller sends, because a
+# caller-settable "don't count this" flag is a way to use the app without
+# appearing to.
+_NON_ACTIVITY_PATHS = frozenset({"/api/observability", "/api/whoami"})
+
+
 async def _call_as_household(household_id: int, call_next, request):
     """
     Run the rest of the request with the household bound, unbinding after.
@@ -273,6 +289,8 @@ async def _call_as_household(household_id: int, call_next, request):
     """
     token = set_current_household_id(household_id)
     try:
+        if request.url.path in _NON_ACTIVITY_PATHS:
+            return await call_next(request)
         # Note that they're here. Throttled to one write per household per
         # 15 minutes inside touch_household_active, and it never raises —
         # a bookkeeping column must not be able to fail a real request.

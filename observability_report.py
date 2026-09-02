@@ -70,10 +70,15 @@ class NoData(Exception):
 
 
 def _passphrases() -> list[str]:
-    raw = os.environ.get("HOME_MANAGER_PASSPHRASES") or os.environ.get(
-        "HOME_MANAGER_PASSWORD", ""
-    )
-    return [p.strip() for p in raw.split(",") if p.strip()]
+    # Only the plural variable is comma-separated. HOME_MANAGER_PASSWORD is
+    # one household's real passphrase and is taken whole: splitting it
+    # turned "correct horse, battery staple" into two wrong passphrases and
+    # then reported a refusal, pointing at the wrong thing entirely.
+    raw = os.environ.get("HOME_MANAGER_PASSPHRASES")
+    if raw:
+        return [p.strip() for p in raw.split(",") if p.strip()]
+    single = os.environ.get("HOME_MANAGER_PASSWORD", "")
+    return [single] if single else []
 
 
 def _base_url() -> str:
@@ -136,15 +141,17 @@ def _collect_over_http(days: int) -> list[dict]:
             opener = _sign_in(base, phrase)
             who = _get_json(opener, f"{base}/api/whoami")
             data = _get_json(opener, f"{base}/api/observability?days={int(days)}")
-        except NoData:
-            raise
-        except (urllib.error.URLError, OSError, ValueError) as e:
-            # One household being unreachable must not hide the others.
+        except (NoData, urllib.error.URLError, OSError, ValueError) as e:
+            # One household being unreachable must not hide the others —
+            # including when the reason is a refused passphrase, which is
+            # the likeliest failure of all and used to abort the whole run.
+            # Emily losing her own report because the tester's passphrase
+            # was rotated is the wrong trade.
             out.append(
                 {
                     "household_id": None,
                     "household": f"passphrase #{i}",
-                    "unreachable": f"{type(e).__name__}: {e}",
+                    "unreachable": str(e) if isinstance(e, NoData) else f"{type(e).__name__}: {e}",
                 }
             )
             continue
@@ -207,14 +214,30 @@ def _collect_from_db(days: int) -> list[dict]:
 
 
 def collect(days: int) -> tuple[list[dict], str]:
-    """The report, and one line saying where it came from."""
-    reasons = []
-    for label, fn in (("the live app", _collect_over_http), ("a local database", _collect_from_db)):
-        try:
-            return fn(days), label
-        except NoData as e:
-            reasons.append(f"  {label}: {e}")
-    raise NoData("Nothing to report on.\n" + "\n".join(reasons))
+    """
+    The report, and one line saying where it came from.
+
+    The fallback is deliberately narrow: it applies only when the web was
+    never configured, never when it was configured and failed.
+
+    Falling back on failure quietly restored the exact thing this script
+    was rewritten to prevent. With a stale local database present — any
+    clone where the app has been run once — a rotated passphrase produced
+    "(read from a local database) / Nothing broke." and exit 0, with the
+    real reason printed nowhere. The one tell was a parenthetical on line
+    one that nothing tells the reader to check. If HOME_MANAGER_URL is set,
+    the live app is the answer or there is no answer.
+    """
+    if _base_url():
+        return _collect_over_http(days), "the live app"
+
+    try:
+        return _collect_from_db(days), "a local database"
+    except NoData as e:
+        raise NoData(
+            f"Nothing to report on.\n  a local database: {e}\n"
+            f"  the live app: HOME_MANAGER_URL is unset, so the live app was not tried."
+        )
 
 
 # ---------- printing ----------

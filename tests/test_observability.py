@@ -516,6 +516,181 @@ def test_the_live_app_is_preferred_over_a_local_file(monkeypatch):
     assert report[0]["errors"]["total"] == 2
 
 
+def test_reading_the_report_does_not_count_as_using_the_app(signed_in):
+    """
+    The monitor must not destroy the signal it monitors.
+
+    last_active_at exists for exactly one line of output: the report's
+    "Last active". Once the report started reading over HTTP it signed in
+    and stamped that column on the way to printing it — so after one
+    overnight run "the tester hasn't opened this since August 20" was gone
+    for good, and the line could only ever say "a few seconds ago" again.
+    """
+    from app.tools import usage
+
+    # Cleared, or this test passes on the 15-minute activity throttle
+    # rather than on the exemption it is meant to be checking — the
+    # signed_in fixture has already stamped the column by signing in.
+    usage._last_touched.clear()
+    conn = get_conn()
+    conn.execute("UPDATE households SET last_active_at = '2026-08-20 09:00:00' WHERE id = 1")
+    conn.commit()
+    conn.close()
+
+    signed_in.get("/api/whoami")
+    signed_in.get("/api/observability?days=1")
+
+    conn = get_conn()
+    after = conn.execute("SELECT last_active_at FROM households WHERE id = 1").fetchone()[0]
+    conn.close()
+    assert after == "2026-08-20 09:00:00", (
+        f"reading the report moved last_active_at to {after}; the signal is now self-referential"
+    )
+
+
+def test_an_ordinary_request_still_counts_as_using_the_app(signed_in):
+    """The other half: the exemption must not switch activity tracking off."""
+    from app.tools import usage
+
+    usage._last_touched.clear()
+    conn = get_conn()
+    conn.execute("UPDATE households SET last_active_at = '2026-08-20 09:00:00' WHERE id = 1")
+    conn.commit()
+    conn.close()
+
+    signed_in.get("/api/facts")
+
+    conn = get_conn()
+    after = conn.execute("SELECT last_active_at FROM households WHERE id = 1").fetchone()[0]
+    conn.close()
+    assert after != "2026-08-20 09:00:00", "real use stopped being recorded"
+
+
+def test_a_refused_passphrase_is_never_reported_as_nothing_broke(monkeypatch, tmp_path):
+    """
+    The fallback quietly restored the failure the rewrite exists to close.
+
+    With HOME_MANAGER_URL set and a stale local database present — any
+    clone where the app has been run once — a rotated passphrase fell
+    through to the local file and printed "Nothing broke", exit 0, with the
+    real reason shown nowhere. So the fallback now applies only when the
+    web was never configured, never when it was configured and failed.
+    """
+    import observability_report
+
+    monkeypatch.setenv("HOME_MANAGER_URL", "https://example.invalid")
+    monkeypatch.setenv("HOME_MANAGER_PASSPHRASES", "rotated-and-wrong")
+
+    def _refused(base, phrase):
+        raise observability_report.NoData("refused a passphrase")
+
+    monkeypatch.setattr(observability_report, "_sign_in", _refused)
+
+    report, source = observability_report.collect(days=1)
+    assert source == "the live app", f"a refused sign-in fell back to {source}"
+    assert report[0]["unreachable"], "a refused passphrase was reported as a clean household"
+
+    monkeypatch.setattr(sys, "argv", ["observability_report.py"])
+    assert observability_report.main() != 0, "a refused passphrase exited 0"
+
+
+def test_a_half_configured_web_source_never_falls_back_to_a_local_file(monkeypatch):
+    """
+    The other way the fallback lies, and the likelier setup mistake: the
+    URL gets set and the passphrase does not.
+
+    A local database exists in this test, as it does in any clone where the
+    app has been run once. Falling back to it would answer a question about
+    the live app with numbers from somewhere else — and print "Nothing
+    broke" while the real app was on fire. If HOME_MANAGER_URL is set, the
+    live app is the answer or there is no answer.
+    """
+    import observability_report
+
+    monkeypatch.setenv("HOME_MANAGER_URL", "https://example.invalid")
+    monkeypatch.delenv("HOME_MANAGER_PASSPHRASES", raising=False)
+    monkeypatch.delenv("HOME_MANAGER_PASSWORD", raising=False)
+
+    with pytest.raises(observability_report.NoData) as caught:
+        observability_report.collect(days=1)
+    assert "HOME_MANAGER_PASSPHRASES" in str(caught.value), (
+        f"the message does not name what is missing: {caught.value}"
+    )
+
+    monkeypatch.setattr(sys, "argv", ["observability_report.py"])
+    assert observability_report.main() == 2, "a half-configured setup did not report 'couldn't look'"
+
+
+def test_one_bad_passphrase_does_not_discard_the_other_households(monkeypatch):
+    """
+    Emily losing her own morning report because the tester's passphrase was
+    rotated is the wrong trade. A refusal used to abort the whole run,
+    throwing away the households already collected.
+    """
+    import observability_report
+
+    monkeypatch.setenv("HOME_MANAGER_URL", "https://example.invalid")
+    monkeypatch.setenv("HOME_MANAGER_PASSPHRASES", "good-one,rotated-and-wrong")
+
+    def _sign_in(base, phrase):
+        if phrase == "good-one":
+            return _FakeOpener()
+        raise observability_report.NoData("refused a passphrase")
+
+    monkeypatch.setattr(observability_report, "_sign_in", _sign_in)
+
+    report, _ = observability_report.collect(days=1)
+    assert len(report) == 2, f"expected both households represented, got {len(report)}"
+    assert report[0]["household"] == "The Test Household", "the good household was discarded"
+    assert report[1]["unreachable"], "the bad passphrase was not reported"
+
+
+def test_a_single_passphrase_is_not_split_on_its_commas(monkeypatch):
+    """
+    HOME_MANAGER_PASSWORD is one household's real passphrase, taken whole.
+    Splitting it turned "correct horse, battery staple" into two wrong
+    passphrases and then blamed the passphrase.
+    """
+    import observability_report
+
+    monkeypatch.delenv("HOME_MANAGER_PASSPHRASES", raising=False)
+    monkeypatch.setenv("HOME_MANAGER_PASSWORD", "correct horse, battery staple")
+    assert observability_report._passphrases() == ["correct horse, battery staple"]
+
+    monkeypatch.setenv("HOME_MANAGER_PASSPHRASES", "one,two")
+    assert observability_report._passphrases() == ["one", "two"]
+
+
+def test_recording_an_error_gives_up_on_a_locked_database(monkeypatch):
+    """
+    record_error runs on the error path, and the case that matters is the
+    database itself being what broke. Without a busy timeout each 500 parks
+    a threadpool worker for sqlite's 5s default — in the same pool the
+    app's sync routes use — so error recording would help turn one failure
+    into an outage.
+
+    This pins the PRAGMA, which the previous round shipped untested: it
+    could be deleted with the whole suite still green.
+    """
+    import time
+
+    from app.db import get_conn as _get_conn
+
+    blocker = _get_conn()
+    blocker.execute("BEGIN EXCLUSIVE")
+    try:
+        started = time.monotonic()
+        tools.record_error("tool", where="locked", detail="RuntimeError")
+        waited = time.monotonic() - started
+    finally:
+        blocker.rollback()
+        blocker.close()
+
+    assert waited < 2.0, (
+        f"a locked database held the error path for {waited:.1f}s; the busy timeout is gone"
+    )
+
+
 def test_the_report_reads_the_keys_the_app_actually_returns(signed_in):
     """
     The fake session above can only prove the script works against my idea
@@ -659,7 +834,15 @@ def test_a_real_browser_error_still_says_something_useful(signed_in):
         "failed to load /static/shell.js": "failed to load /static/shell.js",
         "unhandled rejection": "unhandled rejection",
     }
-    for sent, expected in cases.items():
+    for sent, expected in {**cases, **{
+        # The "failed to load" tail is a URL, and a URL is exactly the
+        # shape that carries a live share token or a member's name. It
+        # gets the same redaction as where_, rather than being trusted for
+        # having a fixed prefix in front of it.
+        "failed to load /api/share/LIVETOKEN123abc": "failed to load /api/share/<token>",
+        "failed to load /api/members/Sophia/share-link":
+            "failed to load /api/members/<name>/share-link",
+    }}.items():
         signed_in.post("/api/client-error", json={"where": "/grocery", "detail": sent})
         row = _rows()[-1]
         assert row["detail"] == expected, f"{sent!r} recorded as {row['detail']!r}"

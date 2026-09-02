@@ -2384,9 +2384,17 @@ def logout():
 # than in the browser, because the browser is the untrusted end.
 _SHARE_PATH_RE = re.compile(r"^(/(?:api/)?(?:member-)?share)/[^/]+")
 
+# A member's name is also a path segment, and the shape check alone does not
+# catch it: "/api/members/Sophia Rodriguez/share-link" fails only because of
+# the space, so a household with single-word names would have sailed
+# through. Redacted by position rather than by looking for names, because
+# there is no list of names to look for.
+_MEMBER_PATH_RE = re.compile(r"(/(?:api/)?members)/[^/]+")
+
 
 def _redact_share_token(where: str) -> str:
-    return _SHARE_PATH_RE.sub(r"\1/<token>", where or "")
+    text = _SHARE_PATH_RE.sub(r"\1/<token>", where or "")
+    return _MEMBER_PATH_RE.sub(r"\1/<name>", text)
 
 
 # What a browser is allowed to put in the table, enforced here rather than
@@ -2414,9 +2422,12 @@ def _redact_share_token(where: str) -> str:
 # of the signal; the sentence after the colon does not, because there is no
 # way to tell a browser's own wording from an interpolated recipe name.
 _JS_ERROR_CLASS_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]{0,38}(?:Error|Exception))\b")
-# The reporter's own fixed phrases, which it builds itself from a
-# same-origin URL rather than from anything a person typed.
-_RESOURCE_FAIL_RE = re.compile(r"^failed to load [A-Za-z0-9._:/\-]{1,80}$")
+# The reporter's own fixed phrase. The tail is a same-origin URL the
+# browser assembled itself, but "a URL" is exactly the shape that carries
+# a member name or a live share token — the same reason where_ stores a
+# route pattern — so the tail goes through the same redaction and shape
+# check as where_ rather than being trusted for having a fixed prefix.
+_RESOURCE_FAIL_RE = re.compile(r"^failed to load (\S{1,80})$")
 _SAFE_LITERALS = frozenset({"unhandled rejection"})
 # A path, and only a path: no query string, no spaces, no prose. Covers
 # both shapes the reporter sends: "/grocery" and "shell.js:42".
@@ -2430,8 +2441,11 @@ def _safe_client_detail(detail: str) -> str:
     text = " ".join(str(detail or "").split())[:_MAX_CLIENT_DETAIL]
     if not text:
         return "unspecified"
-    if text in _SAFE_LITERALS or _RESOURCE_FAIL_RE.match(text):
+    if text in _SAFE_LITERALS:
         return text
+    m = _RESOURCE_FAIL_RE.match(text)
+    if m:
+        return f"failed to load {_safe_client_where(m.group(1))}"
     m = _JS_ERROR_CLASS_RE.match(text)
     if m:
         return m.group(1)
