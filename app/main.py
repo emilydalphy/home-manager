@@ -20,6 +20,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import time
 
 from starlette.concurrency import run_in_threadpool
@@ -63,7 +64,16 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
     (401 not signed in, 404, a rejected input) and is not breakage.
     """
     if exc.status_code >= 500:
-        tools.record_error("server", where=request.url.path, detail=str(exc.detail)[:200])
+        # The status code, never the message. 83 routes build their detail
+        # as f"Server error: {e}", and {e} is unbounded application text —
+        # 27 places in app/tools raise exceptions that interpolate
+        # household data ("No saved recipe named '...'", "No household
+        # member named '...'"). Only 20 of those routes have an
+        # `except ValueError` standing between that text and here, so
+        # storing the message would violate this table's stated
+        # no-user-content rule by construction rather than by accident.
+        # The path is already in where_; the message is in the log.
+        tools.record_error("server", where=request.url.path, detail=f"HTTP {exc.status_code}")
     return await http_exception_handler(request, exc)
 
 
@@ -76,9 +86,36 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     and no ticket: the browser just gets a bare 500. Recorded by exception
     class name only; the traceback goes to the log as it always did.
     """
-    tools.record_error("server", where=request.url.path, detail=type(exc).__name__)
+    # Bind the household from the cookie before recording.
+    #
+    # This handler runs in ServerErrorMiddleware, which sits OUTSIDE
+    # auth_middleware — and _call_as_household resets the ContextVar in its
+    # finally block before the exception gets this far. So household_id()
+    # has already fallen back to 1 by now, and without this every crash
+    # from every household was filed against Emily's. The beta tester's
+    # hard failures are exactly the class this feature exists to surface,
+    # and they were landing in the wrong report and missing from theirs.
+    household = None
+    try:
+        parts = security.read_session_parts(request.cookies.get(security.COOKIE_NAME))
+        household = parts[1] if parts else None
+    except Exception:
+        household = None
+
+    if household is None:
+        tools.record_error("server", where=request.url.path, detail=type(exc).__name__)
+    else:
+        with tools.use_household(household):
+            tools.record_error("server", where=request.url.path, detail=type(exc).__name__)
+
     logger.exception("Unhandled error on %s", request.url.path)
-    raise exc
+    # Return the response rather than re-raising. Starlette's
+    # ServerErrorMiddleware expects a response back and only sends one if
+    # the handler returns; raising from here skipped that, so uvicorn's
+    # protocol-level fallback answered instead — same 500 and same body,
+    # but the keep-alive connection was dropped every time and the
+    # no-index header never got applied.
+    return PlainTextResponse("Internal Server Error", status_code=500)
 
 
 @app.middleware("http")
@@ -191,21 +228,41 @@ def _chat_session_id(request: Request) -> str:
     return f"h{tools.household_id()}:local-dev"
 
 
-def _enforce_rate_limit(request: Request, bucket: str) -> None:
+def _enforce_rate_limit(request: Request, bucket: str, record: bool = True) -> None:
     wait = ratelimit.check(bucket, ratelimit.caller_id(request))
-    if wait:
-        # Recorded as well as logged. A household hitting the chat limit
-        # sees a refusal and usually says nothing about it; before this,
-        # nothing anywhere recorded that it had happened, so "is the
-        # tester bouncing off the rate limiter?" had no answer. The
-        # caller id is deliberately not stored — the household is already
-        # the row's owner, and per-device detail buys nothing here.
-        logger.warning("Rate limit hit on %s (retry in %ss)", bucket, wait)
+    if not wait:
+        return
+
+    # Always logged: a rejection is worth seeing whoever caused it.
+    logger.warning("Rate limit hit on %s (retry in %ss)", bucket, wait)
+
+    # Recorded only for a signed-in caller, and never for the error
+    # reporter's own bucket. Both halves matter:
+    #
+    # - `/login` is a public path, so an anonymous caller hits this with no
+    #   household bound and household_id() falls back to 1. Recording there
+    #   let anyone on the internet write rows into Emily's table as fast as
+    #   they could be refused — the limiter causing the exact resource
+    #   consumption it exists to prevent, with no ceiling. Failed sign-ins
+    #   are still logged, which is where that signal belongs.
+    # - Recording the reporter's own rejections replaced each dropped
+    #   client-error row with a rate_limit row, so the flood protection
+    #   reduced nothing; it just made the flood less informative.
+    if record and _has_bound_household(request):
         tools.record_error("rate_limit", where=bucket, detail=f"retry_after={wait}s")
-        raise HTTPException(
-            status_code=429,
-            detail=f"That's a lot of requests at once — give it about {wait} seconds and try again.",
-        )
+
+    raise HTTPException(
+        status_code=429,
+        detail=f"That's a lot of requests at once — give it about {wait} seconds and try again.",
+    )
+
+
+def _has_bound_household(request: Request) -> bool:
+    """Is this a signed-in caller, i.e. does the row have a real owner?"""
+    try:
+        return security.read_session_parts(request.cookies.get(security.COOKIE_NAME)) is not None
+    except Exception:
+        return False
 
 
 class ChatRequest(BaseModel):
@@ -2260,6 +2317,18 @@ def logout():
     return response
 
 
+# A share URL carries a live credential in its path. The reporter sends
+# location.pathname, so on /share/<token> the token would be the thing
+# recorded — a working key sitting in a table Emily reads each morning, and
+# one that outlives the error it was reporting. Redacted server-side rather
+# than in the browser, because the browser is the untrusted end.
+_SHARE_PATH_RE = re.compile(r"^(/(?:api/)?(?:member-)?share)/[^/]+")
+
+
+def _redact_share_token(where: str) -> str:
+    return _SHARE_PATH_RE.sub(r"\1/<token>", where or "")
+
+
 class ClientErrorRequest(BaseModel):
     where: str = ""
     detail: str = ""
@@ -2284,10 +2353,10 @@ def report_client_error(request: Request, req: ClientErrorRequest):
     time.
     """
     try:
-        _enforce_rate_limit(request, "client_error")
+        _enforce_rate_limit(request, "client_error", record=False)
     except HTTPException:
         return Response(status_code=204)
-    tools.record_error("client", where=req.where, detail=req.detail)
+    tools.record_error("client", where=_redact_share_token(req.where), detail=req.detail)
     return Response(status_code=204)
 
 

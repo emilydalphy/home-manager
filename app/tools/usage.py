@@ -222,6 +222,34 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
 _MAX_DETAIL = 200
 _MAX_WHERE = 120
 
+# Nothing else deletes these rows, and a table that only grows is a slow
+# disk-fill on a Railway volume holding the household's real data. Kept
+# small on purpose: this is a "what broke recently" signal for a morning
+# report, not an archive. Pruned every _PRUNE_EVERY inserts rather than on
+# each one, so a burst of errors doesn't pay for a DELETE per row.
+_KEEP_ROWS = 1000
+_KEEP_DAYS = 30
+_PRUNE_EVERY = 50
+_since_prune = 0
+
+
+def _prune(conn, hid: int) -> None:
+    global _since_prune
+    _since_prune += 1
+    if _since_prune < _PRUNE_EVERY:
+        return
+    _since_prune = 0
+    conn.execute(
+        f"DELETE FROM error_events WHERE household_id = ? "
+        f"AND created_at < datetime('now', '-{_KEEP_DAYS} days')",
+        (hid,),
+    )
+    conn.execute(
+        "DELETE FROM error_events WHERE household_id = ? AND id NOT IN "
+        "(SELECT id FROM error_events WHERE household_id = ? ORDER BY id DESC LIMIT ?)",
+        (hid, hid, _KEEP_ROWS),
+    )
+
 
 def record_error(kind: str, where: str = "", detail: str = "") -> None:
     """
@@ -235,10 +263,12 @@ def record_error(kind: str, where: str = "", detail: str = "") -> None:
     conn = None
     try:
         conn = get_conn()
+        hid = household_id()
         conn.execute(
             "INSERT INTO error_events (household_id, kind, where_, detail) VALUES (?, ?, ?, ?)",
-            (household_id(), str(kind)[:40], str(where)[:_MAX_WHERE], str(detail)[:_MAX_DETAIL]),
+            (hid, str(kind)[:40], str(where)[:_MAX_WHERE], str(detail)[:_MAX_DETAIL]),
         )
+        _prune(conn, hid)
         conn.commit()
     except Exception:
         import logging

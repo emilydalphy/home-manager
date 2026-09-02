@@ -358,3 +358,28 @@ can scan just the decisions rather than reading every ticket. She confirmed (202
 does receive the push notification each morning — that's the working "how do I know what to
 review" mechanism; a routine can't wait overnight for her reply, so the loop is: it surfaces
 clearly, she reads/replies, building starts the moment she does.
+
+### The morning report — check whether anything broke, before anything else
+
+Per Emily's 2026-09-01 decision, errors reach her through the push notification she already
+reads each morning rather than by email. From 2026-09-02 there is something to read:
+
+```
+python observability_report.py --days 1     # exit code 1 if anything broke
+```
+
+Run it near the **start** of an overnight pass, and if it reports anything under `BROKEN`,
+**lead the summary with that** — ahead of tickets, ahead of "needs your call". A beta tester
+hitting errors matters more than backlog progress, and she has no other way to find out.
+
+It reads `DB_PATH` directly and reports every household separately (a tester's bad day is
+invisible if you only look at Emily's). It is a **script, not the `/api/observability`
+endpoint**, deliberately: the routine runs in the cloud with a fresh clone, so it has no more
+access to an authenticated endpoint on Railway than to Railway's logs — but it can read a
+database file, the same way `create_household.py` and `reset_household.py` do. The endpoint
+exists for anything running inside the app.
+
+What it surfaces: crashed tools (invisible from outside — the assistant apologises smoothly
+and the request records as a success), server errors, browser errors, and rate-limit
+rejections. It also flags a household as `QUIET` when nothing happened at all that week,
+which is the beta signal easiest to skim past.

@@ -61,17 +61,24 @@
     // as a contentless "script error".
     var target = e && e.target;
     if (target && target !== window && (target.src || target.href)) {
-      // Host and path only — never the query string. Partly because
-      // "css2?family=Karla:wght@400;500;700&display=swap" is noise rather
-      // than information, and partly because a query string is somewhere
-      // data can hide, and nothing here should be able to carry any.
       var raw = String(target.src || target.href);
-      var name = raw;
-      try {
-        var u = new URL(raw, location.href);
-        name = u.host + u.pathname;
-      } catch (err) { name = raw.split('?')[0]; }
-      report(location.pathname, 'failed to load ' + name.slice(0, 80));
+
+      // Only our own files. A blocked font or third-party script fires on
+      // every single page load — on a flaky connection that would be the
+      // entire contents of the report, spending the page's whole budget
+      // before a real error got a turn. It also isn't a bug in this app.
+      if (raw.indexOf('/') === 0 || raw.indexOf(location.origin) === 0) {
+        // Host and path only, never the query string: partly because
+        // "?family=Karla:wght@400;500;700" is noise rather than
+        // information, and partly because a query string is somewhere
+        // data can hide, and nothing here should be able to carry any.
+        var name = raw;
+        try {
+          var u = new URL(raw, location.href);
+          name = u.host + u.pathname;
+        } catch (err) { name = raw.split('?')[0]; }
+        report(location.pathname, 'failed to load ' + name.slice(0, 80));
+      }
       return;
     }
 
