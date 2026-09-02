@@ -1626,7 +1626,7 @@ html, body {
 /* Muted styling is reserved for the ONE deliberately empty slot in a week —
    a dinner on a night nobody is home. Nothing else in the week is ever
    blank, so this treatment stays meaningful. */
-.wk-dish-out { color: #B0A3A9; font-weight: 400; }
+.wk-dish-out { color: #A29886; font-weight: 400; }
 .wk-dish-open { color: var(--warn-ink); font-weight: 600; }
 .wg-dish-open { color: var(--warn-ink); }
 .wg-slot-open { cursor: pointer; }

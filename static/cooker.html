@@ -737,7 +737,7 @@ function render(view) {
         <button class="check-toggle ${isDone ? 'checked' : ''}" data-prep-id="${t.id}" data-next="${isDone ? 'pending' : 'done'}">${isDone ? '&check;' : ''}</button>
         <div class="desc">
           <p class="date">${escapeHtml(formatDate(t.task_date))}</p>
-          <p class="desc-text" style="margin:0">${escapeHtml(t.description)}${t.related_meal ? ' <span style="color:#999">(' + escapeHtml(t.related_meal) + ')</span>' : ''}</p>
+          <p class="desc-text" style="margin:0">${escapeHtml(t.description)}${t.related_meal ? ' <span style="color:#7C7161">(' + escapeHtml(t.related_meal) + ')</span>' : ''}</p>
         </div>
       </div>`;
     }
