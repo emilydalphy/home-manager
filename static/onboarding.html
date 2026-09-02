@@ -468,6 +468,21 @@ function chipWithCustom(container, options, multi) {
 }
 function addCustomChip(container, text, multi) {
   if (!text.trim()) return;
+  const value = text.trim();
+  // Typing something that is already a chip — one of the presets, or one
+  // added a moment ago — selects it rather than adding a second copy.
+  // These answers go straight into meal planning, where "Italian,
+  // Italian" is noise pretending to be a preference. Committing pending
+  // text on Continue made this easy to hit by accident; it was reachable
+  // via Enter before that.
+  const existing = [...container.querySelectorAll('.chip')].find(
+    c => (c.dataset.value || '').toLowerCase() === value.toLowerCase()
+  );
+  if (existing) {
+    if (!multi) container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    existing.classList.add('active');
+    return;
+  }
   if (!multi) container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -545,13 +560,24 @@ function renderWontEatChips() {
     });
   });
 }
+// Enter is how you add another one, but it is not the only way people
+// finish typing: on a phone the obvious move is to type the food and tap
+// Continue, and the keyboard's return key is easy to miss entirely. So
+// whatever is still sitting in the box gets committed on the way out too —
+// see wont-eat-next. Without that the answer is silently dropped, which is
+// exactly the sort of thing nobody reports because it looks like the app
+// simply didn't care.
+function commitWontEatInput() {
+  const input = document.getElementById('wont-eat-input');
+  const val = input.value.trim();
+  if (val && !wontEatItems.includes(val)) wontEatItems.push(val);
+  input.value = '';
+  renderWontEatChips();
+}
 document.getElementById('wont-eat-input').addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
   e.preventDefault();
-  const val = e.target.value.trim();
-  if (val && !wontEatItems.includes(val)) wontEatItems.push(val);
-  e.target.value = '';
-  renderWontEatChips();
+  commitWontEatInput();
 });
 
 // ---------- Q6: excited about ----------
@@ -562,8 +588,16 @@ function buildExcitedStep() {
   chipWithCustom(chips, CUISINES, true);
   excitedBuilt = true;
   document.getElementById('excited-custom').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); addCustomChip(chips, e.target.value, true); e.target.value = ''; }
+    if (e.key === 'Enter') { e.preventDefault(); commitExcitedCustom(); }
   });
+}
+// Same reason as commitWontEatInput: a cuisine typed but not entered is
+// still an answer, and tapping Continue must not throw it away.
+function commitExcitedCustom() {
+  const input = document.getElementById('excited-custom');
+  if (!input) return;
+  addCustomChip(document.getElementById('excited-chips'), input.value, true);
+  input.value = '';
 }
 
 // ---------- Q7: meals per week ----------
@@ -854,10 +888,14 @@ document.getElementById('household-next').onclick = () => {
 document.getElementById('restrictions-next').onclick = () => showStep('eating-style');
 document.getElementById('eating-style-next').onclick = () => showStep('wont-eat');
 document.getElementById('wont-eat-next').onclick = () => {
+  commitWontEatInput();
   buildExcitedStep();
   showStep('excited-about');
 };
-document.getElementById('excited-next').onclick = () => showStep('dinners');
+document.getElementById('excited-next').onclick = () => {
+  commitExcitedCustom();
+  showStep('dinners');
+};
 
 // The two added steps (design_handoff_plan_the_week §8) sit between the
 // meal counts and the first-week reveal, so the very first plan is built
