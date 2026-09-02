@@ -13,6 +13,7 @@ from fastapi.responses import (
     RedirectResponse,
 )
 from pydantic import BaseModel
+import asyncio
 import base64
 import datetime
 import json
@@ -20,7 +21,9 @@ import logging
 import os
 import time
 
-from . import agent, households, ratelimit, security
+from starlette.concurrency import run_in_threadpool
+
+from . import agent, backup, households, ratelimit, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
 from . import tools
@@ -338,6 +341,46 @@ class ResetRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    # Says in the logs, on day one, whether this database will survive a
+    # redeploy — rather than leaving that discoverable only by losing it.
+    backup.warn_if_database_is_ephemeral()
+
+
+@app.on_event("startup")
+async def start_backup_loop():
+    """
+    Take a snapshot of the database daily.
+
+    An in-process loop because there is nothing else: the container runs
+    one command (uvicorn) with no cron, no scheduler and no sidecar, so
+    "a nightly copy" has to live somewhere in here or not exist. The
+    trade-off is honest -- if the app is down, no backup is taken that
+    day; if it restarts, the day's snapshot is simply retaken, since they
+    are keyed by date.
+
+    The work runs in a threadpool because SQLite writes block, and a
+    minute of copying on the event loop would stall every request.
+    """
+    if os.environ.get("DISABLE_BACKUPS") == "1":
+        logger.info("Database backups are disabled for this process (DISABLE_BACKUPS=1)")
+        return
+
+    async def _loop():
+        while True:
+            try:
+                result = await run_in_threadpool(backup.run_daily_maintenance)
+                logger.info(
+                    "Backup maintenance: created=%s pruned=%d kept=%d",
+                    result["created"], len(result["pruned"]), result["kept"],
+                )
+            except Exception:
+                # The loop must outlive any single bad day. A backup task
+                # that dies quietly would leave the household uncovered
+                # with nothing to show for it.
+                logger.exception("Backup maintenance failed; will try again tomorrow")
+            await asyncio.sleep(24 * 60 * 60)
+
+    asyncio.create_task(_loop())
 
 
 @app.get("/api/onboarding/status")
