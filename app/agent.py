@@ -371,10 +371,12 @@ update_recipe_details in that same turn to save it so it's there next time. The 
 have to ask twice or explicitly request that you fill it in.
 - Cooking for more or fewer people than the plan assumed ("we've got guests, need this for 6 \
 not 4")? Use scale_recipe rather than doing the math yourself.
-- After generating (or regenerating) a plan, proactively offer to run generate_prep_schedule if \
-any of the week's recipes have advance_prep_notes worth surfacing (marinating, thawing, etc.) — \
-don't wait to be asked. Use get_prep_schedule/get_plan_progress to answer "what do I need to \
-prep" or "what's left to cook this week."
+- Prep schedules are generated automatically whenever a week is planned and any of its recipes \
+actually need advance prep (marinating, thawing, dough that has to rise) — you do NOT need to \
+offer or remember to run generate_prep_schedule after planning a week. Use \
+get_prep_schedule/get_plan_progress to answer "what do I need to prep" or "what's left to cook \
+this week." Only call generate_prep_schedule yourself if the household changed the week's meals \
+afterwards and the schedule needs rebuilding, or they ask for it directly.
 - Use check_off_meal and check_off_prep_step the moment the user says something's done ("just \
 made the stir fry," "marinated the chicken") — don't just acknowledge in text.
 - If the user mentions cooking something differently than the recipe said (a swap, a skipped/ \
@@ -2184,9 +2186,85 @@ def generate_weekly_plan(
             "plan_id": plan.get("weekly_plan_id"),
             "signature": signature,
         }
-        return plan
     finally:
         lock.release()
+
+    # Outside the lock on purpose: this can make its own model call, and
+    # holding the week's lock through it would make every other caller
+    # wait on work that has nothing to do with them. Only runs on the path
+    # that actually generated -- a caller handed someone else's plan
+    # doesn't redo the prep for it.
+    #
+    # It is still on the caller's own clock, though: on the weeks it does
+    # fire, onboarding and the plan screen wait for a second model call
+    # after their week is already saved and safe. Kept synchronous
+    # deliberately -- a chat turn that just planned a week can then answer
+    # "what do I need to prep" from a schedule that actually exists, and
+    # backgrounding it would trade that for a race and a failure nobody
+    # ever sees. If onboarding's first impression starts feeling slow,
+    # this is a known place to move off the request path.
+    _generate_prep_schedule_if_needed(plan)
+    return plan
+
+
+def _generate_prep_schedule_if_needed(plan: dict) -> bool:
+    """
+    Build the week's prep schedule, but only when the week actually needs
+    one. Returns whether it ran.
+
+    Prep tasks used to depend on the chat assistant remembering to offer
+    them, which meant a plan generated anywhere else -- onboarding's first
+    week, the plan screen -- never got one at all, and even in chat it
+    relied on the model choosing to do it every time. In practice it never
+    happened once: the prep_tasks table was empty, so the Cooker view had
+    nothing to show from the day it shipped.
+
+    Automatic, but conditional. generate_prep_schedule makes its own model
+    call, and most weeks genuinely have nothing to prep ahead -- running it
+    unconditionally would buy an empty answer with a real round trip every
+    single time a week is planned. The condition itself is free: it reads
+    advance_prep_notes off recipes already in hand. Today that means it
+    fires rarely; as more recipes carry prep notes it scales up on its own,
+    which is the right shape for something whose cost should track how much
+    use it actually is.
+
+    Be clear about what this costs, because it is a narrowing and not only
+    a saving: generate_prep_schedule can ALSO consolidate batch prep from
+    ingredients shared across the week (cook rice once for Tuesday's stir
+    fry and Thursday's fried rice), and that needs no advance_prep_notes at
+    all. Gating on prep notes puts those weeks out of reach. Widening the
+    gate to "any ingredient appears in two meals" would fire on nearly
+    every week, i.e. effectively always -- which is the cost Emily declined
+    on 2026-09-01 when she chose "only when a recipe needs it". So the
+    narrowing is the deliberate consequence of that decision, not an
+    oversight, and it is hers to revisit if batch prep turns out to matter
+    more than the per-week call does. Flagged on the ticket rather than
+    decided here.
+
+    Never raises. A week that planned successfully must not fail because
+    its optional prep schedule couldn't be built.
+    """
+    try:
+        plan_id = plan.get("weekly_plan_id")
+        meal_names = {m.get("meal") for m in plan.get("meals") or [] if m.get("meal")}
+        if not plan_id or not meal_names:
+            return False
+        needs_prep = any(
+            (r.get("advance_prep_notes") or "").strip()
+            for r in tools.list_recipes()
+            if r.get("name") in meal_names
+        )
+        if not needs_prep:
+            return False
+        logger.info("Generating a prep schedule for plan %s", plan_id)
+        generate_prep_schedule(plan_id)
+        return True
+    except Exception:
+        logger.exception(
+            "Could not generate the prep schedule for plan %s; the plan itself is unaffected",
+            plan.get("weekly_plan_id"),
+        )
+        return False
 
 
 def _generate_weekly_plan(
@@ -2545,7 +2623,9 @@ Generate a prep/cooking schedule for this week. Guidelines:
 - Only create a task where a recipe's advance_prep_notes, prep_time_minutes, or instructions \
 genuinely call for doing something ahead of time (marinating, thawing, soaking, dough that \
 needs to rise, batch-cooking a component in advance). Most meals need no task at all — don't \
-invent busywork.
+invent busywork. Note you are only asked to do this for a week where something already needs \
+advance prep (see _generate_prep_schedule_if_needed), so batch-prep consolidation rides along \
+on those weeks rather than being a reason to run on its own.
 - Work backward from each meal's planned date: if advance_prep_notes says "at least 4 hours \
 ahead," a same-day morning task is fine; if it says "overnight" or "the night before," schedule \
 it the day before instead.
