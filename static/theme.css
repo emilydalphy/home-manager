@@ -31,16 +31,26 @@
   touch a call site, move it to the canonical name.
 
   ---------------------------------------------------------------------------
-  LIGHT MODE ONLY — dark mode is a deliberate follow-up
+  LIGHT AND DARK (dark added 2026-09-02, Pomona stage 3)
   ---------------------------------------------------------------------------
-  The brand guide carries a full, tuned dark value for every token below
-  (its "Dark" column — a first dark-mode pass, tuned rather than inverted).
-  Stage 1 ships light only. Adding dark mode is a matter of a
-  `@media (prefers-color-scheme: dark)` block redefining these same tokens
-  from that column, plus the two dark-only tokens the light mode has no use
-  for (Spruce Edge #2C4B38, the hairline that replaces the hero shadow).
-  That is why every colour below is defined once, on :root, as a token: so
-  dark mode is one block, not a sweep.
+  The light values live on :root. The dark values live in exactly one
+  `@media (prefers-color-scheme: dark)` block at the BOTTOM of this file,
+  which redefines only these same custom properties — no selectors, no
+  component rules. Everything styled through a token therefore follows the
+  phone's system setting for free.
+
+  There is deliberately NO manual light/dark toggle this stage. The app
+  follows the OS. A toggle means persisting a preference, an in-app control,
+  and a decision about what "system" means as a third state — that is later
+  polish, and Emily hasn't been asked which she wants.
+
+  Two rules that make dark work, both from the brand guide:
+    - Elevation in dark is a LIGHTER FILL plus a HAIRLINE, not a shadow.
+      A shadow reads as nothing against a dark ground.
+    - The hero panel goes LIGHTER than the light-mode spruce (#22422F, up
+      from #1B3328) so it lifts off the deeper ground, and gains the
+      dark-only Spruce Edge hairline (#2C4B38) where the shadow used to do
+      that job.
 */
 
 :root {
@@ -53,8 +63,34 @@
   --surface:        #FFFDF8;  /* cards, list containers, the ask bar */
   --spruce:         #1B3328;  /* hero panel, dark buttons, active nav ink */
   --spruce-raised:  #24402F;  /* chips/icon tiles ON spruce — never on ivory */
+  --spruce-hover:   #2B4A37;  /* hover on a fill that already sits ON spruce */
   --celadon-tint:   #E2EDE5;  /* the gentle, non-urgent tile */
-  /* dark mode only: --spruce-edge: #2C4B38 */
+
+  /*
+    Dark-only hairline, `transparent` in light so a rule can carry
+    `border/box-shadow: … var(--spruce-edge)` unconditionally and cost
+    light mode nothing. In dark it separates the hero panel from a ground
+    that is now nearly the same value.
+  */
+  --spruce-edge:    transparent;
+
+  /*
+    THE PURE-WHITE TIER. A handful of surfaces used literal #fff rather than
+    Card Ivory — notification panel, ask-message tables, some :hover fills.
+    In light this token IS #fff, so pointing them at it changes nothing; in
+    dark it becomes the one step above --surface that those surfaces want.
+  */
+  --surface-raised: #fff;
+
+  /*
+    SPRUCE PLAYING INK. In light, spruce doubles as the strongest text
+    colour (active tab, "add" links, outline-button labels) — the brand
+    guide's own dark table anticipates this: "Active tabs take Spruce
+    (light) or Ink (dark), never apricot." In dark, spruce becomes a raised
+    PANEL, so anything using it as text has to swing to Ink instead. This
+    token is that swing. Identical to --spruce in light.
+  */
+  --ink-strong:     #1B3328;
 
   /* --- Ink ramp (warm-shifted; never pure black or pure white) --- */
   --ink:              #23302A;  /* headlines and body on ground/cards */
@@ -150,6 +186,19 @@
   --shadow-hero:   0 26px 48px -30px rgba(18, 36, 25, .85);
   --shadow-action: 0 16px 28px -18px rgba(224, 145, 92, .8);
   --shadow-card:   0 1px 2px rgba(35, 48, 42, .05);
+  --shadow-sheet:  0 -8px 30px rgba(35, 48, 42, .2);   /* bottom sheets */
+  --shadow-dialog: 0 18px 44px rgba(35, 48, 42, .28);  /* centred dialogs */
+  --shadow-panel:  0 12px 32px rgba(0, 0, 0, .22);     /* the notification panel */
+  --shadow-toast:  0 6px 20px rgba(0, 0, 0, .18);
+
+  /* Modal backdrop. Dark mode needs a blacker, heavier one — a spruce wash
+     over an already-dark ground barely dims anything. */
+  --scrim: rgba(35, 48, 42, .45);
+
+  /* The toast is the one surface that is dark-on-light in light mode, so it
+     cannot ride --ink (which inverts). Its own pair of tokens instead. */
+  --toast-bg:  #23302A;
+  --toast-ink: #fff;
 
   /* ================= COMPATIBILITY ALIASES — do not extend =================
      Old names, forwarded to the canonical tokens above. Every one of these is
@@ -350,7 +399,7 @@ a:hover { color: var(--apricot-label-hover); }
   color: var(--ink-secondary);
 }
 .app-nav a {
-  color: var(--spruce);
+  color: var(--ink-strong);
   text-decoration: none;
   font-weight: 700;
 }
@@ -391,7 +440,7 @@ summary:focus-visible,
 .btn-primary:focus-visible,
 .btn-gold:focus-visible,
 .kh-btn-gold:focus-visible {
-  outline-color: var(--spruce) !important;
+  outline-color: var(--on-accent-ink) !important;
 }
 
 /* ---------- Voice dictation button ---------- */
@@ -409,7 +458,7 @@ summary:focus-visible,
   height: 36px;
   border-radius: var(--radius-send);
   background: transparent;
-  color: var(--spruce);
+  color: var(--ink-strong);
   border: none;
   display: flex;
   align-items: center;
@@ -450,5 +499,152 @@ summary:focus-visible,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   DARK MODE
+   ==========================================================================
+   Values marked (guide) are lifted verbatim from the brand guide's Dark
+   column. Values marked (derived) are NOT in the guide — the guide's dark
+   pass covered the Today screen's vocabulary, and the app uses a few tokens
+   beyond it. Every derived value was measured, not eyeballed: the ratio in
+   its comment is WCAG 2.1 contrast against the surface it actually sits on.
+
+   This block redefines ONLY custom properties. No selectors, no component
+   rules — so a component styled through tokens needs no dark-specific CSS,
+   and light mode cannot be affected by anything in here.
+
+   THE OPT-OUT: `:root:not([data-theme="light"])` rather than a bare `:root`.
+   A page that puts data-theme="light" on its <html> keeps the light values
+   whatever the phone is set to. Exactly one page does — share.html, the
+   public "printed menu" card; see the note at the top of its style block.
+   This is also the hook a future manual toggle would use, which is why it
+   is an attribute rather than something share.html-specific.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    /* --- Ground & surface (guide) --- */
+    --ground:         #101F19;
+    --surface:        #172C22;
+    --spruce:         #22422F;  /* LIGHTER than light-mode spruce, on purpose */
+    --spruce-raised:  #2E5140;
+    --celadon-tint:   #1C3B2C;
+
+    /* The hairline that replaces the hero's shadow. Dark only — it is
+       `transparent` on :root, so this is where it becomes real. (guide) */
+    --spruce-edge:    #2C4B38;
+
+    /* (derived) Hover on a fill already sitting on spruce. One step above
+       --spruce-raised, capped by apricot-light needing 4.5:1 on it — at
+       #37604B that pair falls to 4.12, so it stops here.
+       apricot-light 4.71:1 · ivory-ink 6.90:1 · ivory-ink-muted 6.00:1 */
+    --spruce-hover:   #32573F;
+
+    /* (derived) The pure-white tier, one step above --surface. Capped by
+       --ink-inactive and --urgent needing 4.5:1 on it.
+       ink 12.04:1 · ink-secondary 6.40:1 · ink-inactive 4.70:1 */
+    --surface-raised: #192F24;
+
+    /* --- Ink ramp (guide) ---
+       Note the collapses the guide makes on dark: Secondary and Muted become
+       one value, and so do Placeholder and Inactive. */
+    --ink:              #F3EBDD;
+    --ink-on-celadon:   #F3EBDD;
+    --ivory-ink:        #F3EBDD;
+    --ivory-ink-muted:  #E4DCCE;  /* a solid token on dark, not an rgba */
+    --ink-secondary:    #BFB6A5;
+    --ink-muted:        #BFB6A5;
+    --ink-placeholder:  #9C9384;
+    --ink-inactive:     #9C9384;
+
+    /* (derived) Completed / struck-out list text and the quantity beside it.
+       Not in the guide. Both clear 4.5:1 here; de-emphasis in dark comes from
+       the strikethrough and the ordering rather than from low contrast.
+       NOTE FOR EMILY: the LIGHT values for these two (#A29886 / #C6BCA9) sit
+       at 2.80:1 and 1.85:1 on card ivory, i.e. they already fail 4.5:1 today.
+       That is a pre-existing light-mode gap, deliberately NOT changed in this
+       stage (light mode had to stay identical), and worth its own ticket.
+       ink-done 5.72:1 · ink-done-soft 4.87:1, both on --surface */
+    --ink-done:       #A9A091;
+    --ink-done-soft:  #9C9384;
+
+    /* (derived) Spruce's ink role swings to Ink, exactly as the guide
+       specifies for the active tab. 14.40:1 on ground, 12.49:1 on surface. */
+    --ink-strong:     #F3EBDD;
+
+    /* --- Apricot (guide) --- */
+    --apricot:        #E9A16C;
+    --apricot-light:  #F2B98E;  /* shared by both modes, unchanged */
+    --apricot-deep:   #E9A16C;  /* folds into Apricot on dark */
+    --apricot-label:  #F2B98E;
+    --apricot-label-hover: #F7D2B4;  /* (derived) hover goes lighter on dark */
+    --apricot-rule:   rgba(233, 161, 108, .30);
+
+    /* --- Celadon (guide) --- */
+    --celadon:        #A9C4B0;  /* shared by both modes, unchanged */
+    --celadon-edge:   #2E5240;
+    --celadon-label:  #97BDA4;
+
+    /* RULE ONE on dark: the ink that sits on an accent fill. (guide) */
+    --on-accent-ink:  #14261D;
+
+    /* --- Lines & edges (guide) --- */
+    --hairline:        #26382E;
+    --hairline-strong: #33473B;
+
+    /* (derived) The warm-neutral fills. On dark they stop being "warm sand"
+       and become the two steps between --surface and --hairline-strong;
+       --sand-deep stays equal to --hairline-strong exactly as it is on light.
+       ink 11.28:1 · ink-secondary 6.65:1, both on --sand */
+    --sand:       #223328;
+    --sand-deep:  #33473B;
+
+    /* --- Status ---
+       (derived — FLAGGED FOR EMILY, same as the light value.) The guide has
+       no urgent swatch in either column, so both the light #B23A22 and this
+       dark counterpart are the assistant's pick, not approved brand values.
+
+       Derived the same way the guide brightened apricot (#E0915C → #E9A16C:
+       hold the hue, lift the lightness so it holds up against the deeper
+       ground), but pushed further, because --urgent has to satisfy TWO jobs
+       that pull in opposite directions: it is used as a FILL carrying
+       --urgent-ink (shell.css:297, 891, 1242; theme.css .pill-attention)
+       AND as body TEXT on the ground (shell.css:1294, 1309).
+
+       A merely-brightened dark terracotta cannot do both: at #BC3D24 it
+       reaches only 3.11:1 as text on the dark ground. So on dark, urgent
+       joins apricot and celadon as a LIGHT accent fill and takes
+       --on-accent-ink, i.e. Rule One applies to it here where it does not on
+       light. Hue is held at 9° — well clear of apricot's 25° — so the two
+       accents stay tellable apart at badge size.
+       as text: 5.55:1 on ground, 4.81:1 on surface, 4.64:1 on surface-raised
+       as fill: --on-accent-ink 5.16:1 on it */
+    --urgent:        #E6705B;
+    --urgent-ink:    #14261D;  /* was ivory on light; Rule One on dark */
+    --urgent-tint:   #3B1D16;  /* ink 12.92:1 · urgent-label 7.66:1 */
+    --urgent-label:  #F0A594;  /* 8.53:1 on ground · 7.41:1 on surface */
+
+    /* --- Elevation ---
+       Per the guide: in dark the hero's shadow all but disappears, so lift
+       comes from the lighter fill plus --spruce-edge. What survives is a
+       blacker (not spruce-tinted) shadow for the things that genuinely float
+       over content, and --shadow-card drops to nothing. */
+    --shadow-hero:   0 26px 48px -30px rgba(0, 0, 0, .75);
+    --shadow-action: 0 16px 28px -18px rgba(233, 161, 108, .45);
+    --shadow-card:   none;
+    --shadow-sheet:  0 -8px 30px rgba(0, 0, 0, .55);
+    --shadow-dialog: 0 18px 44px rgba(0, 0, 0, .60);
+    --shadow-panel:  0 12px 32px rgba(0, 0, 0, .60);
+    --shadow-toast:  0 6px 20px rgba(0, 0, 0, .50);
+
+    --scrim: rgba(0, 0, 0, .66);
+
+    /* The toast keeps its light text; only its fill moves, to a raised
+       spruce that lifts off the ground. 7.49:1. */
+    --toast-bg:  #2E5140;
+    --toast-ink: #F3EBDD;
   }
 }
