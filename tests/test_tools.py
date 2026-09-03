@@ -88,6 +88,134 @@ def test_grocery_list_groups_into_store_sections():
     assert any(s for s in sections.values() if s), "sections should not all be empty"
 
 
+# ---------- already-have decisions (Plan stops action + Review confirmation) ----------
+
+def test_already_have_soft_removes_and_adds_to_inventory():
+    """
+    Have it / Already have used to hard-delete the grocery row. It now
+    soft-removes it (status='removed') so the Review screen can list and
+    undo the decision, the same way a pre-shop drop already could.
+    """
+    tools.add_grocery_item("brown sugar", quantity="1 bag", category="pantry")
+    item_id = tools.list_grocery_list()[0]["id"]
+    tools.move_grocery_item_to_inventory(item_id)
+
+    assert tools.list_grocery_list(status="needed") == []
+    all_items = tools.list_grocery_list(status="all")
+    assert len(all_items) == 1, "soft-removed, not deleted"
+    assert all_items[0]["status"] == "removed"
+
+    inventory_names = [i["item"] for i in tools.get_inventory()]
+    assert "brown sugar" in inventory_names
+
+
+def test_already_have_row_does_not_absorb_a_later_add_of_the_same_item():
+    """
+    add_grocery_item's merge candidates are status='needed' only — a soft-
+    removed already-have row must not silently reappear as 'removed' when
+    the same ingredient comes back on a future week's plan.
+    """
+    tools.add_grocery_item("flour", quantity="2 cups", category="pantry")
+    item_id = tools.list_grocery_list()[0]["id"]
+    tools.move_grocery_item_to_inventory(item_id)
+
+    tools.add_grocery_item("flour", quantity="1 cup", category="pantry")
+    needed = tools.list_grocery_list(status="needed")
+    assert len(needed) == 1
+    assert needed[0]["status"] == "needed"
+    assert "1" in needed[0]["quantity"]
+
+
+def test_get_already_have_decisions_includes_both_flows_and_is_undoable():
+    tools.add_grocery_item("walnuts", quantity="1 bag", category="pantry")
+    tools.add_grocery_item("rice", quantity="2 lb", category="pantry")
+    walnuts_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "walnuts")
+    rice_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "rice")
+
+    tools.move_grocery_item_to_inventory(walnuts_id)  # "Have it" flow
+    tools.drop_grocery_item_pre_shop(rice_id, author="user")  # pre-shop "Drop it" flow
+
+    decisions = tools.get_already_have_decisions()
+    names = sorted(d["item"] for d in decisions)
+    assert names == ["rice", "walnuts"]
+    kinds = {d["item"]: d["removed_by"] for d in decisions}
+    assert kinds["walnuts"] == "already_have"
+    assert kinds["rice"] == "user"
+
+    # Mirrors the existing pre-shop Undo semantics regardless of which
+    # flow removed the item.
+    tools.undo_pre_shop_drop(walnuts_id)
+    remaining = tools.get_already_have_decisions()
+    assert [d["item"] for d in remaining] == ["rice"]
+    assert tools.list_grocery_list(status="needed")[0]["item"] == "walnuts"
+
+
+def test_get_already_have_decisions_excludes_items_never_removed():
+    tools.add_grocery_item("eggs", category="dairy")
+    assert tools.get_already_have_decisions() == []
+
+
+def test_undoing_a_fresh_already_have_removes_the_inventory_row_it_created():
+    """
+    "Actually, I need it" on a brand-new already-have decision (no
+    pre-existing stock) should leave no phantom inventory behind — a
+    household that corrects a mistaken "I have this" shouldn't end up with
+    inventory silently, permanently wrong.
+    """
+    tools.add_grocery_item("oat milk", quantity="1 carton", category="dairy")
+    item_id = tools.list_grocery_list()[0]["id"]
+    tools.move_grocery_item_to_inventory(item_id)
+    assert "oat milk" in [i["item"] for i in tools.get_inventory()]
+
+    tools.undo_pre_shop_drop(item_id)
+
+    assert "oat milk" not in [i["item"] for i in tools.get_inventory()]
+    assert tools.list_grocery_list(status="needed")[0]["item"] == "oat milk"
+
+
+def test_undoing_an_already_have_merge_leaves_the_pre_existing_stock_alone():
+    """
+    When the household already had some tracked (the "Have it" write
+    merged into an existing row rather than creating one), undo can't
+    safely subtract back out — nothing records the pre-merge amount — so
+    it must leave that inventory row alone rather than deleting real stock.
+    """
+    tools.update_inventory("flour", "add", quantity="2 cups", category="pantry")
+    tools.add_grocery_item("flour", quantity="1 cup", category="pantry")
+    item_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "flour")
+    tools.move_grocery_item_to_inventory(item_id)
+    merged = next(i for i in tools.get_inventory() if i["item"] == "flour")
+    assert "3" in merged["quantity"], "merge should have combined the two"
+
+    tools.undo_pre_shop_drop(item_id)
+
+    still_there = next((i for i in tools.get_inventory() if i["item"] == "flour"), None)
+    assert still_there is not None, "pre-existing stock must not be deleted by undo"
+
+
+def test_already_have_summary_endpoint_lists_already_have_and_elsewhere(signed_in):
+    tools.add_grocery_item("walnuts", quantity="1 bag", category="pantry")
+    tools.add_grocery_item("specialty cheese", category="dairy")
+    walnuts_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "walnuts")
+    cheese_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "specialty cheese")
+
+    tools.move_grocery_item_to_inventory(walnuts_id)
+    tools.exclude_grocery_item(cheese_id)
+
+    res = signed_in.get("/api/grocery-list/already-have-summary")
+    assert res.status_code == 200
+    body = res.json()
+    assert [d["item"] for d in body["already_have"]] == ["walnuts"]
+    assert [d["item"] for d in body["elsewhere"]] == ["specialty cheese"]
+
+    # "Elsewhere" undo reuses the existing (already-shipped) include endpoint.
+    res = signed_in.post(f"/api/grocery-list/{cheese_id}/include")
+    assert res.status_code == 200
+    res = signed_in.get("/api/grocery-list/already-have-summary")
+    assert res.json()["elsewhere"] == []
+    assert tools.list_grocery_list(status="needed")[0]["item"] == "specialty cheese"
+
+
 # ---------- recipes and planning ----------
 
 def test_planning_a_meal_does_not_touch_the_grocery_list_on_its_own():

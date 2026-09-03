@@ -111,7 +111,7 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     """
     conn = get_conn()
     conn.execute(
-        "UPDATE grocery_items SET status = 'removed', removed_by = ? "
+        "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
         (author or "", item_id, household_id()),
     )
@@ -125,17 +125,61 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     Undo a pre-shop 'Drop it' — restores the item to 'needed' and marks it
     already_have_reviewed so it goes straight back to its store card
     without being re-flagged this same trip (PRE_SHOP_CHECK.md: undo
-    "does not re-add the flag this trip").
+    "does not re-add the flag this trip"). Also reused by the Review
+    screen's "already have" confirmation section (see
+    get_already_have_decisions) to undo a Have it / Already have action, so
+    there's no separate "already-have-undo" endpoint — but that flow wrote
+    an inventory row a plain pre-shop drop never did, so this also deletes
+    that row when (and only when) it's safe to: already_have_inventory_id
+    is set only for a fresh-insert write (see
+    grocery_items.already_have_inventory_id / move_grocery_item_to_
+    inventory), never for one that merged into pre-existing stock — undoing
+    a merge would need the pre-merge quantity, which nothing tracks, so
+    that case leaves inventory untouched on undo by design.
     """
     conn = get_conn()
+    row = conn.execute(
+        "SELECT already_have_inventory_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
     conn.execute(
-        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1 "
-        "WHERE id = ? AND household_id = ?",
+        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, "
+        "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
     conn.commit()
     conn.close()
+    if row and row["already_have_inventory_id"]:
+        _inventory.remove_inventory_item(row["already_have_inventory_id"])
     return {"item_id": item_id, "status": "needed"}
+
+
+def get_already_have_decisions() -> list[dict]:
+    """
+    Review screen's confirmation section (Loop Board: "Review screen
+    should confirm the already have decisions for the week") — every
+    grocery item currently soft-removed (status='removed') because the
+    household said they already have it, from either flow: a pre-shop
+    "Maybe already home" Drop it (removed_by holds who dropped it, e.g.
+    'user') or a Have it / Already have action on any Grocery List row
+    (removed_by == 'already_have', see move_grocery_item_to_inventory).
+    Scoped to this week (from this Monday, by removed_at) so old decisions
+    don't linger here forever the way they would with no cutoff at all —
+    nothing today ever clears a 'removed' row's removed_at. Restorable
+    with undo_pre_shop_drop regardless of which flow removed it.
+    """
+    from datetime import date, timedelta
+
+    monday = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, item, quantity, category, store, removed_by, removed_at FROM grocery_items "
+        "WHERE household_id = ? AND status = 'removed' AND removed_by != '' "
+        "AND removed_at IS NOT NULL AND removed_at >= ? ORDER BY removed_at DESC",
+        (household_id(), monday),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def keep_all_pre_shop_flags() -> dict:

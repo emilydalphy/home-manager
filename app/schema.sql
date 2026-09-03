@@ -464,6 +464,22 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- codebase has no concept of "the other adult" distinct from "you" at
     -- the data layer, and that gap applies here too.
     removed_by TEXT NOT NULL DEFAULT '',
+    -- When the row above last flipped to status='removed' (drop or
+    -- already-have alike). Lets get_already_have_decisions scope the
+    -- Review screen's confirmation section to this week's decisions
+    -- instead of every removal ever made. NULL until first removed.
+    removed_at TEXT,
+    -- Set only when move_grocery_item_to_inventory's inventory write was a
+    -- brand-new row (no existing stock to merge into) — the one case where
+    -- undo_pre_shop_drop can delete that inventory row on undo with zero
+    -- risk of removing real, pre-existing stock. NULL both before any
+    -- already-have action and whenever the write merged into existing
+    -- inventory instead — undoing a merge would need to know how much was
+    -- added versus already there, which nothing here tracks (deliberately:
+    -- see the "inventory is deferred as policy" roadmap decision). A merge
+    -- case's inventory entry is left alone on undo; only the grocery list
+    -- decision is reversed.
+    already_have_inventory_id INTEGER,
     -- Phase 4, §4.5: hide this item from the normal shown/shopped list
     -- without deleting it — for something the Shopper will get elsewhere
     -- (a butcher, a farmers market) rather than on the regular trip. Stays

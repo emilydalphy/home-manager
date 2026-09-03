@@ -2097,6 +2097,24 @@ def remove_grocery_list_item(item_id: int):
     return result
 
 
+@app.get("/api/grocery-list/already-have-summary")
+def get_grocery_already_have_summary_view():
+    """
+    Review screen's confirmation section: this week's "already have"
+    decisions (pre-shop "Maybe already home" drops, and Have it/Already
+    have actions taken anywhere on the Grocery screen) plus items
+    currently marked "Elsewhere" — each restorable in one tap
+    (already_have via /pre-shop-undo, elsewhere via /include).
+    """
+    try:
+        already_have = tools.get_already_have_decisions()
+        elsewhere = tools.list_grocery_list(status="excluded")
+    except Exception as e:
+        logger.exception("Grocery already-have summary lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"already_have": already_have, "elsewhere": elsewhere}
+
+
 @app.post("/api/grocery-list/{item_id}/already-have")
 def move_grocery_list_item_to_inventory(item_id: int):
     """
