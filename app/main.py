@@ -1812,6 +1812,23 @@ def set_grocery_list_item_store(item_id: int, req: GroceryStoreRequest):
     return result
 
 
+@app.post("/api/grocery-list/{item_id}/store/confirm")
+def confirm_grocery_list_item_store(item_id: int):
+    """
+    Finalize the one-tap 'Remember for {store}?' offer set_grocery_item_store
+    makes the first time an item gets a store (its needs_confirmation flag) —
+    saves the item->store preference and adds it to that store's typical-items
+    list on the Kitchen sheet. Only called when the shopper taps 'yes';
+    declining needs no call at all.
+    """
+    try:
+        result = tools.confirm_grocery_item_store_preference(item_id)
+    except Exception as e:
+        logger.exception("Grocery list store preference confirm failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.post("/api/grocery-list/add")
 def add_grocery_list_item(req: GroceryAddRequest):
     """Add an item to the grocery list directly from the Grocery List view (not via chat)."""
