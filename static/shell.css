@@ -2408,6 +2408,12 @@ html, body {
   padding: 0;
 }
 .gro-icon-btn:hover { background: var(--sand); }
+/* The chip is 34px because the design draws it at 34px, but a 34px target is
+   under the 44px touch minimum — and this one gets used mid-shop, one-handed.
+   The pseudo-element extends the tappable area to 44px without moving a pixel
+   of the layout. Same trick on the row's ⋯ button below. */
+.gro-icon-btn { position: relative; }
+.gro-icon-btn::after { content: ''; position: absolute; inset: -5px; }
 .gro-icon-btn:disabled { opacity: .55; cursor: default; }
 .gro-icon-btn svg { width: 17px; height: 17px; }
 /* Hands-free listening: the same apricot-on-spruce treatment the primary
@@ -2821,6 +2827,10 @@ html, body {
   padding: 0;
 }
 .gro-more:hover { color: var(--ink-secondary); }
+/* 28px drawn, 44px tappable. This is the ONLY way into an item's actions, and
+   the page this replaced guarded it the same way (min-height:44px there). */
+.gro-more { position: relative; }
+.gro-more::after { content: ''; position: absolute; inset: -8px; }
 .gro-more svg { width: 17px; height: 17px; }
 
 /* The per-item menu — edit quantity/section/store, "Have it", "Elsewhere",
