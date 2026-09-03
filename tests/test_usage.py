@@ -171,3 +171,99 @@ def test_usage_is_scoped_to_one_household(signed_in, monkeypatch):
         assert tools.get_usage_summary()["chat_turns"] == 0, (
             "one household's chat activity must not show up in another's numbers"
         )
+
+
+# ---------- what the tokens cost ----------
+
+
+def test_the_priced_model_is_the_model_the_app_actually_runs():
+    """
+    The one way this pricing goes silently wrong: someone changes the model
+    in agent.py and the rate table keeps billing the old one. Nothing about
+    that failure is visible — the report still prints a confident dollar
+    figure, just the wrong one — so it is pinned here rather than trusted
+    to be noticed.
+    """
+    from app import agent
+
+    assert usage_module._PRICED_MODEL == agent.MODEL, (
+        "agent.MODEL changed without updating _PRICED_MODEL — the cost "
+        "report would price the new model at the old model's rates"
+    )
+    assert usage_module._PRICED_MODEL in usage_module._RATES_PER_MTOK, (
+        "no published rate for the model the app runs on"
+    )
+
+
+def test_price_tokens_bills_each_kind_at_its_own_rate():
+    """
+    Cache reads are a tenth of input and cache writes are a quarter more
+    than it. Treating them all as input — the easy mistake, since they are
+    all "input tokens" — would overstate a cached app's bill several-fold.
+    """
+    costs = usage_module.price_tokens({
+        "input": 1_000_000,
+        "cache_read": 1_000_000,
+        "cache_write": 1_000_000,
+        "output": 1_000_000,
+    }, model="claude-sonnet-5")
+
+    assert costs["input"] == 2.00
+    assert costs["cache_read"] == 0.20
+    assert costs["cache_write"] == 2.50
+    assert costs["output"] == 10.00
+    assert costs["total"] == 14.70
+    assert costs["model"] == "claude-sonnet-5"
+
+
+def test_price_tokens_treats_missing_counts_as_zero():
+    """
+    A turn that never touched the cache records nothing for it. Pricing
+    must read that as no cost, not raise, or one such turn takes the whole
+    morning report down with it.
+    """
+    assert usage_module.price_tokens({"output": 1_000_000})["total"] == 10.00
+    assert usage_module.price_tokens({})["total"] == 0.0
+
+
+def test_a_real_week_of_chat_is_priced_in_the_summary(signed_in, monkeypatch):
+    """
+    The end of the chain: tokens recorded by a real request come back out
+    of the summary as money, which is the number this ticket exists for.
+    """
+    monkeypatch.setattr(main, "run_agent_turn", _fake_turn_returning())
+    signed_in.post(
+        "/api/chat",
+        json={"session_id": "default", "message": "hello"},
+    )
+
+    conn = get_conn()
+    conn.execute(
+        "UPDATE chat_turns SET input_tokens = 1000, cache_read_tokens = 30000, "
+        "cache_write_tokens = 2000, output_tokens = 500 WHERE household_id = 1"
+    )
+    conn.commit()
+    conn.close()
+
+    summary = tools.get_usage_summary(days=7)
+    # 1000 in + 30000 cached reads + 2000 cache writes + 500 out, at
+    # Sonnet 5 list prices. The cache *write* is deliberately non-zero:
+    # it is the priciest input class, and a summary that dropped it would
+    # still look plausible.
+    assert summary["cost"]["total"] == round(
+        1000 * 2.0 / 1e6 + 30000 * 0.2 / 1e6 + 2000 * 2.5 / 1e6 + 500 * 10.0 / 1e6, 6
+    )
+    assert summary["cost"]["cache_write"] == round(2000 * 2.5 / 1e6, 6)
+    assert summary["cost"]["total"] > 0
+
+
+def test_pricing_an_unpriced_model_says_so():
+    """
+    The bare KeyError this replaced named the dictionary, not the problem.
+    The realistic way to arrive here is swapping the model and forgetting
+    the rate row, so the message says to add one.
+    """
+    import pytest
+
+    with pytest.raises(ValueError, match="No published token rate"):
+        usage_module.price_tokens({"output": 100}, model="claude-not-a-model")

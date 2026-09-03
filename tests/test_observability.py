@@ -912,3 +912,71 @@ def test_each_household_is_pruned_on_its_own_count(signed_in):
         f"household 1 holds {n} rows against a cap of {usage._KEEP_ROWS} — "
         f"its prune never fired because another household kept taking the turn"
     )
+
+
+# ---------- printing the cost line ----------
+
+
+def _usage(**over):
+    base = {"days": 7, "chat_turns": 3, "meals_cooked": 1, "plans_generated": 1,
+            "plans_approved": 1, "looks_inactive": False,
+            "last_active_at": "2026-09-02"}
+    base.update(over)
+    return base
+
+
+def _printed(usage, capsys):
+    import observability_report
+
+    observability_report._print_human(
+        [{"household": "The Test Household", "household_id": 7,
+          "errors": {"total": 0, "by_kind": {}, "recent": []},
+          "usage": usage}],
+        days=1, source="a test",
+    )
+    return capsys.readouterr().out
+
+
+def test_a_quiet_household_does_not_divide_by_zero(capsys):
+    """
+    The single most likely state in a friend beta -- nobody chatted -- and
+    the turn count is the divisor in the per-turn figure. Reporting on a
+    quiet household is the whole reason this script exists, so it must not
+    be the case that crashes it.
+    """
+    out = _printed(
+        _usage(chat_turns=0, meals_cooked=0, plans_generated=0, looks_inactive=True,
+               cost={"total": 0.0, "model": "claude-sonnet-5"}),
+        capsys,
+    )
+    assert "QUIET" in out
+    assert "Chat cost" not in out, "no turns means no per-turn cost to report"
+
+
+def test_an_older_deployment_without_the_cost_key_still_reports(capsys):
+    """
+    This script reads a *remote* app over HTTP. A deployment that predates
+    the cost work answers without the key, and a morning report that
+    crashes tells Emily less than one that omits a line.
+    """
+    out = _printed(_usage(), capsys)  # no "cost" key at all
+    assert "The Test Household" in out
+    assert "Used —" in out
+    assert "Chat cost" not in out
+
+
+def test_a_sub_penny_week_is_not_reported_as_nothing(capsys):
+    """
+    Rounding to cents would print "$0.00 over 7d ($0.0014 a turn)" -- a line
+    that contradicts itself, and the exact failure the six-decimal-place
+    rounding in price_tokens exists to avoid.
+    """
+    out = _printed(_usage(chat_turns=3, cost={"total": 0.0041, "model": "x"}), capsys)
+    assert "$0.00 " not in out, f"a real cost was rounded away to nothing: {out!r}"
+    assert "$0.0041" in out
+
+
+def test_a_real_bill_reads_as_money(capsys):
+    """Above a dollar, decimal places stop helping and start looking odd."""
+    out = _printed(_usage(chat_turns=100, cost={"total": 12.5, "model": "x"}), capsys)
+    assert "$12.50" in out

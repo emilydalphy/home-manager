@@ -37,6 +37,62 @@ _TURN_FIELDS = ("rounds", "input_tokens", "cache_read_tokens",
                 "cache_write_tokens", "output_tokens", "seconds")
 
 
+# US dollars per million tokens, per model, from Anthropic's list prices.
+# Cache reads bill at 0.1x the input rate and cache writes at 1.25x, which
+# is why those are spelled out rather than derived -- if the multipliers
+# ever change, the change belongs in one visible table and not in
+# arithmetic buried in a function.
+_RATES_PER_MTOK = {
+    "claude-sonnet-5": {
+        "input": 2.00, "cache_read": 0.20, "cache_write": 2.50, "output": 10.00,
+    },
+}
+
+# The model the chat loop actually runs on. Repeated here rather than
+# imported from agent.py, which imports this package -- importing it back
+# would make the cycle real. tests/test_usage.py pins this to agent.MODEL
+# and pins that a rate exists for it, so swapping the model fails loudly
+# instead of quietly billing the new model at the old one's prices.
+_PRICED_MODEL = "claude-sonnet-5"
+
+
+def price_tokens(tokens: dict, model: str = _PRICED_MODEL) -> dict:
+    """
+    Turn a bag of token counts into dollars.
+
+    Cost is derived on read rather than stored on the row at write time,
+    and that is deliberate: prices change and models change, but a dollar
+    figure written into a row is frozen at whatever was true that day and
+    no later correction can reach it. Tokens are the fact worth storing;
+    money is a view over them, recomputed from a rate table anyone can see.
+
+    Rounded to six decimal places -- a household's week of chat costs
+    cents, so rounding to the nearest cent would report most real weeks as
+    zero.
+    """
+    try:
+        rates = _RATES_PER_MTOK[model]
+    except KeyError:
+        # Naming the model beats a bare KeyError, because the realistic way
+        # to get here is swapping agent.MODEL and forgetting the rate row --
+        # and the fix is to add one, not to debug a dictionary lookup.
+        raise ValueError(
+            f"No published token rate for {model!r}. Add it to "
+            f"_RATES_PER_MTOK before pricing it."
+        ) from None
+    costs = {
+        field: round(int(tokens.get(field, 0)) * rate / 1_000_000, 6)
+        for field, rate in rates.items()
+    }
+    # Summed from the unrounded parts, so the total doesn't drift from its
+    # own components at the sixth decimal place.
+    costs["total"] = round(
+        sum(int(tokens.get(f, 0)) * r / 1_000_000 for f, r in rates.items()), 6
+    )
+    costs["model"] = model
+    return costs
+
+
 def record_chat_turn(usage: dict | None = None) -> None:
     """
     Record that a chat turn happened, and what it cost. No message content
@@ -201,6 +257,11 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
             "SELECT COUNT(*) FROM grocery_items WHERE household_id = ? AND status = 'purchased'"
         ),
     }
+    # Tokens are what happened; this is what they cost. Derived here so the
+    # figure always reflects today's rate table rather than whatever was
+    # true when the rows were written -- see price_tokens.
+    summary["cost"] = price_tokens(summary["tokens"])
+
     # An empty week is the signal worth naming out loud, since it is the
     # one a summary of counts is easiest to skim straight past.
     summary["looks_inactive"] = (
