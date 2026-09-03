@@ -1780,7 +1780,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_away_stretch",
-        "description": "Mark a whole away stretch in one gesture — e.g. \"we're away Saturday lunch through Sunday lunch\" — the way to handle a trip conversationally, matching the week intake's own range gesture. Every slot from from_date/from_slot to to_date/to_slot INCLUSIVE is marked away (no planning, no groceries — same guarantee as a nobody-home dinner, now for any slot). Two more slots are derived automatically: the slot right before the range becomes 'quick' (grab-and-go before heading out), and the slot right after becomes 'ready_made' (earmarked with a batch/defrost recommendation rather than cooked fresh — the household still has to confirm that recommendation, see confirm_slot_recommendation). Use set_slot_need instead for a single slot rather than a whole range.",
+        "description": "Mark a whole away stretch in one gesture — e.g. \"we're away Saturday lunch through Sunday lunch\", or \"Vineeth's away for the weekend\" — the way to handle a trip conversationally, matching the week intake's own range gesture. Every slot from from_date/from_slot to to_date/to_slot INCLUSIVE has the travelers taken out of it. If that leaves NOBODY home for a slot, that slot is marked away (no planning, no groceries — same guarantee as a nobody-home dinner, now for any slot); if others are still home, the meal still happens, just for fewer people. Two more slots are derived automatically PER TRAVELER: that person's last meal at home before they go becomes 'quick' (grab-and-go), and their first meal back becomes 'ready_made' (earmarked with a batch/defrost recommendation rather than cooked fresh — the household still has to confirm that recommendation, see confirm_slot_recommendation). Use set_member_attendance instead for one person missing one meal, and set_slot_need for a single slot rather than a whole range.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1789,8 +1789,48 @@ TOOL_DEFINITIONS = [
                 "to_date": {"type": "string", "description": "ISO date of the last away slot (inclusive)."},
                 "to_slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
                 "reason": {"type": "string", "description": "Optional — e.g. 'road trip'. Defaults to a plain 'you're away' reason."},
+                "member_names": {
+                    "type": "array", "items": {"type": "string"},
+                    "description": "Optional — WHO is away, by household member name. Omit (or leave empty) when the whole household is going, which is the common case. Pass just the travelers when only some of them are going, e.g. [\"Vineeth\"] for \"Vineeth's away this weekend\".",
+                },
             },
             "required": ["from_date", "from_slot", "to_date", "to_slot"],
+        },
+    },
+    {
+        "name": "set_member_attendance",
+        "description": "Mark ONE person in or out of ONE meal — \"Vineeth's out Thursday\", \"actually I'm home for lunch tomorrow\". This is the small gesture; it is the same write the presence avatars on the weekly plan screen make. The meal still happens for whoever is left, planned and shopped for the smaller number. If it takes the LAST person out, the meal becomes away (nothing planned, nothing bought) automatically — and putting someone back in undoes that. For an extended absence use set_away_stretch instead: it covers a range in one gesture and derives the quick/ready-made edges around it, which repeated single-meal toggles cannot do.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date_str": {"type": "string", "description": "ISO date."},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
+                "member": {"type": "string", "description": "The household member's name, as it appears in the household."},
+                "present": {"type": "boolean", "description": "false = they're out for this meal (the usual reason to call this); true = they're back in."},
+            },
+            "required": ["date_str", "slot", "member", "present"],
+        },
+    },
+    {
+        "name": "set_guest_count",
+        "description": "How many EXTRA people beyond the household are at a meal — \"my parents are coming for dinner Saturday\" is 2. Guests are the same model as everyone else, just with the headcount up: portions and grocery quantities both scale to members-present plus guests. Pass 0 to say the guests are no longer coming.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date_str": {"type": "string", "description": "ISO date."},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"], "description": "Defaults to dinner."},
+                "guest_count": {"type": "integer", "description": "Extra mouths beyond the household members present."},
+            },
+            "required": ["date_str", "guest_count"],
+        },
+    },
+    {
+        "name": "get_week_attendance",
+        "description": "Who is at which meal across a week — only the meals that differ from everyone-being-home appear. Use this to answer \"who's around this week?\" or to check before planning around somebody's absence.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"week_start": {"type": "string", "description": "ISO date of the week's first day."}},
+            "required": ["week_start"],
         },
     },
     {
@@ -3481,6 +3521,9 @@ TOOL_FUNCTIONS = {
     "get_fresh_perishable_inventory": tools.get_fresh_perishable_inventory,
     "remove_inventory_item": tools.remove_inventory_item,
     "set_away_stretch": tools.set_away_stretch,
+    "set_member_attendance": tools.set_member_attendance,
+    "set_guest_count": tools.set_guest_count,
+    "get_week_attendance": tools.get_week_attendance,
     "set_slot_need": tools.set_slot_need,
     "get_week_slot_needs": tools.get_week_slot_needs,
     "confirm_slot_recommendation": tools.confirm_slot_recommendation,

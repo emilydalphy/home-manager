@@ -407,3 +407,73 @@ def test_an_away_meal_still_buys_nothing_at_all(couple, recipe, stub_model):
 
     assert _grocery_qty_for(plan_id, saturday, "dinner", "beans") is None
     assert _grocery_qty_for(plan_id, saturday, "lunch", "beans") is None
+
+
+# ---------- chat parity: the same gestures, reached conversationally ----------
+
+def test_every_declared_tool_has_a_function_behind_it():
+    """
+    TOOL_DEFINITIONS and TOOL_FUNCTIONS are two hand-maintained lists that
+    must agree; a name in one and not the other is a tool the model can
+    call into a KeyError, or one it can never discover.
+    """
+    declared = {d["name"] for d in agent.TOOL_DEFINITIONS}
+    implemented = set(agent.TOOL_FUNCTIONS)
+
+    assert declared - implemented == set(), "declared to the model but not callable"
+    assert implemented - declared == set(), "callable but never offered to the model"
+
+
+@pytest.mark.parametrize("name", ["set_member_attendance", "set_guest_count", "get_week_attendance"])
+def test_the_attendance_tools_are_offered_to_chat(name):
+    assert name in {d["name"] for d in agent.TOOL_DEFINITIONS}
+    assert name in agent.TOOL_FUNCTIONS
+
+
+def test_each_attendance_tool_schema_matches_its_python_signature():
+    """
+    The schema is written by hand beside the function, so its parameter
+    names can drift from the real ones — and the failure mode is a
+    TypeError only at the moment a household actually says the thing.
+    """
+    import inspect
+
+    for definition in agent.TOOL_DEFINITIONS:
+        if definition["name"] not in (
+            "set_member_attendance", "set_guest_count", "get_week_attendance", "set_away_stretch",
+        ):
+            continue
+        fn = agent.TOOL_FUNCTIONS[definition["name"]]
+        real_params = set(inspect.signature(fn).parameters)
+        declared = set(definition["input_schema"]["properties"])
+        assert declared <= real_params, (
+            f"{definition['name']} declares {declared - real_params}, which it cannot accept"
+        )
+
+
+def test_vineeths_out_thursday_works_through_the_chat_tool(couple):
+    """The conversational form of the presence-avatar tap, called exactly as the model would."""
+    thursday = _week_start()
+
+    result = agent.TOOL_FUNCTIONS["set_member_attendance"](
+        date_str=thursday, slot="dinner", member="Vineeth", present=False,
+    )
+
+    assert result["headcount"] == 1
+    assert result["present_names"] == ["Emily"]
+
+
+def test_a_person_scoped_trip_works_through_the_chat_tool(couple):
+    """"Vineeth's away this weekend" — the same range gesture the intake makes, with a WHO."""
+    week = _week_start()
+    saturday, sunday = tools._week_dates(week)[5], tools._week_dates(week)[6]
+
+    result = agent.TOOL_FUNCTIONS["set_away_stretch"](
+        from_date=saturday, from_slot="lunch", to_date=sunday, to_slot="lunch",
+        member_names=["Vineeth"],
+    )
+
+    assert result["whole_household"] is False
+    assert result["member_names"] == ["Vineeth"]
+    assert result["away_slots"] == []
+    assert len(result["reduced_slots"]) == 4
