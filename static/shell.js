@@ -1223,6 +1223,31 @@
     return !!remembered && remembered === store;
   }
 
+  // Learning etiquette: the first time an item gets a store (assign pill,
+  // save-row's free-text field), the backend doesn't remember it yet — it
+  // comes back with needs_confirmation instead (see stores.
+  // set_grocery_item_store). One light tap here is the "confirm" step;
+  // declining (letting the toast expire) leaves it a one-off, exactly like
+  // before this feature existed. A "yes" writes the preference AND adds
+  // the item to that store's typical-items list on the Kitchen sheet in
+  // one call (confirm_grocery_item_store_preference).
+  function groOfferRememberToast(item, store, itemId) {
+    showToast('Remember ' + item + ' at ' + store + '?', {
+      label: 'Yes, remember',
+      onClick: function () {
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + itemId + '/store/confirm');
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (ok) {
+            groceryState.itemStorePrefs[(item || '').trim().toLowerCase()] = store;
+            showToast('Got it — remembered for next time');
+            renderGrocery();
+          }
+        });
+      }
+    });
+  }
+
   async function groLoadPreShopFlags() {
     try {
       var res = await fetch('/api/grocery-list/pre-shop-flags');
@@ -1882,14 +1907,18 @@
         var cat = menu.querySelector('.gro-m-cat').value;
         var store = menu.querySelector('.gro-m-store').value.trim();
         el.disabled = true;
+        var saveRowStoreResult = null;
         groDo(function () {
           return Promise.all([
             groPost('/api/grocery-list/' + id + '/update', { quantity: qty, category: cat }),
-            groPost('/api/grocery-list/' + id + '/store', { store: store })
+            groPost('/api/grocery-list/' + id + '/store', { store: store }).then(function (r) { saveRowStoreResult = r; return r; })
           ]);
         }, "Couldn't save that — try again.").then(function (ok) {
           if (ok) groceryState.openMenuId = null;
           renderGrocery();
+          if (ok && saveRowStoreResult && saveRowStoreResult.needs_confirmation) {
+            groOfferRememberToast(saveRowStoreResult.item, saveRowStoreResult.store, id);
+          }
         });
         return;
       }
@@ -1978,8 +2007,9 @@
       case 'assign': {
         var toStore = el.dataset.store;
         el.disabled = true;
+        var assignResult = null;
         groDo(function () {
-          return groPost('/api/grocery-list/' + id + '/store', { store: toStore });
+          return groPost('/api/grocery-list/' + id + '/store', { store: toStore }).then(function (r) { assignResult = r; return r; });
         }, "Couldn't assign that — try again.").then(function (ok) {
           if (!ok) return;
           // Auto-advance to the next thing still needing a store, and open
@@ -1989,6 +2019,9 @@
           groceryState.bucketExpanded = {};
           if (toStore) groceryState.bucketExpanded[toStore] = true;
           renderGrocery();
+          if (assignResult && assignResult.needs_confirmation) {
+            groOfferRememberToast(assignResult.item, assignResult.store, id);
+          }
         });
         return;
       }
