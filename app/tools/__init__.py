@@ -235,6 +235,21 @@ from .sharing import (  # noqa: F401
     resolve_member_share_link,
     revoke_member_share_link,
 )
+from .attendance import (  # noqa: F401
+    clear_slot_attendance,
+    context_for_week as attendance_context_for_week,
+    get_slot_attendance,
+    get_week_attendance,
+    grocery_scale_factor,
+    headcount_for_slot,
+    remove_members_from_slot,
+    resolve_member_ids,
+    scale_ingredients,
+    set_guest_count,
+    set_member_attendance,
+    set_slot_attendance,
+    summary_line as attendance_summary_line,
+)
 from .slot_needs import (  # noqa: F401
     NEEDS,
     apply_slot_needs_to_plan,

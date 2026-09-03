@@ -120,6 +120,14 @@ _MIGRATIONS = [
     # Touched in security._call_as_household — see there for why it isn't
     # a write on every single request.
     ("households", "last_active_at", "TEXT"),
+    # Per-person attendance (Emily's deepened week-planning model,
+    # 2026-09-03). Both default to '[]' = "the whole household", which is
+    # precisely what these two tables meant before attendance existed — so
+    # rows written by the household-level version keep their original
+    # meaning rather than silently becoming "nobody's". See schema.sql on
+    # slot_attendance for the full model.
+    ("away_stretches", "member_ids_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("slot_needs", "for_member_ids_json", "TEXT NOT NULL DEFAULT '[]'"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

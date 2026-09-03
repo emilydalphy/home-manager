@@ -17,6 +17,7 @@ reason.
 """
 from __future__ import annotations
 
+import json
 from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
@@ -52,6 +53,7 @@ def _default_reason(need: str) -> str:
 
 
 def _row_to_dict(row) -> dict:
+    for_member_ids = json.loads((row["for_member_ids_json"] or "[]"))
     return {
         "date": row["date"],
         "slot": row["slot"],
@@ -61,7 +63,23 @@ def _row_to_dict(row) -> dict:
         "recommended_batch_from_entry_id": row["recommended_batch_from_entry_id"],
         "recommended_defrost_item": row["recommended_defrost_item"] or None,
         "recommendation_confirmed": bool(row["recommendation_confirmed"]),
+        # [] means the whole household — see schema.sql on
+        # slot_needs.for_member_ids_json.
+        "for_member_ids": for_member_ids,
+        "for_member_names": _member_names(for_member_ids),
     }
+
+
+def _member_names(member_ids: list[int]) -> list[str]:
+    if not member_ids:
+        return []
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, name FROM members WHERE household_id = ? ORDER BY id", (household_id(),)
+    ).fetchall()
+    conn.close()
+    by_id = {r["id"]: r["name"] for r in rows}
+    return [by_id[i] for i in member_ids if i in by_id]
 
 
 def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
@@ -88,7 +106,7 @@ def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
 
 def set_slot_need(
     date_str: str, slot: str, need: str, reason: str = "",
-    away_stretch_id: int | None = None,
+    away_stretch_id: int | None = None, for_member_ids: list[int] | None = None,
 ) -> dict:
     """
     Set (or clear, with need='normal') one slot's planning need directly —
@@ -110,6 +128,11 @@ def set_slot_need(
     need='normal' deletes the row outright rather than storing it — see
     the module docstring on why an explicit 'normal' row would just be a
     second way to say nothing.
+
+    `for_member_ids` scopes the need to specific people (None/[] = the
+    whole household). A partial trip's edges are per-traveler: if only
+    Vineeth is away, the meal before he leaves is 'quick' FOR HIM while
+    everyone else eats normally.
     """
     date.fromisoformat(date_str)
     if need not in NEEDS:
@@ -122,13 +145,16 @@ def set_slot_need(
     conn = get_conn()
     conn.execute(
         """
-        INSERT INTO slot_needs (household_id, date, slot, need, reason, away_stretch_id, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO slot_needs (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id, date, slot) DO UPDATE SET
             need = excluded.need, reason = excluded.reason,
-            away_stretch_id = excluded.away_stretch_id, updated_at = datetime('now')
+            away_stretch_id = excluded.away_stretch_id,
+            for_member_ids_json = excluded.for_member_ids_json,
+            updated_at = datetime('now')
         """,
-        (household_id(), date_str, slot, need, resolved_reason, away_stretch_id),
+        (household_id(), date_str, slot, need, resolved_reason, away_stretch_id,
+         json.dumps(sorted(for_member_ids or []))),
     )
     conn.commit()
 
@@ -148,6 +174,7 @@ def set_slot_need(
     return {
         "date": date_str, "slot": slot, "need": need, "reason": resolved_reason,
         "converted_existing_plan_slot": converted,
+        "for_member_ids": sorted(for_member_ids or []),
     }
 
 
@@ -180,6 +207,7 @@ def get_slot_need(date_str: str, slot: str) -> dict:
             "date": date_str, "slot": slot, "need": "normal", "reason": "",
             "away_stretch_id": None, "recommended_batch_from_entry_id": None,
             "recommended_defrost_item": None, "recommendation_confirmed": False,
+            "for_member_ids": [], "for_member_names": [],
         }
     return _row_to_dict(row)
 
@@ -217,7 +245,59 @@ def _slot_sequence(start_date: str, end_date: str) -> list[tuple[str, str]]:
     return out
 
 
-def set_away_stretch(from_date: str, from_slot: str, to_date: str, to_slot: str, reason: str = "") -> dict:
+def _edge_reason(need: str, traveler_names: list[str], whole_household: bool) -> str:
+    """
+    The reason line for a derived edge, in the house voice — naming the
+    traveler when the trip is only theirs, because "keeping it quick" reads
+    as nonsense on a meal the rest of the household is sitting down to
+    normally. See DESIGN_SYSTEM.md §7.
+    """
+    if whole_household or not traveler_names:
+        return _default_reason(need)
+    from . import attendance as _attendance
+    who = _attendance._join_names(traveler_names)
+    if need == "quick":
+        return f"Last one before {who} heads out — keeping it quick."
+    if need == "ready_made":
+        return f"First one back for {who} — something already made rather than cooking fresh."
+    return _default_reason(need)
+
+
+def _traveler_edge_indices(sequence, idx_from: int, idx_to: int, traveler_id: int) -> tuple[int | None, int | None]:
+    """
+    One traveler's own two edges: the last slot before this stretch they're
+    actually present for, and the first slot after it they're back for.
+
+    This walks rather than just taking the immediate neighbours, because a
+    person can already be out for reasons that have nothing to do with this
+    trip — Vineeth out Friday dinner, then away from Saturday lunch. His
+    last real meal at home is Friday *lunch*, not a Friday dinner he was
+    never going to eat. Taking the neighbour blindly would tag a meal he
+    isn't at as his grab-and-go.
+    """
+    from . import attendance as _attendance
+
+    def present_at(i: int) -> bool:
+        d, s = sequence[i]
+        return traveler_id in _attendance.get_slot_attendance(d, s)["present_member_ids"]
+
+    quick_idx = None
+    for i in range(idx_from - 1, -1, -1):
+        if present_at(i):
+            quick_idx = i
+            break
+    ready_idx = None
+    for i in range(idx_to + 1, len(sequence)):
+        if present_at(i):
+            ready_idx = i
+            break
+    return quick_idx, ready_idx
+
+
+def set_away_stretch(
+    from_date: str, from_slot: str, to_date: str, to_slot: str, reason: str = "",
+    member_names: list | None = None,
+) -> dict:
     """
     Mark a whole away stretch in one gesture — "away Saturday lunch through
     Sunday lunch" — the range primitive from Emily's design (trips as the
@@ -243,17 +323,41 @@ def set_away_stretch(from_date: str, from_slot: str, to_date: str, to_slot: str,
     the day before and its ready_made edge on the day after, crossing into
     the adjacent week rather than being omitted. That's correct: the last
     real meal before an 8-day trip really is the day before it starts.
+
+    `member_names` scopes the trip to specific travelers (names or ids);
+    None or empty means the whole household, which is both the common case
+    and the behavior before attendance existed. What changes with a partial
+    trip (Emily's deepened model, 2026-09-03):
+
+    - The covered slots are NOT blanked. The travelers come out of each
+      slot's attendance; the slot only becomes 'away' if that empties it.
+      A Thursday dinner Vineeth is out for is still a dinner — for one.
+    - Each traveler derives their OWN edges, from their own attendance
+      rather than from the range's boundaries (see
+      _traveler_edge_indices), so two people leaving at different times
+      get different grab-and-go meals.
     """
     date.fromisoformat(from_date)
     date.fromisoformat(to_date)
     _validate_slot(from_slot, allow_snack=False)
     _validate_slot(to_slot, allow_snack=False)
 
-    # Pad one day on each side purely so the two derived edges have
-    # somewhere to land even when the stretch starts on a week's first
-    # slot or ends on its last.
-    pad_start = (date.fromisoformat(from_date) - timedelta(days=1)).isoformat()
-    pad_end = (date.fromisoformat(to_date) + timedelta(days=1)).isoformat()
+    from . import attendance as _attendance
+    travelers = _attendance.resolve_member_ids(member_names)
+    all_member_ids = _attendance._household_member_ids()
+    # '[]' is the stored form of "all of us" — see schema.sql on
+    # away_stretches.member_ids_json. Normalizing here means a trip that
+    # happens to name everyone reads, and phrases itself, as a household
+    # trip rather than as a coincidence of two individual ones.
+    whole_household = not member_names or set(travelers) == set(all_member_ids)
+    scope_ids: list[int] = [] if whole_household else sorted(travelers)
+
+    # Pad two days on each side: one so the derived edges have somewhere to
+    # land when the stretch starts on a week's first slot, and one more
+    # because a per-traveler edge WALKS outward past meals that person was
+    # already out for, so the immediate neighbour may not be far enough.
+    pad_start = (date.fromisoformat(from_date) - timedelta(days=2)).isoformat()
+    pad_end = (date.fromisoformat(to_date) + timedelta(days=2)).isoformat()
     sequence = _slot_sequence(pad_start, pad_end)
     try:
         idx_from = sequence.index((from_date, from_slot))
@@ -266,49 +370,114 @@ def set_away_stretch(from_date: str, from_slot: str, to_date: str, to_slot: str,
     away_reason = (reason or "").strip() or _default_reason("away")
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO away_stretches (household_id, from_date, from_slot, to_date, to_slot, reason) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (household_id(), from_date, from_slot, to_date, to_slot, away_reason),
+        "INSERT INTO away_stretches (household_id, from_date, from_slot, to_date, to_slot, reason, member_ids_json) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (household_id(), from_date, from_slot, to_date, to_slot, away_reason, json.dumps(scope_ids)),
     )
     conn.commit()
     stretch_id = cur.lastrowid
     conn.close()
 
     covered = sequence[idx_from:idx_to + 1]
+    emptied: list[dict] = []
+    reduced: list[dict] = []
     for d, s in covered:
-        set_slot_need(d, s, "away", reason=away_reason, away_stretch_id=stretch_id)
+        if travelers:
+            att = _attendance.remove_members_from_slot(
+                d, s, travelers, source="away_stretch", away_stretch_id=stretch_id,
+            )
+        else:
+            # No members recorded at all (a household mid-onboarding, and
+            # every test that predates attendance). There is nobody to take
+            # out of the meal, so fall back to the household-level meaning
+            # of the gesture directly: this range is away.
+            att = _attendance.set_slot_attendance(
+                d, s, present_member_ids=[], source="away_stretch", away_stretch_id=stretch_id,
+            )
+        if att["nobody_home"]:
+            # _sync_away_need already wrote the 'away' need; re-stamp it so
+            # the caller's reason and this stretch's id are what's stored.
+            set_slot_need(d, s, "away", reason=away_reason, away_stretch_id=stretch_id)
+            emptied.append({"date": d, "slot": s})
+        else:
+            reduced.append({"date": d, "slot": s, "serves": att["headcount"], "present": att["present_names"]})
 
-    quick_slot = sequence[idx_from - 1] if idx_from > 0 else None
-    ready_made_slot = sequence[idx_to + 1] if idx_to + 1 < len(sequence) else None
+    # --- The two derived edges, per traveler -------------------------------
+    # Each traveler's own last-meal-before and first-meal-back. When the
+    # whole household travels together these coincide and merge into one
+    # household-level edge; when they don't, two people can genuinely have
+    # different grab-and-go meals.
+    quick_edges: dict[tuple[str, str], list[int]] = {}
+    ready_edges: dict[tuple[str, str], list[int]] = {}
+    if travelers:
+        for traveler_id in travelers:
+            q_idx, r_idx = _traveler_edge_indices(sequence, idx_from, idx_to, traveler_id)
+            if q_idx is not None:
+                quick_edges.setdefault(sequence[q_idx], []).append(traveler_id)
+            if r_idx is not None:
+                ready_edges.setdefault(sequence[r_idx], []).append(traveler_id)
+    else:
+        if idx_from > 0:
+            quick_edges[sequence[idx_from - 1]] = []
+        if idx_to + 1 < len(sequence):
+            ready_edges[sequence[idx_to + 1]] = []
 
-    if quick_slot:
+    def _apply_edge(slot_key: tuple[str, str], edge_travelers: list[int], need: str) -> bool:
+        d, s = slot_key
+        existing = get_slot_need(d, s)
+        if existing["need"] == "away":
+            # Nobody is home for this meal, so it cannot be anybody's
+            # grab-and-go or first meal back. Leave the away slot alone.
+            return False
+        scope = [] if (not edge_travelers or set(edge_travelers) == set(all_member_ids)) else sorted(edge_travelers)
+        if existing["need"] == need and existing["for_member_ids"] and scope:
+            # A second trip landing its edge on the same meal — add its
+            # travelers rather than replacing the first trip's.
+            scope = sorted(set(existing["for_member_ids"]) | set(scope))
         set_slot_need(
-            quick_slot[0], quick_slot[1], "quick",
-            reason=_default_reason("quick"), away_stretch_id=stretch_id,
+            d, s, need,
+            reason=_edge_reason(need, _member_names(scope), not scope),
+            away_stretch_id=stretch_id, for_member_ids=scope,
         )
+        return True
+
+    for slot_key, edge_travelers in quick_edges.items():
+        _apply_edge(slot_key, edge_travelers, "quick")
 
     ready_made_result = None
-    if ready_made_slot:
-        set_slot_need(
-            ready_made_slot[0], ready_made_slot[1], "ready_made",
-            reason=_default_reason("ready_made"), away_stretch_id=stretch_id,
-        )
-        recommendation = _recommend_ready_made(ready_made_slot[0], ready_made_slot[1])
+    first_ready: tuple[str, str] | None = None
+    for slot_key in sorted(ready_edges):
+        if not _apply_edge(slot_key, ready_edges[slot_key], "ready_made"):
+            continue
+        d, s = slot_key
+        recommendation = _recommend_ready_made(d, s)
         if recommendation["recommended_batch_from_entry_id"] or recommendation["recommended_defrost_item"]:
             set_slot_recommendation(
-                ready_made_slot[0], ready_made_slot[1],
+                d, s,
                 batch_from_entry_id=recommendation["recommended_batch_from_entry_id"],
                 defrost_item=recommendation["recommended_defrost_item"],
             )
-        ready_made_result = get_slot_need(ready_made_slot[0], ready_made_slot[1])
+        if first_ready is None:
+            first_ready = slot_key
+            ready_made_result = get_slot_need(d, s)
 
+    first_quick = sorted(quick_edges)[0] if quick_edges else None
     return {
         "away_stretch_id": stretch_id,
         "from": {"date": from_date, "slot": from_slot},
         "to": {"date": to_date, "slot": to_slot},
-        "away_slots": [{"date": d, "slot": s} for d, s in covered],
-        "quick_slot": {"date": quick_slot[0], "slot": quick_slot[1]} if quick_slot else None,
-        "ready_made_slot": {"date": ready_made_slot[0], "slot": ready_made_slot[1]} if ready_made_slot else None,
+        "member_ids": scope_ids,
+        "member_names": _member_names(scope_ids),
+        "whole_household": whole_household,
+        # Slots nobody is home for — the "nothing planned, nothing bought"
+        # set. For a partial trip this is usually empty.
+        "away_slots": emptied,
+        # Slots that still happen, just for fewer people.
+        "reduced_slots": reduced,
+        "quick_slot": {"date": first_quick[0], "slot": first_quick[1]} if first_quick else None,
+        "quick_slots": [{"date": d, "slot": s} for d, s in sorted(quick_edges)],
+        "ready_made_slot": {"date": first_ready[0], "slot": first_ready[1]} if first_ready else None,
+        "ready_made_slots": [{"date": d, "slot": s} for d, s in sorted(ready_edges)],
         "ready_made_recommendation": ready_made_result,
     }
 

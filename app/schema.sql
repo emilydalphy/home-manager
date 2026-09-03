@@ -632,6 +632,16 @@ CREATE TABLE IF NOT EXISTS slot_needs (
     recommended_batch_from_entry_id INTEGER REFERENCES meal_plan_entries(id),
     recommended_defrost_item TEXT NOT NULL DEFAULT '',
     recommendation_confirmed INTEGER NOT NULL DEFAULT 0,
+    -- WHOSE need this is, as a JSON list of members.id. '[]' means the
+    -- whole household, which is what every need meant before attendance
+    -- existed — so old rows keep their meaning. Set for the per-traveler
+    -- edges: if only Vineeth is away Saturday, Saturday breakfast is
+    -- 'quick' FOR VINEETH (the rest of the house eats normally), and the
+    -- first meal he's back for is 'ready_made' for him. Without this, a
+    -- partial trip would tag the whole household's meal as a grab-and-go,
+    -- which is exactly the "one layer too shallow" problem this deepening
+    -- fixes.
+    for_member_ids_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(household_id, date, slot)
@@ -651,7 +661,64 @@ CREATE TABLE IF NOT EXISTS away_stretches (
     to_date TEXT NOT NULL, -- ISO date of the last away slot (inclusive)
     to_slot TEXT NOT NULL,
     reason TEXT NOT NULL DEFAULT '',
+    -- WHO is away for this stretch, as a JSON list of members.id. '[]'
+    -- means the whole household ("all of us"), which is both the common
+    -- case and the pre-attendance behavior, so an old row reads correctly.
+    -- Emily's deepened model (Notion, 2026-09-03): "Two people in the home
+    -- might also not have the exact same schedule" — a trip belongs to
+    -- specific travelers, and each traveler gets their own derived
+    -- quick-departure / ready-made-return edge.
+    member_ids_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Loop Board: "Week planning: away-stretches and per-meal needs", the
+-- DEEPENED model (Emily, 2026-09-03) that supersedes the household-level
+-- away flag above. Her words: "this flow feels like it's one layer too
+-- shallow... just Emily is home for dinner on Thursday, but Vineeth is
+-- out."
+--
+-- The atomic fact is per-person, per-meal ATTENDANCE — who is actually at
+-- which meal — and everything else derives from it:
+--   * nobody present (and no guests) => that slot is 'away' in slot_needs:
+--     nothing planned, nothing bought. "Away" is no longer a flag someone
+--     sets; it is what an empty attendance MEANS. Both directions are kept
+--     in sync by tools/attendance.py:_sync_away_need.
+--   * some present => plan for the real headcount; portions and grocery
+--     quantities scale to it (see attendance.grocery_scale_factor).
+--   * guests => the same model with the headcount up. The "Hosting guests"
+--     night-tag chip writes guest_count here rather than being a second,
+--     parallel notion of table size.
+--
+-- One row per (date, slot), and — same "absence has one meaning"
+-- discipline slot_needs itself follows — a slot with NO row here means
+-- the ordinary case: every current member present, no guests. That
+-- matters beyond tidiness: it means a member added later is present by
+-- default everywhere, instead of being retroactively absent from every
+-- meal the household has ever planned.
+CREATE TABLE IF NOT EXISTS slot_attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    date TEXT NOT NULL, -- ISO date
+    slot TEXT NOT NULL, -- breakfast | lunch | dinner | snack
+    -- The members PRESENT, as a JSON list of members.id. '[]' means nobody
+    -- is home for this meal, which (with guest_count 0) is exactly the
+    -- 'away' case. Stored as who's present rather than who's absent so
+    -- that "away" has a single, checkable definition: an empty set.
+    present_member_ids_json TEXT NOT NULL DEFAULT '[]',
+    -- Extra mouths beyond the members present — the "Hosting guests"
+    -- gesture, unified into attendance rather than living only in
+    -- week_intake.guest_counts_json.
+    guest_count INTEGER NOT NULL DEFAULT 0,
+    -- Which gesture produced this row: 'toggle' (a presence avatar tapped
+    -- on a day card), 'away_stretch' (derived from a trip range), 'guests'
+    -- (the night-tag chip), or 'chat'. Kept so the UI can explain itself
+    -- and so a trip's slots can be found and undone together.
+    source TEXT NOT NULL DEFAULT '',
+    away_stretch_id INTEGER REFERENCES away_stretches(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, date, slot)
 );
 
 -- Loop Board: "Onboarding: household rhythm without traditional
