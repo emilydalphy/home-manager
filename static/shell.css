@@ -662,9 +662,19 @@ html, body {
 #ask-bar-dock {
   flex-shrink: 0;
   padding: 12px 20px 10px;
+  /* A row now, because the notifications bell sits beside the ask bar here.
+     This dock is a flex sibling of #shell-scroll, so it never scrolls —
+     which is the whole reason the bell was moved into it. */
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
+#bell-home-dock { display: contents; }
 #ask-bar {
-  width: 100%;
+  /* flex, not width:100% — the dock is a row now (the notifications bell is
+     its second child), and a 100%-wide ask bar pushed the bell off-screen. */
+  flex: 1 1 auto;
+  min-width: 0;
   height: 54px;
   box-sizing: border-box;
   background: var(--surface);
@@ -972,13 +982,31 @@ html, body {
     box-sizing: border-box;
     padding: 22px 0 18px;
   }
+  .rail-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 18px 18px 22px;
+  }
   #shell-rail .wordmark {
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 19px;
     color: #fff;
-    padding: 0 22px 18px;
+    padding: 0;
   }
+  /* On spruce, a spruce bell would disappear — it lifts off the rail
+     instead, same treatment as the rail's own "Share meal plan" outline. */
+  #shell-rail .notif-bell {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .12);
+    color: var(--apricot-light);
+  }
+  #shell-rail .notif-bell:hover { background: rgba(255, 255, 255, .2); }
+  #shell-rail .notif-bell .notif-badge { top: 5px; right: 5px; }
   .rail-row {
     display: flex;
     align-items: center;
@@ -1686,42 +1714,42 @@ html, body {
    Notifications bell (design_handoff_home_manager Phase 5).
    Fixed top-right, above both mobile and desktop layouts.
    =========================================================== */
-/* The bell is fixed in the top-right corner, above whatever the active
-   screen draws there — and since the Pomona rebuild that corner holds real
-   content: Today's date rule, Meals' week-range badge. So the two headers
-   reserve it.
-   Unconditionally, deliberately: shell.js sets `notifBell.hidden` when there
-   are no notifications, but `.notif-bell`'s own `display: flex` (below)
-   overrides the hidden attribute, so the button is in fact always on screen.
-   That is a pre-existing bug and NOT fixed here — whether an empty bell
-   should disappear or stay as the way into the panel is Emily's call, not a
-   layout decision. Reserving the space unconditionally matches what is
-   actually rendered today; if the bell is ever made to hide, this becomes
-   `body.has-notif-bell` and the space comes back. */
-.today-datestrip,
-.week-head { padding-right: 52px; }
+/* The two headers no longer reserve their top-right corner: the bell does
+   not float there any more, so the space was dead. See .notif-bell below. */
 
+/* ---------- Notifications bell ----------
+   Emily's call, 2026-09-02: the bell is a PERMANENT entry point — it is the
+   only way into the notifications panel, so it stays put even when the feed
+   is empty (only the unread dot is conditional). Given that, it could not go
+   on floating above the page: fixed to the viewport it painted over whatever
+   scrolled beneath it, and at 390px it covered the last word of Today's
+   dinner reasoning line.
+
+   So it is no longer positioned at all. It sits in the flow of the app's
+   non-scrolling chrome — the ask-bar dock on mobile, the rail on desktop
+   (placeNotifBell in shell.js moves the one element between the two). A
+   button that lives inside chrome cannot overlap the content next to it, at
+   any scroll position, which is the property the old magic offset could
+   never actually give.
+
+   Keeps the icon system it always had: the same line-SVG vocabulary as the
+   tab bar and rail, and the active-tab chip's spruce-fill/apricot-ink. */
 .notif-bell {
-  /* Matches the app's real icon system (shell.js's ICONS.* line-SVGs in
-     the tab bar/rail, not the design_handoff package's older "type and
-     CSS shapes only" note) and the active-tab chip's plum-bg/gold-ink
-     treatment, rather than a plain neutral circle with a generic emoji. */
-  position: fixed;
-  top: calc(14px + env(safe-area-inset-top, 0px));
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--plum, #1B3328);
+  position: relative;   /* for .notif-badge */
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-ask);
+  background: var(--spruce);
   border: none;
-  box-shadow: 0 2px 8px rgba(35, 48, 42,.25);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 60;
-  color: var(--gold, #E0915C);
+  color: var(--apricot-light);
+  padding: 0;
 }
+.notif-bell:hover { background: var(--spruce-raised); }
 .notif-bell-icon {
   display: flex;
   align-items: center;
@@ -1733,8 +1761,8 @@ html, body {
 }
 .notif-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 8px;
+  right: 8px;
   width: 9px;
   height: 9px;
   border-radius: 50%;

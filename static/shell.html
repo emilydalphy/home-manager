@@ -22,7 +22,14 @@
   <div id="shell-app">
 
     <nav id="shell-rail">
-      <div class="wordmark">Pomona</div>
+      <div class="rail-top">
+        <div class="wordmark">Pomona</div>
+        <!-- Desktop home for the notifications bell. The bell is ONE element,
+             moved between this slot and #bell-home-dock by placeNotifBell()
+             in shell.js — see there for why it lives in chrome rather than
+             floating over the page. -->
+        <span id="bell-home-rail"></span>
+      </div>
       <div id="rail-rows"></div>
       <div class="rail-divider"></div>
       <a class="rail-row" href="/memory">
@@ -45,6 +52,7 @@
           <span class="ask-placeholder">The more you tell me, the less you&rsquo;ll swap&hellip;</span>
           <span class="ask-send">&uarr;</span>
         </button>
+        <span id="bell-home-dock"></span>
       </div>
 
       <div id="tab-bar"></div>
@@ -56,9 +64,14 @@
 
   <!-- Notifications bell (design_handoff_home_manager Phase 5 /
        NOTIFICATIONS.md) — a live in-app feed, not real scheduled push
-       (see README's Phase 5 notes for why). Fixed at body level so it
-       floats above both the mobile tab-bar layout and the desktop rail
-       layout without needing separate breakpoint placement. -->
+       (see README's Phase 5 notes for why).
+       It used to be position:fixed at body level, floating over whatever was
+       underneath — which meant that once a panel scrolled, the bell painted
+       on top of real content (at 390px it covered the last word of Today's
+       dinner reasoning line). It now lives IN the app's non-scrolling
+       chrome instead: the ask-bar dock on mobile, the rail on desktop.
+       placeNotifBell() in shell.js moves this one element between the two
+       slots. Parked here in the markup; it is never displayed from here. -->
   <button type="button" id="notif-bell" class="notif-bell" hidden aria-label="Notifications">
     <span class="notif-bell-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
     <span class="notif-badge" id="notif-badge" hidden></span>

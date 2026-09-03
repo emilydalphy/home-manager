@@ -2567,6 +2567,25 @@
     notifScrim.hidden = true;
     notifPanel.hidden = true;
   }
+  // The bell lives inside the app's chrome, not on top of the page. Mobile
+  // chrome is the ask-bar dock (a flex sibling of #shell-scroll, so it never
+  // scrolls); desktop chrome is the rail. Moving the one element between the
+  // two slots keeps a single button, a single badge and a single click
+  // handler — and makes overlapping scrolled content structurally impossible
+  // rather than something a magic offset has to keep dodging.
+  var bellIsDesktop = window.matchMedia('(min-width: 1024px)');
+
+  function placeNotifBell() {
+    if (!notifBell) return;
+    var slot = document.getElementById(bellIsDesktop.matches ? 'bell-home-rail' : 'bell-home-dock');
+    if (slot && notifBell.parentNode !== slot) slot.appendChild(notifBell);
+  }
+
+  placeNotifBell();
+  // Crossing the breakpoint by resizing (or rotating a phone) re-homes it.
+  if (bellIsDesktop.addEventListener) bellIsDesktop.addEventListener('change', placeNotifBell);
+  else if (bellIsDesktop.addListener) bellIsDesktop.addListener(placeNotifBell);  // older WebKit
+
   if (notifBell) notifBell.addEventListener('click', openNotifPanel);
   if (notifScrim) notifScrim.addEventListener('click', closeNotifPanel);
   var notifPanelClose = document.getElementById('notif-panel-close');
@@ -2578,7 +2597,16 @@
       if (!res.ok) throw new Error('failed');
       var data = await res.json();
       latestNotifications = data.notifications || [];
-      notifBell.hidden = latestNotifications.length === 0;
+      // The bell is NOT hidden when the feed is empty. Emily's call,
+      // 2026-09-02: it is the only way into the notifications panel, so
+      // hiding it when there is nothing to show would make an empty panel
+      // unreachable — and the panel already has an empty state that reads
+      // "Nothing needs your attention right now."
+      // (This line used to say `notifBell.hidden = ...`, which never worked
+      // anyway: `.notif-bell`'s own `display: flex` overrode the attribute,
+      // so the bell had always been permanently visible in practice. The
+      // decision makes the intent and the behaviour agree.)
+      // Only the unread DOT is conditional.
       notifBadge.hidden = latestNotifications.length === 0;
       if (latestNotifications.length === 0) closeNotifPanel();
       if (!notifPanel.hidden) renderNotifPanel();
