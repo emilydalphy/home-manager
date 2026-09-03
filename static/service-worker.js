@@ -35,7 +35,7 @@
 // old plum icon and the old "Home Manager" manifest from cache forever, since
 // nothing about the request would tell it to re-fetch. The name changed too,
 // not just the digit, so there is no chance of colliding with a stale entry.
-const CACHE_NAME = "pomona-shell-v4";
+const CACHE_NAME = "pomona-shell-v5";
 const SHELL_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",
