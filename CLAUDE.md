@@ -118,6 +118,13 @@ accurate.
   a parent page cannot re-render part of a child document. If you add a new
   native panel, add its branch here too, or it will go stale in exactly the
   same silent way.
+  **Kitchen was the other hole and is covered on `pomona-kitchen-cooker`.**
+  Two things about that branch matter here: `tab: 'kitchen'` now refreshes
+  *two* screens, because `check_off_meal`/`check_off_prep_step` are tagged
+  kitchen but cooking lives under Meals; and an action with **no tab at
+  all** can still make a screen stale — the household/preferences tools
+  carry only `href: '/memory'`, which is exactly what the Kitchen hub's
+  counts show, so `refreshStaleTabsFromActions` reads the href too.
 - **"Current week" plan resolution** is centralized in
   `tools._current_weekly_plan_row()` (`app/tools/weekly_plan.py`) — it
   prefers the plan whose week
@@ -196,6 +203,89 @@ Newest first. Keep entries terse: one line of fact, one line of why. Full
 detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
+
+- **2026-09-02 — Kitchen is native too, cooking moved under Meals, and the
+  last iframe tab is gone. Branch `pomona-kitchen-cooker` (not merged).**
+  Pomona Stage 2 slice 3, built straight to InnKitchen/InnCooker. Two
+  screens changed and one whole mechanism went with them.
+  **The Kitchen tab is now a hub the shell draws** — a spruce hero carrying
+  what the app has learned (People / Taste / Rhythm / Stores counts, and a
+  "Read it back"), then Inventory and Stores as entry tiles. No apricot
+  anywhere on it by design: the blueprint's rule is that Kitchen has no
+  primary action, because nothing on it is urgent. Inventory is the quietest
+  thing on it — muted stroke, no badge — because inventory is background by
+  policy and must not look like work waiting to be done.
+  **Cooking is a second state of the Meals tab**, behind a Plan | Cook
+  segmented control, and the route stays `/week` in both — Cook is a state,
+  exactly as Grocery's To buy / Plan stops / Review are states of
+  `/grocery`. It is the same week's plan with the recipes opened up, so it
+  belongs with the week; it only ever lived in Kitchen because a bypass
+  pointed that tab's iframe at `cooker.html`, which lit the wrong tab while
+  you cooked. `activateTab`'s `forceEmbedSrc` hack is deleted with it, and
+  `/cooker` now redirects to `/week` rather than `/kitchen`. Tonight is the
+  hero; prep is a two-up supporting rail; the rest of the week is a quiet
+  list. Everything the old page did survives: check-offs, expandable
+  recipes, the live serving stepper, bulk-cook collapse, the attention
+  banner's three shapes, "why this", fill-in-a-recipe, and both hands-free
+  sessions.
+  Seven things worth knowing:
+  - **`.week-content` is a flex column with `gap: 12px`, and wrapping the
+    plan's rows in `#week-plan-view` collapsed them into one flex item** —
+    silently taking every gap between the plan's rows to 0 (measured, not
+    guessed: the approve row ended up flush against the reset row). The
+    wrapper carries the same `display:flex; gap:12px` now. Any future
+    "wrap these existing rows in a div" needs the same check.
+  - **`cookTonightIndex` must be pinned on load, not recomputed per
+    render.** It prefers an *uncooked* meal, so recomputing it after a write
+    meant ticking tonight's dinner as cooked threw it out of the hero and
+    replaced it with the evening snack — the screen moving out from under
+    the person who had just finished cooking. `static/cooker.html` had the
+    same guard (`autoFocusedToday`) for the same reason; it had to be
+    re-derived rather than inherited, because that page recomputed nothing.
+  - **`check_off_meal` and `check_off_prep_step` are tagged `tab: 'kitchen'`
+    by the backend** (`_KITCHEN_TOOLS`), and cooking is no longer in
+    Kitchen. So `refreshStaleTabsFromActions`'s new `kitchen` branch
+    refreshes *both* the hub and the Cook state. Don't "tidy" it to one.
+  - **Cook is refreshed from inside `loadWeekMenu`, not at its six call
+    sites.** Plan and Cook are two renderings of one week, so every path
+    that reloads the plan reloads Cook — and a seventh call site added later
+    gets it for free instead of being the next thing to go stale.
+  - **Kitchen's entry tiles open sheets that iframe the existing pages.**
+    `memory.html` and `inventory.html` were explicitly out of scope to
+    rebuild, and a sheet already satisfies "never a page with its own
+    chrome". So the one remaining iframe in the app is `#kit-sheet`'s, and
+    both pages now hide their *whole header block* in a frame (not just the
+    back link) — leaving the h1 gave "What we know" twice, once in the
+    sheet's chrome and once under it. Their `data-shell-back` therefore
+    changed from `"/static/kitchen.html"` to `"hide"`: the old value would
+    now load the superseded hub inside the screen that replaced it.
+    `tests/test_embedded_pages.py` was updated to pin the new truth,
+    including its frontier regex, which read `embed:`/`forceEmbedSrc:` —
+    both now gone, so it would have derived an empty set and passed
+    vacuously, the exact failure that file warns about.
+  - **The last two navigations out of the shell are gone.** The desktop
+    rail's What-we-know/Inventory links were `<a href>` full page loads, and
+    every household/preferences chat action still carried `href: '/memory'`
+    (`_MEMORY_HREF_TOOLS`, whose comment said "no shell tab shows this yet
+    (Kitchen's 'What we know' absorbs it in a later step)" — this is that
+    step). Both now open the sheet, via `followActionHref`. Deliberately
+    handled on the client rather than by changing the backend's action
+    contract, since it is the screen that was stale, not the payload.
+  - **`static/kitchen.html` and `static/cooker.html` are untouched and
+    unlinked**, the same fallback treatment `grocery.html` got, so this
+    slice reverts by restoring one `TABS` line and two entry points.
+  Two judgment calls flagged rather than assumed. **InnCooker draws the
+  segmented control pouring into the spruce hero**; that only works if it is
+  the last thing before the hero, which it cannot be in both states (Plan
+  has its framing and day rail in between). It is the plain segmented
+  control the Grocery screen already shipped instead — one control,
+  identical in both states. And **the mockup's "Household settings" tile was
+  not built**: its "Emily and Jamie · passphrase · sharing" has no screen
+  behind it anywhere in this app (households are made by a script,
+  `memory.html` has no sharing UI), and the blueprint's own rule is to treat
+  a mockup element you cannot find in the real page as a drawing error and
+  ask. Also not written: the hero's "Six weeks in", which wants a household
+  tenure nothing exposes — inventing one would be inventing history.
 
 - **2026-09-02 — Grocery is a native shell panel, not an iframe, on the
   branch `pomona-grocery-native` (not merged).** Pomona Stage 2 slice 2;
@@ -522,8 +612,16 @@ Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
 - ~~**#8** — split `app/tools.py` into a package by domain.~~ **Done
   2026-09-01** (see Decision log) — `app/tools/` is now 20 domain modules
   and the auth/multi-tenancy work it was blocking can start.
-- **#9** — the shell's tabs are iframes; navigation workarounds (see the
-  Kitchen back-link bug fixed earlier) are accumulating as a result.
+- ~~**#9** — the shell's tabs are iframes; navigation workarounds are
+  accumulating as a result.~~ **Done 2026-09-02** across two branches
+  (`pomona-grocery-native`, `pomona-kitchen-cooker`, neither merged) — no
+  tab is an embedded page any more, and the workarounds it named
+  (`forceEmbedSrc`, the `contentWindow.location.reload()` refresh path, the
+  per-page back-link rewrites) are gone with them. One iframe remains by
+  choice: the Kitchen entry sheet, which hosts `memory.html` /
+  `inventory.html` rather than rebuild them this pass. **#16 (two navigation
+  systems) largely goes with it** — the shell no longer navigates the
+  browser out of itself anywhere.
 - **#10** — no shared `api.js`; ~26 hand-written `fetch('/api/...')` call
   sites, and pages carry 30–60 KB of inline CSS/JS each that can't be
   cached separately from the page.

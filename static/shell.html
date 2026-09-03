@@ -32,14 +32,19 @@
       </div>
       <div id="rail-rows"></div>
       <div class="rail-divider"></div>
-      <a class="rail-row" href="/memory">
+      <!-- These were the last two full page navigations out of the shell:
+           following one left the app entirely, tab bar and all, with only
+           the browser's back button to return. They open the same two
+           destinations as Kitchen entry sheets now, so the rail is a
+           shortcut into the app rather than a way out of it. -->
+      <button type="button" class="rail-row" data-rail-sheet="memory">
         <span class="rail-chip">&#9998;</span>
         <span>What we know</span>
-      </a>
-      <a class="rail-row" href="/inventory">
+      </button>
+      <button type="button" class="rail-row" data-rail-sheet="inventory">
         <span class="rail-chip">&#127823;</span>
         <span>Inventory</span>
-      </a>
+      </button>
       <div class="rail-spacer"></div>
       <button type="button" id="rail-share" class="rail-share">Share meal plan</button>
     </nav>
@@ -123,6 +128,31 @@
       <button type="button" class="btn-outline-plum" id="week-sheet-share">Share</button>
       <button type="button" class="btn-gold" id="week-sheet-back">Back</button>
     </div>
+  </div>
+
+  <!-- Kitchen entry sheet (Stage 2 slice 3). The hub's tiles open What we
+       know / Inventory / Stores as a sheet over the hub instead of a full
+       page navigation that left the app shell — tab bar and all — with only
+       the browser's back button to return.
+
+       The sheet hosts the existing page in an iframe. That is deliberate
+       and it is the ONLY iframe left in the app: rebuilding memory.html and
+       inventory.html natively is real work and is not this slice, while
+       hosting them here already satisfies the rule that a screen never
+       becomes a page with its own chrome. This header is the way back; the
+       page inside hides its own back link (static/embedded-page.js).
+
+       Body level, like every other sheet here, because position:fixed has
+       to sit outside the tab panel's stacking/scroll context. -->
+  <div id="kit-sheet-scrim" hidden></div>
+  <div id="kit-sheet" hidden role="dialog" aria-label="Household details">
+    <div class="ask-sheet-handle" id="kit-sheet-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title" id="kit-sheet-title"></span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="kit-sheet-close" aria-label="Close">&times;</button>
+    </div>
+    <iframe id="kit-sheet-frame" class="kit-sheet-frame" title=""></iframe>
   </div>
 
   <!-- "Start over" confirm (Meals tab) — the self-service reset for a week

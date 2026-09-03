@@ -2233,11 +2233,20 @@ def kitchen_page():
     return FileResponse(os.path.join(static_dir, "shell.html"))
 
 
-# /cooker's content now lives at the Kitchen tab (same cooker.html, embedded
-# in the shell) — redirect rather than serve it standalone a second way.
+# Cooking is a state of the Meals tab now (Stage 2 slice 3) — the same
+# week's plan with the recipes opened up, which is why it belongs with the
+# week rather than in Kitchen, where it only ever lived by pointing that
+# tab's iframe at cooker.html.
+#
+# Redirecting to /week lands on Meals' default Plan state rather than
+# straight into Cook. That is deliberate: Cook is a state, not a route, in
+# exactly the way Grocery's To buy / Plan stops / Review are states of
+# /grocery. The two real ways in are Today's "Start cooking" and Meals'
+# own "Cook" — this route exists only so an old bookmark still arrives
+# somewhere sensible.
 @app.get("/cooker")
 def cooker_page():
-    return RedirectResponse(url="/kitchen")
+    return RedirectResponse(url="/week")
 
 
 # /onboarding and /memory are NOT redirected yet, on purpose: the README

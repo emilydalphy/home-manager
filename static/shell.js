@@ -88,14 +88,38 @@
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
     { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, grocery: true },
-    // Phase 4: the Kitchen tab now embeds the new hub (design_handoff_home_manager
-    // §5) instead of landing straight on the old prep/cook-this-week list —
-    // the hub's own Inventory/What we know rows (linking to the redesigned
-    // /inventory and /memory pages) and "Cooking tonight" card (into
-    // cooker.html — see activateTab's forceEmbedSrc) replace the old
-    // quickLinks restore.
-    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, embed: '/static/kitchen.html' }
+    // Stage 2 slice 3: Kitchen is a real shell screen too, and with it the
+    // last iframe tab comes out. static/kitchen.html still exists and still
+    // works standalone but nothing links to it — the fallback, exactly the
+    // treatment static/grocery.html and static/grocery-legacy.html already
+    // have. Cooking is NOT here any more: it moved to the Meals tab's Cook
+    // state (see COOK below and NavBlueprint's "Where cooking lives").
+    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, kitchen: true }
   ];
+
+  // The Kitchen hub's entry tiles. The blueprint asks for these to open as
+  // sheets over the hub rather than as full page navigations that leave the
+  // app shell (tab bar and all) with only the browser's back button to
+  // return — which is what /inventory and /memory were until this slice.
+  //
+  // Each sheet hosts the EXISTING page in an iframe. Rebuilding
+  // inventory.html and memory.html natively is real work and is explicitly
+  // not this slice; hosting them in a sheet is the least invasive thing that
+  // still satisfies the rule that a screen never becomes a page with its own
+  // chrome — the sheet's header is the way back, and the pages' own back
+  // links hide themselves inside a frame (static/embedded-page.js).
+  //
+  // `src` is written as a plain /static/*.html literal on purpose:
+  // tests/test_embedded_pages.py derives "which pages can end up in a frame"
+  // by reading this file, and a computed or concatenated path would make
+  // that derivation silently blind.
+  var KITCHEN_SHEETS = {
+    memory: { title: 'What we know', src: '/static/memory.html' },
+    inventory: { title: 'Inventory', src: '/static/inventory.html' },
+    // Stores is a tab of the same page, not a page of its own. memory.html
+    // reads the hash on load (see its openingTab()).
+    stores: { title: 'Stores', src: '/static/memory.html', hash: 'stores' }
+  };
 
   function currentTabKey() {
     var path = window.location.pathname.replace(/\/+$/, '') || '/';
@@ -122,30 +146,11 @@
     panel.className = 'tab-panel';
     panel.id = 'panel-' + tab.key;
 
-    if (tab.embed) {
-      // Lazy: the iframe's src is set the first time this tab is activated,
-      // so switching to Grocery/Kitchen doesn't load both pages up front.
-      panel.dataset.embed = tab.embed;
-      // Fix: /inventory and /memory (and the fridge/pantry/receipt photo
-      // scanning that lives on /inventory) used to be reachable from
-      // index.html's old nav bar; nothing in the new shell replaced that
-      // for mobile, and only /memory got a desktop-only rail link (Step
-      // 1) — /inventory had no path in from the new shell chrome at all.
-      // A real redesigned Kitchen tab (README §4's "Running low" / "What
-      // we know about you" / scan-nudge cards) would be the eventual home
-      // for this, but that's real, unbuilt work, not part of any of the 6
-      // build-order steps — this is a lightweight restore, not that
-      // redesign. Real page navigation (not a shell route), same as the
-      // links index.html always had.
-      if (tab.quickLinks) {
-        var links = document.createElement('div');
-        links.className = 'embed-quicklinks';
-        links.innerHTML = tab.quickLinks.map(function (l) {
-          return '<a href="' + l.href + '">' + escapeHtml(l.label) + '</a>';
-        }).join('');
-        panel.appendChild(links);
-      }
-    } else if (tab.placeholder) {
+    // No tab is an embedded page any more. Grocery lost its iframe in
+    // Stage 2 slice 2 and Kitchen in slice 3, so the lazy-src plumbing that
+    // used to live here is gone with them — the only iframe left in the app
+    // is the one inside a Kitchen entry sheet (see KITCHEN_SHEETS).
+    if (tab.placeholder) {
       var box = document.createElement('div');
       box.className = 'tab-placeholder';
       box.innerHTML =
@@ -199,23 +204,6 @@
     });
 
     var panel = panels[key];
-    // Lazy-load the embedded page the first time its tab is shown. Kitchen's
-    // hub (kitchen.html) is the default landing; "Cook mode" entry points
-    // (Today's dinner card, Week's "Cook this") pass forceEmbedSrc to jump
-    // straight past the hub into the already-built Cook mode
-    // (cooker.html — design_handoff_home_manager §10) instead.
-    var forcedSrc = opts && opts.forceEmbedSrc;
-    if (panel && panel.dataset.embed && !panel.querySelector('iframe')) {
-      var iframe = document.createElement('iframe');
-      iframe.src = forcedSrc || panel.dataset.embed;
-      iframe.title = tab.label;
-      panel.appendChild(iframe);
-    } else if (panel && forcedSrc) {
-      var existingIframe = panel.querySelector('iframe');
-      if (existingIframe && existingIframe.getAttribute('src') !== forcedSrc) {
-        existingIframe.setAttribute('src', forcedSrc);
-      }
-    }
     // Lazy-build Today's real content the first time it's shown.
     if (tab.real && !panel.dataset.built) {
       panel.dataset.built = '1';
@@ -231,6 +219,18 @@
       panel.dataset.built = '1';
       buildGroceryPanel(panel);
     }
+    // Lazy-build Kitchen the first time it's shown (Stage 2 slice 3).
+    if (tab.kitchen && !panel.dataset.built) {
+      panel.dataset.built = '1';
+      buildKitchenPanel(panel);
+    }
+
+    // Meals has two states. `opts.mealsView` is how the two cook entry
+    // points (Today's "Start cooking", Meals' own "Cook this") land on the
+    // Cook state instead of Plan — it replaces the old forceEmbedSrc hack,
+    // which reached cooking by re-pointing the KITCHEN tab's iframe at
+    // cooker.html and so lit the wrong tab while you cooked.
+    if (tab.week && opts && opts.mealsView) setMealsView(opts.mealsView);
 
     if (pushHistory && window.location.pathname.replace(/\/+$/, '') !== (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''))) {
       window.history.pushState({ tab: key }, '', tab.path);
@@ -764,7 +764,7 @@
           '<span>Start cooking</span>' + ICONS.arrow +
         '</button>' +
         '<button type="button" class="hero-quiet" id="dinner-swap">Swap tonight for something else</button>';
-      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('kitchen', true, { forceEmbedSrc: '/static/cooker.html' }); });
+      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook' }); });
       card.querySelector('#dinner-swap').addEventListener('click', function () {
         openAskSheet('Swap tonight for something faster');
       });
@@ -2192,6 +2192,322 @@
     groUpdateVoiceButton();
   }
 
+  // ---------- Kitchen (Stage 2 slice 3, built to InnKitchen) ----------
+  //
+  // The household's standing knowledge and its settings, and nothing that
+  // is urgent. Three things follow from that and are deliberate:
+  //
+  //   - There is NO apricot action anywhere on this screen. The blueprint
+  //     is explicit: "Kitchen has no apricot button at all — nothing there
+  //     is urgent, and giving it one would be a lie about what the screen
+  //     is for." The hero's "Read it back" is spruce-raised, not apricot.
+  //   - Inventory is the quiet tile: muted icon, muted sub-line, no count
+  //     badge. Inventory is deferred as policy — background only, never
+  //     something the core loop asks the household to maintain — so it must
+  //     not look like work waiting to be done.
+  //   - Cooking is NOT here. It moved to the Meals tab's Cook state; this
+  //     hub used to carry a "Cooking tonight" card whose buttons re-pointed
+  //     this tab's iframe at cooker.html.
+  //
+  // The one hero is the household itself: what the app has learned, how
+  // much of it there is, and a way to read it back.
+  var kitchenState = { memory: null, facts: null, inventory: null, loadError: false };
+
+  var KITCHEN_ICONS = {
+    person:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20.5V17a7 7 0 0 1 14 0v3.5"/><circle cx="12" cy="7" r="3.2"/></svg>',
+    fridge:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17H6z"/><path d="M6 10h12"/><path d="M9 6.5v1.5"/><path d="M9 13v1.5"/></svg>',
+    storefront:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/></svg>',
+    camera:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
+  };
+
+  function kitchenPanel() { return panels['kitchen']; }
+  function kitchenIsBuilt() { var p = kitchenPanel(); return !!(p && p.dataset.built); }
+
+  function buildKitchenPanel(panel) {
+    panel.innerHTML =
+      '<div class="kitchen-content">' +
+        '<div class="kit-titlerow">' +
+          '<span class="kit-eyebrow">Your household</span>' +
+          '<span class="kit-hairline"></span>' +
+        '</div>' +
+        '<h1 class="kit-title">Kitchen</h1>' +
+        '<div class="kit-hero" id="kit-hero"></div>' +
+        '<div class="kit-body" id="kit-body"></div>' +
+      '</div>';
+    panel.addEventListener('click', onKitchenClick);
+    loadKitchen();
+  }
+
+  // Three reads, none of which blocks the others: the memory summary (usual
+  // stores, members, and growth_count_this_month — a counter this app
+  // already keeps for exactly this "you've taught me N things" line), the
+  // freeform facts (which fill the Taste and Rhythm chips), and the
+  // inventory summary for the quiet tile.
+  async function loadKitchen() {
+    if (!kitchenIsBuilt()) return;
+    try {
+      var results = await Promise.all([
+        fetch('/api/memory').then(function (r) { return r.ok ? r.json() : null; }),
+        fetch('/api/facts').then(function (r) { return r.ok ? r.json() : null; })
+      ]);
+      if (!results[0]) throw new Error('memory lookup failed');
+      kitchenState.memory = results[0];
+      kitchenState.facts = (results[1] && results[1].facts) || [];
+      kitchenState.loadError = false;
+    } catch (err) {
+      console.warn('Kitchen lookup failed:', err);
+      kitchenState.loadError = true;
+    }
+    renderKitchen();
+    // The inventory line is a nicety on a tile that is quiet by policy — it
+    // renders "what's on hand" and fills in a moment later if the counts
+    // arrive. It must never hold up the hero.
+    loadKitchenInventory();
+  }
+
+  function refreshKitchenPanel() {
+    if (kitchenIsBuilt()) loadKitchen();
+  }
+
+  // "N to use soon · N running low". Use-soon is the real
+  // expiring-within-4-days endpoint; "running low" has no stored threshold
+  // anywhere in this app, so it stays what the old hub made it — a light
+  // client-side read of a leading quantity <= 1 — rather than a fabricated
+  // stat. Carried over unchanged from static/kitchen.html.
+  async function loadKitchenInventory() {
+    try {
+      var pair = await Promise.all([
+        fetch('/api/inventory/expiring?days=4'),
+        fetch('/api/inventory')
+      ]);
+      var expiring = pair[0].ok ? ((await pair[0].json()).items || []) : [];
+      var lowCount = 0;
+      if (pair[1].ok) {
+        ((await pair[1].json()).sections || []).forEach(function (s) {
+          (s.items || []).forEach(function (it) {
+            var m = /^\s*([\d.]+)/.exec(it.quantity || '');
+            if (m && parseFloat(m[1]) <= 1) lowCount++;
+          });
+        });
+      }
+      kitchenState.inventory = { expiring: expiring.length, low: lowCount };
+    } catch (err) {
+      kitchenState.inventory = null;
+    }
+    var sub = kitchenPanel() && kitchenPanel().querySelector('#kit-inv-sub');
+    if (sub) sub.textContent = kitchenInventoryLine();
+  }
+
+  function kitchenInventoryLine() {
+    var inv = kitchenState.inventory;
+    if (!inv) return 'What’s on hand';
+    return inv.expiring + ' to use soon · ' + inv.low + ' running low';
+  }
+
+  function kitchenCounts() {
+    var mem = kitchenState.memory || {};
+    var facts = kitchenState.facts || [];
+    function factsIn(cat) {
+      return facts.filter(function (f) { return f.category === cat; }).length;
+    }
+    // People counts what the People tab actually shows: the household's
+    // members plus anything freeform recorded about them. Every chip is
+    // "how much this tab holds", so tapping one lands somewhere that
+    // matches the number.
+    return {
+      people: (mem.members || []).length + factsIn('people'),
+      taste: factsIn('taste'),
+      rhythm: factsIn('rhythm'),
+      stores: (mem.usual_stores || []).length
+    };
+  }
+
+  function renderKitchen() {
+    var panel = kitchenPanel();
+    if (!panel) return;
+    var hero = panel.querySelector('#kit-hero');
+    var body = panel.querySelector('#kit-body');
+    if (!hero || !body) return;
+
+    if (kitchenState.loadError || !kitchenState.memory) {
+      hero.innerHTML = '<p class="kit-hero-error">Couldn’t load what I know about your household right now.</p>';
+      body.innerHTML = '';
+      return;
+    }
+
+    var counts = kitchenCounts();
+    var total = counts.people + counts.taste + counts.rhythm + counts.stores;
+    var taught = kitchenState.memory.growth_count_this_month || 0;
+
+    // The headline says where the app is with this household, and the
+    // Newsreader line under it says what changed lately. Both are read off
+    // real numbers. The mockup's "Six weeks in" wants a household start
+    // date that nothing in this app exposes, so it is not written here —
+    // inventing a tenure would be inventing history.
+    var headline = total
+      ? 'Getting the hang of you'
+      : 'Tell me about your household';
+    var note = total
+      ? (taught
+          ? (taught === 1 ? 'one new thing learned this month' : taught + ' new things learned this month')
+          : 'nothing new this month — tell me anything and it lands here')
+      : 'nothing on record yet — the more I know, the fewer swaps you’ll make';
+
+    hero.innerHTML =
+      '<div class="kit-hero-top">' +
+        '<span class="kit-hero-chip">What we know</span>' +
+        '<span class="kit-hero-rule"></span>' +
+        '<span class="kit-hero-icon">' + KITCHEN_ICONS.person + '</span>' +
+      '</div>' +
+      '<div class="kit-hero-line">' +
+        '<h2 class="kit-hero-headline">' + escapeHtml(headline) + '</h2>' +
+        '<p class="kit-hero-note">' + escapeHtml(note) + '</p>' +
+      '</div>' +
+      '<div class="kit-chips">' +
+        kitChip('People', counts.people, 'memory') +
+        kitChip('Taste', counts.taste, 'taste') +
+        kitChip('Rhythm', counts.rhythm, 'rhythm') +
+        kitChip('Stores', counts.stores, 'stores') +
+      '</div>' +
+      // Spruce-raised, not apricot. See the note at the top of this section.
+      '<button type="button" class="kit-hero-action" data-kit="sheet" data-sheet="memory">' +
+        '<span>Read it back</span>' + ICONS.arrow +
+      '</button>';
+
+    var stores = kitchenState.memory.usual_stores || [];
+    body.innerHTML =
+      '<div class="kit-tiles">' +
+        // Quiet by policy: muted stroke, muted sub, no badge.
+        '<button type="button" class="kit-tile kit-tile-quiet" data-kit="sheet" data-sheet="inventory">' +
+          '<span class="kit-tile-icon">' + KITCHEN_ICONS.fridge + '</span>' +
+          '<span class="kit-tile-title">Inventory</span>' +
+          '<span class="kit-tile-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span>' +
+        '</button>' +
+        '<button type="button" class="kit-tile" data-kit="sheet" data-sheet="stores">' +
+          '<span class="kit-tile-icon kit-tile-icon-warm">' + KITCHEN_ICONS.storefront + '</span>' +
+          '<span class="kit-tile-title">Stores</span>' +
+          '<span class="kit-tile-sub">' +
+            (stores.length ? escapeHtml(stores.join(', ')) : 'Where things come from') +
+          '</span>' +
+        '</button>' +
+      '</div>' +
+      // Carried over from the old hub unchanged, including the fact that
+      // nothing is built behind it yet — it is an entry point that says so.
+      '<div class="kit-worth" data-kit="worth">' +
+        '<div class="kit-worth-top">' +
+          '<span class="kit-worth-icon">' + KITCHEN_ICONS.camera + '</span>' +
+          '<span class="kit-worth-eyebrow">Worth doing sometime</span>' +
+        '</div>' +
+        '<p class="kit-worth-text">Scan a fridge photo, so I stop suggesting what you already have.</p>' +
+      '</div>';
+  }
+
+  function kitChip(label, count, sheet) {
+    return '<button type="button" class="kit-chip" data-kit="sheet" data-sheet="' + sheet + '">' +
+      escapeHtml(label) + '<span class="kit-chip-num">' + count + '</span></button>';
+  }
+
+  function onKitchenClick(e) {
+    var target = e.target.closest('[data-kit]');
+    if (!target) return;
+    var what = target.getAttribute('data-kit');
+    if (what === 'sheet') {
+      var key = target.getAttribute('data-sheet');
+      // The Taste and Rhythm chips are tabs of What we know, not sheets of
+      // their own — same page, opened on the tab whose number was tapped.
+      if (key === 'taste' || key === 'rhythm') openKitchenSheet('memory', key);
+      else openKitchenSheet(key);
+      return;
+    }
+    if (what === 'worth') {
+      showToast('Not built yet — tell me in the ask bar what’s in the fridge and I’ll take it from there.');
+    }
+  }
+
+  // ---------- Kitchen entry sheets ----------
+  // Same scrim/sheet pattern as the ask and week sheets, and the same
+  // "one open at a time" rule. The sheet supplies the header and the way
+  // back; the page inside it supplies no chrome of its own (its own back
+  // link hides itself in a frame — static/embedded-page.js).
+  var kitSheetScrim = document.getElementById('kit-sheet-scrim');
+  var kitSheetEl = document.getElementById('kit-sheet');
+  var kitSheetOpen = null;
+
+  function openKitchenSheet(key, tab) {
+    var meta = KITCHEN_SHEETS[key];
+    if (!meta || !kitSheetEl) return;
+    closeAskSheet();
+    closeWeekSheet();
+    var hash = tab || meta.hash;
+    var src = meta.src + (hash ? '#' + hash : '');
+    var frame = document.getElementById('kit-sheet-frame');
+    // Re-point rather than recreate when it is already the right document,
+    // so reopening the same sheet does not throw away a scroll position or
+    // a half-typed edit for no reason. A different hash IS a different
+    // view, so that still re-points.
+    if (frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+    document.getElementById('kit-sheet-title').textContent = meta.title;
+    frame.title = meta.title;
+    kitSheetOpen = key;
+    kitSheetScrim.hidden = false;
+    kitSheetEl.hidden = false;
+  }
+
+  function closeKitchenSheet() {
+    if (!kitSheetScrim) return;
+    kitSheetScrim.hidden = true;
+    kitSheetEl.hidden = true;
+    // Anything edited in there changes what the hub counts, so re-read on
+    // the way out. This is the sheet's half of the freshness policy.
+    if (kitSheetOpen) refreshKitchenPanel();
+    kitSheetOpen = null;
+  }
+
+  if (kitSheetScrim) {
+    kitSheetScrim.addEventListener('click', closeKitchenSheet);
+    document.getElementById('kit-sheet-handle').addEventListener('click', closeKitchenSheet);
+    document.getElementById('kit-sheet-close').addEventListener('click', closeKitchenSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !kitSheetEl.hidden) closeKitchenSheet();
+    });
+  }
+
+  // Where an action card or a notification says "View" and names an href
+  // rather than a tab.
+  //
+  // Two of those hrefs now have a home inside the app. `/memory` is what
+  // every household/preferences write points at (app/main.py's
+  // _MEMORY_HREF_TOOLS) — its comment says "no shell tab shows this yet
+  // (Kitchen's 'What we know' absorbs it in a later step)", and this is
+  // that step. Sending someone out of the shell to see a store they just
+  // added by voice was the last full page navigation left in the app.
+  //
+  // Anything else still navigates: /onboarding and /plan-week are focused
+  // sequences that deliberately live outside the tab bar.
+  var HREF_AS_SHEET = { '/memory': 'memory', '/inventory': 'inventory' };
+  function followActionHref(href) {
+    var sheet = HREF_AS_SHEET[(href || '').replace(/\/+$/, '') || '/'];
+    if (sheet) {
+      activateTab('kitchen', true);
+      openKitchenSheet(sheet);
+      return;
+    }
+    window.location.href = href;
+  }
+
+  // The desktop rail's two shortcuts open the same sheets. They used to be
+  // <a href> full page navigations out of the shell — see shell.html.
+  document.querySelectorAll('[data-rail-sheet]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      activateTab('kitchen', true);
+      openKitchenSheet(btn.getAttribute('data-rail-sheet'));
+    });
+  });
+
   // ---------- Week (Step 4, rebuilt for design_handoff_home_manager
   // option 6a) ----------
   // Backed by GET /api/week-menu (app/tools.get_week_menu) — always 7 days,
@@ -2232,6 +2548,27 @@
   async function buildWeekPanel(panel) {
     panel.innerHTML =
       '<div class="week-content">' +
+        // Plan | Cook. Cooking is a second state of this tab, not a tab of
+        // its own and not a page: it is the same dataset as the week panel
+        // with the recipes opened up, and two tabs over one dataset is how
+        // panels drift apart (NavBlueprint, "Where cooking lives").
+        //
+        // Judgment call: InnCooker draws this control pouring into the
+        // spruce hero directly beneath it, the way the Meals day rail
+        // does. That only works if the control is the last thing before
+        // the hero, which it cannot be in both states — Plan has its "This
+        // week" framing and its day rail in between. So it is the plain
+        // segmented control the Grocery screen already shipped, in one
+        // place, identical in both states, rather than a decoration that
+        // would have to be built twice and would sit differently in each.
+        '<div class="meals-seg" id="meals-seg" role="tablist">' +
+          '<button type="button" class="meals-seg-btn active" data-meals-view="plan" role="tab" aria-selected="true">Plan</button>' +
+          '<button type="button" class="meals-seg-btn" data-meals-view="cook" role="tab" aria-selected="false">' +
+            ICONS.flame + '<span>Cook</span>' +
+          '</button>' +
+        '</div>' +
+        '<div id="week-cook-view" hidden></div>' +
+        '<div id="week-plan-view">' +
         '<div class="menu-header shell-card" id="week-header"><div class="menu-loading">Loading your menu&hellip;</div></div>' +
         '<div class="week-mobile" id="week-mobile">' +
           '<div class="week-framing" id="week-framing"></div>' +
@@ -2269,10 +2606,14 @@
         // renderPlanWeekEntry. Below Approve because approving the week
         // you already have comes before planning the next one.
         '<div id="week-plan-row"></div>' +
+        '</div>' +
       '</div>';
 
     panel.querySelector('#whole-week-row').addEventListener('click', function () { openWeekSheet(); });
     panel.querySelector('#week-reset-btn').addEventListener('click', function () { openResetDialog(); });
+    panel.querySelectorAll('.meals-seg-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { setMealsView(btn.getAttribute('data-meals-view')); });
+    });
 
     // /plan-week hands back with ?drafted=<Monday>. Without honouring it,
     // Meals asks for "the current plan" and gets whichever week contains
@@ -2316,6 +2657,14 @@
       if (!res.ok) throw new Error('week-menu lookup failed');
       var data = await res.json();
       renderWeekMenu(panel, data);
+      // Plan and Cook are two renderings of one week, so anything that
+      // reloads the plan reloads the cook view with it — a swap, an
+      // approval, a chat turn, a reset. Doing it here rather than at each
+      // of those six call sites is the point: a seventh call site added
+      // later gets the behaviour for free instead of being the next thing
+      // that goes stale. It is a no-op until someone has actually opened
+      // Cook, so this costs nothing for a household that never does.
+      refreshCookView();
     } catch (err) {
       console.warn('Week menu lookup failed:', err);
       panel.querySelector('#week-header').innerHTML = '<div class="menu-loading">Couldn\'t load your menu right now.</div>';
@@ -2562,7 +2911,7 @@
       btn.addEventListener('click', function () { fillWeekDinner(panel, btn.dataset.date, btn.dataset.meal); });
     });
     var cookBtn = wrap.querySelector('#wk-cook-this');
-    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('kitchen', true, { forceEmbedSrc: '/static/cooker.html' }); });
+    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook' }); });
     var swapBtn = wrap.querySelector('#wk-swap-it');
     if (swapBtn) swapBtn.addEventListener('click', function () {
       openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s dinner for something else');
@@ -3170,6 +3519,872 @@
     });
   }
 
+  // ---------- Cook: the Meals tab's second state (InnCooker) ----------
+  //
+  // The same /api/cooker-view data static/cooker.html always used, re-ranked
+  // rather than re-listed. That page rendered the whole week as one flat
+  // stack and then scrolled you to today; this one answers "what am I
+  // cooking now" in the hero and demotes everything else beneath it —
+  // tonight, then the prep that feeds it, then the rest of the week as a
+  // quiet list.
+  //
+  // Everything the old page could do, this does: check a meal or a prep
+  // task off, expand a recipe, scale the servings live, see why a meal was
+  // chosen, fill in a missing recipe, work the attention banner, and drive
+  // any of it hands-free. No endpoint changed.
+  //
+  // Which meal is "tonight" is decided by the clock, not by what has been
+  // ticked — households reliably forget to check breakfast off, and "the
+  // next unticked meal" parks the screen on breakfast all day. Carried over
+  // from cooker.html deliberately, comment and all.
+  var COOK_SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
+  var cookState = {
+    data: null,
+    attention: [],
+    loadError: false,
+    openDetail: null,   // index of the meal whose recipe is expanded
+    tonightIdx: null,
+    voiceSession: null,
+    voiceContext: null, // { type: 'prep' } | { type: 'meal', idx }
+    voiceStepCursor: {},
+    voiceLog: []
+  };
+
+  var COOK_ICONS = {
+    list:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14"/><path d="M5 12h14"/><path d="M5 18.5h9"/></svg>',
+    check:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    mic:
+      '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>'
+  };
+
+  function cookPanel() { return panels['week']; }
+  function cookIsShowing() {
+    var p = cookPanel();
+    return !!(p && p.dataset.built && p.dataset.mealsView === 'cook');
+  }
+
+  // Plan <-> Cook. Both are states of one tab and neither is a route: the
+  // Meals path stays /week either way, exactly as Grocery's three segments
+  // are all /grocery. Deep links into cooking come through the entry points
+  // (Today's "Start cooking", Meals' "Cook this"), not through a URL.
+  function setMealsView(view) {
+    var panel = cookPanel();
+    if (!panel || !panel.dataset.built) return;
+    var isCook = view === 'cook';
+    panel.dataset.mealsView = isCook ? 'cook' : 'plan';
+
+    var planView = panel.querySelector('#week-plan-view');
+    var cookView = panel.querySelector('#week-cook-view');
+    if (planView) planView.hidden = isCook;
+    if (cookView) cookView.hidden = !isCook;
+
+    panel.querySelectorAll('.meals-seg-btn').forEach(function (btn) {
+      var on = btn.getAttribute('data-meals-view') === (isCook ? 'cook' : 'plan');
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+
+    // Leaving Cook stops any hands-free session with it — a mic still
+    // listening on a screen you can no longer see is the worst version of
+    // this feature.
+    if (!isCook) stopCookVoice();
+    if (isCook && !cookView.dataset.built) {
+      cookView.dataset.built = '1';
+      cookView.innerHTML = '<p class="cook-empty">Loading&hellip;</p>';
+      cookView.addEventListener('click', onCookClick);
+      loadCook();
+    }
+  }
+
+  async function loadCook() {
+    var panel = cookPanel();
+    if (!panel) return;
+    var view = panel.querySelector('#week-cook-view');
+    if (!view || !view.dataset.built) return;
+    try {
+      var pair = await Promise.all([
+        fetch('/api/cooker-view'),
+        fetch('/api/attention')
+      ]);
+      if (!pair[0].ok) throw new Error('cooker-view failed');
+      cookState.data = await pair[0].json();
+      cookState.attention = pair[1].ok ? ((await pair[1].json()).items || []) : [];
+      cookState.loadError = false;
+      // Which meal is "tonight" is decided HERE, on a real load, and then
+      // pinned — not recomputed on every render. cookTonightIndex prefers an
+      // uncooked meal, so recomputing after a write meant that ticking
+      // tonight's dinner as cooked threw it out of the hero and replaced it
+      // with the evening snack: the screen moved out from under the person
+      // who had just finished cooking. The old page had the same guard for
+      // the same reason (its autoFocusedToday flag). A genuine reload — a
+      // chat turn, a swap, coming back to the tab — repicks it.
+      cookState.tonightIdx = cookTonightIndex(cookState.data.meals || []);
+    } catch (err) {
+      console.warn('Cooker lookup failed:', err);
+      cookState.loadError = true;
+    }
+    renderCook();
+  }
+
+  // Called from the refresh paths. A Cook view that was opened early has to
+  // stay correct, not stay frozen — the same rule the Grocery panel follows.
+  function refreshCookView() {
+    var panel = cookPanel();
+    var view = panel && panel.querySelector('#week-cook-view');
+    if (view && view.dataset.built) loadCook();
+  }
+
+  // Re-render from a response the server already handed back, instead of
+  // re-fetching. Every /api/cooker/* write returns the whole refreshed view,
+  // which is why checking a box has never needed a round trip of its own.
+  function renderCookFrom(view) {
+    cookState.data = view;
+    cookState.loadError = false;
+    renderCook();
+  }
+
+  function cookSlotRank(m) {
+    var i = COOK_SLOT_ORDER.indexOf(m.slot || '');
+    return i === -1 ? 99 : i;
+  }
+
+  function cookCurrentSlotIndex(hour) {
+    if (hour < 11) return 0;   // breakfast
+    if (hour < 16) return 1;   // lunch
+    return 2;                  // dinner
+  }
+
+  function cookTonightIndex(meals, nowHour) {
+    var iso = todayLocalStr();
+    var hour = typeof nowHour === 'number' ? nowHour : new Date().getHours();
+    var from = cookCurrentSlotIndex(hour);
+    var todays = (meals || [])
+      .map(function (m, i) { return { m: m, i: i }; })
+      .filter(function (x) { return x.m.date === iso; })
+      .sort(function (a, b) { return cookSlotRank(a.m) - cookSlotRank(b.m); });
+    if (!todays.length) return null;
+    var fromNow = todays.filter(function (x) { return cookSlotRank(x.m) >= from; });
+    var uncooked = fromNow.filter(function (x) { return x.m.cooked_status !== 'done'; });
+    if (uncooked.length) return uncooked[0].i;
+    if (fromNow.length) return fromNow[0].i;
+    return todays[todays.length - 1].i;
+  }
+
+  function cookDateLabel(dateStr) {
+    if (!dateStr) return '';
+    var d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d)) return dateStr;
+    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+
+  function renderCook() {
+    var panel = cookPanel();
+    var view = panel && panel.querySelector('#week-cook-view');
+    if (!view) return;
+
+    // Hold the scroll across a re-render — the same rule the Grocery panel
+    // follows, and it matters more here: a re-render happens every time a
+    // box is ticked, and a cook is mid-recipe when they tick one.
+    var keepScroll = scrollEl ? scrollEl.scrollTop : 0;
+
+    if (cookState.loadError || !cookState.data) {
+      view.innerHTML = '<p class="cook-error">Couldn’t load the cook view right now — switch tabs and back to try again.</p>';
+      return;
+    }
+    var data = cookState.data;
+    if (!data.weekly_plan_id) {
+      view.innerHTML = '<p class="cook-empty">No plan yet this week — plan one on the Plan tab first.</p>';
+      return;
+    }
+
+    var meals = data.meals || [];
+    // Pinned by loadCook; only worked out here if a write response arrived
+    // before any load ever did, or if the pinned index no longer exists.
+    if (cookState.tonightIdx === null || cookState.tonightIdx === undefined ||
+        !meals[cookState.tonightIdx]) {
+      cookState.tonightIdx = cookTonightIndex(meals);
+    }
+    // First time in, the tonight meal's recipe is already open — that is
+    // the whole point of a tonight-first screen. After that the cook's own
+    // choice wins, so a re-render never reopens what they closed.
+    if (cookState.openDetail === null && cookState.tonightIdx !== null &&
+        meals[cookState.tonightIdx] && meals[cookState.tonightIdx].has_full_recipe &&
+        !view.dataset.autofocused) {
+      view.dataset.autofocused = '1';
+      cookState.openDetail = String(cookState.tonightIdx);
+    }
+
+    view.innerHTML =
+      cookTitleRowHtml(data) +
+      cookAttentionHtml() +
+      '<div class="cook-voice" id="cook-voice" hidden></div>' +
+      cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
+      '<div class="cook-body">' +
+        cookPrepHtml(data) +
+        cookRestOfWeekHtml(meals) +
+      '</div>';
+
+    wireCookDetails(view);
+    updateCookVoiceButtons();
+    if (scrollEl) scrollEl.scrollTop = keepScroll;
+  }
+
+  function cookTitleRowHtml(data) {
+    var done = data.meals_done || 0;
+    var total = data.meals_total || 0;
+    return '<div class="cook-titlerow">' +
+      '<h1 class="cook-title">This week</h1>' +
+      '<span class="cook-count">' + done + ' of ' + total + ' cooked</span>' +
+    '</div>';
+  }
+
+  // The one hero on this screen, and the one apricot action in it.
+  function cookHeroHtml(meal, idx) {
+    if (!meal) {
+      return '<div class="cook-hero cook-hero-quiet">' +
+        '<div class="cook-hero-top">' +
+          '<span class="cook-hero-chip cook-chip-quiet">Tonight</span>' +
+          '<span class="cook-hero-rule"></span>' +
+        '</div>' +
+        '<h2 class="cook-hero-headline">Nothing to cook tonight</h2>' +
+        '<p class="cook-hero-note">the rest of the week is below</p>' +
+      '</div>';
+    }
+    var isDone = meal.cooked_status === 'done';
+    var chips = [];
+    if (meal.prep_time_minutes || meal.cook_time_minutes) {
+      var bits = [];
+      if (meal.prep_time_minutes) bits.push(meal.prep_time_minutes + 'm prep');
+      if (meal.cook_time_minutes) bits.push(meal.cook_time_minutes + 'm cook');
+      chips.push(bits.join(' + '));
+    }
+    if (meal.default_servings) chips.push('Serves ' + meal.default_servings);
+    if (meal.batch_note) chips.push('Bulk ×' + meal.meal_count);
+
+    // Newsreader italic, once per screen. The reasoning is the honest thing
+    // to say here; the advance-prep note is the more useful one when there
+    // is one, because it is what changes what you do next.
+    var note = meal.advance_prep_notes || meal.reasoning || '';
+    var detailOpen = String(idx) === String(cookState.openDetail);
+
+    return '<div class="cook-hero">' +
+      '<div class="cook-hero-top">' +
+        '<span class="cook-hero-chip">Tonight</span>' +
+        '<span class="cook-hero-rule"></span>' +
+        (meal.advance_prep_notes ? '<span class="cook-hero-tag">Advance prep</span>' : '') +
+      '</div>' +
+      '<div class="cook-hero-line">' +
+        '<h2 class="cook-hero-headline' + (isDone ? ' is-done' : '') + '">' + escapeHtml(meal.meal || 'Dinner') + '</h2>' +
+        (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
+      '</div>' +
+      (chips.length
+        ? '<div class="cook-hero-chips">' + chips.map(function (c) {
+            return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
+      '<div class="cook-hero-actions">' +
+        // The apricot action, and the only one on this screen. It opens the
+        // recipe at the steps; the quiet button beside it opens the same
+        // panel at the ingredients. Two ways into one thing the old page
+        // already did ("Show recipe") — no new capability, just the split
+        // the design asks for between "start cooking" and "what do I need".
+        '<button type="button" class="cook-hero-action" data-cook="detail" data-idx="' + idx + '" data-at="steps">' +
+          '<span>' + (detailOpen ? 'Hide the recipe' : 'Start step 1') + '</span>' + ICONS.arrow +
+        '</button>' +
+        '<button type="button" class="cook-hero-icon" data-cook="detail" data-idx="' + idx + '" data-at="ingredients" ' +
+          'aria-label="Ingredients" title="Ingredients">' + COOK_ICONS.list + '</button>' +
+        '<button type="button" class="cook-hero-check' + (isDone ? ' checked' : '') + '" ' +
+          'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+          'aria-label="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '" ' +
+          'title="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>' +
+      '</div>' +
+      (detailOpen ? '<div class="cook-hero-detail">' + cookDetailHtml(meal, idx, true) + '</div>' : '') +
+    '</div>';
+  }
+
+  // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
+  // a pair of small things rather than another stack of full-width cards.
+  function cookPrepHtml(data) {
+    var tasks = data.prep_tasks || [];
+    if (!tasks.length) return '';
+    var done = data.prep_done || 0;
+    var total = data.prep_total || tasks.length;
+    return '<section class="cook-section">' +
+      '<div class="cook-sectionhead">' +
+        '<span class="cook-eyebrow cook-eyebrow-warm">Prep schedule</span>' +
+        '<span class="cook-rule"></span>' +
+        '<span class="cook-sectionnote">' + done + ' of ' + total + ' done</span>' +
+        '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
+          'aria-label="Hands-free: check off prep steps by voice" ' +
+          'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>' +
+      '</div>' +
+      '<div class="cook-prep-grid">' +
+        tasks.map(function (t) {
+          var isDone = t.status === 'done';
+          return '<div class="cook-prep-card' + (isDone ? ' is-done' : '') + '">' +
+            '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+              'data-cook="check-prep" data-prep-id="' + t.id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+              'aria-label="' + (isDone ? 'Mark not done' : 'Mark done') + '">' + COOK_ICONS.check + '</button>' +
+            '<span class="cook-prep-date">' + escapeHtml(cookDateLabel(t.task_date)) + '</span>' +
+            '<span class="cook-prep-text">' + escapeHtml(t.description) +
+              (t.related_meal ? ' <span class="cook-prep-meal">(' + escapeHtml(t.related_meal) + ')</span>' : '') +
+            '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</section>';
+  }
+
+  // Everything that is not tonight, subordinate: one row each, dense on
+  // purpose, expandable in place for the cook who is looking ahead.
+  function cookRestOfWeekHtml(meals) {
+    var rest = meals
+      .map(function (m, i) { return { m: m, i: i }; })
+      .filter(function (x) { return x.i !== cookState.tonightIdx; });
+    if (!rest.length) {
+      return meals.length
+        ? ''
+        : '<p class="cook-empty">No meals on this plan yet.</p>';
+    }
+    return '<section class="cook-section">' +
+      '<div class="cook-sectionhead">' +
+        '<span class="cook-eyebrow">The rest of the week</span>' +
+        '<span class="cook-rule"></span>' +
+      '</div>' +
+      '<div class="cook-week">' +
+        rest.map(function (x) {
+          var m = x.m, idx = x.i;
+          var isDone = m.cooked_status === 'done';
+          var open = String(idx) === String(cookState.openDetail);
+          var dayLabel = m.component_category
+            ? m.component_category
+            : (m.date ? dayName(m.date, { weekday: 'short' }).slice(0, 3).toUpperCase() : '');
+          return '<div class="cook-week-item' + (isDone ? ' is-done' : '') + '">' +
+            '<div class="cook-week-row">' +
+              '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+                'data-cook="check-meal" data-entry-id="' + m.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+                'aria-label="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>' +
+              '<span class="cook-week-day">' + escapeHtml(dayLabel) + '</span>' +
+              '<button type="button" class="cook-week-name" data-cook="detail" data-idx="' + idx + '" data-at="steps">' +
+                escapeHtml(m.meal || '') +
+              '</button>' +
+              (m.advance_prep_notes ? '<span class="cook-badge cook-badge-warm">Prep ahead</span>' : '') +
+              (m.batch_note ? '<span class="cook-badge">Bulk ×' + m.meal_count + '</span>' : '') +
+            '</div>' +
+            (open ? '<div class="cook-week-detail">' + cookDetailHtml(m, idx, false) + '</div>' : '') +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</section>';
+  }
+
+  // One recipe panel, used by both the hero and a week row.
+  function cookDetailHtml(m, idx, onSpruce) {
+    var cls = onSpruce ? ' on-spruce' : '';
+    if (!m.has_full_recipe) {
+      return '<p class="cook-norecipe' + cls + '">Freeform meal — no saved recipe detail. Ask in the ask bar for the full recipe.</p>';
+    }
+    var ingredients = (m.ingredients || []).map(function (i) {
+      return '<li>' + escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || '')) + '</li>';
+    }).join('') || '<li class="cook-dim">None listed</li>';
+
+    return '<div class="cook-detail' + cls + '">' +
+      '<div class="cook-detail-tools">' +
+        (m.default_servings
+          ? '<div class="cook-serves" data-idx="' + idx + '" data-recipe="' + escapeHtml(m.meal || '') + '" data-base="' + m.default_servings + '">' +
+              '<span class="cook-serves-label">Serves</span>' +
+              '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="-1" aria-label="Fewer servings">&minus;</button>' +
+              '<span class="cook-serves-count" id="cook-serves-' + idx + '">' + m.default_servings + '</span>' +
+              '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="1" aria-label="More servings">+</button>' +
+            '</div>'
+          : '') +
+        '<button type="button" class="cook-mic" data-cook="voice" data-ctx="meal" data-idx="' + idx + '" ' +
+          'aria-label="Hands-free for this recipe" ' +
+          'title="Hands-free: read steps, ask amounts, log a substitution">' + COOK_ICONS.mic + '</button>' +
+      '</div>' +
+      (m.advance_prep_notes
+        ? '<h4 class="cook-detail-head">Advance prep</h4><p class="cook-detail-p">' + escapeHtml(m.advance_prep_notes) + '</p>'
+        : '') +
+      '<h4 class="cook-detail-head">Ingredients</h4>' +
+      '<ul class="cook-ings" id="cook-ings-' + idx + '">' + ingredients + '</ul>' +
+      '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
+      '<h4 class="cook-detail-head">Instructions</h4>' +
+      cookInstructionsHtml(m) +
+      (m.reasoning
+        ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
+          '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
+        : '') +
+    '</div>';
+  }
+
+  // advance_prep_step_indices are 1-based positions within `instructions`
+  // that are the make-ahead steps. When a recipe tags them, the steps split
+  // into "Do ahead" and "Day of" with their own numbering, so it is clear
+  // what to do the night before and what happens later using it. Most
+  // recipes tag nothing and get one flat list.
+  function cookInstructionsHtml(m) {
+    var steps = m.instructions || [];
+    if (!steps.length) {
+      return '<p class="cook-dim">No steps saved yet.</p>' +
+        '<button type="button" class="cook-fill" data-cook="fill" data-recipe="' + escapeHtml(m.meal || '') + '">Fill in this recipe</button>';
+    }
+    var prepIdx = m.advance_prep_step_indices || [];
+    if (!prepIdx.length) {
+      return '<ol class="cook-steps">' + steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>';
+    }
+    var doAhead = steps.filter(function (_, i) { return prepIdx.indexOf(i + 1) !== -1; });
+    var dayOf = steps.filter(function (_, i) { return prepIdx.indexOf(i + 1) === -1; });
+    return '<h5 class="cook-steplabel cook-steplabel-warm">Do ahead</h5>' +
+      '<ol class="cook-steps">' + doAhead.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>' +
+      '<h5 class="cook-steplabel">Day of</h5>' +
+      '<ol class="cook-steps">' + dayOf.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>';
+  }
+
+  function wireCookDetails(view) {
+    // The recipe panel is rendered by the same pass as everything else, so
+    // there is nothing to re-wire per row — one delegated listener on the
+    // view (attached at build) handles every control. This hook exists for
+    // the one thing delegation cannot do: put the newly-opened panel where
+    // it can be read.
+    if (cookState.scrollToDetail) {
+      cookState.scrollToDetail = false;
+      var el = view.querySelector('.cook-detail');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+    }
+  }
+
+  // ---------- Cook: the attention banner ----------
+  // Carried over from cooker.html whole: the three shapes an attention item
+  // can take (a plain one that can be resolved or dismissed, an
+  // inventory-usage one that wants an amount, and the feedback nudge that
+  // wants a rating) all still exist and still hit the same endpoints.
+  function cookAttentionHtml() {
+    var items = cookState.attention || [];
+    if (!items.length) return '';
+    return '<div class="cook-attention">' +
+      '<p class="cook-attention-title">Needs your attention</p>' +
+      items.map(function (it) {
+        var needsAmount = it.id != null && it.detail && it.detail.needs_amount_used;
+        if (needsAmount) {
+          return '<div class="cook-attn-item is-stacked" data-attn-id="' + it.id + '">' +
+            '<span class="cook-attn-summary">' + escapeHtml(it.summary) + '</span>' +
+            '<span class="cook-attn-row">' +
+              '<input type="text" class="cook-attn-input" data-attn-input="' + it.id + '" ' +
+                'placeholder="e.g. 1 cup, or leave blank for all of it" aria-label="Amount used" />' +
+              '<button type="button" class="cook-attn-go" data-cook="attn-use" data-attn-id="' + it.id + '">Log it</button>' +
+              '<button type="button" class="cook-attn-skip" data-cook="attn-resolve" data-attn-id="' + it.id + '" data-status="dismissed">Skip</button>' +
+            '</span>' +
+          '</div>';
+        }
+        if (it.kind === 'feedback_nudge') {
+          var mealName = (it.detail && it.detail.meal) || '';
+          return '<div class="cook-attn-item is-stacked" data-attn-meal="' + escapeHtml(mealName) + '">' +
+            '<span class="cook-attn-summary">' + escapeHtml(it.summary) + '</span>' +
+            '<span class="cook-attn-row">' +
+              '<button type="button" class="cook-attn-fb" data-cook="feedback" data-rating="liked" data-meal="' + escapeHtml(mealName) + '">Liked it</button>' +
+              '<button type="button" class="cook-attn-fb" data-cook="feedback" data-rating="disliked" data-meal="' + escapeHtml(mealName) + '">Not a hit</button>' +
+              '<input type="text" class="cook-attn-input" data-attn-notes="' + escapeHtml(mealName) + '" placeholder="Notes (optional)" aria-label="Notes" />' +
+            '</span>' +
+          '</div>';
+        }
+        return '<div class="cook-attn-item">' +
+          '<span class="cook-attn-summary">' + escapeHtml(it.summary) + '</span>' +
+          (it.id != null
+            ? '<span class="cook-attn-actions">' +
+                '<button type="button" class="cook-attn-btn" data-cook="attn-resolve" data-attn-id="' + it.id + '" data-status="resolved" aria-label="Mark handled" title="Mark handled">' + COOK_ICONS.check + '</button>' +
+                '<button type="button" class="cook-attn-btn is-dismiss" data-cook="attn-resolve" data-attn-id="' + it.id + '" data-status="dismissed" aria-label="Not relevant" title="Not relevant">&times;</button>' +
+              '</span>'
+            : '') +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  async function refreshCookAttention() {
+    try {
+      var res = await fetch('/api/attention');
+      if (res.ok) {
+        cookState.attention = (await res.json()).items || [];
+        renderCook();
+      }
+    } catch (err) { /* non-critical */ }
+  }
+
+  // ---------- Cook: actions ----------
+  // One delegated listener for the whole view. The page this replaces
+  // re-wired every control after every render, which is where a missed
+  // handler hides.
+  function onCookClick(e) {
+    var el = e.target.closest('[data-cook]');
+    if (!el) return;
+    var what = el.getAttribute('data-cook');
+
+    if (what === 'detail') {
+      var idx = el.getAttribute('data-idx');
+      cookState.openDetail = (String(cookState.openDetail) === String(idx)) ? null : idx;
+      cookState.scrollToDetail = cookState.openDetail !== null && el.getAttribute('data-at') === 'ingredients';
+      renderCook();
+      return;
+    }
+    if (what === 'why') {
+      var text = document.getElementById('cook-why-' + el.getAttribute('data-idx'));
+      if (text) text.hidden = !text.hidden;
+      return;
+    }
+    if (what === 'check-meal') return cookCheckMeal(el);
+    if (what === 'check-prep') return cookCheckPrep(el);
+    if (what === 'serves') return cookStepServings(el);
+    if (what === 'fill') return cookFillRecipe(el);
+    if (what === 'attn-resolve') return cookResolveAttention(el);
+    if (what === 'attn-use') return cookLogUsage(el);
+    if (what === 'feedback') return cookRateMeal(el);
+    if (what === 'voice') return cookToggleVoice(el);
+  }
+
+  async function cookPost(url, body) {
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    });
+    if (!res.ok) throw new Error('request failed');
+    return res.json().catch(function () { return {}; });
+  }
+
+  async function cookCheckMeal(el) {
+    el.disabled = true;
+    try {
+      var view = await cookPost('/api/cooker/check-meal', {
+        entry_id: parseInt(el.getAttribute('data-entry-id'), 10),
+        status: el.getAttribute('data-next')
+      });
+      renderCookFrom(view);
+      // Checking a meal off can queue new inventory-depletion items, and it
+      // moves the week's "N of M cooked" everywhere else that counts it.
+      refreshCookAttention();
+      refreshPlanSurfacesAfterCook();
+    } catch (err) {
+      el.disabled = false;
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  async function cookCheckPrep(el) {
+    el.disabled = true;
+    try {
+      renderCookFrom(await cookPost('/api/cooker/check-prep', {
+        prep_task_id: parseInt(el.getAttribute('data-prep-id'), 10),
+        status: el.getAttribute('data-next')
+      }));
+      refreshPlanSurfacesAfterCook();
+    } catch (err) {
+      el.disabled = false;
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  // Cooking changes what Today shows (its dinner hero and its prep tile read
+  // the same rows), so the other screens are told rather than left to go
+  // stale — the freshness policy applies to a write made here exactly as it
+  // does to one made in chat.
+  function refreshPlanSurfacesAfterCook() {
+    // One call covers both: loadTonightsDinner reads /api/cooker-view and
+    // renders the dinner hero AND the prep tile off the same response.
+    if (panels.today && panels.today.dataset.built) loadTonightsDinner(panels.today);
+  }
+
+  // Live re-scale without a plan reload. Non-numeric quantities ("a pinch",
+  // "to taste") cannot scale mathematically, so the backend leaves those
+  // alone and names them in unscaled_items rather than guessing.
+  async function cookStepServings(el) {
+    var idx = el.getAttribute('data-idx');
+    var wrap = el.closest('.cook-serves');
+    var countEl = document.getElementById('cook-serves-' + idx);
+    if (!wrap || !countEl) return;
+    var delta = parseInt(el.getAttribute('data-delta'), 10);
+    var base = parseInt(wrap.getAttribute('data-base'), 10) || 1;
+    var current = parseInt(countEl.textContent, 10) || base;
+    var next = Math.max(1, current + delta);
+    if (next === current) return;
+    countEl.textContent = next;
+
+    var list = document.getElementById('cook-ings-' + idx);
+    var note = document.getElementById('cook-unscaled-' + idx);
+    try {
+      var res = await fetch('/api/recipes/scale?name=' + encodeURIComponent(wrap.getAttribute('data-recipe')) + '&servings=' + next);
+      if (!res.ok) throw new Error('scale failed');
+      var data = await res.json();
+      if (list) {
+        list.innerHTML = (data.scaled_ingredients || []).map(function (i) {
+          return '<li>' + escapeHtml((i.qty ? i.qty + ' ' : '') + (i.item || '')) + '</li>';
+        }).join('') || '<li class="cook-dim">None listed</li>';
+      }
+      if (note) {
+        if (data.unscaled_items && data.unscaled_items.length) {
+          note.textContent = 'Eyeball these — they don’t scale automatically: ' + data.unscaled_items.join(', ') + '.';
+          note.hidden = false;
+        } else {
+          note.hidden = true;
+        }
+      }
+    } catch (err) {
+      // Leave the list as it was rather than breaking the recipe over a
+      // failed scale; the number in the stepper is the only thing that moved.
+    }
+  }
+
+  async function cookFillRecipe(el) {
+    el.disabled = true;
+    var original = el.textContent;
+    el.textContent = 'Writing recipe…';
+    try {
+      renderCookFrom(await cookPost('/api/cooker/fill-recipe', { recipe_name: el.getAttribute('data-recipe') }));
+    } catch (err) {
+      el.disabled = false;
+      el.textContent = original;
+      showToast('Couldn’t write that recipe right now — try again.');
+    }
+  }
+
+  async function cookResolveAttention(el) {
+    el.disabled = true;
+    try {
+      var data = await cookPost('/api/attention/' + el.getAttribute('data-attn-id') + '/resolve', {
+        status: el.getAttribute('data-status')
+      });
+      cookState.attention = data.items || [];
+      renderCook();
+    } catch (err) {
+      el.disabled = false;
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  async function cookLogUsage(el) {
+    var id = el.getAttribute('data-attn-id');
+    var input = document.querySelector('[data-attn-input="' + id + '"]');
+    el.disabled = true;
+    try {
+      var data = await cookPost('/api/attention/' + id + '/use', {
+        amount_used: input ? input.value.trim() : ''
+      });
+      cookState.attention = data.items || [];
+      renderCook();
+    } catch (err) {
+      el.disabled = false;
+      showToast('Couldn’t log that — try again.');
+    }
+  }
+
+  async function cookRateMeal(el) {
+    var meal = el.getAttribute('data-meal');
+    var notesEl = document.querySelector('[data-attn-notes="' + meal.replace(/"/g, '\\"') + '"]');
+    el.disabled = true;
+    try {
+      await cookPost('/api/recipe-feedback', {
+        recipe_name: meal,
+        rating: el.getAttribute('data-rating'),
+        notes: notesEl ? notesEl.value.trim() : ''
+      });
+      refreshCookAttention();
+    } catch (err) {
+      el.disabled = false;
+      showToast('Couldn’t save that rating — try again.');
+    }
+  }
+
+  // ---------- Cook: hands-free ----------
+  // The same two sessions the old page had — one scoped to the prep
+  // schedule, one to a single recipe — on the same shared engine
+  // (voice-session.js) the Grocery screen uses. Behaviour is carried over
+  // unchanged, per the blueprint's "hands-free voice keeps its current
+  // behaviour".
+  function cookVoiceEl() { return document.getElementById('cook-voice'); }
+
+  function setCookVoiceStatus(text) {
+    var el = cookVoiceEl();
+    if (!el) return;
+    if (!text) {
+      cookState.voiceLog = [];
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    // A short scrollback rather than one overwritten line: a single status
+    // flashed by before it could be read, which made "it never hears me"
+    // impossible to tell apart from "it heard something else".
+    cookState.voiceLog.unshift(text);
+    cookState.voiceLog = cookState.voiceLog.slice(0, 5);
+    el.hidden = false;
+    el.innerHTML =
+      '<span class="cook-voice-dot"></span>Listening&hellip;' +
+      '<ul class="cook-voice-log">' + cookState.voiceLog.map(function (t) {
+        return '<li>' + escapeHtml(t) + '</li>';
+      }).join('') + '</ul>' +
+      '<span class="cook-voice-note">Say “hey Pomona” plus a command, or tap the mic again to stop.</span>';
+  }
+
+  function updateCookVoiceButtons() {
+    var active = cookState.voiceSession && cookState.voiceSession.isActive() && cookState.voiceContext;
+    document.querySelectorAll('#week-cook-view .cook-mic').forEach(function (btn) {
+      var ctxType = btn.getAttribute('data-ctx');
+      var btnIdx = btn.getAttribute('data-idx');
+      var isThisOne = !!(active && cookState.voiceContext.type === ctxType &&
+        (ctxType !== 'meal' || String(cookState.voiceContext.idx) === btnIdx));
+      btn.classList.toggle('listening', isThisOne);
+    });
+  }
+
+  function stopCookVoice() {
+    if (cookState.voiceSession && cookState.voiceSession.isActive()) cookState.voiceSession.stop();
+  }
+
+  function cookToggleVoice(el) {
+    var ctxType = el.getAttribute('data-ctx');
+    var btnIdx = el.getAttribute('data-idx');
+    var isThisActive = cookState.voiceSession && cookState.voiceSession.isActive() && cookState.voiceContext &&
+      cookState.voiceContext.type === ctxType &&
+      (ctxType !== 'meal' || String(cookState.voiceContext.idx) === btnIdx);
+    if (isThisActive) { stopCookVoice(); return; }
+    if (typeof window.createVoiceSession !== 'function') {
+      showToast('Hands-free isn’t available in this browser.');
+      return;
+    }
+    stopCookVoice();
+    var ctx = ctxType === 'meal' ? { type: 'meal', idx: parseInt(btnIdx, 10) } : { type: 'prep' };
+    cookState.voiceContext = ctx;
+    cookState.voiceStepCursor = {};
+    cookState.voiceSession = window.createVoiceSession({
+      onListeningChange: function (isListening) {
+        updateCookVoiceButtons();
+        if (!isListening) setCookVoiceStatus('');
+      },
+      onStatus: function (text) { setCookVoiceStatus(text); },
+      onCommand: async function (command) {
+        if (ctx.type === 'prep') return handleCookPrepVoice(command);
+        return handleCookMealVoice(command, ctx.idx);
+      },
+      onEnd: function () { cookState.voiceContext = null; updateCookVoiceButtons(); }
+    });
+    if (cookState.voiceSession.isStandaloneIOS()) {
+      setCookVoiceStatus('Heads up: hands-free can be unreliable in the installed home-screen app on iOS — if it doesn’t seem to hear you, try a regular Safari tab.');
+    }
+    cookState.voiceSession.start();
+    updateCookVoiceButtons();
+  }
+
+  // Matching is keyword-anywhere rather than a fixed sentence shape: real
+  // speech (and imperfect transcription) rarely comes back phrased one way.
+  function cookIsEndCommand(command) {
+    return /\b(stop|cancel|exit|goodbye|end session|that'?s all|that’s all|all done)\b/i.test(command) ||
+      /^done$/i.test(command.trim());
+  }
+
+  // Exact match, then substring, then word overlap. Deliberately permissive
+  // — and it never silently changes data on a weak match by itself, because
+  // the caller always says back what it acted on.
+  function cookFuzzyFind(text, candidates, getLabel) {
+    var t = (text || '').trim().toLowerCase();
+    if (!t || !candidates || !candidates.length) return null;
+    for (var i = 0; i < candidates.length; i++) {
+      if (getLabel(candidates[i]).trim().toLowerCase() === t) return candidates[i];
+    }
+    for (var j = 0; j < candidates.length; j++) {
+      var label = getLabel(candidates[j]).trim().toLowerCase();
+      if (label && (label.indexOf(t) !== -1 || t.indexOf(label) !== -1)) return candidates[j];
+    }
+    var words = t.split(/\s+/);
+    var best = null, bestScore = 0;
+    candidates.forEach(function (c) {
+      var labelWords = getLabel(c).trim().toLowerCase().split(/\s+/);
+      var score = words.filter(function (w) { return labelWords.indexOf(w) !== -1; }).length;
+      if (score > bestScore) { bestScore = score; best = c; }
+    });
+    return bestScore > 0 ? best : null;
+  }
+
+  async function handleCookPrepVoice(command) {
+    if (cookIsEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
+    var tasks = (cookState.data && cookState.data.prep_tasks) || [];
+    var task = null;
+    // Prep steps have no voice action but checking off, so "step"/"task"
+    // plus a number is enough — no verb needs matching too.
+    if (/\b(step|task)\b/i.test(command)) {
+      var n = window.voiceParseNumber(command);
+      if (n !== null) {
+        task = tasks[n - 1] || null;
+        if (!task) return { spoken: 'There’s no step ' + n + ' — I only count ' + tasks.length + '.' };
+      }
+    }
+    if (!task) {
+      var afterVerb = command.replace(/\b(check off|mark|complete|finish|done with)\b/gi, '');
+      task = cookFuzzyFind(afterVerb, tasks, function (t) { return t.description; });
+    }
+    if (!task) return null;
+    try {
+      renderCookFrom(await cookPost('/api/cooker/check-prep', { prep_task_id: task.id, status: 'done' }));
+    } catch (err) { return null; }
+    refreshCookAttention();
+    return { spoken: 'Got it, "' + task.description + '" marked done.' };
+  }
+
+  async function handleCookMealVoice(command, idx) {
+    var meal = cookState.data && cookState.data.meals ? cookState.data.meals[idx] : null;
+    if (!meal) return null;
+    if (cookIsEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
+
+    // Recipe steps aren't individually checkable, so "step" plus a number is
+    // always a read-it-back question and never an action — no ambiguity to
+    // resolve against the other commands.
+    if (/\bstep\b/i.test(command)) {
+      var n = window.voiceParseNumber(command);
+      if (n !== null) {
+        var step = (meal.instructions || [])[n - 1];
+        return step
+          ? { spoken: 'Step ' + n + ': ' + step }
+          : { spoken: 'There’s no step ' + n + ' — this recipe has ' + (meal.instructions || []).length + ' steps.' };
+      }
+    }
+    if (/\bnext\b/i.test(command)) {
+      var cursor = cookState.voiceStepCursor[idx] || 0;
+      var nextStep = (meal.instructions || [])[cursor];
+      if (!nextStep) return { spoken: 'That’s the last step — nothing more after this.' };
+      cookState.voiceStepCursor[idx] = cursor + 1;
+      return { spoken: 'Step ' + (cursor + 1) + ': ' + nextStep };
+    }
+    // Marking the whole meal done needs an explicit qualifier, specifically
+    // so a bare "I'm done" doesn't collide with the session-ending phrase
+    // checked above.
+    if (/\b(done|finish|finished|complete|completed|mark|check off)\b/i.test(command) &&
+        /\b(cooking|meal|recipe|dish|this|it)\b/i.test(command)) {
+      try {
+        renderCookFrom(await cookPost('/api/cooker/check-meal', { entry_id: meal.entry_id, status: 'done' }));
+      } catch (err) { return null; }
+      refreshCookAttention();
+      refreshPlanSurfacesAfterCook();
+      return { spoken: 'Got it, ' + meal.meal + ' marked done.' };
+    }
+    if (/\b(how much|amount|how many)\b/i.test(command)) {
+      var afterKeyword = command.replace(/^.*?\b(how much|how many|amount of|amount)\b/i, '').trim();
+      var ing = cookFuzzyFind(afterKeyword, meal.ingredients || [], function (i) { return i.item || ''; });
+      return ing
+        ? { spoken: (ing.qty || 'No amount tracked') + ' of ' + ing.item + '.' }
+        : { spoken: 'I don’t see that ingredient in this recipe.' };
+    }
+    if (/\bsubstitut|\b(swap|swapped|instead|log|note)\b/i.test(command)) {
+      var note = command
+        .replace(/^(?:log a substitution|log a deviation|log that|note that|note|i substituted|i swapped)[:\s]*/i, '')
+        .trim() || command;
+      try {
+        await cookPost('/api/cooker/log-deviation', { recipe_name: meal.meal, note: note });
+      } catch (err) { return null; }
+      return { spoken: 'Got it, logged.' };
+    }
+    return null;
+  }
+
   // ---------- Week sheet (the 6a grid) ----------
   // Same scrim/sheet/grab-handle pattern as the ask sheet, and the same
   // "only one open at a time" rule — opening this closes the ask sheet and
@@ -3388,6 +4603,8 @@
   // own special case here — a contentWindow.location.reload() through the
   // iframe boundary; now it is a panel like the others.
   function refreshAfterReset(clearedMealPlan, clearedGroceryList) {
+    // loadWeekMenu takes the Cook state with it — clearing the week cannot
+    // leave Cook holding a plan that no longer exists.
     if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
     if (panels.today && panels.today.dataset.built) {
       if (clearedMealPlan) {
@@ -3592,7 +4809,7 @@
       card.addEventListener('click', function () {
         closeAskSheet();
         if (action.tab) activateTab(action.tab, true);
-        else if (action.href) window.location.href = action.href;
+        else if (action.href) followActionHref(action.href);
       });
       wrap.appendChild(card);
     });
@@ -3636,7 +4853,32 @@
   function refreshStaleTabsFromActions(actions) {
     (actions || []).forEach(function (action) {
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
+        // loadWeekMenu refreshes the Cook state too — see its tail.
         loadWeekMenu(panels.week);
+      } else if (action.tab === 'kitchen') {
+        // Kitchen was the second hole in this. The backend has always
+        // tagged these writes with tab: 'kitchen' (app/main.py's
+        // _KITCHEN_TOOLS) and this function has never had a branch for
+        // it — for the same reason Grocery didn't, and with the same
+        // consequence: "we finished the chicken" in chat changed the
+        // inventory and the Kitchen tab went on showing the old counts.
+        //
+        // The branch is two calls rather than one because that tool set
+        // spans both screens now: check_off_meal / check_off_prep_step /
+        // resolve_attention_item land in the Meals tab's Cook state, while
+        // update_inventory and friends land on the Kitchen hub's quiet
+        // tile.
+        refreshKitchenPanel();
+        refreshCookView();
+      } else if (!action.tab && HREF_AS_SHEET[action.href]) {
+        // Household/preferences writes carry no tab at all — they carry
+        // href: '/memory' (app/main.py's _MEMORY_HREF_TOOLS), because when
+        // that was written no shell screen showed the household's standing
+        // knowledge. The Kitchen hub does now: its People / Taste / Rhythm
+        // / Stores counts are exactly what these tools change. Reading the
+        // href rather than adding a tab to the backend keeps the change on
+        // this side of the wire, where the screen that went stale lives.
+        refreshKitchenPanel();
       } else if (action.tab === 'grocery') {
         refreshGroceryPanel();
         // The list changing also changes Today's "Grocery run" tile, which
@@ -3883,7 +5125,7 @@
         closeNotifPanel();
         if (!n) return;
         if (n.tab) activateTab(n.tab, true);
-        else if (n.href) window.location.href = n.href;
+        else if (n.href) followActionHref(n.href);
       });
     });
     notifList.querySelectorAll('[data-notif-dismiss]').forEach(function (btn) {

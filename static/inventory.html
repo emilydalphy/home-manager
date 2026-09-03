@@ -134,8 +134,12 @@
 <body>
 
 <div class="inv-header">
-  <div>
-    <a class="inv-back" data-shell-back="/static/kitchen.html" href="/kitchen">&larr; Kitchen</a>
+  <!-- See memory.html's matching comment. The marker sits on this wrapper so
+       the back link AND the page's own title both hide inside the shell (the
+       Kitchen sheet's header supplies both), while #inv-summary below stays —
+       that line is content, not chrome. -->
+  <div data-shell-back="hide">
+    <a class="inv-back" href="/kitchen">&larr; Kitchen</a>
     <h1 class="inv-title">Inventory</h1>
   </div>
   <p class="inv-summary" id="inv-summary" role="status">Loading…</p>

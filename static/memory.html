@@ -97,8 +97,21 @@
 </head>
 <body>
 
-<div class="wwk-header">
-  <a class="wwk-back" data-shell-back="/static/kitchen.html" href="/kitchen">&larr; Kitchen</a>
+<!-- Inside the shell this page is a Kitchen entry sheet, and the sheet draws
+     the header: its title names the view and its close button is the way
+     back. So the whole header block hides in a frame — not just the back
+     link — because a screen inside the shell never draws its own top-level
+     header, and leaving the h1 gave "What we know" twice, once in the
+     sheet's chrome and once in the document under it.
+
+     The marker used to be on the anchor alone and used to rewrite to
+     /static/kitchen.html, which was right while the Kitchen tab was an
+     iframe holding that hub. The hub is native now, so pointing back at the
+     old file would load the superseded page inside the screen that replaced
+     it. Opened standalone (the URL still works, and is what the sheet
+     loads) this block is untouched. -->
+<div class="wwk-header" data-shell-back="hide">
+  <a class="wwk-back" href="/kitchen">&larr; Kitchen</a>
   <h1 class="wwk-title">What we know</h1>
 </div>
 
@@ -152,7 +165,17 @@ const TAB_META = {
   stores: { intro: 'Where things come from and what a week usually costs.', footer: 'I use these to decide which list an item lands on.' },
 };
 
-let activeTab = 'people';
+// Which tab to open on. The Kitchen hub's Stores tile (and its Taste and
+// Rhythm count chips) open this page at a specific tab rather than at
+// People — Stores is a tab of "what we know", not a screen of its own, so
+// the alternative would have been a second page saying the same things.
+// An unrecognised or absent hash falls back to People exactly as before.
+function openingTab() {
+  const wanted = (window.location.hash || '').replace(/^#/, '');
+  return ['people', 'taste', 'rhythm', 'stores'].includes(wanted) ? wanted : 'people';
+}
+
+let activeTab = openingTab();
 let openEditorId = null; // fact id being edited, or 'new'
 // Which preference field's editor is open ('eating_style' | 'cuisines' | null).
 // Separate from openEditorId because that one is keyed by fact id, and these
@@ -573,6 +596,31 @@ document.getElementById('wwk-import-save').addEventListener('click', async () =>
 
 setupDictation(document.getElementById('wwk-import-textarea'), document.getElementById('wwk-import-mic-btn'), { onMessage: showToast });
 
+// Paint the tab strip to match whichever tab we're opening on. The markup
+// hard-codes People as the active one; without this, arriving at #stores
+// showed the Stores content under a People-looking strip.
+function paintTabStrip() {
+  document.querySelectorAll('.wwk-tab').forEach(t => {
+    const isActive = t.getAttribute('data-tab') === activeTab;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+}
+
+// Changing only the hash of an iframe's src is a same-document navigation in
+// some browsers — the document does not reload, so reading the hash once at
+// startup is not enough on its own. Listening as well makes the Kitchen
+// hub's chips land on the right tab either way.
+window.addEventListener('hashchange', () => {
+  const wanted = openingTab();
+  if (wanted === activeTab) return;
+  activeTab = wanted;
+  openEditorId = null;
+  paintTabStrip();
+  render();
+});
+
+paintTabStrip();
 render();
 </script>
 <script src="/static/embedded-page.js"></script>

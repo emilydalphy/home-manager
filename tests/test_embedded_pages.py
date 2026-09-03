@@ -136,7 +136,14 @@ def _embeddable_closure() -> set[str]:
     """
     shell_js = (STATIC / "shell.js").read_text()
     files = _route_files()
-    frontier = set(re.findall(r"(?:embed|forceEmbedSrc):\s*'/static/([a-z-]+)\.html'", shell_js))
+    # `embed`/`forceEmbedSrc` were the tab-level iframe plumbing; both are
+    # gone now that no tab is an embedded page (Grocery lost its iframe in
+    # Stage 2 slice 2, Kitchen in slice 3). `src` is the Kitchen entry
+    # sheets' — the one remaining place the shell puts another document in
+    # a frame. All three stay in the pattern: this derivation must keep
+    # working across a revert as well as forward, and a page that ends up
+    # framed by ANY of them has the doubled-shell risk.
+    frontier = set(re.findall(r"(?:embed|forceEmbedSrc|src):\s*'/static/([a-z-]+)\.html'", shell_js))
     seen: set[str] = set()
     while frontier:
         page = frontier.pop()
@@ -307,28 +314,47 @@ def test_the_embeddable_list_matches_the_app():
     )
 
 
-def test_the_guard_supports_both_existing_behaviours():
+def test_the_guard_supports_both_behaviours_even_though_only_one_is_used():
     """
-    The two behaviours differ on purpose and must not be flattened into
-    one: grocery and cooker HIDE their back link (the shell's tab bar is
-    already the way back), while inventory and memory REWRITE theirs to a
-    sibling page, because they are pushed views that still need a way out.
+    embedded-page.js has two modes and both must survive in the file, but
+    as of Stage 2 slice 3 only one of them is used by any page.
 
-    Collapsing them would either strand the Kitchen sub-pages with no back
-    link, or leave grocery and cooker showing a redundant one.
+    It used to be a genuine split: grocery and cooker HID their back link
+    (the shell's tab bar was already the way back) while inventory and
+    memory REWROTE theirs to /static/kitchen.html, because they were pushed
+    views inside the Kitchen tab's iframe and needed a way back to the hub
+    that did not load a second app shell.
+
+    That second case no longer exists. The Kitchen hub is a native panel,
+    and inventory and memory open as sheets over it whose own header is the
+    way back — so rewriting their link would point at the superseded
+    kitchen.html *inside* the screen that replaced it. All four framed
+    pages hide their link now.
+
+    The rewrite branch stays in the guard anyway, and this test keeps
+    pinning it: it is the documented meaning of any non-"hide" value, and
+    test_shell_back_markers_are_values_the_guard_understands still accepts
+    a /static/... path. Deleting the branch would quietly turn a valid
+    marker value into a broken href.
     """
     guard = (STATIC / "embedded-page.js").read_text()
     assert "style.display = 'none'" in guard, "the hide behaviour is missing"
     assert "setAttribute('href'" in guard, "the rewrite behaviour is missing"
 
-    for page in ("grocery", "cooker"):
+    for page in ("grocery", "cooker", "inventory", "memory"):
         html = (STATIC / f"{page}.html").read_text()
-        assert 'data-shell-back="hide"' in html, f"{page}.html should hide its back link"
+        assert 'data-shell-back="hide"' in html, (
+            f"{page}.html should hide its back link inside the shell — the tab "
+            f"bar (or, for a Kitchen entry sheet, that sheet's header) is the "
+            f"way back"
+        )
 
     for page in ("inventory", "memory"):
         html = (STATIC / f"{page}.html").read_text()
-        assert 'data-shell-back="/static/kitchen.html"' in html, (
-            f"{page}.html should rewrite its back link to stay inside the frame"
+        assert 'data-shell-back="/static/kitchen.html"' not in html, (
+            f"{page}.html still points its back link at static/kitchen.html, "
+            f"which is the superseded hub the native Kitchen panel replaced. "
+            f'Inside the shell it should be data-shell-back="hide".'
         )
 
 

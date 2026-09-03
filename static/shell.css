@@ -3240,3 +3240,886 @@ html, body {
   cursor: pointer;
 }
 .toast-action:hover { color: var(--apricot); }
+
+/* =====================================================================
+   KITCHEN — the native hub (Stage 2 slice 3, built to InnKitchen)
+   =====================================================================
+   The quiet screen. Nothing here is urgent, which is why there is no
+   apricot fill anywhere below: the blueprint's one-primary-action rule
+   says Kitchen has none, and giving it one would be a lie about what the
+   screen is for. Every action here is spruce, celadon, or plain.
+   ===================================================================== */
+.kitchen-content {
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 0 28px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.kit-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 0;
+}
+.kit-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+  white-space: nowrap;
+}
+.kit-hairline { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
+.kit-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 7px 0 15px;
+  padding: 0 20px;
+}
+
+/* ---------- The hero: the household itself ---------- */
+.kit-hero {
+  background: var(--spruce);
+  border-radius: 0 0 var(--radius-hero) var(--radius-hero);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  box-shadow: var(--shadow-hero);
+}
+.kit-hero-top { display: flex; align-items: center; gap: 10px; }
+.kit-hero-chip {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--on-accent-ink);
+  white-space: nowrap;
+}
+.kit-hero-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--apricot-rule); }
+.kit-hero-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-badge);
+  background: var(--spruce-raised);
+  color: var(--apricot-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kit-hero-icon svg { width: 17px; height: 17px; }
+.kit-hero-line { display: flex; flex-direction: column; gap: 6px; }
+.kit-hero-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ivory-ink);
+  margin: 0;
+}
+/* The one Newsreader italic on this screen. Two and it becomes a serif brand. */
+.kit-hero-note {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--apricot-light);
+  margin: 0;
+}
+.kit-hero-error {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ivory-ink-muted);
+  margin: 0;
+}
+.kit-chips { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.kit-chip {
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-chip);
+  background: var(--spruce-raised);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ivory-ink-muted);
+  cursor: pointer;
+}
+.kit-chip:hover { background: #2B4A37; }
+.kit-chip-num { font-weight: 800; color: var(--apricot-light); }
+/* Spruce-raised, NOT apricot — see the block comment above. */
+.kit-hero-action {
+  min-height: 52px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--spruce-raised);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 16px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ivory-ink);
+}
+.kit-hero-action span { flex: 1 1 auto; text-align: left; }
+.kit-hero-action svg { width: 18px; height: 18px; color: var(--apricot-light); }
+.kit-hero-action:hover { background: #2B4A37; }
+
+/* ---------- Entry tiles ---------- */
+.kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+.kit-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.kit-tile {
+  min-height: 113px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+.kit-tile:hover { border-color: var(--hairline-strong); }
+.kit-tile-icon { display: block; width: 22px; height: 22px; color: var(--apricot-deep); }
+.kit-tile-icon svg { display: block; width: 22px; height: 22px; }
+.kit-tile-icon-warm { color: var(--apricot-deep); }
+.kit-tile-title {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.kit-tile-sub {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-inactive);
+}
+/* Inventory. Deliberately the quietest thing on the quietest screen: a
+   neutral stroke instead of the warm one, and no badge of any kind.
+   Inventory is background by policy — it must never look like a queue of
+   work waiting for the household. */
+.kit-tile-quiet .kit-tile-icon { color: var(--ink-placeholder); }
+
+.kit-worth {
+  border-radius: var(--radius-card);
+  background: var(--sand);
+  border: 1.5px solid var(--sand-deep);
+  padding: 15px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  cursor: pointer;
+}
+.kit-worth-top { display: flex; align-items: center; gap: 9px; }
+.kit-worth-icon { display: block; width: 19px; height: 19px; color: var(--apricot-label); }
+.kit-worth-icon svg { display: block; width: 19px; height: 19px; }
+.kit-worth-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.kit-worth-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* ---------- The Kitchen entry sheet ---------- */
+/* Same scrim/sheet language as the ask and week sheets. Taller than those
+   two because it hosts a whole existing screen rather than a short list. */
+#kit-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(35, 48, 42, .45);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#kit-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  height: 92%;
+  background: var(--ground);
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -8px 30px rgba(35, 48, 42, .2);
+  padding: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#kit-sheet-scrim[hidden], #kit-sheet[hidden] { display: none; }
+.kit-sheet-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  flex: 0 0 auto;
+}
+.kit-sheet-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.kit-sheet-hairline { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
+.kit-sheet-close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.kit-sheet-close:hover { background: var(--sand); }
+.kit-sheet-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  min-height: 0;
+  background: var(--ground);
+}
+
+/* =====================================================================
+   COOK — the Meals tab's second state (Stage 2 slice 3, InnCooker)
+   ===================================================================== */
+.meals-seg {
+  padding: 10px 20px 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+/* A class rule that sets `display` outranks the UA's [hidden] rule — the
+   same guard .gro-seg[hidden], .today-tile[hidden] and .dinner-hero[hidden]
+   already carry, for the same reason. */
+.meals-seg[hidden] { display: none; }
+#week-cook-view[hidden], #week-plan-view[hidden] { display: none; }
+/* The plan's rows used to be direct children of .week-content, which is a
+   flex column with `gap: 12px` — so wrapping them in #week-plan-view to
+   give Cook something to swap with collapsed them into ONE flex item and
+   silently took every gap between them away (measured: 12px rows became
+   0px, the approve row sitting flush against the reset row). The wrapper
+   carries the same layout the rows lost. Cook is a plain block instead:
+   its sections carry their own spacing. */
+#week-plan-view { display: flex; flex-direction: column; gap: 12px; }
+.meals-seg-btn {
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.meals-seg-btn svg { width: 16px; height: 16px; }
+.meals-seg-btn:hover { background: var(--surface); }
+.meals-seg-btn.active {
+  background: var(--spruce);
+  border-color: var(--spruce);
+  color: var(--ivory-ink);
+  font-weight: 800;
+}
+.meals-seg-btn.active svg { color: var(--apricot-light); }
+
+.cook-titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px 8px;
+}
+.cook-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+.cook-count {
+  height: 30px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-badge);
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--celadon-label);
+  white-space: nowrap;
+}
+.cook-empty, .cook-error {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-secondary);
+  padding: 18px 20px;
+  margin: 0;
+}
+.cook-error { color: var(--urgent-label); }
+
+/* ---------- The hero: tonight ---------- */
+.cook-hero {
+  background: var(--spruce);
+  border-radius: 0 0 var(--radius-hero) var(--radius-hero);
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-hero);
+}
+.cook-hero-top { display: flex; align-items: center; gap: 10px; }
+.cook-hero-chip {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--apricot);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--on-accent-ink);
+  white-space: nowrap;
+}
+/* Nothing to cook is not a decision to make, so the chip stops being apricot. */
+.cook-chip-quiet { background: var(--spruce-raised); color: var(--ivory-ink-muted); }
+.cook-hero-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--apricot-rule); }
+.cook-hero-tag {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--on-accent-ink);
+  white-space: nowrap;
+}
+.cook-hero-line { display: flex; flex-direction: column; gap: 6px; }
+.cook-hero-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.038em;
+  line-height: 1.04;
+  color: var(--ivory-ink);
+  margin: 0;
+}
+.cook-hero-headline.is-done { text-decoration: line-through; color: var(--ivory-ink-muted); }
+.cook-hero-note {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--apricot-light);
+  margin: 0;
+}
+.cook-hero-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cook-meta-chip {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-chip);
+  background: var(--spruce-raised);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ivory-ink-muted);
+  white-space: nowrap;
+}
+.cook-hero-actions { display: flex; align-items: center; gap: 8px; }
+/* The one apricot action on this screen. */
+.cook-hero-action {
+  flex: 1 1 auto;
+  min-height: 54px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--apricot);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--on-accent-ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: 0 16px 28px -18px rgba(224, 145, 92, .8);
+}
+.cook-hero-action:hover { background: var(--apricot-light); }
+.cook-hero-action svg { width: 18px; height: 18px; }
+.cook-hero-icon, .cook-hero-check {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--spruce-raised);
+  color: var(--apricot-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.cook-hero-icon svg, .cook-hero-check svg { width: 20px; height: 20px; }
+.cook-hero-icon:hover, .cook-hero-check:hover { background: #2B4A37; }
+.cook-hero-check { color: var(--ivory-ink-muted); }
+.cook-hero-check.checked { background: var(--celadon); color: var(--on-accent-ink); }
+.cook-hero-detail { border-top: 1.5px solid var(--apricot-rule); padding-top: 10px; }
+
+/* ---------- Sections ---------- */
+.cook-body { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 16px; }
+.cook-section { display: flex; flex-direction: column; gap: 9px; }
+.cook-sectionhead { display: flex; align-items: center; gap: 10px; }
+.cook-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.cook-eyebrow-warm { color: var(--apricot-label); }
+.cook-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
+.cook-sectionnote {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-inactive);
+  white-space: nowrap;
+}
+
+/* ---------- Prep: the supporting two-up rail ---------- */
+.cook-prep-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cook-prep-card {
+  min-height: 100px;
+  border-radius: var(--radius-card);
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink-on-celadon);
+}
+/* Done drops out of celadon: the tile stops being a thing to do. */
+.cook-prep-card.is-done { background: var(--surface); border-color: var(--hairline); }
+.cook-prep-date {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--celadon-label);
+}
+.cook-prep-card.is-done .cook-prep-date { color: var(--ink-muted); }
+.cook-prep-text { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+.cook-prep-card.is-done .cook-prep-text { color: var(--ink-inactive); text-decoration: line-through; }
+.cook-prep-meal { color: var(--ink-secondary); font-weight: 500; }
+
+/* The check control, everywhere it appears. 26px of visible box, 44px of
+   tap target via the ::after inset — this screen is read at arm's length
+   with wet hands. */
+.cook-box {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-badge-sm);
+  border: 1.5px solid var(--celadon);
+  background: var(--surface);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+}
+.cook-box::after { content: ''; position: absolute; inset: -9px; }
+.cook-box svg { width: 15px; height: 15px; }
+.cook-box.checked { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
+.cook-box:disabled { opacity: .55; cursor: default; }
+.cook-week-row .cook-box { border-color: var(--sand-deep); background: var(--ground); }
+.cook-week-row .cook-box.checked { background: var(--celadon); border-color: var(--celadon); }
+
+/* ---------- The rest of the week: subordinate, dense on purpose ---------- */
+.cook-week {
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  padding: 2px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.cook-week-item + .cook-week-item { border-top: 1.5px solid var(--hairline); }
+.cook-week-row { min-height: 44px; padding: 8px 0; display: flex; align-items: center; gap: 12px; }
+.cook-week-day {
+  width: 40px;
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.cook-week-item.is-done .cook-week-day { color: var(--ink-done-soft); }
+.cook-week-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cook-week-item.is-done .cook-week-name { color: var(--ink-inactive); text-decoration: line-through; }
+.cook-badge {
+  height: 24px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 0 9px;
+  border-radius: 8px;
+  background: var(--celadon-tint);
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: var(--celadon-label);
+}
+.cook-badge-warm { background: var(--sand); color: var(--apricot-label); }
+.cook-week-detail { padding: 0 0 12px; }
+
+/* ---------- The recipe panel (both the hero's and a week row's) ---------- */
+.cook-detail { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: 14px; color: var(--ink); }
+.cook-detail.on-spruce { color: var(--ivory-ink); }
+.cook-detail-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.cook-detail-head {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 12px 0 5px;
+}
+.cook-detail.on-spruce .cook-detail-head { color: var(--apricot-light); }
+.cook-detail-p { margin: 0; line-height: 1.45; }
+.cook-ings, .cook-steps { margin: 0; padding-left: 20px; line-height: 1.5; }
+.cook-ings li, .cook-steps li { margin-bottom: 4px; }
+.cook-dim { color: var(--ink-secondary); font-style: italic; margin: 0; }
+.cook-detail.on-spruce .cook-dim { color: var(--ivory-ink-muted); }
+.cook-unscaled { font-size: 12.5px; font-style: italic; color: var(--ink-secondary); margin: 6px 0 0; }
+.cook-detail.on-spruce .cook-unscaled { color: var(--ivory-ink-muted); }
+.cook-unscaled[hidden] { display: none; }
+.cook-norecipe { font-family: var(--font-body); font-size: 13.5px; font-style: italic; color: var(--ink-secondary); margin: 0; }
+.cook-norecipe.on-spruce { color: var(--ivory-ink-muted); }
+.cook-steplabel {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon-tint);
+  color: var(--celadon-label);
+}
+.cook-steplabel-warm { background: var(--sand); color: var(--apricot-label); }
+.cook-detail.on-spruce .cook-steplabel { background: var(--spruce-raised); color: var(--celadon); }
+.cook-detail.on-spruce .cook-steplabel-warm { background: var(--spruce-raised); color: var(--apricot-light); }
+.cook-why, .cook-fill {
+  align-self: flex-start;
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  border-radius: var(--radius-control);
+  min-height: 44px;
+  padding: 0 14px;
+  margin-top: 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.cook-detail.on-spruce .cook-why, .cook-detail.on-spruce .cook-fill {
+  border-color: var(--apricot-rule);
+  color: var(--ivory-ink-muted);
+}
+.cook-why:hover, .cook-fill:hover { background: var(--surface); }
+.cook-detail.on-spruce .cook-why:hover, .cook-detail.on-spruce .cook-fill:hover { background: var(--spruce-raised); }
+.cook-fill:disabled { opacity: .6; cursor: default; }
+.cook-why-text { font-family: var(--font-accent); font-style: italic; font-size: 15px; line-height: 1.4; color: var(--ink-secondary); margin: 8px 0 0; }
+.cook-detail.on-spruce .cook-why-text { color: var(--apricot-light); }
+.cook-why-text[hidden] { display: none; }
+
+/* Serving stepper — live re-scale, no plan reload. */
+.cook-serves { display: flex; align-items: center; gap: 8px; }
+.cook-serves-label { font-family: var(--font-body); font-size: 12px; font-weight: 700; color: var(--ink-secondary); }
+.cook-detail.on-spruce .cook-serves-label { color: var(--ivory-ink-muted); }
+.cook-serves-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+}
+.cook-serves-btn::after { content: ''; position: absolute; inset: -5px; }
+.cook-detail.on-spruce .cook-serves-btn { border-color: var(--apricot-rule); color: var(--ivory-ink); }
+.cook-serves-count {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  min-width: 1.4em;
+  text-align: center;
+  color: var(--ink);
+}
+.cook-detail.on-spruce .cook-serves-count { color: var(--ivory-ink); }
+
+/* ---------- Hands-free ---------- */
+.cook-mic {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+.cook-mic::after { content: ''; position: absolute; inset: -5px; }
+.cook-mic svg { width: 17px; height: 17px; }
+.cook-mic:hover { background: var(--sand); }
+.cook-detail.on-spruce .cook-mic { border-color: var(--apricot-rule); color: var(--apricot-light); }
+.cook-detail.on-spruce .cook-mic:hover { background: var(--spruce-raised); }
+.cook-mic.listening {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+  animation: cookMicPulse 1.6s ease-out infinite;
+}
+@keyframes cookMicPulse {
+  0% { box-shadow: 0 0 0 0 rgba(169, 196, 176, .55); }
+  70% { box-shadow: 0 0 0 10px rgba(169, 196, 176, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(169, 196, 176, 0); }
+}
+.cook-voice {
+  margin: 8px 20px 0;
+  border-radius: var(--radius-card);
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink-on-celadon);
+}
+.cook-voice[hidden] { display: none; }
+.cook-voice-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--celadon-label);
+  margin-right: 6px;
+  animation: cookDotPulse 1.2s ease-in-out infinite;
+}
+@keyframes cookDotPulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+.cook-voice-log { margin: 6px 0 0; padding: 0; list-style: none; }
+.cook-voice-log li { padding: 3px 0; border-top: 1.5px solid var(--celadon-edge); }
+.cook-voice-log li:first-child { border-top: none; }
+.cook-voice-note { display: block; margin-top: 6px; color: var(--celadon-label); font-size: 12px; }
+
+/* ---------- Needs your attention ---------- */
+.cook-attention {
+  margin: 10px 20px 0;
+  border-radius: var(--radius-card);
+  background: var(--sand);
+  border: 1.5px solid var(--sand-deep);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cook-attention-title {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+  margin: 0 0 4px;
+}
+.cook-attn-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+.cook-attn-item.is-stacked { flex-direction: column; align-items: stretch; }
+.cook-attn-summary { flex: 1 1 auto; font-family: var(--font-body); font-size: 13.5px; line-height: 1.4; color: var(--ink); }
+.cook-attn-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+.cook-attn-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.cook-attn-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  border: 1.5px solid var(--sand-deep);
+  background: var(--surface);
+  color: var(--celadon-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+}
+.cook-attn-btn::after { content: ''; position: absolute; inset: -5px; }
+.cook-attn-btn svg { width: 15px; height: 15px; }
+.cook-attn-btn.is-dismiss { color: var(--ink-secondary); }
+.cook-attn-btn:disabled { opacity: .55; cursor: default; }
+.cook-attn-input {
+  flex: 1 1 120px;
+  min-width: 100px;
+  min-height: 44px;
+  border: 1.5px solid var(--sand-deep);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  padding: 0 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+}
+.cook-attn-go, .cook-attn-fb {
+  min-height: 44px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--sand-deep);
+  background: var(--surface);
+  padding: 0 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cook-attn-go { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+.cook-attn-go:disabled, .cook-attn-fb:disabled { opacity: .6; cursor: default; }
+.cook-attn-skip {
+  min-height: 44px;
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  padding: 0 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+/* ---------- Wide ---------- */
+@media (min-width: 1100px) {
+  .kitchen-content { max-width: 720px; }
+  .kit-titlerow { padding: 22px 28px 0; }
+  .kit-title { padding: 0 28px; font-size: 36px; }
+  .kit-hero { padding: 24px 28px; }
+  .kit-hero-headline { font-size: 38px; }
+  .kit-body { padding: 18px 28px 0; }
+
+  /* Cooking is one column given room to breathe, the same 720px the Grocery
+     and Kitchen screens take — not the plan view's width. The plan view is
+     wide on purpose (its 7-column week grid needs it); a recipe read at
+     1040px is a line of ingredients stretched across a monitor. Scoped to
+     the Cook state so switching back to Plan gets the grid's width again. */
+  #panel-week[data-meals-view="cook"] .week-content { max-width: 720px; }
+
+  .meals-seg { padding: 14px 28px 0; }
+  .cook-titlerow { padding: 18px 28px 8px; }
+  .cook-hero { padding: 18px 28px; }
+  .cook-hero-headline { font-size: 38px; }
+  .cook-body { padding: 16px 28px 0; }
+  .cook-voice, .cook-attention { margin-left: 28px; margin-right: 28px; }
+}
+
+/* The prep pair and the entry tiles both collapse to one column on a narrow
+   phone rather than squeezing two unreadable cards side by side. */
+@media (max-width: 359px) {
+  .kit-tiles, .cook-prep-grid { grid-template-columns: minmax(0, 1fr); }
+}
