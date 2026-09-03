@@ -588,6 +588,113 @@ CREATE TABLE IF NOT EXISTS facts (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Loop Board: "Week planning: away-stretches and per-meal needs". One
+-- gesture in the intake ("away Sat lunch through Sun lunch") — see
+-- away_stretches below — sets a whole range of these; the per-meal
+-- override layer (progressive disclosure, per Emily's decision
+-- 2026-09-03) sets one at a time. Deliberately a SIBLING table to
+-- meal_plan_entries, not a column on it: a need can (and normally does)
+-- exist before any meal_plan_entries row does — it's declared at intake
+-- time, same as week_intake.night_tags today, and generation reads it
+-- when building the week. One row per (date, slot); a slot with no row
+-- here is implicitly 'normal'.
+CREATE TABLE IF NOT EXISTS slot_needs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    date TEXT NOT NULL, -- ISO date
+    slot TEXT NOT NULL, -- breakfast | lunch | dinner | snack
+    -- 'normal'      no special need — the ordinary case, and never actually
+    --               stored (see slot_needs.clear_slot_need); listed here
+    --               only as the implicit default a missing row means.
+    -- 'away'        extends planned_empty to any slot, not just dinner:
+    --               nobody is home to eat it. No planning, no groceries —
+    --               same invariant as meal_plan_entries.slot_state =
+    --               'planned_empty', enforced the same non-negotiable way.
+    -- 'quick'       the last real meal before an away stretch begins —
+    --               grab-and-go, not a sit-down plan.
+    -- 'ready_made'  the first real meal after an away stretch ends — covered
+    --               by a batch-cooked earmark or a freezer defrost rather
+    --               than fresh cooking; see the recommendation columns below.
+    need TEXT NOT NULL DEFAULT 'normal',
+    reason TEXT NOT NULL DEFAULT '',
+    -- Which away_stretches row (if any) produced this need via range
+    -- derivation, so undoing/editing a trip can find every slot it touched
+    -- — including the two derived edges, which don't fall inside the
+    -- stretch's own from/to range. NULL for a need set directly through
+    -- the per-meal override layer rather than derived from a range.
+    away_stretch_id INTEGER REFERENCES away_stretches(id),
+    -- Ready-made recommendation: what to earmark to cover this slot without
+    -- fresh cooking. Emily's rule (Notion, 2026-09-03): the system always
+    -- RECOMMENDS, the household always CONFIRMS — nothing here is acted on
+    -- (no defrost reminder, no batch-cook instruction) until confirmed=1.
+    -- At most one of the two should be set at a time; both blank means no
+    -- recommendation has been computed yet.
+    recommended_batch_from_entry_id INTEGER REFERENCES meal_plan_entries(id),
+    recommended_defrost_item TEXT NOT NULL DEFAULT '',
+    recommendation_confirmed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, date, slot)
+);
+
+-- Loop Board: "Week planning: away-stretches and per-meal needs". One
+-- "any trips this week?" range ask — day+meal to day+meal — recorded as
+-- its own row so the derivation (which slots got marked away, which two
+-- got the quick/ready_made edges) stays traceable back to the single
+-- gesture that produced it, rather than looking like four unrelated
+-- per-meal edits. See tools/slot_needs.py:set_away_stretch.
+CREATE TABLE IF NOT EXISTS away_stretches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    from_date TEXT NOT NULL, -- ISO date of the first away slot
+    from_slot TEXT NOT NULL,
+    to_date TEXT NOT NULL, -- ISO date of the last away slot (inclusive)
+    to_slot TEXT NOT NULL,
+    reason TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Loop Board: "Onboarding: household rhythm without traditional
+-- assumptions". Emily's decided architecture (Notion, 2026-09-03):
+-- Rhythm (onboarding, once) -> Exceptions (weekly intake, the away
+-- stretches above) -> Corrections (chat, anytime, permanent). This table
+-- is the Rhythm layer's structured half — the three behavior-based
+-- questions (lunch location, meals eaten together, who cooks) that feed
+-- generation defaults programmatically, distinct from the freeform
+-- `facts` category='rhythm' notes (which stay freeform display text, not
+-- something generation can branch logic on).
+--
+-- member_name = '' for a household-level fact (meals_together,
+-- cooking_role); set for a per-person fact (lunch_location). weekday = ''
+-- for the STANDING answer; a specific weekday (e.g. 'Tuesday') for a
+-- correction that overrides just that day — this is the hybrid-schedule
+-- support ("Marcus is in the office Tuesdays now") that Emily explicitly
+-- chose to learn via chat correction rather than ask upfront. Resolving
+-- "where is Marcus at lunch on a given Tuesday" means checking the
+-- weekday-specific row first and falling back to the standing one — see
+-- tools/rhythm.py:get_household_rhythm.
+CREATE TABLE IF NOT EXISTS household_rhythm (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_name TEXT NOT NULL DEFAULT '',
+    weekday TEXT NOT NULL DEFAULT '', -- '' = standing answer; 'Monday'..'Sunday' = a per-weekday override
+    -- 'lunch_location'  value: 'home' | 'out' | 'varies'. Per-person.
+    -- 'meals_together'  value: 'dinner_only' | 'dinner_and_breakfast' |
+    --                   'most_meals' | 'varies'. Household-level.
+    -- 'cooking_role'    value: 'one_person' | 'turns' | 'whoever_free'.
+    --                   Household-level; `who` names the person when
+    --                   value='one_person'.
+    fact_type TEXT NOT NULL,
+    value TEXT NOT NULL DEFAULT '',
+    who TEXT NOT NULL DEFAULT '',
+    -- 'onboarding' | 'chat_correction' | 'expanded_view' — not behavior,
+    -- just provenance for anyone auditing why a default is what it is.
+    source TEXT NOT NULL DEFAULT 'onboarding',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, member_name, weekday, fact_type)
+);
+
 -- design_handoff_home_manager Phase 5 (NOTIFICATIONS.md): this app has no
 -- push infrastructure (no service-worker push handler, no VAPID keys, no
 -- background scheduler process on the Railway deployment) — see README's

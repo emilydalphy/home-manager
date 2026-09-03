@@ -29,7 +29,10 @@ from app.main import app  # noqa: E402
 # the schema and migrations run once and each test still starts clean.
 _TABLES = [
     # week_intake comes after weekly_plans: a plan references the intake it
-    # was generated from, so the referencing rows go first.
+    # was generated from, so the referencing rows go first. slot_needs
+    # references both meal_plan_entries and away_stretches, so it goes
+    # before both of those.
+    "slot_needs", "away_stretches", "household_rhythm",
     "meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "week_intake",
     "grocery_items", "inventory_items", "recipe_notes", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",

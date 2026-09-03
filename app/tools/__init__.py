@@ -211,6 +211,19 @@ from .reset import (  # noqa: F401
     clear_weekly_plan,
     get_reset_preview,
 )
+from .rhythm import (  # noqa: F401
+    COOKING_ROLES,
+    LUNCH_LOCATIONS,
+    MEALS_TOGETHER_OPTIONS,
+    WEEKDAYS,
+    clear_lunch_location_override,
+    effective_lunch_location,
+    get_household_rhythm,
+    rhythm_completeness_signals,
+    set_cooking_role,
+    set_lunch_location,
+    set_meals_together,
+)
 from .sharing import (  # noqa: F401
     eater_add_dietary_restriction,
     eater_add_note,
@@ -221,6 +234,18 @@ from .sharing import (  # noqa: F401
     regenerate_member_share_link,
     resolve_member_share_link,
     revoke_member_share_link,
+)
+from .slot_needs import (  # noqa: F401
+    NEEDS,
+    apply_slot_needs_to_plan,
+    clear_slot_need,
+    confirm_slot_recommendation,
+    generation_context_for_week,
+    get_slot_need,
+    get_week_slot_needs,
+    set_away_stretch,
+    set_slot_need,
+    set_slot_recommendation,
 )
 from .stores import (  # noqa: F401
     _DEFAULT_AISLE_ORDER,
@@ -250,6 +275,7 @@ from .week_intake import (  # noqa: F401
     _household_composition,
     _intake_row_to_dict,
     _observed_day_patterns,
+    _rhythm_packed_lunch_suggestions,
     _week_dates,
     get_week_intake,
     get_week_intake_history,

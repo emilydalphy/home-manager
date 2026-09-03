@@ -9,6 +9,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import household as _household
 from . import preferences as _preferences
+from . import rhythm as _rhythm
 
 
 # See schema.sql's comment on the `facts` table for why this is a separate
@@ -170,15 +171,25 @@ def get_household_memory() -> dict:
     eating_style = prefs["eating_style"] if prefs else ""
     goals = household["goals"] if household else ""
 
+    rhythm = _rhythm.get_household_rhythm()
+    rhythm_signals = _rhythm.rhythm_completeness_signals()
     context_completeness = _build_context_completeness(
         members=member_list, protein_preferences=protein_prefs, cuisine_preferences=cuisine_prefs,
         dislikes=dislikes, cooking_time_preference=cooking_time_pref, usual_stores=usual_stores,
         eating_style=eating_style, goals=goals,
         recipes_rated=recipes_rated_row["c"] if recipes_rated_row else 0,
         meals_cooked=meals_cooked_row["c"] if meals_cooked_row else 0,
+        rhythm_lunch_location_set=rhythm_signals["lunch_location_set"],
+        rhythm_meals_together_set=rhythm_signals["meals_together_set"],
+        rhythm_cooking_role_set=rhythm_signals["cooking_role_set"],
     )
 
     return {
+        # Loop Board "Onboarding: household rhythm without traditional
+        # assumptions" — the structured rhythm facts (lunch location per
+        # person, meals eaten together, who cooks), separate from the
+        # freeform facts table's category='rhythm' notes (see get_facts).
+        "rhythm": rhythm,
         "members": member_list,
         "goals": goals,
         "notes": prefs["notes"] if prefs else "",
@@ -214,27 +225,47 @@ def get_household_memory() -> dict:
 
 # Weight of each context signal toward the overall completeness score
 # (out of 100-ish — doesn't need to sum exactly, the score is earned/total).
-# Ordered roughly by how much it actually improves recommendation quality:
-# real taste signal (ratings, protein/cuisine likes) outweighs one-time
-# setup fields, and actual usage (cooked meals) outweighs stated intent.
+#
+# Reweighted 2026-09-03 per Emily's stated learning hierarchy (Loop Board,
+# "Onboarding: household rhythm..."), her words: "learn more about their
+# rhythm first as the first important, and their habits, then their
+# preferences — this is the key benefit of this app." RHYTHM -> HABITS ->
+# PREFERENCES, in that order:
+#
+#   - Rhythm (lunch_location/meals_together/cooking_role, below): the
+#     highest-weighted cluster, individually and combined — the household's
+#     standing pattern, learned once and corrected via chat.
+#   - Habits (recipes_rated, meals_cooked): real usage signal, tied for
+#     second-highest — a household actually cooking and reacting to plans
+#     outweighs anything merely stated.
+#   - Preferences (protein/cuisine/cooking_time/eating_style/etc.): stated
+#     intent, weighted below both — useful, but the thing this app is
+#     explicitly trying to need less of over time as rhythm and habits fill
+#     in. dietary_restrictions is the one exception kept high regardless of
+#     this hierarchy: it's a hard safety constraint, not a preference.
 _CONTEXT_SIGNALS = [
-    ("members", "Add your household's members", "So dietary restrictions and portions can be personalized per person, not guessed at.", 10),
+    ("lunch_location", "Tell me where everyone typically is at lunchtime", "Drives whether lunch gets a real planned meal or something packable — this is your household's rhythm, the first thing I want to know.", 18),
+    ("meals_together", "Tell me which meals your household eats together", "Shapes portioning and what counts as a shared meal here — part of your rhythm, not a preference.", 16),
+    ("cooking_role", "Tell me who does the cooking", "Shapes who I address and how prep gets assigned — no assumptions made either way.", 16),
     ("dietary_restrictions", "Note any dietary restrictions or allergies", "The single most important thing to get right before I suggest a week of meals.", 15),
+    ("recipes_rated", "Rate a few recipes after cooking them", "The strongest habit signal I get — real reactions beat stated preferences every time.", 15),
+    ("meals_cooked", "Cook a few planned meals and check them off", "Shows me the plan is actually being used, not just generated and ignored.", 15),
+    ("members", "Add your household's members", "So dietary restrictions and portions can be personalized per person, not guessed at.", 10),
     ("protein_preferences", "Rate a few proteins you like or don't", "Helps me actually favor what your household enjoys instead of rotating blindly.", 10),
     ("cuisine_preferences", "Tell me a few cuisines you're into", "Keeps suggestions feeling like your food, not a generic rotation.", 10),
-    ("dislikes", "Mention any standing dislikes", "So I stop suggesting the same thing you keep passing on.", 5),
     ("cooking_time_preference", "Set a cooking time preference", "Keeps weeknight suggestions realistic for how much time you actually have.", 10),
     ("usual_stores", "Add the store(s) you usually shop at", "Powers store-aware grocery lists and shopping-trip planning.", 10),
     ("eating_style", "Tell me about your overall eating style", "e.g. vegetarian, keto, low-carb — shapes every suggestion, not just individual meals.", 10),
+    ("dislikes", "Mention any standing dislikes", "So I stop suggesting the same thing you keep passing on.", 5),
     ("goals", "Share any household goals", "e.g. eating healthier, saving money, more variety — gives me something to optimize toward.", 5),
-    ("recipes_rated", "Rate a few recipes after cooking them", "The strongest signal I get — real reactions beat stated preferences every time.", 15),
-    ("meals_cooked", "Cook a few planned meals and check them off", "Shows me the plan is actually being used, not just generated and ignored.", 15),
 ]
 
 
 def _build_context_completeness(
     *, members, protein_preferences, cuisine_preferences, dislikes, cooking_time_preference,
     usual_stores, eating_style, goals, recipes_rated, meals_cooked,
+    rhythm_lunch_location_set: bool = False, rhythm_meals_together_set: bool = False,
+    rhythm_cooking_role_set: bool = False,
 ) -> dict:
     """
     Turn the household's current signals into a plain "how well do I
@@ -246,6 +277,11 @@ def _build_context_completeness(
     difference from stored data alone, so an unset/empty signal always
     reads as "not yet captured" even if the true answer really is "none."
     Powers the What We Know view's completeness card.
+
+    The three rhythm_* booleans come from rhythm.rhythm_completeness_signals
+    (see get_household_memory) rather than being computed here, same as
+    every other done_map entry takes its answer as a plain argument rather
+    than reaching for a connection itself.
     """
     has_dietary_note = any(m["dietary_restrictions"] for m in members)
     done_map = {
@@ -260,6 +296,9 @@ def _build_context_completeness(
         "goals": bool(goals),
         "recipes_rated": recipes_rated >= 3,
         "meals_cooked": meals_cooked >= 3,
+        "lunch_location": rhythm_lunch_location_set,
+        "meals_together": rhythm_meals_together_set,
+        "cooking_role": rhythm_cooking_role_set,
     }
 
     earned = sum(weight for key, _, _, weight in _CONTEXT_SIGNALS if done_map[key])

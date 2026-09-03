@@ -10,6 +10,7 @@ import sqlite3  # for IntegrityError -- see save_week_intake's retry loop
 from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
+from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 
 
@@ -351,6 +352,63 @@ ONBOARDING_CUISINES = [
 ]
 
 
+def _rhythm_packed_lunch_suggestions(week_start: str) -> list[dict]:
+    """
+    Per-day packed-lunch suggestions derived from household rhythm (Loop
+    Board "Onboarding: household rhythm..."): "the weekly intake's 'which
+    lunches leave the house?' becomes conditional — pre-answered by
+    rhythm". Only ever a SUGGESTION for the intake screen's prefill (the
+    actual answer, once given, lives in week_intake.packed_lunch_days) —
+    the household can always override it there.
+
+    Per adult member with a lunch_location fact on record, resolves their
+    effective location for that weekday (a per-weekday override if one's
+    been learned, else the standing answer — see
+    rhythm.effective_lunch_location). A day is suggested "packed" only when
+    at least one adult resolves 'out' and none resolve 'home' — a mixed
+    household (one home, one out) is a real judgment call about what
+    "packed lunch day" even means for two people eating differently, so
+    it's surfaced as a mix rather than the suggestion silently picking a
+    side; flagged here as a product decision for whoever builds the
+    prefill UI, not resolved by this function. A member whose rhythm was
+    never set contributes to neither bucket (never asked yet is not the
+    same as 'varies', which IS a real answer and also contributes to
+    neither bucket for this specific suggestion, since it doesn't clearly
+    say home or out).
+
+    Returns [] entirely once no adult has any lunch_location on record —
+    a household that hasn't done rhythm onboarding gets no suggestion, not
+    a wrong one.
+    """
+    rhythm = _rhythm.get_household_rhythm()["lunch_location"]
+    if not rhythm:
+        return []
+    dates = _week_dates(week_start)
+    suggestions = []
+    for d in dates:
+        weekday = date.fromisoformat(d).strftime("%A")
+        out_members, home_members, varies_members = [], [], []
+        for member_name in rhythm:
+            location = _rhythm.effective_lunch_location(member_name, weekday)
+            if location == "out":
+                out_members.append(member_name)
+            elif location == "home":
+                home_members.append(member_name)
+            elif location == "varies":
+                varies_members.append(member_name)
+        if not (out_members or home_members or varies_members):
+            continue
+        suggestions.append({
+            "date": d,
+            "weekday": weekday,
+            "out": out_members,
+            "home": home_members,
+            "varies": varies_members,
+            "suggested_packed": bool(out_members) and not home_members,
+        })
+    return suggestions
+
+
 def get_week_intake_prefill(week_start: str) -> dict:
     """
     Everything the two question screens need to open already knowing what
@@ -414,4 +472,7 @@ def get_week_intake_prefill(week_start: str) -> dict:
         "plan_exists": bool(plan),
         "plan_id": plan["id"] if plan else None,
         "plan_status": plan["status"] if plan else None,
+        # Loop Board "Onboarding: household rhythm..." — a suggestion only,
+        # not an answer; see _rhythm_packed_lunch_suggestions.
+        "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start),
     }

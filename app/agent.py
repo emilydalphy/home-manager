@@ -1547,6 +1547,96 @@ TOOL_DEFINITIONS = [
             "required": ["item_id"],
         },
     },
+    {
+        "name": "set_away_stretch",
+        "description": "Mark a whole away stretch in one gesture — e.g. \"we're away Saturday lunch through Sunday lunch\" — the way to handle a trip conversationally, matching the week intake's own range gesture. Every slot from from_date/from_slot to to_date/to_slot INCLUSIVE is marked away (no planning, no groceries — same guarantee as a nobody-home dinner, now for any slot). Two more slots are derived automatically: the slot right before the range becomes 'quick' (grab-and-go before heading out), and the slot right after becomes 'ready_made' (earmarked with a batch/defrost recommendation rather than cooked fresh — the household still has to confirm that recommendation, see confirm_slot_recommendation). Use set_slot_need instead for a single slot rather than a whole range.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "from_date": {"type": "string", "description": "ISO date of the first away slot."},
+                "from_slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                "to_date": {"type": "string", "description": "ISO date of the last away slot (inclusive)."},
+                "to_slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                "reason": {"type": "string", "description": "Optional — e.g. 'road trip'. Defaults to a plain 'you're away' reason."},
+            },
+            "required": ["from_date", "from_slot", "to_date", "to_slot"],
+        },
+    },
+    {
+        "name": "set_slot_need",
+        "description": "Set (or clear, with need='normal') a single meal slot's planning need: 'away' (nobody home — no planning, no groceries, converts any existing plan for that slot immediately), 'quick' (grab-and-go), or 'ready_made' (covered by a batch/defrost earmark rather than cooked fresh). Use set_away_stretch instead when the household describes a whole trip/range rather than one meal — it derives the quick/ready_made edges automatically. Use this for a single slot, or to hand-correct one slot set_away_stretch produced.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date_str": {"type": "string", "description": "ISO date."},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
+                "need": {"type": "string", "enum": ["normal", "away", "quick", "ready_made"]},
+                "reason": {"type": "string", "description": "Optional — defaults to a plain reason for the need."},
+            },
+            "required": ["date_str", "slot", "need"],
+        },
+    },
+    {
+        "name": "get_week_slot_needs",
+        "description": "Get every declared (non-normal) slot need for the 7 days starting week_start — what's away/quick/ready_made and why, plus any ready_made recommendation and whether it's been confirmed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"week_start": {"type": "string", "description": "ISO date of the week's first day."}},
+            "required": ["week_start"],
+        },
+    },
+    {
+        "name": "confirm_slot_recommendation",
+        "description": "Record the household's yes/no on a ready_made slot's batch/defrost recommendation. Nothing acts on a recommendation (no defrost reminder, no batch-cook instruction) until this is confirmed=true — the system always recommends, the household always confirms.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date_str": {"type": "string"},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
+                "confirmed": {"type": "boolean", "description": "Defaults to true; pass false to decline the recommendation."},
+            },
+            "required": ["date_str", "slot"],
+        },
+    },
+    {
+        "name": "set_lunch_location",
+        "description": "Set (or correct) where a household member typically is at lunchtime: 'home' (a real planned meal), 'out' (needs to travel/pack), or 'varies'. Omit weekday for the household's standing answer (onboarding); pass a specific weekday to record a hybrid-schedule override without changing the standing pattern — e.g. \"Marcus is in the office Tuesdays now\" is set_lunch_location(member_name='Marcus', location='out', weekday='Tuesday'). Calling this again for the same member/weekday is how a correction works.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "member_name": {"type": "string"},
+                "location": {"type": "string", "enum": ["home", "out", "varies"]},
+                "weekday": {"type": "string", "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "description": "Omit for the standing answer."},
+            },
+            "required": ["member_name", "location"],
+        },
+    },
+    {
+        "name": "set_meals_together",
+        "description": "Set which meals the household usually eats together, household-level: 'dinner_only', 'dinner_and_breakfast', 'most_meals', or 'varies'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"value": {"type": "string", "enum": ["dinner_only", "dinner_and_breakfast", "most_meals", "varies"]}},
+            "required": ["value"],
+        },
+    },
+    {
+        "name": "set_cooking_role",
+        "description": "Set who does the cooking, household-level: 'one_person' (pass who=that person's name), 'turns', or 'whoever_free'. No default is ever assumed — always ask rather than guess.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "value": {"type": "string", "enum": ["one_person", "turns", "whoever_free"]},
+                "who": {"type": "string", "description": "Required when value='one_person'."},
+            },
+            "required": ["value"],
+        },
+    },
+    {
+        "name": "get_household_rhythm",
+        "description": "Get the household's standing rhythm: per-person lunch location (with any per-weekday overrides), which meals are eaten together, and who cooks. This is separate from get_facts(category='rhythm')'s freeform notes — use this for the structured answers, that for freeform routine notes.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
 ]
 
 _GENERATE_WEEKLY_PLAN_TOOL = {
@@ -2126,6 +2216,36 @@ def _intake_generation_context(intake: dict) -> dict:
     }
 
 
+def _rhythm_only_generation_context(week_start_date: str) -> dict | None:
+    """
+    A minimal intake-shaped context built from household rhythm alone, for
+    a week with no real week_intake row yet — onboarding's very first week
+    is the case that matters (no question-screen answers exist, but a
+    household that's already done rhythm onboarding has told the app
+    something real about lunches; see Loop Board "Onboarding: household
+    rhythm..." — "WFH lunches = real planned meals; out lunches =
+    packable"). Reuses generate_weekly_plan_llm's EXISTING packed_lunch_days
+    handling (its prompt already says: "does NOT decide whether a lunch is
+    planned... those specific days are constrained to food that travels
+    cold") rather than adding new prompt text — this is deliberately just
+    data, routed through a mechanism the prompt already knows how to act on
+    for a different source (the intake screens).
+
+    Returns None when rhythm has nothing to say (no adult's lunch location
+    suggests a packed day this week), matching the pre-existing "no intake
+    at all" behaviour rather than manufacturing an empty intake object.
+    """
+    suggestions = tools._rhythm_packed_lunch_suggestions(week_start_date)
+    packed_days = sorted(s["date"] for s in suggestions if s["suggested_packed"])
+    if not packed_days:
+        return None
+    return {
+        "night_tags": {}, "skip_dinner_dates": [], "guest_extras": {}, "guest_totals": {},
+        "packed_lunch_days": packed_days, "moods": [], "cuisines": [], "freeform": "",
+        "household": {},
+    }
+
+
 # One generation per household per week at a time.
 #
 # There are three ways in -- the chat tool, the onboarding first-plan
@@ -2346,7 +2466,7 @@ def _generate_weekly_plan(
         "day_count": day_count,
         "constraints_notes": constraints_notes,
         "household_memory": household_memory,
-        "intake": _intake_generation_context(intake) if intake else None,
+        "intake": _intake_generation_context(intake) if intake else _rhythm_only_generation_context(week_start_date),
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
         # here at the source rather than relying on a prompt instruction, so
         # they're never even a candidate for suggestion.
@@ -2361,6 +2481,18 @@ def _generate_weekly_plan(
         # yet — a softer "favor what's fresh" nudge distinct from the
         # near-expiring one above.
         "fresh_perishable_inventory": tools.get_fresh_perishable_inventory(),
+        # Loop Board "Week planning: away-stretches and per-meal needs": a
+        # data-layer hook for the generator to eventually consume — see
+        # slot_needs.generation_context_for_week's docstring for why the
+        # prompt-cooperation half (asking the model to actually plan
+        # something quick, or lean on a ready_made recommendation) is a
+        # documented TODO rather than wired into the prompt text here
+        # (collision risk with the concurrent chat-speed-levers streaming
+        # work in this function's sibling, generate_weekly_plan_llm). The
+        # away-slot invariant itself does NOT depend on this being read —
+        # see apply_slot_needs_to_plan, called from _finish_week_slots
+        # below, which enforces it regardless of what the model does.
+        "slot_needs": tools.generation_context_for_week(week_start_date, day_count),
     }
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
@@ -2590,6 +2722,16 @@ def _finish_week_slots(
                 reason=f"You’ve asked me not to plan {slot}s — I’ve left this to you.",
                 derived_from={"constraint": f"{slot}s_per_week:0"},
             )
+
+    # Loop Board "Week planning: away-stretches and per-meal needs" — the
+    # generalized form of the `out`-night pass above, extended from
+    # dinner-only to any slot (breakfast/lunch/dinner) via slot_needs. Runs
+    # BEFORE the audit below for the same reason the out-night and
+    # zero-count passes do: an away slot the model was never told about (or
+    # ignored) must not get audited as "missing" and turned into an open
+    # question first — see apply_slot_needs_to_plan's docstring for the
+    # full invariant this guarantees regardless of what the model did.
+    tools.apply_slot_needs_to_plan(plan_id, week_start_date, day_count=day_count)
 
     audit = tools.audit_plan_slots(plan_id, day_count=day_count)
     for gap in audit["missing"]:
@@ -3071,6 +3213,14 @@ TOOL_FUNCTIONS = {
     "get_expiring_soon": tools.get_expiring_soon,
     "get_fresh_perishable_inventory": tools.get_fresh_perishable_inventory,
     "remove_inventory_item": tools.remove_inventory_item,
+    "set_away_stretch": tools.set_away_stretch,
+    "set_slot_need": tools.set_slot_need,
+    "get_week_slot_needs": tools.get_week_slot_needs,
+    "confirm_slot_recommendation": tools.confirm_slot_recommendation,
+    "set_lunch_location": tools.set_lunch_location,
+    "set_meals_together": tools.set_meals_together,
+    "set_cooking_role": tools.set_cooking_role,
+    "get_household_rhythm": tools.get_household_rhythm,
 }
 
 
