@@ -11,7 +11,7 @@ app/home_manager.db-journal
 .venv-verify/
 
 # Local venv (each worktree gets its own — see .claude/skills/home-manager-loop)
-.venv/
+.venv
 
 # Worktrees live inside the repo, so without this every parallel session's
 # working copy shows up as untracked noise in `git status` on main.

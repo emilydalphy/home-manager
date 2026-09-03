@@ -161,8 +161,15 @@
     letter-spacing: -0.01em;
     color: var(--ivory-ink);
   }
+  /* .60, not .48. Note the backdrop: the input is transparent, so this
+     text composites over .signin-field's --spruce-raised (#24402F), NOT
+     over the page's --spruce. That is a lighter ground under light text,
+     so it LOWERS contrast — .54 measures 4.56:1 against the page and only
+     4.09:1 against what is actually behind it. .60 gives 4.67:1 where it
+     really sits. This is the field a first-time tester types her
+     passphrase into. */
   .signin-field input::placeholder {
-    color: rgba(246, 238, 225, 0.48);
+    color: rgba(246, 238, 225, 0.60);
     font-weight: 600;
   }
 
@@ -205,7 +212,8 @@
     font-weight: 500;
     line-height: 1.4;
     text-align: center;
-    color: rgba(246, 238, 225, 0.44);
+    /* .54, not .44 — 12.5px is small text, so it needs the full 4.5:1. */
+    color: rgba(246, 238, 225, 0.54);
   }
 
   /* Error banner — app/main.py injects exactly <p class="error">…</p>. */

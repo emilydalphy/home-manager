@@ -832,7 +832,11 @@
       return (
         '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' +
           '<span class="chore-checkbox" role="checkbox" aria-checked="' + isDone + '" tabindex="0">' +
-            (isDone ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : '') +
+            // stroke follows the checkbox's own colour rather than being
+            // hardcoded white: ivory on a light accent is the one thing
+            // the palette forbids outright, and this tick was the
+            // instance the brand sweep missed (1.87:1).
+            (isDone ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : '') +
           '</span>' +
           '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
         '</div>'

@@ -638,14 +638,23 @@ html, body {
   justify-content: center;
   cursor: pointer;
 }
-.chore-row.done .chore-checkbox { background: var(--good); border-color: var(--good); }
+/* Dark spruce ink on a light accent fill, as the palette requires
+   everywhere else. The tick inside inherits this via currentColor. */
+.chore-row.done .chore-checkbox {
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--on-accent-ink);
+}
 .chore-name {
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--plum-ink);
   flex: 1;
 }
-.chore-row.done .chore-name { color: var(--faded); text-decoration: line-through; }
+/* --ink-done, not --faded: this IS a struck-out completed list item, and
+   --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
+   Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */
+.chore-row.done .chore-name { color: var(--ink-done); text-decoration: line-through; }
 .empty-row {
   font-family: var(--font-body);
   font-size: 15px;
