@@ -4746,18 +4746,84 @@
     askChipTargets().forEach(function (chipsEl) { chipsEl.innerHTML = ''; chipsEl.hidden = true; });
   }
 
-  // Same seven quick actions static/index.html always offered — preserved
-  // here rather than trimmed, per README §8 ("preserve every behavior the
-  // current pages have").
-  var QUICK_ACTIONS = [
-    { label: 'Set up chores', msg: 'Let’s set up chores for our household.' },
-    { label: 'This week’s chores', msg: 'What chores are coming up this week?' },
-    { label: 'Add a chore', msg: 'Add a chore.' },
-    { label: 'Set up meal planning', msg: 'Let’s set up meal planning — ask me about dietary restrictions and what we like to eat.' },
-    { label: 'This week’s meals', msg: 'What’s the meal plan for this week?' },
-    { label: 'Add a recipe', msg: 'I want to save a recipe.' },
-    { label: 'Grocery list', msg: 'What’s on the grocery list?' }
-  ];
+  // Context-aware quick actions (Loop Board: "Pomona: rethink the chat's
+  // pre-given quick actions", decided by Emily 2026-09-03) — replaces the
+  // old static seven-item list above with 2 suggestions grounded in the
+  // core weekly loop (plan → approve → prep/cook → grocery), chosen from
+  // the household's actual state rather than shown every time regardless
+  // of context. Deliberately dumb and local: no LLM call to pick these,
+  // just a state → suggestion table, computed once per page load the same
+  // moment the ask experience is first built (askBuilt below).
+  //
+  // State → suggestion table (also documented on the ticket):
+  //   no plan yet (weekly_plan_id is null)         -> "Plan my week"
+  //   plan exists, status !== 'approved' (drafted) -> "Approve this week"
+  //   plan approved, local hour < 17 (daytime)      -> "What should I prep today?"
+  //   plan approved, local hour >= 17 (evening)     -> "What's for dinner tonight?"
+  //   always alongside the above                    -> "Add … to the grocery list"
+  //     (this one doesn't send — it focuses the composer with "Add "
+  //     pre-filled, per the brief's "open-ended one" behavior, since what
+  //     to add is the household's to finish typing, not ours to guess.)
+  var GROCERY_QUICK_ACTION = { label: 'Add … to the grocery list', prefill: 'Add ' };
+
+  // Local hour, not UTC — same reasoning as todayLocalStr()/dayName() above:
+  // "daytime" vs "evening" has to match the person's own clock. 17:00 is the
+  // cutoff: before it, the useful question is what to prep ahead of dinner;
+  // from then on, dinner itself is the near-term thing.
+  function isEveningLocal() {
+    return new Date().getHours() >= 17;
+  }
+
+  function computeContextQuickActions(weekMenu) {
+    var hasPlan = !!(weekMenu && weekMenu.weekly_plan_id);
+    var primary;
+    if (!hasPlan) {
+      primary = { label: 'Plan my week', msg: 'Let’s plan my week.' };
+    } else if (weekMenu.status !== 'approved') {
+      primary = { label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' };
+    } else if (isEveningLocal()) {
+      primary = { label: 'What’s for dinner tonight?', msg: 'What’s for dinner tonight?' };
+    } else {
+      primary = { label: 'What should I prep today?', msg: 'What should I prep today?' };
+    }
+    return [primary, GROCERY_QUICK_ACTION];
+  }
+
+  // Fetches the household's current plan fresh rather than trusting
+  // weekState.data — that cache can be empty (Week tab never opened this
+  // load) or pinned to a past week (weekState.showWeekStart), neither of
+  // which is "the current state" this chip logic needs. GET /api/week-menu
+  // with no weekly_plan_id is cheap (a local SQLite lookup) and always
+  // means "the household's current plan" (tools.get_week_menu's own
+  // documented convention). A failed fetch degrades to the no-plan
+  // suggestion rather than throwing — a wrong guess here is a missed
+  // suggestion, not a broken chat.
+  function loadQuickActionChips() {
+    fetch('/api/week-menu')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .catch(function () { return null; })
+      .then(function (weekMenu) { renderAskChips(computeContextQuickActions(weekMenu)); });
+  }
+
+  function renderAskChips(actions) {
+    askChipTargets().forEach(function (chipsEl) {
+      chipsEl.hidden = false;
+      chipsEl.innerHTML = actions.map(function (q, i) {
+        return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
+      }).join('');
+      chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          var action = actions[Number(chip.dataset.i)];
+          // The grocery chip pre-fills and focuses instead of sending —
+          // what to add is the household's call, not something to guess at
+          // and send as a message. openAskSheet(prefill) already knows how
+          // to do this on both the mobile sheet and the desktop column.
+          if (action.prefill) openAskSheet(action.prefill);
+          else sendAskMessage(action.msg);
+        });
+      });
+    });
+  }
 
   function splitTableRow(line) {
     var cells = line.split('|');
@@ -4840,14 +4906,7 @@
   function ensureAskSheetBuilt() {
     if (askBuilt) return;
     askBuilt = true;
-    askChipTargets().forEach(function (chipsEl) {
-      chipsEl.innerHTML = QUICK_ACTIONS.map(function (q, i) {
-        return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
-      }).join('');
-      chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
-        chip.addEventListener('click', function () { sendAskMessage(QUICK_ACTIONS[Number(chip.dataset.i)].msg); });
-      });
-    });
+    loadQuickActionChips();
     // No exclamation mark, and an offer rather than an instruction — this
     // is the first thing the assistant ever says, and it has to sit beside
     // the same voice as the rest of the app.
