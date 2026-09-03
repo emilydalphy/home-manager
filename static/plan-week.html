@@ -1463,6 +1463,20 @@
 
   $('back').addEventListener('click', function () { showStep(1); });
 
+  // The trips gateway and its sheet.
+  $('away-gate').addEventListener('click', openAwaySheet);
+  $('away-close').addEventListener('click', closeAwaySheet);
+  $('away-cancel').addEventListener('click', closeAwaySheet);
+  $('away-save').addEventListener('click', saveAwayRange);
+  $('away-another').addEventListener('click', openAwaySheet);
+  // Tapping the scrim dismisses, the same as any sheet in the shell.
+  $('away-sheet').addEventListener('click', function (e) {
+    if (e.target === $('away-sheet')) closeAwaySheet();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('away-sheet').hidden) closeAwaySheet();
+  });
+
   load();
 })();
 </script>
