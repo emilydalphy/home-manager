@@ -15,9 +15,11 @@ These tests cover the unification: Kitchen -> Grocery, Grocery -> Kitchen
 dedupe between the two lists, and preference_events logging (the growth
 counter).
 """
+from app import db
 from app import tools
 from app.db import get_conn
 from app.tools._shared import household_id
+from app.tools.grocery import _merge_key
 
 
 def _pref_events_count(field: str | None = None) -> int:
@@ -245,3 +247,145 @@ def test_grocery_store_confirm_endpoint_noops_if_row_store_cleared(signed_in):
     confirm = signed_in.post(f"/api/grocery-list/{added['item_id']}/store/confirm")
     assert confirm.json()["confirmed"] is False
     assert "kombucha" not in tools.get_item_store_preferences()
+
+
+# ---------- 6. Identity: singular/plural must not fork the memory ----------
+#
+# Found by independent review (2026-09-03): item_store_preferences and the
+# store_typical_items_json dedupe/removal guard matched on exact lowercased
+# text, while grocery.add_grocery_item matches item names on _merge_key
+# (which singularizes the trailing word). "paper towel" and "paper towels"
+# are the same item to the grocery list but were two different identities
+# to this memory — violating the "one source of truth" rule (#3) these
+# tests otherwise cover.
+
+def _pref_row_count(item_substring: str) -> int:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT COUNT(*) AS c FROM item_store_preferences WHERE household_id = ? AND item LIKE ?",
+        (household_id(), f"%{item_substring}%"),
+    ).fetchone()
+    conn.close()
+    return row["c"]
+
+
+def test_singular_then_plural_write_collapses_to_one_preference_row():
+    tools.set_item_store("paper towel", "Costco")
+    tools.add_store_typical_items("Walmart", ["paper towels"])
+
+    # Exactly one row for this identity, not two independent ones.
+    assert _pref_row_count("towel") == 1
+    # Most-recent write wins, same rule used everywhere else in this file.
+    assert tools.get_item_store_preferences().get("paper towels") == "Walmart"
+
+
+def test_singular_then_plural_write_does_not_leave_item_typical_at_both_stores():
+    tools.set_item_store("paper towel", "Costco")
+    tools.add_store_typical_items("Walmart", ["paper towels"])
+
+    memory = tools.get_household_memory()
+    sti = memory["store_typical_items"]
+    assert not any(_merge_key(i) == "paper towel" for i in sti.get("Costco", [])), (
+        "the old spelling should have been dropped from Costco's typical list"
+    )
+    assert any(_merge_key(i) == "paper towel" for i in sti.get("Walmart", []))
+
+
+def test_singular_then_plural_write_auto_assigns_deterministically():
+    tools.set_item_store("paper towel", "Costco")
+    tools.add_store_typical_items("Walmart", ["paper towels"])
+
+    added = tools.add_grocery_item("paper towel")
+    conn = get_conn()
+    row = conn.execute("SELECT store FROM grocery_items WHERE id = ?", (added["item_id"],)).fetchone()
+    conn.close()
+    assert row["store"] == "Walmart"  # the one surviving, most-recent preference
+
+
+def test_removal_guard_matches_across_plural_singular_when_it_should():
+    tools.set_item_store("paper towel", "Costco")  # preference stored singular
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_preferences SET store_typical_items_json = json_set(store_typical_items_json, '$.Costco', json('[\"paper towels\"]')) WHERE household_id = ?",
+        (household_id(),),
+    )  # typical-items entry stored plural, same store
+    conn.commit()
+    conn.close()
+
+    tools.remove_store_typical_item("Costco", "paper towels")
+
+    assert "paper towel" not in tools.get_item_store_preferences()
+
+
+def test_removal_guard_still_protects_unrelated_store_across_plural_singular():
+    tools.set_item_store("paper towel", "Trader Joe's")  # the real, correct preference
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_preferences SET store_typical_items_json = json_set(store_typical_items_json, '$.Costco', json('[\"paper towels\"]')) WHERE household_id = ?",
+        (household_id(),),
+    )  # a stale duplicate entry under the WRONG store, plural spelling
+    conn.commit()
+    conn.close()
+
+    tools.remove_store_typical_item("Costco", "paper towels")
+
+    assert tools.get_item_store_preferences().get("paper towel") == "Trader Joe's"
+
+
+def test_clearing_a_preference_removes_typical_entry_of_a_different_spelling():
+    tools.set_item_store("paper towel", "Costco")
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_preferences SET store_typical_items_json = json_set(store_typical_items_json, '$.Costco', json('[\"paper towels\"]')) WHERE household_id = ?",
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+
+    tools.set_item_store("paper towel", "")  # chat/UI clears the preference entirely
+
+    memory = tools.get_household_memory()
+    for items in memory["store_typical_items"].values():
+        assert _merge_key("paper towel") not in {_merge_key(i) for i in items}
+
+
+def test_migration_merges_pre_existing_duplicate_rows_keeping_the_newest():
+    # Simulate a database written before the identity fix: two independent
+    # rows for the same underlying item, inserted directly (bypassing
+    # set_item_store, which now prevents this from happening).
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, 'paper towel', 'Costco')",
+        (household_id(),),
+    )
+    conn.execute(
+        "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, 'paper towels', 'Walmart')",
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+    assert _pref_row_count("towel") == 2  # legacy duplicate, pre-cleanup
+
+    conn = get_conn()
+    db._merge_duplicate_item_store_preferences(conn)
+    conn.commit()
+    conn.close()
+
+    assert _pref_row_count("towel") == 1
+    # Keeps the most-recently-created (higher id) row.
+    assert tools.get_item_store_preferences().get("paper towels") == "Walmart"
+
+
+def test_migration_is_idempotent_and_leaves_distinct_items_alone():
+    tools.set_item_store("paper towel", "Costco")
+    tools.set_item_store("olive oil", "Trader Joe's")
+
+    conn = get_conn()
+    db._merge_duplicate_item_store_preferences(conn)
+    db._merge_duplicate_item_store_preferences(conn)  # running twice changes nothing further
+    conn.commit()
+    conn.close()
+
+    prefs = tools.get_item_store_preferences()
+    assert prefs.get("paper towel") == "Costco"
+    assert prefs.get("olive oil") == "Trader Joe's"

@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from ..db import get_conn
 from ._shared import household_id
+from .grocery import _merge_key
 from . import household as _household
 from . import memory as _memory
 
@@ -125,6 +126,13 @@ def add_store_typical_items(
     list it was on, so the two lists can't disagree about where an item
     usually comes from (the preference always wins).
 
+    The cross-store drop matches by _merge_key (the same singular/plural
+    -insensitive identity the grocery list itself merges on), not exact
+    text — found by independent review (2026-09-03): an exact-lowercase
+    compare let "paper towel" survive under one store's list while "paper
+    towels" got added to another's, which is the same underlying grocery
+    item disagreeing about where it usually comes from.
+
     sync_preference=False is for internal use only (stores.set_item_store
     sets it when it calls back in here, so a chat/grocery-triage write
     can't bounce back and forth with this function forever).
@@ -137,11 +145,11 @@ def add_store_typical_items(
     cleaned = [i.strip() for i in items if i.strip()]
     store_items = list(dict.fromkeys(current.get(store, []) + cleaned))
     current[store] = store_items
-    cleaned_lower = {i.lower() for i in cleaned}
+    cleaned_keys = {_merge_key(i) for i in cleaned}
     for other_store in list(current.keys()):
         if other_store == store:
             continue
-        filtered = [i for i in current[other_store] if i.lower() not in cleaned_lower]
+        filtered = [i for i in current[other_store] if _merge_key(i) not in cleaned_keys]
         if filtered != current[other_store]:
             current[other_store] = filtered
     conn.execute(
@@ -179,6 +187,15 @@ def remove_store_typical_item(store: str, item: str, log_event: bool = True) -> 
     at THIS store: removing a stale/duplicate typical-items entry for a
     store the item isn't actually preferred at anymore shouldn't be able
     to wipe out an unrelated, correct preference for a different store.
+
+    That guard matches the preference by _merge_key, not exact text —
+    found by independent review (2026-09-03): an exact dict lookup missed
+    the preference entirely (silently doing nothing) whenever the typical
+    -items entry and the stored preference differed only by plural/
+    singular, e.g. removing "paper towels" here while the preference was
+    saved under "paper towel". The typical-items list itself is still
+    filtered by exact text, on purpose — a chip always removes exactly the
+    text the shopper tapped, never a same-family item they didn't touch.
     """
     conn = get_conn()
     existing = conn.execute(
@@ -196,7 +213,9 @@ def remove_store_typical_item(store: str, item: str, log_event: bool = True) -> 
     if log_event:
         _household._log_preference_event("store_typical_items", "delete")
     from . import stores as _stores
-    current_pref = _stores.get_item_store_preferences().get((item or "").strip().lower())
+    item_key = _merge_key(item)
+    prefs_map = _stores.get_item_store_preferences()
+    current_pref = next((s for i, s in prefs_map.items() if _merge_key(i) == item_key), None)
     if current_pref and current_pref.lower() == (store or "").lower():
         _stores.set_item_store(item, "", log_event=False)
     return {"store": store, "typical_items": store_items}
@@ -210,6 +229,10 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
     auto-assigner can never disagree — an item with no remembered store
     isn't "usually" bought anywhere anymore. Not itself a preference_events
     write: it's cleanup for whichever action already logged the real one.
+
+    Matches by _merge_key so a typical-items entry spelled with a
+    different plural/singular than the cleared preference still gets
+    caught (same identity fix as the other functions in this module).
     """
     conn = get_conn()
     existing = conn.execute(
@@ -219,10 +242,10 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
         conn.close()
         return
     current = json.loads(existing["store_typical_items_json"])
-    item_lower = (item or "").strip().lower()
+    item_key = _merge_key(item)
     changed = False
     for store_name in list(current.keys()):
-        filtered = [i for i in current[store_name] if i.lower() != item_lower]
+        filtered = [i for i in current[store_name] if _merge_key(i) != item_key]
         if filtered != current[store_name]:
             current[store_name] = filtered
             changed = True

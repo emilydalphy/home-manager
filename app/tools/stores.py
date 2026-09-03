@@ -58,20 +58,41 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     forever). log_event=False similarly avoids double-logging one teaching
     moment as two preference_events rows when this function is one half of
     a compound write.
+
+    Identity here is by _merge_key, the same singular/plural-insensitive
+    key the grocery list itself merges on — NOT by the exact text typed.
+    Found by independent review (2026-09-03): the old exact-string
+    ON CONFLICT/DELETE let set_item_store("paper towel", "Costco") and a
+    later set_item_store("paper towels", "Walmart") create two separate
+    rows for what the grocery list treats as one item, so it could end up
+    "typical" at two stores at once and a future add would pick between
+    them non-deterministically. A find-by-merge-key-then-write replaces
+    the raw upsert/delete so there is only ever one row per real item,
+    same as grocery_items itself. The stored text is still whatever was
+    most recently written (never the mangled _merge_key form itself —
+    that's a matching key, not something to show anyone).
     """
     conn = get_conn()
+    key = _merge_key(item)
+    existing_rows = conn.execute(
+        "SELECT id, item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
+    ).fetchall()
+    match = next((r for r in existing_rows if _merge_key(r["item"]) == key), None)
     if store:
-        conn.execute(
-            "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
-            "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
-            (household_id(), item.strip().lower(), store),
-        )
+        if match:
+            conn.execute(
+                "UPDATE item_store_preferences SET item = ?, store = ? WHERE id = ?",
+                (item.strip().lower(), store, match["id"]),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?)",
+                (household_id(), item.strip().lower(), store),
+            )
         _apply_store_to_matching_rows(conn, item, store)
     else:
-        conn.execute(
-            "DELETE FROM item_store_preferences WHERE household_id = ? AND item = ?",
-            (household_id(), item.strip().lower()),
-        )
+        if match:
+            conn.execute("DELETE FROM item_store_preferences WHERE id = ?", (match["id"],))
         _apply_store_to_matching_rows(conn, item, "")
     conn.commit()
     conn.close()
@@ -184,10 +205,14 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
     conn.execute("UPDATE grocery_items SET store = ? WHERE id = ?", (store, item_id))
     already_known = False
     if store and remember:
-        already_known = conn.execute(
-            "SELECT 1 FROM item_store_preferences WHERE household_id = ? AND item = ?",
-            (household_id(), row["item"].strip().lower()),
-        ).fetchone() is not None
+        # Merge-key match, not exact text — "paper towel" already having a
+        # preference counts as "already known" for a row named "paper
+        # towels" too, same identity the grocery list itself uses.
+        wanted_key = _merge_key(row["item"])
+        pref_rows = conn.execute(
+            "SELECT item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchall()
+        already_known = any(_merge_key(p["item"]) == wanted_key for p in pref_rows)
     conn.commit()
     conn.close()
     remembered = False
