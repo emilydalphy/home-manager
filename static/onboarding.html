@@ -231,6 +231,86 @@
   .invite-btn:hover { background: var(--violet-soft); }
   .invite-btn.copied { background: var(--vivid-leaf); border-color: var(--vivid-leaf); color: var(--on-accent-ink); }
   .action-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.5rem; }
+
+  /* Household rhythm steps (Loop Board "Onboarding: household rhythm
+     without traditional assumptions" — the six locked questions, Emily-
+     approved mocks RhythmOnboarding.dc.html / RhythmOnboarding2.dc.html,
+     2026-09-03). New markup, so canonical DESIGN_SYSTEM.md tokens
+     throughout rather than this file's older legacy aliases (--midnight-
+     violet, --turmeric-gold, etc.) used above — per DESIGN_SYSTEM.md §1,
+     "never write a new call site against an alias." */
+  .rhythm-eyebrow {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 10px;
+  }
+  .rhythm-italic {
+    font-family: var(--font-accent);
+    font-style: italic;
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--ink-secondary);
+    margin: 4px 0 0;
+  }
+  .rhythm-card {
+    background: var(--surface);
+    border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card);
+    padding: 15px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 0 12px;
+  }
+  .rhythm-card h2 {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: var(--ink);
+    margin: 0;
+  }
+  .rhythm-person-block { display: flex; flex-direction: column; gap: 8px; }
+  .rhythm-person-name { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--ink); }
+  .rhythm-person-divider { height: 1.5px; background: var(--hairline); border: none; margin: 0; }
+  .rhythm-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rhythm-chip {
+    min-height: 44px;
+    padding: 0 15px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--hairline);
+    background: var(--surface);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .rhythm-chip.active {
+    background: var(--spruce);
+    border-color: var(--spruce);
+    color: var(--ivory-ink);
+    font-weight: 700;
+  }
+  .rhythm-helper { font-family: var(--font-body); font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--ink-inactive); margin: 0; }
+  .rhythm-cta {
+    width: 100%;
+    min-height: 52px;
+    box-shadow: var(--shadow-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 6px;
+  }
 </style>
 <script src="/static/error-reporter.js"></script>
 </head>
@@ -247,13 +327,73 @@
   <div><button class="next-btn" id="household-next" type="button">Continue</button></div>
 </div>
 
+<!-- Rhythm Q1-3 (Loop Board "Onboarding: household rhythm without
+     traditional assumptions" — locked 2026-09-03, mock
+     RhythmOnboarding.dc.html). Rhythm sits right after household members
+     (names are known, so per-person lunch rows use real names) and before
+     every food/preference question, per Emily's stated learning hierarchy:
+     rhythm, then habits, then preferences. -->
+<div id="step-rhythm-1" style="display:none">
+  <p class="rhythm-eyebrow">Getting to know your rhythm</p>
+  <h1>How does a normal week actually run here?</h1>
+  <p class="rhythm-italic">There's no typical household &mdash; this just helps me fit yours.</p>
+
+  <div class="rhythm-card" style="margin-top:14px">
+    <h2>On a typical weekday, where's everyone at lunchtime?</h2>
+    <div id="rhythm-lunch-people"></div>
+  </div>
+
+  <div class="rhythm-card">
+    <h2>Which meals do you usually eat together?</h2>
+    <div class="rhythm-chip-row" id="rhythm-meals-together-chips"></div>
+  </div>
+
+  <div class="rhythm-card">
+    <h2>Who does the cooking?</h2>
+    <div class="rhythm-chip-row" id="rhythm-cooking-role-chips"></div>
+    <div id="rhythm-cooking-who-wrap" style="display:none">
+      <p class="rhythm-helper" style="margin-bottom:8px">Who?</p>
+      <div class="rhythm-chip-row" id="rhythm-cooking-who-chips"></div>
+    </div>
+    <p class="rhythm-helper" id="rhythm-cooking-hint">Choose "Mostly one person" and I'll ask who, right after.</p>
+  </div>
+
+  <div><button class="btn-primary rhythm-cta" id="rhythm-1-next" type="button" disabled>Continue</button></div>
+  <span class="back-link" data-back="household">&larr; Back</span>
+</div>
+
+<!-- Rhythm Q4-6 (mock RhythmOnboarding2.dc.html). -->
+<div id="step-rhythm-2" style="display:none">
+  <p class="rhythm-eyebrow">Getting to know your rhythm</p>
+  <h1>A few more, so I get the timing right.</h1>
+
+  <div class="rhythm-card" style="margin-top:14px">
+    <h2>When does dinner usually land?</h2>
+    <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
+  </div>
+
+  <div class="rhythm-card">
+    <h2>When should your week be ready?</h2>
+    <div class="rhythm-chip-row" id="rhythm-planning-anchor-chips"></div>
+    <p class="rhythm-helper">This is when I'll draft your week and have the list ready &mdash; set it to whenever planning ahead actually happens for you.</p>
+  </div>
+
+  <div class="rhythm-card">
+    <h2>How do you feel about leftovers?</h2>
+    <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
+  </div>
+
+  <div><button class="btn-primary rhythm-cta" id="rhythm-2-next" type="button" disabled>Save my rhythm</button></div>
+  <span class="back-link" data-back="rhythm-1">&larr; Back</span>
+</div>
+
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
   <h1>Anyone I cook carefully around?</h1>
   <p class="subtitle">Allergies, restrictions, or approaches I'll always follow — and who they're for.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
-  <span class="back-link" data-back="household">&larr; Back</span>
+  <span class="back-link" data-back="rhythm-2">&larr; Back</span>
 </div>
 
 <!-- Q4: eating style -->
@@ -329,10 +469,10 @@
     isn&rsquo;t a guess.
   </div>
   <label class="field-label" for="typical-week">A normal week at yours</label>
-  <textarea id="typical-week" rows="4" placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout. One of us travels most other weeks."></textarea>
+  <textarea id="typical-week" rows="4" placeholder="Tuesdays we're both home early so dinner's around 5:30. Fridays are usually takeout. One of us travels most other weeks."></textarea>
   <div class="chip-row" id="typical-week-chips" style="margin-top:10px"></div>
   <label class="field-label" for="next-week-notes">Next week specifically</label>
-  <p class="subtitle" style="margin:0 0 6px">Anything already in the diary? I&rsquo;ll build your very first week around it rather than guessing.</p>
+  <p class="subtitle" style="margin:0 0 6px">Anything already on the calendar? I&rsquo;ll build your very first week around it rather than guessing.</p>
   <textarea id="next-week-notes" rows="2" placeholder="My parents are here Thursday to Sunday."></textarea>
   <div><button class="next-btn" id="typical-week-next" type="button">Continue</button></div>
   <span class="skip-link" id="typical-week-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
@@ -541,6 +681,214 @@ function currentMembers() {
   }).filter(m => m.name);
 }
 
+// ---------- Household rhythm: the six locked questions ----------
+// Loop Board "Onboarding: household rhythm without traditional
+// assumptions" — Emily's "LOCKED: the six rhythm questions" note,
+// 2026-09-03. Placed right after household members (names known, so the
+// per-person lunch rows use them) and before every food/preference
+// question, per her stated learning hierarchy: rhythm, then habits, then
+// preferences. All six save through /api/onboarding/rhythm, the same
+// storage chat corrections write to (app/tools/rhythm.py) — an onboarding
+// answer and a later "actually I do all the cooking" are the same write.
+const LUNCH_LOCATION_OPTIONS = [
+  { key: 'home', label: 'Home' },
+  { key: 'out', label: 'Out' },
+  { key: 'varies', label: 'Varies' },
+];
+const MEALS_TOGETHER_OPTIONS = [
+  { key: 'dinner_only', label: 'Dinner only' },
+  { key: 'dinner_and_breakfast', label: 'Dinner + breakfast' },
+  { key: 'most_meals', label: 'Most meals' },
+  { key: 'varies', label: 'Varies' },
+];
+const COOKING_ROLE_OPTIONS = [
+  { key: 'one_person', label: 'Mostly one person' },
+  { key: 'turns', label: 'We take turns' },
+  { key: 'whoever_free', label: 'Whoever’s free' },
+];
+const DINNER_WINDOW_OPTIONS = [
+  { key: '5_6ish', label: '5–6ish' },
+  { key: '6_8', label: '6–8' },
+  { key: 'later', label: 'Later' },
+  { key: 'all_over', label: 'All over the place' },
+];
+const PLANNING_ANCHOR_OPTIONS = [
+  { key: 'sunday_before', label: 'Sunday, before the week' },
+  { key: 'midweek', label: 'Midweek' },
+  { key: 'as_we_go', label: 'As we go' },
+];
+const LEFTOVERS_STANCE_OPTIONS = [
+  { key: 'love_them', label: 'Love them (cook once, eat twice)' },
+  { key: 'fine_sometimes', label: 'Fine sometimes' },
+  { key: 'fresh_each_night', label: 'Fresh each night' },
+];
+
+let rhythmLunchLocation = {}; // member name -> 'home' | 'out' | 'varies'
+let rhythmMealsTogether = '';
+let rhythmCookingRole = '';
+let rhythmCookingWho = '';
+let rhythmDinnerWindow = '';
+let rhythmPlanningAnchor = '';
+let rhythmLeftoversStance = '';
+
+// Single-select chip row: renders `options` into `container`, marking
+// `currentValue` active, and calls `onSelect(key)` when a chip is tapped.
+function buildSingleSelectChips(container, options, currentValue, onSelect) {
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rhythm-chip' + (currentValue === opt.key ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.dataset.value = opt.key;
+    btn.addEventListener('click', () => onSelect(opt.key));
+    container.appendChild(btn);
+  });
+}
+
+function renderLunchRow(row, memberName) {
+  buildSingleSelectChips(row, LUNCH_LOCATION_OPTIONS, rhythmLunchLocation[memberName] || '', (key) => {
+    rhythmLunchLocation[memberName] = key;
+    renderLunchRow(row, memberName);
+    updateRhythm1ContinueState();
+  });
+}
+function renderLunchPeople() {
+  const wrap = document.getElementById('rhythm-lunch-people');
+  wrap.innerHTML = '';
+  currentMembers().forEach((m, i) => {
+    if (i > 0) {
+      const divider = document.createElement('div');
+      divider.className = 'rhythm-person-divider';
+      wrap.appendChild(divider);
+    }
+    const block = document.createElement('div');
+    block.className = 'rhythm-person-block';
+    const nameEl = document.createElement('span');
+    nameEl.className = 'rhythm-person-name';
+    nameEl.textContent = m.name;
+    const row = document.createElement('div');
+    row.className = 'rhythm-chip-row';
+    block.appendChild(nameEl);
+    block.appendChild(row);
+    wrap.appendChild(block);
+    renderLunchRow(row, m.name);
+  });
+}
+
+function renderMealsTogetherChips() {
+  buildSingleSelectChips(document.getElementById('rhythm-meals-together-chips'), MEALS_TOGETHER_OPTIONS, rhythmMealsTogether, (key) => {
+    rhythmMealsTogether = key;
+    renderMealsTogetherChips();
+    updateRhythm1ContinueState();
+  });
+}
+
+function renderCookingWhoChips() {
+  const wrap = document.getElementById('rhythm-cooking-who-wrap');
+  const hint = document.getElementById('rhythm-cooking-hint');
+  if (rhythmCookingRole !== 'one_person') {
+    wrap.style.display = 'none';
+    hint.style.display = 'block';
+    return;
+  }
+  hint.style.display = 'none';
+  wrap.style.display = 'block';
+  buildSingleSelectChips(
+    document.getElementById('rhythm-cooking-who-chips'),
+    currentMembers().map(m => ({ key: m.name, label: m.name })),
+    rhythmCookingWho,
+    (key) => {
+      rhythmCookingWho = key;
+      renderCookingWhoChips();
+      updateRhythm1ContinueState();
+    }
+  );
+}
+function renderCookingRoleChips() {
+  buildSingleSelectChips(document.getElementById('rhythm-cooking-role-chips'), COOKING_ROLE_OPTIONS, rhythmCookingRole, (key) => {
+    rhythmCookingRole = key;
+    if (key !== 'one_person') rhythmCookingWho = '';
+    renderCookingRoleChips();
+    renderCookingWhoChips();
+    updateRhythm1ContinueState();
+  });
+}
+
+function rhythm1Complete() {
+  const members = currentMembers();
+  if (!members.length) return false;
+  if (!members.every(m => rhythmLunchLocation[m.name])) return false;
+  if (!rhythmMealsTogether) return false;
+  if (!rhythmCookingRole) return false;
+  if (rhythmCookingRole === 'one_person' && !rhythmCookingWho) return false;
+  return true;
+}
+function updateRhythm1ContinueState() {
+  document.getElementById('rhythm-1-next').disabled = !rhythm1Complete();
+}
+function buildRhythmStep1() {
+  renderLunchPeople();
+  renderMealsTogetherChips();
+  renderCookingRoleChips();
+  renderCookingWhoChips();
+  updateRhythm1ContinueState();
+}
+
+function renderDinnerWindowChips() {
+  buildSingleSelectChips(document.getElementById('rhythm-dinner-window-chips'), DINNER_WINDOW_OPTIONS, rhythmDinnerWindow, (key) => {
+    rhythmDinnerWindow = key;
+    renderDinnerWindowChips();
+    updateRhythm2ContinueState();
+  });
+}
+function renderPlanningAnchorChips() {
+  buildSingleSelectChips(document.getElementById('rhythm-planning-anchor-chips'), PLANNING_ANCHOR_OPTIONS, rhythmPlanningAnchor, (key) => {
+    rhythmPlanningAnchor = key;
+    renderPlanningAnchorChips();
+    updateRhythm2ContinueState();
+  });
+}
+function renderLeftoversChips() {
+  buildSingleSelectChips(document.getElementById('rhythm-leftovers-chips'), LEFTOVERS_STANCE_OPTIONS, rhythmLeftoversStance, (key) => {
+    rhythmLeftoversStance = key;
+    renderLeftoversChips();
+    updateRhythm2ContinueState();
+  });
+}
+function rhythm2Complete() {
+  return !!(rhythmDinnerWindow && rhythmPlanningAnchor && rhythmLeftoversStance);
+}
+function updateRhythm2ContinueState() {
+  document.getElementById('rhythm-2-next').disabled = !rhythm2Complete();
+}
+function buildRhythmStep2() {
+  renderDinnerWindowChips();
+  renderPlanningAnchorChips();
+  renderLeftoversChips();
+  updateRhythm2ContinueState();
+}
+
+// Saved in one call once both rhythm steps are answered ("Save my rhythm").
+// Failures are surfaced (unlike the optional plan-the-week steps below) —
+// these six are the locked, required rhythm questions, not a skippable
+// extra, so a household should know if the save didn't go through.
+async function saveRhythmAnswers() {
+  const body = {
+    lunch_location: { ...rhythmLunchLocation },
+    meals_together: rhythmMealsTogether,
+    cooking_role: rhythmCookingRole,
+    cooking_role_who: rhythmCookingWho,
+    dinner_window: rhythmDinnerWindow,
+    planning_anchor: rhythmPlanningAnchor,
+    leftovers_stance: rhythmLeftoversStance,
+  };
+  const res = await fetch('/api/onboarding/rhythm', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Could not save your rhythm');
+}
+
 // ---------- Q3: restrictions, per member ----------
 function buildRestrictionsStep() {
   const dietDiv = document.getElementById('diet-by-member');
@@ -659,10 +1007,16 @@ renderLunchesValue();
 // Starter chips APPEND an example sentence rather than setting a value —
 // the point is to avoid a blank page, not to turn free text into a
 // multiple choice. Each one is a real sentence someone might have written.
+// Loop Board "Home Manager: Review onboarding copy for grammar & tone
+// consistency" (2026-09-03): the household has no assumed traditional
+// structure (Emily's positioning, "no traditional assumptions about how a
+// household runs"), so these examples deliberately span different
+// household shapes — a shift worker's hours, not just a family with kids —
+// rather than defaulting to the one that used to be here.
 const TYPICAL_WEEK_STARTERS = [
   { label: 'One night is takeout', sentence: 'One night a week is usually takeout.' },
   { label: 'Someone travels', sentence: 'One of us travels most weeks.' },
-  { label: 'Kids eat early', sentence: 'The children eat earlier than we do.' },
+  { label: 'One of us works late', sentence: 'One of us works evening shifts, so dinner times don’t always line up.' },
   { label: 'Weekends are slower', sentence: 'Weekends are slower — we cook properly then.' }
 ];
 function buildTypicalWeekStarters() {
@@ -872,14 +1226,19 @@ async function generateFirstPlanAndReveal(answers) {
 }
 
 // ---------- Navigation ----------
-const ALL_STEPS = ['household', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal', 'chores-q', 'chores-review'];
+// The two rhythm steps sit between household and restrictions (Emily's
+// learning hierarchy: rhythm before every food/preference question) —
+// added to both the step list and the progress dots so the shared
+// indicator at the top of the page still reflects true position across
+// the whole wizard rather than just the original eight.
+const ALL_STEPS = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal', 'chores-q', 'chores-review'];
 
 function renderProgress() {
   const progress = document.getElementById('progress');
   progress.innerHTML = '';
   // Only show dots for the fixed pre-reveal question steps — chores is a
   // separate, optional tail the dots don't need to represent.
-  const questionSteps = ['household', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats'];
+  const questionSteps = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats'];
   const idx = questionSteps.indexOf(currentStep);
   questionSteps.forEach((key, i) => {
     const dot = document.createElement('div');
@@ -899,8 +1258,28 @@ function showStep(key) {
 
 document.getElementById('household-next').onclick = () => {
   if (!currentMembers().length) { alert('Add at least one person to get started.'); return; }
-  buildRestrictionsStep();
-  showStep('restrictions');
+  buildRhythmStep1();
+  showStep('rhythm-1');
+};
+document.getElementById('rhythm-1-next').onclick = () => {
+  if (!rhythm1Complete()) return;
+  buildRhythmStep2();
+  showStep('rhythm-2');
+};
+document.getElementById('rhythm-2-next').onclick = async () => {
+  if (!rhythm2Complete()) return;
+  const btn = document.getElementById('rhythm-2-next');
+  btn.disabled = true;
+  try {
+    await saveRhythmAnswers();
+    buildRestrictionsStep();
+    showStep('restrictions');
+  } catch (err) {
+    console.error('Saving household rhythm failed:', err);
+    alert("Couldn't save that — try again in a moment.");
+  } finally {
+    btn.disabled = !rhythm2Complete();
+  }
 };
 document.getElementById('restrictions-next').onclick = () => showStep('eating-style');
 document.getElementById('eating-style-next').onclick = () => showStep('wont-eat');

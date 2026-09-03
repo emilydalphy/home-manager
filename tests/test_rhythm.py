@@ -102,6 +102,90 @@ def test_get_household_rhythm_shape():
     assert rhythm["cooking_role"] == {"value": "one_person", "who": "Emily"}
 
 
+# ---------- the three rhythm facts locked afterward: dinner_window, planning_anchor, leftovers_stance ----------
+
+def test_set_dinner_window_round_trips_and_validates():
+    result = tools.set_dinner_window("6_8")
+    assert result == {"dinner_window": "6_8"}
+    assert tools.get_household_rhythm()["dinner_window"] == "6_8"
+    with pytest.raises(ValueError):
+        tools.set_dinner_window("whenever")
+
+
+def test_set_planning_anchor_round_trips_and_validates():
+    result = tools.set_planning_anchor("sunday_before")
+    assert result == {"planning_anchor": "sunday_before"}
+    assert tools.get_household_rhythm()["planning_anchor"] == "sunday_before"
+    with pytest.raises(ValueError):
+        tools.set_planning_anchor("whenever")
+
+
+def test_set_leftovers_stance_round_trips_and_validates():
+    result = tools.set_leftovers_stance("love_them")
+    assert result == {"leftovers_stance": "love_them"}
+    assert tools.get_household_rhythm()["leftovers_stance"] == "love_them"
+    with pytest.raises(ValueError):
+        tools.set_leftovers_stance("whenever")
+
+
+def test_get_household_rhythm_includes_all_six_locked_facts():
+    tools.set_lunch_location("Marcus", "home")
+    tools.set_meals_together("dinner_only")
+    tools.set_cooking_role("turns")
+    tools.set_dinner_window("later")
+    tools.set_planning_anchor("midweek")
+    tools.set_leftovers_stance("fine_sometimes")
+
+    rhythm = tools.get_household_rhythm()
+    assert rhythm["dinner_window"] == "later"
+    assert rhythm["planning_anchor"] == "midweek"
+    assert rhythm["leftovers_stance"] == "fine_sometimes"
+
+
+def test_new_rhythm_writes_are_also_logged_to_preference_events():
+    before = tools.count_preference_events_this_month()
+    tools.set_dinner_window("6_8")
+    tools.set_planning_anchor("as_we_go")
+    tools.set_leftovers_stance("fresh_each_night")
+    after = tools.count_preference_events_this_month()
+    assert after == before + 3
+
+
+def test_rhythm_completeness_signals_include_the_three_new_facts():
+    signals = tools.rhythm_completeness_signals()
+    assert signals["dinner_window_set"] is False
+    assert signals["planning_anchor_set"] is False
+    assert signals["leftovers_stance_set"] is False
+
+    tools.set_dinner_window("5_6ish")
+    tools.set_planning_anchor("sunday_before")
+    tools.set_leftovers_stance("love_them")
+
+    signals = tools.rhythm_completeness_signals()
+    assert signals["dinner_window_set"] is True
+    assert signals["planning_anchor_set"] is True
+    assert signals["leftovers_stance_set"] is True
+
+
+def test_the_three_new_rhythm_facts_count_toward_completeness():
+    completeness = tools._build_context_completeness(
+        members=[], protein_preferences={}, cuisine_preferences=[], dislikes=[],
+        cooking_time_preference="", usual_stores=[], eating_style="", goals="",
+        recipes_rated=0, meals_cooked=0,
+    )
+    missing_keys = {m["key"] for m in completeness["missing"]}
+    assert {"dinner_window", "planning_anchor", "leftovers_stance"} <= missing_keys
+
+    completeness = tools._build_context_completeness(
+        members=[], protein_preferences={}, cuisine_preferences=[], dislikes=[],
+        cooking_time_preference="", usual_stores=[], eating_style="", goals="",
+        recipes_rated=0, meals_cooked=0,
+        rhythm_dinner_window_set=True, rhythm_planning_anchor_set=True, rhythm_leftovers_stance_set=True,
+    )
+    missing_keys = {m["key"] for m in completeness["missing"]}
+    assert not ({"dinner_window", "planning_anchor", "leftovers_stance"} & missing_keys)
+
+
 # ---------- preference_events growth counter (Loop Board item E) ----------
 
 def test_rhythm_writes_are_logged_to_preference_events():

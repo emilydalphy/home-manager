@@ -32,6 +32,15 @@ MEALS_TOGETHER_OPTIONS = ("dinner_only", "dinner_and_breakfast", "most_meals", "
 COOKING_ROLES = ("one_person", "turns", "whoever_free")
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 
+# The three later-locked rhythm questions (Loop Board "Onboarding: household
+# rhythm without traditional assumptions", Emily's "LOCKED: the six rhythm
+# questions" note, 2026-09-03) — added additively to the same
+# household_rhythm table as the original three above (household-level facts,
+# member_name='' and weekday=''), not a schema change.
+DINNER_WINDOWS = ("5_6ish", "6_8", "later", "all_over")
+PLANNING_ANCHORS = ("sunday_before", "midweek", "as_we_go")
+LEFTOVERS_STANCES = ("love_them", "fine_sometimes", "fresh_each_night")
+
 
 def _upsert(conn, member_name: str, weekday: str, fact_type: str, value: str, who: str, source: str) -> None:
     conn.execute(
@@ -136,14 +145,73 @@ def set_cooking_role(value: str, who: str = "", source: str = "onboarding") -> d
     return {"cooking_role": value, "who": who or None}
 
 
+def set_dinner_window(value: str, source: str = "onboarding") -> dict:
+    """
+    Set when dinner usually lands: '5_6ish', '6_8', 'later', or 'all_over'
+    (all over the place, no real pattern). Household-level. Times prep
+    schedules, defrost reminders, and "tonight" surfacing around an actual
+    target time instead of assuming a default dinner hour.
+    """
+    if value not in DINNER_WINDOWS:
+        raise ValueError(f"value must be one of {DINNER_WINDOWS}, not {value!r}.")
+    conn = get_conn()
+    _upsert(conn, "", "", "dinner_window", value, "", source)
+    conn.commit()
+    conn.close()
+    _household._log_preference_event("rhythm:dinner_window", "write")
+    return {"dinner_window": value}
+
+
+def set_planning_anchor(value: str, source: str = "onboarding") -> dict:
+    """
+    Set when the household wants its week ready: 'sunday_before' (planned
+    and shopped before the week starts), 'midweek', or 'as_we_go'.
+    Household-level. Stored for now as the household's stated cadence
+    preference — the app doesn't yet act on it to time its own planning
+    nudges/list-final/check-in prompts (see the "when should your week be
+    ready" note in generate_prep_schedule_llm's caller and the Loop Board
+    ticket for that follow-up work); this is the fact those prompts will
+    read once built.
+    """
+    if value not in PLANNING_ANCHORS:
+        raise ValueError(f"value must be one of {PLANNING_ANCHORS}, not {value!r}.")
+    conn = get_conn()
+    _upsert(conn, "", "", "planning_anchor", value, "", source)
+    conn.commit()
+    conn.close()
+    _household._log_preference_event("rhythm:planning_anchor", "write")
+    return {"planning_anchor": value}
+
+
+def set_leftovers_stance(value: str, source: str = "onboarding") -> dict:
+    """
+    Set how the household feels about leftovers: 'love_them' (cook once,
+    eat twice), 'fine_sometimes', or 'fresh_each_night'. Household-level.
+    Powers batch-cooking and ready-made recommendations — see its use in
+    generate_weekly_plan_llm's prompt guidance.
+    """
+    if value not in LEFTOVERS_STANCES:
+        raise ValueError(f"value must be one of {LEFTOVERS_STANCES}, not {value!r}.")
+    conn = get_conn()
+    _upsert(conn, "", "", "leftovers_stance", value, "", source)
+    conn.commit()
+    conn.close()
+    _household._log_preference_event("rhythm:leftovers_stance", "write")
+    return {"leftovers_stance": value}
+
+
 def get_household_rhythm() -> dict:
     """
-    Everything on record about the household's standing rhythm: the three
-    onboarding facts plus any per-weekday overrides learned since. Powers
-    the getting-to-know-you hero's Rhythm count, the completeness scoring
-    (see memory._build_context_completeness / rhythm_completeness_signals
-    below), and the packed-lunch default (see
-    week_intake.get_week_intake_prefill).
+    Everything on record about the household's standing rhythm: the six
+    locked onboarding facts (lunch location per person, meals eaten
+    together, who cooks, when dinner lands, when the week should be ready,
+    leftovers stance) plus any per-weekday lunch-location overrides learned
+    since. Powers the getting-to-know-you hero's Rhythm count, the
+    completeness scoring (see memory._build_context_completeness /
+    rhythm_completeness_signals below), the packed-lunch default (see
+    week_intake.get_week_intake_prefill), and — for dinner_window and
+    leftovers_stance — the week/prep generation prompts (see agent.py's
+    generate_weekly_plan_llm and generate_prep_schedule_llm).
     """
     conn = get_conn()
     rows = conn.execute(
@@ -154,6 +222,9 @@ def get_household_rhythm() -> dict:
     lunch_location: dict[str, dict] = {}
     meals_together = None
     cooking_role = None
+    dinner_window = None
+    planning_anchor = None
+    leftovers_stance = None
     for row in rows:
         if row["fact_type"] == "lunch_location":
             entry = lunch_location.setdefault(row["member_name"], {"standing": None, "overrides": {}})
@@ -165,11 +236,20 @@ def get_household_rhythm() -> dict:
             meals_together = row["value"]
         elif row["fact_type"] == "cooking_role":
             cooking_role = {"value": row["value"], "who": row["who"] or None}
+        elif row["fact_type"] == "dinner_window":
+            dinner_window = row["value"]
+        elif row["fact_type"] == "planning_anchor":
+            planning_anchor = row["value"]
+        elif row["fact_type"] == "leftovers_stance":
+            leftovers_stance = row["value"]
 
     return {
         "lunch_location": lunch_location,
         "meals_together": meals_together,
         "cooking_role": cooking_role,
+        "dinner_window": dinner_window,
+        "planning_anchor": planning_anchor,
+        "leftovers_stance": leftovers_stance,
     }
 
 
@@ -192,8 +272,12 @@ def rhythm_completeness_signals() -> dict:
     memory._build_context_completeness): whether every ADULT member has a
     standing lunch location on record (not just one of several — a
     household with two adults and only one answered isn't actually known
-    yet for the other's lunches), and whether the two household-level
-    rhythm facts are set.
+    yet for the other's lunches), and whether each of the five remaining
+    household-level rhythm facts is set — the three from the original
+    build (meals_together, cooking_role) plus the three locked later
+    (dinner_window, planning_anchor, leftovers_stance) so a household that
+    answered the newer onboarding steps but not the older ones (or vice
+    versa) is scored on the honest total, not just the original three.
 
     Queries `members` directly rather than going through list_members():
     that helper doesn't return age_group (see household.list_members), and
@@ -215,4 +299,7 @@ def rhythm_completeness_signals() -> dict:
         "lunch_location_set": lunch_location_set,
         "meals_together_set": bool(rhythm["meals_together"]),
         "cooking_role_set": bool(rhythm["cooking_role"]),
+        "dinner_window_set": bool(rhythm["dinner_window"]),
+        "planning_anchor_set": bool(rhythm["planning_anchor"]),
+        "leftovers_stance_set": bool(rhythm["leftovers_stance"]),
     }

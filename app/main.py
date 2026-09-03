@@ -386,6 +386,24 @@ class OnboardingAnswersRequest(BaseModel):
     lunches_per_week: int = 7
 
 
+class OnboardingRhythmRequest(BaseModel):
+    """
+    The six locked household-rhythm questions (Loop Board "Onboarding:
+    household rhythm without traditional assumptions", Emily's "LOCKED: the
+    six rhythm questions" note, 2026-09-03). lunch_location maps each
+    member's name to 'home'/'out'/'varies' — the wizard sends one entry per
+    household member. cooking_role_who is only read when cooking_role is
+    'one_person'.
+    """
+    lunch_location: dict[str, str] = {}
+    meals_together: str = ""
+    cooking_role: str = ""
+    cooking_role_who: str = ""
+    dinner_window: str = ""
+    planning_anchor: str = ""
+    leftovers_stance: str = ""
+
+
 class ChoreProfileRequest(BaseModel):
     home_type: str = ""
     bedrooms: int = 0
@@ -651,6 +669,45 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         logger.exception("Onboarding answers save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
+
+
+@app.post("/api/onboarding/rhythm")
+def onboarding_rhythm(req: OnboardingRhythmRequest):
+    """
+    Save the six locked household-rhythm questions in one call — lunch
+    location per person, meals eaten together, who cooks, when dinner
+    lands, when the week should be ready, and the household's leftovers
+    stance (Loop Board "Onboarding: household rhythm without traditional
+    assumptions"). Called directly by the onboarding wizard's two rhythm
+    steps, placed after household members and before the food questions
+    per Emily's stated learning hierarchy (rhythm before habits before
+    preferences). The same six facts are also settable/correctable via
+    chat at any time through the underlying rhythm tools (set_lunch_location,
+    etc.) — this endpoint is just the structured-form path onto the same
+    storage, so an onboarding answer and a later chat correction are the
+    same write.
+    """
+    try:
+        for member_name, location in req.lunch_location.items():
+            member_name = (member_name or "").strip()
+            if member_name and location in tools.LUNCH_LOCATIONS:
+                tools.set_lunch_location(member_name, location, source="onboarding")
+        if req.meals_together:
+            tools.set_meals_together(req.meals_together, source="onboarding")
+        if req.cooking_role:
+            tools.set_cooking_role(req.cooking_role, who=req.cooking_role_who, source="onboarding")
+        if req.dinner_window:
+            tools.set_dinner_window(req.dinner_window, source="onboarding")
+        if req.planning_anchor:
+            tools.set_planning_anchor(req.planning_anchor, source="onboarding")
+        if req.leftovers_stance:
+            tools.set_leftovers_stance(req.leftovers_stance, source="onboarding")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Onboarding rhythm save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return tools.get_household_rhythm()
 
 
 @app.get("/api/members/{name}/share-link")

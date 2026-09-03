@@ -2336,6 +2336,34 @@
     return inv.expiring + ' to use soon · ' + inv.low + ' running low';
   }
 
+  // Loop Board "Onboarding: household rhythm without traditional
+  // assumptions" flagged this as a known gap: the structured rhythm answers
+  // (lunch location per person, meals eaten together, who cooks, when
+  // dinner lands, when the week should be ready, leftovers stance — see
+  // app/tools/rhythm.py get_household_rhythm) live separately from the
+  // freeform facts table's category='rhythm' notes, and only the freeform
+  // notes were being counted here. A household that answered every real
+  // rhythm question but never left a freeform note was under-reporting as
+  // zero. Counts one "thing known" per answered structured fact: one per
+  // household member with a standing lunch-location answer, plus one each
+  // for meals_together/cooking_role/dinner_window/planning_anchor/
+  // leftovers_stance when set — on top of the freeform notes, not instead
+  // of them.
+  function structuredRhythmCount(mem) {
+    var rhythm = (mem && mem.rhythm) || {};
+    var count = 0;
+    var lunchByPerson = rhythm.lunch_location || {};
+    Object.keys(lunchByPerson).forEach(function (name) {
+      if (lunchByPerson[name] && lunchByPerson[name].standing) count++;
+    });
+    if (rhythm.meals_together) count++;
+    if (rhythm.cooking_role) count++;
+    if (rhythm.dinner_window) count++;
+    if (rhythm.planning_anchor) count++;
+    if (rhythm.leftovers_stance) count++;
+    return count;
+  }
+
   function kitchenCounts() {
     var mem = kitchenState.memory || {};
     var facts = kitchenState.facts || [];
@@ -2349,7 +2377,7 @@
     return {
       people: (mem.members || []).length + factsIn('people'),
       taste: factsIn('taste'),
-      rhythm: factsIn('rhythm'),
+      rhythm: factsIn('rhythm') + structuredRhythmCount(mem),
       stores: (mem.usual_stores || []).length
     };
   }
