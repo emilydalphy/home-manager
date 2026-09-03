@@ -148,6 +148,7 @@ from .pre_shop import (  # noqa: F401
     _pre_shop_humanize_label,
     _pre_shop_pluralize,
     drop_grocery_item_pre_shop,
+    get_already_have_decisions,
     get_grocery_already_have_items,
     get_pre_shop_flags,
     keep_all_pre_shop_flags,

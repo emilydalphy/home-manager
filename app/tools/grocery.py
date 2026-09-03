@@ -613,8 +613,12 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
     known to inventory or not. Adds it straight to pantry/fridge inventory
     (merging into a matching existing row the same way _add_to_inventory
     always does) carrying over its grocery-list quantity and category, then
-    removes it from the grocery list — no separate manual inventory entry
-    needed. Raises ValueError if the item isn't found.
+    soft-removes it from the grocery list (status='removed',
+    removed_by='already_have') — same soft-delete philosophy as
+    drop_grocery_item_pre_shop, rather than a hard delete, so the Review
+    screen's confirmation section (get_already_have_decisions) can list
+    and undo the decision with undo_pre_shop_drop like any other pre-shop
+    drop. Raises ValueError if the item isn't found.
     """
     conn = get_conn()
     row = conn.execute(
@@ -631,7 +635,14 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
         source="grocery_list_already_have",
         category=row["category"] or None,
     )
-    remove_grocery_item(item_id)
+    conn = get_conn()
+    conn.execute(
+        "UPDATE grocery_items SET status = 'removed', removed_by = 'already_have', "
+        "removed_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
     return {
         "item_id": item_id,
         "item": row["item"],

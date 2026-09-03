@@ -120,6 +120,12 @@ _MIGRATIONS = [
     # Touched in security._call_as_household — see there for why it isn't
     # a write on every single request.
     ("households", "last_active_at", "TEXT"),
+    # Grocery: "already have" decisions (Loop Board tickets on the Plan
+    # stops action + Review confirmation section) — when a row last
+    # flipped to status='removed', so the Review screen can scope its
+    # confirmation list to this week instead of every removal ever made.
+    # See schema.sql's comment on grocery_items.removed_at.
+    ("grocery_items", "removed_at", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
