@@ -326,24 +326,36 @@ def test_write_tools_reject_a_foreign_households_record_id(beta_household):
     conn.close()
 
     with tools.use_household(DEFAULT_HOUSEHOLD_ID):
+        # Each tuple is (function, args, kwargs, id-that-must-appear-in-the-
+        # error) — the id is named explicitly rather than assumed to be
+        # args[0], since set_week_constraints takes it as a keyword.
         attempts = [
-            (tools.remove_grocery_item, (grocery_id,), {}),
-            (tools.mark_grocery_item, (grocery_id,), {}),
-            (tools.exclude_grocery_item, (grocery_id,), {}),
-            (tools.include_grocery_item, (grocery_id,), {}),
-            (tools.update_grocery_item, (grocery_id,), {"quantity": "2 bags"}),
-            (tools.update_chore, (chore_id,), {"active": False}),
-            (tools.complete_chore, (instance_id,), {}),
-            (tools.set_chore_instance_status, (instance_id,), {}),
-            (tools.check_off_meal, (entry_id,), {}),
-            (tools.check_off_prep_step, (prep_task_id,), {}),
-            (tools.resolve_attention_item, (attention_id,), {}),
-            (tools.remove_inventory_item, (inventory_id,), {}),
-            (tools.update_fact, (fact_id,), {"text": "injected"}),
-            (tools.delete_fact, (fact_id,), {}),
+            (tools.remove_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.mark_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.exclude_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.include_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.update_grocery_item, (grocery_id,), {"quantity": "2 bags"}, grocery_id),
+            (tools.update_chore, (chore_id,), {"active": False}, chore_id),
+            (tools.complete_chore, (instance_id,), {}, instance_id),
+            (tools.set_chore_instance_status, (instance_id,), {}, instance_id),
+            (tools.check_off_meal, (entry_id,), {}, entry_id),
+            (tools.check_off_prep_step, (prep_task_id,), {}, prep_task_id),
+            (tools.resolve_attention_item, (attention_id,), {}, attention_id),
+            (tools.remove_inventory_item, (inventory_id,), {}, inventory_id),
+            (tools.update_fact, (fact_id,), {"text": "injected"}, fact_id),
+            (tools.delete_fact, (fact_id,), {}, fact_id),
+            # Found by a second, independent verification pass after the
+            # first round of fixes above — the same bug class, missed
+            # because these live in inventory.py/pre_shop.py/weekly_plan.py
+            # rather than the files the original review's write-up named.
+            (tools.set_inventory_location, (inventory_id, "freezer"), {}, inventory_id),
+            (tools.drop_grocery_item_pre_shop, (grocery_id,), {}, grocery_id),
+            (tools.undo_pre_shop_drop, (grocery_id,), {}, grocery_id),
+            (tools.mark_grocery_item_already_have_reviewed, (grocery_id,), {}, grocery_id),
+            (tools.set_week_constraints, ("injected",), {"weekly_plan_id": plan_id}, plan_id),
         ]
-        for fn, args, kwargs in attempts:
-            with pytest.raises(ValueError, match=str(args[0])):
+        for fn, args, kwargs, expected_id in attempts:
+            with pytest.raises(ValueError, match=str(expected_id)):
                 fn(*args, **kwargs)
 
     # And every row is still there, completely untouched, in its own

@@ -1561,6 +1561,8 @@ def set_inventory_location_view(item_id: int, req: InventoryLocationRequest):
     """Move an inventory item to a different storage location — the item detail sheet's location picker (design_handoff_home_manager §6)."""
     try:
         result = tools.set_inventory_location(item_id, req.location)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Inventory location change failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1787,6 +1789,8 @@ def resolve_pre_shop_flag(item_id: int, req: GroceryPreShopRequest):
             result = tools.mark_grocery_item_already_have_reviewed(item_id)
         else:
             result = tools.drop_grocery_item_pre_shop(item_id, author=req.author)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Pre-shop decision failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1798,6 +1802,8 @@ def undo_pre_shop_flag(item_id: int):
     """Undo a pre-shop 'Drop it' — restores the item to the list without re-flagging it this trip."""
     try:
         result = tools.undo_pre_shop_drop(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Pre-shop undo failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

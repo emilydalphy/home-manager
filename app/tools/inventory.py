@@ -59,6 +59,7 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
 def set_inventory_location(item_id: int, location: str) -> dict:
     """Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately."""
     conn = get_conn()
+    require_household_row(conn, "inventory_items", item_id, label="inventory item")
     conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
     conn.commit()
     conn.close()

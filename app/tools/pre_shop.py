@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import cooker as _cooker
 from . import grocery as _grocery
 from . import inventory as _inventory
@@ -110,6 +110,7 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     distinct from "you" at the data layer, and that gap applies here too.
     """
     conn = get_conn()
+    require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ? "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
@@ -128,6 +129,7 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     "does not re-add the flag this trip").
     """
     conn = get_conn()
+    require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     conn.execute(
         "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1 "
         "WHERE id = ? AND household_id = ?",
@@ -160,6 +162,7 @@ def mark_grocery_item_already_have_reviewed(item_id: int) -> dict:
     this same listing. Does not touch quantity/status; only clears the flag.
     """
     conn = get_conn()
+    require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     conn.execute(
         "UPDATE grocery_items SET already_have_reviewed = 1 WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
