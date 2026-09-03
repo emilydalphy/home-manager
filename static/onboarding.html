@@ -23,7 +23,7 @@
     background: var(--oat-cream);
     color: var(--text-body);
   }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--midnight-violet); margin: 0 0 4px; }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink-strong); margin: 0 0 4px; }
   p.subtitle { color: var(--text-muted); margin: 0 0 1.5rem; font-size: 0.95rem; }
   .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
   .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
@@ -41,7 +41,7 @@
     min-height: 44px;
   }
   input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
-    border-color: var(--midnight-violet);
+    border-color: var(--ink-strong);
   }
   input::placeholder, textarea::placeholder { color: var(--text-muted); }
   textarea { resize: vertical; min-height: 60px; }
@@ -59,8 +59,8 @@
   .remove-btn:hover { border-color: var(--electric-coral); color: var(--electric-coral); }
   .add-btn {
     background: transparent;
-    border: 1px solid var(--midnight-violet);
-    color: var(--midnight-violet);
+    border: 1px solid var(--ink-strong);
+    color: var(--ink-strong);
     font-family: var(--font-body);
     font-weight: 700;
     padding: 10px 16px;
@@ -71,7 +71,7 @@
     margin-bottom: 1.25rem;
   }
   .add-btn:hover { background: var(--violet-soft); }
-  label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--midnight-violet); display: block; margin: 1rem 0 6px; }
+  label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--ink-strong); display: block; margin: 1rem 0 6px; }
   /* design_handoff_plan_the_week: every question carries one of these,
      naming the specific failure the answer prevents. Not decoration — if
      you can't name that failure, the question shouldn't be asked. */
@@ -81,7 +81,7 @@
     padding: 12px 14px;
     font-size: 0.9rem;
     line-height: 1.5;
-    color: var(--midnight-violet);
+    color: var(--ink-strong);
     margin: 0 0 18px;
   }
   /* Skipping is a real, honest answer on both added steps — the app says so
@@ -92,7 +92,7 @@
     font-family: var(--font-body); font-size: 0.85rem;
     color: var(--text-muted); cursor: pointer;
   }
-  .skip-link:hover { color: var(--midnight-violet); }
+  .skip-link:hover { color: var(--ink-strong); }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 16px;
@@ -109,7 +109,7 @@
   }
   .chip.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
   .chip.small { padding: 6px 12px; min-height: 32px; font-size: 0.75rem; }
-  .chip.removable { padding-right: 8px; gap: 6px; cursor: default; background: var(--violet-soft); border-color: var(--card-border); color: var(--midnight-violet); }
+  .chip.removable { padding-right: 8px; gap: 6px; cursor: default; background: var(--violet-soft); border-color: var(--card-border); color: var(--ink-strong); }
   .chip.removable button {
     background: none; border: none; color: inherit; font-size: 1rem; cursor: pointer; line-height: 1; padding: 4px;
   }
@@ -117,7 +117,7 @@
     font-family: var(--font-body);
     font-weight: 700;
     background: var(--turmeric-gold);
-    color: var(--midnight-violet);
+    color: var(--ink-strong);
     border: none;
     padding: 13px 22px;
     min-height: 44px;
@@ -132,8 +132,8 @@
   .next-btn:disabled { opacity: 0.6; cursor: default; }
   .next-btn.secondary {
     background: transparent;
-    color: var(--midnight-violet);
-    border: 1px solid var(--midnight-violet);
+    color: var(--ink-strong);
+    border: 1px solid var(--ink-strong);
   }
   .next-btn.secondary:hover { background: var(--violet-soft); }
   .back-link {
@@ -146,7 +146,7 @@
     display: inline-flex;
     align-items: center;
   }
-  .back-link:hover { color: var(--midnight-violet); }
+  .back-link:hover { color: var(--ink-strong); }
   .member-block { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 10px; }
   .member-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
   .two-col { display: flex; gap: 10px; }
@@ -176,12 +176,12 @@
   .stepper { display: flex; align-items: center; gap: 16px; }
   .stepper-btn {
     width: 44px; height: 44px; border-radius: 50%;
-    border: 1px solid var(--midnight-violet); background: var(--surface-raised);
-    color: var(--midnight-violet); font-size: 1.3rem; font-weight: 700;
+    border: 1px solid var(--ink-strong); background: var(--surface-raised);
+    color: var(--ink-strong); font-size: 1.3rem; font-weight: 700;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
   .stepper-btn:hover { background: var(--violet-soft); }
-  .stepper-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--midnight-violet); min-width: 90px; text-align: center; }
+  .stepper-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--ink-strong); min-width: 90px; text-align: center; }
   .stepper-hint { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; }
 
   /* First-plan reveal — deliberately distinct from the wizard steps above:
@@ -209,7 +209,7 @@
     margin-bottom: 10px;
     box-shadow: var(--shadow-card);
   }
-  .reveal-day .day-name { font-family: var(--font-heading); font-weight: 700; color: var(--midnight-violet); margin: 0 0 4px; font-size: 0.95rem; }
+  .reveal-day .day-name { font-family: var(--font-heading); font-weight: 700; color: var(--ink-strong); margin: 0 0 4px; font-size: 0.95rem; }
   .reveal-day .meal-name { margin: 0; color: var(--text-body); font-size: 0.95rem; }
   .invite-card {
     background: var(--violet-soft);
@@ -218,13 +218,13 @@
     padding: 16px;
     margin-top: 18px;
   }
-  .invite-card h2 { font-family: var(--font-heading); font-size: 1rem; color: var(--midnight-violet); margin: 0 0 4px; }
+  .invite-card h2 { font-family: var(--font-heading); font-size: 1rem; color: var(--ink-strong); margin: 0 0 4px; }
   .invite-card p.hint { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 12px; }
   .invite-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--card-border); }
   .invite-row:first-of-type { border-top: none; }
   .invite-row .name { font-weight: 700; color: var(--text-body); font-size: 0.9rem; }
   .invite-btn {
-    background: var(--surface-raised); border: 1px solid var(--midnight-violet); color: var(--midnight-violet);
+    background: var(--surface-raised); border: 1px solid var(--ink-strong); color: var(--ink-strong);
     font-family: var(--font-body); font-weight: 700; font-size: 0.8rem;
     padding: 8px 14px; min-height: 38px; border-radius: var(--radius-control); cursor: pointer;
   }
@@ -533,7 +533,7 @@ function buildRestrictionsStep() {
   currentMembers().forEach(m => {
     const block = document.createElement('div');
     block.className = 'member-block';
-    block.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;font-size:0.9rem;color:var(--midnight-violet);margin:0 0 6px">${escapeHtmlLocal(m.name)}</p>
+    block.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;font-size:0.9rem;color: var(--ink-strong);margin:0 0 6px">${escapeHtmlLocal(m.name)}</p>
       <div class="chip-row diet-chips" data-member="${escapeHtmlLocal(m.name)}"></div>`;
     chipWithCustom(block.querySelector('.diet-chips'), DIET_OPTIONS, true);
     dietDiv.appendChild(block);

@@ -16,8 +16,8 @@
   * { box-sizing: border-box; }
   body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, var(--sand)); }
   .wwk-header { padding: 20px 20px 6px; }
-  .wwk-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--midnight-violet); text-decoration: none; display: block; margin-bottom: 8px; }
-  .wwk-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0 0 16px; }
+  .wwk-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--ink-strong); text-decoration: none; display: block; margin-bottom: 8px; }
+  .wwk-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--ink-strong); margin: 0 0 16px; }
 
   .wwk-tabs { display: flex; gap: 6px; padding: 0 16px 12px; }
   .wwk-tab { flex: 1; padding: 11px 0; border-radius: 10px; border: none; font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; cursor: pointer; background: var(--surface-raised); color: var(--ink-secondary); }
@@ -49,7 +49,7 @@
   }
 
   .wwk-editor { border-top: 1px solid var(--hairline); padding: 11px 0; }
-  .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 12px; background: var(--surface); font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
+  .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--ink-strong); border-radius: 12px; background: var(--surface); font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
   .wwk-editor-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
   .wwk-save-btn { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 11px; padding: 12px 18px; font-weight: 700; font-family: var(--font-body); cursor: pointer; }
   .wwk-cancel-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: var(--ink-muted); cursor: pointer; }
@@ -67,31 +67,48 @@
   .wwk-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--ground); border-radius: 20px; padding: 9px 8px 9px 13px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
   /* A real <button> now — it was a <span>, so it could only be clicked,
      never tabbed to. Padding/border reset to keep it looking identical. */
-  .wwk-chip-x { padding: 0; border: none; appearance: none; width: 22px; height: 22px; border-radius: 12px; background: var(--hairline-strong); color: var(--midnight-violet); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .wwk-chip-add { border: 1.5px dashed var(--ink-done-soft); border-radius: 20px; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); padding: 9px 15px; cursor: pointer; }
+  .wwk-chip-x { padding: 0; border: none; appearance: none; width: 22px; height: 22px; border-radius: 12px; background: var(--hairline-strong); color: var(--ink-strong); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .wwk-chip-add { border: 1.5px dashed var(--ink-done-soft); border-radius: 20px; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--ink-strong); padding: 9px 15px; cursor: pointer; }
   .wwk-chip-input-row { display: flex; gap: 6px; align-items: center; }
-  .wwk-chip-input { border: 2px solid var(--midnight-violet); border-radius: 20px; padding: 9px 15px; font-family: var(--font-body); font-size: 0.9rem; }
+  .wwk-chip-input { border: 2px solid var(--ink-strong); border-radius: 20px; padding: 9px 15px; font-family: var(--font-body); font-size: 0.9rem; }
   .wwk-import-row { background: var(--ground); border-radius: 14px; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; cursor: pointer; }
   .wwk-import-title { font-family: var(--font-body); font-weight: 700; font-size: 0.94rem; color: var(--ink); margin: 0; }
   .wwk-import-sub { font-family: var(--font-body); font-size: 0.8rem; color: var(--ink-muted); margin: 2px 0 0; }
-  .wwk-import-open { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--midnight-violet); }
+  .wwk-import-open { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--ink-strong); }
 
   /* Import sheet */
-  #wwk-scrim { position: fixed; inset: 0; background: var(--scrim); display: none; z-index: 998; }
+  #wwk-scrim { position: fixed; inset: 0; background: rgba(35, 48, 42,.42); /* NOT --scrim: this backdrop has always been .42, the token is .45 */ display: none; z-index: 998; }
   #wwk-scrim.open { display: block; }
   #wwk-import-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: var(--surface-raised); border-radius: 26px 26px 0 0; padding: 16px 20px 22px; z-index: 999; display: none; }
   #wwk-import-sheet.open { display: block; }
   .wwk-store-picker { display: flex; gap: 8px; margin: 14px 0; }
   .wwk-store-picker button { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid var(--hairline-strong); background: var(--surface-raised); font-family: var(--font-body); cursor: pointer; }
-  .wwk-store-picker button.selected { background: var(--celadon-tint); border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
-  #wwk-import-textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 14px; height: 120px; resize: none; font-family: var(--font-body); font-size: 0.94rem; padding: 12px 14px; margin-bottom: 14px; }
+  .wwk-store-picker button.selected { background: var(--celadon-tint); border-color: var(--ink-strong); font-weight: 700; color: var(--ink-strong); }
+  #wwk-import-textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--ink-strong); border-radius: 14px; height: 120px; resize: none; font-family: var(--font-body); font-size: 0.94rem; padding: 12px 14px; margin-bottom: 14px; }
   .wwk-import-footer { display: flex; gap: 10px; }
   .wwk-import-footer button { flex: 1; padding: 15px; border-radius: 13px; font-weight: 700; font-family: var(--font-body); cursor: pointer; border: none; }
-  .wwk-import-cancel { background: transparent; border: 1.5px solid var(--midnight-violet) !important; color: var(--midnight-violet); }
+  .wwk-import-cancel { background: transparent; border: 1.5px solid var(--ink-strong) !important; color: var(--ink-strong); }
   .wwk-import-save { background: var(--midnight-violet); color: var(--oat-cream); }
 
-  #wwk-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--toast-bg); color: var(--surface); font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: var(--shadow-toast); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  #wwk-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--toast-bg); color: #FFFDF8; /* literal on purpose: light text, correct on the toast fill in BOTH modes */ font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25); /* NOT --shadow-toast: this toast has always been .25, the token is .18 */ z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   #wwk-toast.show { opacity: 1; }
+
+  /* ---------- Dark mode ----------
+     memory.html is fully tokenised, so theme.css carries it. This is the one
+     exception. */
+  @media (prefers-color-scheme: dark) {
+
+    /* Ivory text on a spruce fill. These say `color: var(--oat-cream)`, and
+       --oat-cream is an alias for --ground, which INVERTS: in dark it is
+       #101F19, i.e. dark text on a spruce button. --ivory-ink is the token
+       that means "text on spruce" and is right in both modes, but it is
+       #F6EEE1 against --ground's #FBF6EE, so swapping the declaration
+       outright would have nudged light mode. Overriding here instead keeps
+       light byte-identical. */
+    .wwk-tab.active, .wwk-save-btn, .wwk-import-save { color: var(--ivory-ink); }
+    #wwk-toast { box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+    #wwk-scrim { background: var(--scrim); }
+  }
 </style>
 <script src="/static/error-reporter.js"></script>
 </head>

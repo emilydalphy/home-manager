@@ -29,8 +29,8 @@
   */
   :root {
     color-scheme: light;
-    --plum-panel: #E2EDE5;
-    --ack-green: #4F6B5B;
+    --plum-panel: var(--celadon-tint);
+    --ack-green: var(--celadon-label);
   }
   * { box-sizing: border-box; }
   body {
@@ -46,25 +46,25 @@
     font-family: var(--font-body); font-size: 0.88rem; font-weight: 700;
     color: var(--text-muted); text-decoration: none;
   }
-  .back-link:hover { color: var(--midnight-violet); }
+  .back-link:hover { color: var(--ink-strong); }
   .eyebrow {
     font-family: var(--font-body); font-weight: 700; font-size: 0.72rem;
     letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
     margin: 6px 0 6px;
   }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--midnight-violet); margin: 0 0 8px; }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink-strong); margin: 0 0 8px; }
   .intro { font-size: 0.92rem; line-height: 1.55; color: var(--text-muted); margin: 0 0 24px; }
 
   section.block { margin-bottom: 28px; }
   .block-label {
     font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
-    letter-spacing: .08em; text-transform: uppercase; color: var(--midnight-violet);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-strong);
     margin-bottom: 5px;
   }
   .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--text-muted); margin: 0 0 14px; }
 
   .card {
-    background: #fff; border: 1px solid var(--card-border);
+    background: var(--surface-raised); border: 1px solid var(--card-border);
     border-radius: 14px; padding: 4px 16px;
   }
   .row {
@@ -79,13 +79,13 @@
   .stepper { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
   .stepper button {
     width: 38px; height: 38px; flex-shrink: 0;
-    border-radius: 9px; border: 1px solid var(--midnight-violet);
-    background: #fff; color: var(--midnight-violet);
+    border-radius: 9px; border: 1px solid var(--ink-strong);
+    background: var(--surface-raised); color: var(--ink-strong);
     font-size: 1.15rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
   }
   .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
   .stepper button:disabled { opacity: .35; cursor: default; }
-  .stepper output { min-width: 32px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--midnight-violet); }
+  .stepper output { min-width: 32px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
   .chip {
@@ -93,9 +93,9 @@
     display: inline-flex; align-items: center;
     font-family: var(--font-body); font-size: 0.85rem;
     border-radius: var(--radius-pill); border: 1px solid var(--card-border);
-    background: #fff; color: var(--text-body); cursor: pointer;
+    background: var(--surface-raised); color: var(--text-body); cursor: pointer;
   }
-  .chip:hover { border-color: var(--midnight-violet); }
+  .chip:hover { border-color: var(--ink-strong); }
   .chip.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
 
   .stack { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
@@ -103,19 +103,19 @@
     text-align: left; width: 100%;
     padding: 13px 15px; min-height: 46px;
     border-radius: 12px; border: 1px solid var(--card-border);
-    background: #fff; color: var(--text-body);
+    background: var(--surface-raised); color: var(--text-body);
     font-family: var(--font-body); font-size: 0.92rem; cursor: pointer;
   }
-  .option:hover { border-color: var(--midnight-violet); }
-  .option.on { background: var(--violet-soft); border-color: var(--midnight-violet); color: var(--midnight-violet); font-weight: 700; }
+  .option:hover { border-color: var(--ink-strong); }
+  .option.on { background: var(--violet-soft); border-color: var(--ink-strong); color: var(--ink-strong); font-weight: 700; }
 
   .editable {
     width: 100%; padding: 11px 12px;
     border-radius: var(--radius-control); border: 1px solid var(--card-border);
     font-family: var(--font-body); font-size: 0.92rem;
-    background: #fff; color: var(--text-body); min-height: 44px;
+    background: var(--surface-raised); color: var(--text-body); min-height: 44px;
   }
-  .editable:focus { border-color: var(--midnight-violet); outline: none; }
+  .editable:focus { border-color: var(--ink-strong); outline: none; }
   .editable::placeholder { color: var(--text-muted); }
   textarea.editable { min-height: 72px; resize: vertical; }
 
@@ -124,7 +124,7 @@
     display: inline-flex; align-items: center; gap: 5px;
     padding: 7px 8px 7px 13px; border-radius: var(--radius-pill);
     background: var(--violet-soft); border: 1px solid var(--card-border);
-    color: var(--midnight-violet); font-size: 0.82rem;
+    color: var(--ink-strong); font-size: 0.82rem;
   }
   .list-chip button {
     background: none; border: none; color: inherit; cursor: pointer;
@@ -134,8 +134,8 @@
   .list-add .editable { flex: 1; }
   .list-add button {
     flex-shrink: 0; padding: 0 16px; min-height: 44px;
-    border-radius: var(--radius-control); border: 1px solid var(--midnight-violet);
-    background: #fff; color: var(--midnight-violet);
+    border-radius: var(--radius-control); border: 1px solid var(--ink-strong);
+    background: var(--surface-raised); color: var(--ink-strong);
     font-family: var(--font-body); font-weight: 700; font-size: 0.85rem; cursor: pointer;
   }
   .list-add button:hover { background: var(--violet-soft); }
@@ -150,15 +150,15 @@
 
   /* The embedded chat, scoped honestly to what the controls can't express. */
   .chat-card { background: var(--plum-panel); border-radius: 14px; padding: 16px; }
-  .chat-card h2 { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--midnight-violet); margin: 0 0 5px; }
-  .chat-card p { font-size: 0.88rem; line-height: 1.5; color: var(--midnight-violet); margin: 0 0 12px; }
+  .chat-card h2 { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 700; color: var(--ink-strong); margin: 0 0 5px; }
+  .chat-card p { font-size: 0.88rem; line-height: 1.5; color: var(--ink-strong); margin: 0 0 12px; }
   .chat-form { display: flex; gap: 8px; }
   .chat-form input {
     flex: 1; padding: 12px 13px; min-height: 46px;
-    border-radius: var(--radius-control); border: 1px solid #C7DACD;
-    font-family: var(--font-body); font-size: 0.92rem; background: #fff; color: var(--text-body);
+    border-radius: var(--radius-control); border: 1px solid var(--celadon-edge);
+    font-family: var(--font-body); font-size: 0.92rem; background: var(--surface-raised); color: var(--text-body);
   }
-  .chat-form input:focus { border-color: var(--midnight-violet); outline: none; }
+  .chat-form input:focus { border-color: var(--ink-strong); outline: none; }
   .chat-form button {
     flex-shrink: 0; padding: 0 18px; min-height: 46px;
     border-radius: var(--radius-control); border: none;
@@ -166,7 +166,7 @@
     font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; cursor: pointer;
   }
   .chat-form button:disabled { opacity: .6; cursor: default; }
-  .chat-reply { font-size: 0.9rem; line-height: 1.55; color: var(--midnight-violet); margin-top: 12px; }
+  .chat-reply { font-size: 0.9rem; line-height: 1.55; color: var(--ink-strong); margin-top: 12px; }
   .chat-reply:empty { display: none; }
 
   .loading, .failed { color: var(--text-muted); font-size: 0.92rem; padding: 40px 0; text-align: center; }

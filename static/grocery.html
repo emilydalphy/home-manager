@@ -1,5 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+  Pinned to LIGHT in both modes. This page is legacy: the shell draws these
+  screens natively now (see CLAUDE.md's decision log for the grocery and
+  kitchen/cooker slices), and it is reachable only by typing its /static/ URL
+  — nothing in the app links to it. It carries ~80 hardcoded light literals,
+  so rather than leave it rendering half-dark for whoever hits that URL, it
+  opts out of theme.css's dark block the same way share.html does.
+  It should be deleted, like grocery-legacy.html was; that is a separate call.
+-->
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">

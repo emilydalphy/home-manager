@@ -44,7 +44,7 @@
     background: var(--oat-cream);
     color: var(--text-body);
   }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.55rem; color: var(--midnight-violet); margin: 0 0 12px; line-height: 1.25; }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.55rem; color: var(--ink-strong); margin: 0 0 12px; line-height: 1.25; }
   .eyebrow {
     font-family: var(--font-body); font-weight: 700; font-size: 0.72rem;
     letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
@@ -60,7 +60,7 @@
     padding: 12px 14px;
     font-size: 0.9rem;
     line-height: 1.5;
-    color: var(--midnight-violet);
+    color: var(--ink-strong);
     margin-bottom: 22px;
   }
   .why b { font-weight: 700; }
@@ -77,7 +77,7 @@
   section.block { margin-bottom: 26px; }
   .block-label {
     font-family: var(--font-body); font-weight: 700; font-size: 0.78rem;
-    letter-spacing: .08em; text-transform: uppercase; color: var(--midnight-violet);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-strong);
     margin-bottom: 5px;
   }
   .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--text-muted); margin: 0 0 12px; }
@@ -91,7 +91,7 @@
     margin-bottom: 10px;
   }
   .day-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px; }
-  .day-name { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; color: var(--midnight-violet); }
+  .day-name { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
   .day-date { font-size: 0.8rem; color: var(--text-muted); }
   /* What the app already knows about this day, so the household isn't
      re-answering something it has been told. Grey on purpose: it's context,
@@ -107,7 +107,7 @@
     background: var(--surface-raised); color: var(--text-body);
     cursor: pointer;
   }
-  .tag:hover { border-color: var(--midnight-violet); }
+  .tag:hover { border-color: var(--ink-strong); }
   .tag.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
 
   /* ---- Guest follow-up ---- */
@@ -115,20 +115,20 @@
     margin-top: 12px; padding: 13px 14px;
     background: var(--oat-cream); border-radius: 12px;
   }
-  .guests h3 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: var(--midnight-violet); margin: 0 0 4px; }
+  .guests h3 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: var(--ink-strong); margin: 0 0 4px; }
   .guests p { font-size: 0.83rem; line-height: 1.45; color: var(--text-muted); margin: 0 0 11px; }
   .stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
   .stepper-label { font-size: 0.88rem; color: var(--text-body); }
   .stepper { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .stepper button {
     width: 36px; height: 36px; flex-shrink: 0;
-    border-radius: 9px; border: 1px solid var(--midnight-violet);
-    background: var(--surface-raised); color: var(--midnight-violet);
+    border-radius: 9px; border: 1px solid var(--ink-strong);
+    background: var(--surface-raised); color: var(--ink-strong);
     font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
   }
   .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
   .stepper button:disabled { opacity: .35; cursor: default; }
-  .stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 0.98rem; color: var(--midnight-violet); }
+  .stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); }
 
   /* ---- Chips (lunches, moods, cuisines) ---- */
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -141,7 +141,7 @@
     background: var(--surface-raised); color: var(--text-body);
     cursor: pointer;
   }
-  .chip:hover { border-color: var(--midnight-violet); }
+  .chip:hover { border-color: var(--ink-strong); }
   .chip.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
 
   .card {
@@ -156,7 +156,7 @@
     font-family: var(--font-body); font-size: 0.92rem; line-height: 1.5;
     background: var(--surface-raised); color: var(--text-body);
   }
-  textarea:focus { border-color: var(--midnight-violet); outline: none; }
+  textarea:focus { border-color: var(--ink-strong); outline: none; }
   textarea::placeholder { color: var(--text-muted); }
 
   /* ---- Footer ---- */
@@ -172,7 +172,7 @@
   .footer-inner { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
   .cta {
     width: 100%; font-family: var(--font-body); font-weight: 700;
-    background: var(--turmeric-gold); color: var(--midnight-violet);
+    background: var(--turmeric-gold); color: var(--on-accent-ink);
     border: none; padding: 14px 22px; min-height: 50px;
     border-radius: var(--radius-control); font-size: 0.98rem; cursor: pointer;
   }
@@ -183,13 +183,13 @@
     font-family: var(--font-body); font-size: 0.85rem; cursor: pointer;
     min-height: 40px; align-self: center;
   }
-  .back:hover { color: var(--midnight-violet); }
+  .back:hover { color: var(--ink-strong); }
 
   /* Somebody else already started this week — DATA_MODEL.md's soft lock. */
   .joined {
     background: var(--plum-panel); border-radius: 12px;
     padding: 12px 14px; font-size: 0.88rem; line-height: 1.5;
-    color: var(--midnight-violet); margin-bottom: 18px;
+    color: var(--ink-strong); margin-bottom: 18px;
   }
   .loading, .failed { color: var(--text-muted); font-size: 0.92rem; padding: 40px 0; text-align: center; }
   [hidden] { display: none !important; }
