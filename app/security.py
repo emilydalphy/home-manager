@@ -55,6 +55,7 @@ from .tools._shared import (
     set_current_household_id,
 )
 from .tools import usage as _usage
+from . import households
 
 logger = logging.getLogger("home_manager")
 
@@ -278,13 +279,44 @@ async def auth_middleware(request, call_next):
         )
 
     session = read_session_parts(request.cookies.get(COOKIE_NAME))
+
+    # A validly signed cookie can still name a household that isn't there
+    # any more (deleted, or — today — never real to begin with, since
+    # nothing yet deletes a household in practice). The signature only
+    # proves the cookie was minted by this server; it says nothing about
+    # whether the household inside it still exists. Left unchecked, that
+    # request would still get bound to that (nonexistent) household id:
+    # reads come back silently empty, indistinguishable from a genuine new
+    # household with no data yet, and writes fail as unhelpful 500s — never
+    # a clean "you're signed out." Caught here, before anything is bound,
+    # rather than letting it dribble out as confusing failures downstream.
+    # Off the event loop, same reasoning as touch_household_active below:
+    # this runs on every authenticated request (not throttled the way the
+    # activity write is), so a blocking SQLite call here would stall the
+    # loop thread — and every concurrent request with it — on every single
+    # request rather than once per 15 minutes.
+    stale_cookie = False
+    if session and not await run_in_threadpool(households.household_exists, session[1]):
+        logger.warning(
+            "Session cookie named household %s, which no longer exists — signing out.",
+            session[1],
+        )
+        session = None
+        stale_cookie = True
+
     if session:
         return await _call_as_household(session[1], call_next, request)
 
     wants_html = "text/html" in request.headers.get("accept", "")
     if wants_html and request.method == "GET":
-        return RedirectResponse(url=f"/login?next={_safe_next(path)}", status_code=303)
-    return JSONResponse({"detail": "Please sign in again."}, status_code=401)
+        response = RedirectResponse(url=f"/login?next={_safe_next(path)}", status_code=303)
+    else:
+        response = JSONResponse({"detail": "Please sign in again."}, status_code=401)
+    if stale_cookie:
+        # Clear it the same way /logout does — otherwise the browser keeps
+        # sending a cookie that will fail this same check forever.
+        response.delete_cookie(COOKIE_NAME, path="/")
+    return response
 
 
 # Reading the app is not using the app.

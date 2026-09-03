@@ -4,7 +4,7 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 from __future__ import annotations
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import attention as _attention
 from . import inventory as _inventory
 from . import quantities as _quantities
@@ -223,6 +223,9 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         """,
         (entry_id, household_id()),
     ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No meal plan entry with id {entry_id}.")
     linked_ids = [entry_id]
     if row and row["weekly_plan_id"] is not None:
         plan_row = conn.execute(
@@ -258,6 +261,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
     """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule) as done or back to pending."""
     conn = get_conn()
+    require_household_row(conn, "prep_tasks", prep_task_id, label="prep task")
     conn.execute(
         "UPDATE prep_tasks SET status = ? WHERE id = ? AND household_id = ?",
         (status, prep_task_id, household_id()),

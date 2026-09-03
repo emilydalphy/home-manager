@@ -4,7 +4,7 @@ The grocery list: adding, merging, marking, clearing and repairing items.
 from __future__ import annotations
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import inventory as _inventory
 from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
@@ -350,6 +350,7 @@ def exclude_grocery_item(item_id: int) -> dict:
     to see what's currently hidden this way.
     """
     conn = get_conn()
+    require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     conn.execute(
         "UPDATE grocery_items SET excluded_from_list = 1 WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
@@ -362,6 +363,7 @@ def exclude_grocery_item(item_id: int) -> dict:
 def include_grocery_item(item_id: int) -> dict:
     """Undo exclude_grocery_item — put an item back on the normal shown/shopped grocery list."""
     conn = get_conn()
+    require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     conn.execute(
         "UPDATE grocery_items SET excluded_from_list = 0 WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
@@ -555,6 +557,9 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     row = conn.execute(
         "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No grocery list item with id {item_id}.")
     conn.execute(
         "UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ?",
         (status, item_id, household_id()),
@@ -582,7 +587,7 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     ).fetchone()
     if not row:
         conn.close()
-        return {"item_id": item_id, "found": False}
+        raise ValueError(f"No grocery list item with id {item_id}.")
     new_quantity = quantity if quantity is not None else row["quantity"]
     new_category = category if category is not None else row["category"]
     conn.execute(
@@ -597,6 +602,7 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
 def remove_grocery_item(item_id: int) -> dict:
     """Delete an item from the grocery list."""
     conn = get_conn()
+    require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()

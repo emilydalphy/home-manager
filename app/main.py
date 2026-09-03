@@ -887,6 +887,8 @@ def cooker_check_meal(req: CheckOffMealRequest):
     try:
         tools.check_off_meal(req.entry_id, req.status)
         view = tools.get_cooker_view()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Cooker check-meal failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -899,6 +901,8 @@ def cooker_check_prep(req: CheckOffPrepRequest):
     try:
         tools.check_off_prep_step(req.prep_task_id, req.status)
         view = tools.get_cooker_view()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Cooker check-prep failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -952,6 +956,8 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
     try:
         tools.resolve_attention_item(item_id, req.status)
         items = tools.get_attention_items()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Attention-item resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -982,6 +988,8 @@ def set_chore_status(instance_id: int, req: ChoreStatusRequest):
     """Toggle a chore instance done/pending directly from the Today screen's chores card (no chat round-trip needed)."""
     try:
         result = tools.set_chore_instance_status(instance_id, req.status)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Chore status update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1517,6 +1525,8 @@ def remove_inventory_view_item(item_id: int):
     try:
         tools.remove_inventory_item(item_id)
         result = tools.get_inventory_by_section()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Inventory remove failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1635,6 +1645,8 @@ def update_fact_view(fact_id: int, req: FactUpdateRequest):
     """Edit a fact's text/hard flag in place — What We Know's inline editor."""
     try:
         result = tools.update_fact(fact_id, text=req.text, hard=req.hard)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Fact update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1646,6 +1658,8 @@ def delete_fact_view(fact_id: int):
     """Delete a fact outright."""
     try:
         result = tools.delete_fact(fact_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Fact delete failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1866,6 +1880,8 @@ def update_grocery_list_item(item_id: int, req: GroceryUpdateRequest):
     """Correct an already-listed item's quantity/category directly from the Grocery List view."""
     try:
         result = tools.update_grocery_item(item_id, quantity=req.quantity, category=req.category)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list item update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1877,6 +1893,8 @@ def set_grocery_list_item_status(item_id: int, req: GroceryStatusRequest):
     """Move an item between needed/in_cart/purchased — checking something off as purchased also adds it to tracked inventory automatically."""
     try:
         result = tools.mark_grocery_item(item_id, status=req.status)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list status update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1888,6 +1906,8 @@ def remove_grocery_list_item(item_id: int):
     """Delete an item from the grocery list entirely, directly from the Grocery List view."""
     try:
         result = tools.remove_grocery_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list remove failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1917,6 +1937,8 @@ def exclude_grocery_list_item(item_id: int):
     """Hide an item from the normal shown list (getting it elsewhere) without deleting it, directly from the Grocery List view."""
     try:
         result = tools.exclude_grocery_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list exclude failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1928,6 +1950,8 @@ def include_grocery_list_item(item_id: int):
     """Undo exclude — put an item back on the normal shown list, directly from the Grocery List view."""
     try:
         result = tools.include_grocery_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list include failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

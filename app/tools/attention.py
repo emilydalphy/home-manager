@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import coordination as _coordination
 from . import inventory as _inventory
 
@@ -44,6 +44,7 @@ def add_attention_item(kind: str, summary: str, detail: dict | None = None) -> d
 def resolve_attention_item(item_id: int, status: str = "resolved") -> dict:
     """Mark a queued attention item 'resolved' (handled) or 'dismissed' (not relevant/skip it) — either way it stops showing up in get_attention_items."""
     conn = get_conn()
+    require_household_row(conn, "attention_items", item_id, label="attention item")
     conn.execute(
         "UPDATE attention_items SET status = ?, resolved_at = datetime('now') WHERE id = ? AND household_id = ?",
         (status, item_id, household_id()),

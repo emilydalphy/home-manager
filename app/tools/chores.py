@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import household as _household
 
 
@@ -157,6 +157,7 @@ def update_chore(
 ) -> dict:
     """Update an existing chore's frequency, category, assigned rotation, or active status."""
     conn = get_conn()
+    require_household_row(conn, "chores", chore_id, label="chore")
     if frequency is not None:
         conn.execute("UPDATE chores SET frequency = ? WHERE id = ? AND household_id = ?", (frequency, chore_id, household_id()))
     if category is not None:
@@ -282,6 +283,7 @@ def list_chores(status: str = "pending", days_ahead: int = 14) -> list[dict]:
 def complete_chore(instance_id: int) -> dict:
     """Mark a chore instance as done."""
     conn = get_conn()
+    require_household_row(conn, "chore_instances", instance_id, label="chore instance")
     conn.execute(
         "UPDATE chore_instances SET status = 'done', completed_at = datetime('now') WHERE id = ? AND household_id = ?",
         (instance_id, household_id()),
@@ -328,6 +330,7 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
     check_off_meal/check_off_prep_step below.
     """
     conn = get_conn()
+    require_household_row(conn, "chore_instances", instance_id, label="chore instance")
     completed_at_sql = "datetime('now')" if status == "done" else "NULL"
     conn.execute(
         f"UPDATE chore_instances SET status = ?, completed_at = {completed_at_sql} WHERE id = ? AND household_id = ?",
