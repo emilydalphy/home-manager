@@ -3440,6 +3440,15 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                     block.name,
                     ", ".join(sorted(block.input)) if isinstance(block.input, dict) else "?",
                 )
+                # ...and recorded, not only logged. This is the app's
+                # biggest blind spot: the model is told the tool failed,
+                # writes a smooth apology, and the request records as a
+                # success. A tool broken for every household looks exactly
+                # like a working app. The log fixed that for anyone reading
+                # Railway; this row is what lets the morning report say it.
+                # Tool name and exception class only — the arguments carry
+                # household detail and stay out of the table.
+                tools.record_error("tool", where=block.name, detail=type(e).__name__)
                 content = json.dumps({"error": str(e)})
                 is_error = True
             tool_results.append(

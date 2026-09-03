@@ -233,8 +233,10 @@ from .stores import (  # noqa: F401
     set_item_store,
 )
 from .usage import (  # noqa: F401
+    get_recent_errors,
     get_usage_summary,
     record_chat_turn,
+    record_error,
     touch_household_active,
 )
 from .week_intake import (  # noqa: F401

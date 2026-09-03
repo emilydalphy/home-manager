@@ -693,6 +693,30 @@ CREATE TABLE IF NOT EXISTS chat_turns (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- One row per thing that went wrong, so it can be READ BACK rather than
+-- only written to a log nobody opens. That distinction is the whole point:
+-- errors already reach Railway's logs, but the overnight routine that
+-- reports them each morning cannot read those logs -- it runs in the cloud
+-- with the repo and Notion, not with the running app's stdout. An error
+-- that only exists in a log is, for the purpose of anyone finding out
+-- about it, an error nobody recorded.
+--
+-- Deliberately NO request bodies, no arguments, no tracebacks and no
+-- user text -- same rule as chat_turns. `detail` is an exception class
+-- name or a short reason, `where` is a route or tool name. Enough to tell
+-- you something broke and where to go looking; not a second copy of the
+-- household's private data sitting in a table.
+CREATE TABLE IF NOT EXISTS error_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    kind TEXT NOT NULL,          -- server | tool | client | rate_limit
+    where_ TEXT NOT NULL DEFAULT '',
+    detail TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_error_events_household_created
+    ON error_events (household_id, created_at);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

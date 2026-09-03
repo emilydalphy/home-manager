@@ -16,6 +16,14 @@ are beta questions first and cost questions second:
 - **Cost.** Judged per *completed job*, not per request -- a cheaper call
   that needs more rounds to finish isn't cheaper. That's why chat_turns
   stores `rounds` next to the tokens.
+
+- **Breakage.** Did anything go wrong, and can anyone find out without
+  waiting for the tester to mention it? Errors already reach the logs; what
+  they could not do is be read back. The overnight routine that reports
+  each morning runs in the cloud with the repo and Notion -- not with the
+  running app's stdout -- so a log it cannot open is, for the purpose of
+  anybody hearing about it, no record at all. record_error puts a row in
+  the database instead, and get_recent_errors reads it out.
 """
 from __future__ import annotations
 
@@ -201,3 +209,125 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         and summary["plans_generated"] == 0
     )
     return summary
+
+
+# ---------- errors, so somebody finds out ----------
+
+# What a single error row is allowed to say. Deliberately narrow: a class
+# name or short reason, and a route or tool name. NO request bodies, no
+# tool arguments, no tracebacks, no user text -- the same rule chat_turns
+# follows, and for the same reason. A table of everything that went wrong,
+# holding the content of what people typed, would quietly become the most
+# sensitive thing in the database.
+_MAX_DETAIL = 200
+_MAX_WHERE = 120
+
+# Nothing else deletes these rows, and a table that only grows is a slow
+# disk-fill on a Railway volume holding the household's real data. Kept
+# small on purpose: this is a "what broke recently" signal for a morning
+# report, not an archive. Pruned every _PRUNE_EVERY inserts rather than on
+# each one, so a burst of errors doesn't pay for a DELETE per row.
+_KEEP_ROWS = 1000
+_KEEP_DAYS = 30
+_PRUNE_EVERY = 50
+# Counted PER HOUSEHOLD, not globally. A single shared counter meant the
+# prune fired for whichever household happened to make the 50th call, so
+# two households interleaving left one of them permanently unpruned —
+# measured at ~3x the cap and still climbing. A dict keyed by household is
+# the smallest thing that makes the cap mean what it says.
+_since_prune: dict[int, int] = {}
+
+
+def _prune(conn, hid: int) -> None:
+    _since_prune[hid] = _since_prune.get(hid, 0) + 1
+    if _since_prune[hid] < _PRUNE_EVERY:
+        return
+    _since_prune[hid] = 0
+    conn.execute(
+        f"DELETE FROM error_events WHERE household_id = ? "
+        f"AND created_at < datetime('now', '-{_KEEP_DAYS} days')",
+        (hid,),
+    )
+    conn.execute(
+        "DELETE FROM error_events WHERE household_id = ? AND id NOT IN "
+        "(SELECT id FROM error_events WHERE household_id = ? ORDER BY id DESC LIMIT ?)",
+        (hid, hid, _KEEP_ROWS),
+    )
+
+
+def record_error(kind: str, where: str = "", detail: str = "") -> None:
+    """
+    Record that something broke. Never raises.
+
+    Called from error paths, so it cannot be allowed to fail there -- an
+    exception here would replace a handled 500 with an unhandled one, and
+    turn "something went wrong" into "something went wrong twice, and the
+    second one is ours". Everything is best-effort and swallowed.
+    """
+    conn = None
+    try:
+        conn = get_conn()
+        # Give up on a locked database quickly instead of waiting out
+        # sqlite3's 5s default. This runs on an error path, and the case
+        # that matters is the database *being* the thing that broke: then
+        # every 500 would park a threadpool worker for five seconds, in the
+        # same pool the app's sync routes run in, and error-recording would
+        # help convert one failure into an outage. A missed row is the
+        # cheaper loss.
+        conn.execute("PRAGMA busy_timeout = 500")
+        hid = household_id()
+        conn.execute(
+            "INSERT INTO error_events (household_id, kind, where_, detail) VALUES (?, ?, ?, ?)",
+            (hid, str(kind)[:40], str(where)[:_MAX_WHERE], str(detail)[:_MAX_DETAIL]),
+        )
+        _prune(conn, hid)
+        conn.commit()
+    except Exception:
+        import logging
+
+        logging.getLogger("home_manager").exception("Recording an error event failed")
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
+    """
+    What broke for this household recently — the part of the morning
+    report that leads, when there is anything to lead with.
+
+    Returns counts by kind plus the most recent rows, newest first, so a
+    report can say "11 tool failures" without printing eleven lines.
+    """
+    days = max(1, int(days))
+    limit = max(1, min(int(limit), 200))
+    since = f"-{days} days"
+    conn = get_conn()
+    try:
+        hid = household_id()
+        by_kind = {
+            r["kind"]: r["n"]
+            for r in conn.execute(
+                "SELECT kind, COUNT(*) AS n FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "GROUP BY kind ORDER BY n DESC",
+                (hid,),
+            ).fetchall()
+        }
+        recent = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT kind, where_ AS location, detail, created_at FROM error_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "ORDER BY id DESC LIMIT ?",
+                (hid, limit),
+            ).fetchall()
+        ]
+        return {
+            "days": days,
+            "total": sum(by_kind.values()),
+            "by_kind": by_kind,
+            "recent": recent,
+        }
+    finally:
+        conn.close()

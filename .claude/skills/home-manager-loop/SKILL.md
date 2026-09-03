@@ -358,3 +358,41 @@ can scan just the decisions rather than reading every ticket. She confirmed (202
 does receive the push notification each morning — that's the working "how do I know what to
 review" mechanism; a routine can't wait overnight for her reply, so the loop is: it surfaces
 clearly, she reads/replies, building starts the moment she does.
+
+### The morning report — check whether anything broke, before anything else
+
+Per Emily's 2026-09-01 decision, errors reach her through the push notification she already
+reads each morning rather than by email. From 2026-09-02 there is something to read:
+
+```
+python observability_report.py --days 1     # exit code 1 if anything broke
+```
+
+Run it near the **start** of an overnight pass, and if it reports anything under `BROKEN`,
+**lead the summary with that** — ahead of tickets, ahead of "needs your call". A beta tester
+hitting errors matters more than backlog progress, and she has no other way to find out.
+
+**Exit codes: 0 nothing broke, 1 something broke, 2 it could not look at all.** The third
+matters more than it sounds. This run has a fresh clone and no Railway volume, so unless the
+two variables below are set the script has nothing to read — and an earlier version answered
+that by reporting on an empty local database and printing "Nothing broke" every morning
+regardless. **A report that reads like good news is worse than no report.** If you get exit 2,
+say so in the summary as a broken routine, not as a clean bill of health.
+
+It reads the live app over the web, signing in exactly as a browser does, when these are set in
+this environment:
+
+```
+HOME_MANAGER_URL=https://home-manager-production-4949.up.railway.app
+HOME_MANAGER_PASSPHRASES=<household 1's passphrase>[,<household 2's>,...]
+```
+
+One passphrase per household, because a household's data is reachable only by signing into it —
+there is deliberately no all-households view in the app. It reports every household separately
+(a tester's bad day is invisible if you only look at Emily's). Failing that it reads a database
+file at `DB_PATH`, which is the local/dev case only.
+
+What it surfaces: crashed tools (invisible from outside — the assistant apologises smoothly
+and the request records as a success), server errors, browser errors, and rate-limit
+rejections. It also flags a household as `QUIET` when nothing happened at all that week,
+which is the beta signal easiest to skim past.

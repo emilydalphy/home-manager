@@ -191,6 +191,42 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-02 — The app records what breaks (`error_events`), and
+  `observability_report.py` reads it back for the morning notification.**
+  Before the friend beta there was no way to learn that the app had failed
+  for someone without her saying so — a crashed tool is especially
+  invisible, since the assistant apologises smoothly and the turn records
+  as a success. Four sources: 5xx, unhandled crashes, browser errors
+  (`static/error-reporter.js`), rate-limit rejections. **Three review
+  rounds found something every time, and the pattern each time was a fix
+  that opened a worse hole than it closed.** Round 2: letting the public
+  share pages report meant an unauthenticated write endpoint — 500 junk
+  rows evicted all 10 seeded real errors, reproduced. Reverted; the two
+  share pages now report nothing, tracked as its own ticket. Round 3: the
+  replacement guard asked "does this request have a cookie?" when it
+  needed to ask "is a household bound?" — `/login` is a *public* path, so
+  any signed-in household could write unbounded rows into household 1's
+  table (25 from 25 requests, measured). **The rule that came out of it:
+  on a public path there is no true answer to "whose error is this?", so
+  it is logged and not recorded** — a confident wrong answer sends Emily
+  hunting her own share links for someone else's bug. Also: `where_`
+  stores the route *pattern*, never the URL, or member names and live
+  share tokens land in a table read aloud each morning; and the browser's
+  `detail` is reduced to a shape (`TypeError`) rather than stored
+  verbatim, because it is the one untrusted end and its text is printed
+  into an agent's context.
+  Two judgment calls worth knowing. **The report reads the live app over
+  HTTP, not a database file** — the first version read `DB_PATH` with a
+  docstring arguing a fresh clone "can read a database file", which is
+  true of a local file and false of Railway's, the only one with anything
+  in it. It would have printed "Nothing broke" every morning forever. It
+  now needs `HOME_MANAGER_URL` + `HOME_MANAGER_PASSPHRASES` set in the
+  overnight environment, and **exit 2 ("couldn't look") is deliberately
+  separate from exit 0 ("looked, all fine")**. And the unit test for that
+  script guessed `/api/whoami`'s key the same wrong way the script did
+  (`name`, not `household_name`), so both agreed and neither noticed —
+  caught only by running it against a real server, which is why there is
+  now a test pinning the script against the actual routes.
 - **2026-09-02 — The app is now Pomona, on the branch
   `pomona-rebrand-foundation` (not yet merged). Stage 1 = foundation only,
   no screen layouts touched.** The retired palette (Oat Cream / Midnight
