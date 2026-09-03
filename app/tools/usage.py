@@ -27,6 +27,7 @@ are beta questions first and cost questions second:
 """
 from __future__ import annotations
 
+import statistics
 import time
 
 from ..db import get_conn
@@ -35,6 +36,9 @@ from ._shared import household_id
 
 _TURN_FIELDS = ("rounds", "input_tokens", "cache_read_tokens",
                 "cache_write_tokens", "output_tokens", "seconds")
+
+_CALL_TOKEN_FIELDS = ("input_tokens", "cache_read_tokens",
+                      "cache_write_tokens", "output_tokens")
 
 
 # US dollars per million tokens, per model, from Anthropic's list prices.
@@ -129,6 +133,41 @@ def record_chat_turn(usage: dict | None = None) -> None:
             conn.close()
 
 
+def record_api_call(call_site: str, model: str, usage: dict | None = None,
+                     seconds: float = 0.0) -> None:
+    """
+    Record one Anthropic API call, whatever it was for -- chat, weekly-plan
+    generation, a photo scan, a chore recommendation, anything that goes
+    through agent._create_with_retry. See schema.sql on api_calls for why
+    this is a separate table from chat_turns rather than a replacement
+    for it.
+
+    Same shape and same reasoning as record_chat_turn: one dict of
+    whatever the caller tallied (an unknown key is ignored, not fatal),
+    and never raises -- this is bookkeeping wrapped around a call that
+    already succeeded, and it must not be what turns that success into a
+    500.
+    """
+    values = usage or {}
+    conn = None
+    try:
+        conn = get_conn()
+        conn.execute(
+            "INSERT INTO api_calls (household_id, call_site, model, input_tokens, "
+            "cache_read_tokens, cache_write_tokens, output_tokens, seconds) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (household_id(), str(call_site), str(model),
+             *(int(values.get(f, 0)) for f in _CALL_TOKEN_FIELDS), float(seconds)),
+        )
+        conn.commit()
+    except Exception:
+        import logging
+        logging.getLogger("home_manager").exception("Recording an API call failed")
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 # How long to go before writing last_active_at again for the same
 # household, and the in-process record of when we last did.
 #
@@ -173,6 +212,122 @@ def touch_household_active(household: int) -> None:
     finally:
         if conn is not None:
             conn.close()
+
+
+def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
+    """
+    All-in cost across every call site, for one household, for rows with
+    created_at >= since_sql -- a SQL expression the WHERE clause can
+    compare against directly, e.g. "datetime('now', '-7 days')" or
+    "datetime('now', 'start of month')".
+
+    Grouped by call_site (and priced per-row at the model that row
+    actually ran on, never an assumed single model) so a report can show
+    where the money is actually going -- the same "measure jobs, not
+    calls" correction this ticket already applied to chat now applies to
+    the whole bill.
+    """
+    rows = conn.execute(
+        "SELECT call_site, model, COUNT(*) AS calls, "
+        "COALESCE(SUM(input_tokens), 0) AS input_tokens, "
+        "COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens, "
+        "COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens, "
+        "COALESCE(SUM(output_tokens), 0) AS output_tokens, "
+        "COALESCE(SUM(seconds), 0) AS seconds "
+        f"FROM api_calls WHERE household_id = ? AND created_at >= {since_sql} "
+        "GROUP BY call_site, model",
+        (hid,),
+    ).fetchall()
+
+    by_call_site: dict[str, dict] = {}
+    total = {"input": 0.0, "cache_read": 0.0, "cache_write": 0.0, "output": 0.0, "total": 0.0}
+    for r in rows:
+        # price_tokens' rate table is keyed "input"/"cache_read"/"cache_write"/
+        # "output" (see _RATES_PER_MTOK); api_calls' columns are
+        # "input_tokens" etc. Remapped here rather than renaming one side
+        # to match the other, since each name is the right one for its own
+        # table/function.
+        tokens = {
+            "input": r["input_tokens"], "cache_read": r["cache_read_tokens"],
+            "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
+        }
+        cost = price_tokens(tokens, model=r["model"] or _PRICED_MODEL)
+        entry = by_call_site.setdefault(r["call_site"], {
+            "calls": 0, "seconds": 0.0,
+            "tokens": {"input": 0, "cache_read": 0, "cache_write": 0, "output": 0},
+            "cost": {"input": 0.0, "cache_read": 0.0, "cache_write": 0.0, "output": 0.0, "total": 0.0},
+        })
+        entry["calls"] += r["calls"]
+        entry["seconds"] += r["seconds"]
+        for f in ("input", "cache_read", "cache_write", "output"):
+            entry["tokens"][f] += tokens[f]
+        for k in total:
+            entry["cost"][k] = round(entry["cost"][k] + cost[k], 6)
+            total[k] += cost[k]
+
+    for entry in by_call_site.values():
+        entry["seconds"] = round(entry["seconds"], 1)
+
+    return {
+        "by_call_site": by_call_site,
+        "total_cost": {k: round(v, 6) for k, v in total.items()},
+    }
+
+
+def get_month_to_date_cost() -> dict:
+    """
+    All-in cost so far this calendar month, across every call site -- the
+    number Emily's $1/household/month target (set 2026-09-03) is judged
+    against. Deliberately the calendar month, not a rolling 30-day window:
+    the target is a monthly bill, and a rolling window would drift out of
+    sync with it (and would keep showing spend from a month that's over).
+    """
+    conn = get_conn()
+    try:
+        return _cost_breakdown(conn, household_id(), "datetime('now', 'start of month')")
+    finally:
+        conn.close()
+
+
+def _plan_generation_stats(conn, hid: int, since_sql: str) -> dict:
+    """
+    How long, and how much, week generation actually takes -- Emily asked
+    for this explicitly ("how long it takes to generate the week"), and
+    it's also the single most expensive call in the app (this ticket's
+    2026-08-31 baseline measured ~18,000 uncached input tokens, ~37
+    seconds, once per week).
+
+    p50/max rather than an average: one slow outlier would otherwise hide
+    inside a mean, and "how long does it usually take, and how bad does
+    it get" is the actual question being asked.
+    """
+    rows = conn.execute(
+        "SELECT model, seconds, input_tokens, cache_read_tokens, cache_write_tokens, "
+        "output_tokens FROM api_calls WHERE household_id = ? "
+        "AND call_site = 'generate_weekly_plan_llm' "
+        f"AND created_at >= {since_sql}",
+        (hid,),
+    ).fetchall()
+    if not rows:
+        return {"count": 0}
+
+    seconds = sorted(r["seconds"] for r in rows)
+    total_cost = {"input": 0.0, "cache_read": 0.0, "cache_write": 0.0, "output": 0.0, "total": 0.0}
+    for r in rows:
+        tokens = {
+            "input": r["input_tokens"], "cache_read": r["cache_read_tokens"],
+            "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
+        }
+        cost = price_tokens(tokens, model=r["model"] or _PRICED_MODEL)
+        for k in total_cost:
+            total_cost[k] += cost[k]
+
+    return {
+        "count": len(rows),
+        "p50_seconds": round(statistics.median(seconds), 1),
+        "max_seconds": round(max(seconds), 1),
+        "total_cost": {k: round(v, 6) for k, v in total_cost.items()},
+    }
 
 
 def get_usage_summary(days: int = 7) -> dict:
@@ -260,7 +415,22 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
     # Tokens are what happened; this is what they cost. Derived here so the
     # figure always reflects today's rate table rather than whatever was
     # true when the rows were written -- see price_tokens.
+    #
+    # Chat-only, from chat_turns -- kept for backward compatibility with
+    # what already reads this key. The all-in figure below (every call
+    # site, from api_calls) is the one the $1/household/month target is
+    # judged against.
     summary["cost"] = price_tokens(summary["tokens"])
+
+    # All-in, every call site, this calendar month -- see get_month_to_date_cost.
+    summary["month_to_date_cost"] = _cost_breakdown(
+        conn, hid, "datetime('now', 'start of month')"
+    )
+    # Week-generation latency + cost, same calendar-month window so the two
+    # numbers on the report line up with each other.
+    summary["plan_generation"] = _plan_generation_stats(
+        conn, hid, "datetime('now', 'start of month')"
+    )
 
     # An empty week is the signal worth naming out loud, since it is the
     # one a summary of counts is easiest to skim straight past.

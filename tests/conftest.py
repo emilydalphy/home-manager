@@ -36,7 +36,7 @@ _TABLES = [
     "member_notes", "member_share_links", "share_links", "facts",
     "preference_events", "notification_dismissals", "item_store_preferences",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
-    "chat_turns", "error_events",
+    "chat_turns", "api_calls", "error_events",
 ]
 
 

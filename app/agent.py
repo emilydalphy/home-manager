@@ -75,6 +75,35 @@ def _log_llm_call_timing(label: str, seconds: float, response) -> None:
     )
 
 
+def _record_api_call(label: str, model: str, response, seconds: float) -> None:
+    """
+    Turn one successful API response into the row tools.record_api_call
+    wants. A thin adapter, not inlined at the call site, so the field
+    names the SDK happens to use (input_tokens,
+    cache_read_input_tokens/cache_creation_input_tokens, output_tokens)
+    only have to be spelled correctly once.
+
+    Never raises -- tools.record_api_call already never raises, but a
+    malformed response.usage (an older/mocked client, say) must not turn
+    successful bookkeeping into a failed call either.
+    """
+    try:
+        usage = getattr(response, "usage", None)
+        tools.record_api_call(
+            call_site=label,
+            model=model,
+            usage={
+                "input_tokens": getattr(usage, "input_tokens", 0) or 0,
+                "cache_read_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
+                "cache_write_tokens": getattr(usage, "cache_creation_input_tokens", 0) or 0,
+                "output_tokens": getattr(usage, "output_tokens", 0) or 0,
+            },
+            seconds=seconds,
+        )
+    except Exception:
+        logger.exception("Recording an API call failed")
+
+
 def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts: int = 3, **kwargs):
     """
     Thin wrapper around client.messages.create that quietly retries a
@@ -92,7 +121,16 @@ def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts:
         try:
             started = time.perf_counter()
             response = client.messages.create(**kwargs)
-            _log_llm_call_timing(label, time.perf_counter() - started, response)
+            seconds = time.perf_counter() - started
+            _log_llm_call_timing(label, seconds, response)
+            # Every Anthropic call in the app goes through this one
+            # function, which is why recording lives here instead of at
+            # each of the (currently seven) call sites: one instrumentation
+            # point covers all of them, including any added later, rather
+            # than needing to be remembered at each new call site by hand.
+            # See schema.sql on api_calls for why this exists alongside
+            # (not instead of) chat's own chat_turns recording.
+            _record_api_call(label, kwargs.get("model", MODEL), response, seconds)
             return response
         except (APIConnectionError, APITimeoutError) as e:
             last_error = e

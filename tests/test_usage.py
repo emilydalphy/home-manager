@@ -267,3 +267,183 @@ def test_pricing_an_unpriced_model_says_so():
 
     with pytest.raises(ValueError, match="No published token rate"):
         usage_module.price_tokens({"output": 100}, model="claude-not-a-model")
+
+
+# ---------- every call site, not just chat (api_calls) ----------
+
+
+def _call_rows(household_id: int = 1):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM api_calls WHERE household_id = ? ORDER BY id", (household_id,)
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def _age_last_call(days_ago: int):
+    """Push the most recently inserted api_calls row's created_at back in
+    time, so month-boundary tests don't have to wait for an actual month
+    to pass."""
+    conn = get_conn()
+    conn.execute(
+        "UPDATE api_calls SET created_at = datetime('now', ?) "
+        "WHERE id = (SELECT MAX(id) FROM api_calls)",
+        (f"-{days_ago} days",),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_record_api_call_writes_a_row():
+    usage_module.record_api_call(
+        "generate_weekly_plan_llm", "claude-sonnet-5",
+        {"input_tokens": 17975, "cache_read_tokens": 0, "cache_write_tokens": 0,
+         "output_tokens": 4837},
+        seconds=36.49,
+    )
+    rows = _call_rows()
+    assert len(rows) == 1
+    assert rows[0]["call_site"] == "generate_weekly_plan_llm"
+    assert rows[0]["model"] == "claude-sonnet-5"
+    assert rows[0]["input_tokens"] == 17975
+    assert rows[0]["output_tokens"] == 4837
+    assert round(rows[0]["seconds"], 2) == 36.49
+
+
+def test_recording_an_api_call_never_raises(monkeypatch):
+    def explode(*args, **kwargs):
+        raise RuntimeError("database is on fire")
+
+    monkeypatch.setattr(usage_module, "get_conn", explode)
+    usage_module.record_api_call("run_agent_turn", "claude-sonnet-5", {"output_tokens": 1})
+    # No exception means the whole point of the test passed.
+
+
+def test_month_to_date_cost_breaks_down_by_call_site():
+    usage_module.record_api_call(
+        "generate_weekly_plan_llm", "claude-sonnet-5",
+        {"input_tokens": 1_000_000, "output_tokens": 0}, seconds=36.0,
+    )
+    usage_module.record_api_call(
+        "run_agent_turn", "claude-sonnet-5",
+        {"cache_read_tokens": 1_000_000, "output_tokens": 0}, seconds=2.0,
+    )
+
+    breakdown = usage_module.get_month_to_date_cost()
+    assert breakdown["by_call_site"]["generate_weekly_plan_llm"]["cost"]["total"] == 2.00
+    assert breakdown["by_call_site"]["run_agent_turn"]["cost"]["total"] == 0.20
+    assert breakdown["total_cost"]["total"] == round(2.00 + 0.20, 6)
+    assert breakdown["by_call_site"]["generate_weekly_plan_llm"]["calls"] == 1
+
+
+def test_month_to_date_cost_excludes_last_calendar_month():
+    """
+    Deliberately the calendar month, not a rolling 30-day window -- a
+    target of $1/household/month means "since the 1st", not "in the last
+    30 days", and the two disagree for anyone who reads this on the 2nd.
+    """
+    usage_module.record_api_call(
+        "run_agent_turn", "claude-sonnet-5", {"output_tokens": 1_000_000}, seconds=1.0,
+    )
+    _age_last_call(days_ago=40)  # safely into last month regardless of today's date
+
+    breakdown = usage_module.get_month_to_date_cost()
+    assert breakdown["total_cost"]["total"] == 0.0
+    assert breakdown["by_call_site"] == {}
+
+
+def test_month_to_date_cost_is_scoped_to_one_household():
+    conn = get_conn()
+    conn.execute("INSERT INTO households (id, name) VALUES (2, 'The Testers')")
+    conn.commit()
+    conn.close()
+
+    usage_module.record_api_call("run_agent_turn", "claude-sonnet-5", {"output_tokens": 1000})
+
+    with tools.use_household(2):
+        breakdown = usage_module.get_month_to_date_cost()
+        assert breakdown["total_cost"]["total"] == 0.0, (
+            "one household's API spend must not show up in another's total"
+        )
+
+
+def test_a_call_site_on_a_different_model_is_priced_at_its_own_rate():
+    """
+    price_tokens raises for a model with no rate row, so if a call site
+    ever does run on something other than claude-sonnet-5, the report
+    fails loudly rather than silently billing it at the wrong price. Add
+    a second rate here to prove the per-row model is actually threaded
+    through, not just assumed.
+    """
+    usage_module._RATES_PER_MTOK["claude-cheap-test-model"] = {
+        "input": 1.00, "cache_read": 0.10, "cache_write": 1.25, "output": 5.00,
+    }
+    try:
+        usage_module.record_api_call(
+            "generate_recipe_detail_llm", "claude-cheap-test-model",
+            {"input_tokens": 1_000_000, "output_tokens": 0},
+        )
+        breakdown = usage_module.get_month_to_date_cost()
+        assert breakdown["by_call_site"]["generate_recipe_detail_llm"]["cost"]["total"] == 1.00
+    finally:
+        del usage_module._RATES_PER_MTOK["claude-cheap-test-model"]
+
+
+def test_plan_generation_latency_is_p50_and_max_not_an_average():
+    """
+    Emily asked specifically how long generating the week takes. An
+    average hides a single bad outlier; p50 and max both surface it.
+    """
+    for seconds in (30.0, 32.0, 40.0):
+        usage_module.record_api_call(
+            "generate_weekly_plan_llm", "claude-sonnet-5",
+            {"input_tokens": 18000, "output_tokens": 4800}, seconds=seconds,
+        )
+
+    stats = usage_module.get_usage_summary()["plan_generation"]
+    assert stats["count"] == 3
+    assert stats["p50_seconds"] == 32.0
+    assert stats["max_seconds"] == 40.0
+    assert stats["total_cost"]["total"] > 0
+
+
+def test_plan_generation_stats_are_empty_with_no_runs():
+    stats = usage_module.get_usage_summary()["plan_generation"]
+    assert stats == {"count": 0}
+
+
+def test_every_llm_call_site_passes_the_shared_model_constant():
+    """
+    Every one of the app's Anthropic call sites must pass model=MODEL,
+    never a hardcoded string -- api_calls prices each row at the model it
+    recorded, which only stays correct as long as every call site keeps
+    passing the one shared constant rather than its own copy. A call site
+    that hardcoded its own model string would keep working today (the API
+    doesn't care) and would still price correctly today, right up until
+    agent.MODEL changes and that one site doesn't -- exactly the failure
+    this test exists to catch before it ships, not after.
+    """
+    import inspect
+
+    from app import agent
+
+    source = inspect.getsource(agent)
+    labels = [
+        "generate_weekly_plan_llm", "generate_component_plan_llm",
+        "generate_prep_schedule_llm", "generate_recipe_detail_llm",
+        "_scan_image_for_items", "generate_chore_recommendations", "run_agent_turn",
+    ]
+    assert source.count("_create_with_retry(") - 1 == len(labels), (
+        "the number of _create_with_retry call sites in agent.py changed "
+        "(the -1 is _create_with_retry's own definition) -- update this "
+        "test's label list, and the api_calls schema comment, to match"
+    )
+    for label in labels:
+        idx = source.index(f'label="{label}"')
+        window = source[idx: idx + 150]
+        assert "model=MODEL" in window, (
+            f"{label} does not pass model=MODEL -- it will be priced at "
+            f"whatever _PRICED_MODEL says even if it actually runs on "
+            f"something else"
+        )
