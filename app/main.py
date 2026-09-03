@@ -322,7 +322,10 @@ def _has_bound_household(request: Request) -> bool:
     no true answer to "whose?" and a confident wrong answer sends Emily
     hunting through her own share links for somebody else's bug.
     """
-    return not security.is_public_path(request.url.path)
+    # scope["path"] for the same reason auth_middleware uses it: a "#" or
+    # "?" inside the path truncates request.url.path, so the two would
+    # otherwise disagree about which requests are public.
+    return not security.is_public_path(request.scope["path"])
 
 
 class ChatRequest(BaseModel):

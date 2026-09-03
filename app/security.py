@@ -42,6 +42,7 @@ import hashlib
 import hmac
 import logging
 import os
+import posixpath
 import secrets
 import time
 
@@ -203,7 +204,25 @@ def check_password(candidate: str) -> bool:
 
 
 def is_public_path(path: str) -> bool:
-    return path in _PUBLIC_EXACT or path.startswith(_PUBLIC_PREFIXES)
+    """
+    Is this address one of the few that must work without signing in?
+
+    The address is resolved before it is judged. Asking whether a path
+    *starts with* "/static/icons/" is a question about text, and text can
+    be written more than one way: "/static/icons/../shell.js" starts with
+    the public prefix while naming a file that is not public, and the app
+    served 192KB of its own source to anyone who asked that way.
+
+    That mattered twice over. This same function decides which requests
+    get an error recorded against a household, so a loose answer here was
+    quietly deciding what gets written down as well as what gets served.
+    """
+    resolved = posixpath.normpath(path)
+    # normpath drops a trailing slash, which would turn "/share/" into
+    # something that no longer matches the "/share/" prefix. Keep it.
+    if path.endswith("/") and not resolved.endswith("/"):
+        resolved += "/"
+    return resolved in _PUBLIC_EXACT or resolved.startswith(_PUBLIC_PREFIXES)
 
 
 def _is_local(client_host: str | None) -> bool:
@@ -231,7 +250,14 @@ async def auth_middleware(request, call_next):
     of the lookup. Binding the default here would be the bug: a household-2
     share link would render household 1's dinners.
     """
-    path = request.url.path
+    # scope["path"], not request.url.path. Starlette rebuilds the URL by
+    # round-tripping it through urlsplit, and a literal "#" or "?" *inside*
+    # the path -- which uvicorn will happily decode out of %23 or %3F --
+    # truncates everything after it. So request.url.path reported
+    # "/static/icons/" for "/static/icons/%23/../../shell.js" while the
+    # router and StaticFiles went on to serve the real file. The gate has
+    # to judge the same string the app is going to act on.
+    path = request.scope["path"]
 
     if is_public_path(path):
         return await call_next(request)
