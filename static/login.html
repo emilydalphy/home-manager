@@ -241,7 +241,15 @@
      because this stage could not change light. Dark is now the more legible
      of the two; the light values want their own small ticket. */
   @media (prefers-color-scheme: dark) {
-    .signin-field input::placeholder { color: rgba(246, 238, 225, 0.62); }
+    /*
+      0.72, not the 0.62 that the page-spruce maths suggested. The input is
+      not ON the page spruce: its own translucent fill composites to about
+      #2E5140, which is lighter, so the placeholder had 4.07:1 there and only
+      LOOKED safe when measured against the panel behind it. Caught by
+      auditing what the browser actually renders rather than by arithmetic on
+      the tokens. 4.89:1 on the field, 5.87:1 if it ever sits on bare spruce.
+    */
+    .signin-field input::placeholder { color: rgba(246, 238, 225, 0.72); }
     .signin-helper { color: rgba(246, 238, 225, 0.60); }
   }
 </style>

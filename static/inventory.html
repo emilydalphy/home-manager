@@ -151,6 +151,10 @@
     /* The three status dots. --urgent and --apricot already follow the
        theme; only the neutral "fine" dot needed its own dark step. */
     .inv-dot { background: var(--ink-inactive); }
+    /* Same UA-default placeholder problem as the shell — no ::placeholder
+       rule exists here either, so these fell through to Chrome's #757575
+       (3.21:1 on the dark card). Light is untouched and keeps the UA grey. */
+    input::placeholder, textarea::placeholder { color: var(--ink-placeholder); }
 
     /* Ivory text on a spruce fill. These say `color: var(--oat-cream)`, and
        --oat-cream is an alias for --ground, which INVERTS: in dark it is

@@ -106,6 +106,10 @@
        outright would have nudged light mode. Overriding here instead keeps
        light byte-identical. */
     .wwk-tab.active, .wwk-save-btn, .wwk-import-save { color: var(--ivory-ink); }
+    /* Same UA-default placeholder problem as the shell — no ::placeholder
+       rule exists here either, so these fell through to Chrome's #757575
+       (3.21:1 on the dark card). Light is untouched and keeps the UA grey. */
+    input::placeholder, textarea::placeholder { color: var(--ink-placeholder); }
     #wwk-toast { box-shadow: 0 6px 20px rgba(0,0,0,.6); }
     #wwk-scrim { background: var(--scrim); }
   }

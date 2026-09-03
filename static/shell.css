@@ -4189,6 +4189,32 @@ html, body {
   /* --- Literals with no token twin --- */
   .gro-box { border-color: var(--hairline-strong); }
 
+  /*
+    THE OTHER ALIAS HAZARD, and the one this file missed on the first sweep.
+    .notif-row-action is `background: var(--plum)` + `color: var(--cream)`.
+    --cream is an alias for --ground, which INVERTS: in light it is the ivory
+    canvas and reads correctly on spruce, but in dark it becomes #101F19
+    while the fill only lifts to #22422F — dark ink on a dark button, 1.53:1.
+    This is the same shape as --spruce-as-ink (see --ink-strong in
+    theme.css), just running the other way, and it is the only place --cream
+    is used as a text colour anywhere in the app.
+    Overridden rather than swapped because --ivory-ink (#F6EEE1) is not
+    byte-identical to --ground (#FBF6EE) in light. 9.39:1 here.
+  */
+  .notif-row-action { color: var(--ivory-ink); }
+
+  /*
+    PLACEHOLDERS. This file sets no ::placeholder rule at all, so every input
+    in the shell — the ask composer included — falls through to Chrome's UA
+    default #757575. On the light ground that is 4.28:1 (already marginally
+    under AA, pre-existing and NOT changed here, since light had to stay
+    identical); on the dark ground it drops to 3.70:1, and 3.21:1 on a card.
+    --ink-placeholder is the token that exists for exactly this job.
+    4.87:1 on --surface, 5.62:1 on --ground, 4.70:1 on --surface-raised.
+  */
+  input::placeholder,
+  textarea::placeholder { color: var(--ink-placeholder); }
+
   /* The completed-chore tick. Celadon is a light accent in BOTH modes, so
      RULE ONE applies to it here: dark ink, not white. See the long note at
      .chore-row.done .chore-checkbox — light mode is knowingly left at the

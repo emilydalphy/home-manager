@@ -517,8 +517,12 @@ summary:focus-visible,
 
    THE OPT-OUT: `:root:not([data-theme="light"])` rather than a bare `:root`.
    A page that puts data-theme="light" on its <html> keeps the light values
-   whatever the phone is set to. Exactly one page does — share.html, the
-   public "printed menu" card; see the note at the top of its style block.
+   whatever the phone is set to. FOUR pages do, for two different reasons:
+     - share.html — the public "printed menu" card, deliberately the same
+       for every recipient; see the note at the top of its style block.
+     - grocery.html, cooker.html, kitchen.html — dead legacy pages the shell
+       replaced, reachable only by typing their /static/ URL, carrying ~180
+       light literals between them. Pinned rather than half-converted.
    This is also the hook a future manual toggle would use, which is why it
    is an attribute rather than something share.html-specific.
    ========================================================================== */
@@ -545,7 +549,7 @@ summary:focus-visible,
 
     /* (derived) The pure-white tier, one step above --surface. Capped by
        --ink-inactive and --urgent needing 4.5:1 on it.
-       ink 12.04:1 · ink-secondary 6.40:1 · ink-inactive 4.70:1 */
+       ink 12.04:1 · ink-secondary 7.09:1 · ink-inactive 4.70:1 */
     --surface-raised: #192F24;
 
     /* --- Ink ramp (guide) ---
