@@ -192,6 +192,42 @@
     color: var(--ink-strong); margin-bottom: 18px;
   }
   .loading, .failed { color: var(--text-muted); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+
+  /* ---- Drafting progress ----
+     Shown in place of Q1/Q2 once "draft my week" is tapped. Generating a
+     week is genuinely a ~30-second call (see the "Make chat responses
+     faster" ticket) -- this is what fills that time with something real
+     instead of a static button label, using theme.css's canonical tokens
+     (not the legacy aliases the rest of this older page still carries).
+  */
+  .draft-status {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-body); font-weight: 600; font-size: 0.95rem;
+    color: var(--ink); margin: 4px 0 16px;
+  }
+  .draft-spinner {
+    flex: none; width: 16px; height: 16px; border-radius: 999px;
+    border: 2px solid var(--hairline-strong); border-top-color: var(--apricot);
+    animation: draft-spin .8s linear infinite;
+  }
+  .draft-progress.done .draft-spinner { display: none; }
+  @keyframes draft-spin { to { transform: rotate(360deg); } }
+  .draft-days { display: flex; flex-direction: column; gap: 10px; }
+  .draft-day {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface); border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card); padding: 12px 14px;
+    animation: draft-day-in .25s ease-out;
+  }
+  @keyframes draft-day-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .draft-day-check {
+    flex: none; width: 20px; height: 20px; margin-top: 1px; border-radius: 999px;
+    background: var(--celadon); color: var(--on-accent-ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; line-height: 1;
+  }
+  .draft-day-text { font-family: var(--font-body); font-size: 0.88rem; color: var(--ink); line-height: 1.4; }
+  .draft-day-label { color: var(--ink-secondary); font-weight: 700; }
   [hidden] { display: none !important; }
 </style>
 <script src="/static/error-reporter.js"></script>
@@ -261,6 +297,16 @@
       </p>
       <textarea id="freeform" placeholder="Friday is pizza night. Sam has a friend over Saturday. I want to use the lamb in the freezer."></textarea>
     </section>
+  </section>
+
+  <!-- ---------- Drafting (shown once "draft my week" is tapped) ---------- -->
+  <section id="draft-progress" hidden>
+    <h1>Building your week</h1>
+    <div class="draft-status" id="draft-status">
+      <span class="draft-spinner" aria-hidden="true"></span>
+      <span id="draft-status-text">Getting started&hellip;</span>
+    </div>
+    <div class="draft-days" id="draft-days"></div>
   </section>
 </main>
 
@@ -640,6 +686,97 @@
     return res.json();
   }
 
+  // ---------- drafting progress (streamed) ----------
+  // Swaps Q1/Q2 for a running list of days as the model plans them, in
+  // place of a single ~30-second spinner. See the "Make chat responses
+  // faster" ticket: the wait itself isn't shorter, but something real
+  // shows up within a couple of seconds instead of a blank button.
+  function showDraftProgress() {
+    $('q1').hidden = true;
+    $('q2').hidden = true;
+    $('back').hidden = true;
+    var section = $('draft-progress');
+    section.hidden = false;
+    section.classList.remove('done');
+    $('draft-status-text').textContent = 'Getting started…';
+    $('draft-days').textContent = '';
+  }
+
+  function addDraftDay(day) {
+    var row = document.createElement('div');
+    row.className = 'draft-day';
+    var check = document.createElement('span');
+    check.className = 'draft-day-check';
+    check.setAttribute('aria-hidden', 'true');
+    check.textContent = '✓';
+    var text = document.createElement('span');
+    text.className = 'draft-day-text';
+    var label = document.createElement('span');
+    label.className = 'draft-day-label';
+    var dateLabel = day.date || '';
+    try {
+      dateLabel = new Date(day.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long' });
+    } catch (e) { /* keep the raw date string */ }
+    label.textContent = dateLabel + (day.slot ? ' · ' + day.slot : '') + ' ';
+    text.appendChild(label);
+    text.appendChild(document.createTextNode(day.meal_name || day.category || ''));
+    row.appendChild(check);
+    row.appendChild(text);
+    $('draft-days').appendChild(row);
+  }
+
+  // Reads the streaming generate endpoint (Server-Sent Events) by hand
+  // rather than via EventSource, since EventSource can't send a POST
+  // body — the fetch Response's own ReadableStream carries the same
+  // "event: X\ndata: Y\n\n" frames, just without a helper to parse them.
+  async function streamGenerate(payload) {
+    var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok || !res.body) throw new Error('generate failed');
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+    var plan = null;
+
+    function handleFrame(frame) {
+      var eventName = 'message';
+      var dataLines = [];
+      frame.split('\n').forEach(function (line) {
+        if (line.indexOf('event:') === 0) eventName = line.slice(6).trim();
+        else if (line.indexOf('data:') === 0) dataLines.push(line.slice(5).trim());
+      });
+      if (!dataLines.length) return;
+      var body = JSON.parse(dataLines.join('\n'));
+      if (eventName === 'status') {
+        $('draft-status-text').textContent = body.message || 'Working on it…';
+      } else if (eventName === 'day') {
+        addDraftDay(body);
+      } else if (eventName === 'done') {
+        plan = body;
+      } else if (eventName === 'error') {
+        var err = new Error(body.detail || 'generate failed');
+        err.status = body.status;
+        throw err;
+      }
+    }
+
+    while (true) {
+      var chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      var frames = buffer.split('\n\n');
+      buffer = frames.pop();
+      for (var i = 0; i < frames.length; i++) handleFrame(frames[i]);
+    }
+    if (!plan) throw new Error('generate failed');
+    $('draft-progress').classList.add('done');
+    $('draft-status-text').textContent = 'Your week is ready.';
+    return plan;
+  }
+
   $('cta').addEventListener('click', async function () {
     var btn = $('cta');
     btn.disabled = true;
@@ -673,13 +810,8 @@
           body: JSON.stringify({ field: 'cuisine_preferences', value: answers.cuisines })
         }).catch(function () { /* the week still plans correctly without this */ });
       }
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intake_id: saved.intake_id })
-      });
-      if (!res.ok) throw new Error('generate failed');
-      await res.json();
+      showDraftProgress();
+      await streamGenerate({ intake_id: saved.intake_id });
       // Land on the week that was just drafted, by name. Without the week
       // in the URL, Meals asks for "the current plan" and gets whichever
       // week contains today — so planning NEXT week ended with the freshly
@@ -687,6 +819,14 @@
       location.href = '/week?drafted=' + encodeURIComponent(weekStart);
     } catch (err) {
       console.warn('Plan-the-week step failed:', err);
+      // A failure partway through drafting must not strand the household
+      // on a spinner that will never resolve — back to Q2 so "draft my
+      // week" is tappable again.
+      if (!$('draft-progress').hidden) {
+        $('draft-progress').hidden = true;
+        $('q2').hidden = false;
+        $('back').hidden = false;
+      }
       btn.disabled = false;
       paintCta();
       alert('I couldn’t save that just now — try again in a moment.');

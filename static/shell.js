@@ -4964,6 +4964,61 @@
     });
   }
 
+  // Server-Sent Events reader for /api/chat/stream -- hand-rolled because
+  // EventSource can't carry a POST body. Resolves to the same {reply,
+  // actions} shape /api/chat's plain JSON response always gave; onProgress
+  // fires for every event before "done" so a caller can update a loading
+  // indicator while a slow turn (one that ends up generating a whole
+  // week, ~37s) is still in flight, instead of the ~2-5s a plain question
+  // already took either way. See the "Make chat responses faster" ticket.
+  async function streamChatMessage(payload, onProgress) {
+    var res = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok || !res.body) {
+      var detail = '';
+      try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
+      throw new Error(detail || ('Request failed (' + res.status + ' ' + res.statusText + ')'));
+    }
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+    var result = null;
+
+    function handleFrame(frame) {
+      var eventName = 'message';
+      var dataLines = [];
+      frame.split('\n').forEach(function (line) {
+        if (line.indexOf('event:') === 0) eventName = line.slice(6).trim();
+        else if (line.indexOf('data:') === 0) dataLines.push(line.slice(5).trim());
+      });
+      if (!dataLines.length) return;
+      var body = JSON.parse(dataLines.join('\n'));
+      if (eventName === 'done') {
+        result = body;
+      } else if (eventName === 'error') {
+        var err = new Error(body.detail || 'Request failed');
+        err.status = body.status;
+        throw err;
+      } else if (onProgress) {
+        onProgress(eventName, body);
+      }
+    }
+
+    while (true) {
+      var chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      var frames = buffer.split('\n\n');
+      buffer = frames.pop();
+      for (var i = 0; i < frames.length; i++) handleFrame(frames[i]);
+    }
+    if (!result) throw new Error('Request failed');
+    return result;
+  }
+
   async function sendAskMessage(message) {
     if (!message || askSending) return;
     ensureAskSheetBuilt();
@@ -4978,18 +5033,32 @@
     loadingWraps.forEach(function (w) { w.querySelector('.ask-bubble').classList.add('loading'); });
 
     try {
-      var res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: askSessionId, message: message })
-      });
+      // Most turns finish in a few seconds either way, so this progress
+      // callback usually never fires before "done" arrives -- it only
+      // earns its keep on the turn that ends up generating a whole week
+      // (~37s previously silent), where the loading bubble now updates
+      // instead of sitting frozen on its opening phrase the whole time.
+      var plannedCount = 0;
+      var data = await streamChatMessage(
+        { session_id: askSessionId, message: message },
+        function (eventName, body) {
+          var bubbleText = null;
+          if (eventName === 'status') {
+            bubbleText = body.message || null;
+          } else if (eventName === 'day') {
+            plannedCount += 1;
+            bubbleText = 'Building your week — ' + plannedCount +
+              (plannedCount === 1 ? ' thing' : ' things') + ' planned so far…';
+          }
+          if (bubbleText) {
+            loadingWraps.forEach(function (w) {
+              var bubble = w.querySelector('.ask-bubble');
+              if (bubble) bubble.textContent = bubbleText;
+            });
+          }
+        }
+      );
       loadingWraps.forEach(function (w) { w.remove(); });
-      if (!res.ok) {
-        var detail = '';
-        try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
-        throw new Error(detail || ('Request failed (' + res.status + ' ' + res.statusText + ')'));
-      }
-      var data = await res.json();
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
     } catch (err) {

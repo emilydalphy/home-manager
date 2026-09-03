@@ -152,6 +152,237 @@ def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts:
         "moment, and if it's still not working after a minute or two, let me know."
     ) from last_error
 
+
+# ---------- per-route response effort ----------
+# Sonnet 5 supports output_config.effort ("low" through "max", defaulting
+# to "high" if never set) -- how hard the model reasons before answering.
+# Measured 2026-08-31: the chat loop is already fast (3-5s for real
+# questions) and week/component generation is the genuinely slow, hard
+# task (~37s). Running everyday chat at the same maximum effort as
+# planning a week buys it nothing but latency and cost, so each route
+# gets a level matched to how hard its job actually is. Conservative
+# defaults, not tuned numbers -- this sandbox has no working
+# ANTHROPIC_API_KEY (confirmed: two attempts both returned 401), so real
+# tuning has to come from production's per-call latency/token log lines
+# (see _log_llm_call_timing / _record_api_call), not a guess made once
+# here. Env-overridable for exactly that reason.
+_DEFAULT_EFFORT = {
+    "chat": "medium",       # run_agent_turn -- the everyday chat loop
+    "generation": "high",   # a full week or component plan -- the hardest task in the app
+    "utility": "medium",    # prep schedules, recipe fill-in, image scans, chore recs
+}
+_EFFORT_ENV_VARS = {
+    "chat": "CHAT_EFFORT",
+    "generation": "GENERATION_EFFORT",
+    "utility": "UTILITY_EFFORT",
+}
+_VALID_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
+
+
+def _effort_config(route: str) -> dict:
+    """
+    The output_config kwarg for one of this app's three call routes. Reads
+    an env override first (so production can retune from real numbers
+    without a code change or redeploy) and falls back to the conservative
+    default above. An invalid override is logged and ignored rather than
+    sent to the API to fail the call outright -- a typo'd env var should
+    degrade to "ignored", not "chat is down".
+    """
+    env_var = _EFFORT_ENV_VARS[route]
+    override = os.environ.get(env_var, "").strip().lower()
+    if override:
+        if override in _VALID_EFFORTS:
+            return {"effort": override}
+        logger.warning(
+            "Ignoring invalid %s=%r (must be one of %s); using the %s default",
+            env_var, override, sorted(_VALID_EFFORTS), route,
+        )
+    return {"effort": _DEFAULT_EFFORT[route]}
+
+
+# ---------- streaming a forced single-tool-call generation ----------
+# Used by generate_weekly_plan_llm and generate_component_plan_llm: both
+# ask Claude for one big structured tool call (a week's worth of days, or
+# a component pool) rather than prose, and both are the slow, ~37-second
+# calls this app has (see the "Make chat responses faster" ticket). A
+# progress callback here is what lets the browser show something within
+# ~2 seconds instead of sitting on a blank screen for the full call.
+_WEEK_GEN_PROGRESS: contextvars.ContextVar = contextvars.ContextVar(
+    "week_gen_progress", default=None
+)
+
+
+class _ArrayItemScanner:
+    """
+    Pulls out each complete top-level element of a named JSON array as it
+    finishes arriving, from a stream of incremental text fragments
+    (Anthropic's `input_json_delta.partial_json` chunks for a tool call).
+
+    Why not just wait for the whole tool call and hand back the list in
+    one go? That's the *default* behavior everywhere on this app already
+    (on_item=None) -- this class only exists for the one place that wants
+    to know sooner. A full JSON-streaming parser would be the "proper"
+    way to do this, but the shape here is narrow and known in advance
+    (`{"...": ..., "<array_key>": [ {...}, {...}, ... ], "...": ...}`), so
+    a small string-aware bracket-depth scanner is enough: track whether
+    we're inside a string (and whether the next character is escaped) so
+    braces inside recipe text ("a {pinch} of salt") don't get counted as
+    structure, find the named array's opening `[`, and once inside it,
+    a `{` at depth 0-within-the-array starts an item and the matching `}`
+    ends it -- at which point the substring between them is a complete,
+    independently parseable JSON object.
+
+    Never raises out of feed(): a shape this doesn't understand (the
+    array key hasn't appeared yet, a chunk boundary lands somewhere
+    surprising) just yields nothing for that call, rather than taking
+    down the generation over what is, worst case, a missed progress
+    update.
+    """
+
+    def __init__(self, array_key: str):
+        self._array_key = array_key
+        self._buf = ""
+        self._array_started = False
+        self._depth = 0            # brace depth once inside the array
+        self._item_start = None    # index into _buf where the current item began
+        self._in_string = False
+        self._escape = False
+        self._scanned = 0          # how far into _buf we've already walked
+
+    def feed(self, chunk: str) -> list:
+        self._buf += chunk
+        items = []
+        try:
+            if not self._array_started:
+                marker = f'"{self._array_key}"'
+                idx = self._buf.find(marker)
+                if idx == -1:
+                    return items
+                bracket = self._buf.find("[", idx)
+                if bracket == -1:
+                    return items
+                self._array_started = True
+                self._scanned = bracket + 1
+
+            i = self._scanned
+            buf = self._buf
+            n = len(buf)
+            while i < n:
+                ch = buf[i]
+                if self._in_string:
+                    if self._escape:
+                        self._escape = False
+                    elif ch == "\\":
+                        self._escape = True
+                    elif ch == '"':
+                        self._in_string = False
+                    i += 1
+                    continue
+                if ch == '"':
+                    self._in_string = True
+                elif ch == "{":
+                    if self._depth == 0:
+                        self._item_start = i
+                    self._depth += 1
+                elif ch == "}":
+                    self._depth -= 1
+                    if self._depth == 0 and self._item_start is not None:
+                        candidate = buf[self._item_start: i + 1]
+                        try:
+                            items.append(json.loads(candidate))
+                        except (ValueError, TypeError):
+                            logger.debug("Could not parse a streamed %s item; skipping", self._array_key)
+                        self._item_start = None
+                elif ch == "]" and self._depth == 0:
+                    # End of the array -- nothing left to scan for this key.
+                    i = n
+                    self._scanned = n
+                    break
+                i += 1
+            else:
+                self._scanned = i
+        except Exception:
+            logger.exception("Streaming JSON scanner for %r hit an unexpected error", self._array_key)
+        return items
+
+
+def _stream_forced_tool_call(
+    client: "Anthropic", *, label: str, max_tokens: int, tool_schema: dict,
+    tool_name: str, content, result_key: str, effort_route: str = "generation",
+    on_item=None, model: str | None = None, max_attempts: int = 3,
+):
+    """
+    The streaming equivalent of `_create_with_retry` for a forced
+    single-tool-call generation (submit_weekly_plan, submit_component_plan):
+    same retry-on-transient-failure behavior and the same instrumentation
+    (timing log + cost ledger row) as every other call site in this file,
+    but driven through `client.messages.stream()` so a caller can pass
+    `on_item` and be notified as each element of `result_key`'s array
+    completes, well before the whole generation (and everything after it —
+    saving recipes, attaching meals) is done.
+
+    Returns exactly what `.create()` + reading
+    `block.input.get(result_key, [])` would have -- callers that pass no
+    on_item can't tell this streamed at all.
+    """
+    delay = 0.75
+    last_error: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        scanner = _ArrayItemScanner(result_key) if on_item else None
+        try:
+            started = time.perf_counter()
+            with client.messages.stream(
+                model=model or MODEL,
+                max_tokens=max_tokens,
+                tools=[tool_schema],
+                tool_choice={"type": "tool", "name": tool_name},
+                messages=[{"role": "user", "content": content}],
+                output_config=_effort_config(effort_route),
+            ) as stream:
+                if scanner is not None:
+                    for event in stream:
+                        if (
+                            event.type == "content_block_delta"
+                            and getattr(event.delta, "type", None) == "input_json_delta"
+                        ):
+                            for item in scanner.feed(event.delta.partial_json):
+                                try:
+                                    on_item(item)
+                                except Exception:
+                                    logger.exception(
+                                        "%s progress callback raised; continuing the generation", label
+                                    )
+                response = stream.get_final_message()
+            seconds = time.perf_counter() - started
+            _log_llm_call_timing(label, seconds, response)
+            _record_api_call(label, model or MODEL, response, seconds)
+            if response.stop_reason == "max_tokens":
+                logger.warning("%s hit max_tokens; result may be incomplete", label)
+            for block in response.content:
+                if block.type == "tool_use":
+                    return block.input.get(result_key, [])
+            return []
+        except (APIConnectionError, APITimeoutError) as e:
+            last_error = e
+        except APIStatusError as e:
+            if e.status_code not in _RETRYABLE_STATUS_CODES:
+                raise
+            last_error = e
+        if attempt < max_attempts:
+            logger.warning(
+                "Anthropic streaming call failed (attempt %d/%d), retrying in %.1fs: %s",
+                attempt, max_attempts, delay, last_error,
+            )
+            time.sleep(delay)
+            delay *= 2
+    logger.error("Anthropic streaming call failed after %d attempts: %s", max_attempts, last_error)
+    raise AssistantUnavailableError(
+        "I'm having trouble reaching Claude's servers right now — looks like a temporary "
+        "hiccup on their end, not anything wrong with your data. Please try again in a "
+        "moment, and if it's still not working after a minute or two, let me know."
+    ) from last_error
+
+
 SYSTEM_PROMPT = """You are a helpful home manager assistant for a household — the kind of \
 presence that makes the day feel a little lighter, not another thing to manage. You manage \
 the cleaning/maintenance chore schedule, meal planning, and the grocery list.
@@ -1750,10 +1981,19 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     # copy and the draft screen's per-slot reasons can't drift to different
     # numbers — see tools.RUSH_MAX_MINUTES.
     rush_max = tools.RUSH_MAX_MINUTES
-    prompt = f"""Household context (JSON):
-{json.dumps(context, indent=2)}
-
-Generate a full week's menu (7 days unless day_count says otherwise) for this household — \
+    # Split into a static instructions block and a dynamic context block
+    # (below, at the call site) rather than one f-string with the
+    # household JSON inlined at the top. The instructions are identical
+    # on every call for every household — only the JSON blob changes —
+    # but with the JSON glued on at the front, the whole prompt was a
+    # different string every single time, so Anthropic's prefix-based
+    # prompt cache could never match anything and this call paid full
+    # price on every one of its ~18,000 input tokens (cache_read=0,
+    # confirmed in the 2026-08-31 measurement). Putting the stable
+    # instructions first with a cache breakpoint on them, and the
+    # household-specific JSON after, lets everything before the JSON hit
+    # cache on the second and later generation of any given week.
+    instructions = f"""Generate a full week's menu (7 days unless day_count says otherwise) for this household — \
 breakfast, lunch, dinner, AND a snack every day, not dinner alone, so the week reads as a real \
 day-by-day menu rather than just a dinner list. That means 4 separate entries per day (same \
 date, different slot), unless constraints_notes says otherwise (e.g. "just dinners this week" \
@@ -1988,20 +2228,23 @@ Call submit_weekly_plan with the result."""
     # Further bumped when breakfast/lunch/dinner/snack generation replaced
     # dinner-only (4x the entries per day, even though breakfast/lunch/
     # snack are individually lighter-weight than dinner).
-    response = _create_with_retry(client,
+    context_block = f"Household context (JSON):\n{json.dumps(context, indent=2)}"
+    on_day = _WEEK_GEN_PROGRESS.get(None)
+    return _stream_forced_tool_call(
+        client,
         label="generate_weekly_plan_llm",
         model=MODEL,
         max_tokens=16000,
-        tools=[_GENERATE_WEEKLY_PLAN_TOOL],
-        tool_choice={"type": "tool", "name": "submit_weekly_plan"},
-        messages=[{"role": "user", "content": prompt}],
+        tool_schema=_GENERATE_WEEKLY_PLAN_TOOL,
+        tool_name="submit_weekly_plan",
+        content=[
+            {"type": "text", "text": instructions, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": context_block},
+        ],
+        result_key="days",
+        effort_route="generation",
+        on_item=on_day,
     )
-    if response.stop_reason == "max_tokens":
-        logger.warning("generate_weekly_plan_llm hit max_tokens; plan may be incomplete")
-    for block in response.content:
-        if block.type == "tool_use":
-            return block.input.get("days", [])
-    return []
 
 
 _GENERATE_COMPONENT_PLAN_TOOL = {
@@ -2075,10 +2318,10 @@ def generate_component_plan_llm(context: dict) -> list[dict]:
     across the week. Same forced-tool-call approach for structured output.
     """
     client = _client()
-    prompt = f"""Household context (JSON):
-{json.dumps(context, indent=2)}
-
-Generate a component-based weekly plan for this household — NOT a day-by-day plan. \
+    # Same cache-friendly split as generate_weekly_plan_llm above: static
+    # instructions first (cacheable across every call, every household),
+    # the household-specific JSON last.
+    instructions = f"""Generate a component-based weekly plan for this household — NOT a day-by-day plan. \
 Produce a pool of items by category that the household will mix and match across the week \
 themselves, roughly: 1 breakfast idea, 2-3 proteins, 3-4 vegetables, 1-2 carbs, 1 treat, 1 \
 dip/sauce, and 1-2 snacks (adjust counts modestly for household size/goals in constraints_notes, \
@@ -2163,20 +2406,23 @@ prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-
 
 Call submit_component_plan with the result."""
 
-    response = _create_with_retry(client,
+    context_block = f"Household context (JSON):\n{json.dumps(context, indent=2)}"
+    on_item = _WEEK_GEN_PROGRESS.get(None)
+    return _stream_forced_tool_call(
+        client,
         label="generate_component_plan_llm",
         model=MODEL,
         max_tokens=8192,
-        tools=[_GENERATE_COMPONENT_PLAN_TOOL],
-        tool_choice={"type": "tool", "name": "submit_component_plan"},
-        messages=[{"role": "user", "content": prompt}],
+        tool_schema=_GENERATE_COMPONENT_PLAN_TOOL,
+        tool_name="submit_component_plan",
+        content=[
+            {"type": "text", "text": instructions, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": context_block},
+        ],
+        result_key="items",
+        effort_route="generation",
+        on_item=on_item,
     )
-    if response.stop_reason == "max_tokens":
-        logger.warning("generate_component_plan_llm hit max_tokens; plan may be incomplete")
-    for block in response.content:
-        if block.type == "tool_use":
-            return block.input.get("items", [])
-    return []
 
 
 def _intake_generation_context(intake: dict) -> dict:
@@ -2834,6 +3080,7 @@ Call submit_prep_schedule with the result."""
         tools=[_GENERATE_PREP_SCHEDULE_TOOL],
         tool_choice={"type": "tool", "name": "submit_prep_schedule"},
         messages=[{"role": "user", "content": prompt}],
+        output_config=_effort_config("utility"),
     )
     if response.stop_reason == "max_tokens":
         logger.warning("generate_prep_schedule_llm hit max_tokens; schedule may be incomplete")
@@ -2946,6 +3193,7 @@ Call submit_recipe_detail with the result."""
         tools=[_FILL_RECIPE_DETAIL_TOOL],
         tool_choice={"type": "tool", "name": "submit_recipe_detail"},
         messages=[{"role": "user", "content": prompt}],
+        output_config=_effort_config("utility"),
     )
     for block in response.content:
         if block.type == "tool_use":
@@ -3032,6 +3280,7 @@ def _scan_image_for_items(image_b64: str, media_type: str, instructions: str) ->
                 {"type": "text", "text": instructions},
             ],
         }],
+        output_config=_effort_config("utility"),
     )
     for block in response.content:
         if block.type == "tool_use":
@@ -3304,6 +3553,7 @@ Call submit_chore_recommendations with the result."""
         tools=[_RECOMMEND_CHORES_TOOL],
         tool_choice={"type": "tool", "name": "submit_chore_recommendations"},
         messages=[{"role": "user", "content": prompt}],
+        output_config=_effort_config("utility"),
     )
     for block in response.content:
         if block.type == "tool_use":
@@ -3486,6 +3736,7 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                 # from cache turn-over-turn within a single chat session,
                 # instead of only the shared system+tools prefix.
                 cache_control={"type": "ephemeral"},
+                output_config=_effort_config("chat"),
             )
         except Exception:
             # The turn is over, just not successfully — and this is the

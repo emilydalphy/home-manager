@@ -12,15 +12,19 @@ from fastapi.responses import (
     PlainTextResponse,
     RedirectResponse,
     Response,
+    StreamingResponse,
 )
 from pydantic import BaseModel
 import asyncio
 import base64
+import contextvars
 import datetime
 import json
 import logging
 import os
+import queue
 import re
+import threading
 import time
 
 from starlette.concurrency import run_in_threadpool
@@ -1169,6 +1173,97 @@ def generate_week(week_start: str, req: WeekGenerateRequest):
     return plan
 
 
+def _sse_event(event: str, data) -> str:
+    """
+    One Server-Sent Events frame. `event` names what kind of thing this
+    is (the browser dispatches on it); `data` is JSON-encoded the same way
+    every other endpoint's response body already is.
+    """
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+def _stream_week_generation(*, week_start: str, constraints_notes: str, intake_id):
+    """
+    Run generate_weekly_plan on a background thread and yield its progress
+    as Server-Sent Events: an immediate "status" event (so the browser has
+    something to show within ~2 seconds of the request landing, not ~37
+    seconds of silence), one "day" event per day/item as the model finishes
+    deciding it, and a final "done" (or "error") event carrying exactly
+    what the plain /generate endpoint would have returned.
+
+    Why a background thread rather than just iterating inside this
+    generator: generate_weekly_plan is a normal blocking function --
+    dozens of lines of DB writes threaded through the LLM call, not
+    something written to yield control. The only way to interleave "make
+    progress" and "tell the browser about it" without rewriting all of
+    that as an async/generator pipeline is to run it on its own thread and
+    relay events through a queue, which is what this does. The generation
+    thread runs inside a copied context (contextvars.copy_context) so it
+    sees the same household_id the request itself was scoped to --
+    without that, the calls it makes on this new thread would silently
+    fall back to the default household.
+    """
+    events: queue.Queue = queue.Queue()
+    _DONE = object()
+
+    def on_item(item):
+        events.put(("day", item))
+
+    def run():
+        token = agent._WEEK_GEN_PROGRESS.set(on_item)
+        try:
+            plan = generate_weekly_plan(
+                week_start, constraints_notes=constraints_notes, intake_id=intake_id,
+            )
+            events.put(("done", plan))
+        except AssistantUnavailableError as e:
+            events.put(("error", {"status": 503, "detail": str(e)}))
+        except ValueError as e:
+            events.put(("error", {"status": 400, "detail": str(e)}))
+        except Exception as e:
+            logger.exception("Streaming week generation failed")
+            events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
+        finally:
+            agent._WEEK_GEN_PROGRESS.reset(token)
+            events.put(_DONE)
+
+    ctx = contextvars.copy_context()
+    threading.Thread(target=lambda: ctx.run(run), daemon=True).start()
+
+    yield _sse_event("status", {"message": "Drafting your week…"})
+    while True:
+        item = events.get()
+        if item is _DONE:
+            return
+        event_name, payload = item
+        yield _sse_event(event_name, payload)
+
+
+@app.post("/api/week/{week_start}/generate/stream")
+def generate_week_stream(week_start: str, req: WeekGenerateRequest):
+    """
+    Streaming twin of /api/week/{week_start}/generate (see it for what
+    this actually does) -- same generation, same result, but the plan-week
+    screen can show progress instead of a single ~37-second spinner. Kept
+    as a separate endpoint rather than replacing /generate outright:
+    onboarding's first-plan route calls generate_weekly_plan directly
+    (never through either HTTP endpoint), so nothing else depends on
+    /generate changing shape, and a caller with no interest in progress
+    (a future integration, a script) can keep using the plain JSON one.
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    return StreamingResponse(
+        _stream_week_generation(
+            week_start=week_start, constraints_notes=req.constraints_notes, intake_id=req.intake_id,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 class WeekSlotRequest(BaseModel):
     date: str
     slot: str = "dinner"
@@ -2142,32 +2237,14 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
     return list(by_category.values())
 
 
-@app.post("/api/chat", response_model=ChatResponse)
-def chat(req: ChatRequest, request: Request):
-    request_started = time.perf_counter()
-    # req.session_id is accepted and ignored — the clients still send it and
-    # there is no reason to break them, but the real key comes from the
-    # signed cookie so a caller can't choose whose history they land in.
-    _enforce_rate_limit(request, "chat")
-    session_id = _chat_session_id(request)
-    history = SESSIONS.get(session_id, [])
-    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
-    try:
-        reply, updated_history = run_agent_turn(history, req.message, proactive_check=is_new_sitting)
-    except AssistantUnavailableError as e:
-        # Claude's API itself was down/overloaded even after retrying inside
-        # run_agent_turn — str(e) is already a warm, customer-facing
-        # message (never a raw status code or JSON blob), so it's safe to
-        # show as-is. Session history is untouched here since the request
-        # never got far enough to append anything malformed.
-        logger.warning("Chat turn hit a transient Claude API failure: %s", e)
-        raise HTTPException(status_code=503, detail=str(e))
-    except Exception as e:
-        # Log the full error server-side, but return a short, readable
-        # message to the browser instead of a raw crash page — the most
-        # common cause is a missing/invalid ANTHROPIC_API_KEY.
-        logger.exception("Chat turn failed")
-        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+def _finish_chat_turn(session_id: str, history: list, reply: str, updated_history: list) -> dict:
+    """
+    Everything both /api/chat and its streaming twin do once
+    run_agent_turn has produced a reply: summarize action cards, trim and
+    store the session, and record the turn for cost/usage reporting.
+    Pulled out into one place so the two endpoints can't quietly drift —
+    an action-card bug fixed in one and not the other, say.
+    """
     try:
         actions = summarize_chat_actions(history, updated_history)
     except Exception:
@@ -2198,10 +2275,109 @@ def chat(req: ChatRequest, request: Request):
     # whole point of this line is that it cannot break the turn it
     # records.
     tools.record_chat_turn(agent.LAST_TURN_USAGE.get({}))
+    return {"reply": reply, "actions": actions}
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+def chat(req: ChatRequest, request: Request):
+    request_started = time.perf_counter()
+    # req.session_id is accepted and ignored — the clients still send it and
+    # there is no reason to break them, but the real key comes from the
+    # signed cookie so a caller can't choose whose history they land in.
+    _enforce_rate_limit(request, "chat")
+    session_id = _chat_session_id(request)
+    history = SESSIONS.get(session_id, [])
+    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
+    try:
+        reply, updated_history = run_agent_turn(history, req.message, proactive_check=is_new_sitting)
+    except AssistantUnavailableError as e:
+        # Claude's API itself was down/overloaded even after retrying inside
+        # run_agent_turn — str(e) is already a warm, customer-facing
+        # message (never a raw status code or JSON blob), so it's safe to
+        # show as-is. Session history is untouched here since the request
+        # never got far enough to append anything malformed.
+        logger.warning("Chat turn hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        # Log the full error server-side, but return a short, readable
+        # message to the browser instead of a raw crash page — the most
+        # common cause is a missing/invalid ANTHROPIC_API_KEY.
+        logger.exception("Chat turn failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    result = _finish_chat_turn(session_id, history, reply, updated_history)
     logger.info(
         "/api/chat request took %.2fs end to end", time.perf_counter() - request_started
     )
-    return ChatResponse(reply=reply, actions=actions)
+    return ChatResponse(**result)
+
+
+def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool):
+    """
+    Run run_agent_turn on a background thread and yield its progress as
+    Server-Sent Events, the chat-loop twin of _stream_week_generation
+    (see its docstring for why a background thread + queue, and why the
+    thread runs inside a copied context). An immediate "status" event
+    means the browser has something within milliseconds of the request
+    landing; for the vast majority of turns (measured 2026-08-31 at 3-5
+    seconds) "done" follows a few seconds later with nothing in between.
+    It earns its place on the turn that calls generate_weekly_plan (a
+    stale/missing plan the household just said yes to rebuilding, or
+    "plan my week" itself) — that's the ~37-second call this app actually
+    has, and "day" events surface each one as the model decides it via
+    the same _WEEK_GEN_PROGRESS mechanism the plan-week screen's own
+    streaming endpoint uses.
+    """
+    events: queue.Queue = queue.Queue()
+    _DONE = object()
+
+    def on_item(item):
+        events.put(("day", item))
+
+    def run():
+        token = agent._WEEK_GEN_PROGRESS.set(on_item)
+        try:
+            reply, updated_history = run_agent_turn(history, message, proactive_check=proactive_check)
+            events.put(("done", _finish_chat_turn(session_id, history, reply, updated_history)))
+        except AssistantUnavailableError as e:
+            logger.warning("Chat turn hit a transient Claude API failure: %s", e)
+            events.put(("error", {"status": 503, "detail": str(e)}))
+        except Exception as e:
+            logger.exception("Chat turn failed")
+            events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
+        finally:
+            agent._WEEK_GEN_PROGRESS.reset(token)
+            events.put(_DONE)
+
+    ctx = contextvars.copy_context()
+    threading.Thread(target=lambda: ctx.run(run), daemon=True).start()
+
+    yield _sse_event("status", {"message": "Thinking…"})
+    while True:
+        item = events.get()
+        if item is _DONE:
+            return
+        event_name, payload = item
+        yield _sse_event(event_name, payload)
+
+
+@app.post("/api/chat/stream")
+def chat_stream(req: ChatRequest, request: Request):
+    """
+    Streaming twin of /api/chat: same run_agent_turn, same reply, same
+    action cards, delivered as Server-Sent Events instead of one JSON
+    blob. See _stream_chat_turn for what this actually buys and why.
+    """
+    _enforce_rate_limit(request, "chat")
+    session_id = _chat_session_id(request)
+    history = SESSIONS.get(session_id, [])
+    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
+    return StreamingResponse(
+        _stream_chat_turn(
+            session_id=session_id, message=req.message, history=history, proactive_check=is_new_sitting,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
