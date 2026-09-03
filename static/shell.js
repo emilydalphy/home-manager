@@ -113,11 +113,13 @@
   // tests/test_embedded_pages.py derives "which pages can end up in a frame"
   // by reading this file, and a computed or concatenated path would make
   // that derivation silently blind.
+  // `hash` names the tab within the page, for the entries that are a tab of
+  // a shared page rather than a page of their own. memory.html reads it on
+  // load (openingTab) and exposes showKitchenTab() for the case where the
+  // page is already open on a different tab.
   var KITCHEN_SHEETS = {
-    memory: { title: 'What we know', src: '/static/memory.html' },
+    memory: { title: 'What we know', src: '/static/memory.html', hash: 'people' },
     inventory: { title: 'Inventory', src: '/static/inventory.html' },
-    // Stores is a tab of the same page, not a page of its own. memory.html
-    // reads the hash on load (see its openingTab()).
     stores: { title: 'Stores', src: '/static/memory.html', hash: 'stores' }
   };
 
@@ -192,6 +194,16 @@
   function activateTab(key, pushHistory, opts) {
     var tab = TABS.filter(function (t) { return t.key === key; })[0];
     if (!tab) return;
+
+    // A Kitchen entry sheet belongs to the Kitchen tab, so it cannot outlive
+    // a move off it. This is reached by the browser's Back button too
+    // (popstate calls here), which is where it showed: Kitchen → open
+    // Inventory → Back left the Inventory sheet sitting over the Grocery
+    // panel, and dismissing it then refreshed a Kitchen hub nobody was
+    // looking at. Callers that want a sheet open (the rail shortcuts,
+    // followActionHref) activate the tab first and open it after, so this
+    // does not fight them.
+    closeKitchenSheet();
 
     Object.keys(panels).forEach(function (k) {
       panels[k].classList.toggle('active', k === key);
@@ -2443,13 +2455,38 @@
     closeAskSheet();
     closeWeekSheet();
     var hash = tab || meta.hash;
-    var src = meta.src + (hash ? '#' + hash : '');
     var frame = document.getElementById('kit-sheet-frame');
-    // Re-point rather than recreate when it is already the right document,
-    // so reopening the same sheet does not throw away a scroll position or
-    // a half-typed edit for no reason. A different hash IS a different
-    // view, so that still re-points.
-    if (frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+
+    // Keep the loaded document, and ask it to change view, rather than
+    // reloading — so reopening a sheet does not throw away a scroll position
+    // or a half-typed edit for no reason.
+    //
+    // What this must NOT do is decide "already showing the right thing" from
+    // the URL. The page's own tab strip moves between tabs without touching
+    // its hash, so after tapping People inside the sheet the src still read
+    // `#stores` while People was on screen — and the Stores tile, seeing a
+    // matching src, reopened on People under a header saying "Stores". The
+    // page therefore exposes showKitchenTab(), which is authoritative about
+    // what it is actually displaying.
+    if (frame.dataset.page !== meta.src) {
+      frame.dataset.page = meta.src;
+      frame.setAttribute('src', meta.src + (hash ? '#' + hash : ''));
+    } else if (hash) {
+      var told = false;
+      try {
+        var win = frame.contentWindow;
+        if (win && typeof win.showKitchenTab === 'function') {
+          win.showKitchenTab(hash);
+          told = true;
+        }
+      } catch (err) {
+        // Same-origin, so this should not throw; if it ever does, fall back
+        // to a reload rather than showing the wrong view under a confident
+        // header.
+        console.warn('Kitchen sheet tab handoff failed:', err);
+      }
+      if (!told) frame.setAttribute('src', meta.src + '#' + hash);
+    }
     document.getElementById('kit-sheet-title').textContent = meta.title;
     frame.title = meta.title;
     kitSheetOpen = key;
@@ -2489,8 +2526,15 @@
   // Anything else still navigates: /onboarding and /plan-week are focused
   // sequences that deliberately live outside the tab bar.
   var HREF_AS_SHEET = { '/memory': 'memory', '/inventory': 'inventory' };
+  // One normalisation, used by both callers. They used to differ — this one
+  // trimmed a trailing slash and refreshStaleTabsFromActions matched the raw
+  // string — so a '/memory/' href would have opened the sheet but not
+  // refreshed the hub behind it.
+  function hrefSheetKey(href) {
+    return HREF_AS_SHEET[(href || '').replace(/\/+$/, '') || '/'] || null;
+  }
   function followActionHref(href) {
-    var sheet = HREF_AS_SHEET[(href || '').replace(/\/+$/, '') || '/'];
+    var sheet = hrefSheetKey(href);
     if (sheet) {
       activateTab('kitchen', true);
       openKitchenSheet(sheet);
@@ -3689,13 +3733,18 @@
     // box is ticked, and a cook is mid-recipe when they tick one.
     var keepScroll = scrollEl ? scrollEl.scrollTop : 0;
 
+    // Both of these replace the whole view, and both have to put the scroll
+    // back like every other path here — a chat turn that fails to reload can
+    // otherwise throw a reader who was halfway down the week to the top.
     if (cookState.loadError || !cookState.data) {
       view.innerHTML = '<p class="cook-error">Couldn’t load the cook view right now — switch tabs and back to try again.</p>';
+      if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
     var data = cookState.data;
     if (!data.weekly_plan_id) {
       view.innerHTML = '<p class="cook-empty">No plan yet this week — plan one on the Plan tab first.</p>';
+      if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
 
@@ -4870,7 +4919,7 @@
         // tile.
         refreshKitchenPanel();
         refreshCookView();
-      } else if (!action.tab && HREF_AS_SHEET[action.href]) {
+      } else if (!action.tab && hrefSheetKey(action.href)) {
         // Household/preferences writes carry no tab at all — they carry
         // href: '/memory' (app/main.py's _MEMORY_HREF_TOOLS), because when
         // that was written no shell screen showed the household's standing

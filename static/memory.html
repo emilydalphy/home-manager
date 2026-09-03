@@ -170,9 +170,10 @@ const TAB_META = {
 // People — Stores is a tab of "what we know", not a screen of its own, so
 // the alternative would have been a second page saying the same things.
 // An unrecognised or absent hash falls back to People exactly as before.
+const TAB_KEYS = ['people', 'taste', 'rhythm', 'stores'];
 function openingTab() {
   const wanted = (window.location.hash || '').replace(/^#/, '');
-  return ['people', 'taste', 'rhythm', 'stores'].includes(wanted) ? wanted : 'people';
+  return TAB_KEYS.includes(wanted) ? wanted : 'people';
 }
 
 let activeTab = openingTab();
@@ -183,17 +184,29 @@ let openEditorId = null; // fact id being edited, or 'new'
 let openPrefEditor = null;
 let memoryCache = null;
 
+// The one way this page changes tab, wherever the request comes from — its
+// own tab strip, the hash on load, or the shell asking for a specific tab
+// when it reopens this page in a Kitchen sheet.
+//
+// It is exposed on window deliberately. The shell keeps this page loaded in
+// the sheet's iframe between openings so a scroll position or a half-typed
+// edit survives, which means "reopen on the Stores tab" cannot be expressed
+// by re-pointing the src — the URL is already right. Without this the Stores
+// tile reopened on whatever tab was last tapped inside the sheet, under a
+// header still saying "Stores".
+function showTab(tab) {
+  if (!TAB_KEYS.includes(tab) || tab === activeTab) return;
+  activeTab = tab;
+  openEditorId = null;
+  paintTabStrip();
+  render();
+}
+window.showKitchenTab = showTab;
+
 document.getElementById('wwk-tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.wwk-tab');
   if (!btn) return;
-  activeTab = btn.getAttribute('data-tab');
-  openEditorId = null;
-  document.querySelectorAll('.wwk-tab').forEach(t => {
-    const isActive = t === btn;
-    t.classList.toggle('active', isActive);
-    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
-  });
-  render();
+  showTab(btn.getAttribute('data-tab'));
 });
 
 async function render() {
@@ -611,14 +624,7 @@ function paintTabStrip() {
 // some browsers — the document does not reload, so reading the hash once at
 // startup is not enough on its own. Listening as well makes the Kitchen
 // hub's chips land on the right tab either way.
-window.addEventListener('hashchange', () => {
-  const wanted = openingTab();
-  if (wanted === activeTab) return;
-  activeTab = wanted;
-  openEditorId = null;
-  paintTabStrip();
-  render();
-});
+window.addEventListener('hashchange', () => showTab(openingTab()));
 
 paintTabStrip();
 render();
