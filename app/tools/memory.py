@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import household as _household
 from . import preferences as _preferences
 from . import rhythm as _rhythm
@@ -53,7 +53,7 @@ def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None)
     row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id())).fetchone()
     if not row:
         conn.close()
-        return {"id": fact_id, "found": False}
+        raise ValueError(f"No fact with id {fact_id}.")
     new_text = text.strip() if text is not None else row["text"]
     new_hard = (1 if hard else 0) if hard is not None else row["hard"]
     conn.execute(
@@ -68,6 +68,7 @@ def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None)
 def delete_fact(fact_id: int) -> dict:
     """Delete one fact outright."""
     conn = get_conn()
+    require_household_row(conn, "facts", fact_id, label="fact")
     conn.execute("DELETE FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id()))
     conn.commit()
     conn.close()

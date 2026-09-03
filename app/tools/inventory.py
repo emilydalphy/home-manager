@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
 
@@ -59,6 +59,7 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
 def set_inventory_location(item_id: int, location: str) -> dict:
     """Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately."""
     conn = get_conn()
+    require_household_row(conn, "inventory_items", item_id, label="inventory item")
     conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
     conn.commit()
     conn.close()
@@ -469,6 +470,7 @@ def get_fresh_perishable_inventory(near_expiring_days: int = 4) -> list[dict]:
 def remove_inventory_item(item_id: int) -> dict:
     """Remove a single inventory item outright (e.g. it spoiled, or was added by mistake) — used by the Inventory view's delete control."""
     conn = get_conn()
+    require_household_row(conn, "inventory_items", item_id, label="inventory item")
     conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()

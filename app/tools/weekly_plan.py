@@ -7,7 +7,7 @@ import json
 import re
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
@@ -593,6 +593,13 @@ def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = No
             conn.close()
             raise ValueError("No weekly plan exists yet — generate one first, or pass constraints_notes to generate_weekly_plan directly.")
         weekly_plan_id = row["id"]
+    else:
+        # Unlike the None-branch above (which always resolves to this
+        # household's own current plan), an explicitly passed
+        # weekly_plan_id is caller/model-supplied and was never checked
+        # against the caller's household before this write — the same
+        # no-op-on-a-foreign-id bug fixed elsewhere in app/tools/.
+        require_household_row(conn, "weekly_plans", weekly_plan_id, label="weekly plan")
     conn.execute(
         "UPDATE weekly_plans SET constraints_notes = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (constraints_notes, weekly_plan_id, household_id()),

@@ -104,3 +104,37 @@ PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 
 def _absolute_url(path: str) -> str:
     return f"{PUBLIC_BASE_URL}{path}" if PUBLIC_BASE_URL else path
+
+
+def require_household_row(conn, table: str, id_value: int, *, label: str, id_column: str = "id") -> None:
+    """
+    Confirm a row exists **in the caller's own household** before writing to
+    it, or raise ``ValueError``.
+
+    This exists to close a specific class of bug found by the multi-household
+    security review: a write scoped with a plain
+    ``WHERE id = ? AND household_id = ?`` silently matches zero rows for an
+    id that belongs to another household, and the function still returned
+    its normal success shape — so an accidental (or probing) foreign id
+    looked, from the outside, exactly like the write had happened.
+
+    The fix is this upfront check, not a smarter error message. The
+    ``ValueError`` text is deliberately the *same* regardless of *why* the
+    row wasn't found — wrong household, or never existed at all. Do not
+    special-case either branch (e.g. "belongs to another household" vs.
+    "doesn't exist") in the message: keeping those two cases
+    indistinguishable to the caller is a verified property from the
+    original review, not an accident. A caller cannot use these functions
+    to probe whether *some other household's* id is real.
+    """
+    row = conn.execute(
+        f"SELECT 1 FROM {table} WHERE {id_column} = ? AND household_id = ?",
+        (id_value, household_id()),
+    ).fetchone()
+    if row is None:
+        # Close on the caller's behalf — every call site is about to bail
+        # out via the exception below, matching the existing
+        # close-then-raise idiom the rest of this package already uses
+        # (see e.g. move_grocery_item_to_inventory).
+        conn.close()
+        raise ValueError(f"No {label} with id {id_value}.")

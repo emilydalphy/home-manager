@@ -185,6 +185,32 @@ def test_a_tampered_household_id_invalidates_the_cookie(client, beta_household):
     assert security.read_session(forged) is None
 
 
+def test_a_cookie_for_a_household_that_no_longer_exists_is_rejected(client):
+    """
+    A validly signed cookie only proves the server minted it — not that the
+    household inside it still exists. Before this fix, `auth_middleware`
+    bound the request to whatever household id the cookie named regardless,
+    so a cookie for a deleted (or simply never-real) household id read back
+    silently empty on GETs and 500'd on writes, with no clean sign-out.
+    That's unreachable in practice today (households aren't deleted yet),
+    but `issue_session` happily mints a cookie for any int, so it's real to
+    forge/simulate without needing an actual deletion path to exist yet.
+    """
+    fake_household_id = 999_999
+    assert not households.household_exists(fake_household_id)
+    client.cookies.set(security.COOKIE_NAME, security.issue_session(fake_household_id))
+
+    res = client.get("/api/whoami")
+    assert res.status_code == 401, "a dead household's cookie must not bind the request to it"
+
+    # Signed out cleanly: the cookie itself is cleared, not just refused
+    # this once — otherwise the browser keeps resending a cookie that will
+    # fail this same check forever.
+    set_cookie = res.headers.get("set-cookie", "")
+    assert security.COOKIE_NAME in set_cookie
+    assert "max-age=0" in set_cookie.lower(), "the cookie must be actively cleared, not just refused this once"
+
+
 def test_an_old_cookie_still_signs_into_household_one(client):
     """
     Cookies minted before this change have no household in them. They were
@@ -261,6 +287,86 @@ def test_a_meal_cannot_be_planned_into_another_households_week(beta_household):
         tools.plan_meal(_week_start(), "Chili", slot="dinner", weekly_plan_id=own_plan)
 
 
+def test_write_tools_reject_a_foreign_households_record_id(beta_household):
+    """
+    Found by the multi-household security review: every one of these write
+    functions scoped itself with a plain
+    ``WHERE id = ? AND household_id = ?`` and, when that matched zero rows
+    because the id belonged to a *different* household, still returned its
+    normal success shape — the write silently did nothing and nobody could
+    tell. Swept as a table across every function the review flagged, rather
+    than trusting one hand-picked example to speak for the rest: a function
+    added to this list later without the same guard fails loudly here
+    instead of quietly reintroducing the bug.
+    """
+    conn = get_conn()
+    with tools.use_household(beta_household):
+        grocery_id = tools.add_grocery_item("beta's rye bread")["item_id"]
+        chore_id = tools.add_chore("Beta's chore")["chore_id"]
+        instance_id = tools.schedule_chore_instance("Beta's chore", _week_start())["instance_id"]
+        attention_id = tools.add_attention_item("needs_amount_used", "beta thing")["id"]
+        fact_id = tools.add_fact("preferences", "beta likes tacos")["id"]
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        tools.add_recipe("Beta's Curry", [{"item": "chickpeas", "qty": "1 tin"}])
+        entry_id = tools.plan_meal(
+            _week_start(), "Beta's Curry", slot="dinner", weekly_plan_id=plan_id
+        )["entry_id"]
+        cur = conn.execute(
+            "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description) "
+            "VALUES (?, ?, ?, ?)",
+            (beta_household, plan_id, _week_start(), "Chop veg"),
+        )
+        prep_task_id = cur.lastrowid
+        cur = conn.execute(
+            "INSERT INTO inventory_items (household_id, item) VALUES (?, ?)",
+            (beta_household, "beta's flour"),
+        )
+        inventory_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+
+    with tools.use_household(DEFAULT_HOUSEHOLD_ID):
+        # Each tuple is (function, args, kwargs, id-that-must-appear-in-the-
+        # error) — the id is named explicitly rather than assumed to be
+        # args[0], since set_week_constraints takes it as a keyword.
+        attempts = [
+            (tools.remove_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.mark_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.exclude_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.include_grocery_item, (grocery_id,), {}, grocery_id),
+            (tools.update_grocery_item, (grocery_id,), {"quantity": "2 bags"}, grocery_id),
+            (tools.update_chore, (chore_id,), {"active": False}, chore_id),
+            (tools.complete_chore, (instance_id,), {}, instance_id),
+            (tools.set_chore_instance_status, (instance_id,), {}, instance_id),
+            (tools.check_off_meal, (entry_id,), {}, entry_id),
+            (tools.check_off_prep_step, (prep_task_id,), {}, prep_task_id),
+            (tools.resolve_attention_item, (attention_id,), {}, attention_id),
+            (tools.remove_inventory_item, (inventory_id,), {}, inventory_id),
+            (tools.update_fact, (fact_id,), {"text": "injected"}, fact_id),
+            (tools.delete_fact, (fact_id,), {}, fact_id),
+            # Found by a second, independent verification pass after the
+            # first round of fixes above — the same bug class, missed
+            # because these live in inventory.py/pre_shop.py/weekly_plan.py
+            # rather than the files the original review's write-up named.
+            (tools.set_inventory_location, (inventory_id, "freezer"), {}, inventory_id),
+            (tools.drop_grocery_item_pre_shop, (grocery_id,), {}, grocery_id),
+            (tools.undo_pre_shop_drop, (grocery_id,), {}, grocery_id),
+            (tools.mark_grocery_item_already_have_reviewed, (grocery_id,), {}, grocery_id),
+            (tools.set_week_constraints, ("injected",), {"weekly_plan_id": plan_id}, plan_id),
+        ]
+        for fn, args, kwargs, expected_id in attempts:
+            with pytest.raises(ValueError, match=str(expected_id)):
+                fn(*args, **kwargs)
+
+    # And every row is still there, completely untouched, in its own
+    # household — the point isn't just "it raised", it's "nothing happened".
+    with tools.use_household(beta_household):
+        assert any(i["id"] == grocery_id for i in tools.list_grocery_list())
+        assert tools.list_chores(status="all")[0]["chore"] == "Beta's chore"
+        fact_texts = {f["text"] for f in tools.get_facts()}
+        assert "beta likes tacos" in fact_texts and "injected" not in fact_texts
+
+
 def test_a_new_household_starts_empty(beta, beta_household):
     """Nothing is copied across from household 1."""
     with tools.use_household(DEFAULT_HOUSEHOLD_ID):
@@ -270,6 +376,72 @@ def test_a_new_household_starts_empty(beta, beta_household):
     with tools.use_household(beta_household):
         assert tools.list_recipes() == []
         assert tools.list_grocery_list() == []
+
+
+def test_foreign_household_write_returns_a_clear_error_over_http(client, beta_household):
+    """
+    Same bug as test_write_tools_reject_a_foreign_households_record_id, but
+    through the real HTTP API this time — the route layer used to swallow
+    the tool's "found: False"/no-op outcome and still answer 200.
+    """
+    _sign_in(client, BETA_PASSPHRASE)
+    add_res = client.post("/api/grocery-list/add", json={"item": "beta's oat milk"})
+    assert add_res.status_code == 200
+    with tools.use_household(beta_household):
+        beta_item_id = tools.list_grocery_list()[0]["id"]
+
+    _sign_in(client, "test-password")
+    res = client.post(f"/api/grocery-list/{beta_item_id}/remove")
+    assert res.status_code == 404
+
+    with tools.use_household(beta_household):
+        assert any(i["id"] == beta_item_id for i in tools.list_grocery_list()), (
+            "the failed cross-household call must not have deleted the real item"
+        )
+
+
+def test_wrong_household_id_and_a_made_up_id_look_identical(client, beta_household):
+    """
+    The specific property the original security review verified and this
+    fix must not quietly undo: a real id belonging to another household and
+    an id that was never real anywhere must produce the exact same
+    response — same status, same message shape. If they ever differed, the
+    response itself would be an oracle for "is this id real, just not
+    mine?" Only the id number the caller already supplied is allowed to
+    differ in the text.
+    """
+    import re
+
+    def normalized_detail(res):
+        return re.sub(r"\d+", "<id>", res.json()["detail"])
+
+    _sign_in(client, BETA_PASSPHRASE)
+    client.post("/api/grocery-list/add", json={"item": "beta's oat milk"})
+    with tools.use_household(beta_household):
+        beta_item_id = tools.list_grocery_list()[0]["id"]
+    never_existed_id = beta_item_id + 999_000  # not a row anywhere
+
+    _sign_in(client, "test-password")
+    foreign_res = client.post(f"/api/grocery-list/{beta_item_id}/remove")
+    nonexistent_res = client.post(f"/api/grocery-list/{never_existed_id}/remove")
+
+    assert foreign_res.status_code == nonexistent_res.status_code == 404
+    assert normalized_detail(foreign_res) == normalized_detail(nonexistent_res)
+
+    # Checked again on a differently-shaped endpoint (facts, not grocery)
+    # so the property isn't just true for one hand-picked route.
+    _sign_in(client, BETA_PASSPHRASE)
+    client.post("/api/facts/add", json={"category": "preferences", "text": "beta likes tacos"})
+    with tools.use_household(beta_household):
+        beta_fact_id = tools.get_facts()[0]["id"]
+    never_existed_fact_id = beta_fact_id + 999_000
+
+    _sign_in(client, "test-password")
+    foreign_fact_res = client.post(f"/api/facts/{beta_fact_id}/delete")
+    nonexistent_fact_res = client.post(f"/api/facts/{never_existed_fact_id}/delete")
+
+    assert foreign_fact_res.status_code == nonexistent_fact_res.status_code == 404
+    assert normalized_detail(foreign_fact_res) == normalized_detail(nonexistent_fact_res)
 
 
 # ---------- the property itself: interleaved, through the API ----------

@@ -50,10 +50,10 @@ the app follows the OS.
 | `--ivory-ink-muted` | `rgba(246,238,225,.92)` | `#E4DCCE` (solid) | Chip labels on spruce only. |
 | `--ink-secondary` | `#7C7161` | `#BFB6A5` | Supporting copy, outline-button labels. |
 | `--ink-muted` | `#7E7360` | `#BFB6A5` | 10px/800 uppercase eyebrows **only**. |
-| `--ink-placeholder` | `#8E8370` | `#9C9384` | Ask-bar placeholder. |
+| `--ink-placeholder` | `#797060` | `#9C9384` | Ask-bar placeholder. Darkened 2026-09-03 (from `#8E8370`, 3.47:1) to clear WCAG AA for normal text — now 4.54:1 on ground. |
 | `--ink-inactive` | `#948970` | `#9C9384` | Unselected navigation. |
-| `--ink-done` | `#A29886` | `#A9A091` | Completed/struck list text. **Known gap:** light value is 2.80:1 on card ivory — fails 4.5:1 today. Pre-existing, not yet fixed; don't copy this pattern into new work. |
-| `--ink-done-soft` | `#C6BCA9` | `#9C9384` | Quantity beside completed text. Same known light-mode gap (1.85:1). |
+| `--ink-done` | `#7A705E` | `#A9A091` | Completed/struck list text. Darkened 2026-09-03 (from `#A29886`, 2.65:1) — now 4.53:1 on ground, clearing the gap noted below for `--ink-done-soft`. |
+| `--ink-done-soft` | `#C6BCA9` | `#9C9384` | Quantity beside completed text. **Known gap:** light value is 1.85:1 on card ivory — fails 4.5:1 today. Pre-existing, not yet fixed; don't copy this pattern into new work. |
 
 ### Apricot — the accent that acts
 
@@ -190,8 +190,21 @@ Reference implementations to copy patterns from, not to import as-is (there's no
 
 ---
 
-## 7. Voice
+## 7. Learning etiquette
 
+Pomona learns from what a household does — this section is how it's allowed to do that.
+
+- **The loop is observe → infer → confirm → remember → correct.** The app notices a pattern, forms a guess, and checks it with one light, inline tap — never a form, and never asked twice for the same fact. Once confirmed, it remembers, and that answer stays one tap away from being corrected later. Skipping "confirm" isn't a shortcut version of this loop, it's a different one — see silent learning below.
+- **Silent learning needs a visible flag and an undo, right at the point of use.** The app may act on a guess without asking first, but only where the result shows up on-screen as something the person can see and reverse in the moment — the grocery list's "usually here" / "not this time" is the reference pattern. Acting on a guess anywhere that isn't visible and reversible right there isn't silent learning, it's just guessing.
+- **Repetition earns an offer, not a promotion.** Once something has been observed enough times to look like a rule ("that's two Thursdays — should I just assume it?"), the app asks, once, whether to make it standing. It doesn't quietly upgrade a guess into a fact on its own.
+
+*This section and the voice-character addition just below it were folded in 2026-09-03 (both fully Emily-decided beforehand); per Governance below, the Brand Book canvas guide still needs the same two additions at its next design round.*
+
+---
+
+## 8. Voice
+
+- Pomona's personality is **kind, dependable, helpful, thoughtful** — and understanding the user is part of being helpful, not separate from it. These four words are the test for any new copy: if a line doesn't read as at least one of them, rewrite it.
 - Warm, first-person, concise. State the thing, then soften it — never the reverse, and never at length.
 - Time as a person would say it ("on the table by a quarter past seven"), not a timestamp ("Est. ready 7:15 PM").
 - The answer, not the question ("All in the fridge," not "All required ingredients available").
@@ -202,16 +215,16 @@ Reference implementations to copy patterns from, not to import as-is (there's no
 
 ---
 
-## 8. Governance — who decides what
+## 9. Governance — who decides what
 
 This section is for Emily as much as for any agent working on Pomona. Plain terms.
 
 First, one piece of vocabulary this section leans on: a **token** is just a named value — "the apricot color" or "the standard card corner-roundness" — that every screen points to instead of each screen picking its own. Change the one named value and every screen using it changes together. That's the whole reason a "one line changes the whole app" claim below is literally true rather than a figure of speech.
 
-**Tier 1 — Using the system.** Building a feature with the tokens, components, and rules that already exist in Sections 1–7 above (a new list row, a new card, a new sheet that follows the existing patterns, copy that follows the existing voice). **Any agent can do this as part of normal ticket work** — no separate design approval needed beyond the usual ticket flow. (In plain terms, that flow is: an agent looks into the request, does the work on its own isolated copy — a "branch" — tests it, and only Emily's own review and merge makes it live. See `.claude/skills/home-manager-loop/SKILL.md` for the full version of that flow.)
+**Tier 1 — Using the system.** Building a feature with the tokens, components, and rules that already exist in Sections 1–8 above (a new list row, a new card, a new sheet that follows the existing patterns, copy that follows the existing voice). **Any agent can do this as part of normal ticket work** — no separate design approval needed beyond the usual ticket flow. (In plain terms, that flow is: an agent looks into the request, does the work on its own isolated copy — a "branch" — tests it, and only Emily's own review and merge makes it live. See `.claude/skills/home-manager-loop/SKILL.md` for the full version of that flow.)
 
-**Tier 2 — Changing the system.** Anything that isn't just *using* what's already documented: changing a token's *value*, adding a *new* token or component, changing one of the numbered hard rules in Section 2, or changing something structural — a new shape/spacing convention, a new kind of screen element not in Section 5's list, a change to the four-screen navigation structure in Section 6 (e.g. adding a fifth tab), or a change to the voice guidance in Section 7. **This is Emily's decision first, every time** — an agent proposes it and explains why, but doesn't just build it. Once she's decided: one "commit" (one saved, labeled change to the project) updates `static/theme.css` and `DESIGN_SYSTEM.md` together — never one without the other, since a token change that isn't written down here is a change nobody else can find later — plus a note to also update the Pomona Brand Book canvas so the human-readable guide doesn't drift from the code. The reason this is worth a real decision rather than "just change the CSS": the whole point of tokens (see above) is that **one line change restyles the entire app** — that's real leverage, which is exactly why it needs Emily's sign-off rather than an agent's guess.
+**Tier 2 — Changing the system.** Anything that isn't just *using* what's already documented: changing a token's *value*, adding a *new* token or component, changing one of the numbered hard rules in Section 2, or changing something structural — a new shape/spacing convention, a new kind of screen element not in Section 5's list, a change to the four-screen navigation structure in Section 6 (e.g. adding a fifth tab), a change to the learning-etiquette guidance in Section 7, or a change to the voice guidance in Section 8. **This is Emily's decision first, every time** — an agent proposes it and explains why, but doesn't just build it. Once she's decided: one "commit" (one saved, labeled change to the project) updates `static/theme.css` and `DESIGN_SYSTEM.md` together — never one without the other, since a token change that isn't written down here is a change nobody else can find later — plus a note to also update the Pomona Brand Book canvas so the human-readable guide doesn't drift from the code. The reason this is worth a real decision rather than "just change the CSS": the whole point of tokens (see above) is that **one line change restyles the entire app** — that's real leverage, which is exactly why it needs Emily's sign-off rather than an agent's guess.
 
 **Tier 3 — Identity.** The app's name, its logo, its overall creative direction. This isn't a ticket at all — it's a conversation with Emily, full stop. Don't scope this kind of change into a ticket even if it seems small.
 
-**When it's ambiguous which tier something is** — including a Section 5/6/7 change that doesn't obviously look like a "structural" one, or any other situation this document doesn't clearly cover — flag it as an open question for Emily. Never invent a rule to fill the gap, even if the "obvious" answer seems clear — that's exactly the kind of judgment call this project's workflow reserves for her (see `.claude/skills/home-manager-loop/SKILL.md`, "Emily's role").
+**When it's ambiguous which tier something is** — including a Section 5/6/7/8 change that doesn't obviously look like a "structural" one, or any other situation this document doesn't clearly cover — flag it as an open question for Emily. Never invent a rule to fill the gap, even if the "obvious" answer seems clear — that's exactly the kind of judgment call this project's workflow reserves for her (see `.claude/skills/home-manager-loop/SKILL.md`, "Emily's role").
