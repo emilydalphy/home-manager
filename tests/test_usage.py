@@ -434,10 +434,17 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         "generate_prep_schedule_llm", "generate_recipe_detail_llm",
         "_scan_image_for_items", "generate_chore_recommendations", "run_agent_turn",
     ]
-    assert source.count("_create_with_retry(") - 1 == len(labels), (
-        "the number of _create_with_retry call sites in agent.py changed "
-        "(the -1 is _create_with_retry's own definition) -- update this "
-        "test's label list, and the api_calls schema comment, to match"
+    # generate_weekly_plan_llm and generate_component_plan_llm route through
+    # _stream_forced_tool_call instead of _create_with_retry directly (added
+    # for the "stream week generation" work) -- it's the streaming
+    # equivalent, with the same instrumentation (see its own
+    # _record_api_call call), so both helpers' call sites count toward the
+    # same "every call site is covered" invariant this test exists to check.
+    call_sites = source.count("_create_with_retry(") - 1 + source.count("_stream_forced_tool_call(") - 1
+    assert call_sites == len(labels), (
+        "the number of _create_with_retry/_stream_forced_tool_call call sites in "
+        "agent.py changed (each -1 is that helper's own definition) -- update "
+        "this test's label list, and the api_calls schema comment, to match"
     )
     for label in labels:
         idx = source.index(f'label="{label}"')
