@@ -249,8 +249,8 @@
 
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
-  <h1>Anyone I need to cook carefully around?</h1>
-  <p class="subtitle">Allergies, restrictions, or approaches I'll always follow — and whose.</p>
+  <h1>Anyone I cook carefully around?</h1>
+  <p class="subtitle">Allergies, restrictions, or approaches I'll always follow — and who they're for.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
   <span class="back-link" data-back="household">&larr; Back</span>
@@ -366,7 +366,7 @@
     <h1 id="reveal-title">Here's your first week.</h1>
     <p class="subtitle" id="reveal-subtitle">Building a real week of meals from what you just told me...</p>
   </div>
-  <p class="loading-note" id="reveal-loading">This can take up to 30 seconds.</p>
+  <p class="loading-note" id="reveal-loading">Give me up to 30 seconds for this.</p>
   <div id="reveal-days"></div>
   <div id="invite-section"></div>
   <div class="action-row" id="reveal-actions" style="display:none">
@@ -377,7 +377,7 @@
 
 <div id="step-chores-q" style="display:none">
   <h1>A few more things, then you're done</h1>
-  <p class="subtitle">Pets, what you're hoping this app helps with, and a couple quick questions about your home — you'll review and can change anything before it's saved.</p>
+  <p class="subtitle">Pets, what you're hoping I can help with, and a couple of quick questions about your home — you can review and change anything before it's saved.</p>
 
   <label class="field-label">Any pets?</label>
   <div class="chip-row" id="has-pets-chips"></div>
@@ -386,7 +386,7 @@
     <button class="add-btn" id="add-pet" type="button">+ Add pet</button>
   </div>
 
-  <label class="field-label">What are you hoping this app helps with?</label>
+  <label class="field-label">What are you hoping I can help with?</label>
   <textarea id="goals" rows="2" placeholder="Stay on top of chores, eat healthier, waste less food..."></textarea>
 
   <label class="field-label">Home type</label>
@@ -409,12 +409,12 @@
   <label class="field-label">How would you describe the upkeep you want?</label>
   <div class="chip-row" id="standard-chips"></div>
 
-  <label class="field-label">Who should be in the chore rotation?</label>
+  <label class="field-label">Who's in the chore rotation?</label>
   <div class="chip-row" id="rotation-chips"></div>
 
   <label class="field-label">Any existing help (cleaning service, etc.)?</label>
   <div class="row">
-    <input type="text" id="existing-help" placeholder="e.g. Cleaning service, or leave blank for none" style="flex:1.5" />
+    <input type="text" id="existing-help" placeholder="e.g. cleaning service, or leave blank for none" style="flex:1.5" />
     <input type="text" id="existing-help-freq" placeholder="How often?" style="flex:1" />
   </div>
 
@@ -442,7 +442,22 @@
 
 <script>
 const DIET_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Nut allergy', 'None'];
-const CUISINES = ['Italian', 'Mexican', 'Asian', 'Mediterranean', 'American', 'Indian'];
+// Loop Board: "Break broad cuisine options into specific ones" (2026-09-03).
+// The old list (Italian, Mexican, Asian, Mediterranean, American, Indian) was
+// too broad to power real recommendations — "Asian" and "Mediterranean" each
+// papered over several distinct cuisines. Expanded to a flat, scannable list
+// of specific cuisines instead of a two-level "tap to reveal" chip (that
+// would be a new interaction pattern not in DESIGN_SYSTEM.md's component
+// vocabulary — a bigger call than this ticket needs). "Asian" -> Japanese,
+// Thai, Chinese, Korean, Vietnamese; "Mediterranean" -> Greek, Lebanese,
+// Turkish. Italian/Mexican/Indian/American kept (already specific enough).
+// Free-text fallback (the input below) still covers anything not listed.
+const CUISINES = [
+  'Italian', 'Mexican', 'American', 'Indian',
+  'Japanese', 'Thai', 'Chinese', 'Korean', 'Vietnamese',
+  'Greek', 'Lebanese', 'Turkish',
+  'French', 'Spanish', 'Ethiopian',
+];
 const HOME_TYPES = ['House', 'Apartment / condo'];
 const STANDARD_OPTIONS = ['Relaxed', 'Standard', 'Meticulous'];
 const FREQUENCIES = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'once'];
@@ -785,15 +800,15 @@ function renderRevealDays(meals) {
 
 function buildRevealCopy(answers) {
   if (answers.eating_style) {
-    return `Built around ${escapeHtmlLocal(answers.eating_style)} and everything else you just told us.`;
+    return `Built around ${escapeHtmlLocal(answers.eating_style)} and everything else you just told me.`;
   }
   if (answers.excited_about && answers.excited_about.length) {
-    return `Built around more ${escapeHtmlLocal(answers.excited_about[0])} and everything else you just told us.`;
+    return `Built around more ${escapeHtmlLocal(answers.excited_about[0])} and everything else you just told me.`;
   }
   if (answers.wont_eat && answers.wont_eat.length) {
-    return `Built around what you told us — steering clear of ${escapeHtmlLocal(answers.wont_eat[0])}, exactly like you asked.`;
+    return `Built around what you told me — steering clear of ${escapeHtmlLocal(answers.wont_eat[0])}, exactly like you asked.`;
   }
-  return "Built from exactly what you just told me — not a generic starter.";
+  return "Built around exactly what you just told me — not a generic starter.";
 }
 
 async function renderInviteOffer(memberNames) {
@@ -820,7 +835,7 @@ async function renderInviteOffer(memberNames) {
         if (!res.ok) throw new Error('Could not get link');
         const data = await res.json();
         await navigator.clipboard.writeText(data.link).catch(() => {});
-        btn.textContent = 'Copied!';
+        btn.textContent = 'Copied';
         btn.classList.add('copied');
         setTimeout(() => { btn.textContent = 'Get link'; btn.classList.remove('copied'); }, 2200);
       } catch (err) {
@@ -927,7 +942,8 @@ async function finishSetupAndReveal(btn) {
     showStep('reveal');
     await generateFirstPlanAndReveal(answers);
   } catch (err) {
-    alert('Could not save: ' + err.message);
+    console.error('Onboarding save failed:', err);
+    alert("Couldn't save that — try again in a moment.");
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1152,7 +1168,8 @@ document.getElementById('chores-q-next').onclick = async () => {
     await saveChoresProfile();
     window.location.href = '/week?firstplan=1';
   } catch (err) {
-    alert('Could not save: ' + err.message);
+    console.error('Chores-profile save failed:', err);
+    alert("Couldn't save your chores — try again in a moment.");
   } finally {
     btn.disabled = false;
     document.getElementById('chores-loading').style.display = 'none';
@@ -1166,7 +1183,8 @@ document.getElementById('finish-btn').onclick = async () => {
       body: JSON.stringify({ chores: collectChoresForSave() }),
     });
   } catch (err) {
-    alert('Could not save chores: ' + err.message);
+    console.error('Chores save failed:', err);
+    alert("Couldn't save your chores — try again in a moment.");
     return;
   }
   window.location.href = '/week?firstplan=1';
