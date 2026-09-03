@@ -106,12 +106,18 @@ accurate.
   `max_tokens`), consider whether it needs the same retry-on-truncation
   treatment rather than just a bigger fixed number.
 - **Tab panels build once per page load.** `static/shell.js`'s
-  `buildWeekPanel`/`buildTodayPanel`/etc. are guarded by
+  `buildWeekPanel`/`buildTodayPanel`/`buildGroceryPanel`/etc. are guarded by
   `panel.dataset.built`, so switching tabs away and back does NOT refetch
   data. Any change made via chat (or otherwise) to an already-built panel's
   data goes stale until reload, unless something explicitly refreshes it —
-  see `refreshStaleTabsFromActions()` in shell.js, which now does this for
+  see `refreshStaleTabsFromActions()` in shell.js, which does this for
   chat-driven changes by reading each turn's `actions[].tab` field.
+  **Grocery was the hole in that and is now covered** (branch
+  `pomona-grocery-native`): the backend has always emitted `tab: 'grocery'`,
+  but while that tab was an iframe there was no useful branch to write —
+  a parent page cannot re-render part of a child document. If you add a new
+  native panel, add its branch here too, or it will go stale in exactly the
+  same silent way.
 - **"Current week" plan resolution** is centralized in
   `tools._current_weekly_plan_row()` (`app/tools/weekly_plan.py`) — it
   prefers the plan whose week
@@ -190,6 +196,57 @@ Newest first. Keep entries terse: one line of fact, one line of why. Full
 detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
+
+- **2026-09-02 — Grocery is a native shell panel, not an iframe, on the
+  branch `pomona-grocery-native` (not merged).** Pomona Stage 2 slice 2;
+  built directly to the InnGrocery design rather than migrate-then-restyle.
+  `static/grocery.html`'s four screens are four states of one panel — To
+  buy / Plan stops / Review behind a segmented control, and shopping a
+  store takes the hero over instead of being a page with its own back
+  button. Same `/api/grocery-list*` endpoints; zero API changes.
+  **The point of it was the refresh policy, not the layout.** Three
+  mechanisms existed only because this tab was a second document, and one
+  of them silently did nothing for the tab it most needed to cover:
+  `refreshStaleTabsFromActions` had no `grocery` branch (it could not have
+  had a useful one), `refreshGrocerySurfaces` re-pointed the iframe's
+  `src`, and `refreshAfterReset` reached through
+  `contentWindow.location.reload()`. All three now call one
+  `refreshGroceryPanel()`. Verified by measurement, not inspection: a chat
+  turn that adds an item updates the panel with the DOM node preserved and
+  the scroll position unchanged at 400px.
+  Five things worth knowing:
+  - **`static/grocery.html` is deliberately untouched and unlinked**, the
+    same treatment `grocery-legacy.html` got, so the slice reverts by
+    restoring one line in `TABS`. That is also why `tests/test_embedded_pages.py`
+    still passes unchanged — its `EMBEDDABLE` list tolerates extra entries,
+    and the file it checks still exists with its guard. The two cleanups
+    the ticket listed (grocery's back-link guard, its `href="/"`) are
+    therefore NOT done; they belong with the decision to delete the file.
+  - **The bespoke wide-desktop grocery layouts were not ported** — the
+    blueprint scopes them out of this pass. Two things existed only there
+    and are gone: the person/identity switcher that stamped `added_by`, and
+    the rail's "Already got" toggle (the Done section covers the latter).
+    Flagged to Emily rather than assumed.
+  - **Finishing a stop now records a `shopping_trips` row on every
+    breakpoint.** Only the desktop mode called
+    `/api/shopping-trips/close`; the phone's "Done here" did not. The
+    native screen does the richer of the two, wrapped so it can never block
+    the flow.
+  - **A class rule that sets `display` beats the UA's `[hidden]` rule.**
+    Hiding the add card and the segmented control by setting `.hidden` did
+    nothing until `.gro-add[hidden]`/`.gro-seg[hidden]` existed. This repo
+    already carried `.today-tile[hidden]` and `.dinner-hero[hidden]` for
+    the same reason — if you add an element you hide via `.hidden` and you
+    also give it a `display`, you need the guard.
+  - **Store avatar colours are all light accents now.** The hash palette
+    included spruce and `#7E7360`, which put `--on-accent-ink` (near-black)
+    on a near-black tile — the same failure RULE ONE exists to prevent.
+    Keeping every entry light makes the rule hold by construction.
+  Two quirks were carried over unchanged and are pre-existing, not
+  introduced: "Elsewhere" (exclude) has no un-exclude anywhere in the UI
+  (only chat can `include_grocery_item`), and the hands-free end-command
+  regex matches `that's all` but not `that’s all` (curly apostrophe) — the
+  regex is byte-identical to the old page's.
 
 - **2026-09-02 — The app records what breaks (`error_events`), and
   `observability_report.py` reads it back for the morning notification.**
