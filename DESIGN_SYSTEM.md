@@ -86,7 +86,7 @@ the app follows the OS.
 |---|---|---|---|
 | `--hairline` | `#EEE3D0` | `#26382E` | Card borders, nav divider, header rule. 1.5px, always. |
 | `--hairline-strong` | `#E6D9C4` | `#33473B` | Ask bar, outline buttons, italic underline — an edge that's also a tap target. |
-| `--sand` | `#F3EBDD` | `#223328` | Soft secondary-button / soft-card fill. |
+| `--sand` | `#F3EBDC` | `#223328` | Soft secondary-button / soft-card fill. |
 | `--sand-deep` | `#E6D9C4` (= `--hairline-strong`) | `#33473B` | Deeper warm-neutral step. |
 
 ### Status
@@ -133,6 +133,7 @@ Eyebrows are the only uppercase text in the system: 10px / 800 / 0.13–0.18em t
 Scale reference (size / weight / tracking → where):
 - 33px/700/‑0.038em — hero dish title
 - 31px/700/‑0.038em — screen title (`h1`)
+- 30px/700/1.05 line-height/‑0.035em — greeting
 - 21px/700/‑0.028em — card headline (`h2`)
 - 17px/700/‑0.02em — button label, `h3`/card title
 - 17px/400 italic — the one accent line
@@ -150,7 +151,7 @@ Scale reference (size / weight / tracking → where):
 - **Radii family** (large, soft, and specific to role — don't pick a radius, look it up): `--radius-hero` 30px (hero panel, bottom corners only) · `--radius-card` 20px (cards/tiles) · `--radius-ask` 18px (ask bar) · `--radius-action` 17px (primary action; active day tile, top corners only) · `--radius-tile` 15px (day tiles, 44px icon button) · `--radius-control` 14px (in-card buttons/inputs) · `--radius-send` 13px (send tile) · `--radius-chip` 11px (metadata chips) · `--radius-badge` 10px (badges, hero icon tile) · `--radius-badge-sm` 9px (small caps badges) · `--radius-pill` 999px.
 - **The joined/notched tile motif**: a tile that touches another surface is *square on that shared edge, round everywhere else* — never both round. Example: on Meals, the selected day tile drops its bottom radius exactly where the spruce hero panel drops its top radius, so the two read as one poured shape. This is the system's signature move; don't round every corner of everything "for consistency."
 - **Spacing rhythm**: 20px screen gutter (the one true constant — full-bleed panels break it deliberately, which is what makes them read as architecture rather than as cards) · 24/22px top padding above the first line · 12px between cards/grid cells · 14px card padding · 8–10px between chips/buttons · 4px between navigation cells.
-- **Elevation**: shadow belongs to the hero panel and the apricot action *only* — nothing else gets a shadow. Everything else separates via a `--hairline`. In dark mode the hero's shadow all but disappears against the dark ground, so lift comes from a **lighter fill plus a hairline edge** (`--spruce-edge`) instead — a shadow reads as nothing on a dark ground, don't try to keep using one.
+- **Elevation**: within a screen's normal content, shadow belongs to the hero panel and the apricot primary action *only* — a card, tile, or row never gets one; it separates via a `--hairline` instead. Shadow is also used, separately, by things that float over the *whole screen* rather than sit within it — `--shadow-sheet` (bottom sheets), `--shadow-dialog` (centered dialogs), `--shadow-panel` (the notification panel), `--shadow-toast` — because those need to read as detached from everything beneath them. Don't add a shadow to ordinary in-page content; do reach for the matching token if you're building a new full-screen overlay. In dark mode the hero's shadow all but disappears against the dark ground, so its lift comes from a **lighter fill plus a hairline edge** (`--spruce-edge`) instead — a shadow reads as nothing on a dark ground, don't try to keep using one there.
 
 ---
 
@@ -203,12 +204,14 @@ Reference implementations to copy patterns from, not to import as-is (there's no
 
 ## 8. Governance — who decides what
 
-This section is for Emily as much as for any agent working on Pomona. Plain terms:
+This section is for Emily as much as for any agent working on Pomona. Plain terms.
 
-**Tier 1 — Using the system.** Building a feature with the tokens, components, and rules that already exist (a new list row, a new card, a new sheet that follows the patterns above). **Any agent can do this as part of normal ticket work** — no separate design approval needed beyond the usual ticket flow (investigate → build on a branch → test → Emily merges).
+First, one piece of vocabulary this section leans on: a **token** is just a named value — "the apricot color" or "the standard card corner-roundness" — that every screen points to instead of each screen picking its own. Change the one named value and every screen using it changes together. That's the whole reason a "one line changes the whole app" claim below is literally true rather than a figure of speech.
 
-**Tier 2 — Changing the system.** Changing a token's *value*, adding a *new* token, or changing one of the numbered rules in Section 2. **This is Emily's decision first, every time** — an agent proposes it, but doesn't just do it. Once she's decided: one commit updates `static/theme.css` and `DESIGN_SYSTEM.md` together (never one without the other — a token change that isn't documented here is a change nobody else can find), plus a note to also update the Pomona Brand Book canvas so the human-readable guide doesn't drift from the code. The reason this is worth doing carefully rather than skipping straight to "just change the CSS": the whole point of a token architecture is that **one line change restyles the entire app** — that's real leverage, which is exactly why it needs a real decision behind it rather than an agent's guess.
+**Tier 1 — Using the system.** Building a feature with the tokens, components, and rules that already exist in Sections 1–7 above (a new list row, a new card, a new sheet that follows the existing patterns, copy that follows the existing voice). **Any agent can do this as part of normal ticket work** — no separate design approval needed beyond the usual ticket flow. (In plain terms, that flow is: an agent looks into the request, does the work on its own isolated copy — a "branch" — tests it, and only Emily's own review and merge makes it live. See `.claude/skills/home-manager-loop/SKILL.md` for the full version of that flow.)
+
+**Tier 2 — Changing the system.** Anything that isn't just *using* what's already documented: changing a token's *value*, adding a *new* token or component, changing one of the numbered hard rules in Section 2, or changing something structural — a new shape/spacing convention, a new kind of screen element not in Section 5's list, a change to the four-screen navigation structure in Section 6 (e.g. adding a fifth tab), or a change to the voice guidance in Section 7. **This is Emily's decision first, every time** — an agent proposes it and explains why, but doesn't just build it. Once she's decided: one "commit" (one saved, labeled change to the project) updates `static/theme.css` and `DESIGN_SYSTEM.md` together — never one without the other, since a token change that isn't written down here is a change nobody else can find later — plus a note to also update the Pomona Brand Book canvas so the human-readable guide doesn't drift from the code. The reason this is worth a real decision rather than "just change the CSS": the whole point of tokens (see above) is that **one line change restyles the entire app** — that's real leverage, which is exactly why it needs Emily's sign-off rather than an agent's guess.
 
 **Tier 3 — Identity.** The app's name, its logo, its overall creative direction. This isn't a ticket at all — it's a conversation with Emily, full stop. Don't scope this kind of change into a ticket even if it seems small.
 
-**When it's ambiguous which tier something is** (or a rule in this document doesn't clearly cover the situation in front of you): flag it as an open question for Emily. Never invent a rule to fill the gap, even if the "obvious" answer seems clear — that's exactly the kind of judgment call this project's workflow reserves for her (see `.claude/skills/home-manager-loop/SKILL.md`, "Emily's role").
+**When it's ambiguous which tier something is** — including a Section 5/6/7 change that doesn't obviously look like a "structural" one, or any other situation this document doesn't clearly cover — flag it as an open question for Emily. Never invent a rule to fill the gap, even if the "obvious" answer seems clear — that's exactly the kind of judgment call this project's workflow reserves for her (see `.claude/skills/home-manager-loop/SKILL.md`, "Emily's role").
