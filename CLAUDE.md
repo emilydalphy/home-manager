@@ -238,8 +238,13 @@ why*, not duplicating the diff.
     whose values were close but not equal. **A literal only becomes a token
     if the token's light value is byte-identical**; otherwise it keeps the
     literal and gets a dark override. Both cases are commented in place.
-  - `CACHE_NAME` `pomona-shell-v4` → `v5` (the worker serves the CSS/JS
-    cache-first). `manifest.json` is deliberately unchanged — the manifest
+  - `CACHE_NAME` `pomona-shell-v4` → `v5`. Note this bump matters LESS than
+    the v3→v4 one did, and it is worth being precise about why: CSS/JS/HTML
+    are **network-first** in this worker, so an online phone would pick the
+    new stylesheet up regardless. What the bump actually clears is the
+    stale *offline fallback* copies of the old light-only CSS. (Only the
+    icons and manifest are cache-first, and they did not change here.)
+    `manifest.json` is deliberately unchanged — the manifest
     has no media-query form, so only the in-page `<meta name="theme-color">`
     tags vary by scheme, and they now do.
   - **Known light-mode contrast failures found and deliberately NOT fixed**,
