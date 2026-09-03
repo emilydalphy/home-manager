@@ -527,6 +527,115 @@ def _recommend_ready_made(date_str: str, slot: str) -> dict:
     return {"recommended_batch_from_entry_id": None, "recommended_defrost_item": None}
 
 
+def _weekday_name(date_str: str) -> str:
+    return date.fromisoformat(date_str).strftime("%A")
+
+
+def describe_ready_made(date_str: str, slot: str) -> dict | None:
+    """
+    The stored ready-made recommendation, written out the way the screen
+    asks it — "I'll set aside a double batch of Thursday's chili — sound
+    good?" — plus the other option, when one genuinely exists.
+
+    The alternative is computed, not invented: _recommend_ready_made picks
+    a freezer item over a batch when both are available, so the runner-up
+    is a real second candidate the household could pick instead. When
+    there's only one candidate there is no "or:" line, rather than a
+    fabricated one — the same honesty rule the recommendation itself
+    follows (it says "nothing to recommend yet" instead of guessing).
+
+    Returns None when nothing has been recommended for this slot.
+    """
+    need = get_slot_need(date_str, slot)
+    if need["need"] != "ready_made":
+        return None
+    primary = None
+    if need["recommended_defrost_item"]:
+        primary = {
+            "kind": "defrost",
+            "label": need["recommended_defrost_item"],
+            "sentence": f"I’ll defrost the {need['recommended_defrost_item']} — sound good?",
+        }
+    elif need["recommended_batch_from_entry_id"]:
+        label = _batch_label(need["recommended_batch_from_entry_id"])
+        if label:
+            primary = {
+                "kind": "batch",
+                "label": label,
+                "sentence": f"I’ll set aside a double batch of {label} — sound good?",
+            }
+    if not primary:
+        return None
+
+    alternative = None
+    if primary["kind"] == "defrost":
+        batch = _fallback_batch_candidate(date_str)
+        if batch:
+            label = _batch_label(batch)
+            if label:
+                alternative = {
+                    "kind": "batch",
+                    "label": label,
+                    "sentence": f"or: set aside a double batch of {label} instead.",
+                }
+    else:
+        item = _fallback_freezer_item()
+        if item:
+            alternative = {
+                "kind": "defrost",
+                "label": item,
+                "sentence": f"or: defrost the {item} — I’d remind you {_weekday_name(date_str)} morning.",
+            }
+    return {
+        **primary,
+        "confirmed": need["recommendation_confirmed"],
+        "alternative": alternative,
+    }
+
+
+def _batch_label(entry_id: int) -> str | None:
+    """"Thursday's chili" — the meal a batch would be saved from, named the way a person would."""
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal
+        FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.id = ? AND mpe.household_id = ?
+        """,
+        (entry_id, household_id()),
+    ).fetchone()
+    conn.close()
+    if not row or not row["meal"]:
+        return None
+    return f"{_weekday_name(row['date'])}’s {row['meal'].lower()}"
+
+
+def _fallback_freezer_item() -> str | None:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT item FROM inventory_items WHERE household_id = ? AND location = 'freezer' "
+        "AND TRIM(quantity) != '' ORDER BY updated_at DESC, id DESC LIMIT 1",
+        (household_id(),),
+    ).fetchone()
+    conn.close()
+    return row["item"] if row else None
+
+
+def _fallback_batch_candidate(date_str: str) -> int | None:
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT id FROM meal_plan_entries
+        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
+          AND date < ? AND component_category IS NULL
+        ORDER BY date DESC, id DESC LIMIT 1
+        """,
+        (household_id(), date_str),
+    ).fetchone()
+    conn.close()
+    return row["id"] if row else None
+
+
 def set_slot_recommendation(
     date_str: str, slot: str, batch_from_entry_id: int | None = None, defrost_item: str | None = None,
 ) -> dict:

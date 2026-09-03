@@ -1289,6 +1289,135 @@ def resolve_week_slot(week_start: str, req: WeekSlotRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class SlotAttendanceRequest(BaseModel):
+    """
+    One presence gesture. Either form is valid, and the screen sends
+    whichever it made:
+      - `member` + `present` — one avatar tapped (the common case).
+      - `guest_count` — the guests stepper.
+    Both may be sent together; anything omitted is left as it was.
+    """
+    date: str
+    slot: str = "dinner"
+    member: str | None = None
+    present: bool | None = None
+    guest_count: int | None = None
+
+
+class AwayStretchRequest(BaseModel):
+    """
+    The trip range gesture. `member_names` empty/None means the whole
+    household — the common case and the pre-attendance meaning.
+    """
+    from_date: str
+    from_slot: str = "dinner"
+    to_date: str
+    to_slot: str = "dinner"
+    reason: str = ""
+    member_names: list | None = None
+
+
+class SlotRecommendationRequest(BaseModel):
+    """Confirm (or decline) a ready-made recommendation for one slot."""
+    date: str
+    slot: str = "dinner"
+    confirmed: bool = True
+
+
+@app.get("/api/week/{week_start}/attendance")
+def week_attendance(week_start: str):
+    """
+    Everything the presence UI needs for one week in a single round trip:
+    the household's people (so avatars can be drawn before anything is
+    tapped), the meals whose attendance differs from everyone-being-home,
+    and the derived slot needs those produced.
+
+    Deliberately NOT plan-scoped — attendance is declared at intake time,
+    usually before a plan for that week exists at all, exactly like
+    week_intake.night_tags. So this must not 404 on "no plan yet".
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    try:
+        return {
+            "week_start": week_start,
+            "members": tools.list_members(),
+            "attendance": tools.get_week_attendance(week_start),
+            "slot_needs": tools.get_week_slot_needs(week_start),
+        }
+    except Exception as e:
+        logger.exception("Week attendance lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/attendance")
+def set_week_attendance(week_start: str, req: SlotAttendanceRequest):
+    """
+    Record one presence gesture. Returns the resulting attendance for that
+    slot — including its `summary` line and whether the change made the
+    meal away — so the screen can render the truth it just wrote rather
+    than re-deriving it and risking a different answer.
+    """
+    try:
+        result = None
+        if req.member is not None:
+            result = tools.set_member_attendance(
+                req.date, req.slot, req.member, present=bool(req.present),
+            )
+        if req.guest_count is not None:
+            result = tools.set_guest_count(req.date, req.slot, req.guest_count)
+        if result is None:
+            raise HTTPException(status_code=400, detail="Send either a member to toggle or a guest_count.")
+        result["summary"] = tools.attendance_summary_line(result)
+        result["slot_need"] = tools.get_slot_need(req.date, req.slot)
+        return result
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Attendance save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/away-stretch")
+def set_week_away_stretch(week_start: str, req: AwayStretchRequest):
+    """
+    The trip range — "away from Saturday lunch, back for Sunday dinner" —
+    optionally scoped to specific travelers. Returns which slots emptied,
+    which merely shrank, and the two derived edges, which is exactly what
+    the picker's confirmation copy reports back.
+    """
+    try:
+        return tools.set_away_stretch(
+            req.from_date, req.from_slot, req.to_date, req.to_slot,
+            reason=req.reason, member_names=req.member_names,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Away stretch save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/slot-recommendation")
+def confirm_week_slot_recommendation(week_start: str, req: SlotRecommendationRequest):
+    """
+    The household's yes/no on a ready-made recommendation. Emily's standing
+    rule: the system recommends, the household confirms — nothing acts on a
+    recommendation until this flips.
+    """
+    try:
+        return tools.confirm_slot_recommendation(req.date, req.slot, confirmed=req.confirmed)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Recommendation confirmation failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/week/{week_start}/reopen")
 def reopen_week(week_start: str):
     """

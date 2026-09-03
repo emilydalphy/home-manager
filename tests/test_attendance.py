@@ -477,3 +477,143 @@ def test_a_person_scoped_trip_works_through_the_chat_tool(couple):
     assert result["member_names"] == ["Vineeth"]
     assert result["away_slots"] == []
     assert len(result["reduced_slots"]) == 4
+
+
+# ---------- the HTTP surface the screens use ----------
+
+def test_the_attendance_endpoint_works_before_a_plan_exists(signed_in, couple):
+    """
+    Attendance is declared at INTAKE time, usually before the week has been
+    generated at all — exactly like night tags. A 404 here would make the
+    presence avatars unusable on the screen they were designed for.
+    """
+    week = _week_start()
+
+    res = signed_in.get(f"/api/week/{week}/attendance")
+
+    assert res.status_code == 200
+    body = res.json()
+    assert [m["name"] for m in body["members"]] == ["Emily", "Vineeth"]
+    assert body["attendance"] == {}, "an ordinary week has nothing to report"
+
+
+def test_tapping_an_avatar_returns_the_line_the_card_should_show(signed_in, couple):
+    """The screen renders what the server just wrote, rather than re-deriving it and risking a different answer."""
+    week = _week_start()
+    thursday = tools._week_dates(week)[3]
+
+    res = signed_in.post(
+        f"/api/week/{week}/attendance",
+        json={"date": thursday, "slot": "dinner", "member": "Vineeth", "present": False},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["headcount"] == 1
+    assert body["summary"] == "Dinner for 1 — Vineeth's out."
+    assert body["slot_need"]["need"] == "normal"
+
+
+def test_the_away_range_endpoint_reports_what_it_covered(signed_in, couple):
+    """The picker's "covers N meals" confirmation is the server's own answer, not the client's guess."""
+    week = _week_start()
+    saturday, sunday = tools._week_dates(week)[5], tools._week_dates(week)[6]
+
+    res = signed_in.post(
+        f"/api/week/{week}/away-stretch",
+        json={"from_date": saturday, "from_slot": "lunch", "to_date": sunday, "to_slot": "lunch"},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert len(body["away_slots"]) == 4
+    assert body["quick_slot"] == {"date": saturday, "slot": "breakfast"}
+    assert body["ready_made_slot"] == {"date": sunday, "slot": "dinner"}
+
+
+def test_a_bad_member_name_is_a_400_not_a_500(signed_in, couple):
+    res = signed_in.post(
+        f"/api/week/{_week_start()}/attendance",
+        json={"date": _week_start(), "slot": "dinner", "member": "Nobody", "present": False},
+    )
+    assert res.status_code == 400
+
+
+def test_confirming_a_recommendation_flips_only_that_flag(signed_in, couple, recipe, stub_model):
+    """Emily's standing rule: the system recommends, the household confirms."""
+    week = _week_start()
+    saturday, sunday = tools._week_dates(week)[5], tools._week_dates(week)[6]
+    stub_model(_full_week(week))
+    agent.generate_weekly_plan(week)
+    tools.set_away_stretch(saturday, "lunch", sunday, "lunch")
+    assert tools.get_slot_need(sunday, "dinner")["recommendation_confirmed"] is False
+
+    res = signed_in.post(
+        f"/api/week/{week}/slot-recommendation",
+        json={"date": sunday, "slot": "dinner", "confirmed": True},
+    )
+
+    assert res.status_code == 200
+    assert res.json()["recommendation_confirmed"] is True
+
+
+# ---------- what the Meals screen is handed ----------
+
+def test_the_week_menu_carries_the_derived_states(couple, recipe, stub_model):
+    """
+    The Meals screen renders a slot and the reason it looks that way
+    together; they must arrive together too, or a slot briefly claims to be
+    something it isn't.
+    """
+    week = _week_start()
+    saturday, sunday = tools._week_dates(week)[5], tools._week_dates(week)[6]
+    stub_model(_full_week(week))
+    agent.generate_weekly_plan(week)
+    tools.set_away_stretch(saturday, "lunch", sunday, "lunch")
+
+    menu = tools.get_week_menu()
+    by_date = {d["date"]: d for d in menu["days"]}
+
+    assert by_date[saturday]["lunch"]["need"] == "away"
+    assert by_date[saturday]["breakfast"]["need"] == "quick"
+    assert by_date[sunday]["dinner"]["need"] == "ready_made"
+    assert menu["trip_summary"] == "Away Sat–Sun"
+
+
+def test_an_ordinary_week_carries_no_trip_chrome(couple, recipe, stub_model):
+    """Progressive disclosure (Emily's decision): the per-meal states appear only when something creates the need."""
+    week = _week_start()
+    stub_model(_full_week(week))
+    agent.generate_weekly_plan(week)
+
+    menu = tools.get_week_menu()
+
+    assert menu["trip_summary"] == ""
+    for day in menu["days"]:
+        for slot in ("breakfast", "lunch", "dinner"):
+            assert "need" not in (day[slot] or {}), "an ordinary slot should be untouched"
+
+
+def test_the_ready_made_recommendation_is_written_out_for_the_screen(couple, recipe, stub_model):
+    """The recommendation surface asks a real question about a real earmark."""
+    week = _week_start()
+    saturday, sunday = tools._week_dates(week)[5], tools._week_dates(week)[6]
+    stub_model(_full_week(week))
+    agent.generate_weekly_plan(week)
+    tools.set_away_stretch(saturday, "lunch", sunday, "lunch")
+
+    rec = tools.describe_ready_made(sunday, "dinner")
+
+    assert rec["kind"] == "batch"
+    assert "chili" in rec["label"]
+    assert rec["sentence"].endswith("sound good?")
+    assert rec["confirmed"] is False
+
+
+def test_a_slot_with_nothing_to_recommend_says_so_rather_than_inventing_one(couple):
+    """No plan, no freezer — an honest absence, not a fabricated earmark."""
+    week = _week_start()
+    saturday, sunday = tools._week_dates(week)[5], tools._week_dates(week)[6]
+    tools.set_away_stretch(saturday, "lunch", sunday, "lunch")
+
+    assert tools.describe_ready_made(sunday, "dinner") is None

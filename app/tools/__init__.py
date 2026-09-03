@@ -255,6 +255,7 @@ from .slot_needs import (  # noqa: F401
     apply_slot_needs_to_plan,
     clear_slot_need,
     confirm_slot_recommendation,
+    describe_ready_made,
     generation_context_for_week,
     get_slot_need,
     get_week_slot_needs,

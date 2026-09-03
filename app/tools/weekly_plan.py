@@ -1018,6 +1018,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             day["dinner_suggestions"] = suggestions
 
     intake = _week_intake.get_week_intake(plan["week_start_date"])
+    trip = _decorate_with_needs(days, plan["week_start_date"])
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
         "week_start_date": plan["week_start_date"],
@@ -1026,8 +1027,73 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "days": days,
         "menu_is_suggested": False,
         "headline": _week_headline(plan, days, intake),
+        # The trip banner ("Away Sat–Sun") — present only when the week
+        # actually has one, so the ordinary week carries no extra chrome.
+        "trip_summary": trip,
         **approval,
     }
+
+
+def _decorate_with_needs(days: list[dict], week_start: str) -> str:
+    """
+    Fold each slot's derived need and real headcount into the week menu the
+    Meals screen already fetches, and return a short label for the week's
+    trip if it has one.
+
+    Done here rather than as a second endpoint because the screen renders
+    a slot and its state together — two round trips would let the meal and
+    the reason it looks the way it does arrive separately, which is exactly
+    how a slot ends up briefly claiming to be something it isn't.
+
+    Only decorates; a slot with nothing unusual is left exactly as it was,
+    so every existing consumer of this payload is unaffected.
+    """
+    from . import slot_needs as _slot_needs
+    from . import attendance as _attendance
+
+    needs = _slot_needs.get_week_slot_needs(week_start)
+    attendance = _attendance.get_week_attendance(week_start)
+    away_dates: list[str] = []
+
+    for day in days:
+        d = day["date"]
+        day_needs = needs.get(d) or {}
+        day_attendance = attendance.get(d) or {}
+        if any(info["need"] == "away" for info in day_needs.values()):
+            away_dates.append(d)
+        for slot in ("breakfast", "lunch", "dinner"):
+            entry = day.get(slot)
+            info = day_needs.get(slot)
+            att = day_attendance.get(slot)
+            if entry is None and (info or att):
+                # A need declared before this week was generated has no
+                # entry to hang off yet. Give it a shell so the screen can
+                # still show why the slot looks the way it does.
+                entry = {"title": None, "meta": None, "source": "empty", "state": "planned_empty", "reason": None}
+                day[slot] = entry
+            if entry is None:
+                continue
+            if info:
+                entry["need"] = info["need"]
+                entry["need_reason"] = info["reason"]
+                entry["need_for_names"] = info["for_member_names"]
+                if info["need"] == "ready_made":
+                    entry["recommendation"] = _slot_needs.describe_ready_made(d, slot)
+            if att:
+                entry["serves"] = att["headcount"]
+                entry["away_names"] = att["absent_names"]
+                entry["present_names"] = att["present_names"]
+                entry["guest_count"] = att["guest_count"]
+                entry["attendance_summary"] = _attendance.summary_line(att)
+
+    if not away_dates:
+        return ""
+    first, last = away_dates[0], away_dates[-1]
+    fmt = "%a"
+    start_label = date.fromisoformat(first).strftime(fmt)
+    if first == last:
+        return f"Away {start_label}"
+    return f"Away {start_label}–{date.fromisoformat(last).strftime(fmt)}"
 
 
 def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
