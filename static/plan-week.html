@@ -10,7 +10,8 @@
 <title>Plan the week — Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#1B3328" />
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <style>
   /*
     design_handoff_plan_the_week — the two question screens.
@@ -31,8 +32,8 @@
   */
   :root {
     color-scheme: light;
-    --plum-panel: #E2EDE5;  /* the "Why I'm asking" fill */
-    --ack-green: #4F6B5B;   /* = theme.css --good-ink */
+    --plum-panel: var(--celadon-tint);  /* the "Why I'm asking" fill */
+    --ack-green: var(--celadon-label);   /* = theme.css --good-ink */
   }
   * { box-sizing: border-box; }
   body {
@@ -83,7 +84,7 @@
 
   /* ---- Day rows (Q1) ---- */
   .day {
-    background: #fff;
+    background: var(--surface-raised);
     border: 1px solid var(--card-border);
     border-radius: 14px;
     padding: 14px 15px;
@@ -103,7 +104,7 @@
     font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
     border-radius: var(--radius-pill);
     border: 1px solid var(--card-border);
-    background: #fff; color: var(--text-body);
+    background: var(--surface-raised); color: var(--text-body);
     cursor: pointer;
   }
   .tag:hover { border-color: var(--midnight-violet); }
@@ -122,7 +123,7 @@
   .stepper button {
     width: 36px; height: 36px; flex-shrink: 0;
     border-radius: 9px; border: 1px solid var(--midnight-violet);
-    background: #fff; color: var(--midnight-violet);
+    background: var(--surface-raised); color: var(--midnight-violet);
     font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
   }
   .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
@@ -137,14 +138,14 @@
     font-family: var(--font-body); font-size: 0.85rem;
     border-radius: var(--radius-pill);
     border: 1px solid var(--card-border);
-    background: #fff; color: var(--text-body);
+    background: var(--surface-raised); color: var(--text-body);
     cursor: pointer;
   }
   .chip:hover { border-color: var(--midnight-violet); }
   .chip.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
 
   .card {
-    background: #fff; border: 1px solid var(--card-border);
+    background: var(--surface-raised); border: 1px solid var(--card-border);
     border-radius: 14px; padding: 15px 16px;
   }
 
@@ -153,7 +154,7 @@
     padding: 12px 13px; border-radius: var(--radius-control);
     border: 1px solid var(--card-border);
     font-family: var(--font-body); font-size: 0.92rem; line-height: 1.5;
-    background: #fff; color: var(--text-body);
+    background: var(--surface-raised); color: var(--text-body);
   }
   textarea:focus { border-color: var(--midnight-violet); outline: none; }
   textarea::placeholder { color: var(--text-muted); }

@@ -14,32 +14,32 @@
      README's Phase 4 notes for the People/Taste/Rhythm-vs-structured-data
      judgment call and what happened to the old field-by-field editor. */
   * { box-sizing: border-box; }
-  body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, #F3EBDC); }
+  body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, var(--sand)); }
   .wwk-header { padding: 20px 20px 6px; }
   .wwk-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--midnight-violet); text-decoration: none; display: block; margin-bottom: 8px; }
   .wwk-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0 0 16px; }
 
   .wwk-tabs { display: flex; gap: 6px; padding: 0 16px 12px; }
-  .wwk-tab { flex: 1; padding: 11px 0; border-radius: 10px; border: none; font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; cursor: pointer; background: #fff; color: #7C7161; }
+  .wwk-tab { flex: 1; padding: 11px 0; border-radius: 10px; border: none; font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; cursor: pointer; background: var(--surface-raised); color: var(--ink-secondary); }
   .wwk-tab.active { background: var(--midnight-violet); color: var(--oat-cream); font-weight: 800; }
 
   .wwk-content { padding: 0 20px 20px; }
-  .wwk-card { background: #fff; border-radius: 18px; padding: 17px 19px 11px; margin-bottom: 16px; }
-  .wwk-intro { font-family: var(--font-body); font-size: 0.94rem; color: #7C7161; margin: 0 0 6px; }
-  .wwk-fact-row { padding: 11px 0; border-top: 1px solid #EEE3D0; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .wwk-card { background: var(--surface-raised); border-radius: 18px; padding: 17px 19px 11px; margin-bottom: 16px; }
+  .wwk-intro { font-family: var(--font-body); font-size: 0.94rem; color: var(--ink-secondary); margin: 0 0 6px; }
+  .wwk-fact-row { padding: 11px 0; border-top: 1px solid var(--hairline); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
   .wwk-fact-text { font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; color: var(--ink); flex: 1; }
-  .wwk-fact-edit { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: #A2582F; flex: none; }
-  .wwk-add-row { padding: 11px 0; border-top: 1px solid #EEE3D0; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--spruce); cursor: pointer; }
+  .wwk-fact-edit { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--apricot-label); flex: none; }
+  .wwk-add-row { padding: 11px 0; border-top: 1px solid var(--hairline); font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--ink-strong); cursor: pointer; }
   /* Setup answers on the Taste tab. Styled as part of the same list as the
      freeform facts rather than as a separate widget — they're the same kind
      of thing to the household, and only differ in where they're stored. */
-  .wwk-pref-label { font-family: var(--font-body); font-weight: 700; color: var(--spruce); }
-  .wwk-pref-empty { color: #948970; font-style: italic; }
+  .wwk-pref-label { font-family: var(--font-body); font-weight: 700; color: var(--ink-strong); }
+  .wwk-pref-empty { color: var(--ink-inactive); font-style: italic; }
   .wwk-pref-chips-row { cursor: default; }
   .wwk-pref-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 0 4px; }
   .wwk-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--celadon-tint, #E2EDE5); color: var(--ink-on-celadon);
+    background: var(--celadon-tint, var(--celadon-tint)); color: var(--ink-on-celadon);
     border-radius: 999px; padding: 6px 8px 6px 14px;
     font-family: var(--font-body); font-size: 0.86rem;
   }
@@ -48,49 +48,49 @@
     font-size: 1.05rem; line-height: 1; padding: 6px; min-width: 32px; min-height: 32px;
   }
 
-  .wwk-editor { border-top: 1px solid #EEE3D0; padding: 11px 0; }
-  .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 12px; background: #FFFDF8; font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
+  .wwk-editor { border-top: 1px solid var(--hairline); padding: 11px 0; }
+  .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 12px; background: var(--surface); font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
   .wwk-editor-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
   .wwk-save-btn { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 11px; padding: 12px 18px; font-weight: 700; font-family: var(--font-body); cursor: pointer; }
-  .wwk-cancel-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: #7E7360; cursor: pointer; }
-  .wwk-delete-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: #8F2C17; cursor: pointer; margin-left: auto; }
+  .wwk-cancel-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: var(--ink-muted); cursor: pointer; }
+  .wwk-delete-btn { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: var(--urgent-label); cursor: pointer; margin-left: auto; }
 
-  .wwk-footer-card { background: #E6D9C4; border-radius: 16px; padding: 14px 17px; margin-bottom: 16px; }
-  .wwk-footer-text { font-family: var(--font-body); font-size: 0.86rem; color: #7C7161; margin: 0; line-height: 1.4; }
+  .wwk-footer-card { background: var(--hairline-strong); border-radius: 16px; padding: 14px 17px; margin-bottom: 16px; }
+  .wwk-footer-text { font-family: var(--font-body); font-size: 0.86rem; color: var(--ink-secondary); margin: 0; line-height: 1.4; }
 
   /* Stores tab extra */
-  .wwk-store-block { border-top: 1px solid #EEE3D0; padding: 13px 0; }
+  .wwk-store-block { border-top: 1px solid var(--hairline); padding: 13px 0; }
   .wwk-store-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
   .wwk-store-name { font-family: var(--font-body); font-weight: 700; font-size: 1rem; color: var(--ink); }
-  .wwk-store-count { font-family: var(--font-body); font-size: 0.82rem; color: #7E7360; margin-left: auto; }
+  .wwk-store-count { font-family: var(--font-body); font-size: 0.82rem; color: var(--ink-muted); margin-left: auto; }
   .wwk-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-  .wwk-chip { display: inline-flex; align-items: center; gap: 8px; background: #FBF6EE; border-radius: 20px; padding: 9px 8px 9px 13px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
+  .wwk-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--ground); border-radius: 20px; padding: 9px 8px 9px 13px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; }
   /* A real <button> now — it was a <span>, so it could only be clicked,
      never tabbed to. Padding/border reset to keep it looking identical. */
-  .wwk-chip-x { padding: 0; border: none; appearance: none; width: 22px; height: 22px; border-radius: 12px; background: #E6D9C4; color: var(--midnight-violet); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .wwk-chip-add { border: 1.5px dashed #C6BCA9; border-radius: 20px; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); padding: 9px 15px; cursor: pointer; }
+  .wwk-chip-x { padding: 0; border: none; appearance: none; width: 22px; height: 22px; border-radius: 12px; background: var(--hairline-strong); color: var(--midnight-violet); font-weight: 800; font-size: 0.76rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .wwk-chip-add { border: 1.5px dashed var(--ink-done-soft); border-radius: 20px; background: transparent; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; color: var(--midnight-violet); padding: 9px 15px; cursor: pointer; }
   .wwk-chip-input-row { display: flex; gap: 6px; align-items: center; }
   .wwk-chip-input { border: 2px solid var(--midnight-violet); border-radius: 20px; padding: 9px 15px; font-family: var(--font-body); font-size: 0.9rem; }
-  .wwk-import-row { background: #FBF6EE; border-radius: 14px; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; cursor: pointer; }
+  .wwk-import-row { background: var(--ground); border-radius: 14px; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; cursor: pointer; }
   .wwk-import-title { font-family: var(--font-body); font-weight: 700; font-size: 0.94rem; color: var(--ink); margin: 0; }
-  .wwk-import-sub { font-family: var(--font-body); font-size: 0.8rem; color: #7E7360; margin: 2px 0 0; }
+  .wwk-import-sub { font-family: var(--font-body); font-size: 0.8rem; color: var(--ink-muted); margin: 2px 0 0; }
   .wwk-import-open { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--midnight-violet); }
 
   /* Import sheet */
-  #wwk-scrim { position: fixed; inset: 0; background: rgba(35, 48, 42,.42); display: none; z-index: 998; }
+  #wwk-scrim { position: fixed; inset: 0; background: var(--scrim); display: none; z-index: 998; }
   #wwk-scrim.open { display: block; }
-  #wwk-import-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: #fff; border-radius: 26px 26px 0 0; padding: 16px 20px 22px; z-index: 999; display: none; }
+  #wwk-import-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: var(--surface-raised); border-radius: 26px 26px 0 0; padding: 16px 20px 22px; z-index: 999; display: none; }
   #wwk-import-sheet.open { display: block; }
   .wwk-store-picker { display: flex; gap: 8px; margin: 14px 0; }
-  .wwk-store-picker button { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid #E6D9C4; background: #fff; font-family: var(--font-body); cursor: pointer; }
-  .wwk-store-picker button.selected { background: #E2EDE5; border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
+  .wwk-store-picker button { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid var(--hairline-strong); background: var(--surface-raised); font-family: var(--font-body); cursor: pointer; }
+  .wwk-store-picker button.selected { background: var(--celadon-tint); border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
   #wwk-import-textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--midnight-violet); border-radius: 14px; height: 120px; resize: none; font-family: var(--font-body); font-size: 0.94rem; padding: 12px 14px; margin-bottom: 14px; }
   .wwk-import-footer { display: flex; gap: 10px; }
   .wwk-import-footer button { flex: 1; padding: 15px; border-radius: 13px; font-weight: 700; font-family: var(--font-body); cursor: pointer; border: none; }
   .wwk-import-cancel { background: transparent; border: 1.5px solid var(--midnight-violet) !important; color: var(--midnight-violet); }
   .wwk-import-save { background: var(--midnight-violet); color: var(--oat-cream); }
 
-  #wwk-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #23302A; color: #FFFDF8; font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  #wwk-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--toast-bg); color: var(--surface); font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: var(--shadow-toast); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   #wwk-toast.show { opacity: 1; }
 </style>
 <script src="/static/error-reporter.js"></script>
@@ -122,13 +122,13 @@
   <button type="button" class="wwk-tab" data-tab="stores" role="tab" aria-selected="false" aria-controls="wwk-content">Stores</button>
 </div>
 
-<div class="wwk-content" id="wwk-content" role="tabpanel" aria-live="polite"><p style="text-align:center;color:#7E7360;font-family:var(--font-body)">Loading…</p></div>
+<div class="wwk-content" id="wwk-content" role="tabpanel" aria-live="polite"><p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Loading…</p></div>
 
 <div id="wwk-scrim" aria-hidden="true"></div>
 <div id="wwk-import-sheet" role="dialog" aria-modal="true" aria-labelledby="wwk-import-heading">
-  <p style="font-family:var(--font-body);font-weight:800;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#A2582F;margin:0">What you usually buy</p>
+  <p style="font-family:var(--font-body);font-weight:800;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--apricot-label);margin:0">What you usually buy</p>
   <h2 id="wwk-import-heading" style="font-family:var(--font-heading);font-weight:700;font-size:1.4rem;color:var(--ink);margin:6px 0 0">Import a list</h2>
-  <p style="font-family:var(--font-body);font-size:0.9rem;color:#7C7161;margin:12px 0 0">These items belong to</p>
+  <p style="font-family:var(--font-body);font-size:0.9rem;color:var(--ink-secondary);margin:12px 0 0">These items belong to</p>
   <div class="wwk-store-picker" id="wwk-import-store-picker" role="group" aria-label="These items belong to"></div>
   <div class="dictate-row">
     <textarea id="wwk-import-textarea" aria-label="Items, one per line" placeholder="Paste or type one per line — rotisserie chicken, frozen berries, coffee beans…"></textarea>
@@ -283,7 +283,7 @@ async function renderFactsTab(category) {
     wireFactsActions(category);
     if (preferences) wirePreferenceActions(preferences);
   } catch (err) {
-    content.innerHTML = '<p style="text-align:center;color:#7E7360;font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
+    content.innerHTML = '<p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
 }
 
@@ -447,7 +447,7 @@ async function renderStoresTab() {
     const typical = memory.store_typical_items || {};
     let html = `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     if (!stores.length) {
-      html += `<p style="font-family:var(--font-body);font-size:0.9rem;color:#7E7360;padding:10px 0">No usual stores saved yet — add one below, or mention it in chat (e.g. "we usually shop at Trader Joe's").</p>`;
+      html += `<p style="font-family:var(--font-body);font-size:0.9rem;color:var(--ink-muted);padding:10px 0">No usual stores saved yet — add one below, or mention it in chat (e.g. "we usually shop at Trader Joe's").</p>`;
     }
     for (const store of stores) {
       const items = typical[store] || [];
@@ -468,7 +468,7 @@ async function renderStoresTab() {
     content.innerHTML = html;
     wireStoresActions(stores);
   } catch (err) {
-    content.innerHTML = '<p style="text-align:center;color:#7E7360;font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
+    content.innerHTML = '<p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
 }
 

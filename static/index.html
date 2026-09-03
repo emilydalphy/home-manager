@@ -11,7 +11,8 @@
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#1B3328" />
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Pomona" />
@@ -25,7 +26,7 @@
   p.subtitle { margin-top: 0; }
   p.subtitle a { margin: 0 2px; }
   #chat {
-    background: #fff;
+    background: var(--surface-raised);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
@@ -51,7 +52,7 @@
     margin: 6px 0;
     font-size: 0.85rem;
     white-space: normal;
-    background: #fff;
+    background: var(--surface-raised);
     border-radius: var(--radius-control);
   }
   .msg-table thead, .msg-table tbody { display: table; width: 100%; table-layout: auto; }
@@ -76,7 +77,7 @@
     border-radius: var(--radius-control);
     border: 1px solid var(--card-border);
     font-size: 1rem;
-    background: #fff;
+    background: var(--surface-raised);
     color: var(--text-body);
     font-family: var(--font-body);
   }
@@ -137,6 +138,21 @@
   }
   .bubble.loading { font-style: italic; color: var(--text-muted); animation: loading-pulse 1.3s ease-in-out infinite; }
   @keyframes loading-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  /* ---------- Dark mode: the leftovers ----------
+     theme.css carries every token; these three could not follow one. */
+  @media (prefers-color-scheme: dark) {
+    /* A 4% spruce zebra stripe over a light table is invisible on a dark
+       one; the same idea inverts to a light wash. */
+    .msg-table tbody tr:nth-child(even) { background: rgba(246, 238, 225, .05); }
+    /* --electric-coral is --urgent, which becomes a LIGHT accent fill on
+       dark (see theme.css), so its ivory text has to become dark ink. */
+    #mic-btn.active { color: var(--on-accent-ink); }
+    @keyframes mic-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(230, 112, 91, 0.45); }
+      50% { box-shadow: 0 0 0 6px rgba(230, 112, 91, 0); }
+    }
+  }
 </style>
 </head>
 <body>

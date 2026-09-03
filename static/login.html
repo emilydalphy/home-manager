@@ -9,7 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#1B3328" />
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
   /*
@@ -226,6 +227,22 @@
   @media (max-height: 640px) {
     .signin-top { padding-top: 40px; gap: 16px; }
     .signin-wordmark { font-size: 48px; }
+  }
+
+  /* ---------- Dark mode ----------
+     The sign-in screen is already a full-bleed spruce panel, so it needs no
+     repaint: it rides --spruce, which lifts from #1B3328 to #22422F in dark
+     exactly like every other hero. What DOES change is that a lighter panel
+     costs the quiet ivories some contrast, so the two lowest alphas are
+     raised here to clear 4.5:1 against the lighter ground.
+
+     NOTE FOR EMILY: both of these already fail 4.5:1 in LIGHT mode today
+     (3.93:1 and 3.54:1) — pre-existing, not introduced here, and left alone
+     because this stage could not change light. Dark is now the more legible
+     of the two; the light values want their own small ticket. */
+  @media (prefers-color-scheme: dark) {
+    .signin-field input::placeholder { color: rgba(246, 238, 225, 0.62); }
+    .signin-helper { color: rgba(246, 238, 225, 0.60); }
   }
 </style>
 </head>

@@ -10,7 +10,8 @@
 <title>Set up — Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
-<meta name="theme-color" content="#1B3328" />
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -35,7 +36,7 @@
     font-size: 0.95rem;
     font-family: var(--font-body);
     width: 100%;
-    background: #fff;
+    background: var(--surface-raised);
     color: var(--text-body);
     min-height: 44px;
   }
@@ -50,7 +51,7 @@
     padding: 0;
     border-radius: var(--radius-control);
     border: 1px solid var(--card-border);
-    background: #fff;
+    background: var(--surface-raised);
     cursor: pointer;
     font-size: 1.1rem;
     color: var(--text-muted);
@@ -75,7 +76,7 @@
      naming the specific failure the answer prevents. Not decoration — if
      you can't name that failure, the question shouldn't be asked. */
   .why-panel {
-    background: #E2EDE5;
+    background: var(--celadon-tint);
     border-radius: 12px;
     padding: 12px 14px;
     font-size: 0.9rem;
@@ -102,7 +103,7 @@
     font-size: 0.85rem;
     border-radius: var(--radius-pill);
     border: 1px solid var(--card-border);
-    background: #fff;
+    background: var(--surface-raised);
     color: var(--text-body);
     cursor: pointer;
   }
@@ -151,7 +152,7 @@
   .two-col { display: flex; gap: 10px; }
   .two-col > div { flex: 1; }
   .chore-row {
-    background: #fff;
+    background: var(--surface-raised);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-card);
     padding: 0.8rem;
@@ -175,7 +176,7 @@
   .stepper { display: flex; align-items: center; gap: 16px; }
   .stepper-btn {
     width: 44px; height: 44px; border-radius: 50%;
-    border: 1px solid var(--midnight-violet); background: #fff;
+    border: 1px solid var(--midnight-violet); background: var(--surface-raised);
     color: var(--midnight-violet); font-size: 1.3rem; font-weight: 700;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
@@ -201,7 +202,7 @@
   .reveal-band h1 { color: #fff; font-size: 1.7rem; }
   .reveal-band p.subtitle { color: rgba(255,255,255,0.85); margin: 0; font-size: 0.95rem; }
   .reveal-day {
-    background: #fff;
+    background: var(--surface-raised);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-card);
     padding: 14px 16px;
@@ -223,7 +224,7 @@
   .invite-row:first-of-type { border-top: none; }
   .invite-row .name { font-weight: 700; color: var(--text-body); font-size: 0.9rem; }
   .invite-btn {
-    background: #fff; border: 1px solid var(--midnight-violet); color: var(--midnight-violet);
+    background: var(--surface-raised); border: 1px solid var(--midnight-violet); color: var(--midnight-violet);
     font-family: var(--font-body); font-weight: 700; font-size: 0.8rem;
     padding: 8px 14px; min-height: 38px; border-radius: var(--radius-control); cursor: pointer;
   }

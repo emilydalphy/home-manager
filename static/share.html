@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,21 @@
 <meta name="robots" content="noindex, nofollow" />
 <style>
   /*
+    DELIBERATELY LIGHT IN BOTH MODES. `data-theme="light"` on <html> opts this
+    page out of theme.css's dark block (which is scoped
+    `:root:not([data-theme="light"])`). Two reasons, and they are the same
+    reason the block below uses literals rather than tokens:
+      - This is a printed menu card, not an app screen. It is the one surface
+        whose job is to look like a physical object someone was handed.
+      - It is a PUBLIC link. The person opening it is usually not Emily and
+        has no relationship with the app; the card should look the same for
+        everyone rather than reformatting itself to a stranger's phone
+        setting. member-share.html, which IS a functional app page, does
+        follow the system setting.
+    FLAGGED FOR EMILY: this is a judgment call, and it is reversible by
+    deleting the data-theme attribute — the page's own literals would then
+    need a dark pass.
+
     Restaurant-menu redesign of the weekly meals share view — per the
     "Weekly Meals Card" design handoff (option-6a.html). Colors/type/
     spacing/radii below are pixel-close to that spec using its exact
