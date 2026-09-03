@@ -20,6 +20,10 @@ inventory, and answers "what we know" about the household. Deployed to
 Railway, auto-deploying from `main` on push. Live at
 `home-manager-production-4949.up.railway.app`.
 
+**All UI work follows `DESIGN_SYSTEM.md` — read it before touching anything
+visual.** Tokens, hard rules, components, nav rules, voice, and who's allowed
+to change what are all there.
+
 ## Current state (as of 2026-08-31)
 
 `main` is live on Railway. The big recent change is the **Plan the Week**

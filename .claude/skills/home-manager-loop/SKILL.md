@@ -70,6 +70,10 @@ priority is fine"):
 
 ### Working a ticket
 
+**Any UI ticket requires reading `DESIGN_SYSTEM.md` first** — tokens, hard
+rules, components, nav rules, voice, and who's allowed to change what all
+live there; don't invent visual decisions it already answers.
+
 1. **Investigate before proposing anything.** Read the actual code, find the real root
    cause, cite file:line. Don't guess at causes.
 2. **Separate fact from decision.** If a real product/design decision is needed to finish
