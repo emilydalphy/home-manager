@@ -204,6 +204,51 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-02 — Dark mode. Branch `pomona-dark-mode` (not merged), which is
+  STACKED ON `pomona-kitchen-cooker` — merging it brings that slice too.**
+  Pomona Stage 3, the last of the rebrand. `theme.css` gets one
+  `@media (prefers-color-scheme: dark)` block redefining only the token
+  custom properties; the app follows the OS and there is deliberately **no
+  manual toggle** this stage. The block is scoped
+  `:root:not([data-theme="light"])` so a page can opt out — `share.html`
+  (the public "printed menu" card) and the three dead legacy pages
+  (`grocery.html`, `cooker.html`, `kitchen.html`) do.
+  - **Sixteen dark values come from the brand guide; the rest are derived**
+    and carry their measured WCAG ratio in a comment. The derived one to
+    know about is `--urgent`: on dark it becomes a LIGHT accent (`#E6705B`)
+    carrying `--on-accent-ink`, i.e. Rule One reaches it on dark where it
+    does not on light. It has to, because `--urgent` is used both as a fill
+    AND as body text, and no dark terracotta satisfies both on a dark
+    ground. Still Emily's call, same as the light `#B23A22`.
+  - **The trap in this codebase is a token that plays two roles.** `--spruce`
+    (and its aliases `--plum` and `--midnight-violet`) is the hero fill AND
+    the strongest ink in light; in dark it becomes a raised panel, so every
+    `color: var(--spruce|--plum|--midnight-violet)` was dark-on-dark. That is
+    ~100 call sites, now on the new `--ink-strong` (identical to `--spruce`
+    on `:root`). Same shape for `--oat-cream`/`--ground` used as ivory text,
+    and `--ink` used as the toast's background. **Grep for an alias, not
+    just the canonical name** — the first sweep missed `--midnight-violet`
+    entirely and that is where most of the call sites were.
+  - **Light mode is byte-identical, and that was verified rather than
+    asserted:** two servers (this branch and its parent), same throwaway DB,
+    computed-colour dump of every element across all four tabs and both
+    sheets, compared by SHA-256. It caught two regressions this pass had
+    introduced that no screenshot would have — a toast shadow moved
+    `.25`→`.18` and a scrim `.42`→`.45` when they were pointed at tokens
+    whose values were close but not equal. **A literal only becomes a token
+    if the token's light value is byte-identical**; otherwise it keeps the
+    literal and gets a dark override. Both cases are commented in place.
+  - `CACHE_NAME` `pomona-shell-v4` → `v5` (the worker serves the CSS/JS
+    cache-first). `manifest.json` is deliberately unchanged — the manifest
+    has no media-query form, so only the in-page `<meta name="theme-color">`
+    tags vary by scheme, and they now do.
+  - **Known light-mode contrast failures found and deliberately NOT fixed**,
+    because this stage could not change light: the completed-chore tick is
+    `#fff` on celadon (1.87:1 — the same Rule One class stage 1 fixed nine
+    of and missed here), `--ink-done`/`--ink-done-soft` (2.80:1/1.85:1), and
+    login's placeholder/helper (3.93:1/3.54:1). All are correct in dark.
+    Each wants a one-line fix and Emily's nod; see the notes at each site.
+
 - **2026-09-02 — Kitchen is native too, cooking moved under Meals, and the
   last iframe tab is gone. Branch `pomona-kitchen-cooker` (not merged).**
   Pomona Stage 2 slice 3, built straight to InnKitchen/InnCooker. Two
