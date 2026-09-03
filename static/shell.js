@@ -83,7 +83,11 @@
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.calendarDay, real: true },
     { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.calendarWeek, week: true },
-    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, embed: '/static/grocery.html' },
+    // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
+    // page. static/grocery.html still exists and still works standalone, but
+    // nothing links to it — it is the fallback, the same way
+    // static/grocery-legacy.html already was.
+    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, grocery: true },
     // Phase 4: the Kitchen tab now embeds the new hub (design_handoff_home_manager
     // §5) instead of landing straight on the old prep/cook-this-week list —
     // the hub's own Inventory/What we know rows (linking to the redesigned
@@ -221,6 +225,11 @@
     if (tab.week && !panel.dataset.built) {
       panel.dataset.built = '1';
       buildWeekPanel(panel);
+    }
+    // Lazy-build Grocery the first time it's shown (Stage 2 slice 2).
+    if (tab.grocery && !panel.dataset.built) {
+      panel.dataset.built = '1';
+      buildGroceryPanel(panel);
     }
 
     if (pushHistory && window.location.pathname.replace(/\/+$/, '') !== (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''))) {
@@ -678,15 +687,32 @@
   // ---------- Toast (§6: "used for resolutions and adds only, never errors") ----------
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
-  function showToast(message) {
+  // `action` (optional) is {label, onClick} and turns the toast into an
+  // undoable one — added for the pre-shop check's "dropped it" message, which
+  // takes an item off the list and has to offer a way back. A toast carrying
+  // an action stays up longer, because it is now something to read AND decide
+  // rather than something to notice.
+  function showToast(message, action) {
     if (!toastEl) return;
     toastEl.textContent = message;
+    if (action && action.label) {
+      var actionBtn = document.createElement('button');
+      actionBtn.type = 'button';
+      actionBtn.className = 'toast-action';
+      actionBtn.textContent = action.label;
+      actionBtn.addEventListener('click', function () {
+        toastEl.hidden = true;
+        if (toastTimer) clearTimeout(toastTimer);
+        if (action.onClick) action.onClick();
+      });
+      toastEl.appendChild(actionBtn);
+    }
     toastEl.hidden = false;
     toastEl.classList.remove('pop-in');
     void toastEl.offsetWidth; // restart the animation if a toast is already showing
     toastEl.classList.add('pop-in');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2200);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, action ? 6000 : 2200);
   }
 
   // ---------- The hero: tonight's dinner (InnToday) ----------
@@ -860,6 +886,1310 @@
       console.warn('Grocery summary lookup failed:', err);
       sub.textContent = 'Couldn\'t load the grocery list right now.';
     }
+  }
+
+  // ==========================================================================
+  // Grocery (Stage 2 slice 2) — a native shell screen, was static/grocery.html
+  // ==========================================================================
+  // The whole errand, start to finish, as ONE screen with four states:
+  //
+  //   buy    "To buy"      store cards, aisle spines, the Done row
+  //   plan   "Plan stops"  triage the unsorted, then the per-store buckets
+  //   review "Review"      what looks wrong before you leave the house
+  //   shop   a store       the in-cart pass through one shop's aisles
+  //
+  // The first three are the segmented control; `shop` is entered from the
+  // hero or from a bucket and takes the hero over rather than opening a page,
+  // per the layout blueprint's rule that a screen never grows its own chrome.
+  //
+  // This is a pure frontend migration: same /api/grocery-list* endpoints, same
+  // request bodies, same semantics as the page it replaces. static/grocery.html
+  // is left on disk, untouched and unlinked, as the fallback — same treatment
+  // grocery-legacy.html already got.
+  //
+  // What being native buys, and the reason the ticket exists: a chat turn that
+  // changes the list now re-renders THIS panel (see refreshGroceryPanel, wired
+  // into refreshStaleTabsFromActions / refreshGrocerySurfaces /
+  // refreshAfterReset). The old iframe could only be refreshed by throwing the
+  // entire screen away — mid-shop, scrolled deep into a long list.
+
+  var GRO_CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
+  var GRO_CATEGORY_LABELS = {
+    produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat / seafood',
+    pantry: 'Pantry', frozen: 'Frozen', other: 'Other'
+  };
+  // Aisle spine colours. Kept from the page this replaces, re-pointed at the
+  // Pomona tokens' literal values (a spine is an inline style on a generated
+  // element, so it cannot read a var() from a stylesheet rule).
+  var GRO_AISLE_COLORS = {
+    produce: '#A9C4B0', dairy: '#E0915C', 'meat/seafood': '#B23A22',
+    pantry: '#4F6B5B', frozen: '#B23A22', other: '#948970'
+  };
+  // Store identity colours. Every entry is a LIGHT accent, because the avatar
+  // carries spruce ink (--on-accent-ink) and RULE ONE has no exceptions — the
+  // set this replaces included spruce and #7E7360, which put dark ink on a
+  // dark fill and failed contrast outright.
+  var GRO_STORE_PALETTE = ['#E0915C', '#A9C4B0', '#F2B98E', '#C7DACD', '#E6D9C4', '#EFD3A9'];
+
+  var GRO_ICONS = {
+    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 0 18.4 17"/><path d="M20 5.5V11h-5.5"/></svg>',
+    mic: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>',
+    chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg>',
+    chevRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>',
+    tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
+    basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>'
+  };
+
+  function groAisleColor(section) { return GRO_AISLE_COLORS[section] || '#948970'; }
+  function groStoreColor(name) {
+    // "Any store" is the leftovers bucket, not a stop — it gets the quiet
+    // sand fill rather than a store identity colour.
+    if (!name || name === 'Unassigned') return '#E6D9C4';
+    var h = 0;
+    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    return GRO_STORE_PALETTE[h % GRO_STORE_PALETTE.length];
+  }
+  function groStoreLabel(name) { return (!name || name === 'Unassigned') ? 'Any store' : name; }
+  function groStoreInitial(name) {
+    if (!name || name === 'Unassigned') return '?';
+    return (name.trim()[0] || '?').toUpperCase();
+  }
+  function groPlural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  // Real stores first, "Any store" last. It is where things land before
+  // anyone has decided, so it reads as the remainder at the bottom of the
+  // list rather than as the first stop of the trip.
+  function groOrderStores(names) {
+    return names.slice().sort(function (a, b) {
+      if (a === 'Unassigned') return 1;
+      if (b === 'Unassigned') return -1;
+      return 0;
+    });
+  }
+  function groCategoryOptions(current) {
+    return GRO_CATEGORIES.map(function (c) {
+      return '<option value="' + c + '"' + (c === current ? ' selected' : '') + '>' + GRO_CATEGORY_LABELS[c] + '</option>';
+    }).join('');
+  }
+
+  var groceryState = {
+    screen: 'buy',          // buy | plan | shop | review
+    shopStore: null,
+    data: null,
+    loadError: false,
+    usualStores: [],        // household's saved stores, offered as triage pills
+    itemStorePrefs: {},     // lowercased item name -> remembered store
+    preShopFlags: [],
+    preShopOpen: false,
+    preShopExpanded: false,
+    expandedStores: {},     // store name -> bool (default true)
+    doneOpen: false,
+    openMenuId: null,
+    planOpenId: null,
+    planPageSize: 5,
+    bucketExpanded: {},     // one at a time
+    openFlagKey: null,
+    voiceSession: null,
+    voiceLog: []
+  };
+
+  var GRO_PS_CAP = 5;
+
+  function groPanel() { return panels['grocery']; }
+  function groIsBuilt() { var p = groPanel(); return !!(p && p.dataset.built); }
+
+  // ---------- Data ----------
+  // One fetch of three views, combined client-side into
+  //   storeName -> { sections: [{section, items}], purchased: [], inCart: [] }
+  // exactly as the page this replaces did — no new endpoints, and the three
+  // statuses are the three things every state needs.
+  async function groLoadAllData() {
+    var results = await Promise.all([
+      fetch('/api/grocery-list/by-store?status=needed'),
+      fetch('/api/grocery-list?status=purchased'),
+      fetch('/api/grocery-list?status=in_cart')
+    ]);
+    if (results.some(function (r) { return !r.ok; })) throw new Error('grocery load failed');
+    var byStore = await results[0].json();
+    var purchasedView = await results[1].json();
+    var inCartView = await results[2].json();
+
+    var stores = {};
+    (byStore.stores || []).forEach(function (s) {
+      stores[s.store] = { sections: s.sections || [], purchased: [], inCart: [] };
+    });
+    function fold(view, key) {
+      (view.sections || []).forEach(function (sec) {
+        (sec.items || []).forEach(function (it) {
+          var name = it.store || 'Unassigned';
+          if (!stores[name]) stores[name] = { sections: [], purchased: [], inCart: [] };
+          stores[name][key].push(it);
+        });
+      });
+    }
+    fold(purchasedView, 'purchased');
+    fold(inCartView, 'inCart');
+    return { stores: stores };
+  }
+
+  function groNeededCount(storeData) {
+    return (storeData.sections || []).reduce(function (n, s) { return n + s.items.length; }, 0);
+  }
+  function groUnsorted(data) {
+    var u = data.stores['Unassigned'];
+    if (!u) return [];
+    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, []);
+  }
+  function groStoresWithNeeded(data) {
+    return Object.keys(data.stores).filter(function (n) {
+      return n !== 'Unassigned' && groNeededCount(data.stores[n]) > 0;
+    });
+  }
+  function groTotals(data) {
+    var names = Object.keys(data.stores);
+    var totalNeeded = 0, totalDone = 0, stopsTotal = 0, stopsFinished = 0;
+    names.forEach(function (name) {
+      var s = data.stores[name];
+      var needed = groNeededCount(s);
+      // in_cart is "found, still in the trolley" — it counts as progress on
+      // the trip, the same way the store screen's own wheel counts it.
+      var done = s.purchased.length + s.inCart.length;
+      totalNeeded += needed;
+      totalDone += done;
+      if (name !== 'Unassigned' && (needed > 0 || done > 0)) {
+        stopsTotal++;
+        if (needed === 0) stopsFinished++;
+      }
+    });
+    return {
+      needed: totalNeeded,
+      done: totalDone,
+      all: totalNeeded + totalDone,
+      stopsTotal: stopsTotal,
+      stopsFinished: stopsFinished,
+      stopsLeft: stopsTotal - stopsFinished
+    };
+  }
+
+  // The hero's one italic line. Same facts the old "N to go · N stops
+  // finished" sub carried, said the way the mockup says them.
+  function groTripNote(t) {
+    if (!t.all) return 'nothing on the list yet';
+    if (!t.stopsTotal) return 'no stores picked yet';
+    if (t.stopsLeft === 0) return 'every stop finished';
+    if (t.stopsFinished === 0) return groPlural(t.stopsTotal, 'stop', 'stops') + ' ahead';
+    return groPlural(t.stopsFinished, 'stop', 'stops') + ' down, ' + t.stopsLeft + ' to go';
+  }
+
+  // ---------- Requests ----------
+  async function groPost(url, body) {
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    });
+    if (!res.ok) throw new Error('request failed');
+    return res.json().catch(function () { return {}; });
+  }
+  async function groPostEmpty(url) {
+    var res = await fetch(url, { method: 'POST' });
+    if (!res.ok) throw new Error('request failed');
+    return res.json().catch(function () { return {}; });
+  }
+
+  // Every write goes through here: run it, then re-read and re-render. The
+  // failure message is the shell's toast rather than an alert() — the page
+  // this replaces used alert(), which is a modal interruption for something
+  // that is usually just "try that again".
+  async function groDo(fn, failureMessage) {
+    try {
+      await fn();
+      await loadGrocery();
+      return true;
+    } catch (err) {
+      console.warn('Grocery action failed:', err);
+      showToast(failureMessage || "That didn't save — try again.");
+      await loadGrocery();
+      return false;
+    }
+  }
+
+  // ---------- Build ----------
+  function buildGroceryPanel(panel) {
+    panel.innerHTML =
+      '<div class="grocery-content">' +
+        '<div class="gro-titlerow">' +
+          '<h1 class="gro-title">Grocery</h1>' +
+          '<span class="gro-hairline"></span>' +
+          '<button type="button" class="gro-icon-btn" id="gro-mic-btn" data-gro="voice" ' +
+            'title="Hands-free: check off, add, or ask about items by voice" ' +
+            'aria-label="Hands-free voice mode">' + GRO_ICONS.mic + '</button>' +
+          '<button type="button" class="gro-icon-btn" id="gro-refresh-btn" data-gro="refresh" ' +
+            'title="Reload the latest list" aria-label="Reload the latest list">' + GRO_ICONS.refresh + '</button>' +
+        '</div>' +
+        '<div class="gro-hero" id="gro-hero"></div>' +
+        '<div class="gro-seg" id="gro-seg" role="tablist"></div>' +
+        '<div class="gro-voice" id="gro-voice" hidden></div>' +
+        '<div class="gro-body" id="gro-body"><p class="gro-empty">Loading&hellip;</p></div>' +
+        '<div class="gro-body gro-foot">' +
+          '<div class="gro-add" id="gro-add" hidden>' +
+            '<p class="gro-eyebrow" id="gro-add-label">Add an item</p>' +
+            // Two deliberate rows rather than one that wraps: at 375px the
+            // four controls cannot sit on a line, and letting them wrap put
+            // the mic on its own beside a stranded Qty box.
+            '<div class="gro-add-row">' +
+              '<input type="text" class="gro-add-item" id="gro-add-item" placeholder="Item, e.g. ground beef" aria-label="Item to add to the list" />' +
+              '<button type="button" class="gro-add-mic" id="gro-add-mic" aria-label="Dictate item" title="Dictate item">' + GRO_ICONS.mic + '</button>' +
+            '</div>' +
+            '<div class="gro-add-row">' +
+              '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="Quantity" />' +
+              '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add to the list</button>' +
+            '</div>' +
+          '</div>' +
+          '<div id="gro-confirm-slot"></div>' +
+        '</div>' +
+      '</div>';
+
+    // One delegated listener for the whole screen. The alternative — re-wiring
+    // every row after every render, which is what the page this replaces did —
+    // is where a missed handler hides.
+    panel.addEventListener('click', onGroceryClick);
+    // Enter in either add field adds the item, so the list can be filled
+    // without moving a hand to the button.
+    panel.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      if (e.target.id === 'gro-add-item' || e.target.id === 'gro-add-qty') {
+        e.preventDefault();
+        groAddItem();
+      }
+    });
+    setupDictation(panel.querySelector('#gro-add-item'), panel.querySelector('#gro-add-mic'));
+
+    loadGrocery();
+    // Both are niceties for the triage pills — a failure leaves the pills
+    // populated from what is already tagged on the list, so neither blocks.
+    groLoadUsualStores();
+    groLoadStorePrefs();
+  }
+
+  async function groLoadUsualStores() {
+    try {
+      var res = await fetch('/api/memory');
+      if (!res.ok) return;
+      var memory = await res.json();
+      groceryState.usualStores = memory.usual_stores || [];
+      if (groceryState.screen === 'plan') renderGrocery();
+    } catch (err) { /* triage still works from what's tagged on the list */ }
+  }
+  async function groLoadStorePrefs() {
+    try {
+      var res = await fetch('/api/grocery-list/store-preferences');
+      if (!res.ok) return;
+      var data = await res.json();
+      groceryState.itemStorePrefs = data.preferences || {};
+      if (groceryState.screen === 'plan') renderGrocery();
+    } catch (err) { /* "usually here" tagging is a nicety, not load-bearing */ }
+  }
+  function groIsUsuallyHere(itemName, store) {
+    var remembered = groceryState.itemStorePrefs[(itemName || '').trim().toLowerCase()];
+    return !!remembered && remembered === store;
+  }
+
+  async function groLoadPreShopFlags() {
+    try {
+      var res = await fetch('/api/grocery-list/pre-shop-flags');
+      if (!res.ok) { groceryState.preShopFlags = []; return; }
+      groceryState.preShopFlags = (await res.json()).flags || [];
+    } catch (err) { groceryState.preShopFlags = []; }
+  }
+
+  async function loadGrocery() {
+    var panel = groPanel();
+    if (!panel || !panel.dataset.built) return;
+    try {
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags()]);
+      groceryState.data = pair[0];
+      groceryState.loadError = false;
+    } catch (err) {
+      console.warn('Grocery list lookup failed:', err);
+      groceryState.loadError = true;
+    }
+    renderGrocery();
+  }
+
+  // Called from the three refresh paths (chat action, week approval, reset).
+  // A screen that was built early has to stay correct, not stay frozen.
+  function refreshGroceryPanel() {
+    if (groIsBuilt()) loadGrocery();
+  }
+
+  // ---------- Render ----------
+  function renderGrocery() {
+    var panel = groPanel();
+    if (!panel) return;
+    var hero = panel.querySelector('#gro-hero');
+    var seg = panel.querySelector('#gro-seg');
+    var body = panel.querySelector('#gro-body');
+    if (!hero || !seg || !body) return;
+
+    // Re-rendering replaces the list under the reader's thumb, so hold the
+    // scroll position across it. "Nothing else moves, ever."
+    var keepScroll = scrollEl ? scrollEl.scrollTop : 0;
+
+    if (groceryState.loadError || !groceryState.data) {
+      hero.innerHTML = '';
+      seg.innerHTML = '';
+      body.innerHTML = groceryState.loadError
+        ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.</p>'
+        : '<p class="gro-empty">Loading&hellip;</p>';
+      panel.querySelector('#gro-add').hidden = true;
+      panel.querySelector('#gro-confirm-slot').innerHTML = '';
+      return;
+    }
+
+    var data = groceryState.data;
+    var screen = groceryState.screen;
+
+    hero.innerHTML = screen === 'shop' ? groShopHeroHtml(data) : groTripHeroHtml(data);
+
+    // The segmented control is the three real tabs. Shopping a store is a
+    // state of this same screen, not a fourth tab — while it is on, the
+    // control goes away rather than lying about where you are.
+    if (screen === 'shop') {
+      seg.hidden = true;
+      seg.innerHTML = '';
+    } else {
+      seg.hidden = false;
+      seg.innerHTML = [
+        ['buy', 'To buy'], ['plan', 'Plan stops'], ['review', 'Review']
+      ].map(function (pair) {
+        var active = screen === pair[0];
+        return '<button type="button" class="gro-seg-btn' + (active ? ' active' : '') + '" role="tab" ' +
+          'aria-selected="' + (active ? 'true' : 'false') + '" data-gro="seg" data-screen="' + pair[0] + '">' +
+          pair[1] + '</button>';
+      }).join('');
+    }
+
+    if (screen === 'buy') body.innerHTML = groBuyHtml(data);
+    else if (screen === 'plan') body.innerHTML = groPlanHtml(data);
+    else if (screen === 'shop') body.innerHTML = groShopHtml(data);
+    else body.innerHTML = groReviewHtml(data);
+
+    // The add row is persistent markup rather than part of the re-rendered
+    // body, so a half-typed item survives a refresh landing underneath it.
+    var addCard = panel.querySelector('#gro-add');
+    addCard.hidden = !(screen === 'buy' || screen === 'review');
+    panel.querySelector('#gro-add-label').textContent =
+      screen === 'review' ? 'Add anything missing' : 'Add an item';
+
+    var confirmSlot = panel.querySelector('#gro-confirm-slot');
+    if (screen === 'review') {
+      var allNeeded = groAllNeeded(data);
+      confirmSlot.innerHTML = '<button type="button" class="gro-shop-btn" data-gro="confirm">Confirm list &middot; ' +
+        groPlural(allNeeded.length, 'item', 'items') + '</button>';
+    } else {
+      confirmSlot.innerHTML = '';
+    }
+
+    if (scrollEl) scrollEl.scrollTop = keepScroll;
+  }
+
+  function groTripHeroHtml(data) {
+    var t = groTotals(data);
+    var pct = t.all ? Math.round((t.done / t.all) * 100) : 0;
+    var target = groPrimaryTarget(data);
+    return '' +
+      '<div class="gro-hero-top">' +
+        '<span class="gro-hero-chip">This week&rsquo;s trip</span>' +
+        '<span class="gro-hero-rule"></span>' +
+        '<span class="gro-hero-count">' + groPlural(t.all, 'item', 'items') + '</span>' +
+      '</div>' +
+      '<div class="gro-hero-line">' +
+        '<span class="gro-hero-headline">' + (t.needed ? t.needed + ' to go' : 'All set') + '</span>' +
+        '<span class="gro-hero-note">' + escapeHtml(groTripNote(t)) + '</span>' +
+      '</div>' +
+      '<div class="gro-hero-track"><span class="gro-hero-fill" style="width:' + pct + '%"></span></div>' +
+      '<button type="button" class="gro-hero-action" data-gro="primary"' + (target.disabled ? ' disabled' : '') + '>' +
+        '<span>' + escapeHtml(target.label) + '</span>' + (target.disabled ? '' : ICONS.arrow) +
+      '</button>';
+  }
+
+  // The screen's one apricot action. Where it goes is read off the list
+  // rather than fixed: with one store's worth of shopping left and nothing
+  // waiting to be sorted there is only one place it could mean, so it goes
+  // straight there; otherwise the honest next step is choosing the stops.
+  function groPrimaryTarget(data) {
+    var t = groTotals(data);
+    if (!t.needed) return { label: 'Nothing left to buy', disabled: true, screen: null };
+    var withNeeded = groStoresWithNeeded(data);
+    var unsorted = groUnsorted(data);
+    if (withNeeded.length === 1 && !unsorted.length) {
+      return { label: 'Start shopping', disabled: false, screen: 'shop', store: withNeeded[0] };
+    }
+    return { label: 'Start shopping', disabled: false, screen: 'plan' };
+  }
+
+  function groShopHeroHtml(data) {
+    var store = groceryState.shopStore;
+    var s = store && data.stores[store];
+    if (!s) {
+      return '<div class="gro-hero-top"><span class="gro-hero-chip">Shopping</span><span class="gro-hero-rule"></span></div>' +
+        '<div class="gro-hero-line"><span class="gro-hero-headline">Pick a store</span></div>' +
+        '<button type="button" class="gro-hero-back" data-gro="back-to-plan">&larr; Plan your stops</button>';
+    }
+    var stops = Object.keys(data.stores).filter(function (n) {
+      return n !== 'Unassigned' && (groNeededCount(data.stores[n]) > 0 || data.stores[n].inCart.length > 0 || data.stores[n].purchased.length > 0);
+    });
+    var idx = stops.indexOf(store);
+    var left = groNeededCount(s);
+    var inCart = s.inCart.length;
+    var done = s.purchased.length + inCart;
+    var total = left + done;
+    var pct = total ? Math.round((done / total) * 100) : 0;
+    return '' +
+      '<div class="gro-hero-top">' +
+        '<span class="gro-hero-chip">Stop ' + (idx >= 0 ? idx + 1 : 1) + ' of ' + Math.max(stops.length, 1) + '</span>' +
+        '<span class="gro-hero-rule"></span>' +
+        '<span class="gro-hero-count">' + inCart + ' in the trolley</span>' +
+      '</div>' +
+      '<div class="gro-hero-line">' +
+        '<span class="gro-hero-headline">' + escapeHtml(store) + '</span>' +
+        '<span class="gro-hero-note">' + (left ? escapeHtml(groPlural(left, 'thing', 'things') + ' still to find') : 'everything&rsquo;s in the trolley') + '</span>' +
+      '</div>' +
+      '<div class="gro-hero-track"><span class="gro-hero-fill" style="width:' + pct + '%"></span></div>' +
+      '<button type="button" class="gro-hero-action" data-gro="done-here">' +
+        '<span>Done here &middot; ' + inCart + '</span>' + ICONS.arrow +
+      '</button>' +
+      '<button type="button" class="gro-hero-back" data-gro="back-to-plan">&larr; Plan your stops</button>';
+  }
+
+  // ---------- State: To buy ----------
+  function groBuyHtml(data) {
+    var t = groTotals(data);
+    var html = groPreShopHtml();
+
+    var names = Object.keys(data.stores);
+    var active = groOrderStores(names.filter(function (n) {
+      return groNeededCount(data.stores[n]) > 0 || data.stores[n].purchased.length > 0 || data.stores[n].inCart.length > 0;
+    }));
+
+    if (!active.length) {
+      return html + '<p class="gro-empty">Nothing to buy yet — add something below, or it&rsquo;ll arrive here when you plan a week.</p>';
+    }
+    if (t.needed === 0) {
+      html += '<div class="gro-allclear">Everything&rsquo;s checked off. Nice work.</div>';
+    } else {
+      // Expanded stores first, so the shop you are working through is not
+      // pushed below the ones you have finished with.
+      var withNeeded = active.filter(function (n) { return groNeededCount(data.stores[n]) > 0; });
+      withNeeded.forEach(function (name) {
+        var s = data.stores[name];
+        var needed = groNeededCount(s);
+        var expanded = groceryState.expandedStores[name] !== false; // default open
+        html += '<div class="gro-store' + (expanded ? '' : ' collapsed') + '">' +
+          '<button type="button" class="gro-store-head" data-gro="toggle-store" data-store="' + escapeHtml(name) + '" aria-expanded="' + expanded + '">' +
+            '<span class="gro-store-avatar" style="background:' + groStoreColor(name) + '">' + escapeHtml(groStoreInitial(name)) + '</span>' +
+            '<span class="gro-store-name">' + escapeHtml(groStoreLabel(name)) + '</span>' +
+            '<span class="gro-store-left">' + needed + ' left</span>' +
+            '<span class="gro-chev">' + (expanded ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+          '</button>';
+        if (expanded) {
+          s.sections.forEach(function (sec) {
+            if (!sec.items.length) return;
+            html += '<div class="gro-aisle">' +
+              '<span class="gro-aisle-spine" style="background:' + groAisleColor(sec.section) + '"></span>' +
+              '<span class="gro-eyebrow">' + escapeHtml(sec.section) + '</span>' +
+            '</div>';
+            sec.items.forEach(function (it) { html += groBuyRowHtml(it); });
+          });
+        }
+        html += '</div>';
+      });
+    }
+
+    var allDone = [];
+    names.forEach(function (n) { data.stores[n].purchased.forEach(function (it) { allDone.push(it); }); });
+    var open = groceryState.doneOpen;
+    html += '<div class="gro-done' + (open ? ' open' : '') + '">' +
+      '<button type="button" class="gro-done-head" data-gro="toggle-done" aria-expanded="' + open + '">' +
+        '<span class="gro-done-tick">' + GRO_ICONS.tick + '</span>' +
+        '<span class="gro-done-label">Done &middot; ' + allDone.length + '</span>' +
+        '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+      '</button>' +
+      (open
+        ? '<div class="gro-done-body">' + (allDone.length
+            ? allDone.map(groDoneRowHtml).join('')
+            : '<p class="gro-empty">Nothing checked off yet.</p>') + '</div>'
+        : '') +
+    '</div>';
+    return html;
+  }
+
+  function groBuyRowHtml(it) {
+    var id = String(it.id);
+    var menuOpen = groceryState.openMenuId === id;
+    return '<div class="gro-row" data-gro="check" data-id="' + id + '">' +
+        '<button type="button" class="gro-box" role="checkbox" aria-checked="false" data-gro="check" data-id="' + id + '" ' +
+          'aria-label="Got ' + escapeHtml(it.item) + '"></button>' +
+        '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
+        (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+        '<button type="button" class="gro-more" data-gro="toggle-menu" data-id="' + id + '" ' +
+          'aria-expanded="' + menuOpen + '" aria-label="More options for ' + escapeHtml(it.item) + '">' + GRO_ICONS.dots + '</button>' +
+      '</div>' +
+      '<div class="gro-menu' + (menuOpen ? ' open' : '') + '" data-menu-for="' + id + '">' +
+        '<input type="text" class="gro-m-qty" value="' + escapeHtml(it.quantity || '') + '" placeholder="Quantity" aria-label="Quantity of ' + escapeHtml(it.item) + '" />' +
+        '<select class="gro-m-cat" aria-label="Section for ' + escapeHtml(it.item) + '">' + groCategoryOptions(it.category) + '</select>' +
+        '<input type="text" class="gro-m-store" value="' + escapeHtml(it.store || '') + '" placeholder="Store" aria-label="Store for ' + escapeHtml(it.item) + '" />' +
+        '<button type="button" class="gro-m-save" data-gro="save-row" data-id="' + id + '">Save</button>' +
+        '<button type="button" class="gro-m-have" data-gro="have" data-id="' + id + '">Have it</button>' +
+        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Elsewhere</button>' +
+        '<button type="button" class="gro-m-remove" data-gro="remove" data-id="' + id + '">Remove</button>' +
+      '</div>';
+  }
+
+  function groDoneRowHtml(it) {
+    var id = String(it.id);
+    return '<div class="gro-row done" data-gro="uncheck" data-id="' + id + '">' +
+      '<button type="button" class="gro-box checked" role="checkbox" aria-checked="true" data-gro="uncheck" data-id="' + id + '" ' +
+        'aria-label="Put ' + escapeHtml(it.item) + ' back on the list">' + GRO_ICONS.tick + '</button>' +
+      '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
+      (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+    '</div>';
+  }
+
+  // ---------- "Maybe already home" ----------
+  // The kitchen may already have some of this. The mockup makes it a compact
+  // celadon banner with a "Check" — so it starts folded and opens in place,
+  // rather than sitting on top of the list as a queue of decisions. Same
+  // flags, same keep/drop per item, same Keep all, same undo.
+  function groPreShopHtml() {
+    var flags = groceryState.preShopFlags;
+    if (!flags.length) return '';
+    var open = groceryState.preShopOpen;
+    var shown = groceryState.preShopExpanded ? flags : flags.slice(0, GRO_PS_CAP);
+    var remaining = flags.length - shown.length;
+
+    var html = '<div class="gro-ps">' +
+      '<button type="button" class="gro-ps-head" data-gro="ps-toggle" aria-expanded="' + open + '">' +
+        GRO_ICONS.basket +
+        '<span class="gro-ps-text">' +
+          '<span class="gro-ps-title">Maybe already home</span>' +
+          '<span class="gro-ps-sub">' + groPlural(flags.length, 'thing', 'things') + ' the kitchen may already have</span>' +
+        '</span>' +
+        '<span class="gro-ps-check">' + (open ? 'Hide' : 'Check') + '</span>' +
+      '</button>';
+    if (open) {
+      html += '<div class="gro-ps-body">' +
+        '<p class="gro-ps-helper">Inventory thinks these are in the kitchen. Dropping one takes it off today&rsquo;s list.</p>' +
+        shown.map(function (f) {
+          var title = f.onHandLocation ? ' title="In the ' + escapeHtml(f.onHandLocation) + '"' : '';
+          return '<div class="gro-ps-row">' +
+            '<p class="gro-ps-name">' + escapeHtml(f.name) + '</p>' +
+            '<p class="gro-ps-sentence"' + title + '>' + escapeHtml(f.sentence) + '</p>' +
+            '<div class="gro-ps-actions">' +
+              '<button type="button" class="gro-ps-btn gro-ps-btn-keep" data-gro="ps-decide" data-decision="keep" ' +
+                'data-id="' + f.itemId + '" data-name="' + escapeHtml(f.name) + '">Buy it anyway</button>' +
+              '<button type="button" class="gro-ps-btn gro-ps-btn-drop" data-gro="ps-decide" data-decision="drop" ' +
+                'data-id="' + f.itemId + '" data-name="' + escapeHtml(f.name) + '">Drop it</button>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+        '<div class="gro-ps-foot">' +
+          (remaining > 0
+            ? '<button type="button" class="gro-ps-more" data-gro="ps-more">+' + remaining + ' more like this</button>'
+            : '<span></span>') +
+          '<button type="button" class="gro-ps-keepall" data-gro="ps-keepall">Keep all ' + flags.length + '</button>' +
+        '</div>' +
+      '</div>';
+    }
+    return html + '</div>';
+  }
+
+  // ---------- State: Plan your stops ----------
+  function groPlanHtml(data) {
+    var unsorted = groUnsorted(data);
+    var buckets = groStoresWithNeeded(data);
+    if (!unsorted.length && !buckets.length) {
+      return '<p class="gro-empty">Nothing on the list yet — add items from the To buy tab.</p>';
+    }
+
+    var html = '';
+    if (unsorted.length) {
+      if (groceryState.planOpenId == null) groceryState.planOpenId = String(unsorted[0].id);
+      var shown = unsorted.slice(0, groceryState.planPageSize);
+      var remaining = unsorted.length - shown.length;
+      // Triage pills: every store already on the list, plus the household's
+      // usual stores — so a store can be chosen before anything is tagged to
+      // it — plus "Any" for something it genuinely does not matter where.
+      var pillStores = [];
+      Object.keys(data.stores).forEach(function (n) { if (n !== 'Unassigned' && pillStores.indexOf(n) === -1) pillStores.push(n); });
+      groceryState.usualStores.forEach(function (n) { if (n && pillStores.indexOf(n) === -1) pillStores.push(n); });
+
+      html += '<p class="gro-eyebrow">To sort &middot; ' + unsorted.length + ' &middot; tap to assign</p>' +
+        '<div class="gro-sort">';
+      shown.forEach(function (it) {
+        var id = String(it.id);
+        var isOpen = groceryState.planOpenId === id;
+        html += '<div class="gro-sort-row">' +
+          '<button type="button" class="gro-sort-head" data-gro="sort-toggle" data-id="' + id + '" aria-expanded="' + isOpen + '">' +
+            '<span class="gro-sort-name">' + escapeHtml(it.item) + '</span>' +
+            '<span class="gro-sort-qty">' + escapeHtml(it.quantity || '') + '</span>' +
+            '<span class="gro-chev">' + (isOpen ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+          '</button>' +
+          '<div class="gro-pills' + (isOpen ? ' open' : '') + '">' +
+            pillStores.map(function (n) {
+              return '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="' + escapeHtml(n) + '" ' +
+                'aria-label="Buy ' + escapeHtml(it.item) + ' at ' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
+            }).join('') +
+            '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="" ' +
+              'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+      if (remaining > 0) {
+        html += '<button type="button" class="gro-sort-more" data-gro="sort-more">+' + remaining + ' more to sort</button>';
+      }
+    }
+
+    buckets.forEach(function (name) {
+      var s = data.stores[name];
+      var items = s.sections.reduce(function (acc, sec) { return acc.concat(sec.items); }, []);
+      var aisles = s.sections.filter(function (sec) { return sec.items.length; }).length;
+      var expanded = !!groceryState.bucketExpanded[name];
+      html += '<div class="gro-store' + (expanded ? '' : ' collapsed') + '">' +
+        '<button type="button" class="gro-store-head" data-gro="toggle-bucket" data-store="' + escapeHtml(name) + '" aria-expanded="' + expanded + '">' +
+          '<span class="gro-store-avatar" style="background:' + groStoreColor(name) + '">' + escapeHtml(groStoreInitial(name)) + '</span>' +
+          '<span class="gro-store-name">' + escapeHtml(name) + '</span>' +
+          (expanded
+            ? '<span class="gro-store-left">' + items.length + ' left</span>'
+            : '<span class="gro-bucket-count">' + groPlural(items.length, 'item', 'items') + ' &middot; ' + groPlural(aisles, 'aisle', 'aisles') + '</span>') +
+          '<span class="gro-chev">' + (expanded ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+        '</button>';
+      if (expanded) {
+        s.sections.forEach(function (sec) {
+          if (!sec.items.length) return;
+          html += '<div class="gro-aisle">' +
+            '<span class="gro-aisle-spine" style="background:' + groAisleColor(sec.section) + '"></span>' +
+            '<span class="gro-eyebrow">' + escapeHtml(sec.section) + '</span>' +
+            '<span class="gro-aisle-count">' + sec.items.length + ' left</span>' +
+          '</div>';
+          sec.items.forEach(function (it) {
+            var id = String(it.id);
+            var usually = groIsUsuallyHere(it.item, name);
+            html += '<div class="gro-bucket-row">' +
+              '<span class="gro-bucket-name">' + escapeHtml(it.item) + '</span>' +
+              (usually ? '<span class="gro-usually" title="Auto-assigned from what you usually get here">usually here</span>' : '') +
+              (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+              (usually ? '<button type="button" class="gro-linkbtn" data-gro="not-this-time" data-id="' + id + '">not this time</button>' : '') +
+              '<button type="button" class="gro-linkbtn" data-gro="move" data-id="' + id + '">move</button>' +
+            '</div>';
+          });
+        });
+        html += '<button type="button" class="gro-shop-btn" data-gro="shop-store" data-store="' + escapeHtml(name) + '">Shop this store</button>';
+      }
+      html += '</div>';
+    });
+
+    return html || '<p class="gro-empty">Nothing left to sort — nice work.</p>';
+  }
+
+  // ---------- State: Shopping a store ----------
+  function groShopHtml(data) {
+    var store = groceryState.shopStore;
+    var s = store && data.stores[store];
+    if (!s) return '<p class="gro-empty">Pick a store from Plan your stops first.</p>';
+
+    var inCartBySection = {};
+    s.inCart.forEach(function (it) {
+      var cat = it.category || 'other';
+      (inCartBySection[cat] = inCartBySection[cat] || []).push(it);
+    });
+
+    var html = '';
+    var seen = {};
+    s.sections.forEach(function (sec) {
+      var found = inCartBySection[sec.section] || [];
+      if (!sec.items.length && !found.length) return;
+      seen[sec.section] = true;
+      html += '<div class="gro-store">' +
+        '<div class="gro-aisle" style="border-top:none">' +
+          '<span class="gro-aisle-spine" style="background:' + groAisleColor(sec.section) + '"></span>' +
+          '<span class="gro-eyebrow">' + escapeHtml(sec.section) + '</span>' +
+          '<span class="gro-aisle-count">' + sec.items.length + ' left</span>' +
+        '</div>' +
+        sec.items.map(function (it) { return groShopRowHtml(it, false); }).join('') +
+        found.map(function (it) { return groShopRowHtml(it, true); }).join('') +
+      '</div>';
+    });
+    // An aisle whose every item is already in the trolley has no `needed`
+    // section left to hang off, so it is rendered from the in-cart side —
+    // otherwise finishing an aisle would make it vanish mid-shop.
+    Object.keys(inCartBySection).forEach(function (cat) {
+      if (seen[cat]) return;
+      html += '<div class="gro-store">' +
+        '<div class="gro-aisle" style="border-top:none">' +
+          '<span class="gro-aisle-spine" style="background:' + groAisleColor(cat) + '"></span>' +
+          '<span class="gro-eyebrow">' + escapeHtml(cat) + '</span>' +
+          '<span class="gro-aisle-count">all ' + inCartBySection[cat].length + ' &check;</span>' +
+        '</div>' +
+        inCartBySection[cat].map(function (it) { return groShopRowHtml(it, true); }).join('') +
+      '</div>';
+    });
+
+    return html || '<p class="gro-empty">Nothing left here — tap &ldquo;Done here&rdquo; to finish this stop.</p>';
+  }
+
+  function groShopRowHtml(it, inCart) {
+    var id = String(it.id);
+    return '<div class="gro-row' + (inCart ? ' done' : '') + '" data-gro="shop-toggle" data-id="' + id + '" data-incart="' + (inCart ? '1' : '0') + '">' +
+      '<button type="button" class="gro-box' + (inCart ? ' checked' : '') + '" role="checkbox" aria-checked="' + (inCart ? 'true' : 'false') + '" ' +
+        'data-gro="shop-toggle" data-id="' + id + '" data-incart="' + (inCart ? '1' : '0') + '" ' +
+        'aria-label="' + (inCart ? 'Put ' + escapeHtml(it.item) + ' back' : 'Found ' + escapeHtml(it.item)) + '">' + (inCart ? GRO_ICONS.tick : '') + '</button>' +
+      '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
+      (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+    '</div>';
+  }
+
+  // ---------- State: Review ----------
+  function groAllNeeded(data) {
+    var out = [];
+    Object.keys(data.stores).forEach(function (name) {
+      data.stores[name].sections.forEach(function (sec) {
+        sec.items.forEach(function (it) { out.push(it); });
+      });
+    });
+    return out;
+  }
+
+  function groReviewHtml(data) {
+    var allNeeded = groAllNeeded(data);
+    var missingQty = allNeeded.filter(function (it) { return !(it.quantity || '').trim(); });
+    var noStore = allNeeded.filter(function (it) { return !(it.store || '').trim(); });
+    var groups = {};
+    allNeeded.forEach(function (it) {
+      var key = it.item.trim().toLowerCase();
+      (groups[key] = groups[key] || []).push(it);
+    });
+    var duplicates = Object.keys(groups).map(function (k) { return groups[k]; }).filter(function (g) { return g.length > 1; });
+
+    // The forward link into Plan stops. Confirm returns to To buy, so without
+    // this the only way onward was noticing the segmented control up top.
+    var html = '<button type="button" class="gro-cta" data-gro="goto-plan">' +
+      '<span>Ready to shop? Plan your stops by store next.</span>' + ICONS.arrow + '</button>';
+
+    if (!allNeeded.length) {
+      return html + '<p class="gro-empty">Nothing on the list to review.</p>';
+    }
+    if (!missingQty.length && !noStore.length && !duplicates.length) {
+      html += '<div class="gro-allclear">Nothing flagged — this list is ready to shop.</div>';
+    }
+
+    function flagCard(key, badgeColor, badgeInk, title, bodyHtml) {
+      var open = groceryState.openFlagKey === key;
+      return '<div class="gro-flag">' +
+        '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="' + key + '" aria-expanded="' + open + '">' +
+          '<span class="gro-flag-badge" style="background:' + badgeColor + ';color:' + badgeInk + '">!</span>' +
+          '<span class="gro-flag-title">' + title + '</span>' +
+          '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+        '</button>' +
+        (open ? '<div class="gro-flag-body">' + bodyHtml + '</div>' : '') +
+      '</div>';
+    }
+
+    if (missingQty.length) {
+      html += flagCard('qty', 'var(--urgent)', 'var(--urgent-ink)',
+        'Missing quantity &middot; ' + missingQty.length,
+        missingQty.map(function (it) {
+          return '<div class="gro-fix" data-fix-for="' + String(it.id) + '">' +
+            '<span>' + escapeHtml(it.item) + '</span>' +
+            '<input type="text" class="gro-fix-qty" placeholder="Add a quantity" aria-label="Quantity for ' + escapeHtml(it.item) + '" />' +
+            '<button type="button" data-gro="fix-qty" data-id="' + String(it.id) + '">Save</button>' +
+          '</div>';
+        }).join(''));
+    }
+    if (noStore.length) {
+      html += flagCard('store', 'var(--apricot)', 'var(--on-accent-ink)',
+        'No store assigned &middot; ' + noStore.length,
+        '<p class="gro-fix-note">' + noStore.map(function (it) { return escapeHtml(it.item); }).join(', ') + '</p>' +
+        '<div class="gro-fix"><button type="button" data-gro="goto-plan">Assign in Plan your stops</button></div>');
+    }
+    if (duplicates.length) {
+      html += flagCard('dupe', 'var(--celadon)', 'var(--on-accent-ink)',
+        'Possible duplicate &middot; ' + duplicates.length,
+        duplicates.map(function (g) {
+          return '<div class="gro-fix">' +
+            '<span>' + escapeHtml(g[0].item) + ' appears ' + g.length + ' times</span>' +
+            '<button type="button" class="secondary" data-gro="merge" data-ids="' + g.map(function (it) { return it.id; }).join(',') + '">Merge</button>' +
+          '</div>';
+        }).join(''));
+    }
+
+    var bySection = {};
+    allNeeded.forEach(function (it) { (bySection[it.category] = bySection[it.category] || []).push(it); });
+    html += '<div class="gro-summary"><p class="gro-eyebrow">Summary</p>';
+    GRO_CATEGORIES.forEach(function (cat) {
+      if (!bySection[cat] || !bySection[cat].length) return;
+      html += '<div class="gro-summary-row">' +
+        '<span class="gro-s-name">' + escapeHtml(GRO_CATEGORY_LABELS[cat]) + '</span>' +
+        '<span class="gro-s-count">' + groPlural(bySection[cat].length, 'item', 'items') + '</span>' +
+      '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // ---------- Actions ----------
+  function groSetScreen(screen) {
+    groceryState.screen = screen;
+    groceryState.openMenuId = null;
+    renderGrocery();
+    if (scrollEl) scrollEl.scrollTop = 0;
+  }
+
+  async function groAddItem() {
+    var panel = groPanel();
+    if (!panel) return;
+    var itemInput = panel.querySelector('#gro-add-item');
+    var qtyInput = panel.querySelector('#gro-add-qty');
+    var btn = panel.querySelector('#gro-add-btn');
+    var name = itemInput.value.trim();
+    if (!name) { itemInput.focus(); return; }
+    btn.disabled = true;
+    var ok = await groDo(function () {
+      return groPost('/api/grocery-list/add', { item: name, quantity: qtyInput.value.trim(), category: 'other' });
+    }, "Couldn't add that — try again.");
+    btn.disabled = false;
+    if (ok) {
+      itemInput.value = '';
+      qtyInput.value = '';
+      itemInput.focus();
+    }
+  }
+
+  // Finishing a stop: everything in the trolley becomes purchased (which is
+  // what actually writes it into the kitchen's inventory — see
+  // tools.mark_grocery_item), then the trip is recorded. The trip row is
+  // bookkeeping and never blocks the flow, which is why it is caught
+  // separately. The desktop shopping mode this replaces already did both;
+  // the phone screen only did the first, so this is the richer of the two
+  // behaviours rather than a new one.
+  async function groFinishStore(store) {
+    var data = groceryState.data || await groLoadAllData();
+    var s = data.stores[store];
+    var inCart = s ? s.inCart : [];
+    for (var i = 0; i < inCart.length; i++) {
+      await groPost('/api/grocery-list/' + inCart[i].id + '/status', { status: 'purchased' });
+    }
+    try {
+      await groPost('/api/shopping-trips/close', { store: store, item_count: inCart.length });
+    } catch (err) { /* bookkeeping only */ }
+    return inCart.length;
+  }
+
+  function onGroceryClick(e) {
+    var el = e.target.closest('[data-gro]');
+    if (!el) return;
+    var action = el.dataset.gro;
+    var id = el.dataset.id;
+
+    switch (action) {
+      case 'seg':
+        groSetScreen(el.dataset.screen);
+        return;
+
+      case 'refresh':
+        el.disabled = true;
+        loadGrocery().then(function () { el.disabled = false; });
+        return;
+
+      case 'voice':
+        groToggleVoice();
+        return;
+
+      case 'primary': {
+        var target = groPrimaryTarget(groceryState.data);
+        if (target.disabled) return;
+        if (target.screen === 'shop') groceryState.shopStore = target.store;
+        groSetScreen(target.screen);
+        return;
+      }
+
+      case 'back-to-plan':
+        groSetScreen('plan');
+        return;
+
+      case 'toggle-store': {
+        var sname = el.dataset.store;
+        groceryState.expandedStores[sname] = !(groceryState.expandedStores[sname] !== false);
+        renderGrocery();
+        return;
+      }
+
+      case 'toggle-done':
+        groceryState.doneOpen = !groceryState.doneOpen;
+        renderGrocery();
+        return;
+
+      case 'check':
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/status', { status: 'purchased' });
+        }, "Couldn't check that off — try again.");
+        return;
+
+      case 'uncheck':
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/status', { status: 'needed' });
+        }, "Couldn't put that back — try again.");
+        return;
+
+      case 'toggle-menu':
+        groceryState.openMenuId = groceryState.openMenuId === id ? null : id;
+        renderGrocery();
+        return;
+
+      case 'save-row': {
+        var menu = el.closest('.gro-menu');
+        var qty = menu.querySelector('.gro-m-qty').value;
+        var cat = menu.querySelector('.gro-m-cat').value;
+        var store = menu.querySelector('.gro-m-store').value.trim();
+        el.disabled = true;
+        groDo(function () {
+          return Promise.all([
+            groPost('/api/grocery-list/' + id + '/update', { quantity: qty, category: cat }),
+            groPost('/api/grocery-list/' + id + '/store', { store: store })
+          ]);
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (ok) groceryState.openMenuId = null;
+          renderGrocery();
+        });
+        return;
+      }
+
+      case 'have':
+        el.disabled = true;
+        groceryState.openMenuId = null;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/already-have');
+        }, "Couldn't move that to the kitchen — try again.");
+        return;
+
+      case 'exclude':
+        el.disabled = true;
+        groceryState.openMenuId = null;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/exclude');
+        }, "Couldn't update that — try again.");
+        return;
+
+      case 'remove':
+        el.disabled = true;
+        groceryState.openMenuId = null;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/remove');
+        }, "Couldn't remove that — try again.");
+        return;
+
+      // ----- pre-shop -----
+      case 'ps-toggle':
+        groceryState.preShopOpen = !groceryState.preShopOpen;
+        if (!groceryState.preShopOpen) groceryState.preShopExpanded = false;
+        renderGrocery();
+        return;
+
+      case 'ps-more':
+        groceryState.preShopExpanded = true;
+        renderGrocery();
+        return;
+
+      case 'ps-decide': {
+        var decision = el.dataset.decision;
+        var itemName = el.dataset.name || 'That';
+        var psId = id;
+        el.closest('.gro-ps-row').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        groDo(function () {
+          return groPost('/api/grocery-list/' + psId + '/pre-shop', { decision: decision, author: 'user' });
+        }, "Couldn't update that — try again.").then(function (ok) {
+          if (!ok) return;
+          if (decision === 'keep') {
+            showToast(itemName + ' stays on the list');
+          } else {
+            showToast(itemName + ' off the list — you have enough', {
+              label: 'Undo',
+              onClick: function () {
+                groDo(function () {
+                  return groPostEmpty('/api/grocery-list/' + psId + '/pre-shop-undo');
+                }, "Couldn't undo that — try again.");
+              }
+            });
+          }
+        });
+        return;
+      }
+
+      case 'ps-keepall':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/pre-shop/keep-all');
+        }, "Couldn't update those — try again.").then(function (ok) {
+          if (ok) showToast('Kept all — nothing dropped');
+        });
+        return;
+
+      // ----- plan -----
+      case 'sort-toggle':
+        groceryState.planOpenId = groceryState.planOpenId === id ? null : id;
+        renderGrocery();
+        return;
+
+      case 'sort-more':
+        groceryState.planPageSize += 5;
+        renderGrocery();
+        return;
+
+      case 'assign': {
+        var toStore = el.dataset.store;
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/store', { store: toStore });
+        }, "Couldn't assign that — try again.").then(function (ok) {
+          if (!ok) return;
+          // Auto-advance to the next thing still needing a store, and open
+          // the store it just landed in so the shopper sees where it went.
+          var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
+          groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
+          groceryState.bucketExpanded = {};
+          if (toStore) groceryState.bucketExpanded[toStore] = true;
+          renderGrocery();
+        });
+        return;
+      }
+
+      case 'toggle-bucket': {
+        var bname = el.dataset.store;
+        var wasOpen = !!groceryState.bucketExpanded[bname];
+        groceryState.bucketExpanded = {};
+        if (!wasOpen) groceryState.bucketExpanded[bname] = true;
+        renderGrocery();
+        return;
+      }
+
+      // Both clear the row's store for this week. Neither forgets the
+      // remembered item->store preference (see set_grocery_item_store), so
+      // "not this time" is literally true — it will offer the same store
+      // again next week unless it is reassigned somewhere else.
+      case 'move':
+      case 'not-this-time':
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/store', { store: '' });
+        }, "Couldn't move that — try again.");
+        return;
+
+      case 'shop-store':
+        groceryState.shopStore = el.dataset.store;
+        groSetScreen('shop');
+        return;
+
+      // ----- shop -----
+      case 'shop-toggle': {
+        var wasInCart = el.dataset.incart === '1';
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/status', { status: wasInCart ? 'needed' : 'in_cart' });
+        }, "Couldn't update that — try again.");
+        return;
+      }
+
+      case 'done-here': {
+        var doneStore = groceryState.shopStore;
+        el.disabled = true;
+        groDo(function () {
+          return groFinishStore(doneStore);
+        }, "Couldn't finish this stop — try again.").then(function (ok) {
+          if (!ok) { el.disabled = false; return; }
+          groSetScreen('plan');
+          showToast('Stop saved — I’ll remember what you bought where');
+        });
+        return;
+      }
+
+      // ----- review -----
+      case 'flag-toggle':
+        groceryState.openFlagKey = groceryState.openFlagKey === el.dataset.key ? null : el.dataset.key;
+        renderGrocery();
+        return;
+
+      case 'fix-qty': {
+        var fixRow = el.closest('.gro-fix');
+        var newQty = fixRow.querySelector('.gro-fix-qty').value.trim();
+        if (!newQty) return;
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/update', { quantity: newQty });
+        }, "Couldn't save that — try again.");
+        return;
+      }
+
+      case 'goto-plan':
+        groSetScreen('plan');
+        return;
+
+      case 'merge': {
+        var ids = el.dataset.ids.split(',');
+        if (!window.confirm('Merge these into one line? The extra lines will be removed.')) return;
+        el.disabled = true;
+        groDo(function () {
+          var rest = ids.slice(1);
+          return Promise.all(rest.map(function (rid) {
+            return groPostEmpty('/api/grocery-list/' + rid + '/remove');
+          }));
+        }, "Couldn't merge those — try again.");
+        return;
+      }
+
+      case 'confirm':
+        groSetScreen('buy');
+        return;
+
+      case 'add':
+        groAddItem();
+        return;
+    }
+  }
+
+  // ---------- Hands-free voice ----------
+  // The Shopper session, carried over from the page this replaces: same
+  // trigger phrase, same three commands, same engine (voice-session.js, now
+  // loaded by the shell). The blueprint lists hands-free as keeping its
+  // current behaviour, so nothing here is redesigned — it just had to come
+  // with the screen rather than be left behind on a page nothing links to.
+  function groSetVoiceStatus(text) {
+    var panel = groPanel();
+    if (!panel) return;
+    var el = panel.querySelector('#gro-voice');
+    if (!el) return;
+    if (!text) {
+      groceryState.voiceLog = [];
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    groceryState.voiceLog.unshift(text);
+    groceryState.voiceLog = groceryState.voiceLog.slice(0, 5);
+    el.hidden = false;
+    el.innerHTML =
+      '<div class="gro-voice-head"><span class="gro-voice-dot"></span>Listening&hellip;</div>' +
+      '<ul class="gro-voice-log">' +
+        groceryState.voiceLog.map(function (t) { return '<li>' + escapeHtml(t) + '</li>'; }).join('') +
+      '</ul>' +
+      '<span class="gro-voice-note">Say &ldquo;hey Pomona&rdquo; plus a command, or tap the mic again to stop.</span>';
+  }
+
+  function groUpdateVoiceButton() {
+    var panel = groPanel();
+    if (!panel) return;
+    var btn = panel.querySelector('#gro-mic-btn');
+    if (!btn) return;
+    btn.classList.toggle('listening', !!(groceryState.voiceSession && groceryState.voiceSession.isActive()));
+  }
+
+  function groVoiceFuzzyFind(text, candidates, getLabel) {
+    var t = (text || '').trim().toLowerCase();
+    if (!t || !candidates || !candidates.length) return null;
+    for (var i = 0; i < candidates.length; i++) {
+      if (getLabel(candidates[i]).trim().toLowerCase() === t) return candidates[i];
+    }
+    for (var j = 0; j < candidates.length; j++) {
+      var label = getLabel(candidates[j]).trim().toLowerCase();
+      if (label && (label.indexOf(t) !== -1 || t.indexOf(label) !== -1)) return candidates[j];
+    }
+    var words = t.split(/\s+/);
+    var best = null, bestScore = 0;
+    candidates.forEach(function (c) {
+      var labelWords = getLabel(c).trim().toLowerCase().split(/\s+/);
+      var score = words.filter(function (w) { return labelWords.indexOf(w) !== -1; }).length;
+      if (score > bestScore) { bestScore = score; best = c; }
+    });
+    return bestScore > 0 ? best : null;
+  }
+
+  function groIsVoiceEndCommand(command) {
+    return /\b(stop|cancel|exit|goodbye|end session|that'?s all|all done)\b/i.test(command) || /^done$/i.test(command.trim());
+  }
+
+  async function groFetchNeededFlat() {
+    var res = await fetch('/api/grocery-list?status=needed');
+    if (!res.ok) return [];
+    var view = await res.json();
+    var items = [];
+    (view.sections || []).forEach(function (s) { items.push.apply(items, s.items); });
+    return items;
+  }
+
+  async function groHandleVoiceCommand(command) {
+    if (groIsVoiceEndCommand(command)) return { spoken: 'Ending hands-free.', endSession: true };
+
+    if (/\b(what|which)\b/i.test(command) && /\b(store|section)\b/i.test(command)) {
+      var afterKeyword = command.replace(/^.*?\b(store|section)\b\s*(?:is|does)?\s*/i, '').replace(/\bin\??$/i, '').trim();
+      var items = await groFetchNeededFlat();
+      var found = groVoiceFuzzyFind(afterKeyword, items, function (i) { return i.item; });
+      if (!found) return { spoken: "I don't see that on the list." };
+      var storeText = found.store && found.store.trim() ? found.store : 'no store assigned';
+      return { spoken: found.item + ' is ' + found.category + ', ' + storeText + '.' };
+    }
+
+    if (/\b(check off|got|grabbed|found|bought|picked up)\b/i.test(command)) {
+      var afterGot = command.replace(/^.*?\b(check off|got|grabbed|found|bought|picked up)\b\s*/i, '').trim();
+      var gotItems = await groFetchNeededFlat();
+      var gotItem = groVoiceFuzzyFind(afterGot, gotItems, function (i) { return i.item; });
+      if (!gotItem) return { spoken: "I don't see that on the list." };
+      try {
+        await groPost('/api/grocery-list/' + gotItem.id + '/status', { status: 'purchased' });
+      } catch (err) { return null; }
+      loadGrocery();
+      return { spoken: 'Got it, ' + gotItem.item + ' checked off.' };
+    }
+
+    if (/\b(add|put|need)\b/i.test(command)) {
+      var name = command
+        .replace(/^.*?\b(add)\b\s*/i, '')
+        .replace(/\b(to the list|to my list|on the list|on my list)\b/gi, '')
+        .replace(/^(put|we need|need)\s+/i, '')
+        .trim();
+      if (!name) return null;
+      try {
+        await groPost('/api/grocery-list/add', { item: name, quantity: '', category: 'other' });
+      } catch (err) { return null; }
+      loadGrocery();
+      return { spoken: 'Added ' + name + ' to the list.' };
+    }
+
+    return null;
+  }
+
+  function groToggleVoice() {
+    if (typeof window.createVoiceSession !== 'function') {
+      showToast("Hands-free voice isn't available in this browser.");
+      return;
+    }
+    if (groceryState.voiceSession && groceryState.voiceSession.isActive()) {
+      groceryState.voiceSession.stop();
+      return;
+    }
+    groceryState.voiceSession = window.createVoiceSession({
+      onListeningChange: function (isListening) {
+        groUpdateVoiceButton();
+        if (!isListening) groSetVoiceStatus('');
+      },
+      onStatus: function (text) { groSetVoiceStatus(text); },
+      onCommand: function (command) { return groHandleVoiceCommand(command); },
+      onEnd: function () { groUpdateVoiceButton(); }
+    });
+    if (groceryState.voiceSession.isStandaloneIOS()) {
+      groSetVoiceStatus('Heads up: hands-free voice can be unreliable in the installed home-screen app on iOS — if it doesn’t seem to hear you, try this from a regular Safari tab instead.');
+    }
+    groceryState.voiceSession.start();
+    groUpdateVoiceButton();
   }
 
   // ---------- Week (Step 4, rebuilt for design_handoff_home_manager
@@ -1428,15 +2758,11 @@
   }
 
   function refreshGrocerySurfaces() {
-    // Grocery is an iframed document, not a panel this script renders, so
-    // it can't be re-rendered from here — reloading its src is the only
-    // handle available. Today's grocery-summary card is ours, though, and
-    // is refreshed directly.
-    var groceryPanel = panels['grocery'];
-    if (groceryPanel) {
-      var frame = groceryPanel.querySelector('iframe');
-      if (frame && frame.getAttribute('src')) frame.setAttribute('src', frame.getAttribute('src'));
-    }
+    // Both surfaces that show groceries are this script's own now, so both
+    // are re-rendered in place. This used to reload the Grocery iframe's src
+    // — throwing the whole screen away, scroll position and all — because a
+    // second document was the only handle the shell had on it.
+    refreshGroceryPanel();
     var todayPanel = panels['today'];
     if (todayPanel && todayPanel.dataset.built) loadGrocerySummary(todayPanel);
   }
@@ -2058,9 +3384,9 @@
   // Every surface that could now be showing meals or groceries that no
   // longer exist. Same staleness problem refreshStaleTabsFromActions()
   // solves for chat-driven changes (tab panels build once per page load),
-  // reached from a button instead of a chat turn — plus the Grocery tab,
-  // which that function never had to handle because it's a separate
-  // iframed document, so it gets reloaded rather than re-rendered.
+  // reached from a button instead of a chat turn. Grocery used to need its
+  // own special case here — a contentWindow.location.reload() through the
+  // iframe boundary; now it is a panel like the others.
   function refreshAfterReset(clearedMealPlan, clearedGroceryList) {
     if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
     if (panels.today && panels.today.dataset.built) {
@@ -2070,10 +3396,7 @@
       }
       loadGrocerySummary(panels.today);
     }
-    if (clearedGroceryList || clearedMealPlan) {
-      var groceryFrame = panels.grocery && panels.grocery.querySelector('iframe');
-      if (groceryFrame) groceryFrame.contentWindow.location.reload();
-    }
+    if (clearedGroceryList || clearedMealPlan) refreshGroceryPanel();
   }
 
   if (resetScrim) {
@@ -2301,10 +3624,24 @@
   // reload, proactively refresh any already-built tab a chat action just
   // touched, the same way fillWeekDinner already refreshes Today when a
   // week-sheet dinner-pick affects it.
+  //
+  // Grocery was the hole in this. The backend has always tagged grocery
+  // writes with tab: 'grocery' (app/main.py's _GROCERY_TOOLS), but this
+  // function had no branch for it and could not have had a useful one — the
+  // tab was a second document, and reaching into an iframe to re-render part
+  // of it is not something a parent page can do. So "add milk" in chat
+  // changed the list and the Grocery tab went on showing the old one until a
+  // reload. Now that the panel is this script's own, the branch is the same
+  // one line every other tab gets.
   function refreshStaleTabsFromActions(actions) {
     (actions || []).forEach(function (action) {
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
         loadWeekMenu(panels.week);
+      } else if (action.tab === 'grocery') {
+        refreshGroceryPanel();
+        // The list changing also changes Today's "Grocery run" tile, which
+        // is a count of the same items.
+        if (panels.today && panels.today.dataset.built) loadGrocerySummary(panels.today);
       } else if (action.tab === 'today' && panels.today && panels.today.dataset.built) {
         loadNeedsYou(panels.today);
         loadTonightsDinner(panels.today);

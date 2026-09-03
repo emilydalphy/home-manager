@@ -183,6 +183,11 @@
     <button type="button" class="dialog-cancel-link" id="approve-who-cancel">Not just yet</button>
   </div>
 
+  <!-- Hands-free voice for the Grocery screen (the Shopper session). It moved
+       into the shell with the Grocery tab in Stage 2 slice 2 — it used to be
+       loaded by static/grocery.html, which the shell no longer embeds.
+       Defines window.createVoiceSession; shell.js uses it from groToggleVoice. -->
+  <script src="/static/voice-session.js"></script>
   <script src="/static/shell.js"></script>
 </body>
 </html>
