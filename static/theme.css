@@ -99,9 +99,15 @@
   --ivory-ink-muted:  rgba(246, 238, 225, .92); /* chip labels on spruce */
   --ink-secondary:    #7C7161;  /* supporting copy, outline-button labels */
   --ink-muted:        #7E7360;  /* 10px/800 uppercase eyebrows only */
-  --ink-placeholder:  #8E8370;  /* ask-bar placeholder */
+  /* Darkened 2026-09-03 from #8E8370 (3.47:1 on ground) to clear WCAG AA
+     for normal text. Placeholder text is read by people who most need the
+     hint, so it is the last thing that should be the faintest ink here. */
+  --ink-placeholder:  #797060;  /* ask-bar + input placeholders — 4.54:1 on ground */
   --ink-inactive:     #948970;  /* unselected navigation */
-  --ink-done:         #A29886;  /* completed/struck list text */
+  /* Darkened 2026-09-03 from #A29886 (2.65:1 on ground). The strikethrough
+     is what says "done"; the colour was doing that job a second time and
+     failing legibility to do it. */
+  --ink-done:         #7A705E;  /* completed/struck list text — 4.53:1 on ground */
   --ink-done-soft:    #C6BCA9;  /* the quantity beside completed text */
 
   /* --- Apricot: the accent that acts --- */
@@ -249,6 +255,18 @@ body {
   font-family: var(--font-body);
   background: var(--ground);
   color: var(--ink);
+}
+
+/* Placeholders had no rule anywhere in the shared stylesheet, so every
+   field that didn't set its own inherited the browser's default grey --
+   a colour chosen by Chrome against a white page, not by this palette
+   against ivory. Stated once here, in the file every page loads, so a new
+   input is legible by default rather than by remembering to say so.
+   Pages that set their own ::placeholder still win, as they should. */
+::placeholder {
+  color: var(--ink-placeholder);
+  opacity: 1;  /* Firefox dims placeholders to .54 unless told not to,
+                  which would undo the contrast this value was picked for. */
 }
 
 h1, h2, h3, .h1, .h2, .h3 {

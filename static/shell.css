@@ -642,23 +642,26 @@ html, body {
   The tick inside a completed chore. Its SVG used to hardcode stroke="#fff";
   it now takes `currentColor` so the colour lives here and can follow theme.
 
-  KNOWN LIGHT-MODE BUG, LEFT AS-IS ON PURPOSE (flagged for Emily): white on
-  celadon is 1.87:1, a RULE ONE violation — the same "#fff on what is now
-  celadon" class that stage 1 hunted for and fixed in nine other places, and
-  missed here. The stage-3 brief was that light mode must not change, so the
-  value is pinned to the #fff it already renders rather than silently fixed.
-  The fix is to delete this one line, at which point it inherits
-  --on-accent-ink (8.46:1) like every other accent fill. Dark mode already
-  does exactly that, in the dark block at the bottom of this file.
+  Fixed 2026-09-03 (was the light-mode RULE ONE violation stage 3 flagged
+  and deliberately left in place, at 1.87:1): dark spruce ink on a light
+  accent fill, as the palette requires everywhere else. Now matches what
+  the dark-mode block below already did for the same element.
 */
-.chore-row.done .chore-checkbox { background: var(--good); border-color: var(--good); color: #fff; }
+.chore-row.done .chore-checkbox {
+  background: var(--good);
+  border-color: var(--good);
+  color: var(--on-accent-ink);
+}
 .chore-name {
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--plum-ink);
   flex: 1;
 }
-.chore-row.done .chore-name { color: var(--faded); text-decoration: line-through; }
+/* --ink-done, not --faded: this IS a struck-out completed list item, and
+   --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
+   Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */
+.chore-row.done .chore-name { color: var(--ink-done); text-decoration: line-through; }
 .empty-row {
   font-family: var(--font-body);
   font-size: 15px;
@@ -4216,9 +4219,10 @@ html, body {
   textarea::placeholder { color: var(--ink-placeholder); }
 
   /* The completed-chore tick. Celadon is a light accent in BOTH modes, so
-     RULE ONE applies to it here: dark ink, not white. See the long note at
-     .chore-row.done .chore-checkbox — light mode is knowingly left at the
-     white it already renders (1.87:1) because this stage could not change
-     light; dark gets it right at 8.46:1. */
+     RULE ONE applies to it here: dark ink, not white. Light mode's own
+     1.87:1 white-on-celadon instance (flagged by stage 3, out of scope for
+     that stage) was fixed 2026-09-03 to the same --on-accent-ink value, so
+     this rule is now redundant with the base rule above but kept for
+     clarity — 8.46:1 either way. */
   .chore-row.done .chore-checkbox { color: var(--on-accent-ink); }
 }
