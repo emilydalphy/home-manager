@@ -52,6 +52,13 @@ def add_member(name: str) -> dict:
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
     conn.close()
+    # A new person is present at every meal by default (nobody said they
+    # were away), which can make a slot previously marked 'away' — because
+    # everyone then known was out — no longer true. Re-derive those needs
+    # so attendance and the plan can't contradict each other. Deferred
+    # import: attendance imports weekly_plan, which imports this module.
+    from . import attendance as _attendance
+    _attendance.reconcile_membership()
     return {"member_id": member_id, "name": name}
 
 

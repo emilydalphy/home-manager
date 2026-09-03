@@ -177,6 +177,14 @@ _CONTAINER_UNIT_PLURALS = {
     "head": "heads", "pint": "pints", "clove": "cloves",
     "tub": "tubs", "container": "containers", "pack": "packs",
     "loaf": "loaves", "stick": "sticks",
+    # KNOWN GAP (pre-existing): "tin", "punnet", "sachet", "bar", "roll",
+    # "sprig" and "slice" are missing, so they display unpluralized —
+    # "14 tin". Deliberately NOT fixed alongside the attendance work: this
+    # table drives the grocery list for EVERY household and every week,
+    # including weeks where nobody is away, so adding to it would have
+    # broken that change's one strong safety property (an all-home week
+    # shops byte-for-byte as before). It is a real fix worth making on its
+    # own, where it is the only thing under review.
 }
 
 

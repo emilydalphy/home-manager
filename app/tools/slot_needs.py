@@ -67,7 +67,11 @@ def _row_to_dict(row) -> dict:
         # slot_needs.for_member_ids_json.
         "for_member_ids": for_member_ids,
         "for_member_names": _member_names(for_member_ids),
-        "superseded_need": row["superseded_need"] or "",
+        # The whole need an 'away' covered over, restored intact when the
+        # away is undone. None when nothing was superseded.
+        "superseded": json.loads(row["superseded_json"]) if (row["superseded_json"] or "") else None,
+        "superseded_need": (json.loads(row["superseded_json"]).get("need")
+                            if (row["superseded_json"] or "") else ""),
     }
 
 
@@ -108,7 +112,7 @@ def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
 def set_slot_need(
     date_str: str, slot: str, need: str, reason: str = "",
     away_stretch_id: int | None = None, for_member_ids: list[int] | None = None,
-    superseded_need: str = "",
+    superseded: dict | None = None,
 ) -> dict:
     """
     Set (or clear, with need='normal') one slot's planning need directly —
@@ -148,17 +152,17 @@ def set_slot_need(
     conn.execute(
         """
         INSERT INTO slot_needs
-            (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, superseded_need, updated_at)
+            (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, superseded_json, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id, date, slot) DO UPDATE SET
             need = excluded.need, reason = excluded.reason,
             away_stretch_id = excluded.away_stretch_id,
             for_member_ids_json = excluded.for_member_ids_json,
-            superseded_need = excluded.superseded_need,
+            superseded_json = excluded.superseded_json,
             updated_at = datetime('now')
         """,
         (household_id(), date_str, slot, need, resolved_reason, away_stretch_id,
-         json.dumps(sorted(for_member_ids or [])), superseded_need or ""),
+         json.dumps(sorted(for_member_ids or [])), json.dumps(superseded) if superseded else ""),
     )
     conn.commit()
 
@@ -455,7 +459,17 @@ def set_away_stretch(
         if att["nobody_home"]:
             # _sync_away_need already wrote the 'away' need; re-stamp it so
             # the caller's reason and this stretch's id are what's stored.
-            set_slot_need(d, s, "away", reason=away_reason, away_stretch_id=stretch_id)
+            #
+            # Carry the superseded need through. This write is an upsert, so
+            # omitting it wrote '' straight over whatever _sync_away_need had
+            # just recorded — which silently emptied the undo history on the
+            # TRIP path specifically, the primary way aways actually happen.
+            # A hand-tagged 'quick' swallowed by a trip range came back as
+            # 'normal' when the trip was undone.
+            set_slot_need(
+                d, s, "away", reason=away_reason, away_stretch_id=stretch_id,
+                superseded=get_slot_need(d, s).get("superseded"),
+            )
             emptied.append({"date": d, "slot": s})
         else:
             reduced.append({"date": d, "slot": s, "serves": att["headcount"], "present": att["present_names"]})

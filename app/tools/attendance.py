@@ -47,6 +47,7 @@ is present, exactly as the no-row default would have them.
 from __future__ import annotations
 
 import json
+import math
 from datetime import date, timedelta
 
 from ..db import get_conn
@@ -229,17 +230,24 @@ def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | 
                 date_str, slot, "away",
                 reason=_slot_needs._default_reason("away"),
                 away_stretch_id=away_stretch_id,
-                # Remember what this slot was before the away covered it,
-                # so putting someone back restores their 'quick' or
-                # 'ready_made' rather than flattening it to normal.
-                superseded_need=current["need"] if current["need"] != "normal" else "",
+                # Remember the WHOLE need the away is covering over — not
+                # just its name. A per-traveler edge's scope, its sentence
+                # and its trip link are what made it true; restoring the
+                # bare name would put back a generic household tag wearing
+                # the same word.
+                superseded=_supersede_record(current),
             )
             return "set_away"
         return "already_away"
     if current["need"] == "away":
-        restored = current.get("superseded_need") or ""
-        if restored:
-            _slot_needs.set_slot_need(date_str, slot, restored)
+        restored = current.get("superseded") or None
+        if restored and restored.get("need"):
+            _slot_needs.set_slot_need(
+                date_str, slot, restored["need"],
+                reason=restored.get("reason") or "",
+                away_stretch_id=restored.get("away_stretch_id"),
+                for_member_ids=restored.get("for_member_ids") or None,
+            )
         else:
             _slot_needs.clear_slot_need(date_str, slot)
         # Clearing the NEED is only half of undoing an away. The meal
@@ -251,6 +259,22 @@ def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | 
         _slot_needs._reopen_away_slot(date_str, slot, att)
         return "cleared_away"
     return "unchanged"
+
+
+def _supersede_record(need: dict) -> dict | None:
+    """
+    The parts of a need that have to survive being covered by an away: what
+    it was, the sentence it said, whose it was, and which trip produced it.
+    None for an ordinary slot, which has nothing worth restoring.
+    """
+    if need["need"] == "normal":
+        return None
+    return {
+        "need": need["need"],
+        "reason": need["reason"],
+        "for_member_ids": need["for_member_ids"],
+        "away_stretch_id": need["away_stretch_id"],
+    }
 
 
 def set_slot_attendance(
@@ -351,6 +375,35 @@ def remove_members_from_slot(
     )
 
 
+def reconcile_membership() -> dict:
+    """
+    Re-derive every stored slot's away need after the household's people
+    change. Call this whenever a member is added or removed.
+
+    The case this closes: a slot everyone was marked out of is 'away'. Add a
+    new member — who nobody said was away, so they're present by default —
+    and that slot now has somebody at it while its need still says 'away'
+    and its meal is still blanked. Generation would then be handed a row
+    claiming one person eats there and another claiming nobody does.
+
+    Membership changes are rare and stored slots are few, so re-syncing all
+    of them is cheap and leaves no stale row behind — cheaper, and far
+    easier to reason about, than reconciling on every read.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT date, slot FROM slot_attendance WHERE household_id = ?", (household_id(),)
+    ).fetchall()
+    conn.close()
+    changed = []
+    for row in rows:
+        att = get_slot_attendance(row["date"], row["slot"])
+        outcome = _sync_away_need(row["date"], row["slot"], att)
+        if outcome in ("set_away", "cleared_away"):
+            changed.append({"date": row["date"], "slot": row["slot"], "outcome": outcome})
+    return {"slots_reconciled": len(rows), "changed": changed}
+
+
 def get_week_attendance(week_start: str, day_count: int = 7) -> dict:
     """
     Attendance for a week as {date: {slot: attendance}}, including only the
@@ -418,10 +471,9 @@ def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:
     The result is rounded the way a SHOPPER buys rather than the way
     arithmetic falls out: halving "1 tin" gives 1 tin, not 0.5, because
     half a tin isn't a thing you can put in a basket; halving "3" onions
-    gives 2, not 1.5. Measurable units round to the nearest quarter instead
-    of a repeating decimal. Without this a third of a household turns a
-    plain recipe into "0.333333 tin", which then consolidates onto the
-    list beside a whole one.
+    gives 2, not 1.5; "1/2 cup" halved gives "1/4 cup". Without this a
+    third of a household turns a plain recipe into "0.333333 tin", which
+    then consolidates onto the list beside a whole one.
     """
     if factor == 1.0:
         return [dict(i) for i in ingredients]
@@ -430,10 +482,59 @@ def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:
         parsed = _quantities._parse_quantity(ing.get("qty", "") or "")
         if parsed:
             amount, unit = parsed
-            out.append({**ing, "qty": _quantities._humanize_grocery_quantity(amount * factor, unit)})
+            out.append({**ing, "qty": _shopper_quantity(amount * factor, unit)})
         else:
             out.append(dict(ing))
     return out
+
+
+# Fractions a cook reads at a glance. "1/4 cup" is a measuring cup you own;
+# "0.25 cups" is arithmetic showing its working.
+_FRACTION_WORDS = {0.25: "1/4", 0.5: "1/2", 0.75: "3/4"}
+# Units where a fraction is meaningless — you buy 2 tins, never 1 3/4.
+_METRIC_UNITS = {"g", "ml", "kg", "l"}
+
+
+def _shopper_quantity(amount: float, unit: str | None) -> str:
+    """
+    Format a scaled quantity the way it would be bought or measured, in the
+    unit the recipe was WRITTEN in.
+
+    Deliberately not quantities._humanize_grocery_quantity, which is built
+    for the grocery list's own display job and rolls units up to the
+    largest sensible one — correct there, wrong here: it turned half of
+    "1/2 cup" into "4 tbsp" and a third of "500 g" into "166.75 g". Someone
+    halving a recipe wants a quarter cup, not four tablespoons of the same
+    thing.
+    """
+    if amount <= 0:
+        return _quantities._format_quantity(0, unit)
+    # No unit, or a discrete thing (tin, clove, onion): whole numbers only,
+    # rounded up, because you cannot buy part of one.
+    measurable = unit in {u for group in _quantities._UNIT_CONVERSION_GROUPS for u in group}
+    if not measurable:
+        return _quantities._format_quantity(max(1, math.ceil(amount - 1e-9)), unit)
+    if unit in _METRIC_UNITS:
+        # Metric weights/volumes read as round numbers on a scale, not as
+        # fractions: 5g steps under 100, 10g above.
+        step = 5 if amount < 100 else 10
+        rounded = max(step, int(round(amount / step)) * step)
+        return _quantities._format_quantity(rounded, unit)
+    whole = math.floor(amount + 1e-9)
+    frac = amount - whole
+    nearest = min(_quantities._NICE_FRACTIONS, key=lambda f: abs(f - frac))
+    if nearest >= 1.0:
+        whole, nearest = whole + 1, 0.0
+    if whole == 0 and nearest == 0.0:
+        nearest = 0.25  # never round a real quantity away to nothing
+    if nearest == 0.0:
+        return _quantities._format_quantity(whole, unit)
+    word = _FRACTION_WORDS[nearest]
+    # Anything under one takes the singular: "3/4 cup", never "3/4 cups".
+    singular = whole == 0
+    display_unit = unit if singular else _quantities._format_quantity(2, unit).split(" ", 1)[-1]
+    body = word if whole == 0 else f"{whole} {word}"
+    return f"{body} {display_unit}" if display_unit else body
 
 
 def summary_line(att: dict) -> str:

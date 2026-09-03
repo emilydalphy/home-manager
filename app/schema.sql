@@ -642,12 +642,17 @@ CREATE TABLE IF NOT EXISTS slot_needs (
     -- which is exactly the "one layer too shallow" problem this deepening
     -- fixes.
     for_member_ids_json TEXT NOT NULL DEFAULT '[]',
-    -- What this slot's need was before an 'away' covered it, so undoing
-    -- the away can put it back. Without this, emptying a slot that was
-    -- already tagged 'quick' and then putting someone back in loses the
-    -- 'quick' silently — the away overwrote the row, and clearing it
-    -- deleted the row outright. '' when nothing was superseded.
-    superseded_need TEXT NOT NULL DEFAULT '',
+    -- The WHOLE need this slot carried before an 'away' covered it, as
+    -- JSON {need, reason, for_member_ids, away_stretch_id} — '' when
+    -- nothing was superseded. Undoing the away puts all of it back.
+    --
+    -- Stores the whole row rather than just the need name because the name
+    -- alone restores a lie: a per-traveler edge ('quick', scoped to
+    -- Vineeth, linked to his trip, reading "Last one before Vineeth heads
+    -- out") would come back as a generic household 'quick' with a default
+    -- reason and no trip link. The scope and the sentence are the parts
+    -- that made it true, so they have to survive too.
+    superseded_json TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(household_id, date, slot)

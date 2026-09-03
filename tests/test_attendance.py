@@ -257,6 +257,122 @@ def test_undoing_an_away_restores_the_need_it_covered_over(couple):
     assert tools.get_slot_need(day, "dinner")["need"] == "quick"
 
 
+def test_undoing_a_TRIP_restores_the_need_it_covered_over(couple):
+    """
+    The same restore, reached the way aways ACTUALLY happen — through a trip
+    range rather than a per-meal toggle.
+
+    This is the path that was broken: set_away_stretch re-stamps each
+    covered slot's away need to record its own reason and id, and that
+    upsert wrote a blank over the superseded need _sync_away_need had just
+    saved. The toggle path worked, so a test that only covered toggles
+    reported everything fine.
+    """
+    week = _week_start()
+    saturday = tools._week_dates(week)[5]
+    tools.set_slot_need(saturday, "dinner", "quick", reason="soccer night")
+
+    tools.set_away_stretch(saturday, "lunch", saturday, "dinner")
+    assert tools.get_slot_need(saturday, "dinner")["need"] == "away"
+
+    tools.set_member_attendance(saturday, "dinner", "Emily", present=True)
+
+    restored = tools.get_slot_need(saturday, "dinner")
+    assert restored["need"] == "quick"
+    assert restored["reason"] == "soccer night", "the sentence is part of what made it true"
+
+
+def test_a_restored_edge_keeps_whose_it_was(couple):
+    """
+    A per-traveler edge must come back scoped to that traveler, with its own
+    wording and its trip link — not as a generic household tag wearing the
+    same word. Restoring only the need's NAME put back something that read
+    as true for everybody.
+    """
+    week = _week_start()
+    friday, saturday, sunday = (tools._week_dates(week)[i] for i in (4, 5, 6))
+    vineeth_id = couple["Vineeth"]
+    # Vineeth alone away: Friday dinner becomes HIS quick edge.
+    tools.set_away_stretch(saturday, "breakfast", sunday, "lunch", member_names=["Vineeth"])
+    edge = tools.get_slot_need(friday, "dinner")
+    assert edge["need"] == "quick" and edge["for_member_ids"] == [vineeth_id]
+    original_reason, original_stretch = edge["reason"], edge["away_stretch_id"]
+
+    # Now everyone is out for that same Friday dinner, then back.
+    for name in ("Emily", "Vineeth"):
+        tools.set_member_attendance(friday, "dinner", name, present=False)
+    assert tools.get_slot_need(friday, "dinner")["need"] == "away"
+    tools.set_member_attendance(friday, "dinner", "Emily", present=True)
+
+    back = tools.get_slot_need(friday, "dinner")
+    assert back["need"] == "quick"
+    assert back["for_member_ids"] == [vineeth_id], "the edge belonged to Vineeth, not the household"
+    assert back["for_member_names"] == ["Vineeth"]
+    assert back["reason"] == original_reason
+    assert back["away_stretch_id"] == original_stretch, "it should still trace to the trip that made it"
+
+
+def test_adding_a_member_reconciles_a_slot_that_was_fully_away(couple, recipe, stub_model):
+    """
+    Everyone marked out of a meal makes it away. Add someone new — who
+    nobody said was away — and that meal now has a person at it, so it must
+    stop claiming nobody is home. Otherwise generation is handed one row
+    saying somebody eats there and another saying nothing is planned.
+    """
+    week = _week_start()
+    tuesday = tools._week_dates(week)[1]
+    stub_model(_full_week(week))
+    plan = agent.generate_weekly_plan(week)
+    for name in ("Emily", "Vineeth"):
+        tools.set_member_attendance(tuesday, "dinner", name, present=False)
+    assert tools.get_slot_need(tuesday, "dinner")["need"] == "away"
+
+    tools.add_member("Robin")
+
+    att = tools.get_slot_attendance(tuesday, "dinner")
+    assert att["present_names"] == ["Robin"] and att["nobody_home"] is False
+    assert tools.get_slot_need(tuesday, "dinner")["need"] == "normal", (
+        "somebody is home now — the meal can't still be marked away"
+    )
+    assert _slot_state(plan["weekly_plan_id"], tuesday, "dinner") == "open"
+    ctx = tools.attendance_context_for_week(week)
+    rows = {(s["date"], s["slot"]): s for s in ctx["slots_with_a_different_table"]}
+    assert rows[(tuesday, "dinner")]["serves"] == 1, "generation gets one consistent answer"
+
+
+def test_scaling_keeps_the_recipes_own_unit(couple):
+    """
+    Someone halving a recipe wants a quarter cup, not four tablespoons of
+    the same thing. The grocery list's own humanizer rolls units up, which
+    is right for a shopping line and wrong for a scaled ingredient.
+    """
+    ings = [
+        {"item": "flour", "qty": "1/2 cup"}, {"item": "beef", "qty": "500 g"},
+        {"item": "tomatoes", "qty": "1 tin"}, {"item": "onion", "qty": "3"},
+        {"item": "salt", "qty": "a pinch"},
+    ]
+
+    halved = {i["item"]: i["qty"] for i in tools.scale_ingredients(ings, 0.5)}
+    assert halved["flour"] == "1/4 cup", "not '4 tbsp'"
+    assert halved["beef"] == "250 g"
+    assert halved["tomatoes"] == "1 tin", "half a tin isn't a thing you can buy"
+    assert halved["onion"] == "2"
+    assert halved["salt"] == "a pinch"
+
+    doubled = {i["item"]: i["qty"] for i in tools.scale_ingredients(ings, 2.0)}
+    # "2 tin" rather than "2 tins" is a pre-existing gap in
+    # quantities._CONTAINER_UNIT_PLURALS, left alone on purpose — that
+    # table feeds every household's grocery list, so fixing it here would
+    # have cost this change its byte-for-byte no-op property. Asserted as
+    # it actually behaves, so nobody reads this as already fixed.
+    assert doubled["tomatoes"] == "2 tin"
+    assert doubled["flour"] == "1 cup"
+
+    third = {i["item"]: i["qty"] for i in tools.scale_ingredients(ings, 1 / 3)}
+    assert "." not in third["beef"], f"metric should read as a round number, got {third['beef']}"
+    assert third["tomatoes"] == "1 tin"
+
+
 def test_a_household_with_nobody_on_record_is_not_assumed_to_be_away(couple_free_household):
     """
     With no members recorded, "nobody is home" is ignorance, not a fact. A
