@@ -227,6 +227,43 @@ why*, not duplicating the diff.
   (`name`, not `household_name`), so both agreed and neither noticed —
   caught only by running it against a real server, which is why there is
   now a test pinning the script against the actual routes.
+- **2026-09-02 — The app is now Pomona, on the branch
+  `pomona-rebrand-foundation` (not yet merged). Stage 1 = foundation only,
+  no screen layouts touched.** The retired palette (Oat Cream / Midnight
+  Violet / Turmeric Gold / Vivid Leaf / Electric Coral) is gone, replaced by
+  the brand guide's spruce `#1B3328` / ivory `#FBF6EE` / apricot `#E0915C` /
+  celadon `#A9C4B0`; Quicksand→Bricolage Grotesque and Karla→Figtree, plus
+  Newsreader italic as the one accent face. Review finding **#11 (three
+  overlapping colour vocabularies) is closed by the same pass** rather than
+  separately — every value was being re-pointed anyway, so `theme.css` now
+  has ONE canonical set named after the brand guide, and the old names
+  (`--plum`, `--gold`, `--midnight-violet`, …) survive only as thin `var()`
+  aliases so the ~40 existing call sites keep working. Don't add new uses of
+  an alias. Four things worth knowing:
+  - **Dark spruce text on light accent fills is a hard rule**, and it is a
+    real behaviour change, not a recolour: `--gold-ink` used to be a near-black
+    brown on gold and is now `--on-accent-ink` (`#1B3328`). Nine places were
+    putting `#fff` on what is now celadon — light-on-light, failing contrast
+    outright — and were fixed to dark ink. A grep for `color:#fff` inside any
+    rule whose background is apricot/celadon is the check if more appear.
+  - **Light mode only, deliberately.** The brand guide already carries a
+    tuned dark value for every token; that is why they are all defined once
+    on `:root`, so dark mode is one `prefers-color-scheme` block rather than
+    another sweep. It is a follow-up, not an oversight.
+  - **`--urgent: #B23A22` is the one value not from the brand guide** — the
+    guide has no "urgent" swatch, and urgent semantics had to survive the
+    repaint without becoming a second apricot. Flagged for Emily; it is the
+    assistant's pick, not an approved swatch.
+  - **`HOME_MANAGER_PASSWORD`, the repo, DB names, file paths and code
+    identifiers were deliberately NOT renamed** — only user-facing strings.
+    Renaming the env var would have broken the deployed Railway config.
+  The PWA icon, `manifest.json` and the sign-in screen were rebuilt too, and
+  `CACHE_NAME` went `home-manager-shell-v3` → `pomona-shell-v4` — that bump
+  is load-bearing, since the icons and manifest are the assets this worker
+  still serves *cache-first*, and they changed content while keeping their
+  URLs. Not yet merged; `static/grocery-legacy.html` was left on the old
+  palette on purpose (dead code, linked from nowhere).
+
 - **2026-09-01 — Multiple households, on the branch
   `multi-household-beta` (not yet merged).** The friend beta needs her own
   household with her own data, so signing in now establishes *which*

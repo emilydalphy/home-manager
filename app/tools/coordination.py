@@ -124,9 +124,9 @@ def get_feedback_nudge() -> dict:
 def get_household_people() -> list[dict]:
     """
     The household's adults, each with the avatar initial + color the
-    design_handoff_home_manager package uses for "who added it" on desktop
-    grocery rows (README's People token: first adult plum #66304E, second
-    green #4D8A33 — see db._backfill_member_colors). Powers the identity
+    design package uses for "who added it" on desktop grocery rows (the
+    People token: first adult spruce #1B3328, second deep apricot #C4703C —
+    see db._backfill_member_colors). Powers the identity
     switcher (there's no real login in this app — see FIRST_RUN.md's
     "two adult accounts" note and the Phase 2 judgment call to use a
     lightweight, no-password picker instead) and the avatar rendered next
@@ -147,11 +147,14 @@ def get_household_people() -> list[dict]:
     # not-yet-backfilled adult still gets the right color *this* request by
     # falling back to its ordinal position among adults, not a flat
     # default — otherwise a second adult added since the last restart would
-    # incorrectly show Emily's own plum instead of the household's second
-    # color.
-    fallback_colors = ["#66304E", "#4D8A33"]
+    # incorrectly show the first adult's colour instead of the household's
+    # second colour.
+    # These two values intentionally mirror db._ADULT_COLORS — kept as a
+    # literal rather than an import because app.db importing back into
+    # app.tools is exactly the cycle _shared.py exists to avoid.
+    fallback_colors = ["#1B3328", "#C4703C"]
     out = []
     for i, r in enumerate(rows):
-        color = r["color"] or (fallback_colors[i] if i < len(fallback_colors) else "#8A7A82")
+        color = r["color"] or (fallback_colors[i] if i < len(fallback_colors) else "#7E7360")
         out.append({"name": r["name"], "initial": (r["name"].strip()[:1] or "?").upper(), "color": color})
     return out

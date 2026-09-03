@@ -4,47 +4,47 @@
 <meta charset="UTF-8" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/theme.css">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Inventory — Home Manager</title>
+<title>Inventory — Pomona</title>
 <style>
   /* Inventory (design_handoff_home_manager §6, option 5a, approved). This
      replaces the old pre-redesign page (section toggle, scan buttons,
      plain rows) entirely — see README's Phase 4 notes for what that page
      used to do and what happened to receipt/fridge/pantry scanning. */
   * { box-sizing: border-box; }
-  body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, #EFE6D6); }
+  body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, #F3EBDC); }
   .inv-header { padding: 20px 20px 6px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .inv-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--midnight-violet); text-decoration: none; display: block; margin-bottom: 8px; }
   .inv-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--midnight-violet); margin: 0; }
-  .inv-summary { font-family: var(--font-body); font-size: 0.84rem; color: #6B5A63; text-align: right; white-space: nowrap; padding-top: 8px; }
+  .inv-summary { font-family: var(--font-body); font-size: 0.84rem; color: #7C7161; text-align: right; white-space: nowrap; padding-top: 8px; }
 
   .inv-content { padding: 6px 20px 20px; }
   .inv-card { background: #fff; border-radius: 18px; padding: 16px 18px 10px; margin-bottom: 16px; }
-  .inv-card-header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #F1E8DA; padding-bottom: 10px; margin-bottom: 4px; }
+  .inv-card-header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #EEE3D0; padding-bottom: 10px; margin-bottom: 4px; }
   .inv-card-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.2rem; color: var(--midnight-violet); margin: 0; }
-  .inv-card-count { font-family: var(--font-body); font-size: 0.84rem; color: #9C8B93; }
-  .inv-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F1E8DA; cursor: pointer; }
+  .inv-card-count { font-family: var(--font-body); font-size: 0.84rem; color: #7E7360; }
+  .inv-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #EEE3D0; cursor: pointer; }
   .inv-row:last-child { border-bottom: none; }
-  .inv-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #C4B09C; }
-  .inv-dot.soon { background: #E8562A; }
-  .inv-dot.low { background: #F0B429; }
+  .inv-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #C6BCA9; }
+  .inv-dot.soon { background: #B23A22; }
+  .inv-dot.low { background: #E0915C; }
   .inv-name { font-family: var(--font-body); font-size: 1rem; color: var(--ink); flex: 1; }
-  .inv-qty { font-family: var(--font-body); font-size: 0.92rem; color: #8A7A82; }
+  .inv-qty { font-family: var(--font-body); font-size: 0.92rem; color: #7E7360; }
   /* The "N to use soon" count is a control, not a label — it reads as
      part of the summary line but is tappable, with a full-height target. */
   .inv-soon-btn {
-    font-family: var(--font-body); font-size: inherit; color: #C0431E;
+    font-family: var(--font-body); font-size: inherit; color: #8F2C17;
     background: none; border: none; padding: 0; cursor: pointer;
     text-decoration: underline; font-weight: 700;
   }
-  .inv-soon-btn[aria-pressed="true"] { text-decoration: none; background: rgba(232,86,42,.12); border-radius: 999px; padding: 2px 8px; }
-  .inv-filter-note { font-family: var(--font-body); font-size: 0.84rem; color: #6B5A63; margin: 0 20px 10px; }
+  .inv-soon-btn[aria-pressed="true"] { text-decoration: none; background: rgba(178, 58, 34,.12); border-radius: 999px; padding: 2px 8px; }
+  .inv-filter-note { font-family: var(--font-body); font-size: 0.84rem; color: #7C7161; margin: 0 20px 10px; }
   .inv-flag { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
-  .inv-flag.soon { color: #C0431E; background: rgba(232,86,42,.12); }
-  .inv-flag.low { color: #B98A12; background: rgba(240,180,41,.14); }
-  .inv-empty { text-align: center; padding: 60px 20px; font-family: var(--font-body); color: #8A7A82; }
+  .inv-flag.soon { color: #8F2C17; background: rgba(178, 58, 34,.12); }
+  .inv-flag.low { color: #A2582F; background: rgba(224, 145, 92,.14); }
+  .inv-empty { text-align: center; padding: 60px 20px; font-family: var(--font-body); color: #7E7360; }
 
   .inv-add-card { background: #fff; border-radius: 18px; padding: 16px 18px; margin-bottom: 16px; }
   .inv-add-title { font-family: var(--font-body); font-weight: 700; color: var(--ink); font-size: 0.9rem; margin: 0 0 10px; }
@@ -59,24 +59,24 @@
      (/api/inventory/scan-receipt|scan-fridge|scan-pantry|confirm-scan)
      were never removed — this is UI-only. */
   .inv-scan-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .inv-scan-btn { flex: 1; min-width: 100px; background: #F6EFE1; color: var(--midnight-violet); border: 1.5px solid #E0D3BF; border-radius: 10px; padding: 10px 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer; font-family: var(--font-body); display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .inv-scan-btn:hover { background: #EFE4CF; }
+  .inv-scan-btn { flex: 1; min-width: 100px; background: #FBF6EE; color: var(--midnight-violet); border: 1.5px solid #E6D9C4; border-radius: 10px; padding: 10px 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer; font-family: var(--font-body); display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .inv-scan-btn:hover { background: #F3EBDC; }
   .inv-scan-btn svg { width: 16px; height: 16px; flex: none; }
 
   #inv-scan-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: #fff; border-radius: 26px 26px 0 0; padding: 16px 20px 24px; z-index: 999; display: none; max-height: 88vh; overflow-y: auto; animation: invSheetUp .24s cubic-bezier(.2,.8,.2,1); }
   #inv-scan-sheet.open { display: block; }
   .inv-scan-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.3rem; color: var(--ink); margin: 0 0 4px; }
-  .inv-scan-sub { font-family: var(--font-body); font-size: 0.86rem; color: #6B5A63; margin: 0 0 16px; }
-  .inv-scan-loading { text-align: center; padding: 40px 10px; font-family: var(--font-body); color: #8A7A82; }
-  .inv-scan-item { background: #F6EFE1; border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .inv-scan-sub { font-family: var(--font-body); font-size: 0.86rem; color: #7C7161; margin: 0 0 16px; }
+  .inv-scan-loading { text-align: center; padding: 40px 10px; font-family: var(--font-body); color: #7E7360; }
+  .inv-scan-item { background: #FBF6EE; border-radius: 14px; padding: 12px; margin-bottom: 10px; }
   .inv-scan-item-row1 { display: flex; gap: 6px; margin-bottom: 6px; }
   .inv-scan-item-row1 input { flex: 1; min-width: 0; font-family: var(--font-body); border: 1px solid rgba(0,0,0,.15); border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; }
   .inv-scan-item-row1 input.inv-scan-qty { flex: none; width: 64px; }
   .inv-scan-item-row2 { display: flex; gap: 6px; align-items: center; }
   .inv-scan-item-row2 select { font-family: var(--font-body); border: 1px solid rgba(0,0,0,.15); border-radius: 8px; padding: 7px 8px; font-size: 0.82rem; background: #fff; }
-  .inv-scan-low-badge { font-family: var(--font-body); font-weight: 700; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .04em; color: #B98A12; background: rgba(240,180,41,.16); padding: 3px 7px; border-radius: 999px; }
-  .inv-scan-remove { margin-left: auto; background: none; border: none; color: #A3939B; font-size: 1.1rem; cursor: pointer; padding: 2px 6px; }
-  .inv-scan-empty-note { font-family: var(--font-body); color: #8A7A82; text-align: center; padding: 20px 10px; }
+  .inv-scan-low-badge { font-family: var(--font-body); font-weight: 700; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .04em; color: #A2582F; background: rgba(224, 145, 92,.16); padding: 3px 7px; border-radius: 999px; }
+  .inv-scan-remove { margin-left: auto; background: none; border: none; color: #948970; font-size: 1.1rem; cursor: pointer; padding: 2px 6px; }
+  .inv-scan-empty-note { font-family: var(--font-body); color: #7E7360; text-align: center; padding: 20px 10px; }
   .inv-scan-actions { display: flex; gap: 10px; margin-top: 14px; }
   .inv-scan-actions button { flex: 1; padding: 14px; border-radius: 13px; font-weight: 700; font-size: 0.92rem; cursor: pointer; font-family: var(--font-body); border: none; }
   .inv-scan-save { background: var(--midnight-violet); color: var(--oat-cream); }
@@ -87,13 +87,13 @@
      keeps the original stacked view; picking a location scrolls to and
      highlights just that card. */
   .inv-loc-nav { display: flex; gap: 8px; padding: 0 20px 10px; overflow-x: auto; }
-  .inv-loc-pill { flex: none; font-family: var(--font-body); font-weight: 700; font-size: 0.84rem; padding: 8px 16px; border-radius: 999px; border: 1.5px solid #E0D3BF; background: #fff; color: var(--midnight-violet); cursor: pointer; white-space: nowrap; }
+  .inv-loc-pill { flex: none; font-family: var(--font-body); font-weight: 700; font-size: 0.84rem; padding: 8px 16px; border-radius: 999px; border: 1.5px solid #E6D9C4; background: #fff; color: var(--midnight-violet); cursor: pointer; white-space: nowrap; }
   .inv-loc-pill.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: var(--oat-cream); }
   .inv-card.inv-card-highlight { animation: invCardPulse 1s ease; }
-  @keyframes invCardPulse { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--turmeric-gold, #F0B429); } }
+  @keyframes invCardPulse { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--turmeric-gold, #E0915C); } }
 
   /* Item detail sheet */
-  #inv-scrim, .inv-scan-scrim-el { position: fixed; inset: 0; background: rgba(58,31,46,.42); display: none; z-index: 998; animation: invFadeIn .18s ease; }
+  #inv-scrim, .inv-scan-scrim-el { position: fixed; inset: 0; background: rgba(35, 48, 42,.42); display: none; z-index: 998; animation: invFadeIn .18s ease; }
   #inv-scrim.open, .inv-scan-scrim-el.open { display: block; }
   #inv-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: #fff; border-radius: 26px 26px 0 0; padding: 16px 20px 26px; z-index: 999; display: none; max-height: 88vh; overflow-y: auto; animation: invSheetUp .24s cubic-bezier(.2,.8,.2,1); }
   #inv-sheet.open { display: block; }
@@ -102,31 +102,31 @@
   /* A real <button> now (it closes the sheet, and was previously a <div>
      that only a mouse could use) — reset the UA button styling so it
      still renders as the same grab handle. */
-  .inv-sheet-handle { display: block; width: 44px; height: 5px; padding: 0; border: none; appearance: none; border-radius: 999px; background: #E0D3BF; margin: 0 auto 14px; cursor: pointer; }
-  .inv-sheet-kicker { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #A8825C; margin: 0 0 4px; }
+  .inv-sheet-handle { display: block; width: 44px; height: 5px; padding: 0; border: none; appearance: none; border-radius: 999px; background: #E6D9C4; margin: 0 auto 14px; cursor: pointer; }
+  .inv-sheet-kicker { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: #A2582F; margin: 0 0 4px; }
   .inv-sheet-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink); margin: 0 0 18px; }
-  .inv-sheet-label { font-family: var(--font-body); font-size: 0.92rem; color: #6B5A63; margin: 0 0 8px; }
+  .inv-sheet-label { font-family: var(--font-body); font-size: 0.92rem; color: #7C7161; margin: 0 0 8px; }
   .inv-stepper-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 20px; }
-  .inv-stepper-btn { width: 44px; height: 44px; border-radius: 12px; background: #F6EFE1; border: none; font-family: var(--font-body); font-weight: 800; font-size: 20px; color: var(--midnight-violet); cursor: pointer; }
-  .inv-stepper-btn:hover { background: #EFE4CF; }
+  .inv-stepper-btn { width: 44px; height: 44px; border-radius: 12px; background: #FBF6EE; border: none; font-family: var(--font-body); font-weight: 800; font-size: 20px; color: var(--midnight-violet); cursor: pointer; }
+  .inv-stepper-btn:hover { background: #F3EBDC; }
   .inv-stepper-value { width: 120px; text-align: center; font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; }
   .inv-location-row { display: flex; gap: 8px; margin-bottom: 20px; }
-  .inv-location-btn { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid #E0D3BF; background: #fff; font-family: var(--font-body); font-weight: 400; color: var(--ink); cursor: pointer; text-align: center; }
-  .inv-location-btn.selected { background: #F4E7EF; border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
-  .inv-bb-card { background: #F6EFE1; border-radius: 14px; padding: 13px 13px 13px 17px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .inv-location-btn { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid #E6D9C4; background: #fff; font-family: var(--font-body); font-weight: 400; color: var(--ink); cursor: pointer; text-align: center; }
+  .inv-location-btn.selected { background: #E2EDE5; border-color: var(--midnight-violet); font-weight: 700; color: var(--midnight-violet); }
+  .inv-bb-card { background: #FBF6EE; border-radius: 14px; padding: 13px 13px 13px 17px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
   .inv-bb-left .inv-bb-title { font-family: var(--font-body); font-size: 0.96rem; color: var(--ink); margin: 0; }
-  .inv-bb-left .inv-bb-relative { font-family: var(--font-body); font-size: 0.84rem; margin: 2px 0 0; color: #3A1F2E; }
-  .inv-bb-left .inv-bb-relative.soon { color: #C0431E; }
+  .inv-bb-left .inv-bb-relative { font-family: var(--font-body); font-size: 0.84rem; margin: 2px 0 0; color: #23302A; }
+  .inv-bb-left .inv-bb-relative.soon { color: #8F2C17; }
   .inv-bb-right { display: flex; align-items: center; gap: 8px; }
   .inv-bb-btn { width: 38px; height: 38px; border-radius: 10px; background: #fff; border: none; font-weight: 800; font-family: var(--font-body); font-size: 18px; color: var(--midnight-violet); cursor: pointer; }
   .inv-bb-date { width: 90px; text-align: center; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; }
   .inv-sheet-actions { display: flex; flex-direction: column; gap: 10px; }
   .inv-action-btn { padding: 15px; border-radius: 13px; font-weight: 700; font-size: 0.94rem; cursor: pointer; font-family: var(--font-body); border: none; }
   .inv-action-add { background: var(--midnight-violet); color: var(--oat-cream); }
-  .inv-action-add.on-list { background: #F0F7EA; color: #4D8A33; cursor: default; }
+  .inv-action-add.on-list { background: #E2EDE5; color: #4F6B5B; cursor: default; }
   .inv-action-used { background: transparent; border: 1.5px solid var(--midnight-violet); color: var(--midnight-violet); }
 
-  #inv-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #3A1F2E; color: #FFFDF6; font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  #inv-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #23302A; color: #FFFDF8; font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 1001; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   #inv-toast.show { opacity: 1; }
 </style>
 <script src="/static/error-reporter.js"></script>

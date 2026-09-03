@@ -1,11 +1,11 @@
 {
-  "name": "Home Manager",
-  "short_name": "Home Manager",
+  "name": "Pomona",
+  "short_name": "Pomona",
   "description": "Chores, meal planning, and groceries in one place.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F6EFE1",
-  "theme_color": "#66304E",
+  "background_color": "#FBF6EE",
+  "theme_color": "#1B3328",
   "orientation": "portrait",
   "icons": [
     {

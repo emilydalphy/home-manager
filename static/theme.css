@@ -1,200 +1,333 @@
 /*
-  Home Manager design system
-  Source: "Home Manager - Branding package.pdf" (Brand & Style Guide v1)
-  and "[For using] home-manager-screen-specs.md.pdf" (component-level
-  application of the brand guide to priority screens).
+  Pomona design system — "The Inn"
+  Source of truth: the Brand Guide canvas (v1, approved by Emily 1 Sep 2026),
+  measured from the InnToday / InnMeals screens.
 
-  Load this on every page AFTER the Quicksand/Karla Google Fonts <link>,
-  BEFORE any page-specific <style> block, so page styles can still
-  override specifics while inheriting the shared tokens/components.
+  Premium, capable, warm: two grounds, one anchor (spruce), two accents
+  (apricot acts, celadon reassures).
+
+  Load this on every page AFTER the Bricolage Grotesque / Figtree / Newsreader
+  Google Fonts <link>, BEFORE any page-specific <style> block, so page styles
+  can still override specifics while inheriting the shared tokens/components.
+
+  ---------------------------------------------------------------------------
+  ONE VOCABULARY (2026-09-02)
+  ---------------------------------------------------------------------------
+  This file used to carry three overlapping colour vocabularies that had grown
+  up separately and drifted:
+
+    1. the original brand names   (--midnight-violet, --turmeric-gold, …)
+    2. the Grocery-redesign set   (--violet-light, --ink, --ink-muted, …)
+    3. the app-shell set          (--plum, --gold, --cream, --sand, …)
+
+  Three names for the same colour meant no single place to change it, and
+  three near-but-not-equal values for the same *role*. The Pomona repaint
+  re-pointed every value anyway, so the two jobs were done in one pass.
+
+  There is now exactly ONE canonical set — the block marked CANONICAL below,
+  named after the brand guide. Everything under COMPATIBILITY ALIASES is a
+  thin `var()` forward kept only so the ~40 files that already reference the
+  old names keep working. Do not introduce new uses of an alias, and when you
+  touch a call site, move it to the canonical name.
+
+  ---------------------------------------------------------------------------
+  LIGHT MODE ONLY — dark mode is a deliberate follow-up
+  ---------------------------------------------------------------------------
+  The brand guide carries a full, tuned dark value for every token below
+  (its "Dark" column — a first dark-mode pass, tuned rather than inverted).
+  Stage 1 ships light only. Adding dark mode is a matter of a
+  `@media (prefers-color-scheme: dark)` block redefining these same tokens
+  from that column, plus the two dark-only tokens the light mode has no use
+  for (Spruce Edge #2C4B38, the hairline that replaces the hero shadow).
+  That is why every colour below is defined once, on :root, as a token: so
+  dark mode is one block, not a sweep.
 */
 
 :root {
   color-scheme: light;
 
-  /* --- Brand colors (exact hex from brand guide) --- */
-  --oat-cream: #F6EFE1;       /* default background */
-  --midnight-violet: #66304E; /* primary text, nav, primary buttons/outlines */
-  --turmeric-gold: #F0B429;   /* hero accent — CTAs only, one per screen */
-  --vivid-leaf: #6FB84C;      /* secondary accent — positive/success, sparingly */
-  --electric-coral: #E8562A;  /* secondary accent — attention/urgent, sparingly */
+  /* ======================= CANONICAL — Pomona ======================= */
 
-  /* Derived working tones (not in the brand guide's 5 swatches, but needed
-     for borders/hover/disabled states — kept close to the brand hues so
-     they read as part of the same system rather than off-palette). */
-  --oat-cream-dark: #EDE2CC;      /* borders/dividers on cream */
-  --violet-soft: #F1E4EC;         /* muted violet fill, e.g. neutral tag bg */
-  --violet-hover: #542640;        /* primary button hover/active */
-  --gold-hover: #DDA224;          /* gold button hover/active */
-  --text-muted: #8A7F6E;          /* captions, secondary text on cream */
-  --text-body: #3A2E33;           /* body text — dark, warm-neutral, not pure black */
-  --card-border: #E7DCC8;
+  /* --- Ground & surface --- */
+  --ground:         #FBF6EE;  /* app canvas; every screen starts here */
+  --surface:        #FFFDF8;  /* cards, list containers, the ask bar */
+  --spruce:         #1B3328;  /* hero panel, dark buttons, active nav ink */
+  --spruce-raised:  #24402F;  /* chips/icon tiles ON spruce — never on ivory */
+  --celadon-tint:   #E2EDE5;  /* the gentle, non-urgent tile */
+  /* dark mode only: --spruce-edge: #2C4B38 */
 
-  /* Grocery List redesign (design 13a) — a lighter violet family layered
-     on top of the tones above, used for that screen's headers/active
-     tab/accents/chevrons and related ink shades. Not used elsewhere. */
-  --violet-light: #B0619A;
-  --ink: #3A1F2E;
-  --ink-muted: #8A7A83;
-  --ink-faint: #A3939B;
-  --ink-done: #B3A7AD;
-  --qty-done: #C9BEC3;
-  --leaf-dark: #3F7A29;
+  /* --- Ink ramp (warm-shifted; never pure black or pure white) --- */
+  --ink:              #23302A;  /* headlines and body on ground/cards */
+  --ink-on-celadon:   #24362D;  /* body inside celadon tiles */
+  --ivory-ink:        #F6EEE1;  /* text on spruce */
+  --ivory-ink-muted:  rgba(246, 238, 225, .92); /* chip labels on spruce */
+  --ink-secondary:    #7C7161;  /* supporting copy, outline-button labels */
+  --ink-muted:        #7E7360;  /* 10px/800 uppercase eyebrows only */
+  --ink-placeholder:  #8E8370;  /* ask-bar placeholder */
+  --ink-inactive:     #948970;  /* unselected navigation */
+  --ink-done:         #A29886;  /* completed/struck list text */
+  --ink-done-soft:    #C6BCA9;  /* the quantity beside completed text */
 
-  /* --- Typography --- */
-  --font-heading: "Quicksand", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-body: "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* --- Apricot: the accent that acts --- */
+  --apricot:        #E0915C;             /* primary action fill, badges */
+  --apricot-light:  #F2B98E;             /* apricot ON spruce; italic accent */
+  --apricot-deep:   #C4703C;             /* status dots, line-icon strokes */
+  --apricot-label:  #A2582F;             /* uppercase micro-labels, links */
+  --apricot-label-hover: #82441F;
+  --apricot-rule:   rgba(224, 145, 92, .34); /* the only divider on spruce */
 
-  /* --- Radii / shadow, consistent card + button rounding --- */
-  --radius-card: 14px;
-  --radius-pill: 999px;
-  --radius-control: 10px;
-  --shadow-card: 0 1px 2px rgba(102, 48, 78, 0.06);
+  /* --- Celadon: the accent that reassures --- */
+  --celadon:        #A9C4B0;  /* confirmation chips, the "New" badge */
+  --celadon-edge:   #C7DACD;  /* hairline on a celadon-tint surface */
+  --celadon-label:  #4F6B5B;  /* label + icon stroke inside celadon tiles */
 
-  /* App-shell redesign (design_handoff_shell/README.md) tokens. These are
-     additive aliases, not replacements — every existing --midnight-violet /
-     --turmeric-gold / --oat-cream / etc. usage above is untouched. Several
-     resolve to the exact same hex as an existing token (confirmed against
-     the brand guide); those are noted so it's clear this isn't drift. */
-  --plum:        #66304e;  /* = --midnight-violet */
-  --plum-ink:    #3a1f2e;  /* = --ink */
-  --gold:        #f0b429;  /* = --turmeric-gold */
-  --gold-ink:    #3a2a0a;
-  --cream:       #f6efe1;  /* = --oat-cream */
-  --card:        #ffffff;
-  --menu-paper:  #fffdf6;  /* menu card surface */
-  --menu-rule:   #e7dcc4;  /* menu card border / rules */
-  --menu-ink:    #a8825c;  /* menu meta, course labels */
-  --sand:        #ecdfc8;  /* secondary button, soft card */
-  --rule:        #f1e8da;  /* list separators */
-  --muted:       #6b5a63;  /* secondary text (shell copy) */
-  --faded:       #a3939b;  /* completed text; = --ink-faint */
-  --urgent:      #e8562a;  /* needs-a-decision; = --electric-coral */
-  --warn:        #f0b429;  /* time-boxed; = --gold/--turmeric-gold */
-  --warn-ink:    #b98a12;
-  --good:        #6fb84c;  /* done, your turn; = --vivid-leaf */
-  --good-ink:    #4d8a33;
+  /*
+    RULE ONE, made a token. Dark spruce text on light accent fills, always.
+    Ivory on saturated apricot or celadon fails contrast outright. There is
+    no exception, including icon strokes.
+  */
+  --on-accent-ink:  #1B3328;
+
+  /* --- Lines & edges (1.5px, always — this is what makes a card a card) --- */
+  --hairline:        #EEE3D0;  /* card borders, nav divider, header rule */
+  --hairline-strong: #E6D9C4;  /* ask bar, outline buttons, italic underline */
+
+  /* --- Warm neutrals ---
+     Soft sand fills that sit between the ground and a hairline: secondary
+     buttons, soft cards, inactive tracks. This replaces the scattered
+     one-off creams (#ECDFC8, #E0D3BF, #EADFC7, #E2D2B6 …) that used to be
+     invented per screen. */
+  --sand:       #F3EBDC;
+  --sand-deep:  #E6D9C4;  /* = --hairline-strong */
+
+  /* --- Status ---
+     The brand guide covers "settled" (celadon) and "wants doing" (apricot)
+     but has no swatch for genuinely urgent, so this is the one value in this
+     file NOT lifted from it. Deep terracotta: the same hue family as apricot,
+     dropped far enough in value and pushed far enough to red that it reads
+     as a warning rather than as another action. It is a dark, saturated fill
+     (not a light accent), so it carries ivory text — RULE ONE governs the
+     light accent fills, not this one. FLAGGED FOR EMILY: the exact value is
+     the assistant's pick, not an approved brand swatch. */
+  --urgent:        #B23A22;  /* needs a decision / overdue */
+  --urgent-ink:    #F6EEE1;  /* text on an urgent fill */
+  --urgent-tint:   #F7E6DE;  /* soft urgent background, dark text on it */
+  --urgent-label:  #8F2C17;  /* urgent text ON the tint or the ground */
+
+  --good:       var(--celadon);        /* done, handled, your turn */
+  --good-ink:   var(--celadon-label);  /* "good" text on ground */
+  --warn:       var(--apricot);        /* time-boxed, wants doing */
+  --warn-ink:   var(--apricot-label);  /* "warn" text on ground */
+
+  /* --- Typography: three faces, each with one job ---
+     Bricolage Grotesque carries every headline and button (always 700,
+     always tightened). Figtree carries everything else. Newsreader appears
+     once per screen, in italic — two lines and it becomes a serif brand. */
+  --font-display: "Bricolage Grotesque", "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-body:    "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-accent:  "Newsreader", Georgia, "Times New Roman", Times, serif;
+
+  /* --- Radii: soft geometry, joined at the edges ---
+     The signature move is a tile that joins the panel below it instead of
+     floating above it: square where they meet, round where they leave. */
+  --radius-hero:    30px;  /* hero panel, bottom corners only */
+  --radius-card:    20px;  /* cards and tiles */
+  --radius-ask:     18px;  /* ask bar */
+  --radius-action:  17px;  /* primary action; active day tile, top only */
+  --radius-tile:    15px;  /* day tiles, 44px icon button */
+  --radius-control: 14px;  /* in-card buttons, inputs */
+  --radius-send:    13px;  /* send tile */
+  --radius-chip:    11px;  /* metadata chips */
+  --radius-badge:   10px;  /* badges, hero icon tile */
+  --radius-badge-sm: 9px;  /* small caps badges */
+  --radius-pill:   999px;
+
+  /* --- Elevation ---
+     Shadow belongs to the hero panel and the apricot action — nothing else.
+     Cards are separated by a hairline. --shadow-card is kept as a whisper
+     for the many existing cards that still lean on it; Stage 2 replaces
+     those with hairlines per the guide. */
+  --shadow-hero:   0 26px 48px -30px rgba(18, 36, 25, .85);
+  --shadow-action: 0 16px 28px -18px rgba(224, 145, 92, .8);
+  --shadow-card:   0 1px 2px rgba(35, 48, 42, .05);
+
+  /* ================= COMPATIBILITY ALIASES — do not extend =================
+     Old names, forwarded to the canonical tokens above. Every one of these is
+     a `var()` reference, never a literal, so there is exactly one place any
+     colour is defined. Move call sites off these as you touch them. */
+
+  /* was: the original brand names */
+  --oat-cream:       var(--ground);
+  --midnight-violet: var(--spruce);
+  --turmeric-gold:   var(--apricot);
+  --vivid-leaf:      var(--celadon);
+  --electric-coral:  var(--urgent);
+  --oat-cream-dark:  var(--hairline);
+  --violet-soft:     var(--celadon-tint);
+  --violet-hover:    var(--spruce-raised);
+  --gold-hover:      var(--apricot-deep);
+  --text-muted:      var(--ink-secondary);
+  --text-body:       var(--ink);
+  --card-border:     var(--hairline);
+
+  /* was: the Grocery-redesign set */
+  --violet-light: var(--celadon-label);
+  --ink-faint:    var(--ink-inactive);
+  --qty-done:     var(--ink-done-soft);
+  --leaf-dark:    var(--celadon-label);
+
+  /* was: the app-shell set */
+  --plum:       var(--spruce);
+  --plum-ink:   var(--ink);
+  --gold:       var(--apricot);
+  --gold-ink:   var(--on-accent-ink);  /* CHANGED: dark spruce on apricot */
+  --cream:      var(--ground);
+  --card:       var(--surface);
+  --menu-paper: var(--surface);
+  --menu-rule:  var(--hairline);
+  --menu-ink:   var(--apricot-label);
+  --rule:       var(--hairline);
+  --muted:      var(--ink-secondary);
+  --faded:      var(--ink-inactive);
+
+  /* --font-heading predates the three-face system; --font-display is the name
+     the brand guide uses. */
+  --font-heading: var(--font-display);
 }
 
 /* ---------- Base ---------- */
 body {
   font-family: var(--font-body);
-  background: var(--oat-cream);
-  color: var(--text-body);
+  background: var(--ground);
+  color: var(--ink);
 }
 
 h1, h2, h3, .h1, .h2, .h3 {
-  font-family: var(--font-heading);
-  color: var(--midnight-violet);
+  font-family: var(--font-display);
+  color: var(--ink);
   font-weight: 700;
   margin: 0 0 4px;
 }
-h1, .h1 { font-size: 32px; line-height: 1.2; font-weight: 700; }
-h2, .h2 { font-size: 22px; line-height: 1.25; font-weight: 600; }
-h3, .h3, .card-title { font-size: 17px; line-height: 1.3; font-weight: 600; }
+h1, .h1 { font-size: 31px; line-height: 1.05; letter-spacing: -0.038em; font-weight: 700; }
+h2, .h2 { font-size: 21px; line-height: 1.20; letter-spacing: -0.028em; font-weight: 700; }
+h3, .h3, .card-title { font-size: 17px; line-height: 1.3; letter-spacing: -0.02em; font-weight: 700; }
 
 p, li, td, label, input, select, textarea, button {
   font-family: var(--font-body);
 }
 
 .subtitle, p.subtitle {
-  color: var(--text-muted);
+  color: var(--ink-secondary);
   font-size: 0.9rem;
 }
 
+/* Eyebrows are the only uppercase in the system: 10px, 800, .13–.18em. */
 .caption {
   font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 12px;
+  font-weight: 800;
+  font-size: 10px;
   line-height: 1.4;
-  color: var(--text-muted);
+  color: var(--ink-muted);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.14em;
 }
 
-a { color: var(--midnight-violet); }
+/* The one accent line — Newsreader italic, 17px, once per screen. */
+.accent-line {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--apricot-label);
+}
+
+a { color: var(--apricot-label); }
+a:hover { color: var(--apricot-label-hover); }
 
 /* ---------- Shared components ---------- */
 
-/* Primary CTA — Turmeric Gold fill, dark text. Reserve for the single
-   most important action on a screen. */
+/* Primary CTA — apricot fill, dark spruce text (RULE ONE). Reserve for the
+   single most important action on a screen: one apricot fill per screen. */
 .btn-primary, button.btn-primary {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 14px;
-  background: var(--turmeric-gold);
-  color: var(--midnight-violet);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  background: var(--apricot);
+  color: var(--on-accent-ink);
   border: none;
-  border-radius: var(--radius-control);
-  padding: 12px 20px;
+  border-radius: var(--radius-action);
+  padding: 15px 22px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.btn-primary:hover:not(:disabled) { background: var(--gold-hover); }
+.btn-primary:hover:not(:disabled) { background: var(--apricot-deep); }
 .btn-primary:disabled { opacity: 0.5; cursor: default; }
 
-/* Secondary / ghost — Midnight Violet outline or text-only. Frequent,
-   lower-stakes actions (add item, edit, cancel). */
+/* Secondary / ghost — spruce outline or text-only. Frequent, lower-stakes
+   actions (add item, edit, cancel). */
 .btn-secondary, button.btn-secondary {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
   background: transparent;
-  color: var(--midnight-violet);
-  border: 1px solid var(--midnight-violet);
+  color: var(--ink-secondary);
+  border: 1.5px solid var(--hairline-strong);
   border-radius: var(--radius-control);
   padding: 11px 18px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.btn-secondary:hover:not(:disabled) { background: var(--violet-soft); }
+.btn-secondary:hover:not(:disabled) { background: var(--sand); }
 .btn-secondary:disabled { opacity: 0.5; cursor: default; }
 
-/* Status tag / pill */
+/* Status tag / pill — 12px/700 metadata chips. Accent fills carry dark ink. */
 .pill {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 14px;
-  border-radius: var(--radius-pill);
-  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-chip);
+  padding: 4px 10px;
   line-height: 1.4;
 }
-.pill-success { background: var(--vivid-leaf); color: #fff; }
-.pill-attention { background: var(--electric-coral); color: #fff; }
-.pill-neutral { background: var(--violet-soft); color: var(--midnight-violet); }
+.pill-success   { background: var(--celadon); color: var(--on-accent-ink); }
+.pill-attention { background: var(--urgent);  color: var(--urgent-ink); }
+.pill-neutral   { background: var(--celadon-tint); color: var(--ink-on-celadon); }
 
-/* Card */
+/* Card — the lift comes from the hairline, not a shadow. */
 .card {
-  background: var(--oat-cream);
-  border: 1px solid var(--card-border);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
 }
 
-/* Surfaces that sit "above" the cream page background (e.g. panels on
-   pages whose body is cream) use plain white so cards still read as
-   distinct layers. */
+/* Surfaces that sit "above" the ground use card ivory — exactly one step
+   brighter than the ground. */
 .surface {
-  background: #fff;
-  border: 1px solid var(--card-border);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
   border-radius: var(--radius-card);
 }
 
 /* List row — min 44x44 tap targets on interactive elements is enforced
    per-element (checkboxes, icon buttons), not just on the row. */
 .list-row {
-  background: var(--oat-cream);
+  background: var(--surface);
   font-family: var(--font-body);
+  font-weight: 600;
   font-size: 15px;
-  color: var(--text-body);
+  color: var(--ink);
 }
 .list-row .row-caption {
   font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
 }
 .tap-target {
   min-width: 44px;
@@ -203,19 +336,21 @@ a { color: var(--midnight-violet); }
 
 /* Empty state — warm, first-person copy, not "No items." */
 .empty-state {
-  color: var(--text-muted);
+  color: var(--ink-secondary);
   font-size: 0.95rem;
   padding: 1rem 0;
 }
 
-/* Top nav strip shared by every page — Midnight Violet links on Oat Cream. */
+/* Top nav strip shared by every page. Active nav ink is spruce, never
+   apricot — apricot is for the thing that wants doing, not for "you are
+   here". */
 .app-nav {
   font-family: var(--font-body);
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--ink-secondary);
 }
 .app-nav a {
-  color: var(--midnight-violet);
+  color: var(--spruce);
   text-decoration: none;
   font-weight: 700;
 }
@@ -224,15 +359,15 @@ a { color: var(--midnight-violet); }
 /* ---------- Focus visibility ---------- */
 
 /*
-  Until now there was exactly one :focus rule in the whole frontend and no
-  :focus-visible at all, and the ask composer explicitly set outline:none
-  with nothing replacing it — so anyone navigating by keyboard had no way to
-  tell where they were.
+  Until this was added there was exactly one :focus rule in the whole frontend
+  and no :focus-visible at all, and the ask composer explicitly set
+  outline:none with nothing replacing it — so anyone navigating by keyboard
+  had no way to tell where they were.
 
   :focus-visible rather than :focus so the ring appears for keyboard and
-  assistive-tech users without drawing a box around every mouse click. Gold
-  reads clearly on both the cream page background and the plum surfaces, and
-  it's already the palette's attention colour.
+  assistive-tech users without drawing a box around every mouse click. Apricot
+  reads clearly on both the ivory ground and the spruce panels, and it is
+  already the palette's "something here" colour.
 */
 /*
   !important is deliberate here, and is the one place in this file that uses
@@ -248,15 +383,15 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid var(--turmeric-gold) !important;
+  outline: 3px solid var(--apricot) !important;
   outline-offset: 2px !important;
 }
 
-/* On gold surfaces a gold ring would vanish — switch to plum there. */
+/* On apricot surfaces an apricot ring would vanish — switch to spruce there. */
 .btn-primary:focus-visible,
 .btn-gold:focus-visible,
 .kh-btn-gold:focus-visible {
-  outline-color: var(--midnight-violet) !important;
+  outline-color: var(--spruce) !important;
 }
 
 /* ---------- Voice dictation button ---------- */
@@ -272,9 +407,9 @@ summary:focus-visible,
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-send);
   background: transparent;
-  color: var(--plum);
+  color: var(--spruce);
   border: none;
   display: flex;
   align-items: center;
@@ -282,16 +417,16 @@ summary:focus-visible,
   cursor: pointer;
 }
 .dictate-btn svg { width: 16px; height: 16px; }
-.dictate-btn:hover { background: var(--violet-soft); }
+.dictate-btn:hover { background: var(--celadon-tint); }
 .dictate-btn.active {
   background: var(--urgent);
-  color: #fff;
+  color: var(--urgent-ink);
   animation: dictateBtnPulse 1.4s ease-in-out infinite;
 }
 .dictate-btn:disabled { opacity: .5; cursor: default; animation: none; }
 @keyframes dictateBtnPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 86, 42, .45); }
-  50% { box-shadow: 0 0 0 6px rgba(232, 86, 42, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(178, 58, 34, .45); }
+  50% { box-shadow: 0 0 0 6px rgba(178, 58, 34, 0); }
 }
 /* A textarea (multi-line) paired with a dictate button sits in its own
    row rather than inline with other fields — the textarea shrinks to

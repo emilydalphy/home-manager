@@ -15,10 +15,12 @@ CREATE TABLE IF NOT EXISTS members (
     name TEXT NOT NULL,
     age_group TEXT NOT NULL DEFAULT '', -- freeform, e.g. "adult", "teen", "child", "toddler"
     dietary_restrictions_json TEXT NOT NULL DEFAULT '[]', -- e.g. ["vegetarian", "peanut allergy"]
-    -- design_handoff_home_manager Phase 2: an adult's avatar color for the
-    -- "who added it" avatars on desktop grocery rows (README's People
-    -- token: Emily #66304E, Marcus #4D8A33). Blank until backfilled — see
-    -- db._backfill_member_colors, run once when this column is first added.
+    -- An adult's avatar color for the "who added it" avatars on desktop
+    -- grocery rows (the People token: first adult spruce #1B3328, second
+    -- deep apricot #C4703C, repainted for Pomona 2026-09-02 — these were
+    -- plum #66304E and leaf green #4D8A33 under the retired palette).
+    -- Blank until backfilled — see db._backfill_member_colors, run once
+    -- when this column is first added.
     color TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
