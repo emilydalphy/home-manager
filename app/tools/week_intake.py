@@ -272,7 +272,9 @@ def save_week_intake(
             conn.commit()
             intake_id = cursor.lastrowid
             row = conn.execute("SELECT * FROM week_intake WHERE id = ?", (intake_id,)).fetchone()
-            return _intake_row_to_dict(row)
+            saved = _intake_row_to_dict(row)
+            _sync_guest_attendance(saved)
+            return saved
         except sqlite3.IntegrityError:
             # Somebody took this revision number between our read and our
             # write. Undo our supersede and start again from what they left.
@@ -281,6 +283,41 @@ def save_week_intake(
                 raise
         finally:
             conn.close()
+
+
+def _sync_guest_attendance(intake: dict) -> None:
+    """
+    Push the "Hosting guests" answers into attendance, so a bigger table is
+    the SAME fact as a smaller one rather than a parallel notion of it.
+
+    Emily's deepened model unifies guests into attendance: members present
+    ± guests. Without this, "hosting 3 on Saturday" would live only in
+    week_intake.guest_counts_json, where the grocery path can't see it —
+    which is exactly how the guests chip's "and shop for that" promise
+    ends up depending entirely on the model choosing to write bigger
+    quantities. Writing it here means the headcount reaches groceries
+    structurally, the same way a presence toggle does.
+
+    Only dinner: the guest steppers are a night-tag follow-up, and a night
+    tag is a dinner concept in this app. Deliberately tolerant of failure —
+    a household mid-onboarding may have no members yet, and an intake save
+    must not fail over a headcount echo.
+    """
+    from . import attendance as _attendance
+
+    for day, extras in (intake.get("guest_counts") or {}).items():
+        if not isinstance(extras, dict):
+            continue
+        total_guests = int(extras.get("adults", 0) or 0) + int(extras.get("children", 0) or 0)
+        try:
+            current = _attendance.get_slot_attendance(day, "dinner")
+            if current["guest_count"] == total_guests:
+                continue
+            if total_guests == 0 and not current["explicit"]:
+                continue
+            _attendance.set_guest_count(day, "dinner", total_guests)
+        except ValueError:
+            continue
 
 
 def _observed_day_patterns(week_start: str) -> dict:

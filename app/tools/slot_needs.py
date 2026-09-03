@@ -646,25 +646,20 @@ def apply_slot_needs_to_plan(plan_id: int, week_start_date: str, day_count: int 
 def generation_context_for_week(week_start_date: str, day_count: int = 7) -> dict:
     """
     Slot needs reshaped for the generator's context dict — the data-layer
-    half of "generation respects the needs". Deliberately NOT wired into
-    generate_weekly_plan_llm's prompt text: that function is concurrently
-    being touched by another in-flight change (the chat-speed-levers
-    branch's streaming work), and the prompt-cooperation half of this
-    (asking the model to actually plan something quick for a 'quick' slot,
-    or lean on the 'ready_made' recommendation instead of a fresh dish) is
-    exactly the kind of edit that would collide with it.
+    half of "generation respects the needs".
 
-    This is added to the generation context in agent.py:_generate_weekly_plan
-    (a single extra key, not a prompt change) so the data is already there,
-    tested at this boundary, for whoever picks up that integration next.
+    The prompt-cooperation half is now wired too (agent.py's generation
+    prompt has a `slot_needs` bullet): skip 'away' slots, keep 'quick'
+    slots inside the same minute cap `rush` night tags use, and cover a
+    'ready_made' slot with its stored recommendation instead of a fresh
+    cook. That was previously a documented TODO held back to avoid
+    colliding with the concurrent streaming rewrite of
+    generate_weekly_plan_llm; that work merged (8316a86), so it's closed.
 
-    TODO(merge, after the streaming work lands): have the prompt actually
-    read context['slot_needs'] and (a) skip planning 'away' slots at all —
-    already guaranteed regardless, see apply_slot_needs_to_plan, so this is
-    an efficiency win not a correctness one; (b) keep 'quick' slots at/under
-    RUSH_MAX_MINUTES, the same cap `rush` night tags already use; (c)
-    mention the 'ready_made' recommendation in that slot's reasoning
-    instead of planning a fresh dish for it.
+    The 'away' guarantee still does not rest on the model reading any of
+    this — apply_slot_needs_to_plan enforces it afterwards either way. What
+    the prompt buys is the cooperative half: a genuinely quick meal before
+    a departure, and a return meal that leans on the earmark.
 
     away_slots is a full breakfast/lunch/dinner removal list, the same
     intent as intake's skip_dinner_dates but not limited to dinner (which

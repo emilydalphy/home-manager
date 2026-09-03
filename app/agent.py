@@ -2058,6 +2058,23 @@ derived_from.links_to pointing at that earlier date's dinner.
   * `normal` on a date — an affirmed ordinary night. Not a constraint, but not noise either: \
 the household explicitly said this one is fine as-is, so don't get clever with it.
   * `out` on a date — you will not see these; they're removed before you're asked.
+- `attendance` is WHO IS ACTUALLY AT each meal, and it decides how many that meal serves. \
+`attendance.default_serves` is the ordinary table; every entry in \
+`attendance.slots_with_a_different_table` overrides it for that one date and slot, with \
+`serves` as the real number to cook for, `away` naming who is missing, and `guests` any \
+extra mouths. Deliver this in BOTH halves, the same way the `guests` tag works: choose a dish \
+that suits that number, and write the ingredient quantities for that number. A dinner for one \
+is not a family tray divided by four — it is the kind of thing a person actually makes for \
+themselves, and it's a chance to pick something that particular person likes. Say who it's for \
+in that slot's reasoning ("just you tonight — Vineeth's out").
+- `slot_needs` carries the derived needs around a trip. Honour each one: \
+`slot_needs.away_slots` are meals nobody is home for — plan NOTHING for them (they are \
+enforced empty regardless, so anything you put there is discarded); `slot_needs.quick_slots` \
+are the last meal before someone heads out, capped at {rush_max} minutes and grab-and-go in \
+character; `slot_needs.ready_made_slots` are the first meal back, which must NOT be a fresh \
+cook — lean on that slot's stored recommendation (a batch saved from earlier in the week, or \
+something to defrost) and name it in the reasoning. Each of these carries a `reason` written \
+for the household; keep your reasoning consistent with it rather than contradicting it.
 - `intake.packed_lunch_days` does NOT decide whether a lunch is planned. Every lunch is \
 planned either way. Those specific days are constrained to food that genuinely travels cold \
 and holds up till noon — no reheating, nothing that wilts or goes soggy in a bag. Say so in \
@@ -2727,18 +2744,19 @@ def _generate_weekly_plan(
         # yet — a softer "favor what's fresh" nudge distinct from the
         # near-expiring one above.
         "fresh_perishable_inventory": tools.get_fresh_perishable_inventory(),
-        # Loop Board "Week planning: away-stretches and per-meal needs": a
-        # data-layer hook for the generator to eventually consume — see
-        # slot_needs.generation_context_for_week's docstring for why the
-        # prompt-cooperation half (asking the model to actually plan
-        # something quick, or lean on a ready_made recommendation) is a
-        # documented TODO rather than wired into the prompt text here
-        # (collision risk with the concurrent chat-speed-levers streaming
-        # work in this function's sibling, generate_weekly_plan_llm). The
-        # away-slot invariant itself does NOT depend on this being read —
-        # see apply_slot_needs_to_plan, called from _finish_week_slots
-        # below, which enforces it regardless of what the model does.
+        # Loop Board "Week planning: away-stretches and per-meal needs".
+        # The prompt now actually reads this (see the `slot_needs` bullet in
+        # the generation prompt): the streaming work this was deliberately
+        # held back from colliding with has since merged (8316a86), so the
+        # documented TODO that lived here is closed. The away-slot
+        # invariant still does NOT depend on the model cooperating — see
+        # apply_slot_needs_to_plan, called from _finish_week_slots below,
+        # which enforces it regardless of what comes back.
         "slot_needs": tools.generation_context_for_week(week_start_date, day_count),
+        # Who is actually at each meal, and therefore how many each meal
+        # has to serve. Only slots that differ from the household's
+        # ordinary table appear — see attendance.context_for_week.
+        "attendance": tools.attendance_context_for_week(week_start_date, day_count),
     }
 
     # Run the actual generation call BEFORE creating the weekly_plans row.

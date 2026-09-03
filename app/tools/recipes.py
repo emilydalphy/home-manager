@@ -389,7 +389,30 @@ def _add_recipe_ingredients_to_grocery_list(
     (the yes for a whole generated week). Shared by both so a meal's
     ingredients land on the list identically whether it was planned
     one-off in chat or arrived with an approved week.
+
+    Quantities are scaled to the meal's actual HEADCOUNT before they reach
+    the list (Emily's deepened attendance model): a Thursday dinner only
+    one of two people is home for buys for one. The factor comes from
+    attendance.grocery_scale_factor, which is 1.0 — an exact no-op, leaving
+    every quantity byte-for-byte as the recipe writes it — unless that
+    specific meal has an explicit attendance row. So a week where everyone
+    is home shops precisely as it always has.
     """
+    # Which meal this is, so attendance can say how many it feeds. A
+    # missing entry (an ad hoc add, a row since deleted) simply doesn't
+    # scale rather than failing the shop.
+    scale = 1.0
+    entry_conn = get_conn()
+    entry_row = entry_conn.execute(
+        "SELECT date, slot FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    entry_conn.close()
+    if entry_row:
+        from . import attendance as _attendance
+        scale = _attendance.grocery_scale_factor(entry_row["date"], entry_row["slot"])
+        if scale != 1.0:
+            recipe_ingredients = _attendance.scale_ingredients(recipe_ingredients, scale)
     # Skip adding anything already tracked in pantry/fridge inventory (with
     # a non-blank quantity) — this is the "accounts for logged inventory"
     # behavior for the plan-approval path. For a direct chat-driven add
