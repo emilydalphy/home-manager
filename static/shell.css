@@ -3018,6 +3018,10 @@ html, body {
 }
 .gro-pill:hover { border-color: var(--apricot); }
 .gro-pill:disabled { opacity: .6; cursor: default; }
+/* Secondary action, not a store choice — celadon says "settled, already
+   true" (design system §1) so it doesn't read as one more store option. */
+.gro-pill-have { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }
+.gro-pill-have:hover { border-color: var(--celadon-edge); }
 .gro-sort-more {
   background: none;
   border: none;
@@ -3073,6 +3077,10 @@ html, body {
 }
 .gro-linkbtn:hover { color: var(--apricot-label-hover); }
 .gro-linkbtn:disabled { opacity: .6; cursor: default; }
+/* Same "already have" celadon treatment as .gro-pill-have, for the store-
+   bucket row's version of the action. */
+.gro-linkbtn-have { color: var(--celadon-label); }
+.gro-linkbtn-have:hover { color: var(--celadon-label); }
 .gro-shop-btn {
   margin: 10px 0 12px;
   width: 100%;

@@ -1010,6 +1010,7 @@
     preShopFlags: [],
     preShopOpen: false,
     preShopExpanded: false,
+    alreadyHaveSummary: { already_have: [], elsewhere: [] },  // Review's confirmation section
     expandedStores: {},     // store name -> bool (default true)
     doneOpen: false,
     openMenuId: null,
@@ -1231,11 +1232,23 @@
     } catch (err) { groceryState.preShopFlags = []; }
   }
 
+  // Review's confirmation section — this week's "already have" decisions
+  // plus current "Elsewhere" exclusions. Loaded alongside everything else
+  // rather than only when Review is the active screen, same as
+  // preShopFlags, so the count is already right the moment you switch tabs.
+  async function groLoadAlreadyHaveSummary() {
+    try {
+      var res = await fetch('/api/grocery-list/already-have-summary');
+      if (!res.ok) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; return; }
+      groceryState.alreadyHaveSummary = await res.json();
+    } catch (err) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; }
+  }
+
   async function loadGrocery() {
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags()]);
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary()]);
       groceryState.data = pair[0];
       groceryState.loadError = false;
     } catch (err) {
@@ -1571,6 +1584,11 @@
             }).join('') +
             '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="" ' +
               'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
+            // Secondary action, same backend path as the To buy ⋯ menu's
+            // "Have it" — a store pill sorts the item, this takes it off
+            // the list entirely because it turns out no store is needed.
+            '<button type="button" class="gro-pill gro-pill-have" data-gro="already-have" data-id="' + id + '" ' +
+              'aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>' +
           '</div>' +
         '</div>';
       });
@@ -1610,6 +1628,7 @@
               (usually ? '<span class="gro-usually" title="Auto-assigned from what you usually get here">usually here</span>' : '') +
               (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
               (usually ? '<button type="button" class="gro-linkbtn" data-gro="not-this-time" data-id="' + id + '">not this time</button>' : '') +
+              '<button type="button" class="gro-linkbtn gro-linkbtn-have" data-gro="already-have" data-id="' + id + '">have it</button>' +
               '<button type="button" class="gro-linkbtn" data-gro="move" data-id="' + id + '">move</button>' +
             '</div>';
           });
@@ -1690,6 +1709,47 @@
     return out;
   }
 
+  // This week's "already have" decisions (Have it/Already have + pre-shop
+  // drops) and current "Elsewhere" exclusions — a confirmation, not a
+  // warning, so it shares the flagCard shell but always celadon ("settled,
+  // handled, already true" per the design system), never urgent/apricot.
+  // Independent of allNeeded, so it still shows on an otherwise-empty list.
+  function groAlreadyHaveHtml() {
+    var summary = groceryState.alreadyHaveSummary || {};
+    var already = summary.already_have || [];
+    var elsewhere = summary.elsewhere || [];
+    if (!already.length && !elsewhere.length) return '';
+
+    function decisionRow(it, action, label) {
+      return '<div class="gro-fix">' +
+        '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + '</span>' +
+        '<button type="button" class="secondary" data-gro="' + action + '" data-id="' + String(it.id) + '">' + label + '</button>' +
+      '</div>';
+    }
+
+    var body = '';
+    if (already.length) {
+      body += '<p class="gro-fix-note">You said you already have: ' +
+        already.map(function (it) { return escapeHtml(it.item); }).join(', ') + '</p>' +
+        already.map(function (it) { return decisionRow(it, 'undo-already-have', 'Actually, I need it'); }).join('');
+    }
+    if (elsewhere.length) {
+      body += '<p class="gro-fix-note">Getting elsewhere: ' +
+        elsewhere.map(function (it) { return escapeHtml(it.item); }).join(', ') + '</p>' +
+        elsewhere.map(function (it) { return decisionRow(it, 'undo-elsewhere', 'Actually, get it here'); }).join('');
+    }
+
+    var open = groceryState.openFlagKey === 'already-have';
+    return '<div class="gro-flag">' +
+      '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
+        '<span class="gro-flag-badge" style="background:var(--celadon);color:var(--on-accent-ink)">&check;</span>' +
+        '<span class="gro-flag-title">Already sorted this week &middot; ' + (already.length + elsewhere.length) + '</span>' +
+        '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+      '</button>' +
+      (open ? '<div class="gro-flag-body">' + body + '</div>' : '') +
+    '</div>';
+  }
+
   function groReviewHtml(data) {
     var allNeeded = groAllNeeded(data);
     var missingQty = allNeeded.filter(function (it) { return !(it.quantity || '').trim(); });
@@ -1705,6 +1765,10 @@
     // this the only way onward was noticing the segmented control up top.
     var html = '<button type="button" class="gro-cta" data-gro="goto-plan">' +
       '<span>Ready to shop? Plan your stops by store next.</span>' + ICONS.arrow + '</button>';
+
+    // Independent of the needed-list flags below — shows even when
+    // everything is sorted and there's nothing left to flag.
+    html += groAlreadyHaveHtml();
 
     if (!allNeeded.length) {
       return html + '<p class="gro-empty">Nothing on the list to review.</p>';
@@ -1993,6 +2057,24 @@
         return;
       }
 
+      // Same backend path as the To buy ⋯ menu's "Have it" — offered here
+      // too (triage row and store-bucket row alike) because "wait, I
+      // already have this" is a natural thing to realize mid-sort, not
+      // just from the main list. On the triage row this also removes the
+      // item from Unassigned, so it advances the same way picking a store
+      // does — the shopper never has to hunt for the next thing to sort.
+      case 'already-have':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/already-have');
+        }, "Couldn't move that to the kitchen — try again.").then(function (ok) {
+          if (!ok) return;
+          var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
+          groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
+          renderGrocery();
+        });
+        return;
+
       case 'toggle-bucket': {
         var bname = el.dataset.store;
         var wasOpen = !!groceryState.bucketExpanded[bname];
@@ -2060,6 +2142,28 @@
 
       case 'goto-plan':
         groSetScreen('plan');
+        return;
+
+      // Review's confirmation section — undo either kind of "already have"
+      // decision. The DB effect needed is identical whether the row was
+      // removed by a pre-shop drop or a Have it/Already have action, so
+      // both reuse the existing pre-shop-undo endpoint (see
+      // get_already_have_decisions/undo_pre_shop_drop on the backend).
+      case 'undo-already-have':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/pre-shop-undo');
+        }, "Couldn't undo that — try again.");
+        return;
+
+      // Restores an "Elsewhere" exclusion — reuses the existing include
+      // endpoint, which already had a backend undo but no UI control
+      // anywhere until this Review row.
+      case 'undo-elsewhere':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/include');
+        }, "Couldn't undo that — try again.");
         return;
 
       case 'merge': {
