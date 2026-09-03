@@ -617,9 +617,15 @@ The multi-store-only visibility toggle that used to hide "By store" for single-s
 (`is_multi_store_household`) isn't used by this rebuild — trip-planning is useful even with one
 store, so all three tabs always show now.
 
-The previous single-page version is kept at `static/grocery-legacy.html` (not linked anywhere) so
-this rebuild can be diffed or reverted if needed; it isn't wired into any route and can be deleted
-once the new version's been used for a while.
+The previous single-page version used to be kept at `static/grocery-legacy.html` as a diff/revert
+reference. **It was deleted on 2026-09-02** (Pomona Stage 2 slice 3), which is what this paragraph
+always said should happen "once the new version's been used for a while": that four-screen rebuild
+has since been superseded in turn by the native Grocery panel in `shell.js`, so the legacy file was
+two generations stale, referenced by no route, no link and no test, and still carrying the retired
+Karla/Quicksand type and the pre-Pomona name. It remains in git history if it is ever wanted.
+
+The file that *is* the revert path for the native Grocery panel is `static/grocery.html`, which is
+deliberately still here and still works standalone — see the decision log in `CLAUDE.md`.
 
 **Remembering where an item usually comes from.** Assigning a store to an item on Plan your
 stops (a triage pill tap) doesn't just tag that one item this week — it's remembered as that
