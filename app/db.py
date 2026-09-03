@@ -128,6 +128,7 @@ _MIGRATIONS = [
     # slot_attendance for the full model.
     ("away_stretches", "member_ids_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("slot_needs", "for_member_ids_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("slot_needs", "superseded_need", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

@@ -57,6 +57,23 @@ def couple():
 
 
 @pytest.fixture
+def couple_free_household():
+    """A household mid-onboarding: no members on record yet."""
+    return None
+
+
+def _slot_state(plan_id: int, day: str, slot: str) -> str | None:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT slot_state FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? "
+        "AND component_category IS NULL ORDER BY id DESC LIMIT 1",
+        (plan_id, day, slot),
+    ).fetchone()
+    conn.close()
+    return row["slot_state"] if row else None
+
+
+@pytest.fixture
 def recipe():
     tools.add_recipe(
         "Chili",
@@ -95,19 +112,51 @@ def test_a_meal_with_no_attendance_row_has_everyone_home(couple):
     assert att["explicit"] is False, "the ordinary case should not need a row"
 
 
-def test_a_member_added_later_is_present_at_meals_already_recorded(couple):
-    """A new person joins the table; they don't have to be re-added to every meal."""
+def test_a_member_added_later_is_present_even_at_meals_already_touched(couple):
+    """
+    A new person joins the household. Nobody said they were out of
+    anything, so they are at every meal — including meals that already
+    carry an attendance row from a guest count, a toggle or a trip.
+
+    This is why rows store ABSENCES rather than attendances. Storing who's
+    present made this case wrong in a way that was quietly expensive: the
+    new member appeared as "out", the headcount stayed low, and that meal's
+    shopping shrank for a person who was standing right there.
+    """
     day = _week_start()
     tools.set_guest_count(day, "dinner", 1)  # forces a row to exist
 
     tools.add_member("Robin")
 
     att = tools.get_slot_attendance(day, "dinner")
-    assert "Robin" not in att["present_names"], (
-        "an explicit attendance row is authoritative about who is there"
-    )
-    other_day = (datetime.date.fromisoformat(day) + datetime.timedelta(days=1)).isoformat()
-    assert tools.get_slot_attendance(other_day, "dinner")["headcount"] == 3
+    assert att["present_names"] == ["Emily", "Vineeth", "Robin"]
+    assert att["absent_names"] == [], "nobody said Robin was out"
+    assert att["headcount"] == 4, "three people plus the guest"
+
+
+def test_someone_marked_out_stays_out_when_the_household_grows(couple):
+    """The flip side: a real absence is not forgotten just because someone else joined."""
+    day = _week_start()
+    tools.set_member_attendance(day, "dinner", "Vineeth", present=False)
+
+    tools.add_member("Robin")
+
+    att = tools.get_slot_attendance(day, "dinner")
+    assert att["absent_names"] == ["Vineeth"]
+    assert att["present_names"] == ["Emily", "Robin"]
+
+
+def test_a_member_removed_from_the_household_stops_counting(couple):
+    """A departed member shouldn't keep inflating a headcount."""
+    day = _week_start()
+    tools.set_guest_count(day, "dinner", 0)
+    from app.db import get_conn as _c
+    conn = _c()
+    conn.execute("DELETE FROM members WHERE name = 'Vineeth'")
+    conn.commit()
+    conn.close()
+
+    assert tools.get_slot_attendance(day, "dinner")["headcount"] == 1
 
 
 # ---------- the one-off gesture: one person out of one meal ----------
@@ -163,6 +212,66 @@ def test_emptying_a_meal_makes_it_away_and_refilling_it_undoes_that(couple):
         "putting someone back at the table should un-blank the meal"
     )
     assert tools.get_slot_attendance(day, "dinner")["headcount"] == 1
+
+
+def test_undoing_an_away_hands_the_meal_back_as_a_decision(couple, recipe, stub_model):
+    """
+    Clearing the NEED is only half of undoing an away. The meal itself was
+    converted to planned_empty and its ingredients reversed off the list —
+    leaving it there would show "nothing planned, nothing bought" for a
+    meal attendance now says somebody is home to eat, i.e. the two halves
+    of the app contradicting each other on screen.
+    """
+    week = _week_start()
+    tuesday = tools._week_dates(week)[1]
+    stub_model(_full_week(week))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+
+    tools.set_member_attendance(tuesday, "dinner", "Emily", present=False)
+    tools.set_member_attendance(tuesday, "dinner", "Vineeth", present=False)
+    assert _slot_state(plan_id, tuesday, "dinner") == "planned_empty"
+
+    tools.set_member_attendance(tuesday, "dinner", "Emily", present=True)
+
+    assert tools.get_slot_need(tuesday, "dinner")["need"] == "normal"
+    assert _slot_state(plan_id, tuesday, "dinner") == "open", (
+        "somebody is home again and nothing has been chosen — that's an open decision"
+    )
+
+
+def test_undoing_an_away_restores_the_need_it_covered_over(couple):
+    """
+    A slot tagged 'quick' by hand, then emptied, then refilled, must come
+    back as 'quick' — the away covered it, it didn't delete it.
+    """
+    day = _week_start()
+    tools.set_slot_need(day, "dinner", "quick", reason="gym night")
+
+    tools.set_member_attendance(day, "dinner", "Emily", present=False)
+    tools.set_member_attendance(day, "dinner", "Vineeth", present=False)
+    assert tools.get_slot_need(day, "dinner")["need"] == "away"
+
+    tools.set_member_attendance(day, "dinner", "Emily", present=True)
+
+    assert tools.get_slot_need(day, "dinner")["need"] == "quick"
+
+
+def test_a_household_with_nobody_on_record_is_not_assumed_to_be_away(couple_free_household):
+    """
+    With no members recorded, "nobody is home" is ignorance, not a fact. A
+    household mid-onboarding that ticks and then un-ticks "hosting guests"
+    must not have that dinner silently blanked.
+    """
+    week = _week_start()
+    thursday = tools._week_dates(week)[3]
+
+    tools.save_week_intake(week, guest_counts={thursday: {"adults": 2, "children": 0}})
+    tools.save_week_intake(week, guest_counts={thursday: {"adults": 0, "children": 0}})
+
+    assert tools.get_slot_need(thursday, "dinner")["need"] == "normal", (
+        "an empty roster must not infer an away"
+    )
 
 
 def test_refilling_a_meal_leaves_a_hand_set_need_alone(couple):

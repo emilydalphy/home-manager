@@ -228,6 +228,149 @@
   }
   .draft-day-text { font-family: var(--font-body); font-size: 0.88rem; color: var(--ink); line-height: 1.4; }
   .draft-day-label { color: var(--ink-secondary); font-weight: 700; }
+
+  /* ---------- Presence avatars (IntakeTrips mock) ----------
+     The one-off gesture: one tap takes a person out of one meal. Canonical
+     tokens only — this block is new code, so it never reaches for the
+     legacy aliases the older rules above still use (DESIGN_SYSTEM §1). */
+  .presence { display: flex; align-items: center; gap: 10px; padding-top: 2px; }
+  .presence-label {
+    width: 52px; flex: 0 0 auto; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--apricot-label);
+  }
+  .presence-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* 44px square, per hard rule 6 — nothing tappable is smaller. */
+  .avatar {
+    width: 44px; height: 44px; flex: 0 0 auto; border-radius: var(--radius-pill);
+    border: 1.5px solid var(--spruce); background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-body); font-size: 15px; font-weight: 800;
+    color: var(--ink-strong); cursor: pointer; padding: 0;
+  }
+  .avatar.out {
+    border-color: var(--hairline); background: var(--sand);
+    color: var(--ink-inactive); text-decoration: line-through;
+  }
+  .avatar:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
+  .presence-summary {
+    font-size: 13px; font-weight: 700; line-height: 1.4;
+    color: var(--celadon-label); margin-top: 6px;
+  }
+  .presence-summary:empty { display: none; }
+  /* The offer to remember a one-off as a standing pattern. Dashed, because
+     it is an offer rather than a state — nothing has been remembered yet. */
+  .remember {
+    min-height: 44px; padding: 0 14px; margin-top: 8px; margin-left: 62px;
+    display: inline-flex; align-items: center; gap: 7px;
+    border-radius: var(--radius-pill); border: 1.5px dashed var(--hairline-strong);
+    background: transparent; font-family: var(--font-body);
+    font-size: 12.5px; font-weight: 700; color: var(--ink-secondary); cursor: pointer;
+  }
+  .remember[hidden] { display: none; }
+
+  /* ---------- The trips gateway (opt-in context, Emily's decision) ---------- */
+  .away-gate {
+    width: 100%; min-height: 56px; margin-top: 14px; padding: 0 14px;
+    border-radius: var(--radius-ask); background: var(--surface);
+    border: 1.5px solid var(--hairline-strong);
+    display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  }
+  .away-gate-icon {
+    width: 32px; height: 32px; flex: 0 0 auto; border-radius: var(--radius-badge);
+    background: var(--sand); display: flex; align-items: center; justify-content: center;
+    color: var(--ink-secondary);
+  }
+  .away-gate-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
+  .away-gate-title {
+    font-family: var(--font-body); font-size: 14.5px; font-weight: 800;
+    letter-spacing: -0.01em; color: var(--ink);
+  }
+  .away-gate-sub { font-size: 12px; font-weight: 500; color: var(--ink-secondary); }
+  .away-gate-chevron { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
+  .away-set {
+    margin-top: 10px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .away-set-row {
+    border-radius: var(--radius-control); background: var(--celadon-tint);
+    padding: 10px 12px; font-size: 13px; font-weight: 700; line-height: 1.45;
+    color: var(--ink-on-celadon);
+  }
+
+  /* ---------- The range picker sheet (AwayRange mock) ----------
+     A sheet, not a page: nav rule — everything that isn't one of the four
+     screens is a state, a sheet, or a step. */
+  .sheet-scrim {
+    position: fixed; inset: 0; background: rgba(27, 51, 40, 0.45);
+    display: flex; flex-direction: column; justify-content: flex-end; z-index: 60;
+  }
+  .sheet-scrim[hidden] { display: none; }
+  .sheet {
+    background: var(--ground); border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+    box-shadow: var(--shadow-sheet, 0 -22px 44px -26px rgba(18, 36, 25, 0.55));
+    max-height: 92vh; overflow-y: auto; padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .sheet-head { display: flex; align-items: center; gap: 12px; }
+  .sheet-title {
+    flex: 1 1 auto; font-family: var(--font-heading); font-size: 22px;
+    font-weight: 700; letter-spacing: -0.025em; color: var(--ink);
+  }
+  .sheet-close {
+    width: 44px; height: 44px; flex: 0 0 auto; border-radius: var(--radius-chip);
+    background: var(--surface); border: 1.5px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-secondary); cursor: pointer; padding: 0;
+  }
+  .sheet-lede { font-size: 13.5px; font-weight: 500; line-height: 1.5; color: var(--ink-secondary); }
+  .field-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--apricot-label);
+  }
+  .field-group { display: flex; flex-direction: column; gap: 10px; }
+  .opt-row { display: flex; gap: 5px; }
+  .opt-row.wide { gap: 6px; }
+  .opt {
+    flex: 1 1 0; min-height: 44px; padding: 0 6px; border-radius: var(--radius-send);
+    border: 1.5px solid var(--hairline); background: var(--surface);
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-family: var(--font-body); font-size: 12px; font-weight: 700;
+    color: var(--ink-secondary); cursor: pointer;
+  }
+  .opt.wide-label { font-size: 12.5px; font-weight: 600; }
+  .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 800; }
+  .opt:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
+  .who-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .who-opt {
+    min-height: 44px; padding: 0 15px; border-radius: var(--radius-pill);
+    border: 1.5px solid var(--hairline); background: var(--surface);
+    display: inline-flex; align-items: center; font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer;
+  }
+  .who-opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 700; }
+  .range-divider { display: flex; align-items: center; gap: 10px; }
+  .range-divider span.rule { flex: 1 1 auto; height: 1.5px; background: var(--hairline); display: block; }
+  .range-divider span.rule.short { flex: 0 0 30px; }
+  .covers {
+    border-radius: var(--radius-chip); background: var(--celadon-tint);
+    padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .covers-tick {
+    width: 26px; height: 26px; flex: 0 0 auto; border-radius: var(--radius-badge-sm);
+    background: var(--celadon); display: flex; align-items: center; justify-content: center;
+    color: var(--on-accent-ink); margin-top: 1px;
+  }
+  .covers-text { font-size: 13px; font-weight: 700; line-height: 1.45; color: var(--ink-on-celadon); }
+  .sheet-add {
+    width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center;
+    gap: 8px; border-radius: var(--radius-control); border: 1.5px solid var(--hairline-strong);
+    background: transparent; font-family: var(--font-body); font-size: 13.5px;
+    font-weight: 700; color: var(--ink-strong); cursor: pointer;
+  }
+  .sheet-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .sheet-cancel {
+    min-height: 44px; background: none; border: none; font-family: var(--font-body);
+    font-size: 13.5px; font-weight: 600; color: var(--ink-secondary); cursor: pointer;
+  }
   [hidden] { display: none !important; }
 </style>
 <script src="/static/error-reporter.js"></script>
@@ -252,6 +395,23 @@
     </div>
 
     <div id="days"></div>
+
+    <!-- Trips are OPT-IN CONTEXT, not part of the default flow (Emily's
+         decision, 2026-09-03): a light gateway that opens the range picker
+         only when it's relevant, rather than a question everyone answers. -->
+    <button type="button" class="away-gate" id="away-gate">
+      <span class="away-gate-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="11" rx="2"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2"></path><path d="M4 13h16"></path></svg>
+      </span>
+      <span class="away-gate-text">
+        <span class="away-gate-title">Anyone away this week?</span>
+        <span class="away-gate-sub">I&rsquo;ll skip planning and shopping while you&rsquo;re gone.</span>
+      </span>
+      <span class="away-gate-chevron">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6l6 6-6 6"></path></svg>
+      </span>
+    </button>
+    <div class="away-set" id="away-set"></div>
 
     <section class="block" style="margin-top:26px">
       <div class="card">
@@ -317,6 +477,59 @@
   </div>
 </div>
 
+<!-- The range picker (AwayRange mock). One gesture covers every meal in
+     between, so nobody has to tag four days by hand. -->
+<div class="sheet-scrim" id="away-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="away-sheet-title">
+  <div class="sheet">
+    <div class="sheet-head">
+      <span class="sheet-title" id="away-sheet-title">Away this week</span>
+      <button type="button" class="sheet-close" id="away-close" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
+      </button>
+    </div>
+    <p class="sheet-lede">Tell me the range once &mdash; I&rsquo;ll cover every meal in between, no need to tag each day.</p>
+
+    <div class="field-group" id="away-who-group">
+      <span class="field-label">Who&rsquo;s going</span>
+      <div class="who-row" id="away-who"></div>
+    </div>
+
+    <div class="field-group">
+      <span class="field-label">Away from</span>
+      <div class="opt-row" id="away-from-days"></div>
+      <div class="opt-row wide" id="away-from-slots"></div>
+    </div>
+
+    <div class="range-divider">
+      <span class="rule short"></span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ink-inactive)" aria-hidden="true"><path d="M12 5v14"></path><path d="M6.5 13.5L12 19l5.5-5.5"></path></svg>
+      <span class="rule"></span>
+    </div>
+
+    <div class="field-group">
+      <span class="field-label">Back for</span>
+      <div class="opt-row" id="away-to-days"></div>
+      <div class="opt-row wide" id="away-to-slots"></div>
+    </div>
+
+    <div class="covers" id="away-covers">
+      <span class="covers-tick">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>
+      </span>
+      <span class="covers-text" id="away-covers-text"></span>
+    </div>
+
+    <div class="sheet-actions">
+      <button type="button" class="cta" id="away-save">Set this range</button>
+      <button type="button" class="sheet-add" id="away-another" hidden>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+        Add another range
+      </button>
+      <button type="button" class="sheet-cancel" id="away-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
@@ -326,6 +539,12 @@
   var who = new URLSearchParams(location.search).get('who') || '';
   var data = null;                 // the prefill payload
   var step = 1;
+  // Who's at which meal. Its own store rather than part of `answers`,
+  // because attendance is not an intake revision — it's a standing fact
+  // about the week that chat, the Meals screen and this screen all read
+  // and write. Saved on each tap rather than at submit, so a half-finished
+  // intake doesn't lose it.
+  var attendance = { members: [], byDate: {} };
   var answers = {
     night_tags: {},                // { "2026-09-02": ["rush"] }
     guest_counts: {},              // { "2026-09-06": { adults, children } }
@@ -409,14 +628,39 @@
       }
     }
 
+    await loadAttendance();
+
     $('loading').hidden = true;
     $('flow').hidden = false;
     $('footer').hidden = false;
     renderDays();
+    renderAwaySet();
     renderLunchDays();
     renderMoods();
     renderCuisines();
     showStep(1);
+  }
+
+  // Attendance is fetched separately from the intake prefill: it's a
+  // different store with a different lifecycle, and a household with no
+  // members recorded yet must still get a working intake screen — so a
+  // failure here degrades to "no avatars", never to a broken week.
+  async function loadAttendance() {
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance');
+      if (!res.ok) throw new Error('attendance load failed');
+      var body = await res.json();
+      attendance.members = body.members || [];
+      attendance.byDate = body.attendance || {};
+      Object.keys(attendance.byDate).forEach(function (d) {
+        var dinner = attendance.byDate[d].dinner;
+        if (dinner && !dinner.summary) dinner.summary = localSummary(dinner);
+      });
+    } catch (err) {
+      console.warn('Attendance load failed:', err);
+      attendance.members = [];
+      attendance.byDate = {};
+    }
   }
 
   function relativeTime(iso) {
@@ -446,6 +690,8 @@
               return '<button type="button" class="tag" data-tag="' + t.key + '">' + esc(t.label) + '</button>';
             }).join('') +
           '</div>' +
+          presenceHtml() +
+          '<div class="presence-summary"></div>' +
           '<div class="ack"></div>' +
           '<div class="guests" hidden></div>' +
         '</div>'
@@ -456,8 +702,165 @@
       dayEl.querySelectorAll('.tag').forEach(function (btn) {
         btn.addEventListener('click', function () { toggleTag(dayEl, btn.dataset.tag); });
       });
+      dayEl.querySelectorAll('.avatar').forEach(function (btn) {
+        btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
+      });
+      var remember = dayEl.querySelector('.remember');
+      if (remember) remember.addEventListener('click', function () { offerToRemember(dayEl); });
       paintDay(dayEl);
     });
+  }
+
+  // ---------- presence avatars: the one-off gesture ----------
+  // Emily's distinction (2026-09-03): an extended absence is the trips
+  // gateway below; ONE evening out is a single tap here, no form at all.
+  // Dinner only — the day card is a dinner-shaped question in this app,
+  // same as the night tags beside it. Breakfast and lunch absences are
+  // reachable through the range picker and through chat.
+  function presenceHtml() {
+    if (!attendance.members.length) return '';
+    return (
+      '<div class="presence">' +
+        '<span class="presence-label">Dinner</span>' +
+        '<div class="presence-chips">' +
+          attendance.members.map(function (m) {
+            return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" ' +
+              'aria-pressed="true" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      '<button type="button" class="remember" hidden>' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M17 2.1l4 4-4 4"></path><path d="M3 12.9V10a4 4 0 0 1 4-4h14"></path>' +
+        '<path d="M7 21.9l-4-4 4-4"></path><path d="M21 11.1V14a4 4 0 0 1-4 4H3"></path></svg>' +
+        'Just this week?' +
+      '</button>'
+    );
+  }
+
+  // First initial, unless two people share one — then enough letters to
+  // tell them apart, because an avatar you can't identify isn't a control.
+  function initialFor(member) {
+    var name = (member.name || '').trim();
+    if (!name) return '?';
+    var clash = attendance.members.filter(function (m) {
+      return m.id !== member.id && (m.name || '').trim().charAt(0).toUpperCase() === name.charAt(0).toUpperCase();
+    }).length > 0;
+    return (clash ? name.slice(0, 2) : name.charAt(0)).toUpperCase();
+  }
+
+  function attendanceFor(date) {
+    var day = attendance.byDate[date] || {};
+    return day.dinner || null;
+  }
+
+  function paintPresence(dayEl) {
+    var d = dayEl.dataset.date;
+    var att = attendanceFor(d);
+    var awayNames = att ? att.absent_names || [] : [];
+    dayEl.querySelectorAll('.avatar').forEach(function (btn) {
+      var out = awayNames.indexOf(btn.dataset.member) !== -1;
+      btn.classList.toggle('out', out);
+      btn.setAttribute('aria-pressed', out ? 'false' : 'true');
+      btn.title = btn.dataset.member + (out ? ' — out for dinner' : ' — home for dinner');
+    });
+    var summary = dayEl.querySelector('.presence-summary');
+    if (summary) summary.textContent = att && att.summary ? att.summary : '';
+    var remember = dayEl.querySelector('.remember');
+    // The offer appears only once a toggle has actually created something
+    // worth remembering — progressive disclosure, same rule as the per-meal
+    // tags (Emily's decision, 2026-09-03).
+    if (remember) remember.hidden = !(att && awayNames.length && !att.remembered);
+  }
+
+  async function toggleAvatar(dayEl, btn) {
+    var d = dayEl.dataset.date;
+    var name = btn.dataset.member;
+    var wasOut = btn.classList.contains('out');
+    var previous = attendance.byDate[d] ? JSON.parse(JSON.stringify(attendance.byDate[d])) : null;
+
+    // Update on tap, before the server confirms (DESIGN_SYSTEM §6 refresh
+    // policy). A failed save puts the row back and says so.
+    applyLocalToggle(d, name, wasOut);
+    paintPresence(dayEl);
+
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: d, slot: 'dinner', member: name, present: wasOut })
+      });
+      if (!res.ok) throw new Error('attendance save failed');
+      var saved = await res.json();
+      attendance.byDate[d] = attendance.byDate[d] || {};
+      attendance.byDate[d].dinner = saved;
+      paintPresence(dayEl);
+    } catch (err) {
+      console.warn('Attendance save failed:', err);
+      if (previous) attendance.byDate[d] = previous; else delete attendance.byDate[d];
+      paintPresence(dayEl);
+      var summary = dayEl.querySelector('.presence-summary');
+      if (summary) summary.textContent = 'I couldn’t save that just now — try again in a moment.';
+    }
+  }
+
+  function applyLocalToggle(date, name, becomingPresent) {
+    var day = attendance.byDate[date] || (attendance.byDate[date] = {});
+    var att = day.dinner || (day.dinner = {
+      absent_names: [], present_names: attendance.members.map(function (m) { return m.name; }),
+      headcount: attendance.members.length, guest_count: 0, summary: ''
+    });
+    var absent = att.absent_names || [];
+    if (becomingPresent) absent = absent.filter(function (n) { return n !== name; });
+    else if (absent.indexOf(name) === -1) absent = absent.concat([name]);
+    att.absent_names = absent;
+    att.present_names = attendance.members
+      .map(function (m) { return m.name; })
+      .filter(function (n) { return absent.indexOf(n) === -1; });
+    att.headcount = att.present_names.length + (att.guest_count || 0);
+    att.summary = localSummary(att);
+  }
+
+  // A local echo of the server's own sentence, used only for the instant
+  // between the tap and the response — the server's version replaces it.
+  function localSummary(att) {
+    var away = att.absent_names || [];
+    if (!away.length && !att.guest_count) return '';
+    if (!att.headcount) return 'Dinner skipped — nobody’s home. Nothing planned, nothing bought.';
+    var bits = [];
+    if (away.length) bits.push(joinNames(away) + (away.length === 1 ? '’s out' : ' are out'));
+    if (att.guest_count) bits.push(att.guest_count + ' guest' + (att.guest_count === 1 ? '' : 's'));
+    return 'Dinner for ' + att.headcount + ' — ' + bits.join(' and ') + '.';
+  }
+
+  function joinNames(names) {
+    if (names.length <= 1) return names.join('');
+    if (names.length === 2) return names[0] + ' and ' + names[1];
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+
+  // HONEST GAP: this records the intent locally and says so, but does not
+  // yet write a standing rhythm rule. Persisting "Vineeth's out Thursday
+  // evenings" belongs to the RHYTHM layer (household_rhythm, a per-weekday
+  // override row) and needs its own decision about what a single week's
+  // tap is allowed to imply about every future week — which is Emily's
+  // call, not this ticket's. The affordance is here so the flow is real;
+  // the persistence is deliberately not faked.
+  // TODO(rhythm): wire to a household_rhythm per-weekday override once
+  // that promotion rule is decided.
+  function offerToRemember(dayEl) {
+    var d = dayEl.dataset.date;
+    var att = attendanceFor(d);
+    if (!att) return;
+    att.remembered = true;
+    var summary = dayEl.querySelector('.presence-summary');
+    if (summary) {
+      summary.textContent = att.summary +
+        ' Just this week for now — ask me in chat to make it every week.';
+    }
+    var remember = dayEl.querySelector('.remember');
+    if (remember) remember.hidden = true;
   }
 
   function toggleTag(dayEl, tag) {
@@ -494,6 +897,7 @@
       ? 'I’ll ' + acks.join(' And I’ll ')
       : '';
     renderGuests(dayEl, tags.indexOf('guests') !== -1);
+    paintPresence(dayEl);
   }
 
   // ---------- the guest follow-up ----------
@@ -533,6 +937,230 @@
     });
     paintGuests(dayEl);
   }
+
+  // ---------- the trips gateway + range picker ----------
+  // The extended-absence gesture. One range covers every meal in between,
+  // which is the whole point: nobody should have to tag four days by hand
+  // to say "we're away for the weekend".
+  var MEAL_SEQ = ['breakfast', 'lunch', 'dinner'];
+  var awayRanges = [];   // ranges set this session, for the confirmation list
+  var awayDraft = null;
+
+  function addDays(iso, n) {
+    var d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  function nextSlot(pos) {
+    var i = MEAL_SEQ.indexOf(pos.slot);
+    return i < MEAL_SEQ.length - 1
+      ? { date: pos.date, slot: MEAL_SEQ[i + 1] }
+      : { date: addDays(pos.date, 1), slot: MEAL_SEQ[0] };
+  }
+  function prevSlot(pos) {
+    var i = MEAL_SEQ.indexOf(pos.slot);
+    return i > 0
+      ? { date: pos.date, slot: MEAL_SEQ[i - 1] }
+      : { date: addDays(pos.date, -1), slot: MEAL_SEQ[MEAL_SEQ.length - 1] };
+  }
+  function slotRank(pos) {
+    return new Date(pos.date + 'T00:00:00').getTime() / 86400000 * 3 + MEAL_SEQ.indexOf(pos.slot);
+  }
+  function weekdayFor(iso) {
+    var match = (data.days || []).filter(function (d) { return d.date === iso; })[0];
+    if (match) return match.weekday;
+    return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long' });
+  }
+  function mealPhrase(pos) { return weekdayFor(pos.date) + ' ' + pos.slot; }
+
+  function coveredSlots(from, to) {
+    var out = [];
+    var cur = { date: from.date, slot: from.slot };
+    var guard = 0;
+    while (slotRank(cur) <= slotRank(to) && guard++ < 100) {
+      out.push({ date: cur.date, slot: cur.slot });
+      cur = nextSlot(cur);
+    }
+    return out;
+  }
+
+  function openAwaySheet() {
+    var days = (data.days || []).map(function (d) { return d.date; });
+    if (!days.length) return;
+    awayDraft = {
+      who: [],                                   // empty = all of us
+      fromDate: days[0], fromAfter: 'breakfast',  // away from AFTER this meal
+      toDate: days.length > 1 ? days[1] : days[0], toBackFor: 'dinner'
+    };
+    buildAwaySheet();
+    $('away-sheet').hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAwaySheet() {
+    $('away-sheet').hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function buildAwaySheet() {
+    var days = (data.days || []);
+
+    // WHO. Only worth asking when there's more than one person — a
+    // one-person household has nothing to choose between, and an
+    // unanswerable question is worse than no question.
+    var whoGroup = $('away-who-group');
+    if (attendance.members.length > 1) {
+      whoGroup.hidden = false;
+      $('away-who').innerHTML =
+        '<button type="button" class="who-opt" data-who="">All of us</button>' +
+        attendance.members.map(function (m) {
+          return '<button type="button" class="who-opt" data-who="' + esc(m.name) + '">' + esc(m.name) + '</button>';
+        }).join('');
+      $('away-who').querySelectorAll('.who-opt').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var name = btn.dataset.who;
+          if (!name) awayDraft.who = [];
+          else if (awayDraft.who.indexOf(name) !== -1) {
+            awayDraft.who = awayDraft.who.filter(function (n) { return n !== name; });
+          } else {
+            awayDraft.who = awayDraft.who.concat([name]);
+          }
+          paintAwaySheet();
+        });
+      });
+    } else {
+      whoGroup.hidden = true;
+    }
+
+    $('away-from-days').innerHTML = days.map(function (d) {
+      return '<button type="button" class="opt" data-date="' + d.date + '">' + esc(d.weekday.slice(0, 3)) + '</button>';
+    }).join('');
+    $('away-to-days').innerHTML = days.map(function (d) {
+      return '<button type="button" class="opt" data-date="' + d.date + '">' + esc(d.weekday.slice(0, 3)) + '</button>';
+    }).join('');
+    $('away-from-slots').innerHTML = MEAL_SEQ.map(function (s) {
+      return '<button type="button" class="opt wide-label" data-slot="' + s + '">After ' + s + '</button>';
+    }).join('');
+    $('away-to-slots').innerHTML = MEAL_SEQ.map(function (s) {
+      return '<button type="button" class="opt wide-label" data-slot="' + s + '">' + s.charAt(0).toUpperCase() + s.slice(1) + '</button>';
+    }).join('');
+
+    $('away-from-days').querySelectorAll('.opt').forEach(function (b) {
+      b.addEventListener('click', function () { awayDraft.fromDate = b.dataset.date; paintAwaySheet(); });
+    });
+    $('away-to-days').querySelectorAll('.opt').forEach(function (b) {
+      b.addEventListener('click', function () { awayDraft.toDate = b.dataset.date; paintAwaySheet(); });
+    });
+    $('away-from-slots').querySelectorAll('.opt').forEach(function (b) {
+      b.addEventListener('click', function () { awayDraft.fromAfter = b.dataset.slot; paintAwaySheet(); });
+    });
+    $('away-to-slots').querySelectorAll('.opt').forEach(function (b) {
+      b.addEventListener('click', function () { awayDraft.toBackFor = b.dataset.slot; paintAwaySheet(); });
+    });
+
+    paintAwaySheet();
+  }
+
+  function awayBounds() {
+    // "Away from: Saturday, after breakfast" means the first meal missed is
+    // the NEXT one; "back for: Sunday dinner" means the last one missed is
+    // the one BEFORE it. Doing this conversion here rather than asking the
+    // household to think in "first missed meal" is the whole reason the
+    // picker reads like a sentence.
+    return {
+      first: nextSlot({ date: awayDraft.fromDate, slot: awayDraft.fromAfter }),
+      last: prevSlot({ date: awayDraft.toDate, slot: awayDraft.toBackFor })
+    };
+  }
+
+  function paintAwaySheet() {
+    $('away-who').querySelectorAll('.who-opt').forEach(function (b) {
+      var name = b.dataset.who;
+      b.classList.toggle('on', name ? awayDraft.who.indexOf(name) !== -1 : awayDraft.who.length === 0);
+    });
+    $('away-from-days').querySelectorAll('.opt').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.date === awayDraft.fromDate);
+    });
+    $('away-to-days').querySelectorAll('.opt').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.date === awayDraft.toDate);
+    });
+    $('away-from-slots').querySelectorAll('.opt').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.slot === awayDraft.fromAfter);
+    });
+    $('away-to-slots').querySelectorAll('.opt').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.slot === awayDraft.toBackFor);
+    });
+
+    var bounds = awayBounds();
+    var covered = coveredSlots(bounds.first, bounds.last);
+    var text = $('away-covers-text');
+    if (!covered.length) {
+      text.textContent = 'That leaves no meals in between — pick a later "back for".';
+      $('away-save').disabled = true;
+      return;
+    }
+    $('away-save').disabled = false;
+    var phrases = covered.map(mealPhrase);
+    var listed = phrases.length <= 4
+      ? joinNames(phrases)
+      : phrases[0] + ' through ' + phrases[phrases.length - 1];
+    var who = awayDraft.who.length ? joinNames(awayDraft.who) + ' away for ' : '';
+    text.textContent = 'Covers ' + covered.length + ' meal' + (covered.length === 1 ? '' : 's') +
+      ' — ' + who + listed + '.';
+  }
+
+  async function saveAwayRange() {
+    var bounds = awayBounds();
+    $('away-save').disabled = true;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/away-stretch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_date: bounds.first.date, from_slot: bounds.first.slot,
+          to_date: bounds.last.date, to_slot: bounds.last.slot,
+          member_names: awayDraft.who.length ? awayDraft.who : null
+        })
+      });
+      if (!res.ok) throw new Error('away stretch save failed');
+      var saved = await res.json();
+      awayRanges.push(saved);
+      // Re-read attendance rather than patching it locally: the range
+      // touches slots this screen didn't ask about (the two derived edges),
+      // and a guess about those would be a guess shown as fact.
+      await loadAttendance();
+      $('days').querySelectorAll('.day').forEach(paintPresence);
+      renderAwaySet();
+      $('away-another').hidden = false;
+      closeAwaySheet();
+    } catch (err) {
+      console.warn('Away range save failed:', err);
+      $('away-covers-text').textContent = 'I couldn’t save that just now — try again in a moment.';
+      $('away-save').disabled = false;
+    }
+  }
+
+  function renderAwaySet() {
+    if (!awayRanges.length) { $('away-set').innerHTML = ''; return; }
+    $('away-set').innerHTML = awayRanges.map(function (r) {
+      var who = r.whole_household ? 'You’re' : joinNames(r.member_names || []) + '’s';
+      var count = (r.away_slots || []).length;
+      var reduced = (r.reduced_slots || []).length;
+      var line;
+      if (count) {
+        line = who + ' away for ' + count + ' meal' + (count === 1 ? '' : 's') +
+          ' — nothing planned, nothing bought for those.';
+      } else {
+        line = who + ' away for ' + reduced + ' meal' + (reduced === 1 ? '' : 's') +
+          ' — I’ll still cook those, just for fewer.';
+      }
+      if (r.quick_slot) line += ' ' + capitalize(mealPhrase(r.quick_slot)) + ' will be quick.';
+      if (r.ready_made_slot) line += ' ' + capitalize(mealPhrase(r.ready_made_slot)) + ' will be something already made.';
+      return '<div class="away-set-row">' + esc(line) + '</div>';
+    }).join('');
+  }
+
+  function capitalize(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }
 
   function stepperHtml(field, label) {
     return (

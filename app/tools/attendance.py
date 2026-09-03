@@ -34,6 +34,15 @@ no guests. Same "absence has one meaning" discipline slot_needs already
 follows, and load-bearing for a reason beyond tidiness — it means a member
 added next month is present by default at every meal, rather than being
 retroactively absent from every meal already planned.
+
+That rule is why rows store the ABSENCES, not the attendances (see
+schema.sql on slot_attendance.absent_member_ids_json). Storing who's
+present would honour the rule only for slots with no row at all: a person
+added later appears in no existing row's present-list, so every meal
+already touched by a toggle, a trip, or the guests chip would report them
+as absent — which nobody said, and which would quietly shrink that meal's
+shopping. Storing absences means a new person is simply not listed, and so
+is present, exactly as the no-row default would have them.
 """
 from __future__ import annotations
 
@@ -93,6 +102,11 @@ def resolve_member_ids(members: list | None) -> list[int]:
     valid_ids = {r["id"] for r in rows}
     resolved: list[int] = []
     for m in members:
+        # A NAME always wins over an id-shaped reading of the same string,
+        # so a household member called "2" is still addressable by name.
+        if isinstance(m, str) and str(m).strip().lower() in by_lower_name:
+            resolved.append(by_lower_name[str(m).strip().lower()])
+            continue
         if isinstance(m, int) or (isinstance(m, str) and m.isdigit()):
             mid = int(m)
             if mid not in valid_ids:
@@ -112,21 +126,23 @@ def resolve_member_ids(members: list | None) -> list[int]:
 def _attendance_dict(rows, row, date_str: str, slot: str) -> dict:
     all_ids = [r["id"] for r in rows]
     if row is None:
-        present = list(all_ids)
+        absent_stored: set[int] = set()
         guests = 0
         explicit = False
         source = ""
         stretch_id = None
     else:
-        stored = json.loads(row["present_member_ids_json"] or "[]")
-        # Intersect with live members: someone removed from the household
-        # shouldn't keep counting toward a headcount.
-        present = [i for i in all_ids if i in set(stored)]
+        absent_stored = set(json.loads(row["absent_member_ids_json"] or "[]"))
         guests = int(row["guest_count"] or 0)
         explicit = True
         source = row["source"] or ""
         stretch_id = row["away_stretch_id"]
-    absent = [i for i in all_ids if i not in set(present)]
+    # Anyone not named as absent is here — including a member who joined
+    # the household after this row was written, who nobody said was away.
+    # Intersecting with live members also drops anyone since removed, so a
+    # departed member stops counting toward a headcount.
+    absent = [i for i in all_ids if i in absent_stored]
+    present = [i for i in all_ids if i not in absent_stored]
     headcount = len(present) + guests
     return {
         "date": date_str,
@@ -160,22 +176,22 @@ def get_slot_attendance(date_str: str, slot: str) -> dict:
     return _attendance_dict(rows, row, date_str, slot)
 
 
-def _write(date_str: str, slot: str, present_ids: list[int], guest_count: int,
+def _write(date_str: str, slot: str, absent_ids: list[int], guest_count: int,
            source: str, away_stretch_id: int | None) -> None:
     conn = get_conn()
     conn.execute(
         """
         INSERT INTO slot_attendance
-            (household_id, date, slot, present_member_ids_json, guest_count, source, away_stretch_id, updated_at)
+            (household_id, date, slot, absent_member_ids_json, guest_count, source, away_stretch_id, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id, date, slot) DO UPDATE SET
-            present_member_ids_json = excluded.present_member_ids_json,
+            absent_member_ids_json = excluded.absent_member_ids_json,
             guest_count = excluded.guest_count,
             source = excluded.source,
             away_stretch_id = COALESCE(excluded.away_stretch_id, slot_attendance.away_stretch_id),
             updated_at = datetime('now')
         """,
-        (household_id(), date_str, slot, json.dumps(present_ids), int(guest_count), source, away_stretch_id),
+        (household_id(), date_str, slot, json.dumps(sorted(absent_ids)), int(guest_count), source, away_stretch_id),
     )
     conn.commit()
     conn.close()
@@ -198,6 +214,14 @@ def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | 
     """
     from . import slot_needs as _slot_needs  # deferred: slot_needs reaches back into this module
 
+    if att["household_size"] == 0:
+        # Nobody is on record yet, so "nobody is home" is ignorance, not a
+        # fact — a household mid-onboarding that adds and then un-checks
+        # "hosting guests" must not have that dinner silently blanked.
+        # set_away_stretch still marks its own range away explicitly; this
+        # only declines to INFER away from an empty roster.
+        return "unknown_household"
+
     current = _slot_needs.get_slot_need(date_str, slot)
     if att["nobody_home"]:
         if current["need"] != "away":
@@ -205,11 +229,26 @@ def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | 
                 date_str, slot, "away",
                 reason=_slot_needs._default_reason("away"),
                 away_stretch_id=away_stretch_id,
+                # Remember what this slot was before the away covered it,
+                # so putting someone back restores their 'quick' or
+                # 'ready_made' rather than flattening it to normal.
+                superseded_need=current["need"] if current["need"] != "normal" else "",
             )
             return "set_away"
         return "already_away"
     if current["need"] == "away":
-        _slot_needs.clear_slot_need(date_str, slot)
+        restored = current.get("superseded_need") or ""
+        if restored:
+            _slot_needs.set_slot_need(date_str, slot, restored)
+        else:
+            _slot_needs.clear_slot_need(date_str, slot)
+        # Clearing the NEED is only half of undoing an away. The meal
+        # itself was converted to planned_empty and its ingredients taken
+        # off the list; leaving it there would show a blanked slot while
+        # attendance says somebody is home to eat. Hand it back as an open
+        # decision — the honest state, since nobody has chosen what that
+        # meal should now be.
+        _slot_needs._reopen_away_slot(date_str, slot, att)
         return "cleared_away"
     return "unchanged"
 
@@ -230,13 +269,16 @@ def set_slot_attendance(
     date.fromisoformat(date_str)
     _validate_slot(slot)
     current = get_slot_attendance(date_str, slot)
-    present = (
-        current["present_member_ids"] if present_member_ids is None
-        else resolve_member_ids(present_member_ids) if present_member_ids
-        else []  # an explicit empty list means nobody — not "default to everyone"
-    )
+    if present_member_ids is None:
+        absent = current["absent_member_ids"]
+    else:
+        # An explicit empty list means nobody is here — not "default to
+        # everyone". Absences are derived against the household as it
+        # stands right now, which is what the caller was looking at.
+        present = resolve_member_ids(present_member_ids) if present_member_ids else []
+        absent = [i for i in _household_member_ids() if i not in set(present)]
     guests = current["guest_count"] if guest_count is None else max(0, int(guest_count))
-    _write(date_str, slot, present, guests, source or current["source"] or "", away_stretch_id)
+    _write(date_str, slot, absent, guests, source or current["source"] or "", away_stretch_id)
     att = get_slot_attendance(date_str, slot)
     att["away_need"] = _sync_away_need(date_str, slot, att, away_stretch_id)
     return att
@@ -372,6 +414,14 @@ def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:
     freeform — "a pinch", "to taste", "1 clove or so" — is left exactly as
     written rather than guessed at, the same call scale_recipe already
     makes for a cook standing at the counter.
+
+    The result is rounded the way a SHOPPER buys rather than the way
+    arithmetic falls out: halving "1 tin" gives 1 tin, not 0.5, because
+    half a tin isn't a thing you can put in a basket; halving "3" onions
+    gives 2, not 1.5. Measurable units round to the nearest quarter instead
+    of a repeating decimal. Without this a third of a household turns a
+    plain recipe into "0.333333 tin", which then consolidates onto the
+    list beside a whole one.
     """
     if factor == 1.0:
         return [dict(i) for i in ingredients]
@@ -380,7 +430,7 @@ def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:
         parsed = _quantities._parse_quantity(ing.get("qty", "") or "")
         if parsed:
             amount, unit = parsed
-            out.append({**ing, "qty": _quantities._format_quantity(amount * factor, unit)})
+            out.append({**ing, "qty": _quantities._humanize_grocery_quantity(amount * factor, unit)})
         else:
             out.append(dict(ing))
     return out
@@ -403,10 +453,13 @@ def summary_line(att: dict) -> str:
         bits.append(f"{names}{verb}")
     if att["guest_count"]:
         n = att["guest_count"]
-        bits.append(f"{n} guest{'s' if n != 1 else ''}")
+        # "and 3 guests" reads as a third thing being out alongside the
+        # people who are; "with" says they're joining.
+        bits.append(f"{'with ' if bits else ''}{n} guest{'s' if n != 1 else ''}")
     if not bits:
         return ""
-    return f"{slot_label} for {att['headcount']} — {' and '.join(bits)}."
+    joined = " ".join(bits) if len(bits) == 2 else bits[0]
+    return f"{slot_label} for {att['headcount']} — {joined}."
 
 
 def _join_names(names: list[str]) -> str:

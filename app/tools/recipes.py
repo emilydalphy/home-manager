@@ -397,6 +397,17 @@ def _add_recipe_ingredients_to_grocery_list(
     every quantity byte-for-byte as the recipe writes it — unless that
     specific meal has an explicit attendance row. So a week where everyone
     is home shops precisely as it always has.
+
+    KNOWN LIMITATION: this runs when ingredients are ADDED to the list, so
+    it reflects attendance as it stood at approval. Changing a meal's
+    headcount after the week is approved does not re-quantify what's
+    already on the list — the line stays at the number it was bought for.
+    (The away path is different, and does reverse post-approval: an away
+    slot's ingredients are taken back off, because "nothing bought" is a
+    promise rather than an estimate.) Re-scaling an approved line means
+    reversing and re-adding a partial contribution, which is the
+    swap-a-meal machinery, not this function's. Worth doing; deliberately
+    not smuggled into this change.
     """
     # Which meal this is, so attendance can say how many it feeds. A
     # missing entry (an ad hoc add, a row since deleted) simply doesn't

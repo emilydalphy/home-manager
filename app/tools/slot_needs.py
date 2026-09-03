@@ -67,6 +67,7 @@ def _row_to_dict(row) -> dict:
         # slot_needs.for_member_ids_json.
         "for_member_ids": for_member_ids,
         "for_member_names": _member_names(for_member_ids),
+        "superseded_need": row["superseded_need"] or "",
     }
 
 
@@ -107,6 +108,7 @@ def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
 def set_slot_need(
     date_str: str, slot: str, need: str, reason: str = "",
     away_stretch_id: int | None = None, for_member_ids: list[int] | None = None,
+    superseded_need: str = "",
 ) -> dict:
     """
     Set (or clear, with need='normal') one slot's planning need directly —
@@ -145,16 +147,18 @@ def set_slot_need(
     conn = get_conn()
     conn.execute(
         """
-        INSERT INTO slot_needs (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO slot_needs
+            (household_id, date, slot, need, reason, away_stretch_id, for_member_ids_json, superseded_need, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id, date, slot) DO UPDATE SET
             need = excluded.need, reason = excluded.reason,
             away_stretch_id = excluded.away_stretch_id,
             for_member_ids_json = excluded.for_member_ids_json,
+            superseded_need = excluded.superseded_need,
             updated_at = datetime('now')
         """,
         (household_id(), date_str, slot, need, resolved_reason, away_stretch_id,
-         json.dumps(sorted(for_member_ids or []))),
+         json.dumps(sorted(for_member_ids or [])), superseded_need or ""),
     )
     conn.commit()
 
@@ -176,6 +180,60 @@ def set_slot_need(
         "converted_existing_plan_slot": converted,
         "for_member_ids": sorted(for_member_ids or []),
     }
+
+
+def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
+    """
+    Hand a previously-away meal back as an open decision, once somebody is
+    home for it again.
+
+    clear_slot_need deliberately doesn't touch an already-planned meal — but
+    an 'away' slot was CONVERTED to planned_empty when the need was set, and
+    its ingredients were reversed off the shopping list. Clearing only the
+    need would leave the plan showing "nothing planned, nothing bought" for
+    a meal attendance now says people are eating: the two halves of the app
+    contradicting each other on screen.
+
+    'open' rather than a re-generated meal, because nobody has chosen what
+    this meal should be. The app owes a decision here, and open is exactly
+    the state that says so (see plan_slot_open). Returns False when there
+    was no plan slot to reopen, which is the normal case for a need
+    declared before the week was generated.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, weekly_plan_id, slot_state FROM meal_plan_entries "
+        "WHERE household_id = ? AND date = ? AND slot = ? AND component_category IS NULL "
+        "ORDER BY id DESC LIMIT 1",
+        (household_id(), date_str, slot),
+    ).fetchone()
+    conn.close()
+    if not row or row["slot_state"] != "planned_empty" or not row["weekly_plan_id"]:
+        return False
+
+    who = attendance.get("present_names") or []
+    guests = attendance.get("guest_count") or 0
+    if who and guests:
+        eaters = f"{_join_people(who)} plus {guests} guest{'s' if guests != 1 else ''}"
+    elif who:
+        eaters = _join_people(who)
+    else:
+        eaters = f"{guests} guest{'s' if guests != 1 else ''}"
+    _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot)
+    _weekly_plan.plan_slot_open(
+        weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
+        open_reason=(
+            f"This was down as nobody home, but {eaters} will be here after all — "
+            "tell me what you'd like and I'll shop for it."
+        ),
+        derived_from={"need": "away", "undone_by": "attendance"},
+    )
+    return True
+
+
+def _join_people(names: list[str]) -> str:
+    from . import attendance as _attendance
+    return _attendance._join_names(names)
 
 
 def clear_slot_need(date_str: str, slot: str) -> dict:
@@ -207,7 +265,7 @@ def get_slot_need(date_str: str, slot: str) -> dict:
             "date": date_str, "slot": slot, "need": "normal", "reason": "",
             "away_stretch_id": None, "recommended_batch_from_entry_id": None,
             "recommended_defrost_item": None, "recommendation_confirmed": False,
-            "for_member_ids": [], "for_member_names": [],
+            "for_member_ids": [], "for_member_names": [], "superseded_need": "",
         }
     return _row_to_dict(row)
 

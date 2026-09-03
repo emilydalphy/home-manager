@@ -642,6 +642,12 @@ CREATE TABLE IF NOT EXISTS slot_needs (
     -- which is exactly the "one layer too shallow" problem this deepening
     -- fixes.
     for_member_ids_json TEXT NOT NULL DEFAULT '[]',
+    -- What this slot's need was before an 'away' covered it, so undoing
+    -- the away can put it back. Without this, emptying a slot that was
+    -- already tagged 'quick' and then putting someone back in loses the
+    -- 'quick' silently — the away overwrote the row, and clearing it
+    -- deleted the row outright. '' when nothing was superseded.
+    superseded_need TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(household_id, date, slot)
@@ -701,11 +707,19 @@ CREATE TABLE IF NOT EXISTS slot_attendance (
     household_id INTEGER NOT NULL REFERENCES households(id),
     date TEXT NOT NULL, -- ISO date
     slot TEXT NOT NULL, -- breakfast | lunch | dinner | snack
-    -- The members PRESENT, as a JSON list of members.id. '[]' means nobody
-    -- is home for this meal, which (with guest_count 0) is exactly the
-    -- 'away' case. Stored as who's present rather than who's absent so
-    -- that "away" has a single, checkable definition: an empty set.
-    present_member_ids_json TEXT NOT NULL DEFAULT '[]',
+    -- The members NOT at this meal, as a JSON list of members.id. '[]'
+    -- means everybody is here.
+    --
+    -- Storing the ABSENCES rather than the attendances is the whole reason
+    -- the "a missing row means the ordinary case" rule above actually
+    -- holds. Store who's present and the rule quietly stops working the
+    -- moment the household changes: a member added next month is in no
+    -- existing row's present-list, so every meal already touched by a
+    -- toggle, a trip or the guests chip would report them as ABSENT —
+    -- nobody having said any such thing. Storing absences means a new
+    -- person is simply not in the list, and is therefore present, which is
+    -- the same default a slot with no row at all gives them.
+    absent_member_ids_json TEXT NOT NULL DEFAULT '[]',
     -- Extra mouths beyond the members present — the "Hosting guests"
     -- gesture, unified into attendance rather than living only in
     -- week_intake.guest_counts_json.
