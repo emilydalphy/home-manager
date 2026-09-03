@@ -243,6 +243,17 @@ def collect(days: int) -> tuple[list[dict], str]:
 # ---------- printing ----------
 
 
+def _money(dollars: float) -> str:
+    """
+    Cents are too coarse to report this honestly. A household's week of
+    chat can genuinely cost less than a penny, and rounding it to "$0.00"
+    beside a per-turn figure of "$0.0021" prints a line that contradicts
+    itself -- nothing, charged three times. Below a dollar, show enough
+    decimal places to be true; above it, money looks like money.
+    """
+    return f"${dollars:,.2f}" if dollars >= 1 else f"${dollars:.4f}"
+
+
 def _print_human(report: list[dict], days: int, source: str) -> None:
     print(f"(read from {source})")
     for h in report:
@@ -273,6 +284,17 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 f"  Used — {usage['chat_turns']} chat turns, "
                 f"{usage['meals_cooked']} meals cooked, "
                 f"{usage['plans_generated']} plans ({usage['plans_approved']} approved)"
+            )
+        # .get, not [], because this reads a *remote* app: a deployment
+        # older than the cost work answers without the key, and a morning
+        # report that crashes tells you less than one that omits a line.
+        # The turn count is guarded too — a quiet household is the most
+        # likely state in a beta, and it is the divisor below.
+        cost = usage.get("cost")
+        if cost and usage["chat_turns"]:
+            print(
+                f"  Chat cost — {_money(cost['total'])} over {usage['days']}d "
+                f"({_money(cost['total'] / usage['chat_turns'])} a turn)"
             )
         print(f"  Last active: {usage['last_active_at'] or 'never'}")
 
