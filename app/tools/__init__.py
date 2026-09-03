@@ -233,8 +233,10 @@ from .stores import (  # noqa: F401
     set_item_store,
 )
 from .usage import (  # noqa: F401
+    get_month_to_date_cost,
     get_recent_errors,
     get_usage_summary,
+    record_api_call,
     record_chat_turn,
     record_error,
     touch_household_active,

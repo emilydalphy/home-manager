@@ -243,6 +243,27 @@ def collect(days: int) -> tuple[list[dict], str]:
 # ---------- printing ----------
 
 
+# Machine call_site labels (agent._create_with_retry's `label` kwarg) to
+# what a non-technical reader recognizes. Falls back to the raw label for
+# a call site added later and not yet named here, so a new one shows up
+# instead of vanishing from the breakdown.
+_CALL_SITE_LABELS = {
+    "run_agent_turn": "chat",
+    "generate_weekly_plan_llm": "weekly plan generation",
+    "generate_component_plan_llm": "weekly plan (swap/adjust a meal)",
+    "generate_prep_schedule_llm": "prep schedule",
+    "generate_recipe_detail_llm": "recipe fill-in",
+    "_scan_image_for_items": "photo scan (receipt/fridge/pantry)",
+    "generate_chore_recommendations": "chore recommendations",
+}
+
+# Emily's target, set 2026-09-03: all-in API cost under this, per
+# household, per month. See the "Get API token usage down" Loop Board
+# ticket. Measure-only for now -- this is the number that pass exists to
+# make answerable, not to hit yet.
+_MONTHLY_TARGET_DOLLARS = 1.00
+
+
 def _money(dollars: float) -> str:
     """
     Cents are too coarse to report this honestly. A household's week of
@@ -285,17 +306,31 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 f"{usage['meals_cooked']} meals cooked, "
                 f"{usage['plans_generated']} plans ({usage['plans_approved']} approved)"
             )
-        # .get, not [], because this reads a *remote* app: a deployment
-        # older than the cost work answers without the key, and a morning
-        # report that crashes tells you less than one that omits a line.
-        # The turn count is guarded too — a quiet household is the most
-        # likely state in a beta, and it is the divisor below.
-        cost = usage.get("cost")
-        if cost and usage["chat_turns"]:
+        # .get everywhere below, not [], because this reads a *remote* app:
+        # a deployment older than this work answers without these keys,
+        # and a morning report that crashes tells you less than one that
+        # omits a line.
+        month_cost = usage.get("month_to_date_cost")
+        if month_cost:
+            total = month_cost["total_cost"]["total"]
+            flag = "OVER" if total > _MONTHLY_TARGET_DOLLARS else "under"
             print(
-                f"  Chat cost — {_money(cost['total'])} over {usage['days']}d "
-                f"({_money(cost['total'] / usage['chat_turns'])} a turn)"
+                f"  API cost, all calls, month-to-date — {_money(total)} "
+                f"— vs target ${_MONTHLY_TARGET_DOLLARS:.2f}/household/month: {flag}"
             )
+            by_site = month_cost.get("by_call_site") or {}
+            for site, info in sorted(by_site.items(), key=lambda kv: -kv[1]["cost"]["total"]):
+                label = _CALL_SITE_LABELS.get(site, site)
+                print(f"      {label:32} {_money(info['cost']['total']):>10}  ({info['calls']} calls)")
+
+        plan_gen = usage.get("plan_generation")
+        if plan_gen and plan_gen.get("count"):
+            print(
+                f"  Week generation — {plan_gen['count']} this month, "
+                f"{_money(plan_gen['total_cost']['total'])} total, "
+                f"latency p50={plan_gen['p50_seconds']}s max={plan_gen['max_seconds']}s"
+            )
+
         print(f"  Last active: {usage['last_active_at'] or 'never'}")
 
 

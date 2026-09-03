@@ -710,7 +710,12 @@ def test_the_report_reads_the_keys_the_app_actually_returns(signed_in):
     assert "errors" in obs and "usage" in obs, f"/api/observability returns {sorted(obs)}"
     assert {"total", "by_kind", "recent"} <= set(obs["errors"])
     assert {"looks_inactive", "days", "chat_turns", "meals_cooked",
-            "plans_generated", "plans_approved", "last_active_at"} <= set(obs["usage"])
+            "plans_generated", "plans_approved", "last_active_at",
+            "month_to_date_cost", "plan_generation"} <= set(obs["usage"])
+    assert {"by_call_site", "total_cost"} <= set(obs["usage"]["month_to_date_cost"])
+    assert obs["usage"]["plan_generation"] == {"count": 0}, (
+        "no weekly plan has been generated in this test session"
+    )
 
 
 class _FakeOpener:
@@ -937,46 +942,131 @@ def _printed(usage, capsys):
     return capsys.readouterr().out
 
 
+def _month_cost(total, by_call_site=None):
+    """Build a month_to_date_cost dict shaped like _cost_breakdown's output."""
+    return {
+        "total_cost": {"input": 0.0, "cache_read": 0.0, "cache_write": 0.0,
+                       "output": 0.0, "total": total},
+        "by_call_site": by_call_site or {},
+    }
+
+
 def test_a_quiet_household_does_not_divide_by_zero(capsys):
     """
-    The single most likely state in a friend beta -- nobody chatted -- and
-    the turn count is the divisor in the per-turn figure. Reporting on a
-    quiet household is the whole reason this script exists, so it must not
-    be the case that crashes it.
+    The single most likely state in a friend beta -- nobody chatted, no
+    plan generated, nothing called the API at all. Reporting on a quiet
+    household is the whole reason this script exists, so it must not be
+    the case that crashes it.
     """
     out = _printed(
         _usage(chat_turns=0, meals_cooked=0, plans_generated=0, looks_inactive=True,
-               cost={"total": 0.0, "model": "claude-sonnet-5"}),
+               month_to_date_cost=_month_cost(0.0), plan_generation={"count": 0}),
         capsys,
     )
     assert "QUIET" in out
-    assert "Chat cost" not in out, "no turns means no per-turn cost to report"
+    assert "under" in out, "zero spend against the target is under, not over"
+    assert "Week generation" not in out, "no runs this month means no latency line to print"
 
 
-def test_an_older_deployment_without_the_cost_key_still_reports(capsys):
+def test_an_older_deployment_without_the_new_keys_still_reports(capsys):
     """
     This script reads a *remote* app over HTTP. A deployment that predates
-    the cost work answers without the key, and a morning report that
-    crashes tells Emily less than one that omits a line.
+    this work answers without month_to_date_cost/plan_generation, and a
+    morning report that crashes tells Emily less than one that omits a
+    couple of lines.
     """
-    out = _printed(_usage(), capsys)  # no "cost" key at all
+    out = _printed(_usage(), capsys)  # no cost/plan-generation keys at all
     assert "The Test Household" in out
     assert "Used —" in out
-    assert "Chat cost" not in out
+    assert "API cost" not in out
+    assert "Week generation" not in out
 
 
-def test_a_sub_penny_week_is_not_reported_as_nothing(capsys):
+def test_a_sub_penny_month_is_not_reported_as_nothing(capsys):
     """
-    Rounding to cents would print "$0.00 over 7d ($0.0014 a turn)" -- a line
-    that contradicts itself, and the exact failure the six-decimal-place
-    rounding in price_tokens exists to avoid.
+    Rounding to cents would print "$0.00 ... under" for a household that
+    is in fact spending a few tenths of a cent -- the exact failure the
+    six-decimal-place rounding in price_tokens exists to avoid.
     """
-    out = _printed(_usage(chat_turns=3, cost={"total": 0.0041, "model": "x"}), capsys)
+    out = _printed(_usage(month_to_date_cost=_month_cost(0.0041)), capsys)
     assert "$0.00 " not in out, f"a real cost was rounded away to nothing: {out!r}"
     assert "$0.0041" in out
+    assert "under" in out
 
 
 def test_a_real_bill_reads_as_money(capsys):
     """Above a dollar, decimal places stop helping and start looking odd."""
-    out = _printed(_usage(chat_turns=100, cost={"total": 12.5, "model": "x"}), capsys)
+    out = _printed(_usage(month_to_date_cost=_month_cost(12.50)), capsys)
     assert "$12.50" in out
+    assert "OVER" in out, "$12.50 is well past the $1/household/month target"
+
+
+def test_the_breakdown_is_shown_by_call_site_not_just_a_total(capsys):
+    """
+    The whole point of moving past chat_turns alone: a household can see
+    which call site the money is actually going to, not just one number.
+    """
+    out = _printed(
+        _usage(month_to_date_cost=_month_cost(0.50, {
+            "generate_weekly_plan_llm": {
+                "calls": 4, "seconds": 140.0,
+                "tokens": {"input": 70000, "cache_read": 0, "cache_write": 0, "output": 19000},
+                "cost": {"input": 0.14, "cache_read": 0.0, "cache_write": 0.0,
+                         "output": 0.19, "total": 0.33},
+            },
+            "run_agent_turn": {
+                "calls": 40, "seconds": 200.0,
+                "tokens": {"input": 80, "cache_read": 1200000, "cache_write": 1600,
+                           "output": 3200},
+                "cost": {"input": 0.0002, "cache_read": 0.24, "cache_write": 0.004,
+                         "output": 0.032, "total": 0.17},
+            },
+        })),
+        capsys,
+    )
+    assert "weekly plan generation" in out, "raw call_site labels should read as plain English"
+    assert "chat" in out
+    # The bigger cost (weekly plan generation, $0.33) should be listed
+    # before the smaller one -- biggest lever first, matching how the
+    # ticket itself orders levers.
+    assert out.index("weekly plan generation") < out.index("      chat")
+
+
+def test_an_unmapped_call_site_still_shows_up(capsys):
+    """
+    A call site added later and not yet named in _CALL_SITE_LABELS must
+    still appear in the breakdown -- falling back to the raw label beats
+    silently dropping a line and understating the bill.
+    """
+    out = _printed(
+        _usage(month_to_date_cost=_month_cost(0.02, {
+            "some_new_call_site": {
+                "calls": 1, "seconds": 1.0,
+                "tokens": {"input": 100, "cache_read": 0, "cache_write": 0, "output": 100},
+                "cost": {"input": 0.0002, "cache_read": 0.0, "cache_write": 0.0,
+                         "output": 0.001, "total": 0.02},
+            },
+        })),
+        capsys,
+    )
+    assert "some_new_call_site" in out
+
+
+def test_week_generation_latency_is_reported(capsys):
+    """
+    Emily asked specifically how long it takes to generate the week --
+    p50 and max, not just a total cost line.
+    """
+    out = _printed(
+        _usage(plan_generation={
+            "count": 4, "p50_seconds": 34.2, "max_seconds": 41.8,
+            "total_cost": {"input": 0.14, "cache_read": 0.0, "cache_write": 0.0,
+                           "output": 0.19, "total": 0.33},
+        }),
+        capsys,
+    )
+    assert "Week generation" in out
+    assert "4 this month" in out
+    assert "p50=34.2s" in out
+    assert "max=41.8s" in out
+    assert "$0.33" in out

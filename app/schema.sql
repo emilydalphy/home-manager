@@ -717,6 +717,50 @@ CREATE TABLE IF NOT EXISTS error_events (
 CREATE INDEX IF NOT EXISTS idx_error_events_household_created
     ON error_events (household_id, created_at);
 
+-- One row per Anthropic API call, of ANY kind. chat_turns above rolls a
+-- whole chat turn (its several rounds) into one row for turn-level
+-- reporting; this table is one row per ACTUAL call to
+-- client.messages.create, at every call site in the app -- chat included,
+-- but also the six other places chat_turns never saw: weekly-plan
+-- generation, component-plan fill-in, prep-schedule generation, recipe
+-- fill-in, photo scans (receipt/fridge/pantry), and chore
+-- recommendations. That distinction matters because chat_turns alone only
+-- ever priced the chat loop, and the app's single most expensive call
+-- (weekly-plan generation, ~18,000 uncached input tokens per run) was
+-- invisible to it -- see the "Get API token usage down" ticket.
+--
+-- Deliberately duplicates chat's own numbers rather than replacing
+-- chat_turns: the two answer different questions (turns/rounds needed to
+-- finish a job, vs. cost broken down by call site) and neither can be
+-- derived from the other.
+--
+-- call_site is the `label` passed to agent._create_with_retry -- the one
+-- function every Anthropic call in the app actually goes through. That is
+-- also why recording lives there instead of at each of the seven call
+-- sites separately: one instrumentation point covers all of them, and a
+-- call site added later is covered automatically instead of needing this
+-- table kept in sync by hand.
+--
+-- model is stored per row, not assumed, so a call site that ever runs on
+-- a different model from the rest is still priced correctly rather than
+-- silently billed at the wrong rate.
+CREATE TABLE IF NOT EXISTS api_calls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    call_site TEXT NOT NULL,
+    model TEXT NOT NULL DEFAULT '',
+    input_tokens INTEGER NOT NULL DEFAULT 0,
+    cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+    cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    seconds REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_api_calls_household_created
+    ON api_calls (household_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_api_calls_household_site
+    ON api_calls (household_id, call_site);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'
