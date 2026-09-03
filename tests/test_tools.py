@@ -155,6 +155,44 @@ def test_get_already_have_decisions_excludes_items_never_removed():
     assert tools.get_already_have_decisions() == []
 
 
+def test_undoing_a_fresh_already_have_removes_the_inventory_row_it_created():
+    """
+    "Actually, I need it" on a brand-new already-have decision (no
+    pre-existing stock) should leave no phantom inventory behind — a
+    household that corrects a mistaken "I have this" shouldn't end up with
+    inventory silently, permanently wrong.
+    """
+    tools.add_grocery_item("oat milk", quantity="1 carton", category="dairy")
+    item_id = tools.list_grocery_list()[0]["id"]
+    tools.move_grocery_item_to_inventory(item_id)
+    assert "oat milk" in [i["item"] for i in tools.get_inventory()]
+
+    tools.undo_pre_shop_drop(item_id)
+
+    assert "oat milk" not in [i["item"] for i in tools.get_inventory()]
+    assert tools.list_grocery_list(status="needed")[0]["item"] == "oat milk"
+
+
+def test_undoing_an_already_have_merge_leaves_the_pre_existing_stock_alone():
+    """
+    When the household already had some tracked (the "Have it" write
+    merged into an existing row rather than creating one), undo can't
+    safely subtract back out — nothing records the pre-merge amount — so
+    it must leave that inventory row alone rather than deleting real stock.
+    """
+    tools.update_inventory("flour", "add", quantity="2 cups", category="pantry")
+    tools.add_grocery_item("flour", quantity="1 cup", category="pantry")
+    item_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "flour")
+    tools.move_grocery_item_to_inventory(item_id)
+    merged = next(i for i in tools.get_inventory() if i["item"] == "flour")
+    assert "3" in merged["quantity"], "merge should have combined the two"
+
+    tools.undo_pre_shop_drop(item_id)
+
+    still_there = next((i for i in tools.get_inventory() if i["item"] == "flour"), None)
+    assert still_there is not None, "pre-existing stock must not be deleted by undo"
+
+
 def test_already_have_summary_endpoint_lists_already_have_and_elsewhere(signed_in):
     tools.add_grocery_item("walnuts", quantity="1 bag", category="pantry")
     tools.add_grocery_item("specialty cheese", category="dairy")

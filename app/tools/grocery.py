@@ -618,16 +618,32 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
     drop_grocery_item_pre_shop, rather than a hard delete, so the Review
     screen's confirmation section (get_already_have_decisions) can list
     and undo the decision with undo_pre_shop_drop like any other pre-shop
-    drop. Raises ValueError if the item isn't found.
+    drop. If undo_pre_shop_drop restores this item, it also needs to
+    decide what to do with the inventory row just written: when there was
+    no existing stock to merge into (a brand-new inventory_items row), it's
+    unambiguously safe to delete on undo, so that row's id is recorded on
+    already_have_inventory_id below; when it merged into existing stock,
+    reversing it would need the pre-merge quantity, which nothing tracks
+    (deliberately — see the "inventory is deferred as policy" roadmap
+    decision), so that case is left for undo to leave inventory alone.
+    Raises ValueError if the item isn't found.
     """
     conn = get_conn()
     row = conn.execute(
         "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
-    conn.close()
     if not row:
+        conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    # Same match _add_to_inventory itself will use (no location passed
+    # below) — checked first so we know, after the fact, whether its write
+    # was a fresh insert or a merge into this pre-existing row.
+    pre_existing = conn.execute(
+        "SELECT id FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
+        (household_id(), row["item"]),
+    ).fetchone()
+    conn.close()
 
     inventory_result = _inventory._add_to_inventory(
         row["item"],
@@ -635,11 +651,14 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
         source="grocery_list_already_have",
         category=row["category"] or None,
     )
+    fresh_inventory_id = None if pre_existing else inventory_result.get("item_id")
+
     conn = get_conn()
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = 'already_have', "
-        "removed_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
+        "removed_at = datetime('now'), already_have_inventory_id = ? "
+        "WHERE id = ? AND household_id = ?",
+        (fresh_inventory_id, item_id, household_id()),
     )
     conn.commit()
     conn.close()

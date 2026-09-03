@@ -2145,10 +2145,11 @@
         return;
 
       // Review's confirmation section — undo either kind of "already have"
-      // decision. The DB effect needed is identical whether the row was
-      // removed by a pre-shop drop or a Have it/Already have action, so
-      // both reuse the existing pre-shop-undo endpoint (see
-      // get_already_have_decisions/undo_pre_shop_drop on the backend).
+      // decision via the one existing pre-shop-undo endpoint. Restoring
+      // the grocery row to 'needed' is identical either way; the backend
+      // also deletes the inventory row a Have it/Already have action
+      // created, but only when that write didn't merge into pre-existing
+      // stock (see undo_pre_shop_drop/already_have_inventory_id).
       case 'undo-already-have':
         el.disabled = true;
         groDo(function () {

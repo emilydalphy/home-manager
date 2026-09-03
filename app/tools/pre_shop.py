@@ -125,20 +125,32 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     Undo a pre-shop 'Drop it' — restores the item to 'needed' and marks it
     already_have_reviewed so it goes straight back to its store card
     without being re-flagged this same trip (PRE_SHOP_CHECK.md: undo
-    "does not re-add the flag this trip"). Also reused, unchanged, by the
-    Review screen's "already have" confirmation section (see
-    get_already_have_decisions) to undo a Have it / Already have action —
-    the DB effect needed is identical regardless of which flow soft-removed
-    the row, so there's no separate "already-have-undo" endpoint.
+    "does not re-add the flag this trip"). Also reused by the Review
+    screen's "already have" confirmation section (see
+    get_already_have_decisions) to undo a Have it / Already have action, so
+    there's no separate "already-have-undo" endpoint — but that flow wrote
+    an inventory row a plain pre-shop drop never did, so this also deletes
+    that row when (and only when) it's safe to: already_have_inventory_id
+    is set only for a fresh-insert write (see
+    grocery_items.already_have_inventory_id / move_grocery_item_to_
+    inventory), never for one that merged into pre-existing stock — undoing
+    a merge would need the pre-merge quantity, which nothing tracks, so
+    that case leaves inventory untouched on undo by design.
     """
     conn = get_conn()
+    row = conn.execute(
+        "SELECT already_have_inventory_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
     conn.execute(
-        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, removed_at = NULL "
-        "WHERE id = ? AND household_id = ?",
+        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, "
+        "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
     conn.commit()
     conn.close()
+    if row and row["already_have_inventory_id"]:
+        _inventory.remove_inventory_item(row["already_have_inventory_id"])
     return {"item_id": item_id, "status": "needed"}
 
 
