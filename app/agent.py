@@ -1904,8 +1904,35 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "set_dinner_window",
+        "description": "Set (or correct) when dinner usually lands, household-level: '5_6ish', '6_8', 'later', or 'all_over' (no real pattern). E.g. \"we usually eat around 8\" is set_dinner_window('6_8') or set_dinner_window('later') depending on how close to 8 — use judgment on the closest bucket.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"value": {"type": "string", "enum": ["5_6ish", "6_8", "later", "all_over"]}},
+            "required": ["value"],
+        },
+    },
+    {
+        "name": "set_planning_anchor",
+        "description": "Set (or correct) when the household wants its week ready, household-level: 'sunday_before' (planned/shopped before the week starts), 'midweek', or 'as_we_go'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"value": {"type": "string", "enum": ["sunday_before", "midweek", "as_we_go"]}},
+            "required": ["value"],
+        },
+    },
+    {
+        "name": "set_leftovers_stance",
+        "description": "Set (or correct) how the household feels about leftovers, household-level: 'love_them' (cook once, eat twice), 'fine_sometimes', or 'fresh_each_night'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"value": {"type": "string", "enum": ["love_them", "fine_sometimes", "fresh_each_night"]}},
+            "required": ["value"],
+        },
+    },
+    {
         "name": "get_household_rhythm",
-        "description": "Get the household's standing rhythm: per-person lunch location (with any per-weekday overrides), which meals are eaten together, and who cooks. This is separate from get_facts(category='rhythm')'s freeform notes — use this for the structured answers, that for freeform routine notes.",
+        "description": "Get the household's standing rhythm: per-person lunch location (with any per-weekday overrides), which meals are eaten together, who cooks, when dinner lands, when the week should be ready, and the household's leftovers stance. This is separate from get_facts(category='rhythm')'s freeform notes — use this for the structured answers, that for freeform routine notes.",
         "input_schema": {"type": "object", "properties": {}},
     },
 ]
@@ -2130,6 +2157,12 @@ two or three cook-once-eat-twice pairs (a bigger batch one night, its leftovers 
 "one_a_week" means exactly one such pair; "all_different" means seven distinct dinners and no \
 leftovers nights at all unless a night tag explicitly asks for one. Blank means unknown — use \
 your normal judgement.
+- household_memory's `rhythm.leftovers_stance` (Loop Board "Onboarding: household rhythm...") \
+is the household's own stated feeling about leftovers, distinct from and read alongside \
+`repeats_tolerance` above: "love_them" reinforces building in cook-once-eat-twice pairs and \
+favors batch-friendly recipes; "fresh_each_night" is a signal against relying on leftovers even \
+if `repeats_tolerance` would otherwise allow a repeat; "fine_sometimes" or blank means no extra \
+lean either way — fall back to `repeats_tolerance` alone.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
 dinners in prep+cook minutes. A `rush` tag overrides it downwards, never upwards.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
@@ -3113,6 +3146,11 @@ on those weeks rather than being a reason to run on its own.
 - Work backward from each meal's planned date: if advance_prep_notes says "at least 4 hours \
 ahead," a same-day morning task is fine; if it says "overnight" or "the night before," schedule \
 it the day before instead.
+- `dinner_window` (when set) is this household's own answer for when dinner actually lands: \
+"5_6ish" leaves the least same-day lead time — lean toward scheduling anything needing several \
+hours the day before rather than that morning; "6_8" or "later" leaves more of the day free for \
+same-day prep; "all_over" or unset means no reliable target time — use your normal judgement \
+from advance_prep_notes alone.
 - For a component_based plan (planning_mode='component_based'), items aren't tied to a specific \
 day — use week_start_date as the reference point for any tasks needed (e.g. "before you start \
 using this component this week").
@@ -3188,6 +3226,12 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
         "week_start_date": plan["week_start_date"],
         "planning_mode": plan["planning_mode"],
         "meals": meals_detail,
+        # Loop Board "Onboarding: household rhythm...": when dinner usually
+        # lands, so "same day is fine" vs. "needs to move to the day before"
+        # is judged against this household's actual target time rather than
+        # an assumed dinner hour. See the matching guideline in
+        # generate_prep_schedule_llm. None when never answered.
+        "dinner_window": tools.get_household_rhythm().get("dinner_window"),
     }
     tasks = generate_prep_schedule_llm(context)
     tools.save_prep_tasks(plan_id, tasks)
@@ -3530,6 +3574,9 @@ TOOL_FUNCTIONS = {
     "set_lunch_location": tools.set_lunch_location,
     "set_meals_together": tools.set_meals_together,
     "set_cooking_role": tools.set_cooking_role,
+    "set_dinner_window": tools.set_dinner_window,
+    "set_planning_anchor": tools.set_planning_anchor,
+    "set_leftovers_stance": tools.set_leftovers_stance,
     "get_household_rhythm": tools.get_household_rhythm,
 }
 

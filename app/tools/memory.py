@@ -182,6 +182,9 @@ def get_household_memory() -> dict:
         rhythm_lunch_location_set=rhythm_signals["lunch_location_set"],
         rhythm_meals_together_set=rhythm_signals["meals_together_set"],
         rhythm_cooking_role_set=rhythm_signals["cooking_role_set"],
+        rhythm_dinner_window_set=rhythm_signals["dinner_window_set"],
+        rhythm_planning_anchor_set=rhythm_signals["planning_anchor_set"],
+        rhythm_leftovers_stance_set=rhythm_signals["leftovers_stance_set"],
     )
 
     return {
@@ -247,6 +250,13 @@ _CONTEXT_SIGNALS = [
     ("lunch_location", "Tell me where everyone typically is at lunchtime", "Drives whether lunch gets a real planned meal or something packable — this is your household's rhythm, the first thing I want to know.", 18),
     ("meals_together", "Tell me which meals your household eats together", "Shapes portioning and what counts as a shared meal here — part of your rhythm, not a preference.", 16),
     ("cooking_role", "Tell me who does the cooking", "Shapes who I address and how prep gets assigned — no assumptions made either way.", 16),
+    # The three rhythm questions Emily locked afterward (Loop Board
+    # "Onboarding: household rhythm...", "LOCKED: the six rhythm questions",
+    # 2026-09-03) — same rhythm cluster, same reasoning, weighted just under
+    # the original three so the earliest-asked rhythm facts still lead.
+    ("dinner_window", "Tell me when dinner usually lands", "Times prep schedules and defrost reminders around when you actually eat — part of your rhythm.", 14),
+    ("planning_anchor", "Tell me when your week should be ready", "Sets when I plan, when your list needs to be final, and when I check in — part of your rhythm.", 14),
+    ("leftovers_stance", "Tell me how you feel about leftovers", "Powers batch-cooking and ready-made suggestions instead of guessing — part of your rhythm.", 14),
     ("dietary_restrictions", "Note any dietary restrictions or allergies", "The single most important thing to get right before I suggest a week of meals.", 15),
     ("recipes_rated", "Rate a few recipes after cooking them", "The strongest habit signal I get — real reactions beat stated preferences every time.", 15),
     ("meals_cooked", "Cook a few planned meals and check them off", "Shows me the plan is actually being used, not just generated and ignored.", 15),
@@ -265,7 +275,8 @@ def _build_context_completeness(
     *, members, protein_preferences, cuisine_preferences, dislikes, cooking_time_preference,
     usual_stores, eating_style, goals, recipes_rated, meals_cooked,
     rhythm_lunch_location_set: bool = False, rhythm_meals_together_set: bool = False,
-    rhythm_cooking_role_set: bool = False,
+    rhythm_cooking_role_set: bool = False, rhythm_dinner_window_set: bool = False,
+    rhythm_planning_anchor_set: bool = False, rhythm_leftovers_stance_set: bool = False,
 ) -> dict:
     """
     Turn the household's current signals into a plain "how well do I
@@ -278,7 +289,7 @@ def _build_context_completeness(
     reads as "not yet captured" even if the true answer really is "none."
     Powers the What We Know view's completeness card.
 
-    The three rhythm_* booleans come from rhythm.rhythm_completeness_signals
+    The six rhythm_* booleans come from rhythm.rhythm_completeness_signals
     (see get_household_memory) rather than being computed here, same as
     every other done_map entry takes its answer as a plain argument rather
     than reaching for a connection itself.
@@ -299,6 +310,9 @@ def _build_context_completeness(
         "lunch_location": rhythm_lunch_location_set,
         "meals_together": rhythm_meals_together_set,
         "cooking_role": rhythm_cooking_role_set,
+        "dinner_window": rhythm_dinner_window_set,
+        "planning_anchor": rhythm_planning_anchor_set,
+        "leftovers_stance": rhythm_leftovers_stance_set,
     }
 
     earned = sum(weight for key, _, _, weight in _CONTEXT_SIGNALS if done_map[key])

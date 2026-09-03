@@ -213,16 +213,22 @@ from .reset import (  # noqa: F401
 )
 from .rhythm import (  # noqa: F401
     COOKING_ROLES,
+    DINNER_WINDOWS,
+    LEFTOVERS_STANCES,
     LUNCH_LOCATIONS,
     MEALS_TOGETHER_OPTIONS,
+    PLANNING_ANCHORS,
     WEEKDAYS,
     clear_lunch_location_override,
     effective_lunch_location,
     get_household_rhythm,
     rhythm_completeness_signals,
     set_cooking_role,
+    set_dinner_window,
+    set_leftovers_stance,
     set_lunch_location,
     set_meals_together,
+    set_planning_anchor,
 )
 from .sharing import (  # noqa: F401
     eater_add_dietary_restriction,
