@@ -8,6 +8,7 @@ from ..db import get_conn
 from ._shared import household_id
 from .grocery import _merge_key
 from . import grocery as _grocery
+from . import household as _household
 from . import quantities as _quantities
 
 
@@ -32,30 +33,81 @@ def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
             )
 
 
-def set_item_store(item: str, store: str) -> dict:
+def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: bool = True) -> dict:
     """
     Remember which store an item (or type of item) should be bought at,
     e.g. "we get paper towels at Costco" -> set_item_store("paper towels",
     "Costco"). Applies immediately to any matching item already on the
     grocery list, and automatically to future adds of that same item name.
     Pass an empty store to clear the preference.
+
+    This is the single place an item->store preference actually gets
+    written or cleared (the Grocery List view's first-time-confirm flow
+    and the Kitchen "What we know" Stores sheet both funnel through it —
+    see confirm_grocery_item_store_preference and
+    preferences.add_store_typical_items) — so it's also the one place that
+    keeps the Kitchen sheet's typical-items list and this preference from
+    ever disagreeing (Loop Board "Stores: one bidirectional memory..."):
+    setting a store here also remembers the item as typical for that store,
+    and clearing it drops the item from every store's typical list, not
+    just the one it happened to be filed under.
+
+    sync_typical=False is for internal use only (preferences.
+    add_store_typical_items sets it when it calls back in here, so a
+    Kitchen-sheet add can't bounce back and forth with this function
+    forever). log_event=False similarly avoids double-logging one teaching
+    moment as two preference_events rows when this function is one half of
+    a compound write.
+
+    Identity here is by _merge_key, the same singular/plural-insensitive
+    key the grocery list itself merges on — NOT by the exact text typed.
+    Found by independent review (2026-09-03): the old exact-string
+    ON CONFLICT/DELETE let set_item_store("paper towel", "Costco") and a
+    later set_item_store("paper towels", "Walmart") create two separate
+    rows for what the grocery list treats as one item, so it could end up
+    "typical" at two stores at once and a future add would pick between
+    them non-deterministically. A find-by-merge-key-then-write replaces
+    the raw upsert/delete so there is only ever one row per real item,
+    same as grocery_items itself. The stored text is still whatever was
+    most recently written (never the mangled _merge_key form itself —
+    that's a matching key, not something to show anyone).
     """
     conn = get_conn()
+    key = _merge_key(item)
+    existing_rows = conn.execute(
+        "SELECT id, item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
+    ).fetchall()
+    match = next((r for r in existing_rows if _merge_key(r["item"]) == key), None)
     if store:
-        conn.execute(
-            "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
-            "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
-            (household_id(), item.strip().lower(), store),
-        )
+        if match:
+            conn.execute(
+                "UPDATE item_store_preferences SET item = ?, store = ? WHERE id = ?",
+                (item.strip().lower(), store, match["id"]),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?)",
+                (household_id(), item.strip().lower(), store),
+            )
         _apply_store_to_matching_rows(conn, item, store)
     else:
-        conn.execute(
-            "DELETE FROM item_store_preferences WHERE household_id = ? AND item = ?",
-            (household_id(), item.strip().lower()),
-        )
+        if match:
+            conn.execute("DELETE FROM item_store_preferences WHERE id = ?", (match["id"],))
         _apply_store_to_matching_rows(conn, item, "")
     conn.commit()
     conn.close()
+    if log_event:
+        _household._log_preference_event("item_store_preference", "write" if store else "delete")
+    # Local import: stores.py and preferences.py each call into the other
+    # (this keeps the Kitchen typical-items list and this table in sync in
+    # both directions), which would be a circular import at module load
+    # time — safe here because it's resolved at call time, once both
+    # modules already finished loading.
+    from . import preferences as _preferences
+    if store and sync_typical:
+        _preferences.add_store_typical_items(store, [item], log_event=False, sync_preference=False)
+    elif not store:
+        _preferences.remove_item_from_all_stores_typical_list(item)
     return {"item": item, "store": store}
 
 
@@ -129,6 +181,19 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
     set just this one row without touching the remembered preference at
     all (used when re-displaying/correcting a row rather than the shopper
     actively choosing a store for it).
+
+    The FIRST time this item gets a remembered store (no existing
+    item_store_preferences row for it yet), nothing is written to that
+    table here — the response comes back with needs_confirmation=True
+    instead, and remembered stays False. The Grocery List view is expected
+    to offer a one-tap "Remember for {store}?" per the learning etiquette
+    (observe -> infer -> confirm once -> remember) and, only if the shopper
+    taps yes, call confirm_grocery_item_store_preference to actually save
+    it. Doing nothing ("just this once") leaves this one row assigned for
+    this trip and asks again next time, exactly like today. Every later
+    assignment of an item that already has a preference updates it
+    immediately and quietly (remembered=True, needs_confirmation=False) —
+    asking every time would violate the etiquette.
     """
     conn = get_conn()
     row = conn.execute(
@@ -138,17 +203,65 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
         conn.close()
         return {"item_id": item_id, "found": False}
     conn.execute("UPDATE grocery_items SET store = ? WHERE id = ?", (store, item_id))
-    remembered = False
+    already_known = False
     if store and remember:
-        conn.execute(
-            "INSERT INTO item_store_preferences (household_id, item, store) VALUES (?, ?, ?) "
-            "ON CONFLICT(household_id, item) DO UPDATE SET store = excluded.store",
-            (household_id(), row["item"].strip().lower(), store),
-        )
-        remembered = True
+        # Merge-key match, not exact text — "paper towel" already having a
+        # preference counts as "already known" for a row named "paper
+        # towels" too, same identity the grocery list itself uses.
+        wanted_key = _merge_key(row["item"])
+        pref_rows = conn.execute(
+            "SELECT item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchall()
+        already_known = any(_merge_key(p["item"]) == wanted_key for p in pref_rows)
     conn.commit()
     conn.close()
-    return {"item_id": item_id, "item": row["item"], "store": store, "found": True, "remembered": remembered}
+    remembered = False
+    needs_confirmation = False
+    if store and remember and already_known:
+        # A correction to an item the household already has an opinion
+        # about — update it immediately, same as before this feature, and
+        # keep the Kitchen sheet in sync with wherever it now points.
+        set_item_store(row["item"], store)
+        remembered = True
+    elif store and remember and not already_known:
+        needs_confirmation = True
+    return {
+        "item_id": item_id,
+        "item": row["item"],
+        "store": store,
+        "found": True,
+        "remembered": remembered,
+        "needs_confirmation": needs_confirmation,
+    }
+
+
+def confirm_grocery_item_store_preference(item_id: int) -> dict:
+    """
+    Finalize the one-tap "Remember for {store}?" confirmation that
+    set_grocery_item_store offers the first time an item gets assigned a
+    store (see needs_confirmation on that function) — writes the
+    item->store preference and adds the item to that store's typical-items
+    list on the Kitchen sheet, in one teaching event. Call this only when
+    the shopper actually taps "yes"; declining requires no call at all —
+    the store stays on this one grocery row for this trip only, and the
+    same offer comes back next time this item gets a store, since nothing
+    was ever saved. Reads whatever store is currently on the row rather
+    than taking one as an argument, so it can't accidentally save a
+    different store than the one the shopper saw on the toast. No-ops
+    (confirmed=False) if the row's store was cleared or the item removed
+    since the toast appeared.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT item, store FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    conn.close()
+    if not row or not row["store"]:
+        return {"item_id": item_id, "confirmed": False}
+    item, store = row["item"], row["store"]
+    set_item_store(item, store)
+    return {"item_id": item_id, "item": item, "store": store, "confirmed": True}
 
 
 def get_item_store_preferences() -> dict:

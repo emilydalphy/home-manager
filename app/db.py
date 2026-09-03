@@ -181,6 +181,44 @@ def _backfill_member_colors(conn):
             conn.execute("UPDATE members SET color = ? WHERE id = ?", (color, row["id"]))
 
 
+def _merge_duplicate_item_store_preferences(conn):
+    """
+    One-time-per-duplicate cleanup, found by independent review
+    (2026-09-03): item_store_preferences used to be keyed on exact
+    lowercased text, so "paper towel" and "paper towels" could each get
+    their own row even though the grocery list treats them as one item
+    (see tools.grocery._merge_key) — a household could end up with an item
+    "typical" at two different stores at once, and a future add would pick
+    between the two rows non-deterministically. stores.set_item_store now
+    writes by merge-key identity so this can't happen going forward; this
+    cleans up any row pairs a database made before that fix. Idempotent
+    and cheap: only acts on a household that actually has more than one
+    row sharing a merge key, keeping the most recently created row (this
+    feature's existing "most recent write wins" rule) and deleting the
+    rest.
+    """
+    # Local import: app.db is imported by every app.tools module (for
+    # get_conn), so importing app.tools.grocery back from here at module
+    # load time would be circular. Safe as a call-time import instead,
+    # same trick tools/stores.py and tools/preferences.py use on each
+    # other for the same reason.
+    from .tools.grocery import _merge_key
+
+    rows = conn.execute(
+        "SELECT id, household_id, item FROM item_store_preferences ORDER BY id"
+    ).fetchall()
+    groups: dict[tuple[int, str], list] = {}
+    for row in rows:
+        key = (row["household_id"], _merge_key(row["item"]))
+        groups.setdefault(key, []).append(row)
+    for group in groups.values():
+        if len(group) > 1:
+            keep_id = max(r["id"] for r in group)
+            for row in group:
+                if row["id"] != keep_id:
+                    conn.execute("DELETE FROM item_store_preferences WHERE id = ?", (row["id"],))
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -191,6 +229,7 @@ def _run_migrations(conn):
     # the fact) should still pick up a color next time the app starts.
     # Idempotent: only ever touches rows whose color is still blank.
     _backfill_member_colors(conn)
+    _merge_duplicate_item_store_preferences(conn)
 
 
 def init_db():
