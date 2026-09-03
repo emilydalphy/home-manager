@@ -2808,6 +2808,16 @@
       '<div class="week-head">' +
         '<h1>This week</h1>' +
         (range ? '<span class="week-badge">' + escapeHtml(range) + '</span>' : '') +
+        // The trip chip (WeekWithTrip mock) — present only on a week that
+        // actually has an away stretch, so an ordinary week gains no chrome.
+        (data.trip_summary
+          ? '<span class="week-trip">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>' +
+              escapeHtml(data.trip_summary) +
+            '</span>'
+          : '') +
       '</div>' +
       (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
       // A component-based household has no real day mapping underneath —
@@ -2858,6 +2868,94 @@
   // hero moment per screen" means the other two slots must not compete
   // with it. Every state courseHtml handled is handled here; the difference
   // is where it renders and how loudly.
+  // ---------- derived trip states (WeekWithTrip mock) ----------
+  // Per Emily's progressive-disclosure decision these appear ONLY when a
+  // trip or an override has created the need — an ordinary week's slots
+  // carry no `need` at all and render exactly as they always have.
+  var NEED_LABELS = { quick: 'Quick', ready_made: 'Ready-made' };
+  var READY_CHECK =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+
+  function needBadgeHtml(entry) {
+    if (!entry || !entry.need || !NEED_LABELS[entry.need]) return '';
+    var who = (entry.need_for_names || []).length
+      ? ' for ' + joinList(entry.need_for_names)
+      : '';
+    return '<span class="need-badge">' + escapeHtml(NEED_LABELS[entry.need] + who) + '</span>';
+  }
+
+  function joinList(names) {
+    if (names.length <= 1) return names.join('');
+    if (names.length === 2) return names[0] + ' and ' + names[1];
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+
+  // An away slot is quiet on purpose: it states what it is and offers
+  // nothing, because offering to change it is exactly what the away state
+  // exists to prevent. Distinct from the generic "Out — nothing to cook"
+  // an out-night gets, since this one can also name whose trip caused it.
+  function awayLineFor(entry) {
+    return entry && entry.need === 'away'
+      ? 'Away — nothing planned, nothing bought.'
+      : (entry && entry.title) || '';
+  }
+
+  // The recommendation surface. Everything shown here comes from what the
+  // engine actually stored: the sentence, the alternative, and whether it
+  // has been confirmed. Nothing is invented client-side — when the engine
+  // has nothing to recommend, this renders nothing rather than a plausible
+  // guess.
+  function readyMadeHtml(day) {
+    var entry = day.dinner;
+    if (!entry || entry.need !== 'ready_made') return '';
+    var rec = entry.recommendation;
+    if (!rec) {
+      return '<div class="ready-made">' +
+        '<div class="ready-made-ask">' + escapeHtml(entry.need_reason ||
+          'First one back — I’ll cover this with something already made.') + '</div>' +
+        '<div class="ready-made-none">I haven’t got anything to earmark for this yet — ' +
+          'nothing batch-cooked earlier and nothing in the freezer.</div>' +
+      '</div>';
+    }
+    if (rec.confirmed) {
+      return '<div class="ready-made">' +
+        '<div class="ready-made-done">' + READY_CHECK +
+          '<span>' + escapeHtml(capitalizeFirst(rec.label)) + ' — settled.</span></div>' +
+      '</div>';
+    }
+    return '<div class="ready-made">' +
+      '<div class="ready-made-ask">' + escapeHtml(rec.sentence) + '</div>' +
+      '<div class="ready-made-actions">' +
+        '<button type="button" class="ready-made-confirm" data-date="' + day.date + '">' +
+          READY_CHECK + '<span>Confirm</span></button>' +
+        '<button type="button" class="ready-made-other" data-date="' + day.date + '">Choose differently</button>' +
+      '</div>' +
+      (rec.alternative
+        ? '<div class="ready-made-alt">' + escapeHtml(rec.alternative.sentence) + '</div>'
+        : '') +
+    '</div>';
+  }
+
+  function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }
+
+  async function confirmReadyMade(panel, date, confirmed) {
+    var week = weekState.data && weekState.data.week_start_date;
+    if (!week) return;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(week) + '/slot-recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: date, slot: 'dinner', confirmed: confirmed })
+      });
+      if (!res.ok) throw new Error('confirm failed');
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Ready-made confirmation failed:', err);
+      showToast('I couldn’t save that just now — try again in a moment.');
+    }
+  }
+
   function dinnerHeroHtml(day) {
     var entry = day.dinner;
     var tag = day.status
@@ -2881,9 +2979,24 @@
     // because offering to change it is exactly what planned_empty exists to
     // prevent.
     if (entry && entry.state === 'planned_empty') {
+      // A need declared before the week was generated has no meal to show
+      // yet, but it still has something to SAY — the badge and, for a
+      // ready-made slot, the recommendation waiting on a yes.
+      var emptyLine = awayLineFor(entry) ||
+        (entry.need === 'ready_made' ? 'Something already made' :
+         entry.need === 'quick' ? 'Something quick' : 'Nothing yet');
       return top +
-        '<div class="hero-dish hero-dish-out">' + escapeHtml(entry.title) + '</div>' +
-        (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '');
+        (entry.need && entry.need !== 'away'
+          ? '<div class="hero-needs">' + needBadgeHtml(entry) + '</div>' : '') +
+        '<div class="hero-dish hero-dish-out">' + escapeHtml(emptyLine) + '</div>' +
+        // An away slot's reason says the same thing its headline just said
+        // ("nothing planned, nothing bought"), so it is deliberately not
+        // repeated here — the household was told once, plainly. Other
+        // empty states keep their reason, which adds something.
+        (entry.need !== 'away' && (entry.need_reason || entry.reason)
+          ? '<div class="hero-accent">' + escapeHtml(entry.need_reason || entry.reason) + '</div>'
+          : '') +
+        readyMadeHtml(day);
     }
 
     // A decision handed back. The question and its answers live in one place
@@ -2903,8 +3016,10 @@
 
     if (entry) {
       return top +
+        (entry.need ? '<div class="hero-needs">' + needBadgeHtml(entry) + '</div>' : '') +
         '<div class="hero-dish' + dishSizeClass(entry.title) + '">' + escapeHtml(entry.title) + '</div>' +
         (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '') +
+        readyMadeHtml(day) +
         '<div class="hero-chips">' +
           (entry.meta ? '<span class="hero-chip">' + escapeHtml(entry.meta) + '</span>' : '') +
           '<span class="hero-chips-spacer"></span>' +
@@ -2937,7 +3052,8 @@
     var label = '<span class="side-label">' + SLOT_LABELS[slot] + '</span>';
     var body;
     if (entry && entry.state === 'planned_empty') {
-      body = '<span class="side-dish side-dish-out">' + escapeHtml(entry.title) + '</span>';
+      body = '<span class="side-dish side-dish-out">' +
+        escapeHtml(awayLineFor(entry) || 'Nothing planned') + '</span>';
     } else if (entry && entry.state === 'open') {
       body = '<span class="side-dish side-dish-open">' + escapeHtml(entry.title) + '</span>';
     } else if (entry) {
@@ -2948,7 +3064,9 @@
       body = '<span class="side-dish side-dish-blank">' +
         (day.isPast ? 'Not planned' : 'Not planned yet') + '</span>';
     }
-    return '<div class="side-row">' + label + body + '</div>';
+    // The badge rides alongside the dish rather than replacing it: a quick
+    // breakfast still names what it is.
+    return '<div class="side-row">' + label + body + needBadgeHtml(entry) + '</div>';
   }
 
   // Quick-dinner-pick suggestions (day.dinner_suggestions, from
@@ -2969,6 +3087,22 @@
     var wrap = panel.querySelector('#day-card-wrap');
     wrap.querySelectorAll('.wk-suggest-row').forEach(function (btn) {
       btn.addEventListener('click', function () { fillWeekDinner(panel, btn.dataset.date, btn.dataset.meal); });
+    });
+    // Confirm / Choose differently on a ready-made recommendation. Emily's
+    // standing rule: the system recommends, the household confirms —
+    // nothing acts on the earmark until this is tapped.
+    wrap.querySelectorAll('.ready-made-confirm').forEach(function (btn) {
+      btn.addEventListener('click', function () { confirmReadyMade(panel, btn.dataset.date, true); });
+    });
+    wrap.querySelectorAll('.ready-made-other').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // "Choose differently" declines the earmark and hands the question
+        // to chat, which is where an actual alternative gets chosen — the
+        // engine stores one recommendation, not a menu to pick from.
+        confirmReadyMade(panel, btn.dataset.date, false);
+        openAskSheet('Something else for ' + dayName(btn.dataset.date, { weekday: 'long' }) +
+          '’s dinner — I’ll be back from a trip, so nothing that needs real cooking');
+      });
     });
     var cookBtn = wrap.querySelector('#wk-cook-this');
     if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook' }); });

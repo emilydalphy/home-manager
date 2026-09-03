@@ -1589,6 +1589,135 @@ html, body {
 .side-dish-out { font-weight: 400; font-style: italic; color: var(--ink-done); }
 .side-dish-open { color: var(--apricot-label); }
 .side-dish-blank { font-weight: 400; font-style: italic; color: var(--ink-inactive); }
+
+/* ---------- Derived trip states (WeekWithTrip mock) ----------
+   Progressive disclosure, per Emily's decision: none of this renders on an
+   ordinary week — a slot only carries a `need` once a trip or an override
+   has created one. */
+.need-badge {
+  flex: 0 0 auto;
+  align-self: center;
+  height: 20px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-badge-sm);
+  background: var(--sand);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 9.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  /* --apricot-label on --sand measures 4.46:1 at this size — just under
+     the 4.5 floor, and 9.5px/800 is nowhere near "large text", so it
+     doesn't get the 3:1 allowance. The mock's own pairing has the same
+     shortfall. --apricot-label-hover keeps the hue and measures 6.9:1.
+     Using an existing token rather than adding one, since a new token is
+     Emily's call (DESIGN_SYSTEM §8, Tier 2) — flagged on the ticket as
+     worth formalising, because "small warm label on sand" will come up
+     again. */
+  color: var(--apricot-label-hover);
+  white-space: nowrap;
+}
+.hero-needs { margin-bottom: 6px; }
+/* On the spruce hero the badge sits on a lifted spruce fill rather than
+   sand — sand on spruce would read as a hole punched in the panel. */
+.hero-needs .need-badge {
+  background: var(--spruce-raised);
+  color: var(--apricot-light);
+}
+/* The trip chip beside "This week". */
+.week-trip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: var(--radius-badge);
+  background: var(--sand);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  /* The mock's own muted grey measures 4.04:1 on sand at 11px — under the
+     4.5 floor, and 11px/700 doesn't qualify as large text. Using --ink
+     instead measures 11.2:1 light / 10.6:1 dark (rule 8: measured, not
+     eyeballed), and needs no new token, which would be Emily's call. The
+     sand fill still carries the "quiet chrome" read. */
+  color: var(--ink);
+  white-space: nowrap;
+}
+.week-trip svg { width: 12px; height: 12px; flex: 0 0 auto; }
+
+/* The ready-made recommendation: a question with two answers, inside the
+   dinner hero. Its divider is --apricot-rule, the only divider permitted
+   inside the hero panel (DESIGN_SYSTEM §4). */
+.ready-made {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1.5px solid var(--apricot-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ready-made-ask {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--ivory-ink);
+}
+.ready-made-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ready-made-confirm,
+.ready-made-other {
+  flex: 1 1 auto;
+  min-height: 44px;
+  min-width: 120px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ready-made-confirm {
+  background: var(--apricot);
+  border: none;
+  color: var(--on-accent-ink);
+}
+.ready-made-confirm svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.ready-made-other {
+  background: transparent;
+  border: 1.5px solid var(--apricot-rule);
+  color: var(--ivory-ink-muted);
+}
+.ready-made-alt {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ivory-ink-muted);
+}
+.ready-made-none {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ivory-ink-muted);
+}
+.ready-made-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--apricot-light);
+}
+.ready-made-done svg { width: 15px; height: 15px; flex: 0 0 auto; }
 .btn-outline-plum {
   font-family: var(--font-body);
   font-weight: 700;
