@@ -80,14 +80,14 @@ html, body {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
-  color: var(--plum);
+  color: var(--ink-strong);
   text-decoration: none;
   padding: 8px 14px;
   border-radius: 10px;
   background: var(--card);
   white-space: nowrap;
 }
-.embed-quicklinks a:hover { background: #fff; }
+.embed-quicklinks a:hover { background: var(--surface-raised); }
 
 /* Placeholder content (Week, and anything not yet embedded) */
 .tab-placeholder {
@@ -240,7 +240,7 @@ html, body {
   color: var(--ink);
   cursor: pointer;
 }
-.tile-grocery:hover { background: #fff; border-color: var(--hairline-strong); }
+.tile-grocery:hover { background: var(--surface-raised); border-color: var(--hairline-strong); }
 .tile-grocery .tile-icon { color: var(--apricot-deep); }
 .tile-grocery .tile-eyebrow { color: var(--ink-muted); }
 
@@ -326,7 +326,7 @@ html, body {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
-  color: var(--plum);
+  color: var(--ink-strong);
   flex-shrink: 0;
   margin-left: 12px;
 }
@@ -361,14 +361,14 @@ html, body {
   left: 50%;
   bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
-  background: var(--plum-ink);
-  color: #fff;
+  background: var(--toast-bg);
+  color: var(--toast-ink);
   border-radius: 14px;
   padding: 14px 17px;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
-  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  box-shadow: var(--shadow-toast);
   z-index: 50;
   max-width: calc(100vw - 40px);
   text-align: center;
@@ -579,9 +579,9 @@ html, body {
   min-height: 44px;
 }
 .btn-gold { background: var(--gold); color: var(--gold-ink); }
-.btn-gold:hover { background: #e0915c; }
-.btn-sand { background: var(--sand); color: var(--plum); }
-.btn-sand:hover { background: #e6d9c4; }
+.btn-gold:hover { background: var(--apricot); }
+.btn-sand { background: var(--sand); color: var(--ink-strong); }
+.btn-sand:hover { background: var(--sand-deep); }
 
 /* Your chores */
 /* Chores are the quiet line at the bottom of Today: a list, not a third
@@ -632,13 +632,26 @@ html, body {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  border: 2px solid #c6bca9;
+  border: 2px solid var(--ink-done-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
-.chore-row.done .chore-checkbox { background: var(--good); border-color: var(--good); }
+/*
+  The tick inside a completed chore. Its SVG used to hardcode stroke="#fff";
+  it now takes `currentColor` so the colour lives here and can follow theme.
+
+  KNOWN LIGHT-MODE BUG, LEFT AS-IS ON PURPOSE (flagged for Emily): white on
+  celadon is 1.87:1, a RULE ONE violation — the same "#fff on what is now
+  celadon" class that stage 1 hunted for and fixed in nine other places, and
+  missed here. The stage-3 brief was that light mode must not change, so the
+  value is pinned to the #fff it already renders rather than silently fixed.
+  The fix is to delete this one line, at which point it inherits
+  --on-accent-ink (8.46:1) like every other accent fill. Dark mode already
+  does exactly that, in the dark block at the bottom of this file.
+*/
+.chore-row.done .chore-checkbox { background: var(--good); border-color: var(--good); color: #fff; }
 .chore-name {
   font-family: var(--font-body);
   font-size: 15px;
@@ -747,7 +760,7 @@ html, body {
   width: 44px;
   height: 5px;
   border-radius: 3px;
-  background: #e6d9c4;
+  background: var(--sand-deep);
   margin: 0 auto;
   flex-shrink: 0;
   cursor: pointer;
@@ -771,12 +784,12 @@ html, body {
   white-space: pre-wrap;
 }
 .ask-msg.user .ask-bubble { background: var(--plum); color: #fff; border-radius: 16px 16px 4px 16px; }
-.ask-msg.assistant .ask-bubble { background: #fbf6ee; color: var(--plum-ink); border-radius: 16px 16px 16px 4px; }
-.ask-bubble.loading { font-style: italic; color: var(--muted); background: #fbf6ee; animation: loading-pulse 1.3s ease-in-out infinite; }
+.ask-msg.assistant .ask-bubble { background: var(--ground); color: var(--plum-ink); border-radius: 16px 16px 16px 4px; }
+.ask-bubble.loading { font-style: italic; color: var(--muted); background: var(--ground); animation: loading-pulse 1.3s ease-in-out infinite; }
 @keyframes loading-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
 
 /* Markdown-lite tables inside an assistant bubble (see renderMarkdownLite in shell.js) */
-.ask-msg-table { display: block; overflow-x: auto; max-width: 100%; border-collapse: collapse; margin: 6px 0; font-size: .85rem; background: #fff; border-radius: 10px; }
+.ask-msg-table { display: block; overflow-x: auto; max-width: 100%; border-collapse: collapse; margin: 6px 0; font-size: .85rem; background: var(--surface-raised); border-radius: 10px; }
 .ask-msg-table thead, .ask-msg-table tbody { display: table; width: 100%; table-layout: auto; }
 .ask-msg-table th, .ask-msg-table td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
 .ask-msg-table th { font-family: var(--font-heading); font-weight: 700; color: var(--plum-ink); background: var(--cream); }
@@ -787,7 +800,7 @@ html, body {
 .ask-action-card {
   align-self: stretch;
   background: var(--card);
-  border: 1.5px solid #e6d9c4;
+  border: 1.5px solid var(--hairline-strong);
   border-radius: 14px;
   padding: 15px 17px;
   display: flex;
@@ -798,7 +811,7 @@ html, body {
   text-align: left;
   animation: popIn .2s ease;
 }
-.ask-action-card:hover { background: #fffdf8; }
+.ask-action-card:hover { background: var(--surface); }
 .ask-action-card .ask-action-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ask-action-card .ask-action-kicker {
   font-family: var(--font-body);
@@ -810,12 +823,12 @@ html, body {
   margin-bottom: 5px;
 }
 .ask-action-card .ask-action-change { font-family: var(--font-body); font-size: 16px; color: var(--plum-ink); }
-.ask-action-card .ask-action-view { flex-shrink: 0; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--plum); }
+.ask-action-card .ask-action-view { flex-shrink: 0; font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--ink-strong); }
 
 .ask-chips { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
 .ask-chip {
   background: var(--cream);
-  color: var(--plum);
+  color: var(--ink-strong);
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 15px;
@@ -825,7 +838,7 @@ html, body {
   cursor: pointer;
   min-height: 44px;
 }
-.ask-chip:hover { background: #f3ebdc; }
+.ask-chip:hover { background: var(--sand); }
 
 .ask-composer-bar {
   background: var(--cream);
@@ -878,7 +891,7 @@ html, body {
   height: 40px;
   border-radius: 11px;
   background: transparent;
-  color: var(--plum);
+  color: var(--ink-strong);
   border: none;
   display: flex;
   align-items: center;
@@ -947,7 +960,7 @@ html, body {
   letter-spacing: -0.01em;
   color: inherit;
 }
-.tab-btn.active { color: var(--spruce); }
+.tab-btn.active { color: var(--ink-strong); }
 .tab-btn.active .tab-label { font-weight: 800; }
 .tab-btn .tab-badge {
   display: none;
@@ -1168,7 +1181,7 @@ html, body {
   background: var(--menu-paper);
   border: 1px solid var(--menu-rule);
   border-radius: 18px;
-  box-shadow: 0 2px 0 #f3ebdc;
+  box-shadow: 0 2px 0 var(--sand);
   flex-shrink: 0;
 }
 .week-days { flex-shrink: 0; }
@@ -1204,7 +1217,7 @@ html, body {
   color: var(--menu-ink);
 }
 .menu-dots {
-  color: #c4703c;
+  color: var(--apricot-deep);
   font-size: 5px;
   letter-spacing: 8px;
   margin: 10px 0;
@@ -1579,7 +1592,7 @@ html, body {
   font-size: 16px;
   background: none;
   border: 1.5px solid var(--plum);
-  color: var(--plum);
+  color: var(--ink-strong);
   border-radius: 12px;
   cursor: pointer;
   min-height: 44px;
@@ -1611,7 +1624,7 @@ html, body {
 #week-sheet-scrim {
   position: fixed;
   inset: 0;
-  background: rgba(35, 48, 42,.45);
+  background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 40;
 }
@@ -1624,7 +1637,7 @@ html, body {
   max-height: 84%;
   background: var(--menu-paper);
   border-radius: 26px 26px 0 0;
-  box-shadow: 0 -8px 30px rgba(35, 48, 42,.2);
+  box-shadow: var(--shadow-sheet);
   padding: 16px 16px 20px;
   display: flex;
   flex-direction: column;
@@ -1640,8 +1653,8 @@ html, body {
   flex-shrink: 0;
 }
 .week-sheet-title { font-family: var(--font-heading); font-weight: 700; font-size: 20px; color: var(--plum-ink); }
-.week-sheet-hairline { flex: 1; border-bottom: 1px solid #e6d9c4; height: 1px; }
-.week-sheet-range { font-family: var(--font-body); font-style: italic; font-size: 14px; color: #7c7161; }
+.week-sheet-hairline { flex: 1; border-bottom: 1px solid var(--hairline-strong); height: 1px; }
+.week-sheet-range { font-family: var(--font-body); font-style: italic; font-size: 14px; color: var(--ink-secondary); }
 .week-sheet-cols {
   display: flex;
   gap: 8px;
@@ -1656,15 +1669,15 @@ html, body {
   font-size: 9px;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: #a2582f;
+  color: var(--apricot-label);
 }
-.week-sheet-col-dinner { flex: 1.25; color: #8f2c17; }
+.week-sheet-col-dinner { flex: 1.25; color: var(--urgent-label); }
 .week-sheet-rows { overflow-y: auto; display: flex; flex-direction: column; }
 .week-sheet-row {
   display: flex;
   gap: 8px;
   padding: 9px 4px;
-  border-top: 1px solid #eee3d0;
+  border-top: 1px solid var(--hairline);
   border-radius: 10px;
   cursor: pointer;
   background: none;
@@ -1673,7 +1686,7 @@ html, body {
   font: inherit;
   width: 100%;
 }
-.week-sheet-row.selected { background: #f3ebdc; }
+.week-sheet-row.selected { background: var(--sand); }
 .week-sheet-row.past { opacity: .55; }
 .week-sheet-day-label {
   width: 40px;
@@ -1682,8 +1695,8 @@ html, body {
   font-size: 12px;
   color: var(--plum-ink);
 }
-.week-sheet-row.selected .week-sheet-day-label { font-family: var(--font-body); font-weight: 800; color: var(--plum); }
-.week-sheet-row.gap .week-sheet-day-label { color: #8f2c17; }
+.week-sheet-row.selected .week-sheet-day-label { font-family: var(--font-body); font-weight: 800; color: var(--ink-strong); }
+.week-sheet-row.gap .week-sheet-day-label { color: var(--urgent-label); }
 .week-sheet-cell {
   flex: 1;
   font-family: var(--font-body);
@@ -1693,7 +1706,7 @@ html, body {
   font-weight: 600;
 }
 .week-sheet-cell.dinner { flex: 1.25; }
-.week-sheet-cell.empty { font-style: italic; color: #8f2c17; font-weight: 400; }
+.week-sheet-cell.empty { font-style: italic; color: var(--urgent-label); font-weight: 400; }
 .week-sheet-cell.blank { font-style: italic; color: var(--faded); font-weight: 400; }
 .week-sheet-footer {
   display: flex;
@@ -1782,9 +1795,9 @@ html, body {
   left: 16px;
   max-width: 380px;
   margin-left: auto;
-  background: #fff;
+  background: var(--surface-raised);
   border-radius: 18px;
-  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+  box-shadow: var(--shadow-panel);
   z-index: 70;
   max-height: 70vh;
   overflow-y: auto;
@@ -1795,13 +1808,13 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px 8px;
-  border-bottom: 1px solid #EEE3D0;
+  border-bottom: 1px solid var(--hairline);
 }
 .notif-panel-title {
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 1.05rem;
-  color: var(--plum, #1B3328);
+  color: var(--ink-strong);
 }
 .notif-panel-close {
   background: none;
@@ -1813,7 +1826,7 @@ html, body {
 }
 .notif-row {
   padding: 12px 16px;
-  border-bottom: 1px solid #EEE3D0;
+  border-bottom: 1px solid var(--hairline);
 }
 .notif-row:last-child { border-bottom: none; }
 .notif-row-title {
@@ -1907,7 +1920,7 @@ html, body {
   padding: 4px 2px;
   flex-shrink: 0;
 }
-.plan-nudge-dismiss:hover { color: var(--plum); }
+.plan-nudge-dismiss:hover { color: var(--ink-strong); }
 .plan-nudge-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -1936,7 +1949,7 @@ html, body {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 15px;
-  color: var(--plum);
+  color: var(--ink-strong);
   cursor: pointer;
   padding: 4px 0;
 }
@@ -2014,8 +2027,8 @@ html, body {
 #week-open-row:empty { display: none; }
 .week-open-card {
   padding: 16px 17px;
-  border-left: 4px solid #E0915C;
-  background: #F3EBDC;
+  border-left: 4px solid var(--apricot);
+  background: var(--sand);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -2035,8 +2048,8 @@ html, body {
   gap: 12px;
   width: 100%;
   text-align: left;
-  background: #fff;
-  border: 1px solid #E6D9C4;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline-strong);
   border-radius: 12px;
   padding: 13px 15px;
   min-height: 46px;
@@ -2053,7 +2066,7 @@ html, body {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 15px;
-  color: var(--plum);
+  color: var(--ink-strong);
   cursor: pointer;
   padding: 4px 0;
 }
@@ -2076,7 +2089,7 @@ html, body {
   padding: 8px 4px;
   min-height: 40px;
 }
-.week-redo-btn:hover:not(:disabled) { color: var(--plum); }
+.week-redo-btn:hover:not(:disabled) { color: var(--ink-strong); }
 .week-redo-btn:disabled { opacity: .6; cursor: default; }
 
 /* The way into the revisitable setup screen, offered both on the approved
@@ -2090,7 +2103,7 @@ html, body {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
-  color: var(--plum);
+  color: var(--ink-strong);
   cursor: pointer;
   padding: 10px 19px 4px;
 }
@@ -2109,7 +2122,7 @@ html, body {
   cursor: pointer;
   padding: 6px 0 0;
 }
-.week-reopen-btn:hover { color: var(--plum); }
+.week-reopen-btn:hover { color: var(--ink-strong); }
 
 /* ---------- Approve the week / approved receipt ----------
    design_handoff_plan_the_week. Two states of one slot: the promise plus
@@ -2223,7 +2236,7 @@ html, body {
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   position: fixed;
   inset: 0;
-  background: rgba(35, 48, 42,.45);
+  background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 50;
 }
@@ -2241,7 +2254,7 @@ html, body {
   background: var(--menu-paper);
   border: 1px solid var(--menu-rule);
   border-radius: 22px;
-  box-shadow: 0 18px 44px rgba(35, 48, 42,.28);
+  box-shadow: var(--shadow-dialog);
   padding: 22px 22px 20px;
   animation: sheetUp .2s cubic-bezier(.2,.8,.2,1);
 }
@@ -2288,7 +2301,7 @@ html, body {
   width: 20px;
   height: 20px;
   margin: 1px 0 0;
-  accent-color: var(--plum);
+  accent-color: var(--ink-strong);
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -2434,7 +2447,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  box-shadow: 0 26px 48px -30px rgba(18, 36, 25, .85);
+  box-shadow: var(--shadow-hero);
 }
 .gro-hero-top { display: flex; align-items: center; gap: 10px; }
 .gro-hero-chip {
@@ -2507,7 +2520,7 @@ html, body {
   font-weight: 700;
   letter-spacing: -0.02em;
   cursor: pointer;
-  box-shadow: 0 16px 28px -18px rgba(224, 145, 92, .8);
+  box-shadow: var(--shadow-action);
   width: 100%;
 }
 .gro-hero-action:hover { background: var(--apricot-light); }
@@ -2663,7 +2676,7 @@ html, body {
 .gro-ps-btn:disabled { opacity: .6; cursor: default; }
 .gro-ps-btn-keep { background: var(--spruce); border: none; color: var(--ivory-ink); }
 .gro-ps-btn-keep:hover { background: var(--spruce-raised); }
-.gro-ps-btn-drop { background: transparent; border: 1.5px solid var(--celadon-edge); color: var(--spruce); }
+.gro-ps-btn-drop { background: transparent; border: 1.5px solid var(--celadon-edge); color: var(--ink-strong); }
 .gro-ps-btn-drop:hover { background: var(--surface); }
 .gro-ps-more, .gro-ps-keepall {
   background: none;
@@ -2677,7 +2690,7 @@ html, body {
   min-height: 36px;
   text-align: left;
 }
-.gro-ps-more:hover, .gro-ps-keepall:hover { color: var(--spruce); }
+.gro-ps-more:hover, .gro-ps-keepall:hover { color: var(--ink-strong); }
 .gro-ps-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
 /* ---------- Store card ---------- */
@@ -3367,7 +3380,7 @@ html, body {
   color: var(--ivory-ink-muted);
   cursor: pointer;
 }
-.kit-chip:hover { background: #2B4A37; }
+.kit-chip:hover { background: var(--spruce-hover); }
 .kit-chip-num { font-weight: 800; color: var(--apricot-light); }
 /* Spruce-raised, NOT apricot — see the block comment above. */
 .kit-hero-action {
@@ -3388,7 +3401,7 @@ html, body {
 }
 .kit-hero-action span { flex: 1 1 auto; text-align: left; }
 .kit-hero-action svg { width: 18px; height: 18px; color: var(--apricot-light); }
-.kit-hero-action:hover { background: #2B4A37; }
+.kit-hero-action:hover { background: var(--spruce-hover); }
 
 /* ---------- Entry tiles ---------- */
 .kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
@@ -3466,7 +3479,7 @@ html, body {
 #kit-sheet-scrim {
   position: fixed;
   inset: 0;
-  background: rgba(35, 48, 42, .45);
+  background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 40;
 }
@@ -3479,7 +3492,7 @@ html, body {
   height: 92%;
   background: var(--ground);
   border-radius: 26px 26px 0 0;
-  box-shadow: 0 -8px 30px rgba(35, 48, 42, .2);
+  box-shadow: var(--shadow-sheet);
   padding: 12px 0 0;
   display: flex;
   flex-direction: column;
@@ -3707,7 +3720,7 @@ html, body {
   font-weight: 700;
   letter-spacing: -0.02em;
   cursor: pointer;
-  box-shadow: 0 16px 28px -18px rgba(224, 145, 92, .8);
+  box-shadow: var(--shadow-action);
 }
 .cook-hero-action:hover { background: var(--apricot-light); }
 .cook-hero-action svg { width: 18px; height: 18px; }
@@ -3725,7 +3738,7 @@ html, body {
   cursor: pointer;
 }
 .cook-hero-icon svg, .cook-hero-check svg { width: 20px; height: 20px; }
-.cook-hero-icon:hover, .cook-hero-check:hover { background: #2B4A37; }
+.cook-hero-icon:hover, .cook-hero-check:hover { background: var(--spruce-hover); }
 .cook-hero-check { color: var(--ivory-ink-muted); }
 .cook-hero-check.checked { background: var(--celadon); color: var(--on-accent-ink); }
 .cook-hero-detail { border-top: 1.5px solid var(--apricot-rule); padding-top: 10px; }
@@ -4122,4 +4135,64 @@ html, body {
    phone rather than squeezing two unreadable cards side by side. */
 @media (max-width: 359px) {
   .kit-tiles, .cook-prep-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ==========================================================================
+   DARK MODE — the leftovers (§ Pomona stage 3)
+   ==========================================================================
+   theme.css does the real work: every token gets a dark value there and any
+   component styled through a token follows for free. This block is only for
+   the handful of places in this file that could NOT be pointed at a token
+   without also changing light mode — a scrim at .4 where the token is .45,
+   an rgba wash tuned for a light ground, a literal with no token twin.
+
+   Everything here lives inside the media query, so light mode is untouched
+   by construction: there is no rule below that a light-mode browser applies.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+
+  /* --- The hero panel's edge ---
+     Per the guide, a shadow reads as nothing on a dark ground, so the hero
+     lifts on a lighter fill (--spruce goes to #22422F) plus a hairline.
+     An inset ring rather than a border: it follows the panel's radius and
+     costs no layout, and these panels are joined to the top edge. */
+  .dinner-hero, .day-hero, .gro-hero, .kit-hero, .cook-hero {
+    box-shadow: var(--shadow-hero), inset 0 0 0 1.5px var(--spruce-edge);
+  }
+
+  /* The dark hero is a LIGHTER spruce, so the quiet ivories that sit on it
+     lose contrast. .58 falls to 4.40:1 there; .66 restores it to 5.20:1. */
+  .hero-dish-out, .hero-dish-blank { color: rgba(246, 238, 225, .66); }
+
+  /* --- Scrims and sheet shadows left at their own alphas ---
+     Tokenising these would have moved light mode by a few percent of
+     opacity, so they get a dark value here instead. A spruce wash over an
+     already-dark ground barely dims anything; black does. */
+  #ask-scrim { background: var(--scrim); }
+  #notif-scrim { background: var(--scrim); }
+  #ask-sheet { box-shadow: var(--shadow-sheet); }
+
+  /* --- Washes tuned for a light ground ---
+     A 6% spruce tint marks today's column on the week grid. On a dark
+     ground a dark tint is invisible; the same idea inverts to a light one. */
+  .wg-today { background: rgba(246, 238, 225, .07); }
+
+  /* --- Accent fills whose ink flips ---
+     --urgent becomes a LIGHT accent on dark (see theme.css), so the ivory
+     text these carried has to become --on-accent-ink with it. */
+  .ask-composer-mic.active { color: var(--urgent-ink); }
+  @keyframes askMicPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(230, 112, 91, .45); }
+    50% { box-shadow: 0 0 0 6px rgba(230, 112, 91, 0); }
+  }
+
+  /* --- Literals with no token twin --- */
+  .gro-box { border-color: var(--hairline-strong); }
+
+  /* The completed-chore tick. Celadon is a light accent in BOTH modes, so
+     RULE ONE applies to it here: dark ink, not white. See the long note at
+     .chore-row.done .chore-checkbox — light mode is knowingly left at the
+     white it already renders (1.87:1) because this stage could not change
+     light; dark gets it right at 8.46:1. */
+  .chore-row.done .chore-checkbox { color: var(--on-accent-ink); }
 }

@@ -844,7 +844,7 @@
       return (
         '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' +
           '<span class="chore-checkbox" role="checkbox" aria-checked="' + isDone + '" tabindex="0">' +
-            (isDone ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : '') +
+            (isDone ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : '') +
           '</span>' +
           '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
         '</div>'
@@ -930,17 +930,29 @@
     produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat / seafood',
     pantry: 'Pantry', frozen: 'Frozen', other: 'Other'
   };
-  // Aisle spine colours. Kept from the page this replaces, re-pointed at the
-  // Pomona tokens' literal values (a spine is an inline style on a generated
-  // element, so it cannot read a var() from a stylesheet rule).
+  // Aisle spine colours. These are `var()` references, not literals: a custom
+  // property DOES cascade into an inline style attribute, so emitting
+  // `style="background: var(--apricot)"` resolves per theme exactly like a
+  // stylesheet rule would. (The earlier note here claimed otherwise; it was
+  // wrong, and it was the reason these were frozen at light-mode literals.)
+  // Getting them onto tokens is what makes the spines follow dark mode —
+  // #4F6B5B and #B23A22 on the dark ground were 1.5:1 and 2.8:1.
   var GRO_AISLE_COLORS = {
-    produce: '#A9C4B0', dairy: '#E0915C', 'meat/seafood': '#B23A22',
-    pantry: '#4F6B5B', frozen: '#B23A22', other: '#948970'
+    produce: 'var(--celadon)', dairy: 'var(--apricot)',
+    'meat/seafood': 'var(--urgent)', pantry: 'var(--celadon-label)',
+    frozen: 'var(--urgent)', other: 'var(--ink-inactive)'
   };
   // Store identity colours. Every entry is a LIGHT accent, because the avatar
   // carries spruce ink (--on-accent-ink) and RULE ONE has no exceptions — the
   // set this replaces included spruce and #7E7360, which put dark ink on a
   // dark fill and failed contrast outright.
+  // These stay LITERALS on purpose, unlike the aisle spines above: they are
+  // arbitrary identity colours rather than semantic roles, and a light accent
+  // fill carrying dark ink is correct on either ground. Measured against
+  // --on-accent-ink in both modes, the worst pair is 5.40:1 (light) / 6.32:1
+  // (dark). Pointing them at tokens would be wrong — --celadon-edge and
+  // --sand-deep both go DARK in dark mode, which would put dark ink on a
+  // dark fill, the exact failure the comment above is about.
   var GRO_STORE_PALETTE = ['#E0915C', '#A9C4B0', '#F2B98E', '#C7DACD', '#E6D9C4', '#EFD3A9'];
 
   var GRO_ICONS = {
@@ -953,7 +965,7 @@
     basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>'
   };
 
-  function groAisleColor(section) { return GRO_AISLE_COLORS[section] || '#948970'; }
+  function groAisleColor(section) { return GRO_AISLE_COLORS[section] || 'var(--ink-inactive)'; }
   function groStoreColor(name) {
     // "Any store" is the leftovers bucket, not a stop — it gets the quiet
     // sand fill rather than a store identity colour.
