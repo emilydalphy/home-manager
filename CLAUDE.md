@@ -307,6 +307,35 @@ why*, not duplicating the diff.
     reasoning anyway. The assistant is also told not to plan wider than it
     was asked, because a wider period now silently retires days nobody
     mentioned.
+  - **An adversarial review found nine issues before this was pushed; eight
+    are fixed and one is deliberately open.** The serious ones were all the
+    same mechanism failing in different places: `day_count = 0` meant BOTH
+    "surrendered every day" AND, read as the legacy sentinel, seven days —
+    so a retired plan claimed a whole week again the moment anything let it
+    past a `status != 'retired'` filter, and **approving a week did exactly
+    that** (it resolved to the retired row by filing key and set its status
+    back to `approved`: two live plans on one week, from one HTTP call).
+    The sentinel is now BOTH columns unset together and a retired plan keeps
+    its start. Also fixed: `get_plan_id_for_date`'s filing-key fallback,
+    which answered "yes, that plan" for days a plan no longer covers —
+    `slot_needs` is the caller, so an `away` attached to a dead plan is
+    never enforced and the household gets shopped for a night they said they
+    were out. And the takeover now deconflicts **globally**: shortening two
+    pre-existing overlapping plans independently pushed both onto the same
+    resume date and invented five clashing days that did not exist before it
+    ran. **The lesson is the same one the Plan the Week review taught: the
+    author had verified all of it and still shipped those.**
+  - **STILL OPEN, and Emily's call: `retire_overlapping_plans` is not
+    atomic across plans.** Every decision is computed before anything is
+    destroyed, but each plan's meals, prep tasks and grocery reversal commit
+    before the next plan is touched. A failure mid-loop (a locked database,
+    a killed process) leaves the first plan's days genuinely gone while the
+    household sees an error saying nothing was saved. Only reachable when a
+    single generation takes over two or more plans at once. A real fix needs
+    one transaction spanning the loop, which fights the
+    connection-per-operation style and `_reverse_meal_grocery_contributions`
+    committing internally — worth doing deliberately, not as a footnote to
+    this branch.
   - UI is one light control on the plan card ("Pick my own days" → start
     day + length + a confirm naming the dates), inline rather than a sheet.
     Contrast measured in both schemes; lowest new value 4.58:1 light
