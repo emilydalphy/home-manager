@@ -4208,6 +4208,15 @@ html, body {
 .cook-detail-p { margin: 0; line-height: 1.45; }
 .cook-ings, .cook-steps { margin: 0; padding-left: 20px; line-height: 1.5; }
 .cook-ings li, .cook-steps li { margin-bottom: 4px; }
+/* Tap-to-check Do-ahead/Day-of steps (focused cook mode only) — the number
+   still comes from the <ol> marker (display:flex directly on an <li> drops
+   it, so the flex row is an inner span instead); the checkbox is the
+   .cook-box shared with prep tiles and the week list, so a step reads the
+   same as any other checkable row in Cook. */
+.cook-step-row { display: flex; align-items: flex-start; gap: 8px; }
+.cook-step-check { flex: 0 0 auto; margin-top: 1px; }
+.cook-step-text { flex: 1 1 auto; }
+.cook-step-item.is-done .cook-step-text { color: var(--ink-inactive); text-decoration: line-through; }
 .cook-dim { color: var(--ink-secondary); font-style: italic; margin: 0; }
 .cook-detail.on-spruce .cook-dim { color: var(--ivory-ink-muted); }
 .cook-unscaled { font-size: 12.5px; font-style: italic; color: var(--ink-secondary); margin: 6px 0 0; }

@@ -4115,6 +4115,7 @@
     focusScrollTo: null, // 'ingredients' | null — landed-on section, once
     pendingFocusTonight: false, // set by a "Start cooking"/"Cook this" deep link that arrives before the view has ever loaded
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
+    focusStepsChecked: {},      // 'idx:stepPos' -> true — tap-to-check on Do-ahead/Day-of steps, client-side only (see cookStepLi)
     voiceSession: null,
     voiceContext: null, // { type: 'prep' } | { type: 'meal', idx }
     voiceStepCursor: {},
@@ -4278,6 +4279,14 @@
     var panel = cookPanel();
     var view = panel && panel.querySelector('#week-cook-view');
     if (!view) return;
+
+    // The Plan/Cook segmented control is Meals' own top-level state, not
+    // part of what's "on screen" once a meal takes it over — the same rule
+    // Grocery's shopping mode follows for its own To buy/Plan stops/Review
+    // control (renderGrocery: "while it is on, the control goes away rather
+    // than lying about where you are").
+    var mealsSeg = panel && panel.querySelector('#meals-seg');
+    if (mealsSeg) mealsSeg.hidden = cookState.screen === 'focus';
 
     // Hold the scroll across a re-render — the same rule the Grocery panel
     // follows, and it matters more here: a re-render happens every time a
@@ -4521,7 +4530,7 @@
       '<ul class="cook-ings" id="cook-ings-' + idx + '">' + ingredients + '</ul>' +
       '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
       '<h4 class="cook-detail-head">Instructions</h4>' +
-      cookInstructionsHtml(m) +
+      cookInstructionsHtml(m, idx) +
       (m.reasoning
         ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
           '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
@@ -4534,7 +4543,33 @@
   // into "Do ahead" and "Day of" with their own numbering, so it is clear
   // what to do the night before and what happens later using it. Most
   // recipes tag nothing and get one flat list.
-  function cookInstructionsHtml(m) {
+  //
+  // Each step is tap-to-check (cookState.focusStepsChecked, client-side
+  // only — there is no server column for "which recipe steps has this cook
+  // done," and there doesn't need to be one: it's a during-the-cook memory
+  // aid, not a record anyone needs later, so it resets with the page like
+  // the rest of this in-memory screen state). Keyed by meal idx + the
+  // step's position in the FULL instructions array, not the Do
+  // ahead/Day of sub-list's own numbering, so a check survives whichever
+  // list it's currently rendered into.
+  function cookStepLi(step, idx, stepPos) {
+    var key = idx + ':' + stepPos;
+    var done = !!cookState.focusStepsChecked[key];
+    // The number stays a real <ol> marker — a step someone might reference
+    // ("step 3") should look like one — so the checkbox+text flex row lives
+    // INSIDE the <li> rather than on it; display:flex directly on an <li>
+    // silently drops its own marker in every browser that matters here.
+    return '<li class="cook-step-item' + (done ? ' is-done' : '') + '">' +
+      '<span class="cook-step-row">' +
+        '<button type="button" class="cook-box cook-step-check' + (done ? ' checked' : '') + '" ' +
+          'data-cook="check-step" data-idx="' + idx + '" data-step="' + stepPos + '" ' +
+          'aria-label="' + (done ? 'Mark step not done' : 'Mark step done') + '">' + COOK_ICONS.check + '</button>' +
+        '<span class="cook-step-text">' + escapeHtml(step) + '</span>' +
+      '</span>' +
+    '</li>';
+  }
+
+  function cookInstructionsHtml(m, idx) {
     var steps = m.instructions || [];
     if (!steps.length) {
       return '<p class="cook-dim">No steps saved yet.</p>' +
@@ -4542,14 +4577,16 @@
     }
     var prepIdx = m.advance_prep_step_indices || [];
     if (!prepIdx.length) {
-      return '<ol class="cook-steps">' + steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>';
+      return '<ol class="cook-steps cook-steps-check">' +
+        steps.map(function (s, i) { return cookStepLi(s, idx, i); }).join('') +
+      '</ol>';
     }
-    var doAhead = steps.filter(function (_, i) { return prepIdx.indexOf(i + 1) !== -1; });
-    var dayOf = steps.filter(function (_, i) { return prepIdx.indexOf(i + 1) === -1; });
+    var doAhead = [], dayOf = [];
+    steps.forEach(function (s, i) { (prepIdx.indexOf(i + 1) !== -1 ? doAhead : dayOf).push({ s: s, i: i }); });
     return '<h5 class="cook-steplabel cook-steplabel-warm">Do ahead</h5>' +
-      '<ol class="cook-steps">' + doAhead.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>' +
+      '<ol class="cook-steps cook-steps-check">' + doAhead.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>' +
       '<h5 class="cook-steplabel">Day of</h5>' +
-      '<ol class="cook-steps">' + dayOf.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>';
+      '<ol class="cook-steps cook-steps-check">' + dayOf.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>';
   }
 
   // ---------- Cook: focused single-meal mode ----------
@@ -4632,7 +4669,11 @@
   function cookFocusHtml(data, meals, idx) {
     var meal = meals[idx];
     var isDone = meal.cooked_status === 'done';
-    var dayLabel = meal.date ? cookDateLabel(meal.date) : (meal.component_category || 'Cooking');
+    // A component-based plan's date is a placeholder (week_start, per
+    // get_weekly_plan) — showing it as a real day would be a lie about
+    // when this is for, same reason cookRestOfWeekHtml prefers the
+    // category label over the date for these entries.
+    var dayLabel = meal.component_category || (meal.date ? cookDateLabel(meal.date) : 'Cooking');
 
     var chips = [];
     if (meal.prep_time_minutes || meal.cook_time_minutes) {
@@ -4781,6 +4822,12 @@
     }
     if (what === 'exit-focus') return cookExitFocus();
     if (what === 'focus-check') return cookFocusCheckMeal(el);
+    if (what === 'check-step') {
+      var stepKey = el.getAttribute('data-idx') + ':' + el.getAttribute('data-step');
+      cookState.focusStepsChecked[stepKey] = !cookState.focusStepsChecked[stepKey];
+      renderCook();
+      return;
+    }
     if (what === 'why') {
       var text = document.getElementById('cook-why-' + el.getAttribute('data-idx'));
       if (text) text.hidden = !text.hidden;
