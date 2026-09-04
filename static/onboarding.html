@@ -1235,7 +1235,7 @@ function groupRevealMealsByDay(meals) {
 
 function revealSlotDishHtml(m) {
   if (m.slot_state === 'open') {
-    return `<span class="reveal-slot-dish reveal-slot-dish-open">Still deciding — I'll ask you about this one</span>`;
+    return `<span class="reveal-slot-dish reveal-slot-dish-open">Still deciding</span>`;
   }
   if (m.slot_state === 'planned_empty' || !m.meal) {
     return `<span class="reveal-slot-dish reveal-slot-dish-empty">Nothing planned</span>`;
