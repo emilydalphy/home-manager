@@ -33,11 +33,30 @@ LAST_TURN_USAGE: contextvars.ContextVar[dict] = contextvars.ContextVar("last_tur
 
 MODEL = "claude-sonnet-5"
 
+# The model interactive chat falls back to, once, after the primary model's
+# retries exhaust on an overload-shaped error (see _OVERLOADED_STATUS_CODES
+# and _create_with_retry's fallback_model parameter). Pinned to an exact
+# dated snapshot rather than a rolling alias — a fallback should behave the
+# same way every time it's actually needed, not drift underneath this app
+# whenever Anthropic moves the alias. Env-overridable so production can
+# repoint it without a code change; keep app/tools/usage.py's
+# _RATES_PER_MTOK in sync with whatever this resolves to, or cost reporting
+# on a fallback call raises (see price_tokens).
+CHAT_FALLBACK_MODEL = os.environ.get("CHAT_FALLBACK_MODEL", "claude-haiku-4-5-20251001")
+
 # Status codes worth silently retrying — Anthropic's own transient blips
 # (overloaded, rate-limited, brief 5xx) rather than anything wrong with the
 # request itself. Retrying anything else (e.g. a 400 bad request) would
 # just fail again the exact same way, so those raise immediately instead.
 _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504, 529}
+
+# The subset of _RETRYABLE_STATUS_CODES that specifically means "Anthropic's
+# servers are overloaded" rather than "we're being rate-limited" (429) or "a
+# brief 5xx blip" (500/502/504) — the only ones worth spending a fallback
+# model's extra cost/latency on, since a different model can't do anything
+# about a rate limit or a one-off network hiccup that a same-model retry
+# wouldn't already have fixed.
+_OVERLOADED_STATUS_CODES = {503, 529}
 
 
 class AssistantUnavailableError(RuntimeError):
@@ -104,7 +123,10 @@ def _record_api_call(label: str, model: str, response, seconds: float) -> None:
         logger.exception("Recording an API call failed")
 
 
-def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts: int = 3, **kwargs):
+def _create_with_retry(
+    client: "Anthropic", *, label: str = "llm", max_attempts: int = 3,
+    fallback_model: str | None = None, **kwargs,
+):
     """
     Thin wrapper around client.messages.create that quietly retries a
     handful of times (short exponential backoff) when the failure is
@@ -114,6 +136,16 @@ def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts:
     never even notices anything happened. If it's still failing after all
     attempts, raises AssistantUnavailableError with a friendly message
     instead of letting the raw API error bubble up to the browser.
+
+    fallback_model, when given, is a second, cheaper/different model to try
+    ONCE after retries exhaust — but only for an overload-shaped failure
+    (_OVERLOADED_STATUS_CODES: 503/529), and never for a 4xx (those are our
+    bugs, not Anthropic's outage, so a different model wouldn't help) or for
+    429/500/502/504 (a rate limit or brief blip that a same-model retry
+    already had a fair shot at). Degraded quality beats a dead chat, which
+    is why only run_agent_turn (interactive chat) passes this — week/
+    component generation deliberately fails soft with the existing friendly
+    message instead of a plan built by a weaker model; see CHAT_FALLBACK_MODEL.
     """
     delay = 0.75
     last_error: Exception | None = None
@@ -145,6 +177,41 @@ def _create_with_retry(client: "Anthropic", *, label: str = "llm", max_attempts:
             )
             time.sleep(delay)
             delay *= 2
+
+    if (
+        fallback_model
+        and isinstance(last_error, APIStatusError)
+        and last_error.status_code in _OVERLOADED_STATUS_CODES
+    ):
+        primary_model = kwargs.get("model", MODEL)
+        logger.warning(
+            "%s overloaded (%s) after %d attempts; retrying %s once on fallback model %s",
+            primary_model, last_error.status_code, max_attempts, label, fallback_model,
+        )
+        # The observability channel, not just the log line above — Railway's
+        # stdout isn't something the morning report can read (see
+        # tools.record_error's own docstring), so a fallback that only
+        # logged would be invisible to Emily. "fallback" extends the
+        # existing server/tool/client/rate_limit kind convention; it isn't
+        # really a failure (the turn is about to succeed), but it's exactly
+        # the kind of thing she'd otherwise never find out happened.
+        tools.record_error(
+            "fallback", where=label,
+            detail=f"{primary_model} overloaded ({last_error.status_code}); used {fallback_model}",
+        )
+        try:
+            started = time.perf_counter()
+            response = client.messages.create(**{**kwargs, "model": fallback_model})
+            seconds = time.perf_counter() - started
+            _log_llm_call_timing(label, seconds, response)
+            _record_api_call(label, fallback_model, response, seconds)
+            return response
+        except Exception as fallback_error:
+            logger.error(
+                "Fallback model %s also failed for %s: %s", fallback_model, label, fallback_error,
+            )
+            last_error = fallback_error
+
     logger.error("Anthropic API call failed after %d attempts: %s", max_attempts, last_error)
     raise AssistantUnavailableError(
         "I'm having trouble reaching Claude's servers right now — looks like a temporary "
@@ -3965,6 +4032,7 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
             response = _create_with_retry(client,
                 label="run_agent_turn",
                 model=MODEL,
+                fallback_model=CHAT_FALLBACK_MODEL,  # interactive chat only — see _create_with_retry's docstring
                 # Was 1024, then 4096, then 8192 — a turn that rebuilds several
                 # full recipes (add_recipe's ingredients/instructions/etc, built
                 # out in full per SYSTEM_PROMPT/the tool's own instructions) AND

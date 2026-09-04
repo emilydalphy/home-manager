@@ -35,16 +35,29 @@ def _tool_block(name, tool_input, block_id="tu_1"):
 
 
 class _FakeMessages:
-    """Hands back one scripted response, or raises, like the real API would."""
+    """
+    Hands back one scripted response, or raises, like the real API would.
+
+    `raises` is either a single exception (raised on every call -- the
+    original, still-used shape) or a list of exceptions to raise one per
+    call, front to back, after which calls fall through to `responses` --
+    this is what lets a test script "fail N times, then succeed" for the
+    retry-then-fallback path without a second fake class.
+    """
 
     def __init__(self, responses=None, raises=None):
         self._responses = list(responses or [])
         self._raises = raises
         self.calls = 0
+        self.models_seen: list = []
 
     def create(self, **kwargs):
         self.calls += 1
-        if self._raises is not None:
+        self.models_seen.append(kwargs.get("model"))
+        if isinstance(self._raises, list):
+            if self._raises:
+                raise self._raises.pop(0)
+        elif self._raises is not None:
             raise self._raises
         return self._responses.pop(0)
 
@@ -153,6 +166,111 @@ def test_a_call_that_never_succeeds_records_nothing(monkeypatch):
         )
 
     assert _api_call_rows() == []
+
+
+# ---------- chat's fallback model (Resilience: fall back to a second
+# model when Claude's servers are overloaded) ----------
+
+
+def _overload_error(status_code=529):
+    import httpx2
+    from anthropic import APIStatusError
+
+    resp = httpx2.Response(
+        status_code, request=httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+    )
+    return APIStatusError("overloaded", response=resp, body=None)
+
+
+def test_529_exhaustion_falls_back_once_and_records_the_fallback_model(monkeypatch):
+    """
+    The actual ticket: chat's primary model is overloaded for the whole
+    retry budget, so run_agent_turn's call site (the only one that passes
+    fallback_model) gets one extra shot on a different, pinned model
+    before giving up. The turn succeeds, and the row it leaves behind
+    says which model actually answered -- not the one that was asked
+    first, which is what a household's bill and Emily's morning report
+    both depend on being accurate.
+    """
+    fake = _stub_client(
+        monkeypatch,
+        responses=[
+            types.SimpleNamespace(
+                content=[], stop_reason="end_turn",
+                usage=_Usage(input_tokens=10, output_tokens=5),
+            ),
+        ],
+        raises=[_overload_error(529), _overload_error(529), _overload_error(529)],
+    )
+
+    response = agent._create_with_retry(
+        fake, label="run_agent_turn", model=agent.MODEL, max_attempts=3,
+        fallback_model=agent.CHAT_FALLBACK_MODEL,
+        max_tokens=10, messages=[{"role": "user", "content": "hi"}],
+    )
+
+    assert response is not None
+    assert fake.messages.calls == 4, "3 exhausted primary attempts + exactly 1 fallback attempt"
+    assert fake.messages.models_seen == [
+        agent.MODEL, agent.MODEL, agent.MODEL, agent.CHAT_FALLBACK_MODEL,
+    ]
+
+    rows = _api_call_rows()
+    assert len(rows) == 1, "only the call that actually succeeded gets billed"
+    assert rows[0]["model"] == agent.CHAT_FALLBACK_MODEL
+
+    errors = tools.get_recent_errors(days=1)
+    assert errors["by_kind"].get("fallback") == 1, (
+        "a fallback occurrence must reach the observability channel "
+        "(error_events), or the morning report has no way to surface it"
+    )
+
+
+def test_a_400_never_triggers_a_fallback(monkeypatch):
+    """
+    A 400 is our bug, not Anthropic's outage -- a different model would
+    just fail the same request the same way, so it must raise immediately,
+    exactly as it did before fallback existed, with no fallback attempt
+    and nothing recorded either as a cost or as a fallback occurrence.
+    """
+    from anthropic import APIStatusError
+
+    fake = _stub_client(monkeypatch, raises=_overload_error(400))
+
+    with pytest.raises(APIStatusError):
+        agent._create_with_retry(
+            fake, label="run_agent_turn", model=agent.MODEL, max_attempts=3,
+            fallback_model=agent.CHAT_FALLBACK_MODEL,
+            max_tokens=10, messages=[{"role": "user", "content": "hi"}],
+        )
+
+    assert fake.messages.calls == 1, "a 4xx must not even be retried, let alone fall back"
+    assert _api_call_rows() == []
+    assert tools.get_recent_errors(days=1)["by_kind"].get("fallback", 0) == 0
+
+
+def test_generation_call_sites_do_not_fall_back_on_overload(monkeypatch):
+    """
+    Design choice from the ticket: a worse weekly plan is worse than
+    "try again shortly," so generation (and every other non-chat call
+    site) never passes fallback_model and must fail soft exactly as it
+    did before -- exhausting retries and raising, with no extra attempt
+    on a different model.
+    """
+    fake = _stub_client(
+        monkeypatch,
+        raises=[_overload_error(529), _overload_error(529), _overload_error(529)],
+    )
+
+    with pytest.raises(agent.AssistantUnavailableError):
+        agent._create_with_retry(
+            fake, label="generate_weekly_plan_llm", model=agent.MODEL, max_attempts=3,
+            max_tokens=10, messages=[{"role": "user", "content": "hi"}],
+        )
+
+    assert fake.messages.calls == 3, "no fourth, fallback attempt for a generation call site"
+    assert _api_call_rows() == []
+    assert tools.get_recent_errors(days=1)["by_kind"].get("fallback", 0) == 0
 
 
 def test_recording_an_api_call_never_breaks_the_caller(monkeypatch):
