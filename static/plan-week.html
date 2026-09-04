@@ -1318,7 +1318,9 @@
     var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.assign({ created_by: who }, payload))
+      // day_count rides on every save so the server's in-range check
+      // knows how long this period is, not just where it starts.
+      body: JSON.stringify(Object.assign({ created_by: who, day_count: dayCount }, payload))
     });
     if (!res.ok) throw new Error('intake save failed');
     return res.json();

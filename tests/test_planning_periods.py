@@ -234,6 +234,37 @@ class TestNonMondayPeriods:
         assert prefill["week_label"] == tools._format_period_range(start, 8)
         assert prefill["day_count"] == 8
 
+    def test_the_last_day_of_a_long_period_can_actually_be_ANSWERED(self, recipes, stub_model):
+        # The worst bug this build had, and it was invisible from the code:
+        # save_week_intake checked each tagged day against seven days from
+        # week_start, so tagging the eighth day of an eight-day period was
+        # REFUSED — question 1 could not be saved and the whole flow
+        # stopped. Nothing raised until the round trip was actually run.
+        start = _thursday()
+        days = tools.period_dates(start, 8)
+        saved = tools.save_week_intake(
+            start, night_tags={days[7]: ["out"]}, created_by="Ana", day_count=8,
+        )
+        assert saved["intake_id"]
+
+        stub_model(_full_period(start, 8))
+        plan = agent.generate_weekly_plan(
+            start, day_count=8, period_start=start, intake_id=saved["intake_id"],
+        )
+        # And the answer was HONOURED, not merely accepted: the tag wins
+        # over whatever the model sent for that night.
+        menu = tools.get_week_menu(plan["weekly_plan_id"])
+        last = [d for d in menu["days"] if d["date"] == days[7]][0]
+        assert last["dinner"]["state"] == "planned_empty"
+
+    def test_a_tag_outside_the_period_is_still_refused(self):
+        # The check widened; it did not go away. A tag stranded outside the
+        # plan's days is visible nowhere and clearable from no screen.
+        start = _thursday()
+        outside = tools.period_dates(start, 9)[-1]
+        with pytest.raises(ValueError, match="isn't in the"):
+            tools.save_week_intake(start, night_tags={outside: ["out"]}, day_count=8)
+
     def test_a_shorter_period_does_not_ask_about_days_nobody_planned(self):
         # Answers to imaginary days would be saved as intake and read back
         # the next time that week IS planned.

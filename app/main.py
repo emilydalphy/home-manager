@@ -1163,6 +1163,11 @@ class WeekIntakeRequest(BaseModel):
     packed_lunch_days: list | None = None
     moods: list | None = None
     cuisines: list | None = None
+    # The length of the period these answers are for. Defaults to the seven
+    # every existing client sends nothing about; it widens the in-range check
+    # on night_tags, which would otherwise refuse a tag on the eighth day of
+    # an eight-day period and stop the flow dead.
+    day_count: int = 7
     freeform: str | None = None
     created_by: str = ""
 
@@ -1330,6 +1335,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             cuisines=req.cuisines,
             freeform=req.freeform,
             created_by=req.created_by,
+            day_count=req.day_count,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

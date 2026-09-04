@@ -196,6 +196,7 @@ def save_week_intake(
     cuisines: list | None = None,
     freeform: str | None = None,
     created_by: str = "",
+    day_count: int = 7,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -216,16 +217,27 @@ def save_week_intake(
 
     Both snapshots are retaken on every revision, so each one records what
     was true when that answer was given.
+
+    day_count is the length of the PERIOD these answers are for (Loop Board
+    "Planning periods, not weeks"), defaulting to the seven this always
+    assumed. It is not cosmetic: the in-range check below is the reason a
+    household planning Thursday to next Thursday could not tag the eighth
+    day of their own period at all — the save was refused outright, so
+    question 1 could not be answered and the whole flow stopped. Found by
+    running the round trip, not by reading the code.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
-    week_days = set(_week_dates(week_start))
+    week_days = set(period_dates(week_start, day_count))
     for day, tags in (night_tags or {}).items():
         date.fromisoformat(day)  # keyed by ISO date, never by weekday
-        # A tag on a date outside the week it's being saved for would
-        # produce a planned_empty entry stranded outside the seven days —
-        # visible nowhere, and impossible to clear from any screen.
+        # A tag on a date outside the PERIOD it's being saved for would
+        # produce a planned_empty entry stranded outside the plan's days —
+        # visible nowhere, and impossible to clear from any screen. The
+        # check stays; only its idea of the window widened.
         if day not in week_days:
-            raise ValueError(f"{day} isn't in the week starting {week_start}.")
+            raise ValueError(
+                f"{day} isn't in the {day_count}-day period starting {week_start}."
+            )
         # A bare string here would iterate its characters and report
         # "Unknown night tag(s): r, u, s, h"; a None would raise a TypeError
         # and surface as a 500. Both are only reachable by hand-written API
