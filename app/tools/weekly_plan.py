@@ -819,7 +819,6 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
 
         if component_based or (period_start <= other_start and new_end >= other_end):
             surrendered = _week_intake.period_dates(other_start, other_days)
-            orphaned: list[str] = []
             new_start_date, new_day_count, retired = "", 0, True
         elif period_start > other_start:
             # Ends the day before the new period starts. When the new period
@@ -827,15 +826,22 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
             # orphaned — see the docstring's INSIDE case.
             kept = (date.fromisoformat(period_start) - date.fromisoformat(other_start)).days
             surrendered = _week_intake.period_dates(period_start, other_days - kept)
-            orphaned = [d for d in surrendered if d > new_end]
             new_start_date, new_day_count, retired = other_start, kept, False
         else:
             # Begins the day after the new period ends.
             resume = (date.fromisoformat(new_end) + timedelta(days=1)).isoformat()
             dropped = (date.fromisoformat(resume) - date.fromisoformat(other_start)).days
             surrendered = _week_intake.period_dates(other_start, dropped)
-            orphaned = []
             new_start_date, new_day_count, retired = resume, other_days - dropped, False
+
+        # Derived once for all four shapes rather than per branch: a
+        # surrendered day the new period does NOT cover is a day the
+        # household has lost and nothing has replaced. Written this way
+        # because the per-branch version quietly reported [] for a
+        # component_based plan given up whole on a partial overlap — the
+        # branch that surrenders the most days was the one that claimed to
+        # orphan none.
+        orphaned = [d for d in surrendered if d < period_start or d > new_end]
 
         removal = _release_plan_days(other_id, surrendered, include_components=component_based)
         result["meals_removed"] += removal["meals_removed"]

@@ -391,6 +391,36 @@ class TestOverlapTakeover:
         for day in took["orphaned_dates"]:
             assert day not in _dates_on(outer["weekly_plan_id"])
 
+    def test_a_component_plan_given_up_whole_reports_the_days_it_lost(self, recipes, monkeypatch):
+        # A component_based plan's entries carry no real date, so a partial
+        # overlap has no subset to surrender — it goes whole. The days it
+        # held OUTSIDE the new period are then genuinely orphaned, and the
+        # branch that surrenders the most days must not be the one that
+        # claims to orphan none.
+        week = _monday()
+        tools.set_planning_mode("component_based")
+        monkeypatch.setattr(agent, "generate_component_plan_llm", lambda ctx: [
+            {"meal_name": "Chili", "category": "protein", "is_new_recipe": False},
+        ])
+        components = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        tools.set_planning_mode("day_based")
+
+        monkeypatch.setattr(agent, "generate_weekly_plan_llm",
+                            lambda ctx: _full_period(week, 3, meal="Katsu"))
+        new = agent.generate_weekly_plan(week, day_count=3, period_start=week)
+
+        assert new["took_over"]["retired_plan_ids"] == [components["weekly_plan_id"]]
+        assert new["took_over"]["orphaned_dates"] == tools.period_dates(week, 7)[3:]
+        # Its undated components really went, rather than surviving on a
+        # plan whose period no longer claims anything.
+        conn = get_conn()
+        left = conn.execute(
+            "SELECT COUNT(*) AS n FROM meal_plan_entries WHERE weekly_plan_id = ?",
+            (components["weekly_plan_id"],),
+        ).fetchone()["n"]
+        conn.close()
+        assert left == 0
+
     def test_regenerating_the_same_period_does_not_retire_itself(self, recipes, stub_model):
         # "Try again" on a drafted week. The new plan must take over from
         # the OLD one and never appear in its own overlap set.
