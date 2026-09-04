@@ -360,12 +360,13 @@ def test_scaling_keeps_the_recipes_own_unit(couple):
     assert halved["salt"] == "a pinch"
 
     doubled = {i["item"]: i["qty"] for i in tools.scale_ingredients(ings, 2.0)}
-    # "2 tin" rather than "2 tins" is a pre-existing gap in
-    # quantities._CONTAINER_UNIT_PLURALS, left alone on purpose — that
-    # table feeds every household's grocery list, so fixing it here would
-    # have cost this change its byte-for-byte no-op property. Asserted as
-    # it actually behaves, so nobody reads this as already fixed.
-    assert doubled["tomatoes"] == "2 tin"
+    # Was "2 tin" until 2026-09-03 — a pre-existing gap in
+    # quantities._CONTAINER_UNIT_PLURALS, deliberately left alone while
+    # this file's attendance-scaling work was under review (fixing it here
+    # would have cost that change its byte-for-byte no-op property). Now
+    # fixed on its own branch; see tests/test_quantities.py for direct
+    # coverage of the plural table itself.
+    assert doubled["tomatoes"] == "2 tins"
     assert doubled["flour"] == "1 cup"
 
     third = {i["item"]: i["qty"] for i in tools.scale_ingredients(ings, 1 / 3)}
