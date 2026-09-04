@@ -44,14 +44,39 @@ def _freeze(item="Chicken Thighs", quantity="1 lb", category="meat/seafood"):
 
 @pytest.mark.parametrize("item,expected_hours,expected_tier", [
     ("Whole Chicken", 48.0, "large"),
-    ("Turkey", 48.0, "large"),
+    ("Whole Turkey", 48.0, "large"),
     ("Pork Shoulder", 48.0, "large"),
+    ("Pot Roast", 48.0, "large"),
     ("Chicken Thighs", 24.0, "standard"),
     ("Ground Beef", 24.0, "standard"),
     ("Shrimp", 18.0, "small_thin"),
     ("Salmon Fillet", 18.0, "small_thin"),
+    ("Bacon", 18.0, "small_thin"),
 ])
 def test_lead_hours_for_item_tiers(item, expected_hours, expected_tier):
+    hours, tier = defrost.lead_hours_for_item(item)
+    assert hours == expected_hours
+    assert tier == expected_tier
+
+
+@pytest.mark.parametrize("item,expected_hours,expected_tier", [
+    # Found in independent review: a naive `keyword in name` substring check
+    # matched "ham" inside "Hamburger" and "roast" inside "Roasted
+    # Vegetables", and a bare "turkey" keyword matched straight through
+    # "Ground Turkey" and "Turkey Bacon" -- all four got wrongly tagged as a
+    # 48h large roast. These are regression tests for that fix
+    # (_matches_keyword's word-boundary matching, and dropping the
+    # over-broad bare "turkey"/"ham" keywords in favor of "whole turkey"/
+    # "whole ham").
+    ("Hamburger", 24.0, "standard"),
+    ("Ground Turkey", 24.0, "standard"),
+    ("Turkey Bacon", 18.0, "small_thin"),  # "bacon" now correctly wins
+    ("Roasted Vegetables", 24.0, "standard"),
+    ("Turkey", 24.0, "standard"),  # bare "turkey" alone is not assumed to mean a whole bird
+    ("Ham", 24.0, "standard"),  # bare "ham" alone is ambiguous (deli ham vs. a whole roast) -- not assumed large
+    ("Whole Ham", 48.0, "large"),
+])
+def test_lead_hours_for_item_does_not_false_positive_on_substrings(item, expected_hours, expected_tier):
     hours, tier = defrost.lead_hours_for_item(item)
     assert hours == expected_hours
     assert tier == expected_tier
@@ -64,12 +89,22 @@ def test_move_date_with_a_known_dinner_window_uses_clock_time():
     assert defrost._move_date("2026-09-10", 24.0, "6_8") == "2026-09-09"
 
 
-def test_move_date_short_lead_can_stay_same_day_with_a_late_dinner_window():
-    # A 6h lead against an 8pm-ish dinner still lands same-day (14:00) --
-    # this is exactly the case a whole-day fallback would get needlessly
-    # conservative about, which is why a known dinner_window is used when
-    # it's available.
-    assert defrost._move_date("2026-09-10", 6.0, "later") == "2026-09-10"
+def test_move_date_never_lands_on_the_cook_day_itself():
+    """
+    Independent-review regression: 18h (small/thin) against a 6-8pm dinner
+    (19:00) is 01:00 the SAME calendar day as cooking -- clock-arithmetic-
+    correct, but the Today tile frames this as "defrost tonight", and
+    "tonight" for a same-day meal is nonsensical (the move would need to
+    happen that morning, and by evening it's too late). The ticket's own
+    framing is consistently "the night before, sometimes two", so this
+    floors at one full day of buffer even when the raw clock arithmetic
+    would technically allow same-day.
+    """
+    assert defrost._move_date("2026-09-10", 18.0, "6_8") == "2026-09-09"
+    # A synthetic short lead (no real category is ever this low) proves the
+    # floor isn't specific to 18h -- it holds for the clock-arithmetic
+    # branch generally.
+    assert defrost._move_date("2026-09-10", 6.0, "later") == "2026-09-09"
 
 
 def test_move_date_without_a_dinner_window_falls_back_to_whole_days():
@@ -105,6 +140,53 @@ def test_a_freezer_item_used_by_a_planned_meal_produces_a_defrost_candidate(chic
     # No dinner_window set for this household -> whole-day fallback, 24h
     # (standard cut) rounds up to exactly one day before the meal.
     assert c["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=1)).isoformat()
+
+
+def test_candidate_derivation_honors_a_known_dinner_window(chicken_recipe):
+    """
+    End-to-end through the real candidate pipeline (not just a direct
+    _move_date call) with the household's dinner_window actually set --
+    the gap independent review flagged: every other candidate-derivation
+    test relies on the unset fallback, so the clock-arithmetic branch was
+    only exercised via _move_date directly with a synthetic lead value.
+    """
+    _freeze()
+    tools.set_dinner_window("later")  # ~8pm
+    week = _week_start()
+    dates = tools._week_dates(week)
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(dates[3], "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+
+    candidates = defrost.defrost_candidates_for_plan(plan["weekly_plan_id"])
+
+    assert len(candidates) == 1
+    # Standard cut, 24h, against an 8pm dinner: 8pm - 24h = 8pm the day
+    # before -- same single-day-before answer as the no-window fallback
+    # for this particular lead, but derived via the real clock branch.
+    assert candidates[0]["task_date"] == (datetime.date.fromisoformat(dates[3]) - datetime.timedelta(days=1)).isoformat()
+
+
+def test_candidate_derivation_matches_a_plural_inventory_item_name(chicken_recipe):
+    """
+    Regression for the word-boundary keyword fix's own plural gap, run
+    through the real pipeline rather than lead_hours_for_item directly --
+    a household is far more likely to track "Chicken Thighs" (plural) than
+    a singular form, and _find_inventory_match's own confident-match bar
+    already handles ingredient-name pluralization; this confirms the
+    lead-time lookup does too.
+    """
+    tools.add_recipe("Fillet Dinner", ingredients=[{"item": "Salmon Fillets", "qty": "2"}])
+    tools.update_inventory("Salmon Fillets", "add", quantity="2", category="meat/seafood", location="freezer")
+    week = _week_start()
+    dates = tools._week_dates(week)
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(dates[3], "Fillet Dinner", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+
+    candidates = defrost.defrost_candidates_for_plan(plan["weekly_plan_id"])
+
+    assert len(candidates) == 1
+    assert candidates[0]["lead_tier"] == "small_thin"
+    assert candidates[0]["lead_hours"] == 18.0
 
 
 def test_a_fridge_item_of_the_same_name_is_not_a_defrost_candidate(chicken_recipe):
@@ -368,6 +450,40 @@ def test_confirming_a_ready_made_defrost_recommendation_creates_a_task():
     conn_tasks = [t for t in tools.get_prep_schedule(plan["weekly_plan_id"]) if t["task_type"] == "defrost"]
     assert len(conn_tasks) == 1
     assert "Frozen Lasagna" in conn_tasks[0]["description"]
+
+
+def test_resyncing_the_plan_does_not_delete_a_confirmed_ready_made_task():
+    """
+    HIGH-severity bug caught in independent review, reproduced against real
+    code before this fix: sync_defrost_tasks loaded every task_type='defrost'
+    row for the plan and deleted any that didn't match one of ITS OWN
+    candidates -- but a ready_made-derived task is never one of its
+    candidates (those only ever come from the plan's own meals), so it was
+    always classified stale and deleted. Reachable on an ordinary path:
+    agent.generate_prep_schedule calls sync_defrost_tasks every time it
+    runs, so a re-plan or a "regenerate my prep schedule" request silently
+    deleted a reminder the household had just said yes to. Fixed by scoping
+    sync_defrost_tasks to meal_plan_entry_id IS NOT NULL, since a
+    ready_made task's meal_plan_entry_id is always NULL (see
+    defrost_task_from_ready_made).
+    """
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.update_inventory("Frozen Lasagna", "add", quantity="1", category="frozen", location="freezer")
+    week = _week_start()
+    dates = tools._week_dates(week)
+    saturday, sunday = dates[5], dates[6]
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(dates[4], "Chili", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+    tools.set_away_stretch(saturday, "lunch", sunday, "lunch")
+    tools.confirm_slot_recommendation(sunday, "dinner", confirmed=True)
+    assert any(t["task_type"] == "defrost" for t in tools.get_prep_schedule(plan["weekly_plan_id"]))
+
+    result = defrost.sync_defrost_tasks(plan["weekly_plan_id"])
+
+    assert result["removed"] == 0, "syncing the plan's own meals must never remove a ready_made-derived task"
+    tasks = [t for t in tools.get_prep_schedule(plan["weekly_plan_id"]) if t["task_type"] == "defrost"]
+    assert len(tasks) == 1
+    assert "Frozen Lasagna" in tasks[0]["description"]
 
 
 def test_declining_a_ready_made_recommendation_removes_any_created_task():

@@ -36,6 +36,7 @@ Two things produce a defrost task, both landing in the same prep_tasks rows
 from __future__ import annotations
 
 import math
+import re
 from datetime import date, datetime, time, timedelta
 
 from ..db import get_conn
@@ -65,10 +66,18 @@ STANDARD_LEAD_HOURS = 24.0
 # rounds to "about two days" — 48h is the honest single number for that
 # tier, not a weight-scaled formula (this app doesn't track item weight).
 LARGE_LEAD_HOURS = 48.0
+# No bare "turkey": "whole turkey" already covers the legitimate whole-bird
+# case, and a bare "turkey" keyword was matching straight through common
+# compound items that are anything but large — "Ground Turkey" and "Turkey
+# Bacon" both got tagged 48h before this was caught in review. Same reasoning
+# kept "ham" off this list entirely (it's genuinely ambiguous — a whole
+# holiday ham vs. diced deli ham — and "Hamburger" doesn't even mean ham; see
+# _matches_keyword's word-boundary matching below for why that one part was
+# already a plain bug, not just an ambiguous call).
 _LARGE_KEYWORDS = (
-    "whole chicken", "whole turkey", "turkey", "roast", "brisket",
+    "whole chicken", "whole turkey", "roast", "brisket",
     "prime rib", "leg of lamb", "pork shoulder", "pork butt", "whole duck",
-    "ham", "rack of",
+    "whole ham", "rack of",
 )
 
 # Small/thin cuts thaw faster — commonly cited as 12-24h. 18h is the
@@ -77,8 +86,29 @@ _LARGE_KEYWORDS = (
 SMALL_THIN_LEAD_HOURS = 18.0
 _SMALL_THIN_KEYWORDS = (
     "shrimp", "prawn", "fillet", "filet", "tilapia", "cutlet", "thin-cut",
-    "thin cut", "scallop",
+    "thin cut", "scallop", "bacon",
 )
+
+
+def _matches_keyword(name: str, keyword: str) -> bool:
+    """
+    Whole-word/whole-phrase match (allowing a plain trailing 's', since
+    inventory items are commonly named in the plural — "Chicken Thighs",
+    "Salmon Fillets"), not bare substring containment. A plain `keyword in
+    name` check was the actual bug caught in review: "ham" is a substring
+    of "hamburger" (a single word, not "ham" + "burger"), and "roast" is a
+    substring of "roasted" ("Roasted Vegetables") — both matched and
+    wrongly tagged an ordinary item as a 48h large roast. \\b anchors the
+    keyword to real word edges so it only matches the words it's meant to;
+    the first fix (plain \\b, no plural allowance) over-corrected and
+    stopped matching "Salmon Fillets"/"Beef Roasts" at all, caught in the
+    same review — `s?` restores the plural without reopening the
+    substring hole ("roasts?" still doesn't match inside "roasted", since
+    the literal character after "roast" there is "e", not "s").
+    Doesn't handle a plural that changes an earlier word ("legs of lamb"),
+    an acceptable gap for a documented rule-of-thumb table.
+    """
+    return re.search(r"\b" + re.escape(keyword) + r"s?\b", name) is not None
 
 # Approximate clock time dinner actually lands, per the household's own
 # dinner_window rhythm fact (app/tools/rhythm.py) — used to place a defrost
@@ -100,14 +130,17 @@ def lead_hours_for_item(item_name: str) -> tuple[float, str]:
     The rule-of-thumb defrost lead time for a freezer item, by name —
     (hours, tier) where tier is 'large' | 'standard' | 'small_thin', purely
     so callers/tests can explain which bucket produced the number. Keyword
-    match is case-insensitive substring, most-specific tiers checked first.
+    match is case-insensitive and whole-word (see _matches_keyword — NOT
+    bare substring containment, which used to false-positive on "Hamburger"
+    and "Roasted Vegetables"), most-specific tiers (large, then small/thin)
+    checked first.
     """
     name = (item_name or "").strip().lower()
     for kw in _LARGE_KEYWORDS:
-        if kw in name:
+        if _matches_keyword(name, kw):
             return LARGE_LEAD_HOURS, "large"
     for kw in _SMALL_THIN_KEYWORDS:
-        if kw in name:
+        if _matches_keyword(name, kw):
             return SMALL_THIN_LEAD_HOURS, "small_thin"
     return STANDARD_LEAD_HOURS, "standard"
 
@@ -125,15 +158,28 @@ def _move_date(cook_date_str: str, lead_hours: float, dinner_window: str | None)
     round the lead time up to full days and step back that many calendar
     days. Rounding up (not down) means the fallback never recommends less
     lead time than the table calls for.
+
+    Never returns the cook day itself, even when the clock arithmetic would
+    technically allow it (a short lead against a late dinner_window, e.g.
+    18h against a 7pm dinner lands at 1am the SAME calendar day) — caught
+    in independent review: the Today tile frames this as "defrost tonight",
+    and "tonight" for a meal happening that same evening is nonsensical (the
+    move would need to happen that morning, and by the time anyone reads a
+    tile that says "tonight" it may already be too late). The ticket's own
+    framing is consistently "the night before, sometimes two" — same-day
+    was never part of the intended shape — so this floors at one full
+    calendar day of buffer, always.
     """
     cook_date = date.fromisoformat(cook_date_str)
     clock = _DINNER_CLOCK_BY_WINDOW.get(dinner_window or "")
     if clock is None:
         days_before = math.ceil(lead_hours / 24.0)
-        return (cook_date - timedelta(days=max(days_before, 0))).isoformat()
-    cook_dt = datetime.combine(cook_date, clock)
-    move_dt = cook_dt - timedelta(hours=lead_hours)
-    return move_dt.date().isoformat()
+        result = cook_date - timedelta(days=max(days_before, 0))
+    else:
+        cook_dt = datetime.combine(cook_date, clock)
+        move_dt = cook_dt - timedelta(hours=lead_hours)
+        result = move_dt.date()
+    return min(result, cook_date - timedelta(days=1)).isoformat()
 
 
 def _weekday_name(date_str: str) -> str:
@@ -209,11 +255,23 @@ def defrost_candidates_for_plan(weekly_plan_id: int) -> list[dict]:
 
 def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     """
-    Recompute and persist this plan's defrost tasks (task_type='defrost'
-    prep_tasks rows) — safe to call as often as needed (plan generation,
-    a manual prep-schedule regenerate, a swapped meal): it only ever
-    touches its own task_type, never the LLM-generated 'general' rows (see
-    save_prep_tasks, which is scoped the same way in the other direction).
+    Recompute and persist this plan's meal-derived defrost tasks
+    (task_type='defrost' rows with meal_plan_entry_id set) — safe to call
+    as often as needed (plan generation, a manual prep-schedule regenerate,
+    a swapped meal): it only ever touches its own task_type, never the
+    LLM-generated 'general' rows (see save_prep_tasks, which is scoped the
+    same way in the other direction).
+
+    Deliberately scoped to `meal_plan_entry_id IS NOT NULL` — a ready_made
+    recommendation's defrost task (meal_plan_entry_id IS NULL, see
+    defrost_task_from_ready_made) is never one of this function's own
+    candidates, since candidates only ever come from the plan's own meals.
+    An earlier version swept those in as "stale" and deleted a
+    just-confirmed reminder the very next time a plan synced — caught in
+    independent review and reproduced against real code before this fix:
+    confirming a ready_made defrost, then calling this function, made the
+    task vanish. Each producer now only ever touches the rows it created;
+    see defrost_task_from_ready_made's own docstring for its side.
 
     Existing rows are matched to fresh candidates by
     (inventory_item_id, meal_plan_entry_id, task_date) and left with their
@@ -228,7 +286,8 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     candidates = defrost_candidates_for_plan(weekly_plan_id)
     existing = conn.execute(
         "SELECT id, inventory_item_id, meal_plan_entry_id, task_date FROM prep_tasks "
-        "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost'",
+        "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
+        "AND meal_plan_entry_id IS NOT NULL",
         (weekly_plan_id, household_id()),
     ).fetchall()
     existing_by_key = {
@@ -255,6 +314,11 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
                 (household_id(), weekly_plan_id, c["task_date"], c["description"], c["related_meal"],
                  c["inventory_item_id"], c["meal_plan_entry_id"], c["quantity"]),
             )
+            # Recorded immediately (not just added to kept_ids) so two
+            # identical candidates within the same call — the same
+            # ingredient named twice on one recipe, say — update the row
+            # just inserted instead of inserting a second duplicate.
+            existing_by_key[key] = cur.lastrowid
             kept_ids.add(cur.lastrowid)
             inserted += 1
 
