@@ -3285,10 +3285,23 @@ def _generate_weekly_plan(
                     reasoning=item.get("reasoning", ""),
                 )
         else:
+            # The days actually asked for. The model is told the window and
+            # mostly respects it, but being told is not the same as being
+            # prevented — the rule this codebase already applies to `out`
+            # nights. A day outside the period used to be written anyway,
+            # landing on a plan whose period doesn't contain it: saved,
+            # rendered nowhere, and removable from no screen. It is dropped
+            # here instead, because a plan that quietly holds days it does
+            # not claim is how one-plan-per-day gets broken from the inside.
+            in_scope = set(tools.period_dates(content_start_date, day_count))
+            out_of_scope = []
             for day in items:
                 slot = day.get("slot", "dinner")
                 meal_date = day.get("date")
                 if not meal_date:
+                    continue
+                if meal_date not in in_scope:
+                    out_of_scope.append(f"{meal_date} {slot}")
                     continue
                 # A slot the model genuinely couldn't decide without guessing.
                 # Recorded as a real slot carrying the constraint that caused
@@ -3317,6 +3330,12 @@ def _generate_weekly_plan(
                     weekly_plan_id=plan_id,
                     reasoning=day.get("reasoning", ""),
                     derived_from=day.get("derived_from") or {},
+                )
+            if out_of_scope:
+                logger.warning(
+                    "Generation for %s (%d days) returned %d slot(s) outside the period and they "
+                    "were dropped: %s",
+                    content_start_date, day_count, len(out_of_scope), ", ".join(out_of_scope),
                 )
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,

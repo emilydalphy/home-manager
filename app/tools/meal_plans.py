@@ -9,6 +9,9 @@ from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id
 from . import recipes as _recipes
+# Module, not name: weekly_plan imports meal_plans back, and importing the
+# module resolves that cycle at call time instead of exploding at import.
+from . import weekly_plan as _weekly_plan
 
 
 def plan_meal(
@@ -75,12 +78,40 @@ def plan_meal(
     # is one added parameter away from being, and the check is one query.
     if weekly_plan_id is not None:
         owner = conn.execute(
-            "SELECT id FROM weekly_plans WHERE id = ? AND household_id = ?",
+            "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
             (weekly_plan_id, household_id()),
         ).fetchone()
         if not owner:
             conn.close()
             raise ValueError(f"No weekly plan {weekly_plan_id} in this household.")
+        # A meal can only be attached to a plan on a day that plan actually
+        # covers. Two separate things go wrong without this, and the
+        # generation path never hits either because it only ever plans its
+        # own dates:
+        #
+        # - It is the last way left to break one-plan-per-day (Emily,
+        #   2026-09-04). retire_overlapping_plans enforces the rule when a
+        #   PERIOD is created, but nothing stopped a single meal being
+        #   written into plan A on a day plan B owns — two live plans, one
+        #   day, and "what's for dinner" back to having two answers.
+        # - Even with no other plan involved, an entry on a day outside its
+        #   own plan's period renders nowhere: every screen draws the
+        #   plan's days, so the meal is saved, invisible, and unreachable
+        #   from any screen that could remove it.
+        #
+        # Component entries are exempt, and have to be: they carry no real
+        # date at all, just the plan's week_start_date as a placeholder
+        # (see meal_plan_entries.component_category), which for a part-week
+        # filed under its Monday sits outside the content period by design.
+        if component_category is None:
+            period_start, period_days = _weekly_plan.plan_period(owner)
+            if not (period_start <= meal_date <= _weekly_plan.period_end_date(period_start, period_days)):
+                conn.close()
+                raise ValueError(
+                    f"{meal_date} isn't in weekly plan {weekly_plan_id}'s period "
+                    f"({period_start} for {period_days} days). Plan the meal without a "
+                    f"weekly_plan_id, or generate a period that covers that day."
+                )
 
     recipe = conn.execute(
         "SELECT * FROM recipes WHERE household_id = ? AND name = ?", (household_id(), meal)

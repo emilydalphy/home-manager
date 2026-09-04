@@ -8,12 +8,26 @@ choosing to every time. In practice it never happened once: the
 prep_tasks table was empty from the day the feature shipped, so the
 Cooker view had nothing to show.
 """
+import datetime
+
 import pytest
 
 from app import agent, tools
 
 
-def _week(meal="Chili", date_str="2026-08-31"):
+def _week(meal="Chili", date_str=None, ctx=None):
+    """
+    One dinner, on a day the plan being generated actually covers.
+
+    It used to be a hardcoded "2026-08-31". That worked only because a meal
+    dated outside the plan's window was silently accepted and stored — an
+    entry no screen could render and no screen could remove. Generation now
+    drops out-of-period days (see _generate_weekly_plan), so a stub has to
+    answer the question it was actually asked: `ctx` is the generation
+    context, whose week_start_date is the period's real first day.
+    """
+    if date_str is None:
+        date_str = (ctx or {}).get("week_start_date") or datetime.date.today().isoformat()
     return [{"date": date_str, "slot": "dinner", "meal_name": meal, "food_groups": []}]
 
 
@@ -30,7 +44,7 @@ def test_a_week_with_advance_prep_gets_a_schedule_without_being_asked(monkeypatc
         ingredients=[{"item": "chicken", "qty": "1 kg"}],
         advance_prep_notes="Marinate at least 4 hours ahead",
     )
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken"))
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken", ctx=ctx))
     calls = _prep_calls(monkeypatch)
 
     plan = agent.generate_weekly_plan("2026-08-31")
@@ -47,7 +61,7 @@ def test_a_week_with_nothing_to_prep_does_not_pay_for_a_model_call(monkeypatch):
     an empty answer with a real round trip every single time.
     """
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Chili"))
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Chili", ctx=ctx))
     calls = _prep_calls(monkeypatch)
 
     agent.generate_weekly_plan("2026-08-31")
@@ -61,7 +75,7 @@ def test_whitespace_prep_notes_do_not_count_as_needing_prep(monkeypatch):
         ingredients=[{"item": "beans", "qty": "1 tin"}],
         advance_prep_notes="   ",
     )
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Chili"))
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Chili", ctx=ctx))
     calls = _prep_calls(monkeypatch)
 
     agent.generate_weekly_plan("2026-08-31")
@@ -79,7 +93,7 @@ def test_a_broken_prep_schedule_does_not_lose_the_week(monkeypatch):
         ingredients=[{"item": "chicken", "qty": "1 kg"}],
         advance_prep_notes="Marinate overnight",
     )
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken"))
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken", ctx=ctx))
 
     fired = []
 
@@ -108,7 +122,7 @@ def test_the_onboarding_route_gets_a_prep_schedule_too(monkeypatch, signed_in):
         ingredients=[{"item": "chicken", "qty": "1 kg"}],
         advance_prep_notes="Marinate at least 4 hours ahead",
     )
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken"))
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken", ctx=ctx))
     calls = _prep_calls(monkeypatch)
 
     res = signed_in.post("/api/onboarding/generate-first-plan")
@@ -128,7 +142,7 @@ def test_the_plan_screen_route_gets_a_prep_schedule_too(monkeypatch, signed_in):
         ingredients=[{"item": "chicken", "qty": "1 kg"}],
         advance_prep_notes="Marinate at least 4 hours ahead",
     )
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken"))
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _week("Marinated chicken", ctx=ctx))
     calls = _prep_calls(monkeypatch)
 
     res = signed_in.post("/api/week/2026-08-31/generate", json={})
@@ -157,7 +171,7 @@ def test_a_caller_handed_someone_elses_plan_does_not_redo_its_prep(monkeypatch):
 
     def slow(ctx):
         time.sleep(0.4)
-        return _week("Marinated chicken")
+        return _week("Marinated chicken", ctx=ctx)
 
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", slow)
     calls = _prep_calls(monkeypatch)

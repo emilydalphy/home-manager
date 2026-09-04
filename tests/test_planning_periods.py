@@ -469,6 +469,42 @@ class TestOverlapTakeover:
         conn.close()
         assert left == 0
 
+    def test_a_meal_cannot_be_attached_to_a_plan_on_a_day_it_does_not_own(self, recipes, stub_model):
+        # The last way left to break the rule. retire_overlapping_plans
+        # enforces it when a PERIOD is created; nothing stopped a single
+        # chat-planned meal being written into plan A on a day plan B owns.
+        week = _monday()
+        old = self._plan(stub_model, week, 3)                 # Mon-Wed
+        thursday = tools.period_dates(week, 7)[3]
+        new = self._plan(stub_model, thursday, 4, meal="Katsu")  # Thu-Sun
+
+        with pytest.raises(ValueError, match="isn't in weekly plan"):
+            tools.plan_meal(thursday, "Chili", weekly_plan_id=old["weekly_plan_id"])
+        # Inside its own period it still works exactly as before.
+        assert tools.plan_meal(week, "Chili", weekly_plan_id=old["weekly_plan_id"])["entry_id"]
+        assert tools.plan_meal(thursday, "Katsu", weekly_plan_id=new["weekly_plan_id"])["entry_id"]
+
+    def test_a_day_the_model_was_not_asked_for_is_dropped_not_stored(self, recipes, monkeypatch):
+        # Telling the generator the window is not the same as preventing it
+        # leaving. An out-of-period meal used to be written anyway, onto a
+        # plan whose period doesn't contain it: saved, rendered nowhere,
+        # removable from no screen.
+        week = _monday()
+        stray = tools.period_dates(week, 7)[5]
+        monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: (
+            _full_period(week, 3) + [
+                {"date": stray, "slot": "dinner", "meal_name": "Katsu",
+                 "is_new_recipe": False, "reasoning": "unasked for"},
+            ]
+        ))
+        plan = agent.generate_weekly_plan(week, day_count=3, period_start=week)
+
+        assert stray not in _dates_on(plan["weekly_plan_id"])
+        assert _dates_on(plan["weekly_plan_id"]) == set(tools.period_dates(week, 3))
+        # And the week still generated rather than failing over the model's
+        # mistake — a stray day must not cost the household their plan.
+        assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"]
+
     def test_regenerating_the_same_period_does_not_retire_itself(self, recipes, stub_model):
         # "Try again" on a drafted week. The new plan must take over from
         # the OLD one and never appear in its own overlap set.
