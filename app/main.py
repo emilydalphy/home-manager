@@ -5,6 +5,7 @@ Run with:  uvicorn app.main:app --reload
 Then open: http://localhost:8000
 """
 from fastapi import FastAPI, HTTPException, File, Form, Request, UploadFile
+from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import (
     FileResponse,
@@ -1262,8 +1263,22 @@ def _sse_event(event: str, data) -> str:
     One Server-Sent Events frame. `event` names what kind of thing this
     is (the browser dispatches on it); `data` is JSON-encoded the same way
     every other endpoint's response body already is.
+
+    Routed through jsonable_encoder first -- the same conversion FastAPI
+    runs automatically on a normal `response_model` return value -- rather
+    than handing `data` straight to json.dumps. A plain json.dumps call
+    only understands JSON's own primitive types, so any pydantic model
+    tucked inside `data` (e.g. the ChatAction objects _finish_chat_turn
+    puts in the "done" event's `actions` list) raised "Object of type X is
+    not JSON serializable" and aborted the stream after headers were
+    already sent -- the browser never saw the reply OR the action card,
+    even though the underlying tool call (e.g. adding a grocery item) had
+    already happened. jsonable_encoder also handles datetimes, Decimal,
+    dataclasses, etc. generically, so any other non-primitive value that
+    ends up in a streamed payload is covered the same way, not just
+    ChatAction specifically.
     """
-    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+    return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
 def _stream_week_generation(*, week_start: str, constraints_notes: str, intake_id):

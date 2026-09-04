@@ -223,3 +223,78 @@ def test_chat_stream_surfaces_assistant_unavailable_as_an_error_event(signed_in,
     assert names[-1] == "error"
     payload = next(p for e, p in events if e == "error")
     assert payload["status"] == 503
+
+
+def _fake_run_agent_turn_no_progress(history, message, proactive_check=False):
+    """A quick, non-week-generation turn -- the shape of a normal
+    action-producing reply like "add milk"."""
+    return "Added milk to your grocery list.", history + [
+        {"role": "user", "content": message},
+        {"role": "assistant", "content": "Added milk to your grocery list."},
+    ]
+
+
+def test_chat_stream_generator_delivers_a_reply_that_carries_an_action_card(monkeypatch):
+    """
+    Regression test for the "Object of type ChatAction is not JSON
+    serializable" crash: _finish_chat_turn's "done" payload includes
+    `actions`, a list of ChatAction pydantic models (see
+    summarize_chat_actions), not plain dicts. _sse_event used to hand that
+    straight to json.dumps, which has no idea how to encode a pydantic
+    model and blew up mid-stream -- after the SSE headers (and the
+    "status" event) had already gone out, so the browser lost the reply
+    AND the action card with no fallback.
+
+    Every other test in this file monkeypatches summarize_chat_actions to
+    return `[]`, which is exactly why this gap shipped -- none of them
+    ever pushed a real ChatAction through _sse_event's json.dumps. This
+    one returns actual ChatAction instances instead, driving the generator
+    directly so a serialization crash here surfaces as this test raising,
+    not as a silently-swallowed background-thread exception.
+    """
+    action = main_module.ChatAction(
+        kicker="Grocery list", change="Added milk", tab="grocery",
+    )
+    monkeypatch.setattr(main_module, "run_agent_turn", _fake_run_agent_turn_no_progress)
+    monkeypatch.setattr(main_module, "summarize_chat_actions", lambda old, new: [action])
+
+    gen = main_module._stream_chat_turn(
+        session_id="s1", message="add milk", history=[], proactive_check=False,
+    )
+    chunks = list(gen)  # would raise TypeError on the old json.dumps(data) before the fix
+
+    events = _parse_sse(chunks)
+    names = [e for e, _ in events]
+    assert names[0] == "status"
+    assert names[-1] == "done"
+    done_payload = next(p for e, p in events if e == "done")
+    assert done_payload["reply"] == "Added milk to your grocery list."
+    assert done_payload["actions"] == [
+        {"kicker": "Grocery list", "change": "Added milk", "tab": "grocery", "href": None},
+    ]
+
+
+def test_chat_stream_endpoint_completes_over_http_when_the_reply_carries_an_action_card(
+    signed_in, monkeypatch,
+):
+    """Same scenario as above, but end to end through the HTTP endpoint --
+    confirms the SSE response actually completes (status 200, a real
+    "done" frame) instead of the connection aborting mid-stream the way it
+    did before the fix, which a direct-generator test alone wouldn't catch
+    if some other layer (e.g. StreamingResponse itself) swallowed the
+    error differently over HTTP."""
+    action = main_module.ChatAction(
+        kicker="Grocery list", change="Added milk and eggs", tab="grocery",
+    )
+    monkeypatch.setattr(main_module, "run_agent_turn", _fake_run_agent_turn_no_progress)
+    monkeypatch.setattr(main_module, "summarize_chat_actions", lambda old, new: [action])
+
+    with signed_in.stream("POST", "/api/chat/stream", json={"message": "add milk and eggs"}) as response:
+        assert response.status_code == 200
+        events = _parse_sse(list(response.iter_lines()))
+
+    names = [e for e, _ in events]
+    assert names[-1] == "done"
+    done_payload = next(p for e, p in events if e == "done")
+    assert done_payload["actions"][0]["change"] == "Added milk and eggs"
+    assert done_payload["actions"][0]["tab"] == "grocery"
