@@ -292,7 +292,9 @@ why*, not duplicating the diff.
     `#fff` on celadon (1.87:1 — the same Rule One class stage 1 fixed nine
     of and missed here), `--ink-done`/`--ink-done-soft` (2.80:1/1.85:1), and
     login's placeholder/helper (3.93:1/3.54:1). All are correct in dark.
-    Each wants a one-line fix and Emily's nod; see the notes at each site.
+    (Superseded: they were fixed on 2026-09-03 — see the correction at the
+    top of this bullet. Left in place because the list is still the record of
+    what stage 3 found and chose not to touch.)
 
 - **2026-09-02 — Kitchen is native too, cooking moved under Meals, and the
   last iframe tab is gone. Branch `pomona-kitchen-cooker` (MERGED).**
@@ -746,7 +748,7 @@ visual/screen-reader verification of the whole app is still an open gap.
    No migration was written for this on purpose — backfilling a "why" the
    app never actually reasoned would be inventing history.
 3. **Multi-household is merged and live** (branch `multi-household-beta`,
-   merged 2026-09-02, see Decision log). What it still does *not* do, on
+   since merged into `main`, see Decision log). What it still does *not* do, on
    purpose, and what Emily has yet to decide: what the second household's
    first run looks like, and how the passphrase actually reaches the beta
    tester. The mechanism is there; the product answers are open questions

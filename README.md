@@ -11,7 +11,8 @@ Railway config kept working. Don't "fix" that inconsistency without
 checking Railway first.
 
 **The assistant's voice is defined in `DESIGN_SYSTEM.md` §8 and
-`design_handoff_plan_the_week/VOICE.md`, not here.** Short version, because
+`design_handoff_plan_the_week/VOICE.md`, and enforced in `app/agent.py`'s
+`SYSTEM_PROMPT` — not here.** Short version, because
 this file said the opposite until now: it is never apologetic, never eager,
 never cute, and uses no exclamation marks. The "warm and cheery... real
 enthusiasm" tone this section used to describe was deliberately retired on
@@ -31,10 +32,10 @@ applying the Pomona brand guide: spruce `#1B3328` (hero panels, dark buttons,
 active nav ink) on an ivory `#FBF6EE` canvas, with apricot `#E0915C` as the
 one primary-action fill and celadon `#A9C4B0` for confirmation. The palette is
 declared once: `theme.css` has a single `prefers-color-scheme` block that
-redefines only the token values for dark mode. (A handful of pages carry a
-small supplementary dark block of their own — `shell.css`, `memory.html`,
-`login.html`, `inventory.html` — for the few values that couldn't be
-tokenized without changing light mode.) Headlines use Bricolage Grotesque, body copy uses
+redefines only the token values for dark mode. (A few pages also carry a small
+supplementary dark block of their own — `shell.css`, `memory.html`,
+`login.html` and `inventory.html` among them — for the handful of values
+that couldn't be tokenized without changing light mode.) Headlines use Bricolage Grotesque, body copy uses
 Figtree, and Newsreader italic is the one accent face, loaded from Google
 Fonts.
 
@@ -60,8 +61,8 @@ distance while cooking.
   `HOUSEHOLD_ID` constant — never reintroduce one, and never capture
   `household_id()` at import time. See CLAUDE.md for why that rule is
   load-bearing.
-- **`app/tools/`** — a *package*, not a single file (split from a 6,895-line
-  `tools.py` on 2026-09-01). Plain Python functions across 24 domain
+- **`app/tools/`** — a *package*, not a single file (split out of a single
+  very large `tools.py` on 2026-09-01). Plain Python functions across 24 domain
   modules (`recipes.py`, `grocery.py`, `meal_plans.py`, …) that read/write
   the database. These are the real "product" — the AI is just a
   natural-language interface on top. **Every tool function must also be
@@ -91,7 +92,8 @@ always. A genuine bug (bad request, missing config, etc.) still surfaces
 immediately without wasting time retrying something that won't fix itself.
 
 The chat UI renders a light subset of markdown from Claude's replies (`renderMarkdownLite` in
-`static/index.html`) rather than showing it as raw text — `**bold**`, `- `/`* ` bullet lines, and
+`static/shell.js`; a copy also survives in the superseded `static/index.html`) rather than
+showing it as raw text — `**bold**`, `- `/`* ` bullet lines, and
 now full markdown tables (pipe-delimited rows plus a `|---|---|` separator), rendered as a real
 scrollable `<table>` rather than literal pipe characters. This matters most for a "week at a
 glance" summary: the system prompt tells Claude to always format a multi-day meal summary as a
