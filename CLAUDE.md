@@ -240,6 +240,79 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-04 — A plan is a PERIOD, not a week, and no day has two of
+  them. Branch `planning-periods` (NOT merged at the time of writing).**
+  Loop Board "Planning periods, not weeks — plan any window (Thursday to
+  Thursday)". `weekly_plans` gains `content_start_date` + `day_count`;
+  `week_start_date` keeps its old job and only that job — the filing key
+  every `/api/week/{...}` route is addressed by. Read the period through
+  `weekly_plan.plan_period()`, never the columns directly.
+  - **The sentinels ARE the old meaning, and nothing backfills them.** `''`
+    / `0` resolve to "seven days from week_start_date", so every row
+    written before this reads identically without being rewritten — and a
+    rewrite is the only way this migration could turn a correct row wrong.
+    There is a SQL twin of that resolution (`_SQL_PERIOD_START`,
+    `_SQL_PERIOD_LAST_OFFSET`) because two queries have to resolve it
+    inside SQL; they have to agree with the Python exactly, and a drift
+    would be invisible — the query would just return a different plan than
+    every other reader thinks is current.
+  - **The riskiest site was the one a grep would miss**, exactly as the
+    ticket's own investigation predicted: `_current_weekly_plan_row`'s
+    seven-day window was the SQL literal `date(week_start_date, '+6 days')`,
+    not a `timedelta` or a `range(7)`.
+  - **`_week_dates(start)[:day_count]` was the other bad idiom** — five
+    sites. A slice CAPS at seven, so an 8-day Thursday-to-Thursday period
+    silently lost its eighth day: generated for, never audited, never
+    rendered. `week_intake.period_dates(start, n)` replaces it.
+  - **One plan per day is Emily's rule (2026-09-04) and it is NEW.** There
+    was never a uniqueness constraint; overlapping plans are ordinary
+    existing data, resolved until now by a newest-wins tiebreak.
+    `retire_overlapping_plans` enforces it going forward, and **existing
+    overlaps are deliberately NOT migrated** — `find_overlapping_plans`
+    reports them without touching anything. Deciding at startup which of a
+    household's real, already-cooked-from weeks to dismantle, in the one
+    database that matters and with no undo, is not a migration's business.
+  - **Takeover runs LAST in generation, after the plan is real.** It is the
+    only step that destroys another plan's content, and the week it
+    replaces is one the household may still be cooking from — dismantling
+    it for a generation that then fails and rolls back would be the worst
+    possible order. Grocery reconciliation goes through the existing
+    per-meal `_reverse_meal_grocery_contributions`, so the in_cart/
+    purchased rule is inherited rather than re-decided.
+  - **A new period strictly INSIDE an existing plan orphans that plan's
+    tail**, because a period is contiguous and cannot survive with a hole
+    punched through it. Reported as `orphaned_dates` and logged rather than
+    hidden. **This one is worth Emily's eyes** — it is the only case where
+    the household loses planned days they didn't ask to replace.
+  - **`clear_stale_grocery_items` had to change, and this was found by
+    writing the test, not by reading the code.** It treated every plan but
+    the current one as stale, which was the same sentence as "replaced"
+    right up until a partial takeover became possible. A period starting
+    Thursday leaves the previous plan alive with Mon–Wed still on it, and
+    its ingredients were being deleted out from under three days the
+    household was about to cook. Stale now means "holds no day from today
+    onward". The overlap itself is left to the per-meal reversal — which is
+    also what gives an already-bought line its protection, since this
+    function is a blunt DELETE with no ledger behind it.
+  - **`planning_anchor` finally does something.** Collected at rhythm
+    onboarding and, by its own setter's admission, acted on nowhere until
+    now: `suggest_planning_period` maps `sunday_before` (and never-answered)
+    to the Monday week, and `midweek`/`as_we_go` to seven days from today.
+    That mapping is a judgment call — the anchor is a cadence, not a
+    weekday — and it is written down in that function rather than inferred.
+  - **The prompt was rewritten in the same pass.** This repo's own rule is
+    that telling the generator something isn't the same as preventing it;
+    the converse also holds. A period-shaped database under a system prompt
+    that says "Monday through Sunday" three times gets Monday-week
+    reasoning anyway. The assistant is also told not to plan wider than it
+    was asked, because a wider period now silently retires days nobody
+    mentioned.
+  - UI is one light control on the plan card ("Pick my own days" → start
+    day + length + a confirm naming the dates), inline rather than a sheet.
+    Contrast measured in both schemes; lowest new value 4.58:1 light
+    (a 10px/800 eyebrow on `--ink-muted`), 7.36:1 dark. No second apricot —
+    the screen's one primary stays with Approve.
+
 - **2026-09-02 — Dark mode. Branch `pomona-dark-mode` (MERGED; was stacked
   on `pomona-kitchen-cooker`, which merged with it).**
   Pomona Stage 3, the last of the rebrand. `theme.css` gets one
