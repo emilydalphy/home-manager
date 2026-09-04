@@ -1290,7 +1290,7 @@ def week_planning_period():
 
 
 @app.get("/api/week/{week_start}/intake")
-def week_intake_prefill(week_start: str):
+def week_intake_prefill(week_start: str, day_count: int = 7):
     """
     Everything the two question screens need to open already knowing what
     the app knows: each day's hint from What We Know and observed history,
@@ -1302,8 +1302,13 @@ def week_intake_prefill(week_start: str):
         datetime.date.fromisoformat(week_start)
     except ValueError:
         raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    if day_count < 1 or day_count > tools.MAX_PERIOD_DAYS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.",
+        )
     try:
-        return tools.get_week_intake_prefill(week_start)
+        return tools.get_week_intake_prefill(week_start, day_count=day_count)
     except Exception as e:
         logger.exception("Week intake prefill failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

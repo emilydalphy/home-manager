@@ -2319,6 +2319,108 @@ html, body {
   .week-plan-row .week-plan-btn { flex: 1; align-items: center; }
 }
 
+/* ---------- Pick my own days (Loop Board "Planning periods, not weeks")
+   A household's week does not have to start on a Monday. The two week
+   buttons above stay the answer for almost everybody, so this is quieter
+   than they are: plain text on the card, not a third outline button
+   competing with them. It still gets its own 44px row (hard rule 6)
+   rather than being sized to its words. */
+/* width:100% is what puts these two on their own lines inside
+   .week-plan-row's flex, which now wraps for exactly that reason. */
+.week-plan-row { flex-wrap: wrap; }
+.week-period-open {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.week-period-open:hover { color: var(--apricot-label-hover); }
+.week-period-picker {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  margin-top: 12px;
+  border-top: 1.5px solid var(--hairline);
+}
+.week-period-group { display: flex; flex-direction: column; gap: 8px; }
+.week-period-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+/* Horizontal scroll rather than a wrapped grid: a fortnight of day tiles
+   wrapped onto four rows reads as a calendar, which is exactly what this
+   control is not. */
+.week-period-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+.week-period-day,
+.week-period-len {
+  flex: 0 0 auto;
+  cursor: pointer;
+  min-height: 44px;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline-strong);
+  color: var(--ink-strong);
+  font-family: var(--font-body);
+}
+.week-period-day {
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: var(--radius-tile);
+}
+.week-period-dow { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.week-period-num { font-size: 16px; font-weight: 700; }
+.week-period-len {
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 700;
+}
+/* Selected reads as settled, not as urgent — celadon, the accent that
+   reassures, carrying dark ink per hard rule 1. Apricot is reserved for
+   the one action per screen, and a chosen day is a state, not an act. */
+.week-period-day.is-on,
+.week-period-len.is-on {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink);
+}
+.week-period-go {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 8px 14px;
+  min-height: 44px;
+  line-height: 1.25;
+}
+@media (max-width: 520px) {
+  .week-period-go { align-self: stretch; align-items: center; }
+}
+
 /* ---------- The draft: headline, per-slot reasons, open slots ---------- */
 
 /* One line above the plan, no recap — the per-slot reasons carry the

@@ -165,20 +165,39 @@ def get_already_have_decisions() -> list[dict]:
     "Maybe already home" Drop it (removed_by holds who dropped it, e.g.
     'user') or a Have it / Already have action on any Grocery List row
     (removed_by == 'already_have', see move_grocery_item_to_inventory).
-    Scoped to this week (from this Monday, by removed_at) so old decisions
-    don't linger here forever the way they would with no cutoff at all —
-    nothing today ever clears a 'removed' row's removed_at. Restorable
+    Scoped to the household's CURRENT PLANNING PERIOD (by removed_at) so old
+    decisions don't linger here forever the way they would with no cutoff at
+    all — nothing today ever clears a 'removed' row's removed_at. Restorable
     with undo_pre_shop_drop regardless of which flow removed it.
+
+    That cutoff used to be "this Monday", which was grocery state quietly
+    carrying a plan-shaped assumption (Loop Board "Planning periods, not
+    weeks" flagged this one as easy to miss for exactly that reason). For a
+    household planning Thursday to Thursday, a Monday cutoff throws away the
+    first half of the very shop the Review screen is confirming: they said
+    "we already have rice" on Thursday, and by the following Monday that
+    decision has silently aged out of a period still running. Falls back to
+    this Monday when no plan covers today, which is byte-identical to the
+    old behaviour for every household without a plan.
     """
     from datetime import date, timedelta
+    from . import weekly_plan as _weekly_plan
 
-    monday = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    today = date.today()
+    conn = get_conn()
+    plan = _weekly_plan._current_weekly_plan_row(conn)
+    conn.close()
+    cutoff = (today - timedelta(days=today.weekday())).isoformat()
+    if plan:
+        period_start, period_days = _weekly_plan.plan_period(plan)
+        if period_start <= today.isoformat() <= _weekly_plan.period_end_date(period_start, period_days):
+            cutoff = period_start
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, category, store, removed_by, removed_at FROM grocery_items "
         "WHERE household_id = ? AND status = 'removed' AND removed_by != '' "
         "AND removed_at IS NOT NULL AND removed_at >= ? ORDER BY removed_at DESC",
-        (household_id(), monday),
+        (household_id(), cutoff),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]

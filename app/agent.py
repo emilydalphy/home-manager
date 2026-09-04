@@ -2712,7 +2712,7 @@ def _rhythm_only_generation_context(week_start_date: str, day_count: int = 7) ->
     into days belonging to NEXT week and hand the model packed-lunch
     guidance for dates it was never asked to plan.
     """
-    suggestions = tools._rhythm_packed_lunch_suggestions(week_start_date)
+    suggestions = tools._rhythm_packed_lunch_suggestions(week_start_date, day_count)
     # period_dates, not a 7-day slice: for a period longer than a week the
     # slice would silently drop the days past the seventh from scope.
     in_scope = set(tools.period_dates(week_start_date, day_count))

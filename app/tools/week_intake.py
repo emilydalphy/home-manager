@@ -342,7 +342,7 @@ def _sync_guest_attendance(intake: dict) -> None:
             continue
 
 
-def _observed_day_patterns(week_start: str) -> dict:
+def _observed_day_patterns(week_start: str, day_count: int = 7) -> dict:
     """
     What the app already knows about each weekday, so the household isn't
     re-answering things it has already been told. The grey hint line under
@@ -355,8 +355,12 @@ def _observed_day_patterns(week_start: str) -> dict:
         to takeout or leftovers in most of the last four weeks.
     A day with neither gets no hint, and the row still works — it just
     reads "Nothing on the calendar."
+    A period longer than a week can repeat a weekday (Thursday to next
+    Thursday has two Thursdays). The hints are keyed by DATE, and the same
+    weekday's hint simply lands on both — which is right: "Tuesdays are
+    tee-ball" is true of every Tuesday in the window.
     """
-    dates = _week_dates(week_start)
+    dates = period_dates(week_start, day_count)
     weekday_names = [date.fromisoformat(d).strftime("%A") for d in dates]
 
     conn = get_conn()
@@ -411,7 +415,7 @@ ONBOARDING_CUISINES = [
 ]
 
 
-def _rhythm_packed_lunch_suggestions(week_start: str) -> list[dict]:
+def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
     """
     Per-day packed-lunch suggestions derived from household rhythm (Loop
     Board "Onboarding: household rhythm..."): "the weekly intake's 'which
@@ -438,11 +442,17 @@ def _rhythm_packed_lunch_suggestions(week_start: str) -> list[dict]:
     Returns [] entirely once no adult has any lunch_location on record —
     a household that hasn't done rhythm onboarding gets no suggestion, not
     a wrong one.
+
+    day_count covers a planning period that isn't seven days (Loop Board
+    "Planning periods, not weeks"). It defaults to 7, so every existing
+    caller asks the same question; the generation path passes the real
+    length so a longer period's last days get suggestions too, and a
+    shorter one stops suggesting for days nobody asked to plan.
     """
     rhythm = _rhythm.get_household_rhythm()["lunch_location"]
     if not rhythm:
         return []
-    dates = _week_dates(week_start)
+    dates = period_dates(week_start, day_count)
     suggestions = []
     for d in dates:
         weekday = date.fromisoformat(d).strftime("%A")
@@ -468,7 +478,7 @@ def _rhythm_packed_lunch_suggestions(week_start: str) -> list[dict]:
     return suggestions
 
 
-def get_week_intake_prefill(week_start: str) -> dict:
+def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
     """
     Everything the two question screens need to open already knowing what
     the app knows: per-day hints, the household's own saved cuisines, its
@@ -484,6 +494,14 @@ def get_week_intake_prefill(week_start: str) -> dict:
     guest panel switches to asking for the WHOLE TABLE in that case rather
     than for extras added to a base of zero, which would silently produce a
     wrong number and an acknowledgement that confidently states it.
+
+    day_count is the length of the planning period being asked about (Loop
+    Board "Planning periods, not weeks"), defaulting to the seven this
+    always assumed. It matters more here than almost anywhere else: these
+    screens ask the household to tag each day, and asking about seven days
+    when they chose four is asking four real questions and three imaginary
+    ones — whose answers would then be saved as intake for days no plan
+    covers, and read back the next time that week IS planned.
     """
     date.fromisoformat(week_start)
     household = _household_composition()
@@ -518,7 +536,7 @@ def get_week_intake_prefill(week_start: str) -> dict:
                 "hint": hint,
             }
             for d, hint in (
-                (d, _observed_day_patterns(week_start).get(d, "")) for d in _week_dates(week_start)
+                (d, _observed_day_patterns(week_start, day_count).get(d, "")) for d in period_dates(week_start, day_count)
             )
         ],
         "household": household,
@@ -533,5 +551,10 @@ def get_week_intake_prefill(week_start: str) -> dict:
         "plan_status": plan["status"] if plan else None,
         # Loop Board "Onboarding: household rhythm..." — a suggestion only,
         # not an answer; see _rhythm_packed_lunch_suggestions.
-        "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start),
+        "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start, day_count),
+        # The period these questions are about, echoed back so the screen
+        # can name it ("Sep 11-18") instead of calling every window "your
+        # week" regardless of what the household actually picked.
+        "period_start_date": week_start,
+        "day_count": day_count,
     }

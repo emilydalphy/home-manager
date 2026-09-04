@@ -536,6 +536,16 @@
 
   // ---------- state ----------
   var weekStart = new URLSearchParams(location.search).get('week') || '';
+  // How many days this period runs. Absent means seven, so every link that
+  // existed before planning periods (and any bookmarked one) still opens
+  // exactly the week it always did. Clamped rather than trusted: this comes
+  // from a URL, and a nonsense value here would ask the household to tag a
+  // year of days one at a time.
+  var dayCount = (function () {
+    var raw = parseInt(new URLSearchParams(location.search).get('days'), 10);
+    if (!raw || raw < 1) return 7;
+    return Math.min(raw, 28);
+  })();
   var who = new URLSearchParams(location.search).get('who') || '';
   var data = null;                 // the prefill payload
   var step = 1;
@@ -577,7 +587,7 @@
   async function load() {
     if (!weekStart) { $('loading').hidden = true; $('failed').hidden = false; return; }
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake');
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
       if (!res.ok) throw new Error('prefill failed');
       data = await res.json();
     } catch (err) {
@@ -1439,7 +1449,7 @@
         }).catch(function () { /* the week still plans correctly without this */ });
       }
       showDraftProgress();
-      await streamGenerate({ intake_id: saved.intake_id });
+      await streamGenerate({ intake_id: saved.intake_id, day_count: dayCount });
       // Land on the week that was just drafted, by name. Without the week
       // in the URL, Meals asks for "the current plan" and gets whichever
       // week contains today — so planning NEXT week ended with the freshly
