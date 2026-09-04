@@ -747,18 +747,43 @@ def onboarding_generate_first_plan():
     while every screen went looking for Monday: the Meals tab offered to
     "Plan this week" for a week it was already showing, taking that offer
     created a second overlapping plan, and chat judged the plan stale and
-    wanted to rebuild it.
+    wanted to rebuild it. Fixed 2026-09-02 by snapping the filing key to
+    Monday (see git history) — that part stays.
 
-    Someone onboarding late in the week therefore sees meals against days
-    that have already passed. That is the accepted cost of the simple fix
-    (Emily's call, 2026-09-02) — a genuine part-week filed under Monday is
-    real work, since the generator can only fill a week from the front and
-    the slot audit has no concept of "past". It has its own ticket.
+    What changed here (Loop Board "Build a real part-week for households
+    who onboard mid-week"): the week is still FILED under Monday, but its
+    CONTENT now actually starts today rather than at the week's Monday.
+    Onboarding on a Wednesday used to mean a plan whose first two days had
+    already gone by; now it means a 5-day plan running Wednesday-Sunday,
+    correctly filed under that week's Monday so every other screen still
+    finds it. See generate_weekly_plan's skip_days parameter for the
+    mechanics, and _prorate_meal_count for how "4 dinners a week" scales
+    down to fit fewer days.
+
+    Floor rule for the degenerate case (flagged as a judgment call, not a
+    technical necessity — Emily's to revisit): onboarding on a Sunday would
+    otherwise produce a 1-day part-week, which is a lot of new machinery
+    (its own grocery scoping, its own reveal) for a single dinner. Instead,
+    a 1-day part-week skips straight to a normal, full 7-day plan starting
+    the very next day (Monday) — the household's first plan is a whole
+    real week rather than a token one, at the cost of tonight's dinner not
+    being covered by "the plan" at all. A 2-day part-week (Saturday
+    onboarding) is left as a genuine part-week rather than folded in the
+    same way — two real days felt worth planning for rather than skipping.
     """
     try:
         today = datetime.date.today()
-        week_start = (today - datetime.timedelta(days=today.weekday())).isoformat()
-        plan = generate_weekly_plan(week_start)
+        monday = today - datetime.timedelta(days=today.weekday())
+        skip_days = today.weekday()  # 0=Monday .. 6=Sunday
+        day_count = 7 - skip_days
+        if day_count <= 1:
+            # Sunday: fold forward into next week's full plan rather than
+            # generating a 1-day part-week. See the floor-rule note above.
+            monday = monday + datetime.timedelta(days=7)
+            skip_days = 0
+            day_count = 7
+        week_start = monday.isoformat()
+        plan = generate_weekly_plan(week_start, day_count=day_count, skip_days=skip_days)
     except AssistantUnavailableError as e:
         logger.warning("First-plan generation hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))

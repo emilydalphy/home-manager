@@ -2670,7 +2670,7 @@ def _intake_generation_context(intake: dict) -> dict:
     }
 
 
-def _rhythm_only_generation_context(week_start_date: str) -> dict | None:
+def _rhythm_only_generation_context(week_start_date: str, day_count: int = 7) -> dict | None:
     """
     A minimal intake-shaped context built from household rhythm alone, for
     a week with no real week_intake row yet — onboarding's very first week
@@ -2688,9 +2688,19 @@ def _rhythm_only_generation_context(week_start_date: str) -> dict | None:
     Returns None when rhythm has nothing to say (no adult's lunch location
     suggests a packed day this week), matching the pre-existing "no intake
     at all" behaviour rather than manufacturing an empty intake object.
+
+    day_count trims the suggestions to the days actually being generated.
+    tools._rhythm_packed_lunch_suggestions always looks 7 days ahead of
+    week_start_date regardless of day_count — harmless for every ordinary
+    caller (day_count is 7), but for a part-week (Loop Board "Build a real
+    part-week...") week_start_date here is already the content start date,
+    not the week's Monday, so an unfiltered 7-day lookahead would spill
+    into days belonging to NEXT week and hand the model packed-lunch
+    guidance for dates it was never asked to plan.
     """
     suggestions = tools._rhythm_packed_lunch_suggestions(week_start_date)
-    packed_days = sorted(s["date"] for s in suggestions if s["suggested_packed"])
+    in_scope = set(tools._week_dates(week_start_date)[:day_count])
+    packed_days = sorted(s["date"] for s in suggestions if s["suggested_packed"] and s["date"] in in_scope)
     if not packed_days:
         return None
     return {
@@ -2749,6 +2759,7 @@ def generate_weekly_plan(
     constraints_notes: str = "",
     day_count: int = 7,
     intake_id: int | None = None,
+    skip_days: int = 0,
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass. See
@@ -2767,9 +2778,19 @@ def generate_weekly_plan(
     fish this week", a different intake), the second caller's request is a
     real request, not a duplicate to swallow. In either case this
     generates properly instead.
+
+    skip_days is for a genuine part-week: the plan is still FILED under
+    week_start_date (which must stay that week's Monday — every other
+    screen looks the plan up by that exact key, see
+    tools.get_plan_id_for_week), but its actual content starts skip_days
+    after it, and day_count is how many days from there get real content.
+    A household onboarding on a Wednesday passes week_start_date=Monday,
+    skip_days=2, day_count=5, and gets a plan filed correctly under Monday
+    whose meals actually run Wednesday-Sunday — see
+    _generate_weekly_plan's docstring for the mechanics.
     """
     key = (tools.household_id(), _week_lock_key(week_start_date))
-    signature = (constraints_notes, day_count, intake_id)
+    signature = (constraints_notes, day_count, intake_id, skip_days)
     lock = _week_generation_lock(key)
     # Read before blocking, so "did a generation finish while I waited"
     # can be answered by comparison rather than by guessing.
@@ -2792,6 +2813,7 @@ def generate_weekly_plan(
             constraints_notes=constraints_notes,
             day_count=day_count,
             intake_id=intake_id,
+            skip_days=skip_days,
         )
         _WEEK_GENERATION_RESULTS[key] = {
             "seq": _WEEK_GENERATION_RESULTS.get(key, {}).get("seq", 0) + 1,
@@ -2951,11 +2973,51 @@ def _attach_personal_context_for_subset_slots(attendance_ctx: dict) -> None:
         logger.exception("Could not attach per-person taste context; generation continues with attendance alone")
 
 
+def _prorate_meal_count(preference: int, day_count: int) -> int:
+    """
+    Scale a full-week meal-VARIETY target down to fit a part-week.
+
+    household_memory's dinners_per_week/breakfasts_per_week/lunches_per_week
+    are counts of DISTINCT meals across 7 days, not a count of days to plan
+    (see the generation prompt's own explanation of this) — "4 dinners"
+    means four different recipes repeated to fill the week, so a household
+    that said "cook twice, we'll eat leftovers the rest of the week" is
+    saying something about how OFTEN they want something new, not how many
+    days get fed.
+
+    That ratio, not the raw count, is what should survive a shorter week.
+    Carrying the raw number over unchanged breaks in both directions: a
+    household onboarding on a Wednesday with dinners_per_week=7 (something
+    different every night) would otherwise be told to plan 7 distinct
+    dinners into a 5-day week, and one with dinners_per_week=2 (mostly
+    leftovers) onboarding on a Saturday would be told "2 distinct dinners"
+    for a 2-day week — which, for 2 remaining days, means a different meal
+    both nights, exactly the opposite of what "we don't cook much" meant
+    over a full week.
+
+    The rule: prorated = round(preference * day_count / 7), floored at 1 to
+    keep any nonzero preference a real answer rather than rounding it away,
+    and capped at day_count since there cannot be more distinct meals than
+    days to cook them in. A preference of exactly 0 passes through
+    unchanged — that's handled as "plan none of this meal at all" elsewhere
+    (see _finish_week_slots's zero-count pass) and proration must not turn
+    a real "none, thanks" into "one, thanks" by flooring it up.
+
+    A full 7-day week (day_count >= 7) is returned unchanged; there's
+    nothing to prorate.
+    """
+    if day_count >= 7 or preference <= 0:
+        return preference
+    prorated = round(preference * day_count / 7)
+    return max(1, min(prorated, day_count))
+
+
 def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
     day_count: int = 7,
     intake_id: int | None = None,
+    skip_days: int = 0,
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass: gathers current
@@ -2976,6 +3038,27 @@ def _generate_weekly_plan(
     the question screens and then re-generated from chat still respects
     what the household said, rather than quietly reverting to a blank
     slate. The plan records which intake revision produced it.
+
+    skip_days is what makes a genuine part-week possible (Loop Board "Build
+    a real part-week for households who onboard mid-week"): the plan is
+    still FILED under week_start_date — that stays the week's Monday, the
+    key every other screen looks this plan up by (tools.get_plan_id_for_week,
+    _current_weekly_plan_row) — but its actual content starts skip_days
+    later, running for day_count days from there. A household onboarding
+    on a Wednesday passes week_start_date=Monday, skip_days=2, day_count=5:
+    the ROW is filed under Monday, but nothing is ever generated, audited,
+    or asked about for Monday or Tuesday — they simply have no slots at
+    all, planned or open, rather than being invented as "missing" and
+    turned into open questions about a day that's already gone by. Content
+    runs Wednesday through Sunday, which is real generation work for those
+    5 days, not a placeholder.
+
+    The intake/rhythm lookups below still use the real week_start_date
+    (Monday) — a week's intake answers ("out Thu/Fri", guest counts) belong
+    to the real calendar week regardless of which day content starts on.
+    Only the actual generation window (what gets sent to the model, what
+    gets audited, what attendance/slot-needs context gets built) is shifted
+    to the content start date.
     """
     household_memory = tools.get_household_memory()
     if intake_id is not None:
@@ -2987,12 +3070,33 @@ def _generate_weekly_plan(
             raise ValueError(f"No week intake with id {intake_id} for the week of {week_start_date}.")
     else:
         intake = tools.get_week_intake(week_start_date)
+
+    # The actual first day content is generated for. Equal to week_start_date
+    # itself when skip_days is 0 (every non-onboarding caller), so this is a
+    # no-op for the whole rest of the app.
+    content_start_date = (
+        tools._week_dates(week_start_date)[skip_days] if skip_days else week_start_date
+    )
+
+    # A part-week's meal-variety targets are prorated to the days it
+    # actually has (see _prorate_meal_count) — everything else about
+    # household_memory (dislikes, restrictions, style) carries over as-is.
+    effective_memory = household_memory
+    if day_count < 7:
+        effective_memory = dict(household_memory)
+        for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
+            if household_memory.get(field) is not None:
+                effective_memory[field] = _prorate_meal_count(household_memory[field], day_count)
+
     context = {
-        "week_start_date": week_start_date,
+        "week_start_date": content_start_date,
         "day_count": day_count,
         "constraints_notes": constraints_notes,
-        "household_memory": household_memory,
-        "intake": _intake_generation_context(intake) if intake else _rhythm_only_generation_context(week_start_date),
+        "household_memory": effective_memory,
+        "intake": (
+            _intake_generation_context(intake) if intake
+            else _rhythm_only_generation_context(content_start_date, day_count)
+        ),
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
         # here at the source rather than relying on a prompt instruction, so
         # they're never even a candidate for suggestion.
@@ -3015,11 +3119,11 @@ def _generate_weekly_plan(
         # invariant still does NOT depend on the model cooperating — see
         # apply_slot_needs_to_plan, called from _finish_week_slots below,
         # which enforces it regardless of what comes back.
-        "slot_needs": tools.generation_context_for_week(week_start_date, day_count),
+        "slot_needs": tools.generation_context_for_week(content_start_date, day_count),
         # Who is actually at each meal, and therefore how many each meal
         # has to serve. Only slots that differ from the household's
         # ordinary table appear — see attendance.context_for_week.
-        "attendance": tools.attendance_context_for_week(week_start_date, day_count),
+        "attendance": tools.attendance_context_for_week(content_start_date, day_count),
     }
     # Loop Board "Per-person taste learning + solo-night personalization":
     # enrich the subset-attendance slots above with what's actually known
@@ -3144,7 +3248,9 @@ def _generate_weekly_plan(
                     reasoning=day.get("reasoning", ""),
                     derived_from=day.get("derived_from") or {},
                 )
-            _finish_week_slots(plan_id, week_start_date, intake, household_memory, day_count)
+            _finish_week_slots(
+                plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
+            )
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
@@ -3188,7 +3294,7 @@ def _generate_weekly_plan(
 
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
-    household_memory: dict, day_count: int = 7,
+    household_memory: dict, day_count: int = 7, skip_days: int = 0,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -3197,6 +3303,15 @@ def _finish_week_slots(
     happens when it doesn't. "Week generation silently leaves random meal
     slots empty" is a real reported bug, and its shape is precisely that
     nothing downstream ever checked. Three passes, in order:
+
+    week_start_date here is the actual CONTENT start date (see
+    _generate_weekly_plan's docstring on skip_days) — for an ordinary
+    full week that's the same as the plan's filed Monday, so every
+    existing caller is unaffected. skip_days itself is only needed for the
+    audit_plan_slots call at the end, which — unlike everything else in
+    this function — re-reads the plan's FILED week_start_date from the
+    database rather than trusting a passed-in date, so it needs the offset
+    to independently line up on the same in-scope window.
 
     1. `out` nights become planned_empty dinners. These were deliberately
        hidden from the model, so they have to be written here — and as
@@ -3267,7 +3382,7 @@ def _finish_week_slots(
     # full invariant this guarantees regardless of what the model did.
     tools.apply_slot_needs_to_plan(plan_id, week_start_date, day_count=day_count)
 
-    audit = tools.audit_plan_slots(plan_id, day_count=day_count)
+    audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
         tools.plan_slot_open(
