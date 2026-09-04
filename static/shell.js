@@ -57,14 +57,16 @@
   'use strict';
 
   var ICONS = {
-    calendarDay:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="12" cy="15" r="2.2" fill="currentColor" stroke="none"/></svg>',
-    calendarWeek:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>',
-    cart:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none"/><path d="M2.5 3h2.4l2.1 11.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7.5H6.2"/></svg>',
+    // Nav bar set, exact match to the InnToday.dc.html mockup (design-system
+    // canvas, brand-canvas/InnToday.dc.html) per the "nav bar icons don't
+    // match the design mockup" ticket — same drawing style, stroke weight,
+    // and 24x24 grid as the mock, so don't restyle these independently of it.
+    sunrise:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M2.5 19h19"/><path d="M12 3.5v2"/><path d="M5 7l1.5 1.5"/><path d="M19 7l-1.5 1.5"/></svg>',
+    plate:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3"/></svg>',
     pot:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-4Z"/><path d="M2 11h20M8 3.5c0 1-1 1-1 2s1 1.5 1 2M13 3.5c0 1-1 1-1 2s1 1.5 1 2"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
     // Pomona (InnToday/InnMeals): the hero's flame tile, the prep tile's
     // clock, the grocery tile's bag, and the arrow that ends a primary
     // action. Line icons, 2px, round caps — the brand guide's one icon
@@ -77,17 +79,21 @@
     bag:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
     arrow:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12.5 6l6 6-6 6"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12.5 6l6 6-6 6"/></svg>',
+    // The desktop week grid's "Why this?" toggle (InnMeals redesign) — same
+    // small info-circle the mock draws next to it.
+    info:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>'
   };
 
   var TABS = [
-    { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.calendarDay, real: true },
-    { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.calendarWeek, week: true },
+    { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
+    { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
-    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.cart, grocery: true },
+    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.bag, grocery: true },
     // Stage 2 slice 3: Kitchen is a real shell screen too, and with it the
     // last iframe tab comes out. static/kitchen.html still exists and still
     // works standalone but nothing links to it — the fallback, exactly the
@@ -3213,26 +3219,33 @@
     return '<button type="button" class="hero-swap" id="wk-swap-it">Swap it</button>';
   }
 
+  // A tinted tile per slot (InnMeals redesign) — same three states as
+  // always, restyled off the old hairline-divided row list to match the
+  // grid below it and the tile language the rest of the app already uses
+  // (Today's "Before bed"/"Tonight" pair is the same move).
   function sideCourseHtml(day, slot) {
     var entry = day[slot];
-    var label = '<span class="side-label">' + SLOT_LABELS[slot] + '</span>';
     var body;
     if (entry && entry.state === 'planned_empty') {
-      body = '<span class="side-dish side-dish-out">' +
+      body = '<span class="side-tile-dish side-tile-dish-out">' +
         escapeHtml(awayLineFor(entry) || 'Nothing planned') + '</span>';
     } else if (entry && entry.state === 'open') {
-      body = '<span class="side-dish side-dish-open">' + escapeHtml(entry.title) + '</span>';
+      body = '<span class="side-tile-dish side-tile-dish-open">' + escapeHtml(entry.title) + '</span>';
     } else if (entry) {
-      body = '<span class="side-dish">' + escapeHtml(entry.title) + '</span>';
+      body = '<span class="side-tile-dish">' + escapeHtml(entry.title) + '</span>';
     } else {
       // No fill flow was ever designed for breakfast/lunch — plain and
       // non-interactive, so it never dead-ends like a fake "Pick" would.
-      body = '<span class="side-dish side-dish-blank">' +
+      body = '<span class="side-tile-dish side-tile-dish-blank">' +
         (day.isPast ? 'Not planned' : 'Not planned yet') + '</span>';
     }
-    // The badge rides alongside the dish rather than replacing it: a quick
-    // breakfast still names what it is.
-    return '<div class="side-row">' + label + body + needBadgeHtml(entry) + '</div>';
+    return '<div class="side-tile">' +
+      '<div class="side-tile-row">' +
+        '<span class="side-tile-label">' + SLOT_LABELS[slot] + '</span>' +
+        needBadgeHtml(entry) +
+      '</div>' +
+      body +
+    '</div>';
   }
 
   // Quick-dinner-pick suggestions (day.dinner_suggestions, from
@@ -3243,11 +3256,15 @@
   // is still easy to turn back on.
 
   function renderDayCard(panel, day) {
+    var eyebrow = (day.isToday ? 'Today · ' : '') + dayName(day.date, { weekday: 'long' });
     panel.querySelector('#day-card-wrap').innerHTML =
       '<div class="day-hero">' + dinnerHeroHtml(day) + '</div>' +
       '<div class="day-sides shell-card">' +
-        WEEK_SLOTS.filter(function (s) { return s !== 'dinner'; })
-          .map(function (s) { return sideCourseHtml(day, s); }).join('') +
+        '<span class="day-sides-eyebrow">' + escapeHtml(eyebrow) + '</span>' +
+        '<div class="day-sides-grid">' +
+          WEEK_SLOTS.filter(function (s) { return s !== 'dinner'; })
+            .map(function (s) { return sideCourseHtml(day, s); }).join('') +
+        '</div>' +
       '</div>';
 
     var wrap = panel.querySelector('#day-card-wrap');
@@ -3795,59 +3812,27 @@
     var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
     gridEl.innerHTML =
       '<div class="shell-card week-grid-sheet">' +
-        '<div class="week-grid-table">' +
-          '<div class="wg-cell wg-corner"></div>' +
-          days.map(function (day, i) {
-            return (
-              '<div class="wg-cell wg-daycol-head' + (i === todayIndex ? ' wg-today' : '') + '">' +
-                '<div class="wg-day-name">' + dayName(day.date, { weekday: 'long' }) + '</div>' +
-                '<div class="wg-day-date">' + dayName(day.date, { month: 'short', day: 'numeric' }) + '</div>' +
-              '</div>'
-            );
-          }).join('') +
+        '<div class="wg2-grid">' +
+          '<div class="wg2-row wg2-row-head">' +
+            '<div class="wg2-label"></div>' +
+            days.map(function (day, i) {
+              return wgHeadCellHtml(day, i === todayIndex);
+            }).join(WG_SPINE) +
+          '</div>' +
           WEEK_SLOTS.map(function (slot) {
+            var isDinner = slot === 'dinner';
             return (
-              '<div class="wg-cell wg-gutter">' + SLOT_LABELS[slot] + '</div>' +
-              days.map(function (day, i) {
-                var entry = day[slot];
-                var cellClass = 'wg-cell wg-slot' + (i === todayIndex ? ' wg-today' : '');
-                if (entry && entry.state === 'planned_empty') {
-                  return (
-                    '<div class="' + cellClass + '">' +
-                      '<span class="wg-dish wg-dish-blank">' + escapeHtml(entry.title) + '</span>' +
-                    '</div>'
-                  );
-                }
-                if (entry && entry.state === 'open') {
-                  // Tapping through to the day card is where the options
-                  // live — the grid cell is too small to answer in, and a
-                  // truncated question is worse than a pointer to it.
-                  return (
-                    '<div class="' + cellClass + ' wg-slot-open" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
-                      '<span class="wg-dish wg-dish-open">Your call</span>' +
-                      '<span class="wg-meta">Answer</span>' +
-                    '</div>'
-                  );
-                }
-                if (!entry) {
-                  if (day.isPast) {
-                    return '<div class="' + cellClass + '"><span class="wg-dish wg-dish-blank">Not planned</span></div>';
-                  }
-                  return (
-                    '<div class="' + cellClass + ' wg-slot-empty" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
-                      '<span class="course-dish-empty">Choose a ' + slot + '</span>' +
-                      '<span class="course-meta-empty">Pick</span>' +
-                    '</div>'
-                  );
-                }
-                return (
-                  '<div class="' + cellClass + '">' +
-                    '<span class="wg-dish">' + escapeHtml(entry.title) + '</span>' +
-                    (entry.meta ? '<span class="wg-meta">' + escapeHtml(entry.meta) + '</span>' : '') +
-                    (entry.reason ? '<span class="wg-reason">' + escapeHtml(entry.reason) + '</span>' : '') +
-                  '</div>'
-                );
-              }).join('')
+              '<div class="wg2-row' + (isDinner ? ' wg2-row-dinner' : '') + '">' +
+                (isDinner
+                  ? '<div class="wg2-label wg2-label-dinner"><span class="wg2-dot"></span>' + SLOT_LABELS[slot] + '</div>'
+                  : '<div class="wg2-label">' + SLOT_LABELS[slot] + '</div>') +
+                days.map(function (day, i) {
+                  var isToday = i === todayIndex;
+                  return isDinner
+                    ? wgDinnerTileHtml(day, isToday)
+                    : wgSideTileHtml(day, slot, isToday);
+                }).join(WG_SPINE) +
+              '</div>'
             );
           }).join('') +
         '</div>' +
@@ -3856,10 +3841,9 @@
     // "Pick" tap target -> Today, where the (future, Step 5) decision card
     // resolves it. Nothing else on the menu is tappable, per README §5.
     // "Pick" tap target on the desktop grid -> Today, where the needs-you
-    // card resolves it (the desktop grid itself wasn't rebuilt this pass —
-    // see the comment above buildWeekPanel). The mobile day card's own
-    // "Pick" rows (courseHtml, above) fill inline instead via fillWeekDinner.
-    panel.querySelectorAll('.wg-slot-empty').forEach(function (el) {
+    // card resolves it. The mobile day card's own "Pick" rows (courseHtml,
+    // above) fill inline instead via fillWeekDinner.
+    panel.querySelectorAll('.wg2-tile-empty').forEach(function (el) {
       var go = function () { activateTab('today', true); };
       el.addEventListener('click', go);
       el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
@@ -3868,7 +3852,7 @@
     // An open slot on the grid selects that day and scrolls the day card
     // into view — the question and its options are too long to answer in a
     // grid cell, and a truncated question is worse than a pointer to it.
-    panel.querySelectorAll('.wg-slot-open').forEach(function (el) {
+    panel.querySelectorAll('.wg2-tile-open').forEach(function (el) {
       var go = function () {
         var card = panel.querySelector('.week-open-card[data-open-date="' + el.dataset.date +
           '"][data-open-slot="' + el.dataset.slot + '"]');
@@ -3877,6 +3861,134 @@
       el.addEventListener('click', go);
       el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
     });
+
+    // The grid's own "Why this?" toggle — the per-meal reasoning decision
+    // (stored at generation, revealed on demand) applies here exactly like
+    // it already does in Cook's recipe detail (.cook-why). A plain hide/show
+    // toggle, no re-render, so it can't disturb anything else mid-tap.
+    panel.querySelectorAll('.wg2-why').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = panel.querySelector('#wg2-why-' + btn.dataset.key);
+        if (!text) return;
+        text.hidden = !text.hidden;
+        btn.setAttribute('aria-expanded', String(!text.hidden));
+      });
+    });
+  }
+
+  // ---------- Desktop week grid tiles (InnMeals week-grid redesign) ----------
+  // The joined-tile motif: today's column is square on every edge it shares
+  // with another tile in the same column and tinted, so the header + three
+  // slot rows read as one poured shape running top to bottom — everywhere
+  // else rounds freely and floats with its own margin. See DESIGN_SYSTEM.md
+  // §4. A soft 3px rounded spine stands in for the old hairline cell border
+  // between one day's column and the next.
+  var WG_SPINE = '<span class="wg2-spine"></span>';
+
+  function wgHeadCellHtml(day, isToday) {
+    return '<div class="wg2-head-cell' + (isToday ? ' is-today' : '') + '">' +
+      '<span class="wg2-head-day">' + dayName(day.date, { weekday: 'short' }) + '</span>' +
+      '<span class="wg2-head-date">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
+    '</div>';
+  }
+
+  // A unique, DOM-safe key for a slot's "Why this?" panel — a date is
+  // already safe as an id fragment (YYYY-MM-DD).
+  function wgWhyKey(day, slot) { return day.date + '-' + slot; }
+
+  function wgWhyHtml(day, slot, entry) {
+    if (!entry || !entry.reason) return '';
+    var key = wgWhyKey(day, slot);
+    return '<button type="button" class="wg2-why" data-wg="why" data-key="' + key + '" aria-expanded="false">' +
+        ICONS.info + '<span>Why this?</span>' +
+      '</button>' +
+      '<p class="wg2-why-text" id="wg2-why-' + key + '" hidden>' + escapeHtml(entry.reason) + '</p>';
+  }
+
+  // Breakfast/lunch: subordinate, compact, quiet — same three slot states
+  // sideCourseHtml already handles, restyled as a floating soft tile instead
+  // of a hairline table cell.
+  function wgSideTileHtml(day, slot, isToday) {
+    var entry = day[slot];
+    var cls = 'wg2-tile wg2-tile-' + slot + (isToday ? ' is-today' : '');
+    if (entry && entry.state === 'planned_empty') {
+      return '<div class="' + cls + '">' +
+        '<div class="wg2-tile-row">' +
+          '<span class="wg2-tile-name wg2-tile-away">' + escapeHtml(awayLineFor(entry) || entry.title) + '</span>' +
+          (entry.need && entry.need !== 'away' ? needBadgeHtml(entry) : '') +
+        '</div>' +
+      '</div>';
+    }
+    if (entry && entry.state === 'open') {
+      // Tapping through to the day card is where the options live — the
+      // grid cell is too small to answer in, and a truncated question is
+      // worse than a pointer to it.
+      return '<div class="' + cls + ' wg2-tile-open" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
+        '<div class="wg2-tile-row">' +
+          '<span class="wg2-tile-name">Your call</span>' +
+          '<span class="wg2-tile-meta">Answer</span>' +
+        '</div>' +
+      '</div>';
+    }
+    if (!entry) {
+      if (day.isPast) {
+        return '<div class="' + cls + '"><div class="wg2-tile-row"><span class="wg2-tile-name wg2-tile-away">Not planned</span></div></div>';
+      }
+      return '<div class="' + cls + ' wg2-tile-empty" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
+        '<div class="wg2-tile-row">' +
+          '<span class="wg2-tile-name wg2-tile-blank">Choose a ' + slot + '</span>' +
+          '<span class="wg2-tile-meta">Pick</span>' +
+        '</div>' +
+      '</div>';
+    }
+    return '<div class="' + cls + '">' +
+      '<div class="wg2-tile-row">' +
+        '<span class="wg2-tile-name">' + escapeHtml(entry.title) + '</span>' +
+        (entry.need ? needBadgeHtml(entry) : '') +
+      '</div>' +
+      wgWhyHtml(day, slot, entry) +
+    '</div>';
+  }
+
+  // Dinner: the dominant row — it's the starred meal. Larger tile, a spruce
+  // accent border standing in for the hero's own spruce, time/servings as
+  // small chips. No interactive actions here (Swap, Cook this, the
+  // ready-made confirm) — those stay on the day hero above, the same way an
+  // "open" tile here only points at the day card rather than answering
+  // inline.
+  function wgDinnerTileHtml(day, isToday) {
+    var entry = day.dinner;
+    var cls = 'wg2-dinner-tile' + (isToday ? ' is-today' : '');
+    if (entry && entry.state === 'planned_empty') {
+      var emptyLine = awayLineFor(entry) ||
+        (entry.need === 'ready_made' ? 'Something already made' :
+         entry.need === 'quick' ? 'Something quick' : 'Nothing yet');
+      return '<div class="' + cls + '">' +
+        (entry.need && entry.need !== 'away' ? '<div class="wg2-dinner-chips">' + needBadgeHtml(entry) + '</div>' : '') +
+        '<span class="wg2-dinner-away">' + escapeHtml(emptyLine) + '</span>' +
+      '</div>';
+    }
+    if (entry && entry.state === 'open') {
+      return '<div class="' + cls + ' wg2-tile-open" data-date="' + day.date + '" data-slot="dinner" role="button" tabindex="0">' +
+        '<span class="wg2-dinner-name">Your call</span>' +
+        '<span class="wg2-tile-meta">Answer</span>' +
+      '</div>';
+    }
+    if (!entry) {
+      if (day.isPast) {
+        return '<div class="' + cls + '"><span class="wg2-dinner-away">Not planned</span></div>';
+      }
+      return '<div class="' + cls + ' wg2-tile-empty" data-date="' + day.date + '" data-slot="dinner" role="button" tabindex="0">' +
+        '<span class="wg2-dinner-name wg2-tile-blank">Choose a dinner</span>' +
+        '<span class="wg2-tile-meta">Pick</span>' +
+      '</div>';
+    }
+    return '<div class="' + cls + '">' +
+      (entry.need ? '<div class="wg2-dinner-chips">' + needBadgeHtml(entry) + '</div>' : '') +
+      '<span class="wg2-dinner-name">' + escapeHtml(entry.title) + '</span>' +
+      (entry.meta ? '<div class="wg2-dinner-chips"><span class="wg2-dinner-chip">' + escapeHtml(entry.meta) + '</span></div>' : '') +
+      wgWhyHtml(day, 'dinner', entry) +
+    '</div>';
   }
 
   // ---------- Cook: the Meals tab's second state (InnCooker) ----------
@@ -3901,6 +4013,7 @@
   var cookState = {
     data: null,
     attention: [],
+    attentionOpen: false, // folded by default — see cookAttentionHtml
     loadError: false,
     openDetail: null,   // index of the meal whose recipe is expanded
     tonightIdx: null,
@@ -4081,11 +4194,15 @@
       cookState.openDetail = String(cookState.tonightIdx);
     }
 
+    // The hero leads — one hero per screen, same rule Today follows (its
+    // needs-you band sits below #today-dinner-card, never above). Attention
+    // items come after it, folded by default per the inventory-is-quiet
+    // policy: a count you can open, not a wall of questions on the way in.
     view.innerHTML =
       cookTitleRowHtml(data) +
-      cookAttentionHtml() +
       '<div class="cook-voice" id="cook-voice" hidden></div>' +
       cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
+      cookAttentionHtml() +
       '<div class="cook-body">' +
         cookPrepHtml(data) +
         cookRestOfWeekHtml(meals) +
@@ -4328,9 +4445,23 @@
   function cookAttentionHtml() {
     var items = cookState.attention || [];
     if (!items.length) return '';
-    return '<div class="cook-attention">' +
-      '<p class="cook-attention-title">Needs your attention</p>' +
-      items.map(function (it) {
+    // Folded behind a count, same move as Grocery's "Maybe already home"
+    // (groPreShopHtml) — quiet by default, one tap opens it, per the
+    // inventory-is-background policy: nobody should have to read a wall of
+    // questions to get to tonight.
+    var open = cookState.attentionOpen;
+    var sub = items.length === 1 ? '1 quick thing from last night' : items.length + ' quick things from last night';
+    var html = '<div class="cook-attention">' +
+      '<button type="button" class="cook-attention-head" data-cook="attn-toggle" aria-expanded="' + open + '">' +
+        '<span class="cook-attention-text">' +
+          '<span class="cook-attention-title">Needs your attention</span>' +
+          '<span class="cook-attention-sub">' + escapeHtml(sub) + '</span>' +
+        '</span>' +
+        '<span class="cook-attention-toggle">' + (open ? 'Hide' : 'Review') + '</span>' +
+      '</button>';
+    if (!open) return html + '</div>';
+    html += '<div class="cook-attention-body">';
+    html += items.map(function (it) {
         var needsAmount = it.id != null && it.detail && it.detail.needs_amount_used;
         if (needsAmount) {
           return '<div class="cook-attn-item is-stacked" data-attn-id="' + it.id + '">' +
@@ -4363,8 +4494,9 @@
               '</span>'
             : '') +
         '</div>';
-      }).join('') +
-    '</div>';
+      }).join('');
+    html += '</div></div>';
+    return html;
   }
 
   async function refreshCookAttention() {
@@ -4402,6 +4534,7 @@
     if (what === 'check-prep') return cookCheckPrep(el);
     if (what === 'serves') return cookStepServings(el);
     if (what === 'fill') return cookFillRecipe(el);
+    if (what === 'attn-toggle') { cookState.attentionOpen = !cookState.attentionOpen; renderCook(); return; }
     if (what === 'attn-resolve') return cookResolveAttention(el);
     if (what === 'attn-use') return cookLogUsage(el);
     if (what === 'feedback') return cookRateMeal(el);

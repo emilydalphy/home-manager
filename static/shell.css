@@ -1357,75 +1357,175 @@ html, body {
   .week-days { display: none; }
   .week-grid { display: block; }
 
-  .week-grid-sheet { padding: 26px 30px 22px; }
+  .week-grid-sheet {
+    padding: 26px 30px 22px;
+    background: var(--surface);
+    border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card);
+  }
   .week-grid-sheet .menu-rule-line,
   .week-grid-sheet .menu-household,
   .week-grid-sheet .menu-subtitle { display: none; }
 
-  .week-grid-table {
-    display: grid;
-    grid-template-columns: 90px repeat(7, 1fr);
-    grid-auto-rows: auto;
-  }
-  .wg-cell {
-    border-bottom: 1px solid var(--menu-rule);
-    border-right: 1px solid var(--menu-rule);
-    padding: 10px 8px;
-    box-sizing: border-box;
-    min-height: 56px;
-  }
-  .wg-cell:last-child { border-right: none; }
-  .week-grid-table > .wg-cell:nth-last-child(-n+8) { border-bottom: none; }
-  .wg-corner { border-top: none; border-left: none; background: transparent; border-bottom-color: transparent; }
-  .wg-daycol-head {
-    text-align: center;
-    border-bottom: none;
-  }
-  .wg-day-name {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--plum-ink);
-  }
-  .wg-day-date {
-    font-family: var(--font-body);
-    font-size: 13px;
-    color: var(--menu-ink);
-  }
-  .wg-gutter {
-    font-family: var(--font-body);
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--menu-ink);
-    text-align: right;
+  /* ---------- InnMeals week grid: dinner dominant, soft spines, the
+     joined-tile motif on today's column (DESIGN_SYSTEM.md §4) ----------
+     Replaces the old hairline table (a plain re-colored `<table>` — the
+     "week desktop" ticket's whole complaint). Each row is its own flex
+     band rather than one CSS grid, because the joined column needs a
+     margin/radius that differs row to row (square top at the header,
+     square bottom at dinner, square throughout in between) — easier to
+     say per row than to fight out of a single grid's uniform gap. */
+  .wg2-grid { display: flex; flex-direction: column; }
+  .wg2-row { display: flex; align-items: stretch; }
+  .wg2-spine { width: 3px; flex: 0 0 3px; border-radius: 2px; background: var(--hairline); align-self: stretch; }
+
+  .wg2-label {
+    width: 130px;
+    flex: 0 0 130px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    padding-right: 14px;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
   }
-  .wg-slot {
+  .wg2-row-head .wg2-label { width: 150px; flex: 0 0 150px; }
+  .wg2-label-dinner { color: var(--ink-strong); font-weight: 800; font-size: 11px; letter-spacing: .12em; gap: 6px; }
+  .wg2-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot); flex: 0 0 auto; }
+
+  .wg2-head-cell {
+    flex: 1 1 0;
+    min-height: 60px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    align-items: center;
     justify-content: center;
+    gap: 2px;
   }
-  .wg-today { background: rgba(27, 51, 40,.06); }
-  .wg-daycol-head.wg-today { border-top: 3px solid var(--plum); }
-  .wg-dish {
+  .wg2-head-day {
     font-family: var(--font-body);
-    font-size: 15px;
-    color: var(--plum-ink);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-inactive);
   }
-  .wg-meta {
+  .wg2-head-date { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--ink-secondary); }
+  .wg2-head-cell.is-today { background: var(--spruce); border-radius: 12px 12px 0 0; }
+  .wg2-head-cell.is-today .wg2-head-day { color: var(--apricot-light); }
+  .wg2-head-cell.is-today .wg2-head-date { color: var(--ivory-ink); font-weight: 800; }
+
+  /* Breakfast/lunch: floating soft tiles, quiet on purpose — the dinner row
+     below is the one this screen leads with. */
+  .wg2-tile {
+    flex: 1 1 0;
+    margin: 4px 3px;
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    padding: 8px 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 46px;
+  }
+  .wg2-tile-lunch { min-height: 54px; }
+  .wg2-tile-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wg2-tile-name {
     font-family: var(--font-body);
-    font-size: 13px;
-    color: var(--menu-ink);
+    font-weight: 600;
+    font-size: 13.5px;
+    line-height: 1.3;
+    color: var(--ink);
   }
-  .wg-dish-blank { color: var(--faded); font-style: italic; }
-  .wg-slot-empty { cursor: pointer; }
-  .wg-slot-empty .course-dish-empty { font-size: 15px; display: block; }
-  .wg-slot-empty .course-meta-empty { font-size: 13px; display: block; }
+  .wg2-tile-meta { font-family: var(--font-body); font-size: 11px; font-weight: 700; color: var(--apricot-label); flex: 0 0 auto; }
+  .wg2-tile-away, .wg2-tile-blank { font-style: italic; font-weight: 400; color: var(--ink-done); }
+  .wg2-tile.is-today { margin: 0 3px; border-radius: 0; background: rgba(27, 51, 40, .055); }
+  .wg2-tile-open, .wg2-tile-empty { cursor: pointer; }
+  .wg2-tile-open:hover, .wg2-tile-empty:hover { background: var(--sand); }
+  .wg2-tile.is-today.wg2-tile-open:hover, .wg2-tile.is-today.wg2-tile-empty:hover { background: rgba(27, 51, 40, .09); }
+
+  /* The per-meal "Why this?" tap-to-reveal — stored reasoning stays out of
+     the cell until asked for, same pattern as Cook's .cook-why. */
+  .wg2-why {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: none;
+    padding: 0;
+    margin-top: 2px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--apricot-label);
+    cursor: pointer;
+  }
+  .wg2-why svg { width: 11px; height: 11px; flex: 0 0 auto; }
+  .wg2-why-text {
+    margin: 2px 0 0;
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--ink-secondary);
+  }
+  .wg2-why-text[hidden] { display: none; }
+
+  /* Dinner: the dominant row — it's the starred meal. Bigger tile, a spruce
+     accent border standing in for the hero it echoes. */
+  .wg2-dinner-tile {
+    flex: 1 1 0;
+    margin: 6px 3px 0;
+    border-radius: 16px;
+    background: var(--surface);
+    border-left: 3px solid var(--spruce);
+    padding: 14px 14px 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-height: 108px;
+  }
+  .wg2-dinner-tile.is-today { margin: 0 3px 6px; border-radius: 0 0 16px 16px; background: rgba(27, 51, 40, .07); }
+  .wg2-dinner-tile.wg2-tile-open, .wg2-dinner-tile.wg2-tile-empty { cursor: pointer; }
+  .wg2-dinner-tile.wg2-tile-open:hover, .wg2-dinner-tile.wg2-tile-empty:hover { background: var(--sand); }
+  .wg2-dinner-tile.is-today.wg2-tile-open:hover, .wg2-dinner-tile.is-today.wg2-tile-empty:hover { background: rgba(27, 51, 40, .1); }
+  .wg2-dinner-name {
+    font-family: var(--font-display);
+    font-size: 15.5px;
+    font-weight: 700;
+    letter-spacing: -.015em;
+    line-height: 1.28;
+    /* --ink-strong, not --spruce directly: this text sits on --surface,
+       and spruce itself becomes a dark panel fill in dark mode (theme.css)
+       — --ink-strong is the token that swaps to a legible ink there. */
+    color: var(--ink-strong);
+  }
+  .wg2-dinner-away { font-family: var(--font-body); font-style: italic; font-size: 14px; color: var(--ink-done); }
+  .wg2-dinner-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .wg2-dinner-chip {
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 8px;
+    background: var(--sand);
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--apricot-label);
+  }
+
   #week-header { display: none; }
 }
 
@@ -1550,45 +1650,56 @@ html, body {
   background: var(--apricot);
 }
 
-/* Breakfast and lunch: subordinate rows in a plain card under the hero.
-   Same three slot states as ever, rendered deliberately quietly — "one hero
-   moment per screen" means these must not compete with dinner. */
+/* Breakfast and lunch: subordinate tiles under the hero, rendered
+   deliberately quietly — "one hero moment per screen" means these must not
+   compete with dinner. Restyled off a bare white row-list onto a tinted
+   tile pair (InnMeals week-grid redesign), the same tile language Today's
+   own two-up cards already use. */
 .day-sides {
   margin: 16px 20px 0;
-  padding: 2px 14px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
-.side-row {
-  min-height: 46px;
-  padding: 11px 0;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.side-row + .side-row { border-top: 1.5px solid var(--hairline); }
-.side-label {
-  width: 72px;
-  flex: 0 0 auto;
+.day-sides-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
   font-size: 10px;
-  letter-spacing: .13em;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.day-sides-grid { display: flex; gap: 12px; }
+.side-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: var(--radius-control);
+  background: var(--sand);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.side-tile-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.side-tile-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--apricot-label);
 }
-.side-dish {
-  flex: 1 1 auto;
-  min-width: 0;
+.side-tile-dish {
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.35;
   color: var(--ink);
 }
-.side-dish-out { font-weight: 400; font-style: italic; color: var(--ink-done); }
-.side-dish-open { color: var(--apricot-label); }
-.side-dish-blank { font-weight: 400; font-style: italic; color: var(--ink-inactive); }
+.side-tile-dish-out { font-weight: 400; font-style: italic; color: var(--ink-done); }
+.side-tile-dish-open { color: var(--apricot-label); }
+.side-tile-dish-blank { font-weight: 400; font-style: italic; color: var(--ink-inactive); }
 
 /* ---------- Derived trip states (WeekWithTrip mock) ----------
    Progressive disclosure, per Emily's decision: none of this renders on an
@@ -2133,24 +2244,10 @@ html, body {
    detail. Only ever shown on a draft; once approved the receipt speaks
    instead. It renders as .week-note now — see the Meals section below. */
 
-/* The 4-9 word "why" under a meal name. Small and quiet: it explains, it
-   doesn't compete with the meal itself. */
-.wg-reason {
-  display: block;
-  font-family: var(--font-body);
-  font-size: 12.5px;
-  line-height: 1.35;
-  color: var(--menu-ink);
-  font-style: italic;
-  margin-top: 3px;
-}
-
-/* Muted styling is reserved for the ONE deliberately empty slot in a week —
-   a dinner on a night nobody is home. Nothing else in the week is ever
-   blank, so this treatment stays meaningful. */
-.wg-dish-open { color: var(--warn-ink); }
-.wg-slot-open { cursor: pointer; }
-.wg-slot-open:hover { background: var(--menu-paper); }
+/* The desktop grid's per-meal reasoning is now a "Why this?" tap-to-reveal
+   (.wg2-why / .wg2-why-text, in the desktop grid block above) rather than
+   always-on caption text — the old .wg-reason/.wg-dish-open/.wg-slot-open
+   plain-table rules retired with it. */
 
 /* The question itself. Amber card with a 4px left rule, per the design —
    distinct from the coral of a needs-you card, because this is the app
@@ -4166,15 +4263,28 @@ html, body {
 
 /* ---------- Needs your attention ---------- */
 .cook-attention {
-  margin: 10px 20px 0;
+  margin: 14px 20px 0;
   border-radius: var(--radius-card);
   background: var(--sand);
   border: 1.5px solid var(--sand-deep);
-  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
+/* Folded head: a count you tap open, not a wall of questions on the way in
+   (the same collapsed-banner move as Grocery's .gro-ps-head). */
+.cook-attention-head {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  background: none;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.cook-attention-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
 .cook-attention-title {
   font-family: var(--font-body);
   font-weight: 800;
@@ -4182,7 +4292,27 @@ html, body {
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--apricot-label);
-  margin: 0 0 4px;
+}
+.cook-attention-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+.cook-attention-toggle {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.cook-attention-body {
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1.5px solid var(--sand-deep);
+  padding-top: 8px;
 }
 .cook-attn-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
 .cook-attn-item.is-stacked { flex-direction: column; align-items: stretch; }
@@ -4313,9 +4443,10 @@ html, body {
   #ask-sheet { box-shadow: var(--shadow-sheet); }
 
   /* --- Washes tuned for a light ground ---
-     A 6% spruce tint marks today's column on the week grid. On a dark
+     A spruce tint marks today's joined column on the week grid. On a dark
      ground a dark tint is invisible; the same idea inverts to a light one. */
-  .wg-today { background: rgba(246, 238, 225, .07); }
+  .wg2-tile.is-today,
+  .wg2-dinner-tile.is-today { background: rgba(246, 238, 225, .07); }
 
   /* --- Accent fills whose ink flips ---
      --urgent becomes a LIGHT accent on dark (see theme.css), so the ivory
