@@ -3,6 +3,7 @@ The grocery list: adding, merging, marking, clearing and repairing items.
 """
 from __future__ import annotations
 
+from datetime import date
 from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import inventory as _inventory
@@ -482,6 +483,31 @@ def repair_grocery_quantities(status: str = "needed") -> dict:
     return {"fixed_count": len(fixed), "fixed": fixed}
 
 
+def _live_plan_ids(current_id: int | None) -> list[int]:
+    """
+    The plans whose ingredients are not stale: the one being generated, plus
+    every non-retired plan still holding a day from today onward. Empty only
+    when the household has no plan at all, which is the one case that falls
+    back to the pre-period query below unchanged.
+    """
+    today = date.today().isoformat()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, week_start_date, content_start_date, day_count, status "
+        "FROM weekly_plans WHERE household_id = ?",
+        (household_id(),),
+    ).fetchall()
+    conn.close()
+    live = {current_id} if current_id is not None else set()
+    for row in rows:
+        if row["status"] == "retired":
+            continue
+        start, days = _weekly_plan.plan_period(row)
+        if days > 0 and _weekly_plan.period_end_date(start, days) >= today:
+            live.add(row["id"])
+    return sorted(live)
+
+
 def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict:
     """
     Remove 'needed' grocery items that came from an OLDER generated weekly
@@ -496,12 +522,37 @@ def clear_stale_grocery_items(current_weekly_plan_id: int | None = None) -> dict
     get_weekly_plan considers most recent. Called automatically at the
     start of every generate_weekly_plan; also fine to call directly if the
     user notices buildup and asks to clean it up.
+
+    "Older" means a plan that no longer holds any day from today onward —
+    not merely "not the current one". Before Loop Board "Planning periods,
+    not weeks" those were the same sentence, because generating a plan
+    replaced whatever was there. They are not the same now: a period
+    starting Thursday leaves the previous plan alive with Monday to
+    Wednesday still on it, and treating that live sibling as stale would
+    delete the ingredients for three days the household is about to cook.
+    Plans whose days have genuinely gone by are still cleared, which is the
+    quantity-stacking bug this function exists to fix ("9 lbs chicken
+    breast built from 4 different weeks"), and so are retired ones.
+
+    Note what this does NOT do to the overlap it leaves behind: the days a
+    new period takes over are reconciled by retire_overlapping_plans, which
+    runs later in the same generation and reverses per meal — so an item
+    already bought is spared. Doing it here instead would have deleted it,
+    because this is a blunt DELETE with no ledger behind it.
     """
     current_id = current_weekly_plan_id
     if current_id is None:
         current_id = _weekly_plan.get_weekly_plan().get("weekly_plan_id")
+    live_ids = _live_plan_ids(current_id)
     conn = get_conn()
-    if current_id is None:
+    if live_ids:
+        keep = ",".join("?" * len(live_ids))
+        rows = conn.execute(
+            f"SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            f"AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id NOT IN ({keep})",
+            (household_id(), *live_ids),
+        ).fetchall()
+    elif current_id is None:
         rows = conn.execute(
             "SELECT id, item FROM grocery_items WHERE household_id = ? AND status = 'needed' "
             "AND source_weekly_plan_id IS NOT NULL",
