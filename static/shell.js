@@ -252,6 +252,28 @@
     // just on the Cook overview — see setMealsView.
     if (tab.week && opts && opts.mealsView) setMealsView(opts.mealsView, opts.mealsFocus);
 
+    // A draft awaiting a decision shouldn't hide just because you left and
+    // came back (Loop Board: "land on the review moment"). #shell-scroll is
+    // one scroll region shared by every tab (see its declaration below), so
+    // switching INTO Meals doesn't reset scroll position on its own — a
+    // household that had scrolled down reading a day card before switching
+    // away would return to that same scroll depth, with the review band
+    // (now the first thing in the panel) sitting off-screen above them.
+    // Only fires on an actual tab switch into an already-built Meals PLAN
+    // view with a live draft — never on the quiet background refreshes
+    // loadWeekMenu does elsewhere (settling an open slot, a chat edit),
+    // which per the nav rules must never jump the screen under someone's
+    // thumb, and never on a Cook-view entry (opts.mealsView === 'cook',
+    // from Today's "Start cooking" or Meals' own "Cook this") — the review
+    // band doesn't exist in #week-cook-view, so jumping scroll there
+    // wouldn't reveal anything and isn't what this is for. weekState is
+    // declared further down this file but already assigned by the time
+    // any tab click can reach here.
+    if (tab.week && (!opts || opts.mealsView !== 'cook') && panel.dataset.built && weekState.data &&
+        weekState.data.weekly_plan_id && weekState.data.status !== 'approved' && scrollEl) {
+      scrollEl.scrollTop = 0;
+    }
+
     if (pushHistory && window.location.pathname.replace(/\/+$/, '') !== (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''))) {
       window.history.pushState({ tab: key }, '', tab.path);
     }
@@ -2889,6 +2911,16 @@
         '</div>' +
         '<div id="week-cook-view" hidden></div>' +
         '<div id="week-plan-view">' +
+        // The review moment (Loop Board: "After generating a week, land on
+        // the review moment — not the top of the Plan screen"). First child
+        // of #week-plan-view so it renders above #week-header/#week-mobile
+        // at BOTH breakpoints without any scroll — a draft's decision no
+        // longer waits behind the day rail, the day card and "the whole
+        // week" row. Populated by renderWeekReviewBand, which leaves this
+        // empty whenever there's no plan or the plan is already approved,
+        // so an approved week's layout is completely untouched (its receipt
+        // still renders in #week-approve-row exactly as before).
+        '<div id="week-review-band"></div>' +
         '<div class="menu-header shell-card" id="week-header"><div class="menu-loading">Loading your menu&hellip;</div></div>' +
         '<div class="week-mobile" id="week-mobile">' +
           '<div class="week-framing" id="week-framing"></div>' +
@@ -3619,15 +3651,44 @@
       return;
     }
 
+    // A draft's Approve/Try again/Change my answers now render up in
+    // #week-review-band (renderWeekReviewBand, called from renderWeekMenu)
+    // instead of here — that's the whole point of the review-landing
+    // change: the decision is above the fold, not after the day rail and
+    // day card. Leaving this row empty (rather than duplicating the same
+    // apricot button in two places) also keeps Rule 5 — one apricot
+    // primary per screen.
+    row.innerHTML = '';
+  }
+
+  // ---------- The review band (Loop Board: "land on the review moment") ----
+  // First child of #week-plan-view (see buildWeekPanel), so a draft's
+  // decision is the first thing on the Meals screen at both breakpoints —
+  // no scroll, no separate arrival screen. Renders nothing once the week is
+  // approved (renderWeekApproval's receipt, further down, takes over) or
+  // when there's no plan at all yet.
+  function renderWeekReviewBand(panel, data, statusLine) {
+    var band = panel.querySelector('#week-review-band');
+    if (!band) return;
+    if (!data.weekly_plan_id || data.status === 'approved') { band.innerHTML = ''; return; }
+
     var openCount = countOpenSlots(data);
-    row.innerHTML =
+    band.innerHTML =
       '<div class="shell-card week-approve-card">' +
+        '<div class="week-review-eyebrow">DRAFT · YOUR TURN</div>' +
+        (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
         '<div class="week-approve-promise">' + escapeHtml(groceryPromiseText(data.grocery_preview)) + '</div>' +
         // Approving with a slot still open is allowed, but named — never a
         // silent shortfall.
         '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
           (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve the week') +
         '</button>' +
+        // Same idiom as "or start over" (.week-reset-link) — one quiet
+        // Newsreader-italic text link under the primary button, not a
+        // second button competing with it. Prefills the composer rather
+        // than opening a blank chat, echoing the first-week-reveal
+        // branch's "or tweak it with me" pattern for the everyday flow.
+        '<button type="button" class="week-reset-link week-tweak-link" id="week-tweak-btn">or tweak it with me</button>' +
         // DECISIONS.md #3: two actions, because they're different needs.
         // One button labelled "Redo" can only be one of them, and would be
         // the wrong one half the time.
@@ -3636,9 +3697,12 @@
           '<button type="button" class="week-redo-btn" id="week-change-answers">Change my answers</button>' +
         '</div>' +
       '</div>';
-    row.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
-    row.querySelector('#week-try-again').addEventListener('click', function () { tryAgain(panel, data); });
-    row.querySelector('#week-change-answers').addEventListener('click', function () {
+    band.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
+    band.querySelector('#week-tweak-btn').addEventListener('click', function () {
+      openAskSheet('Let’s tweak this week — ');
+    });
+    band.querySelector('#week-try-again').addEventListener('click', function () { tryAgain(panel, data); });
+    band.querySelector('#week-change-answers').addEventListener('click', function () {
       startPlanningWeek(data.week_start_date);
     });
   }
@@ -3858,6 +3922,7 @@
         '</div>';
       mobileEl.querySelector('#whole-week-sub').textContent = '';
       gridEl.innerHTML = '';
+      renderWeekReviewBand(panel, data, '');
       renderOpenSlots(panel, data);
       renderWeekApproval(panel, data);
       renderPlanWeekEntry(panel, data);
@@ -3896,6 +3961,7 @@
       weekState.selectedIndex = todayIndexForSelect >= 0 ? todayIndexForSelect : 0;
     }
 
+    renderWeekReviewBand(panel, data, statusLine);
     renderWeekFraming(panel, data, statusLine);
     renderDayRail(panel, days);
     renderDayCard(panel, days[weekState.selectedIndex]);
