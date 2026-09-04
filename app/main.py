@@ -794,6 +794,31 @@ def onboarding_generate_first_plan():
     return plan
 
 
+@app.post("/api/onboarding/generate-first-plan/stream")
+def onboarding_generate_first_plan_stream():
+    """
+    Streaming twin of /api/onboarding/generate-first-plan (see it for the
+    week-key rationale) -- reuses the exact same _stream_week_generation
+    machinery the Meals draft screen's /api/week/{week_start}/generate/stream
+    already uses (Loop Board "Redesign the post-onboarding first sample
+    week screen": the reveal was still a single ~30-second blocking call
+    while the rest of the app had already moved to progressive per-day
+    streaming). Same generation, same saved plan, same side effects
+    (generate_weekly_plan is the one thing both endpoints call) -- the
+    only difference is the reveal can now show each day landing instead
+    of one long silence. The plain endpoint stays as the tested,
+    unstreamed path other callers (and the existing onboarding tests)
+    still use, same rationale as generate_week_stream's own docstring.
+    """
+    today = datetime.date.today()
+    week_start = (today - datetime.timedelta(days=today.weekday())).isoformat()
+    return StreamingResponse(
+        _stream_week_generation(week_start=week_start, constraints_notes="", intake_id=None),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.post("/api/onboarding/chores/recommend")
 def onboarding_chores_recommend(req: ChoreProfileRequest):
     """
