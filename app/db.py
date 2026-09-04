@@ -139,6 +139,12 @@ _MIGRATIONS = [
     # schema.sql's comment on grocery_items.already_have_inventory_id) so
     # undo can safely delete that exact row without risking real stock.
     ("grocery_items", "already_have_inventory_id", "INTEGER"),
+    # Loop Board "First-class 'defrost' prep step" — see schema.sql's
+    # comment on prep_tasks for what each of these four columns is for.
+    ("prep_tasks", "task_type", "TEXT NOT NULL DEFAULT 'general'"),
+    ("prep_tasks", "inventory_item_id", "INTEGER"),
+    ("prep_tasks", "meal_plan_entry_id", "INTEGER"),
+    ("prep_tasks", "quantity", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

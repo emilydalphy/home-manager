@@ -467,7 +467,7 @@ class CheckOffMealRequest(BaseModel):
 
 class CheckOffPrepRequest(BaseModel):
     prep_task_id: int
-    status: str = "done"  # pending | done
+    status: str = "done"  # pending | done | skipped
 
 
 class FillRecipeRequest(BaseModel):
@@ -1051,6 +1051,25 @@ def set_chore_status(instance_id: int, req: ChoreStatusRequest):
         logger.exception("Chore status update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+@app.get("/api/prep/defrost-today")
+def defrost_today():
+    """
+    Pending defrost tasks due today — powers the app-shell Today screen's
+    defrost tile (Loop Board "First-class 'defrost' prep step"), the same
+    small direct-read-endpoint pattern /api/chores/today established just
+    above. Marking one done/skipped reuses the existing
+    /api/cooker/check-prep endpoint (tools.check_off_prep_step accepts
+    'skipped' now too) rather than adding a second write endpoint for the
+    same table.
+    """
+    try:
+        tasks = tools.get_defrost_today()
+    except Exception as e:
+        logger.exception("Today's-defrost lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"tasks": tasks}
 
 
 @app.get("/api/week-menu")

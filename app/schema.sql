@@ -365,8 +365,14 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
 );
 
 -- A generated prep/cooking task for a weekly plan — "what needs prepping or
--- starting ahead of time and when," derived purely from recipe timing (see
--- generate_prep_schedule), not the Cooker's calendar/availability.
+-- starting ahead of time and when." Two independent producers write into
+-- this one table (see task_type below): the LLM-driven pass derived from
+-- recipe timing (generate_prep_schedule) and the deterministic defrost
+-- pass derived from freezer inventory + a fixed lead-time table
+-- (app/tools/defrost.py) — Loop Board "First-class 'defrost' prep step".
+-- Each producer only ever deletes/rewrites its own task_type's rows (see
+-- save_prep_tasks and defrost.sync_defrost_tasks), so regenerating one
+-- kind never wipes the other's data or in-flight done/skip status.
 CREATE TABLE IF NOT EXISTS prep_tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
@@ -374,7 +380,31 @@ CREATE TABLE IF NOT EXISTS prep_tasks (
     task_date TEXT NOT NULL, -- ISO date this task should happen on
     description TEXT NOT NULL, -- e.g. "Marinate chicken for Wednesday's stir fry"
     related_meal TEXT NOT NULL DEFAULT '', -- freeform meal name this task supports
-    status TEXT NOT NULL DEFAULT 'pending', -- pending | done
+    status TEXT NOT NULL DEFAULT 'pending', -- pending | done | skipped
+    -- 'general' — the pre-existing LLM-derived kind (marinate, soak, batch
+    -- prep). 'defrost' — a freezer-to-fridge move, computed deterministically
+    -- (no model call): matched against real inventory and a documented
+    -- category lead-time table, never an LLM guess. See defrost.py's module
+    -- docstring for why this is deliberately not LLM-generated.
+    task_type TEXT NOT NULL DEFAULT 'general',
+    -- Structured reference for a 'defrost' task — which freezer row this
+    -- is about. NULL for 'general' tasks (which have no single item), and
+    -- also NULL for a defrost task derived from a ready_made slot's
+    -- recommendation rather than a plain recipe ingredient (see
+    -- defrost.defrost_task_from_ready_made) if the recommended item text
+    -- can't be matched back to a live inventory row. No REFERENCES clause:
+    -- SQLite can't add a foreign key via ALTER TABLE, so an existing
+    -- database gets the plain column (see db.py's migration for this one).
+    inventory_item_id INTEGER,
+    -- Which specific planned meal this defrost is for, so the reminder can
+    -- say "for Thursday's skewers" precisely rather than just naming a day.
+    -- NULL for 'general' tasks and for a ready_made-derived defrost task
+    -- (that slot has no single recipe entry — see related_meal instead).
+    meal_plan_entry_id INTEGER,
+    -- How much of the item this specific meal needs, straight from the
+    -- recipe's own ingredient line (e.g. "1 lb") — not the amount currently
+    -- on hand in inventory. Blank for 'general' tasks.
+    quantity TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

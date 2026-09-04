@@ -741,9 +741,14 @@ def confirm_slot_recommendation(date_str: str, slot: str, confirmed: bool = True
     """
     Record the household's yes/no on a ready_made recommendation — Emily's
     rule that the system recommends but never acts without confirmation.
-    Only flips the flag; the actual defrost reminder / batch-cook nudge
-    this unlocks is the separate defrost-flow ticket's territory, and reads
-    this flag rather than duplicating it.
+    Flips the flag, then — for a defrost recommendation specifically —
+    wires it into the same defrost prep-task machinery a normal meal's
+    ingredient uses (see defrost.defrost_task_from_ready_made), so a
+    confirmed "I'll defrost the X" actually produces the Today-tile
+    reminder rather than just sitting confirmed with nothing acting on it.
+    A batch-from-entry recommendation has no defrost task to create, and
+    that function is a no-op (returns None) for one — this always calls it
+    regardless of kind, rather than branching here on what was recommended.
     """
     date.fromisoformat(date_str)
     _validate_slot(slot)
@@ -761,6 +766,8 @@ def confirm_slot_recommendation(date_str: str, slot: str, confirmed: bool = True
     )
     conn.commit()
     conn.close()
+    from . import defrost as _defrost  # local import: avoids a module-load cycle with defrost.py
+    _defrost.defrost_task_from_ready_made(date_str, slot)
     return get_slot_need(date_str, slot)
 
 

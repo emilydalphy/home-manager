@@ -1316,20 +1316,28 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_prep_schedule",
-        "description": "Get the generated prep-task schedule for a plan. Omit weekly_plan_id for the household's current plan.",
+        "description": "Get the generated prep-task schedule for a plan — both general prep tasks and defrost tasks (task_type distinguishes them; a defrost task also carries quantity and references to the specific inventory item/meal it's for). Omit weekly_plan_id for the household's current plan. For a pure defrost question ('what do I need to defrost?'), prefer get_defrost_schedule instead — it isn't scoped to one plan and reads more naturally.",
         "input_schema": {
             "type": "object",
             "properties": {"weekly_plan_id": {"type": "integer"}},
         },
     },
     {
+        "name": "get_defrost_schedule",
+        "description": "What needs to move from the freezer to the fridge, and when — today or over the next `days` days. Each item names the freezer item, how much the meal needs, which meal it's for, and the day it should come out (computed from the household's dinner_window and a category-based lead-time rule of thumb: ~48h for a large roast/whole bird, ~24h for standard cuts, ~18h for small/thin cuts like fillets or shrimp — see tools/defrost.py if asked why). Use this for 'what do I need to defrost' or similar, rather than filtering get_prep_schedule yourself.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"days": {"type": "integer", "description": "How many days ahead to look, in addition to today. Defaults to 7."}},
+        },
+    },
+    {
         "name": "check_off_prep_step",
-        "description": "Mark a specific prep task as done or back to pending.",
+        "description": "Mark a specific prep task (general or defrost) as done, skipped, or back to pending.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "prep_task_id": {"type": "integer"},
-                "status": {"type": "string", "enum": ["pending", "done"]},
+                "status": {"type": "string", "enum": ["pending", "done", "skipped"]},
             },
             "required": ["prep_task_id"],
         },
@@ -2698,7 +2706,36 @@ def generate_weekly_plan(
     # ever sees. If onboarding's first impression starts feeling slow,
     # this is a known place to move off the request path.
     _generate_prep_schedule_if_needed(plan)
+    _sync_defrost_tasks_if_needed(plan)
     return plan
+
+
+def _sync_defrost_tasks_if_needed(plan: dict) -> dict | None:
+    """
+    Recompute this plan's defrost tasks (tools.defrost.sync_defrost_tasks)
+    right alongside the general prep schedule above — but, deliberately,
+    with no gate at all, unlike that call's advance_prep_notes condition.
+
+    _generate_prep_schedule_if_needed's gate exists to avoid paying for a
+    model call on weeks that don't need one (Emily's 2026-09-01 decision).
+    Defrost detection makes no model call — it's a lookup against real
+    inventory plus a fixed lead-time table (see tools/defrost.py's module
+    docstring) — so there's no cost to weigh here, and gating it on the
+    same advance_prep_notes condition would reintroduce the exact bug this
+    ticket exists to fix: a week with a frozen chicken breast and no
+    marinade note would still never get a defrost reminder.
+
+    Never raises, same safety net as its sibling: an optional reminder
+    pass failing must not take a successfully generated week down with it.
+    """
+    try:
+        plan_id = plan.get("weekly_plan_id")
+        if not plan_id:
+            return None
+        return tools.sync_defrost_tasks(plan_id)
+    except Exception:
+        logger.exception("Could not sync defrost tasks for plan %s; the plan itself is unaffected", plan.get("weekly_plan_id"))
+        return None
 
 
 def _generate_prep_schedule_if_needed(plan: dict) -> bool:
@@ -3235,6 +3272,12 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
     }
     tasks = generate_prep_schedule_llm(context)
     tools.save_prep_tasks(plan_id, tasks)
+    # Refresh defrost tasks too, on a manual/chat-triggered regenerate —
+    # save_prep_tasks only touches task_type='general' rows (see its own
+    # docstring), so this is what keeps the defrost half in sync if a meal
+    # or freezer inventory changed since the plan was first generated.
+    # sync_defrost_tasks makes no model call, so this costs nothing extra.
+    tools.sync_defrost_tasks(plan_id)
     return tools.get_plan_progress(plan_id)
 
 
@@ -3516,6 +3559,7 @@ TOOL_FUNCTIONS = {
     "approve_weekly_plan": tools.approve_weekly_plan,
     "generate_prep_schedule": generate_prep_schedule,
     "get_prep_schedule": tools.get_prep_schedule,
+    "get_defrost_schedule": tools.get_defrost_schedule,
     "check_off_prep_step": tools.check_off_prep_step,
     "check_off_meal": tools.check_off_meal,
     "get_plan_progress": tools.get_plan_progress,

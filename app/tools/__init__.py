@@ -58,6 +58,14 @@ from .cooker import (  # noqa: F401
     get_prep_schedule,
     save_prep_tasks,
 )
+from .defrost import (  # noqa: F401
+    lead_hours_for_item,
+    defrost_candidates_for_plan,
+    defrost_task_from_ready_made,
+    get_defrost_schedule,
+    get_defrost_today,
+    sync_defrost_tasks,
+)
 from .coordination import (  # noqa: F401
     check_plan_conflicts,
     explain_meal_choice,

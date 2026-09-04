@@ -303,6 +303,7 @@
           // there is no prep task, rather than leaving a lonely half-tile.
           '<div class="today-tiles today-area-tiles">' +
             '<div class="today-tile tile-prep" id="today-prep-tile" hidden></div>' +
+            '<div class="today-tile tile-defrost" id="today-defrost-tile" hidden></div>' +
             '<button type="button" class="today-tile tile-grocery" id="grocery-summary-open">' +
               '<span class="tile-icon">' + ICONS.bag + '</span>' +
               '<span class="tile-eyebrow">Grocery run</span>' +
@@ -341,6 +342,7 @@
       loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
       loadTonightsDinner(panel),
+      loadDefrostToday(panel),
       loadChores(panel),
       loadGrocerySummary(panel)
     ]);
@@ -810,6 +812,86 @@
       '<span class="tile-eyebrow">Prep today</span>' +
       '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
       (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : '');
+  }
+
+  // ---------- The defrost tile ----------
+  // Unlike the read-only prep tile just above, this one is interactive —
+  // Loop Board "First-class 'defrost' prep step" specifically asks for a
+  // one-tap done/skip right here, because a defrost decision made days
+  // before cooking has no natural moment inside Cook mode (which owns
+  // check-off for everything else prep-related) to happen in. Backed by
+  // /api/prep/defrost-today (app/tools/defrost.get_defrost_today) — pending
+  // task_type='defrost' prep_tasks due today. Marking one done/skipped
+  // reuses the existing /api/cooker/check-prep endpoint, same table as
+  // Cook mode's own prep check-off, just called from here instead.
+  async function loadDefrostToday(panel) {
+    try {
+      var res = await fetch('/api/prep/defrost-today');
+      if (!res.ok) throw new Error('defrost lookup failed');
+      var data = await res.json();
+      panel._defrostTasks = data.tasks || [];
+    } catch (err) {
+      console.warn('Defrost-today lookup failed:', err);
+      panel._defrostTasks = [];
+    }
+    renderDefrostToday(panel);
+  }
+
+  function renderDefrostToday(panel) {
+    var tile = panel.querySelector('#today-defrost-tile');
+    if (!tile) return;
+    var tasks = panel._defrostTasks || [];
+    if (!tasks.length) { tile.hidden = true; tile.innerHTML = ''; return; }
+    var task = tasks[0];
+    var more = tasks.length - 1;
+    tile.hidden = false;
+    tile.innerHTML =
+      '<span class="tile-icon">' + ICONS.clock + '</span>' +
+      '<span class="tile-eyebrow">Defrost tonight</span>' +
+      '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
+      (more > 0 ? '<span class="tile-foot">+' + more + ' more today</span>' : '') +
+      '<div class="tile-defrost-actions">' +
+        '<button type="button" class="tile-defrost-btn tile-defrost-done" aria-label="Done — moved to the fridge">' +
+          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' +
+          '<span>Done</span>' +
+        '</button>' +
+        '<button type="button" class="tile-defrost-btn tile-defrost-skip" aria-label="Skip this reminder">' +
+          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+          '<span>Skip</span>' +
+        '</button>' +
+      '</div>';
+    tile.querySelector('.tile-defrost-done').addEventListener('click', function (e) {
+      e.stopPropagation();
+      actOnDefrostTask(panel, task, 'done');
+    });
+    tile.querySelector('.tile-defrost-skip').addEventListener('click', function (e) {
+      e.stopPropagation();
+      actOnDefrostTask(panel, task, 'skipped');
+    });
+  }
+
+  async function actOnDefrostTask(panel, task, status) {
+    var tasks = panel._defrostTasks || [];
+    var idx = tasks.indexOf(task);
+    // Optimistic, same shape as toggleChore below: remove from the local
+    // list and re-render immediately (a resolved task no longer belongs
+    // in "pending, due today"), roll back on failure.
+    if (idx > -1) tasks.splice(idx, 1);
+    renderDefrostToday(panel);
+    try {
+      var res = await fetch('/api/cooker/check-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_task_id: task.id, status: status })
+      });
+      if (!res.ok) throw new Error('defrost status update failed');
+      showToast(status === 'done' ? 'Moved to the fridge — nice.' : 'Skipped for today.');
+    } catch (err) {
+      console.warn('Defrost action failed, rolling back:', err);
+      if (idx > -1) { tasks.splice(idx, 0, task); } else { tasks.push(task); }
+      renderDefrostToday(panel);
+      alert('Could not save that right now — try again in a moment.');
+    }
   }
 
   async function loadChores(panel) {
@@ -5294,6 +5376,13 @@
         // tile.
         refreshKitchenPanel();
         refreshCookView();
+        // check_off_prep_step is also how a defrost task gets marked
+        // done/skipped from chat ("mark the chicken thighs done") — same
+        // table, same tool, just called from a different surface than the
+        // Today tile's own buttons. Without this, Today's defrost tile
+        // would go on showing an already-handled reminder until the next
+        // full panel rebuild.
+        if (panels.today && panels.today.dataset.built) loadDefrostToday(panels.today);
       } else if (!action.tab && hrefSheetKey(action.href)) {
         // Household/preferences writes carry no tab at all — they carry
         // href: '/memory' (app/main.py's _MEMORY_HREF_TOOLS), because when

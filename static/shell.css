@@ -232,6 +232,52 @@ html, body {
 }
 .tile-prep .tile-icon,
 .tile-prep .tile-eyebrow { color: var(--celadon-label); }
+/* Defrost is celadon too — same "nudge, not the task" family as prep (§1
+   token table) — but unlike prep it IS a control: there's no Cook-mode
+   moment for it (the move happens days before cooking starts), so the
+   one-tap done/skip lives right here. Neither button is apricot: Today's
+   hero already spends this screen's one apricot primary (Rule 5), and a
+   quiet in-tile action doesn't need to compete with it. */
+.tile-defrost {
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  color: var(--ink-on-celadon);
+}
+.tile-defrost .tile-icon,
+.tile-defrost .tile-eyebrow { color: var(--celadon-label); }
+.tile-defrost-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+.tile-defrost-btn {
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tile-defrost-btn svg { display: block; width: 16px; height: 16px; }
+/* Done is the affirmative half of the pair — a filled celadon fill (Rule 1:
+   dark ink on a light accent fill, always) so it reads slightly heavier
+   than Skip without reaching for apricot. */
+.tile-defrost-done {
+  background: var(--celadon);
+  border: none;
+  color: var(--on-accent-ink);
+}
+.tile-defrost-skip {
+  background: transparent;
+  border: 1.5px solid var(--celadon-edge);
+  color: var(--celadon-label);
+}
+
 /* Grocery is the tile that goes somewhere, so it is the one that is a
    button. */
 .tile-grocery {

@@ -259,7 +259,9 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
 
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
-    """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule) as done or back to pending."""
+    """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule, general or defrost) as done, skipped, or back to pending. 'skipped' is the defrost tile's one-tap decline — see static/shell.js's Today defrost tile — but is valid for any prep task, not defrost-specific."""
+    if status not in ("pending", "done", "skipped"):
+        raise ValueError(f"status must be one of pending/done/skipped, not {status!r}.")
     conn = get_conn()
     require_household_row(conn, "prep_tasks", prep_task_id, label="prep task")
     conn.execute(
@@ -272,7 +274,7 @@ def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
 
 
 def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
-    """Get the generated prep-task schedule for a plan (see generate_prep_schedule). Omit weekly_plan_id for the household's current/most recent plan."""
+    """Get the generated prep-task schedule for a plan (see generate_prep_schedule and defrost.sync_defrost_tasks — both general and defrost tasks come back together, distinguished by task_type). Omit weekly_plan_id for the household's current/most recent plan."""
     conn = get_conn()
     if weekly_plan_id is None:
         row = _weekly_plan._current_weekly_plan_row(conn)
@@ -281,7 +283,8 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
             return []
         weekly_plan_id = row["id"]
     rows = conn.execute(
-        "SELECT id, task_date, description, related_meal, status FROM prep_tasks "
+        "SELECT id, task_date, description, related_meal, status, task_type, "
+        "inventory_item_id, meal_plan_entry_id, quantity FROM prep_tasks "
         "WHERE weekly_plan_id = ? AND household_id = ? ORDER BY task_date ASC, id ASC",
         (weekly_plan_id, household_id()),
     ).fetchall()
@@ -291,18 +294,25 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
 
 def save_prep_tasks(weekly_plan_id: int, tasks: list[dict]) -> dict:
     """
-    Persist a generated prep schedule for a plan — internal helper used by
-    generate_prep_schedule right after the LLM produces the task list.
-    Replaces any previously-generated tasks for this plan (re-generating
-    supersedes, rather than appending duplicates).
+    Persist a generated (general/LLM-derived) prep schedule for a plan —
+    internal helper used by generate_prep_schedule right after the LLM
+    produces the task list. Replaces any previously-generated *general*
+    tasks for this plan (re-generating supersedes, rather than appending
+    duplicates) — scoped to task_type='general' so this never touches the
+    separately-managed defrost rows (see defrost.sync_defrost_tasks, which
+    is scoped the same way in the other direction).
     """
     conn = get_conn()
-    conn.execute("DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?", (weekly_plan_id, household_id()))
+    conn.execute(
+        "DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'general'",
+        (weekly_plan_id, household_id()),
+    )
     for t in tasks:
         if not t.get("task_date") or not t.get("description"):
             continue
         conn.execute(
-            "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, task_type) "
+            "VALUES (?, ?, ?, ?, ?, 'general')",
             (household_id(), weekly_plan_id, t["task_date"], t["description"], t.get("related_meal", "")),
         )
     conn.commit()
