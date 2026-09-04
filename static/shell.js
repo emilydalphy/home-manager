@@ -2954,7 +2954,15 @@
     if (window.location.search.indexOf('firstplan=1') !== -1) {
       showToast("Here's a first pass — change anything and I'll re-plan around it.");
     }
-    if (drafted || window.location.search.indexOf('firstplan=1') !== -1) {
+    // The reveal's "or tweak it with me" quiet link (Loop Board "Redesign
+    // the post-onboarding first sample week screen") redirects here with
+    // ?tweak=1 instead of ?firstplan=1 — same landing, but straight into
+    // the ask sheet with a prefill rather than a toast, since the person
+    // already said they want to change something rather than just look.
+    if (window.location.search.indexOf('tweak=1') !== -1) {
+      openAskSheet("Let's tweak my first sample week — ");
+    }
+    if (drafted || window.location.search.indexOf('firstplan=1') !== -1 || window.location.search.indexOf('tweak=1') !== -1) {
       var cleanUrl = window.location.pathname;
       window.history.replaceState({ tab: 'week' }, '', cleanUrl);
     }
