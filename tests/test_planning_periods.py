@@ -224,6 +224,23 @@ class TestNonMondayPeriods:
         eighth_day = [d for d in menu["days"] if d["date"] == eighth][0]
         assert eighth_day["dinner"]["state"] == "open"
 
+    def test_the_question_screens_ask_about_the_periods_real_days(self):
+        # Caught by driving the real screen, not by reading the code: the
+        # day cards were right and the eyebrow above them still said seven,
+        # so the page named a window it was visibly not asking about.
+        start = _thursday()
+        prefill = tools.get_week_intake_prefill(start, day_count=8)
+        assert [d["date"] for d in prefill["days"]] == tools.period_dates(start, 8)
+        assert prefill["week_label"] == tools._format_period_range(start, 8)
+        assert prefill["day_count"] == 8
+
+    def test_a_shorter_period_does_not_ask_about_days_nobody_planned(self):
+        # Answers to imaginary days would be saved as intake and read back
+        # the next time that week IS planned.
+        start = _thursday()
+        prefill = tools.get_week_intake_prefill(start, day_count=3)
+        assert len(prefill["days"]) == 3
+
     def test_the_menu_renders_the_period_and_labels_it(self, recipes, stub_model):
         start = _thursday()
         stub_model(_full_period(start, 8))

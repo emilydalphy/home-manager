@@ -526,7 +526,11 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
 
     return {
         "week_start": week_start,
-        "week_label": _weekly_plan._format_week_range(week_start),
+        # The period's real dates, not seven days from its start. This is
+        # the eyebrow above the questions ("Question 1 of 2 · Sep 10–17"),
+        # so a 7-day label over an 8-day set of day cards would have the
+        # screen naming a window it is visibly not asking about.
+        "week_label": _weekly_plan._format_period_range(week_start, day_count),
         "days": [
             {
                 "date": d,
