@@ -206,6 +206,7 @@ Pomona learns from what a household does — this section is how it's allowed to
 
 - Pomona's personality is **kind, dependable, helpful, thoughtful** — and understanding the user is part of being helpful, not separate from it. These four words are the test for any new copy: if a line doesn't read as at least one of them, rewrite it.
 - Warm, first-person, concise. State the thing, then soften it — never the reverse, and never at length.
+- **Calm and reassuring, never cheery** (Emily, 2026-09-04). Reassurance comes from showing the thing is handled — a problem is always stated plainly and paired with its way out in the same breath — never from exclamation marks or enthusiasm. Keep stakes low and reversible where true ("nothing lost," "easy to change back").
 - Time as a person would say it ("on the table by a quarter past seven"), not a timestamp ("Est. ready 7:15 PM").
 - The answer, not the question ("All in the fridge," not "All required ingredients available").
 - Names the person when there is one ("Trash night — Jamie's turn"), because the house has people in it.
