@@ -50,6 +50,18 @@ _RATES_PER_MTOK = {
     "claude-sonnet-5": {
         "input": 2.00, "cache_read": 0.20, "cache_write": 2.50, "output": 10.00,
     },
+    # The chat-fallback model (agent.CHAT_FALLBACK_MODEL) -- keyed to the
+    # exact dated snapshot it's pinned to, since that's the literal string
+    # api_calls.model records for a fallback call. $1/$5 per MTok, verified
+    # 2026-09-03 against Anthropic's published Claude Haiku 4.5 rate (same
+    # 0.1x/1.25x cache multipliers as every other model in this table). If
+    # CHAT_FALLBACK_MODEL is ever overridden to a different model string,
+    # add a matching row here too -- otherwise price_tokens raises (below)
+    # the moment a fallback call needs pricing, rather than silently
+    # mis-billing it.
+    "claude-haiku-4-5-20251001": {
+        "input": 1.00, "cache_read": 0.10, "cache_write": 1.25, "output": 5.00,
+    },
 }
 
 # The model the chat loop actually runs on. Repeated here rather than

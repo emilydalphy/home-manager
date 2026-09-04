@@ -195,6 +195,24 @@ def test_the_priced_model_is_the_model_the_app_actually_runs():
     )
 
 
+def test_the_chat_fallback_model_has_a_published_rate_too():
+    """
+    Same failure mode as the primary-model pin above, one hop removed: a
+    529-exhaustion fallback call records agent.CHAT_FALLBACK_MODEL into
+    api_calls.model, and _cost_breakdown prices every row by its own
+    model (see usage.py's _cost_breakdown) -- with no rate row for it,
+    that pricing call raises instead of quietly mis-billing, which would
+    take the whole cost report down with it the first time a fallback
+    actually fires.
+    """
+    from app import agent
+
+    assert agent.CHAT_FALLBACK_MODEL in usage_module._RATES_PER_MTOK, (
+        "agent.CHAT_FALLBACK_MODEL changed (or its env override moved) "
+        "without adding a matching row to _RATES_PER_MTOK"
+    )
+
+
 def test_price_tokens_bills_each_kind_at_its_own_rate():
     """
     Cache reads are a tenth of input and cache writes are a quarter more
