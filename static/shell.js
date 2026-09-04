@@ -5678,21 +5678,37 @@
   // max-height), then scroll internally instead of growing further. One
   // function serves both composer instances since they share markup/CSS.
   //
-  // dataset.baseHeight caches each textarea's own single-empty-line height
-  // (captured the first time this runs, via the empty-value setup call
-  // right after each composer is wired below) — that is what lets
-  // .is-grown mean "has actually grown past one line" rather than firing
-  // on every keystroke regardless of height.
+  // oneLineHeight() is computed from line-height + padding rather than by
+  // reading the empty textarea's own scrollHeight — measured live, an EMPTY
+  // textarea's scrollHeight tracks its wrapped *placeholder* text, not one
+  // line of real content. The desktop Today column is narrow enough that
+  // this composer's long placeholder wraps to 2-3 lines there, so an empty
+  // box was measuring (and rendering) as multi-line tall — confirmed live
+  // rather than assumed. Computing the one-line height from font metrics
+  // instead sidesteps the placeholder entirely, and works even before the
+  // element has ever been laid out (e.g. the moment its panel is built,
+  // still offscreen), since it doesn't depend on scrollHeight at all.
   var ASK_COMPOSER_MAX_HEIGHT = 128; // px — keep in sync with shell.css's .ask-composer-input max-height
+  function oneLineHeight(textarea) {
+    var cs = getComputedStyle(textarea);
+    return parseFloat(cs.lineHeight) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  }
   function autoGrowAskInput(textarea) {
     if (!textarea) return;
-    if (textarea.dataset.baseHeight === undefined) textarea.dataset.baseHeight = textarea.scrollHeight;
+    var bar = textarea.closest('.ask-composer-bar');
+    if (!textarea.value) {
+      // Nothing typed — always exactly one line, regardless of what the
+      // (possibly multi-line-wrapped) placeholder would otherwise measure.
+      textarea.style.height = oneLineHeight(textarea) + 'px';
+      textarea.style.overflowY = 'hidden';
+      if (bar) bar.classList.remove('is-grown');
+      return;
+    }
     textarea.style.height = 'auto'; // shrink first so scrollHeight reflects the current value, not the old height
     var next = Math.min(textarea.scrollHeight, ASK_COMPOSER_MAX_HEIGHT);
     textarea.style.height = next + 'px';
     textarea.style.overflowY = textarea.scrollHeight > ASK_COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden';
-    var bar = textarea.closest('.ask-composer-bar');
-    if (bar) bar.classList.toggle('is-grown', next > Number(textarea.dataset.baseHeight) + 2);
+    if (bar) bar.classList.toggle('is-grown', next > oneLineHeight(textarea) + 2);
   }
 
   function openAskSheet(prefill) {
@@ -5833,7 +5849,7 @@
     }
   }
   setupDictation(askInput, document.getElementById('ask-mic-btn'));
-  autoGrowAskInput(askInput); // captures this textarea's own one-line height before anything can grow it
+  autoGrowAskInput(askInput); // sets its correct one-line height immediately, in case the browser rendered rows="1" differently before this ran
 
   // Wires up Today's permanent desktop Ask column (§7) — same
   // ensureAskSheetBuilt/sendAskMessage the sheet uses, just a second entry
@@ -5868,7 +5884,7 @@
     });
     input.addEventListener('input', function () { autoGrowAskInput(input); });
     setupDictation(input, panel.querySelector('#today-ask-mic-btn'));
-    autoGrowAskInput(input); // captures this textarea's own one-line height before anything can grow it
+    autoGrowAskInput(input); // sets its correct one-line height immediately, in case the browser rendered rows="1" differently before this ran
   }
 
   // ---------- Notifications (Phase 5 / NOTIFICATIONS.md) ----------
