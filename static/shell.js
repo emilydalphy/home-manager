@@ -247,8 +247,10 @@
     // points (Today's "Start cooking", Meals' own "Cook this") land on the
     // Cook state instead of Plan — it replaces the old forceEmbedSrc hack,
     // which reached cooking by re-pointing the KITCHEN tab's iframe at
-    // cooker.html and so lit the wrong tab while you cooked.
-    if (tab.week && opts && opts.mealsView) setMealsView(opts.mealsView);
+    // cooker.html and so lit the wrong tab while you cooked. Both of them
+    // also pass `mealsFocus`, so they land IN tonight's focused screen, not
+    // just on the Cook overview — see setMealsView.
+    if (tab.week && opts && opts.mealsView) setMealsView(opts.mealsView, opts.mealsFocus);
 
     if (pushHistory && window.location.pathname.replace(/\/+$/, '') !== (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''))) {
       window.history.pushState({ tab: key }, '', tab.path);
@@ -784,7 +786,7 @@
           '<span>Start cooking</span>' + ICONS.arrow +
         '</button>' +
         '<button type="button" class="hero-quiet" id="dinner-swap">Swap tonight for something else</button>';
-      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook' }); });
+      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook', mealsFocus: true }); });
       card.querySelector('#dinner-swap').addEventListener('click', function () {
         openAskSheet('Swap tonight for something faster');
       });
@@ -3382,7 +3384,7 @@
       });
     });
     var cookBtn = wrap.querySelector('#wk-cook-this');
-    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook' }); });
+    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook', mealsFocus: true }); });
     var swapBtn = wrap.querySelector('#wk-swap-it');
     if (swapBtn) swapBtn.addEventListener('click', function () {
       openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s dinner for something else');
@@ -4109,8 +4111,19 @@
     attention: [],
     attentionOpen: false, // folded by default — see cookAttentionHtml
     loadError: false,
-    openDetail: null,   // index of the meal whose recipe is expanded
     tonightIdx: null,
+    // Focused single-meal cook mode: a state of this same screen, exactly
+    // like Grocery's shopping mode is a state of Grocery — never a route,
+    // never a page with its own header. 'overview' is the tonight-hero +
+    // prep-rail + week-list screen this always starts on; 'focus' takes
+    // the whole screen over for one meal until "back to the week" or a
+    // check-off returns you. See cookEnterFocus/cookExitFocus.
+    screen: 'overview',
+    focusIdx: null,      // index into cookState.data.meals, while focused
+    focusScrollTo: null, // 'ingredients' | null — landed-on section, once
+    pendingFocusTonight: false, // set by a "Start cooking"/"Cook this" deep link that arrives before the view has ever loaded
+    pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
+    focusStepsChecked: {},      // 'idx:stepPos' -> true — tap-to-check on Do-ahead/Day-of steps, client-side only (see cookStepLi)
     voiceSession: null,
     voiceContext: null, // { type: 'prep' } | { type: 'meal', idx }
     voiceStepCursor: {},
@@ -4136,7 +4149,13 @@
   // Meals path stays /week either way, exactly as Grocery's three segments
   // are all /grocery. Deep links into cooking come through the entry points
   // (Today's "Start cooking", Meals' "Cook this"), not through a URL.
-  function setMealsView(view) {
+  // focusTonight is how Today's "Start cooking" and Meals' own "Cook this"
+  // land directly in the focused screen for tonight's meal, rather than on
+  // the Cook overview — the literal "entering 'Start cooking' on a meal
+  // opens that ONE meal full-screen" the ticket asks for. Clicking the
+  // Plan/Cook segmented control itself never passes this, so a deliberate
+  // switch to Cook still lands on the overview, same as always.
+  function setMealsView(view, focusTonight) {
     var panel = cookPanel();
     if (!panel || !panel.dataset.built) return;
     var isCook = view === 'cook';
@@ -4161,7 +4180,14 @@
       cookView.dataset.built = '1';
       cookView.innerHTML = '<p class="cook-empty">Loading&hellip;</p>';
       cookView.addEventListener('click', onCookClick);
+      cookState.pendingFocusTonight = !!focusTonight;
       loadCook();
+      return;
+    }
+    // Already built and loaded: a repeat "Start cooking" tap should land
+    // back in tonight's focus, not wherever the screen was left.
+    if (isCook && focusTonight && cookState.data && cookState.tonightIdx !== null && cookState.tonightIdx !== undefined) {
+      cookEnterFocus(cookState.tonightIdx);
     }
   }
 
@@ -4191,6 +4217,17 @@
     } catch (err) {
       console.warn('Cooker lookup failed:', err);
       cookState.loadError = true;
+    }
+    // A "Start cooking"/"Cook this" deep link that arrived before this
+    // view had ever loaded (the common case — Cook is lazy-built) asked
+    // for tonight's meal in focus, not the overview; honor it now that
+    // tonight is actually known.
+    if (cookState.pendingFocusTonight) {
+      cookState.pendingFocusTonight = false;
+      if (!cookState.loadError && cookState.tonightIdx !== null && cookState.tonightIdx !== undefined) {
+        cookEnterFocus(cookState.tonightIdx);
+        return;
+      }
     }
     renderCook();
   }
@@ -4251,6 +4288,14 @@
     var view = panel && panel.querySelector('#week-cook-view');
     if (!view) return;
 
+    // The Plan/Cook segmented control is Meals' own top-level state, not
+    // part of what's "on screen" once a meal takes it over — the same rule
+    // Grocery's shopping mode follows for its own To buy/Plan stops/Review
+    // control (renderGrocery: "while it is on, the control goes away rather
+    // than lying about where you are").
+    var mealsSeg = panel && panel.querySelector('#meals-seg');
+    if (mealsSeg) mealsSeg.hidden = cookState.screen === 'focus';
+
     // Hold the scroll across a re-render — the same rule the Grocery panel
     // follows, and it matters more here: a re-render happens every time a
     // box is ticked, and a cook is mid-recipe when they tick one.
@@ -4278,33 +4323,41 @@
         !meals[cookState.tonightIdx]) {
       cookState.tonightIdx = cookTonightIndex(meals);
     }
-    // First time in, the tonight meal's recipe is already open — that is
-    // the whole point of a tonight-first screen. After that the cook's own
-    // choice wins, so a re-render never reopens what they closed.
-    if (cookState.openDetail === null && cookState.tonightIdx !== null &&
-        meals[cookState.tonightIdx] && meals[cookState.tonightIdx].has_full_recipe &&
-        !view.dataset.autofocused) {
-      view.dataset.autofocused = '1';
-      cookState.openDetail = String(cookState.tonightIdx);
+
+    // A focused meal that vanished from underneath it (the plan changed,
+    // it was swapped out) has nothing left to show — fall back to the
+    // overview rather than rendering a focus screen for a meal that no
+    // longer exists.
+    if (cookState.screen === 'focus' && !meals[cookState.focusIdx]) {
+      cookState.screen = 'overview';
     }
 
-    // The hero leads — one hero per screen, same rule Today follows (its
-    // needs-you band sits below #today-dinner-card, never above). Attention
-    // items come after it, folded by default per the inventory-is-quiet
-    // policy: a count you can open, not a wall of questions on the way in.
-    view.innerHTML =
-      cookTitleRowHtml(data) +
-      '<div class="cook-voice" id="cook-voice" hidden></div>' +
-      cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
-      cookAttentionHtml() +
-      '<div class="cook-body">' +
-        cookPrepHtml(data) +
-        cookRestOfWeekHtml(meals) +
-      '</div>';
+    if (cookState.screen === 'focus') {
+      view.innerHTML = cookFocusHtml(data, meals, cookState.focusIdx);
+      wireCookFocusScroll(view);
+    } else {
+      // The hero leads — one hero per screen, same rule Today follows (its
+      // needs-you band sits below #today-dinner-card, never above).
+      // Attention items come after it, folded by default per the
+      // inventory-is-quiet policy: a count you can open, not a wall of
+      // questions on the way in.
+      view.innerHTML =
+        cookTitleRowHtml(data) +
+        '<div class="cook-voice" id="cook-voice" hidden></div>' +
+        cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
+        cookAttentionHtml() +
+        '<div class="cook-body">' +
+          cookPrepHtml(data) +
+          cookRestOfWeekHtml(meals) +
+        '</div>';
+    }
 
-    wireCookDetails(view);
     updateCookVoiceButtons();
-    if (scrollEl) scrollEl.scrollTop = keepScroll;
+    // Entering/leaving focus is a screen change (Grocery's shopping-mode
+    // precedent resets to the top the same way, groSetScreen); every other
+    // render — a step checked, a box ticked — keeps the reader's place.
+    if (scrollEl) scrollEl.scrollTop = cookState.pendingScrollTop ? 0 : keepScroll;
+    cookState.pendingScrollTop = false;
   }
 
   function cookTitleRowHtml(data) {
@@ -4343,7 +4396,6 @@
     // to say here; the advance-prep note is the more useful one when there
     // is one, because it is what changes what you do next.
     var note = meal.advance_prep_notes || meal.reasoning || '';
-    var detailOpen = String(idx) === String(cookState.openDetail);
 
     return '<div class="cook-hero">' +
       '<div class="cook-hero-top">' +
@@ -4361,22 +4413,22 @@
           }).join('') + '</div>'
         : '') +
       '<div class="cook-hero-actions">' +
-        // The apricot action, and the only one on this screen. It opens the
-        // recipe at the steps; the quiet button beside it opens the same
-        // panel at the ingredients. Two ways into one thing the old page
-        // already did ("Show recipe") — no new capability, just the split
-        // the design asks for between "start cooking" and "what do I need".
-        '<button type="button" class="cook-hero-action" data-cook="detail" data-idx="' + idx + '" data-at="steps">' +
-          '<span>' + (detailOpen ? 'Hide the recipe' : 'Start step 1') + '</span>' + ICONS.arrow +
+        // The apricot action, and the only one on this screen. It no longer
+        // expands the recipe in place below the fold — it takes the whole
+        // screen over for just this meal (cookEnterFocus), which is the
+        // point of the ticket: everything else stops competing for the
+        // screen while your hands are busy. The quiet icon beside it opens
+        // the same focused screen, scrolled straight to ingredients.
+        '<button type="button" class="cook-hero-action" data-cook="focus" data-idx="' + idx + '" data-at="steps">' +
+          '<span>Start cooking</span>' + ICONS.arrow +
         '</button>' +
-        '<button type="button" class="cook-hero-icon" data-cook="detail" data-idx="' + idx + '" data-at="ingredients" ' +
+        '<button type="button" class="cook-hero-icon" data-cook="focus" data-idx="' + idx + '" data-at="ingredients" ' +
           'aria-label="Ingredients" title="Ingredients">' + COOK_ICONS.list + '</button>' +
         '<button type="button" class="cook-hero-check' + (isDone ? ' checked' : '') + '" ' +
           'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
           'aria-label="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '" ' +
           'title="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>' +
       '</div>' +
-      (detailOpen ? '<div class="cook-hero-detail">' + cookDetailHtml(meal, idx, true) + '</div>' : '') +
     '</div>';
   }
 
@@ -4413,8 +4465,9 @@
     '</section>';
   }
 
-  // Everything that is not tonight, subordinate: one row each, dense on
-  // purpose, expandable in place for the cook who is looking ahead.
+  // Everything that is not tonight, subordinate: one dense row each. Tapping
+  // a name enters the same focused screen tonight's hero does — a "quiet
+  // scannable week list" per the ticket, not another accordion of recipes.
   function cookRestOfWeekHtml(meals) {
     var rest = meals
       .map(function (m, i) { return { m: m, i: i }; })
@@ -4433,7 +4486,6 @@
         rest.map(function (x) {
           var m = x.m, idx = x.i;
           var isDone = m.cooked_status === 'done';
-          var open = String(idx) === String(cookState.openDetail);
           var dayLabel = m.component_category
             ? m.component_category
             : (m.date ? dayName(m.date, { weekday: 'short' }).slice(0, 3).toUpperCase() : '');
@@ -4443,13 +4495,12 @@
                 'data-cook="check-meal" data-entry-id="' + m.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
                 'aria-label="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>' +
               '<span class="cook-week-day">' + escapeHtml(dayLabel) + '</span>' +
-              '<button type="button" class="cook-week-name" data-cook="detail" data-idx="' + idx + '" data-at="steps">' +
+              '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + idx + '" data-at="steps">' +
                 escapeHtml(m.meal || '') +
               '</button>' +
               (m.advance_prep_notes ? '<span class="cook-badge cook-badge-warm">Prep ahead</span>' : '') +
               (m.batch_note ? '<span class="cook-badge">Bulk ×' + m.meal_count + '</span>' : '') +
             '</div>' +
-            (open ? '<div class="cook-week-detail">' + cookDetailHtml(m, idx, false) + '</div>' : '') +
           '</div>';
         }).join('') +
       '</div>' +
@@ -4487,7 +4538,7 @@
       '<ul class="cook-ings" id="cook-ings-' + idx + '">' + ingredients + '</ul>' +
       '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
       '<h4 class="cook-detail-head">Instructions</h4>' +
-      cookInstructionsHtml(m) +
+      cookInstructionsHtml(m, idx) +
       (m.reasoning
         ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
           '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
@@ -4500,7 +4551,33 @@
   // into "Do ahead" and "Day of" with their own numbering, so it is clear
   // what to do the night before and what happens later using it. Most
   // recipes tag nothing and get one flat list.
-  function cookInstructionsHtml(m) {
+  //
+  // Each step is tap-to-check (cookState.focusStepsChecked, client-side
+  // only — there is no server column for "which recipe steps has this cook
+  // done," and there doesn't need to be one: it's a during-the-cook memory
+  // aid, not a record anyone needs later, so it resets with the page like
+  // the rest of this in-memory screen state). Keyed by meal idx + the
+  // step's position in the FULL instructions array, not the Do
+  // ahead/Day of sub-list's own numbering, so a check survives whichever
+  // list it's currently rendered into.
+  function cookStepLi(step, idx, stepPos) {
+    var key = idx + ':' + stepPos;
+    var done = !!cookState.focusStepsChecked[key];
+    // The number stays a real <ol> marker — a step someone might reference
+    // ("step 3") should look like one — so the checkbox+text flex row lives
+    // INSIDE the <li> rather than on it; display:flex directly on an <li>
+    // silently drops its own marker in every browser that matters here.
+    return '<li class="cook-step-item' + (done ? ' is-done' : '') + '">' +
+      '<span class="cook-step-row">' +
+        '<button type="button" class="cook-box cook-step-check' + (done ? ' checked' : '') + '" ' +
+          'data-cook="check-step" data-idx="' + idx + '" data-step="' + stepPos + '" ' +
+          'aria-label="' + (done ? 'Mark step not done' : 'Mark step done') + '">' + COOK_ICONS.check + '</button>' +
+        '<span class="cook-step-text">' + escapeHtml(step) + '</span>' +
+      '</span>' +
+    '</li>';
+  }
+
+  function cookInstructionsHtml(m, idx) {
     var steps = m.instructions || [];
     if (!steps.length) {
       return '<p class="cook-dim">No steps saved yet.</p>' +
@@ -4508,26 +4585,159 @@
     }
     var prepIdx = m.advance_prep_step_indices || [];
     if (!prepIdx.length) {
-      return '<ol class="cook-steps">' + steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>';
+      return '<ol class="cook-steps cook-steps-check">' +
+        steps.map(function (s, i) { return cookStepLi(s, idx, i); }).join('') +
+      '</ol>';
     }
-    var doAhead = steps.filter(function (_, i) { return prepIdx.indexOf(i + 1) !== -1; });
-    var dayOf = steps.filter(function (_, i) { return prepIdx.indexOf(i + 1) === -1; });
+    var doAhead = [], dayOf = [];
+    steps.forEach(function (s, i) { (prepIdx.indexOf(i + 1) !== -1 ? doAhead : dayOf).push({ s: s, i: i }); });
     return '<h5 class="cook-steplabel cook-steplabel-warm">Do ahead</h5>' +
-      '<ol class="cook-steps">' + doAhead.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>' +
+      '<ol class="cook-steps cook-steps-check">' + doAhead.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>' +
       '<h5 class="cook-steplabel">Day of</h5>' +
-      '<ol class="cook-steps">' + dayOf.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>';
+      '<ol class="cook-steps cook-steps-check">' + dayOf.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>';
   }
 
-  function wireCookDetails(view) {
+  // ---------- Cook: focused single-meal mode ----------
+  // Entering "Start cooking" (the hero, a week row, or a Today/Meals deep
+  // link) takes the whole Cook screen over for one meal — the ticket's
+  // whole point: "no stack of twenty other cards underneath, no scroll
+  // position to lose". Leaving is the quiet "← Back to the week" text
+  // control on the focused hero, the same shape Grocery's shopping mode
+  // uses to step back out of a store into Plan your stops (groShopHeroHtml/
+  // .gro-hero-back) — a state of this screen, never a page with its own
+  // header or back button.
+  function cookEnterFocus(idx) {
+    if (!cookState.data || !(cookState.data.meals || [])[idx]) return;
+    cookState.screen = 'focus';
+    cookState.focusIdx = idx;
+    cookState.focusScrollTo = null;
+    cookState.pendingScrollTop = true;
+    renderCook();
+  }
+
+  function cookExitFocus() {
+    cookState.screen = 'overview';
+    cookState.pendingScrollTop = true;
+    renderCook();
+  }
+
+  // Prep for just this meal: a defrost task carries the entry it feeds
+  // (meal_plan_entry_id, set by defrost.sync_defrost_tasks — see
+  // get_prep_schedule), which also covers a merged bulk-cook card via its
+  // entry_ids. A general (LLM-written) prep task has no entry link, only
+  // the plain-text related_meal name save_prep_tasks stores, so that's the
+  // fallback match.
+  function cookFocusPrepTasks(data, meal) {
+    var all = (data && data.prep_tasks) || [];
+    var entryIds = meal.entry_ids || [meal.entry_id];
+    var mealName = (meal.meal || '').trim().toLowerCase();
+    return all.filter(function (t) {
+      if (t.meal_plan_entry_id != null) return entryIds.indexOf(t.meal_plan_entry_id) !== -1;
+      return !!mealName && (t.related_meal || '').trim().toLowerCase() === mealName;
+    });
+  }
+
+  // Same card shell as the week's shared prep rail (cookPrepHtml) — one
+  // section, scoped down to this meal's own rows, defrost tiles included.
+  function cookFocusPrepHtml(tasks) {
+    if (!tasks.length) return '';
+    return '<section class="cook-section">' +
+      '<div class="cook-sectionhead">' +
+        '<span class="cook-eyebrow cook-eyebrow-warm">For this meal</span>' +
+        '<span class="cook-rule"></span>' +
+      '</div>' +
+      '<div class="cook-prep-grid">' +
+        tasks.map(function (t) {
+          var isDone = t.status === 'done';
+          return '<div class="cook-prep-card' + (isDone ? ' is-done' : '') + '">' +
+            '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+              'data-cook="check-prep" data-prep-id="' + t.id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+              'aria-label="' + (isDone ? 'Mark not done' : 'Mark done') + '">' + COOK_ICONS.check + '</button>' +
+            '<span class="cook-prep-date">' + escapeHtml(cookDateLabel(t.task_date)) + '</span>' +
+            '<span class="cook-prep-text">' + escapeHtml(t.description) + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</section>';
+  }
+
+  // "for 2 + 1 guest" — headcount plus who's extra, since portions matter
+  // mid-cook. attendance is null for a component-based meal's placeholder
+  // date (see get_cooker_view) — no real day to answer "who's home" about.
+  function cookAttendanceChip(meal) {
+    var att = meal.attendance;
+    if (!att) return null;
+    var label = 'for ' + att.present_count;
+    if (att.guest_count) {
+      label += ' + ' + att.guest_count + ' guest' + (att.guest_count !== 1 ? 's' : '');
+    }
+    return label;
+  }
+
+  function cookFocusHtml(data, meals, idx) {
+    var meal = meals[idx];
+    var isDone = meal.cooked_status === 'done';
+    // A component-based plan's date is a placeholder (week_start, per
+    // get_weekly_plan) — showing it as a real day would be a lie about
+    // when this is for, same reason cookRestOfWeekHtml prefers the
+    // category label over the date for these entries.
+    var dayLabel = meal.component_category || (meal.date ? cookDateLabel(meal.date) : 'Cooking');
+
+    var chips = [];
+    if (meal.prep_time_minutes || meal.cook_time_minutes) {
+      var bits = [];
+      if (meal.prep_time_minutes) bits.push(meal.prep_time_minutes + 'm prep');
+      if (meal.cook_time_minutes) bits.push(meal.cook_time_minutes + 'm cook');
+      chips.push(bits.join(' + '));
+    }
+    if (meal.batch_note) chips.push('Bulk ×' + meal.meal_count);
+    var attChip = cookAttendanceChip(meal);
+    if (attChip) chips.push(attChip);
+
+    // Newsreader italic, once per screen — same rule as the overview hero,
+    // and this replaces it (they never show at once).
+    var note = meal.advance_prep_notes || meal.reasoning || '';
+    var prepTasks = cookFocusPrepTasks(data, meal);
+
+    return '<div class="cook-focus">' +
+      '<div class="cook-hero">' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&larr; Back to the week</button>' +
+        '<div class="cook-hero-top">' +
+          '<span class="cook-hero-chip">' + escapeHtml(dayLabel) + '</span>' +
+          '<span class="cook-hero-rule"></span>' +
+          (meal.advance_prep_notes ? '<span class="cook-hero-tag">Advance prep</span>' : '') +
+        '</div>' +
+        '<div class="cook-hero-line">' +
+          '<h2 class="cook-hero-headline' + (isDone ? ' is-done' : '') + '">' + escapeHtml(meal.meal || 'Dinner') + '</h2>' +
+          (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
+        '</div>' +
+        (chips.length
+          ? '<div class="cook-hero-chips">' + chips.map(function (c) {
+              return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
+            }).join('') + '</div>'
+          : '') +
+        '<button type="button" class="cook-hero-action cook-focus-check' + (isDone ? ' is-done' : '') + '" ' +
+          'data-cook="focus-check" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
+          '<span>' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '</span>' + (isDone ? '' : ICONS.arrow) +
+        '</button>' +
+      '</div>' +
+      '<div class="cook-body">' +
+        cookFocusPrepHtml(prepTasks) +
+        '<div class="card cook-focus-recipe">' + cookDetailHtml(meal, idx, false) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function wireCookFocusScroll(view) {
     // The recipe panel is rendered by the same pass as everything else, so
     // there is nothing to re-wire per row — one delegated listener on the
     // view (attached at build) handles every control. This hook exists for
-    // the one thing delegation cannot do: put the newly-opened panel where
-    // it can be read.
-    if (cookState.scrollToDetail) {
-      cookState.scrollToDetail = false;
-      var el = view.querySelector('.cook-detail');
-      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+    // the one thing delegation cannot do: land the ingredients icon's entry
+    // on the ingredients list rather than the top of the screen.
+    if (cookState.focusScrollTo === 'ingredients') {
+      cookState.focusScrollTo = null;
+      var el = view.querySelector('.cook-ings');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'auto', block: 'start' });
     }
   }
 
@@ -4612,10 +4822,17 @@
     if (!el) return;
     var what = el.getAttribute('data-cook');
 
-    if (what === 'detail') {
-      var idx = el.getAttribute('data-idx');
-      cookState.openDetail = (String(cookState.openDetail) === String(idx)) ? null : idx;
-      cookState.scrollToDetail = cookState.openDetail !== null && el.getAttribute('data-at') === 'ingredients';
+    if (what === 'focus') {
+      var idx = parseInt(el.getAttribute('data-idx'), 10);
+      cookState.focusScrollTo = el.getAttribute('data-at') === 'ingredients' ? 'ingredients' : null;
+      cookEnterFocus(idx);
+      return;
+    }
+    if (what === 'exit-focus') return cookExitFocus();
+    if (what === 'focus-check') return cookFocusCheckMeal(el);
+    if (what === 'check-step') {
+      var stepKey = el.getAttribute('data-idx') + ':' + el.getAttribute('data-step');
+      cookState.focusStepsChecked[stepKey] = !cookState.focusStepsChecked[stepKey];
       renderCook();
       return;
     }
@@ -4655,6 +4872,32 @@
       renderCookFrom(view);
       // Checking a meal off can queue new inventory-depletion items, and it
       // moves the week's "N of M cooked" everywhere else that counts it.
+      refreshCookAttention();
+      refreshPlanSurfacesAfterCook();
+    } catch (err) {
+      el.disabled = false;
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  // The focused screen's own check-off: marking a meal cooked completes
+  // and returns to the overview (the ticket's answer to "what happens when
+  // you check the meal off") — there's nothing left to do on this screen
+  // once it's done. Marking it back to not-cooked is an undo, not a
+  // completion, so that one stays put in focus rather than bouncing out.
+  async function cookFocusCheckMeal(el) {
+    el.disabled = true;
+    var next = el.getAttribute('data-next');
+    try {
+      var view = await cookPost('/api/cooker/check-meal', {
+        entry_id: parseInt(el.getAttribute('data-entry-id'), 10),
+        status: next
+      });
+      if (next === 'done') {
+        cookState.screen = 'overview';
+        cookState.pendingScrollTop = true;
+      }
+      renderCookFrom(view);
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
     } catch (err) {

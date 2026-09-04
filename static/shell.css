@@ -4029,7 +4029,38 @@ html, body {
 .cook-hero-icon:hover, .cook-hero-check:hover { background: var(--spruce-hover); }
 .cook-hero-check { color: var(--ivory-ink-muted); }
 .cook-hero-check.checked { background: var(--celadon); color: var(--on-accent-ink); }
-.cook-hero-detail { border-top: 1.5px solid var(--apricot-rule); padding-top: 10px; }
+
+/* ---------- Focused single-meal cook mode ----------
+   A state of this same screen (never a route), exactly like Grocery's
+   shopping mode — see .gro-hero-back, the precedent this back link copies.
+   .cook-focus-hero reuses .cook-hero wholesale; only the back link and the
+   completed-state check button are new. */
+.cook-focus-back {
+  background: none;
+  border: none;
+  padding: 0;
+  align-self: flex-start;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-light);
+  cursor: pointer;
+}
+.cook-focus-back:hover { color: var(--ivory-ink); }
+/* Marking a cooked meal not-cooked is an undo, not a call to action, so it
+   drops the apricot fill for a quiet outline on spruce — matching the
+   .cook-serves-btn.on-spruce/.cook-mic.on-spruce outline treatment. */
+.cook-focus-check.is-done {
+  background: none;
+  border: 1.5px solid var(--apricot-rule);
+  color: var(--ivory-ink);
+  box-shadow: none;
+}
+.cook-focus-check.is-done:hover { background: var(--spruce-hover); }
+.cook-focus-recipe { padding: 14px; }
 
 /* ---------- Sections ---------- */
 .cook-body { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 16px; }
@@ -4159,9 +4190,8 @@ html, body {
   color: var(--celadon-label);
 }
 .cook-badge-warm { background: var(--sand); color: var(--apricot-label); }
-.cook-week-detail { padding: 0 0 12px; }
 
-/* ---------- The recipe panel (both the hero's and a week row's) ---------- */
+/* ---------- The recipe panel (used inside the focused screen) ---------- */
 .cook-detail { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-body); font-size: 14px; color: var(--ink); }
 .cook-detail.on-spruce { color: var(--ivory-ink); }
 .cook-detail-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -4178,6 +4208,15 @@ html, body {
 .cook-detail-p { margin: 0; line-height: 1.45; }
 .cook-ings, .cook-steps { margin: 0; padding-left: 20px; line-height: 1.5; }
 .cook-ings li, .cook-steps li { margin-bottom: 4px; }
+/* Tap-to-check Do-ahead/Day-of steps (focused cook mode only) — the number
+   still comes from the <ol> marker (display:flex directly on an <li> drops
+   it, so the flex row is an inner span instead); the checkbox is the
+   .cook-box shared with prep tiles and the week list, so a step reads the
+   same as any other checkable row in Cook. */
+.cook-step-row { display: flex; align-items: flex-start; gap: 8px; }
+.cook-step-check { flex: 0 0 auto; margin-top: 1px; }
+.cook-step-text { flex: 1 1 auto; }
+.cook-step-item.is-done .cook-step-text { color: var(--ink-inactive); text-decoration: line-through; }
 .cook-dim { color: var(--ink-secondary); font-style: italic; margin: 0; }
 .cook-detail.on-spruce .cook-dim { color: var(--ivory-ink-muted); }
 .cook-unscaled { font-size: 12.5px; font-style: italic; color: var(--ink-secondary); margin: 6px 0 0; }
