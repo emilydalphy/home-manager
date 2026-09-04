@@ -182,6 +182,47 @@ CREATE TABLE IF NOT EXISTS recipe_notes (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Loop Board: "Per-person taste learning + solo-night personalization".
+-- ADDITIVE on top of recipes.rating/feedback_notes, which stay exactly as
+-- they are — the household-level rating, and the fallback default for
+-- anyone (or any recipe) this table doesn't yet have an opinion for. This
+-- table only ever holds something MORE specific than that: one row per
+-- (recipe, member), a later write for the same pair overwriting rather
+-- than accumulating, matching recipes.rating's own "current verdict, not a
+-- history" shape.
+--
+-- source says how the app came to know this:
+--   'explicit'  someone said so, with a name attached, in chat —
+--               "Vineeth loved the skewers", or correcting an existing
+--               household rating with "that was just my rating"
+--               (attribute_recipe_feedback). A stated fact IS its own
+--               confirmation per DESIGN_SYSTEM.md §7's learning etiquette,
+--               so this is safe to record immediately, no separate
+--               confirm step needed.
+--   'solo_auto' inferred silently because exactly one person was home for
+--               the specific meal this recipe was cooked at (see
+--               attendance.slot_attendance) — the app's own guess, never
+--               asked about, written by mark_recipe_feedback. Per
+--               DESIGN_SYSTEM §7's silent-learning rule this needs a
+--               visible, undoable flag at its point of use before a
+--               household can fully trust it; that surface is UI work
+--               tracked as a follow-up on the Loop Board ticket, not built
+--               here — until it exists, treat a 'solo_auto' row as a
+--               softer signal than an 'explicit' one, and never let it
+--               overwrite an existing 'explicit' row for the same pair.
+CREATE TABLE IF NOT EXISTS member_recipe_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    recipe_id INTEGER NOT NULL REFERENCES recipes(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    rating TEXT NOT NULL CHECK(rating IN ('liked', 'disliked')),
+    source TEXT NOT NULL DEFAULT 'explicit', -- 'explicit' | 'solo_auto'
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, recipe_id, member_id)
+);
+
 -- design_handoff_plan_the_week/DATA_MODEL.md: the ANSWERS a week was built
 -- from, as a first-class object rather than as chat history. Three things
 -- become impossible to add later if this isn't stored with provenance:

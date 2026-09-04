@@ -7,6 +7,7 @@ import json
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
+from . import household as _household
 from . import quantities as _quantities
 
 
@@ -270,6 +271,15 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     replacing it. Call this the moment the user expresses an opinion about
     a specific recipe they've made, so future suggestions can favor what
     they actually liked.
+
+    When a rating is given AND the most recent time this recipe was
+    actually cooked (a checked-off meal_plan_entries row) had exactly one
+    household member home for it, that person's own taste is updated too,
+    silently — see attribute_recipe_feedback's 'solo_auto' source and
+    DESIGN_SYSTEM.md §7's silent-learning rule. This never overwrites an
+    explicit attribution someone already gave that recipe/person pair. The
+    result's solo_auto_attribution key names who this fired for, if anyone,
+    so a caller can mention it if it seems worth surfacing.
     """
     conn = get_conn()
     recipe = conn.execute(
@@ -293,7 +303,179 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
         conn.execute("UPDATE recipes SET feedback_notes = ? WHERE id = ?", (merged_notes, recipe["id"]))
     conn.commit()
     conn.close()
-    return {"name": recipe_name, "rating": rating, "feedback_notes": merged_notes}
+
+    solo_auto_attribution = None
+    if rating is not None:
+        solo_auto_attribution = _maybe_auto_attribute_solo_night(recipe["id"], recipe_name, rating)
+    return {
+        "name": recipe_name, "rating": rating, "feedback_notes": merged_notes,
+        "solo_auto_attribution": solo_auto_attribution,
+    }
+
+
+def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: str) -> str | None:
+    """
+    Solo-night auto-attribution (Loop Board "Per-person taste learning +
+    solo-night personalization"): if the last time this recipe was actually
+    cooked, exactly one household member was home for it, that meal's
+    feedback is really THEIRS, not the household's in general — silently
+    record it as such and return their name. Returns None when the last
+    cooked instance wasn't a solo meal (or there isn't one), or when an
+    'explicit' attribution already exists for this exact recipe/person —
+    a stated fact from chat is never quietly overwritten by a guess.
+
+    "Last cooked" is read off meal_plan_entries.cooked_status='done' (an
+    actually-checked-off meal — see cooker.check_off_meal), not just the
+    most recently PLANNED entry, since a planned-but-never-cooked meal
+    tells us nothing about who actually ate it.
+
+    Deferred import: attendance imports weekly_plan, which imports this
+    module — importing attendance at module scope here would be circular.
+    Same trick household.py uses for the same reason.
+    """
+    from . import attendance as _attendance
+
+    conn = get_conn()
+    entry = conn.execute(
+        """
+        SELECT date, slot FROM meal_plan_entries
+        WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
+        ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC LIMIT 1
+        """,
+        (household_id(), recipe_id),
+    ).fetchone()
+    if not entry:
+        conn.close()
+        return None
+    conn.close()
+
+    att = _attendance.get_slot_attendance(entry["date"], entry["slot"])
+    if att["guest_count"] or len(att["present_member_ids"]) != 1:
+        return None
+    member_id = att["present_member_ids"][0]
+    member_name = att["present_names"][0]
+
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT source FROM member_recipe_feedback WHERE household_id = ? AND recipe_id = ? AND member_id = ?",
+        (household_id(), recipe_id, member_id),
+    ).fetchone()
+    if existing and existing["source"] == "explicit":
+        conn.close()
+        return None  # a stated fact outranks a guess — never clobber it silently
+    conn.execute(
+        """
+        INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source)
+        VALUES (?, ?, ?, ?, 'solo_auto')
+        ON CONFLICT(household_id, recipe_id, member_id) DO UPDATE SET
+            rating = excluded.rating, source = 'solo_auto', updated_at = datetime('now')
+        """,
+        (household_id(), recipe_id, member_id, rating),
+    )
+    conn.commit()
+    conn.close()
+    _household._log_preference_event(f"member:{member_name}:recipe:{recipe_name}", "write")
+    return member_name
+
+
+def attribute_recipe_feedback(
+    recipe_name: str, member_name: str, rating: str | None = None, notes: str = "",
+) -> dict:
+    """
+    Record which SPECIFIC household member a recipe's feedback belongs to —
+    additive on top of the household-level rating from mark_recipe_feedback,
+    which stays exactly as-is and remains the fallback for anyone (or any
+    recipe) without their own row here. Call this the moment a rating comes
+    with a name attached, in either of these two shapes:
+
+    1. Someone says it with a name attached ("Vineeth loved the skewers") —
+       pass rating explicitly.
+    2. A household-level rating already exists and someone clarifies it was
+       really just their own opinion ("that was just my rating," "that's
+       just me, Vineeth actually didn't love it") — omit rating and this
+       reuses the recipe's current household-level rating as this person's.
+       Raises if the recipe has no rating yet to attribute — ask for one
+       instead of guessing.
+
+    A stated attribution like this counts as its own confirmation
+    (DESIGN_SYSTEM.md §7) — safe to save immediately, no separate
+    confirm-first step needed. Always recorded as source='explicit', so it
+    can never be silently overwritten by solo-night auto-attribution later.
+    """
+    conn = get_conn()
+    recipe = conn.execute(
+        "SELECT id, rating FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        (household_id(), recipe_name),
+    ).fetchone()
+    if not recipe:
+        conn.close()
+        raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
+
+    resolved_rating = rating or (recipe["rating"] or None)
+    if not resolved_rating:
+        conn.close()
+        raise ValueError(
+            f"'{recipe_name}' has no rating yet to attribute to {member_name} — pass rating explicitly."
+        )
+    if resolved_rating not in ("liked", "disliked"):
+        conn.close()
+        raise ValueError("rating must be 'liked' or 'disliked'.")
+
+    member_id = _household._get_or_create_member(conn, member_name)
+    conn.execute(
+        """
+        INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source, notes)
+        VALUES (?, ?, ?, ?, 'explicit', ?)
+        ON CONFLICT(household_id, recipe_id, member_id) DO UPDATE SET
+            rating = excluded.rating, source = 'explicit',
+            notes = CASE WHEN excluded.notes != '' THEN excluded.notes ELSE member_recipe_feedback.notes END,
+            updated_at = datetime('now')
+        """,
+        (household_id(), recipe["id"], member_id, resolved_rating, notes),
+    )
+    conn.commit()
+    conn.close()
+    _household._log_preference_event(f"member:{member_name}:recipe:{recipe_name}", "write")
+    return {"name": recipe_name, "member": member_name, "rating": resolved_rating, "source": "explicit"}
+
+
+def get_member_taste(member_name: str) -> dict:
+    """
+    What's actually known about ONE person's own taste, separate from the
+    household's shared rating — answers "what does Vineeth like?" from
+    per-person data specifically (see attribute_recipe_feedback and
+    solo-night auto-attribution), rather than the whole household's.
+
+    has_any_data tells you whether this is real signal or a cold start: for
+    a recipe this person has no row for, the household-level rating from
+    mark_recipe_feedback is what actually governs their meals, exactly as
+    it always has — say so plainly rather than implying deeper personal
+    knowledge than actually exists yet.
+    """
+    conn = get_conn()
+    member = conn.execute(
+        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        (household_id(), member_name),
+    ).fetchone()
+    if not member:
+        conn.close()
+        raise ValueError(f"No household member named '{member_name}'.")
+    rows = conn.execute(
+        """
+        SELECT r.name AS recipe_name, mrf.rating
+        FROM member_recipe_feedback mrf JOIN recipes r ON r.id = mrf.recipe_id
+        WHERE mrf.household_id = ? AND mrf.member_id = ?
+        ORDER BY mrf.updated_at DESC
+        """,
+        (household_id(), member["id"]),
+    ).fetchall()
+    conn.close()
+    return {
+        "name": member_name,
+        "liked_recipes": [r["recipe_name"] for r in rows if r["rating"] == "liked"],
+        "disliked_recipes": [r["recipe_name"] for r in rows if r["rating"] == "disliked"],
+        "has_any_data": bool(rows),
+    }
 
 
 def log_recipe_note(recipe_name: str, note: str) -> dict:
