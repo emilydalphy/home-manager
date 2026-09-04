@@ -819,7 +819,21 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 80px;
+  /* min-height:0, not a fixed floor — found live while verifying the
+     composer's auto-grow against a squeezed viewport (a small phone with
+     its keyboard open): #ask-sheet has no overflow rule of its own, so if
+     its flex children can't shrink enough to fit its max-height:76% cap,
+     the overflow spills out past the sheet's own box instead of the sheet
+     growing — and .ask-composer-bar is flex-shrink:0 (deliberate, so
+     typing itself never gets squeezed), which left this min-height:80px as
+     the one thing standing between "the grown composer stays inside the
+     sheet" and "it doesn't." Already scrollable via overflow-y above, so
+     letting it shrink toward 0 under real pressure only means less history
+     visible at once, not lost — same trade the desktop Ask column already
+     makes with its own .ask-messages (min-height:0 below). Verified: a
+     390x420 viewport with the composer grown to its cap and 20 seeded
+     messages no longer overflows past the sheet's own bottom edge. */
+  min-height: 0;
 }
 .ask-msg { display: flex; flex-direction: column; gap: 8px; }
 .ask-msg.user { align-items: flex-end; }
