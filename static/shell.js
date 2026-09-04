@@ -802,8 +802,12 @@
     var tile = panel.querySelector('#today-prep-tile');
     if (!tile) return;
     var today = todayLocalStr();
+    // Excludes task_type === 'defrost': that kind gets its own dedicated,
+    // interactive tile (renderDefrostToday/#today-defrost-tile) right next
+    // to this one — without this filter the same reminder showed up
+    // twice, once read-only here and once actionable there.
     var task = (tasks || []).filter(function (t) {
-      return t.task_date === today && t.status !== 'done';
+      return t.task_date === today && t.status !== 'done' && t.task_type !== 'defrost';
     })[0];
     if (!task) { tile.hidden = true; tile.innerHTML = ''; return; }
     tile.hidden = false;
