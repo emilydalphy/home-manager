@@ -74,6 +74,26 @@ def _dates_on(plan_id: int) -> set[str]:
     return {r["date"] for r in rows}
 
 
+def _live_day_owners() -> dict:
+    """
+    Every day claimed by more than one LIVE plan — the one-plan-per-day rule
+    stated as a query. Empty is the only acceptable answer.
+
+    Asked of the database rather than of a return value on purpose: a
+    takeover that reports the right thing while leaving two plans claiming
+    a day has not enforced anything.
+    """
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM weekly_plans WHERE status != 'retired'").fetchall()
+    conn.close()
+    owners: dict[str, list[int]] = {}
+    for row in rows:
+        start, days = tools.plan_period(row)
+        for day in tools.period_dates(start, days):
+            owners.setdefault(day, []).append(row["id"])
+    return {d: ids for d, ids in owners.items() if len(ids) > 1}
+
+
 @pytest.fixture
 def recipes():
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}],
@@ -422,22 +442,26 @@ class TestOverlapTakeover:
         assert tools.plan_period(row) == (resumes, 4)
         assert _dates_on(later["weekly_plan_id"]) == set(tools.period_dates(resumes, 4))
 
-    def test_a_period_strictly_inside_another_orphans_the_tail_and_says_so(self, recipes, stub_model):
+    def test_a_period_strictly_inside_another_keeps_the_longer_side(self, recipes, stub_model):
         # The one case where the household loses days they did not ask to
         # replace. A period is contiguous, so the old plan cannot survive
-        # with a hole punched through it. It must be REPORTED, not hidden.
+        # with a hole punched through it — it keeps the LONGER of the two
+        # remaining runs, which is the most of their plan that can survive,
+        # and the shorter is reported rather than hidden.
         week = _monday()
+        days = tools.period_dates(week, 7)
         outer = self._plan(stub_model, week, 7)
-        wednesday = tools.period_dates(week, 7)[2]
-        inner = self._plan(stub_model, wednesday, 2, meal="Katsu")
+        inner = self._plan(stub_model, days[2], 2, meal="Katsu")   # Wed-Thu
 
         took = inner["took_over"]
-        assert took["orphaned_dates"] == tools.period_dates(week, 7)[4:]
-        assert tools.plan_period(_plan_row(outer["weekly_plan_id"])) == (week, 2)
+        # Mon-Tue (2 days) vs Fri-Sun (3 days): the three-day run wins.
+        assert tools.plan_period(_plan_row(outer["weekly_plan_id"])) == (days[4], 3)
+        assert took["orphaned_dates"] == days[:2]
         # Orphaned days really are unplanned — not quietly still on the old
         # plan while its period claims otherwise.
         for day in took["orphaned_dates"]:
             assert day not in _dates_on(outer["weekly_plan_id"])
+        assert _dates_on(outer["weekly_plan_id"]) == set(days[4:])
 
     def test_a_component_plan_given_up_whole_reports_the_days_it_lost(self, recipes, monkeypatch):
         # A component_based plan's entries carry no real date, so a partial
@@ -549,6 +573,163 @@ class TestOverlapTakeover:
         assert all(f["overlap_dates"] == tools._week_dates(week) for f in found)
         # Nothing was changed by asking.
         assert all(_plan_row(f["weekly_plan_id"])["status"] == "draft" for f in found)
+
+
+# ---------- what adversarial review found ----------
+
+class TestRetiredPlansStayDead:
+    """
+    A retired plan is not merely hidden — it must not be reachable by any
+    door that can bring it back to life. Every one of these came out of an
+    adversarial review of this branch, and the first is the reason the rest
+    are here: they are one mechanism failing in several places.
+    """
+    def _retire_one(self, stub_model, week):
+        stub_model(_full_period(week, 7))
+        old = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        stub_model(_full_period(week, 7, meal="Katsu"))
+        new = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        assert _plan_row(old["weekly_plan_id"])["status"] == "retired"
+        return old, new
+
+    def test_a_retired_plan_reads_as_an_EMPTY_period_not_a_full_week(self, recipes, stub_model):
+        # The root cause of the resurrection below. day_count 0 meant both
+        # "surrendered everything" and, read as the legacy sentinel, SEVEN
+        # DAYS. The legacy sentinel is now both columns unset together, so a
+        # retired plan — which keeps its start — cannot be mistaken for one.
+        week = _monday()
+        old, _ = self._retire_one(stub_model, week)
+        row = _plan_row(old["weekly_plan_id"])
+        assert row["day_count"] == 0
+        assert row["content_start_date"] == week, "a retired plan keeps its start"
+        assert tools.plan_period(row) == (week, 0)
+        assert tools.period_dates(*tools.plan_period(row)) == []
+
+    def test_approving_a_week_never_resurrects_the_retired_plan(self, recipes, stub_model, signed_in):
+        # Approving by week key resolved to the RETIRED row and set its
+        # status back to 'approved' — clearing the one flag keeping it out
+        # of every live-plan query, and putting two live plans on one week.
+        week = _monday()
+        old, new = self._retire_one(stub_model, week)
+        assert tools.get_plan_id_for_week(week) == new["weekly_plan_id"]
+
+        res = signed_in.post(f"/api/week/{week}/approve", json={"approved_by": "Ana"})
+        assert res.status_code == 200
+        assert res.json()["weekly_plan_id"] == new["weekly_plan_id"]
+        assert _plan_row(old["weekly_plan_id"])["status"] == "retired"
+        assert _live_day_owners() == {}, "one day, one plan"
+
+    def test_reopening_a_week_never_resurrects_it_either(self, recipes, stub_model, signed_in):
+        week = _monday()
+        old, new = self._retire_one(stub_model, week)
+        res = signed_in.post(f"/api/week/{week}/reopen")
+        assert res.status_code == 200
+        assert _plan_row(old["weekly_plan_id"])["status"] == "retired"
+        assert _live_day_owners() == {}
+
+    def test_a_day_no_live_plan_covers_answers_None(self, recipes, stub_model):
+        # get_plan_id_for_date used to fall through to a FILING-KEY lookup,
+        # which happily returned a retired or shortened plan for days it no
+        # longer covers. slot_needs uses this: an `away` attaching to a dead
+        # plan is never enforced, and the household gets shopped for a night
+        # they said they were out.
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        stub_model(_full_period(week, 7))
+        old = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        stub_model(_full_period(week, 3, meal="Katsu"))
+        agent.generate_weekly_plan(week, day_count=3, period_start=week)   # keeps Mon-Wed
+
+        assert tools.plan_period(_plan_row(old["weekly_plan_id"])) == (days[3], 4)
+        for day in days:
+            found = tools.get_plan_id_for_date(day)
+            assert found is not None, day
+        # A day genuinely outside every plan is None, not a filing-key guess.
+        assert tools.get_plan_id_for_date(tools.period_dates(week, 9)[-1]) is None
+
+
+class TestTakeoverDeconflictsGlobally:
+    def test_two_pre_existing_overlaps_are_not_pushed_into_a_new_clash(self, recipes, stub_model):
+        # Handling each old plan against the new period ALONE shortened two
+        # of them onto the same resume date — inventing five clashing days
+        # that did not exist before the takeover ran.
+        week = _monday()
+        conn = get_conn()
+        for key in (week, tools.period_dates(week, 7)[2], tools.period_dates(week, 7)[3]):
+            conn.execute(
+                "INSERT INTO weekly_plans (household_id, week_start_date, status) VALUES (1, ?, 'approved')",
+                (key,),
+            )
+        conn.commit()
+        conn.close()
+        assert _live_day_owners(), "the fixture really is a pre-existing overlap"
+
+        stub_model(_full_period(tools.period_dates(week, 7)[1], 3))
+        agent.generate_weekly_plan(
+            tools.period_dates(week, 7)[1], day_count=3,
+            period_start=tools.period_dates(week, 7)[1],
+        )
+        assert _live_day_owners() == {}, "a generation must leave the household deconflicted"
+
+    def test_orphaned_days_exclude_anything_another_plan_still_holds(self, recipes, stub_model):
+        # The warning and the `took_over` payload are what a screen would
+        # read out. Reporting a day as lost while a plan is still cooking
+        # from it is worse than not reporting it at all.
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        stub_model(_full_period(week, 7))
+        agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        stub_model(_full_period(days[5], 4, meal="Katsu"))
+        agent.generate_weekly_plan(days[5], day_count=4, period_start=days[5])
+        stub_model(_full_period(days[2], 2, meal="Chili"))
+        new = agent.generate_weekly_plan(days[2], day_count=2, period_start=days[2])
+
+        owners = _live_day_owners()
+        assert owners == {}, owners
+        for day in new["took_over"]["orphaned_dates"]:
+            assert tools.get_plan_id_for_date(day) is None, f"{day} was reported lost but is planned"
+
+    def test_a_shortened_plan_does_not_draw_days_it_gave_up(self, recipes, stub_model):
+        # before_plan_start means "already gone by" everywhere else in this
+        # codebase. Reusing it for "another plan owns this" had two screens
+        # drawing the same dates and neither saying so.
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        stub_model(_full_period(days[1], 6))
+        old = agent.generate_weekly_plan(days[1], day_count=6, period_start=days[1])
+        stub_model(_full_period(week, 3, meal="Katsu"))
+        new = agent.generate_weekly_plan(week, day_count=3, period_start=week)
+
+        old_days = {d["date"] for d in tools.get_week_menu(old["weekly_plan_id"])["days"]}
+        new_days = {d["date"] for d in tools.get_week_menu(new["weekly_plan_id"])["days"]}
+        assert old_days & new_days == set(), sorted(old_days & new_days)
+
+
+class TestPeriodEndpointsAreConsistentlyGuarded:
+    def test_saving_intake_clamps_the_period_like_its_siblings(self, signed_in):
+        # The one period entry point that didn't clamp: day_count went
+        # straight to period_dates, spending a second building date strings
+        # before surfacing an OverflowError as a 500.
+        res = signed_in.post(
+            f"/api/week/{_monday()}/intake", json={"night_tags": {}, "day_count": 3_000_000},
+        )
+        assert res.status_code == 400
+        assert "between 1 and" in res.json()["detail"]
+
+    def test_a_period_cannot_start_arbitrarily_far_from_its_filing_key(self, signed_in):
+        # The Meals grid draws every day from the filing key up to the
+        # period start, so an unbounded gap drew 150 empty days from a
+        # 3-day plan — and then looked up needs and attendance for each.
+        res = signed_in.post(
+            "/api/week/2026-01-05/generate",
+            json={"period_start": "2026-06-01", "day_count": 3},
+        )
+        assert res.status_code == 400
+        res = signed_in.post(
+            "/api/week/2026-06-01/generate",
+            json={"period_start": "2026-01-05", "day_count": 3},
+        )
+        assert res.status_code == 400, "a period cannot start before its filing key either"
 
 
 # ---------- grocery reconciliation ----------

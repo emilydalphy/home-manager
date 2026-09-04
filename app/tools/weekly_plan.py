@@ -34,7 +34,9 @@ MAX_PERIOD_DAYS = 28
 # drift between them is invisible: the query would simply return a different
 # plan than every other reader thinks is current.
 _SQL_PERIOD_START = "COALESCE(NULLIF(content_start_date, ''), week_start_date)"
-_SQL_PERIOD_LAST_OFFSET = "(CASE WHEN day_count > 0 THEN day_count - 1 ELSE 6 END)"
+_SQL_PERIOD_LAST_OFFSET = (
+    "(CASE WHEN content_start_date = '' AND day_count = 0 THEN 6 ELSE day_count - 1 END)"
+)
 
 
 def plan_period(plan) -> tuple[str, int]:
@@ -43,20 +45,34 @@ def plan_period(plan) -> tuple[str, int]:
     unset sentinels are resolved, so every screen, query and audit agrees on
     which days belong to a plan.
 
-    A row written before Loop Board "Planning periods, not weeks" carries
-    content_start_date '' and day_count 0, and resolves here to seven days
-    from week_start_date: exactly what it has always meant. Nothing
-    backfills those columns, on purpose — the sentinel IS the old meaning,
-    and rewriting it into explicit values is the only way this migration
-    could turn a correct row into a wrong one.
+    The legacy sentinel is BOTH columns unset together — content_start_date
+    '' AND day_count 0. That is how a row written before Loop Board
+    "Planning periods, not weeks" looks, and it resolves to seven days from
+    week_start_date: exactly what it has always meant. Nothing backfills
+    those columns, on purpose — the sentinel IS the old meaning, and
+    rewriting it into explicit values is the only way this migration could
+    turn a correct row into a wrong one.
+
+    It has to be BOTH, not just day_count, and that distinction is
+    load-bearing rather than fussy. retire_overlapping_plans writes
+    day_count 0 to mean "this plan surrendered every one of its days" — the
+    opposite of seven. Read as the legacy sentinel, a fully retired plan
+    claimed a whole week again the moment anything let it back past a
+    `status != 'retired'` filter, and one route did (approving a week
+    resolved to the retired row and set its status back to 'approved').
+    A retired plan therefore keeps its old START, so the pair reads
+    unambiguously: a start with a zero count is an empty period, and only
+    the two-unset pair means seven.
 
     Takes either a sqlite3.Row or a dict, because the plan travels as both
     (rows straight from a query, dicts out of get_weekly_plan).
     """
     keys = plan.keys() if hasattr(plan, "keys") else plan
-    start = (plan["content_start_date"] if "content_start_date" in keys else "") or plan["week_start_date"]
+    raw_start = (plan["content_start_date"] if "content_start_date" in keys else "") or ""
     raw_count = (plan["day_count"] if "day_count" in keys else 0) or 0
-    return start, (raw_count if raw_count > 0 else 7)
+    if not raw_start and not raw_count:
+        return plan["week_start_date"], 7
+    return (raw_start or plan["week_start_date"]), max(0, raw_count)
 
 
 def period_end_date(start_date: str, day_count: int) -> str:
@@ -688,11 +704,21 @@ def get_plan_id_for_week(week_start_date: str) -> int | None:
     is a different week. Picks the most recently created row if a week
     somehow has more than one, which shouldn't happen but shouldn't 500
     either.
+
+    A RETIRED plan is never returned, and that is the whole reason this
+    function is not one line. Every week-scoped route resolves through here
+    — /approve, /reopen, /slot — and a retired plan filed under the same key
+    as its replacement was still reachable by all three. Approving it set
+    its status back to 'approved', which is precisely the flag keeping it
+    out of every live-plan query, so a single approve of a dead plan put two
+    live plans on the same seven days. The one-plan-per-day rule cannot be
+    enforced only where plans are created; it has to hold at every door that
+    can bring one back to life.
     """
     conn = get_conn()
     row = conn.execute(
         "SELECT id FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
-        "ORDER BY created_at DESC, id DESC LIMIT 1",
+        "AND status != 'retired' ORDER BY created_at DESC, id DESC LIMIT 1",
         (household_id(), week_start_date),
     ).fetchone()
     conn.close()
@@ -716,8 +742,15 @@ def find_overlapping_plans(period_start: str, day_count: int, exclude_plan_id: i
     startup which of a household's real, already-cooked-from plans to
     dismantle is not a migration's business, and doing it in the one
     database that matters (Emily's) with no undo is not a risk worth taking
-    for tidiness. They resolve the first time a period is generated over
-    them, which is a moment a person is present for.
+    for tidiness.
+
+    They are resolved the first time a period is generated over ANY of the
+    days they share — retire_overlapping_plans deconflicts every live plan
+    at once, not just each one against the new period, so a generation
+    settles pre-existing clashes between old plans too. Until then they
+    stand, and this reports them. Note the corollary: a pair of overlapping
+    plans nowhere near anything newly planned stays overlapping, and only a
+    person can decide which of those should lose days.
     """
     conn = get_conn()
     rows = conn.execute(
@@ -744,6 +777,111 @@ def find_overlapping_plans(period_start: str, day_count: int, exclude_plan_id: i
     return found
 
 
+def _longest_run(days: list[str]) -> list[str]:
+    """
+    The longest contiguous stretch of consecutive dates in an ordered list.
+
+    A period is a start plus a length, so a plan can only ever keep a
+    CONTIGUOUS set of days. When a takeover leaves it days on both sides of
+    the new period, this is the half it keeps. Ties go to the earlier run —
+    arbitrary, but it has to be decided somewhere and deciding it here keeps
+    the result reproducible rather than dependent on iteration order.
+    """
+    best: list[str] = []
+    run: list[str] = []
+    for day in days:
+        if run and date.fromisoformat(day) - date.fromisoformat(run[-1]) == timedelta(days=1):
+            run.append(day)
+        else:
+            run = [day]
+        if len(run) > len(best):
+            best = list(run)
+    return best
+
+
+def _plan_takeover(new_plan_id: int, period_start: str, day_count: int) -> list[dict]:
+    """
+    Decide what every other live plan keeps and gives up — and decide ALL of
+    it before anything is written.
+
+    Two reasons it is separated from the writing.
+
+    It is the only way to deconflict globally. Each plan's decision depends
+    on what the plans newer than it kept, so the claims have to accumulate
+    across the whole walk; handling one plan at a time against the new
+    period alone is what let two of them be shortened onto the same resume
+    date and invent a clash. Here, `claimed` starts as the new period's days
+    and grows as each plan keeps its run, so a day can be awarded once.
+
+    And it makes the destructive half short. retire_overlapping_plans still
+    is not atomic — each plan's meals, prep tasks and grocery reversal
+    commit before the next plan is touched — but every decision is settled
+    first, so nothing can be destroyed on the strength of a calculation that
+    then throws. **The remaining non-atomicity is real and known: a failure
+    between two plans (a locked database, a killed process) leaves the first
+    one's days genuinely gone. Worth Emily's eyes.**
+
+    Returns one dict per affected plan, newest first, or [] when nothing
+    overlaps — the ordinary case.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        "ORDER BY created_at DESC, id DESC",
+        (household_id(),),
+    ).fetchall()
+    conn.close()
+
+    new_days = set(_week_intake.period_dates(period_start, day_count))
+    claimed = set(new_days)
+    decisions = []
+    for row in rows:
+        if row["id"] == new_plan_id:
+            continue
+        other_start, other_days = plan_period(row)
+        days = _week_intake.period_dates(other_start, other_days)
+        if not days:
+            continue
+        available = [d for d in days if d not in claimed]
+        if len(available) == len(days):
+            # Untouched: it clashes with nothing, so it is not part of this
+            # takeover at all and must not be rewritten or reported.
+            claimed.update(days)
+            continue
+
+        # A component_based plan's entries carry no real date (they all sit
+        # on the plan's week_start_date as a placeholder — see
+        # meal_plan_entries.component_category), so there is no subset of
+        # them corresponding to the days being taken over. It goes whole.
+        component_based = row["planning_mode"] == "component_based"
+        keep = [] if component_based else _longest_run(available)
+        surrendered = [d for d in days if d not in keep]
+        claimed.update(keep)
+        decisions.append({
+            "weekly_plan_id": row["id"],
+            "status": row["status"],
+            "component_based": component_based,
+            "previous_start": other_start,
+            "previous_day_count": other_days,
+            "kept_start": keep[0] if keep else other_start,
+            "kept_day_count": len(keep),
+            "retired": not keep,
+            "surrendered": surrendered,
+            # A surrendered day the NEW period does not cover is a day
+            # nothing has replaced. Computed against new_days rather than
+            # against the period's start/end pair so it stays right for a
+            # plan that gave up days on both sides of it.
+            "orphaned": [d for d in surrendered if d not in new_days],
+        })
+
+    # A day another surviving plan still holds was never orphaned, whatever
+    # the plan that gave it up thinks. Resolved here, once, now that every
+    # decision is known — per-plan it could only have been guessed at.
+    for decision in decisions:
+        decision["orphaned"] = [d for d in decision["orphaned"] if d not in claimed]
+    return decisions
+
+
 def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int) -> dict:
     """
     Make "no day has two plans" true rather than merely intended: every
@@ -756,25 +894,39 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
     created_at tiebreak in one query while the other plan's ingredients
     stayed on the shopping list forever, bought for meals nobody would cook.
 
-    What happens to the loser depends on WHERE the overlap falls, and the
-    shape of a period — a start plus a length — is what decides it, because
-    a period cannot have a hole in the middle:
+    It deconflicts the household's plans GLOBALLY, not just each old plan
+    against the new one. That distinction was found by adversarial review
+    and it matters: overlapping plans are ordinary pre-existing data (there
+    has never been a uniqueness constraint), and shortening two of them
+    independently pushed both onto the same resume date — five clashing days
+    that did not exist before the takeover ran. So the rule is applied once,
+    over every live plan at once: walk them newest-first, and each may keep
+    only days nothing newer has already claimed. Newest-first is not
+    arbitrary — it is the same tiebreak _current_weekly_plan_row has always
+    used to decide which of two overlapping plans wins.
 
-    - Fully covered: the old plan retires. status 'retired', day_count 0.
-    - Overlap at its END (the usual case — a new period starting partway
-      through the current week): it ends the day before the new one starts,
-      exactly as the ticket describes. This is the common path.
-    - Overlap at its START (a new period that covers the beginning of a
-      plan already made for later): it begins the day after the new period
-      ends.
-    - Overlap strictly INSIDE it: the old plan keeps only the days BEFORE
-      the new period, and its days after the new period are orphaned —
-      returned as `orphaned_dates` and logged, because this is the one case
-      where the household loses planned days they did not ask to replace.
-      There is no honest alternative within this model: a period is
-      contiguous, so a plan cannot survive with a gap punched through it,
-      and retiring it whole would surrender the same days plus the ones
-      before. Flagged rather than hidden. **Worth Emily's eyes.**
+    What a loser keeps is then the longest contiguous run of days still
+    available to it, because a period is a start plus a length and cannot
+    have a hole in the middle:
+
+    - Nothing left: it retires. status 'retired', day_count 0, and it keeps
+      its old start so the pair reads as an empty period rather than as the
+      legacy seven-day sentinel (see plan_period).
+    - Days left only BEFORE the new period (the usual case — a new period
+      starting partway through the current week): it ends the day before the
+      new one starts, exactly as the ticket describes.
+    - Days left only AFTER: it begins the day after the new period ends.
+    - Days left on BOTH sides: it keeps the longer run, and the shorter one
+      is orphaned — returned as `orphaned_dates` and logged, because this is
+      the one case where the household loses planned days they did not ask
+      to replace. There is no honest alternative within this model: a plan
+      cannot survive with a gap punched through it, and retiring it whole
+      would surrender those days plus the ones it could have kept. Flagged
+      rather than hidden. **Worth Emily's eyes.**
+
+    `orphaned_dates` excludes any day another surviving plan still holds,
+    so the sentence a screen builds from it is true. Reporting a day as
+    lost while a plan is still cooking from it is worse than not reporting.
 
     Groceries reconcile through _reverse_meal_grocery_contributions, the
     same per-meal reversal a swap and clear_weekly_plan already use — so
@@ -795,7 +947,6 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
     Never raises for "nothing overlapped" — that's the ordinary case, and
     it returns the same shape with empty lists.
     """
-    overlapping = find_overlapping_plans(period_start, day_count, exclude_plan_id=new_plan_id)
     result = {
         "new_plan_id": new_plan_id,
         "retired_plan_ids": [],
@@ -807,41 +958,19 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
         "grocery_trimmed": [],
         "grocery_kept_bought": [],
     }
-    if not overlapping:
+    decisions = _plan_takeover(new_plan_id, period_start, day_count)
+    if not decisions:
         return result
 
-    new_end = period_end_date(period_start, day_count)
-    for other in overlapping:
-        other_id = other["weekly_plan_id"]
-        other_start, other_days = other["period_start_date"], other["day_count"]
-        other_end = period_end_date(other_start, other_days)
-        component_based = other["planning_mode"] == "component_based"
-
-        if component_based or (period_start <= other_start and new_end >= other_end):
-            surrendered = _week_intake.period_dates(other_start, other_days)
-            new_start_date, new_day_count, retired = "", 0, True
-        elif period_start > other_start:
-            # Ends the day before the new period starts. When the new period
-            # also ends before this one does, everything after it is
-            # orphaned — see the docstring's INSIDE case.
-            kept = (date.fromisoformat(period_start) - date.fromisoformat(other_start)).days
-            surrendered = _week_intake.period_dates(period_start, other_days - kept)
-            new_start_date, new_day_count, retired = other_start, kept, False
-        else:
-            # Begins the day after the new period ends.
-            resume = (date.fromisoformat(new_end) + timedelta(days=1)).isoformat()
-            dropped = (date.fromisoformat(resume) - date.fromisoformat(other_start)).days
-            surrendered = _week_intake.period_dates(other_start, dropped)
-            new_start_date, new_day_count, retired = resume, other_days - dropped, False
-
-        # Derived once for all four shapes rather than per branch: a
-        # surrendered day the new period does NOT cover is a day the
-        # household has lost and nothing has replaced. Written this way
-        # because the per-branch version quietly reported [] for a
-        # component_based plan given up whole on a partial overlap — the
-        # branch that surrenders the most days was the one that claimed to
-        # orphan none.
-        orphaned = [d for d in surrendered if d < period_start or d > new_end]
+    for decision in decisions:
+        other_id = decision["weekly_plan_id"]
+        other_start, other_days = decision["previous_start"], decision["previous_day_count"]
+        component_based = decision["component_based"]
+        surrendered = decision["surrendered"]
+        orphaned = decision["orphaned"]
+        new_start_date = decision["kept_start"]
+        new_day_count = decision["kept_day_count"]
+        retired = decision["retired"]
 
         removal = _release_plan_days(other_id, surrendered, include_components=component_based)
         result["meals_removed"] += removal["meals_removed"]
@@ -872,7 +1001,7 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
             "superseded_json = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
             (
                 new_start_date, new_day_count,
-                "retired" if retired else other["status"],
+                "retired" if retired else decision["status"],
                 json.dumps(record), other_id, household_id(),
             ),
         )
@@ -884,8 +1013,8 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
     result["orphaned_dates"] = sorted(set(result["orphaned_dates"]))
     if result["orphaned_dates"]:
         logger.warning(
-            "Plan %s sits inside an existing plan's period; %d day(s) after it are now "
-            "unplanned and were not replaced: %s",
+            "Plan %s left %d day(s) of an existing plan unplanned and unreplaced "
+            "(a plan cannot keep a window with a hole in it, so it kept the longer side): %s",
             new_plan_id, len(result["orphaned_dates"]), ", ".join(result["orphaned_dates"]),
         )
     return result
@@ -981,10 +1110,19 @@ def get_plan_id_for_date(meal_date: str) -> int | None:
 
     Under the one-plan-per-day rule at most one non-retired plan can match,
     so the ordering is a tiebreak for legacy overlaps only (newest wins,
-    the same tiebreak _current_weekly_plan_row has always used). Falls back
-    to the Monday lookup for a day no period claims, which is what keeps a
-    need declared for an unplanned week attaching to that week's plan when
-    it is eventually generated under its Monday.
+    the same tiebreak _current_weekly_plan_row has always used).
+
+    There is deliberately NO Monday fallback. An earlier version fell
+    through to get_plan_id_for_week, which finds a plan by FILING KEY and
+    therefore answered "yes, that plan" for days the plan no longer covers
+    — a day orphaned by a takeover, or a day of a component plan that had
+    retired whole. The caller that makes this dangerous is
+    slot_needs._plan_id_for_date: an `away` declared for such a day attached
+    to a dead or shortened plan, so apply_slot_needs_to_plan would never
+    enforce it and the household would be sold food for a night they had
+    said they were away. None is the honest answer for a day no live plan
+    covers, and every caller already handles it — a need declared before a
+    week is generated is the ordinary case.
     """
     date.fromisoformat(meal_date)
     conn = get_conn()
@@ -996,10 +1134,7 @@ def get_plan_id_for_date(meal_date: str) -> int | None:
         (household_id(), meal_date, meal_date),
     ).fetchone()
     conn.close()
-    if row:
-        return row["id"]
-    d = date.fromisoformat(meal_date)
-    return get_plan_id_for_week((d - timedelta(days=d.weekday())).isoformat())
+    return row["id"] if row else None
 
 
 def _format_week_range(week_start_date: str) -> str:
@@ -1433,9 +1568,18 @@ def _menu_dates(plan: dict) -> list[str]:
       gives its own eight days and nothing else. There is no lead-in,
       because the filing key IS the period start.
 
-    The lead-in is bounded by the period start, never by a fixed seven, so a
-    period that begins long after its filing key cannot generate an
-    unbounded run of empty days.
+    The lead-in is bounded by the period start, and the API refuses a
+    period whose start is more than one period-length past its filing key
+    (see main._validated_period) — without that the distance is unbounded
+    and a 3-day plan filed months earlier drew 150 empty days, each of
+    which _decorate_with_needs then looked up.
+
+    The lead-in is also dropped entirely once the plan has been SHORTENED
+    by a takeover — i.e. once its content start has moved forward from a
+    period it used to hold. Those days now belong to another plan, and
+    `before_plan_start` means "already gone by" everywhere else in this
+    codebase; using it for "somebody else owns this" would have two screens
+    drawing the same dates and neither saying so.
     """
     # Reads get_weekly_plan's already-resolved period fields rather than
     # calling plan_period again: this is handed that function's RESULT, not a
@@ -1446,7 +1590,7 @@ def _menu_dates(plan: dict) -> list[str]:
     day_count = plan["day_count"]
     week_start = plan["week_start_date"]
     lead_in = []
-    if period_start > week_start:
+    if period_start > week_start and not plan.get("superseded"):
         span = (date.fromisoformat(period_start) - date.fromisoformat(week_start)).days
         lead_in = _week_intake.period_dates(week_start, span)
     return lead_in + _week_intake.period_dates(period_start, day_count)

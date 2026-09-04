@@ -4021,18 +4021,6 @@
     window.location.href = '/meal-setup';
   }
 
-  function nextWeekStartLocal() {
-    // The Monday after this one, built from local date fields for the same
-    // reason todayLocalStr is — toISOString() is UTC and gets the day
-    // wrong either side of midnight.
-    var d = new Date();
-    var daysSinceMonday = (d.getDay() + 6) % 7;   // JS weeks start on Sunday
-    d.setDate(d.getDate() - daysSinceMonday + 7);
-    var m = String(d.getMonth() + 1).padStart(2, '0');
-    var day = String(d.getDate()).padStart(2, '0');
-    return d.getFullYear() + '-' + m + '-' + day;
-  }
-
   async function approveWeek(panel, data) {
     // Who is approving. There is no per-person login in this app (see
     // tools.get_household_people), so with two adults on record the only

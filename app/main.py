@@ -1206,7 +1206,27 @@ def _validated_period(week_start: str, req: WeekGenerateRequest) -> tuple[str, i
             status_code=400,
             detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.",
         )
-    return (req.period_start or week_start), req.day_count
+    period_start = req.period_start or week_start
+    # The filing key and the content start are genuinely two different
+    # things, but not ARBITRARILY different: the Meals grid draws every day
+    # from the filing key up to the period, so a period starting months
+    # after its key renders that whole gap as empty lead-in days, and then
+    # asks for that many days of slot needs and attendance to decorate them.
+    # Measured at 150 days from a 3-day plan before this check existed. The
+    # window is capped at one period's length, which covers every real case
+    # (a mid-week part-week is at most six days past its Monday).
+    if period_start != week_start:
+        gap = (datetime.date.fromisoformat(period_start)
+               - datetime.date.fromisoformat(week_start)).days
+        if not 0 <= gap <= tools.MAX_PERIOD_DAYS:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "A period has to start on its filing week, not before it and not more "
+                    f"than {tools.MAX_PERIOD_DAYS} days after it."
+                ),
+            )
+    return period_start, req.day_count
 
 
 def _plan_id_for_week(week_start: str) -> int:
@@ -1325,6 +1345,15 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
     Save the household's answers as a NEW intake revision. Append-only —
     see tools.save_week_intake for why nothing is ever updated in place.
     """
+    # The same clamp the three sibling period endpoints apply, and the one
+    # place it was missing: day_count went straight to period_dates, so a
+    # request for three million days spent a second building date strings
+    # and then surfaced an OverflowError as a 500.
+    if req.day_count < 1 or req.day_count > tools.MAX_PERIOD_DAYS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.",
+        )
     try:
         return tools.save_week_intake(
             week_start,
