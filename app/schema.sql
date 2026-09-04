@@ -296,8 +296,41 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_week_intake_revision
 CREATE TABLE IF NOT EXISTS weekly_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
+    -- The plan's FILING KEY, and only that. Every week-scoped endpoint and
+    -- link is /api/week/{this}, so it has to stay stable and unique-ish per
+    -- plan. For a traditional Monday week it is that Monday; for a custom
+    -- planning period (Loop Board "Planning periods, not weeks") it is the
+    -- period's own first day. It is NOT the answer to "which days does this
+    -- plan cover" — content_start_date/day_count below are.
     week_start_date TEXT NOT NULL, -- ISO date, the Monday (or first planned day) of the week
-    status TEXT NOT NULL DEFAULT 'draft', -- draft | approved
+    -- The PERIOD: the first day this plan actually holds content for, and how
+    -- many days it runs from there, inclusive. Together they are the one
+    -- answer to "which days belong to this plan", and the one-plan-per-day
+    -- rule (Emily, 2026-09-04) is defined over exactly this window.
+    --
+    -- Both carry an "unset" sentinel — '' and 0 — which means "seven days
+    -- from week_start_date", i.e. precisely what every row meant before this
+    -- existed. Nothing backfills them: a plan written before periods existed
+    -- reads identically through plan_period() without being rewritten, and a
+    -- rewrite is the one thing that could turn a correct old row into a
+    -- wrong new one. Read them through weekly_plan.plan_period(), never
+    -- directly, so the sentinel is resolved in exactly one place.
+    --
+    -- content_start_date can be LATER than week_start_date (a part-week filed
+    -- under its Monday: onboarding Wednesday gives Monday/'2026-09-09'/5) and
+    -- the window can run PAST week_start_date + 6 (Thursday to next Thursday
+    -- is day_count 8). Neither is an error; both are the point.
+    content_start_date TEXT NOT NULL DEFAULT '',
+    day_count INTEGER NOT NULL DEFAULT 0,
+    -- What this plan surrendered when a newer period took over days it held,
+    -- as JSON — the same shape and the same reason as
+    -- slot_needs.superseded_json: the whole record, not just the fact. Holds
+    -- the period it had before, the exact dates it gave up, which plan took
+    -- them, and what that did to the grocery list (including the items left
+    -- alone because they were already bought). '' while nothing has ever
+    -- superseded this plan. See weekly_plan.retire_overlapping_plans.
+    superseded_json TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'draft', -- draft | approved | retired
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a
     -- past plan stays interpretable even if the household later switches

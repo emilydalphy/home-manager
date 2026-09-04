@@ -46,8 +46,30 @@ RUSH_MAX_MINUTES = 20
 
 
 def _week_dates(week_start: str) -> list[str]:
-    start = date.fromisoformat(week_start)
-    return [(start + timedelta(days=i)).isoformat() for i in range(7)]
+    return period_dates(week_start, 7)
+
+
+def period_dates(start_date: str, day_count: int = 7) -> list[str]:
+    """
+    The ISO dates of a planning period: `day_count` days from `start_date`,
+    inclusive. `_week_dates` is this with day_count pinned to 7.
+
+    Exists because the old idiom for "the days of a shorter window" was
+    `_week_dates(start)[:day_count]`, which silently CAPS at seven — fine
+    while every period was a Monday week or a part of one, wrong the moment
+    a household plans Thursday to next Thursday (Loop Board "Planning
+    periods, not weeks"). That slice returned 7 days for an 8-day period and
+    the eighth day would have been generated for, never audited, and never
+    rendered. Slicing a list can't express a window longer than the list, so
+    the window is built at the length it actually is.
+
+    day_count below 1 yields no dates rather than raising: a plan that has
+    surrendered every one of its days to a newer period (see
+    retire_overlapping_plans) is a real, queryable row with an empty window,
+    and every caller here loops over the result.
+    """
+    start = date.fromisoformat(start_date)
+    return [(start + timedelta(days=i)).isoformat() for i in range(max(0, day_count))]
 
 
 def _household_composition() -> dict:

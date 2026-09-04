@@ -145,6 +145,20 @@ _MIGRATIONS = [
     ("prep_tasks", "inventory_item_id", "INTEGER"),
     ("prep_tasks", "meal_plan_entry_id", "INTEGER"),
     ("prep_tasks", "quantity", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "Planning periods, not weeks". A plan is a PERIOD — a start
+    # date and a day count — and the Monday week is only its most common
+    # shape. Both columns default to the "unset" sentinel ('' / 0), which
+    # every pre-existing row keeps, and which every reader below resolves to
+    # exactly the old meaning: seven days from week_start_date. That is what
+    # makes this migration a no-op for existing data rather than a rewrite
+    # of it. See schema.sql's comments on weekly_plans for the full model.
+    ("weekly_plans", "content_start_date", "TEXT NOT NULL DEFAULT ''"),
+    ("weekly_plans", "day_count", "INTEGER NOT NULL DEFAULT 0"),
+    # What a plan surrendered when a newer period took its days over, in the
+    # same shape slot_needs.superseded_json uses for the same reason: the
+    # whole record, not just the fact that something happened. '' while a
+    # plan has never been superseded. See weekly_plan.retire_overlapping_plans.
+    ("weekly_plans", "superseded_json", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

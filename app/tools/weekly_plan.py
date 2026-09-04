@@ -4,8 +4,9 @@ The weekly plan as an object: slots, the menu view, approval, and swaps.
 from __future__ import annotations
 
 import json
+import logging
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import coordination as _coordination
@@ -16,7 +17,74 @@ from . import recipes as _recipes
 from . import week_intake as _week_intake
 
 
+logger = logging.getLogger("home_manager")
+
 WEEK_SLOTS = ("breakfast", "lunch", "dinner")
+
+# The longest period the app will plan in one go. Not a data-model limit —
+# nothing below cares — but a guard on the generation call, which asks the
+# model for every day at once and is already the slowest thing in the app at
+# seven. Named rather than inlined so the API, the UI and the tool schema all
+# refuse the same number.
+MAX_PERIOD_DAYS = 28
+
+# The SQL form of plan_period(), for the two places that have to resolve the
+# period inside a query rather than in Python (see _current_weekly_plan_row).
+# Kept beside the Python version because they have to agree exactly, and a
+# drift between them is invisible: the query would simply return a different
+# plan than every other reader thinks is current.
+_SQL_PERIOD_START = "COALESCE(NULLIF(content_start_date, ''), week_start_date)"
+_SQL_PERIOD_LAST_OFFSET = "(CASE WHEN day_count > 0 THEN day_count - 1 ELSE 6 END)"
+
+
+def plan_period(plan) -> tuple[str, int]:
+    """
+    The (start_date, day_count) a plan actually covers — the ONE place the
+    unset sentinels are resolved, so every screen, query and audit agrees on
+    which days belong to a plan.
+
+    A row written before Loop Board "Planning periods, not weeks" carries
+    content_start_date '' and day_count 0, and resolves here to seven days
+    from week_start_date: exactly what it has always meant. Nothing
+    backfills those columns, on purpose — the sentinel IS the old meaning,
+    and rewriting it into explicit values is the only way this migration
+    could turn a correct row into a wrong one.
+
+    Takes either a sqlite3.Row or a dict, because the plan travels as both
+    (rows straight from a query, dicts out of get_weekly_plan).
+    """
+    keys = plan.keys() if hasattr(plan, "keys") else plan
+    start = (plan["content_start_date"] if "content_start_date" in keys else "") or plan["week_start_date"]
+    raw_count = (plan["day_count"] if "day_count" in keys else 0) or 0
+    return start, (raw_count if raw_count > 0 else 7)
+
+
+def period_end_date(start_date: str, day_count: int) -> str:
+    """
+    The LAST day of a period, inclusive — the form every overlap test and
+    every date range in this app is written in. A zero-day period (one that
+    has surrendered everything, see retire_overlapping_plans) returns the day
+    BEFORE its start, which is what makes `start <= d <= end` correctly match
+    nothing rather than accidentally matching the start day.
+    """
+    return (date.fromisoformat(start_date) + timedelta(days=day_count - 1)).isoformat()
+
+
+def periods_overlap(a_start: str, a_days: int, b_start: str, b_days: int) -> list[str]:
+    """
+    The dates two periods have in common, in order — empty when they don't
+    touch. Returned as the actual dates rather than a bool because every
+    caller needs them anyway: the one-plan-per-day rule is enforced by
+    retiring exactly these days, not by knowing that an overlap exists.
+    """
+    if a_days < 1 or b_days < 1:
+        return []
+    lo = max(a_start, b_start)
+    hi = min(period_end_date(a_start, a_days), period_end_date(b_start, b_days))
+    if lo > hi:
+        return []
+    span = (date.fromisoformat(hi) - date.fromisoformat(lo)).days + 1
+    return _week_intake.period_dates(lo, span)
 
 
 def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
@@ -413,6 +481,12 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7, skip_days: int = 0
     short week. Auditing a 5-day request against 7 days would invent
     questions about Saturday and Sunday nobody asked to have planned.
 
+    Both parameters are now the FALLBACK rather than the source of truth:
+    since Loop Board "Planning periods, not weeks" a plan stores the period
+    it was generated for, and this reads that when it's there. They still
+    matter for a plan with no period on record, and passing them wrong can
+    no longer silently audit the wrong days for a plan that has one.
+
     `skip_days` is the other half of that same idea, for a genuine
     part-week (Loop Board "Build a real part-week for households who
     onboard mid-week"): the plan is filed under this week's Monday
@@ -430,7 +504,7 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7, skip_days: int = 0
     """
     conn = get_conn()
     plan = conn.execute(
-        "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",
+        "SELECT week_start_date, content_start_date, day_count FROM weekly_plans WHERE id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),
     ).fetchone()
     if not plan:
@@ -443,7 +517,18 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7, skip_days: int = 0
     ).fetchall()
     conn.close()
 
-    dates = _week_intake._week_dates(plan["week_start_date"])[skip_days:skip_days + day_count]
+    # The plan's own stored period wins when it has one, because that is what
+    # was actually generated; the skip_days/day_count parameters are the
+    # pre-period way of saying the same thing and stay authoritative only for
+    # a plan that has no period on record. Deriving the window from the row
+    # rather than from the caller is also what makes an audit of an 8-day
+    # Thursday-to-Thursday period cover all eight days: the old expression
+    # sliced a 7-item list and could not have returned more than seven.
+    stored_start, stored_count = plan_period(plan)
+    if (plan["content_start_date"] or plan["day_count"]):
+        dates = _week_intake.period_dates(stored_start, stored_count)
+    else:
+        dates = _week_intake._week_dates(plan["week_start_date"])[skip_days:skip_days + day_count]
     # Only the three real meals, and only within the days actually asked
     # for. Snacks ride along in the same table but aren't part of the
     # guarantee, and counting them made `present` exceed `expected` and
@@ -508,6 +593,303 @@ def get_plan_id_for_week(week_start_date: str) -> int | None:
     return row["id"] if row else None
 
 
+def find_overlapping_plans(period_start: str, day_count: int, exclude_plan_id: int | None = None) -> list[dict]:
+    """
+    Every live plan of this household that holds at least one day inside the
+    given period, with the days it holds. Read-only.
+
+    Two callers, and they want it for opposite reasons.
+    retire_overlapping_plans uses it to find what a new period has to take
+    over. And it answers, without changing anything, "does this household
+    already have plans that break the one-plan-per-day rule?" — which
+    matters because the rule is NEW (Emily, 2026-09-04), not something the
+    database has ever enforced. There is no uniqueness constraint on
+    weekly_plans and never was; overlapping plans are ordinary existing
+    data, resolved until now by _current_weekly_plan_row's newest-wins
+    tiebreak. Nothing here or in the migration rewrites those. Deciding at
+    startup which of a household's real, already-cooked-from plans to
+    dismantle is not a migration's business, and doing it in the one
+    database that matters (Emily's) with no undo is not a risk worth taking
+    for tidiness. They resolve the first time a period is generated over
+    them, which is a moment a person is present for.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' ORDER BY id",
+        (household_id(),),
+    ).fetchall()
+    conn.close()
+    found = []
+    for row in rows:
+        if exclude_plan_id is not None and row["id"] == exclude_plan_id:
+            continue
+        other_start, other_days = plan_period(row)
+        shared = periods_overlap(period_start, day_count, other_start, other_days)
+        if shared:
+            found.append({
+                "weekly_plan_id": row["id"],
+                "week_start_date": row["week_start_date"],
+                "period_start_date": other_start,
+                "day_count": other_days,
+                "status": row["status"],
+                "planning_mode": row["planning_mode"],
+                "overlap_dates": shared,
+            })
+    return found
+
+
+def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int) -> dict:
+    """
+    Make "no day has two plans" true rather than merely intended: every
+    other plan holding a day inside this period gives that day up, and the
+    groceries it put on the list for those days come back off.
+
+    This is the enforcement half of Emily's one-plan-per-day rule
+    (2026-09-04). "What's for dinner?" has to have exactly one answer, and
+    before this it could have two — the loser being decided by a
+    created_at tiebreak in one query while the other plan's ingredients
+    stayed on the shopping list forever, bought for meals nobody would cook.
+
+    What happens to the loser depends on WHERE the overlap falls, and the
+    shape of a period — a start plus a length — is what decides it, because
+    a period cannot have a hole in the middle:
+
+    - Fully covered: the old plan retires. status 'retired', day_count 0.
+    - Overlap at its END (the usual case — a new period starting partway
+      through the current week): it ends the day before the new one starts,
+      exactly as the ticket describes. This is the common path.
+    - Overlap at its START (a new period that covers the beginning of a
+      plan already made for later): it begins the day after the new period
+      ends.
+    - Overlap strictly INSIDE it: the old plan keeps only the days BEFORE
+      the new period, and its days after the new period are orphaned —
+      returned as `orphaned_dates` and logged, because this is the one case
+      where the household loses planned days they did not ask to replace.
+      There is no honest alternative within this model: a period is
+      contiguous, so a plan cannot survive with a gap punched through it,
+      and retiring it whole would surrender the same days plus the ones
+      before. Flagged rather than hidden. **Worth Emily's eyes.**
+
+    Groceries reconcile through _reverse_meal_grocery_contributions, the
+    same per-meal reversal a swap and clear_weekly_plan already use — so
+    the guarantee it carries holds here too: a line already moved to
+    in_cart or purchased is LEFT ALONE. Somebody has bought that food. It
+    is reported back as `grocery_kept_bought` rather than silently skipped,
+    because "we already own three peppers" is the household's business and
+    the only place that fact still exists after the meal is gone.
+
+    A component_based plan surrenders ENTIRELY on any overlap. Its entries
+    carry no real date (they all sit on the plan's week_start_date as a
+    placeholder — see meal_plan_entries.component_category), so there is no
+    subset of them that corresponds to the days being taken over; picking
+    some to reverse would be inventing a day-assignment the plan
+    deliberately doesn't have.
+
+    Returns what happened, in enough detail for a screen to say it out loud.
+    Never raises for "nothing overlapped" — that's the ordinary case, and
+    it returns the same shape with empty lists.
+    """
+    overlapping = find_overlapping_plans(period_start, day_count, exclude_plan_id=new_plan_id)
+    result = {
+        "new_plan_id": new_plan_id,
+        "retired_plan_ids": [],
+        "shortened_plan_ids": [],
+        "surrendered_dates": [],
+        "orphaned_dates": [],
+        "meals_removed": 0,
+        "grocery_removed": [],
+        "grocery_trimmed": [],
+        "grocery_kept_bought": [],
+    }
+    if not overlapping:
+        return result
+
+    new_end = period_end_date(period_start, day_count)
+    for other in overlapping:
+        other_id = other["weekly_plan_id"]
+        other_start, other_days = other["period_start_date"], other["day_count"]
+        other_end = period_end_date(other_start, other_days)
+        component_based = other["planning_mode"] == "component_based"
+
+        if component_based or (period_start <= other_start and new_end >= other_end):
+            surrendered = _week_intake.period_dates(other_start, other_days)
+            orphaned: list[str] = []
+            new_start_date, new_day_count, retired = "", 0, True
+        elif period_start > other_start:
+            # Ends the day before the new period starts. When the new period
+            # also ends before this one does, everything after it is
+            # orphaned — see the docstring's INSIDE case.
+            kept = (date.fromisoformat(period_start) - date.fromisoformat(other_start)).days
+            surrendered = _week_intake.period_dates(period_start, other_days - kept)
+            orphaned = [d for d in surrendered if d > new_end]
+            new_start_date, new_day_count, retired = other_start, kept, False
+        else:
+            # Begins the day after the new period ends.
+            resume = (date.fromisoformat(new_end) + timedelta(days=1)).isoformat()
+            dropped = (date.fromisoformat(resume) - date.fromisoformat(other_start)).days
+            surrendered = _week_intake.period_dates(other_start, dropped)
+            orphaned = []
+            new_start_date, new_day_count, retired = resume, other_days - dropped, False
+
+        removal = _release_plan_days(other_id, surrendered, include_components=component_based)
+        result["meals_removed"] += removal["meals_removed"]
+        result["grocery_removed"].extend(removal["grocery_removed"])
+        result["grocery_trimmed"].extend(removal["grocery_trimmed"])
+        result["grocery_kept_bought"].extend(removal["grocery_kept_bought"])
+        result["surrendered_dates"].extend(surrendered)
+        result["orphaned_dates"].extend(orphaned)
+
+        record = {
+            "superseded_at": datetime.utcnow().isoformat(sep=" ", timespec="seconds"),
+            "by_plan_id": new_plan_id,
+            "by_period": {"start_date": period_start, "day_count": day_count},
+            # The period this plan HAD, so what it gave up stays legible
+            # after the columns have been rewritten — the same reason
+            # slot_needs.superseded_json stores the whole need rather than
+            # its name.
+            "previous_period": {"start_date": other_start, "day_count": other_days},
+            "surrendered_dates": surrendered,
+            "orphaned_dates": orphaned,
+            "grocery_removed": removal["grocery_removed"],
+            "grocery_trimmed": removal["grocery_trimmed"],
+            "grocery_kept_bought": removal["grocery_kept_bought"],
+        }
+        conn = get_conn()
+        conn.execute(
+            "UPDATE weekly_plans SET content_start_date = ?, day_count = ?, status = ?, "
+            "superseded_json = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (
+                new_start_date, new_day_count,
+                "retired" if retired else other["status"],
+                json.dumps(record), other_id, household_id(),
+            ),
+        )
+        conn.commit()
+        conn.close()
+        (result["retired_plan_ids"] if retired else result["shortened_plan_ids"]).append(other_id)
+
+    result["surrendered_dates"] = sorted(set(result["surrendered_dates"]))
+    result["orphaned_dates"] = sorted(set(result["orphaned_dates"]))
+    if result["orphaned_dates"]:
+        logger.warning(
+            "Plan %s sits inside an existing plan's period; %d day(s) after it are now "
+            "unplanned and were not replaced: %s",
+            new_plan_id, len(result["orphaned_dates"]), ", ".join(result["orphaned_dates"]),
+        )
+    return result
+
+
+def _release_plan_days(plan_id: int, dates: list[str], include_components: bool = False) -> dict:
+    """
+    Take a plan's meals for specific dates off it, reversing what each one
+    put on the grocery list first.
+
+    The reversal is _grocery._reverse_meal_grocery_contributions, per meal,
+    exactly as clear_weekly_plan and swap_meal_in_plan do it — this is
+    deliberately not a second implementation of the grocery-side logic. It
+    also means the in_cart/purchased rule is inherited rather than
+    re-decided: food someone has already bought is never yanked back off
+    the list, so a takeover mid-shop cannot empty a cart.
+
+    What IS added here is naming the kept lines. The reversal helper
+    reports what it removed and trimmed but says nothing about what it
+    declined to touch, so the already-bought items are read off the ledger
+    BEFORE the reversal clears it — afterwards the link rows are gone and
+    the fact is unrecoverable.
+
+    include_components sweeps up a component_based plan's entries, which
+    carry no real date and would otherwise survive their own plan's
+    retirement — still on the grocery list, attached to a plan no screen
+    shows. Only ever true for a plan being surrendered WHOLE, because a
+    subset of undated components is not a thing that exists.
+    """
+    if not dates:
+        return {"meals_removed": 0, "grocery_removed": [], "grocery_trimmed": [], "grocery_kept_bought": []}
+    conn = get_conn()
+    placeholders = ",".join("?" * len(dates))
+    entry_ids = [
+        r["id"] for r in conn.execute(
+            f"SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+            f"AND (date IN ({placeholders})"
+            + (" OR component_category IS NOT NULL)" if include_components else ")"),
+            (plan_id, household_id(), *dates),
+        ).fetchall()
+    ]
+    kept_bought = []
+    if entry_ids:
+        entry_placeholders = ",".join("?" * len(entry_ids))
+        kept_bought = [
+            r["item"] for r in conn.execute(
+                f"SELECT DISTINCT g.item FROM meal_plan_grocery_links l "
+                f"JOIN grocery_items g ON g.id = l.grocery_item_id "
+                f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
+                f"AND g.status != 'needed'",
+                (household_id(), *entry_ids),
+            ).fetchall()
+        ]
+    conn.close()
+
+    removed_items, trimmed_items = [], []
+    for entry_id in entry_ids:
+        reversal = _grocery._reverse_meal_grocery_contributions(entry_id)
+        removed_items.extend(reversal["removed_items"])
+        trimmed_items.extend(reversal["trimmed_items"])
+    if entry_ids:
+        conn = get_conn()
+        entry_placeholders = ",".join("?" * len(entry_ids))
+        # Prep tasks describe prepping meals that no longer exist, the same
+        # reasoning clear_weekly_plan applies when it empties a whole plan.
+        conn.execute(
+            f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({entry_placeholders})",
+            (household_id(), *entry_ids),
+        )
+        conn.execute(
+            f"DELETE FROM meal_plan_entries WHERE household_id = ? AND id IN ({entry_placeholders})",
+            (household_id(), *entry_ids),
+        )
+        conn.commit()
+        conn.close()
+    return {
+        "meals_removed": len(entry_ids),
+        "grocery_removed": removed_items,
+        "grocery_trimmed": trimmed_items,
+        "grocery_kept_bought": kept_bought,
+    }
+
+
+def get_plan_id_for_date(meal_date: str) -> int | None:
+    """
+    The plan whose PERIOD contains a given day, or None.
+
+    "Which plan does Thursday belong to?" used to be answered by snapping
+    Thursday back to its Monday and looking up a plan filed under that key
+    — which is right exactly as long as every plan is a Monday week. A
+    Thursday-to-Thursday period is filed under its own Thursday, so the
+    Monday snap looks up a key no plan has and reports the day unplanned.
+
+    Under the one-plan-per-day rule at most one non-retired plan can match,
+    so the ordering is a tiebreak for legacy overlaps only (newest wins,
+    the same tiebreak _current_weekly_plan_row has always used). Falls back
+    to the Monday lookup for a day no period claims, which is what keeps a
+    need declared for an unplanned week attaching to that week's plan when
+    it is eventually generated under its Monday.
+    """
+    date.fromisoformat(meal_date)
+    conn = get_conn()
+    row = conn.execute(
+        f"SELECT id FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        f"AND date({_SQL_PERIOD_START}) <= date(?) "
+        f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
+        f"ORDER BY created_at DESC, id DESC LIMIT 1",
+        (household_id(), meal_date, meal_date),
+    ).fetchone()
+    conn.close()
+    if row:
+        return row["id"]
+    d = date.fromisoformat(meal_date)
+    return get_plan_id_for_week((d - timedelta(days=d.weekday())).isoformat())
+
+
 def _format_week_range(week_start_date: str) -> str:
     """
     A week as the design writes it: "Sep 1–7", or "Aug 30–Sep 5" when the
@@ -516,9 +898,23 @@ def _format_week_range(week_start_date: str) -> str:
     wherever a week has to be named in a sentence rather than shown as a
     grid — the Sunday nudge, the approval notification, the draft eyebrow.
     """
-    start = date.fromisoformat(week_start_date)
-    end = start + timedelta(days=6)
+    return _format_period_range(week_start_date, 7)
+
+
+def _format_period_range(start_date: str, day_count: int = 7) -> str:
+    """
+    A planning period as the design writes a week: "Sep 1–7", or
+    "Aug 30–Sep 5" across a month boundary. _format_week_range is this with
+    day_count pinned to 7, and every string it produced is byte-identical.
+
+    A one-day period is written as the single date ("Sep 10") rather than
+    "Sep 10–10", which is the only shape a range can't say sensibly.
+    """
+    start = date.fromisoformat(start_date)
+    end = start + timedelta(days=max(1, day_count) - 1)
     start_month = start.strftime("%b")
+    if start == end:
+        return f"{start_month} {start.day}"
     if start.month == end.month:
         return f"{start_month} {start.day}–{end.day}"
     return f"{start_month} {start.day}–{end.strftime('%b')} {end.day}"
@@ -568,18 +964,36 @@ def _current_weekly_plan_row(conn):
     real current calendar week, correctly showed nothing. That's the exact
     "the chat knows about a meal plan the app doesn't show" report this
     fixes at the source, instead of just in one call site.
+
+    Two changes came with Loop Board "Planning periods, not weeks":
+
+    The seven-day window used to be written into the SQL as a literal
+    `date(week_start_date, '+6 days')`, which is why a grep for `timedelta`
+    or `range(7)` would never have found it. It now asks the same question
+    of the plan's real PERIOD, via the SQL twin of plan_period(). A row with
+    the unset sentinels resolves to exactly the old expression, so this is a
+    no-op for every plan written before periods existed — verified by test
+    rather than argued from the SQL.
+
+    And a retired plan is never current. Under the one-plan-per-day rule
+    (Emily, 2026-09-04) a plan whose days were taken over by a newer period
+    has genuinely stopped being anybody's answer to "what's for dinner"; the
+    fallback branch would otherwise resurrect it the moment no plan covered
+    today, which is the emptiest week of all to hand back.
     """
     today = date.today().isoformat()
     plan = conn.execute(
-        "SELECT * FROM weekly_plans WHERE household_id = ? "
-        "AND date(week_start_date) <= date(?) AND date(week_start_date, '+6 days') >= date(?) "
-        "ORDER BY created_at DESC, id DESC LIMIT 1",
+        f"SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        f"AND date({_SQL_PERIOD_START}) <= date(?) "
+        f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
+        f"ORDER BY created_at DESC, id DESC LIMIT 1",
         (household_id(), today, today),
     ).fetchone()
     if plan:
         return plan
     return conn.execute(
-        "SELECT * FROM weekly_plans WHERE household_id = ? ORDER BY created_at DESC, id DESC LIMIT 1",
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        "ORDER BY created_at DESC, id DESC LIMIT 1",
         (household_id(),),
     ).fetchone()
 
@@ -816,13 +1230,37 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     # Computed here rather than stored, so it stays correct even if rows are
     # edited later; falls back to week_start_date for a plan with no meals
     # yet, which reproduces the pre-part-week behaviour exactly.
-    first_planned_date = min((m["date"] for m in meal_dicts), default=plan["week_start_date"])
+    #
+    # Since Loop Board "Planning periods, not weeks" the plan usually KNOWS
+    # its own first day, and a stored answer beats a derived one: a plan
+    # whose opening days are all `planned_empty` has rows for them, so the
+    # derivation was only ever right because part-weeks wrote no rows at all
+    # for the days before they began. The min() stays as the fallback for
+    # every plan written before periods existed, unchanged.
+    period_start, period_day_count = plan_period(plan)
+    first_planned_date = (
+        plan["content_start_date"]
+        or min((m["date"] for m in meal_dicts), default=plan["week_start_date"])
+    )
 
     result = {
         "weekly_plan_id": plan["id"],
         "week_start_date": plan["week_start_date"],
+        # The period, as the one honest answer to "which days is this plan
+        # for". week_start_date above stays what it has always been: the
+        # filing key every /api/week/{...} route is addressed by.
+        "period_start_date": period_start,
+        "day_count": period_day_count,
+        "period_end_date": period_end_date(period_start, period_day_count),
+        "period_label": _format_period_range(period_start, period_day_count),
+        # True for anything that isn't a plain seven days — a mid-week
+        # onboarding part-week, a Thursday-to-Thursday period, a three-day
+        # window. Named for the shape rather than for one cause of it.
+        "is_custom_period": period_day_count != 7 or period_start != plan["week_start_date"],
         "first_planned_date": first_planned_date,
         "is_part_week": first_planned_date != plan["week_start_date"],
+        "status_is_retired": plan["status"] == "retired",
+        "superseded": json.loads(plan["superseded_json"]) if plan["superseded_json"] else None,
         "status": plan["status"],
         # Who said yes to this week and when — the approved receipt's own
         # two fields. Blank/None while the plan is still a draft.
@@ -851,7 +1289,9 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         # view) even though component_based plans have no fixed day
         # mapping underneath — menu_is_suggested tells the caller this is
         # one example arrangement, not something actually planned/tracked.
-        result["suggested_schedule"] = _build_suggested_schedule(result["components"], plan["week_start_date"])
+        result["suggested_schedule"] = _build_suggested_schedule(
+            result["components"], period_start, days=period_day_count,
+        )
         result["menu"] = result["suggested_schedule"]
         result["menu_is_suggested"] = True
     else:
@@ -861,9 +1301,48 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     return result
 
 
+def _menu_dates(plan: dict) -> list[str]:
+    """
+    The days the Meals screen draws for a plan: its period, plus any filing
+    days that run ahead of it.
+
+    Three shapes, and the second is the reason this isn't just the period:
+
+    - An ordinary Monday week — period start == week_start_date, 7 days —
+      gives the same seven dates the old `range(7)` loop gave. Byte-identical,
+      which is the property the no-op test pins.
+    - A part-week filed under its Monday (onboarding Wednesday: filed Monday,
+      content Wed, 5 days) gives all seven days again, with Monday and
+      Tuesday carrying `before_plan_start: True` — the flag exists precisely
+      so the grid can grey days that have already gone by rather than show
+      three blank slots that look like an unplanned day. Dropping them to
+      show only the period would have thrown that distinction away.
+    - A custom period (Thursday to next Thursday, filed under the Thursday)
+      gives its own eight days and nothing else. There is no lead-in,
+      because the filing key IS the period start.
+
+    The lead-in is bounded by the period start, never by a fixed seven, so a
+    period that begins long after its filing key cannot generate an
+    unbounded run of empty days.
+    """
+    # Reads get_weekly_plan's already-resolved period fields rather than
+    # calling plan_period again: this is handed that function's RESULT, not a
+    # database row, and the result carries no `content_start_date` for
+    # plan_period to find — it would have quietly resolved every part-week's
+    # start back to its filing Monday and drawn two days of ghost slots.
+    period_start = plan["period_start_date"]
+    day_count = plan["day_count"]
+    week_start = plan["week_start_date"]
+    lead_in = []
+    if period_start > week_start:
+        span = (date.fromisoformat(period_start) - date.fromisoformat(week_start)).days
+        lead_in = _week_intake.period_dates(week_start, span)
+    return lead_in + _week_intake.period_dates(period_start, day_count)
+
+
 def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     """
-    The always-7-day weekly menu for the Week tab (design_handoff_shell/
+    The weekly menu for the Week tab (design_handoff_shell/
     README.md §5) — the "one backend ask" for that redesign. Unlike
     get_weekly_plan's `menu` (which only lists dates that already have at
     least one entry), this always returns exactly 7 days starting at the
@@ -940,8 +1419,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     ] if approver else []
 
     slots = ("breakfast", "lunch", "dinner")
-    start = date.fromisoformat(plan["week_start_date"])
-    dates = [(start + timedelta(days=i)).isoformat() for i in range(7)]
+    dates = _menu_dates(plan)
 
     if plan["planning_mode"] == "component_based":
         by_date = {d["date"]: d for d in plan["menu"]}
@@ -972,6 +1450,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         return {
             "weekly_plan_id": plan["weekly_plan_id"],
             "week_start_date": plan["week_start_date"],
+            "period_start_date": plan["period_start_date"],
+            "period_end_date": plan["period_end_date"],
+            "day_count": plan["day_count"],
+            "is_custom_period": plan["is_custom_period"],
             "household_name": household_name,
             "days": days,
             "menu_is_suggested": True,
@@ -1034,9 +1516,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         if r["slot"] in slots:
             by_date_slot[(r["date"], r["slot"])] = build_slot(r)
 
-    # This function always returns exactly 7 days from week_start_date
-    # (the Monday filing key) even for a genuine part-week, on purpose —
-    # the Week tab renders a fixed-size grid from this array. But a
+    # The day list is the plan's period plus any filing days ahead of it —
+    # see _menu_dates, which keeps an ordinary week at exactly the seven days
+    # this used to hard-code and a part-week at the same seven it did. But a
     # part-week's earlier days never got any rows at all (see
     # get_weekly_plan's first_planned_date), so all three of their slots
     # would otherwise be indistinguishable None from an ordinary day
@@ -1045,7 +1527,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # than guess from three blank slots what they mean. False for every
     # plan that isn't a part-week (the overwhelming majority), which
     # reproduces the exact previous shape of this response.
-    content_start = min((r["date"] for r in rows), default=plan["week_start_date"])
+    content_start = plan["period_start_date"]
     days = [
         {"date": d, "before_plan_start": d < content_start, **{s: by_date_slot.get((d, s)) for s in slots}}
         for d in dates
@@ -1070,7 +1552,14 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
         "week_start_date": plan["week_start_date"],
-        "week_label": _format_week_range(plan["week_start_date"]),
+        # The eyebrow names the days the household actually chose, not the
+        # seven the filing key implies — "Sep 10–17" for a Thursday-to-
+        # Thursday period, still "Sep 7–13" for an ordinary week.
+        "week_label": _format_period_range(plan["period_start_date"], plan["day_count"]),
+        "period_start_date": plan["period_start_date"],
+        "period_end_date": plan["period_end_date"],
+        "day_count": plan["day_count"],
+        "is_custom_period": plan["is_custom_period"],
         "household_name": household_name,
         "days": days,
         "menu_is_suggested": False,
@@ -1095,12 +1584,22 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
 
     Only decorates; a slot with nothing unusual is left exactly as it was,
     so every existing consumer of this payload is unaffected.
+
+    The lookup window is taken from `days` itself rather than from a fixed
+    seven, because `days` is now a planning period and can be longer (Loop
+    Board "Planning periods, not weeks"). Fetching seven days of needs for
+    an eight-day period would have left the last day silently undecorated —
+    an away night rendering as an ordinary empty slot, which is the one
+    difference this decoration exists to make visible. `week_start` is still
+    the filing key and still the fallback for an empty day list.
     """
     from . import slot_needs as _slot_needs
     from . import attendance as _attendance
 
-    needs = _slot_needs.get_week_slot_needs(week_start)
-    attendance = _attendance.get_week_attendance(week_start)
+    window_start = days[0]["date"] if days else week_start
+    window_days = len(days) or 7
+    needs = _slot_needs.get_week_slot_needs(window_start, window_days)
+    attendance = _attendance.get_week_attendance(window_start, window_days)
     away_dates: list[str] = []
 
     for day in days:

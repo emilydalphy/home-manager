@@ -104,9 +104,12 @@ def _plan_id_for_date(conn, meal_date: str, slot: str) -> int | None:
     ).fetchone()
     if row and row["weekly_plan_id"]:
         return row["weekly_plan_id"]
-    d = date.fromisoformat(meal_date)
-    monday = (d - timedelta(days=d.weekday())).isoformat()
-    return _weekly_plan.get_plan_id_for_week(monday)
+    # Asks which plan's PERIOD contains this day rather than snapping the
+    # day back to a Monday and hoping a plan is filed there — a
+    # Thursday-to-Thursday period is filed under its own Thursday, so the
+    # snap would have reported every one of its days unplanned. The Monday
+    # lookup survives inside that helper as the fallback.
+    return _weekly_plan.get_plan_id_for_date(meal_date)
 
 
 def set_slot_need(
@@ -274,15 +277,20 @@ def get_slot_need(date_str: str, slot: str) -> dict:
     return _row_to_dict(row)
 
 
-def get_week_slot_needs(week_start: str) -> dict:
+def get_week_slot_needs(week_start: str, day_count: int = 7) -> dict:
     """
-    Every declared (non-'normal') slot need for the 7 days starting
+    Every declared (non-'normal') slot need for the `day_count` days starting
     week_start, as {date: {slot: need_dict}}. A day/slot with nothing
     declared simply doesn't appear — same "absence means normal"
     convention the row itself follows.
+
+    day_count defaults to 7, so every existing caller asks exactly the
+    question it always asked. It exists because a planning period is no
+    longer always a week (Loop Board "Planning periods, not weeks") and the
+    seven was hard-coded into the range below.
     """
     start = date.fromisoformat(week_start)
-    week_end = (start + timedelta(days=7)).isoformat()
+    week_end = (start + timedelta(days=max(0, day_count))).isoformat()
     conn = get_conn()
     rows = conn.execute(
         "SELECT * FROM slot_needs WHERE household_id = ? AND date >= ? AND date < ?",
@@ -799,8 +807,11 @@ def apply_slot_needs_to_plan(plan_id: int, week_start_date: str, day_count: int 
     Returns a small summary rather than raising — a week that generated
     fine must not fail over enforcing a need on it.
     """
-    dates = _week_intake._week_dates(week_start_date)[:day_count]
-    needs = get_week_slot_needs(week_start_date)
+    # period_dates rather than a 7-day slice: a slice silently caps an
+    # 8-day Thursday-to-Thursday period at seven, so its last day would
+    # be generated for but never have its needs enforced.
+    dates = _week_intake.period_dates(week_start_date, day_count)
+    needs = get_week_slot_needs(week_start_date, day_count)
     away_enforced = []
     ready_made_recommended = []
     for d in dates:
@@ -853,8 +864,11 @@ def generation_context_for_week(week_start_date: str, day_count: int = 7) -> dic
     intent as intake's skip_dinner_dates but not limited to dinner (which
     skip_dinner_dates structurally can't express).
     """
-    dates = _week_intake._week_dates(week_start_date)[:day_count]
-    needs = get_week_slot_needs(week_start_date)
+    # period_dates rather than a 7-day slice: a slice silently caps an
+    # 8-day Thursday-to-Thursday period at seven, so its last day would
+    # be generated for but never have its needs enforced.
+    dates = _week_intake.period_dates(week_start_date, day_count)
+    needs = get_week_slot_needs(week_start_date, day_count)
     away, quick, ready_made = [], [], []
     for d in dates:
         for slot, info in (needs.get(d) or {}).items():

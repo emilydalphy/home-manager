@@ -193,10 +193,29 @@ def get_recent_meal_history(weeks: int = 3) -> list[dict]:
     ]
 
 
-def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dict:
+def create_weekly_plan(
+    week_start_date: str,
+    constraints_notes: str = "",
+    content_start_date: str = "",
+    day_count: int = 0,
+) -> dict:
     """
     Start a new weekly plan — a reviewable batch of meals for a week,
     rather than meals living only as scattered chat-planned entries.
+
+    content_start_date and day_count record the PERIOD this plan covers
+    (Loop Board "Planning periods, not weeks"). Left unset they keep their
+    sentinel meaning — seven days from week_start_date — so every existing
+    caller creates exactly the row it always did. generate_weekly_plan sets
+    them explicitly for every plan it makes, including ordinary full weeks,
+    because a period that is written down can be reasoned about and a period
+    that is merely implied cannot.
+
+    Creating a plan does NOT take days over from an existing one. The
+    one-plan-per-day rule is enforced in generate_weekly_plan, after the
+    generation has actually succeeded — retiring a household's real week in
+    favour of an empty shell that a failed model call then rolls back would
+    destroy a plan to make room for nothing. See retire_overlapping_plans.
     constraints_notes is freeform per-week context (e.g. "out Thu/Fri,
     keep it under 30 min on weeknights"). Snapshots the household's current
     planning_mode (day_based/component_based, see set_planning_mode) onto
@@ -220,8 +239,12 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     ).fetchone()["n"]
     is_first_plan = existing_plan_count == 0
     cur = conn.execute(
-        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes, planning_mode, is_first_plan) VALUES (?, ?, ?, ?, ?)",
-        (household_id(), week_start_date, constraints_notes, planning_mode, int(is_first_plan)),
+        "INSERT INTO weekly_plans (household_id, week_start_date, constraints_notes, planning_mode, is_first_plan, "
+        "content_start_date, day_count) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            household_id(), week_start_date, constraints_notes, planning_mode, int(is_first_plan),
+            content_start_date or "", max(0, day_count),
+        ),
     )
     conn.commit()
     plan_id = cur.lastrowid
@@ -229,6 +252,8 @@ def create_weekly_plan(week_start_date: str, constraints_notes: str = "") -> dic
     return {
         "weekly_plan_id": plan_id,
         "week_start_date": week_start_date,
+        "content_start_date": content_start_date or week_start_date,
+        "day_count": day_count if day_count > 0 else 7,
         "status": "draft",
         "planning_mode": planning_mode,
         "is_first_plan": is_first_plan,

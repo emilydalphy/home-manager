@@ -2699,7 +2699,9 @@ def _rhythm_only_generation_context(week_start_date: str, day_count: int = 7) ->
     guidance for dates it was never asked to plan.
     """
     suggestions = tools._rhythm_packed_lunch_suggestions(week_start_date)
-    in_scope = set(tools._week_dates(week_start_date)[:day_count])
+    # period_dates, not a 7-day slice: for a period longer than a week the
+    # slice would silently drop the days past the seventh from scope.
+    in_scope = set(tools.period_dates(week_start_date, day_count))
     packed_days = sorted(s["date"] for s in suggestions if s["suggested_packed"] and s["date"] in in_scope)
     if not packed_days:
         return None
@@ -2760,6 +2762,7 @@ def generate_weekly_plan(
     day_count: int = 7,
     intake_id: int | None = None,
     skip_days: int = 0,
+    period_start: str | None = None,
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass. See
@@ -2788,9 +2791,19 @@ def generate_weekly_plan(
     skip_days=2, day_count=5, and gets a plan filed correctly under Monday
     whose meals actually run Wednesday-Sunday — see
     _generate_weekly_plan's docstring for the mechanics.
+
+    period_start is the general form of that idea and the one to reach for
+    now (Loop Board "Planning periods, not weeks"): the first day of an
+    arbitrary planning window, which may sit anywhere relative to
+    week_start_date and whose day_count may carry it past that week's
+    Sunday. "Thursday to next Thursday" is week_start_date=the Thursday,
+    period_start=the same Thursday, day_count=8. skip_days is kept because
+    onboarding still speaks it and it means something slightly different —
+    an offset INTO the filing week — but the two must not be combined; see
+    _generate_weekly_plan.
     """
     key = (tools.household_id(), _week_lock_key(week_start_date))
-    signature = (constraints_notes, day_count, intake_id, skip_days)
+    signature = (constraints_notes, day_count, intake_id, skip_days, period_start)
     lock = _week_generation_lock(key)
     # Read before blocking, so "did a generation finish while I waited"
     # can be answered by comparison rather than by guessing.
@@ -2814,6 +2827,7 @@ def generate_weekly_plan(
             day_count=day_count,
             intake_id=intake_id,
             skip_days=skip_days,
+            period_start=period_start,
         )
         _WEEK_GENERATION_RESULTS[key] = {
             "seq": _WEEK_GENERATION_RESULTS.get(key, {}).get("seq", 0) + 1,
@@ -3018,6 +3032,7 @@ def _generate_weekly_plan(
     day_count: int = 7,
     intake_id: int | None = None,
     skip_days: int = 0,
+    period_start: str | None = None,
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass: gathers current
@@ -3053,13 +3068,42 @@ def _generate_weekly_plan(
     runs Wednesday through Sunday, which is real generation work for those
     5 days, not a placeholder.
 
+    period_start generalises skip_days to any window (Loop Board "Planning
+    periods, not weeks"). Where skip_days can only say "start N days into
+    the filing week", period_start names the first day outright and
+    day_count may run past that week's Sunday — Thursday to next Thursday
+    is period_start=the Thursday with day_count=8. The two say overlapping
+    things, so passing both is refused rather than silently resolved: a
+    caller that means one of them and passes the other would otherwise get
+    a plan quietly generated for different days than it asked for.
+
     The intake/rhythm lookups below still use the real week_start_date
     (Monday) — a week's intake answers ("out Thu/Fri", guest counts) belong
     to the real calendar week regardless of which day content starts on.
     Only the actual generation window (what gets sent to the model, what
     gets audited, what attendance/slot-needs context gets built) is shifted
     to the content start date.
+
+    Once the plan is fully written, any OTHER plan holding days inside this
+    period is retired from those days and its grocery contributions for them
+    reversed — the one-plan-per-day rule (Emily, 2026-09-04). That runs at
+    the very end, after generation has actually succeeded, for the same
+    reason the weekly_plans row is created late: a household's real week must
+    not be dismantled to make room for a generation that then fails and rolls
+    back. See tools.retire_overlapping_plans.
     """
+    if period_start and skip_days:
+        raise ValueError(
+            "Pass either period_start or skip_days, not both — they are two ways of saying "
+            "where a plan's content begins, and combining them would generate for days "
+            "neither caller asked for."
+        )
+    if day_count < 1 or day_count > tools.MAX_PERIOD_DAYS:
+        raise ValueError(
+            f"day_count must be between 1 and {tools.MAX_PERIOD_DAYS} days, not {day_count}."
+        )
+    if period_start:
+        datetime.date.fromisoformat(period_start)
     household_memory = tools.get_household_memory()
     if intake_id is not None:
         intake = next(
@@ -3072,9 +3116,9 @@ def _generate_weekly_plan(
         intake = tools.get_week_intake(week_start_date)
 
     # The actual first day content is generated for. Equal to week_start_date
-    # itself when skip_days is 0 (every non-onboarding caller), so this is a
-    # no-op for the whole rest of the app.
-    content_start_date = (
+    # itself when neither period_start nor skip_days is given (every
+    # pre-period caller), so this is a no-op for the whole rest of the app.
+    content_start_date = period_start or (
         tools._week_dates(week_start_date)[skip_days] if skip_days else week_start_date
     )
 
@@ -3157,7 +3201,19 @@ def _generate_weekly_plan(
             "have been cut off or hit an error. Nothing was saved; try generating the week again."
         )
 
-    plan = tools.create_weekly_plan(week_start_date, constraints_notes=constraints_notes)
+    # The period is written down, not left implied — including for an
+    # ordinary Monday week, where content_start_date == week_start_date and
+    # day_count == 7. Storing it even when it matches the old default is what
+    # lets every reader ask the plan which days it covers instead of
+    # re-deriving an answer from the filing key, which is exactly the
+    # re-derivation that made "the Monday week" an assumption in thirteen
+    # places rather than a fact in one.
+    plan = tools.create_weekly_plan(
+        week_start_date,
+        constraints_notes=constraints_notes,
+        content_start_date=content_start_date,
+        day_count=day_count,
+    )
     plan_id = plan["weekly_plan_id"]
 
     # Everything from here on is the plan's actual content. If any of it
@@ -3272,8 +3328,38 @@ def _generate_weekly_plan(
         # deferring it costs nothing.
         tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
 
+        # One plan per day (Emily, 2026-09-04). Any other plan holding days
+        # inside this period gives them up now: its meals for those days go,
+        # and whatever they put on the shopping list comes back off unless
+        # it has already been bought.
+        #
+        # LAST, and inside the try, for two separate reasons. Last, because
+        # this is the only step that destroys another plan's content and it
+        # must not run for a generation that then fails — the plan being
+        # replaced is a real week the household may still be cooking from.
+        # Inside the try, because if it throws, the half-built new plan is
+        # rolled back too rather than being left as a second claimant on
+        # days the old plan still holds.
+        takeover = tools.retire_overlapping_plans(
+            plan_id, content_start_date, day_count,
+        )
+        if takeover["retired_plan_ids"]:
+            logger.info(
+                "Plan %s (%s for %d days) took over %d day(s) from plan(s) %s; "
+                "%d grocery line(s) removed, %d trimmed, %d left alone as already bought",
+                plan_id, content_start_date, day_count, len(takeover["surrendered_dates"]),
+                takeover["retired_plan_ids"], len(takeover["grocery_removed"]),
+                len(takeover["grocery_trimmed"]), len(takeover["grocery_kept_bought"]),
+            )
+
         completed = True
-        return tools.get_weekly_plan(plan_id)
+        result = tools.get_weekly_plan(plan_id)
+        # What the household is owed an explanation for. Carried on the plan
+        # payload rather than logged only, because "your Thursday plan
+        # replaced four days of last week's" is a thing that happened TO
+        # their shopping list, and a screen can only say so if it is told.
+        result["took_over"] = takeover
+        return result
     finally:
         if not completed:
             # discard_failed_plan swallows its own errors, but this second
@@ -3328,7 +3414,12 @@ def _finish_week_slots(
        that the app couldn't settle it rather than inventing a constraint
        it didn't have.
     """
-    dates = tools._week_dates(week_start_date)[:day_count]
+    # The period's real days. `_week_dates(...)[:day_count]` capped at seven,
+    # so an 8-day period's last day never got its `out` tag honoured, never
+    # had a zero-count category emptied, and never got audited into an open
+    # slot — it would simply have been missing, which is the one thing the
+    # 21-slot guarantee exists to make impossible.
+    dates = tools.period_dates(week_start_date, day_count)
     night_tags = (intake or {}).get("night_tags") or {}
     for day, tags in night_tags.items():
         if "out" not in tags or day not in dates:
