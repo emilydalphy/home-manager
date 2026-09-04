@@ -327,7 +327,7 @@
             '<div class="ask-messages" id="today-ask-messages"></div>' +
             '<div class="ask-chips" id="today-ask-chips"></div>' +
             '<form id="today-ask-composer" class="ask-composer-bar">' +
-              '<input id="today-ask-input" class="ask-composer-input" type="text" placeholder="The more you tell me, the less you&rsquo;ll swap&hellip;" autocomplete="off" />' +
+              '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="The more you tell me, the less you&rsquo;ll swap&hellip;" autocomplete="off"></textarea>' +
               '<button type="button" id="today-ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">' +
                 '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>' +
               '</button>' +
@@ -5669,12 +5669,39 @@
     return window.matchMedia('(min-width: 1024px)').matches && !!document.getElementById('today-ask-input');
   }
 
+  // ---------- Composer auto-grow (Loop Board: "Chat composer should grow
+  // with your message") ----------
+  // #ask-input/#today-ask-input were fixed one-line <input>s — anything
+  // longer than a sentence scrolled out of view while typing. Both are now
+  // <textarea>s that grow with what's typed, up to ~4-5 lines
+  // (ASK_COMPOSER_MAX_HEIGHT, mirrored in shell.css's .ask-composer-input
+  // max-height), then scroll internally instead of growing further. One
+  // function serves both composer instances since they share markup/CSS.
+  //
+  // dataset.baseHeight caches each textarea's own single-empty-line height
+  // (captured the first time this runs, via the empty-value setup call
+  // right after each composer is wired below) — that is what lets
+  // .is-grown mean "has actually grown past one line" rather than firing
+  // on every keystroke regardless of height.
+  var ASK_COMPOSER_MAX_HEIGHT = 128; // px — keep in sync with shell.css's .ask-composer-input max-height
+  function autoGrowAskInput(textarea) {
+    if (!textarea) return;
+    if (textarea.dataset.baseHeight === undefined) textarea.dataset.baseHeight = textarea.scrollHeight;
+    textarea.style.height = 'auto'; // shrink first so scrollHeight reflects the current value, not the old height
+    var next = Math.min(textarea.scrollHeight, ASK_COMPOSER_MAX_HEIGHT);
+    textarea.style.height = next + 'px';
+    textarea.style.overflowY = textarea.scrollHeight > ASK_COMPOSER_MAX_HEIGHT ? 'auto' : 'hidden';
+    var bar = textarea.closest('.ask-composer-bar');
+    if (bar) bar.classList.toggle('is-grown', next > Number(textarea.dataset.baseHeight) + 2);
+  }
+
   function openAskSheet(prefill) {
     ensureAskSheetBuilt();
     closeWeekSheet();
     if (isDesktopAsk()) {
       var col = document.getElementById('today-ask-input');
       if (prefill) col.value = prefill;
+      autoGrowAskInput(col);
       col.focus();
       return;
     }
@@ -5682,6 +5709,7 @@
     askSheet.hidden = false;
     if (prefill) {
       askInput.value = prefill;
+      autoGrowAskInput(askInput);
       askInput.focus();
     } else {
       askInput.focus();
@@ -5694,13 +5722,25 @@
 
   askScrim.addEventListener('click', closeAskSheet);
   document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet);
+  // Enter-to-send is deliberately NOT wired here. #ask-input is the sheet
+  // used on phone widths and on any narrower/tablet window below the
+  // permanent desktop column's 1024px breakpoint (the same split this
+  // shell already draws everywhere else — e.g. isDesktopAsk() above,
+  // #ask-bar-dock's own breakpoint). On a touch keyboard, Enter/return
+  // inserting a newline (the textarea's native, un-intercepted behavior)
+  // is the least surprising choice — it's how every native mobile chat
+  // text field already behaves, and the always-visible send button is the
+  // one way to actually send. See setupAskColumn() below for the opposite,
+  // keyboard-first choice made for the desktop column.
   askComposer.addEventListener('submit', function (e) {
     e.preventDefault();
     var message = askInput.value.trim();
     if (!message) return;
     askInput.value = '';
+    autoGrowAskInput(askInput); // shrink back to one line
     sendAskMessage(message);
   });
+  askInput.addEventListener('input', function () { autoGrowAskInput(askInput); });
 
   // ---------- Voice dictation (restored per testing feedback) ----------
   // Ported from static/index.html's mic button, which the ask-sheet's
@@ -5741,6 +5781,7 @@
         }
         var spoken = (finalText + interimText).trim();
         input.value = dictationBaseValue ? (dictationBaseValue + ' ' + spoken) : spoken;
+        autoGrowAskInput(input); // dictation sets .value directly, which fires no 'input' event
       };
       recognition.onerror = function (e) {
         recognizing = false;
@@ -5792,6 +5833,7 @@
     }
   }
   setupDictation(askInput, document.getElementById('ask-mic-btn'));
+  autoGrowAskInput(askInput); // captures this textarea's own one-line height before anything can grow it
 
   // Wires up Today's permanent desktop Ask column (§7) — same
   // ensureAskSheetBuilt/sendAskMessage the sheet uses, just a second entry
@@ -5802,14 +5844,31 @@
     ensureAskSheetBuilt(); // populates greeting + chips into the column too, even before it's ever "opened"
     var composer = panel.querySelector('#today-ask-composer');
     var input = panel.querySelector('#today-ask-input');
-    composer.addEventListener('submit', function (e) {
-      e.preventDefault();
+    function submitTodayAsk(e) {
+      if (e) e.preventDefault();
       var message = input.value.trim();
       if (!message) return;
       input.value = '';
+      autoGrowAskInput(input); // shrink back to one line
       sendAskMessage(message);
+    }
+    composer.addEventListener('submit', submitTodayAsk);
+    // Unlike the sheet's #ask-input (see the comment above its submit
+    // listener), this composer is desktop-only (isDesktopAsk() gates it to
+    // >=1024px, a permanent column rather than a sheet) — a keyboard-first
+    // surface where Enter-to-send, Shift+Enter-for-newline is the
+    // unsurprising choice (matches Slack/Discord/Linear, which this
+    // permanent panel visually resembles). e.isComposing guards an IME's
+    // Enter-to-confirm-a-candidate from also sending the message.
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        submitTodayAsk();
+      }
     });
+    input.addEventListener('input', function () { autoGrowAskInput(input); });
     setupDictation(input, panel.querySelector('#today-ask-mic-btn'));
+    autoGrowAskInput(input); // captures this textarea's own one-line height before anything can grow it
   }
 
   // ---------- Notifications (Phase 5 / NOTIFICATIONS.md) ----------
