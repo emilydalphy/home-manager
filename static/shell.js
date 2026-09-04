@@ -257,13 +257,17 @@
     // household that had scrolled down reading a day card before switching
     // away would return to that same scroll depth, with the review band
     // (now the first thing in the panel) sitting off-screen above them.
-    // Only fires on an actual tab switch into an already-built Meals panel
-    // with a live draft — never on the quiet background refreshes
+    // Only fires on an actual tab switch into an already-built Meals PLAN
+    // view with a live draft — never on the quiet background refreshes
     // loadWeekMenu does elsewhere (settling an open slot, a chat edit),
     // which per the nav rules must never jump the screen under someone's
-    // thumb. weekState is declared further down this file but already
-    // assigned by the time any tab click can reach here.
-    if (tab.week && panel.dataset.built && weekState.data &&
+    // thumb, and never on a Cook-view entry (opts.mealsView === 'cook',
+    // from Today's "Start cooking" or Meals' own "Cook this") — the review
+    // band doesn't exist in #week-cook-view, so jumping scroll there
+    // wouldn't reveal anything and isn't what this is for. weekState is
+    // declared further down this file but already assigned by the time
+    // any tab click can reach here.
+    if (tab.week && (!opts || opts.mealsView !== 'cook') && panel.dataset.built && weekState.data &&
         weekState.data.weekly_plan_id && weekState.data.status !== 'approved' && scrollEl) {
       scrollEl.scrollTop = 0;
     }
