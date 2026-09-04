@@ -1453,6 +1453,7 @@ html, body {
   /* The per-meal "Why this?" tap-to-reveal — stored reasoning stays out of
      the cell until asked for, same pattern as Cook's .cook-why. */
   .wg2-why {
+    position: relative;
     align-self: flex-start;
     display: inline-flex;
     align-items: center;
@@ -1467,6 +1468,10 @@ html, body {
     color: var(--apricot-label);
     cursor: pointer;
   }
+  /* Visually a small text link (it has to be, inside a compact grid tile),
+     but nothing tappable is under 44x44px — same invisible-hitbox trick
+     .cook-attn-btn already uses. */
+  .wg2-why::after { content: ''; position: absolute; inset: -15px -8px; }
   .wg2-why svg { width: 11px; height: 11px; flex: 0 0 auto; }
   .wg2-why-text {
     margin: 2px 0 0;
@@ -4447,6 +4452,10 @@ html, body {
      ground a dark tint is invisible; the same idea inverts to a light one. */
   .wg2-tile.is-today,
   .wg2-dinner-tile.is-today { background: rgba(246, 238, 225, .07); }
+  .wg2-tile.is-today.wg2-tile-open:hover,
+  .wg2-tile.is-today.wg2-tile-empty:hover,
+  .wg2-dinner-tile.is-today.wg2-tile-open:hover,
+  .wg2-dinner-tile.is-today.wg2-tile-empty:hover { background: rgba(246, 238, 225, .12); }
 
   /* --- Accent fills whose ink flips ---
      --urgent becomes a LIGHT accent on dark (see theme.css), so the ivory
