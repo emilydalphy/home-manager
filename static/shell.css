@@ -2437,6 +2437,20 @@ html, body {
   line-height: 1.45;
   color: var(--ink-secondary);
 }
+/* The review band's draft badge (Loop Board: "land on the review moment").
+   Same 10px/800/uppercase eyebrow shape as .week-receipt-eyebrow below,
+   apricot-label rather than celadon-label — apricot is "the accent that
+   acts" (DESIGN_SYSTEM §1), which is the point of this whole band: there's
+   a decision waiting, not a settled fact to read. Text only, no fill, so
+   it doesn't compete with .week-approve-btn as a second apricot surface
+   (Rule 5). */
+.week-review-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--apricot-label);
+}
 /* The one primary action on Meals (NavBlueprint §03). */
 .week-approve-btn {
   width: 100%;
@@ -2512,6 +2526,18 @@ html, body {
   cursor: pointer;
 }
 .week-reset-link:hover { color: var(--ink); border-bottom-color: var(--ink-secondary); }
+
+/* "or tweak it with me" — the review band's own quiet action, sharing
+   .week-reset-link's exact idiom (Newsreader italic, underline, muted ink)
+   rather than inventing a new visual language for "secondary text action
+   under a primary button." It isn't wrapped in .week-reset-row's centering
+   container here, so it gets its own 44px tap target (Rule 6). */
+.week-tweak-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   position: fixed;
