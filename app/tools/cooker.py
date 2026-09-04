@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from ..db import get_conn
 from ._shared import household_id, require_household_row
+from . import attendance as _attendance
 from . import attention as _attention
 from . import inventory as _inventory
 from . import quantities as _quantities
@@ -385,6 +386,28 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
         })
+
+    # Headcount for the focused cook-mode screen ("for 2 + 1 guest") — real
+    # only for a day-based plan, where date+slot name an actual meal someone
+    # is actually sitting down to. A component-based plan's date is a
+    # placeholder (see get_weekly_plan), so attendance there would answer a
+    # question nobody asked; leave it out rather than show a number that
+    # looks precise and means nothing.
+    for m in meals:
+        att = None
+        if plan["planning_mode"] != "component_based":
+            try:
+                slot_att = _attendance.get_slot_attendance(m["date"], m["slot"])
+                att = {
+                    "headcount": slot_att["headcount"],
+                    "present_count": len(slot_att["present_member_ids"]),
+                    "guest_count": slot_att["guest_count"],
+                    "absent_names": slot_att["absent_names"],
+                    "everyone_home": slot_att["everyone_home"],
+                }
+            except Exception:
+                att = None
+        m["attendance"] = att
 
     if plan["planning_mode"] == "component_based":
         # get_weekly_plan's meals are ordered by date/slot, which is
