@@ -49,7 +49,12 @@ def fake_week_generation(monkeypatch):
     whatever progress callback the streaming endpoint registered, then
     returns the plan the plain /generate-first-plan endpoint would."""
 
-    def fake(week_start, constraints_notes="", day_count=7, intake_id=None):
+    # **kwargs so this stub survives generate_weekly_plan growing a
+    # parameter (period_start arrived with planning periods). A stub that
+    # pins the exact signature turns every future argument into a
+    # TypeError inside a background thread, which surfaces as an unrelated
+    # timing assertion rather than as "the signature changed".
+    def fake(week_start, constraints_notes="", day_count=7, intake_id=None, **kwargs):
         on_item = agent._WEEK_GEN_PROGRESS.get(None)
         if on_item:
             on_item({"date": week_start, "slot": "dinner", "meal_name": "Chili"})

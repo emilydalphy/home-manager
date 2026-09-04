@@ -334,6 +334,7 @@ from .weekly_plan import (  # noqa: F401
     get_plan_id_for_date,
     find_overlapping_plans,
     retire_overlapping_plans,
+    suggest_planning_period,
     MAX_PERIOD_DAYS,
     _plan_grocery_candidate_entries,
     _suggest_quick_dinners,

@@ -1170,6 +1170,38 @@ class WeekIntakeRequest(BaseModel):
 class WeekGenerateRequest(BaseModel):
     intake_id: int | None = None
     constraints_notes: str = ""
+    # The planning period (Loop Board "Planning periods, not weeks"). Both
+    # default to the traditional shape: seven days beginning at the
+    # {week_start} in the path, which is exactly what every existing caller
+    # sends and gets. period_start is only needed when the content window
+    # starts somewhere other than the filing key, which the UI does not
+    # currently produce (it files a custom period under its own first day)
+    # but the API allows, since a plan's filing key and its first day are
+    # genuinely two different things.
+    day_count: int = 7
+    period_start: str | None = None
+
+
+def _validated_period(week_start: str, req: WeekGenerateRequest) -> tuple[str, int]:
+    """
+    The period a generate request is asking for, refused at the door if it
+    isn't one. Shared by the plain and streaming endpoints so a request the
+    JSON endpoint rejects can't be smuggled past the SSE one -- where the
+    same failure would arrive as an `error` frame after a 200 and a set of
+    headers, i.e. as a stream that starts fine and then says no.
+    """
+    try:
+        datetime.date.fromisoformat(week_start)
+        if req.period_start:
+            datetime.date.fromisoformat(req.period_start)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Dates must be ISO dates (YYYY-MM-DD).")
+    if req.day_count < 1 or req.day_count > tools.MAX_PERIOD_DAYS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.",
+        )
+    return (req.period_start or week_start), req.day_count
 
 
 def _plan_id_for_week(week_start: str) -> int:
@@ -1238,6 +1270,25 @@ def week_plan_nudge():
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.get("/api/week/planning-period")
+def week_planning_period():
+    """
+    Where this household's "this week" starts, and how long it runs — the
+    default the plan screen opens on.
+
+    A separate call rather than a field on the nudge because the permanent
+    "Plan a week" entry needs it too, and that entry is shown whether or not
+    the nudge is. Declared above the /api/week/{week_start}/... routes on
+    purpose: FastAPI matches in declaration order, and "planning-period"
+    would otherwise be swallowed as a {week_start} that isn't a date.
+    """
+    try:
+        return tools.suggest_planning_period()
+    except Exception as e:
+        logger.exception("Planning period suggestion failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/week/{week_start}/intake")
 def week_intake_prefill(week_start: str):
     """
@@ -1285,18 +1336,23 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
 @app.post("/api/week/{week_start}/generate")
 def generate_week(week_start: str, req: WeekGenerateRequest):
     """
-    Draft a week from the household's answers. Adds NOTHING to the grocery
+    Draft a period from the household's answers — seven days from
+    {week_start} unless the body says otherwise. Adds NOTHING to the grocery
     list — a draft is not a yes; approving is (see approve_week).
+
+    A period that overlaps an existing plan takes those days over (Emily's
+    one-plan-per-day rule); the response's `took_over` says what that cost
+    the shopping list, including which lines were left alone because
+    somebody had already bought them.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    period_start, day_count = _validated_period(week_start, req)
     try:
         plan = generate_weekly_plan(
             week_start,
             constraints_notes=req.constraints_notes,
             intake_id=req.intake_id,
+            day_count=day_count,
+            period_start=period_start,
         )
     except AssistantUnavailableError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -1331,7 +1387,10 @@ def _sse_event(event: str, data) -> str:
     return f"event: {event}\ndata: {json.dumps(jsonable_encoder(data))}\n\n"
 
 
-def _stream_week_generation(*, week_start: str, constraints_notes: str, intake_id):
+def _stream_week_generation(
+    *, week_start: str, constraints_notes: str, intake_id,
+    day_count: int = 7, period_start: str | None = None,
+):
     """
     Run generate_weekly_plan on a background thread and yield its progress
     as Server-Sent Events: an immediate "status" event (so the browser has
@@ -1363,6 +1422,7 @@ def _stream_week_generation(*, week_start: str, constraints_notes: str, intake_i
         try:
             plan = generate_weekly_plan(
                 week_start, constraints_notes=constraints_notes, intake_id=intake_id,
+                day_count=day_count, period_start=period_start,
             )
             events.put(("done", plan))
         except AssistantUnavailableError as e:
@@ -1399,14 +1459,17 @@ def generate_week_stream(week_start: str, req: WeekGenerateRequest):
     (never through either HTTP endpoint), so nothing else depends on
     /generate changing shape, and a caller with no interest in progress
     (a future integration, a script) can keep using the plain JSON one.
+
+    Streams a period of any length -- the per-day `day` events are emitted
+    by the generation itself, so nothing here counts to seven. The period is
+    validated BEFORE the StreamingResponse is constructed, so a bad request
+    is a plain 400 rather than a 200 whose body immediately says no.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    period_start, day_count = _validated_period(week_start, req)
     return StreamingResponse(
         _stream_week_generation(
             week_start=week_start, constraints_notes=req.constraints_notes, intake_id=req.intake_id,
+            day_count=day_count, period_start=period_start,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},

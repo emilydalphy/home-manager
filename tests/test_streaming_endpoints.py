@@ -53,7 +53,12 @@ def slow_week_generation(monkeypatch):
     """
     calls = []
 
-    def fake(week_start, constraints_notes="", day_count=7, intake_id=None):
+    # **kwargs so this stub survives generate_weekly_plan growing a
+    # parameter (period_start arrived with planning periods). A stub that
+    # pins the exact signature turns every future argument into a
+    # TypeError inside a background thread, which surfaces as an unrelated
+    # timing assertion rather than as "the signature changed".
+    def fake(week_start, constraints_notes="", day_count=7, intake_id=None, **kwargs):
         calls.append(week_start)
         on_item = agent._WEEK_GEN_PROGRESS.get(None)
         time.sleep(0.25)
@@ -126,7 +131,12 @@ def test_plan_week_stream_endpoint_returns_the_same_events_over_http(
 
 
 def test_plan_week_stream_surfaces_a_failure_as_an_error_event(monkeypatch, signed_in):
-    def fake(week_start, constraints_notes="", day_count=7, intake_id=None):
+    # **kwargs so this stub survives generate_weekly_plan growing a
+    # parameter (period_start arrived with planning periods). A stub that
+    # pins the exact signature turns every future argument into a
+    # TypeError inside a background thread, which surfaces as an unrelated
+    # timing assertion rather than as "the signature changed".
+    def fake(week_start, constraints_notes="", day_count=7, intake_id=None, **kwargs):
         raise ValueError("no meals came back")
 
     monkeypatch.setattr(main_module, "generate_weekly_plan", fake)

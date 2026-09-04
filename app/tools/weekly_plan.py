@@ -235,6 +235,77 @@ def get_meal_planning_preferences() -> dict:
     }
 
 
+def suggest_planning_period(from_date: str = "") -> dict:
+    """
+    The period the app offers by default — where "this week" starts for
+    THIS household, rather than where the calendar says a week starts.
+
+    Read from the rhythm the household already gave at onboarding
+    (household_rhythm.planning_anchor, "when do you want your week ready?"),
+    which until now was stored and acted on nowhere — its own setter says
+    so. It is a cadence, not a weekday, so the mapping is a judgment call
+    and is written here rather than inferred:
+
+    - 'sunday_before' — planned and shopped before the week begins. Their
+      week IS the Monday week; anchoring anywhere else would put the shop
+      in the middle of it. Monday-anchored, seven days. Also the answer for
+      a household that has never said (no rhythm on record), which is what
+      keeps this a no-op for everyone who predates it.
+    - 'midweek' and 'as_we_go' — households whose planning does not line up
+      with a Monday at all. Seven days from TODAY. For 'midweek' that is
+      the whole point; for 'as_we_go' a Monday anchor is the least
+      meaningful boundary there is, since nothing about their week begins
+      there.
+
+    This is a SUGGESTION and nothing more: it seeds the default on the plan
+    screen, and every one of its parts is overridable by picking a start
+    date and a length. The rule Pomona is actually defending is that the
+    household is never forced into a week they didn't choose — a default
+    that guesses better is not the same as a constraint that guesses less.
+    """
+    today = date.fromisoformat(from_date) if from_date else date.today()
+    anchor = (_rhythm_anchor() or "sunday_before")
+    if anchor == "sunday_before":
+        start = today - timedelta(days=today.weekday())
+    else:
+        start = today
+    return {
+        "start_date": start.isoformat(),
+        "day_count": 7,
+        "planning_anchor": anchor,
+        "label": _format_period_range(start.isoformat(), 7),
+        "is_monday_anchored": start.weekday() == 0,
+    }
+
+
+def _rhythm_anchor() -> str:
+    """
+    The household's stored planning_anchor, or '' if it has never answered.
+    Read straight from household_rhythm rather than through
+    get_household_rhythm, which assembles the whole six-fact picture (and
+    reaches into members) to answer a question about one string.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT value FROM household_rhythm WHERE household_id = ? AND fact_type = 'planning_anchor' "
+        "AND weekday = '' ORDER BY id DESC LIMIT 1",
+        (household_id(),),
+    ).fetchone()
+    conn.close()
+    return (row["value"] if row else "") or ""
+
+
+def _live_plan_covering(conn, day: str):
+    """The non-retired plan whose period contains `day`, or None."""
+    return conn.execute(
+        f"SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        f"AND date({_SQL_PERIOD_START}) <= date(?) "
+        f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
+        f"ORDER BY created_at DESC, id DESC LIMIT 1",
+        (household_id(), day, day),
+    ).fetchone()
+
+
 def get_week_planning_nudge() -> dict:
     """
     Whether to offer to plan a week, and which one — the Sunday nudge on
@@ -262,23 +333,45 @@ def get_week_planning_nudge() -> dict:
     """
     today = date.today()
     this_monday = today - timedelta(days=today.weekday())
-    next_monday = this_monday + timedelta(days=7)
+    suggestion = suggest_planning_period()
 
     conn = get_conn()
     dismissed = _notifications._dismissed_keys(conn)
-    planned = {
+    covering = _live_plan_covering(conn, today.isoformat())
+    planned_week_keys = {
         row["week_start_date"]
         for row in conn.execute(
-            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ?", (household_id(),)
+            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ? AND status != 'retired'",
+            (household_id(),),
         ).fetchall()
     }
     conn.close()
 
     target = None
-    if this_monday.isoformat() not in planned:
-        target = this_monday
-    elif today.weekday() >= 5 and next_monday.isoformat() not in planned:
-        target = next_monday
+    target_days = suggestion["day_count"]
+    is_current = False
+    if covering is None and this_monday.isoformat() not in planned_week_keys:
+        # Nothing covers today. The filing-key half of that test is what
+        # keeps a part-week honest: a plan filed under this Monday whose
+        # content deliberately starts on the Wednesday the household joined
+        # has NOT left Monday unplanned in any sense worth nudging about —
+        # those days went by before the household existed here. Without it,
+        # every mid-week onboarding would be met by an immediate offer to
+        # re-plan the week it had just been given.
+        target, is_current = date.fromisoformat(suggestion["start_date"]), True
+    elif covering is not None:
+        # The generalisation of "from Saturday onward, offer next week".
+        # A period ends on some day E; the offer opens two days before E,
+        # which for a Monday-to-Sunday week is exactly Saturday — the same
+        # day, for the same reason (this nudge is only ever seen when the
+        # app is opened, so it has to be early enough to be seen at all).
+        # Now it is right for a period of any length or start.
+        cover_start, cover_days = plan_period(covering)
+        cover_end = date.fromisoformat(period_end_date(cover_start, cover_days))
+        if (cover_end - today).days <= 1:
+            following = cover_end + timedelta(days=1)
+            if _plan_covers_any(following.isoformat(), target_days) is None:
+                target = following
 
     if target is None:
         return {"show": False, "week_start": None}
@@ -288,10 +381,23 @@ def get_week_planning_nudge() -> dict:
     return {
         "show": True,
         "week_start": week_start,
-        "week_label": _format_week_range(week_start),
-        "is_current_week": target == this_monday,
+        "week_label": _format_period_range(week_start, target_days),
+        "day_count": target_days,
+        "is_current_week": is_current,
         "dismiss_key": f"plan_week_nudge:{week_start}",
     }
+
+
+def _plan_covers_any(start_date: str, day_count: int) -> int | None:
+    """
+    The id of a live plan already holding any day of the given period, or
+    None. Used to stop the nudge offering a period the household has
+    already planned — the old test asked whether a plan was FILED under that
+    Monday, which a Thursday-to-Thursday period covering the same days is
+    not.
+    """
+    found = find_overlapping_plans(start_date, day_count)
+    return found[0]["weekly_plan_id"] if found else None
 
 
 def _week_headline(plan: dict, days: list[dict], intake: dict | None) -> str:
