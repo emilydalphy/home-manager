@@ -646,6 +646,11 @@ offer or remember to run generate_prep_schedule after planning a week. Use \
 get_prep_schedule/get_plan_progress to answer "what do I need to prep" or "what's left to cook \
 this week." Only call generate_prep_schedule yourself if the household changed the week's meals \
 afterwards and the schedule needs rebuilding, or they ask for it directly.
+- Defrost tasks (a freezer item that needs to move to the fridge ahead of a meal) are computed \
+separately and automatically alongside every generated plan — no model call, no gate, they're \
+always current. For "what do I need to defrost?" or similar, use get_defrost_schedule rather than \
+filtering get_prep_schedule yourself; it already reads more naturally and covers a confirmed \
+ready_made recommendation's defrost too.
 - Use check_off_meal and check_off_prep_step the moment the user says something's done ("just \
 made the stir fry," "marinated the chicken") — don't just acknowledge in text.
 - If the user mentions cooking something differently than the recipe said (a swap, a skipped/ \
