@@ -2314,7 +2314,8 @@ html, body {
 .week-plan-btn-label { font-size: 15px; font-weight: 700; }
 .week-plan-btn-dates { font-size: 12px; font-weight: 400; opacity: .75; }
 @media (max-width: 520px) {
-  .week-plan-row { flex-wrap: wrap; }
+  /* .week-plan-row's flex-wrap moved out of this query and became
+     unconditional — the period picker below needs it at every width. */
   .week-plan-buttons { width: 100%; }
   .week-plan-row .week-plan-btn { flex: 1; align-items: center; }
 }
