@@ -207,8 +207,11 @@ from .quantities import (  # noqa: F401
 )
 from .recipes import (  # noqa: F401
     _add_recipe_ingredients_to_grocery_list,
+    _maybe_auto_attribute_solo_night,
     add_recipe,
+    attribute_recipe_feedback,
     flag_recipe_temporary,
+    get_member_taste,
     get_recipe,
     list_recipes,
     log_cooking_deviation,

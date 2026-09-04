@@ -1143,6 +1143,29 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "attribute_recipe_feedback",
+        "description": "Record which SPECIFIC household member a recipe's feedback belongs to — additive on top of mark_recipe_feedback's household-level rating, which stays as the fallback default for anyone without their own row here. Call the moment a rating comes with a name attached: either a fresh opinion ('Vineeth loved the skewers' — pass rating) or a correction to an existing household rating ('that was just my rating' — omit rating to reuse the recipe's current one). Powers per-person taste for solo-night suggestions and 'what does X like?' read-back (get_member_taste).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "recipe_name": {"type": "string"},
+                "member_name": {"type": "string"},
+                "rating": {"type": "string", "enum": ["liked", "disliked"], "description": "Omit only when correcting an existing household-level rating to belong to just this person — reuses that rating."},
+                "notes": {"type": "string"},
+            },
+            "required": ["recipe_name", "member_name"],
+        },
+    },
+    {
+        "name": "get_member_taste",
+        "description": "What's specifically known about ONE person's own taste (their per-person liked/disliked recipes), separate from the household's shared rating. Use to answer 'what does Vineeth like?' has_any_data=false means it's a cold start for this person — the household-level rating is what's actually governing their meals so far; say that plainly rather than implying more personal knowledge than exists.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"member_name": {"type": "string"}},
+            "required": ["member_name"],
+        },
+    },
+    {
         "name": "log_recipe_note",
         "description": "Log a one-off note about a specific time a recipe was made, WITHOUT changing its permanent rating — e.g. 'wasn't great with this cut of meat,' 'ran out of time to marinate.' A single bad experience shouldn't blacklist a recipe the way mark_recipe_feedback's 'disliked' rating does. Surfaced as a soft signal in future plan generation.",
         "input_schema": {
@@ -2147,6 +2170,21 @@ that suits that number, and write the ingredient quantities for that number. A d
 is not a family tray divided by four — it is the kind of thing a person actually makes for \
 themselves, and it's a chance to pick something that particular person likes. Say who it's for \
 in that slot's reasoning ("just you tonight — Vineeth's out").
+- Any slot in `attendance.slots_with_a_different_table` that also carries a `personal_context` \
+key is a genuine subset night (someone named in `away` isn't eating this meal at all) — lean \
+into what's actually known about the people who ARE there, not the household in general. For \
+each present person listed in `personal_context`, `dietary_restrictions` is THEIRS specifically \
+and is what actually applies to this one meal — an absent person's own restriction does not \
+need to be honored in a meal only being cooked for someone else (still honor it as always for \
+every slot where they're present, or any slot with no `personal_context` at all — this is a \
+narrow, per-slot loosening, not a change to the household's standing restrictions). Where a \
+present person also carries `liked_recipes`/`disliked_recipes`, favor their likes and avoid \
+their dislikes for that meal specifically, over the household's general rating where the two \
+would differ, and phrase the reasoning personally — "a you-night pick," or naming the actual \
+dish you know they love — rather than a generic "good dinner for one." A subset slot with NO \
+`personal_context` at all (or a present person missing from it) is a genuine cold start for \
+that person: fall back to the household's shared rating/dislikes exactly as normal, and don't \
+invent a personal reason that isn't backed by real data.
 - `slot_needs` carries the derived needs around a trip. Honour each one: \
 `slot_needs.away_slots` are meals nobody is home for — plan NOTHING for them (they are \
 enforced empty regardless, so anything you put there is discarded); `slot_needs.quick_slots` \
@@ -2803,6 +2841,49 @@ def _generate_prep_schedule_if_needed(plan: dict) -> bool:
         return False
 
 
+def _attach_personal_context_for_subset_slots(attendance_ctx: dict) -> None:
+    """
+    Attach per-present-person context (dietary restrictions, and any
+    per-person taste on record — see tools.get_member_taste) to every
+    subset-attendance slot, so generation can personalize a solo/subset
+    night instead of just shrinking the household's usual table.
+
+    Deliberately narrow: only a slot where someone is actually named in
+    `away` qualifies (a guests-only addition still has the whole regular
+    household at the table, so it isn't a "you-night" in the sense this
+    ticket means). Restrictions are attached for every present person on a
+    qualifying slot — that data already exists for everyone — but
+    liked/disliked recipes are only included for someone get_member_taste
+    actually has data for, so a person with no per-person history yet is
+    simply left out rather than padded with empty lists. That keeps cold
+    start honest: the instructions fall back to the household-level rating
+    for anyone (or any slot) not represented here, exactly as they always
+    have.
+
+    Never raises: this only enriches an already-built attendance context,
+    and a week that would otherwise generate fine must not fail just
+    because this optional personalization step couldn't be computed.
+    """
+    try:
+        qualifying_slots = [s for s in attendance_ctx.get("slots_with_a_different_table", []) if s.get("away")]
+        if not qualifying_slots:
+            return
+        restrictions_by_name = {m["name"]: m["dietary_restrictions"] for m in tools.list_members()}
+        for slot in qualifying_slots:
+            personal: dict = {}
+            for name in slot.get("present", []):
+                entry = {"dietary_restrictions": restrictions_by_name.get(name, [])}
+                taste = tools.get_member_taste(name)
+                if taste["has_any_data"]:
+                    entry["liked_recipes"] = taste["liked_recipes"]
+                    entry["disliked_recipes"] = taste["disliked_recipes"]
+                personal[name] = entry
+            if personal:
+                slot["personal_context"] = personal
+    except Exception:
+        logger.exception("Could not attach per-person taste context; generation continues with attendance alone")
+
+
 def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
@@ -2873,6 +2954,13 @@ def _generate_weekly_plan(
         # ordinary table appear — see attendance.context_for_week.
         "attendance": tools.attendance_context_for_week(week_start_date, day_count),
     }
+    # Loop Board "Per-person taste learning + solo-night personalization":
+    # enrich the subset-attendance slots above with what's actually known
+    # about the present people individually, so generation can lean into a
+    # solo/subset night's own taste instead of just a smaller version of
+    # the household's usual table. See the `personal_context` bullet in the
+    # instructions above for exactly how this is meant to be used.
+    _attach_personal_context_for_subset_slots(context["attendance"])
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
@@ -3551,6 +3639,8 @@ TOOL_FUNCTIONS = {
     "update_recipe_details": tools.update_recipe_details,
     "scale_recipe": tools.scale_recipe,
     "mark_recipe_feedback": tools.mark_recipe_feedback,
+    "attribute_recipe_feedback": tools.attribute_recipe_feedback,
+    "get_member_taste": tools.get_member_taste,
     "log_recipe_note": tools.log_recipe_note,
     "log_cooking_deviation": tools.log_cooking_deviation,
     "flag_recipe_temporary": tools.flag_recipe_temporary,

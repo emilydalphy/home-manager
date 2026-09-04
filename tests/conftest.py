@@ -36,7 +36,7 @@ _TABLES = [
     # before both.
     "slot_attendance", "slot_needs", "away_stretches", "household_rhythm",
     "meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "week_intake",
-    "grocery_items", "inventory_items", "recipe_notes", "recipes",
+    "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "facts",
     "preference_events", "notification_dismissals", "item_store_preferences",
