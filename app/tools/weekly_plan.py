@@ -396,7 +396,7 @@ def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     return {"weekly_plan_id": weekly_plan_id, "intake_id": intake_id}
 
 
-def audit_plan_slots(weekly_plan_id: int, day_count: int = 7) -> dict:
+def audit_plan_slots(weekly_plan_id: int, day_count: int = 7, skip_days: int = 0) -> dict:
     """
     Check a generated week against the one rule it can't be allowed to
     break: every slot exists, and each is planned, planned_empty, or open —
@@ -412,6 +412,17 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7) -> dict:
     generate_weekly_plan takes it as a parameter and chat can ask for a
     short week. Auditing a 5-day request against 7 days would invent
     questions about Saturday and Sunday nobody asked to have planned.
+
+    `skip_days` is the other half of that same idea, for a genuine
+    part-week (Loop Board "Build a real part-week for households who
+    onboard mid-week"): the plan is filed under this week's Monday
+    (week_start_date, read from the row below) regardless of which day its
+    content actually starts on, so a household onboarding on a Wednesday
+    is audited against days 2 through 6 of that week (Wed-Sun), not days 0
+    through 4 (Mon-Fri) — the days that have already gone by are simply
+    never in scope, not present, not missing, not asked about. Defaults to
+    0, which reproduces the exact previous behaviour for every ordinary
+    caller.
 
     Duplicates matter as much as gaps: two rows for one slot is how a night
     nobody is home ends up with groceries bought for it. They're reported
@@ -432,7 +443,7 @@ def audit_plan_slots(weekly_plan_id: int, day_count: int = 7) -> dict:
     ).fetchall()
     conn.close()
 
-    dates = _week_intake._week_dates(plan["week_start_date"])[:day_count]
+    dates = _week_intake._week_dates(plan["week_start_date"])[skip_days:skip_days + day_count]
     # Only the three real meals, and only within the days actually asked
     # for. Snacks ride along in the same table but aren't part of the
     # guarantee, and counting them made `present` exceed `expected` and
@@ -794,9 +805,24 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         for m in meals
     ]
 
+    # The plan's real first day of content, as opposed to week_start_date
+    # (always that week's Monday — the filing key every screen looks this
+    # plan up by, see tools.get_plan_id_for_week). For an ordinary
+    # full week these are the same date. For a genuine part-week (Loop
+    # Board "Build a real part-week for households who onboard mid-week"),
+    # generation never writes a row for a day before the household actually
+    # joined — no meal, no open question, nothing — so the earliest date
+    # actually on record IS the first day the household has anything to see.
+    # Computed here rather than stored, so it stays correct even if rows are
+    # edited later; falls back to week_start_date for a plan with no meals
+    # yet, which reproduces the pre-part-week behaviour exactly.
+    first_planned_date = min((m["date"] for m in meal_dicts), default=plan["week_start_date"])
+
     result = {
         "weekly_plan_id": plan["id"],
         "week_start_date": plan["week_start_date"],
+        "first_planned_date": first_planned_date,
+        "is_part_week": first_planned_date != plan["week_start_date"],
         "status": plan["status"],
         # Who said yes to this week and when — the approved receipt's own
         # two fields. Blank/None while the plan is still a draft.
@@ -924,7 +950,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         suggestions = None
         for d in dates:
             row = by_date.get(d, {})
-            day = {"date": d}
+            # component_based plans have no fixed day mapping and aren't
+            # part-week-aware yet (see the day-based branch below for the
+            # real field) — always False here so the key exists either way.
+            day = {"date": d, "before_plan_start": False}
             for s in slots:
                 title = row.get(s)
                 # `state` matters even here, where every slot is "planned"
@@ -1005,8 +1034,20 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         if r["slot"] in slots:
             by_date_slot[(r["date"], r["slot"])] = build_slot(r)
 
+    # This function always returns exactly 7 days from week_start_date
+    # (the Monday filing key) even for a genuine part-week, on purpose —
+    # the Week tab renders a fixed-size grid from this array. But a
+    # part-week's earlier days never got any rows at all (see
+    # get_weekly_plan's first_planned_date), so all three of their slots
+    # would otherwise be indistinguishable None from an ordinary day
+    # nobody's planned yet. before_plan_start names that difference
+    # explicitly, so the caller can choose to grey/hide those days rather
+    # than guess from three blank slots what they mean. False for every
+    # plan that isn't a part-week (the overwhelming majority), which
+    # reproduces the exact previous shape of this response.
+    content_start = min((r["date"] for r in rows), default=plan["week_start_date"])
     days = [
-        {"date": d, **{s: by_date_slot.get((d, s)) for s in slots}}
+        {"date": d, "before_plan_start": d < content_start, **{s: by_date_slot.get((d, s)) for s in slots}}
         for d in dates
     ]
 
