@@ -24,17 +24,49 @@ Railway, auto-deploying from `main` on push. Live at
 visual.** Tokens, hard rules, components, nav rules, voice, and who's allowed
 to change what are all there.
 
-## Current state (as of 2026-08-31)
+## Current state (as of 2026-09-04)
 
-`main` is live on Railway. The big recent change is the **Plan the Week**
-flow (PR #3), built from the handover package now in
-`design_handoff_plan_the_week/` — read that directory before touching
-weekly planning, approval, or the assistant's voice. Building a week is no
-longer an open-ended chat: it's a nudge, two question screens
-(`/plan-week`), a 21-slot draft on Meals, and an Approve button. There is
-also a revisitable setup screen at `/meal-setup`. If you're picking this
-repo up fresh, run `git log --oneline -15` to confirm this is still
-accurate.
+`main` is live on Railway. Everything the Decision log below describes as
+built has since **merged** — the entries were written on their branches and
+several still say "not merged" in their own headline; that is the state at
+the time of writing, not now. Specifically, all of these are on `main`:
+the Pomona rebrand and dark mode, the native Grocery and Kitchen screens
+(no tab is an iframe any more), multi-household, the `app/tools/` package
+split, the Plan the Week flow, household rhythm onboarding, per-person
+taste, the defrost flow, and streaming chat.
+
+The **Plan the Week** flow is still the shape of weekly planning: a nudge,
+two question screens (`/plan-week`), a 21-slot draft on Meals, and an
+Approve button, plus a revisitable setup screen at `/meal-setup`. Read
+`design_handoff_plan_the_week/` before touching weekly planning, approval,
+or the assistant's voice.
+
+The four native tabs are **Today / Meals / Grocery / Kitchen** (`TABS` in
+`static/shell.js`). Cooking is a *state* of the Meals tab, not its own tab.
+Chores have a working backend but no tab, and are deliberately hidden from
+the beta (`OFFER_CHORES_AFTER_REVEAL = false` in `static/onboarding.html`).
+
+If you're picking this repo up fresh, run `git log --oneline -15` to confirm
+this is still accurate.
+
+**Known live bug at the time of writing:** `/api/chat/stream` crashes on any
+chat turn that returns an action card — `_sse_event` serialises a pydantic
+`ChatAction` with plain `json.dumps` (`jsonable_encoder` appears nowhere in
+`app/`). Reproduced on `main` 2026-09-04.
+
+Note the symptom carefully, because it is worse than "chat writes don't
+work": the tool call and the database write **do** commit, and the crash
+happens afterwards while encoding the frame. So the change really happens
+while the screen says `Error: Request failed` — and `streamChatMessage` has
+no fallback to `/api/chat`, so that is all the user sees. It invites doing
+the thing twice.
+
+**No fix exists in this repository.** A fix was reportedly built in a
+worktree outside this repo (branch name `fix-chat-stream-actions`) and never
+pushed — it is not on `origin` and not in any local branch or worktree here,
+so don't go looking for it. The test gap that let this ship is real too:
+`tests/test_streaming_endpoints.py` stubs `summarize_chat_actions` to return
+`[]`, so no test ever puts a real `ChatAction` through the encoder.
 
 ## Working style established so far
 
@@ -208,8 +240,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **2026-09-02 — Dark mode. Branch `pomona-dark-mode` (not merged), which is
-  STACKED ON `pomona-kitchen-cooker` — merging it brings that slice too.**
+- **2026-09-02 — Dark mode. Branch `pomona-dark-mode` (MERGED; was stacked
+  on `pomona-kitchen-cooker`, which merged with it).**
   Pomona Stage 3, the last of the rebrand. `theme.css` gets one
   `@media (prefers-color-scheme: dark)` block redefining only the token
   custom properties; the app follows the OS and there is deliberately **no
@@ -251,15 +283,19 @@ why*, not duplicating the diff.
     `manifest.json` is deliberately unchanged — the manifest
     has no media-query form, so only the in-page `<meta name="theme-color">`
     tags vary by scheme, and they now do.
-  - **Known light-mode contrast failures found and deliberately NOT fixed**,
-    because this stage could not change light: the completed-chore tick is
+  - **Known light-mode contrast failures found and deliberately not fixed at
+    the time**, because this stage could not change light. **ALL FOUR HAVE
+    SINCE BEEN FIXED** on `main` (2026-09-03, `3fc55d6`, which also added
+    `tests/test_contrast.py`); `theme.css` now carries the measured
+    "Darkened 2026-09-03" ratios in place. The list below is history, not an
+    open to-do: the completed-chore tick is
     `#fff` on celadon (1.87:1 — the same Rule One class stage 1 fixed nine
     of and missed here), `--ink-done`/`--ink-done-soft` (2.80:1/1.85:1), and
     login's placeholder/helper (3.93:1/3.54:1). All are correct in dark.
     Each wants a one-line fix and Emily's nod; see the notes at each site.
 
 - **2026-09-02 — Kitchen is native too, cooking moved under Meals, and the
-  last iframe tab is gone. Branch `pomona-kitchen-cooker` (not merged).**
+  last iframe tab is gone. Branch `pomona-kitchen-cooker` (MERGED).**
   Pomona Stage 2 slice 3, built straight to InnKitchen/InnCooker. Two
   screens changed and one whole mechanism went with them.
   **The Kitchen tab is now a hub the shell draws** — a spruce hero carrying
@@ -342,7 +378,7 @@ why*, not duplicating the diff.
   tenure nothing exposes — inventing one would be inventing history.
 
 - **2026-09-02 — Grocery is a native shell panel, not an iframe, on the
-  branch `pomona-grocery-native` (not merged).** Pomona Stage 2 slice 2;
+  branch `pomona-grocery-native` (MERGED).** Pomona Stage 2 slice 2;
   built directly to the InnGrocery design rather than migrate-then-restyle.
   `static/grocery.html`'s four screens are four states of one panel — To
   buy / Plan stops / Review behind a segmented control, and shopping a
@@ -429,7 +465,7 @@ why*, not duplicating the diff.
   caught only by running it against a real server, which is why there is
   now a test pinning the script against the actual routes.
 - **2026-09-02 — The app is now Pomona, on the branch
-  `pomona-rebrand-foundation` (not yet merged). Stage 1 = foundation only,
+  `pomona-rebrand-foundation` (MERGED). Stage 1 = foundation only,
   no screen layouts touched.** The retired palette (Oat Cream / Midnight
   Violet / Turmeric Gold / Vivid Leaf / Electric Coral) is gone, replaced by
   the brand guide's spruce `#1B3328` / ivory `#FBF6EE` / apricot `#E0915C` /
@@ -466,7 +502,8 @@ why*, not duplicating the diff.
   palette on purpose (dead code, linked from nowhere).
 
 - **2026-09-01 — Multiple households, on the branch
-  `multi-household-beta` (not yet merged).** The friend beta needs her own
+  `multi-household-beta` — MERGED, now on `main`; the date above is when it
+  was built, not merged).** The friend beta needs her own
   household with her own data, so signing in now establishes *which*
   household a session is, rather than only that the caller is allowed in.
   Each household has one shared passphrase (`app/households.py`, PBKDF2
@@ -668,7 +705,7 @@ Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
   and the auth/multi-tenancy work it was blocking can start.
 - ~~**#9** — the shell's tabs are iframes; navigation workarounds are
   accumulating as a result.~~ **Done 2026-09-02** across two branches
-  (`pomona-grocery-native`, `pomona-kitchen-cooker`, neither merged) — no
+  (`pomona-grocery-native`, `pomona-kitchen-cooker`, both since merged) — no
   tab is an embedded page any more, and the workarounds it named
   (`forceEmbedSrc`, the `contentWindow.location.reload()` refresh path, the
   per-page back-link rewrites) are gone with them. One iframe remains by
@@ -679,7 +716,11 @@ Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
 - **#10** — no shared `api.js`; ~26 hand-written `fetch('/api/...')` call
   sites, and pages carry 30–60 KB of inline CSS/JS each that can't be
   cached separately from the page.
-- **#11** — three overlapping color vocabularies in `theme.css`.
+- ~~**#11** — three overlapping color vocabularies in `theme.css`.~~
+  **Done 2026-09-02** — closed by the Pomona rebrand pass (see Decision
+  log): `theme.css` now has one canonical set named after the brand guide,
+  with the old names surviving only as thin `var()` aliases. Don't add new
+  uses of an alias.
 - **#14** — "What we know" effectively asks the household to do data entry;
   autosave and collapse would help.
 - **#15** — loading states are bare "Loading…" against a design system that
@@ -704,12 +745,12 @@ visual/screen-reader verification of the whole app is still an open gap.
    render fine; they just look different from a freshly generated week.
    No migration was written for this on purpose — backfilling a "why" the
    app never actually reasoned would be inventing history.
-3. **Multi-household is built but not merged** (branch
-   `multi-household-beta`, 2026-09-01, see Decision log). What it does
-   *not* do, on purpose, and what Emily still has to decide: what the
-   second household's first run looks like, and how the passphrase
-   actually reaches the beta tester. The mechanism is there; the product
-   answers are open questions on the Loop Board ticket.
+3. **Multi-household is merged and live** (branch `multi-household-beta`,
+   merged 2026-09-02, see Decision log). What it still does *not* do, on
+   purpose, and what Emily has yet to decide: what the second household's
+   first run looks like, and how the passphrase actually reaches the beta
+   tester. The mechanism is there; the product answers are open questions
+   on the Loop Board ticket.
 4. **Two-adult identity is still a lightweight picker, not a login.**
    Approving asks which adult is present because nothing else knows. The
    "other adult was told" notification is household-wide rather than

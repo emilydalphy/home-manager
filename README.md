@@ -1,22 +1,49 @@
-# Home Manager (V1)
+# Pomona
 
-A Claude-powered household assistant for cleaning schedule, meal planning, and
-grocery list. Chat-based, backed by SQLite, built on FastAPI + the Anthropic
-Messages API with tool use.
+A Claude-powered household assistant for meal planning, groceries, and the
+kitchen. Backed by SQLite, built on FastAPI + the Anthropic Messages API
+with tool use.
 
-The assistant's tone (set in `app/agent.py`'s `SYSTEM_PROMPT`) is deliberately warm and
-cheery — someone glad to help, not a flat utility — while staying clear and concise, no
-fluff: short, upbeat replies rather than long or robotic ones, with directness preserved for
-anything that actually needs attention (a failed save, a conflict, an allergy risk).
+The app is **Pomona**; the repository, database file, env vars
+(`HOME_MANAGER_PASSWORD`) and code identifiers still say "home manager"
+on purpose — only user-facing strings were renamed, so that the deployed
+Railway config kept working. Don't "fix" that inconsistency without
+checking Railway first.
+
+**The assistant's voice is defined in `DESIGN_SYSTEM.md` §8 and
+`design_handoff_plan_the_week/VOICE.md`, not here.** Short version, because
+this file said the opposite until now: it is never apologetic, never eager,
+never cute, and uses no exclamation marks. The "warm and cheery... real
+enthusiasm" tone this section used to describe was deliberately retired on
+2026-08-31 — two voices on one screen would show exactly the seam the design
+system exists to remove.
 
 ## Design system
 
-Every page shares a single visual language defined in `static/theme.css`, applying the
-"Home Manager Brand & Style Guide" (Oat Cream background, Midnight Violet for text/nav/
-primary structure, Turmeric Gold reserved for exactly one hero CTA per screen, Vivid Leaf
-for success/positive states, Electric Coral for attention/urgent states — both secondary
-accents used sparingly). Headlines use Quicksand; body copy, labels, buttons, and captions
-use Karla, loaded from Google Fonts. Shared component classes (`.btn-primary`,
+**`DESIGN_SYSTEM.md` at the repo root is the binding source for anything
+visual — read it before touching a screen.** It carries the tokens, the nine
+hard rules, the component vocabulary, the navigation rules, the voice, and
+who is allowed to change what. This section is a summary and defers to it on
+every point of conflict.
+
+Every page shares a single visual language defined in `static/theme.css`,
+applying the Pomona brand guide: spruce `#1B3328` (hero panels, dark buttons,
+active nav ink) on an ivory `#FBF6EE` canvas, with apricot `#E0915C` as the
+one primary-action fill and celadon `#A9C4B0` for confirmation. The palette is
+declared once: `theme.css` has a single `prefers-color-scheme` block that
+redefines only the token values for dark mode. (A handful of pages carry a
+small supplementary dark block of their own — `shell.css`, `memory.html`,
+`login.html`, `inventory.html` — for the few values that couldn't be
+tokenized without changing light mode.) Headlines use Bricolage Grotesque, body copy uses
+Figtree, and Newsreader italic is the one accent face, loaded from Google
+Fonts.
+
+The earlier palette (Oat Cream / Midnight Violet / Turmeric Gold / Vivid Leaf
+/ Electric Coral) and its Quicksand/Karla type are **retired**. Their names
+survive in `theme.css` only as thin `var()` aliases so existing call sites
+keep working — don't add new uses of one.
+
+Shared component classes (`.btn-primary`,
 `.btn-secondary`, `.pill`/`.pill-success`/`.pill-attention`/`.pill-neutral`, `.card`,
 `.list-row`, `.empty-state`, `.app-nav`) live in `theme.css` and get pulled into each
 page's own `<style>` block, so a color or button style only needs to change in one place.
@@ -27,17 +54,30 @@ distance while cooking.
 ## How it's built
 
 - **`app/schema.sql`** — SQLite schema. Every table has a `household_id`
-  column (hardcoded to `1` for now) so this can go multi-tenant later
-  without a data model rewrite.
-- **`app/tools.py`** — plain Python functions (add/list chores, plan meals,
-  manage grocery list) that read/write the database. These are the real
-  "product" — the AI is just a natural-language interface on top.
+  column, and the app is genuinely multi-household: the id is **request-
+  scoped**, read from the signed session cookie by `security.auth_middleware`
+  and exposed as `household_id()` in `app/tools/_shared.py`. There is no
+  `HOUSEHOLD_ID` constant — never reintroduce one, and never capture
+  `household_id()` at import time. See CLAUDE.md for why that rule is
+  load-bearing.
+- **`app/tools/`** — a *package*, not a single file (split from a 6,895-line
+  `tools.py` on 2026-09-01). Plain Python functions across 24 domain
+  modules (`recipes.py`, `grocery.py`, `meal_plans.py`, …) that read/write
+  the database. These are the real "product" — the AI is just a
+  natural-language interface on top. **Every tool function must also be
+  re-exported from `app/tools/__init__.py`**, or `agent.py` and `main.py`
+  won't see it.
 - **`app/agent.py`** — tool schemas + the Claude tool-use loop. Claude
   decides which tool(s) to call based on what you ask; the loop executes
   them and feeds results back until Claude has a final answer.
-- **`app/main.py`** — FastAPI server exposing `/api/chat` and serving the
-  chat UI.
-- **`static/index.html`** — single-page chat UI, no build step.
+- **`app/main.py`** — FastAPI server exposing `/api/chat`, the streaming
+  `/api/chat/stream`, the rest of the API, and the app shell.
+- **`static/shell.html` + `static/shell.js`** — the app itself: a four-tab
+  shell (Today / Meals / Grocery / Kitchen), no build step, no framework.
+  All four tabs are native; none is an iframe. `static/index.html` is the
+  superseded single-page chat UI and is no longer linked from anywhere —
+  along with `grocery.html`, `kitchen.html` and `cooker.html`, it is kept
+  as a standalone fallback, not a live screen.
 
 Every call out to Claude's API (chat, plan generation, chore recommendations,
 recipe fill-in, receipt/fridge/pantry photo scans) is wrapped with a short
@@ -108,21 +148,32 @@ anchor per meal type, not a cluttered one-off per message.
    elsewhere, letting anyone add their own preferences directly — without
    blocking or slowing down getting to the plan itself; skipping it here
    doesn't lose the option, the same "get their link" button lives
-   permanently on the What We Know page under each person's name. From the
-   reveal you can either jump straight into chat or continue on to chores
-   setup, which still asks a handful of profile questions (pets, app goals,
-   home type, bed/bath count, yard, cleanliness standard, who's in the
-   rotation, existing help like a cleaning service) before saving. Every
-   chip group has a "type your own" option for anything not listed. After
-   onboarding, you land in chat and can just talk normally:
-   - "what chores are coming up this week?"
-   - "add a chore: clean out the gutters, every 6 months, maintenance"
-   - "mark the trash chore as done"
+   permanently on the What We Know page under each person's name. The reveal
+   ends with one primary action, "I'm all set — show me my week," which
+   lands you on the Meals tab.
+
+   **The chores step after the reveal is deliberately switched off for the
+   beta** (`OFFER_CHORES_AFTER_REVEAL = false` in `static/onboarding.html`),
+   per Emily's meals-only-beta decision. The whole chores flow — the profile
+   questions about pets, home type, cleanliness standard, rotation and so on
+   — is still wired and working underneath, and flipping that one constant
+   brings it back. Every chip group has a "type your own" option for
+   anything not listed.
+
+   After onboarding you land in the app shell and can talk to the assistant
+   from the ask sheet on any tab:
    - "add milk and eggs to the grocery list"
    - "plan chicken stir fry for dinner Thursday"
+   - "swap tonight's dinner for something quicker"
+   - "we finished the chicken"
 
-   You can rerun the wizard any time via "Edit household setup" at the top
-   of the chat page.
+   Chores still work in chat — both the questions ("what chores are coming up
+   this week?") and the add syntax ("add a chore: clean out the gutters, every
+   6 months, maintenance") — but there is **no Chores tab**. Chores are Phase 2
+   and have no first-class screen yet.
+
+   You can revisit meal-planning settings at `/meal-setup`, and rerun the
+   full setup wizard at `/onboarding`.
 
 ### How chore scheduling works
 
@@ -197,8 +248,8 @@ correct anything directly in conversation ("actually I like Thai food," "forget
 that I said no peppers") and it's saved immediately, the same way new
 preferences are.
 
-There's also a dedicated **What We Know** page (linked from the top of the
-chat page) if you'd rather review and edit things directly instead of asking
+There's also a dedicated **What We Know** page (opened as a sheet from the
+Kitchen tab) if you'd rather review and edit things directly instead of asking
 in chat — add/remove dislikes, favorite cuisines, and usual stores as chips,
 add/remove protein preferences, edit cooking-time preference/eating
 style/breakfasts-lunches-dinners-per-week, and edit notes and household
@@ -222,7 +273,7 @@ before Phase 6's audit found the gap.
 
 At the top of the page, a **context completeness** card gives a plain read on whether there's
 actually enough for recommendations to be personalized yet, vs. still mostly running on defaults
-(`_build_context_completeness` in tools.py, called from `get_household_memory`). It's a weighted
+(`_build_context_completeness` in `app/tools/memory.py`, called from `get_household_memory`). It's a weighted
 checklist — real usage signals like rated recipes and cooked meals count for more than one-time
 setup fields like a cooking-time preference — rolled into a 0-100 score and one of four named
 tiers rather than a bare percentage: **Just met** (0-24), **Getting acquainted** (25-49), **Know
@@ -375,7 +426,7 @@ rating.
 
 ### Cooker view
 
-A dedicated page (linked at the top of chat, next to What We Know) built for whoever's
+The Cook state of the Meals tab (Plan | Cook), built for whoever's
 actually standing in the kitchen: this week's meals with full ingredients and step-by-step
 instructions expandable per meal, the generated prep schedule, and tap-to-check-off progress
 for both — no need to go back and forth with chat mid-cook. Asking for a recipe in chat
@@ -419,8 +470,8 @@ ingredient list so it's clear which ones to eyeball yourself.
 ### Weekly menu (Share view)
 
 The read-only share link ("Share meal plan," safe to hand to anyone in the household — no
-login, no write access) presents as a restaurant-menu card: a Midnight Violet day sidebar
-(Mon–Sun, as many days as the plan has) next to an Oat Cream content column showing one
+login, no write access) presents as a restaurant-menu card: a spruce day sidebar
+(Mon–Sun, as many days as the plan has) next to an ivory content column showing one
 day's Breakfast/Lunch/Dinner/Snack at a time, each with a rotated "stamp" badge in its own
 brand color. Clicking a sidebar day swaps the content column instantly (no reload); the
 default day on load is today's date if it's in this week's plan, otherwise the first day
@@ -438,7 +489,7 @@ wants to mix and match differently. Nothing about the suggested arrangement is s
 tracked as "planned" — it's purely a friendlier way to look at the pool.
 
 The share view also surfaces two signals that used to be generated but invisible: a
-**freshness tag** ("2 new recipes this week," Vivid Leaf) counts how many of this week's
+**freshness tag** ("2 new recipes this week," celadon) counts how many of this week's
 meals are recipes that didn't exist before this plan was created — not based on
 `recipes.times_cooked`, since that counter increments at planning time rather than actual
 cook time and would misleadingly read every meal as a repeat. And a household's **very
@@ -574,7 +625,7 @@ variety, dietary restrictions, or preference.
 
 ### Inventory view
 
-A dedicated page (linked at the top of chat) for browsing what's on hand without going
+A dedicated page (opened as a sheet from the Kitchen tab) for browsing what's on hand without going
 through chat — grouped into the same store sections as the grocery list (produce, dairy,
 meat/seafood, pantry, frozen, other), with inline quantity editing and removal, plus a quick
 add-item form for anything you'd rather type directly than mention conversationally. Adding
@@ -583,7 +634,7 @@ stay in sync automatically.
 
 ### Grocery list view
 
-A dedicated page (linked at the top of chat) for shopping from without going through chat,
+The Grocery tab of the shell, for shopping from without going through chat,
 rebuilt as a four-screen flow (design "13a"). Same underlying `/api/grocery-list*` endpoints and
 data as before — this is a UI rebuild, not a schema change — so everything added or checked off
 here still stays in sync with chat and with what a generated weekly plan adds automatically.
@@ -763,9 +814,14 @@ publicly) until the auth work described below is done.
 ## Path to a sellable product
 
 The things that will actually need to change to go multi-tenant:
-- Replace `HOUSEHOLD_ID = 1` in `app/tools.py` with a real household id
-  derived from auth/session.
-- Add a users/auth table and login flow.
+- ~~Replace `HOUSEHOLD_ID = 1` with a real household id derived from
+  auth/session.~~ **Done — on `main`.** The constant is gone; `household_id()`
+  (`app/tools/_shared.py`) reads a request-scoped ContextVar set from the
+  signed session cookie.
+- **Add a users/auth table and login flow.** Partly done: each *household*
+  has one shared passphrase (`app/households.py`, PBKDF2), created by the
+  `create_household.py` script. There are still no per-*person* accounts, no
+  sign-up, and no account UI — that's the remaining half.
 - Move chat session storage from in-memory dict to a real store (Redis/DB).
 - Swap SQLite for Postgres once concurrent households need to write at once.
 
