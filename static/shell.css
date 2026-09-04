@@ -819,7 +819,21 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 80px;
+  /* min-height:0, not a fixed floor — found live while verifying the
+     composer's auto-grow against a squeezed viewport (a small phone with
+     its keyboard open): #ask-sheet has no overflow rule of its own, so if
+     its flex children can't shrink enough to fit its max-height:76% cap,
+     the overflow spills out past the sheet's own box instead of the sheet
+     growing — and .ask-composer-bar is flex-shrink:0 (deliberate, so
+     typing itself never gets squeezed), which left this min-height:80px as
+     the one thing standing between "the grown composer stays inside the
+     sheet" and "it doesn't." Already scrollable via overflow-y above, so
+     letting it shrink toward 0 under real pressure only means less history
+     visible at once, not lost — same trade the desktop Ask column already
+     makes with its own .ask-messages (min-height:0 below). Verified: a
+     390x420 viewport with the composer grown to its cap and 20 seeded
+     messages no longer overflows past the sheet's own bottom edge. */
+  min-height: 0;
 }
 .ask-msg { display: flex; flex-direction: column; gap: 8px; }
 .ask-msg.user { align-items: flex-end; }
@@ -890,8 +904,8 @@ html, body {
 .ask-chip:hover { background: var(--sand); }
 
 .ask-composer-bar {
-  background: var(--cream);
-  border: 2px solid var(--plum);
+  background: var(--ground);
+  border: 2px solid var(--spruce);
   border-radius: 16px;
   padding: 6px 8px 6px 16px;
   display: flex;
@@ -899,6 +913,13 @@ html, body {
   gap: 10px;
   flex-shrink: 0;
 }
+/* Once the textarea below has actually grown past one line, bottom-align
+   the row instead of centering it — otherwise the mic/send buttons drift
+   to the vertical middle of a multi-line composer instead of sitting on
+   its last line, same as any chat composer. Toggled by autoGrowAskInput()
+   in shell.js; untouched (still align-items:center above) at one line, so
+   the common single-line case renders pixel-identical to before this. */
+.ask-composer-bar.is-grown { align-items: flex-end; }
 .ask-composer-input {
   flex: 1;
   min-width: 0;
@@ -909,16 +930,25 @@ html, body {
   background: transparent;
   font-family: var(--font-body);
   font-size: 16px;
-  color: var(--plum-ink);
+  line-height: 1.4;
+  color: var(--ink);
   padding: 10px 0;
+  /* Auto-grow textarea (was a single-line <input>) — see autoGrowAskInput()
+     in shell.js, which sets an explicit inline height up to this max and
+     switches overflow-y to auto once it's actually maxed out, so the
+     scrollbar only appears once there's something to scroll. resize:none
+     because growth is driven by content, not a user-draggable handle. */
+  resize: none;
+  overflow-y: hidden;
+  max-height: 128px; /* ~4-5 lines; mirrors ASK_COMPOSER_MAX_HEIGHT in shell.js */
 }
 .ask-composer-send {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   border-radius: 11px;
-  background: var(--plum);
-  color: var(--gold);
+  background: var(--spruce);
+  color: var(--apricot);
   border: none;
   display: flex;
   align-items: center;
