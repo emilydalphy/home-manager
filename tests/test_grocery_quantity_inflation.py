@@ -516,3 +516,23 @@ def test_emilys_first_approved_week_reads_like_a_shopping_list(week):
     assert _qty("Cottage cheese") == "1 tub (48 oz)"   # was "48 oz tubs"
     assert _qty("Olive oil") == "1 bottle"        # was 3 bottles
     assert _qty("Bell peppers") == "17"           # honest sum, uncapped
+
+
+def test_a_stated_package_size_merges_with_an_unstated_one():
+    """
+    One recipe writes "2 lb bag (frozen)" and the next just writes "1 bag".
+    To a shopper those are bags of the same thing; leaving them as "1 bag
+    (2 lb) + 1 bag" is the concatenation bug in a different hat. The
+    stated size wins, because it says more.
+    """
+    assert grocery._greater_of_quantity("1 bag (2 lb), frozen", "1 bag frozen") == (
+        "1 bag (2 lb), frozen", True)
+    assert grocery._try_consolidate_quantity("1 can (12 oz)", "1 can") == ("2 cans (12 oz)", True)
+
+
+def test_two_different_stated_sizes_still_show_both():
+    """A real disagreement is still reported rather than resolved by
+    picking one and silently dropping the other."""
+    merged, reconciled = grocery._try_consolidate_quantity("1 bag (2 lb)", "1 bag (500 g)")
+    assert reconciled is False
+    assert "2 lb" in merged and "500 g" in merged

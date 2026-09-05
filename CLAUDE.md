@@ -304,6 +304,11 @@ why*, not duplicating the diff.
     `_try_consolidate_quantity` and taking the max under
     `_greater_of_quantity`) and back down on the way out
     (`_subtract_quantity`). Genuinely different text still concatenates.
+    Same package word with the size stated on only one side merges too
+    (`_shared_package_unit`): "1 bag (2 lb)" beside "1 bag" is two bags of
+    the same thing, and the stated size wins because it says more. Two
+    DIFFERENT stated sizes still show both — that is a real disagreement,
+    not a formatting accident.
   - **How `leftovers-servings-scaling` actually landed**, correcting an
     earlier draft of this entry that said a total-servings factor
     "replaces that one call and nothing else". It does not. That branch

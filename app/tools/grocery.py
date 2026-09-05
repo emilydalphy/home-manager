@@ -128,7 +128,38 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
             _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]),
             note,
         ), True
+    shared_unit = _shared_package_unit(existing_parsed, new_parsed)
+    if shared_unit:
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], shared_unit), note
+        ), True
     return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=True)
+
+
+def _shared_package_unit(existing_parsed, new_parsed) -> str | None:
+    """
+    The unit two parsed quantities should merge under when their units
+    differ only in whether the package's SIZE was stated — "1 bag (2 lb)"
+    from one recipe beside "1 bag" from another. To a shopper those are
+    two bags of the same thing, and leaving them as "1 bag (2 lb) + 1 bag"
+    is the concatenation bug wearing a different hat. The stated size
+    wins, because it says more.
+
+    Returns None — and the caller falls through to the honest "both
+    amounts, unreconciled" line — whenever there is a real disagreement to
+    report: a different container word, or two DIFFERENT stated sizes
+    ("1 bag (2 lb)" against "1 bag (500 g)"), where picking one would
+    silently throw away what the other recipe asked for.
+    """
+    if not existing_parsed or not new_parsed or not existing_parsed[1] or not new_parsed[1]:
+        return None
+    existing_head, existing_size = _quantities._split_package_size(existing_parsed[1])
+    new_head, new_size = _quantities._split_package_size(new_parsed[1])
+    if existing_head != new_head or existing_head not in _quantities._CONTAINER_UNIT_PLURALS:
+        return None
+    if existing_size and new_size:
+        return None
+    return existing_parsed[1] if existing_size else new_parsed[1]
 
 
 def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) -> tuple[str, bool]:
@@ -183,6 +214,11 @@ def _greater_of_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
         return _quantities._with_note(
             _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), existing_parsed[1]),
             note,
+        ), True
+    shared_unit = _shared_package_unit(existing_parsed, new_parsed)
+    if shared_unit:
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), shared_unit), note
         ), True
     return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=False)
 
