@@ -181,7 +181,9 @@
     cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
   .stepper-btn:hover { background: var(--violet-soft); }
-  .stepper-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--ink-strong); min-width: 90px; text-align: center; }
+  .stepper-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--ink-strong); text-align: center; display: block; }
+  .stepper-value-group { min-width: 90px; }
+  .stepper-unit { font-family: var(--font-body); font-weight: 600; font-size: 0.72rem; color: var(--ink-muted); text-align: center; display: block; margin-top: 2px; }
   .stepper-hint { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; }
 
   /* First-plan reveal (redesigned 2026-09-03, Loop Board "Redesign the
@@ -496,27 +498,26 @@
 
 <!-- Q7: meals per week -->
 <div id="step-dinners" style="display:none">
-  <h1>How many meals shall I plan in a typical week?</h1>
-  <p class="subtitle">The rest of the week is yours — leftovers, takeout, whatever works.</p>
+  <h1>How many different recipes a week?</h1>
+  <p class="subtitle">Pick how many breakfasts, lunches and dinners you'll actually cook. I'll fill the rest of the week with those — leftovers included — unless you tell me you're away.</p>
   <p class="stepper-hint" style="margin-top:0">Breakfasts</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="breakfasts-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value" id="breakfasts-value">7</span>
+    <span class="stepper-value-group"><span class="stepper-value" id="breakfasts-value">7</span><span class="stepper-unit">recipes</span></span>
     <button class="stepper-btn" type="button" id="breakfasts-plus" aria-label="More">+</button>
   </div>
   <p class="stepper-hint">Lunches</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="lunches-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value" id="lunches-value">7</span>
+    <span class="stepper-value-group"><span class="stepper-value" id="lunches-value">7</span><span class="stepper-unit">recipes</span></span>
     <button class="stepper-btn" type="button" id="lunches-plus" aria-label="More">+</button>
   </div>
   <p class="stepper-hint">Dinners</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="dinners-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value" id="dinners-value">5</span>
+    <span class="stepper-value-group"><span class="stepper-value" id="dinners-value">5</span><span class="stepper-unit">recipes</span></span>
     <button class="stepper-btn" type="button" id="dinners-plus" aria-label="More">+</button>
   </div>
-  <p class="stepper-hint">How many <em>different</em> meals I&rsquo;ll come up with &mdash; 0 to 7 each. I&rsquo;ll still put something in every slot.</p>
   <div><button class="next-btn" id="dinners-next" type="button">Continue</button></div>
   <span class="back-link" data-back="excited-about">&larr; Back</span>
 </div>
@@ -654,7 +655,12 @@
 </div>
 
 <script>
-const DIET_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Nut allergy', 'None'];
+// "Allergy" and "Other" (2026-09-05, Loop Board "Onboarding restrictions:
+// 'Allergy → what are they allergic to?', add 'Other'") each reveal an
+// inline text field instead of just being a bare chip — see
+// buildRestrictionsStep/currentRestrictions below. Replaces the old single
+// "Nut allergy" preset, which could only ever mean one specific allergen.
+const DIET_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Allergy', 'Other', 'None'];
 // Loop Board: "Break broad cuisine options into specific ones" (2026-09-03).
 // The old list (Italian, Mexican, Asian, Mediterranean, American, Indian) was
 // too broad to power real recommendations — "Asian" and "Mediterranean" each
@@ -963,6 +969,11 @@ async function saveRhythmAnswers() {
 }
 
 // ---------- Q3: restrictions, per member ----------
+// "Allergy" and "Other" each reveal their own inline field the moment
+// they're tapped, rather than expecting a free-text chip to cover them —
+// an allergy specifically needs to be stored so the clash checker
+// (check_plan_conflicts) can treat it as hard, which a plain custom chip
+// can't guarantee.
 function buildRestrictionsStep() {
   const dietDiv = document.getElementById('diet-by-member');
   dietDiv.innerHTML = '';
@@ -970,16 +981,52 @@ function buildRestrictionsStep() {
     const block = document.createElement('div');
     block.className = 'member-block';
     block.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;font-size:0.9rem;color: var(--ink-strong);margin:0 0 6px">${escapeHtmlLocal(m.name)}</p>
-      <div class="chip-row diet-chips" data-member="${escapeHtmlLocal(m.name)}"></div>`;
+      <div class="chip-row diet-chips" data-member="${escapeHtmlLocal(m.name)}"></div>
+      <div class="row diet-allergy-row" style="margin-top:8px;display:none">
+        <input type="text" class="diet-allergy-input" placeholder="What are they allergic to?" style="flex:1">
+      </div>
+      <div class="row diet-other-row" style="margin-top:8px;display:none">
+        <input type="text" class="diet-other-input" placeholder="Anything else I should always follow?" style="flex:1">
+      </div>`;
     chipWithCustom(block.querySelector('.diet-chips'), DIET_OPTIONS, true);
+    const allergyChip = [...block.querySelectorAll('.diet-chips .chip')].find(c => c.dataset.value === 'Allergy');
+    const otherChip = [...block.querySelectorAll('.diet-chips .chip')].find(c => c.dataset.value === 'Other');
+    const allergyRow = block.querySelector('.diet-allergy-row');
+    const otherRow = block.querySelector('.diet-other-row');
+    // chipWithCustom already wired btn.onclick to toggle the "active" class;
+    // this listener runs after that one fires, so it can just read the
+    // resulting state rather than manage it itself.
+    if (allergyChip) allergyChip.addEventListener('click', () => {
+      allergyRow.style.display = allergyChip.classList.contains('active') ? 'flex' : 'none';
+    });
+    if (otherChip) otherChip.addEventListener('click', () => {
+      otherRow.style.display = otherChip.classList.contains('active') ? 'flex' : 'none';
+    });
     dietDiv.appendChild(block);
   });
 }
 function currentRestrictions() {
   const out = {};
   document.querySelectorAll('.diet-chips').forEach(el => {
-    const active = getActiveChips(el).filter(v => v !== 'None');
-    if (active.length) out[el.dataset.member] = active;
+    const member = el.dataset.member;
+    const activeRaw = getActiveChips(el);
+    const items = activeRaw.filter(v => v !== 'None' && v !== 'Allergy' && v !== 'Other');
+    if (activeRaw.indexOf('Allergy') !== -1) {
+      const block = el.closest('.member-block');
+      const raw = block ? block.querySelector('.diet-allergy-input').value : '';
+      // Comma-separated -> one "allergy: x" entry each, lower-case prefix so
+      // the clash checker's stopword filter recognises it as an allergy
+      // rather than a food to search for literally.
+      raw.split(',').map(s => s.trim()).filter(Boolean).forEach(thing => {
+        items.push('allergy: ' + thing);
+      });
+    }
+    if (activeRaw.indexOf('Other') !== -1) {
+      const block = el.closest('.member-block');
+      const other = block ? block.querySelector('.diet-other-input').value.trim() : '';
+      if (other) items.push(other);
+    }
+    if (items.length) out[member] = items;
   });
   return out;
 }

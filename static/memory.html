@@ -58,6 +58,14 @@
   .wwk-footer-card { background: var(--hairline-strong); border-radius: 16px; padding: 14px 17px; margin-bottom: 16px; }
   .wwk-footer-text { font-family: var(--font-body); font-size: 0.86rem; color: var(--ink-secondary); margin: 0; line-height: 1.4; }
 
+  /* Quiet sign-out link, bottom of the sheet — same idiom as shell.css's
+     .week-setup-link/.plan-nudge-link (text-only, underline on hover), just
+     in --ink-secondary since this one isn't a next-step, it's an exit. Its
+     own row keeps the 44px tap target (Rule 6) without inflating the text. */
+  .wwk-signout-row { display: flex; justify-content: center; min-height: 44px; align-items: center; margin-top: 4px; }
+  .wwk-signout-link { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--ink-secondary); text-decoration: none; padding: 12px; }
+  .wwk-signout-link:hover { text-decoration: underline; }
+
   /* Stores tab extra */
   .wwk-store-block { border-top: 1px solid var(--hairline); padding: 13px 0; }
   .wwk-store-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
@@ -145,6 +153,8 @@
 
 <div class="wwk-content" id="wwk-content" role="tabpanel" aria-live="polite"><p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Loading…</p></div>
 
+<div class="wwk-signout-row"><a class="wwk-signout-link" href="/logout">Sign out</a></div>
+
 <div id="wwk-scrim" aria-hidden="true"></div>
 <div id="wwk-import-sheet" role="dialog" aria-modal="true" aria-labelledby="wwk-import-heading">
   <p style="font-family:var(--font-body);font-weight:800;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--apricot-label);margin:0">What you usually buy</p>
@@ -183,7 +193,7 @@ const TAB_META = {
   people: { intro: "Who I'm planning for, and what nobody will eat.", footer: "Tap any line to correct it. I'll re-check this week's plan against changes." },
   taste: { intro: 'What tends to work, so suggestions land the first time.', footer: "The more of these you fix, the fewer swaps you'll have to make." },
   rhythm: { intro: 'The shape of your week — I plan around these.', footer: "Tell me about a one-off week in the ask bar instead — these are the standing patterns." },
-  stores: { intro: 'Where things come from and what a week usually costs.', footer: 'I use these to decide which list an item lands on.' },
+  stores: { intro: "Where you shop. Tell me once and I'll sort your list by store.", footer: 'I use these to decide which list an item lands on.' },
 };
 
 // Which tab to open on. The Kitchen hub's Stores tile (and its Taste and

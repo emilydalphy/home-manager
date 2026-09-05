@@ -97,6 +97,16 @@
      re-answering something it has been told. Grey on purpose: it's context,
      not an answer. */
   .day-hint { font-size: 0.82rem; color: var(--text-muted); font-style: italic; margin-bottom: 10px; }
+  /* Small captions naming what each row of controls is asking — added so
+     "Nothing special" (née "Regular night") isn't left to explain itself,
+     and so the presence row reads as a question rather than a stray row of
+     initials. Same eyebrow idiom as .presence-label, just above the row
+     instead of beside it. */
+  .day-section-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-muted); margin: 0 0 6px;
+  }
+  .day-section-label.presence-section-label { margin-top: 10px; }
   .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
   .tag {
     padding: 8px 13px; min-height: 38px;
@@ -568,7 +578,7 @@
   // "So I'll", which reads as the app justifying itself rather than getting
   // on with it.
   var TAGS = [
-    { key: 'normal', label: 'Regular night', ack: 'plan a normal dinner you cook that evening.' },
+    { key: 'normal', label: 'Nothing special', ack: 'plan a normal dinner you cook that evening.' },
     { key: 'out',    label: 'Nobody home',   ack: 'plan nothing and buy nothing for this night.' },
     { key: 'rush',   label: 'Short on time', ack: 'keep it under 20 minutes, or make the night before stretch to cover it.' },
     { key: 'guests', label: 'Hosting guests', ack: 'scale the recipe and the shopping to the bigger table.' },
@@ -695,11 +705,13 @@
             '<span class="day-date">' + day.day_of_month + '</span>' +
           '</div>' +
           '<div class="day-hint">' + esc(day.hint || 'Nothing on the calendar') + '</div>' +
+          '<div class="day-section-label">What kind of evening?</div>' +
           '<div class="tag-row">' +
             TAGS.map(function (t) {
               return '<button type="button" class="tag" data-tag="' + t.key + '">' + esc(t.label) + '</button>';
             }).join('') +
           '</div>' +
+          (attendance.members.length ? '<div class="day-section-label presence-section-label">Who&rsquo;s eating?</div>' : '') +
           presenceHtml() +
           '<div class="presence-summary"></div>' +
           '<div class="ack"></div>' +

@@ -86,6 +86,7 @@
   .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
   .stepper button:disabled { opacity: .35; cursor: default; }
   .stepper output { min-width: 32px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
+  .stepper-unit { font-family: var(--font-body); font-weight: 600; font-size: 0.68rem; color: var(--text-muted); }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
   .chip {
@@ -190,11 +191,10 @@
   </p>
 
   <section class="block">
-    <div class="block-label">How many meals shall I plan?</div>
+    <div class="block-label">How many different recipes a week?</div>
     <p class="block-body">
-      One breakfast a week is a perfectly good answer &mdash; I&rsquo;d rather plan four things you
-      cook than seven you don&rsquo;t. These are how many <em>different</em> meals I&rsquo;ll come up
-      with; I&rsquo;ll still put something in every slot.
+      Pick how many breakfasts, lunches and dinners you&rsquo;ll actually cook. I&rsquo;ll fill the
+      rest of the week with those &mdash; leftovers included &mdash; unless you tell me you&rsquo;re away.
     </p>
     <div class="card" id="counts"></div>
     <div class="saved" id="counts-saved"></div>
@@ -379,6 +379,7 @@
           '<span class="stepper" data-field="' + c.field + '">' +
             '<button type="button" data-delta="-1" aria-label="Fewer ' + esc(c.label) + '">&minus;</button>' +
             '<output>' + prefs.meal_counts[c.field] + '</output>' +
+            '<span class="stepper-unit">recipes</span>' +
             '<button type="button" data-delta="1" aria-label="More ' + esc(c.label) + '">+</button>' +
           '</span>' +
         '</div>'
@@ -402,12 +403,14 @@
     });
   }
 
+  var COUNT_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
+
   function countAck(field, n) {
     var noun = field === 'dinners_per_week' ? 'dinner' : (field === 'lunches_per_week' ? 'lunch' : 'breakfast');
     var plural = field === 'lunches_per_week' ? 'lunches' : noun + 's';
     if (n === 0) return 'I’ll leave ' + plural + ' to you from next week.';
-    if (n === 1) return 'I’ll plan one ' + noun + ' and carry it through the week.';
-    return 'I’ll come up with ' + n + ' different ' + plural + ' and spread them across the week.';
+    if (n === 1) return 'One ' + noun + ', carried through the week.';
+    return COUNT_WORDS[n] + ' ' + plural + ', rotated across the week.';
   }
 
   function paintStepper(stepper, value, min, max) {
