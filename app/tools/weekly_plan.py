@@ -2414,6 +2414,14 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     }
 
 
+# Shown above Approve when the allergy check itself could not run. Calm and
+# plain (DESIGN_SYSTEM §8: safety copy states the thing and its way out).
+_CHECK_FAILED_NOTE = (
+    "I couldn't check this week against your household's allergies just now. "
+    "Approve anyway, or try again in a moment."
+)
+
+
 def approve_weekly_plan(
     weekly_plan_id: int, approved_by: str = "", confirm_hard_conflicts: bool = False
 ) -> dict:
@@ -2473,6 +2481,7 @@ def approve_weekly_plan(
     # Run before the approval work, so the warning describes the plan that
     # was actually approved and a failure here can't half-approve a week.
     conflicts, conflicts_note, draft_note = [], None, None
+    check_failed = False
     try:
         found = _coordination.check_plan_conflicts(weekly_plan_id)
         conflicts = found["conflicts"]
@@ -2484,7 +2493,12 @@ def approve_weekly_plan(
         draft_note = found["note"]
         conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
     except Exception:
+        # Logged, not swallowed: the gate below treats a check that could
+        # not run the same as a check that found something. Approving past
+        # an allergy because the allergy check crashed is exactly the
+        # failure this confirm exists to prevent.
         logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+        check_failed = True
 
     conn = get_conn()
     existing = conn.execute(
@@ -2504,8 +2518,13 @@ def approve_weekly_plan(
     # made the first time, re-approving adds nothing (see the guards above),
     # and asking a household to confirm an allergy they already accepted is
     # the app not listening rather than the app being careful.
-    if not confirm_hard_conflicts and not was_already_approved and any(
-        c.get("severity") == "hard" for c in conflicts
+    #
+    # A check that CRASHED fails closed, the same way: the household is
+    # asked rather than waved through, because "we couldn't look" is not
+    # "nothing was found". The note says so plainly and the flag still
+    # approves — a broken check must not lock a household out of its week.
+    if not confirm_hard_conflicts and not was_already_approved and (
+        check_failed or any(c.get("severity") == "hard" for c in conflicts)
     ):
         conn.close()
         return {
@@ -2514,7 +2533,8 @@ def approve_weekly_plan(
             "conflicts": conflicts,
             # The draft wording, not the after-approval one: nothing has
             # been approved, so "before you approve" is still true.
-            "conflicts_note": draft_note,
+            "conflicts_note": _CHECK_FAILED_NOTE if check_failed else draft_note,
+            "check_failed": check_failed,
             "approved": False,
         }
 

@@ -275,6 +275,18 @@ why*, not duplicating the diff.
     otherwise have posted a "Week approved — your list is ready" card for an
     approval that was stopped, i.e. the app contradicting the question it
     had just asked.
+  - **A crashed allergy check fails CLOSED** (added after independent
+    review). `check_plan_conflicts` raising used to be logged and the week
+    approved anyway — tolerable for a soft warning, not for the gate this
+    branch exists to build: the crash would have silently bypassed it.
+    Now a failed check returns `needs_confirmation` with `check_failed:
+    true` and a plain note; the flag still approves, so a broken check
+    cannot lock a household out of its week.
+  - **The armed "Approve anyway" state is client-only and resets if the
+    band re-renders** between taps (a chat turn refreshing the tab, another
+    device). That is deliberate, not a gap: the server re-gates every tap,
+    so the worst case is one extra tap. Don't "fix" it by remembering the
+    confirm on the client — that would be a client-side bypass.
   - **Soft stays warn-only, and a dislike does not even warn**
     (`_conflicts_note` returns None for soft-only — a preference is not a
     warning). Confirming past preferences is exactly how a confirm tap stops

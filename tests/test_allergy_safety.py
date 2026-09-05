@@ -1014,3 +1014,35 @@ def test_the_approve_button_asks_instead_of_claiming_it_approved():
     # One note, not two: the band's existing conflict note is reused rather
     # than a second sentence being added under the first.
     assert "band.querySelector('.week-conflict-note')" in approve
+
+
+def test_a_crashed_allergy_check_asks_rather_than_waving_the_week_through(kitchen, monkeypatch):
+    """
+    Fail closed. The confirm exists to stop a week going past an allergy;
+    a check that crashed has not found nothing, it has found out nothing,
+    and approving on that is the exact gap the confirm was built to close.
+    """
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    plan_id = _draft_with("Pineapple Chicken")
+    from app.tools import coordination as _coordination
+
+    def boom(*_a, **_k):
+        raise RuntimeError("keyword table exploded")
+
+    monkeypatch.setattr(_coordination, "check_plan_conflicts", boom)
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert result["status"] == "needs_confirmation"
+    assert result["check_failed"] is True
+    assert result["conflicts"] == []
+    assert "couldn" in result["conflicts_note"] and "allergies" in result["conflicts_note"]
+    row = _plan_row(plan_id)
+    assert row["status"] != "approved"
+    assert not row["approved_by"]
+
+    # The flag still approves: a broken check must not lock the household
+    # out of its own week.
+    confirmed = tools.approve_weekly_plan(plan_id, approved_by="Emily", confirm_hard_conflicts=True)
+    assert confirmed["status"] == "approved"
+    assert _plan_row(plan_id)["approved_by"] == "Emily"
