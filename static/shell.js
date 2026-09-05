@@ -4348,10 +4348,13 @@
     if (!note && band && btn.parentNode) {
       // Only when the band was rendered without one — a clash the screen
       // did not know about at render time (an allergy written down after
-      // this panel was built).
+      // this panel was built). Placed where renderWeekReviewBand would have
+      // put it: above the grocery promise, not squeezed between it and the
+      // button.
       note = document.createElement('div');
       note.className = 'week-note week-conflict-note';
-      btn.parentNode.insertBefore(note, btn);
+      var promise = band.querySelector('.week-approve-promise');
+      btn.parentNode.insertBefore(note, promise || btn);
     }
     if (note && approval.conflicts_note) note.textContent = approval.conflicts_note;
     btn.dataset.confirmHard = '1';
