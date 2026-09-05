@@ -1150,6 +1150,11 @@ def week_menu(weekly_plan_id: int | None = None):
 
 class WeekApproveRequest(BaseModel):
     approved_by: str = ""
+    # Set by the second tap on the review band's approve button, once the
+    # household has been shown a hard allergy/must-avoid clash by name.
+    # Default false, so a client that never learned about the confirm still
+    # gets stopped rather than approving past an allergy in one tap.
+    confirm_hard_conflicts: bool = False
 
 
 class WeekIntakeRequest(BaseModel):
@@ -1706,12 +1711,30 @@ def approve_week(week_start: str, req: WeekApproveRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
-        result = tools.approve_weekly_plan(plan_id, approved_by=req.approved_by)
+        result = tools.approve_weekly_plan(
+            plan_id, approved_by=req.approved_by,
+            confirm_hard_conflicts=req.confirm_hard_conflicts,
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Week approval failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    # A hard clash stopped this approval and nothing was written. Answered
+    # 200 rather than 4xx on purpose: the request was fine and the week is
+    # fine, there is just a question to put to the household first. The
+    # screen branches on `status`, and the fields an approval would have
+    # carried (approver, time, counts) are deliberately absent — there is
+    # no approval to describe yet.
+    if result["status"] == "needs_confirmation":
+        return {
+            "week_start": week_start,
+            "weekly_plan_id": result["weekly_plan_id"],
+            "status": "needs_confirmation",
+            "approved": False,
+            "conflicts": result["conflicts"],
+            "conflicts_note": result["conflicts_note"],
+        }
     return {
         "week_start": week_start,
         "weekly_plan_id": result["weekly_plan_id"],
@@ -2751,6 +2774,12 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             # turn still overwrites this one below, same as any other
             # "last call for this area wins" case.
             if name == "approve_weekly_plan":
+                # A hard clash stopped that approval — the week is still a
+                # draft and the list is unchanged, so there is no card to
+                # show. Announcing "Week approved" here would be the app
+                # contradicting the question it just asked.
+                if isinstance(result, dict) and result.get("status") == "needs_confirmation":
+                    continue
                 by_category[category] = ChatAction(
                     kicker=_CATEGORY_KICKERS[category],
                     change="Week approved — your list is ready",

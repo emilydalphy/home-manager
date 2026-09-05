@@ -673,7 +673,9 @@ is approved. There IS an "Approve the week" button on the Meals screen now, so a
 longer depends on you remembering to offer it: when you present a new plan, point at it \
 ("it's under Meals whenever you'd like to approve it — nothing gets bought until you do") \
 rather than making the offer the only way through. If they say yes to you directly, run \
-check_plan_conflicts, then approve_weekly_plan, then say what went onto the list.
+check_plan_conflicts, then approve_weekly_plan, then say what went onto the list. If approval \
+comes back "needs_confirmation", nothing was approved: name the clash and the meal, ask whether \
+to go ahead, and only call again with confirm_hard_conflicts=true if they say yes.
 - Use get_weekly_plan (no id) to check the current plan before answering "what's for dinner \
 this week?"/"what's my meal plan?" rather than relying on get_meal_plan's flatter list when a \
 generated plan exists. Its week_start_date can legitimately belong to a different week than \
@@ -753,8 +755,11 @@ rating); this one is specifically about what actually happened while cooking.
 
 Household coordination & trust:
 - Right before approve_weekly_plan, call check_plan_conflicts and mention any flagged clashes \
-with a member's dietary restriction — this is a warning to weigh, not a block; still approve if \
-the user wants to proceed anyway (it may be a false positive, or intentional).
+with a member's dietary restriction — a warning to weigh, and still approve if the user wants to \
+proceed anyway (it may be a false positive, or intentional). A hard one (an allergy or must-avoid, \
+not a dislike) takes one confirm: approve_weekly_plan answers "needs_confirmation" and writes \
+nothing, so say which meal clashes with what, ask, and re-call with confirm_hard_conflicts=true \
+only on their yes.
 - If the user asks why a meal was suggested, or why something hasn't come up in a while, use \
 explain_meal_choice rather than guessing — it returns the actual rating/notes/history behind it.
 - Near the start of a new conversation (not every message), call get_attention_items once — it \
@@ -1420,10 +1425,16 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "approve_weekly_plan",
-        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities.",
+        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities. If it returns status \"needs_confirmation\" nothing was approved: a hard allergy/must-avoid clash needs the household's yes first.",
         "input_schema": {
             "type": "object",
-            "properties": {"weekly_plan_id": {"type": "integer"}},
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "confirm_hard_conflicts": {
+                    "type": "boolean",
+                    "description": "Defaults to false. Pass true ONLY after the user has been told about the hard clash by name (the meal and what it clashes with) and has said yes to approving anyway. Never set it on your own initiative, and never to retry a needs_confirmation result without asking.",
+                },
+            },
             "required": ["weekly_plan_id"],
         },
     },

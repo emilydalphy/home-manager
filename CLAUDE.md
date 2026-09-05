@@ -49,24 +49,16 @@ the beta (`OFFER_CHORES_AFTER_REVEAL = false` in `static/onboarding.html`).
 If you're picking this repo up fresh, run `git log --oneline -15` to confirm
 this is still accurate.
 
-**Known live bug at the time of writing:** `/api/chat/stream` crashes on any
-chat turn that returns an action card — `_sse_event` serialises a pydantic
-`ChatAction` with plain `json.dumps` (`jsonable_encoder` appears nowhere in
-`app/`). Reproduced on `main` 2026-09-04.
-
-Note the symptom carefully, because it is worse than "chat writes don't
-work": the tool call and the database write **do** commit, and the crash
-happens afterwards while encoding the frame. So the change really happens
-while the screen says `Error: Request failed` — and `streamChatMessage` has
-no fallback to `/api/chat`, so that is all the user sees. It invites doing
-the thing twice.
-
-**No fix exists in this repository.** A fix was reportedly built in a
-worktree outside this repo (branch name `fix-chat-stream-actions`) and never
-pushed — it is not on `origin` and not in any local branch or worktree here,
-so don't go looking for it. The test gap that let this ship is real too:
-`tests/test_streaming_endpoints.py` stubs `summarize_chat_actions` to return
-`[]`, so no test ever puts a real `ChatAction` through the encoder.
+**The streaming-chat action-card crash is fixed** (this file used to carry it
+as a known live bug). `/api/chat/stream` used to die on any turn that
+returned an action card, because `_sse_event` handed a pydantic `ChatAction`
+straight to `json.dumps` — after the tool call and the DB write had already
+committed, so the change happened while the screen said
+`Error: Request failed`. `app/main.py`'s `_sse_event` now runs its payload
+through `jsonable_encoder` (verified 2026-09-05, `app/main.py:1434`), and
+`tests/test_streaming_endpoints.py` drives real `ChatAction` instances
+through it rather than stubbing `summarize_chat_actions` to `[]` — which was
+the test gap that let it ship.
 
 ## Working style established so far
 
@@ -240,6 +232,53 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-05 — A hard allergen clash now takes one confirm tap; a soft
+  dislike still only warns. Branch `allergy-hard-confirm` (NOT merged at the
+  time of writing).** Emily's decision 1b, closing the "warn, never block —
+  and that is a default, not a conclusion" question the allergy work left
+  open. It is a confirm, not a veto: the household still approves the week,
+  they just have to say it out loud once.
+  - **`approve_weekly_plan` gained `confirm_hard_conflicts=False` and a gate
+    that writes NOTHING** — no status flip, no approver, no groceries — when
+    a conflict has `severity == "hard"`. It returns
+    `status: "needs_confirmation"` with the DRAFT wording of the note
+    (`check_plan_conflicts`'s own `found["note"]`, which ends "before you
+    approve"), because at that moment nothing has been approved and the
+    after-approval sentence would be a lie. Half-approving and then asking
+    would be worse than not asking.
+  - **An already-approved plan passes straight through without the flag.**
+    The decision was made the first time and a re-approval adds nothing (see
+    the function's own two guards), so asking again is the app not
+    listening. This is also what keeps every existing re-approve caller
+    working.
+  - **The client arms on the server's answer rather than pre-arming from the
+    menu payload.** `data.conflicts` carries severity at render time, so the
+    band could have drawn "Approve anyway" up front and saved a round trip —
+    rejected because that panel is built once per page load, so its copy of
+    the clash can be stale in both directions (an allergy written down by
+    chat after the render; a meal swapped out since). A label that says
+    "anyway" before anyone has been shown what "anyway" refers to is the one
+    failure mode this ticket exists to prevent. The server is the gate
+    either way: a client that skips the confirm still gets
+    `needs_confirmation`.
+  - **The confirm reuses the band's existing conflict note and its one
+    apricot button** (Rule 5) — the label swaps to `Approve anyway`, the
+    server's sentence goes into `.week-conflict-note`, and the way out is
+    the "or tweak it with me" link that was already there. The wording lives
+    in one function, `hardClashConfirmLabel()` in `shell.js`, so it is
+    Emily's to change without reading `approveWeek`.
+  - **The second tap does not re-ask who is approving.** The answer from the
+    first tap is parked on the button (`dataset.approvedBy`); asking a
+    two-adult household twice for the same name is how a confirm becomes a
+    thing people tap without reading.
+  - **`summarize_chat_actions` had to learn about it too** — it would
+    otherwise have posted a "Week approved — your list is ready" card for an
+    approval that was stopped, i.e. the app contradicting the question it
+    had just asked.
+  - **Soft stays warn-only, and a dislike does not even warn**
+    (`_conflicts_note` returns None for soft-only — a preference is not a
+    warning). Confirming past preferences is exactly how a confirm tap stops
+    being read.
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
   merged at the time of writing).** Root cause of the original bug was three

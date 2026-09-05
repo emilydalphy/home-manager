@@ -4247,28 +4247,53 @@
     window.location.href = '/meal-setup';
   }
 
+  // The hard-clash confirm, in one place so the wording is Emily's to change
+  // without reading approveWeek. The sentence above the button is the
+  // server's (it names the meal and what it clashes with, see
+  // check_plan_conflicts); this is only the button, and the way out is the
+  // "or tweak it with me" link already sitting under it.
+  function hardClashConfirmLabel() { return 'Approve anyway'; }
+
   async function approveWeek(panel, data) {
-    // Who is approving. There is no per-person login in this app (see
-    // tools.get_household_people), so with two adults on record the only
-    // honest way to name one on the receipt is to ask which one is here —
-    // a single tap, and it is also the household's confirm step. One adult
-    // (or none) needs no question: approve straight away.
-    var people = (data.other_adults || []);
+    var btn = panel.querySelector('#week-approve-btn');
+    // A hard allergy/must-avoid clash takes a second tap (Emily,
+    // 2026-09-05). The first tap was stopped by the server and turned this
+    // button into the confirm; tapping it again is the yes. Don't ask who
+    // is approving a second time — the first tap already answered that, and
+    // the answer is parked on the button.
+    var armed = !!(btn && btn.dataset.confirmHard === '1');
     var approvedBy = '';
-    if (people.length > 1) {
-      approvedBy = await askWhoIsApproving(people);
-      if (approvedBy === null) return;
-    } else if (people.length === 1) {
-      approvedBy = people[0];
+    if (armed) {
+      approvedBy = btn.dataset.approvedBy || '';
+    } else {
+      // Who is approving. There is no per-person login in this app (see
+      // tools.get_household_people), so with two adults on record the only
+      // honest way to name one on the receipt is to ask which one is here —
+      // a single tap, and it is also the household's confirm step. One adult
+      // (or none) needs no question: approve straight away.
+      var people = (data.other_adults || []);
+      if (people.length > 1) {
+        approvedBy = await askWhoIsApproving(people);
+        if (approvedBy === null) return;
+        btn = panel.querySelector('#week-approve-btn');
+      } else if (people.length === 1) {
+        approvedBy = people[0];
+      }
     }
 
-    var btn = panel.querySelector('#week-approve-btn');
+    // Whatever the button said before this tap — "Approve the week", an
+    // open-slots label, or the hard-clash confirm. A failed request has to
+    // put that back, not overwrite it with a guess.
+    var restoreLabel = btn ? btn.textContent : 'Approve the week';
     if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_by: approvedBy })
+        // The server is the gate, not this flag: a client that never sends
+        // it (or skips the confirm entirely) still gets needs_confirmation
+        // back rather than an approval.
+        body: JSON.stringify({ approved_by: approvedBy, confirm_hard_conflicts: armed })
       });
       if (!res.ok) throw new Error('approve failed');
       // The approve endpoint answers with the dietary check it ran on the
@@ -4279,6 +4304,13 @@
       // clash; being quiet about it is not.
       var approval = {};
       try { approval = (await res.json()) || {}; } catch (e) { approval = {}; }
+      // Nothing was approved and nothing reached the grocery list: a hard
+      // clash is waiting on an answer. Say what it is, in the band, on the
+      // button that asked — never a toast saying "Approved".
+      if (approval.status === 'needs_confirmation') {
+        armApproveForHardClash(panel, approval, approvedBy);
+        return;
+      }
       var openListAction = {
         label: 'Open the list',
         onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); }
@@ -4297,9 +4329,35 @@
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Week approval failed:', err);
-      if (btn) { btn.disabled = false; btn.textContent = 'Approve the week'; }
+      if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
       alert('Could not approve the week right now — try again in a moment.');
     }
+  }
+
+  // Turn the review band's one primary button into the confirm, in place.
+  // No second button and no second note: the band already has a slot for
+  // the server's clash sentence (renderWeekReviewBand's .week-conflict-note)
+  // and a way out under the button ("or tweak it with me"). Rule 5 — the
+  // approve button stays the screen's only apricot primary; it just says
+  // something else now.
+  function armApproveForHardClash(panel, approval, approvedBy) {
+    var band = panel.querySelector('#week-review-band');
+    var btn = panel.querySelector('#week-approve-btn');
+    if (!btn) return;
+    var note = band ? band.querySelector('.week-conflict-note') : null;
+    if (!note && band && btn.parentNode) {
+      // Only when the band was rendered without one — a clash the screen
+      // did not know about at render time (an allergy written down after
+      // this panel was built).
+      note = document.createElement('div');
+      note.className = 'week-note week-conflict-note';
+      btn.parentNode.insertBefore(note, btn);
+    }
+    if (note && approval.conflicts_note) note.textContent = approval.conflicts_note;
+    btn.dataset.confirmHard = '1';
+    btn.dataset.approvedBy = approvedBy || '';
+    btn.disabled = false;
+    btn.textContent = hardClashConfirmLabel();
   }
 
   function renderWeekMenu(panel, data) {

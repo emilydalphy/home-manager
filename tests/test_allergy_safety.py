@@ -242,11 +242,13 @@ def test_an_approved_week_is_not_nagged_about_a_decision_already_made(kitchen, m
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     # Approval says it out loud once...
     assert {c["meal"] for c in result["conflicts"]} == {"Pineapple Chicken"}
-    assert result["status"] == "approved", "a clash warns, it never blocks"
+    assert result["status"] == "approved", "a confirmed clash approves, it is not a veto"
     # ...and the settled week stops carrying the warning.
     assert tools.get_week_menu(plan["weekly_plan_id"])["conflicts"] == []
 
@@ -521,7 +523,9 @@ def test_approval_hands_back_a_sentence_worded_for_a_decision_already_made(kitch
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     note = result["conflicts_note"]
     assert note and "Pineapple Chicken" in note
@@ -788,9 +792,9 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     The allergen was in the INGREDIENTS of an innocently-named dish, so the
     only place it ever became visible was the shopping list.
 
-    Approval still goes through — warn, never block, is the standing
-    default and promoting it to a block is Emily's call, still pending —
-    but the sentence handed back has to name the meal that put it there.
+    Approval still goes through — a hard clash asks once and takes the
+    household's yes (Emily, 2026-09-05); it is a confirm, not a veto — but
+    the sentence handed back has to name the meal that put it there.
     """
     week = _week_start()
     tools.add_recipe(
@@ -804,15 +808,209 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     # The list really does carry the allergen — this is the bug's evidence,
     # not an aside.
     bought = [i["item"].lower() for i in tools.list_grocery_list("needed")]
     assert any("pineapple" in item for item in bought)
 
-    assert result["status"] == "approved", "a clash warns, it never blocks"
+    assert result["status"] == "approved", "a confirmed clash approves, it is not a veto"
     note = result["conflicts_note"]
     assert note, "the week that bought the allergen cannot approve in silence"
     assert "Fruit Salad" in note, "name the meal that put it on the list"
     assert "pineapple" in note.lower()
+
+
+# ---------- 13. a hard clash takes one confirm ----------
+#
+# Emily, 2026-09-05: approving a week with a HARD allergen clash requires a
+# confirm tap; a soft dislike stays warn-only. The confirm is a question,
+# not a veto — the household still decides, they just have to say it.
+
+
+def _draft_with(meal: str, week: str | None = None) -> int:
+    """A one-meal draft, the smallest plan an approval can be run against."""
+    week = week or _week_start()
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(
+        tools._week_dates(week)[0], meal, slot="dinner",
+        weekly_plan_id=plan["weekly_plan_id"],
+    )
+    return plan["weekly_plan_id"]
+
+
+def _plan_row(plan_id: int):
+    from app.db import get_conn
+
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()
+    conn.close()
+    return row
+
+
+def test_a_hard_clash_stops_the_approval_and_asks(kitchen):
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    plan_id = _draft_with("Pineapple Chicken")
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert result["status"] == "needs_confirmation"
+    assert result["approved"] is False
+    assert {c["meal"] for c in result["conflicts"]} == {"Pineapple Chicken"}
+    note = result["conflicts_note"]
+    assert note and "Pineapple Chicken" in note
+    # The DRAFT wording, because nothing has been approved: "before you
+    # approve" is still the truth at this moment.
+    assert "before you approve" in note
+    assert "before you shop" not in note
+
+
+def test_the_stopped_approval_wrote_nothing_at_all(kitchen):
+    """
+    Not "approved but flagged" — the week is untouched. A half-approval
+    (status flipped, list built, question still open) would be worse than
+    no question at all.
+    """
+    tools.set_member_dietary_restrictions("Emily", ["pineapple allergy"])
+    plan_id = _draft_with("Pineapple Chicken")
+
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    row = _plan_row(plan_id)
+    assert row["status"] != "approved"
+    assert not row["approved_at"], "no approval time for an approval that did not happen"
+    assert not row["approved_by"]
+    assert tools.list_grocery_list() == [], "nothing reaches the list before the yes"
+
+
+def test_the_confirm_approves_and_builds_the_list(kitchen):
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    plan_id = _draft_with("Pineapple Chicken")
+
+    result = tools.approve_weekly_plan(
+        plan_id, approved_by="Emily", confirm_hard_conflicts=True
+    )
+
+    assert result["status"] == "approved"
+    assert result["approved_by"] == "Emily"
+    assert result["groceries_added_count"] >= 1
+    assert tools.list_grocery_list(), "the confirmed yes is what builds the list"
+    # The clash is still said out loud, now worded for a decision made.
+    assert "before you shop" in (result["conflicts_note"] or "")
+
+
+def test_a_dislike_never_asks_for_a_confirm(kitchen):
+    """
+    Soft stays warn-only. Making a household confirm past a preference is
+    how a confirm tap becomes a thing you tap without reading.
+    """
+    tools.edit_preference("dislikes", ["pineapple"])
+    plan_id = _draft_with("Pineapple Chicken")
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert result["status"] == "approved"
+    assert [c["severity"] for c in result["conflicts"]] == ["soft"]
+    # And it does not even warn: a preference is not a warning (see
+    # coordination._conflicts_note).
+    assert result["conflicts_note"] is None
+    assert tools.list_grocery_list()
+
+
+def test_a_week_with_nothing_to_flag_approves_in_one_step(kitchen):
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    plan_id = _draft_with("Chili")
+
+    result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert result["status"] == "approved"
+    assert result["conflicts"] == []
+
+
+def test_an_already_approved_week_is_not_asked_again(kitchen):
+    """
+    The decision was made the first time. Re-approving adds nothing (see
+    approve_weekly_plan's guards), so asking again is the app not
+    listening rather than the app being careful.
+    """
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    plan_id = _draft_with("Pineapple Chicken")
+    tools.approve_weekly_plan(plan_id, approved_by="Emily", confirm_hard_conflicts=True)
+
+    again = tools.approve_weekly_plan(plan_id, approved_by="Marcus")
+
+    assert again["status"] == "approved"
+    assert again["was_already_approved"] is True
+    assert again["approved_by"] == "Emily", "the receipt keeps naming who settled it"
+
+
+def test_the_route_answers_the_question_with_a_200(signed_in, kitchen):
+    """
+    Not a 4xx: the request was fine and so is the week, there is just
+    something to put to the household first. The screen branches on status.
+    """
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    _draft_with("Pineapple Chicken", week)
+
+    res = signed_in.post(f"/api/week/{week}/approve", json={"approved_by": "Emily"})
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["status"] == "needs_confirmation"
+    assert body["approved"] is False
+    assert "Pineapple Chicken" in (body["conflicts_note"] or "")
+    assert body["conflicts"]
+    assert tools.list_grocery_list() == []
+
+    confirmed = signed_in.post(
+        f"/api/week/{week}/approve",
+        json={"approved_by": "Emily", "confirm_hard_conflicts": True},
+    )
+
+    assert confirmed.status_code == 200
+    assert confirmed.json()["status"] == "approved"
+    assert tools.list_grocery_list()
+
+
+def test_the_chat_tool_can_confirm_but_is_told_not_to_do_it_alone():
+    schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "approve_weekly_plan")
+    prop = schema["input_schema"]["properties"]["confirm_hard_conflicts"]
+
+    assert prop["type"] == "boolean"
+    assert "confirm_hard_conflicts" not in schema["input_schema"].get("required", [])
+    described = prop["description"].lower()
+    assert "only after" in described and "said yes" in described
+    assert "never" in described, "the assistant must not set this on its own initiative"
+
+
+def test_the_prompt_tells_the_assistant_what_needs_confirmation_means():
+    prompt = agent.SYSTEM_PROMPT
+
+    assert "needs_confirmation" in prompt
+    assert "confirm_hard_conflicts=true" in prompt
+
+
+def test_the_approve_button_asks_instead_of_claiming_it_approved():
+    """
+    The client half of the same gate: a needs_confirmation answer must
+    re-arm the button rather than fall through to the 'Approved' toast.
+    """
+    import pathlib
+
+    shell = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
+    approve = shell[shell.index("async function approveWeek("):]
+    approve = approve[:approve.index("\n  function renderWeekMenu(")]
+
+    assert "needs_confirmation" in approve
+    # The check has to come before the toast, or the household is told the
+    # week is approved and then asked whether to approve it.
+    assert approve.index("needs_confirmation") < approve.index("showToast('Approved.")
+    assert "confirm_hard_conflicts: armed" in approve
+    assert "hardClashConfirmLabel" in approve
+    # One note, not two: the band's existing conflict note is reused rather
+    # than a second sentence being added under the first.
+    assert "band.querySelector('.week-conflict-note')" in approve

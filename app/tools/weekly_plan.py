@@ -2414,7 +2414,9 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     }
 
 
-def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
+def approve_weekly_plan(
+    weekly_plan_id: int, approved_by: str = "", confirm_hard_conflicts: bool = False
+) -> dict:
     """
     Approve a weekly plan — and, in the same step, put its meals'
     ingredients on the grocery list.
@@ -2456,20 +2458,30 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     and swap_component_in_plan.
 
     The returned `conflicts`/`conflicts_note` are the dietary/allergy check
-    (check_plan_conflicts) run automatically on the way through. Approval is
-    NOT blocked by them — the household may well mean it — but a clash is
-    said out loud rather than left to whether anyone thought to ask. Mention
-    any that come back when reporting the approval.
+    (check_plan_conflicts) run automatically on the way through. A clash is
+    said out loud rather than left to whether anyone thought to ask.
+
+    A HARD clash — an allergy or a must-avoid, as opposed to a standing
+    dislike — takes one confirm before it approves (Emily, 2026-09-05). With
+    `confirm_hard_conflicts` false this returns status "needs_confirmation"
+    and writes nothing at all: no status flip, no approver, no groceries.
+    Call again with the flag true to approve anyway. A soft clash still
+    warns and approves in one step, and so does a plan with no clash — the
+    confirm is for the thing that could hurt somebody, not for every
+    reservation the app has about the week.
     """
     # Run before the approval work, so the warning describes the plan that
     # was actually approved and a failure here can't half-approve a week.
-    conflicts, conflicts_note = [], None
+    conflicts, conflicts_note, draft_note = [], None, None
     try:
         found = _coordination.check_plan_conflicts(weekly_plan_id)
         conflicts = found["conflicts"]
-        # Not found["note"]: that sentence ends "before you approve", and
-        # this is the moment just after. Same clash, worded for a decision
-        # already made — see conflicts_note_after_approval.
+        # Two wordings of the same clash, because it can be read at two
+        # different moments. found["note"] ends "before you approve" and is
+        # the one to hand back when nothing has been approved yet; the
+        # after-approval sentence is for the moment just past the yes — see
+        # conflicts_note_after_approval.
+        draft_note = found["note"]
         conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
     except Exception:
         logger.exception("Conflict check failed for plan %s", weekly_plan_id)
@@ -2483,6 +2495,29 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     was_already_approved = existing["status"] == "approved"
+
+    # The hard-clash gate. It sits here, after the plan is known to exist
+    # and its status has been read, and before the first write — so a week
+    # that needs confirming is left exactly as it was found.
+    #
+    # An ALREADY-approved plan passes straight through: the decision was
+    # made the first time, re-approving adds nothing (see the guards above),
+    # and asking a household to confirm an allergy they already accepted is
+    # the app not listening rather than the app being careful.
+    if not confirm_hard_conflicts and not was_already_approved and any(
+        c.get("severity") == "hard" for c in conflicts
+    ):
+        conn.close()
+        return {
+            "weekly_plan_id": weekly_plan_id,
+            "status": "needs_confirmation",
+            "conflicts": conflicts,
+            # The draft wording, not the after-approval one: nothing has
+            # been approved, so "before you approve" is still true.
+            "conflicts_note": draft_note,
+            "approved": False,
+        }
+
     # A re-approval never overwrites the original approver/time — the
     # receipt names who actually settled the week, and the first yes is the
     # one that built the list. Only a genuine transition into 'approved'
