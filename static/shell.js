@@ -3712,6 +3712,13 @@
       '<div class="shell-card week-approve-card">' +
         '<div class="week-review-eyebrow">DRAFT · YOUR TURN</div>' +
         (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
+        // A possible allergy/must-avoid clash, named above the Approve
+        // button rather than left for the household to catch. Server-worded
+        // (see check_plan_conflicts) so the sentence lives with the data it
+        // describes, and absent entirely when there's nothing to say.
+        (data.conflicts_note
+          ? '<div class="week-note week-conflict-note">' + escapeHtml(data.conflicts_note) + '</div>'
+          : '') +
         '<div class="week-approve-promise">' + escapeHtml(groceryPromiseText(data.grocery_preview)) + '</div>' +
         // Approving with a slot still open is allowed, but named — never a
         // silent shortfall.
