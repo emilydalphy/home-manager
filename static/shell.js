@@ -438,7 +438,11 @@
       '</div>';
 
     wrap.querySelector('#plan-nudge-go').addEventListener('click', function () {
-      startPlanningWeek(nudge.week_start);
+      // nudge.day_count, not seven. The nudge's own headline already names
+      // the real span ("Shall I put Sep 5–7 together for you?"), so
+      // dropping it here asked the next screen about four days nobody had
+      // been offered. Same defect as the Meals entry's, same payload.
+      startPlanningWeek(nudge.week_start, nudge.day_count || 7);
     });
     wrap.querySelector('#plan-nudge-dismiss').addEventListener('click', async function () {
       // Say what dismissing means, and where the offer went — the entry
@@ -449,7 +453,7 @@
           '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
         '</div>';
       wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
-        startPlanningWeek(nudge.week_start);
+        startPlanningWeek(nudge.week_start, nudge.day_count || 7);
       });
       try {
         await fetch('/api/notifications/dismiss', {
@@ -3310,7 +3314,10 @@
     // The note is the same sentence the desktop header has always shown
     // (the draft's server headline, else the "N meals still need a decision"
     // count), passed in rather than recomputed so the two can't drift.
-    var range = data.week_label || (data.week_start_date ? weekRangeLabel(data.week_start_date) : '');
+    // periodRangeLabel(x, 7) is what weekRangeLabel used to be, character
+    // for character. It only survives as a fallback for a payload with no
+    // week_label; the server's own label already knows the real span.
+    var range = data.week_label || (data.week_start_date ? periodRangeLabel(data.week_start_date, 7) : '');
     panel.querySelector('#week-framing').innerHTML =
       '<div class="week-head">' +
         '<h1>This week</h1>' +
@@ -3963,7 +3970,10 @@
     });
     band.querySelector('#week-try-again').addEventListener('click', function () { tryAgain(panel, data); });
     band.querySelector('#week-change-answers').addEventListener('click', function () {
-      startPlanningWeek(data.week_start_date);
+      // The same day count tryAgain() already passes when it rebuilds this
+      // plan — changing your answers must not also silently change how
+      // many days you are answering about.
+      startPlanningWeek(data.week_start_date, data.day_count || 7);
     });
   }
 
@@ -4048,10 +4058,17 @@
     // Falls back to the Monday while that request is in flight or has
     // failed, which is exactly what this offered before it existed.
     var defaultStart = (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
-    var followingStart = addDaysLocal(defaultStart, 7);
-    var weeks = [
-      { start: defaultStart, label: 'This week' },
-      { start: followingStart, label: 'Next week' }
+    // How LONG this household's period runs, from the same suggestion.
+    // Seven used to be hardcoded here in three places at once — the second
+    // button's start day, both buttons' date labels, and the URL they
+    // opened — so an "as we go" household (day_count 3) was offered two
+    // seven-day weeks and then handed a seven-day intake. Seven stays the
+    // fallback for the moment before the suggestion lands and for a failed
+    // lookup, exactly as the Monday start does.
+    var dayCount = (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    var periods = [
+      { start: defaultStart, which: 'current' },
+      { start: addDaysLocal(defaultStart, dayCount), which: 'next' }
     ];
     row.innerHTML =
       '<div class="shell-card week-plan-row">' +
@@ -4060,13 +4077,13 @@
           '<div class="week-plan-sub">Two rounds of questions, then I’ll draft it. Nothing gets bought until you approve.</div>' +
         '</div>' +
         '<div class="week-plan-buttons">' +
-          weeks.map(function (w) {
-            // "Re-plan" rather than "Plan" when that week already has one,
-            // so the button never understates what it's about to do.
-            var planned = weekIsPlanned(data, w.start);
-            return '<button type="button" class="btn-outline-plum week-plan-btn" data-week="' + w.start + '">' +
-              '<span class="week-plan-btn-label">' + (planned ? 'Re-plan ' : 'Plan ') + w.label.toLowerCase() + '</span>' +
-              '<span class="week-plan-btn-dates">' + escapeHtml(weekRangeLabel(w.start)) + '</span>' +
+          periods.map(function (p) {
+            // "Re-plan" rather than "Plan" when that stretch already has a
+            // plan, so the button never understates what it's about to do.
+            var planned = weekIsPlanned(data, p.start);
+            return '<button type="button" class="btn-outline-plum week-plan-btn" data-week="' + p.start + '">' +
+              '<span class="week-plan-btn-label">' + escapeHtml(planEntryLabel(dayCount, p.which, planned)) + '</span>' +
+              '<span class="week-plan-btn-dates">' + escapeHtml(periodRangeLabel(p.start, dayCount)) + '</span>' +
             '</button>';
           }).join('') +
         '</div>' +
@@ -4088,97 +4105,207 @@
       '<button type="button" class="week-setup-link" id="week-setup-standing">' +
         'Weeks not landing how you’d like? Let’s adjust your setup →</button>';
     row.querySelectorAll('.week-plan-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week); });
+      btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week, dayCount); });
     });
     row.querySelector('#week-setup-standing').addEventListener('click', openMealSetup);
-    wirePeriodPicker(row, defaultStart);
+    wirePeriodPicker(row, defaultStart, dayCount);
   }
 
-  // The custom-period picker: two rows of choices and one confirm, inline
-  // in the card that opened it. Not a sheet and not a page — it is a
-  // refinement of the choice already on screen, and taking over the screen
-  // for it would make picking Thursday feel heavier than picking Monday.
-  // Not a calendar widget either: a household planning "Thursday to next
-  // Thursday" is choosing a day of the week and a length, not navigating
-  // months, and a date input would ask them to do arithmetic the app can
-  // do (see the ticket's "keep it two taps, not a calendar widget").
-  var PERIOD_LENGTHS = [
-    { days: 3, label: '3 days' },
-    { days: 5, label: '5 days' },
-    { days: 7, label: '1 week' },
-    // Emily's own example. Saying "Thursday to next Thursday" out loud
-    // means both Thursdays, which is eight days — the off-by-one everyone
-    // makes, so the app names the shape rather than the number.
-    { days: 8, label: 'To the same day next week' },
-    { days: 14, label: '2 weeks' }
-  ];
+  // What the two buttons are called. Seven days is still "this week" /
+  // "next week" — that is simply what a week is called, and calling it
+  // "the next 7 days" would make the common case read as machinery. A
+  // household on a shorter horizon is NOT planning a week, though, and
+  // being told it is was half of the bug this wording fixes.
+  // ASSUMPTION (Emily's call): "Plan the next 3 days" / "Plan the 3 after".
+  function planEntryLabel(dayCount, which, planned) {
+    var verb = planned ? 'Re-plan ' : 'Plan ';
+    if (dayCount === 7) return verb + (which === 'current' ? 'this week' : 'next week');
+    var unit = dayCount + (dayCount === 1 ? ' day' : ' days');
+    // "the 3 after", not "the 3 days after" — the dates line right under it
+    // says which three, so the second "days" is a word that isn't earning
+    // its place.
+    return verb + (which === 'current' ? 'the next ' + unit : 'the ' + dayCount + ' after');
+  }
 
-  function wirePeriodPicker(row, defaultStart) {
+  // The custom-range picker: ONE strip of days, inline in the card that
+  // opened it. Tap the first day, tap the last, and the days between fill
+  // in. Not a sheet and not a page — it is a refinement of the choice
+  // already on screen, and taking over the screen for it would make
+  // picking Thursday feel heavier than picking Monday.
+  //
+  // This REPLACES a start-day strip plus a row of length chips (3 days /
+  // 5 days / 1 week / to the same day next week / 2 weeks). That shape was
+  // built to a note reading "keep it two taps, not a calendar widget";
+  // Emily looked at it on 2026-09-05 and asked to let people choose the
+  // date range directly, so that note no longer holds and nobody should
+  // re-argue it from the comment that used to sit here. Two taps survive
+  // anyway — the first day and the last one.
+  //
+  // Every user-facing string lives in one place so the wording is a
+  // one-line change rather than a hunt through the render.
+  var PERIOD_PICKER_COPY = {
+    open: 'Pick my own days',
+    close: 'Never mind',
+    // Live. The first reads while a whole range is showing; the second
+    // takes over once a first day has been tapped and the last one is the
+    // only thing missing.
+    hintBoth: 'Tap the first day, then the last',
+    hintEnd: 'Tap the last day',
+    confirm: 'Plan these days'
+  };
+
+  // How far past today the strip runs — about three weeks, which is as far
+  // ahead as anyone has been observed to plan and still short enough to
+  // scroll by thumb.
+  var PERIOD_STRIP_DAYS = 21;
+  // The ceiling on a range, and it is not a design choice: /plan-week
+  // clamps its `days` parameter to 1..28 (see static/plan-week.html), so a
+  // longer range would arrive there silently shortened. Enforced here so
+  // the button never names dates the next screen won't honour.
+  var PERIOD_MAX_DAYS = 28;
+
+  function wirePeriodPicker(row, defaultStart, defaultDays) {
     var opener = row.querySelector('#week-period-open');
     var picker = row.querySelector('#week-period-picker');
     if (!opener || !picker) return;
-    var state = { start: todayLocalStr(), days: 7 };
+    // `start` is always set. `end` is '' exactly while a range is
+    // half-chosen — which is also the whole of the confirm button's
+    // disabled condition.
+    var state = { start: defaultStart, end: '' };
 
     opener.addEventListener('click', function () {
       var opening = picker.hidden;
       picker.hidden = !opening;
       opener.setAttribute('aria-expanded', opening ? 'true' : 'false');
-      opener.textContent = opening ? 'Never mind' : 'Pick my own days';
+      opener.textContent = opening ? PERIOD_PICKER_COPY.close : PERIOD_PICKER_COPY.open;
       if (opening) {
-        state = { start: defaultStart, days: 7 };
+        // Opens on the household's OWN period — the same days the first
+        // button offers — rather than on nothing at all. An "as we go"
+        // household opens on its three days, a weekly one on its week,
+        // and either can retap from there.
+        state = {
+          start: defaultStart,
+          end: addDaysLocal(defaultStart, Math.max(1, defaultDays || 7) - 1)
+        };
         renderPicker();
       }
     });
 
+    function stripDays() {
+      // Today forward, because "from today" is the request this control
+      // exists to answer. The one exception: a household's own period can
+      // have started BEFORE today (a Monday-anchored week, opened on a
+      // Thursday), and a strip that couldn't show the preselected range
+      // would open with nothing selected on it. So it begins at the
+      // earlier of the two and always reaches PERIOD_STRIP_DAYS past
+      // today.
+      var today = todayLocalStr();
+      var first = defaultStart < today ? defaultStart : today;
+      var stop = addDaysLocal(today, PERIOD_STRIP_DAYS - 1);
+      var days = [];
+      for (var d = first; d <= stop; d = addDaysLocal(d, 1)) days.push(d);
+      return days;
+    }
+
+    function pickDay(day) {
+      if (!state.end) {
+        // A range is half-chosen. A day on or after the start closes it —
+        // including the start itself, which is a legitimate one-day range
+        // ("just tonight"), not a mis-tap to swallow. A day BEFORE the
+        // start isn't an end at all; it's somebody restarting, so it
+        // becomes the new first day.
+        if (day < state.start) {
+          state.start = day;
+        } else {
+          var cap = addDaysLocal(state.start, PERIOD_MAX_DAYS - 1);
+          state.end = day <= cap ? day : cap;
+        }
+      } else {
+        // A whole range is showing; any tap starts a new one.
+        state = { start: day, end: '' };
+      }
+      renderPicker();
+    }
+
+    function chosenDayCount() {
+      // Inclusive of both ends: Sep 5 to Sep 7 is three days, not two.
+      return daysBetweenLocal(state.start, state.end) + 1;
+    }
+
     function renderPicker() {
-      // Fourteen days forward from today, which is as far ahead as anyone
-      // has ever been observed to plan and short enough to scroll by
-      // thumb. Starting at today rather than at the default start matters:
-      // "from today" is the request this control exists to answer.
-      var starts = [];
-      for (var i = 0; i < 14; i++) starts.push(addDaysLocal(todayLocalStr(), i));
+      var days = stripDays();
+      var last = state.end || state.start;
+      // Every tap rebuilds the strip, and a rebuilt element starts at
+      // scrollLeft 0 — so scrolling right to tap the 20th snapped the
+      // strip back to today and put the day you had just chosen off
+      // screen. Carried across by hand; there is nothing else holding it.
+      var prevScroll = picker.querySelector('.week-period-scroll');
+      prevScroll = prevScroll ? prevScroll.scrollLeft : 0;
       picker.innerHTML =
         '<div class="week-period-group">' +
-          '<div class="week-period-eyebrow">Starting</div>' +
-          '<div class="week-period-scroll" role="group" aria-label="Start day">' +
-            starts.map(function (d) {
-              var sel = d === state.start;
-              return '<button type="button" class="week-period-day' + (sel ? ' is-on' : '') +
-                '" data-start="' + d + '" aria-pressed="' + sel + '">' +
+          '<div class="week-period-hint">' +
+            escapeHtml(state.end ? PERIOD_PICKER_COPY.hintBoth : PERIOD_PICKER_COPY.hintEnd) +
+          '</div>' +
+          '<div class="week-period-scroll" role="group" aria-label="Days to plan">' +
+            days.map(function (d) {
+              var isEdge = d === state.start || d === state.end;
+              var inRange = d >= state.start && d <= last;
+              return '<button type="button" class="week-period-day' +
+                (isEdge ? ' is-on' : (inRange ? ' is-in' : '')) +
+                '" data-day="' + d + '" aria-pressed="' + (inRange ? 'true' : 'false') + '">' +
                 '<span class="week-period-dow">' + escapeHtml(dayNameShort(d)) + '</span>' +
                 '<span class="week-period-num">' + new Date(d + 'T00:00:00').getDate() + '</span>' +
               '</button>';
             }).join('') +
           '</div>' +
         '</div>' +
-        '<div class="week-period-group">' +
-          '<div class="week-period-eyebrow">For</div>' +
-          '<div class="week-period-scroll" role="group" aria-label="How many days">' +
-            PERIOD_LENGTHS.map(function (l) {
-              var sel = l.days === state.days;
-              return '<button type="button" class="week-period-len' + (sel ? ' is-on' : '') +
-                '" data-days="' + l.days + '" aria-pressed="' + sel + '">' +
-                escapeHtml(l.label) + '</button>';
-            }).join('') +
-          '</div>' +
-        '</div>' +
-        // The whole point of the confirm row: it names the actual dates,
-        // so nobody taps it wondering what they just chose.
-        '<button type="button" class="btn-outline-plum week-period-go" id="week-period-go">' +
-          '<span class="week-plan-btn-label">Plan these days</span>' +
-          '<span class="week-plan-btn-dates">' + escapeHtml(periodRangeLabel(state.start, state.days)) + '</span>' +
+        // The whole point of the confirm row: it names the actual dates, so
+        // nobody taps it wondering what they just chose. With only a first
+        // day chosen there are no dates to name yet, so it has nothing to
+        // say and cannot be tapped.
+        '<button type="button" class="btn-outline-plum week-period-go" id="week-period-go"' +
+          (state.end ? '' : ' disabled') + '>' +
+          '<span class="week-plan-btn-label">' + escapeHtml(PERIOD_PICKER_COPY.confirm) + '</span>' +
+          (state.end
+            ? '<span class="week-plan-btn-dates">' +
+                escapeHtml(periodRangeLabel(state.start, chosenDayCount())) + '</span>'
+            : '') +
         '</button>';
 
-      picker.querySelectorAll('[data-start]').forEach(function (b) {
-        b.addEventListener('click', function () { state.start = b.dataset.start; renderPicker(); });
+      var scroll = picker.querySelector('.week-period-scroll');
+      scroll.scrollLeft = prevScroll;
+      picker.querySelectorAll('[data-day]').forEach(function (b) {
+        b.addEventListener('click', function () { pickDay(b.dataset.day); });
       });
-      picker.querySelectorAll('[data-days]').forEach(function (b) {
-        b.addEventListener('click', function () { state.days = Number(b.dataset.days); renderPicker(); });
-      });
+      // Then make sure the range you just finished is actually on screen.
+      // Only this container scrolls — scrollIntoView would take the page
+      // with it, moving the whole card under the thumb that just tapped.
+      // The LAST of the range's two ends, which is the one a tap most
+      // likely just put out of view. (:last-of-type would have meant "the
+      // last button, if it happens to be chosen" — a different thing.)
+      var edges = picker.querySelectorAll('.week-period-day.is-on');
+      var edge = edges[edges.length - 1];
+      if (edge) {
+        var left = edge.offsetLeft, right = left + edge.offsetWidth;
+        if (right > scroll.scrollLeft + scroll.clientWidth) {
+          scroll.scrollLeft = right - scroll.clientWidth;
+        } else if (left < scroll.scrollLeft) {
+          scroll.scrollLeft = left;
+        }
+      }
       picker.querySelector('#week-period-go').addEventListener('click', function () {
-        startPlanningWeek(state.start, state.days);
+        if (!state.end) return;
+        startPlanningWeek(state.start, chosenDayCount());
       });
     }
+  }
+
+  function daysBetweenLocal(fromIso, toIso) {
+    // Rounded rather than floored: both ends are local midnight, so a DST
+    // boundary between them makes the difference 23 or 25 hours.
+    var a = new Date(fromIso + 'T00:00:00');
+    var b = new Date(toIso + 'T00:00:00');
+    return Math.round((b.getTime() - a.getTime()) / 86400000);
   }
 
   function addDaysLocal(isoDate, n) {
@@ -4217,20 +4344,6 @@
     // itself states what it found when it opens — better an understated
     // button than a second lookup on every Meals render.
     return !!(data.weekly_plan_id && data.week_start_date === weekStart);
-  }
-
-  function weekRangeLabel(weekStart) {
-    // "Aug 31–Sep 6". Same shape as the server's _format_week_range, kept
-    // in step deliberately — the two are read side by side.
-    var start = new Date(weekStart + 'T00:00:00');
-    var end = new Date(start.getTime());
-    end.setDate(end.getDate() + 6);
-    var startMonth = start.toLocaleDateString('en-US', { month: 'short' });
-    if (start.getMonth() === end.getMonth()) {
-      return startMonth + ' ' + start.getDate() + '–' + end.getDate();
-    }
-    return startMonth + ' ' + start.getDate() + '–' +
-      end.toLocaleDateString('en-US', { month: 'short' }) + ' ' + end.getDate();
   }
 
   function thisWeekStartLocal() {

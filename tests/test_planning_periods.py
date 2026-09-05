@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import datetime
 import json
+import re
+from pathlib import Path
 
 import pytest
 
@@ -388,6 +390,26 @@ class TestRhythmAnchoredDefault:
         assert res.status_code == 200
         assert res.json()["start_date"] == datetime.date.today().isoformat()
         assert res.json()["day_count"] == 3
+
+    def test_the_endpoint_labels_the_real_span_not_a_week(self, signed_in):
+        # The Meals card draws its two buttons from this payload, and it
+        # drew SEVEN days for everybody until 2026-09-05 — an "as we go"
+        # household was offered two week-long stretches and then handed a
+        # seven-day intake. The label is the visible half of that bug, so
+        # it is pinned alongside the count: three days from today reads as
+        # a three-day range, seven as a seven-day one.
+        today = datetime.date.today()
+
+        self._set_anchor("as_we_go")
+        short = signed_in.get("/api/week/planning-period").json()
+        assert short["day_count"] == 3
+        assert short["label"] == tools._format_period_range(today.isoformat(), 3)
+
+        self._set_anchor("friday")
+        week = signed_in.get("/api/week/planning-period").json()
+        assert week["day_count"] == 7
+        assert week["label"] == tools._format_period_range(week["start_date"], 7)
+        assert week["label"] != short["label"]
 
 
 # ---------- the nudge, retimed to the household's own ready day ----------
@@ -929,3 +951,59 @@ class TestStreamingArbitraryPeriods:
         res = signed_in.post(f"/api/week/{_monday()}/generate/stream", json={"day_count": 400})
         assert res.status_code == 400
         assert res.headers["content-type"].startswith("application/json")
+
+
+# ---------- what the Meals card actually ships ----------
+
+class TestPlanEntryStaticContract:
+    """
+    Two things this repo has no JS test harness for, checked the way
+    tests/test_embedded_pages.py checks the shell: by reading the shipped
+    file. Both are contracts between two files that a grep would otherwise
+    be the only guard on.
+
+    1.  The start-day-plus-length picker is gone. Emily, 2026-09-05: "for
+        the custom dates just let them choose the date range they want."
+        The length chips (PERIOD_LENGTHS) were the shape she replaced, so
+        their name reappearing in shell.js means the old control came back.
+    2.  /plan-week still clamps its `days` parameter. shell.js caps a
+        custom range at 28 days precisely because that page clamps to
+        1..28; if the clamp were dropped, the cap here would be enforcing
+        a rule that no longer exists on the other side.
+    """
+    SHELL_JS = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
+    PLAN_WEEK_HTML = (Path(__file__).resolve().parent.parent / "static" / "plan-week.html").read_text()
+
+    def test_the_length_chips_are_gone_from_the_shell(self):
+        assert "PERIOD_LENGTHS" not in self.SHELL_JS
+
+    def test_the_shell_ships_a_range_picker_capped_at_the_page_clamp(self):
+        assert "PERIOD_MAX_DAYS = 28" in self.SHELL_JS
+        # The strip and the two-tap range it selects.
+        assert "PERIOD_STRIP_DAYS" in self.SHELL_JS
+        assert "data-day=" in self.SHELL_JS
+
+    def test_plan_week_still_clamps_days(self):
+        assert "Math.min(raw, 28)" in self.PLAN_WEEK_HTML
+
+    def test_the_entry_reads_the_period_length_rather_than_assuming_seven(self):
+        # The bug: renderPlanWeekEntry hardcoded addDaysLocal(start, 7) for
+        # the second button and called startPlanningWeek with no day count
+        # at all, so an "as we go" household's 3 became 7 on the next
+        # screen. Both now ride on the suggestion's day_count.
+        assert "planningPeriodDefault.day_count" in self.SHELL_JS
+        assert "addDaysLocal(defaultStart, 7)" not in self.SHELL_JS
+        assert "startPlanningWeek(btn.dataset.week, dayCount)" in self.SHELL_JS
+
+    def test_nothing_opens_plan_week_without_saying_how_many_days(self):
+        # The same one-argument call was in four places: the Meals entry,
+        # the Today nudge's CTA, its dismissed-state link, and the review
+        # band's "Change my answers". Every one of them had a real day
+        # count on the payload it was already reading. A bare
+        # startPlanningWeek(x) reappearing means a fifth.
+        calls = re.findall(r"startPlanningWeek\(([^)]*)\)", self.SHELL_JS)
+        # The declaration itself is the one legitimate single-name match.
+        calls = [c for c in calls if c != "weekStart, dayCount"]
+        assert calls, "the call sites vanished — this check would pass vacuously"
+        for c in calls:
+            assert "," in c, f"startPlanningWeek({c}) drops the day count"

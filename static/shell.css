@@ -2360,15 +2360,17 @@ html, body {
   border-top: 1.5px solid var(--hairline);
 }
 .week-period-group { display: flex; flex-direction: column; gap: 8px; }
-.week-period-eyebrow {
+/* An instruction, not a label — so it is a sentence in body type rather
+   than the uppercase eyebrow that used to sit here saying "STARTING".
+   Contrast measured in-browser (hard rule 8), --ink-secondary on
+   --surface: 4.70:1 light, 7.36:1 dark. */
+.week-period-hint {
   font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-secondary);
 }
-/* Horizontal scroll rather than a wrapped grid: a fortnight of day tiles
+/* Horizontal scroll rather than a wrapped grid: three weeks of day tiles
    wrapped onto four rows reads as a calendar, which is exactly what this
    control is not. */
 .week-period-scroll {
@@ -2378,8 +2380,7 @@ html, body {
   padding-bottom: 2px;
   -webkit-overflow-scrolling: touch;
 }
-.week-period-day,
-.week-period-len {
+.week-period-day {
   flex: 0 0 auto;
   cursor: pointer;
   min-height: 44px;
@@ -2387,8 +2388,6 @@ html, body {
   border: 1.5px solid var(--hairline-strong);
   color: var(--ink-strong);
   font-family: var(--font-body);
-}
-.week-period-day {
   min-width: 44px;
   display: flex;
   flex-direction: column;
@@ -2400,20 +2399,24 @@ html, body {
 }
 .week-period-dow { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .week-period-num { font-size: 16px; font-weight: 700; }
-.week-period-len {
-  padding: 10px 14px;
-  border-radius: var(--radius-pill);
-  font-size: 14px;
-  font-weight: 700;
-}
-/* Selected reads as settled, not as urgent — celadon, the accent that
+/* Chosen reads as settled, not as urgent — celadon, the accent that
    reassures, carrying dark ink per hard rule 1. Apricot is reserved for
-   the one action per screen, and a chosen day is a state, not an act. */
-.week-period-day.is-on,
-.week-period-len.is-on {
+   the one action per screen, and a chosen day is a state, not an act.
+   The two ENDS of the range are the full accent; the days between are the
+   tint, so the strip says "these two, and everything in between" rather
+   than "these twelve things I tapped". Contrast measured in-browser
+   (hard rule 8): --on-accent-ink on --celadon 7.23:1 light /
+   8.46:1 dark; --ink-on-celadon on --celadon-tint
+   10.65:1 light / 10.37:1 dark. */
+.week-period-day.is-on {
   background: var(--celadon);
   border-color: var(--celadon);
   color: var(--on-accent-ink);
+}
+.week-period-day.is-in {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  color: var(--ink-on-celadon);
 }
 .week-period-go {
   align-self: flex-start;
@@ -2428,6 +2431,10 @@ html, body {
 @media (max-width: 520px) {
   .week-period-go { align-self: stretch; align-items: center; }
 }
+/* Disabled until there is a last day: the same .5/not-allowed pair the
+   reset row already uses, rather than a second convention for the same
+   state. */
+.week-period-go[disabled] { opacity: .5; cursor: not-allowed; }
 
 /* ---------- The draft: headline, per-slot reasons, open slots ---------- */
 

@@ -240,6 +240,54 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-05 — "Pick my own days" became a date RANGE, and the same card
+  stopped assuming every household plans in weeks. Branch
+  `custom-date-range` (NOT merged at the time of writing).** Two tickets in
+  one pass because they are one control.
+  - **Emily, looking at the start-day-plus-length picker: "for the custom
+    dates just let them choose the date range they want."** One strip of
+    days now — first tap is the first day, second tap the last, the days
+    between fill in. The five length chips (`PERIOD_LENGTHS`) are gone and
+    so is the "keep it two taps, not a calendar widget" note that produced
+    them; the replacement comment says that explicitly so nobody re-argues
+    it from the old one. Two taps survive anyway.
+  - **Tapping the start again completes a ONE-DAY range** rather than being
+    a no-op. The alternative reading of the ticket ("no-op or clears")
+    blocks "just tonight", and a control that swallows a deliberate tap is
+    worse than one that takes a person at their word. A day before the
+    start restarts from there; any tap on a finished range starts a new one.
+  - **The strip begins at the earlier of today and the household's own
+    start**, not flatly at today. A Monday-anchored week opened on a
+    Thursday preselects days that began before today, and a strip that
+    cannot show them would open with nothing selected on it.
+  - **28 is `/plan-week`'s clamp, not a design choice.** `PERIOD_MAX_DAYS`
+    exists so the confirm never names dates the next screen would quietly
+    shorten.
+  - **The bug in the same card: it planned seven days for everybody.**
+    `renderPlanWeekEntry` hardcoded a seven three times over — the second
+    button's start day, both buttons' date labels, and (by omitting the
+    argument to `startPlanningWeek`) the URL — so an "as we go" household,
+    whose `/api/week/planning-period` has said `day_count: 3` all along,
+    was offered two week-long stretches and then handed a seven-day intake.
+    The server was right the whole time; only the client wasn't reading it.
+  - **Three more call sites had the identical defect and are fixed with
+    it** — the Today nudge's CTA and its dismissed-state link
+    (`nudge.day_count` was already on that payload beside the label that
+    names the real span) and the review band's "Change my answers"
+    (`data.day_count`, exactly what `tryAgain` already passes). Leaving
+    them would have made the Meals card and the nudge disagree about the
+    same household's week.
+  - `weekRangeLabel` is deleted rather than taught a day count:
+    `periodRangeLabel(x, 7)` was already character-for-character what it did.
+  - **Button wording is an ASSUMPTION, flagged for Emily:** "Plan the next
+    3 days" / "Plan the 3 after" when the period isn't seven days, and the
+    unchanged "Plan this week" / "Plan next week" when it is. It lives in
+    one function (`planEntryLabel`); all picker copy lives in one object
+    (`PERIOD_PICKER_COPY`), for the same reason.
+  - Contrast measured in-browser and recorded in `shell.css`: range
+    endpoints 7.23:1 light / 8.46:1 dark, the days between 10.65:1 /
+    10.37:1, the hint line 4.70:1 / 7.36:1. Tiles measured 44x44 at 390px.
+
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
   merged at the time of writing).** Root cause of the original bug was three
