@@ -240,6 +240,53 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-04 — The grocery list multiplied packages by how often a meal
+  repeated. Branch `fix-grocery-quantity-inflation` (NOT merged at the time
+  of writing; branched off `fix-leftovers-ordering`).** Emily's first
+  approved week: 6 bags of baby spinach, 4 bottles of honey, 4 tubs of
+  hummus, 3 bottles of olive oil, cottage cheese as "48 oz tubs". The three
+  earlier fixes she remembers — summing instead of concatenating, the
+  singular/plural merge, container pluralising — were all correct and none
+  of them was the bug. The inputs to the sum were wrong.
+  - **Root cause: `approve_weekly_plan` ingested one MEAL at a time**
+    (`weekly_plan.py`, the `_plan_grocery_candidate_entries` loop → one
+    `_add_recipe_ingredients_to_grocery_list` call per entry). The
+    generation prompt deliberately repeats a breakfast 2-3+ times a week
+    and writes qty as a bought unit ("1 bag"), so six mornings added one
+    bag six times. Ingestion is now per RECIPE-week
+    (`recipes._add_recipe_ingredients_for_entries`).
+  - **A sealed package is added once per recipe-week and consolidated
+    across recipes by keeping the LARGER, not the sum** (`add_grocery_item`
+    gained `quantity_mode="max"`). Per-portion amounts are untouched and
+    still add up per meal, still scaled by each meal's own attendance
+    factor — Emily's 18 peppers were the arithmetic truth, not a bug.
+  - **`_PACKAGE_UNITS` is deliberately five words** — bag, bottle,
+    container, jar, tub. "can"/"tin"/"box"/"carton"/"pack" are packages of
+    things eaten a package at a time (a tin of beans, a box of pasta), and
+    collapsing those leaves a cook short mid-week. A test asserting a
+    takeover trims the beans caught exactly that when "tin" was briefly in
+    the set. When in doubt a word stays OUT: an extra line beats a missing
+    dinner.
+  - **"48 oz tub" parsed as forty-eight tubs.** `_parse_quantity` now reads
+    `<size> <measure> <container>` as ONE package whose size rides with the
+    unit — `(1.0, "tub (48 oz)")`, formatted back as "3 tubs (48 oz)" and
+    round-tripping exactly. This changes "1 lb bag" to display as "1 bag
+    (1 lb)" too, which is the same fix, not a side effect.
+  - **Reversal had to stop being one-meal-one-share for packages.** A
+    package line now survives until the LAST meal linked to it goes
+    (`_reverse_meal_grocery_contributions`), so a swap leaves the bottle
+    the other two dinners still need and clearing the week still empties
+    the list exactly. A package line with no `source_weekly_plan_id` is a
+    hand-added standing want and is never removed.
+  - **Where `leftovers-servings-scaling` plugs in:** the per-portion path
+    in `_add_recipe_ingredients_for_entries` still scales per meal via
+    `attendance.grocery_scale_factor` (anchored to household size, on
+    purpose — see the attendance entry). A total-servings factor across
+    the group's `entry_ids` replaces that one call and nothing else.
+  - **Open for Emily:** whether a true per-portion sum should ever be
+    capped. 17 peppers is honest arithmetic; it may still be more than
+    anyone wants to read on one line.
+
 - **2026-09-04 — A plan is a PERIOD, not a week, and no day has two of
   them. Branch `planning-periods` (NOT merged at the time of writing).**
   Loop Board "Planning periods, not weeks — plan any window (Thursday to

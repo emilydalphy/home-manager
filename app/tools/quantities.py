@@ -195,6 +195,38 @@ _CONTAINER_UNIT_PLURALS = {
 _CONTAINER_UNIT_SINGULARS = {plural: singular for singular, plural in _CONTAINER_UNIT_PLURALS.items()}
 
 
+# The subset of container words that name a SEALED PACKAGE the household
+# buys one of and draws on all week — a bottle of oil, a jar of spice, a
+# bag of granola, a tub of cottage cheese. This is the line the grocery
+# ingestion path draws (see recipes._add_recipe_ingredients_for_entries):
+# a package is added once per week however many meals name it, while
+# everything else adds up per meal.
+#
+# Deliberately a SHORT list, and much shorter than _CONTAINER_UNIT_PLURALS
+# above. The question a word has to pass is not "is this a package?" but
+# "does one of these last a household a whole week?", and the two answers
+# come apart constantly:
+#
+#   - "bunch", "head", "clove", "pint", "punnet", "sprig", "slice",
+#     "stick", "block", "bar", "loaf" and "roll" are per-meal amounts.
+#     Five dinners each wanting a bunch of cilantro want five bunches.
+#   - "can", "tin", "carton", "box", "pack", "packet" and "sachet" are
+#     packages, but of things eaten a package at a time — a tin of beans,
+#     a box of pasta, a carton of broth, a packet of yeast. These are the
+#     ingredients the generation prompt itself calls out as needing "their
+#     own real qty every time they're used, since each use is an actual
+#     portion, not a pinch" (agent.py, the staples bullet). Collapsing
+#     them to one would leave a cook short mid-week, which is a worse
+#     failure than a list that asks for one line too many.
+#
+# What is left is the shape Emily's first approved week actually got wrong:
+# the bag of spinach, the bag of granola, the bag of quinoa, the bottle of
+# honey, the bottle of olive oil, the tub of hummus, the tub of cottage
+# cheese. When in doubt a word stays OUT of this set, because that is the
+# side that only ever costs an extra line rather than a missing dinner.
+_PACKAGE_UNITS = {"bag", "bottle", "container", "jar", "tub"}
+
+
 def _normalize_container_word(unit_str: str) -> str:
     """Singularize a trailing container word ("lb bags" -> "lb bag") so a
     previously-pluralized display string parses back to the same canonical
@@ -210,7 +242,58 @@ def _normalize_container_word(unit_str: str) -> str:
 # sometimes carries a package word too ("1 lb bag", "12 oz can") — allow one
 # optional second word so these parse instead of falling through to the
 # "unparseable, concatenate raw strings" fallback in _try_consolidate_quantity.
-_QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]+(?:\s+[a-zA-Z]+)?)?$")
+# The optional trailing "(...)" is the canonical form this module writes a
+# sized package back out in — "1 tub (48 oz)" — so a formatted quantity
+# parses back to exactly the value it was formatted from.
+_QTY_RE = re.compile(
+    r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]+(?:\s+[a-zA-Z]+)?)?(?:\s*\(([^()]*)\))?$"
+)
+
+
+def _measure_units() -> set[str]:
+    """Units that measure an amount (oz, lb, g, cup…) as opposed to counting
+    things. Computed at call time because _UNIT_CONVERSION_GROUPS is defined
+    further down the module."""
+    return {u for group in _UNIT_CONVERSION_GROUPS for u in group}
+
+
+def _sized_package_unit(container: str, amount: float, measure: str) -> str:
+    """Canonical unit string for a package that carries its own size:
+    ("tub", 48, "oz") -> "tub (48 oz)". The size never pluralizes — a
+    48-ounce tub is "48 oz", not "48 ozs" — so it is written directly
+    rather than through _format_quantity."""
+    return f"{container} ({amount:g} {measure})"
+
+
+def _split_package_size(unit: str | None) -> tuple[str | None, str]:
+    """Split a canonical unit into (package word, " (size)" suffix).
+    "tub (48 oz)" -> ("tub", " (48 oz)"); "cup" -> ("cup", "")."""
+    if not unit:
+        return unit, ""
+    head, sep, rest = unit.partition(" (")
+    return head, (f" ({rest}" if sep else "")
+
+
+def package_unit(qty: str) -> str | None:
+    """
+    The sealed-package word a bought-unit quantity names ("1 bottle",
+    "2 bags", "48 oz tub" -> "bottle", "bag", "tub"), or None for anything
+    that isn't one — a plain count, a measured amount, a per-meal produce
+    unit like a bunch, or freeform text.
+
+    This is the single place the "buy one per week, not one per meal" rule
+    decides what counts as a package; grocery ingestion and the reversal
+    that undoes it both ask this so they can never disagree about which
+    lines follow that rule.
+    """
+    parsed = _parse_quantity(qty)
+    if not parsed or not parsed[1]:
+        return None
+    head, _ = _split_package_size(parsed[1])
+    # Last word, so a size descriptor in front of the package word ("2
+    # large bags") still reads as a bag rather than falling through.
+    word = head.rpartition(" ")[2]
+    return word if word in _PACKAGE_UNITS else None
 
 
 def _strip_prep_descriptor(qty: str) -> str:
@@ -233,13 +316,29 @@ def _strip_prep_descriptor(qty: str) -> str:
 
 
 def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
-    """Parse a freeform quantity string into (amount, normalized_unit_or_None). Returns None if unparseable (e.g. blank, or freeform text like 'a bunch')."""
+    """
+    Parse a freeform quantity string into (amount, normalized_unit_or_None).
+    Returns None if unparseable (e.g. blank, or freeform text like 'a bunch').
+
+    One shape needs explaining. In "48 oz tub", "1 lb bag", "12 oz can" the
+    number is the SIZE of one package, not a count of packages — nobody
+    means forty-eight tubs of cottage cheese. Those parse as ONE package
+    whose size travels with the unit: (1.0, "tub (48 oz)"). Read the other
+    way (the way this used to), the size became the count and the grocery
+    list asked Emily to buy "48 oz tubs" of cottage cheese, then "192 oz
+    tubs" once four lunches had each added one.
+
+    A count of same-sized packages is written the way this module formats
+    it back out — "3 tubs (48 oz)" — and parses to (3.0, "tub (48 oz)"),
+    so formatting and parsing round-trip exactly.
+    """
     if not qty or not qty.strip():
         return None
     match = _QTY_RE.match(_strip_prep_descriptor(qty.strip()).lower())
     if not match:
         return None
     amount_str, unit_str = match.group(1), (match.group(2) or "").strip()
+    size_str = (match.group(3) or "").strip()
     try:
         if "/" in amount_str:
             parts = amount_str.split(" ")
@@ -254,7 +353,21 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
             amount = float(amount_str)
     except (ValueError, ZeroDivisionError):
         return None
-    return amount, (_UNIT_ALIASES.get(unit_str, _normalize_container_word(unit_str)) or None)
+    unit = _UNIT_ALIASES.get(unit_str, _normalize_container_word(unit_str)) or None
+    if size_str:
+        # "3 tubs (48 oz)" — an explicit count of packages of a stated size.
+        size = _parse_quantity(size_str)
+        if unit and size and size[1]:
+            return amount, _sized_package_unit(unit, size[0], size[1])
+        return amount, unit
+    if unit and " " in unit:
+        # "48 oz tub" — a measure word in front of a container word means
+        # the number sizes the package rather than counting packages.
+        measure, _, container = unit.partition(" ")
+        measure = _UNIT_ALIASES.get(measure, measure)
+        if container in _CONTAINER_UNIT_PLURALS and measure in _measure_units():
+            return 1.0, _sized_package_unit(container, amount, measure)
+    return amount, unit
 
 
 _UNIT_PLURALS = {"cup": "cups", "lb": "lbs"}
@@ -264,15 +377,18 @@ def _format_quantity(amount: float, unit: str | None) -> str:
     amount_str = f"{amount:g}"
     if not unit:
         return amount_str
+    # A sized package ("tub (48 oz)") pluralizes the package word and
+    # leaves the size alone: "2 tubs (48 oz)", never "2 tub (48 ozs)".
+    head, size_suffix = _split_package_size(unit)
     if amount == 1:
-        return f"{amount_str} {unit}"
-    if unit in _UNIT_PLURALS:
-        return f"{amount_str} {_UNIT_PLURALS[unit]}"
-    prefix, _, last_word = unit.rpartition(" ")
+        return f"{amount_str} {head}{size_suffix}"
+    if head in _UNIT_PLURALS:
+        return f"{amount_str} {_UNIT_PLURALS[head]}{size_suffix}"
+    prefix, _, last_word = head.rpartition(" ")
     if last_word in _CONTAINER_UNIT_PLURALS:
         display_unit = f"{prefix} {_CONTAINER_UNIT_PLURALS[last_word]}" if prefix else _CONTAINER_UNIT_PLURALS[last_word]
-        return f"{amount_str} {display_unit}"
-    return f"{amount_str} {unit}"
+        return f"{amount_str} {display_unit}{size_suffix}"
+    return f"{amount_str} {head}{size_suffix}"
 
 
 # Unit groups for shopping-list "roll up to a bigger unit" conversion, each

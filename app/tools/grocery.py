@@ -119,6 +119,33 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     return f"{existing_qty} + {new_qty}", False
 
 
+def _greater_of_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
+    """
+    Keep the LARGER of two quantities for the same grocery item instead of
+    their sum. Same contract as _try_consolidate_quantity — returns
+    (resulting_quantity_string, was_merged) and concatenates rather than
+    guessing when the units don't reconcile.
+
+    This is what "one bottle of olive oil per week" means in code. Three
+    dinners that each list "1 bottle" want one bottle between them, not
+    three; a recipe that genuinely asks for "2 bottles" still wins over a
+    "1 bottle" beside it. Only the sealed-package quantities identified by
+    quantities.package_unit are merged this way — see
+    recipes._add_recipe_ingredients_for_entries, the only caller.
+    """
+    existing_qty = _quantities._strip_prep_descriptor((existing_qty or "").strip())
+    new_qty = _quantities._strip_prep_descriptor((new_qty or "").strip())
+    if not existing_qty:
+        return new_qty, True
+    if not new_qty:
+        return existing_qty, True
+    existing_parsed = _quantities._parse_quantity(existing_qty)
+    new_parsed = _quantities._parse_quantity(new_qty)
+    if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
+        return _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), existing_parsed[1]), True
+    return f"{existing_qty} + {new_qty}", False
+
+
 def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     """
     The inverse of _try_consolidate_quantity — used when a meal that
@@ -165,6 +192,19 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     left alone regardless — the shopper has already acted on it, so this
     won't yank something out of a cart mid-trip. Always clears the ledger
     rows for this entry afterward, whether or not anything was adjusted.
+
+    A SEALED-PACKAGE line (one bottle of oil, one bag of granola — see
+    quantities.package_unit) is the exception, and has to be, because the
+    add side no longer adds one per meal: the whole week's oil is a single
+    bottle however many dinners named it. Subtracting a bottle per meal
+    would take the line off the list the first time any one of those meals
+    changed, while the rest still needed it. So a package line survives
+    until the LAST meal holding a link to it goes, and then goes with it —
+    which keeps clearing a whole week exactly symmetric with approving it,
+    and leaves the bottle alone when a single meal is swapped. A package
+    line with no source_weekly_plan_id was asked for by a person directly
+    and is never removed by this at all; the plan borrowed it, it doesn't
+    own it.
     """
     conn = get_conn()
     links = conn.execute(
@@ -176,10 +216,19 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     trimmed_items = []
     for link in links:
         grocery_row = conn.execute(
-            "SELECT id, item, quantity, status FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
             (link["grocery_item_id"], household_id()),
         ).fetchone()
-        if grocery_row and grocery_row["status"] == "needed":
+        if grocery_row and grocery_row["status"] == "needed" and _quantities.package_unit(link["quantity"] or ""):
+            still_wanted = conn.execute(
+                "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
+                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
+                (household_id(), link["grocery_item_id"], entry_id),
+            ).fetchone()["n"]
+            if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
+                conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
+                removed_items.append(grocery_row["item"])
+        elif grocery_row and grocery_row["status"] == "needed":
             new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
             if fully_removed:
                 conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
@@ -199,6 +248,7 @@ def add_grocery_item(
     category: str = "other",
     added_by: str = "user",
     source_weekly_plan_id: int | None = None,
+    quantity_mode: str = "sum",
 ) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
@@ -216,6 +266,12 @@ def add_grocery_item(
     generated weekly plan (see plan_meal/generate_weekly_plan), so
     clear_stale_grocery_items can tell a current week's ingredients apart
     from an old week's leftovers.
+
+    quantity_mode is for callers, not for the assistant: leave it at "sum"
+    for anything a person asks for. "max" keeps the larger of the two
+    quantities rather than adding them, which is how a sealed package a
+    whole week draws on lands once instead of once per meal — see
+    _greater_of_quantity and recipes._add_recipe_ingredients_for_entries.
     """
     quantity = _quantities._normalize_grocery_quantity(quantity or "")
     conn = get_conn()
@@ -241,7 +297,8 @@ def add_grocery_item(
     pref = next((p for p in prefs if _merge_key(p["item"]) == _merge_key(item)), None)
     preferred_store = pref["store"] if pref else ""
     if existing:
-        merged_qty, merged = _try_consolidate_quantity(existing["quantity"] or "", quantity)
+        consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
+        merged_qty, merged = consolidate(existing["quantity"] or "", quantity)
         # A row with no source_weekly_plan_id is something a person asked
         # for directly, and clear_stale_grocery_items is required to leave
         # those alone forever. Stamping this week's plan id onto it during
