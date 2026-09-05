@@ -606,6 +606,19 @@ _LEFTOVER_REPAIR_OPTIONS = [
 ]
 
 
+def _join_with_and(items: list[str]) -> str:
+    """
+    "Tuesday", "Tuesday and Thursday", or "Tuesday, Thursday, and Friday" —
+    the prose join for however many nights end up sharing one source's
+    leftovers.
+    """
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return ", ".join(items[:-1]) + f", and {items[-1]}"
+
+
 def _resolve_leftover_source(links_to: str, by_date_slot: dict, by_id: dict):
     """
     The row `links_to` claims to point at, or None if it doesn't resolve to
@@ -635,15 +648,26 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
     cook-once-eat-twice pairing) and both land in this same unchecked
     field, so both get checked here.
 
-    Called from _finish_week_slots BEFORE audit_plan_slots, for the same
-    reason the out-night/zero-count/slot-needs passes run before it: a
-    slot repaired here becomes `open`, which the audit must see as present,
-    not question a second time as missing.
+    Called from _finish_week_slots AFTER duplicates are deduped and BEFORE
+    the final audit_plan_slots, for two separate reasons that both land on
+    "run it here": a slot repaired here becomes `open`, which the audit
+    must see as present, not question a second time as missing — and a
+    slot that still has two rows for it must never reach this function,
+    because repairing one of them clears the WHOLE slot (both rows), not
+    just the bad one. See _finish_week_slots' docstring for why dedupe now
+    runs before this rather than after.
 
     A chain is valid only if ALL of:
     - links_to parses (see _resolve_leftover_source);
     - the source date is strictly EARLIER than this entry's date;
     - the source is a `planned` entry with a real meal, in THIS plan;
+    - the source slot is lunch or dinner — a dinner claiming a breakfast's
+      leftovers is a type mismatch as backwards as the bug this exists to
+      catch, just sideways instead of in time. (A breakfast eating an
+      earlier breakfast's leftovers still isn't allowed, since the rule is
+      about the SOURCE, not a match between the two slots — the smallest
+      rule that rejects the reported shape without inventing a same-slot
+      requirement nobody asked for.)
     - the source is not itself a leftovers entry (chaining leftovers off
       leftovers is exactly as backwards as the bug this exists to catch).
 
@@ -658,7 +682,11 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
     own derived_from_json — no schema change needed for it — so the
     Cooker/plan screens can eventually say "make double." Quantities
     themselves are not scaled here; see cooker.py's batch_note for the
-    component-based equivalent of that half.
+    component-based equivalent of that half. A single source can carry
+    more than one leftovers night (Tuesday AND Thursday both eating
+    Monday's cook), so make_double_for is always a list of "date:slot"
+    targets, accumulated rather than overwritten — never assume it holds
+    exactly one.
     """
     conn = get_conn()
     rows = conn.execute(
@@ -689,12 +717,15 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             issue = "a meal that hasn’t happened yet"
         elif source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
             issue = "a night nothing was actually cooked"
+        elif source["slot"] not in ("lunch", "dinner"):
+            issue = "a breakfast"
         else:
             source_derived = json.loads(source["derived_from_json"] or "{}")
             if (source_derived.get("links_to") or "").strip():
                 issue = "another leftovers night, not an actual cook"
 
         if issue:
+            day_name = date.fromisoformat(r["date"]).strftime("%A")
             clear_plan_slot(weekly_plan_id, r["date"], r["slot"])
             repaired_derived = {k: v for k, v in derived.items() if k != "links_to"}
             repaired_derived["repaired"] = "leftovers_backwards"
@@ -704,23 +735,38 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
                 meal_date=r["date"],
                 slot=r["slot"],
                 open_reason=(
-                    f"I’d planned {r['slot']} here as leftovers from {issue} — that’s my "
-                    "mistake, not yours. Pick something, or I’ll cook fresh."
+                    f"{day_name} I’d rather ask than guess: I’d pencilled in leftovers "
+                    f"from {issue}, and there’s nothing to reheat. Pick something, or "
+                    "I’ll cook fresh."
                 ),
                 options=_LEFTOVER_REPAIR_OPTIONS,
                 derived_from=repaired_derived,
             )
             repaired.append({"date": r["date"], "slot": r["slot"], "original_links_to": links_to, "issue": issue})
         else:
-            day_name = date.fromisoformat(r["date"]).strftime("%A")
-            note = f"I’ll set aside a double batch tonight — {day_name} eats the leftovers."
+            target = f"{r['date']}:{r['slot']}"
             conn = get_conn()
             existing = conn.execute(
                 "SELECT derived_from_json FROM meal_plan_entries WHERE id = ?", (source["id"],)
             ).fetchone()
             source_derived = json.loads(existing["derived_from_json"] or "{}") if existing else {}
-            source_derived["make_double_note"] = note
-            source_derived["make_double_for"] = f"{r['date']}:{r['slot']}"
+            # A list, not a scalar: one cook can feed more than one leftovers
+            # night (Tuesday AND Thursday both eating Monday's chili), and an
+            # overwrite here would silently drop every earlier one. Sorted by
+            # date so the note reads in the order the nights actually fall,
+            # regardless of the order this loop happens to visit them in.
+            targets = source_derived.get("make_double_for") or []
+            if isinstance(targets, str):  # tolerate the pre-fix scalar shape
+                targets = [targets]
+            if target not in targets:
+                targets.append(target)
+            targets.sort(key=lambda t: t.split(":")[0])
+            day_names = [date.fromisoformat(t.split(":")[0]).strftime("%A") for t in targets]
+            source_derived["make_double_note"] = (
+                f"I’ll set aside a double batch tonight — {_join_with_and(day_names)} "
+                f"{'eats' if len(day_names) == 1 else 'eat'} the leftovers."
+            )
+            source_derived["make_double_for"] = targets
             conn.execute(
                 "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
                 (json.dumps(source_derived), source["id"]),

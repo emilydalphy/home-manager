@@ -3431,7 +3431,7 @@ def _finish_week_slots(
     The prompt tells the model every slot must come back; this is what
     happens when it doesn't. "Week generation silently leaves random meal
     slots empty" is a real reported bug, and its shape is precisely that
-    nothing downstream ever checked. Three passes, in order:
+    nothing downstream ever checked. Five passes, in order:
 
     week_start_date here is the actual CONTENT start date (see
     _generate_weekly_plan's docstring on skip_days) — for an ordinary
@@ -3451,16 +3451,30 @@ def _finish_week_slots(
        to the setup screen's stepper, and this is what honouring it looks
        like in stored form. (A count above zero means DISTINCT meals, not
        days — see the generation prompt — so it never empties a slot.)
-    3. Any leftovers entry (derived_from.links_to set) whose earlier cook
+    3. Every declared slot need (away/ready_made/quick) gets enforced
+       against whatever the model actually generated. See
+       tools.apply_slot_needs_to_plan.
+    4. Anything DUPLICATED (two or more rows claiming one slot) gets
+       deduped, keeping the first-created row. This has to run BEFORE
+       leftovers repair, not after: repairing a bad leftovers chain clears
+       the whole slot, and a slot still carrying a valid sibling row at
+       that point loses it too — the sibling deleted along with the row
+       that actually deserved it, and a leftovers source left pointing at
+       a slot that's now open instead of the meal it was really about.
+       Computed directly from tools.audit_plan_slots so the later,
+       end-of-function call to that same function is answering a different
+       question (what's still missing) against a plan that should have no
+       duplicates left in it.
+    5. Any leftovers entry (derived_from.links_to set) whose earlier cook
        doesn't actually check out — hasn't happened yet, isn't in this
-       plan, or is itself a leftovers night — gets reopened rather than
-       trusted. See tools.repair_leftover_chains.
-    4. Anything still missing is filled as an open slot naming what
+       plan, points at the wrong kind of slot, or is itself a leftovers
+       night — gets reopened rather than trusted. See
+       tools.repair_leftover_chains.
+    6. Anything still missing is filled as an open slot naming what
        actually happened. This is the honest failure mode: the household
        sees a question rather than a blank, and the reason says plainly
        that the app couldn't settle it rather than inventing a constraint
-       it didn't have. Anything DUPLICATED (two rows claiming one slot) is
-       resolved at the same point, keeping the first row.
+       it didn't have.
     """
     # The period's real days. `_week_dates(...)[:day_count]` capped at seven,
     # so an 8-day period's last day never got its `out` tag honoured, never
@@ -3521,8 +3535,24 @@ def _finish_week_slots(
     # full invariant this guarantees regardless of what the model did.
     tools.apply_slot_needs_to_plan(plan_id, week_start_date, day_count=day_count)
 
-    # 4. A leftovers night whose derived_from.links_to points at a date
-    # that hasn't happened yet (or anywhere else invalid) — Loop Board "the
+    # Two rows claiming one slot is how a night nobody is home ends up with
+    # groceries bought for it — audit_plan_slots has always computed this,
+    # but nothing consumed it until now. Keep the first row, drop the rest.
+    #
+    # MUST run before repair_leftover_chains, not after: repairing a bad
+    # leftovers chain clears the ENTIRE slot (both rows, if the slot still
+    # has two), not just the offending one. A duplicate pair left standing
+    # into that pass can lose its valid row along with the bad one, and
+    # leave the real source's make_double_for pointing at a slot that's
+    # now `open` instead of the meal it was actually about. Computed here
+    # directly from audit_plan_slots rather than waiting for the pass at
+    # the end of this function, which answers a different question (what's
+    # still missing) once the plan should have no duplicates left in it.
+    early_audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
+    tools._dedupe_duplicate_slots(plan_id, early_audit["duplicated"])
+
+    # A leftovers night whose derived_from.links_to points at a date that
+    # hasn't happened yet (or anywhere else invalid) — Loop Board "the
     # planner scheduled Wednesday as leftovers of Thursday's cook". Runs
     # before the audit below for the same reason every other pass here
     # does: a slot this reopens must be seen as present, not questioned a
@@ -3530,10 +3560,6 @@ def _finish_week_slots(
     tools.repair_leftover_chains(plan_id)
 
     audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
-    # Two rows claiming one slot is how a night nobody is home ends up with
-    # groceries bought for it — audit_plan_slots has always computed this,
-    # but nothing consumed it until now. Keep the first row, drop the rest.
-    tools._dedupe_duplicate_slots(plan_id, audit["duplicated"])
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
         tools.plan_slot_open(
