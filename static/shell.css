@@ -1658,6 +1658,13 @@ html, body {
   color: var(--ink-secondary);
   margin-top: 6px;
 }
+/* A possible allergy/must-avoid clash on the draft. Uses the existing --warn-ink
+   pair (no new token) and stays a sentence, not a banner: this is something to
+   look at before approving, not an error, and the week is still approvable. */
+.week-conflict-note {
+  color: var(--warn-ink);
+  font-weight: 600;
+}
 .week-suggested-note {
   font-family: var(--font-accent);
   font-style: italic;
