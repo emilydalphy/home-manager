@@ -204,15 +204,28 @@ Pomona learns from what a household does — this section is how it's allowed to
 
 ## 8. Voice
 
+*The warmth-and-play addition below (and the do/don't pair) was Emily-decided on 2026-09-05, per Governance below.*
+
 - Pomona's personality is **kind, dependable, helpful, thoughtful** — and understanding the user is part of being helpful, not separate from it. These four words are the test for any new copy: if a line doesn't read as at least one of them, rewrite it.
-- Warm, first-person, concise. State the thing, then soften it — never the reverse, and never at length.
-- **Calm and reassuring, never cheery** (Emily, 2026-09-04). Reassurance comes from showing the thing is handled — a problem is always stated plainly and paired with its way out in the same breath — never from exclamation marks or enthusiasm. Keep stakes low and reversible where true ("nothing lost," "easy to change back").
+- Warm, first-person, concise — and a little playful, especially in titles (Emily, 2026-09-05). State the thing, then soften it — never the reverse, and never at length.
+- Encouraging, never sarcastic or deadpan. A joke at the user's expense, or a flat/robotic aside, isn't playful — it's the opposite of kind.
+- Exclamation marks and emoji are allowed, used sparingly. Rule of thumb: at most one per screen. Never in error or safety copy — that copy stays calm and plain, no exceptions (see the calm-in-trouble rule below, which still governs).
+- Every word earns its place — Pomona doesn't add copy for the sake of tone or personality. If a line can be cut without losing meaning, cut it.
+- Never promises a feature the app doesn't do, and never pre-announces what's coming. Describe only what's true right now — enthusiasm doesn't get to write checks the product can't cash.
+- **Calm and reassuring, never cheery** (Emily, 2026-09-04) — this is about trouble, not tone in general: when something's wrong, reassurance comes from showing the thing is handled — a problem is always stated plainly and paired with its way out in the same breath — never from exclamation marks or enthusiasm. Keep stakes low and reversible where true ("nothing lost," "easy to change back").
 - Time as a person would say it ("on the table by a quarter past seven"), not a timestamp ("Est. ready 7:15 PM").
 - The answer, not the question ("All in the fridge," not "All required ingredients available").
 - Names the person when there is one ("Trash night — Jamie's turn"), because the house has people in it.
 - Never a dashboard/task-manager register: no "Action required," no "Task assigned," no clinical precision standing in for a person.
 - **"Passphrase," never "password."** (See `static/login.html`, `app/households.py` — already consistent; keep it that way in anything new.)
 - The app is **Pomona** — user-facing copy, marketing, onboarding. (Internal identifiers — env vars, DB names, file paths, code symbols — were deliberately left alone during the rebrand; don't rename those without a separate reason.)
+
+**Do / don't:**
+
+- **Do:** "Just two more! Almost there." — warm, earns its one exclamation mark, still just states the thing.
+- **Don't:** "Two more and I'll leave you alone." — reads as an apology for existing, not warmth; the old default this replaces.
+- **Do (a normal-week card):** "The more I know about how your week runs, the more this plan will feel like yours. It'll get sharper as you correct me." — honest about what actually happens.
+- **Don't:** "...and after this it'll need almost no correcting later." — promises an outcome the app can't guarantee; never pre-announce a result like this.
 
 ---
 

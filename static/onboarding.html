@@ -93,6 +93,11 @@
     color: var(--text-muted); cursor: pointer;
   }
   .skip-link:hover { color: var(--ink-strong); }
+  /* Plain "worth mentioning" list under the normal-week textarea — a prompt,
+     not a set of tappable chips (Emily, 2026-09-05). */
+  .typical-week-hint-label { font-family: var(--font-body); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 12px 0 4px; }
+  ul.typical-week-hints { margin: 0 0 6px; padding-left: 1.1rem; }
+  ul.typical-week-hints li { font-family: var(--font-body); font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 2px; }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 16px;
@@ -531,18 +536,25 @@
 <!-- Step A: a normal week (design_handoff_plan_the_week §8).
      The single highest-value thing a household can tell the app, and it was
      not being asked at all. Both fields are free text and both are
-     skippable — a starter chip appends an example sentence rather than
-     leaving a blank page. -->
+     skippable — a plain "worth mentioning" list points at what to include
+     rather than leaving a blank page (Emily, 2026-09-05: the old chips only
+     pasted canned sentences, which didn't earn their place). -->
 <div id="step-typical-week" style="display:none">
   <h1>What does a normal week look like at yours?</h1>
   <div class="why-panel">
-    <b>Why I&rsquo;m asking:</b> this is the single most useful thing you can tell me. A week I
-    understand needs almost no correcting later &mdash; and it means your very first plan
-    isn&rsquo;t a guess.
+    <b>Why I&rsquo;m asking:</b> the more I know about how your week runs, the more this plan
+    will feel like yours. It&rsquo;ll get sharper as you correct me.
   </div>
   <label class="field-label" for="typical-week">A normal week at yours</label>
   <textarea id="typical-week" rows="4" placeholder="Tuesdays we're both home early so dinner's around 5:30. Fridays are usually takeout. One of us travels most other weeks."></textarea>
-  <div class="chip-row" id="typical-week-chips" style="margin-top:10px"></div>
+  <p class="typical-week-hint-label">Worth mentioning:</p>
+  <ul class="typical-week-hints">
+    <li>Who&rsquo;s home for which meals, and when work runs late</li>
+    <li>Nights you eat out</li>
+    <li>How breakfast and lunch actually happen</li>
+    <li>Anything you always cook or never will</li>
+    <li>When you like to prep ahead</li>
+  </ul>
   <label class="field-label" for="next-week-notes">Next week specifically</label>
   <p class="subtitle" style="margin:0 0 6px">Anything already on the calendar? I&rsquo;ll build your very first week around it rather than guessing.</p>
   <textarea id="next-week-notes" rows="2" placeholder="My parents are here Thursday to Sunday."></textarea>
@@ -560,14 +572,14 @@
      "step-kit-repeats" id/element names rather than renaming everything
      that touches this step for a naming-only change. -->
 <div id="step-kit-repeats" style="display:none">
-  <h1>One more and I&rsquo;ll leave you alone</h1>
+  <h1>Just one more! Almost there.</h1>
   <div class="why-panel">
     <b>Why I&rsquo;m asking:</b> your kit decides which recipes are even possible to suggest.
   </div>
   <label class="field-label">What you&rsquo;ve got to cook with</label>
   <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
   <div class="chip-row" id="kit-chips"></div>
-  <div><button class="next-btn" id="kit-repeats-next" type="button">That&rsquo;s me done</button></div>
+  <div><button class="next-btn" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button></div>
   <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
   <span class="back-link" data-back="typical-week">&larr; Back</span>
 </div>
@@ -597,7 +609,7 @@
 </div>
 
 <div id="step-chores-q" style="display:none">
-  <h1>A few more things, then you're done</h1>
+  <h1>A few more things, then you're all set</h1>
   <p class="subtitle">Pets, what you're hoping I can help with, and a couple of quick questions about your home — you can review and change anything before it's saved.</p>
 
   <label class="field-label">Any pets?</label>
@@ -1158,39 +1170,8 @@ renderLunchesValue();
 renderSnacksValue();
 
 // ---------- Step A: a normal week ----------
-// Starter chips APPEND an example sentence rather than setting a value —
-// the point is to avoid a blank page, not to turn free text into a
-// multiple choice. Each one is a real sentence someone might have written.
-// Loop Board "Home Manager: Review onboarding copy for grammar & tone
-// consistency" (2026-09-03): the household has no assumed traditional
-// structure (Emily's positioning, "no traditional assumptions about how a
-// household runs"), so these examples deliberately span different
-// household shapes — a shift worker's hours, not just a family with kids —
-// rather than defaulting to the one that used to be here.
-const TYPICAL_WEEK_STARTERS = [
-  { label: 'One night is takeout', sentence: 'One night a week is usually takeout.' },
-  { label: 'Someone travels', sentence: 'One of us travels most weeks.' },
-  { label: 'One of us works late', sentence: 'One of us works evening shifts, so dinner times don’t always line up.' },
-  { label: 'Weekends are slower', sentence: 'Weekends are slower — we cook properly then.' }
-];
-function buildTypicalWeekStarters() {
-  const wrap = document.getElementById('typical-week-chips');
-  wrap.innerHTML = '';
-  TYPICAL_WEEK_STARTERS.forEach(s => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip small';
-    btn.textContent = s.label;
-    btn.addEventListener('click', () => {
-      const field = document.getElementById('typical-week');
-      const existing = field.value.trim();
-      if (existing.includes(s.sentence)) return;
-      field.value = existing ? existing + ' ' + s.sentence : s.sentence;
-      field.focus();
-    });
-    wrap.appendChild(btn);
-  });
-}
+// The "worth mentioning" prompts are a plain static list in the markup now
+// (Emily, 2026-09-05) — no chips to build, nothing to wire up here.
 
 // ---------- Step B: kit ----------
 const KIT_OPTIONS = [
@@ -1561,7 +1542,6 @@ document.getElementById('excited-next').onclick = () => {
 // meal counts and the first-week reveal, so the very first plan is built
 // from real answers rather than a guess.
 document.getElementById('dinners-next').onclick = () => {
-  buildTypicalWeekStarters();
   showStep('typical-week');
 };
 document.getElementById('typical-week-next').onclick = () => {
