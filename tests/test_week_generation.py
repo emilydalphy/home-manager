@@ -124,6 +124,228 @@ def test_an_open_slot_the_model_asked_for_keeps_its_reason_and_options(recipe, s
     assert len(gap["derived_from"]["options"]) == 3
 
 
+# ---------- leftovers must eat something that actually happened ----------
+
+def test_a_leftovers_night_pointing_at_the_future_is_reopened_not_saved(recipe, stub_model):
+    """
+    The reported bug, reproduced directly: an EARLIER date's dinner
+    (Monday) is sent as leftovers with links_to pointing at a LATER date's
+    dinner (Wednesday) — the exact shape of "the planner scheduled
+    Wednesday as leftovers of Thursday's cook." It must never be saved as
+    a planned leftovers entry; it must come back open, with the repair
+    kept on derived_from rather than silently dropped.
+    """
+    week = _week_start()
+    dates = tools._week_dates(week)
+    monday, wednesday = dates[0], dates[2]
+    days = [d for d in _full_week(week) if not (d["date"] == monday and d["slot"] == "dinner")]
+    days.append({
+        "date": monday, "slot": "dinner", "meal_name": "Chili leftovers", "is_new_recipe": False,
+        "reasoning": "leftovers", "derived_from": {"links_to": f"{wednesday}:dinner"},
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    entry = _slots_for(plan["weekly_plan_id"])[(monday, "dinner")]
+    assert entry["slot_state"] == "open"
+    assert "hasn’t happened yet" in entry["open_reason"]
+    assert entry["derived_from"]["repaired"] == "leftovers_backwards"
+    assert entry["derived_from"]["original_links_to"] == f"{wednesday}:dinner"
+    assert "links_to" not in entry["derived_from"]
+    assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
+
+    # Voice: names the day and the constraint, same shape as every other
+    # open_reason in this file — never an apology (DESIGN_SYSTEM.md §8).
+    assert "rather ask than guess" in entry["open_reason"]
+    assert "mistake" not in entry["open_reason"]
+    assert "sorry" not in entry["open_reason"].lower()
+
+
+def test_a_valid_leftovers_chain_is_left_intact_and_the_cook_night_gets_a_note(recipe, stub_model):
+    week = _week_start()
+    dates = tools._week_dates(week)
+    tuesday, wednesday = dates[1], dates[2]
+    days = [d for d in _full_week(week) if not (d["date"] == wednesday and d["slot"] == "dinner")]
+    days.append({
+        "date": wednesday, "slot": "dinner", "meal_name": "Chili leftovers", "is_new_recipe": False,
+        "reasoning": "leftovers", "derived_from": {"links_to": f"{tuesday}:dinner"},
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    slots = _slots_for(plan["weekly_plan_id"])
+    leftover = slots[(wednesday, "dinner")]
+    assert leftover["slot_state"] == "planned"
+    assert "repaired" not in leftover["derived_from"]
+
+    source = slots[(tuesday, "dinner")]
+    assert "double batch" in source["derived_from"]["make_double_note"]
+    assert source["derived_from"]["make_double_for"] == [f"{wednesday}:dinner"]
+    assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
+
+
+def test_a_leftovers_night_pointing_at_nothing_is_reopened(recipe, stub_model):
+    week = _week_start()
+    dates = tools._week_dates(week)
+    wednesday = dates[2]
+    days = [d for d in _full_week(week) if not (d["date"] == wednesday and d["slot"] == "dinner")]
+    days.append({
+        "date": wednesday, "slot": "dinner", "meal_name": "Mystery leftovers", "is_new_recipe": False,
+        "reasoning": "leftovers", "derived_from": {"links_to": "2099-01-01:dinner"},
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    entry = _slots_for(plan["weekly_plan_id"])[(wednesday, "dinner")]
+    assert entry["slot_state"] == "open"
+    assert entry["derived_from"]["repaired"] == "leftovers_backwards"
+    assert "can’t find" in entry["open_reason"]
+
+
+def test_leftover_repair_resolves_the_entry_id_form(recipe):
+    """
+    An older design doc used "entry_id:<n>" for links_to before the
+    prompt/schema settled on "YYYY-MM-DD:slot" — both forms are accepted.
+    Exercised directly against tools.repair_leftover_chains rather than
+    through a stubbed generation, since a real entry_id can only exist
+    once the source row has actually been written.
+    """
+    week = _week_start()
+    plan = tools.create_weekly_plan(week, content_start_date=week, day_count=7)
+    plan_id = plan["weekly_plan_id"]
+    dates = tools._week_dates(week)
+    tuesday, wednesday = dates[1], dates[2]
+
+    source = tools.plan_meal(tuesday, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(
+        wednesday, "Chili leftovers", slot="dinner", weekly_plan_id=plan_id,
+        derived_from={"links_to": f"entry_id:{source['entry_id']}"},
+    )
+
+    tools.repair_leftover_chains(plan_id)
+
+    slots = _slots_for(plan_id)
+    assert slots[(wednesday, "dinner")]["slot_state"] == "planned"
+    assert slots[(tuesday, "dinner")]["derived_from"]["make_double_for"] == [f"{wednesday}:dinner"]
+
+
+def test_a_pre_existing_duplicate_is_deduped_before_leftover_repair_runs(recipe):
+    """
+    Ordering regression. repair_leftover_chains clears the WHOLE slot when
+    it reopens a bad chain, not just the offending row — so a slot that
+    still has two rows for it (the exact state _dedupe_duplicate_slots
+    exists to clean up) must never reach repair with a bad row still in
+    it: the bad row's repair would take the good row down with it, and
+    leave the real source's make_double_for pointing at a slot that had
+    gone back to `open` instead of the meal it was actually about.
+
+    Exercised directly against _finish_week_slots (rather than through a
+    stubbed generation) so the duplicate pair can be written in a known
+    order: the good row first (lower id), the bad row second, matching
+    _dedupe_duplicate_slots' "keep the first-created row" rule.
+    """
+    week = _week_start()
+    plan = tools.create_weekly_plan(week, content_start_date=week, day_count=7)
+    plan_id = plan["weekly_plan_id"]
+    dates = tools._week_dates(week)
+    tuesday, wednesday = dates[1], dates[2]
+
+    source = tools.plan_meal(tuesday, "Chili", slot="dinner", weekly_plan_id=plan_id)
+    # GOOD: a genuinely valid leftovers chain, written first.
+    tools.plan_meal(
+        wednesday, "Chili leftovers", slot="dinner", weekly_plan_id=plan_id,
+        derived_from={"links_to": f"{tuesday}:dinner"},
+    )
+    # BAD: a second row claiming the same slot, with a chain that can't resolve.
+    tools.plan_meal(
+        wednesday, "Mystery leftovers", slot="dinner", weekly_plan_id=plan_id,
+        derived_from={"links_to": "2099-01-01:dinner"},
+    )
+
+    agent._finish_week_slots(plan_id, week, intake=None, household_memory={}, day_count=7)
+
+    import json
+    from app.db import get_conn
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT slot_state, derived_from_json FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner' AND component_category IS NULL",
+        (plan_id, wednesday),
+    ).fetchall()
+    conn.close()
+    assert len(rows) == 1, "the duplicate must have been resolved to exactly one row"
+    remaining = rows[0]
+    assert remaining["slot_state"] == "planned", "the surviving row must be the good chain, not the reopened bad one"
+    assert json.loads(remaining["derived_from_json"])["links_to"] == f"{tuesday}:dinner"
+
+    src = _slots_for(plan_id)[(tuesday, "dinner")]
+    assert src["derived_from"]["make_double_for"] == [f"{wednesday}:dinner"], (
+        "the source's make-double note must point at the slot that actually survived"
+    )
+
+
+def test_make_double_for_accumulates_every_leftovers_night_off_one_source(recipe, stub_model):
+    """
+    One cook can feed more than one leftovers night (Wednesday AND Friday
+    both eating Tuesday's chili). The second confirmed chain must not
+    overwrite the first's make_double_for — both nights need to show up,
+    or the household only finds out about one of them.
+    """
+    week = _week_start()
+    dates = tools._week_dates(week)
+    tuesday, wednesday, friday = dates[1], dates[2], dates[4]
+    days = [
+        d for d in _full_week(week)
+        if not (d["slot"] == "dinner" and d["date"] in (wednesday, friday))
+    ]
+    days.append({
+        "date": wednesday, "slot": "dinner", "meal_name": "Chili leftovers", "is_new_recipe": False,
+        "reasoning": "leftovers", "derived_from": {"links_to": f"{tuesday}:dinner"},
+    })
+    days.append({
+        "date": friday, "slot": "dinner", "meal_name": "Chili leftovers", "is_new_recipe": False,
+        "reasoning": "leftovers", "derived_from": {"links_to": f"{tuesday}:dinner"},
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    source = _slots_for(plan["weekly_plan_id"])[(tuesday, "dinner")]
+    assert source["derived_from"]["make_double_for"] == [f"{wednesday}:dinner", f"{friday}:dinner"]
+    assert "Wednesday" in source["derived_from"]["make_double_note"]
+    assert "Friday" in source["derived_from"]["make_double_note"]
+    assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
+
+
+def test_leftovers_cannot_chain_off_a_breakfast(recipe, stub_model):
+    """
+    Cross-slot-type chains ("a dinner claiming leftovers of a breakfast")
+    are exactly as backwards as the bug repair_leftover_chains exists to
+    catch, just sideways instead of in time. The smallest sane rule: the
+    SOURCE must be a lunch or dinner.
+    """
+    week = _week_start()
+    dates = tools._week_dates(week)
+    monday, tuesday = dates[0], dates[1]
+    days = [d for d in _full_week(week) if not (d["date"] == tuesday and d["slot"] == "dinner")]
+    days.append({
+        "date": tuesday, "slot": "dinner", "meal_name": "Toast leftovers", "is_new_recipe": False,
+        "reasoning": "leftovers", "derived_from": {"links_to": f"{monday}:breakfast"},
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    entry = _slots_for(plan["weekly_plan_id"])[(tuesday, "dinner")]
+    assert entry["slot_state"] == "open"
+    assert entry["derived_from"]["repaired"] == "leftovers_backwards"
+    assert "a breakfast" in entry["open_reason"]
+    assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
+
+
 # ---------- the tags do what the household was told they would ----------
 
 def test_a_nobody_home_night_is_planned_empty_and_never_asked_about(recipe, stub_model):

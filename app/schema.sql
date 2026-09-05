@@ -433,7 +433,12 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     --   {"tags": ["rush"], "constraint": "max_minutes:20",
     --    "inputs": ["cuisines:thai", "mood:comfort_food"],
     --    "freeform": "I want to use the lamb in the freezer",
-    --    "inventory": ["lamb_shoulder"], "links_to": "entry_id:8842"}
+    --    "inventory": ["lamb_shoulder"], "links_to": "2026-09-02:dinner"}
+    -- links_to's format is "YYYY-MM-DD:slot" (see the generation prompt
+    -- and tools.repair_leftover_chains, which enforces it points at a
+    -- real, earlier cook in the same plan). An older design doc used
+    -- "entry_id:<n>" instead; that form is still accepted and resolved,
+    -- but new writes should use the date:slot form above.
     derived_from_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

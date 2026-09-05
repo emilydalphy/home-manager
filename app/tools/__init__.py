@@ -345,6 +345,8 @@ from .weekly_plan import (  # noqa: F401
     attach_intake_to_plan,
     audit_plan_slots,
     clear_plan_slot,
+    _dedupe_duplicate_slots,
+    repair_leftover_chains,
     get_meal_planning_preferences,
     get_needs_you_items,
     get_plan_id_for_week,
