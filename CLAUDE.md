@@ -240,6 +240,80 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-05 — 17 peppers was arithmetic, and the arithmetic was wrong in
+  two places. Branch `fix-produce-quantities` (on top of
+  `fix-grocery-quantity-inflation`, NOT merged at the time of writing).**
+  Emily, looking at the week the package fix had already cleaned up: "a
+  regular week for a family of 3 shouldn't have 17 peppers, it's not
+  normal — look into the root of this." The previous entry closed with
+  exactly this as **Open for Emily**, and answered it wrongly: the
+  seventeen were not honest arithmetic that might merely want a cap. Two
+  independent causes, plus the reason there were five pepper dinners at
+  all.
+  - **Nothing in the grocery path had ever looked at `default_servings`.**
+    Every recipe carries 4 (the `add_recipe` default, and what generation
+    writes), and the only scaling factor —
+    `attendance.grocery_scale_factor` — was deliberately anchored to the
+    HOUSEHOLD, returning 1.0 whenever no attendance row said otherwise. Its
+    docstring said so and said why: a recipe-servings anchor "would
+    silently re-quantify every meal in the app the moment this shipped,
+    which is a much bigger claim than this ticket gets to make on its own."
+    Correct scoping then; the claim has now been made, by Emily, on
+    evidence. `attendance.servings_scale_factor` composes the two —
+    `grocery_scale_factor` (headcount ÷ household_size) × (household_size ÷
+    default_servings) = **eaters ÷ default_servings**, the household size
+    cancelling so neither anchor is applied twice. It falls back to
+    attendance alone with no members on record or no default_servings,
+    so a household mid-onboarding still shops as it did.
+  - **Rounding happened once per recipe and then summed.** With the
+    servings scaling the five dinners want 2.25, 3, 1.5, 3 and 3 peppers;
+    rounded up individually that is 3+3+2+3+3 = **14**, when the week wants
+    12.75 → **13**. A shopper buys peppers once. `WeekGroceryBuffer` holds
+    per-portion amounts unrounded for the whole approval and rounds once
+    per grocery line (`_week_bought_amount`: ceil for countables, nearest
+    quarter for measurables, rolled up to the display unit FIRST so the
+    line and the ledger share a unit). **The recipe-week group was the
+    wrong unit for this** — grouping is right for a sealed package, but
+    Emily's peppers came from five DIFFERENT recipes, so only something
+    spanning the whole `approve_weekly_plan` can see them as one shopping
+    decision. `plan_meal` and the swap paths get a buffer of their own that
+    flushes on the way out.
+  - **Rounding once forces apportionment, and that is load-bearing, not
+    tidiness.** The line says 13; the meals behind it wanted 12.75. Ledger
+    rows carrying their own unrounded shares would leave a phantom quarter
+    pepper after `clear_weekly_plan` — which then displays as one whole
+    pepper for a dinner nobody is cooking. `_apportion` splits the rounded
+    total by largest remainder into whole quanta that sum to the line
+    exactly. A meal can land on a real `"0"`, never a blank: a blank tells
+    `_subtract_quantity` "this contribution IS the whole line".
+  - **Why five pepper dinners existed at all is a prompt gap, not a
+    quantity bug.** The generation prompt had variety rules for
+    `main_protein` and for cuisine and none for an ingredient. Both
+    instruction blocks now cap one fresh ingredient at 3 dinners a week
+    (staples and things the household asked for exempt) and tell the model
+    to set `default_servings` from `attendance.default_serves` rather than
+    a generic 4 — which, once it takes, means the ingest has nothing left
+    to rescale. `plan_quality.ingredient_repeat` measures it, warn-only.
+    Note `"pepper"` is deliberately NOT in `_STAPLE_FRESH_WORDS`: black
+    pepper is a staple, it is pantry so it never reaches the rule, and the
+    word sitting there would exempt Bell pepper from the rule written for
+    it.
+  - **This changes amounts for every household with members on record, and
+    that is Emily's to veto.** Four existing tests asserted the old
+    behaviour and were turned over on purpose, one of them
+    (`test_a_week_where_everyone_is_home_shops_exactly_as_before`) being
+    the explicit safety property of the earlier scoping decision; it is now
+    `..._buys_for_everyone_who_is_home` and says in its docstring why it
+    flipped. Two households of 2 with 4-serving recipes now buy half of
+    what they bought last week. The failure mode if this is wrong is
+    under-buying, which costs a trip.
+  - **Left open:** existing SAVED recipes still say 4, so the ingest is
+    doing the rescaling for every one of them and will keep doing it until
+    they are rewritten; nothing back-fills `default_servings`. And
+    re-quantifying an already-approved line when attendance changes
+    afterwards is still not done (the KNOWN LIMITATION in
+    `_add_recipe_ingredients_for_entries`, unchanged).
+
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
   merged at the time of writing).** Root cause of the original bug was three
@@ -420,6 +494,11 @@ why*, not duplicating the diff.
     capped. 17 peppers is honest arithmetic — five dinners wanting 3, 4,
     2, 4 and 4 — and it is NOT capped or hidden; the list shows 17. It may
     still be more than anyone wants to read on one line.
+    **CLOSED, and this paragraph was wrong** — see the 2026-09-05 entry at
+    the top. It was not honest arithmetic: nothing scaled by
+    `default_servings`, so three people were buying four people's dinner,
+    and the per-recipe rounding added one more on top. No cap was needed;
+    the inputs were wrong again, one level up.
 
 - **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
   `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT

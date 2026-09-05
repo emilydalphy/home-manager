@@ -55,6 +55,7 @@ row already scoped to one plan):
         "cook_time_minutes": 20 | None,
         "is_new_recipe": False,
         "links_to": "2026-09-02:dinner" | None,
+        "ingredients": [{"item": "Bell peppers", "category": "produce"}, ...],
     }
 
 context shape (what check_week expects -- distinct from the larger
@@ -69,6 +70,7 @@ becomes the other):
              "main_protein": ..., "rating": ...},
             ...
         ],
+        "household_asks": "we're on a pepper kick",  # their own words, lowercased
     }
 
 No record of a violation count is kept anywhere persistent. There's no
@@ -82,6 +84,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import re
 from dataclasses import dataclass
 
 from ..db import get_conn
@@ -111,6 +114,32 @@ _BANNED_REASONING_PHRASES = {
 }
 
 _WEEKDAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+
+# How many dinners one fresh ingredient may turn up in before it stops
+# being a coincidence and starts being a shopping-list problem. Three of
+# seven is a household that likes peppers; five is Emily's week, and
+# "17 bell peppers" on the list.
+INGREDIENT_REPEAT_MAX_DINNERS = 3
+
+# The grocery-list sections that hold things bought fresh and used up.
+# Pantry/frozen/other are excluded on purpose: rice in four dinners is
+# not the problem this rule is looking for.
+_FRESH_CATEGORIES = {"produce", "dairy"}
+
+# The fresh things that quietly go into everything, where appearing every
+# night is correct rather than repetitive. Deliberately a SHORT list a
+# person can argue with, in the same spirit as _ALLERGEN_ALIASES in
+# coordination.py — extend it when a real false positive shows up, rather
+# than trying to infer "staple-ness". Matched on whole words, so "yellow
+# onion" and "spring onion" are both covered by "onion".
+#
+# Salt, pepper and oil are deliberately NOT here even though they are the
+# obvious staples: they are pantry, so they never reach this rule at all,
+# and "pepper" sitting in this set would quietly make "Bell pepper" — the
+# whole reason the rule exists — exempt from it.
+_STAPLE_FRESH_WORDS = {
+    "onion", "onions", "garlic", "shallot", "shallots", "ginger", "butter",
+}
 
 
 @dataclass(frozen=True)
@@ -340,6 +369,80 @@ def _full_plate(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
+def _is_staple(name: str) -> bool:
+    """A fresh ingredient that goes in everything. Whole words, so "yellow
+    onion" and "spring onion" are both onions and "butternut squash" is
+    not butter."""
+    return bool(set(re.findall(r"[a-z]+", name)) & _STAPLE_FRESH_WORDS)
+
+
+def _was_asked_for(name: str, asks: str) -> bool:
+    """
+    Whether the household actually asked for this ingredient — the item's
+    name found as a PHRASE in whatever they wrote (this week's intake
+    freeform, their standing notes, the week's constraints). Prose rather
+    than a structured field, because "we're on a bell peppers kick" is
+    typed into the freeform box and never into a schema.
+
+    Known limit, and an acceptable one for a warn-only rule: this matches
+    the ingredient's name as the recipe wrote it, so "peppers" in the
+    freeform box does not reach an ingredient named "Bell peppers". The
+    consequence of a miss is a log line nobody needed, not a bad week.
+    """
+    if not asks:
+        return False
+    return bool(re.search(rf"\b{re.escape(name)}\b", asks))
+
+
+def _ingredient_repeat(entries: list[dict], context: dict) -> list[Violation]:
+    """
+    The same fresh ingredient in more than three of the week's dinners.
+
+    Emily, on her first approved week: "a regular week for a family of 3
+    shouldn't have 17 peppers, it's not normal." The seventeen were honest
+    arithmetic over five pepper dinners out of seven — the generation
+    prompt had variety rules for protein and for cuisine and none at all
+    for an ingredient, so nothing was stopping the model reaching for the
+    same vegetable all week and nothing downstream measured it. The prompt
+    now carries that rule (see the variety bullet in
+    generate_weekly_plan_llm); this is the half that checks whether the
+    model listened.
+
+    Warn-only, like everything else here. A leftovers night is skipped —
+    it eats an earlier night's cooking, so counting it would charge the
+    ingredient twice for one pot.
+    """
+    asks = (context.get("household_asks") or "").lower()
+    dates_by_ingredient: dict[str, dict] = {}
+    for entry in entries:
+        if entry.get("slot") != "dinner" or not _is_planned(entry):
+            continue
+        if entry.get("links_to"):
+            continue
+        for ing in entry.get("ingredients") or []:
+            if (ing.get("category") or "").strip().lower() not in _FRESH_CATEGORIES:
+                continue
+            name = (ing.get("item") or "").strip().lower()
+            if not name or _is_staple(name):
+                continue
+            seen = dates_by_ingredient.setdefault(name, {"display": ing["item"].strip(), "dates": set()})
+            seen["dates"].add(entry["date"])
+    violations = []
+    for name, seen in sorted(dates_by_ingredient.items()):
+        count = len(seen["dates"])
+        if count <= INGREDIENT_REPEAT_MAX_DINNERS or _was_asked_for(name, asks):
+            continue
+        violations.append(Violation(
+            rule="ingredient_repeat", severity="warn", date=None, slot="dinner",
+            message=(
+                f"{seen['display']} is in {count} of this week's dinners "
+                f"({', '.join(sorted(seen['dates']))}); the cap is "
+                f"{INGREDIENT_REPEAT_MAX_DINNERS} unless the household asked for it."
+            ),
+        ))
+    return violations
+
+
 def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     """
     Pure rule engine over an already-assembled week. Takes plain dicts
@@ -358,6 +461,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _open_slot_budget(plan_entries, context)
     violations += _leftover_direction(plan_entries, context)
     violations += _full_plate(plan_entries, context)
+    violations += _ingredient_repeat(plan_entries, context)
     return violations
 
 
@@ -367,7 +471,8 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
         """
         SELECT mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal_name,
-               r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked
+               r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked,
+               r.ingredients_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
@@ -398,6 +503,10 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # isn't a recipe at all, so it doesn't count either way.
             "is_new_recipe": r["times_cooked"] == 0 if r["times_cooked"] is not None else False,
             "links_to": derived_from.get("links_to"),
+            # A freeform meal has no recipe row and therefore no ingredient
+            # list — no data, which _ingredient_repeat treats as nothing to
+            # count rather than as a clean week.
+            "ingredients": json.loads(r["ingredients_json"] or "[]"),
         })
     return entries
 
@@ -424,13 +533,23 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
         entries = _load_plan_entries(plan_id)
         intake_ctx = generation_context.get("intake") or {}
         night_tags = intake_ctx.get("night_tags") or {}
+        memory = generation_context.get("household_memory") or {}
         quality_context = {
             "rush_max_minutes": RUSH_MAX_MINUTES,
             "rush_dates": {d for d, tags in night_tags.items() if "rush" in tags},
-            "weeknight_max_minutes": (generation_context.get("household_memory") or {}).get(
-                "weeknight_max_minutes"
-            ),
+            "weeknight_max_minutes": memory.get("weeknight_max_minutes"),
             "recent_history": generation_context.get("recent_history") or [],
+            # What the household said they wanted, in their own words, so
+            # _ingredient_repeat can let a requested ingredient off. Their
+            # prose, not a structured field, because "we're on a pepper
+            # kick" is typed into the freeform box, never into a schema.
+            "household_asks": " ".join(str(part) for part in (
+                intake_ctx.get("freeform") or "",
+                " ".join(intake_ctx.get("cuisines") or []),
+                " ".join(intake_ctx.get("moods") or []),
+                memory.get("notes") or "",
+                generation_context.get("constraints_notes") or "",
+            )).lower(),
         }
         violations = check_week(entries, quality_context)
         for v in violations:

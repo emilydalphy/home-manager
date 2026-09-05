@@ -2323,7 +2323,7 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     """
     return conn.execute(
         """
-        SELECT mpe.id, mpe.recipe_id, r.ingredients_json
+        SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
@@ -2530,18 +2530,33 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     by_recipe: dict[int, dict] = {}
     for entry in entries:
         group = by_recipe.setdefault(
-            entry["recipe_id"], {"ingredients_json": entry["ingredients_json"], "entry_ids": []}
+            entry["recipe_id"], {
+                "ingredients_json": entry["ingredients_json"],
+                "default_servings": entry["default_servings"],
+                "entry_ids": [],
+            },
         )
         group["entry_ids"].append(entry["id"])
 
+    # One buffer for the WHOLE approval, not one per recipe. Grouping by
+    # recipe is the right unit for a sealed package (six breakfasts of the
+    # same dish, one bag of spinach) but the wrong one for rounding a
+    # per-portion amount: Emily's 17 peppers came from five DIFFERENT
+    # dinners, so five separate calls below each round their own share up
+    # and the week ends up buying a pepper more than it wants. The buffer
+    # holds every per-portion amount unrounded until all five have spoken,
+    # then writes one rounded line — see recipes.WeekGroceryBuffer.
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
     added_items = []
     already_have = []
     for group in by_recipe.values():
         added, have = _recipes._add_recipe_ingredients_for_entries(
-            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
+            default_servings=group["default_servings"], buffer=buffer,
         )
         added_items.extend(added)
         already_have.extend(have)
+    buffer.flush()
 
     # Counted as distinct names, matching preview_plan_grocery_impact, so
     # the number the draft promised and the number the receipt reports are

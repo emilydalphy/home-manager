@@ -22,7 +22,9 @@ Concretely, the three cases and what each derives:
 * **Some present** -> plan for the real headcount. `grocery_scale_factor`
   turns that into actual smaller (or bigger) shopping quantities, and
   `context_for_week` hands generation the number so the meal itself is
-  planned for the right table.
+  planned for the right table. `servings_scale_factor` composes that with
+  the recipe's own default_servings, which is what makes a recipe written
+  for 4 shop for a household of 3.
 * **Guests** -> the same model with the headcount up. The "Hosting guests"
   night-tag chip writes `guest_count` here (see
   week_intake.save_week_intake) instead of being a second, parallel notion
@@ -440,14 +442,19 @@ def grocery_scale_factor(date_str: str, slot: str) -> float:
     What to multiply this meal's ingredient quantities by, so the shopping
     matches the table.
 
-    Deliberately relative to the FULL HOUSEHOLD, not to the recipe's own
-    default_servings: today nothing in the grocery path scales at all
-    (quantities are used exactly as the recipe writes them), so anchoring
-    to the household means a week where everyone is home shops precisely as
-    it always has — 1.0, byte for byte — and only a meal whose attendance
-    actually deviates moves. A recipe-servings anchor would silently
-    re-quantify every meal in the app the moment this shipped, which is a
-    much bigger claim than this ticket gets to make on its own.
+    Relative to the FULL HOUSEHOLD, and only to the household: this answers
+    "what fraction of the usual table is at this one meal", nothing more.
+    1.0 means the ordinary table, whatever size that is.
+
+    An earlier version of this docstring said the recipe's own
+    default_servings deliberately went unused anywhere in the grocery path.
+    That is no longer true, and the reason it was true stopped holding.
+    Anchoring only to the household meant a recipe written for 4 was bought
+    in full for a household of 3, and Emily's week came back asking for 17
+    peppers. The recipe anchor now lives in servings_scale_factor below,
+    which COMPOSES with this one rather than replacing it — this function's
+    contract is unchanged, and it is still the only thing that knows about
+    attendance.
 
     Returns 1.0 whenever there's no explicit attendance, when the household
     has no members recorded yet, or when nobody is home (an away slot
@@ -458,6 +465,46 @@ def grocery_scale_factor(date_str: str, slot: str) -> float:
     if not att["explicit"] or att["household_size"] == 0 or att["nobody_home"]:
         return 1.0
     return att["headcount"] / att["household_size"]
+
+
+def servings_scale_factor(date_str: str, slot: str, default_servings: int | None) -> float:
+    """
+    What to multiply a recipe's per-portion quantities by so the shop feeds
+    the people who will actually eat THIS meal — the factor the grocery
+    ingest uses (recipes._add_recipe_ingredients_for_entries).
+
+    This is grocery_scale_factor re-anchored from the household to the
+    recipe, and the composition is the whole point of writing it here
+    rather than at the call site. grocery_scale_factor gives
+    headcount / household_size (1.0 unless attendance says otherwise);
+    multiplying by household_size / default_servings cancels the household
+    size and leaves eaters / default_servings. So the two anchors compose
+    exactly ONCE — there is no path through here that applies attendance
+    twice.
+
+    Worked through: a recipe written for 4, a household of 3, nobody away
+    → 1.0 × 3/4 = 0.75, and "4 bell peppers" buys 3. The same recipe with
+    one of the three out that night → (2/3) × (3/4) = 0.5, and it buys 2.
+    A recipe already written for 3 in a household of 3 → 1.0, unchanged
+    byte for byte, which is the shape we want every household to end up in
+    once generation starts writing recipes for the real table (see the
+    default_servings rule in agent.py's generation instructions).
+
+    Falls back to grocery_scale_factor alone — i.e. no servings anchor at
+    all — when there is nothing trustworthy to anchor to: no members on
+    record yet (a household mid-onboarding), or a recipe with no
+    default_servings. Guessing a factor from an unknown table is how a
+    household that has told the app nothing ends up with a quarter of a
+    dinner. A nobody-home slot keeps grocery_scale_factor's own convention
+    (1.0, never used, never 0.0).
+    """
+    base = grocery_scale_factor(date_str, slot)
+    if not default_servings or default_servings <= 0:
+        return base
+    att = get_slot_attendance(date_str, slot)
+    if att["household_size"] == 0 or att["nobody_home"]:
+        return base
+    return base * att["household_size"] / default_servings
 
 
 def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:

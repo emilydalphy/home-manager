@@ -326,6 +326,11 @@ def test_headcount_still_scales_the_per_portion_amounts(week):
     Grouping the ingest by recipe must not flatten attendance: each meal is
     still scaled by its own table before its share is added, so a night one
     of two people is home still buys for one.
+
+    Chili is written for 4 (the add_recipe default) and this household is
+    2, so each night is also re-anchored to the recipe — see
+    attendance.servings_scale_factor. Two nights: the full table takes
+    2/4 of 4 cups, the solo night 1/4 of it.
     """
     tools.add_member("Emily")
     tools.add_member("Vineeth")
@@ -336,8 +341,8 @@ def test_headcount_still_scales_the_per_portion_amounts(week):
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    # 4 cups for the full table plus 2 for the solo night.
-    assert _qty("beans") == "6 cups"
+    # 2 cups for the full table plus 1 for the solo night.
+    assert _qty("beans") == "3 cups"
 
 
 def test_headcount_does_not_split_a_package(week):

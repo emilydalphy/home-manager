@@ -2140,7 +2140,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "type": "array", "items": {"type": "string"},
                             "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
                         },
-                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
+                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Set it to this household's own table (attendance.default_serves), not a generic 4 — the grocery list scales per-portion amounts by eaters/default_servings, so a mismatch is what turns a clean recipe into odd fractions on the list. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
@@ -2251,6 +2251,15 @@ main_protein or cuisine too many days in a row for dinner — check recent_histo
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
 rated 'liked' again is more forgivable than reaching for one rated 'disliked'.
+- Variety is about INGREDIENTS, not only dish names, proteins and cuisines. The same FRESH \
+ingredient — a vegetable or fruit, a fresh herb, a fresh dairy item — should appear in AT MOST \
+3 of the week's dinners. Two narrow exceptions: a genuine staple that quietly goes into \
+everything (onion, garlic, cooking oil, salt, pepper) doesn't count, and neither does something \
+the household actually asked for this week or has a standing preference for — those can show up \
+as often as they've earned. Everything else, spread out. This is not a style note: five of \
+seven dinners reaching for bell peppers is what put "17 bell peppers" on one real household's \
+shopping list, and no family of three is buying seventeen peppers. Before you finish, read \
+back over the week's dinners and count the produce.
 - household_memory's protein_preferences give a 1-5 rating of how much the household likes \
 each protein (5 = favorite, 1 = avoid) — treat this as a real constraint on the week's mix, \
 not just a tiebreaker: a protein rated 1 shouldn't appear at all, 2 should appear at most \
@@ -2412,6 +2421,14 @@ belongs to (produce, dairy, meat/seafood, pantry, frozen, other) — pantry mean
 only; eggs, butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines \
 which aisle it's grouped under when auto-added to the grocery list, so don't leave it blank \
 or default to pantry/other out of habit.
+- Set default_servings to THIS household's own table, not a generic 4: use \
+`attendance.default_serves` from the context above, which is how many people eat here \
+ordinarily. Then write every ingredient quantity for that many people. This is load-bearing for \
+the shopping list, which buys per portion — a recipe written for 4 in a household of 3 has \
+every quantity multiplied by three quarters on the way to the list, so "4 bell peppers" becomes \
+3 and a week of that arrives as odd fractions nobody wrote. Write it for the real table and the \
+list is simply what you wrote. (A slot listed in `attendance.slots_with_a_different_table` \
+still overrides this for that one meal — see the attendance bullet above.)
 - Write each ingredient's qty as how it's actually bought at the store, not how much ends up \
 used once prepped — "1 head" of cabbage, not "3 cups shredded"; "1 bunch" of cilantro, not "2 \
 tbsp chopped"; "1 lb" of carrots, not "1 cup diced". This is what shows up on the grocery list, \
@@ -2461,7 +2478,8 @@ soft lean, not a rule: don't force an odd combination, don't feel obligated to u
 the list, and don't let it override genuine variety/preference/novelty considerations — it only \
 matters as a tiebreaker-ish nudge among otherwise-reasonable options.
 - For any new recipe, fill in instructions (ordered cooking steps) so it's actually cookable \
-later, not just a shopping list — this powers the Cooker view. Also fill in default_servings, \
+later, not just a shopping list — this powers the Cooker view. Also fill in default_servings \
+(the household's own table — see the bullet on that above), \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
 ahead") whenever reasonably inferable — advance_prep_notes in particular feeds \
 generate_prep_schedule, so only set it when something is genuinely worth planning around ahead \
@@ -2561,7 +2579,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                             "type": "array", "items": {"type": "string"},
                             "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
                         },
-                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
+                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Set it to this household's own table (attendance.default_serves), not a generic 4 — the grocery list scales per-portion amounts by eaters/default_servings, so a mismatch is what turns a clean recipe into odd fractions on the list. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
@@ -2626,6 +2644,13 @@ each protein (5 = favorite, 1 = avoid) and should shape which/how many proteins 
 protein rated 1 shouldn't appear at all, and 4-5 should show up more than once across the \
 protein items. (Older saved data may still have a frequency phrase instead of a number — \
 treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "rarely"≈2, "avoid"≈1.)
+- Variety is about INGREDIENTS, not only proteins and cuisines. The same FRESH ingredient — a \
+vegetable or fruit, a fresh herb, a fresh dairy item — should appear in AT MOST 3 items across \
+the whole pool. A genuine staple that goes into everything (onion, garlic, cooking oil, salt, \
+pepper) doesn't count, and neither does something the household actually asked for or has a \
+standing preference for. Everything else, spread out: a pool where most items reach for bell \
+peppers is what puts "17 bell peppers" on the shopping list, and no family of three is buying \
+seventeen peppers. Same rule as the day-based prompt.
 - Honor any per-week constraints in constraints_notes exactly.
 - household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
 specific list of foods someone says they should be eating) is a hard constraint, treated with \
@@ -2685,6 +2710,11 @@ dish name descriptive are now separate items — "Chicken Skewers" or "Grilled C
 too generic. Keep the flavor profile, marinade, or prep method in the name even after splitting: \
 "Greek Lemon-Oregano Chicken Skewers", "Garlic Lime Shrimp", "Blackened Cajun Salmon" — specific \
 enough that picking it out of a pool of proteins tells you what it actually tastes like.
+- Set default_servings to THIS household's own table, not a generic 4: use \
+`attendance.default_serves` from the context above, and write every ingredient quantity for \
+that many people. The grocery list buys per portion, so a recipe written for 4 in a household \
+of 3 gets every quantity multiplied by three quarters on the way to the list. Write it for the \
+real table and the list is simply what you wrote. Same rule as the day-based prompt.
 - For any new recipe, fill in instructions (ordered cooking steps), default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-based planning \
 — see the equivalent guidance there. This powers the Cooker view and prep schedule.

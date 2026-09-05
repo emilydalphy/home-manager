@@ -557,7 +557,14 @@ def test_emily_solo_thursday_shops_for_one(couple, recipe, stub_model):
     """
     The brief's named scenario, end to end: Vineeth out Thursday dinner ->
     that night's groceries are scaled to one, while every other night of
-    the same week is untouched.
+    the same week keeps the two-person share.
+
+    The absolute numbers moved when the recipe anchor landed (see
+    attendance.servings_scale_factor and the produce-quantities branch):
+    Chili is written for 4 and this household is 2, so an ordinary night
+    is half of "4 cups", not all of it. What this test is actually pinning
+    is the RATIO — a solo night buys half of what a two-person night buys
+    — and that is unchanged.
     """
     week = _week_start()
     thursday, friday = tools._week_dates(week)[3], tools._week_dates(week)[4]
@@ -568,16 +575,20 @@ def test_emily_solo_thursday_shops_for_one(couple, recipe, stub_model):
     plan_id = plan["weekly_plan_id"]
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
 
-    assert _grocery_qty_for(plan_id, thursday, "dinner", "beans") == "2 cups", (
+    assert _grocery_qty_for(plan_id, thursday, "dinner", "beans") == "1 cup", (
         "half the table should buy half the beans"
     )
-    assert _grocery_qty_for(plan_id, friday, "dinner", "beans") == "4 cups", (
-        "a night everyone is home must shop exactly as it always has"
+    assert _grocery_qty_for(plan_id, friday, "dinner", "beans") == "2 cups", (
+        "an ordinary night buys the two people at it, out of a recipe written for four"
     )
 
 
 def test_a_bigger_table_buys_more(couple, recipe, stub_model):
-    """The same arithmetic upward — guests are not a special case."""
+    """
+    The same arithmetic upward — guests are not a special case. Two adults
+    plus two guests is four people, and Chili is written for exactly four,
+    so this is the one night of the week that buys the recipe as written.
+    """
     week = _week_start()
     saturday = tools._week_dates(week)[5]
     tools.set_guest_count(saturday, "dinner", 2)
@@ -587,7 +598,10 @@ def test_a_bigger_table_buys_more(couple, recipe, stub_model):
     plan_id = plan["weekly_plan_id"]
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
 
-    assert _grocery_qty_for(plan_id, saturday, "dinner", "beans") == "8 cups"
+    assert _grocery_qty_for(plan_id, saturday, "dinner", "beans") == "4 cups"
+    assert _grocery_qty_for(plan_id, tools._week_dates(week)[4], "dinner", "beans") == "2 cups", (
+        "and an ordinary night beside it is still just the two of them"
+    )
 
 
 def test_freeform_quantities_are_left_alone_rather_than_guessed_at(couple, recipe, stub_model):
@@ -604,12 +618,48 @@ def test_freeform_quantities_are_left_alone_rather_than_guessed_at(couple, recip
     assert _grocery_qty_for(plan_id, thursday, "dinner", "salt") == "a pinch"
 
 
-def test_a_week_where_everyone_is_home_shops_exactly_as_before(couple, recipe, stub_model):
+def test_a_week_where_everyone_is_home_buys_for_everyone_who_is_home(couple, recipe, stub_model):
     """
-    The safety property behind anchoring the scale factor to the household
-    rather than to recipes.default_servings: shipping this must not
-    silently re-quantify every meal in the app.
+    This test used to assert the opposite, and it is worth saying why it
+    turned over rather than quietly editing the number.
+
+    It was written as the safety property behind anchoring the scale factor
+    to the household rather than to recipes.default_servings: a week with
+    no attendance rows had to shop byte-for-byte as it always had, because
+    re-quantifying every meal in the app was a bigger claim than that
+    ticket could make on its own. That claim has since been made, by Emily,
+    on the evidence: "a regular week for a family of 3 shouldn't have 17
+    peppers." A recipe written for 4 bought in full by a household of 2 is
+    the thing that was wrong.
+
+    So the safety property is now the OTHER one: a week with no attendance
+    rows buys for the household, uniformly, with no night singled out. The
+    absence of an attendance row still means "the ordinary table" — it just
+    no longer means "the recipe's table".
     """
+    week = _week_start()
+    stub_model(_full_week(week))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    for day in tools._week_dates(week):
+        assert _grocery_qty_for(plan_id, day, "dinner", "beans") == "2 cups", (
+            "two people, out of a recipe written for four"
+        )
+
+
+def test_a_recipe_already_written_for_this_household_is_untouched(couple, stub_model):
+    """
+    The no-op case, and the shape every household should end up in: once
+    generation writes recipes for the real table (see the default_servings
+    rule in the generation prompt), the servings anchor multiplies by one
+    and the quantities are exactly what the recipe says.
+    """
+    tools.add_recipe(
+        "Chili", ingredients=[{"item": "beans", "qty": "4 cups"}, {"item": "salt", "qty": "a pinch"}],
+        prep_time_minutes=10, cook_time_minutes=20, default_servings=2,
+    )
     week = _week_start()
     stub_model(_full_week(week))
     plan = agent.generate_weekly_plan(week)
