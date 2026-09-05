@@ -516,6 +516,12 @@
     <span class="stepper-value" id="dinners-value">5</span>
     <button class="stepper-btn" type="button" id="dinners-plus" aria-label="More">+</button>
   </div>
+  <p class="stepper-hint">Snacks &amp; desserts</p>
+  <div class="stepper">
+    <button class="stepper-btn" type="button" id="snacks-minus" aria-label="Fewer">&minus;</button>
+    <span class="stepper-value" id="snacks-value">3</span>
+    <button class="stepper-btn" type="button" id="snacks-plus" aria-label="More">+</button>
+  </div>
   <p class="stepper-hint">How many <em>different</em> meals I&rsquo;ll come up with &mdash; 0 to 7 each. I&rsquo;ll still put something in every slot.</p>
   <div><button class="next-btn" id="dinners-next" type="button">Continue</button></div>
   <span class="back-link" data-back="excited-about">&larr; Back</span>
@@ -544,21 +550,22 @@
   <span class="back-link" data-back="dinners">&larr; Back</span>
 </div>
 
-<!-- Step B: kit and repeats. The kit question prevents impossible
-     suggestions outright; the repeats answer changes the structure of every
-     week the app builds. -->
+<!-- Step B: kit. Prevents impossible suggestions outright. The old
+     "how do you feel about repeats?" question that used to live here was
+     dropped (Loop Board "Onboarding asks about leftovers twice",
+     2026-09-05) — it asked the same thing the rhythm step's leftovers
+     question already asks, one screen apart; leftovers_stance from that
+     rhythm step is now the only place this gets asked. Keeping the
+     "step-kit-repeats" id/element names rather than renaming everything
+     that touches this step for a naming-only change. -->
 <div id="step-kit-repeats" style="display:none">
-  <h1>Two more and I&rsquo;ll leave you alone</h1>
+  <h1>One more and I&rsquo;ll leave you alone</h1>
   <div class="why-panel">
-    <b>Why I&rsquo;m asking:</b> your kit decides which recipes are even possible, and your
-    feeling about repeats decides the shape of every week I build.
+    <b>Why I&rsquo;m asking:</b> your kit decides which recipes are even possible to suggest.
   </div>
   <label class="field-label">What you&rsquo;ve got to cook with</label>
   <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
   <div class="chip-row" id="kit-chips"></div>
-  <label class="field-label">How do you feel about repeats?</label>
-  <p class="subtitle" style="margin:0 0 8px">This one changes a lot &mdash; it decides whether I cook once and stretch it, or give you seven different dinners.</p>
-  <div class="chip-row" id="repeats-chips"></div>
   <div><button class="next-btn" id="kit-repeats-next" type="button">That&rsquo;s me done</button></div>
   <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
   <span class="back-link" data-back="typical-week">&larr; Back</span>
@@ -790,10 +797,14 @@ const PLANNING_ANCHOR_OPTIONS = [
   { key: 'midweek', label: 'Midweek' },
   { key: 'as_we_go', label: 'As we go' },
 ];
+// Merged with the old final-step "how do you feel about repeats?" question
+// (Loop Board "Onboarding asks about leftovers twice", Emily 2026-09-05) —
+// this is now the ONE leftovers/repeats question asked anywhere in
+// onboarding. Copy is Emily's exact wording.
 const LEFTOVERS_STANCE_OPTIONS = [
-  { key: 'love_them', label: 'Love them (cook once, eat twice)' },
-  { key: 'fine_sometimes', label: 'Fine sometimes' },
-  { key: 'fresh_each_night', label: 'Fresh each night' },
+  { key: 'love_them', label: 'Love them — cook once, eat twice' },
+  { key: 'fine_sometimes', label: 'Fine now and then' },
+  { key: 'fresh_each_night', label: 'Fresh every night' },
 ];
 
 let rhythmLunchLocation = {}; // member name -> 'home' | 'out' | 'varies'
@@ -1042,10 +1053,16 @@ function commitExcitedCustom() {
 let dinnersPerWeek = 5;
 let breakfastsPerWeek = 7;
 let lunchesPerWeek = 7;
+// Default 3, not 7 like the other three — Emily's explicit call (Loop
+// Board "Onboarding / meal setup: add a Snacks & desserts count",
+// 2026-09-05): 7 was only ever an implicit default for snacks, never
+// actually asked, and 3 is the more honest starting point.
+let snacksPerWeek = 3;
 function renderDinnersValue() { document.getElementById('dinners-value').textContent = dinnersPerWeek; }
 function renderBreakfastsValue() { document.getElementById('breakfasts-value').textContent = breakfastsPerWeek; }
 function renderLunchesValue() { document.getElementById('lunches-value').textContent = lunchesPerWeek; }
-// Floor of 0, not 1, on all three: "none, thanks" is a real answer, and
+function renderSnacksValue() { document.getElementById('snacks-value').textContent = snacksPerWeek; }
+// Floor of 0, not 1, on all four: "none, thanks" is a real answer, and
 // above zero these are counts of DISTINCT meals spread across the week
 // rather than a number of days to plan (see the setup screen's copy).
 document.getElementById('dinners-minus').addEventListener('click', () => {
@@ -1072,9 +1089,18 @@ document.getElementById('lunches-plus').addEventListener('click', () => {
   lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
   renderLunchesValue();
 });
+document.getElementById('snacks-minus').addEventListener('click', () => {
+  snacksPerWeek = Math.max(0, snacksPerWeek - 1);
+  renderSnacksValue();
+});
+document.getElementById('snacks-plus').addEventListener('click', () => {
+  snacksPerWeek = Math.min(7, snacksPerWeek + 1);
+  renderSnacksValue();
+});
 renderDinnersValue();
 renderBreakfastsValue();
 renderLunchesValue();
+renderSnacksValue();
 
 // ---------- Step A: a normal week ----------
 // Starter chips APPEND an example sentence rather than setting a value —
@@ -1111,20 +1137,14 @@ function buildTypicalWeekStarters() {
   });
 }
 
-// ---------- Step B: kit and repeats ----------
+// ---------- Step B: kit ----------
 const KIT_OPTIONS = [
   { key: 'slow_cooker', label: 'Slow cooker' }, { key: 'air_fryer', label: 'Air fryer' },
   { key: 'grill', label: 'Grill' }, { key: 'instant_pot', label: 'Instant Pot' },
   { key: 'stand_mixer', label: 'Stand mixer' }, { key: 'blender', label: 'Blender' },
   { key: 'cast_iron', label: 'Cast iron' }, { key: 'no_dishwasher', label: 'No dishwasher' }
 ];
-const REPEAT_OPTIONS = [
-  { key: 'cook_once_eat_twice', label: 'Cook once, eat twice — I like the shortcut' },
-  { key: 'one_a_week', label: 'One repeat a week is fine' },
-  { key: 'all_different', label: 'Something different every night' }
-];
 let kitchenKit = [];
-let repeatsTolerance = '';
 function buildKitRepeatsStep() {
   const kitWrap = document.getElementById('kit-chips');
   kitWrap.innerHTML = '';
@@ -1140,20 +1160,6 @@ function buildKitRepeatsStep() {
     });
     kitWrap.appendChild(btn);
   });
-  const repeatsWrap = document.getElementById('repeats-chips');
-  repeatsWrap.innerHTML = '';
-  REPEAT_OPTIONS.forEach(r => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip' + (repeatsTolerance === r.key ? ' active' : '');
-    btn.textContent = r.label;
-    btn.addEventListener('click', () => {
-      repeatsTolerance = r.key;
-      repeatsWrap.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-    });
-    repeatsWrap.appendChild(btn);
-  });
 }
 
 // Saved one field at a time through the same endpoint the setup screen
@@ -1168,7 +1174,6 @@ async function savePlanTheWeekAnswers() {
   if (typical) writes.push(['typical_week', typical]);
   if (nextWeek) writes.push(['next_week_notes', nextWeek]);
   if (kitchenKit.length) writes.push(['kitchen_kit', kitchenKit]);
-  if (repeatsTolerance) writes.push(['repeats_tolerance', repeatsTolerance]);
   for (const [field, value] of writes) {
     try {
       await fetch('/api/preferences/meal-planning', {
@@ -1193,6 +1198,7 @@ async function saveOnboardingAnswers() {
     dinners_per_week: dinnersPerWeek,
     breakfasts_per_week: breakfastsPerWeek,
     lunches_per_week: lunchesPerWeek,
+    snacks_per_week: snacksPerWeek,
   };
   const res = await fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -1534,10 +1540,9 @@ async function finishSetupAndReveal(btn) {
 document.getElementById('kit-repeats-next').onclick = () =>
   finishSetupAndReveal(document.getElementById('kit-repeats-next'));
 document.getElementById('kit-repeats-skip').onclick = () => {
-  // A skip means "don't record these two" — clear anything half-tapped so
-  // a partial answer isn't saved as though it were considered.
+  // A skip means "don't record this" — clear anything half-tapped so a
+  // partial answer isn't saved as though it were considered.
   kitchenKit = [];
-  repeatsTolerance = '';
   finishSetupAndReveal(null);
 };
 

@@ -385,6 +385,7 @@ class OnboardingAnswersRequest(BaseModel):
     dinners_per_week: int = 7
     breakfasts_per_week: int = 7
     lunches_per_week: int = 7
+    snacks_per_week: int = 3
 
 
 class OnboardingRhythmRequest(BaseModel):
@@ -665,6 +666,7 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             dinners_per_week=req.dinners_per_week,
             breakfasts_per_week=req.breakfasts_per_week,
             lunches_per_week=req.lunches_per_week,
+            snacks_per_week=req.snacks_per_week,
         )
     except Exception as e:
         logger.exception("Onboarding answers save failed")
@@ -2003,6 +2005,15 @@ def get_facts_view(category: str | None = None):
                 "eating_style": memory.get("eating_style") or "",
                 "cuisines": memory.get("cuisine_preferences") or [],
             }
+        if category == "rhythm":
+            # leftovers_stance (Loop Board "Onboarding asks about leftovers
+            # twice", 2026-09-05) is the single source of truth for how the
+            # household feels about leftovers/repeats, and — like
+            # eating_style/cuisines on the Taste tab above — was previously
+            # editable nowhere after onboarding except by asking chat.
+            # Structured rhythm facts live in household_rhythm, not the
+            # freeform `facts` table this route otherwise reads.
+            preferences = {"leftovers_stance": tools.get_household_rhythm().get("leftovers_stance") or ""}
     except Exception as e:
         logger.exception("Facts lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

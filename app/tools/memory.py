@@ -211,6 +211,7 @@ def get_household_memory() -> dict:
         "dinners_per_week": prefs["dinners_per_week"] if prefs else 7,
         "breakfasts_per_week": prefs["breakfasts_per_week"] if prefs else 7,
         "lunches_per_week": prefs["lunches_per_week"] if prefs else 7,
+        "snacks_per_week": prefs["snacks_per_week"] if prefs else 3,
         # design_handoff_plan_the_week. kitchen_kit is the highest-value
         # constraint the app wasn't collecting — it stops impossible
         # suggestions outright rather than filtering them afterwards. And
@@ -374,19 +375,26 @@ def edit_preference(field: str, value) -> dict:
     store suggestions in the grocery list view), 'eating_style' (str,
     freeform — a diet/eating style the household's meals should follow,
     e.g. "keto" or "high-protein, low-carb"; distinct from hard dietary
-    restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week'
-    (each int, 0-7 — how many DISTINCT meals of that kind a typical week
-    should plan, spread across the seven days; 0 means "none, thanks" and
-    leaves that meal unplanned all week), 'kitchen_kit' (list of str — what
+    restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week'/
+    'snacks_per_week' (each int, 0-7 — how many DISTINCT meals of that kind a
+    typical week should plan, spread across the seven days; 0 means "none,
+    thanks" and leaves that meal unplanned all week), 'kitchen_kit' (list of str — what
     the household has to cook with, e.g. ["slow_cooker", "air_fryer"];
     recipes are limited to what their kitchen can actually make),
-    'repeats_tolerance' (str: 'cook_once_eat_twice', 'one_a_week' or
-    'all_different' — this one changes the shape of every week built),
+    'repeats_tolerance' (DEPRECATED — str: 'cook_once_eat_twice', 'one_a_week'
+    or 'all_different'; superseded by leftovers_stance, see the note below),
     'weeknight_max_minutes' (int — a real cap on Mon-Fri dinners; 0 means no
     cap), 'table_style' (str), 'typical_week'/'next_week_notes' (str,
     freeform, kept in the household's own words). To remove a
     single item from a list rather than replacing
     it wholesale, use delete_preference instead.
+
+    NOTE: 'repeats_tolerance' is deprecated (Loop Board "Onboarding asks
+    about leftovers twice", 2026-09-05) in favor of the rhythm step's
+    leftovers_stance (see rhythm.set_leftovers_stance) — generation no
+    longer reads this field, and onboarding/the setup screen no longer ask
+    or show it. Still writable here for backward compatibility, but prefer
+    set_leftovers_stance for anything leftovers-related going forward.
     """
     # Straightforward column writes with no merging or special casing —
     # a table rather than another chain of ifs alongside the ones below.
@@ -399,7 +407,7 @@ def edit_preference(field: str, value) -> dict:
     valid_fields = {
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
         "dislikes", "novelty_preference", "usual_stores", "eating_style",
-        "dinners_per_week", "breakfasts_per_week", "lunches_per_week",
+        "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week",
         "kitchen_kit", "weeknight_max_minutes", *simple_text_columns,
     }
     if field not in valid_fields:
@@ -409,7 +417,7 @@ def edit_preference(field: str, value) -> dict:
     # and it genuinely matters: the floor is 0, not 1 — "none, thanks" is a
     # real answer to the setup screen's stepper — and a value above 7 would
     # be a count of distinct meals larger than the week itself.
-    if field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
+    if field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week"):
         try:
             count = int(value)
         except (TypeError, ValueError):
@@ -488,6 +496,8 @@ def edit_preference(field: str, value) -> dict:
         return _preferences.set_household_meal_preferences(breakfasts_per_week=int(value), mark_complete=False)
     if field == "lunches_per_week":
         return _preferences.set_household_meal_preferences(lunches_per_week=int(value), mark_complete=False)
+    if field == "snacks_per_week":
+        return _preferences.set_household_meal_preferences(snacks_per_week=int(value), mark_complete=False)
     return _preferences.set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
 
@@ -499,7 +509,8 @@ def delete_preference(field: str, item: str | None = None) -> dict:
     item = the protein name to forget. For scalar fields ('notes',
     'cooking_time_preference', or 'eating_style'), omit item to clear the
     field entirely. 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week'
-    each reset to the default of 7.
+    each reset to the default of 7; 'snacks_per_week' resets to its default
+    of 3.
     """
     conn = get_conn()
     existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
@@ -564,6 +575,11 @@ def delete_preference(field: str, item: str | None = None) -> dict:
     elif field == "lunches_per_week":
         conn.execute(
             "UPDATE meal_preferences SET lunches_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
+            (household_id(),),
+        )
+    elif field == "snacks_per_week":
+        conn.execute(
+            "UPDATE meal_preferences SET snacks_per_week = 3, updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )
     else:

@@ -268,6 +268,7 @@ def set_household_meal_preferences(
     dinners_per_week: int | None = None,
     breakfasts_per_week: int | None = None,
     lunches_per_week: int | None = None,
+    snacks_per_week: int | None = None,
     mark_complete: bool = True,
 ) -> dict:
     """
@@ -283,12 +284,13 @@ def set_household_meal_preferences(
     recipes, it's not "never"), eating_style (freeform, e.g. "keto",
     "high-protein, low-carb" — a style/goal for meals to follow, distinct
     from hard dietary_restrictions), and dinners_per_week/breakfasts_per_week/
-    lunches_per_week (each 1-7, how many days a typical week should actually
-    plan that meal — a household that's only home for dinner 4 nights
-    doesn't need all 7 filled in, same idea for breakfast/lunch). Any field
-    can be omitted/partial — pass what you have. By default this marks
-    meal-planning onboarding as complete; pass mark_complete=False if
-    you're saving a partial update mid-conversation.
+    lunches_per_week/snacks_per_week (each 0-7, how many DISTINCT meals of
+    that kind a typical week should actually plan — a household that's only
+    home for dinner 4 nights doesn't need all 7 filled in, same idea for
+    breakfast/lunch/snacks). Any field can be omitted/partial — pass what
+    you have. By default this marks meal-planning onboarding as complete;
+    pass mark_complete=False if you're saving a partial update
+    mid-conversation.
     """
     conn = get_conn()
     existing = conn.execute(
@@ -314,12 +316,17 @@ def set_household_meal_preferences(
     merged_lunches_per_week = lunches_per_week if lunches_per_week is not None else (
         existing["lunches_per_week"] if existing else 7
     )
+    # Default 3, not 7 like the other three — see schema.sql's comment on
+    # meal_preferences.snacks_per_week for why (Emily's explicit call).
+    merged_snacks_per_week = snacks_per_week if snacks_per_week is not None else (
+        existing["snacks_per_week"] if existing else 3
+    )
 
     conn.execute(
         """
         INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, onboarding_complete, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET
             notes = excluded.notes,
             protein_preferences_json = excluded.protein_preferences_json,
@@ -330,6 +337,7 @@ def set_household_meal_preferences(
             dinners_per_week = excluded.dinners_per_week,
             breakfasts_per_week = excluded.breakfasts_per_week,
             lunches_per_week = excluded.lunches_per_week,
+            snacks_per_week = excluded.snacks_per_week,
             onboarding_complete = excluded.onboarding_complete,
             updated_at = datetime('now')
         """,
@@ -344,6 +352,7 @@ def set_household_meal_preferences(
             merged_dinners_per_week,
             merged_breakfasts_per_week,
             merged_lunches_per_week,
+            merged_snacks_per_week,
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
@@ -359,6 +368,7 @@ def set_household_meal_preferences(
         "dinners_per_week": merged_dinners_per_week,
         "breakfasts_per_week": merged_breakfasts_per_week,
         "lunches_per_week": merged_lunches_per_week,
+        "snacks_per_week": merged_snacks_per_week,
         "onboarding_complete": bool(mark_complete),
     }
 
@@ -372,6 +382,7 @@ def save_onboarding_answers(
     dinners_per_week: int,
     breakfasts_per_week: int = 7,
     lunches_per_week: int = 7,
+    snacks_per_week: int = 3,
 ) -> dict:
     """
     Save all onboarding-redesign questions in one call: household
@@ -379,7 +390,7 @@ def save_onboarding_answers(
     keyed by member name — only members who actually have something get an
     entry), a freeform eating style, standing dislikes ("won't eat, no
     matter what"), cuisines/foods to lean into, and how many
-    breakfasts/lunches/dinners a typical week should plan. This
+    breakfasts/lunches/dinners/snacks a typical week should plan. This
     is the entire pre-first-plan question set per the onboarding redesign —
     everything else (favorite proteins, casual dislikes beyond this list,
     cuisine depth beyond this list, feedback) is deliberately NOT asked
@@ -433,6 +444,7 @@ def save_onboarding_answers(
         dinners_per_week=dinners_per_week,
         breakfasts_per_week=breakfasts_per_week,
         lunches_per_week=lunches_per_week,
+        snacks_per_week=snacks_per_week,
         mark_complete=True,
     )
     _household._log_preference_event("onboarding_excited_about", "write")

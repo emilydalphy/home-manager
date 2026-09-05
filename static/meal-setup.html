@@ -208,16 +208,6 @@
   </section>
 
   <section class="block">
-    <div class="block-label">How do you feel about repeats?</div>
-    <p class="block-body">
-      This one changes a lot &mdash; it decides whether I cook once and stretch it, or give you
-      seven different dinners.
-    </p>
-    <div class="stack" id="repeats"></div>
-    <div class="saved" id="repeats-saved"></div>
-  </section>
-
-  <section class="block">
     <div class="block-label">On a weeknight</div>
     <p class="block-body">The most I&rsquo;ll spend on a Monday-to-Friday dinner, start to finish.</p>
     <div class="card">
@@ -297,11 +287,6 @@
     { key: 'cast_iron', label: 'Cast iron' },
     { key: 'no_dishwasher', label: 'No dishwasher' }
   ];
-  var REPEATS = [
-    { key: 'cook_once_eat_twice', label: 'Cook once, eat twice — I like the shortcut' },
-    { key: 'one_a_week', label: 'One repeat a week is fine' },
-    { key: 'all_different', label: 'Something different every night' }
-  ];
   var TABLE_STYLES = [
     { key: 'everyone_same', label: 'Everyone eats the same thing' },
     { key: 'kids_differ', label: 'The children often eat something else' },
@@ -310,7 +295,8 @@
   var COUNTS = [
     { field: 'breakfasts_per_week', label: 'Breakfasts' },
     { field: 'lunches_per_week', label: 'Lunches' },
-    { field: 'dinners_per_week', label: 'Dinners' }
+    { field: 'dinners_per_week', label: 'Dinners' },
+    { field: 'snacks_per_week', label: 'Snacks & desserts' }
   ];
 
   function esc(s) {
@@ -362,7 +348,6 @@
     $('setup').hidden = false;
     renderCounts();
     renderKit();
-    renderRepeats();
     renderMinutes();
     renderList('dislikes', 'dislikes', 'dislikes-saved');
     renderList('cuisines', 'cuisine_preferences', 'cuisines-saved');
@@ -403,7 +388,10 @@
   }
 
   function countAck(field, n) {
-    var noun = field === 'dinners_per_week' ? 'dinner' : (field === 'lunches_per_week' ? 'lunch' : 'breakfast');
+    var noun = field === 'dinners_per_week' ? 'dinner'
+      : field === 'lunches_per_week' ? 'lunch'
+      : field === 'snacks_per_week' ? 'snack'
+      : 'breakfast';
     var plural = field === 'lunches_per_week' ? 'lunches' : noun + 's';
     if (n === 0) return 'I’ll leave ' + plural + ' to you from next week.';
     if (n === 1) return 'I’ll plan one ' + noun + ' and carry it through the week.';
@@ -433,7 +421,7 @@
     });
   }
 
-  // ---------- repeats / table style ----------
+  // ---------- table style ----------
   function renderOptions(containerId, options, current, field, savedId, ackFor) {
     $(containerId).innerHTML = options.map(function (o) {
       return '<button type="button" class="option' + (o.key === current ? ' on' : '') + '" data-key="' + o.key + '">' + esc(o.label) + '</button>';
@@ -444,14 +432,6 @@
         btn.classList.add('on');
         save(field, btn.dataset.key, savedId, ackFor(btn.dataset.key));
       });
-    });
-  }
-
-  function renderRepeats() {
-    renderOptions('repeats', REPEATS, prefs.repeats_tolerance, 'repeats_tolerance', 'repeats-saved', function (key) {
-      if (key === 'cook_once_eat_twice') return 'I’ll build in a few nights that eat the night before’s cooking.';
-      if (key === 'one_a_week') return 'I’ll plan exactly one repeat a week.';
-      return 'I’ll give you seven different dinners.';
     });
   }
 

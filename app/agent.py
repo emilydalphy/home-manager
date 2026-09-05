@@ -2330,18 +2330,17 @@ suggest recipes their kitchen can make: no air-fryer recipe for a household with
 slow-cooker night if there's no slow cooker. If "no_dishwasher" is listed, keep an eye on how \
 many pans a weeknight dinner dirties. An empty list means unknown, not "nothing" — don't \
 constrain on it at all in that case.
-- household_memory's `repeats_tolerance` decides the SHAPE of the week, so honour it \
-structurally rather than as a preference: "cook_once_eat_twice" means deliberately build in \
-two or three cook-once-eat-twice pairs (a bigger batch one night, its leftovers the next); \
-"one_a_week" means exactly one such pair; "all_different" means seven distinct dinners and no \
-leftovers nights at all unless a night tag explicitly asks for one. Blank means unknown — use \
-your normal judgement.
-- household_memory's `rhythm.leftovers_stance` (Loop Board "Onboarding: household rhythm...") \
-is the household's own stated feeling about leftovers, distinct from and read alongside \
-`repeats_tolerance` above: "love_them" reinforces building in cook-once-eat-twice pairs and \
-favors batch-friendly recipes; "fresh_each_night" is a signal against relying on leftovers even \
-if `repeats_tolerance` would otherwise allow a repeat; "fine_sometimes" or blank means no extra \
-lean either way — fall back to `repeats_tolerance` alone.
+- household_memory's `rhythm.leftovers_stance` (Loop Board "Onboarding: household rhythm...", \
+and the single leftovers question after "Onboarding asks about leftovers twice" merged it with \
+the old repeats question, 2026-09-05) decides the SHAPE of the week, so honour it structurally \
+rather than as a preference: "love_them" means deliberately build in two or three \
+cook-once-eat-twice pairs (a bigger batch one night, its leftovers the next) and favor \
+batch-friendly recipes; "fine_sometimes" means at most one such pair, no strong lean either \
+way otherwise; "fresh_each_night" means no leftover nights at all unless a night tag explicitly \
+asks for one — every dinner is cooked fresh that night. This does NOT mean seven distinct \
+dinners: the same dish can still repeat across the week (that's what dinners_per_week already \
+governs), it's specifically that a dinner is never a reheat of an earlier one. Blank means \
+unknown — use your normal judgement.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
 dinners in prep+cook minutes. A `rush` tag overrides it downwards, never upwards.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
@@ -2361,15 +2360,19 @@ reasons.
 one, which mood/cuisine inputs drove it, the quoted span of their freeform text if that's what \
 drove it, and any inventory it was chosen to use up. Record what actually drove the choice, \
 not everything you were shown.
-- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week (0-7) are counts \
-of DISTINCT meals, not counts of days to plan. Every day still gets all three meals. "4 \
-breakfasts" means four different breakfast ideas spread across the seven mornings, repeating \
-as needed to fill the week — it does NOT mean three mornings with nothing. This is what the \
-setup screen promises the household in so many words: "I'd rather plan four things you cook \
-than seven you don't," and "one breakfast a week is a perfectly good answer" — one idea, eaten \
-all week, not one morning fed and six ignored. A count of 0 is handled outside this call; if \
-you see it, still plan that meal normally and it will be dealt with afterwards. Snack isn't \
-governed by any of these numbers.
+- household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week / \
+snacks_per_week (0-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
+gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
+mornings, repeating as needed to fill the week — it does NOT mean three mornings with nothing. \
+This is what the setup screen promises the household in so many words: "I'd rather plan four \
+things you cook than seven you don't," and "one breakfast a week is a perfectly good answer" — \
+one idea, eaten all week, not one morning fed and six ignored. snacks_per_week follows the \
+exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts count", \
+2026-09-05): that many distinct snack/dessert ideas, rotated across the week the same way a \
+breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
+tagged `guests` or otherwise called out as special in constraints_notes/intake, rather than on \
+an ordinary weeknight. A count of 0 for any of the four is handled outside this call; if you \
+see it, still plan that meal/slot normally and it will be dealt with afterwards.
 - household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
 specific list of foods someone says they should be eating) is a hard constraint, treated with \
 the exact same "without exception" rigor as a dietary restriction/allergy above — not a soft \
@@ -3249,10 +3252,16 @@ def _generate_weekly_plan(
     # A part-week's meal-variety targets are prorated to the days it
     # actually has (see _prorate_meal_count) — everything else about
     # household_memory (dislikes, restrictions, style) carries over as-is.
-    effective_memory = household_memory
+    #
+    # Always a copy (not just when day_count < 7) because repeats_tolerance
+    # is dropped from it below: deprecated in favor of rhythm.leftovers_stance
+    # (Loop Board "Onboarding asks about leftovers twice", 2026-09-05) — the
+    # column stays for now (see schema.sql), but the generator is no longer
+    # told about it at all, in the prompt text or here in its context.
+    effective_memory = dict(household_memory)
+    effective_memory.pop("repeats_tolerance", None)
     if day_count < 7:
-        effective_memory = dict(household_memory)
-        for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
+        for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week"):
             if household_memory.get(field) is not None:
                 effective_memory[field] = _prorate_meal_count(household_memory[field], day_count)
 
@@ -3669,6 +3678,7 @@ def _finish_week_slots(
         "breakfast": household_memory.get("breakfasts_per_week"),
         "lunch": household_memory.get("lunches_per_week"),
         "dinner": household_memory.get("dinners_per_week"),
+        "snack": household_memory.get("snacks_per_week"),
     }
     for slot, count in zero_counts.items():
         if count != 0:
