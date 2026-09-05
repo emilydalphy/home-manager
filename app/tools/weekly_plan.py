@@ -2323,7 +2323,7 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     """
     return conn.execute(
         """
-        SELECT mpe.id, r.ingredients_json
+        SELECT mpe.id, mpe.recipe_id, r.ingredients_json
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
@@ -2519,11 +2519,26 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     ).fetchone()["approved_at"]
     conn.close()
 
+    # Grouped by RECIPE, not left one row per meal. A week's shop is a
+    # recipe-week question: the same breakfast six mornings needs one bag
+    # of spinach, not six, and only something that looks at all six meals
+    # at once can know that. Ingesting per meal is what put 6 bags of
+    # spinach and 4 bottles of honey on Emily's first approved week —
+    # every downstream step was working correctly on wrong inputs. See
+    # _add_recipe_ingredients_for_entries for which ingredients stop
+    # multiplying and which (rightly) still add up.
+    by_recipe: dict[int, dict] = {}
+    for entry in entries:
+        group = by_recipe.setdefault(
+            entry["recipe_id"], {"ingredients_json": entry["ingredients_json"], "entry_ids": []}
+        )
+        group["entry_ids"].append(entry["id"])
+
     added_items = []
     already_have = []
-    for entry in entries:
-        added, have = _recipes._add_recipe_ingredients_to_grocery_list(
-            entry["id"], json.loads(entry["ingredients_json"]), weekly_plan_id
+    for group in by_recipe.values():
+        added, have = _recipes._add_recipe_ingredients_for_entries(
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id
         )
         added_items.extend(added)
         already_have.extend(have)

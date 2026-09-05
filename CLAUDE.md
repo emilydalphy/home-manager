@@ -320,6 +320,105 @@ why*, not duplicating the diff.
     from chat and nowhere else — the What-we-know screen cannot set or show
     it — so the whole hard-fact path depends on the assistant having chosen
     the flag when it wrote the note. Open, unchanged by this branch.
+- **2026-09-04 — The grocery list multiplied packages by how often a meal
+  repeated. Branch `fix-grocery-quantity-inflation` (NOT merged at the time
+  of writing; branched off `fix-leftovers-ordering`).** Emily's first
+  approved week: 6 bags of baby spinach, 4 bottles of honey, 4 tubs of
+  hummus, 3 bottles of olive oil, cottage cheese as "48 oz tubs". The three
+  earlier fixes she remembers — summing instead of concatenating, the
+  singular/plural merge, container pluralising — were all correct and none
+  of them was the bug. The inputs to the sum were wrong.
+  - **Root cause: `approve_weekly_plan` ingested one MEAL at a time**
+    (`weekly_plan.py`, the `_plan_grocery_candidate_entries` loop → one
+    `_add_recipe_ingredients_to_grocery_list` call per entry). The
+    generation prompt deliberately repeats a breakfast 2-3+ times a week
+    and writes qty as a bought unit ("1 bag"), so six mornings added one
+    bag six times. Ingestion is now per RECIPE-week
+    (`recipes._add_recipe_ingredients_for_entries`).
+  - **A sealed package is added once per recipe-week and consolidated
+    across recipes by keeping the LARGER, not the sum** (`add_grocery_item`
+    gained `quantity_mode="max"`). Per-portion amounts are untouched and
+    still add up per meal, still scaled by each meal's own attendance
+    factor — Emily's 18 peppers were the arithmetic truth, not a bug.
+  - **`_PACKAGE_UNITS` is deliberately five words** — bag, bottle,
+    container, jar, tub. "can"/"tin"/"box"/"carton"/"pack" are packages of
+    things eaten a package at a time (a tin of beans, a box of pasta), and
+    collapsing those leaves a cook short mid-week. A test asserting a
+    takeover trims the beans caught exactly that when "tin" was briefly in
+    the set. When in doubt a word stays OUT: an extra line beats a missing
+    dinner.
+  - **"48 oz tub" parsed as forty-eight tubs.** `_parse_quantity` now reads
+    `<size> <measure> <container>` as ONE package whose size rides with the
+    unit — `(1.0, "tub (48 oz)")`, formatted back as "3 tubs (48 oz)" and
+    round-tripping exactly. This changes "1 lb bag" to display as "1 bag
+    (1 lb)" too, which is the same fix, not a side effect.
+  - **Reversal had to stop being one-meal-one-share for packages.** A
+    package line now survives until the LAST meal linked to it goes
+    (`_reverse_meal_grocery_contributions`), so a swap leaves the bottle
+    the other two dinners still need and clearing the week still empties
+    the list exactly. A package line with no `source_weekly_plan_id` is a
+    hand-added standing want and is never removed.
+  - **A descriptor is not a unit, and it used to eat the whole quantity.**
+    Emily added two more rows after the above was written: "Mixed berries:
+    2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag
+    (frozen)" and "Pineapple chunks · 3 bag frozen". Two different
+    failures with one cause — "(frozen)" made the string unparseable so it
+    concatenated, and in "1 bag frozen" the unit read as "bag frozen" so
+    `package_unit` never saw a bag and three snacks summed. Descriptors
+    now come OUT before parsing and come BACK as a note
+    (`_split_quantity_note`), in one canonical shape: **amount first, note
+    last, separated by a comma** — "1 bag (2 lb), frozen", "3 bags,
+    frozen", "1 jar, large". Amount-first because that is what a shopper
+    scans for; the note is what they read once they have found the line.
+    The vocabulary is a CLOSED set (`_DESCRIPTOR_WORDS`) of words that can
+    only ever be descriptions — an unrecognized trailing word is left
+    alone, because guessing it is decoration is how a real unit gets
+    thrown away. A note is only re-attached to something that parsed, so
+    freeform text ("a frozen handful") keeps its own wording rather than
+    saying "frozen" twice.
+  - **The concatenation fallback may never write the same words twice.**
+    "2 cups + 1 lb" is an honest report that two amounts could not be
+    reconciled; four copies of "2 lb bag (frozen)" is not. Identical text
+    now collapses to one copy with a repeat marker — "a handful ×2" —
+    which counts up on the way in (`_repeat_or_concatenate`, summing under
+    `_try_consolidate_quantity` and taking the max under
+    `_greater_of_quantity`) and back down on the way out
+    (`_subtract_quantity`). Genuinely different text still concatenates.
+    Same package word with the size stated on only one side merges too
+    (`_shared_package_unit`): "1 bag (2 lb)" beside "1 bag" is two bags of
+    the same thing, and the stated size wins because it says more. Two
+    DIFFERENT stated sizes still show both — that is a real disagreement,
+    not a formatting accident.
+  - **How `leftovers-servings-scaling` actually landed**, correcting an
+    earlier draft of this entry that said a total-servings factor
+    "replaces that one call and nothing else". It does not. That branch
+    (since merged to `main`; see the entry below) does three things per
+    entry and only one of them is a factor, and merging it into the
+    grouped ingest needed all three handled separately:
+    1. `scale *= batch["servings"] / batch["cook_eaters"]` for a chain
+       SOURCE is the easy one, and the old claim holds there: it
+       multiplies the per-entry `grocery_scale_factor` inside the loop
+       that builds `scaled_for_entry`, one entry at a time, composing
+       exactly as it did before.
+    2. `return [], []` for a LEFTOVERS entry did NOT survive translation
+       and would have been a real bug. A chain reuses the same
+       `recipe_id`, so the cook night and the reheat night land in the
+       SAME recipe-week group — an early return would have dropped the
+       cook night's shop along with the reheat's. It is now a FILTER:
+       `contributing_ids`, with the group returning `[], []` only when
+       every entry in it was a reheat (which is what the single-meal door
+       still does for a lone leftovers entry).
+    3. The package path needed that filtered list too. A package is added
+       once per group and then `_record_link`s each contributing entry; a
+       reheat night must not hold a link, or a swap would leave the
+       bottle alive past the cook night that actually earned it.
+    Chains are now looked up once per PLAN and cached, not once per entry
+    — grouping already brings every meal for a recipe through in one
+    call, so the per-entry query would just repeat itself.
+  - **Open for Emily:** whether a true per-portion sum should ever be
+    capped. 17 peppers is honest arithmetic — five dinners wanting 3, 4,
+    2, 4 and 4 — and it is NOT capped or hidden; the list shows 17. It may
+    still be more than anyone wants to read on one line.
 
 - **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
   `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT

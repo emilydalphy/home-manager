@@ -2436,6 +2436,11 @@ garlic powder or 9 bottles of olive oil — technically correct per recipe, absu
 together. This does NOT apply to ingredients genuinely consumed in real per-recipe portions even \
 when pantry-sourced — canned beans, rice, pasta, broth, flour for baking — those need their own \
 real qty every time they're used, since each use is an actual portion, not a pinch.
+- A sealed package written as a bought unit — "1 bag", "1 bottle", "1 jar", "1 tub" — is counted \
+once for the whole week no matter how many meals name it, so write it plainly on every recipe \
+that uses it and never try to compensate by writing a fraction of one ("1/6 bag") or by \
+splitting it across days. A breakfast planned six mornings that lists "1 bag" of spinach buys \
+one bag.
 - current_inventory lists what's already on hand. For an ingredient already covered there in a \
 comparable quantity, still include it in the recipe's ingredients list (the recipe should stay \
 accurate/reusable), but leave its category as normal — the household already has it, so it \
