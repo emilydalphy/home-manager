@@ -321,6 +321,28 @@ why*, not duplicating the diff.
     it — so the whole hard-fact path depends on the assistant having chosen
     the flag when it wrote the note. Open, unchanged by this branch.
 
+- **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
+  `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT
+  merged at the time of writing).** Emily, seeing the same dish on two
+  nights of the Cook view: "show the one night it's being cooked as 6
+  servings, make a little note that this covers tonight + leftovers, and
+  not have it on another night for cooking." `fix-leftovers-ordering`
+  made the chains trustworthy (`derived_from.make_double_for` on the
+  source) but nothing read them back, so the second night still behaved
+  as a full cook everywhere: its own recipe card, its own groceries, its
+  own defrost reminder, its own prep, and a second inventory depletion
+  when checked off. New `app/tools/leftovers.py` is the one read-side
+  reader (it honours a chain only when BOTH entries agree, so an
+  unvalidated plan behaves exactly as before), and the Cook view, the
+  grocery contribution, defrost and the prep context all go through it.
+  Component mode's bulk-cook scaling was lifted into
+  `cooker._scale_card_to_batch` and is now shared by both modes rather
+  than existing only on the component side. **Known gap:** the Meals
+  *Plan* tab (`weekly_plan.get_week_menu`'s `build_slot`) still draws a
+  leftovers night as an ordinary planned cook with a "Cook this" button
+  — it only detects leftovers from the freeform text, and a chain entry
+  carries a real recipe_id. Deliberately out of scope; own ticket.
+
 - **2026-09-04 — A plan is a PERIOD, not a week, and no day has two of
   them. Branch `planning-periods` (NOT merged at the time of writing).**
   Loop Board "Planning periods, not weeks — plan any window (Thursday to

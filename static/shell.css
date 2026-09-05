@@ -4340,6 +4340,10 @@ html, body {
   cursor: pointer;
 }
 .cook-week-item.is-done .cook-week-name { color: var(--ink-inactive); text-decoration: line-through; }
+/* A reheat night's name is text, not a way into a recipe (see
+   cookRestOfWeekHtml) — same row, same size, no pointer promising a tap
+   that does nothing. */
+span.cook-week-name { cursor: default; }
 .cook-badge {
   height: 24px;
   flex: 0 0 auto;
