@@ -629,22 +629,64 @@ def _add_recipe_ingredients_to_grocery_list(
     entry_id: int, recipe_ingredients: list[dict], weekly_plan_id: int | None
 ) -> tuple[list[str], list[str]]:
     """
-    Put one planned meal's recipe ingredients onto the grocery list and
-    record what it contributed, returning (added_items, already_have).
+    One planned meal's ingredients onto the grocery list — the single-meal
+    door onto _add_recipe_ingredients_for_entries below, which is where
+    the behaviour lives. Used by plan_meal and the swap paths, where there
+    genuinely is only one meal to account for.
+    """
+    return _add_recipe_ingredients_for_entries([entry_id], recipe_ingredients, weekly_plan_id)
 
-    Deliberately never called from anywhere the household hasn't said yes
-    — see plan_meal (opt-in flag, default off) and approve_weekly_plan
-    (the yes for a whole generated week). Shared by both so a meal's
-    ingredients land on the list identically whether it was planned
-    one-off in chat or arrived with an approved week.
 
-    Quantities are scaled to the meal's actual HEADCOUNT before they reach
+def _add_recipe_ingredients_for_entries(
+    entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None
+) -> tuple[list[str], list[str]]:
+    """
+    Put ONE RECIPE's ingredients onto the grocery list for every meal in
+    this week that cooks it, and record what each of those meals
+    contributed, returning (added_items, already_have).
+
+    The unit of work is a recipe-week, not a meal, and that is the whole
+    point. Called once per meal — which is what approve_weekly_plan used
+    to do — a breakfast planned six mornings put "1 bag baby spinach" on
+    the list six times, and the summing that a previous fix correctly
+    introduced turned that into six bags. Emily's first approved week
+    asked her to buy 6 bags of spinach, 4 bottles of honey and 4 tubs of
+    hummus. Nothing downstream was wrong; the inputs were.
+
+    So each ingredient goes down one of two paths:
+
+    - A SEALED PACKAGE ("1 bag", "1 bottle", "1 jar", "48 oz tub" — see
+      quantities.package_unit) is what the household buys ONE of and draws
+      on all week. It is added once for the whole recipe-week, not
+      multiplied by how often the meal repeats, and it consolidates with
+      the same package on another recipe by keeping the larger of the two
+      rather than adding them (quantity_mode="max"), so three dinners that
+      each list a bottle of olive oil buy one bottle. A recipe that really
+      does want "2 bottles" still wins.
+
+      This is a beta rule and it is deliberately generous-downward: one
+      bottle of oil, one jar of spice, one bag of granola per week is
+      right far more often than it is wrong, and a household that truly
+      needs a second one can bump the line. Under-buying a staple costs a
+      trip; the old behaviour cost trust in the whole list.
+
+    - Everything else is a PER-PORTION amount — 4 cups of beans, 3 bell
+      peppers, a bunch of cilantro — and still adds up across every meal
+      that wants it, each meal scaled to its own headcount exactly as
+      before. Five dinners wanting 2-4 peppers each genuinely want the
+      sum.
+
+    Quantities are scaled to each meal's actual HEADCOUNT before they reach
     the list (Emily's deepened attendance model): a Thursday dinner only
     one of two people is home for buys for one. The factor comes from
     attendance.grocery_scale_factor, which is 1.0 — an exact no-op, leaving
     every quantity byte-for-byte as the recipe writes it — unless that
-    specific meal has an explicit attendance row. So a week where everyone
-    is home shops precisely as it always has.
+    specific meal has an explicit attendance row. Scaling stays per meal
+    rather than being folded into one recipe-week factor, so a week where
+    everyone is home shops precisely as it always has and the anchor
+    grocery_scale_factor deliberately chose (the household, not the
+    recipe's default_servings) is untouched here. A package is not scaled
+    at all — half a table still buys one bottle.
 
     A cook-once-eat-twice chain moves that factor a second time, and moves
     the other night to zero. A LEFTOVERS entry contributes NOTHING at all
@@ -659,6 +701,28 @@ def _add_recipe_ingredients_to_grocery_list(
     attendance rows anywhere doubles exactly, and one with someone away on
     Thursday buys for five.
 
+    Grouping by recipe-week is what makes that chain check a FILTER rather
+    than an early return, and the distinction matters: a chain reuses one
+    recipe_id, so the cook night and the reheat night are two entries in
+    the SAME group here. Returning early on the reheat would take the cook
+    night's shop with it. So a leftovers entry is dropped from the group's
+    contributing entries — no scaled share, and no grocery link, since a
+    link would keep a package alive on the list past the cook night that
+    actually earned it — and the group returns empty only when every entry
+    in it was dropped.
+
+    Every contributing meal gets its own meal_plan_grocery_links row, so
+    reversal stays exactly symmetric with what was added: a per-portion
+    row carries that meal's own scaled share, and a package row carries
+    the package, with _reverse_meal_grocery_contributions holding the line
+    on the list until the last meal that named it is gone.
+
+    Deliberately never called from anywhere the household hasn't said yes
+    — see plan_meal (opt-in flag, default off) and approve_weekly_plan
+    (the yes for a whole generated week). Shared by both so a meal's
+    ingredients land on the list identically whether it was planned
+    one-off in chat or arrived with an approved week.
+
     KNOWN LIMITATION: this runs when ingredients are ADDED to the list, so
     it reflects attendance as it stood at approval. Changing a meal's
     headcount after the week is approved does not re-quantify what's
@@ -670,37 +734,58 @@ def _add_recipe_ingredients_to_grocery_list(
     swap-a-meal machinery, not this function's. Worth doing; deliberately
     not smuggled into this change.
     """
-    # Which meal this is, so attendance can say how many it feeds. A
-    # missing entry (an ad hoc add, a row since deleted) simply doesn't
-    # scale rather than failing the shop.
-    scale = 1.0
+    from . import attendance as _attendance
+    from . import leftovers as _leftovers
+
+    # Each meal's own headcount factor, so attendance can say how many it
+    # feeds. A missing entry (an ad hoc add, a row since deleted) simply
+    # doesn't scale rather than failing the shop.
+    #
+    # The chain check sits at this one choke point rather than in the
+    # callers, so plan_meal's opt-in flag and approve_weekly_plan's
+    # whole-week yes both get it. Chains are looked up once per PLAN and
+    # cached here rather than once per entry: grouping by recipe already
+    # brings every meal that cooks this recipe through in one call, so the
+    # per-entry query the single-meal path used to do would now repeat
+    # itself for no reason.
     entry_conn = get_conn()
-    entry_row = entry_conn.execute(
-        "SELECT date, slot, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-        (entry_id, household_id()),
-    ).fetchone()
-    entry_conn.close()
-    if entry_row:
-        from . import attendance as _attendance
-        scale = _attendance.grocery_scale_factor(entry_row["date"], entry_row["slot"])
-        # The chain check sits at this one choke point rather than in the
-        # callers, so plan_meal's opt-in flag and approve_weekly_plan's
-        # whole-week yes both get it. It reads the plan's chains per entry
-        # — a query per meal on a path that runs once per approval, which
-        # is the cheap side of the trade against threading the map through
-        # three call sites.
-        if entry_row["weekly_plan_id"]:
-            from . import leftovers as _leftovers
-            chains = _leftovers.plan_leftover_chains(entry_row["weekly_plan_id"])
+    scaled_for_entry: dict[int, list[dict]] = {}
+    contributing_ids: list[int] = []
+    chains_by_plan: dict[int, dict] = {}
+    for entry_id in entry_ids:
+        entry_row = entry_conn.execute(
+            "SELECT date, slot, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+        scale = (
+            _attendance.grocery_scale_factor(entry_row["date"], entry_row["slot"])
+            if entry_row else 1.0
+        )
+        if entry_row and entry_row["weekly_plan_id"]:
+            plan_id = entry_row["weekly_plan_id"]
+            if plan_id not in chains_by_plan:
+                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id)
+            chains = chains_by_plan[plan_id]
+            # A reheat night buys nothing and links to nothing — it drops
+            # out of the group entirely rather than returning early, since
+            # the cook night it eats from shares this very group.
             if entry_id in chains["leftovers"]:
-                return [], []
+                continue
             source = chains["sources"].get(entry_id)
             if source:
                 batch = _leftovers.batch_for_source(source)
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     scale *= batch["servings"] / batch["cook_eaters"]
-        if scale != 1.0:
-            recipe_ingredients = _attendance.scale_ingredients(recipe_ingredients, scale)
+        contributing_ids.append(entry_id)
+        scaled_for_entry[entry_id] = (
+            _attendance.scale_ingredients(recipe_ingredients, scale)
+            if scale != 1.0 else recipe_ingredients
+        )
+    entry_conn.close()
+    # Every meal in this group was a reheat, so the group buys nothing —
+    # the same answer the single-meal path gives for a lone leftovers entry.
+    if not contributing_ids:
+        return [], []
     # Skip adding anything already tracked in pantry/fridge inventory (with
     # a non-blank quantity) — this is the "accounts for logged inventory"
     # behavior for the plan-approval path. For a direct chat-driven add
@@ -726,15 +811,7 @@ def _add_recipe_ingredients_to_grocery_list(
     # week (not an ad hoc one-off), so a later week's generation can
     # tell this ingredient apart from a genuine standing want and clear
     # it out once it's stale — see clear_stale_grocery_items.
-    for ing in recipe_ingredients:
-        if ing["item"].strip().lower() in have_names:
-            already_have.append(ing["item"])
-            continue
-        add_result = _grocery.add_grocery_item(
-            ing["item"], quantity=ing.get("qty", ""), category=ing.get("category", "other"), added_by="ai",
-            source_weekly_plan_id=weekly_plan_id,
-        )
-        added_items.append(ing["item"])
+    def _record_link(entry_id: int, item: str, grocery_item_id: int, qty: str) -> None:
         # Record exactly what THIS entry contributed to that grocery
         # line, before it got merged with anything else already there —
         # see _reverse_meal_grocery_contributions, which is what lets
@@ -744,8 +821,39 @@ def _add_recipe_ingredients_to_grocery_list(
         link_conn.execute(
             "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
             "VALUES (?, ?, ?, ?, ?)",
-            (household_id(), entry_id, add_result["item_id"], ing["item"], _quantities._strip_prep_descriptor(ing.get("qty", "") or "")),
+            (household_id(), entry_id, grocery_item_id, item, _quantities._strip_prep_descriptor(qty or "")),
         )
         link_conn.commit()
         link_conn.close()
+
+    for index, ing in enumerate(recipe_ingredients):
+        if ing["item"].strip().lower() in have_names:
+            already_have.append(ing["item"])
+            continue
+        # The recipe's own wording decides the path, before any headcount
+        # scaling — scaling can only ever turn a package into the same
+        # package (you cannot buy two thirds of a jar), so asking the
+        # unscaled quantity keeps the classification stable across meals.
+        raw_qty = ing.get("qty", "") or ""
+        if _quantities.package_unit(raw_qty):
+            add_result = _grocery.add_grocery_item(
+                ing["item"], quantity=raw_qty, category=ing.get("category", "other"), added_by="ai",
+                source_weekly_plan_id=weekly_plan_id, quantity_mode="max",
+            )
+            for entry_id in contributing_ids:
+                _record_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
+        else:
+            for entry_id in contributing_ids:
+                # This meal's own scaled copy of the same ingredient, by
+                # position — scale_ingredients preserves order and length.
+                scaled = scaled_for_entry[entry_id][index]
+                add_result = _grocery.add_grocery_item(
+                    scaled["item"], quantity=scaled.get("qty", ""), category=scaled.get("category", "other"),
+                    added_by="ai", source_weekly_plan_id=weekly_plan_id,
+                )
+                _record_link(entry_id, scaled["item"], add_result["item_id"], scaled.get("qty", ""))
+        # Once per ingredient, not once per meal: this is the list of
+        # NAMES that landed on the shopping list, and approve_weekly_plan
+        # counts it distinctly anyway.
+        added_items.append(ing["item"])
     return added_items, already_have

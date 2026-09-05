@@ -293,6 +293,10 @@ _MIGRATIONS = [
     # until the sentence has actually been served to a screen — see
     # weekly_plan.get_week_menu and main.week_menu.
     ("meal_preferences", "plates_intro_shown_at", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "Onboarding / meal setup: add a Snacks & desserts count"
+    # (Emily, 2026-09-05). Existing households get 3, not 7 — see
+    # schema.sql's comment on meal_preferences.snacks_per_week for why.
+    ("meal_preferences", "snacks_per_week", "INTEGER NOT NULL DEFAULT 3"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -383,6 +387,86 @@ def _merge_duplicate_item_store_preferences(conn):
                     conn.execute("DELETE FROM item_store_preferences WHERE id = ?", (row["id"],))
 
 
+_REPEATS_TOLERANCE_TO_LEFTOVERS_STANCE = {
+    "cook_once_eat_twice": "love_them",
+    "one_a_week": "fine_sometimes",
+    "all_different": "fresh_each_night",
+}
+
+
+def _migrate_repeats_tolerance_to_leftovers_stance(conn):
+    """
+    One-time-per-household backfill for Loop Board "Onboarding asks about
+    leftovers twice" (Emily, 2026-09-05): onboarding used to ask this same
+    thing twice — once as household_rhythm.leftovers_stance on the rhythm
+    step, once as meal_preferences.repeats_tolerance on the final step — and
+    now only asks it once, on the rhythm step. leftovers_stance is the
+    single source of truth going forward (see tools/rhythm.py and
+    generate_weekly_plan_llm's prompt), but a household that only ever
+    answered the OLD repeats question would otherwise look like they never
+    answered at all.
+
+    Only touches a household whose leftovers_stance is still unset — a
+    household that has ever answered the rhythm question (onboarding or a
+    later chat correction) keeps that answer untouched, even if it disagrees
+    with an older repeats_tolerance value; the newer, more specific answer
+    always wins over a backfill. Idempotent and safe to run every startup:
+    once a household has a leftovers_stance on record (written here or
+    otherwise), it's never a candidate again.
+
+    repeats_tolerance itself is left alone — see schema.sql's comment on it
+    for why the column stays.
+    """
+    rows = conn.execute(
+        "SELECT household_id, repeats_tolerance FROM meal_preferences "
+        "WHERE repeats_tolerance != ''"
+    ).fetchall()
+    for row in rows:
+        mapped = _REPEATS_TOLERANCE_TO_LEFTOVERS_STANCE.get(row["repeats_tolerance"])
+        if not mapped:
+            continue
+        already_set = conn.execute(
+            "SELECT 1 FROM household_rhythm WHERE household_id = ? AND member_name = '' "
+            "AND weekday = '' AND fact_type = 'leftovers_stance'",
+            (row["household_id"],),
+        ).fetchone()
+        if already_set:
+            continue
+        conn.execute(
+            """
+            INSERT INTO household_rhythm (household_id, member_name, weekday, fact_type, value, who, source, updated_at)
+            VALUES (?, '', '', 'leftovers_stance', ?, '', 'migrated_from_repeats_tolerance', datetime('now'))
+            """,
+            (row["household_id"], mapped),
+        )
+def _migrate_planning_anchor_values(conn):
+    """
+    Loop Board "Rhythm: rename 'When should your week be ready?' ... and
+    decide what 'As we go' actually does" (Emily, 2026-09-05):
+    household_rhythm.planning_anchor moved from an abstract cadence
+    ('sunday_before'/'midweek'/'as_we_go') to a concrete weekday the plan
+    and list are final by ('monday' ... 'sunday'), plus 'as_we_go'
+    unchanged. Maps every existing answer onto the value that preserves
+    what it already meant:
+
+    - 'sunday_before' (ready the Sunday before, Monday start) -> 'sunday'
+    - 'midweek' (no real day named, just "not the weekend") -> 'wednesday',
+      the middle of the week and the closest a literal day gets to what
+      "midweek" meant
+    - 'as_we_go' -> unchanged; only its downstream meaning changed (see
+      tools.weekly_plan.suggest_planning_period), not the stored value
+
+    Idempotent and run every startup like the other one-time value fixups
+    below: once no row carries an old value, both UPDATEs touch zero rows.
+    """
+    conn.execute(
+        "UPDATE household_rhythm SET value = 'sunday' WHERE fact_type = 'planning_anchor' AND value = 'sunday_before'"
+    )
+    conn.execute(
+        "UPDATE household_rhythm SET value = 'wednesday' WHERE fact_type = 'planning_anchor' AND value = 'midweek'"
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -394,6 +478,8 @@ def _run_migrations(conn):
     # Idempotent: only ever touches rows whose color is still blank.
     _backfill_member_colors(conn)
     _merge_duplicate_item_store_preferences(conn)
+    _migrate_repeats_tolerance_to_leftovers_stance(conn)
+    _migrate_planning_anchor_values(conn)
 
 
 def init_db():

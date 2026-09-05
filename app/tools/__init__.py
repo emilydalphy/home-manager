@@ -231,8 +231,10 @@ from .quantities import (  # noqa: F401
     _roll_up_unit,
     _round_to_nice_fraction,
     _strip_prep_descriptor,
+    package_unit,
 )
 from .recipes import (  # noqa: F401
+    _add_recipe_ingredients_for_entries,
     _add_recipe_ingredients_to_grocery_list,
     _maybe_auto_attribute_solo_night,
     add_recipe,
@@ -259,10 +261,12 @@ from .rhythm import (  # noqa: F401
     LUNCH_LOCATIONS,
     MEALS_TOGETHER_OPTIONS,
     PLANNING_ANCHORS,
+    PLANNING_ANCHOR_WEEKDAYS,
     WEEKDAYS,
     clear_lunch_location_override,
     effective_lunch_location,
     get_household_rhythm,
+    planning_anchor_label,
     rhythm_completeness_signals,
     set_cooking_role,
     set_dinner_window,

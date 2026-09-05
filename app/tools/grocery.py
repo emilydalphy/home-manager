@@ -105,7 +105,16 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     (e.g. "2 cups flour" + "1 lb flour"), nothing is guessed — both amounts
     are kept together on one line so the shopper sees both rather than a
     silently wrong conversion.
+
+    What it will NOT do is write the same quantity twice. Two sides that
+    are the same words are the same unit whether or not this module can
+    read that unit, and "2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag
+    (frozen) + 2 lb bag (frozen)" is not an honest report of uncertainty,
+    it is four copies of one line — see _repeat_or_concatenate.
     """
+    note = _quantities._merge_notes(
+        _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
+    )
     existing_qty = _quantities._strip_prep_descriptor((existing_qty or "").strip())
     new_qty = _quantities._strip_prep_descriptor((new_qty or "").strip())
     if not existing_qty:
@@ -115,8 +124,103 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     existing_parsed = _quantities._parse_quantity(existing_qty)
     new_parsed = _quantities._parse_quantity(new_qty)
     if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
-        return _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]), True
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]),
+            note,
+        ), True
+    shared_unit = _shared_package_unit(existing_parsed, new_parsed)
+    if shared_unit:
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], shared_unit), note
+        ), True
+    return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=True)
+
+
+def _shared_package_unit(existing_parsed, new_parsed) -> str | None:
+    """
+    The unit two parsed quantities should merge under when their units
+    differ only in whether the package's SIZE was stated — "1 bag (2 lb)"
+    from one recipe beside "1 bag" from another. To a shopper those are
+    two bags of the same thing, and leaving them as "1 bag (2 lb) + 1 bag"
+    is the concatenation bug wearing a different hat. The stated size
+    wins, because it says more.
+
+    Returns None — and the caller falls through to the honest "both
+    amounts, unreconciled" line — whenever there is a real disagreement to
+    report: a different container word, or two DIFFERENT stated sizes
+    ("1 bag (2 lb)" against "1 bag (500 g)"), where picking one would
+    silently throw away what the other recipe asked for.
+    """
+    if not existing_parsed or not new_parsed or not existing_parsed[1] or not new_parsed[1]:
+        return None
+    existing_head, existing_size = _quantities._split_package_size(existing_parsed[1])
+    new_head, new_size = _quantities._split_package_size(new_parsed[1])
+    if existing_head != new_head or existing_head not in _quantities._CONTAINER_UNIT_PLURALS:
+        return None
+    if existing_size and new_size:
+        return None
+    return existing_parsed[1] if existing_size else new_parsed[1]
+
+
+def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) -> tuple[str, bool]:
+    """
+    The last resort when two quantities for the same item can't be added.
+    Identical text is never written twice: it collapses to one copy with a
+    "×N" repeat marker ("a handful" + "a handful" -> "a handful ×2"), and
+    an existing marker counts up rather than starting a second line.
+    sum_counts says whether N adds (four meals each wanting one) or takes
+    the larger (a sealed package, where four meals still want one) — the
+    same split as _try_consolidate_quantity vs _greater_of_quantity.
+
+    Genuinely different text still concatenates, because that is the
+    honest answer: "2 cups + 1 lb" tells the shopper there are two amounts
+    and this module could not reconcile them. What it stops being is a way
+    for one repeated breakfast to fill a line with copies of itself.
+    """
+    existing_base, existing_count = _quantities._split_repeat_count(existing_qty)
+    new_base, new_count = _quantities._split_repeat_count(new_qty)
+    if existing_base.lower() == new_base.lower():
+        count = existing_count + new_count if sum_counts else max(existing_count, new_count)
+        return _quantities._with_repeat_count(existing_base, count), True
     return f"{existing_qty} + {new_qty}", False
+
+
+def _greater_of_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
+    """
+    Keep the LARGER of two quantities for the same grocery item instead of
+    their sum. Same contract as _try_consolidate_quantity — returns
+    (resulting_quantity_string, was_merged) and concatenates rather than
+    guessing when the units don't reconcile.
+
+    This is what "one bottle of olive oil per week" means in code. Three
+    dinners that each list "1 bottle" want one bottle between them, not
+    three; a recipe that genuinely asks for "2 bottles" still wins over a
+    "1 bottle" beside it. Only the sealed-package quantities identified by
+    quantities.package_unit are merged this way — see
+    recipes._add_recipe_ingredients_for_entries, the only caller.
+    """
+    note = _quantities._merge_notes(
+        _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
+    )
+    existing_qty = _quantities._strip_prep_descriptor((existing_qty or "").strip())
+    new_qty = _quantities._strip_prep_descriptor((new_qty or "").strip())
+    if not existing_qty:
+        return new_qty, True
+    if not new_qty:
+        return existing_qty, True
+    existing_parsed = _quantities._parse_quantity(existing_qty)
+    new_parsed = _quantities._parse_quantity(new_qty)
+    if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), existing_parsed[1]),
+            note,
+        ), True
+    shared_unit = _shared_package_unit(existing_parsed, new_parsed)
+    if shared_unit:
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), shared_unit), note
+        ), True
+    return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=False)
 
 
 def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
@@ -133,7 +237,14 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     remove entirely. Otherwise nothing is guessed — the line is left
     exactly as-is (fully_removed=False, resulting string unchanged) rather
     than risk deleting an amount still needed for something else.
+
+    Whatever _try_consolidate_quantity can write, this has to be able to
+    unwrite, or a swap leaves the list slowly drifting: the note a merged
+    line carries survives the subtraction ("3 bags, frozen" less one bag
+    is "2 bags, frozen"), and a "×N" repeat marker counts back down
+    instead of being left as an unreconcilable string.
     """
+    note = _quantities._quantity_note(current_qty)
     current_qty = _quantities._strip_prep_descriptor((current_qty or "").strip())
     remove_qty = _quantities._strip_prep_descriptor((remove_qty or "").strip())
     if not current_qty:
@@ -146,7 +257,16 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
         remainder = current_parsed[0] - remove_parsed[0]
         if remainder <= 0.0001:
             return "", True
-        return _quantities._humanize_grocery_quantity(remainder, current_parsed[1]), False
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(remainder, current_parsed[1]), note
+        ), False
+    current_base, current_count = _quantities._split_repeat_count(current_qty)
+    remove_base, remove_count = _quantities._split_repeat_count(remove_qty)
+    if current_base.lower() == remove_base.lower():
+        remaining = current_count - remove_count
+        if remaining <= 0:
+            return "", True
+        return _quantities._with_repeat_count(current_base, remaining), False
     return current_qty, False
 
 
@@ -165,6 +285,19 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     left alone regardless — the shopper has already acted on it, so this
     won't yank something out of a cart mid-trip. Always clears the ledger
     rows for this entry afterward, whether or not anything was adjusted.
+
+    A SEALED-PACKAGE line (one bottle of oil, one bag of granola — see
+    quantities.package_unit) is the exception, and has to be, because the
+    add side no longer adds one per meal: the whole week's oil is a single
+    bottle however many dinners named it. Subtracting a bottle per meal
+    would take the line off the list the first time any one of those meals
+    changed, while the rest still needed it. So a package line survives
+    until the LAST meal holding a link to it goes, and then goes with it —
+    which keeps clearing a whole week exactly symmetric with approving it,
+    and leaves the bottle alone when a single meal is swapped. A package
+    line with no source_weekly_plan_id was asked for by a person directly
+    and is never removed by this at all; the plan borrowed it, it doesn't
+    own it.
     """
     conn = get_conn()
     links = conn.execute(
@@ -176,10 +309,19 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     trimmed_items = []
     for link in links:
         grocery_row = conn.execute(
-            "SELECT id, item, quantity, status FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
             (link["grocery_item_id"], household_id()),
         ).fetchone()
-        if grocery_row and grocery_row["status"] == "needed":
+        if grocery_row and grocery_row["status"] == "needed" and _quantities.package_unit(link["quantity"] or ""):
+            still_wanted = conn.execute(
+                "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
+                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
+                (household_id(), link["grocery_item_id"], entry_id),
+            ).fetchone()["n"]
+            if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
+                conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
+                removed_items.append(grocery_row["item"])
+        elif grocery_row and grocery_row["status"] == "needed":
             new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
             if fully_removed:
                 conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
@@ -199,6 +341,7 @@ def add_grocery_item(
     category: str = "other",
     added_by: str = "user",
     source_weekly_plan_id: int | None = None,
+    quantity_mode: str = "sum",
 ) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
@@ -216,6 +359,12 @@ def add_grocery_item(
     generated weekly plan (see plan_meal/generate_weekly_plan), so
     clear_stale_grocery_items can tell a current week's ingredients apart
     from an old week's leftovers.
+
+    quantity_mode is for callers, not for the assistant: leave it at "sum"
+    for anything a person asks for. "max" keeps the larger of the two
+    quantities rather than adding them, which is how a sealed package a
+    whole week draws on lands once instead of once per meal — see
+    _greater_of_quantity and recipes._add_recipe_ingredients_for_entries.
     """
     quantity = _quantities._normalize_grocery_quantity(quantity or "")
     conn = get_conn()
@@ -241,7 +390,8 @@ def add_grocery_item(
     pref = next((p for p in prefs if _merge_key(p["item"]) == _merge_key(item)), None)
     preferred_store = pref["store"] if pref else ""
     if existing:
-        merged_qty, merged = _try_consolidate_quantity(existing["quantity"] or "", quantity)
+        consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
+        merged_qty, merged = consolidate(existing["quantity"] or "", quantity)
         # A row with no source_weekly_plan_id is something a person asked
         # for directly, and clear_stale_grocery_items is required to leave
         # those alone forever. Stamping this week's plan id onto it during

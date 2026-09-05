@@ -146,6 +146,29 @@ To preview the app live in the Browser pane, use `preview_start` with the config
 (the *primary* working directory's config, not one inside this project folder — the preview
 tool only reads the primary directory's launch.json, so don't recreate one here).
 
+## Servers and the real database (rule added 2026-09-05 after two near-misses)
+
+The local dev database (`app/home_manager.db`) and the production one hold real household
+data. Two verification sub-agents on 2026-09-05 each briefly started a server against the
+real local DB — once via a killed preview process auto-relaunching the managed dev server,
+once via `preview_start` attaching to the project's own launch config — before switching to
+a throwaway copy. Nothing was written, but it must not happen again:
+
+- **Sub-agents never start servers with `preview_start`, launch configs, or any managed
+  dev-server tool**, and never run anything against `app/home_manager.db`. Every agent brief
+  says so explicitly.
+- **Any browser verification runs uvicorn by hand from the agent's own worktree, against a
+  throwaway copy** (exactly this pattern):
+  `DB_PATH=/tmp/<worktree>-preview.db HOME_MANAGER_PASSWORD=test SESSION_SECRET=test
+  ANTHROPIC_API_KEY=test-key-not-used DISABLE_BACKUPS=1 .venv/bin/python -m uvicorn
+  app.main:app --port 80xx` — a distinct port per worktree, `DB_PATH` set before import,
+  backups disabled, and the process killed when done. Confirm the DB path in the startup log
+  before opening a browser.
+- **Only the main session** may use `preview_start` with the `home-manager` launch config, and
+  only when Emily wants to see the real app; that config points at the real DB.
+- If a server ever comes up against the real DB by accident: stop it immediately, check row
+  counts read-only (`sqlite3 "file:app/home_manager.db?mode=ro"`), and tell Emily plainly.
+
 ## Worktrees (working in parallel without collisions)
 
 Multiple Claude Code sessions can be — and have been — working on this project at the same

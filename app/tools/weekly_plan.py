@@ -15,6 +15,7 @@ from . import meal_plans as _meal_plans
 from . import notifications as _notifications
 from . import plates as _plates
 from . import recipes as _recipes
+from . import rhythm as _rhythm
 from . import week_intake as _week_intake
 
 
@@ -236,6 +237,7 @@ def get_meal_planning_preferences() -> dict:
             "breakfasts_per_week": field("breakfasts_per_week", 7),
             "lunches_per_week": field("lunches_per_week", 7),
             "dinners_per_week": field("dinners_per_week", 7),
+            "snacks_per_week": field("snacks_per_week", 3),
         },
         "dislikes": json.loads(field("dislikes_json", "[]")),
         "protein_preferences": json.loads(field("protein_preferences_json", "{}")),
@@ -258,21 +260,24 @@ def suggest_planning_period(from_date: str = "") -> dict:
     THIS household, rather than where the calendar says a week starts.
 
     Read from the rhythm the household already gave at onboarding
-    (household_rhythm.planning_anchor, "when do you want your week ready?"),
-    which until now was stored and acted on nowhere — its own setter says
-    so. It is a cadence, not a weekday, so the mapping is a judgment call
-    and is written here rather than inferred:
+    (household_rhythm.planning_anchor, "when should your weekly plan be
+    ready?"). Emily's decision, 2026-09-05: the anchor is a WEEKDAY the
+    plan and list are final by — her example, "ready by Friday" — not an
+    abstract cadence, and 'as_we_go' is the one non-weekday escape with a
+    concrete meaning of its own (short horizons, not "no answer"):
 
-    - 'sunday_before' — planned and shopped before the week begins. Their
-      week IS the Monday week; anchoring anywhere else would put the shop
-      in the middle of it. Monday-anchored, seven days. Also the answer for
-      a household that has never said (no rhythm on record), which is what
-      keeps this a no-op for everyone who predates it.
-    - 'midweek' and 'as_we_go' — households whose planning does not line up
-      with a Monday at all. Seven days from TODAY. For 'midweek' that is
-      the whole point; for 'as_we_go' a Monday anchor is the least
-      meaningful boundary there is, since nothing about their week begins
-      there.
+    - A weekday (rhythm.PLANNING_ANCHOR_WEEKDAYS) — "ready by Friday" means
+      the week STARTS THE NEXT MORNING, so the period begins the day after
+      the ready day and runs seven days. The nearest such start (today
+      counts, if today already is that day) is used, matching how the
+      original Monday default always meant the week currently running
+      rather than some future one. A household that has never answered
+      defaults to 'sunday' — ready the Sunday before, Monday start — which
+      is the exact old default, so this is a no-op for everyone who
+      predates the weekday picker.
+    - 'as_we_go' — no weekly ready day at all. Three days from TODAY: a
+      short horizon a household re-plans every couple of days, not a
+      Monday-shaped week with a different start.
 
     This is a SUGGESTION and nothing more: it seeds the default on the plan
     screen, and every one of its parts is overridable by picking a start
@@ -281,16 +286,20 @@ def suggest_planning_period(from_date: str = "") -> dict:
     that guesses better is not the same as a constraint that guesses less.
     """
     today = date.fromisoformat(from_date) if from_date else date.today()
-    anchor = (_rhythm_anchor() or "sunday_before")
-    if anchor == "sunday_before":
-        start = today - timedelta(days=today.weekday())
-    else:
+    anchor = (_rhythm_anchor() or "sunday")
+    if anchor == "as_we_go":
         start = today
+        day_count = 3
+    else:
+        ready_index = _rhythm.PLANNING_ANCHOR_WEEKDAYS.index(anchor)
+        start_index = (ready_index + 1) % 7
+        start = today - timedelta(days=(today.weekday() - start_index) % 7)
+        day_count = 7
     return {
         "start_date": start.isoformat(),
-        "day_count": 7,
+        "day_count": day_count,
         "planning_anchor": anchor,
-        "label": _format_period_range(start.isoformat(), 7),
+        "label": _format_period_range(start.isoformat(), day_count),
         "is_monday_anchored": start.weekday() == 0,
     }
 
@@ -1897,9 +1906,23 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "approved_grocery_added": plan["approved_grocery_added"],
         "approved_grocery_skipped": plan["approved_grocery_skipped"],
         "grocery_preview": None,
+        # The dietary/allergy warning the review band shows above the
+        # Approve button. Recomputed here rather than stored with the plan
+        # so it stays true after a swap, and only for a draft: a week that's
+        # already approved has had its decision made, and a warning about it
+        # would be a scold rather than a help.
+        "conflicts": [],
+        "conflicts_note": None,
     }
     if plan["status"] != "approved":
         approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
+        try:
+            found = _coordination.check_plan_conflicts(plan["weekly_plan_id"])
+            approval["conflicts"] = found["conflicts"]
+            approval["conflicts_note"] = found["note"]
+        except Exception:
+            # The Meals screen must still render if the check itself breaks.
+            logger.exception("Conflict check failed for plan %s", plan["weekly_plan_id"])
     # Every adult but the one who approved — the receipt's "{Other adult}
     # has been told the week is settled." Empty for a one-adult household,
     # which is what keeps that sentence from being written at all rather
@@ -2372,7 +2395,7 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     """
     return conn.execute(
         """
-        SELECT mpe.id, r.ingredients_json, mpe.sides_json
+        SELECT mpe.id, mpe.recipe_id, r.ingredients_json, mpe.sides_json
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
@@ -2445,12 +2468,17 @@ def _entry_shopping_ingredients(row) -> list[dict]:
     no unwinding logic of its own.
     """
     ingredients = json.loads(row["ingredients_json"] or "[]")
+    return ingredients + _entry_side_ingredients(row)
+
+
+def _entry_side_ingredients(row) -> list[dict]:
+    """Just the side's ingredients for one plan entry ('[]' when none)."""
     sides = row["sides_json"] if "sides_json" in row.keys() else "[]"
     try:
         parsed = json.loads(sides or "[]")
     except (TypeError, ValueError):
         parsed = []
-    return ingredients + _plates.side_ingredients(parsed if isinstance(parsed, list) else [])
+    return _plates.side_ingredients(parsed if isinstance(parsed, list) else [])
 
 
 def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
@@ -2561,7 +2589,26 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     Raises ValueError for a weekly_plan_id that doesn't exist, rather than
     reporting a cheerful approval of nothing — same as clear_weekly_plan
     and swap_component_in_plan.
+
+    The returned `conflicts`/`conflicts_note` are the dietary/allergy check
+    (check_plan_conflicts) run automatically on the way through. Approval is
+    NOT blocked by them — the household may well mean it — but a clash is
+    said out loud rather than left to whether anyone thought to ask. Mention
+    any that come back when reporting the approval.
     """
+    # Run before the approval work, so the warning describes the plan that
+    # was actually approved and a failure here can't half-approve a week.
+    conflicts, conflicts_note = [], None
+    try:
+        found = _coordination.check_plan_conflicts(weekly_plan_id)
+        conflicts = found["conflicts"]
+        # Not found["note"]: that sentence ends "before you approve", and
+        # this is the moment just after. Same clash, worded for a decision
+        # already made — see conflicts_note_after_approval.
+        conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
+    except Exception:
+        logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+
     conn = get_conn()
     existing = conn.execute(
         "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -2606,6 +2653,8 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
             "was_already_approved": True,
             "approved_by": receipt["approved_by"] if receipt else "",
             "approved_at": receipt["approved_at"] if receipt else None,
+            "conflicts": conflicts,
+            "conflicts_note": conflicts_note,
         }
     entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
     approved_at = conn.execute(
@@ -2614,14 +2663,42 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     ).fetchone()["approved_at"]
     conn.close()
 
+    # Grouped by RECIPE, not left one row per meal. A week's shop is a
+    # recipe-week question: the same breakfast six mornings needs one bag
+    # of spinach, not six, and only something that looks at all six meals
+    # at once can know that. Ingesting per meal is what put 6 bags of
+    # spinach and 4 bottles of honey on Emily's first approved week —
+    # every downstream step was working correctly on wrong inputs. See
+    # _add_recipe_ingredients_for_entries for which ingredients stop
+    # multiplying and which (rightly) still add up.
+    by_recipe: dict[int, dict] = {}
+    for entry in entries:
+        group = by_recipe.setdefault(
+            entry["recipe_id"], {"ingredients_json": entry["ingredients_json"], "entry_ids": []}
+        )
+        group["entry_ids"].append(entry["id"])
+
     added_items = []
     already_have = []
-    for entry in entries:
-        added, have = _recipes._add_recipe_ingredients_to_grocery_list(
-            entry["id"], _entry_shopping_ingredients(entry), weekly_plan_id
+    for group in by_recipe.values():
+        added, have = _recipes._add_recipe_ingredients_for_entries(
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id
         )
         added_items.extend(added)
         already_have.extend(have)
+
+    # A side the app attached to complete a plate belongs to ONE meal, not to
+    # the recipe, so it goes in as its own one-entry group (plates.py). It is
+    # still recorded against that entry's id, which is what lets removing the
+    # meal remove its side's shopping too.
+    for entry in entries:
+        side_ingredients = _entry_side_ingredients(entry)
+        if side_ingredients:
+            added, have = _recipes._add_recipe_ingredients_for_entries(
+                [entry["id"]], side_ingredients, weekly_plan_id
+            )
+            added_items.extend(added)
+            already_have.extend(have)
 
     # Counted as distinct names, matching preview_plan_grocery_impact, so
     # the number the draft promised and the number the receipt reports are
@@ -2649,6 +2726,8 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
         "was_already_approved": False,
         "approved_by": approved_by.strip(),
         "approved_at": approved_at,
+        "conflicts": conflicts,
+        "conflicts_note": conflicts_note,
     }
 
 

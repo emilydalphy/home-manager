@@ -67,6 +67,13 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- Same idea as dinners_per_week, for the other two main meals.
     breakfasts_per_week INTEGER NOT NULL DEFAULT 7,
     lunches_per_week INTEGER NOT NULL DEFAULT 7,
+    -- Loop Board "Onboarding / meal setup: add a Snacks & desserts count"
+    -- (Emily, 2026-09-05). Same distinct-count-then-rotate rule as the three
+    -- above, just for snacks/desserts. Defaults to 3, not 7 like the others —
+    -- Emily's explicit call, since 7 was only ever an implicit default for
+    -- snacks (never actually asked) and 3 reads as the more honest "some
+    -- snacks most days" starting point for a household that's never answered.
+    snacks_per_week INTEGER NOT NULL DEFAULT 3,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate
@@ -77,9 +84,16 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- What the household has to cook with. The highest-value question the
     -- app wasn't asking: it prevents impossible suggestions outright.
     kitchen_kit_json TEXT NOT NULL DEFAULT '[]', -- ["slow_cooker", "air_fryer"]
-    -- How they feel about eating the same thing twice. This single answer
-    -- changes the structure of every week the app builds — whether it cooks
-    -- once and stretches it, or gives seven different dinners.
+    -- DEPRECATED (Loop Board "Onboarding asks about leftovers twice", Emily
+    -- 2026-09-05): this asked the same thing household_rhythm.leftovers_stance
+    -- does, one screen apart. leftovers_stance is now the single source of
+    -- truth the planner reads for how they feel about repeats/leftovers — see
+    -- tools/rhythm.py:set_leftovers_stance and generate_weekly_plan_llm's
+    -- prompt. Column kept (not dropped) so old data isn't lost and the
+    -- one-time migration in db.py has something to read from; still
+    -- readable/settable via edit_preference for anyone with old integrations,
+    -- but no longer asked in onboarding, shown on the setup screen, or read
+    -- by generation.
     repeats_tolerance TEXT NOT NULL DEFAULT '', -- cook_once_eat_twice | one_a_week | all_different
     -- A real number of minutes, distinct from cooking_time_preference's
     -- freeform "quick"/"moderate". 0 means unset — no cap.

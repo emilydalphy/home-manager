@@ -143,7 +143,12 @@ def get_active_notifications() -> list[dict]:
                 "key": key, "type": "week_approved",
                 "title": f"{approved_row['approved_by']} approved the week",
                 "body": f"{week_label} is settled, and the shopping list is built.",
-                "tab": "week", "action_label": "Take a look",
+                # Points at Grocery, not Meals — the shopping list is the
+                # thing this notification just said got built, so "See the
+                # list" is the step that's actually waiting, not another
+                # look at the plan that's already settled (loop-handoffs
+                # slice 1).
+                "tab": "grocery", "action_label": "See the list",
             })
     conn.close()
     return out

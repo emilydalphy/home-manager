@@ -50,6 +50,49 @@ def test_dietary_restrictions_round_trip():
     assert "no shellfish" in emily["dietary_restrictions"]
 
 
+def test_onboarding_allergy_and_other_restrictions_use_the_storage_convention():
+    """
+    Loop Board "Onboarding restrictions: 'Allergy -> what are they allergic
+    to?', add 'Other'" (2026-09-05) — storage-convention half. static/
+    onboarding.html's currentRestrictions() turns a comma-separated Allergy
+    field into one "allergy: <thing>" entry per item (lower-case prefix, so
+    check_plan_conflicts' stopword filter treats it as hard) and passes the
+    Other field through as-is. This exercises the same household_restrictions
+    shape the wizard actually POSTs to /api/onboarding/answers, one level
+    below the HTTP boundary.
+    """
+    tools.save_onboarding_answers(
+        member_names=["Emily"],
+        household_restrictions={"Emily": ["allergy: pineapple", "allergy: kiwi", "no pork"]},
+        eating_style="",
+        wont_eat=[],
+        excited_about=[],
+        dinners_per_week=5,
+    )
+    emily = next(m for m in tools.list_members() if m["name"] == "Emily")
+    assert emily["dietary_restrictions"] == ["allergy: pineapple", "allergy: kiwi", "no pork"]
+
+
+def test_allergy_prefix_still_flags_a_matching_recipe():
+    """
+    The clash checker (check_plan_conflicts) strips "allergy"/"allergic" as
+    stopwords before matching a restriction's words against a recipe's
+    ingredients. Confirms the "allergy: <thing>" storage convention above
+    still reaches that check as a hard match — not just that it round-trips
+    through storage untouched.
+    """
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["allergy: pineapple"])
+    tools.add_recipe(
+        "Pineapple Chicken",
+        ingredients=[{"item": "pineapple chunks", "qty": "1 cup"}, {"item": "chicken breast", "qty": "2"}],
+    )
+    plan = tools.create_weekly_plan(_week_start())
+    tools.plan_meal(_today(), "Pineapple Chicken", weekly_plan_id=plan["weekly_plan_id"])
+    result = tools.check_plan_conflicts(plan["weekly_plan_id"])
+    assert any(c["member"] == "Emily" and c["restriction"] == "allergy: pineapple" for c in result["conflicts"])
+
+
 def test_dislikes_accumulate_without_duplicating():
     tools.add_food_dislikes(["olives"])
     tools.add_food_dislikes(["olives", "beetroot"])

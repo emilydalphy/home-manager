@@ -86,6 +86,7 @@
   .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
   .stepper button:disabled { opacity: .35; cursor: default; }
   .stepper output { min-width: 32px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
+  .stepper-unit { font-family: var(--font-body); font-weight: 600; font-size: 0.68rem; color: var(--text-muted); }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0; }
   .chip {
@@ -190,11 +191,10 @@
   </p>
 
   <section class="block">
-    <div class="block-label">How many meals shall I plan?</div>
+    <div class="block-label">How many different recipes a week?</div>
     <p class="block-body">
-      One breakfast a week is a perfectly good answer &mdash; I&rsquo;d rather plan four things you
-      cook than seven you don&rsquo;t. These are how many <em>different</em> meals I&rsquo;ll come up
-      with; I&rsquo;ll still put something in every slot.
+      Pick how many breakfasts, lunches and dinners you&rsquo;ll actually cook. I&rsquo;ll fill the
+      rest of the week with those &mdash; leftovers included &mdash; unless you tell me you&rsquo;re away.
     </p>
     <div class="card" id="counts"></div>
     <div class="saved" id="counts-saved"></div>
@@ -205,16 +205,6 @@
     <p class="block-body">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
     <div class="chip-row" id="kit"></div>
     <div class="saved" id="kit-saved"></div>
-  </section>
-
-  <section class="block">
-    <div class="block-label">How do you feel about repeats?</div>
-    <p class="block-body">
-      This one changes a lot &mdash; it decides whether I cook once and stretch it, or give you
-      seven different dinners.
-    </p>
-    <div class="stack" id="repeats"></div>
-    <div class="saved" id="repeats-saved"></div>
   </section>
 
   <section class="block">
@@ -297,11 +287,6 @@
     { key: 'cast_iron', label: 'Cast iron' },
     { key: 'no_dishwasher', label: 'No dishwasher' }
   ];
-  var REPEATS = [
-    { key: 'cook_once_eat_twice', label: 'Cook once, eat twice — I like the shortcut' },
-    { key: 'one_a_week', label: 'One repeat a week is fine' },
-    { key: 'all_different', label: 'Something different every night' }
-  ];
   var TABLE_STYLES = [
     { key: 'everyone_same', label: 'Everyone eats the same thing' },
     { key: 'kids_differ', label: 'The children often eat something else' },
@@ -310,7 +295,8 @@
   var COUNTS = [
     { field: 'breakfasts_per_week', label: 'Breakfasts' },
     { field: 'lunches_per_week', label: 'Lunches' },
-    { field: 'dinners_per_week', label: 'Dinners' }
+    { field: 'dinners_per_week', label: 'Dinners' },
+    { field: 'snacks_per_week', label: 'Snacks & desserts' }
   ];
 
   function esc(s) {
@@ -362,7 +348,6 @@
     $('setup').hidden = false;
     renderCounts();
     renderKit();
-    renderRepeats();
     renderMinutes();
     renderList('dislikes', 'dislikes', 'dislikes-saved');
     renderList('cuisines', 'cuisine_preferences', 'cuisines-saved');
@@ -379,6 +364,7 @@
           '<span class="stepper" data-field="' + c.field + '">' +
             '<button type="button" data-delta="-1" aria-label="Fewer ' + esc(c.label) + '">&minus;</button>' +
             '<output>' + prefs.meal_counts[c.field] + '</output>' +
+            '<span class="stepper-unit">recipes</span>' +
             '<button type="button" data-delta="1" aria-label="More ' + esc(c.label) + '">+</button>' +
           '</span>' +
         '</div>'
@@ -402,12 +388,17 @@
     });
   }
 
+  var COUNT_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
+
   function countAck(field, n) {
-    var noun = field === 'dinners_per_week' ? 'dinner' : (field === 'lunches_per_week' ? 'lunch' : 'breakfast');
+    var noun = field === 'dinners_per_week' ? 'dinner'
+      : field === 'lunches_per_week' ? 'lunch'
+      : field === 'snacks_per_week' ? 'snack'
+      : 'breakfast';
     var plural = field === 'lunches_per_week' ? 'lunches' : noun + 's';
     if (n === 0) return 'I’ll leave ' + plural + ' to you from next week.';
-    if (n === 1) return 'I’ll plan one ' + noun + ' and carry it through the week.';
-    return 'I’ll come up with ' + n + ' different ' + plural + ' and spread them across the week.';
+    if (n === 1) return 'One ' + noun + ', carried through the week.';
+    return COUNT_WORDS[n] + ' ' + plural + ', rotated across the week.';
   }
 
   function paintStepper(stepper, value, min, max) {
@@ -433,7 +424,7 @@
     });
   }
 
-  // ---------- repeats / table style ----------
+  // ---------- table style ----------
   function renderOptions(containerId, options, current, field, savedId, ackFor) {
     $(containerId).innerHTML = options.map(function (o) {
       return '<button type="button" class="option' + (o.key === current ? ' on' : '') + '" data-key="' + o.key + '">' + esc(o.label) + '</button>';
@@ -444,14 +435,6 @@
         btn.classList.add('on');
         save(field, btn.dataset.key, savedId, ackFor(btn.dataset.key));
       });
-    });
-  }
-
-  function renderRepeats() {
-    renderOptions('repeats', REPEATS, prefs.repeats_tolerance, 'repeats_tolerance', 'repeats-saved', function (key) {
-      if (key === 'cook_once_eat_twice') return 'I’ll build in a few nights that eat the night before’s cooking.';
-      if (key === 'one_a_week') return 'I’ll plan exactly one repeat a week.';
-      return 'I’ll give you seven different dinners.';
     });
   }
 
