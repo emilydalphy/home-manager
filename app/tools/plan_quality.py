@@ -1,6 +1,11 @@
 """
 Deterministic, LOG-AND-WARN-ONLY quality checks for a generated week.
 
+Scope: check_and_log is invoked from _finish_week_slots, which only the
+DAY-BASED generation branch calls (pre-existing placement, agent.py). A
+component-based household therefore gets no quality checking from this
+module today -- that is a known gap, not coverage.
+
 The generation prompt (see generate_weekly_plan_llm's instructions in
 agent.py) tells the model a long list of rules -- a `rush` night is capped
 at RUSH_MAX_MINUTES, a weeknight cap when the household has set one, don't
@@ -251,7 +256,7 @@ def _reasoning_is_specific(entries: list[dict], context: dict) -> list[Violation
                 date=entry["date"], slot=entry.get("slot"),
                 message=f"{entry['date']} {entry.get('slot')} ('{entry['meal_name']}') has no reasoning at all.",
             ))
-        elif reasoning.rstrip(".").lower() in _BANNED_REASONING_PHRASES:
+        elif reasoning.strip().rstrip(".!?…").strip().lower() in _BANNED_REASONING_PHRASES:
             violations.append(Violation(
                 rule="reasoning_is_specific", severity="warn",
                 date=entry["date"], slot=entry.get("slot"),
