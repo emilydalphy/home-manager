@@ -15,6 +15,7 @@ import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import tools
+from .tools import plan_quality
 
 logger = logging.getLogger("home_manager")
 
@@ -2205,6 +2206,10 @@ they don't need elaborate multi-step instructions or advance prep, and it's norm
 for the same breakfast/lunch/snack idea to repeat 2-3 times across the week rather than forcing \
 a fully distinct one every day. Don't stretch these into restaurant-tier new recipes; match the \
 actual effort level of what they are.
+- `today` gives today's real date and the current season (e.g. "2026-09-04 (fall)") — use it as \
+a light lean toward seasonally appropriate ingredients and dishes (soups and roasting in winter, \
+grilling and salads in summer) when nothing else already decides the choice; it never overrides \
+a stated preference, a constraint, or the variety/novelty rules elsewhere in this list.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
 - Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
@@ -2219,9 +2224,17 @@ the floor this whole rule exists to enforce.
 verdict — weigh them softly (e.g. avoid the exact same misstep if a note calls one out), but \
 don't treat them like rating='disliked'. Only an actual 'disliked' rating should exclude a \
 recipe from suggestion.
-- Avoid repeating any meal (or a near-identical variant) that appears in recent_history \
-within the last 3 weeks, and avoid repeating the same main_protein or cuisine too many \
-days in a row — check recent_history's cuisine/main_protein fields, not just meal names.
+- The no-repeat rule against recent_history is about DINNER, and loosely lunch — not \
+breakfast or snack. Check recent_history's `slot` field and avoid repeating any dinner (or a \
+near-identical variant) that appears there within the last 3 weeks; use the same judgment for \
+lunch when a genuinely comparable option shows up. Breakfast and snack repeating within the \
+current week is normal and expected (see the guideline above), and so is a breakfast/snack \
+idea persisting from a previous week — recent_history's breakfast/snack entries are \
+informational only, not something to avoid repeating. Separately, avoid repeating the same \
+main_protein or cuisine too many days in a row for dinner — check recent_history's cuisine/ \
+main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
+meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
+rated 'liked' again is more forgivable than reaching for one rated 'disliked'.
 - household_memory's protein_preferences give a 1-5 rating of how much the household likes \
 each protein (5 = favorite, 1 = avoid) — treat this as a real constraint on the week's mix, \
 not just a tiebreaker: a protein rated 1 shouldn't appear at all, 2 should appear at most \
@@ -2274,6 +2287,14 @@ dish you know they love — rather than a generic "good dinner for one." A subse
 `personal_context` at all (or a present person missing from it) is a genuine cold start for \
 that person: fall back to the household's shared rating/dislikes exactly as normal, and don't \
 invent a personal reason that isn't backed by real data.
+- `member_taste` gives household-level liked/disliked recipes per person (see get_member_taste), \
+independent of the subset-night `personal_context` above — weigh EVERYONE at the table against \
+it, on every slot, not just subset/away nights (those are already covered by `personal_context`, \
+which takes precedence there since it's the narrower, more specific signal). Lean toward a dish \
+several present people are known to like, and steer away from one someone at the table is known \
+to dislike, when doing so doesn't conflict with the primary rating/variety/restriction rules \
+above. A member missing from `member_taste` simply has no per-person history yet — fall back to \
+the household's shared rating for them, exactly as always.
 - `slot_needs` carries the derived needs around a trip. Honour each one: \
 `slot_needs.away_slots` are meals nobody is home for — plan NOTHING for them (they are \
 enforced empty regardless, so anything you put there is discarded); `slot_needs.quick_slots` \
@@ -3048,6 +3069,53 @@ def _prorate_meal_count(preference: int, day_count: int) -> int:
     return max(1, min(prorated, day_count))
 
 
+_SEASON_BY_MONTH = {
+    12: "winter", 1: "winter", 2: "winter",
+    3: "spring", 4: "spring", 5: "spring",
+    6: "summer", 7: "summer", 8: "summer",
+    9: "fall", 10: "fall", 11: "fall",
+}
+
+
+def _current_date_and_season() -> str:
+    """
+    Today's real date and the current (Northern-hemisphere) season, as one
+    short string for the generation context -- e.g. "2026-09-04 (fall)".
+    One string rather than two separate keys since the two are always used
+    together (see the `today` bullet in the generation prompt) and nothing
+    else in the app needs the season on its own.
+    """
+    today = datetime.date.today()
+    return f"{today.isoformat()} ({_SEASON_BY_MONTH[today.month]})"
+
+
+def _household_member_taste() -> dict[str, dict]:
+    """
+    Household-level version of what _attach_personal_context_for_subset_slots
+    attaches per subset-attendance slot: for every member get_member_taste
+    actually has data for, their liked/disliked recipes. Unlike that
+    function, this runs once and lands on every slot (via the top-level
+    `member_taste` context key), not just away/subset nights -- the
+    subset-slot mechanism already covers "who's actually at THIS meal";
+    this covers "who's usually at the table generally."
+
+    Same honesty rule as the subset-slot version: a member with no
+    per-person feedback on record yet is left out entirely rather than
+    padded with empty lists, so a cold start reads as "no data" and falls
+    back to the household's shared rating, not as "this person likes
+    nothing."
+    """
+    taste: dict[str, dict] = {}
+    for member in tools.list_members():
+        member_taste = tools.get_member_taste(member["name"])
+        if member_taste["has_any_data"]:
+            taste[member["name"]] = {
+                "liked_recipes": member_taste["liked_recipes"],
+                "disliked_recipes": member_taste["disliked_recipes"],
+            }
+    return taste
+
+
 def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
@@ -3165,9 +3233,19 @@ def _generate_weekly_plan(
         ),
         # Temporarily-excluded recipes (flag_recipe_temporary) are filtered out
         # here at the source rather than relying on a prompt instruction, so
-        # they're never even a candidate for suggestion.
-        "saved_recipes": tools.list_recipes(include_temporarily_excluded=False),
+        # they're never even a candidate for suggestion. Slimmed to the
+        # fields generation actually needs to choose among saved recipes by
+        # name (no ingredients/instructions) -- see list_recipes_for_planning
+        # for the measured token cost this replaced.
+        "saved_recipes": tools.list_recipes_for_planning(include_temporarily_excluded=False),
         "recent_history": tools.get_recent_meal_history(weeks=3),
+        # Today's real date and season -- see the `today` bullet in the
+        # generation prompt below.
+        "today": _current_date_and_season(),
+        # Household-level per-person taste (see the `member_taste` bullet
+        # below), independent of and in addition to the subset-attendance
+        # personalization already attached to `attendance` further down.
+        "member_taste": _household_member_taste(),
         "current_inventory": tools.get_inventory(),
         # Phase 4, §4.2: items already expired or expiring soon — the LLM
         # prompts are instructed to weight candidate recipes toward using
@@ -3347,6 +3425,7 @@ def _generate_weekly_plan(
                 )
             _finish_week_slots(
                 plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
+                context=context,
             )
 
         if intake:
@@ -3422,6 +3501,7 @@ def _generate_weekly_plan(
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
+    context: dict | None = None,
 ) -> None:
     """
     Make the 21-slot guarantee true rather than merely asked for.
@@ -3533,6 +3613,15 @@ def _finish_week_slots(
             week_start_date, len(audit["missing"]), audit["expected"],
             ", ".join(f"{g['date']} {g['slot']}" for g in audit["missing"]),
         )
+
+    # Deterministic, log-and-warn-only quality pass over the finished week
+    # -- see app/tools/plan_quality.py. Read-only: it does not change
+    # anything written above. `context` is only absent for a caller that
+    # predates this (there are none left; the default exists so a signature
+    # this narrow can't itself break anything), so skip it rather than
+    # check a plan against nothing.
+    if context is not None:
+        plan_quality.check_and_log(plan_id, context)
 
 
 _GENERATE_PREP_SCHEDULE_TOOL = {

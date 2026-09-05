@@ -200,26 +200,51 @@ def get_meal_plan(days_ahead: int = 7) -> list[dict]:
 def get_recent_meal_history(weeks: int = 3) -> list[dict]:
     """
     Look up what's actually been planned/cooked in the last N weeks
-    (default 3), including each meal's cuisine and main protein where
-    known. Call this before generating a new week's plan so you can avoid
-    repeating the same recipe or near-identical meals within the window,
-    and check protein/cuisine variety across it — not just literal repeats.
+    (default 3), including each meal's slot, cuisine, main protein, and
+    rating where known. Call this before generating a new week's plan so
+    you can avoid repeating the same recipe or near-identical meals within
+    the window, and check protein/cuisine variety across it — not just
+    literal repeats. `slot` is what lets a caller scope the no-repeat rule
+    to the slot it's actually meant for (dinners chiefly — breakfast/lunch/
+    snack are expected to repeat both within a week and across weeks, so a
+    caller applying a strict no-repeat rule to every slot indiscriminately
+    would be fighting that intended repetition rather than catching a real
+    one). `rating` is the recipe's permanent feedback (liked/disliked/None),
+    a soft signal for how forgivable a given repeat actually is.
+
+    Deliberately no upper date bound: on a regeneration, the plan being
+    replaced still shows up here as "recent history" (it's still real
+    meals that were, until a moment ago, this week's plan), which is the
+    existing, intentional behaviour this keeps.
+
+    A `planned_empty` or `open` slot has no meal at all (COALESCE would
+    otherwise surface it as a null "meal") and is filtered out here at the
+    source, rather than left for every caller to re-derive the same check.
     """
     conn = get_conn()
     start_date = (date.today() - timedelta(weeks=weeks)).isoformat()
     rows = conn.execute(
         """
-        SELECT mpe.date, COALESCE(r.name, mpe.freeform_meal) AS meal, r.cuisine, r.main_protein
+        SELECT mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               r.cuisine, r.main_protein, r.rating
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.household_id = ? AND mpe.date >= ?
+          AND (mpe.recipe_id IS NOT NULL OR (mpe.freeform_meal IS NOT NULL AND mpe.freeform_meal != ''))
         ORDER BY mpe.date DESC
         """,
         (household_id(), start_date),
     ).fetchall()
     conn.close()
     return [
-        {"date": r["date"], "meal": r["meal"], "cuisine": r["cuisine"] or None, "main_protein": r["main_protein"] or None}
+        {
+            "date": r["date"],
+            "slot": r["slot"],
+            "meal": r["meal"],
+            "cuisine": r["cuisine"] or None,
+            "main_protein": r["main_protein"] or None,
+            "rating": r["rating"] or None,
+        }
         for r in rows
     ]
 

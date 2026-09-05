@@ -214,6 +214,7 @@ from .recipes import (  # noqa: F401
     get_member_taste,
     get_recipe,
     list_recipes,
+    list_recipes_for_planning,
     log_cooking_deviation,
     log_recipe_note,
     mark_recipe_feedback,
