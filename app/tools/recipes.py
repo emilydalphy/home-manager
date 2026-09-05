@@ -213,6 +213,72 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     ]
 
 
+def list_recipes_for_planning(include_temporarily_excluded: bool = False) -> list[dict]:
+    """
+    A slimmed projection of list_recipes for feeding into weekly-plan
+    generation: name, rating, cuisine, main_protein, tags, times_cooked,
+    prep/cook time, food_groups, and recent_one_off_notes -- WITHOUT
+    ingredients or instructions.
+
+    The generation prompt tells the model to reuse a saved recipe by exact
+    name rather than re-inventing its ingredients (see the is_new_recipe
+    bullet in generate_weekly_plan_llm's instructions), which means the
+    full recipe body -- everything list_recipes returns -- was pure
+    overhead on every single generation call: measured at ~19.8k
+    characters (~5.4k tokens) for a 13-recipe household, resent in full on
+    every generation whether or not any of those recipes were even
+    considered that week. recent_one_off_notes is kept even though it's
+    not part of the "for choosing a recipe by name" core, because two
+    separate prompt bullets (day-based and component-based) tell the model
+    to weigh it when deciding whether to repeat a recipe -- dropping it
+    would silently break that instruction rather than just trim tokens.
+
+    A separate function rather than a parameter on list_recipes, so every
+    other caller (recipe detail views, the Cooker, editing) keeps getting
+    the full row untouched.
+    """
+    conn = get_conn()
+    query = """
+        SELECT id, name, rating, cuisine, main_protein, tags_json, times_cooked,
+               prep_time_minutes, cook_time_minutes, food_groups_json
+        FROM recipes WHERE household_id = ?
+        {exclusion_clause}
+        ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
+        """.format(exclusion_clause="" if include_temporarily_excluded else "AND temporarily_excluded = 0")
+    rows = conn.execute(query, (household_id(),)).fetchall()
+
+    recipe_ids = [r["id"] for r in rows]
+    notes_by_recipe: dict[int, list[str]] = {}
+    if recipe_ids:
+        placeholders = ",".join("?" * len(recipe_ids))
+        note_rows = conn.execute(
+            f"SELECT recipe_id, note FROM recipe_notes WHERE recipe_id IN ({placeholders}) "
+            "ORDER BY created_at DESC",
+            recipe_ids,
+        ).fetchall()
+        for nr in note_rows:
+            notes_by_recipe.setdefault(nr["recipe_id"], [])
+            if len(notes_by_recipe[nr["recipe_id"]]) < 3:
+                notes_by_recipe[nr["recipe_id"]].append(nr["note"])
+    conn.close()
+
+    return [
+        {
+            "name": r["name"],
+            "rating": r["rating"] or None,
+            "cuisine": r["cuisine"] or None,
+            "main_protein": r["main_protein"] or None,
+            "tags": json.loads(r["tags_json"]),
+            "times_cooked": r["times_cooked"],
+            "prep_time_minutes": r["prep_time_minutes"],
+            "cook_time_minutes": r["cook_time_minutes"],
+            "food_groups": json.loads(r["food_groups_json"]),
+            "recent_one_off_notes": notes_by_recipe.get(r["id"], []),
+        }
+        for r in rows
+    ]
+
+
 def get_recipe(recipe_name: str) -> dict:
     """
     Get full detail for a single saved recipe by exact name — ingredients,
