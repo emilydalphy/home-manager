@@ -3431,7 +3431,7 @@ def _finish_week_slots(
     The prompt tells the model every slot must come back; this is what
     happens when it doesn't. "Week generation silently leaves random meal
     slots empty" is a real reported bug, and its shape is precisely that
-    nothing downstream ever checked. Five passes, in order:
+    nothing downstream ever checked. Six passes, in order:
 
     week_start_date here is the actual CONTENT start date (see
     _generate_weekly_plan's docstring on skip_days) — for an ordinary
