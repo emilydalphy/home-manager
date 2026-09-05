@@ -240,6 +240,87 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-04 — A written-down allergy now reaches the food, and the check
+  that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
+  merged at the time of writing).** Root cause of the original bug was three
+  gaps in a row, not one: generation was never handed the `facts` table, the
+  safety net (`check_plan_conflicts`) read only member restrictions and only
+  a saved recipe's ingredient text, and nothing ever called it outside chat.
+  All three closed; a second pass then fixed what the first pass's keyword
+  matching did to the innocent meals.
+  - **Warn, never block — and that is a default, not a conclusion.** A clash
+    is said out loud at generation, on the review band, and again on
+    approval, but approval still goes through. Auto-promoting a hard note
+    into a member dietary restriction, or hard-blocking on one, is
+    **Emily's call and still pending**; until then the household decides and
+    the app is merely never silent. Live evidence for that decision: an
+    approved week of Emily's put "Pineapple chunks · 3 bag frozen" on the
+    shopping list for a pineapple-allergic member. The allergen was in an
+    innocently-named dish's INGREDIENTS, so the list was the first place it
+    became visible. Left unblocked as agreed, with a test pinning that the
+    approval sentence names the meal that put it there.
+  - **Keyword extraction is the whole difficulty, and it is judgment, not
+    an algorithm.** A hard fact is a sentence a person wrote, so treating
+    every non-stopword in it as a food to hunt for flagged House Salad on
+    "no pork in this house", Porridge on "no cow milk…oat milk is fine",
+    Satay on "allergic to tree nuts but peanuts are fine", and a Protein
+    Bowl on "needs high-protein dinners". Three layers now stand between a
+    fact and a match term: only the span after an **avoidance trigger**
+    counts (a fact with no trigger — a requirement — produces no terms at
+    all), a **stated exception** is subtracted rather than merely truncated
+    (so it also cancels an alias expansion), and the stopword list carries
+    the furniture of household prose. Against that, an explicit
+    **allergen alias table** (`_ALLERGEN_ALIASES`) makes "nut allergy" reach
+    peanut butter and walnuts while whole-word matching keeps it off
+    coconut, nutmeg and butternut. Both are deliberately *lists a person can
+    argue with*, not stemming — and the alias table is a starting list;
+    extend it when a real miss shows up.
+  - **A multi-word avoidance is matched as a PHRASE, not as its loose
+    words** (third pass, after a second independent verification). Reading
+    the right span out of the sentence was only half the job: every word of
+    that span then became an *independent* term, so "no red meat during the
+    week" hunted for "red" on its own and flagged Red Lentil Dahl, and
+    "avoid sugar" flagged Sugar Snap Peas. A phrase now has to be found as
+    a phrase — all its words, in order, inside ONE stretch of text (the
+    dish's name, or a single ingredient line, never the two joined) — and
+    only a genuinely one-word avoidance matches on one word. Splitting on
+    commas and "and"/"or" first (`_conflict_phrases`) is what stops that
+    becoming a miss: "allergic to pineapple, shellfish and eggs" is three
+    one-word phrases. Applied to saved restrictions as well as facts, since
+    "red meat" typed into the restrictions box has the same problem. **Known
+    limit, deliberately left open:** the check matches words, so "red meat"
+    does not reach beef, lamb or pork — closing it needs a food taxonomy,
+    not a regex. There is a test asserting the miss so it stays written
+    down.
+  - **`_COMPOUND_EXCEPTIONS` — the two-word foods where the allergen word is
+    not the allergen.** Whole-word matching already keeps "nut" off coconut,
+    nutmeg, butternut and eggplant; these are the ones written as two words,
+    where the word really is standing there and still isn't the allergen —
+    "peanut butter" is not dairy, "coconut milk" is not dairy, "sugar snap
+    peas" are a pea (all three off Emily's own week). Implemented as an
+    exclusion *on the alias*, never by dropping it: real butter is dairy, so
+    "butter" stays in `_ALLERGEN_ALIASES["dairy"]` and only its occurrence
+    inside a nut/seed-butter compound is discounted. Two limits keep a false
+    positive from becoming a false negative — only the listed word is
+    discounted (a **nut** allergy still catches peanut butter, on "peanut"),
+    and a discount only applies to a one-word avoidance (write "allergic to
+    coconut milk" and you are taken at your word). Same spirit as the alias
+    table: a short list a person can argue with, extended when a real case
+    shows up. `buttermilk` went the other way — into the dairy aliases,
+    because whole-word matching reaches neither half of it and it *is*
+    dairy.
+  - **A false positive is a safety bug here, not a cosmetic one.** A check
+    that flags the safe meals too is one the household learns to click past,
+    and the real warning goes past with it. That is why the false-positive
+    work sits in the same file as the false-negative work.
+  - **Correction to `ccbc532`'s commit message:** it says "32 new tests, 24
+    of which fail on the previous commit". The real number is **23**. The
+    claim is wrong only in the message, not in the code or the tests.
+  - **The `hard` flag still has no UI.** `add_fact(hard=True)` is reachable
+    from chat and nowhere else — the What-we-know screen cannot set or show
+    it — so the whole hard-fact path depends on the assistant having chosen
+    the flag when it wrote the note. Open, unchanged by this branch.
+
 - **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
   `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT
   merged at the time of writing).** Emily, seeing the same dish on two

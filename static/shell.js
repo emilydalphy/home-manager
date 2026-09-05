@@ -751,7 +751,10 @@
   // takes an item off the list and has to offer a way back. A toast carrying
   // an action stays up longer, because it is now something to read AND decide
   // rather than something to notice.
-  function showToast(message, action) {
+  function showToast(message, action, holdMs) {
+    // holdMs: for the rare toast that is a sentence rather than a
+    // confirmation — an allergy warning after approval — 2.2 seconds is not
+    // long enough to read one.
     if (!toastEl) return;
     toastEl.textContent = message;
     if (action && action.label) {
@@ -771,7 +774,7 @@
     void toastEl.offsetWidth; // restart the animation if a toast is already showing
     toastEl.classList.add('pop-in');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.hidden = true; }, action ? 6000 : 2200);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, holdMs || (action ? 6000 : 2200));
   }
 
   // ---------- The hero: tonight's dinner (InnToday) ----------
@@ -3768,6 +3771,13 @@
       '<div class="shell-card week-approve-card">' +
         '<div class="week-review-eyebrow">DRAFT · YOUR TURN</div>' +
         (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
+        // A possible allergy/must-avoid clash, named above the Approve
+        // button rather than left for the household to catch. Server-worded
+        // (see check_plan_conflicts) so the sentence lives with the data it
+        // describes, and absent entirely when there's nothing to say.
+        (data.conflicts_note
+          ? '<div class="week-note week-conflict-note">' + escapeHtml(data.conflicts_note) + '</div>'
+          : '') +
         '<div class="week-approve-promise">' + escapeHtml(groceryPromiseText(data.grocery_preview)) + '</div>' +
         // Approving with a slot still open is allowed, but named — never a
         // silent shortfall.
@@ -4101,8 +4111,19 @@
         body: JSON.stringify({ approved_by: approvedBy })
       });
       if (!res.ok) throw new Error('approve failed');
-      await res.json();
-      showToast('Approved. I’ll get your list together.');
+      // The approve endpoint answers with the dietary check it ran on the
+      // way through (app/main.py's approve route, tools.approve_weekly_plan).
+      // This used to throw that answer away and show a fixed line, so a
+      // household that approved past the draft's warning — or never saw it —
+      // was told only that their list was coming. Approving is allowed to
+      // clash; being quiet about it is not.
+      var approval = {};
+      try { approval = (await res.json()) || {}; } catch (e) { approval = {}; }
+      if (approval.conflicts_note) {
+        showToast('Approved. ' + approval.conflicts_note, null, 9000);
+      } else {
+        showToast('Approved. I’ll get your list together.');
+      }
       // Approving is the one action in this app that writes to the grocery
       // list wholesale, so anything already showing that list is stale the
       // moment it succeeds — the same staleness

@@ -1890,9 +1890,23 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "approved_grocery_added": plan["approved_grocery_added"],
         "approved_grocery_skipped": plan["approved_grocery_skipped"],
         "grocery_preview": None,
+        # The dietary/allergy warning the review band shows above the
+        # Approve button. Recomputed here rather than stored with the plan
+        # so it stays true after a swap, and only for a draft: a week that's
+        # already approved has had its decision made, and a warning about it
+        # would be a scold rather than a help.
+        "conflicts": [],
+        "conflicts_note": None,
     }
     if plan["status"] != "approved":
         approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
+        try:
+            found = _coordination.check_plan_conflicts(plan["weekly_plan_id"])
+            approval["conflicts"] = found["conflicts"]
+            approval["conflicts_note"] = found["note"]
+        except Exception:
+            # The Meals screen must still render if the check itself breaks.
+            logger.exception("Conflict check failed for plan %s", plan["weekly_plan_id"])
     # Every adult but the one who approved — the receipt's "{Other adult}
     # has been told the week is settled." Empty for a one-adult household,
     # which is what keeps that sentence from being written at all rather
@@ -2431,7 +2445,26 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     Raises ValueError for a weekly_plan_id that doesn't exist, rather than
     reporting a cheerful approval of nothing — same as clear_weekly_plan
     and swap_component_in_plan.
+
+    The returned `conflicts`/`conflicts_note` are the dietary/allergy check
+    (check_plan_conflicts) run automatically on the way through. Approval is
+    NOT blocked by them — the household may well mean it — but a clash is
+    said out loud rather than left to whether anyone thought to ask. Mention
+    any that come back when reporting the approval.
     """
+    # Run before the approval work, so the warning describes the plan that
+    # was actually approved and a failure here can't half-approve a week.
+    conflicts, conflicts_note = [], None
+    try:
+        found = _coordination.check_plan_conflicts(weekly_plan_id)
+        conflicts = found["conflicts"]
+        # Not found["note"]: that sentence ends "before you approve", and
+        # this is the moment just after. Same clash, worded for a decision
+        # already made — see conflicts_note_after_approval.
+        conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
+    except Exception:
+        logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+
     conn = get_conn()
     existing = conn.execute(
         "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -2476,6 +2509,8 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
             "was_already_approved": True,
             "approved_by": receipt["approved_by"] if receipt else "",
             "approved_at": receipt["approved_at"] if receipt else None,
+            "conflicts": conflicts,
+            "conflicts_note": conflicts_note,
         }
     entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
     approved_at = conn.execute(
@@ -2519,6 +2554,8 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
         "was_already_approved": False,
         "approved_by": approved_by.strip(),
         "approved_at": approved_at,
+        "conflicts": conflicts,
+        "conflicts_note": conflicts_note,
     }
 
 
