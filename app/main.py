@@ -1134,6 +1134,17 @@ def week_menu(weekly_plan_id: int | None = None):
     """
     try:
         menu = tools.get_week_menu(weekly_plan_id)
+        # "I added a small side" — said once, and this is the moment it
+        # actually reaches a person, so this is where it gets marked as
+        # said. Not inside get_week_menu, which the assistant also calls
+        # mid-conversation: stamping it there would spend the household's
+        # one telling on a read nobody saw. Failing to stamp must not fail
+        # the screen — the worst case is the sentence shown twice.
+        if menu.get("plates_note"):
+            try:
+                tools.mark_plates_intro_shown()
+            except Exception:
+                logger.exception("Marking the plate-completion note as shown failed")
     except Exception as e:
         logger.exception("Week-menu lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1997,6 +2008,11 @@ def get_facts_view(category: str | None = None):
             preferences = {
                 "eating_style": memory.get("eating_style") or "",
                 "cuisines": memory.get("cuisine_preferences") or [],
+                # "Every meal is a full plate" (Emily, 2026-09-05). Shown
+                # here because the household is told once that the app does
+                # this, and a thing you're told once has to be findable
+                # afterwards — see app/tools/plates.py.
+                "complete_plates": bool(memory.get("complete_plates", True)),
             }
     except Exception as e:
         logger.exception("Facts lookup failed")

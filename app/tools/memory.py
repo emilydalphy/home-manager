@@ -222,6 +222,12 @@ def get_household_memory() -> dict:
         "weeknight_max_minutes": prefs["weeknight_max_minutes"] if prefs else 0,
         "table_style": prefs["table_style"] if prefs else "",
         "typical_week": prefs["typical_week"] if prefs else "",
+        # "Every meal is a full plate" (Emily, 2026-09-05) — whether the app
+        # may attach a small side to a meal that came out short of the
+        # household's plate rule. On unless they've said otherwise; see
+        # app/tools/plates.py and What We Know's Taste tab, where it's a
+        # single toggle.
+        "complete_plates": bool(prefs["complete_plates"]) if prefs else True,
         "growth_count_this_month": _household.count_preference_events_this_month(),
         "context_completeness": context_completeness,
     }
@@ -383,7 +389,11 @@ def edit_preference(field: str, value) -> dict:
     'repeats_tolerance' (str: 'cook_once_eat_twice', 'one_a_week' or
     'all_different' — this one changes the shape of every week built),
     'weeknight_max_minutes' (int — a real cap on Mon-Fri dinners; 0 means no
-    cap), 'table_style' (str), 'typical_week'/'next_week_notes' (str,
+    cap), 'table_style' (str), 'complete_plates' (bool — whether the app may
+    add a small side to a meal that came out short of a full plate: protein
+    + vegetable, plus a carb unless their eating style is low-carb. On by
+    default. Set it False when someone says any version of "stop adding
+    things to my meals"), 'typical_week'/'next_week_notes' (str,
     freeform, kept in the household's own words). To remove a
     single item from a list rather than replacing
     it wholesale, use delete_preference instead.
@@ -400,7 +410,8 @@ def edit_preference(field: str, value) -> dict:
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
         "dislikes", "novelty_preference", "usual_stores", "eating_style",
         "dinners_per_week", "breakfasts_per_week", "lunches_per_week",
-        "kitchen_kit", "weeknight_max_minutes", *simple_text_columns,
+        "kitchen_kit", "weeknight_max_minutes", "complete_plates",
+        *simple_text_columns,
     }
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
@@ -427,12 +438,27 @@ def edit_preference(field: str, value) -> dict:
         value = minutes
     if field == "repeats_tolerance" and value not in ("", "cook_once_eat_twice", "one_a_week", "all_different"):
         raise ValueError("repeats_tolerance must be 'cook_once_eat_twice', 'one_a_week' or 'all_different'.")
+    if field == "complete_plates":
+        # Stored as an INTEGER, and reaching it through chat means a model
+        # is choosing the value — so the strings a model actually sends
+        # ("false", "off", "no") have to mean what they say rather than
+        # being truthy Python objects that silently turn the setting ON.
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in ("false", "off", "no", "0", "n"):
+                value = False
+            elif lowered in ("true", "on", "yes", "1", "y"):
+                value = True
+            else:
+                raise ValueError("complete_plates must be true or false.")
+        value = 1 if value else 0
 
     _household._log_preference_event(field, "write")
-    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes"):
+    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes", "complete_plates"):
         column = {
             "kitchen_kit": "kitchen_kit_json",
             "weeknight_max_minutes": "weeknight_max_minutes",
+            "complete_plates": "complete_plates",
             **simple_text_columns,
         }[field]
         stored = json.dumps(value) if field == "kitchen_kit" else value
@@ -445,7 +471,11 @@ def edit_preference(field: str, value) -> dict:
         )
         conn.commit()
         conn.close()
-        return {field: value}
+        # complete_plates is stored as 0/1 but is a yes/no everywhere else
+        # (get_household_memory, the toggle, the pass) — hand it back as one
+        # rather than making every caller remember which side of the column
+        # boundary it is on.
+        return {field: bool(value) if field == "complete_plates" else value}
     if field == "dislikes":
         conn = get_conn()
         conn.execute(

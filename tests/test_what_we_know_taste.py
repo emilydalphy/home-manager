@@ -125,4 +125,8 @@ def test_a_household_that_answered_nothing_still_gets_a_usable_tab(signed_in):
     rather than erroring or returning nothing to render.
     """
     body = signed_in.get("/api/facts?category=taste").json()
-    assert body["preferences"] == {"eating_style": "", "cuisines": []}
+    # complete_plates is on for a household that has said nothing: the app
+    # rounds a short meal out unless told otherwise (Emily, 2026-09-05).
+    assert body["preferences"] == {
+        "eating_style": "", "cuisines": [], "complete_plates": True,
+    }

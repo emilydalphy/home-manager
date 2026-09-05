@@ -240,6 +240,56 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-05 — Every meal is a full plate, and a short one gets a side
+  rather than a regeneration. Branch `fix-full-plate` (NOT merged at the
+  time of writing).** Emily settled the question `plan_quality`'s
+  `full_plate` rule had been deliberately only WARNING about since it was
+  written. A plate is protein + vegetable, plus a carb unless the
+  household's `eating_style` reads low-carb; it applies to all four slots,
+  with a lighter floor on breakfast/snack. New `app/tools/plates.py` holds
+  the rule, the classifier and the attach mechanics; `agent.generate_sides_llm`
+  is the one new model call; `_complete_plates_pass` runs it over a
+  just-finished week.
+  - **The eating_style classifier is new and is a keyword list, not a model
+    call.** Nothing classified `eating_style` before — it was handed to the
+    model as free text. `plates.is_low_carb` is a documented phrase list
+    because it runs per entry per week, the cost of a wrong answer is one
+    unwanted side, and a list anyone can read and correct beats a judgment
+    nobody can see. It is deliberately literal: "clean eating" reads as
+    NOT low-carb and gets a carb, which is the app's default, not a harm.
+  - **"Never just a fruit / just a granola bar" reduces to a two-group
+    floor**, and that is the whole of the light rule (`LIGHT_SLOT_MIN_GROUPS`).
+    Both of those carry at most ONE food group, so a two-group floor
+    excludes them without the app keeping a list of foods it disapproves of.
+  - **A side attaches to the ENTRY (`meal_plan_entries.sides_json`), never
+    to the recipe.** A recipe is shared across weeks; rewriting its
+    `ingredients_json` to bolt a salad on would change every future plan
+    that reuses it and be indistinguishable later from the recipe's own
+    ingredients. `derived_from_json` was the other candidate (no migration
+    needed) and was rejected: it records what CAUSED a slot and is read as
+    provenance by four modules, while a side is content the grocery list
+    and Cooker have to consume. Recording it against the same entry_id is
+    also what makes removal symmetric for free —
+    `_reverse_meal_grocery_contributions` is keyed by entry.
+  - **An entry with NO recorded food groups is skipped and logged, never
+    guessed at** — the same stance `plan_quality`'s rule already took.
+  - **Six side calls per generated week, dinners first.** A week needing
+    more than six is a generation problem to read in the log, not one to
+    paper over with twenty-eight model calls; the overflow is logged by
+    name. ~$0.003–0.005 per call (cached instructions; see
+    `tools/usage.py`), so a capped worst-case week is about two cents.
+  - **The household is told once, and the telling is marked by the ROUTE,
+    not the tool.** `get_week_menu` is also a read the assistant makes
+    mid-conversation; stamping `plates_intro_shown_at` there would spend
+    the one telling on something nobody saw, so `/api/week-menu` does it.
+  - **`complete_plates` off means log-only, not silent.** The pass still
+    runs and still records what it would have added.
+  - **Known gap:** `cooker.deplete_inventory_for_meal` reads the RECIPE's
+    ingredients, so a side's ingredients are bought but never depleted from
+    tracked inventory when the meal is checked off. Deliberately out of
+    scope; own ticket. Also deliberately not built: Emily's "optional
+    add-ons" idea for keto (decision 7a) is a separate later ticket.
+
 - **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
   `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT
   merged at the time of writing).** Emily, seeing the same dish on two

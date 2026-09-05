@@ -90,6 +90,17 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- "a week I understand needs almost no correcting later."
     typical_week TEXT NOT NULL DEFAULT '',
     next_week_notes TEXT NOT NULL DEFAULT '',
+    -- "Every meal is a full plate" (Emily, 2026-09-05). ON by default: when
+    -- a generated meal falls short of the household's plate rule, the app
+    -- attaches a small side rather than leaving it short — see
+    -- app/tools/plates.py. Turning it off doesn't hide the rule, it just
+    -- stops the app acting on it: the pass logs what it would have added
+    -- and changes nothing.
+    complete_plates INTEGER NOT NULL DEFAULT 1,
+    -- The household is told this is deliberate exactly once. Set the first
+    -- time the review band actually serves that sentence, not the first
+    -- time a plate is completed — see weekly_plan.get_week_menu.
+    plates_intro_shown_at TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -440,6 +451,14 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- "entry_id:<n>" instead; that form is still accepted and resolved,
     -- but new writes should use the date:slot form above.
     derived_from_json TEXT NOT NULL DEFAULT '{}',
+    -- "Every meal is a full plate" (Emily, 2026-09-05). The side(s) the app
+    -- attached to THIS night's dish because its own food_groups were short
+    -- of the household's plate rule — see app/tools/plates.py for the rule,
+    -- the shape stored here, and the reasoning for why this is a column on
+    -- the entry rather than a rewrite of the recipe's ingredients_json (a
+    -- recipe is shared across weeks; a side belongs to one night).
+    -- '[]' for the overwhelming majority of entries.
+    sides_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -1054,7 +1073,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the seven call
+-- also why recording lives there instead of at each of the eight call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.

@@ -359,6 +359,22 @@ function renderPreferenceCard(prefs) {
   } else {
     html += `<div class="wwk-add-row" data-open-pref="cuisines">+ Add a cuisine</div>`;
   }
+
+  // "Every meal is a full plate" (Emily, 2026-09-05). The household is told
+  // once, on the review band, that the app rounds a short meal out — so the
+  // setting they were told about has to be somewhere they can find it
+  // afterwards, and this is the screen for things the app knows about them.
+  // Same fact-row idiom as everything above it; the value is the answer,
+  // not a switch widget (DESIGN_SYSTEM.md §8: the answer, not the question).
+  const platesOn = prefs.complete_plates !== false;
+  html += `<div class="wwk-fact-row" data-toggle-pref="complete_plates">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Rounding out meals</span> ${
+      platesOn
+        ? 'I add a small side when a meal comes out short'
+        : 'I leave your meals exactly as planned'
+    }</span>
+    <span class="wwk-fact-edit">${platesOn ? 'Stop' : 'Start'}</span>
+  </div>`;
   html += `</div>`;
   return html;
 }
@@ -367,6 +383,15 @@ function wirePreferenceActions(prefs) {
   const content = document.getElementById('wwk-content');
   content.querySelectorAll('[data-open-pref]').forEach(el => {
     el.addEventListener('click', () => { openPrefEditor = el.getAttribute('data-open-pref'); render(); });
+  });
+  content.querySelectorAll('[data-toggle-pref]').forEach(el => {
+    el.addEventListener('click', async () => {
+      const next = prefs.complete_plates === false;
+      try {
+        await savePreference('complete_plates', next);
+        render();
+      } catch (err) { alert("Couldn't save that — try again."); }
+    });
   });
   content.querySelectorAll('[data-cancel-pref]').forEach(btn => {
     btn.addEventListener('click', () => { openPrefEditor = null; render(); });
