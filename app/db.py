@@ -11,6 +11,125 @@ DB_PATH = os.environ.get(
 SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
+def misplaced_db_path_error(
+    db_path: str | None = None,
+    env: dict | None = None,
+    is_mount=None,
+) -> str | None:
+    """
+    For the admin scripts only: refuse to act on a database that isn't the
+    one the operator thinks it is, or return None if we are where we look.
+
+    `railway run` injects the deployed service's variables and then runs
+    the command ON THE LOCAL MACHINE. Production sets DB_PATH to a file
+    under the mounted volume (e.g. /data/home_manager.db). Every caller
+    here starts by calling init_db(), so without this guard the script
+    either dies on a permissions error or -- worse -- creates a brand-new
+    empty database at that path and reports success against it, which
+    looks more convincing than a crash.
+
+    The check is deliberately "is the volume actually MOUNTED here", not
+    "does that directory happen to exist". The first version of this guard
+    asked the second question and an adversarial review broke it in one
+    line: on a machine that merely has a /data directory (ordinary on
+    Linux; a dev box, a container that isn't this one) every production
+    variable can be present, the guard passes, and a decoy database is
+    created and reported on. A path existing says nothing about whose
+    filesystem it is; a mount point does.
+
+    `is_mount` is injectable only so the tests can describe a mounted
+    volume without needing to mount one.
+
+    Returns a message rather than raising, so the tests can exercise every
+    branch as a pure function -- but note the message is only half the
+    protection. The caller must actually stop; see the subprocess tests in
+    tests/test_admin_scripts.py, which pin that it does.
+    """
+    db_path = DB_PATH if db_path is None else db_path
+    env = os.environ if env is None else env
+    is_mount = os.path.ismount if is_mount is None else is_mount
+
+    abs_db = os.path.abspath(db_path)
+    mount = env.get("RAILWAY_VOLUME_MOUNT_PATH")
+
+    # A deliberate, documented way past the mount check. This guard fails
+    # CLOSED on purpose -- these scripts wipe and create households, so a
+    # wrong "yes" is far more expensive than a wrong "no". But the mount
+    # test has never been run against the real Railway container from a
+    # development machine, and if it ever misjudges one, the person it
+    # blocks is the one person who needs the script to work. So: an escape
+    # hatch that cannot be hit by accident, and the refusal below names it.
+    if env.get("HOME_MANAGER_ADMIN_SKIP_PATH_CHECK") == "i-am-in-the-container":
+        return None
+
+    if mount:
+        # Production's variables reached us. That is expected inside the
+        # container and a mistake anywhere else, so the volume itself is
+        # the witness: on the service it is a real mount, on a laptop it
+        # is at best an empty directory of the same name.
+        abs_mount = os.path.abspath(mount)
+        if not (os.path.isdir(abs_mount) and is_mount(abs_mount)):
+            return (
+                f"Refusing to run: this environment says a Railway volume lives at "
+                f"{mount!r}, but nothing is mounted there on this machine.\n"
+                "That is what `railway run` looks like — it injects production's "
+                "variables and runs the command on your laptop. Acting now would "
+                "create a new, empty database and report success against it. "
+                "Nothing has been read or written.\n"
+                "\n"
+                "If you ARE inside the container and seeing this, the mount check "
+                "has misjudged it — re-run with "
+                "HOME_MANAGER_ADMIN_SKIP_PATH_CHECK=i-am-in-the-container and "
+                "tell Claude, since that means this guard needs fixing."
+            )
+        # The volume is genuinely mounted, but DB_PATH sits outside it:
+        # the database we would touch is not the one on the volume. Same
+        # class of mistake, opposite symptom — and this one would succeed
+        # quietly against the wrong file.
+        if not abs_db.startswith(abs_mount + os.sep):
+            return (
+                f"Refusing to run: a Railway volume is mounted at {mount!r}, but "
+                f"DB_PATH points at {db_path!r}, which is outside it.\n"
+                "The real database lives on the volume; this would act on a "
+                "different file. Nothing has been read or written."
+            )
+        return None
+
+    # No volume variable at all — an ordinary local run, unless DB_PATH was
+    # injected while the volume variable was not, which is the same laptop
+    # mistake wearing a different hat.
+    parent = os.path.dirname(abs_db) or "."
+    if not os.path.isdir(parent):
+        return (
+            f"Refusing to run: the database directory {parent!r} does not exist "
+            f"on this machine, but DB_PATH points at {db_path!r}.\n"
+            "Nothing has been read or written."
+        )
+
+    return None
+
+
+def how_to_run_on_production(script_name: str) -> str:
+    """
+    The command the operator actually wanted, named for the script they
+    actually ran. A shared constant used to say `create_household.py` to
+    everybody, so someone refused mid-reset was never told the reset
+    command -- which is the one thing a refusal owes them.
+    """
+    return (
+        "To act on the production database, run the script INSIDE the deployed\n"
+        "container instead:\n"
+        "\n"
+        f"    railway ssh -- python {script_name}\n"
+        "\n"
+        "(`railway ssh` opens a shell on the service; everything after `--` runs\n"
+        "there.) To check which database you are pointed at first, without\n"
+        "touching any household data:\n"
+        "\n"
+        "    railway ssh -- python create_household.py --list"
+    )
+
+
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
