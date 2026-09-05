@@ -48,6 +48,11 @@ _CONFLICT_STOPWORDS = frozenset({
     "dinner", "dinners", "breakfast", "breakfasts", "lunch", "lunches",
     "snack", "snacks", "needs", "need", "likes", "wants", "prefers",
     "high", "low", "tree",
+    # "no red meat DURING the week" — a stretch-of-time word sitting inside
+    # the avoidance span itself, so it survived into the phrase and made
+    # "red meat" unmatchable as written. Time words that can appear before
+    # the trigger are already above; this one comes after it.
+    "during", "throughout", "while",
 })
 
 
@@ -70,7 +75,12 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "pistachio", "macadamia"},
     "shellfish": {"shrimp", "prawn", "crab", "lobster", "clam", "mussel",
                   "scallop", "oyster"},
-    "dairy": {"milk", "cheese", "butter", "cream", "yogurt", "yoghurt", "whey"},
+    # "buttermilk" is here rather than left to "butter"/"milk": whole-word
+    # matching reaches neither half of it, and it is unambiguously dairy —
+    # the opposite call from "peanut butter", which is spelled with a dairy
+    # word and contains none (see _COMPOUND_EXCEPTIONS).
+    "dairy": {"milk", "cheese", "butter", "buttermilk", "cream", "yogurt",
+              "yoghurt", "whey"},
     "gluten": {"flour", "bread", "pasta", "noodles", "couscous", "seitan"},
     "wheat": {"flour", "bread", "pasta", "noodles", "couscous", "seitan"},
     "egg": {"eggs", "mayonnaise", "mayo"},
@@ -79,6 +89,45 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
 }
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
+
+
+# The compound food names where an allergen word is not the allergen.
+#
+# Whole-word matching already handles the ones written as a single word —
+# coconut, nutmeg, butternut, eggplant are not "nut" or "egg" and never
+# match. These are the ones written as TWO words, where the allergen word
+# really is standing there on its own and still doesn't mean the allergen:
+# "peanut butter" is not dairy, "coconut milk" is not dairy, "sugar snap
+# peas" are a pea. Emily's own week flagged Peanut Butter Toast for a dairy
+# note and Sugar Snap Peas for "avoid sugar".
+#
+# Each entry is (the words it neutralises, the compound it neutralises them
+# inside). Only that OCCURRENCE is discounted, so "sugar snap peas tossed in
+# brown sugar" still trips a sugar avoidance on the second one.
+#
+# Two deliberate limits, both about not turning a false positive into a
+# false negative — which is the worse bug here:
+#
+#   1. Only the listed word is discounted, never the whole compound. A NUT
+#      allergy still catches "peanut butter" on "peanut"; it is only a DAIRY
+#      note that stops catching it on "butter".
+#   2. A discount only applies to a single-word avoidance. If the household
+#      wrote the compound itself — "allergic to coconut milk" — they are
+#      taken at their word and the phrase matches.
+#
+# Short on purpose, and a list a person can argue with. Extend it when a
+# real false positive shows up, the same way _ALLERGEN_ALIASES is extended
+# when a real miss does.
+_COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
+    (frozenset({"butter", "butters"}), re.compile(
+        r"\b(?:peanut|almond|cashew|hazelnut|pistachio|pecan|walnut|macadamia|"
+        r"sunflower|pumpkin|sesame|seed|nut|apple|cocoa|cacao|shea)s?\s+butters?\b"
+    )),
+    (frozenset({"milk", "milks"}), re.compile(
+        r"\b(?:almond|cashew|coconut|hazelnut|hemp|oat|pea|rice|soy|soya)\s+milks?\b"
+    )),
+    (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
+)
 
 
 # What turns a sentence into an avoidance. A hard What-we-know fact is
@@ -132,6 +181,39 @@ def _conflict_keywords(phrase: str, drop: set[str] | None = None) -> list[str]:
     return [w for w in words if w not in _CONFLICT_STOPWORDS and w not in drop]
 
 
+# Where one avoidance ends and the next begins. "allergic to pineapple,
+# shellfish and eggs" is three things to avoid, not one three-word food —
+# and getting that wrong in the other direction is a false NEGATIVE, which
+# is the failure this whole file exists to prevent. "and"/"or" are already
+# stopwords; they are listed here as well because they mark a boundary, not
+# only a word to ignore.
+_PHRASE_SPLIT_RE = re.compile(r"[,;/]|\band\b|\bor\b|\bplus\b|\bas\s+well\s+as\b")
+
+
+def _conflict_phrases(text: str, drop: set[str] | None = None) -> list[list[str]]:
+    """
+    A restriction or an avoidance span read as PHRASES rather than as a bag
+    of loose words — the fix for the check's loudest false positives.
+
+    Every non-stopword used to become an independent thing to hunt for, so a
+    multi-word avoidance leaked its common words: "no red meat during the
+    week" searched for "red" on its own and flagged Red Lentil Dahl, and any
+    two-word food did the same. A phrase now has to be found as a phrase —
+    all of its words, in order, inside one stretch of text (see _matches) —
+    and only a genuinely single-word avoidance matches on a single word.
+
+    Splitting on commas and "and"/"or" first is what keeps that from
+    becoming a miss: "allergic to pineapple, shellfish and eggs" is three
+    one-word phrases, not one phrase that matches nothing.
+    """
+    out: list[list[str]] = []
+    for piece in _PHRASE_SPLIT_RE.split((text or "").lower()):
+        words = _conflict_keywords(piece, drop=drop)
+        if words and words not in out:
+            out.append(words)
+    return out
+
+
 def _split_exception(span: str) -> tuple[str, str]:
     """Split "tree nuts but peanuts are fine" into what to avoid and what not to."""
     m = _CONTRAST_RE.search(span)
@@ -145,12 +227,18 @@ def _split_exception(span: str) -> tuple[str, str]:
     return span, ""
 
 
-def _fact_keywords(text: str, drop: set[str]) -> tuple[list[str], list[str]]:
+def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str]]:
     """
     Read a freeform hard fact as (things to avoid, things explicitly fine).
 
-    Both lists can be empty, and an empty first list is the important case:
-    it means the fact says nothing about avoiding a food, so it must produce
+    The first list is a list of PHRASES — each one an ordered run of words
+    that all have to be found together (see _conflict_phrases) — because a
+    fact is a sentence and its avoidances arrive as noun phrases, not as
+    loose words. The second is a flat list of words the sentence called
+    fine, subtracted from whatever the first produced.
+
+    Both can be empty, and an empty first list is the important case: it
+    means the fact says nothing about avoiding a food, so it must produce
     no warning at all. Every non-stopword in the sentence used to become a
     match term, which is how a fact about wanting protein flagged a Protein
     Bowl and a fact about the house flagged a House Salad.
@@ -176,14 +264,16 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[str], list[str]]:
             before = re.split(r"\b(?:and|or|but|with)\b", before)[-1]
             spans.append(" ".join(before.split()[-window:]))
 
-    keywords, seen = [], set()
+    phrases: list[list[str]] = []
+    seen: set[tuple[str, ...]] = set()
     for span in spans:
-        for word in _conflict_keywords(span, drop=drop):
-            if word not in seen:
-                seen.add(word)
-                keywords.append(word)
+        for words in _conflict_phrases(span, drop=drop):
+            key = tuple(words)
+            if key not in seen:
+                seen.add(key)
+                phrases.append(words)
     excepted = [w for span in exception_spans for w in _conflict_keywords(span, drop=drop)]
-    return keywords, excepted
+    return phrases, excepted
 
 
 def _keyword_variants(keyword: str) -> set[str]:
@@ -217,34 +307,99 @@ def _keyword_variants(keyword: str) -> set[str]:
     return variants
 
 
-def _match_terms(keywords: list[str], excepted: list[str] | None = None) -> list[tuple[str, set[str]]]:
+def _match_terms(
+    phrases: list[list[str]], excepted: list[str] | None = None,
+) -> list[tuple[str, list[set[str]]]]:
     """
-    Each keyword paired with every spelling that should count as finding it:
-    its own plural/singular twin, plus the alias table's expansion when the
-    keyword names a whole allergen family. Anything the household explicitly
-    called fine is removed — including from an alias expansion, which is what
-    lets "allergic to tree nuts but peanuts are fine" still catch walnuts.
+    Each avoidance phrase turned into what it takes to find it: the phrase's
+    label, plus one set of acceptable spellings PER WORD, in order. A word's
+    set is its own plural/singular twin plus the alias table's expansion when
+    it names a whole allergen family.
+
+    Anything the household explicitly called fine is removed — including from
+    an alias expansion, which is what lets "allergic to tree nuts but peanuts
+    are fine" still catch walnuts. A word whose every spelling was excepted
+    drops out of the phrase rather than killing it: "no cow milk for Emily,
+    oat milk is fine" is left looking for "cow".
     """
     excluded: set[str] = set()
     for word in excepted or []:
         excluded |= _keyword_variants(word)
-    out = []
-    for keyword in keywords:
-        variants: set[str] = set()
-        for base in {keyword} | _ALLERGEN_ALIASES.get(keyword, set()):
-            variants |= _keyword_variants(base)
-        variants -= excluded
-        if variants:
-            out.append((keyword, variants))
+    out: list[tuple[str, list[set[str]]]] = []
+    for phrase in phrases:
+        groups: list[set[str]] = []
+        kept: list[str] = []
+        for word in phrase:
+            variants: set[str] = set()
+            for base in {word} | _ALLERGEN_ALIASES.get(word, set()):
+                variants |= _keyword_variants(base)
+            variants -= excluded
+            if variants:
+                groups.append(variants)
+                kept.append(word)
+        if groups:
+            out.append((" ".join(kept), groups))
     return out
 
 
-def _matches(terms: list[tuple[str, set[str]]], text: str) -> str | None:
-    """The first keyword that appears in `text` as a whole word, or None."""
-    for keyword, variants in terms:
+def _discounted(variant: str, match: re.Match, text: str) -> bool:
+    """Whether this occurrence sits inside a compound that neutralises it."""
+    for words, compound in _COMPOUND_EXCEPTIONS:
+        if variant not in words:
+            continue
+        for found in compound.finditer(text):
+            if found.start() <= match.start() and match.end() <= found.end():
+                return True
+    return False
+
+
+def _find_variant(variant: str, text: str, start: int, discountable: bool) -> re.Match | None:
+    """The first whole-word occurrence at or after `start` that actually counts."""
+    for m in re.finditer(r"\b" + re.escape(variant) + r"\b", text):
+        if m.start() < start:
+            continue
+        if discountable and _discounted(variant, m, text):
+            continue
+        return m
+    return None
+
+
+def _phrase_in(groups: list[set[str]], text: str) -> bool:
+    """
+    Whether every word of a phrase appears in `text`, in order.
+
+    In order rather than strictly adjacent, so "red meat" still finds "red
+    minced meat" — but within ONE stretch of text (see _matches), so it
+    cannot be assembled out of a word in the dish's name and another in an
+    unrelated ingredient three lines down.
+    """
+    pos = 0
+    discountable = len(groups) == 1
+    for variants in groups:
+        best: re.Match | None = None
         for variant in variants:
-            if re.search(r"\b" + re.escape(variant) + r"\b", text):
-                return keyword
+            m = _find_variant(variant, text, pos, discountable)
+            if m and (best is None or m.start() < best.start()):
+                best = m
+        if best is None:
+            return False
+        pos = best.end()
+    return True
+
+
+def _matches(terms: list[tuple[str, list[set[str]]]], segments: list[str]) -> str | None:
+    """
+    The first avoidance found in any one of `segments`, or None.
+
+    Segments, not one joined blob: a phrase has to land inside a single
+    stretch of text — the dish's name, or one ingredient line — because a
+    two-word food spread across two unrelated ingredients is a coincidence,
+    not a clash.
+    """
+    for label, groups in terms:
+        for segment in segments:
+            if _phrase_in(groups, segment):
+                return label
     return None
 
 
@@ -266,8 +421,11 @@ def _avoidances() -> list[dict]:
         for restriction in m["dietary_restrictions"]:
             if not restriction.strip():
                 continue
-            keywords = _conflict_keywords(restriction, drop=name_words)
-            terms = _match_terms(keywords)
+            # Phrases here too, not only for facts. A saved restriction is
+            # meant to be one restriction per list entry, so "red meat" is a
+            # food and not two — and the comma/"and" split above still reads
+            # "no dairy, no eggs" typed into a single box as two things.
+            terms = _match_terms(_conflict_phrases(restriction, drop=name_words))
             if not terms:
                 continue
             out.append({
@@ -290,8 +448,8 @@ def _avoidances() -> list[dict]:
             None,
         )
         name_words = {w for w in re.sub(r"[^a-z0-9\s]", " ", (named or "").lower()).split()}
-        keywords, excepted = _fact_keywords(text, drop=name_words)
-        terms = _match_terms(keywords, excepted)
+        phrases, excepted = _fact_keywords(text, drop=name_words)
+        terms = _match_terms(phrases, excepted)
         if not terms:
             continue
         out.append({
@@ -302,7 +460,7 @@ def _avoidances() -> list[dict]:
     # Standing dislikes are not a safety matter, so they ride along at a
     # lower severity — worth mentioning, never worth alarming about.
     for dislike in _memory.get_household_memory().get("dislikes") or []:
-        terms = _match_terms(_conflict_keywords(dislike))
+        terms = _match_terms(_conflict_phrases(dislike))
         if not terms:
             continue
         out.append({
@@ -456,15 +614,23 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         if not name or meal.get("slot_state") in ("planned_empty", "open"):
             continue
         recipe = recipes_by_name.get(name.lower())
-        ingredient_text = ""
+        # The dish's name and each ingredient line SEPARATELY, not one
+        # joined blob. A multi-word avoidance has to be found inside a
+        # single one of them — "red meat" assembled out of "red pepper" in
+        # the name and "minced meat" four lines later is a coincidence, not
+        # a clash. Whitespace collapsed as well as punctuation stripped, so
+        # a two-word term ("soy sauce") still matches an ingredient written
+        # with odd spacing.
+        raw_segments = [name]
         if recipe:
-            ingredient_text = " ".join((i.get("item") or "") for i in recipe.get("ingredients", []))
-        # Whitespace collapsed as well as punctuation stripped, so a
-        # two-word term ("soy sauce") still matches text that was joined
-        # with a blank ingredient in the middle.
-        haystack = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", f"{name} {ingredient_text}".lower()))
+            raw_segments += [(i.get("item") or "") for i in recipe.get("ingredients", [])]
+        segments = [
+            re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", s.lower())).strip()
+            for s in raw_segments
+        ]
+        segments = [s for s in segments if s]
         for avoidance in avoidances:
-            matched = _matches(avoidance["terms"], haystack)
+            matched = _matches(avoidance["terms"], segments)
             if not matched:
                 continue
             conflicts.append({

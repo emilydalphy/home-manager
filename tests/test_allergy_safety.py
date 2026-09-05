@@ -591,3 +591,228 @@ def test_the_prompt_gets_the_fact_and_not_its_bookkeeping(kitchen, monkeypatch):
     assert facts and all(set(f) == {"category", "text", "hard"} for f in facts), \
         "id/author/updated_at are storage bookkeeping and cost tokens for nothing"
     assert facts[0]["hard"] is True
+
+# ---------- 10. a multi-word avoidance is a phrase, not its loose words ----------
+
+class TestAPhraseIsMatchedAsAPhrase:
+    """
+    The second verification pass's headline finding, and the same shape of
+    bug as section 4: every significant word of an avoidance became an
+    INDEPENDENT thing to hunt for, so a two-word food leaked its common
+    half. "no red meat during the week" searched for "red" on its own and
+    flagged Red Lentil Dahl; "avoid sugar" flagged Sugar Snap Peas.
+    """
+
+    def _plan_with(self, meal: str) -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        return plan["weekly_plan_id"]
+
+    def test_red_meat_does_not_flag_a_red_lentil_dahl(self, kitchen):
+        tools.add_recipe("Red Lentil Dahl", ingredients=[{"item": "red lentils", "qty": "200g"},
+                                                         {"item": "coconut oil", "qty": "1 tbsp"}])
+        tools.add_fact("people", "no red meat during the week", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Red Lentil Dahl"))["conflicts"] == []
+
+    def test_red_meat_still_flags_the_red_meat(self, kitchen):
+        """The false positive is fixed by reading the phrase, not by dropping it."""
+        tools.add_recipe("Sunday Ragu", ingredients=[{"item": "red meat mince", "qty": "500g"}])
+        tools.add_fact("people", "no red meat during the week", hard=True)
+
+        found = tools.check_plan_conflicts(self._plan_with("Sunday Ragu"))["conflicts"]
+
+        assert [c["matched"] for c in found] == ["red meat"]
+
+    def test_during_is_a_stopword_so_the_phrase_is_findable_at_all(self):
+        """
+        "during" survived into the avoidance span and made the phrase
+        unmatchable as written — a false negative hiding behind the false
+        positive.
+        """
+        from app.tools import coordination
+
+        assert coordination._fact_keywords("no red meat during the week", set())[0] == [
+            ["red", "meat"]
+        ]
+
+    def test_beef_is_a_known_miss_for_red_meat(self, kitchen):
+        """
+        DOCUMENTED LIMIT, not an accident. This check matches words the
+        household wrote against words on the recipe; it has no idea that
+        beef, lamb and pork are what "red meat" means. Closing it needs a
+        food taxonomy (or an alias entry per category), not a regex — and
+        until then it is better written down here than discovered on a
+        Tuesday. See _ALLERGEN_ALIASES: extend it when a real miss shows up.
+        """
+        tools.add_recipe("Beef Stew", ingredients=[{"item": "stewing beef", "qty": "600g"}])
+        tools.add_fact("people", "no red meat during the week", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Beef Stew"))["conflicts"] == [], \
+            "if this ever starts passing, delete the test and celebrate"
+
+    def test_a_phrase_is_not_assembled_across_two_ingredients(self, kitchen):
+        """
+        In order, but inside ONE stretch of text. A word from the name and a
+        word from an unrelated ingredient line is a coincidence.
+        """
+        tools.add_recipe("Red Pepper Soup", ingredients=[{"item": "red peppers", "qty": "3"},
+                                                         {"item": "meat stock", "qty": "500ml"}])
+        tools.add_fact("people", "no red meat during the week", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Red Pepper Soup"))["conflicts"] == []
+
+    def test_several_foods_in_one_sentence_are_still_several_avoidances(self, kitchen):
+        """
+        The trap the phrase rule could have walked into: reading "pineapple,
+        shellfish and eggs" as one three-word food would match nothing at
+        all — a false negative, which is the worse bug of the two.
+        """
+        tools.add_fact("people", "Emily is allergic to pineapple, shellfish and eggs", hard=True)
+        for dish, item in (("Pineapple Chicken", None), ("Paella", "prawns"),
+                           ("Potato Salad", "mayonnaise")):
+            if item:
+                tools.add_recipe(dish, ingredients=[{"item": item, "qty": "1"}])
+            assert tools.check_plan_conflicts(self._plan_with(dish))["conflicts"], dish
+
+    def test_two_restrictions_typed_into_one_box_are_still_two(self, kitchen):
+        tools.add_recipe("Omelette", ingredients=[{"item": "eggs", "qty": "3"}])
+        tools.set_member_dietary_restrictions("Emily", ["no dairy, no eggs"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Omelette"))["conflicts"]
+
+    def test_a_single_word_avoidance_still_matches_on_the_single_word(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        found = tools.check_plan_conflicts(self._plan_with("Pineapple Chicken"))["conflicts"]
+
+        assert [c["matched"] for c in found] == ["pineapple"]
+
+
+# ---------- 11. the compound foods that only look like the allergen ----------
+
+class TestCompoundFoodsThatAreNotTheAllergen:
+    """
+    Whole-word matching already keeps "nut" off coconut and butternut. These
+    are the ones written as two words, where the allergen word is standing
+    right there and still isn't the allergen — the false positives from
+    Emily's own week.
+    """
+
+    def _plan_with(self, meal: str) -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        return plan["weekly_plan_id"]
+
+    def test_peanut_butter_is_not_dairy(self, kitchen):
+        tools.add_recipe("Peanut Butter Toast", ingredients=[{"item": "peanut butter", "qty": "2 tbsp"},
+                                                             {"item": "sourdough", "qty": "2 slices"}])
+        tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Peanut Butter Toast"))["conflicts"] == []
+
+    def test_peanut_butter_is_still_very_much_a_nut(self, kitchen):
+        """The discount is per WORD, never per compound — "butter" only."""
+        tools.add_recipe("Peanut Butter Toast", ingredients=[{"item": "peanut butter", "qty": "2 tbsp"}])
+        tools.set_member_dietary_restrictions("Emily", ["nut allergy"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Peanut Butter Toast"))["conflicts"]
+
+    def test_real_butter_is_still_dairy(self, kitchen):
+        tools.add_recipe("Butter Chicken", ingredients=[{"item": "chicken thighs", "qty": "600g"}])
+        tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+
+        found = tools.check_plan_conflicts(self._plan_with("Butter Chicken"))["conflicts"]
+
+        assert [c["matched"] for c in found] == ["dairy"]
+
+    def test_milk_is_still_dairy(self, kitchen):
+        tools.add_recipe("Milk Pudding", ingredients=[{"item": "whole milk", "qty": "500ml"}])
+        tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Milk Pudding"))["conflicts"]
+
+    def test_buttermilk_is_dairy_even_though_neither_half_matches_it(self, kitchen):
+        tools.add_recipe("Soda Bread", ingredients=[{"item": "buttermilk", "qty": "300ml"}])
+        tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Soda Bread"))["conflicts"]
+
+    def test_coconut_milk_is_not_dairy(self, kitchen):
+        tools.add_recipe("Thai Curry", ingredients=[{"item": "coconut milk", "qty": "400ml"}])
+        tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Thai Curry"))["conflicts"] == []
+
+    def test_naming_the_compound_yourself_beats_the_exception(self, kitchen):
+        """
+        A discount only applies to a single-word avoidance. Someone who
+        writes "allergic to coconut milk" is taken at their word.
+        """
+        tools.add_recipe("Thai Curry", ingredients=[{"item": "coconut milk", "qty": "400ml"}])
+        tools.add_fact("people", "Emily is allergic to coconut milk", hard=True)
+
+        found = tools.check_plan_conflicts(self._plan_with("Thai Curry"))["conflicts"]
+
+        assert [c["matched"] for c in found] == ["coconut milk"]
+
+    def test_sugar_snap_peas_are_a_pea(self, kitchen):
+        tools.add_recipe("Sugar Snap Peas", ingredients=[{"item": "sugar snap peas", "qty": "200g"}])
+        tools.add_fact("people", "avoid sugar", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Sugar Snap Peas"))["conflicts"] == []
+
+    def test_the_sugar_that_is_sugar_still_flags(self, kitchen):
+        """Only that occurrence is discounted, not the word everywhere else."""
+        tools.add_recipe("Glazed Snaps", ingredients=[{"item": "sugar snap peas", "qty": "200g"},
+                                                      {"item": "brown sugar", "qty": "2 tbsp"}])
+        tools.add_fact("people", "avoid sugar", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Glazed Snaps"))["conflicts"]
+
+
+# ---------- 12. the clash Emily found on the shopping list ----------
+
+def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatch):
+    """
+    What Emily actually saw: an approved week whose grocery list said
+    "Pineapple chunks · 3 bag frozen" for a pineapple-allergic household.
+    The allergen was in the INGREDIENTS of an innocently-named dish, so the
+    only place it ever became visible was the shopping list.
+
+    Approval still goes through — warn, never block, is the standing
+    default and promoting it to a block is Emily's call, still pending —
+    but the sentence handed back has to name the meal that put it there.
+    """
+    week = _week_start()
+    tools.add_recipe(
+        "Fruit Salad",
+        ingredients=[{"item": "pineapple chunks", "qty": "3 bag frozen"},
+                     {"item": "strawberries", "qty": "1 punnet"}],
+    )
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Fruit Salad")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    # The list really does carry the allergen — this is the bug's evidence,
+    # not an aside.
+    bought = [i["item"].lower() for i in tools.list_grocery_list("needed")]
+    assert any("pineapple" in item for item in bought)
+
+    assert result["status"] == "approved", "a clash warns, it never blocks"
+    note = result["conflicts_note"]
+    assert note, "the week that bought the allergen cannot approve in silence"
+    assert "Fruit Salad" in note, "name the meal that put it on the list"
+    assert "pineapple" in note.lower()
