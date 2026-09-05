@@ -12,6 +12,15 @@ from . import quantities as _quantities
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
 
+# Slot states with no meal behind them, so nothing to cook. See
+# get_cooker_view for why this is a deny-list rather than an allow-list of
+# 'planned'. The ordered tuple and its placeholders exist only so
+# get_plan_progress can apply the same rule inside SQL without the two
+# drifting apart -- one definition, two ways of asking.
+_NOT_COOKABLE_SLOT_STATES = frozenset({"planned_empty", "open"})
+_NOT_COOKABLE_SLOT_STATES_ORDERED = tuple(sorted(_NOT_COOKABLE_SLOT_STATES))
+_NOT_COOKABLE_PLACEHOLDERS = ",".join("?" * len(_NOT_COOKABLE_SLOT_STATES_ORDERED))
+
 
 def _singularize(word: str) -> str:
     return word[:-1] if word.endswith("s") else word
@@ -327,6 +336,14 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     cooked (see check_off_meal) and which prep tasks are done (see
     check_off_prep_step), plus counts. Omit weekly_plan_id for the
     household's current/most recent plan.
+
+    Counts only slots there is something to cook, on the same rule and for
+    the same reason as get_cooker_view -- see its docstring. This one
+    matters just as much despite having no screen: it is a chat tool, and
+    the system prompt names it as the way to answer "what's left to cook
+    this week". Unfiltered, it answered with a total nobody could reach and
+    handed back nameless entries carrying real entry_ids the assistant
+    could pass to check_off_meal.
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
@@ -335,8 +352,9 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     meal_rows = conn.execute(
         "SELECT mpe.id AS entry_id, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.cooked_status AS cooked_status "
         "FROM meal_plan_entries mpe "
-        "LEFT JOIN recipes r ON r.id = mpe.recipe_id WHERE mpe.weekly_plan_id = ?",
-        (plan["weekly_plan_id"],),
+        "LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        f"WHERE mpe.weekly_plan_id = ? AND mpe.slot_state NOT IN ({_NOT_COOKABLE_PLACEHOLDERS})",
+        (plan["weekly_plan_id"], *_NOT_COOKABLE_SLOT_STATES_ORDERED),
     ).fetchall()
     conn.close()
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
@@ -360,6 +378,40 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     rather than requiring separate get_weekly_plan/get_recipe/
     get_prep_schedule calls. Omit weekly_plan_id for the household's
     current plan.
+
+    Only slots there is something to COOK are included. A slot is one of
+    three states (see meal_plan_entries.slot_state) and two of them have no
+    meal behind them:
+
+    - 'planned_empty' — nobody is home. schema.sql calls this out as the
+      one deliberately empty slot in a week, which "must NEVER be offered
+      to the household as one". It was reaching this view because the view
+      never asked for slot_state, so a night nobody is home rendered as a
+      cookable row with an empty name and a checkbox -- and, if it fell on
+      today's dinner, as the Cook hero, headlined "Dinner", captioned with
+      the reason nobody is eating, and offering to start cooking it.
+    - 'open' — a decision genuinely handed back, carrying open_reason.
+      There is no meal here either, so it cannot be cooked; it belongs to
+      the Plan screen, which already renders open slots as the question
+      they are.
+
+    get_weekly_plan already carries slot_state for exactly this reason (its
+    own comment records the same bug being caught in a chat turn), so this
+    is a filter, not new plumbing.
+
+    slot_state is forwarded per meal, but note what that is and isn't for:
+    every row that survives the filter is cookable by construction, so it
+    cannot be used to say anything about the nights that were skipped. It
+    is there so a reader of one meal can see the state rather than infer
+    it. A screen that wants to say "you're away Friday" needs the skipped
+    slots themselves, which this deliberately does not return -- Cook is
+    the "what am I making now" state, and what to say about an away night
+    there is a copy decision nobody has made yet.
+
+    Anything that is not one of those two states counts as cookable, rather
+    than testing for 'planned' — the column arrived by ALTER TABLE with a
+    'planned' default, and a filter that only trusted an exact match would
+    blank the whole view for any row that ever held something else.
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
@@ -368,6 +420,8 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     meals = []
     for m in plan["meals"]:
+        if m.get("slot_state") in _NOT_COOKABLE_SLOT_STATES:
+            continue
         recipe = recipes_by_name.get((m["meal"] or "").lower())
         meals.append({
             "entry_id": m["entry_id"],
@@ -375,6 +429,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "slot": m["slot"],
             "component_category": m["component_category"],
             "meal": m["meal"],
+            "slot_state": m.get("slot_state"),
             "cooked_status": m["cooked_status"],
             "reasoning": m.get("reasoning"),
             "ingredients": recipe["ingredients"] if recipe else [],
