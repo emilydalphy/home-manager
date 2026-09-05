@@ -2246,7 +2246,9 @@ household plus extras), and if children are at the table, shift the choice towar
 they will actually eat. Both halves matter: portions AND the shopping.
   * `left` on a date — plan NO new dinner for it. Instead, increase the previous night's batch \
 and set this date's meal to a leftovers entry naming what it's eating, with \
-derived_from.links_to pointing at that earlier date's dinner.
+derived_from.links_to set to that earlier date's dinner in "YYYY-MM-DD:dinner" form (e.g. \
+"2026-09-02:dinner") — it must name a REAL dinner you are actually generating earlier in this \
+same week, never a date after this one.
   * `normal` on a date — an affirmed ordinary night. Not a constraint, but not noise either: \
 the household explicitly said this one is fine as-is, so don't get clever with it.
   * `out` on a date — you will not see these; they're removed before you're asked.
@@ -3449,11 +3451,16 @@ def _finish_week_slots(
        to the setup screen's stepper, and this is what honouring it looks
        like in stored form. (A count above zero means DISTINCT meals, not
        days — see the generation prompt — so it never empties a slot.)
-    3. Anything still missing is filled as an open slot naming what
+    3. Any leftovers entry (derived_from.links_to set) whose earlier cook
+       doesn't actually check out — hasn't happened yet, isn't in this
+       plan, or is itself a leftovers night — gets reopened rather than
+       trusted. See tools.repair_leftover_chains.
+    4. Anything still missing is filled as an open slot naming what
        actually happened. This is the honest failure mode: the household
        sees a question rather than a blank, and the reason says plainly
        that the app couldn't settle it rather than inventing a constraint
-       it didn't have.
+       it didn't have. Anything DUPLICATED (two rows claiming one slot) is
+       resolved at the same point, keeping the first row.
     """
     # The period's real days. `_week_dates(...)[:day_count]` capped at seven,
     # so an 8-day period's last day never got its `out` tag honoured, never
@@ -3514,7 +3521,19 @@ def _finish_week_slots(
     # full invariant this guarantees regardless of what the model did.
     tools.apply_slot_needs_to_plan(plan_id, week_start_date, day_count=day_count)
 
+    # 4. A leftovers night whose derived_from.links_to points at a date
+    # that hasn't happened yet (or anywhere else invalid) — Loop Board "the
+    # planner scheduled Wednesday as leftovers of Thursday's cook". Runs
+    # before the audit below for the same reason every other pass here
+    # does: a slot this reopens must be seen as present, not questioned a
+    # second time as missing. See tools.repair_leftover_chains.
+    tools.repair_leftover_chains(plan_id)
+
     audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
+    # Two rows claiming one slot is how a night nobody is home ends up with
+    # groceries bought for it — audit_plan_slots has always computed this,
+    # but nothing consumed it until now. Keep the first row, drop the rest.
+    tools._dedupe_duplicate_slots(plan_id, audit["duplicated"])
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
         tools.plan_slot_open(

@@ -586,6 +586,196 @@ def attach_intake_to_plan(weekly_plan_id: int, intake_id: int) -> dict:
     return {"weekly_plan_id": weekly_plan_id, "intake_id": intake_id}
 
 
+# derived_from.links_to's one agreed shape (see schema.sql and the
+# generation prompt, both of which used to disagree with this and each
+# other — Loop Board "the planner scheduled Wednesday as leftovers of
+# Thursday's cook"). "entry_id:<n>" is also accepted and resolved below,
+# since one existing design doc used that form.
+_LINKS_TO_DATE_SLOT_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}):(breakfast|lunch|dinner)$")
+_LINKS_TO_ENTRY_ID_RE = re.compile(r"^entry_id:(\d+)$")
+
+# Offered when a leftovers night gets reopened — genuinely generic, since
+# by the time this runs there's no real recipe recommendation behind any
+# of them, unlike the model's own open slots. "Takeout, don't plan it"
+# matches the exact phrase the generation schema already promises the
+# household for this kind of honest last resort.
+_LEFTOVER_REPAIR_OPTIONS = [
+    {"label": "Something quick", "meta": "20 min or less"},
+    {"label": "Cook something fresh", "meta": ""},
+    {"label": "Takeout, don’t plan it", "meta": ""},
+]
+
+
+def _resolve_leftover_source(links_to: str, by_date_slot: dict, by_id: dict):
+    """
+    The row `links_to` claims to point at, or None if it doesn't resolve to
+    anything in THIS plan. Deliberately scoped to `by_date_slot`/`by_id` —
+    both built from a single plan's rows — so an entry_id belonging to a
+    different plan resolves to nothing rather than reaching across plans.
+    """
+    m = _LINKS_TO_DATE_SLOT_RE.match(links_to)
+    if m:
+        return by_date_slot.get((m.group(1), m.group(2)))
+    m = _LINKS_TO_ENTRY_ID_RE.match(links_to)
+    if m:
+        return by_id.get(int(m.group(1)))
+    return None
+
+
+def repair_leftover_chains(weekly_plan_id: int) -> dict:
+    """
+    Enforce that every leftovers entry actually eats a real, earlier cook —
+    the fix for "the planner scheduled Wednesday as leftovers of Thursday's
+    cook" (Loop Board). derived_from.links_to has existed since the
+    generation prompt started asking the model to set it, but nothing ever
+    read it back: a leftovers night pointing at a date that hadn't happened
+    yet saved exactly as written, same as one pointing at a date outside
+    the plan or at a night nothing was actually cooked. Two pathways write
+    a links_to (the household's `left` night tag, and the model's own
+    cook-once-eat-twice pairing) and both land in this same unchecked
+    field, so both get checked here.
+
+    Called from _finish_week_slots BEFORE audit_plan_slots, for the same
+    reason the out-night/zero-count/slot-needs passes run before it: a
+    slot repaired here becomes `open`, which the audit must see as present,
+    not question a second time as missing.
+
+    A chain is valid only if ALL of:
+    - links_to parses (see _resolve_leftover_source);
+    - the source date is strictly EARLIER than this entry's date;
+    - the source is a `planned` entry with a real meal, in THIS plan;
+    - the source is not itself a leftovers entry (chaining leftovers off
+      leftovers is exactly as backwards as the bug this exists to catch).
+
+    On failure, the week is never reordered — reordering a night the
+    household already saw a reasoning for is its own kind of surprise.
+    Instead the slot is reopened: cleared and handed back as a real
+    question, the same shape as any other open slot, with the failure kept
+    on derived_from.repaired/original_links_to rather than silently
+    dropped, so it stays traceable.
+
+    On success, the SOURCE (the earlier cook) gets a note recorded on its
+    own derived_from_json — no schema change needed for it — so the
+    Cooker/plan screens can eventually say "make double." Quantities
+    themselves are not scaled here; see cooker.py's batch_note for the
+    component-based equivalent of that half.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, date, slot, slot_state, recipe_id, freeform_meal, derived_from_json "
+        "FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL",
+        (weekly_plan_id, household_id()),
+    ).fetchall()
+    conn.close()
+
+    by_date_slot = {(r["date"], r["slot"]): r for r in rows}
+    by_id = {r["id"]: r for r in rows}
+
+    repaired = []
+    confirmed = []
+    for r in rows:
+        if r["slot"] not in WEEK_SLOTS or r["slot_state"] != "planned":
+            continue
+        derived = json.loads(r["derived_from_json"] or "{}")
+        links_to = (derived.get("links_to") or "").strip()
+        if not links_to:
+            continue
+
+        source = _resolve_leftover_source(links_to, by_date_slot, by_id)
+        issue = None
+        if source is None:
+            issue = "a meal I can’t find anymore"
+        elif source["date"] >= r["date"]:
+            issue = "a meal that hasn’t happened yet"
+        elif source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
+            issue = "a night nothing was actually cooked"
+        else:
+            source_derived = json.loads(source["derived_from_json"] or "{}")
+            if (source_derived.get("links_to") or "").strip():
+                issue = "another leftovers night, not an actual cook"
+
+        if issue:
+            clear_plan_slot(weekly_plan_id, r["date"], r["slot"])
+            repaired_derived = {k: v for k, v in derived.items() if k != "links_to"}
+            repaired_derived["repaired"] = "leftovers_backwards"
+            repaired_derived["original_links_to"] = links_to
+            plan_slot_open(
+                weekly_plan_id=weekly_plan_id,
+                meal_date=r["date"],
+                slot=r["slot"],
+                open_reason=(
+                    f"I’d planned {r['slot']} here as leftovers from {issue} — that’s my "
+                    "mistake, not yours. Pick something, or I’ll cook fresh."
+                ),
+                options=_LEFTOVER_REPAIR_OPTIONS,
+                derived_from=repaired_derived,
+            )
+            repaired.append({"date": r["date"], "slot": r["slot"], "original_links_to": links_to, "issue": issue})
+        else:
+            day_name = date.fromisoformat(r["date"]).strftime("%A")
+            note = f"I’ll set aside a double batch tonight — {day_name} eats the leftovers."
+            conn = get_conn()
+            existing = conn.execute(
+                "SELECT derived_from_json FROM meal_plan_entries WHERE id = ?", (source["id"],)
+            ).fetchone()
+            source_derived = json.loads(existing["derived_from_json"] or "{}") if existing else {}
+            source_derived["make_double_note"] = note
+            source_derived["make_double_for"] = f"{r['date']}:{r['slot']}"
+            conn.execute(
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+                (json.dumps(source_derived), source["id"]),
+            )
+            conn.commit()
+            conn.close()
+            confirmed.append({"date": r["date"], "slot": r["slot"], "source_entry_id": source["id"]})
+
+    if repaired:
+        logger.warning(
+            "Week plan %s had %d backwards leftovers chain(s); reopened: %s",
+            weekly_plan_id, len(repaired),
+            ", ".join(f"{x['date']} {x['slot']} ({x['issue']})" for x in repaired),
+        )
+    return {"repaired": repaired, "confirmed": confirmed}
+
+
+def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None:
+    """
+    audit_plan_slots computes `duplicated` (two-or-more rows claiming one
+    slot) but until now nothing consumed it — a latent bug found alongside
+    the leftovers-ordering one, same shape: a check that runs and is
+    ignored is no different from no check at all. Approving a week with a
+    duplicated slot buys groceries for the same slot twice.
+
+    Keeps the first-created row (lowest id — the order these were written
+    in) for each duplicated (date, slot) and removes the rest, reversing
+    any grocery contribution they made first, same care clear_plan_slot
+    takes for a single slot.
+    """
+    if not duplicated:
+        return
+    conn = get_conn()
+    for dup in duplicated:
+        rows = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? "
+            "AND household_id = ? AND component_category IS NULL ORDER BY id ASC",
+            (weekly_plan_id, dup["date"], dup["slot"], household_id()),
+        ).fetchall()
+        extras = rows[1:]
+        for row in extras:
+            _grocery._reverse_meal_grocery_contributions(row["id"])
+        if extras:
+            conn.execute(
+                "DELETE FROM meal_plan_entries WHERE id IN (%s)" % ",".join("?" * len(extras)),
+                tuple(r["id"] for r in extras),
+            )
+        logger.warning(
+            "Week plan %s had %d entries for %s %s; kept the first, removed %d duplicate(s)",
+            weekly_plan_id, dup["count"], dup["date"], dup["slot"], len(extras),
+        )
+    conn.commit()
+    conn.close()
+
+
 def audit_plan_slots(weekly_plan_id: int, day_count: int = 7, skip_days: int = 0) -> dict:
     """
     Check a generated week against the one rule it can't be allowed to
