@@ -646,6 +646,19 @@ def _add_recipe_ingredients_to_grocery_list(
     specific meal has an explicit attendance row. So a week where everyone
     is home shops precisely as it always has.
 
+    A cook-once-eat-twice chain moves that factor a second time, and moves
+    the other night to zero. A LEFTOVERS entry contributes NOTHING at all
+    — its dinner was already bought on the night it is actually cooked,
+    and buying the same recipe twice was the shopping half of the bug
+    Emily reported on 2026-09-04. The SOURCE entry buys for the whole
+    chain: its factor is multiplied by (everyone the batch feeds ÷ the
+    people at the cook night's own table), so a Tuesday cook for three
+    that also feeds a Thursday for three shops for six. The two factors
+    compose rather than fight: each is relative to a different baseline
+    (the household, then that night's table), so a chain with no
+    attendance rows anywhere doubles exactly, and one with someone away on
+    Thursday buys for five.
+
     KNOWN LIMITATION: this runs when ingredients are ADDED to the list, so
     it reflects attendance as it stood at approval. Changing a meal's
     headcount after the week is approved does not re-quantify what's
@@ -663,13 +676,29 @@ def _add_recipe_ingredients_to_grocery_list(
     scale = 1.0
     entry_conn = get_conn()
     entry_row = entry_conn.execute(
-        "SELECT date, slot FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        "SELECT date, slot, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (entry_id, household_id()),
     ).fetchone()
     entry_conn.close()
     if entry_row:
         from . import attendance as _attendance
         scale = _attendance.grocery_scale_factor(entry_row["date"], entry_row["slot"])
+        # The chain check sits at this one choke point rather than in the
+        # callers, so plan_meal's opt-in flag and approve_weekly_plan's
+        # whole-week yes both get it. It reads the plan's chains per entry
+        # — a query per meal on a path that runs once per approval, which
+        # is the cheap side of the trade against threading the map through
+        # three call sites.
+        if entry_row["weekly_plan_id"]:
+            from . import leftovers as _leftovers
+            chains = _leftovers.plan_leftover_chains(entry_row["weekly_plan_id"])
+            if entry_id in chains["leftovers"]:
+                return [], []
+            source = chains["sources"].get(entry_id)
+            if source:
+                batch = _leftovers.batch_for_source(source)
+                if batch["servings"] > 0 and batch["cook_eaters"] > 0:
+                    scale *= batch["servings"] / batch["cook_eaters"]
         if scale != 1.0:
             recipe_ingredients = _attendance.scale_ingredients(recipe_ingredients, scale)
     # Skip adding anything already tracked in pantry/fridge inventory (with

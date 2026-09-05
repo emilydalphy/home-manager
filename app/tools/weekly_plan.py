@@ -2342,7 +2342,16 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     Mirrors _add_recipe_ingredients_to_grocery_list's own two rules exactly
     — entries that already contributed are skipped, and an ingredient whose
     name matches a tracked inventory item with a real quantity counts as
-    already-in-the-kitchen rather than as something to buy. Deliberately
+    already-in-the-kitchen rather than as something to buy.
+
+    It does NOT mirror that function's third rule, the leftovers one, and
+    doesn't need to: a leftovers night contributes nothing on approval,
+    but it names the same dish as the cook night it eats from, so its
+    ingredients are already in this set of DISTINCT names anyway. The
+    promised count and the delivered count still match. (If a leftovers
+    entry ever named a different recipe from its source, this would
+    over-promise by those names — worth knowing, not worth a second
+    chain lookup on a read-only preview today.) Deliberately
     counts DISTINCT ingredient names, not raw rows: two recipes both
     wanting onions consolidate onto one grocery line (add_grocery_item
     merges by name), so counting rows would promise more items than

@@ -3732,6 +3732,10 @@ from advance_prep_notes alone.
 - For a component_based plan (planning_mode='component_based'), items aren't tied to a specific \
 day — use week_start_date as the reference point for any tasks needed (e.g. "before you start \
 using this component this week").
+- A meal with `servings` set is cooking one batch for more than one night — `covers` says which \
+nights. Its `ingredients` are ALREADY scaled to that batch, so size any task off them as written \
+(marinate all of it, thaw all of it). The nights eating those leftovers are not in this list at \
+all and must not get tasks of their own: nothing is cooked on them.
 - Keep descriptions specific and actionable, e.g. "Marinate the chicken for the stir fry (at \
 least 4 hours, can do the night before)" rather than just "prep chicken."
 - Batch-prep consolidation: before finalizing, look across the WHOLE week's ingredients for \
@@ -3773,6 +3777,12 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
     for this plan rather than duplicating it. Returns the plan's progress
     view (see get_plan_progress) so the caller sees both the schedule and
     current done/outstanding state in one call.
+
+    A leftovers night is left out of the context entirely and its cook
+    night is described at the size it actually cooks (Emily, 2026-09-04):
+    nothing is prepped ahead for a night that only reheats, and the night
+    that does cook is marinating enough for two dinners, not one. See
+    tools.leftovers.
     """
     plan = tools.get_weekly_plan(weekly_plan_id)
     plan_id = plan.get("weekly_plan_id")
@@ -3780,9 +3790,27 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
         raise ValueError("No weekly plan exists yet — generate one first with generate_weekly_plan.")
 
     recipes_by_name = {r["name"]: r for r in tools.list_recipes()}
+    chains = tools.plan_leftover_chains(plan_id)
     meals_detail = []
     for m in plan["meals"]:
+        entry_id = m.get("entry_id")
+        if entry_id in chains["leftovers"]:
+            continue  # a reheat night: nothing to prep ahead for it
         recipe = recipes_by_name.get(m["meal"])
+        ingredients = recipe["ingredients"] if recipe else []
+        servings = None
+        covers = None
+        source = chains["sources"].get(entry_id)
+        if source and recipe:
+            batch = tools.batch_for_source(source)
+            if batch["servings"] > 0:
+                servings = batch["servings"]
+                covers = tools.leftovers_covers_note(source, batch["servings"])
+                # The model sizes tasks off what it is shown, so show it
+                # the batch: "marinate 2 lb of beef" for a night that also
+                # feeds Thursday, not the 1 lb the recipe is written for.
+                scaled = tools.scale_recipe(m["meal"], batch["servings"])
+                ingredients = scaled["scaled_ingredients"]
         meals_detail.append({
             "date": m["date"],
             "meal": m["meal"],
@@ -3794,10 +3822,13 @@ def generate_prep_schedule(weekly_plan_id: int | None = None) -> dict:
             # and consolidate that into one batch-prep task instead of one
             # per meal (see the "batch-prep consolidation" prompt guidance
             # in generate_prep_schedule_llm).
-            "ingredients": recipe["ingredients"] if recipe else [],
+            "ingredients": ingredients,
             "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
             "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
+            # Only set on a night cooking for more than its own table.
+            "servings": servings,
+            "covers": covers,
         })
 
     context = {

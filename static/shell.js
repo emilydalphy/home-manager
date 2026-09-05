@@ -86,6 +86,14 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>'
   };
 
+  // A leftovers night is a reheat, not a cook (Emily, 2026-09-04) — so its
+  // one action is not "Start cooking" and not "Mark cooked". The wording
+  // itself is still Emily's call; it lives here, in ONE place, used by both
+  // the Cook screen's reheat card and Today's hero, so changing it is a
+  // one-line change rather than a hunt.
+  var REHEAT_ACTION_LABEL = 'Mark eaten';
+  var REHEAT_UNDO_LABEL = 'Mark not eaten';
+
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
     { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
@@ -797,25 +805,48 @@
         card.hidden = true;
         return;
       }
+      // Tonight is a reheat, not a cook (Emily, 2026-09-04): the dish was
+      // cooked on an earlier night in a batch big enough to cover this
+      // one. So the hero names what it is and where it came from, drops
+      // the timings and the flame, and offers the one thing there is to
+      // do — never "Start cooking", which would open a cook flow for a
+      // meal nobody is cooking.
+      var isReheat = !!meal.is_leftovers;
       var minutes = (meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0);
       var chips = '';
-      if (minutes) chips += '<span class="hero-chip">' + minutes + ' min</span>';
-      if (meal.default_servings) chips += '<span class="hero-chip">Serves ' + escapeHtml(meal.default_servings) + '</span>';
+      if (!isReheat && minutes) chips += '<span class="hero-chip">' + minutes + ' min</span>';
+      if (isReheat && meal.servings) {
+        chips += '<span class="hero-chip">for ' + escapeHtml(meal.servings) + '</span>';
+      } else if (!isReheat && meal.default_servings) {
+        chips += '<span class="hero-chip">Serves ' + escapeHtml(meal.default_servings) + '</span>';
+      }
+      var dish = isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner');
+      var accent = isReheat ? (meal.reheat_note || '') : (meal.reasoning || '');
       card.hidden = false;
       card.innerHTML =
         '<div class="hero-top">' +
           '<span class="hero-badge">Tonight&rsquo;s dinner</span>' +
           '<span class="hero-rule"></span>' +
-          '<span class="hero-icon">' + ICONS.flame + '</span>' +
+          (isReheat ? '' : '<span class="hero-icon">' + ICONS.flame + '</span>') +
         '</div>' +
-        '<div class="hero-dish' + dishSizeClass(meal.meal) + '">' + escapeHtml(meal.meal || 'Dinner') + '</div>' +
-        (meal.reasoning ? '<div class="hero-accent">' + escapeHtml(meal.reasoning) + '</div>' : '') +
+        '<div class="hero-dish' + dishSizeClass(dish) + '">' + escapeHtml(dish) + '</div>' +
+        (accent ? '<div class="hero-accent">' + escapeHtml(accent) + '</div>' : '') +
         (chips ? '<div class="hero-chips">' + chips + '</div>' : '') +
         '<button type="button" class="hero-action" id="dinner-cook-mode">' +
-          '<span>Start cooking</span>' + ICONS.arrow +
+          '<span>' + escapeHtml(
+            isReheat
+              ? (meal.cooked_status === 'done' ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
+              : 'Start cooking'
+          ) + '</span>' + ICONS.arrow +
         '</button>' +
         '<button type="button" class="hero-quiet" id="dinner-swap">Swap tonight for something else</button>';
-      card.querySelector('#dinner-cook-mode').addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook', mealsFocus: true }); });
+      card.querySelector('#dinner-cook-mode').addEventListener('click', function () {
+        // A reheat has no cook flow to open, so its action does the thing
+        // itself and re-reads the card, rather than taking someone to a
+        // recipe screen that would have nothing on it.
+        if (isReheat) return markTonightEaten(panel, meal);
+        activateTab('week', true, { mealsView: 'cook', mealsFocus: true });
+      });
       card.querySelector('#dinner-swap').addEventListener('click', function () {
         openAskSheet('Swap tonight for something faster');
       });
@@ -823,6 +854,31 @@
       console.warn('Tonight\'s dinner lookup failed:', err);
       card.hidden = true;
       renderPrepNudge(panel, []);
+    }
+  }
+
+  // Today's one action on a reheat night. Same endpoint Cook mode's
+  // check-off uses (/api/cooker/check-meal), same as the defrost tile
+  // reuses /api/cooker/check-prep rather than inventing its own — then
+  // re-read the card so it comes back showing the night as handled.
+  async function markTonightEaten(panel, meal) {
+    var btn = panel.querySelector('#dinner-cook-mode');
+    if (btn) btn.disabled = true;
+    var next = meal.cooked_status === 'done' ? 'pending' : 'done';
+    try {
+      var res = await fetch('/api/cooker/check-meal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: meal.entry_id, status: next })
+      });
+      if (!res.ok) throw new Error('check-meal failed');
+      showToast(next === 'done' ? 'Marked eaten.' : 'Back to not eaten.');
+      loadTonightsDinner(panel);
+      refreshCookView();
+    } catch (err) {
+      console.warn('Could not mark tonight eaten:', err);
+      if (btn) btn.disabled = false;
+      showToast('That didn’t save — try again.');
     }
   }
 
@@ -4602,6 +4658,52 @@
     '</div>';
   }
 
+  // "for 6" once a night is cooking one batch across more than one dinner
+  // (get_cooker_view sets `servings` and `covers_note` together on exactly
+  // those nights — see cooker._apply_leftover_chains). Everything else
+  // keeps the "Serves 4" it has always shown, read off the recipe.
+  function cookServesChip(meal) {
+    if (meal.covers_note && meal.servings) return 'for ' + meal.servings;
+    return meal.default_servings ? 'Serves ' + meal.default_servings : '';
+  }
+
+  // A reheat night, in place of the cook hero. Emily, 2026-09-04: the dish
+  // is cooked on ONE night, and the night that eats the leftovers should
+  // not be a second cook. So: no recipe, no steps, no prep, no Bulk badge,
+  // no "Start cooking" — the source it came from, an optional line of the
+  // recipe's own reheating advice, and one action.
+  function cookReheatCardHtml(meal, chipLabel) {
+    var isDone = meal.cooked_status === 'done';
+    var chips = [];
+    if (meal.servings) chips.push('for ' + meal.servings);
+    var note = meal.reheat_note || '';
+    return '<div class="cook-hero-top">' +
+        '<span class="cook-hero-chip">' + escapeHtml(chipLabel) + '</span>' +
+        '<span class="cook-hero-rule"></span>' +
+      '</div>' +
+      '<div class="cook-hero-line">' +
+        '<h2 class="cook-hero-headline' + (isDone ? ' is-done' : '') + '">' +
+          escapeHtml(meal.leftovers_headline || 'Leftovers') +
+        '</h2>' +
+        (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
+      '</div>' +
+      (chips.length
+        ? '<div class="cook-hero-chips">' + chips.map(function (c) {
+            return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
+      '<div class="cook-hero-actions">' +
+        '<button type="button" class="cook-hero-action" ' +
+          'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
+          '<span>' + escapeHtml(isDone ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL) + '</span>' + (isDone ? '' : ICONS.arrow) +
+        '</button>' +
+      '</div>';
+  }
+
+  function cookReheatHeroHtml(meal) {
+    return '<div class="cook-hero cook-hero-quiet">' + cookReheatCardHtml(meal, 'Tonight') + '</div>';
+  }
+
   // The one hero on this screen, and the one apricot action in it.
   function cookHeroHtml(meal, idx) {
     if (!meal) {
@@ -4614,6 +4716,7 @@
         '<p class="cook-hero-note">the rest of the week is below</p>' +
       '</div>';
     }
+    if (meal.is_leftovers) return cookReheatHeroHtml(meal);
     var isDone = meal.cooked_status === 'done';
     var chips = [];
     if (meal.prep_time_minutes || meal.cook_time_minutes) {
@@ -4622,13 +4725,18 @@
       if (meal.cook_time_minutes) bits.push(meal.cook_time_minutes + 'm cook');
       chips.push(bits.join(' + '));
     }
-    if (meal.default_servings) chips.push('Serves ' + meal.default_servings);
+    // "for 6" for a night cooking one batch across more than one dinner
+    // (see cookServesChip); "Serves 4" for every ordinary night, unchanged.
+    chips.push(cookServesChip(meal));
     if (meal.batch_note) chips.push('Bulk ×' + meal.meal_count);
+    chips = chips.filter(Boolean);
 
     // Newsreader italic, once per screen. The reasoning is the honest thing
     // to say here; the advance-prep note is the more useful one when there
-    // is one, because it is what changes what you do next.
-    var note = meal.advance_prep_notes || meal.reasoning || '';
+    // is one, because it is what changes what you do next — and the note
+    // about a batch covering a later night's leftovers outranks both,
+    // because it is the reason this card says 6 and not 3.
+    var note = meal.covers_note || meal.advance_prep_notes || meal.reasoning || '';
 
     return '<div class="cook-hero">' +
       '<div class="cook-hero-top">' +
@@ -4722,17 +4830,32 @@
           var dayLabel = m.component_category
             ? m.component_category
             : (m.date ? dayName(m.date, { weekday: 'short' }).slice(0, 3).toUpperCase() : '');
+          // A reheat night is a row, not a way into a recipe: its name is
+          // plain text rather than a button into the focused cook screen,
+          // and its box says eaten rather than cooked. It keeps the
+          // "Leftovers — Tuesday's Bulgogi" wording the reheat card uses,
+          // so the same night reads the same way wherever you meet it.
+          var isReheat = !!m.is_leftovers;
+          var rowLabel = isReheat
+            ? (m.leftovers_headline || 'Leftovers')
+            : (m.meal || '');
+          var checkLabel = isReheat
+            ? (isDone ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
+            : (isDone ? 'Mark not cooked' : 'Mark cooked');
           return '<div class="cook-week-item' + (isDone ? ' is-done' : '') + '">' +
             '<div class="cook-week-row">' +
               '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
                 'data-cook="check-meal" data-entry-id="' + m.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
-                'aria-label="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>' +
+                'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
               '<span class="cook-week-day">' + escapeHtml(dayLabel) + '</span>' +
-              '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + idx + '" data-at="steps">' +
-                escapeHtml(m.meal || '') +
-              '</button>' +
-              (m.advance_prep_notes ? '<span class="cook-badge cook-badge-warm">Prep ahead</span>' : '') +
-              (m.batch_note ? '<span class="cook-badge">Bulk ×' + m.meal_count + '</span>' : '') +
+              (isReheat
+                ? '<span class="cook-week-name">' + escapeHtml(rowLabel) + '</span>'
+                : '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + idx + '" data-at="steps">' +
+                    escapeHtml(rowLabel) +
+                  '</button>') +
+              (isReheat ? '<span class="cook-badge">Reheat</span>' : '') +
+              (!isReheat && m.advance_prep_notes ? '<span class="cook-badge cook-badge-warm">Prep ahead</span>' : '') +
+              (!isReheat && m.batch_note ? '<span class="cook-badge">Bulk ×' + m.meal_count + '</span>' : '') +
             '</div>' +
           '</div>';
         }).join('') +
@@ -4861,6 +4984,12 @@
   // the plain-text related_meal name save_prep_tasks stores, so that's the
   // fallback match.
   function cookFocusPrepTasks(data, meal) {
+    // Nothing is cooked on a reheat night, so nothing is prepped for one.
+    // The backend already declines to write those tasks (defrost.py,
+    // agent.generate_prep_schedule); this stops an older 'general' task
+    // still carrying the source meal's NAME from matching the reheat
+    // night by the related_meal fallback below.
+    if (meal.is_leftovers) return [];
     var all = (data && data.prep_tasks) || [];
     var entryIds = meal.entry_ids || [meal.entry_id];
     var mealName = (meal.meal || '').trim().toLowerCase();
@@ -4898,6 +5027,11 @@
   // mid-cook. attendance is null for a component-based meal's placeholder
   // date (see get_cooker_view) — no real day to answer "who's home" about.
   function cookAttendanceChip(meal) {
+    // A batch night already answers "for how many" with the number it is
+    // actually cooking (its own table plus the leftover nights') — showing
+    // tonight's three beside a six-serving recipe would just be two
+    // different answers to the same question.
+    if (meal.covers_note && meal.servings) return null;
     var att = meal.attendance;
     if (!att) return null;
     var label = 'for ' + att.present_count;
@@ -4907,8 +5041,31 @@
     return label;
   }
 
+  // The focused screen for a reheat night — reachable from Today's hero,
+  // which deep-links straight into focus for tonight. Deliberately the
+  // same compact card the overview hero shows rather than a full-screen
+  // recipe with the recipe taken out of it: there is no cook here, so
+  // there is nothing for a cook screen to hold.
+  function cookReheatFocusHtml(meal) {
+    var src = meal.leftovers_from || {};
+    var dayLabel = meal.date ? cookDateLabel(meal.date) : 'Leftovers';
+    var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
+    return '<div class="cook-focus">' +
+      '<div class="cook-hero cook-hero-quiet">' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&larr; Back to the week</button>' +
+        cookReheatCardHtml(meal, dayLabel) +
+      '</div>' +
+      (srcLine
+        ? '<div class="cook-body"><div class="card cook-focus-recipe">' +
+            '<p class="cook-detail-p">' + escapeHtml(srcLine) + '</p>' +
+          '</div></div>'
+        : '') +
+    '</div>';
+  }
+
   function cookFocusHtml(data, meals, idx) {
     var meal = meals[idx];
+    if (meal.is_leftovers) return cookReheatFocusHtml(meal);
     var isDone = meal.cooked_status === 'done';
     // A component-based plan's date is a placeholder (week_start, per
     // get_weekly_plan) — showing it as a real day would be a lie about
@@ -4924,12 +5081,17 @@
       chips.push(bits.join(' + '));
     }
     if (meal.batch_note) chips.push('Bulk ×' + meal.meal_count);
+    // Same "for 6" the overview hero shows on a batch night — the focused
+    // screen is where the ingredients are actually read off, so it is the
+    // one place the number really has to be right in front of them.
+    if (meal.covers_note && meal.servings) chips.push('for ' + meal.servings);
     var attChip = cookAttendanceChip(meal);
     if (attChip) chips.push(attChip);
 
     // Newsreader italic, once per screen — same rule as the overview hero,
-    // and this replaces it (they never show at once).
-    var note = meal.advance_prep_notes || meal.reasoning || '';
+    // and this replaces it (they never show at once). Same precedence too:
+    // the batch note first, because it explains the quantities below it.
+    var note = meal.covers_note || meal.advance_prep_notes || meal.reasoning || '';
     var prepTasks = cookFocusPrepTasks(data, meal);
 
     return '<div class="cook-focus">' +

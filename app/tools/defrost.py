@@ -41,7 +41,9 @@ from datetime import date, datetime, time, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
+from . import attendance as _attendance
 from . import inventory as _inventory
+from . import leftovers as _leftovers
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
@@ -191,6 +193,21 @@ def _describe(item: str, meal: str, meal_date: str) -> str:
     return f"Move the {item} to the fridge — for {_weekday_name(meal_date)}'s {meal}."
 
 
+def _batch_quantity(ing: dict, batch_factor: float) -> str:
+    """
+    How much of this ingredient to actually move to the fridge. 1.0 for an
+    ordinary meal, which leaves the recipe's own wording untouched, byte
+    for byte; more than that for a night cooking for its own table plus a
+    later night's leftovers. Rounded the way an amount you handle is
+    written rather than the way the division lands — the same
+    attendance.scale_ingredients the shopping list already goes through.
+    """
+    qty = (ing.get("qty") or "").strip()
+    if batch_factor == 1.0 or not qty:
+        return qty
+    return (_attendance.scale_ingredients([{**ing, "qty": qty}], batch_factor)[0].get("qty") or "").strip()
+
+
 def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: str | None) -> list[dict]:
     """
     Walk a plan's meals, cross-referencing each recipe's ingredient list
@@ -208,15 +225,31 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
     with its own move date and its own quantity, rather than merged into
     one. Documented as a v1 simplification (see the ticket write-up) —
     consolidating same-day/same-item defrosts is a reasonable follow-up.
+
+    A leftovers night is skipped outright and its cook night's quantity is
+    scaled up instead (Emily, 2026-09-04). Nothing is cooked on a reheat
+    night, so "move the beef to the fridge for Thursday" was a reminder
+    for a thing that never happens — and the Tuesday it really belongs to
+    has to thaw enough beef for both nights, not one.
     """
     if not freezer_items:
         return []
     recipes_by_name = {r["name"]: r for r in _recipes.list_recipes()}
+    chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"]) if plan.get("weekly_plan_id") else {"sources": {}, "leftovers": {}}
     candidates = []
     for m in plan.get("meals") or []:
         recipe = recipes_by_name.get(m.get("meal"))
         if not recipe:
             continue
+        entry_id = m.get("entry_id")
+        if entry_id in chains["leftovers"]:
+            continue
+        batch_factor = 1.0
+        source = chains["sources"].get(entry_id)
+        if source:
+            batch = _leftovers.batch_for_source(source)
+            if batch["servings"] > 0 and batch["cook_eaters"] > 0:
+                batch_factor = batch["servings"] / batch["cook_eaters"]
         for ing in recipe.get("ingredients") or []:
             ing_name = (ing.get("item") or "").strip()
             if not ing_name:
@@ -232,7 +265,7 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
                 "task_date": move_date,
                 "description": _describe(match["item"], m["meal"], m["date"]),
                 "related_meal": m["meal"],
-                "quantity": (ing.get("qty") or "").strip(),
+                "quantity": _batch_quantity(ing, batch_factor),
                 "lead_hours": lead_hours,
                 "lead_tier": tier,
             })
