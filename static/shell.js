@@ -219,6 +219,14 @@
     // does not fight them.
     closeKitchenSheet();
 
+    // The shop-done handoff is page-view-only (see
+    // groceryState.justFinishedTrip's declaration, further down this file
+    // but already assigned by the time any tab click can reach here, same
+    // as weekState below) — leaving Grocery for any other tab and coming
+    // back later must not still show "that's the shopping done" from a
+    // stop finished earlier in this same visit.
+    if (key !== 'grocery') groceryState.justFinishedTrip = false;
+
     Object.keys(panels).forEach(function (k) {
       panels[k].classList.toggle('active', k === key);
     });
@@ -259,6 +267,13 @@
     // also pass `mealsFocus`, so they land IN tonight's focused screen, not
     // just on the Cook overview — see setMealsView.
     if (tab.week && opts && opts.mealsView) setMealsView(opts.mealsView, opts.mealsFocus);
+
+    // Grocery has three states (To buy/Plan stops/Review — see groSetScreen).
+    // `opts.groScreen` is how the approve-week receipt's "Take me to the
+    // list" (and its toast twin) land on Plan stops instead of the default
+    // To-buy state — cheap because groSetScreen just flips groceryState and
+    // re-renders; it works whether or not Grocery was already built above.
+    if (tab.grocery && opts && opts.groScreen) groSetScreen(opts.groScreen);
 
     // A draft awaiting a decision shouldn't hide just because you left and
     // came back (Loop Board: "land on the review moment"). #shell-scroll is
@@ -1201,7 +1216,26 @@
     bucketExpanded: {},     // one at a time
     openFlagKey: null,
     voiceSession: null,
-    voiceLog: []
+    voiceLog: [],
+    // Page-view only, like weekReceiptHandoffDismissed — "I'll come back to
+    // it" on the shop-done handoff (Plan stops, everything bought) just
+    // collapses the offer for this visit, no persistence.
+    shopDoneHandoffDismissed: false,
+    // Whether a stop was finished in THIS page view (see 'done-here' below).
+    // groTotals().done can't answer "did anything get bought this cycle" —
+    // it sums purchased + in_cart rows over the household's entire
+    // lifetime, and nothing ever resets a purchased row (clear_stale_
+    // grocery_items only touches 'needed' rows), so it stays > 0 forever
+    // after the first-ever trip. Using it to gate the shop-done handoff
+    // meant approving a new week that added no items still showed "that's
+    // the shopping done" — a false congratulations for a list that was
+    // simply never repopulated. This flag is the honest replacement: true
+    // only from a successful finish-this-stop in this visit, and cleared
+    // (a) the moment the list gains needed items again (groPlanHtml), so a
+    // stale trip from before a restock can't resurface once the restock is
+    // bought out too, and (b) on leaving the Grocery tab for any other tab
+    // (activateTab), so "away and back" doesn't resurrect it either.
+    justFinishedTrip: false
   };
 
   var GRO_PS_CAP = 5;
@@ -1753,11 +1787,74 @@
     return html + '</div>';
   }
 
+  // Tonight's dinner name, read from whatever the Meals tab has already
+  // cached in weekState (see weekState below) — never a new fetch just for
+  // this line. Null whenever Meals hasn't been visited yet this session, or
+  // tonight has no settled dish (still open, or a planned night off), which
+  // the shop-done handoff below treats as "say it without the dish".
+  function tonightDinnerName() {
+    var data = weekState.data;
+    if (!data || !data.days) return null;
+    var todayStr = todayLocalStr();
+    var day = data.days.filter(function (d) { return d.date === todayStr; })[0];
+    var entry = day && day.dinner;
+    if (entry && entry.title && entry.state !== 'open' && entry.state !== 'planned_empty') return entry.title;
+    return null;
+  }
+
+  // The handoff for "that's the shopping done" (Emily, 2026-09-04's ask to
+  // walk the loop forward): shown in Plan stops only once the list has
+  // nothing left to buy AND a stop was actually finished in this page view
+  // — groceryState.justFinishedTrip, not a lifetime purchased/in_cart count
+  // (see that flag's declaration for why) — so groPlanHtml below can tell
+  // the never-had-anything case apart from this one. Not the screen's
+  // apricot primary — the hero's own "Nothing left to buy" chip already
+  // sits there, dimmed but still apricot-filled (Rule 5), so this reuses
+  // the needs-you-card pattern of a spruce-fill primary + outline
+  // secondary instead of stacking a second apricot on the same screen.
+  function groShopDoneHtml() {
+    var dish = tonightDinnerName();
+    var line = dish
+      ? 'That’s the shopping done. Tonight it’s ' + escapeHtml(dish) + '.'
+      : 'That’s the shopping done.';
+    return (
+      '<div class="shell-card gro-shop-done-card">' +
+        '<div class="gro-shop-done-line">' + line + '</div>' +
+        '<div class="gro-shop-done-actions">' +
+          '<button type="button" class="btn-gold" data-gro="shop-done-tonight">Show me tonight</button>' +
+          '<button type="button" class="btn-sand" data-gro="shop-done-later">I’ll come back to it</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
   // ---------- State: Plan your stops ----------
   function groPlanHtml(data) {
     var unsorted = groUnsorted(data);
     var buckets = groStoresWithNeeded(data);
+    if (unsorted.length || buckets.length) {
+      // The list has needed items again — any justFinishedTrip signal left
+      // over from an earlier stop in this same visit no longer describes
+      // this list, so it must not resurface once this batch is bought out
+      // too. See the flag's declaration in groceryState above.
+      groceryState.justFinishedTrip = false;
+    }
     if (!unsorted.length && !buckets.length) {
+      // Two different empty states share this shape: a list that never had
+      // anything on it (the real empty case) vs. one that just got fully
+      // shopped in this page view — conflating them would send "add items
+      // from the To buy tab" to someone who just finished a trip.
+      if (groceryState.justFinishedTrip) {
+        if (groceryState.shopDoneHandoffDismissed) {
+          return (
+            '<div class="shell-card gro-shop-done-card gro-shop-done-dismissed">' +
+              '<div class="gro-shop-done-line">That’s the shopping done.</div>' +
+              '<button type="button" class="gro-shop-done-link" data-gro="shop-done-tonight">See tonight’s dinner &rarr;</button>' +
+            '</div>'
+          );
+        }
+        return groShopDoneHtml();
+      }
       return '<p class="gro-empty">Nothing on the list yet — add items from the To buy tab.</p>';
     }
 
@@ -2332,6 +2429,11 @@
           return groFinishStore(doneStore);
         }, "Couldn't finish this stop — try again.").then(function (ok) {
           if (!ok) { el.disabled = false; return; }
+          // A stop was actually finished in this page view — the honest
+          // signal groPlanHtml's shop-done handoff waits for. See
+          // groceryState.justFinishedTrip's declaration for why this can't
+          // just be read off groTotals().done.
+          groceryState.justFinishedTrip = true;
           groSetScreen('plan');
           showToast('Stop saved — I’ll remember what you bought where');
         });
@@ -2357,6 +2459,17 @@
 
       case 'goto-plan':
         groSetScreen('plan');
+        return;
+
+      // The shop-done handoff (Plan stops, nothing left to buy after a
+      // trip) — see groShopDoneHtml.
+      case 'shop-done-tonight':
+        activateTab('week', true, { mealsView: 'cook', mealsFocus: true });
+        return;
+
+      case 'shop-done-later':
+        groceryState.shopDoneHandoffDismissed = true;
+        renderGrocery();
         return;
 
       // Review's confirmation section — undo either kind of "already have"
@@ -3715,6 +3828,13 @@
     if (todayPanel && todayPanel.dataset.built) loadGrocerySummary(todayPanel);
   }
 
+  // Keyed by weekly_plan_id, page-view only (no fetch, no server write) —
+  // Emily's ask was to walk the loop forward, not to remember a "no" past
+  // this visit, and reopening this exact question every time the approved
+  // receipt re-renders (a tab switch away and back, say) would be worse
+  // than just leaving the offer up. See renderWeekApproval's handoff row.
+  var weekReceiptHandoffDismissed = {};
+
   function renderWeekApproval(panel, data) {
     var row = panel.querySelector('#week-approve-row');
     if (!row) return;
@@ -3724,10 +3844,33 @@
       var who = (data.approved_by || '').trim();
       var time = approvedAtLabel(data.approved_at);
       var eyebrow = '✓ APPROVED' + (who ? ' BY ' + who.toUpperCase() : '') + (time ? ' · ' + time : '');
+      // The loop nudge (Emily, 2026-09-04): the receipt already says the
+      // list is built, so it's the natural place to ask whether she wants
+      // to go plan the trip from here. Only offered when approving
+      // actually put something on the list — a week that needed nothing
+      // has nowhere useful to send her. This is also the screen's one
+      // apricot primary (Rule 5): renderWeekReviewBand renders nothing
+      // once a week is approved, so nothing else on Meals is competing
+      // for it.
+      var added = data.approved_grocery_added || 0;
+      var handoffHtml = '';
+      if (added && !weekReceiptHandoffDismissed[data.weekly_plan_id]) {
+        handoffHtml =
+          '<div class="week-receipt-handoff">' +
+            '<div class="week-receipt-handoff-line">' +
+              escapeHtml('Your list is ready — ' + added + (added === 1 ? ' item.' : ' items.')) +
+            '</div>' +
+            '<div class="week-receipt-handoff-actions">' +
+              '<button type="button" class="btn-gold" id="week-receipt-go">Take me to the list</button>' +
+              '<button type="button" class="week-receipt-not-now" id="week-receipt-not-now">Not now</button>' +
+            '</div>' +
+          '</div>';
+      }
       row.innerHTML =
         '<div class="shell-card week-receipt-card">' +
           '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
           '<div class="week-receipt-body">' + escapeHtml(receiptBodyText(data)) + '</div>' +
+          handoffHtml +
           // The receipt is the moment a household is most likely to notice
           // the week wasn't quite right, so the way to fix that permanently
           // is offered right here rather than only on the settings screen
@@ -3742,6 +3885,22 @@
         '</div>';
       row.querySelector('#week-reopen-btn').addEventListener('click', function () { reopenWeek(panel, data); });
       row.querySelector('#week-setup-link').addEventListener('click', openMealSetup);
+      var goBtn = row.querySelector('#week-receipt-go');
+      if (goBtn) {
+        goBtn.addEventListener('click', function () {
+          // Plan stops is the screen that's actually about the trip Emily
+          // just asked to be walked toward, not just the list itself.
+          activateTab('grocery', true, { groScreen: 'plan' });
+        });
+      }
+      var notNowBtn = row.querySelector('#week-receipt-not-now');
+      if (notNowBtn) {
+        notNowBtn.addEventListener('click', function () {
+          weekReceiptHandoffDismissed[data.weekly_plan_id] = true;
+          var handoff = row.querySelector('.week-receipt-handoff');
+          if (handoff) handoff.remove();
+        });
+      }
       return;
     }
 
@@ -4119,10 +4278,14 @@
       // clash; being quiet about it is not.
       var approval = {};
       try { approval = (await res.json()) || {}; } catch (e) { approval = {}; }
+      var openListAction = {
+        label: 'Open the list',
+        onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); }
+      };
       if (approval.conflicts_note) {
-        showToast('Approved. ' + approval.conflicts_note, null, 9000);
+        showToast('Approved. ' + approval.conflicts_note, openListAction, 9000);
       } else {
-        showToast('Approved. I’ll get your list together.');
+        showToast('Approved. I’ll get your list together.', openListAction);
       }
       // Approving is the one action in this app that writes to the grocery
       // list wholesale, so anything already showing that list is stale the
