@@ -10,7 +10,9 @@ import datetime
 
 import pytest
 
-from app import agent, tools
+from app import agent, db, tools
+from app.db import get_conn
+from app.tools._shared import household_id
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -113,11 +115,88 @@ def test_set_dinner_window_round_trips_and_validates():
 
 
 def test_set_planning_anchor_round_trips_and_validates():
-    result = tools.set_planning_anchor("sunday_before")
-    assert result == {"planning_anchor": "sunday_before"}
-    assert tools.get_household_rhythm()["planning_anchor"] == "sunday_before"
+    # Emily's decision, 2026-09-05: a weekday the plan/list are final by,
+    # or 'as_we_go' — not the retired cadence names.
+    result = tools.set_planning_anchor("friday")
+    assert result == {"planning_anchor": "friday"}
+    assert tools.get_household_rhythm()["planning_anchor"] == "friday"
     with pytest.raises(ValueError):
         tools.set_planning_anchor("whenever")
+    with pytest.raises(ValueError):
+        tools.set_planning_anchor("sunday_before")  # the old cadence name, no longer valid
+
+
+def test_planning_anchor_label_reads_back_plainly():
+    assert tools.planning_anchor_label("friday") == "Ready on Friday"
+    assert tools.planning_anchor_label("as_we_go") == "As we go — planned a few days at a time"
+    assert tools.planning_anchor_label("") == ""
+    tools.set_planning_anchor("friday")
+    assert tools.get_household_rhythm()["planning_anchor_label"] == "Ready on Friday"
+
+
+def test_chat_tool_set_planning_anchor_accepts_a_weekday():
+    spec = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "set_planning_anchor")
+    enum = spec["input_schema"]["properties"]["value"]["enum"]
+    assert set(enum) == set(tools.PLANNING_ANCHOR_WEEKDAYS) | {"as_we_go"}
+    assert "sunday_before" not in enum and "midweek" not in enum
+
+    result = agent.TOOL_FUNCTIONS["set_planning_anchor"]("friday")
+    assert result == {"planning_anchor": "friday"}
+
+
+# ---------- migration: the retired cadence names map onto weekdays ----------
+
+def test_migration_maps_old_cadence_values_onto_the_new_weekdays():
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO household_rhythm (household_id, member_name, weekday, fact_type, value, who, source, updated_at) "
+        "VALUES (?, '', '', 'planning_anchor', 'sunday_before', '', 'onboarding', datetime('now'))",
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+
+    conn = get_conn()
+    db._migrate_planning_anchor_values(conn)
+    conn.commit()
+    conn.close()
+
+    assert tools.get_household_rhythm()["planning_anchor"] == "sunday"
+
+
+def test_migration_maps_midweek_onto_wednesday():
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO household_rhythm (household_id, member_name, weekday, fact_type, value, who, source, updated_at) "
+        "VALUES (?, '', '', 'planning_anchor', 'midweek', '', 'onboarding', datetime('now'))",
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+
+    conn = get_conn()
+    db._migrate_planning_anchor_values(conn)
+    conn.commit()
+    conn.close()
+
+    assert tools.get_household_rhythm()["planning_anchor"] == "wednesday"
+
+
+def test_migration_leaves_as_we_go_and_new_values_untouched():
+    tools.set_planning_anchor("as_we_go")
+    conn = get_conn()
+    db._migrate_planning_anchor_values(conn)
+    conn.commit()
+    conn.close()
+    assert tools.get_household_rhythm()["planning_anchor"] == "as_we_go"
+
+    tools.set_planning_anchor("friday")
+    conn = get_conn()
+    db._migrate_planning_anchor_values(conn)
+    db._migrate_planning_anchor_values(conn)  # idempotent
+    conn.commit()
+    conn.close()
+    assert tools.get_household_rhythm()["planning_anchor"] == "friday"
 
 
 def test_set_leftovers_stance_round_trips_and_validates():
@@ -133,12 +212,12 @@ def test_get_household_rhythm_includes_all_six_locked_facts():
     tools.set_meals_together("dinner_only")
     tools.set_cooking_role("turns")
     tools.set_dinner_window("later")
-    tools.set_planning_anchor("midweek")
+    tools.set_planning_anchor("wednesday")
     tools.set_leftovers_stance("fine_sometimes")
 
     rhythm = tools.get_household_rhythm()
     assert rhythm["dinner_window"] == "later"
-    assert rhythm["planning_anchor"] == "midweek"
+    assert rhythm["planning_anchor"] == "wednesday"
     assert rhythm["leftovers_stance"] == "fine_sometimes"
 
 
@@ -158,7 +237,7 @@ def test_rhythm_completeness_signals_include_the_three_new_facts():
     assert signals["leftovers_stance_set"] is False
 
     tools.set_dinner_window("5_6ish")
-    tools.set_planning_anchor("sunday_before")
+    tools.set_planning_anchor("sunday")
     tools.set_leftovers_stance("love_them")
 
     signals = tools.rhythm_completeness_signals()

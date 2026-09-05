@@ -3883,8 +3883,9 @@
     // permanent entry point, it's the nudge with extra steps.
     // Where "this week" starts is the household's answer, not the
     // calendar's — planningPeriodDefault is the rhythm-derived suggestion
-    // from /api/week/planning-period (Monday for a household that plans on
-    // the Sunday before; today for one that plans midweek or as it goes).
+    // from /api/week/planning-period (the morning after their chosen
+    // ready day, e.g. Saturday for a household ready by Friday; today,
+    // three days, for a household planning as it goes).
     // Falls back to the Monday while that request is in flight or has
     // failed, which is exactly what this offered before it existed.
     var defaultStart = (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
