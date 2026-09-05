@@ -1721,6 +1721,11 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         "was_already_approved": result["was_already_approved"],
         "groceries_added": result["groceries_added_count"],
         "already_have_skipped": result["already_have_skipped_count"],
+        # Approving never blocks on these (see approve_weekly_plan), but the
+        # clash is passed on rather than dropped — the household deserves to
+        # know afterwards even if they approved past the draft's warning.
+        "conflicts": result["conflicts"],
+        "conflicts_note": result["conflicts_note"],
     }
 
 
@@ -2579,6 +2584,19 @@ _CATEGORY_KICKERS = {
     "grocery": "Grocery updated",
     "memory": "Household info updated",
 }
+# Distinct from _CATEGORY_KICKERS on purpose — this is _humanize_change's
+# fallback when no field it knows about is readable, and the card renders
+# kicker-then-change as two lines. Falling back to the kicker text again
+# used to print the same phrase twice ("Household info updated / Household
+# info updated") on any tool call whose useful fields weren't in
+# _CHANGE_TEXT_FIELDS yet (loop-handoffs slice 1).
+_CATEGORY_FALLBACK_CHANGES = {
+    "today": "Your chores have changed",
+    "week": "Your week has changed",
+    "kitchen": "Your kitchen has changed",
+    "grocery": "Your list has changed",
+    "memory": "Saved what you told me",
+}
 _VERB_PREFIXES = [
     ("add_", "Added"), ("remove_", "Removed"), ("complete_", "Completed"), ("check_off_", "Marked done:"),
     ("swap_", "Swapped in"), ("update_", "Updated"), ("set_", "Updated"), ("mark_", "Updated"),
@@ -2586,7 +2604,17 @@ _VERB_PREFIXES = [
     ("clear_", "Cleared"), ("consolidate_", "Consolidated"), ("resolve_", "Resolved"), ("flag_", "Flagged"),
     ("log_", "Logged"), ("plan_", "Planned"), ("schedule_", "Scheduled"),
 ]
-_CHANGE_TEXT_FIELDS = ["name", "item", "chore", "meal", "recipe_name", "dish", "message", "store", "field", "text"]
+# "items"/"restrictions"/"new_meal"/"goals" are listed ahead of the older,
+# more generic fields: set_member_dietary_restrictions(name, restrictions)
+# has both, and the restrictions are the actual change ("gluten-free" is
+# more useful on the card than the member's name, which isn't new
+# information). Nothing else in real use carries two of these at once, so
+# reordering doesn't change any existing card.
+_CHANGE_TEXT_FIELDS = [
+    "items", "restrictions", "new_meal", "goals",
+    "name", "item", "chore", "meal", "recipe_name", "dish", "message", "store", "field", "text",
+    "member_name",
+]
 
 
 def _categorize_tool(tool_name: str) -> tuple[str, str | None, str | None]:
@@ -2605,23 +2633,57 @@ def _categorize_tool(tool_name: str) -> tuple[str, str | None, str | None]:
     return "memory", None, "/memory"
 
 
-def _humanize_change(tool_name: str, args: dict, result) -> str:
+def _noun_from_value(v) -> str | None:
+    """A field's raw value as display text, or None if it has nothing to say.
+
+    A plain string is used as-is. A list (add_grocery_items' `items`,
+    set_member_dietary_restrictions' `restrictions`, ...) becomes a short,
+    human list: one entry alone, two joined with "and", three or more as
+    "first, second +N more" — never a bare Python repr. List entries can be
+    plain strings or dicts (add_grocery_items accepts {"item": "flour", ...}
+    alongside plain "milk"), so a dict's own name-ish field is read out of
+    it rather than stringifying the dict.
+    """
+    if isinstance(v, str):
+        v = v.strip()
+        return v or None
+    if isinstance(v, list) and v:
+        names = []
+        for entry in v:
+            if isinstance(entry, dict):
+                label = entry.get("item") or entry.get("name") or entry.get("meal")
+            else:
+                label = entry
+            label = str(label).strip() if label not in (None, "") else ""
+            if label:
+                names.append(label)
+        if not names:
+            return None
+        if len(names) == 1:
+            return names[0]
+        if len(names) == 2:
+            return f"{names[0]} and {names[1]}"
+        return f"{names[0]}, {names[1]} +{len(names) - 2} more"
+    return None
+
+
+def _humanize_change(tool_name: str, args: dict, result) -> str | None:
     """Best-effort human-readable line for an action card, e.g. "Added milk" —
     built from the tool call's own arguments (usually the readable part;
     results are often just ids/status) with a small verb guessed from the
-    tool name's prefix. Falls back to the category kicker if nothing usable
-    is found, which still reads fine on its own."""
+    tool name's prefix. Returns None when no known field has anything
+    usable — the caller falls back to _CATEGORY_FALLBACK_CHANGES, a
+    sentence distinct from the kicker, rather than printing the kicker
+    twice."""
     noun = None
     for field in _CHANGE_TEXT_FIELDS:
-        v = args.get(field) if isinstance(args, dict) else None
-        if isinstance(v, str) and v.strip():
-            noun = v.strip()
+        noun = _noun_from_value(args.get(field) if isinstance(args, dict) else None)
+        if noun:
             break
     if noun is None and isinstance(result, dict):
         for field in _CHANGE_TEXT_FIELDS:
-            v = result.get(field)
-            if isinstance(v, str) and v.strip():
-                noun = v.strip()
+            noun = _noun_from_value(result.get(field))
+            if noun:
                 break
     if noun is None:
         return None
@@ -2680,7 +2742,29 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             except Exception:
                 result = None
             category, tab, href = _categorize_tool(name)
-            change = _humanize_change(name, args, result) or _CATEGORY_KICKERS[category]
+            # Approving the week is the one write that changes two screens
+            # at once — the week itself, and (via approve_weekly_plan's own
+            # grocery-list work) the shopping list — so it earns two cards
+            # instead of being squeezed into "week" with no mention of the
+            # list Emily's ask is walking her toward (loop-handoffs slice
+            # 1). A second, later grocery-category tool call in the same
+            # turn still overwrites this one below, same as any other
+            # "last call for this area wins" case.
+            if name == "approve_weekly_plan":
+                by_category[category] = ChatAction(
+                    kicker=_CATEGORY_KICKERS[category],
+                    change="Week approved — your list is ready",
+                    tab=tab, href=href,
+                )
+                added = result.get("groceries_added_count") if isinstance(result, dict) else None
+                if isinstance(added, int) and added > 0:
+                    grocery_change = f"{added} item{'' if added == 1 else 's'} ready to shop"
+                    by_category["grocery"] = ChatAction(
+                        kicker=_CATEGORY_KICKERS["grocery"], change=grocery_change,
+                        tab="grocery", href=None,
+                    )
+                continue
+            change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
             by_category[category] = ChatAction(kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href)
 
     return list(by_category.values())
