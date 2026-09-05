@@ -314,7 +314,7 @@ why*, not duplicating the diff.
     and the real warning goes past with it. That is why the false-positive
     work sits in the same file as the false-negative work.
   - **Correction to `ccbc532`'s commit message:** it says "32 new tests, 24
-    of which fail on the previous commit". The real number is **23**. The
+    of which fail on the previous commit". A first re-measurement said 23; a third-round verification re-ran it three times and got **24** — the commit message was right. The
     claim is wrong only in the message, not in the code or the tests.
   - **The `hard` flag still has no UI.** `add_fact(hard=True)` is reachable
     from chat and nowhere else — the What-we-know screen cannot set or show
