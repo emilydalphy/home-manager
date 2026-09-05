@@ -123,6 +123,18 @@ from .inventory import (  # noqa: F401
     update_inventory,
     update_inventory_items,
 )
+# Read-side helpers for the leftover chains repair_leftover_chains records
+# (see leftovers.py). Not agent tools — the assistant has no reason to
+# call these — but re-exported so agent.py's prep-schedule context and any
+# future caller reach them the same `tools.x(...)` way as everything else.
+# `covers_note` is aliased on the way out: the bare name says nothing about
+# what it covers once it is sitting in this flat namespace.
+from .leftovers import (  # noqa: F401
+    batch_for_source,
+    eaters_at,
+    plan_leftover_chains,
+)
+from .leftovers import covers_note as leftovers_covers_note  # noqa: F401
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
     discard_failed_plan,
@@ -214,6 +226,7 @@ from .recipes import (  # noqa: F401
     get_member_taste,
     get_recipe,
     list_recipes,
+    list_recipes_for_planning,
     log_cooking_deviation,
     log_recipe_note,
     mark_recipe_feedback,
@@ -344,6 +357,8 @@ from .weekly_plan import (  # noqa: F401
     attach_intake_to_plan,
     audit_plan_slots,
     clear_plan_slot,
+    _dedupe_duplicate_slots,
+    repair_leftover_chains,
     get_meal_planning_preferences,
     get_needs_you_items,
     get_plan_id_for_week,

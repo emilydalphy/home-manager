@@ -231,34 +231,38 @@ inventory work to complete the core loop.
 ## Running the loop
 
 When Emily says something like "run the loop," "work through the tickets," or "pick up the
-next ticket," this is a manual trigger — do the following, and **stop there** rather than
-continuing on to a fix without her:
+next ticket," this is a manual trigger for the **full cycle: investigate, verify, build on a
+branch, test, verify again, write it up.** Per Emily's 2026-09-04 decision, "run the loop"
+always means going through to a built and tested branch — not investigate-and-stop. The
+only thing it never does is merge (or push without her go-ahead); those stay hers.
 
-1. Query the Loop Board for cards with Status = "Not started." Check the "Work Tonight"
-   checkbox property first (added 2026-08-30) — any card Emily checked the day before goes
-   ahead of normal priority order.
-2. Pick one: a "Work Tonight"-checked card first if any exist, otherwise the
-   highest-priority one (High > Medium > Low), preferring an earlier-Phase card when
-   priorities tie (Phase 0 before Phase 1, etc.; never auto-pick a "Parked" card) — unless
-   she named a specific ticket. If still tied, pick the oldest/least-recently-touched one. Uncheck "Work Tonight" once
-   that card's been handled, so it doesn't linger as still-queued.
-3. Investigate it per the "Working a ticket" steps 1-2 above: read the real code, find the
-   actual root cause or the real current state, cite file:line. Do not write or change any
-   code in this pass, even if the fix looks obvious.
-4. Before writing up the conclusion, verify it with a fresh sub-agent per "Sub-agents"
-   below — don't skip this because the finding feels obvious.
-5. Update the ticket's page content with what was found — root cause, relevant code, and
-   either a concrete fix direction or an explicit open question if it's a real decision. If
-   it's a real open question, also check "Needs Your Call" (added 2026-08-31) so it surfaces
-   consistently whether this ticket was worked live or overnight.
-6. Report back to Emily in plain language: what ticket, what was found, and what (if
-   anything) needs her input next.
+1. **Pick the card(s).** Query the Loop Board for Status = "Not started" (or the tickets she
+   named). "Work Tonight"-checked cards first; otherwise highest Priority, earlier Phase on a
+   tie, never a "Parked" card, oldest if still tied. Uncheck "Work Tonight" once handled.
+   "A few" means a few — run them in parallel with delegated agents (see Sub-agents and
+   Emily's model rule: Opus for complex/design/risky/safety work, Sonnet for well-specified
+   execution and reviews), one worktree each.
+2. **Investigate** per "Working a ticket" steps 1-2: real code, real root cause, file:line.
+3. **Verify the finding** with a fresh sub-agent before anything is built on it.
+4. **Build it — on a branch, in a worktree, never on `main`** ("Working a ticket" step 3).
+   Where a product/design/wording decision is genuinely open, don't stall: build with the
+   recommended default, make it easy to change, and state the assumption in the ticket and
+   the report so Emily can override before merge. A ticket that is *all* decision (a
+   redesign, a copy pass she hasn't approved) stays investigate-only — say so.
+5. **Test it.** Run the full suite (`.venv/bin/python -m pytest -q`) and add tests that fail
+   on `main` and pass on the branch. Verify live in the browser when the change is
+   observable there. Clean up any test data (step 4 of "Working a ticket").
+6. **Verify the build** with a *second* fresh sub-agent against the actual diff: re-run the
+   suite, read the diff against the findings, try adversarial cases the tests don't cover.
+   A build that fails verification goes back to the builder, not to Emily.
+7. **Update the ticket**: findings, what was built, branch name, test counts, what was
+   deliberately left out, the assumptions taken; set Status **In progress** (built, on a
+   branch, awaiting her merge) and check **Needs Your Call** (merging, plus any assumption).
+8. **Report back in plain language**: what ticket, what was found, what was built, what she
+   needs to decide, and that nothing was pushed or merged.
 
-This is deliberately a stop-and-report pattern, not a chain through the whole board
-unprompted — she stays in the loop about what's happening rather than finding a pile of
-changes after the fact. If she wants an actual fix built after seeing the findings, that's
-a separate, explicit next step (like the "fix the high priority tickets" request on
-2026-08-30) — don't treat "run the loop" itself as authorization to also implement.
+Stop there. Pushing needs her go-ahead in a live session; merging is hers every time; once
+she has merged, close the ticket ("Working a ticket" step 6) rather than asking twice.
 
 ## Automation rules (unattended/scheduled runs only)
 

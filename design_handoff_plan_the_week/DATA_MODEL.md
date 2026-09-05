@@ -105,6 +105,8 @@ derived_from: {
 }
 \`\`\`
 
+(Note, post-launch: the code now writes/expects `links_to` as `"YYYY-MM-DD:slot"`, e.g. `"2026-09-02:dinner"` — the `entry_id:<n>` form above is still accepted for compatibility but is no longer what's generated. See app/schema.sql and tools.repair_leftover_chains.)
+
 Three payoffs, in order of how soon you'll want them:
 
 1. The per-slot "why" line in the UI is generated from this rather than improvised, so it can't

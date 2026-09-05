@@ -13,7 +13,23 @@ Usage (local):
 
 Usage (production, via Railway CLI — this is the one that matters, since
 the beta tester signs into the deployed app, not a laptop):
-    railway run python create_household.py "The Smiths"
+    railway ssh -- python create_household.py "The Smiths"
+
+NOT `railway run` — that injects the deployed service's variables and
+then runs the command on YOUR LAPTOP. Production's DB_PATH points at a
+file on the mounted volume, which does not exist locally, so this would
+mint a household into a database nobody will ever read, while printing a
+passphrase that looks real. `railway ssh` opens a shell on the service
+itself; everything after `--` runs there. The script refuses to start if
+it detects that mismatch, but the right command is this one.
+
+--list is the safe check before anything destructive: it touches no
+household data and prints the database path it found plus the households
+in it, so it is the quickest way to confirm you are pointed at production.
+(It does run the app's ordinary startup migrations first, the same ones
+the app itself runs every boot — so "touches no household data" rather
+than "changes nothing at all".)
+    railway ssh -- python create_household.py --list
 
 With no --passphrase, one is generated and printed. Nothing is stored in
 plain text: only a PBKDF2 hash goes into the database, so this printout is
@@ -32,7 +48,12 @@ import argparse
 import secrets
 import sys
 
-from app.db import DB_PATH, init_db
+from app.db import (
+    DB_PATH,
+    how_to_run_on_production,
+    init_db,
+    misplaced_db_path_error,
+)
 from app import households
 
 
@@ -92,6 +113,13 @@ def main() -> None:
     args = parser.parse_args()
 
     print(f"Database: {DB_PATH}")
+    # Before init_db(), which would otherwise CREATE the database this
+    # check exists to stop us pointing at. --list is guarded too: its
+    # whole job is answering "which database am I looking at", and a
+    # confident answer about the wrong one is the failure being fixed.
+    problem = misplaced_db_path_error()
+    if problem:
+        sys.exit(f"\n{problem}\n\n{how_to_run_on_production('create_household.py')}")
     init_db()
 
     if args.list:
