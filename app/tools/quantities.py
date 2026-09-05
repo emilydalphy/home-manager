@@ -160,6 +160,11 @@ _UNIT_ALIASES = {
     # single count instead of falling through to literal "1 large + 1/2"
     # concatenation. See _try_consolidate_quantity / the grocery-quantity
     # bug this fixes (onion showing as "1 large + 1/2" instead of "2").
+    #
+    # Kept as a backstop only: _split_quantity_note below now lifts these
+    # words out of the string before it is ever matched, wherever in the
+    # string they sit, and hands them back as a note. This table only
+    # still fires for a unit string built by hand somewhere else.
     "large": "", "medium": "", "small": "", "whole": "", "jumbo": "", "xl": "",
 }
 
@@ -195,6 +200,38 @@ _CONTAINER_UNIT_PLURALS = {
 _CONTAINER_UNIT_SINGULARS = {plural: singular for singular, plural in _CONTAINER_UNIT_PLURALS.items()}
 
 
+# The subset of container words that name a SEALED PACKAGE the household
+# buys one of and draws on all week — a bottle of oil, a jar of spice, a
+# bag of granola, a tub of cottage cheese. This is the line the grocery
+# ingestion path draws (see recipes._add_recipe_ingredients_for_entries):
+# a package is added once per week however many meals name it, while
+# everything else adds up per meal.
+#
+# Deliberately a SHORT list, and much shorter than _CONTAINER_UNIT_PLURALS
+# above. The question a word has to pass is not "is this a package?" but
+# "does one of these last a household a whole week?", and the two answers
+# come apart constantly:
+#
+#   - "bunch", "head", "clove", "pint", "punnet", "sprig", "slice",
+#     "stick", "block", "bar", "loaf" and "roll" are per-meal amounts.
+#     Five dinners each wanting a bunch of cilantro want five bunches.
+#   - "can", "tin", "carton", "box", "pack", "packet" and "sachet" are
+#     packages, but of things eaten a package at a time — a tin of beans,
+#     a box of pasta, a carton of broth, a packet of yeast. These are the
+#     ingredients the generation prompt itself calls out as needing "their
+#     own real qty every time they're used, since each use is an actual
+#     portion, not a pinch" (agent.py, the staples bullet). Collapsing
+#     them to one would leave a cook short mid-week, which is a worse
+#     failure than a list that asks for one line too many.
+#
+# What is left is the shape Emily's first approved week actually got wrong:
+# the bag of spinach, the bag of granola, the bag of quinoa, the bottle of
+# honey, the bottle of olive oil, the tub of hummus, the tub of cottage
+# cheese. When in doubt a word stays OUT of this set, because that is the
+# side that only ever costs an extra line rather than a missing dinner.
+_PACKAGE_UNITS = {"bag", "bottle", "container", "jar", "tub"}
+
+
 def _normalize_container_word(unit_str: str) -> str:
     """Singularize a trailing container word ("lb bags" -> "lb bag") so a
     previously-pluralized display string parses back to the same canonical
@@ -206,11 +243,197 @@ def _normalize_container_word(unit_str: str) -> str:
     return " ".join(words)
 
 
+# Words a recipe hangs on a quantity that describe the PRODUCT rather than
+# the amount of it — "2 lb bag (frozen)", "3 bag frozen", "1 large", "2
+# ripe". They are not units and they are not counts, and while they sat in
+# the string they defeated the number/unit match below outright: Emily's
+# first approved week showed "Mixed berries: 2 lb bag (frozen) + 2 lb bag
+# (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen)", four unparseable
+# strings glued end to end, and "Pineapple chunks · 3 bag frozen", where
+# "bag frozen" read as the unit so the package rule never saw a bag.
+#
+# So they come OUT of the string before parsing and are kept as a NOTE,
+# which the grocery list appends back after the amount: "1 bag (2 lb),
+# frozen". That is the one canonical shape — amount first, then a comma,
+# then whatever describes the product — because the amount is what a
+# shopper scans a list for and the note is what they read once they have
+# found the line. Frozen berries stay visibly frozen; they just stop
+# breaking the arithmetic.
+#
+# Deliberately a closed vocabulary of words that can only ever be
+# descriptions. Anything unrecognized is left in the string, where it will
+# either parse as a unit or fall through to the freeform path exactly as
+# it does today — guessing that an unknown trailing word is decoration is
+# how a real unit gets thrown away.
+_DESCRIPTOR_WORDS = {
+    # How the product is sold/preserved — genuinely useful to a shopper,
+    # and the reason a note is retained rather than simply discarded.
+    "frozen", "fresh", "canned", "jarred", "dried", "raw", "cooked",
+    "organic", "ripe", "unripe", "seedless", "boneless", "skinless",
+    "unsalted", "salted", "unsweetened", "sweetened",
+    # Size words. These carry no amount at all (see _UNIT_ALIASES above,
+    # which used to be the only thing that handled them) and are noted
+    # rather than dropped so "3, large" still tells the shopper which
+    # onions — but they never touch the number, so "1 large" and "1/2"
+    # still add up to a single count the way that table intends.
+    "large", "extra-large", "medium", "small", "whole", "jumbo", "xl",
+}
+
+
+def _looks_like_package_size(text: str) -> bool:
+    """
+    True for the parenthetical that states the SIZE of one package — "(2
+    lb)", "(48 oz)" — and false for one that merely describes it,
+    "(frozen)". The two are told apart by whether the contents are a
+    number and a unit of MEASURE, which is the only shape the canonical
+    sized-package form ever writes (see _sized_package_unit).
+    """
+    match = re.match(r"^(\d*\.?\d+)\s*([a-zA-Z]+)$", text.strip().lower())
+    if not match:
+        return False
+    unit = _UNIT_ALIASES.get(match.group(2), match.group(2))
+    return unit in _measure_units()
+
+
+def _merge_notes(*notes) -> str:
+    """Combine note strings/lists into one comma-separated note, keeping
+    first-seen order and dropping duplicates — two dinners that both say
+    "frozen" produce one "frozen", not two."""
+    seen: list[str] = []
+    for note in notes:
+        parts = note if isinstance(note, (list, tuple, set)) else [note]
+        for part in parts:
+            for word in str(part or "").split(","):
+                word = word.strip()
+                if word and word not in seen:
+                    seen.append(word)
+    return ", ".join(seen)
+
+
+def _with_note(text: str, note: str) -> str:
+    """The canonical shape: the amount, then the note. "1 bag (2 lb)" +
+    "frozen" -> "1 bag (2 lb), frozen"."""
+    if not note:
+        return text
+    return f"{text}, {note}" if text else note
+
+
+def _split_quantity_note(qty: str) -> tuple[str, str]:
+    """
+    Split a raw quantity into (the part that states an amount, the note
+    describing the product). "2 lb bag (frozen)" -> ("2 lb bag",
+    "frozen"); "3 bag frozen" -> ("3 bag", "frozen"); "1 bag (2 lb),
+    frozen" -> ("1 bag (2 lb)", "frozen"), so a quantity this module has
+    already formatted splits back into exactly what it was built from.
+    A quantity with nothing to strip comes back unchanged with an empty
+    note, which is the overwhelmingly common case.
+    """
+    if not qty:
+        return "", ""
+    notes: list[str] = []
+
+    def _take_paren(match: re.Match) -> str:
+        inner = match.group(1).strip()
+        if _looks_like_package_size(inner):
+            return match.group(0)
+        if inner:
+            notes.append(inner.lower())
+        return " "
+
+    core = re.sub(r"\(([^()]*)\)", _take_paren, qty)
+    kept: list[str] = []
+    # Split keeping the separators, so removing a word leaves the rest of
+    # the string spaced and punctuated exactly as it was written.
+    for token in re.split(r"(\s+|,)", core):
+        if token.strip().lower() in _DESCRIPTOR_WORDS:
+            notes.append(token.strip().lower())
+            continue
+        kept.append(token)
+    core = re.sub(r"\s+", " ", "".join(kept)).strip().strip(" ,")
+    return core, _merge_notes(notes)
+
+
+def _quantity_note(qty: str) -> str:
+    """Just the note half of _split_quantity_note, for callers that merge
+    two already-normalized quantities and have to carry the note across."""
+    return _split_quantity_note((qty or "").strip())[1]
+
+
+# A quantity that genuinely cannot be parsed still must not be written
+# twice on one line. "a handful" and "a handful" become "a handful ×2" —
+# see grocery._repeat_or_concatenate, which is the only thing that writes
+# this, and _subtract_quantity, which is the only thing that unwinds it.
+_REPEAT_RE = re.compile(r"^(.+?)\s*×\s*(\d+)\s*$")
+
+
+def _split_repeat_count(qty: str) -> tuple[str, int]:
+    """"a handful ×3" -> ("a handful", 3); anything else -> (itself, 1)."""
+    match = _REPEAT_RE.match((qty or "").strip())
+    if match:
+        return match.group(1).strip(), int(match.group(2))
+    return (qty or "").strip(), 1
+
+
+def _with_repeat_count(base: str, count: int) -> str:
+    return base if count <= 1 else f"{base} ×{count}"
+
+
 # Unit is normally one word ("lb", "cup"), but a store-purchase quantity
 # sometimes carries a package word too ("1 lb bag", "12 oz can") — allow one
 # optional second word so these parse instead of falling through to the
 # "unparseable, concatenate raw strings" fallback in _try_consolidate_quantity.
-_QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]+(?:\s+[a-zA-Z]+)?)?$")
+# The optional trailing "(...)" is the canonical form this module writes a
+# sized package back out in — "1 tub (48 oz)" — so a formatted quantity
+# parses back to exactly the value it was formatted from.
+_QTY_RE = re.compile(
+    r"^(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)\s*([a-zA-Z]+(?:\s+[a-zA-Z]+)?)?(?:\s*\(([^()]*)\))?$"
+)
+
+
+def _measure_units() -> set[str]:
+    """Units that measure an amount (oz, lb, g, cup…) as opposed to counting
+    things. Computed at call time because _UNIT_CONVERSION_GROUPS is defined
+    further down the module."""
+    return {u for group in _UNIT_CONVERSION_GROUPS for u in group}
+
+
+def _sized_package_unit(container: str, amount: float, measure: str) -> str:
+    """Canonical unit string for a package that carries its own size:
+    ("tub", 48, "oz") -> "tub (48 oz)". The size never pluralizes — a
+    48-ounce tub is "48 oz", not "48 ozs" — so it is written directly
+    rather than through _format_quantity."""
+    return f"{container} ({amount:g} {measure})"
+
+
+def _split_package_size(unit: str | None) -> tuple[str | None, str]:
+    """Split a canonical unit into (package word, " (size)" suffix).
+    "tub (48 oz)" -> ("tub", " (48 oz)"); "cup" -> ("cup", "")."""
+    if not unit:
+        return unit, ""
+    head, sep, rest = unit.partition(" (")
+    return head, (f" ({rest}" if sep else "")
+
+
+def package_unit(qty: str) -> str | None:
+    """
+    The sealed-package word a bought-unit quantity names ("1 bottle",
+    "2 bags", "48 oz tub" -> "bottle", "bag", "tub"), or None for anything
+    that isn't one — a plain count, a measured amount, a per-meal produce
+    unit like a bunch, or freeform text.
+
+    This is the single place the "buy one per week, not one per meal" rule
+    decides what counts as a package; grocery ingestion and the reversal
+    that undoes it both ask this so they can never disagree about which
+    lines follow that rule.
+    """
+    parsed = _parse_quantity(qty)
+    if not parsed or not parsed[1]:
+        return None
+    head, _ = _split_package_size(parsed[1])
+    # Last word, so a size descriptor in front of the package word ("2
+    # large bags") still reads as a bag rather than falling through.
+    word = head.rpartition(" ")[2]
+    return word if word in _PACKAGE_UNITS else None
 
 
 def _strip_prep_descriptor(qty: str) -> str:
@@ -233,13 +456,34 @@ def _strip_prep_descriptor(qty: str) -> str:
 
 
 def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
-    """Parse a freeform quantity string into (amount, normalized_unit_or_None). Returns None if unparseable (e.g. blank, or freeform text like 'a bunch')."""
+    """
+    Parse a freeform quantity string into (amount, normalized_unit_or_None).
+    Returns None if unparseable (e.g. blank, or freeform text like 'a bunch').
+
+    One shape needs explaining. In "48 oz tub", "1 lb bag", "12 oz can" the
+    number is the SIZE of one package, not a count of packages — nobody
+    means forty-eight tubs of cottage cheese. Those parse as ONE package
+    whose size travels with the unit: (1.0, "tub (48 oz)"). Read the other
+    way (the way this used to), the size became the count and the grocery
+    list asked Emily to buy "48 oz tubs" of cottage cheese, then "192 oz
+    tubs" once four lunches had each added one.
+
+    A count of same-sized packages is written the way this module formats
+    it back out — "3 tubs (48 oz)" — and parses to (3.0, "tub (48 oz)"),
+    so formatting and parsing round-trip exactly.
+    """
     if not qty or not qty.strip():
         return None
-    match = _QTY_RE.match(_strip_prep_descriptor(qty.strip()).lower())
+    # Descriptors ("frozen", "large", "(frozen)") come out first — they
+    # describe the product, not the amount, and left in place they defeat
+    # the match below entirely. The note itself is not this function's to
+    # return; _normalize_grocery_quantity re-attaches it for display.
+    core, _note = _split_quantity_note(qty.strip())
+    match = _QTY_RE.match(_strip_prep_descriptor(core).lower())
     if not match:
         return None
     amount_str, unit_str = match.group(1), (match.group(2) or "").strip()
+    size_str = (match.group(3) or "").strip()
     try:
         if "/" in amount_str:
             parts = amount_str.split(" ")
@@ -254,7 +498,21 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
             amount = float(amount_str)
     except (ValueError, ZeroDivisionError):
         return None
-    return amount, (_UNIT_ALIASES.get(unit_str, _normalize_container_word(unit_str)) or None)
+    unit = _UNIT_ALIASES.get(unit_str, _normalize_container_word(unit_str)) or None
+    if size_str:
+        # "3 tubs (48 oz)" — an explicit count of packages of a stated size.
+        size = _parse_quantity(size_str)
+        if unit and size and size[1]:
+            return amount, _sized_package_unit(unit, size[0], size[1])
+        return amount, unit
+    if unit and " " in unit:
+        # "48 oz tub" — a measure word in front of a container word means
+        # the number sizes the package rather than counting packages.
+        measure, _, container = unit.partition(" ")
+        measure = _UNIT_ALIASES.get(measure, measure)
+        if container in _CONTAINER_UNIT_PLURALS and measure in _measure_units():
+            return 1.0, _sized_package_unit(container, amount, measure)
+    return amount, unit
 
 
 _UNIT_PLURALS = {"cup": "cups", "lb": "lbs"}
@@ -264,15 +522,18 @@ def _format_quantity(amount: float, unit: str | None) -> str:
     amount_str = f"{amount:g}"
     if not unit:
         return amount_str
+    # A sized package ("tub (48 oz)") pluralizes the package word and
+    # leaves the size alone: "2 tubs (48 oz)", never "2 tub (48 ozs)".
+    head, size_suffix = _split_package_size(unit)
     if amount == 1:
-        return f"{amount_str} {unit}"
-    if unit in _UNIT_PLURALS:
-        return f"{amount_str} {_UNIT_PLURALS[unit]}"
-    prefix, _, last_word = unit.rpartition(" ")
+        return f"{amount_str} {head}{size_suffix}"
+    if head in _UNIT_PLURALS:
+        return f"{amount_str} {_UNIT_PLURALS[head]}{size_suffix}"
+    prefix, _, last_word = head.rpartition(" ")
     if last_word in _CONTAINER_UNIT_PLURALS:
         display_unit = f"{prefix} {_CONTAINER_UNIT_PLURALS[last_word]}" if prefix else _CONTAINER_UNIT_PLURALS[last_word]
-        return f"{amount_str} {display_unit}"
-    return f"{amount_str} {unit}"
+        return f"{amount_str} {display_unit}{size_suffix}"
+    return f"{amount_str} {head}{size_suffix}"
 
 
 # Unit groups for shopping-list "roll up to a bigger unit" conversion, each
@@ -349,10 +610,16 @@ def _normalize_grocery_quantity(qty: str) -> str:
     """
     Reformat a raw quantity string for shopper-friendly display (see
     _humanize_grocery_quantity). Freeform text that doesn't parse as a
-    number+unit (e.g. "a bunch", "to taste") is left exactly as-is.
+    number+unit (e.g. "a bunch", "to taste") is left exactly as-is —
+    including any descriptor inside it, since re-attaching a note to a
+    string that still contains the word would say it twice.
+
+    A quantity that DOES parse comes back in the canonical shape amount
+    first, note last: "2 lb bag (frozen)" -> "1 bag (2 lb), frozen".
     """
-    stripped = _strip_prep_descriptor((qty or "").strip())
-    parsed = _parse_quantity(stripped)
+    raw = (qty or "").strip()
+    core, note = _split_quantity_note(raw)
+    parsed = _parse_quantity(core)
     if not parsed:
-        return stripped
-    return _humanize_grocery_quantity(parsed[0], parsed[1])
+        return _strip_prep_descriptor(raw)
+    return _with_note(_humanize_grocery_quantity(parsed[0], parsed[1]), note)

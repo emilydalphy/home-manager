@@ -597,7 +597,12 @@ person's name and the restriction (leave replace unset/false — this is a mid-c
 mention, not their full list, so it should merge with whatever's already saved for them, not \
 overwrite it). Match the name to an existing member from list_members/get_household_memory \
 where you reasonably can (e.g. "my partner" -> whichever member fits) rather than inventing a \
-new one when they clearly mean someone already on file.
+new one when they clearly mean someone already on file. set_member_dietary_restrictions is the \
+right tool here even when the mention is casual — do NOT file an allergy about a person as a \
+What-we-know fact instead (add_fact). add_fact is for everything a restriction field can't \
+hold: household context, tastes, routines, and a must-avoid that isn't tied to one person \
+("no shellfish in this house" — that one is add_fact with hard=true). If you've already saved \
+an allergy as a fact, also call set_member_dietary_restrictions so it's in both places.
 - The same goes for positive or negative feedback on a specific recipe they've actually made — \
 "we loved that chicken dish", "that pasta was too bland", "make that again sometime" — call \
 mark_recipe_feedback right away with the recipe name, a rating ('liked'/'disliked') if implied, \
@@ -1608,7 +1613,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_fact",
-        "description": "Add one freeform fact to the What We Know screen. Use 'people' for who's-who and allergies/restrictions phrased as a note (e.g. \"Sam is allergic to peanuts\") rather than the structured dietary_restrictions field when the user is just telling you something in passing to remember, not filling out a form; 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true only for allergy/must-avoid-type facts (mirrors the UI's visual flag for those). This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
+        "description": "Add one freeform fact to the What We Know screen. NOT for an allergy or dietary restriction about a specific person: \"Sam is allergic to peanuts\", \"Mia can't have gluten\", \"my partner doesn't eat shellfish\" go to set_member_dietary_restrictions, which is the field meal generation and the pre-approval safety check are built around — call that FIRST for anything allergy-shaped about a named (or clearly identifiable) person, even when it's said casually in passing rather than as a form answer. Use add_fact for everything else: 'people' for who's-who and household context (who works late, who cooks, a must-avoid that isn't tied to one person like \"no shellfish in this house\"); 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true for any must-avoid-type fact — a hard fact is treated as an absolute must-avoid by week generation and by the pre-approval conflict check, so use it for real safety limits and not for strong preferences. This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2212,6 +2217,17 @@ grilling and salads in summer) when nothing else already decides the choice; it 
 a stated preference, a constraint, or the variety/novelty rules elsewhere in this list.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
 listed dislike.
+- household_facts are the household's own notes about themselves (the "What we know" screen). \
+Any fact with hard=true is an ABSOLUTE must-avoid — treat it with exactly the same "without \
+exception" force as a member's dietary_restrictions, including when the same thing appears \
+nowhere else in this context. An allergy written as a sentence ("Emily is allergic to \
+pineapple") is an allergy; it does not become a preference because of where it was typed. Every \
+other fact is a strong preference: honor people/taste notes unless something explicit in \
+constraints_notes overrides them.
+- Never name a dish after an ingredient it leaves out. No "Pineapple-Free Fried Rice", no \
+"Nut-Free Brownies" — the name should describe what the dish IS. A meal named after an \
+allergen is alarming to read on the week's menu even when the recipe is safe, and it makes the \
+plan impossible to check at a glance.
 - Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
 times_cooked), but don't just repeat them. household_memory's novelty_preference sets how \
 much new-recipe exposure to aim for this week: "mostly_favorites" -> still surface at least \
@@ -2420,6 +2436,11 @@ garlic powder or 9 bottles of olive oil — technically correct per recipe, absu
 together. This does NOT apply to ingredients genuinely consumed in real per-recipe portions even \
 when pantry-sourced — canned beans, rice, pasta, broth, flour for baking — those need their own \
 real qty every time they're used, since each use is an actual portion, not a pinch.
+- A sealed package written as a bought unit — "1 bag", "1 bottle", "1 jar", "1 tub" — is counted \
+once for the whole week no matter how many meals name it, so write it plainly on every recipe \
+that uses it and never try to compensate by writing a fraction of one ("1/6 bag") or by \
+splitting it across days. A breakfast planned six mornings that lists "1 bag" of spinach buys \
+one bag.
 - current_inventory lists what's already on hand. For an ingredient already covered there in a \
 comparable quantity, still include it in the recipe's ingredients list (the recipe should stay \
 accurate/reusable), but leave its category as normal — the household already has it, so it \
@@ -2584,6 +2605,17 @@ distinct from treat (a dessert-y indulgence) and dip (a sauce/dip meant to accom
 just a smaller version of either. Guidelines:
 - Respect every listed dietary restriction and allergy without exception. Avoid every listed \
 dislike.
+- household_facts are the household's own notes about themselves (the "What we know" screen). \
+Any fact with hard=true is an ABSOLUTE must-avoid — treat it with exactly the same "without \
+exception" force as a member's dietary_restrictions, including when the same thing appears \
+nowhere else in this context. An allergy written as a sentence ("Emily is allergic to \
+pineapple") is an allergy; it does not become a preference because of where it was typed. Every \
+other fact is a strong preference: honor people/taste notes unless something explicit in \
+constraints_notes overrides them.
+- Never name an item after an ingredient it leaves out. No "Pineapple-Free Fried Rice", no \
+"Nut-Free Brownies" — the name should describe what the item IS. An item named after an \
+allergen is alarming to read in the week's pool even when the recipe is safe, and it makes the \
+plan impossible to check at a glance.
 - Lean toward liked/favorite recipes from saved_recipes, but honor novelty_preference the same \
 way as day-based planning — even "mostly_favorites" should include at least one new item \
 somewhere in the pool.
@@ -3229,6 +3261,22 @@ def _generate_weekly_plan(
         "day_count": day_count,
         "constraints_notes": constraints_notes,
         "household_memory": effective_memory,
+        # The household's own What-we-know notes (the `facts` table behind
+        # the People/Taste/Rhythm tabs). These used to reach chat and the
+        # What-we-know screen but never generation, which meant an allergy
+        # written down as a note — "Emily is allergic to pineapple", flagged
+        # hard, exactly where add_fact and that screen put it — was invisible
+        # to the thing that plans the food. The prompts below treat a
+        # hard=true fact as an absolute must-avoid, on the same footing as a
+        # member's dietary_restrictions.
+        # Trimmed to the three fields the prompt can actually use. A fact's
+        # id, author and updated_at are storage bookkeeping — they cost
+        # tokens in a context that is already large and give the model
+        # nothing to plan with.
+        "household_facts": [
+            {"category": f.get("category"), "text": f.get("text"), "hard": bool(f.get("hard"))}
+            for f in tools.get_facts()
+        ],
         "intake": (
             _intake_generation_context(intake) if intake
             else _rhythm_only_generation_context(content_start_date, day_count)
@@ -3372,6 +3420,10 @@ def _generate_weekly_plan(
                     component_category=category,
                     reasoning=item.get("reasoning", ""),
                 )
+            # The day-based branch gets this inside _finish_week_slots, which
+            # has no component equivalent to live in — so it is called here
+            # directly rather than left out, which is what it was.
+            _log_plan_conflicts(plan_id, content_start_date)
         else:
             # The days actually asked for. The model is told the window and
             # mostly respects it, but being told is not the same as being
@@ -3498,6 +3550,37 @@ def _generate_weekly_plan(
                 logger.exception(
                     "Rolling back weekly plan %s failed; keeping the original error", plan_id
                 )
+
+
+def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
+    """
+    The allergy check, run because a week was generated rather than because
+    someone remembered to ask for it. check_plan_conflicts existed for a
+    long time as a chat tool only, which meant the one path that produces a
+    whole week of food — generation — never called it, and a clash reached
+    the household only if the assistant happened to think of it
+    mid-conversation. Warnings, not a block: the household still decides.
+    The result isn't stored, it's recomputed for the draft payload (see
+    get_week_menu) so it stays true after a swap.
+
+    Its own function because BOTH generation modes have to run it. It first
+    lived inside _finish_week_slots, which a component-based household never
+    reaches — so exactly the households whose plan is a list of components
+    got no post-generation check at all.
+    """
+    try:
+        conflicts = tools.check_plan_conflicts(plan_id)["conflicts"]
+        if conflicts:
+            # Deduplicated: one dish planned on several nights is one clash
+            # worth reading, not seven identical log lines' worth.
+            pairs = sorted({f"{c['meal']} vs {c['restriction']}" for c in conflicts})
+            logger.warning(
+                "Week %s has %d possible dietary clash(es): %s",
+                week_start_date, len(pairs), ", ".join(pairs),
+            )
+    except Exception:
+        # A failed warning must never cost the household a generated week.
+        logger.exception("Conflict check failed for plan %s", plan_id)
 
 
 def _finish_week_slots(
@@ -3667,6 +3750,13 @@ def _finish_week_slots(
     # check a plan against nothing.
     if context is not None:
         plan_quality.check_and_log(plan_id, context)
+
+    # LAST, deliberately. The allergy/dietary check has to describe the week
+    # as it finally stands — after the out-night and zero-count passes, the
+    # slot-needs pass, the open-slot audit and the quality pass above have
+    # all had their say. Anything that runs after this is a change the
+    # warning didn't see.
+    _log_plan_conflicts(plan_id, week_start_date)
 
 
 _GENERATE_PREP_SCHEDULE_TOOL = {

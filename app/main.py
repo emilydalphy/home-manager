@@ -1719,6 +1719,11 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         "was_already_approved": result["was_already_approved"],
         "groceries_added": result["groceries_added_count"],
         "already_have_skipped": result["already_have_skipped_count"],
+        # Approving never blocks on these (see approve_weekly_plan), but the
+        # clash is passed on rather than dropped — the household deserves to
+        # know afterwards even if they approved past the draft's warning.
+        "conflicts": result["conflicts"],
+        "conflicts_note": result["conflicts_note"],
     }
 
 

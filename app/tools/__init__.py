@@ -216,8 +216,10 @@ from .quantities import (  # noqa: F401
     _roll_up_unit,
     _round_to_nice_fraction,
     _strip_prep_descriptor,
+    package_unit,
 )
 from .recipes import (  # noqa: F401
+    _add_recipe_ingredients_for_entries,
     _add_recipe_ingredients_to_grocery_list,
     _maybe_auto_attribute_solo_night,
     add_recipe,
