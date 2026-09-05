@@ -219,6 +219,14 @@
     // does not fight them.
     closeKitchenSheet();
 
+    // The shop-done handoff is page-view-only (see
+    // groceryState.justFinishedTrip's declaration, further down this file
+    // but already assigned by the time any tab click can reach here, same
+    // as weekState below) — leaving Grocery for any other tab and coming
+    // back later must not still show "that's the shopping done" from a
+    // stop finished earlier in this same visit.
+    if (key !== 'grocery') groceryState.justFinishedTrip = false;
+
     Object.keys(panels).forEach(function (k) {
       panels[k].classList.toggle('active', k === key);
     });
@@ -1209,7 +1217,22 @@
     // Page-view only, like weekReceiptHandoffDismissed — "I'll come back to
     // it" on the shop-done handoff (Plan stops, everything bought) just
     // collapses the offer for this visit, no persistence.
-    shopDoneHandoffDismissed: false
+    shopDoneHandoffDismissed: false,
+    // Whether a stop was finished in THIS page view (see 'done-here' below).
+    // groTotals().done can't answer "did anything get bought this cycle" —
+    // it sums purchased + in_cart rows over the household's entire
+    // lifetime, and nothing ever resets a purchased row (clear_stale_
+    // grocery_items only touches 'needed' rows), so it stays > 0 forever
+    // after the first-ever trip. Using it to gate the shop-done handoff
+    // meant approving a new week that added no items still showed "that's
+    // the shopping done" — a false congratulations for a list that was
+    // simply never repopulated. This flag is the honest replacement: true
+    // only from a successful finish-this-stop in this visit, and cleared
+    // (a) the moment the list gains needed items again (groPlanHtml), so a
+    // stale trip from before a restock can't resurface once the restock is
+    // bought out too, and (b) on leaving the Grocery tab for any other tab
+    // (activateTab), so "away and back" doesn't resurrect it either.
+    justFinishedTrip: false
   };
 
   var GRO_PS_CAP = 5;
@@ -1778,11 +1801,13 @@
 
   // The handoff for "that's the shopping done" (Emily, 2026-09-04's ask to
   // walk the loop forward): shown in Plan stops only once the list has
-  // nothing left to buy AND this trip actually bought something (groPlanHtml
-  // below tells the never-had-anything case apart from this one). Not the
-  // screen's apricot primary — the hero's own "Nothing left to buy" chip
-  // already sits there, dimmed but still apricot-filled (Rule 5), so this
-  // reuses the needs-you-card pattern of a spruce-fill primary + outline
+  // nothing left to buy AND a stop was actually finished in this page view
+  // — groceryState.justFinishedTrip, not a lifetime purchased/in_cart count
+  // (see that flag's declaration for why) — so groPlanHtml below can tell
+  // the never-had-anything case apart from this one. Not the screen's
+  // apricot primary — the hero's own "Nothing left to buy" chip already
+  // sits there, dimmed but still apricot-filled (Rule 5), so this reuses
+  // the needs-you-card pattern of a spruce-fill primary + outline
   // secondary instead of stacking a second apricot on the same screen.
   function groShopDoneHtml() {
     var dish = tonightDinnerName();
@@ -1804,13 +1829,19 @@
   function groPlanHtml(data) {
     var unsorted = groUnsorted(data);
     var buckets = groStoresWithNeeded(data);
+    if (unsorted.length || buckets.length) {
+      // The list has needed items again — any justFinishedTrip signal left
+      // over from an earlier stop in this same visit no longer describes
+      // this list, so it must not resurface once this batch is bought out
+      // too. See the flag's declaration in groceryState above.
+      groceryState.justFinishedTrip = false;
+    }
     if (!unsorted.length && !buckets.length) {
       // Two different empty states share this shape: a list that never had
       // anything on it (the real empty case) vs. one that just got fully
-      // shopped (t.done > 0) — conflating them would send "add items from
-      // the To buy tab" to someone who just finished a trip.
-      var t = groTotals(data);
-      if (t.done) {
+      // shopped in this page view — conflating them would send "add items
+      // from the To buy tab" to someone who just finished a trip.
+      if (groceryState.justFinishedTrip) {
         if (groceryState.shopDoneHandoffDismissed) {
           return (
             '<div class="shell-card gro-shop-done-card gro-shop-done-dismissed">' +
@@ -2395,6 +2426,11 @@
           return groFinishStore(doneStore);
         }, "Couldn't finish this stop — try again.").then(function (ok) {
           if (!ok) { el.disabled = false; return; }
+          // A stop was actually finished in this page view — the honest
+          // signal groPlanHtml's shop-done handoff waits for. See
+          // groceryState.justFinishedTrip's declaration for why this can't
+          // just be read off groTotals().done.
+          groceryState.justFinishedTrip = true;
           groSetScreen('plan');
           showToast('Stop saved — I’ll remember what you bought where');
         });

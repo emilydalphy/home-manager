@@ -13,6 +13,28 @@ shell.js side alone:
   special case in summarize_chat_actions.
 - The "week approved" notification pointed at Meals, even though the
   thing it just said got built lives on Grocery.
+
+NOT covered here, and not covered by any automated test — there is no JS
+test harness in this repo (no package.json/jest/mocha, checked 2026-09-05):
+the shell.js "that's the shopping done" handoff (groPlanHtml /
+groceryState.justFinishedTrip / the 'done-here' click handler). It was
+originally gated on groTotals().done > 0, which sums purchased + in_cart
+grocery rows over the household's entire LIFETIME — nothing ever resets a
+purchased row (clear_stale_grocery_items only touches 'needed' rows), so
+that count stays > 0 forever after the first-ever trip. That meant
+approving a later week that added zero new items (see
+test_approving_the_week_with_nothing_added_skips_the_grocery_card above —
+the backend correctly reports groceries_added_count: 0) would still show a
+false "that's the shopping done" congratulations on the Grocery tab,
+because the list was simply empty, not just-finished. The fix replaced the
+lifetime count with groceryState.justFinishedTrip, a page-view-only flag
+set true only by a successful finish-this-stop ('done-here') in the
+current visit, and cleared either when the list gains needed items again
+or when the Grocery tab is left for any other tab (see the flag's
+declaration and the activateTab check in static/shell.js). If a JS test
+harness is ever added to this repo, that state-transition logic (flag set
+on done-here, cleared on restock, cleared on tab-away, and the empty-state
+branch reading it instead of groTotals().done) is what should be covered.
 """
 from __future__ import annotations
 
