@@ -304,35 +304,58 @@ why*, not duplicating the diff.
     `_try_consolidate_quantity` and taking the max under
     `_greater_of_quantity`) and back down on the way out
     (`_subtract_quantity`). Genuinely different text still concatenates.
-  - **Where `leftovers-servings-scaling` plugs in** (correcting an earlier
-    draft of this entry, which said a total-servings factor "replaces that
-    one call and nothing else" — it does not; that branch does three
-    things per entry, and only one of them is a factor). Against
-    `_add_recipe_ingredients_for_entries`:
-    1. Its `scale *= batch["servings"] / batch["cook_eaters"]` for a chain
-       SOURCE is the easy one, and the claim holds there: it multiplies
-       the per-entry `grocery_scale_factor` inside the loop that builds
-       `scaled_for_entry`, one entry at a time, composing exactly as it
-       does today.
-    2. Its `return [], []` for a LEFTOVERS entry does NOT survive
-       translation. A leftovers chain reuses the same `recipe_id`, so the
-       cook night and the reheat night land in the SAME recipe-week group
-       — an early return would drop the cook night's shop too. It has to
-       become a filter on `entry_ids` before the loop, with the group
-       returning `[], []` only when every entry in it was filtered out.
-    3. The package path needs that filtered list as well: a package is
-       added once per group and `_record_link`s every entry in it, so a
-       reheat night must not hold a link (it contributed nothing, and a
-       link would keep the bottle alive past the cook night that did).
-    Also: read `weekly_plan_id` off the entry rows already being fetched
-    and look the chains up once per group, not once per entry as that
-    branch does. Expect a real textual conflict in `recipes.py` — that
-    branch edits the body of `_add_recipe_ingredients_to_grocery_list`,
-    which this branch reduced to a one-line wrapper.
+  - **How `leftovers-servings-scaling` actually landed**, correcting an
+    earlier draft of this entry that said a total-servings factor
+    "replaces that one call and nothing else". It does not. That branch
+    (since merged to `main`; see the entry below) does three things per
+    entry and only one of them is a factor, and merging it into the
+    grouped ingest needed all three handled separately:
+    1. `scale *= batch["servings"] / batch["cook_eaters"]` for a chain
+       SOURCE is the easy one, and the old claim holds there: it
+       multiplies the per-entry `grocery_scale_factor` inside the loop
+       that builds `scaled_for_entry`, one entry at a time, composing
+       exactly as it did before.
+    2. `return [], []` for a LEFTOVERS entry did NOT survive translation
+       and would have been a real bug. A chain reuses the same
+       `recipe_id`, so the cook night and the reheat night land in the
+       SAME recipe-week group — an early return would have dropped the
+       cook night's shop along with the reheat's. It is now a FILTER:
+       `contributing_ids`, with the group returning `[], []` only when
+       every entry in it was a reheat (which is what the single-meal door
+       still does for a lone leftovers entry).
+    3. The package path needed that filtered list too. A package is added
+       once per group and then `_record_link`s each contributing entry; a
+       reheat night must not hold a link, or a swap would leave the
+       bottle alive past the cook night that actually earned it.
+    Chains are now looked up once per PLAN and cached, not once per entry
+    — grouping already brings every meal for a recipe through in one
+    call, so the per-entry query would just repeat itself.
   - **Open for Emily:** whether a true per-portion sum should ever be
     capped. 17 peppers is honest arithmetic — five dinners wanting 3, 4,
     2, 4 and 4 — and it is NOT capped or hidden; the list shows 17. It may
     still be more than anyone wants to read on one line.
+
+- **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
+  `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT
+  merged at the time of writing).** Emily, seeing the same dish on two
+  nights of the Cook view: "show the one night it's being cooked as 6
+  servings, make a little note that this covers tonight + leftovers, and
+  not have it on another night for cooking." `fix-leftovers-ordering`
+  made the chains trustworthy (`derived_from.make_double_for` on the
+  source) but nothing read them back, so the second night still behaved
+  as a full cook everywhere: its own recipe card, its own groceries, its
+  own defrost reminder, its own prep, and a second inventory depletion
+  when checked off. New `app/tools/leftovers.py` is the one read-side
+  reader (it honours a chain only when BOTH entries agree, so an
+  unvalidated plan behaves exactly as before), and the Cook view, the
+  grocery contribution, defrost and the prep context all go through it.
+  Component mode's bulk-cook scaling was lifted into
+  `cooker._scale_card_to_batch` and is now shared by both modes rather
+  than existing only on the component side. **Known gap:** the Meals
+  *Plan* tab (`weekly_plan.get_week_menu`'s `build_slot`) still draws a
+  leftovers night as an ordinary planned cook with a "Cook this" button
+  — it only detects leftovers from the freeform text, and a chain entry
+  carries a real recipe_id. Deliberately out of scope; own ticket.
 
 - **2026-09-04 — A plan is a PERIOD, not a week, and no day has two of
   them. Branch `planning-periods` (NOT merged at the time of writing).**

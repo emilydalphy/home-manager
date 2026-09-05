@@ -213,6 +213,72 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
     ]
 
 
+def list_recipes_for_planning(include_temporarily_excluded: bool = False) -> list[dict]:
+    """
+    A slimmed projection of list_recipes for feeding into weekly-plan
+    generation: name, rating, cuisine, main_protein, tags, times_cooked,
+    prep/cook time, food_groups, and recent_one_off_notes -- WITHOUT
+    ingredients or instructions.
+
+    The generation prompt tells the model to reuse a saved recipe by exact
+    name rather than re-inventing its ingredients (see the is_new_recipe
+    bullet in generate_weekly_plan_llm's instructions), which means the
+    full recipe body -- everything list_recipes returns -- was pure
+    overhead on every single generation call: measured at ~19.8k
+    characters (~5.4k tokens) for a 13-recipe household, resent in full on
+    every generation whether or not any of those recipes were even
+    considered that week. recent_one_off_notes is kept even though it's
+    not part of the "for choosing a recipe by name" core, because two
+    separate prompt bullets (day-based and component-based) tell the model
+    to weigh it when deciding whether to repeat a recipe -- dropping it
+    would silently break that instruction rather than just trim tokens.
+
+    A separate function rather than a parameter on list_recipes, so every
+    other caller (recipe detail views, the Cooker, editing) keeps getting
+    the full row untouched.
+    """
+    conn = get_conn()
+    query = """
+        SELECT id, name, rating, cuisine, main_protein, tags_json, times_cooked,
+               prep_time_minutes, cook_time_minutes, food_groups_json
+        FROM recipes WHERE household_id = ?
+        {exclusion_clause}
+        ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
+        """.format(exclusion_clause="" if include_temporarily_excluded else "AND temporarily_excluded = 0")
+    rows = conn.execute(query, (household_id(),)).fetchall()
+
+    recipe_ids = [r["id"] for r in rows]
+    notes_by_recipe: dict[int, list[str]] = {}
+    if recipe_ids:
+        placeholders = ",".join("?" * len(recipe_ids))
+        note_rows = conn.execute(
+            f"SELECT recipe_id, note FROM recipe_notes WHERE recipe_id IN ({placeholders}) "
+            "ORDER BY created_at DESC",
+            recipe_ids,
+        ).fetchall()
+        for nr in note_rows:
+            notes_by_recipe.setdefault(nr["recipe_id"], [])
+            if len(notes_by_recipe[nr["recipe_id"]]) < 3:
+                notes_by_recipe[nr["recipe_id"]].append(nr["note"])
+    conn.close()
+
+    return [
+        {
+            "name": r["name"],
+            "rating": r["rating"] or None,
+            "cuisine": r["cuisine"] or None,
+            "main_protein": r["main_protein"] or None,
+            "tags": json.loads(r["tags_json"]),
+            "times_cooked": r["times_cooked"],
+            "prep_time_minutes": r["prep_time_minutes"],
+            "cook_time_minutes": r["cook_time_minutes"],
+            "food_groups": json.loads(r["food_groups_json"]),
+            "recent_one_off_notes": notes_by_recipe.get(r["id"], []),
+        }
+        for r in rows
+    ]
+
+
 def get_recipe(recipe_name: str) -> dict:
     """
     Get full detail for a single saved recipe by exact name — ingredients,
@@ -619,11 +685,31 @@ def _add_recipe_ingredients_for_entries(
     rather than being folded into one recipe-week factor, so a week where
     everyone is home shops precisely as it always has and the anchor
     grocery_scale_factor deliberately chose (the household, not the
-    recipe's default_servings) is untouched here. Moving that anchor is
-    the leftovers-servings-scaling branch's job, and this function is
-    where it plugs in: give the per-portion path a total-servings factor
-    computed across `entry_ids` instead of the per-entry factor below.
-    A package is not scaled at all — half a table still buys one bottle.
+    recipe's default_servings) is untouched here. A package is not scaled
+    at all — half a table still buys one bottle.
+
+    A cook-once-eat-twice chain moves that factor a second time, and moves
+    the other night to zero. A LEFTOVERS entry contributes NOTHING at all
+    — its dinner was already bought on the night it is actually cooked,
+    and buying the same recipe twice was the shopping half of the bug
+    Emily reported on 2026-09-04. The SOURCE entry buys for the whole
+    chain: its factor is multiplied by (everyone the batch feeds ÷ the
+    people at the cook night's own table), so a Tuesday cook for three
+    that also feeds a Thursday for three shops for six. The two factors
+    compose rather than fight: each is relative to a different baseline
+    (the household, then that night's table), so a chain with no
+    attendance rows anywhere doubles exactly, and one with someone away on
+    Thursday buys for five.
+
+    Grouping by recipe-week is what makes that chain check a FILTER rather
+    than an early return, and the distinction matters: a chain reuses one
+    recipe_id, so the cook night and the reheat night are two entries in
+    the SAME group here. Returning early on the reheat would take the cook
+    night's shop with it. So a leftovers entry is dropped from the group's
+    contributing entries — no scaled share, and no grocery link, since a
+    link would keep a package alive on the list past the cook night that
+    actually earned it — and the group returns empty only when every entry
+    in it was dropped.
 
     Every contributing meal gets its own meal_plan_grocery_links row, so
     reversal stays exactly symmetric with what was added: a per-portion
@@ -649,26 +735,57 @@ def _add_recipe_ingredients_for_entries(
     not smuggled into this change.
     """
     from . import attendance as _attendance
+    from . import leftovers as _leftovers
 
     # Each meal's own headcount factor, so attendance can say how many it
     # feeds. A missing entry (an ad hoc add, a row since deleted) simply
     # doesn't scale rather than failing the shop.
+    #
+    # The chain check sits at this one choke point rather than in the
+    # callers, so plan_meal's opt-in flag and approve_weekly_plan's
+    # whole-week yes both get it. Chains are looked up once per PLAN and
+    # cached here rather than once per entry: grouping by recipe already
+    # brings every meal that cooks this recipe through in one call, so the
+    # per-entry query the single-meal path used to do would now repeat
+    # itself for no reason.
     entry_conn = get_conn()
     scaled_for_entry: dict[int, list[dict]] = {}
+    contributing_ids: list[int] = []
+    chains_by_plan: dict[int, dict] = {}
     for entry_id in entry_ids:
         entry_row = entry_conn.execute(
-            "SELECT date, slot FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            "SELECT date, slot, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
             (entry_id, household_id()),
         ).fetchone()
         scale = (
             _attendance.grocery_scale_factor(entry_row["date"], entry_row["slot"])
             if entry_row else 1.0
         )
+        if entry_row and entry_row["weekly_plan_id"]:
+            plan_id = entry_row["weekly_plan_id"]
+            if plan_id not in chains_by_plan:
+                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id)
+            chains = chains_by_plan[plan_id]
+            # A reheat night buys nothing and links to nothing — it drops
+            # out of the group entirely rather than returning early, since
+            # the cook night it eats from shares this very group.
+            if entry_id in chains["leftovers"]:
+                continue
+            source = chains["sources"].get(entry_id)
+            if source:
+                batch = _leftovers.batch_for_source(source)
+                if batch["servings"] > 0 and batch["cook_eaters"] > 0:
+                    scale *= batch["servings"] / batch["cook_eaters"]
+        contributing_ids.append(entry_id)
         scaled_for_entry[entry_id] = (
             _attendance.scale_ingredients(recipe_ingredients, scale)
             if scale != 1.0 else recipe_ingredients
         )
     entry_conn.close()
+    # Every meal in this group was a reheat, so the group buys nothing —
+    # the same answer the single-meal path gives for a lone leftovers entry.
+    if not contributing_ids:
+        return [], []
     # Skip adding anything already tracked in pantry/fridge inventory (with
     # a non-blank quantity) — this is the "accounts for logged inventory"
     # behavior for the plan-approval path. For a direct chat-driven add
@@ -723,10 +840,10 @@ def _add_recipe_ingredients_for_entries(
                 ing["item"], quantity=raw_qty, category=ing.get("category", "other"), added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max",
             )
-            for entry_id in entry_ids:
+            for entry_id in contributing_ids:
                 _record_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
         else:
-            for entry_id in entry_ids:
+            for entry_id in contributing_ids:
                 # This meal's own scaled copy of the same ingredient, by
                 # position — scale_ingredients preserves order and length.
                 scaled = scaled_for_entry[entry_id][index]

@@ -8,9 +8,19 @@ from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import attention as _attention
 from . import inventory as _inventory
+from . import leftovers as _leftovers
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
+
+# Slot states with no meal behind them, so nothing to cook. See
+# get_cooker_view for why this is a deny-list rather than an allow-list of
+# 'planned'. The ordered tuple and its placeholders exist only so
+# get_plan_progress can apply the same rule inside SQL without the two
+# drifting apart -- one definition, two ways of asking.
+_NOT_COOKABLE_SLOT_STATES = frozenset({"planned_empty", "open"})
+_NOT_COOKABLE_SLOT_STATES_ORDERED = tuple(sorted(_NOT_COOKABLE_SLOT_STATES))
+_NOT_COOKABLE_PLACEHOLDERS = ",".join("?" * len(_NOT_COOKABLE_SLOT_STATES_ORDERED))
 
 
 def _singularize(word: str) -> str:
@@ -124,16 +134,23 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     still mostly there, so it's worth a quick check instead. Freeform meals
     (no saved recipe) have no ingredient list, so there's nothing to
     deplete or flag.
+
+    A leftovers night depletes nothing. The ingredients were used on the
+    night the batch was actually cooked and depleted then; taking them out
+    of inventory a second time for the reheat would empty a shelf that is
+    still full (Emily, 2026-09-04). See leftovers.plan_leftover_chains.
     """
     conn = get_conn()
     entry = conn.execute(
-        "SELECT mpe.id, mpe.recipe_id, COALESCE(r.name, mpe.freeform_meal) AS meal_name "
+        "SELECT mpe.id, mpe.recipe_id, mpe.weekly_plan_id, COALESCE(r.name, mpe.freeform_meal) AS meal_name "
         "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         "WHERE mpe.id = ? AND mpe.household_id = ?",
         (entry_id, household_id()),
     ).fetchone()
     conn.close()
     if not entry or not entry["recipe_id"]:
+        return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
+    if entry["weekly_plan_id"] and entry_id in _leftovers.plan_leftover_chains(entry["weekly_plan_id"])["leftovers"]:
         return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
 
     try:
@@ -327,6 +344,14 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     cooked (see check_off_meal) and which prep tasks are done (see
     check_off_prep_step), plus counts. Omit weekly_plan_id for the
     household's current/most recent plan.
+
+    Counts only slots there is something to cook, on the same rule and for
+    the same reason as get_cooker_view -- see its docstring. This one
+    matters just as much despite having no screen: it is a chat tool, and
+    the system prompt names it as the way to answer "what's left to cook
+    this week". Unfiltered, it answered with a total nobody could reach and
+    handed back nameless entries carrying real entry_ids the assistant
+    could pass to check_off_meal.
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
@@ -335,8 +360,9 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     meal_rows = conn.execute(
         "SELECT mpe.id AS entry_id, COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.cooked_status AS cooked_status "
         "FROM meal_plan_entries mpe "
-        "LEFT JOIN recipes r ON r.id = mpe.recipe_id WHERE mpe.weekly_plan_id = ?",
-        (plan["weekly_plan_id"],),
+        "LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        f"WHERE mpe.weekly_plan_id = ? AND mpe.slot_state NOT IN ({_NOT_COOKABLE_PLACEHOLDERS})",
+        (plan["weekly_plan_id"], *_NOT_COOKABLE_SLOT_STATES_ORDERED),
     ).fetchall()
     conn.close()
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
@@ -351,6 +377,100 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     }
 
 
+def _scale_card_to_batch(card: dict, batch_servings: int) -> bool:
+    """
+    Cook ONE card for the whole batch it actually has to cover: scale its
+    ingredients to `batch_servings` and say so on the card.
+
+    Both planning modes need this and neither owns it. A component-based
+    plan batches because the same component is planned into several meals
+    (see the merge in get_cooker_view); a day-based plan batches because
+    one night's cook also feeds a later night's leftovers (see
+    leftovers.py). The arithmetic and the fields it writes are identical,
+    so they share this rather than each keeping their own copy — which is
+    how the day-based path came to have none at all.
+
+    `servings` is what the "for N" chip reads. `default_servings` moves
+    with it so the Cook screen's live servings stepper starts from the
+    batch the card is actually about, not from the recipe's own baseline.
+    Returns whether it scaled: a freeform meal, a recipe with no baseline
+    servings, or a batch of zero (a household with nobody on record) is
+    left exactly as written rather than scaled to a guess.
+    """
+    if batch_servings <= 0 or not card.get("has_full_recipe") or not card.get("default_servings"):
+        return False
+    scaled = _recipes.scale_recipe(card["meal"], batch_servings)
+    card["ingredients"] = scaled["scaled_ingredients"]
+    card["default_servings"] = batch_servings
+    card["servings"] = batch_servings
+    return True
+
+
+def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_name: dict) -> None:
+    """
+    The day-based half of batch cooking (Emily, 2026-09-04): one night
+    cooks for the whole chain, and the nights eating its leftovers stop
+    pretending to be cooks.
+
+    For the SOURCE entry — scale the recipe to everyone the batch has to
+    feed (that night's table plus each leftover night's), put that number
+    on `servings` for the "for 6" chip, and write `covers_note` naming the
+    nights it covers.
+
+    For each LEFTOVER entry — mark `is_leftovers` and strip the cook out
+    of it: no ingredients, no instructions, no advance-prep notes, no
+    recipe. It keeps its own entry_id (it is still a real night that can
+    be checked off) and gains `leftovers_from`/`leftovers_headline` so the
+    screen can say what it is and where it came from, plus `reheat_note`
+    if the recipe happens to carry reheating advice.
+
+    Chains come from leftovers.plan_leftover_chains, which only honours a
+    pairing both entries agree on — so a plan whose chains were never
+    validated is left exactly as it was.
+    """
+    chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+    if not chains["sources"]:
+        return
+    by_entry = {m["entry_id"]: m for m in meals}
+
+    for source in chains["sources"].values():
+        card = by_entry.get(source["entry_id"])
+        if card is None:
+            continue
+        batch = _leftovers.batch_for_source(source)
+        card["covers"] = [
+            {"date": t["date"], "slot": t["slot"], "eaters": t["eaters"]} for t in batch["targets"]
+        ]
+        if batch["servings"] > 0:
+            _scale_card_to_batch(card, batch["servings"])
+            card["covers_note"] = _leftovers.covers_note(source, batch["servings"])
+        else:
+            # Nothing countable to scale to (no members on record yet).
+            # The pairing is still real, so still say it — in the words
+            # repair_leftover_chains already wrote for this plan.
+            card["covers_note"] = source.get("note") or ""
+
+    for leftover in chains["leftovers"].values():
+        card = by_entry.get(leftover["entry_id"])
+        if card is None:
+            continue
+        src = leftover["source"]
+        card["is_leftovers"] = True
+        card["leftovers_from"] = src
+        card["leftovers_headline"] = _leftovers.leftovers_headline(src["meal"], src["date"])
+        card["reheat_note"] = _leftovers.reheat_note(recipes_by_name.get((src["meal"] or "").lower()))
+        card["servings"] = _leftovers.eaters_at(leftover["date"], leftover["slot"]) or None
+        # A reheat is not a cook. Emptied rather than left in place so no
+        # screen can render this night as a second cook of the same dish
+        # by reading a field it happens to still find populated.
+        card["ingredients"] = []
+        card["instructions"] = []
+        card["advance_prep_notes"] = ""
+        card["advance_prep_step_indices"] = []
+        card["has_full_recipe"] = False
+        card["default_servings"] = None
+
+
 def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     Everything the person actually cooking needs for the current (or given)
@@ -360,6 +480,46 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     rather than requiring separate get_weekly_plan/get_recipe/
     get_prep_schedule calls. Omit weekly_plan_id for the household's
     current plan.
+
+    Only slots there is something to COOK are included. A slot is one of
+    three states (see meal_plan_entries.slot_state) and two of them have no
+    meal behind them:
+
+    - 'planned_empty' — nobody is home. schema.sql calls this out as the
+      one deliberately empty slot in a week, which "must NEVER be offered
+      to the household as one". It was reaching this view because the view
+      never asked for slot_state, so a night nobody is home rendered as a
+      cookable row with an empty name and a checkbox -- and, if it fell on
+      today's dinner, as the Cook hero, headlined "Dinner", captioned with
+      the reason nobody is eating, and offering to start cooking it.
+    - 'open' — a decision genuinely handed back, carrying open_reason.
+      There is no meal here either, so it cannot be cooked; it belongs to
+      the Plan screen, which already renders open slots as the question
+      they are.
+
+    get_weekly_plan already carries slot_state for exactly this reason (its
+    own comment records the same bug being caught in a chat turn), so this
+    is a filter, not new plumbing.
+
+    slot_state is forwarded per meal, but note what that is and isn't for:
+    every row that survives the filter is cookable by construction, so it
+    cannot be used to say anything about the nights that were skipped. It
+    is there so a reader of one meal can see the state rather than infer
+    it. A screen that wants to say "you're away Friday" needs the skipped
+    slots themselves, which this deliberately does not return -- Cook is
+    the "what am I making now" state, and what to say about an away night
+    there is a copy decision nobody has made yet.
+
+    Anything that is not one of those two states counts as cookable, rather
+    than testing for 'planned' — the column arrived by ALTER TABLE with a
+    'planned' default, and a filter that only trusted an exact match would
+    blank the whole view for any row that ever held something else.
+
+    A meal that is really a leftovers night comes back with
+    is_leftovers=True and no recipe on it at all — the cook happened on an
+    earlier night, and that earlier night's card carries the whole batch
+    (`servings`, scaled ingredients, and `covers_note` naming the nights
+    it feeds). See _apply_leftover_chains.
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
@@ -368,6 +528,8 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     meals = []
     for m in plan["meals"]:
+        if m.get("slot_state") in _NOT_COOKABLE_SLOT_STATES:
+            continue
         recipe = recipes_by_name.get((m["meal"] or "").lower())
         meals.append({
             "entry_id": m["entry_id"],
@@ -375,6 +537,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "slot": m["slot"],
             "component_category": m["component_category"],
             "meal": m["meal"],
+            "slot_state": m.get("slot_state"),
             "cooked_status": m["cooked_status"],
             "reasoning": m.get("reasoning"),
             "ingredients": recipe["ingredients"] if recipe else [],
@@ -385,6 +548,14 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
             "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
+            # Set for real by _apply_leftover_chains below. Present on
+            # every meal (not only the ones it applies to) so a screen can
+            # branch on it without first checking whether the field exists.
+            "is_leftovers": False,
+            # The "for N" chip. None unless this card stands for a batch
+            # bigger than the recipe's own baseline — see
+            # _scale_card_to_batch.
+            "servings": None,
         })
 
     # Headcount for the focused cook-mode screen ("for 2 + 1 guest") — real
@@ -446,16 +617,17 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             statuses = g.pop("_statuses")
             g["cooked_status"] = "done" if all(s == "done" for s in statuses) else "pending"
             count = g["meal_count"]
-            if count > 1 and g["has_full_recipe"] and g["default_servings"]:
-                batch_servings = g["default_servings"] * count
-                scaled = _recipes.scale_recipe(g["meal"], batch_servings)
-                g["ingredients"] = scaled["scaled_ingredients"]
-                g["default_servings"] = batch_servings
+            batch_servings = (g["default_servings"] or 0) * count if count > 1 else 0
+            if _scale_card_to_batch(g, batch_servings):
                 g["batch_note"] = f"Bulk-cook once — makes enough for all {count} meals this week."
             else:
                 g["batch_note"] = None
             merged_meals.append(g)
         meals = merged_meals
+    else:
+        # The day-based equivalent of the merge above: a night whose batch
+        # also feeds a later night's leftovers cooks once, for everyone.
+        _apply_leftover_chains(plan["weekly_plan_id"], meals, recipes_by_name)
 
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
     return {
