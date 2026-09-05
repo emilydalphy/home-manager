@@ -240,6 +240,45 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-04 — A written-down allergy now reaches the food, and the check
+  that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
+  merged at the time of writing).** Root cause of the original bug was three
+  gaps in a row, not one: generation was never handed the `facts` table, the
+  safety net (`check_plan_conflicts`) read only member restrictions and only
+  a saved recipe's ingredient text, and nothing ever called it outside chat.
+  All three closed; a second pass then fixed what the first pass's keyword
+  matching did to the innocent meals.
+  - **Warn, never block — and that is a default, not a conclusion.** A clash
+    is said out loud at generation, on the review band, and again on
+    approval, but approval still goes through. Auto-promoting a hard note
+    into a member dietary restriction, or hard-blocking on one, is
+    **Emily's call and still pending**; until then the household decides and
+    the app is merely never silent.
+  - **Keyword extraction is the whole difficulty, and it is judgment, not
+    an algorithm.** A hard fact is a sentence a person wrote, so treating
+    every non-stopword in it as a food to hunt for flagged House Salad on
+    "no pork in this house", Porridge on "no cow milk…oat milk is fine",
+    Satay on "allergic to tree nuts but peanuts are fine", and a Protein
+    Bowl on "needs high-protein dinners". Three layers now stand between a
+    fact and a match term: only the span after an **avoidance trigger**
+    counts (a fact with no trigger — a requirement — produces no terms at
+    all), a **stated exception** is subtracted rather than merely truncated
+    (so it also cancels an alias expansion), and the stopword list carries
+    the furniture of household prose. Against that, an explicit
+    **allergen alias table** (`_ALLERGEN_ALIASES`) makes "nut allergy" reach
+    peanut butter and walnuts while whole-word matching keeps it off
+    coconut, nutmeg and butternut. Both are deliberately *lists a person can
+    argue with*, not stemming — and the alias table is a starting list;
+    extend it when a real miss shows up.
+  - **A false positive is a safety bug here, not a cosmetic one.** A check
+    that flags the safe meals too is one the household learns to click past,
+    and the real warning goes past with it. That is why the false-positive
+    work sits in the same file as the false-negative work.
+  - **The `hard` flag still has no UI.** `add_fact(hard=True)` is reachable
+    from chat and nowhere else — the What-we-know screen cannot set or show
+    it — so the whole hard-fact path depends on the assistant having chosen
+    the flag when it wrote the note. Open, unchanged by this branch.
+
 - **2026-09-04 — A plan is a PERIOD, not a week, and no day has two of
   them. Branch `planning-periods` (NOT merged at the time of writing).**
   Loop Board "Planning periods, not weeks — plan any window (Thursday to

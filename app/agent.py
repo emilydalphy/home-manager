@@ -3194,7 +3194,14 @@ def _generate_weekly_plan(
         # to the thing that plans the food. The prompts below treat a
         # hard=true fact as an absolute must-avoid, on the same footing as a
         # member's dietary_restrictions.
-        "household_facts": tools.get_facts(),
+        # Trimmed to the three fields the prompt can actually use. A fact's
+        # id, author and updated_at are storage bookkeeping — they cost
+        # tokens in a context that is already large and give the model
+        # nothing to plan with.
+        "household_facts": [
+            {"category": f.get("category"), "text": f.get("text"), "hard": bool(f.get("hard"))}
+            for f in tools.get_facts()
+        ],
         "intake": (
             _intake_generation_context(intake) if intake
             else _rhythm_only_generation_context(content_start_date, day_count)
@@ -3328,6 +3335,10 @@ def _generate_weekly_plan(
                     component_category=category,
                     reasoning=item.get("reasoning", ""),
                 )
+            # The day-based branch gets this inside _finish_week_slots, which
+            # has no component equivalent to live in — so it is called here
+            # directly rather than left out, which is what it was.
+            _log_plan_conflicts(plan_id, content_start_date)
         else:
             # The days actually asked for. The model is told the window and
             # mostly respects it, but being told is not the same as being
@@ -3455,6 +3466,37 @@ def _generate_weekly_plan(
                 )
 
 
+def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
+    """
+    The allergy check, run because a week was generated rather than because
+    someone remembered to ask for it. check_plan_conflicts existed for a
+    long time as a chat tool only, which meant the one path that produces a
+    whole week of food — generation — never called it, and a clash reached
+    the household only if the assistant happened to think of it
+    mid-conversation. Warnings, not a block: the household still decides.
+    The result isn't stored, it's recomputed for the draft payload (see
+    get_week_menu) so it stays true after a swap.
+
+    Its own function because BOTH generation modes have to run it. It first
+    lived inside _finish_week_slots, which a component-based household never
+    reaches — so exactly the households whose plan is a list of components
+    got no post-generation check at all.
+    """
+    try:
+        conflicts = tools.check_plan_conflicts(plan_id)["conflicts"]
+        if conflicts:
+            # Deduplicated: one dish planned on several nights is one clash
+            # worth reading, not seven identical log lines' worth.
+            pairs = sorted({f"{c['meal']} vs {c['restriction']}" for c in conflicts})
+            logger.warning(
+                "Week %s has %d possible dietary clash(es): %s",
+                week_start_date, len(pairs), ", ".join(pairs),
+            )
+    except Exception:
+        # A failed warning must never cost the household a generated week.
+        logger.exception("Conflict check failed for plan %s", plan_id)
+
+
 def _finish_week_slots(
     plan_id: int, week_start_date: str, intake: dict | None,
     household_memory: dict, day_count: int = 7, skip_days: int = 0,
@@ -3570,27 +3612,7 @@ def _finish_week_slots(
             ", ".join(f"{g['date']} {g['slot']}" for g in audit["missing"]),
         )
 
-    # The allergy check, run because a week was generated rather than
-    # because someone remembered to ask for it. check_plan_conflicts existed
-    # for a long time as a chat tool only, which meant the one path that
-    # produces a whole week of food — this one — never called it, and a
-    # clash reached the household only if the assistant happened to think of
-    # it mid-conversation. Warnings, not a block: the household still
-    # decides. The result isn't stored, it's recomputed for the draft
-    # payload (see get_week_menu) so it stays true after a swap.
-    try:
-        conflicts = tools.check_plan_conflicts(plan_id)["conflicts"]
-        if conflicts:
-            # Deduplicated: one dish planned on several nights is one clash
-            # worth reading, not seven identical log lines' worth.
-            pairs = sorted({f"{c['meal']} vs {c['restriction']}" for c in conflicts})
-            logger.warning(
-                "Week %s has %d possible dietary clash(es): %s",
-                week_start_date, len(pairs), ", ".join(pairs),
-            )
-    except Exception:
-        # A failed warning must never cost the household a generated week.
-        logger.exception("Conflict check failed for plan %s", plan_id)
+    _log_plan_conflicts(plan_id, week_start_date)
 
 
 _GENERATE_PREP_SCHEDULE_TOOL = {

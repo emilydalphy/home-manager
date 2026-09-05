@@ -2212,7 +2212,11 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     conflicts, conflicts_note = [], None
     try:
         found = _coordination.check_plan_conflicts(weekly_plan_id)
-        conflicts, conflicts_note = found["conflicts"], found["note"]
+        conflicts = found["conflicts"]
+        # Not found["note"]: that sentence ends "before you approve", and
+        # this is the moment just after. Same clash, worded for a decision
+        # already made — see conflicts_note_after_approval.
+        conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
     except Exception:
         logger.exception("Conflict check failed for plan %s", weekly_plan_id)
 

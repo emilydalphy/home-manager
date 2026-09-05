@@ -14,7 +14,7 @@ from . import weekly_plan as _weekly_plan
 
 
 # Words that describe a restriction rather than name the food it is about.
-# Two groups, and the second one is the bug fix:
+# Three groups now, and the third one is the fix that matters most:
 #
 #   1. Severity/negation words ("allergy", "free", "no") — these were always
 #      filtered, because keeping them would flag every recipe.
@@ -25,8 +25,13 @@ from . import weekly_plan as _weekly_plan
 #      that actually bit: it survived the old filter, and whole-word matched
 #      "salt to taste" — an ingredient in a large share of every recipe
 #      collection — so a single allergy fact would have flagged most of the
-#      week for the wrong reason. A warning that fires on everything is a
-#      warning nobody reads, which for an allergy check is worse than none.
+#      week for the wrong reason.
+#   3. The furniture of a sentence about a household: places, times, meals,
+#      wanting verbs. A fact is written the way a person talks, so it carries
+#      words that look exactly like food words to a keyword match and are
+#      not: "no pork in this house" flagged House Salad on "house".
+#      A warning that fires on everything is a warning nobody reads, which
+#      for an allergy check is worse than none.
 _CONFLICT_STOPWORDS = frozenset({
     "allergy", "allergies", "allergic", "free", "intolerance", "intolerant",
     "sensitivity", "sensitive", "no", "not", "never", "avoid", "avoids",
@@ -37,7 +42,81 @@ _CONFLICT_STOPWORDS = frozenset({
     "foods", "in", "on", "at", "for", "from", "it", "its", "this", "that",
     "these", "those", "she", "he", "they", "we", "i", "you", "her", "his",
     "their", "our", "my", "your", "them", "us", "me", "who", "does", "do",
+    # Group 3 — place, time, meal, and wanting words.
+    "house", "home", "here", "kitchen", "table", "week", "weeknights",
+    "weekends", "night", "nights", "day", "days", "meal", "meals",
+    "dinner", "dinners", "breakfast", "breakfasts", "lunch", "lunches",
+    "snack", "snacks", "needs", "need", "likes", "wants", "prefers",
+    "high", "low", "tree",
 })
+
+
+# The one place a keyword is allowed to mean more than itself.
+#
+# "nut allergy" has to reach peanut butter, walnuts and almonds — whole-word
+# matching finds none of them, and an allergen the household wrote down in
+# the ordinary way is exactly what this check exists to catch. Kept as an
+# explicit table rather than any kind of stemming so the expansion is
+# readable and arguable: every entry below is a deliberate claim about food,
+# not a string trick. Whole-word matching still applies to each expansion,
+# which is what keeps "nut" off coconut, nutmeg and butternut squash.
+#
+# A STARTING LIST, not a complete one. It covers the common allergens a
+# household is likely to write down; add to it when a real miss shows up
+# rather than trying to enumerate every food in advance. Plurals are not
+# listed — _keyword_variants already handles those.
+_ALLERGEN_ALIASES: dict[str, set[str]] = {
+    "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
+            "pistachio", "macadamia"},
+    "shellfish": {"shrimp", "prawn", "crab", "lobster", "clam", "mussel",
+                  "scallop", "oyster"},
+    "dairy": {"milk", "cheese", "butter", "cream", "yogurt", "yoghurt", "whey"},
+    "gluten": {"flour", "bread", "pasta", "noodles", "couscous", "seitan"},
+    "wheat": {"flour", "bread", "pasta", "noodles", "couscous", "seitan"},
+    "egg": {"eggs", "mayonnaise", "mayo"},
+    "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce"},
+    "sesame": {"tahini"},
+}
+_ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
+_ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
+
+
+# What turns a sentence into an avoidance. A hard What-we-know fact is
+# freeform prose and not every one of them is a "keep this off the table" —
+# "Emily needs high-protein dinners" is hard, and true, and names no food to
+# avoid. Only the span AFTER one of these triggers is read as a food to keep
+# away from; a fact with no trigger contributes no match terms at all.
+# Word boundaries are written per-alternative on purpose: a trailing \b
+# after the whole group would silently kill "allergies:", because there is
+# no word boundary between a colon and the space after it.
+_AVOIDANCE_TRIGGER_RE = re.compile(
+    r"\ballerg(?:ic|y|ies)\s+to\b"
+    r"|\ballergies\s*:"
+    r"|\bcan(?:no|')?t\s+(?:have|eat)\b"
+    r"|\bintoleran(?:t|ce)\s+to\b"
+    r"|\bavoids?\b|\bavoiding\b|\bnever\b|\bno\b"
+)
+
+# The same claim written backwards — "Emily has a nut allergy", "she's
+# lactose intolerant", "we cook dairy-free". Not in the trigger list above
+# because the food comes BEFORE the word, and dropping this shape would
+# have quietly lost the single most common way an allergy gets written
+# down. A tight window (the two words before an allergy noun, one before an
+# adjective) rather than the whole clause, because everything further back
+# is sentence, not food.
+_ALLERGY_NOUN_RE = re.compile(r"\ballerg(?:y|ies|ic)\b")
+_ALLERGY_ADJ_RE = re.compile(r"\bintoleran(?:t|ce)\b|(?<=[a-z])-free\b")
+
+# A stated exception. "allergic to tree nuts but peanuts are fine" says two
+# things, and reading only the first half is how a household gets warned
+# about the exact food they just told us was safe. The span after one of
+# these is not an avoidance — it is subtracted from the match terms, so it
+# also cancels anything the alias table above expanded into it.
+_CONTRAST_RE = re.compile(
+    r"\b(?:but|except|excepting|unless|though|although|apart\s+from|"
+    r"other\s+than|aside\s+from)\b"
+)
+_FINE_RE = re.compile(r"\b(?:fine|ok|okay|alright|allowed|welcome)\b")
 
 
 def _conflict_keywords(phrase: str, drop: set[str] | None = None) -> list[str]:
@@ -53,30 +132,119 @@ def _conflict_keywords(phrase: str, drop: set[str] | None = None) -> list[str]:
     return [w for w in words if w not in _CONFLICT_STOPWORDS and w not in drop]
 
 
+def _split_exception(span: str) -> tuple[str, str]:
+    """Split "tree nuts but peanuts are fine" into what to avoid and what not to."""
+    m = _CONTRAST_RE.search(span)
+    if m:
+        return span[:m.start()], span[m.end():]
+    # The comma form: "no cow milk for Emily, oat milk is fine".
+    for m in re.finditer(r",", span):
+        tail = span[m.end():]
+        if _FINE_RE.search(tail):
+            return span[:m.start()], tail
+    return span, ""
+
+
+def _fact_keywords(text: str, drop: set[str]) -> tuple[list[str], list[str]]:
+    """
+    Read a freeform hard fact as (things to avoid, things explicitly fine).
+
+    Both lists can be empty, and an empty first list is the important case:
+    it means the fact says nothing about avoiding a food, so it must produce
+    no warning at all. Every non-stopword in the sentence used to become a
+    match term, which is how a fact about wanting protein flagged a Protein
+    Bowl and a fact about the house flagged a House Salad.
+    """
+    lowered = (text or "").lower().replace("’", "'")
+    spans: list[str] = []
+    exception_spans: list[str] = []
+
+    for m in _AVOIDANCE_TRIGGER_RE.finditer(lowered):
+        rest = re.split(r"[.;!?]", lowered[m.end():], maxsplit=1)[0]
+        # "no pork, no shellfish" is two avoidances, not one long one.
+        nxt = _AVOIDANCE_TRIGGER_RE.search(rest)
+        if nxt:
+            rest = rest[:nxt.start()]
+        avoid, exception = _split_exception(rest)
+        spans.append(avoid)
+        if exception:
+            exception_spans.append(exception)
+
+    for regex, window in ((_ALLERGY_NOUN_RE, 2), (_ALLERGY_ADJ_RE, 1)):
+        for m in regex.finditer(lowered):
+            before = re.split(r"[.,;!?]", lowered[:m.start()])[-1]
+            before = re.split(r"\b(?:and|or|but|with)\b", before)[-1]
+            spans.append(" ".join(before.split()[-window:]))
+
+    keywords, seen = [], set()
+    for span in spans:
+        for word in _conflict_keywords(span, drop=drop):
+            if word not in seen:
+                seen.add(word)
+                keywords.append(word)
+    excepted = [w for span in exception_spans for w in _conflict_keywords(span, drop=drop)]
+    return keywords, excepted
+
+
 def _keyword_variants(keyword: str) -> set[str]:
     """
-    A keyword plus its obvious singular/plural twin. A restriction saved as
+    A keyword plus its plausible singular/plural twin. A restriction saved as
     "peanuts" has to match an ingredient listed as "peanut butter" — whole-word
     matching alone would miss it, and missing an allergen is the failure this
     check exists to prevent.
+
+    English enough to stop inventing words. The first version appended both
+    "s" and "es" to everything, so "nut" also searched for "nutes" and
+    "shellfish" for "shellfishs" — never harmful (nothing matches a non-word)
+    but noise in the one function whose output a person may end up reading.
     """
     variants = {keyword}
-    if keyword.endswith("es") and len(keyword) > 4:
+    if len(keyword) > 4 and keyword.endswith("ies"):
+        variants.add(keyword[:-3] + "y")
+    elif len(keyword) > 4 and keyword.endswith(("ches", "shes", "sses", "xes", "zes")):
         variants.add(keyword[:-2])
-    if keyword.endswith("s") and len(keyword) > 3:
+    elif len(keyword) > 3 and keyword.endswith("es"):
         variants.add(keyword[:-1])
+        variants.add(keyword[:-2])
+    elif len(keyword) > 3 and keyword.endswith("s"):
+        variants.add(keyword[:-1])
+    elif keyword.endswith("y") and len(keyword) > 2 and keyword[-2] not in "aeiou":
+        variants.add(keyword[:-1] + "ies")
+    elif keyword.endswith(("s", "x", "z", "ch", "sh")):
+        variants.add(keyword + "es")
     else:
         variants.add(keyword + "s")
-        variants.add(keyword + "es")
     return variants
 
 
-def _matches(keywords: list[str], text: str) -> str | None:
+def _match_terms(keywords: list[str], excepted: list[str] | None = None) -> list[tuple[str, set[str]]]:
+    """
+    Each keyword paired with every spelling that should count as finding it:
+    its own plural/singular twin, plus the alias table's expansion when the
+    keyword names a whole allergen family. Anything the household explicitly
+    called fine is removed — including from an alias expansion, which is what
+    lets "allergic to tree nuts but peanuts are fine" still catch walnuts.
+    """
+    excluded: set[str] = set()
+    for word in excepted or []:
+        excluded |= _keyword_variants(word)
+    out = []
+    for keyword in keywords:
+        variants: set[str] = set()
+        for base in {keyword} | _ALLERGEN_ALIASES.get(keyword, set()):
+            variants |= _keyword_variants(base)
+        variants -= excluded
+        if variants:
+            out.append((keyword, variants))
+    return out
+
+
+def _matches(terms: list[tuple[str, set[str]]], text: str) -> str | None:
     """The first keyword that appears in `text` as a whole word, or None."""
-    for kw in keywords:
-        for variant in _keyword_variants(kw):
+    for keyword, variants in terms:
+        for variant in variants:
             if re.search(r"\b" + re.escape(variant) + r"\b", text):
-                return kw
+                return keyword
     return None
 
 
@@ -98,10 +266,14 @@ def _avoidances() -> list[dict]:
         for restriction in m["dietary_restrictions"]:
             if not restriction.strip():
                 continue
+            keywords = _conflict_keywords(restriction, drop=name_words)
+            terms = _match_terms(keywords)
+            if not terms:
+                continue
             out.append({
                 "member": m["name"], "label": restriction.strip().lower(),
                 "source": "dietary_restriction", "severity": "hard",
-                "keywords": _conflict_keywords(restriction, drop=name_words),
+                "terms": terms,
             })
 
     # Hard facts — the What-we-know notes flagged as must-avoid. The person
@@ -118,51 +290,127 @@ def _avoidances() -> list[dict]:
             None,
         )
         name_words = {w for w in re.sub(r"[^a-z0-9\s]", " ", (named or "").lower()).split()}
-        keywords = _conflict_keywords(text, drop=name_words)
-        if not keywords:
+        keywords, excepted = _fact_keywords(text, drop=name_words)
+        terms = _match_terms(keywords, excepted)
+        if not terms:
             continue
         out.append({
             "member": named, "label": text.strip(), "source": "fact",
-            "severity": "hard", "keywords": keywords,
+            "severity": "hard", "terms": terms,
         })
 
     # Standing dislikes are not a safety matter, so they ride along at a
     # lower severity — worth mentioning, never worth alarming about.
     for dislike in _memory.get_household_memory().get("dislikes") or []:
-        keywords = _conflict_keywords(dislike)
-        if not keywords:
+        terms = _match_terms(_conflict_keywords(dislike))
+        if not terms:
             continue
         out.append({
             "member": None, "label": dislike.strip().lower(), "source": "dislike",
-            "severity": "soft", "keywords": keywords,
+            "severity": "soft", "terms": terms,
         })
     return out
 
 
-def _conflicts_note(conflicts: list[dict]) -> str | None:
+# The closing half of the warning sentence. Two of them, because the same
+# clash is read at two different moments: on the review band there is still
+# a decision to make, and after approval there isn't — telling a household
+# to look "before you approve" once they already have is the app not
+# listening.
+_DRAFT_CLOSING = "worth a look before you approve"
+_APPROVED_CLOSING = "worth a look before you shop"
+
+# A label that already says what kind of thing it is ("pineapple allergy",
+# "dairy-free") can hang off a name; a bare food ("shellfish") cannot —
+# "a clash with Emily's shellfish" is not a sentence anyone would say.
+_SELF_DESCRIBING_LABEL_RE = re.compile(
+    r"\b(?:allerg\w*|intoleran\w*|sensitivit\w*|free|diet|vegan|vegetarian|"
+    r"pescatarian|halal|kosher)\b"
+)
+
+_NUMBER_WORDS = {
+    1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+    6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+}
+
+
+def _spell(n: int) -> str:
+    return _NUMBER_WORDS.get(n, str(n))
+
+
+def _one_meal_sentence(c: dict, closing: str) -> str:
+    """The full sentence when a single dish trips a single thing to avoid."""
+    meal, member, label = c["meal"], c["member"], c["restriction"]
+    if c["source"] == "fact":
+        # The fact is a whole sentence, so it is quoted rather than
+        # grammatically absorbed — and named to a person when it names one.
+        whose = f"something {member} can’t have" if member else "something you’ve told me"
+        return f"{meal} looks like a clash with {whose} — “{label}”. {closing[0].upper()}{closing[1:]}."
+    if member:
+        if _SELF_DESCRIBING_LABEL_RE.search(label):
+            return f"{meal} looks like a clash with {member}’s {label} — {closing}."
+        return f"{meal} looks like a clash with the {label} {member} can’t have — {closing}."
+    return f"{meal} looks like a clash with the {label} you’ve asked me to avoid — {closing}."
+
+
+def _conflicts_note(conflicts: list[dict], closing: str = _DRAFT_CLOSING) -> str | None:
     """
     One plain sentence for the draft's review band, or None when there is
     nothing to say. Written here rather than in the UI so the wording lives
     with the data it describes — and only ever about the hard ones, because
     a dislike is a preference, not a warning.
+
+    Counted in MEALS, not in clashes. One dish planned on five nights is one
+    thing to look at, not five; one dish that trips two separate facts is
+    also one thing to look at, and the sentence knows its name — retreating
+    to "One meal looks like a clash" when the dish is sitting right there
+    was the app being vaguer than it needed to be.
     """
     hard = [c for c in conflicts if c["severity"] == "hard"]
     if not hard:
         return None
-    # One dish planned on five nights is one thing to look at, not five, and
-    # the sentence should name it rather than retreat into a count.
-    distinct = {(c["meal"], c["restriction"]): c for c in hard}
-    if len(distinct) > 1:
-        meals = len({c["meal"] for c in hard})
-        subject = "One meal" if meals == 1 else f"{meals} meals"
-        verb = "looks" if meals == 1 else "look"
-        return f"{subject} {verb} like a clash with something you’ve asked me to avoid — worth a look before you approve."
-    c = next(iter(distinct.values()))
-    if c["source"] == "fact":
-        return f"{c['meal']} looks like a clash with something you’ve told me — “{c['restriction']}”. Worth a look before you approve."
-    if c["member"]:
-        return f"{c['meal']} looks like a clash with {c['member']}’s {c['restriction']} — worth a look before you approve."
-    return f"{c['meal']} looks like a clash with the {c['restriction']} you’ve asked me to avoid — worth a look before you approve."
+
+    meals: list[str] = []
+    for c in hard:
+        if c["meal"] not in meals:
+            meals.append(c["meal"])
+
+    if len(meals) == 1:
+        distinct = {c["restriction"]: c for c in hard}
+        if len(distinct) == 1:
+            return _one_meal_sentence(next(iter(distinct.values())), closing)
+        # Two facts, one dish. Still name the dish, and still name the
+        # person when every clash is about the same one.
+        members = {c["member"] for c in hard}
+        whose = (
+            f"{_spell(len(distinct))} things {members.pop()} can’t have"
+            if len(members) == 1 and None not in members
+            else f"{_spell(len(distinct))} things you’ve asked me to avoid"
+        )
+        return f"{meals[0]} looks like a clash with {whose} — {closing}."
+
+    if len(meals) == 2:
+        return (
+            f"{meals[0]} and {meals[1]} look like a clash with something "
+            f"you’ve asked me to avoid — {closing}."
+        )
+    subject = _spell(len(meals))
+    return (
+        f"{subject[0].upper()}{subject[1:]} meals look like a clash with something "
+        f"you’ve asked me to avoid — {closing}."
+    )
+
+
+def conflicts_note_after_approval(conflicts: list[dict]) -> str | None:
+    """
+    The same warning, worded for a week that has already been approved.
+
+    approve_weekly_plan passes its clashes through here instead of using
+    check_plan_conflicts' own note: the draft's sentence ends "before you
+    approve", and repeating that back to someone who just approved reads as
+    the app not having noticed.
+    """
+    return _conflicts_note(conflicts, closing=_APPROVED_CLOSING)
 
 
 def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
@@ -211,9 +459,12 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         ingredient_text = ""
         if recipe:
             ingredient_text = " ".join((i.get("item") or "") for i in recipe.get("ingredients", []))
-        haystack = re.sub(r"[^a-z0-9\s-]", " ", f"{name} {ingredient_text}".lower())
+        # Whitespace collapsed as well as punctuation stripped, so a
+        # two-word term ("soy sauce") still matches text that was joined
+        # with a blank ingredient in the middle.
+        haystack = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", f"{name} {ingredient_text}".lower()))
         for avoidance in avoidances:
-            matched = _matches(avoidance["keywords"], haystack)
+            matched = _matches(avoidance["terms"], haystack)
             if not matched:
                 continue
             conflicts.append({
