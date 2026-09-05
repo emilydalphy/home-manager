@@ -160,6 +160,11 @@ _UNIT_ALIASES = {
     # single count instead of falling through to literal "1 large + 1/2"
     # concatenation. See _try_consolidate_quantity / the grocery-quantity
     # bug this fixes (onion showing as "1 large + 1/2" instead of "2").
+    #
+    # Kept as a backstop only: _split_quantity_note below now lifts these
+    # words out of the string before it is ever matched, wherever in the
+    # string they sit, and hands them back as a note. This table only
+    # still fires for a unit string built by hand somewhere else.
     "large": "", "medium": "", "small": "", "whole": "", "jumbo": "", "xl": "",
 }
 
@@ -236,6 +241,141 @@ def _normalize_container_word(unit_str: str) -> str:
     words = unit_str.split(" ")
     words[-1] = _CONTAINER_UNIT_SINGULARS.get(words[-1], words[-1])
     return " ".join(words)
+
+
+# Words a recipe hangs on a quantity that describe the PRODUCT rather than
+# the amount of it — "2 lb bag (frozen)", "3 bag frozen", "1 large", "2
+# ripe". They are not units and they are not counts, and while they sat in
+# the string they defeated the number/unit match below outright: Emily's
+# first approved week showed "Mixed berries: 2 lb bag (frozen) + 2 lb bag
+# (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen)", four unparseable
+# strings glued end to end, and "Pineapple chunks · 3 bag frozen", where
+# "bag frozen" read as the unit so the package rule never saw a bag.
+#
+# So they come OUT of the string before parsing and are kept as a NOTE,
+# which the grocery list appends back after the amount: "1 bag (2 lb),
+# frozen". That is the one canonical shape — amount first, then a comma,
+# then whatever describes the product — because the amount is what a
+# shopper scans a list for and the note is what they read once they have
+# found the line. Frozen berries stay visibly frozen; they just stop
+# breaking the arithmetic.
+#
+# Deliberately a closed vocabulary of words that can only ever be
+# descriptions. Anything unrecognized is left in the string, where it will
+# either parse as a unit or fall through to the freeform path exactly as
+# it does today — guessing that an unknown trailing word is decoration is
+# how a real unit gets thrown away.
+_DESCRIPTOR_WORDS = {
+    # How the product is sold/preserved — genuinely useful to a shopper,
+    # and the reason a note is retained rather than simply discarded.
+    "frozen", "fresh", "canned", "jarred", "dried", "raw", "cooked",
+    "organic", "ripe", "unripe", "seedless", "boneless", "skinless",
+    "unsalted", "salted", "unsweetened", "sweetened",
+    # Size words. These carry no amount at all (see _UNIT_ALIASES above,
+    # which used to be the only thing that handled them) and are noted
+    # rather than dropped so "3, large" still tells the shopper which
+    # onions — but they never touch the number, so "1 large" and "1/2"
+    # still add up to a single count the way that table intends.
+    "large", "extra-large", "medium", "small", "whole", "jumbo", "xl",
+}
+
+
+def _looks_like_package_size(text: str) -> bool:
+    """
+    True for the parenthetical that states the SIZE of one package — "(2
+    lb)", "(48 oz)" — and false for one that merely describes it,
+    "(frozen)". The two are told apart by whether the contents are a
+    number and a unit of MEASURE, which is the only shape the canonical
+    sized-package form ever writes (see _sized_package_unit).
+    """
+    match = re.match(r"^(\d*\.?\d+)\s*([a-zA-Z]+)$", text.strip().lower())
+    if not match:
+        return False
+    unit = _UNIT_ALIASES.get(match.group(2), match.group(2))
+    return unit in _measure_units()
+
+
+def _merge_notes(*notes) -> str:
+    """Combine note strings/lists into one comma-separated note, keeping
+    first-seen order and dropping duplicates — two dinners that both say
+    "frozen" produce one "frozen", not two."""
+    seen: list[str] = []
+    for note in notes:
+        parts = note if isinstance(note, (list, tuple, set)) else [note]
+        for part in parts:
+            for word in str(part or "").split(","):
+                word = word.strip()
+                if word and word not in seen:
+                    seen.append(word)
+    return ", ".join(seen)
+
+
+def _with_note(text: str, note: str) -> str:
+    """The canonical shape: the amount, then the note. "1 bag (2 lb)" +
+    "frozen" -> "1 bag (2 lb), frozen"."""
+    if not note:
+        return text
+    return f"{text}, {note}" if text else note
+
+
+def _split_quantity_note(qty: str) -> tuple[str, str]:
+    """
+    Split a raw quantity into (the part that states an amount, the note
+    describing the product). "2 lb bag (frozen)" -> ("2 lb bag",
+    "frozen"); "3 bag frozen" -> ("3 bag", "frozen"); "1 bag (2 lb),
+    frozen" -> ("1 bag (2 lb)", "frozen"), so a quantity this module has
+    already formatted splits back into exactly what it was built from.
+    A quantity with nothing to strip comes back unchanged with an empty
+    note, which is the overwhelmingly common case.
+    """
+    if not qty:
+        return "", ""
+    notes: list[str] = []
+
+    def _take_paren(match: re.Match) -> str:
+        inner = match.group(1).strip()
+        if _looks_like_package_size(inner):
+            return match.group(0)
+        if inner:
+            notes.append(inner.lower())
+        return " "
+
+    core = re.sub(r"\(([^()]*)\)", _take_paren, qty)
+    kept: list[str] = []
+    # Split keeping the separators, so removing a word leaves the rest of
+    # the string spaced and punctuated exactly as it was written.
+    for token in re.split(r"(\s+|,)", core):
+        if token.strip().lower() in _DESCRIPTOR_WORDS:
+            notes.append(token.strip().lower())
+            continue
+        kept.append(token)
+    core = re.sub(r"\s+", " ", "".join(kept)).strip().strip(" ,")
+    return core, _merge_notes(notes)
+
+
+def _quantity_note(qty: str) -> str:
+    """Just the note half of _split_quantity_note, for callers that merge
+    two already-normalized quantities and have to carry the note across."""
+    return _split_quantity_note((qty or "").strip())[1]
+
+
+# A quantity that genuinely cannot be parsed still must not be written
+# twice on one line. "a handful" and "a handful" become "a handful ×2" —
+# see grocery._repeat_or_concatenate, which is the only thing that writes
+# this, and _subtract_quantity, which is the only thing that unwinds it.
+_REPEAT_RE = re.compile(r"^(.+?)\s*×\s*(\d+)\s*$")
+
+
+def _split_repeat_count(qty: str) -> tuple[str, int]:
+    """"a handful ×3" -> ("a handful", 3); anything else -> (itself, 1)."""
+    match = _REPEAT_RE.match((qty or "").strip())
+    if match:
+        return match.group(1).strip(), int(match.group(2))
+    return (qty or "").strip(), 1
+
+
+def _with_repeat_count(base: str, count: int) -> str:
+    return base if count <= 1 else f"{base} ×{count}"
 
 
 # Unit is normally one word ("lb", "cup"), but a store-purchase quantity
@@ -334,7 +474,12 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
     """
     if not qty or not qty.strip():
         return None
-    match = _QTY_RE.match(_strip_prep_descriptor(qty.strip()).lower())
+    # Descriptors ("frozen", "large", "(frozen)") come out first — they
+    # describe the product, not the amount, and left in place they defeat
+    # the match below entirely. The note itself is not this function's to
+    # return; _normalize_grocery_quantity re-attaches it for display.
+    core, _note = _split_quantity_note(qty.strip())
+    match = _QTY_RE.match(_strip_prep_descriptor(core).lower())
     if not match:
         return None
     amount_str, unit_str = match.group(1), (match.group(2) or "").strip()
@@ -465,10 +610,16 @@ def _normalize_grocery_quantity(qty: str) -> str:
     """
     Reformat a raw quantity string for shopper-friendly display (see
     _humanize_grocery_quantity). Freeform text that doesn't parse as a
-    number+unit (e.g. "a bunch", "to taste") is left exactly as-is.
+    number+unit (e.g. "a bunch", "to taste") is left exactly as-is —
+    including any descriptor inside it, since re-attaching a note to a
+    string that still contains the word would say it twice.
+
+    A quantity that DOES parse comes back in the canonical shape amount
+    first, note last: "2 lb bag (frozen)" -> "1 bag (2 lb), frozen".
     """
-    stripped = _strip_prep_descriptor((qty or "").strip())
-    parsed = _parse_quantity(stripped)
+    raw = (qty or "").strip()
+    core, note = _split_quantity_note(raw)
+    parsed = _parse_quantity(core)
     if not parsed:
-        return stripped
-    return _humanize_grocery_quantity(parsed[0], parsed[1])
+        return _strip_prep_descriptor(raw)
+    return _with_note(_humanize_grocery_quantity(parsed[0], parsed[1]), note)

@@ -278,14 +278,61 @@ why*, not duplicating the diff.
     the other two dinners still need and clearing the week still empties
     the list exactly. A package line with no `source_weekly_plan_id` is a
     hand-added standing want and is never removed.
-  - **Where `leftovers-servings-scaling` plugs in:** the per-portion path
-    in `_add_recipe_ingredients_for_entries` still scales per meal via
-    `attendance.grocery_scale_factor` (anchored to household size, on
-    purpose — see the attendance entry). A total-servings factor across
-    the group's `entry_ids` replaces that one call and nothing else.
+  - **A descriptor is not a unit, and it used to eat the whole quantity.**
+    Emily added two more rows after the above was written: "Mixed berries:
+    2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag
+    (frozen)" and "Pineapple chunks · 3 bag frozen". Two different
+    failures with one cause — "(frozen)" made the string unparseable so it
+    concatenated, and in "1 bag frozen" the unit read as "bag frozen" so
+    `package_unit` never saw a bag and three snacks summed. Descriptors
+    now come OUT before parsing and come BACK as a note
+    (`_split_quantity_note`), in one canonical shape: **amount first, note
+    last, separated by a comma** — "1 bag (2 lb), frozen", "3 bags,
+    frozen", "1 jar, large". Amount-first because that is what a shopper
+    scans for; the note is what they read once they have found the line.
+    The vocabulary is a CLOSED set (`_DESCRIPTOR_WORDS`) of words that can
+    only ever be descriptions — an unrecognized trailing word is left
+    alone, because guessing it is decoration is how a real unit gets
+    thrown away. A note is only re-attached to something that parsed, so
+    freeform text ("a frozen handful") keeps its own wording rather than
+    saying "frozen" twice.
+  - **The concatenation fallback may never write the same words twice.**
+    "2 cups + 1 lb" is an honest report that two amounts could not be
+    reconciled; four copies of "2 lb bag (frozen)" is not. Identical text
+    now collapses to one copy with a repeat marker — "a handful ×2" —
+    which counts up on the way in (`_repeat_or_concatenate`, summing under
+    `_try_consolidate_quantity` and taking the max under
+    `_greater_of_quantity`) and back down on the way out
+    (`_subtract_quantity`). Genuinely different text still concatenates.
+  - **Where `leftovers-servings-scaling` plugs in** (correcting an earlier
+    draft of this entry, which said a total-servings factor "replaces that
+    one call and nothing else" — it does not; that branch does three
+    things per entry, and only one of them is a factor). Against
+    `_add_recipe_ingredients_for_entries`:
+    1. Its `scale *= batch["servings"] / batch["cook_eaters"]` for a chain
+       SOURCE is the easy one, and the claim holds there: it multiplies
+       the per-entry `grocery_scale_factor` inside the loop that builds
+       `scaled_for_entry`, one entry at a time, composing exactly as it
+       does today.
+    2. Its `return [], []` for a LEFTOVERS entry does NOT survive
+       translation. A leftovers chain reuses the same `recipe_id`, so the
+       cook night and the reheat night land in the SAME recipe-week group
+       — an early return would drop the cook night's shop too. It has to
+       become a filter on `entry_ids` before the loop, with the group
+       returning `[], []` only when every entry in it was filtered out.
+    3. The package path needs that filtered list as well: a package is
+       added once per group and `_record_link`s every entry in it, so a
+       reheat night must not hold a link (it contributed nothing, and a
+       link would keep the bottle alive past the cook night that did).
+    Also: read `weekly_plan_id` off the entry rows already being fetched
+    and look the chains up once per group, not once per entry as that
+    branch does. Expect a real textual conflict in `recipes.py` — that
+    branch edits the body of `_add_recipe_ingredients_to_grocery_list`,
+    which this branch reduced to a one-line wrapper.
   - **Open for Emily:** whether a true per-portion sum should ever be
-    capped. 17 peppers is honest arithmetic; it may still be more than
-    anyone wants to read on one line.
+    capped. 17 peppers is honest arithmetic — five dinners wanting 3, 4,
+    2, 4 and 4 — and it is NOT capped or hidden; the list shows 17. It may
+    still be more than anyone wants to read on one line.
 
 - **2026-09-04 — A plan is a PERIOD, not a week, and no day has two of
   them. Branch `planning-periods` (NOT merged at the time of writing).**

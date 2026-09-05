@@ -105,7 +105,16 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     (e.g. "2 cups flour" + "1 lb flour"), nothing is guessed — both amounts
     are kept together on one line so the shopper sees both rather than a
     silently wrong conversion.
+
+    What it will NOT do is write the same quantity twice. Two sides that
+    are the same words are the same unit whether or not this module can
+    read that unit, and "2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag
+    (frozen) + 2 lb bag (frozen)" is not an honest report of uncertainty,
+    it is four copies of one line — see _repeat_or_concatenate.
     """
+    note = _quantities._merge_notes(
+        _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
+    )
     existing_qty = _quantities._strip_prep_descriptor((existing_qty or "").strip())
     new_qty = _quantities._strip_prep_descriptor((new_qty or "").strip())
     if not existing_qty:
@@ -115,7 +124,33 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     existing_parsed = _quantities._parse_quantity(existing_qty)
     new_parsed = _quantities._parse_quantity(new_qty)
     if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
-        return _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]), True
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], existing_parsed[1]),
+            note,
+        ), True
+    return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=True)
+
+
+def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) -> tuple[str, bool]:
+    """
+    The last resort when two quantities for the same item can't be added.
+    Identical text is never written twice: it collapses to one copy with a
+    "×N" repeat marker ("a handful" + "a handful" -> "a handful ×2"), and
+    an existing marker counts up rather than starting a second line.
+    sum_counts says whether N adds (four meals each wanting one) or takes
+    the larger (a sealed package, where four meals still want one) — the
+    same split as _try_consolidate_quantity vs _greater_of_quantity.
+
+    Genuinely different text still concatenates, because that is the
+    honest answer: "2 cups + 1 lb" tells the shopper there are two amounts
+    and this module could not reconcile them. What it stops being is a way
+    for one repeated breakfast to fill a line with copies of itself.
+    """
+    existing_base, existing_count = _quantities._split_repeat_count(existing_qty)
+    new_base, new_count = _quantities._split_repeat_count(new_qty)
+    if existing_base.lower() == new_base.lower():
+        count = existing_count + new_count if sum_counts else max(existing_count, new_count)
+        return _quantities._with_repeat_count(existing_base, count), True
     return f"{existing_qty} + {new_qty}", False
 
 
@@ -133,6 +168,9 @@ def _greater_of_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
     quantities.package_unit are merged this way — see
     recipes._add_recipe_ingredients_for_entries, the only caller.
     """
+    note = _quantities._merge_notes(
+        _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
+    )
     existing_qty = _quantities._strip_prep_descriptor((existing_qty or "").strip())
     new_qty = _quantities._strip_prep_descriptor((new_qty or "").strip())
     if not existing_qty:
@@ -142,8 +180,11 @@ def _greater_of_quantity(existing_qty: str, new_qty: str) -> tuple[str, bool]:
     existing_parsed = _quantities._parse_quantity(existing_qty)
     new_parsed = _quantities._parse_quantity(new_qty)
     if existing_parsed and new_parsed and existing_parsed[1] == new_parsed[1]:
-        return _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), existing_parsed[1]), True
-    return f"{existing_qty} + {new_qty}", False
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(max(existing_parsed[0], new_parsed[0]), existing_parsed[1]),
+            note,
+        ), True
+    return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=False)
 
 
 def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
@@ -160,7 +201,14 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     remove entirely. Otherwise nothing is guessed — the line is left
     exactly as-is (fully_removed=False, resulting string unchanged) rather
     than risk deleting an amount still needed for something else.
+
+    Whatever _try_consolidate_quantity can write, this has to be able to
+    unwrite, or a swap leaves the list slowly drifting: the note a merged
+    line carries survives the subtraction ("3 bags, frozen" less one bag
+    is "2 bags, frozen"), and a "×N" repeat marker counts back down
+    instead of being left as an unreconcilable string.
     """
+    note = _quantities._quantity_note(current_qty)
     current_qty = _quantities._strip_prep_descriptor((current_qty or "").strip())
     remove_qty = _quantities._strip_prep_descriptor((remove_qty or "").strip())
     if not current_qty:
@@ -173,7 +221,16 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
         remainder = current_parsed[0] - remove_parsed[0]
         if remainder <= 0.0001:
             return "", True
-        return _quantities._humanize_grocery_quantity(remainder, current_parsed[1]), False
+        return _quantities._with_note(
+            _quantities._humanize_grocery_quantity(remainder, current_parsed[1]), note
+        ), False
+    current_base, current_count = _quantities._split_repeat_count(current_qty)
+    remove_base, remove_count = _quantities._split_repeat_count(remove_qty)
+    if current_base.lower() == remove_base.lower():
+        remaining = current_count - remove_count
+        if remaining <= 0:
+            return "", True
+        return _quantities._with_repeat_count(current_base, remaining), False
     return current_qty, False
 
 

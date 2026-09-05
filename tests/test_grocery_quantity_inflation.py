@@ -28,7 +28,7 @@ import pytest
 
 from app import tools
 from app.db import get_conn
-from app.tools import quantities
+from app.tools import grocery, quantities
 
 
 def _week_start() -> str:
@@ -353,3 +353,166 @@ def test_headcount_does_not_split_a_package(week):
     tools.approve_weekly_plan(week, approved_by="Emily")
 
     assert _qty("Olive oil") == "1 bottle"
+
+
+# ---------- descriptors: "(frozen)", "3 bag frozen", "1 large" ----------
+
+@pytest.mark.parametrize("written,reads_as", [
+    # The two rows Emily flagged after this fix was already underway.
+    ("2 lb bag (frozen)", "1 bag (2 lb), frozen"),
+    ("3 bag frozen", "3 bags, frozen"),
+    # The same shapes, spelled the other ways a recipe writes them.
+    ("1 bag frozen", "1 bag, frozen"),
+    ("2 bags (organic)", "2 bags, organic"),
+    ("1 large jar", "1 jar, large"),
+    ("2 ripe", "2, ripe"),
+    # Canonical output parses back to itself, so a line that has already
+    # been merged once can be merged into again.
+    ("1 bag (2 lb), frozen", "1 bag (2 lb), frozen"),
+    ("3 bags, frozen", "3 bags, frozen"),
+    # Nothing to strip: unchanged, note-free.
+    ("48 oz tub", "1 tub (48 oz)"),
+    ("2 cups", "2 cups"),
+])
+def test_a_descriptor_is_lifted_out_of_the_amount_and_kept_as_a_note(written, reads_as):
+    """
+    "Frozen" is not a unit and not a count. Left in the string it defeated
+    the parse outright, which is how Emily's list ended up with "2 lb bag
+    (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen)"
+    and "3 bag frozen". Stripped into a note, the amount parses and the
+    shopper still gets told the berries are frozen.
+    """
+    assert quantities._normalize_grocery_quantity(written) == reads_as
+
+
+def test_a_descriptor_does_not_hide_the_package_from_the_package_rule():
+    """The "3 bag frozen" half of the bug: "bag frozen" read as the unit,
+    so package_unit never saw a bag and the bags summed per meal."""
+    assert quantities.package_unit("2 lb bag (frozen)") == "bag"
+    assert quantities.package_unit("1 bag frozen") == "bag"
+    assert quantities.package_unit("1 large jar") == "jar"
+
+
+def test_freeform_text_keeps_its_own_wording():
+    """A note is only re-attached to something that parsed. "a frozen
+    handful" is left exactly as written rather than becoming "a frozen
+    handful, frozen"."""
+    assert quantities._normalize_grocery_quantity("a frozen handful") == "a frozen handful"
+
+
+def test_mixed_berries_four_mornings_buy_one_bag(week):
+    """Emily's row, end to end: "Mixed berries: 2 lb bag (frozen) + 2 lb
+    bag (frozen) + 2 lb bag (frozen) + 2 lb bag (frozen)"."""
+    tools.add_recipe("Berry bowl", ingredients=[
+        {"item": "Mixed berries", "qty": "2 lb bag (frozen)", "category": "frozen"}])
+    _plan(week, _days()[:4], "Berry bowl", "breakfast")
+
+    tools.approve_weekly_plan(week, approved_by="Emily")
+
+    assert _qty("Mixed berries") == "1 bag (2 lb), frozen"
+
+
+def test_pineapple_chunks_three_snacks_buy_one_bag(week):
+    """Emily's other row, "Pineapple chunks · 3 bag frozen" — three lunches
+    that each said "1 bag frozen", summed because the descriptor hid the
+    bag from the package rule."""
+    tools.add_recipe("Pineapple bowl", ingredients=[
+        {"item": "Pineapple chunks", "qty": "1 bag frozen", "category": "frozen"}])
+    _plan(week, _days()[:3], "Pineapple bowl", "lunch")
+
+    tools.approve_weekly_plan(week, approved_by="Emily")
+
+    assert _qty("Pineapple chunks") == "1 bag, frozen"
+
+
+def test_a_recipe_that_really_wants_three_frozen_bags_still_gets_three(week):
+    """The floor-not-cap rule survives the descriptor stripping."""
+    tools.add_recipe("Big smoothie", ingredients=[
+        {"item": "Pineapple chunks", "qty": "3 bag frozen", "category": "frozen"}])
+    tools.plan_meal(_days()[0], "Big smoothie", slot="breakfast", weekly_plan_id=week)
+
+    tools.approve_weekly_plan(week, approved_by="Emily")
+
+    assert _qty("Pineapple chunks") == "3 bags, frozen"
+
+
+# ---------- an unreadable quantity is never written twice ----------
+
+def test_two_identical_unreadable_quantities_collapse_to_a_repeat_count():
+    """
+    The concatenation fallback is for amounts this module genuinely cannot
+    reconcile — "2 cups" against "1 lb". Two copies of the same words are
+    not that: they are the same unit whether or not it can be read, and
+    four of them on one line is how the mixed-berries row looked.
+    """
+    assert grocery._try_consolidate_quantity("a handful", "a handful") == ("a handful ×2", True)
+    assert grocery._try_consolidate_quantity("a handful ×2", "a handful") == ("a handful ×3", True)
+    assert grocery._try_consolidate_quantity("a handful ×2", "a handful ×2") == ("a handful ×4", True)
+
+
+def test_a_repeat_count_is_a_package_rule_too():
+    """Under the package rule the same unreadable quantity twice is still
+    one of it, not two — the max, not the sum."""
+    assert grocery._greater_of_quantity("a handful", "a handful") == ("a handful", True)
+    assert grocery._greater_of_quantity("a handful ×3", "a handful") == ("a handful ×3", True)
+
+
+def test_genuinely_different_amounts_still_show_both():
+    """The honest case the fallback exists for is untouched."""
+    assert grocery._try_consolidate_quantity("2 cups", "1 lb") == ("2 cups + 1 lb", False)
+
+
+def test_a_repeat_count_counts_back_down_when_a_meal_goes_away():
+    """Whatever consolidation can write, reversal has to unwrite."""
+    assert grocery._subtract_quantity("a handful ×3", "a handful") == ("a handful ×2", False)
+    assert grocery._subtract_quantity("a handful ×2", "a handful ×2") == ("", True)
+
+
+def test_a_note_survives_being_added_to_and_taken_back_from():
+    """A merged line keeps saying "frozen" through both directions."""
+    assert grocery._try_consolidate_quantity("2 bags, frozen", "1 bag, frozen") == ("3 bags, frozen", True)
+    assert grocery._subtract_quantity("3 bags, frozen", "1 bag, frozen") == ("2 bags, frozen", False)
+
+
+# ---------- Emily's first approved week, all eight lines at once ----------
+
+def test_emilys_first_approved_week_reads_like_a_shopping_list(week):
+    """
+    The whole complaint in one plan: six breakfasts, four lunches and five
+    dinners, and every line that was wrong. Bell peppers are the control —
+    seventeen is what five dinners of two to four peppers actually comes
+    to, and this fix deliberately does not cap it.
+    """
+    tools.add_recipe("Green scramble", ingredients=[
+        {"item": "Baby spinach", "qty": "1 bag", "category": "produce"},
+        {"item": "Honey", "qty": "1 bottle", "category": "pantry"},
+        {"item": "Granola", "qty": "1 bag", "category": "pantry"},
+    ])
+    tools.add_recipe("Hummus plate", ingredients=[
+        {"item": "Hummus", "qty": "1 tub", "category": "dairy"},
+        {"item": "Quinoa", "qty": "1 bag", "category": "pantry"},
+        {"item": "Cottage cheese", "qty": "48 oz tub", "category": "dairy"},
+    ])
+    peppers = ["3", "4", "2", "4", "4"]
+    for index, amount in enumerate(peppers):
+        tools.add_recipe(f"Pepper dinner {index}", ingredients=[
+            {"item": "Bell peppers", "qty": amount, "category": "produce"},
+            {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"},
+        ])
+
+    days = _days()
+    _plan(week, days[:6], "Green scramble", "breakfast")
+    _plan(week, days[:4], "Hummus plate", "lunch")
+    for index in range(5):
+        tools.plan_meal(days[index], f"Pepper dinner {index}", slot="dinner", weekly_plan_id=week)
+
+    tools.approve_weekly_plan(week, approved_by="Emily")
+
+    assert _qty("Baby spinach") == "1 bag"        # was 6 bags
+    assert _qty("Honey") == "1 bottle"            # was 4 bottles
+    assert _qty("Granola") == "1 bag"
+    assert _qty("Hummus") == "1 tub"              # was 4 tubs
+    assert _qty("Quinoa") == "1 bag"              # was 3 bags
+    assert _qty("Cottage cheese") == "1 tub (48 oz)"   # was "48 oz tubs"
+    assert _qty("Olive oil") == "1 bottle"        # was 3 bottles
+    assert _qty("Bell peppers") == "17"           # honest sum, uncapped
