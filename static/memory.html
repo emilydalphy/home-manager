@@ -257,7 +257,7 @@ async function renderFactsTab(category) {
       html += `</div>`;
     }
     if (preferences) {
-      html += renderPreferenceCard(preferences);
+      html += category === 'rhythm' ? renderRhythmPreferenceCard(preferences) : renderPreferenceCard(preferences);
     }
     html += `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     facts.forEach(f => {
@@ -302,7 +302,10 @@ async function renderFactsTab(category) {
     html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
     content.innerHTML = html;
     wireFactsActions(category);
-    if (preferences) wirePreferenceActions(preferences);
+    if (preferences) {
+      if (category === 'rhythm') wireRhythmPreferenceActions();
+      else wirePreferenceActions(preferences);
+    }
   } catch (err) {
     content.innerHTML = '<p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
@@ -361,6 +364,57 @@ function renderPreferenceCard(prefs) {
   }
   html += `</div>`;
   return html;
+}
+
+// The Rhythm tab's one editable structured fact: leftovers_stance (Loop
+// Board "Onboarding asks about leftovers twice", 2026-09-05). Before this,
+// the merged leftovers/repeats answer was only ever settable at onboarding
+// or by asking chat — same gap renderPreferenceCard above was built to
+// close for eating_style/cuisines on Taste, just for one single-select
+// fact here instead of free text/a list. Lives in household_rhythm, not
+// meal_preferences, so it saves through /api/onboarding/rhythm (the same
+// endpoint the rhythm onboarding step posts to) rather than
+// /api/memory/edit.
+const RHYTHM_LEFTOVERS_OPTIONS = [
+  { key: 'love_them', label: 'Love them — cook once, eat twice' },
+  { key: 'fine_sometimes', label: 'Fine now and then' },
+  { key: 'fresh_each_night', label: 'Fresh every night' },
+];
+
+function renderRhythmPreferenceCard(prefs) {
+  let html = `<div class="wwk-card"><p class="wwk-intro">From your setup answers — this shapes every week I plan.</p>`;
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Leftovers</span></span>
+  </div>`;
+  html += `<div class="wwk-pref-chips">`;
+  RHYTHM_LEFTOVERS_OPTIONS.forEach(o => {
+    const on = prefs.leftovers_stance === o.key;
+    html += `<button type="button" class="wwk-chip-add" data-set-leftovers="${o.key}"
+      style="${on ? 'background:var(--celadon-tint);color:var(--ink-on-celadon);border-style:solid;font-weight:800;' : ''}">${escapeHtml(o.label)}</button>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+async function saveLeftoversStance(value) {
+  const res = await fetch('/api/onboarding/rhythm', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ leftovers_stance: value }),
+  });
+  if (!res.ok) throw new Error('failed');
+}
+
+function wireRhythmPreferenceActions() {
+  const content = document.getElementById('wwk-content');
+  content.querySelectorAll('[data-set-leftovers]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await saveLeftoversStance(btn.getAttribute('data-set-leftovers'));
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
 }
 
 function wirePreferenceActions(prefs) {

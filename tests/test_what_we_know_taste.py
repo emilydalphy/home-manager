@@ -55,18 +55,25 @@ def test_the_taste_tab_is_given_the_values_it_needs_to_show(signed_in, household
 
 def test_the_other_tabs_are_unaffected(signed_in, household_with_taste):
     """
-    The People tab has its own extra block and must keep it; Rhythm and
-    Stores should get neither. A preferences card appearing on every tab
-    would be the obvious way to get this wrong.
+    The People tab has its own extra block and must keep it; Stores gets
+    neither. Rhythm has grown its own preferences card since (Loop Board
+    "Onboarding asks about leftovers twice", 2026-09-05 — see
+    test_leftovers_and_snacks.py), but it must be RHYTHM's own shape
+    (leftovers_stance), not the Taste tab's eating_style/cuisines card
+    leaking across tabs — that would be the obvious way to get this wrong.
     """
     people = signed_in.get("/api/facts?category=people").json()
     assert people["onboarding"] is not None, "People lost its onboarding block"
     assert people.get("preferences") is None, "People should not get the taste card"
 
-    for tab in ("rhythm", "stores"):
-        body = signed_in.get(f"/api/facts?category={tab}").json()
-        assert body.get("preferences") is None, f"{tab} should not get the taste card"
-        assert body.get("onboarding") is None, f"{tab} should not get the onboarding block"
+    rhythm = signed_in.get("/api/facts?category=rhythm").json()
+    assert set(rhythm.get("preferences") or {}) == {"leftovers_stance"}, \
+        "rhythm should get its own leftovers card, not the taste card"
+    assert rhythm.get("onboarding") is None, "rhythm should not get the onboarding block"
+
+    stores = signed_in.get("/api/facts?category=stores").json()
+    assert stores.get("preferences") is None, "stores should not get any preferences card"
+    assert stores.get("onboarding") is None, "stores should not get the onboarding block"
 
 
 def test_editing_the_eating_style_reaches_the_planner(signed_in, household_with_taste):

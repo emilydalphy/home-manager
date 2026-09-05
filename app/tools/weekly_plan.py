@@ -235,6 +235,7 @@ def get_meal_planning_preferences() -> dict:
             "breakfasts_per_week": field("breakfasts_per_week", 7),
             "lunches_per_week": field("lunches_per_week", 7),
             "dinners_per_week": field("dinners_per_week", 7),
+            "snacks_per_week": field("snacks_per_week", 3),
         },
         "dislikes": json.loads(field("dislikes_json", "[]")),
         "protein_preferences": json.loads(field("protein_preferences_json", "{}")),
