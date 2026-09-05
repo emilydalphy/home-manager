@@ -38,7 +38,18 @@ WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", 
 # household_rhythm table as the original three above (household-level facts,
 # member_name='' and weekday=''), not a schema change.
 DINNER_WINDOWS = ("5_6ish", "6_8", "later", "all_over")
-PLANNING_ANCHORS = ("sunday_before", "midweek", "as_we_go")
+
+# Emily's decision, 2026-09-05 (Loop Board "Rhythm: rename 'When should
+# your week be ready?' ... and decide what 'As we go' actually does"):
+# planning_anchor is a WEEKDAY the plan and list are final on ("ready by
+# Friday" — her example), not an abstract cadence. 'as_we_go' is the one
+# non-weekday escape and means something concrete now too: short
+# horizons, plan a few days at a time, rather than a whole week (see
+# weekly_plan.suggest_planning_period). Replaces the original three-chip
+# cadence ('sunday_before'/'midweek'/'as_we_go') — see db._migrate_planning_anchor_values
+# for how an existing household's old answer maps onto this.
+PLANNING_ANCHOR_WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+PLANNING_ANCHORS = PLANNING_ANCHOR_WEEKDAYS + ("as_we_go",)
 LEFTOVERS_STANCES = ("love_them", "fine_sometimes", "fresh_each_night")
 
 
@@ -164,14 +175,16 @@ def set_dinner_window(value: str, source: str = "onboarding") -> dict:
 
 def set_planning_anchor(value: str, source: str = "onboarding") -> dict:
     """
-    Set when the household wants its week ready: 'sunday_before' (planned
-    and shopped before the week starts), 'midweek', or 'as_we_go'.
-    Household-level. Stored for now as the household's stated cadence
-    preference — the app doesn't yet act on it to time its own planning
-    nudges/list-final/check-in prompts (see the "when should your week be
-    ready" note in generate_prep_schedule_llm's caller and the Loop Board
-    ticket for that follow-up work); this is the fact those prompts will
-    read once built.
+    Set the day the household wants its plan and list FINAL by: one of
+    PLANNING_ANCHOR_WEEKDAYS ('monday' ... 'sunday'), or 'as_we_go' for a
+    household that doesn't want a weekly ready day at all. Household-level.
+
+    A weekday value means the week itself starts the NEXT morning — "ready
+    by Friday" is a Saturday-start week (see
+    weekly_plan.suggest_planning_period, which reads this to seed the
+    default plan period and time the planning nudge). 'as_we_go' means
+    something concrete, not merely "no answer": short horizons — plan two
+    or three days at a time instead of a full week.
     """
     if value not in PLANNING_ANCHORS:
         raise ValueError(f"value must be one of {PLANNING_ANCHORS}, not {value!r}.")
@@ -181,6 +194,22 @@ def set_planning_anchor(value: str, source: str = "onboarding") -> dict:
     conn.close()
     _household._log_preference_event("rhythm:planning_anchor", "write")
     return {"planning_anchor": value}
+
+
+def planning_anchor_label(value: str) -> str:
+    """
+    The human-readable form of a stored planning_anchor value, for
+    anywhere What We Know or chat needs to say it back plainly: "Ready on
+    Friday" for a weekday, or the short-horizon description for
+    'as_we_go'. Returns '' for an unset/unrecognized value rather than
+    guessing — an unanswered rhythm question should read as unanswered,
+    not as a default.
+    """
+    if value in PLANNING_ANCHOR_WEEKDAYS:
+        return f"Ready on {value.capitalize()}"
+    if value == "as_we_go":
+        return "As we go — planned a few days at a time"
+    return ""
 
 
 def set_leftovers_stance(value: str, source: str = "onboarding") -> dict:
@@ -249,6 +278,7 @@ def get_household_rhythm() -> dict:
         "cooking_role": cooking_role,
         "dinner_window": dinner_window,
         "planning_anchor": planning_anchor,
+        "planning_anchor_label": planning_anchor_label(planning_anchor or ""),
         "leftovers_stance": leftovers_stance,
     }
 

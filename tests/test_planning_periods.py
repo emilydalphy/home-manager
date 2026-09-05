@@ -330,31 +330,56 @@ class TestNonMondayPeriods:
 # ---------- the anchor ----------
 
 class TestRhythmAnchoredDefault:
+    """
+    Emily's decision, 2026-09-05 (Loop Board "Rhythm: rename 'When should
+    your week be ready?' ... and decide what 'As we go' actually does"):
+    planning_anchor is a WEEKDAY the plan/list are final by, not an
+    abstract cadence, and the week it seeds starts the NEXT morning —
+    "ready by Friday" is a Saturday-start week. 'as_we_go' is the one
+    non-weekday escape and now means something concrete: short horizons,
+    three days at a time, rather than a full week.
+    """
     def _set_anchor(self, value: str):
         tools.set_planning_anchor(value)
 
-    def test_a_household_that_plans_on_the_sunday_before_gets_a_monday(self):
-        self._set_anchor("sunday_before")
+    def test_a_household_ready_the_sunday_before_gets_a_monday(self):
+        # 'sunday' is the exact old default's new name — ready the Sunday
+        # before, Monday start.
+        self._set_anchor("sunday")
         suggestion = tools.suggest_planning_period()
         assert suggestion["is_monday_anchored"] is True
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
         assert suggestion["day_count"] == 7
 
-    def test_a_household_that_plans_as_it_goes_starts_today(self):
+    def test_ready_by_friday_starts_the_week_on_saturday(self):
+        # Emily's own example: "ready by Friday" means the week starts the
+        # next morning.
+        self._set_anchor("friday")
+        suggestion = tools.suggest_planning_period()
+        assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 5  # Saturday
+        assert suggestion["day_count"] == 7
+        assert suggestion["planning_anchor"] == "friday"
+
+    def test_every_weekday_anchor_starts_the_day_after_itself(self):
+        for i, weekday in enumerate(tools.PLANNING_ANCHOR_WEEKDAYS):
+            self._set_anchor(weekday)
+            suggestion = tools.suggest_planning_period()
+            assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == (i + 1) % 7, weekday
+
+    def test_a_household_that_plans_as_it_goes_gets_a_short_horizon(self):
+        # Short horizons, not a Monday-shaped week from a different start:
+        # three days from today, not seven.
         self._set_anchor("as_we_go")
         suggestion = tools.suggest_planning_period()
         assert suggestion["start_date"] == datetime.date.today().isoformat()
+        assert suggestion["day_count"] == 3
         assert suggestion["planning_anchor"] == "as_we_go"
-
-    def test_midweek_planners_also_start_today(self):
-        self._set_anchor("midweek")
-        assert tools.suggest_planning_period()["start_date"] == datetime.date.today().isoformat()
 
     def test_a_household_that_never_answered_keeps_the_monday(self):
         # The no-op property again: every household predating the anchor
         # sees exactly the default this app has always offered.
         suggestion = tools.suggest_planning_period()
-        assert suggestion["planning_anchor"] == "sunday_before"
+        assert suggestion["planning_anchor"] == "sunday"
         assert datetime.date.fromisoformat(suggestion["start_date"]).weekday() == 0
 
     def test_the_endpoint_serves_it(self, signed_in):
@@ -362,6 +387,59 @@ class TestRhythmAnchoredDefault:
         res = signed_in.get("/api/week/planning-period")
         assert res.status_code == 200
         assert res.json()["start_date"] == datetime.date.today().isoformat()
+        assert res.json()["day_count"] == 3
+
+
+# ---------- the nudge, retimed to the household's own ready day ----------
+
+class TestPlanningNudgeOpensBeforeTheReadyDay:
+    """
+    Loop Board "Rhythm: rename ... and decide what 'As we go' actually
+    does": for a weekday anchor, "ready by Friday" means Friday IS the
+    last day of the currently-running period (see suggest_planning_period)
+    — so the existing "offer the next period from one day before its
+    predecessor ends" rule (get_week_planning_nudge) already opens the
+    nudge the day before the ready day, and on the ready day itself,
+    without needing anchor-specific code. Pinned here with a fixed
+    "today" so the day-of-week math is asserted directly rather than
+    trusted by inspection.
+    """
+    PERIOD_START = "2026-09-05"  # a Saturday
+    READY_DAY = "2026-09-11"     # the following Friday: PERIOD_START + 6 days
+
+    class _FixedToday(datetime.date):
+        _value: "datetime.date | None" = None
+
+        @classmethod
+        def today(cls):
+            return cls._value
+
+    def _pin_today(self, monkeypatch, iso_date: str):
+        from app.tools import weekly_plan as _weekly_plan
+        self._FixedToday._value = datetime.date.fromisoformat(iso_date)
+        monkeypatch.setattr(_weekly_plan, "date", self._FixedToday)
+
+    def _make_current_period_plan(self, recipes, stub_model):
+        tools.set_planning_anchor("friday")
+        stub_model(_full_period(self.PERIOD_START, 7))
+        agent.generate_weekly_plan(self.PERIOD_START, day_count=7, period_start=self.PERIOD_START)
+
+    def test_no_nudge_while_the_ready_day_is_still_a_few_days_off(self, recipes, stub_model, monkeypatch):
+        self._make_current_period_plan(recipes, stub_model)
+        self._pin_today(monkeypatch, "2026-09-08")  # Tuesday, 3 days before Friday
+        assert tools.get_week_planning_nudge()["show"] is False
+
+    def test_nudge_opens_the_day_before_the_ready_day(self, recipes, stub_model, monkeypatch):
+        self._make_current_period_plan(recipes, stub_model)
+        self._pin_today(monkeypatch, "2026-09-10")  # Thursday, the day before Friday
+        nudge = tools.get_week_planning_nudge()
+        assert nudge["show"] is True
+        assert nudge["week_start"] == "2026-09-12"  # Saturday: the morning after Friday
+
+    def test_nudge_stays_open_on_the_ready_day_itself(self, recipes, stub_model, monkeypatch):
+        self._make_current_period_plan(recipes, stub_model)
+        self._pin_today(monkeypatch, self.READY_DAY)  # Friday
+        assert tools.get_week_planning_nudge()["show"] is True
 
 
 # ---------- overlap takeover ----------

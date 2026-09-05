@@ -2043,10 +2043,10 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_planning_anchor",
-        "description": "Set (or correct) when the household wants its week ready, household-level: 'sunday_before' (planned/shopped before the week starts), 'midweek', or 'as_we_go'.",
+        "description": "Set (or correct) the day the household wants its plan and list FINAL by, household-level: a weekday ('monday'...'sunday' — e.g. \"ready by Friday\" is set_planning_anchor('friday')), meaning the week itself starts the next morning; or 'as_we_go' for a household that doesn't want a weekly ready day at all and instead plans a few days at a time.",
         "input_schema": {
             "type": "object",
-            "properties": {"value": {"type": "string", "enum": ["sunday_before", "midweek", "as_we_go"]}},
+            "properties": {"value": {"type": "string", "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "as_we_go"]}},
             "required": ["value"],
         },
     },

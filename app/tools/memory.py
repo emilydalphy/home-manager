@@ -257,7 +257,7 @@ _CONTEXT_SIGNALS = [
     # 2026-09-03) — same rhythm cluster, same reasoning, weighted just under
     # the original three so the earliest-asked rhythm facts still lead.
     ("dinner_window", "Tell me when dinner usually lands", "Times prep schedules and defrost reminders around when you actually eat — part of your rhythm.", 14),
-    ("planning_anchor", "Tell me when your week should be ready", "Sets when I plan, when your list needs to be final, and when I check in — part of your rhythm.", 14),
+    ("planning_anchor", "Tell me when your weekly plan should be ready", "Sets the day your plan and list are final, and when your week starts — part of your rhythm.", 14),
     ("leftovers_stance", "Tell me how you feel about leftovers", "Powers batch-cooking and ready-made suggestions instead of guessing — part of your rhythm.", 14),
     ("dietary_restrictions", "Note any dietary restrictions or allergies", "The single most important thing to get right before I suggest a week of meals.", 15),
     ("recipes_rated", "Rate a few recipes after cooking them", "The strongest habit signal I get — real reactions beat stated preferences every time.", 15),

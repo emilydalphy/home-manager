@@ -438,9 +438,9 @@
   </div>
 
   <div class="rhythm-card">
-    <h2>When should your week be ready?</h2>
+    <h2>When should your weekly plan be ready?</h2>
     <div class="rhythm-chip-row" id="rhythm-planning-anchor-chips"></div>
-    <p class="rhythm-helper">This is when I'll draft your week and have the list ready &mdash; set it to whenever planning ahead actually happens for you.</p>
+    <p class="rhythm-helper">I'll have the plan and the list ready that day; your week starts the next morning. As we go means I plan a few days at a time.</p>
   </div>
 
   <div class="rhythm-card">
@@ -792,9 +792,17 @@ const DINNER_WINDOW_OPTIONS = [
   { key: 'later', label: 'Later' },
   { key: 'all_over', label: 'All over the place' },
 ];
+// Emily's decision, 2026-09-05: a weekday picker (the day the plan and
+// list are final by — her example, Friday) plus "As we go" as the one
+// escape from naming a day at all.
 const PLANNING_ANCHOR_OPTIONS = [
-  { key: 'sunday_before', label: 'Sunday, before the week' },
-  { key: 'midweek', label: 'Midweek' },
+  { key: 'monday', label: 'Mon' },
+  { key: 'tuesday', label: 'Tue' },
+  { key: 'wednesday', label: 'Wed' },
+  { key: 'thursday', label: 'Thu' },
+  { key: 'friday', label: 'Fri' },
+  { key: 'saturday', label: 'Sat' },
+  { key: 'sunday', label: 'Sun' },
   { key: 'as_we_go', label: 'As we go' },
 ];
 // Merged with the old final-step "how do you feel about repeats?" question

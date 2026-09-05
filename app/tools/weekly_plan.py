@@ -14,6 +14,7 @@ from . import grocery as _grocery
 from . import meal_plans as _meal_plans
 from . import notifications as _notifications
 from . import recipes as _recipes
+from . import rhythm as _rhythm
 from . import week_intake as _week_intake
 
 
@@ -258,21 +259,24 @@ def suggest_planning_period(from_date: str = "") -> dict:
     THIS household, rather than where the calendar says a week starts.
 
     Read from the rhythm the household already gave at onboarding
-    (household_rhythm.planning_anchor, "when do you want your week ready?"),
-    which until now was stored and acted on nowhere — its own setter says
-    so. It is a cadence, not a weekday, so the mapping is a judgment call
-    and is written here rather than inferred:
+    (household_rhythm.planning_anchor, "when should your weekly plan be
+    ready?"). Emily's decision, 2026-09-05: the anchor is a WEEKDAY the
+    plan and list are final by — her example, "ready by Friday" — not an
+    abstract cadence, and 'as_we_go' is the one non-weekday escape with a
+    concrete meaning of its own (short horizons, not "no answer"):
 
-    - 'sunday_before' — planned and shopped before the week begins. Their
-      week IS the Monday week; anchoring anywhere else would put the shop
-      in the middle of it. Monday-anchored, seven days. Also the answer for
-      a household that has never said (no rhythm on record), which is what
-      keeps this a no-op for everyone who predates it.
-    - 'midweek' and 'as_we_go' — households whose planning does not line up
-      with a Monday at all. Seven days from TODAY. For 'midweek' that is
-      the whole point; for 'as_we_go' a Monday anchor is the least
-      meaningful boundary there is, since nothing about their week begins
-      there.
+    - A weekday (rhythm.PLANNING_ANCHOR_WEEKDAYS) — "ready by Friday" means
+      the week STARTS THE NEXT MORNING, so the period begins the day after
+      the ready day and runs seven days. The nearest such start (today
+      counts, if today already is that day) is used, matching how the
+      original Monday default always meant the week currently running
+      rather than some future one. A household that has never answered
+      defaults to 'sunday' — ready the Sunday before, Monday start — which
+      is the exact old default, so this is a no-op for everyone who
+      predates the weekday picker.
+    - 'as_we_go' — no weekly ready day at all. Three days from TODAY: a
+      short horizon a household re-plans every couple of days, not a
+      Monday-shaped week with a different start.
 
     This is a SUGGESTION and nothing more: it seeds the default on the plan
     screen, and every one of its parts is overridable by picking a start
@@ -281,16 +285,20 @@ def suggest_planning_period(from_date: str = "") -> dict:
     that guesses better is not the same as a constraint that guesses less.
     """
     today = date.fromisoformat(from_date) if from_date else date.today()
-    anchor = (_rhythm_anchor() or "sunday_before")
-    if anchor == "sunday_before":
-        start = today - timedelta(days=today.weekday())
-    else:
+    anchor = (_rhythm_anchor() or "sunday")
+    if anchor == "as_we_go":
         start = today
+        day_count = 3
+    else:
+        ready_index = _rhythm.PLANNING_ANCHOR_WEEKDAYS.index(anchor)
+        start_index = (ready_index + 1) % 7
+        start = today - timedelta(days=(today.weekday() - start_index) % 7)
+        day_count = 7
     return {
         "start_date": start.isoformat(),
-        "day_count": 7,
+        "day_count": day_count,
         "planning_anchor": anchor,
-        "label": _format_period_range(start.isoformat(), 7),
+        "label": _format_period_range(start.isoformat(), day_count),
         "is_monday_anchored": start.weekday() == 0,
     }
 

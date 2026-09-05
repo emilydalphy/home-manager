@@ -424,6 +424,32 @@ def _migrate_repeats_tolerance_to_leftovers_stance(conn):
             """,
             (row["household_id"], mapped),
         )
+def _migrate_planning_anchor_values(conn):
+    """
+    Loop Board "Rhythm: rename 'When should your week be ready?' ... and
+    decide what 'As we go' actually does" (Emily, 2026-09-05):
+    household_rhythm.planning_anchor moved from an abstract cadence
+    ('sunday_before'/'midweek'/'as_we_go') to a concrete weekday the plan
+    and list are final by ('monday' ... 'sunday'), plus 'as_we_go'
+    unchanged. Maps every existing answer onto the value that preserves
+    what it already meant:
+
+    - 'sunday_before' (ready the Sunday before, Monday start) -> 'sunday'
+    - 'midweek' (no real day named, just "not the weekend") -> 'wednesday',
+      the middle of the week and the closest a literal day gets to what
+      "midweek" meant
+    - 'as_we_go' -> unchanged; only its downstream meaning changed (see
+      tools.weekly_plan.suggest_planning_period), not the stored value
+
+    Idempotent and run every startup like the other one-time value fixups
+    below: once no row carries an old value, both UPDATEs touch zero rows.
+    """
+    conn.execute(
+        "UPDATE household_rhythm SET value = 'sunday' WHERE fact_type = 'planning_anchor' AND value = 'sunday_before'"
+    )
+    conn.execute(
+        "UPDATE household_rhythm SET value = 'wednesday' WHERE fact_type = 'planning_anchor' AND value = 'midweek'"
+    )
 
 
 def _run_migrations(conn):
@@ -438,6 +464,7 @@ def _run_migrations(conn):
     _backfill_member_colors(conn)
     _merge_duplicate_item_store_preferences(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
+    _migrate_planning_anchor_values(conn)
 
 
 def init_db():
