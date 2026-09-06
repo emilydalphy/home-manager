@@ -6260,6 +6260,10 @@
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
+          // The post-change next-step chip (offerNextStepChip) navigates
+          // directly rather than sending a message — "Open the list" and
+          // "Plan my stops" are places to go, not things to ask about.
+          if (action.onClick) return action.onClick();
           // The grocery chip pre-fills and focuses instead of sending —
           // what to add is the household's call, not something to guess at
           // and send as a message. openAskSheet(prefill) already knows how
@@ -6269,6 +6273,50 @@
         });
       });
     });
+  }
+
+  // "core loop handoffs, slice 2" item B (Emily, 2026-09-05): once
+  // hideAskChips has fired (after the household's first message), the
+  // pre-conversation quick-action chips are gone for good — but a turn
+  // that actually changed something still has an obvious next step, and
+  // making the household type it out again is exactly the friction the
+  // quick-action chips exist to remove. So: after any turn whose actions
+  // (the same {tab, change} cards refreshStaleTabsFromActions reads) show
+  // a real change, recompute and show exactly ONE relevant chip. Purely
+  // client-side, per the ticket — no backend change, no new fields.
+  //
+  // Priority when a turn touched more than one area: an approval (which
+  // often ALSO carries a grocery action for the items it just added) beats
+  // a plain grocery edit, which beats an unapproved draft edit — the
+  // biggest life-cycle event wins.
+  function computeNextStepChip(actions) {
+    var weekAction = null, groceryAction = null;
+    (actions || []).forEach(function (a) {
+      if (a.tab === 'week') weekAction = a;
+      if (a.tab === 'grocery') groceryAction = a;
+    });
+    // approve_weekly_plan is the one 'week' tool whose action card's
+    // `change` text says "approved" (app/main.py's _categorize_tool
+    // special-cases it to "Week approved — your list is ready") — the
+    // only signal available here, without a backend change, that this
+    // turn was an approval rather than an ordinary draft edit.
+    if (weekAction && /approved/i.test(weekAction.change || '')) {
+      return { label: 'Open the list', onClick: function () { activateTab('grocery', true); } };
+    }
+    if (groceryAction) {
+      return { label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } };
+    }
+    if (weekAction) {
+      // Same label + message computeContextQuickActions already uses for
+      // "there's a draft, go approve it" — one wording for one meaning.
+      return { label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' };
+    }
+    return null;
+  }
+
+  function offerNextStepChip(actions) {
+    var chip = computeNextStepChip(actions);
+    if (chip) renderAskChips([chip]);
   }
 
   function splitTableRow(line) {
@@ -6573,6 +6621,7 @@
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
+      offerNextStepChip(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);
