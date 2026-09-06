@@ -546,3 +546,37 @@ def test_defrost_today_endpoint(signed_in, chicken_recipe):
     assert done.status_code == 200
     res2 = signed_in.get("/api/prep/defrost-today")
     assert res2.json()["tasks"] == []
+
+
+def test_undo_a_skipped_defrost_task_reverts_it_to_pending(signed_in, chicken_recipe):
+    """
+    "core loop handoffs, slice 3" item 3: the Today defrost tile's "Skipped
+    for today." toast gets an Undo action. No new backend route was needed
+    — check_off_prep_step already accepts 'pending' as a real status (see
+    its own docstring: "done, skipped, or back to pending") — this just
+    confirms the existing /api/cooker/check-prep endpoint really does put a
+    skipped task back where get_defrost_today (the Today tile's own read)
+    will find it again.
+    """
+    _freeze()
+    week = _week_start()
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(tools._week_dates(week)[3], "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+    defrost.sync_defrost_tasks(plan["weekly_plan_id"])
+    task = tools.get_prep_schedule(plan["weekly_plan_id"])[0]
+    from app.db import get_conn
+    conn = get_conn()
+    conn.execute("UPDATE prep_tasks SET task_date = ? WHERE id = ?", (datetime.date.today().isoformat(), task["id"]))
+    conn.commit()
+    conn.close()
+
+    skipped = signed_in.post("/api/cooker/check-prep", json={"prep_task_id": task["id"], "status": "skipped"})
+    assert skipped.status_code == 200
+    assert signed_in.get("/api/prep/defrost-today").json()["tasks"] == []
+
+    undone = signed_in.post("/api/cooker/check-prep", json={"prep_task_id": task["id"], "status": "pending"})
+    assert undone.status_code == 200
+    restored = signed_in.get("/api/prep/defrost-today").json()["tasks"]
+    assert len(restored) == 1
+    assert restored[0]["id"] == task["id"]
+    assert restored[0]["status"] == "pending"

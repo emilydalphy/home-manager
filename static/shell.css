@@ -222,14 +222,17 @@ html, body {
   color: var(--celadon-label);
   margin-top: -4px;
 }
-/* Prep is celadon — the accent that reassures. Nothing on this tile is
-   urgent and it is deliberately not a control: prep gets ticked off in Cook
-   mode, which owns that flow. */
+/* Prep is celadon — the accent that reassures. It's a button now too (Loop
+   Board "core loop handoffs" item 1: it goes to Cook mode, where prep is
+   actually ticked off), so it gets the same cursor/hover treatment
+   .tile-grocery already has. */
 .tile-prep {
   background: var(--celadon-tint);
   border: 1.5px solid var(--celadon-edge);
   color: var(--ink-on-celadon);
+  cursor: pointer;
 }
+.tile-prep:hover { background: var(--celadon-edge); }
 .tile-prep .tile-icon,
 .tile-prep .tile-eyebrow { color: var(--celadon-label); }
 /* Defrost is celadon too — same "nudge, not the task" family as prep (§1
@@ -278,8 +281,7 @@ html, body {
   color: var(--celadon-label);
 }
 
-/* Grocery is the tile that goes somewhere, so it is the one that is a
-   button. */
+/* Grocery's own tile — a button, same as .tile-prep above. */
 .tile-grocery {
   background: var(--surface);
   border: 1.5px solid var(--hairline);
@@ -4167,6 +4169,24 @@ html, body {
   margin: 0;
 }
 .cook-error { color: var(--urgent-label); }
+/* "plan one on the Plan tab first" — the whole reason the empty state
+   exists is to send someone there, so it's the tappable part of the
+   sentence rather than dead text. Inline-flex keeps it sitting in the
+   paragraph's own flow while still getting the full 44px target (Rule 6),
+   the same idiom .week-tweak-link already uses for an in-prose link. */
+.cook-empty-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.cook-empty-link:hover { color: var(--apricot-label-hover); }
 
 /* ---------- The hero: tonight ---------- */
 .cook-hero {
@@ -4342,6 +4362,10 @@ html, body {
 }
 
 /* ---------- Prep: the supporting two-up rail ---------- */
+/* Only ever rendered when tonight has no meal of its own to offer a
+   "Start cooking" primary already (see cookPrepHtml) — a fallback way in,
+   never a second apricot alongside the hero's own. */
+.cook-prep-startcooking { margin-bottom: 12px; }
 .cook-prep-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .cook-prep-card {
   min-height: 100px;
@@ -4524,6 +4548,47 @@ span.cook-week-name { cursor: default; }
 .cook-why-text { font-family: var(--font-accent); font-style: italic; font-size: 15px; line-height: 1.4; color: var(--ink-secondary); margin: 8px 0 0; }
 .cook-detail.on-spruce .cook-why-text { color: var(--apricot-light); }
 .cook-why-text[hidden] { display: none; }
+
+/* The small row that closes out the last step — a quiet echo of the hero's
+   own "Mark cooked", not a second accent moment (Rule 5's one-apricot-per-
+   screen already spent on the hero above), so it reuses the plain
+   spruce-outline vocabulary .cook-why/.btn-secondary already use on this
+   same card. */
+.cook-focus-end {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cook-focus-end-note { margin: 0; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-secondary); }
+.cook-focus-end-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cook-focus-end-done {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.cook-focus-end-done:hover { background: var(--sand); }
+.cook-focus-end-back {
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.cook-focus-end-back:hover { color: var(--apricot-label-hover); }
 
 /* Serving stepper — live re-scale, no plan reload. */
 .cook-serves { display: flex; align-items: center; gap: 8px; }

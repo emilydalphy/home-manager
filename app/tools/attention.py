@@ -129,7 +129,14 @@ def get_attention_items() -> list[dict]:
         items.append({
             "id": None,
             "kind": "feedback_nudge",
-            "summary": f"{nudge['meal']} was cooked recently and hasn't been rated yet — worth asking how it went.",
+            # "core loop handoffs, slice 3" item 5 (Emily, 2026-09-05): this
+            # used to be written for the agent to read and decide whether to
+            # ask ("...hasn't been rated yet — worth asking how it went") —
+            # but it's shown verbatim in the Cook screen's attention card
+            # too (see cookAttentionHtml's cook-attn-summary), where it read
+            # as a status report about the cook rather than something said
+            # to them. Rewritten as the actual question.
+            "summary": f"How did {nudge['meal']} go?",
             "detail": {"meal": nudge["meal"], "cooked_at": nudge["cooked_at"]},
         })
     conn = get_conn()

@@ -355,7 +355,7 @@
           // auto-fit means the pair collapses to one full-width tile when
           // there is no prep task, rather than leaving a lonely half-tile.
           '<div class="today-tiles today-area-tiles">' +
-            '<div class="today-tile tile-prep" id="today-prep-tile" hidden></div>' +
+            '<button type="button" class="today-tile tile-prep" id="today-prep-tile" hidden></button>' +
             '<div class="today-tile tile-defrost" id="today-defrost-tile" hidden></div>' +
             '<button type="button" class="today-tile tile-grocery" id="grocery-summary-open">' +
               '<span class="tile-icon">' + ICONS.bag + '</span>' +
@@ -388,6 +388,12 @@
     panel.querySelector('#today-greeting').textContent = greetingForNow();
 
     panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
+    // The prep tile used to be read-only; there is somewhere useful for a
+    // tap to go — Cook mode, where prep is actually checked off — so it's
+    // a button now (Loop Board "core loop handoffs" item 1).
+    panel.querySelector('#today-prep-tile').addEventListener('click', function () {
+      activateTab('week', true, { mealsView: 'cook' });
+    });
 
     setupAskColumn(panel);
 
@@ -504,15 +510,20 @@
     return 'Good evening';
   }
 
-  function setTodayHeading(panel, count) {
+  function setTodayHeading(panel, count, isError) {
     // Same sentence, same source, quieter place: this is the line under the
     // greeting now rather than the H1. The count still drives the tab badge.
+    // "You're clear" is a real answer from a real count — a failed lookup
+    // isn't that, and saying it anyway would be telling someone nothing
+    // needs them when the truth is just that the app couldn't check.
     var line = panel.querySelector('#today-h1');
     if (line) {
-      line.textContent = count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you');
-      line.classList.toggle('is-clear', count === 0);
+      line.textContent = isError
+        ? 'Couldn’t check just now — pull to refresh.'
+        : (count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you'));
+      line.classList.toggle('is-clear', !isError && count === 0);
     }
-    setTodayBadge(count);
+    setTodayBadge(isError ? 0 : count);
   }
 
   function setTodayBadge(count) {
@@ -563,7 +574,7 @@
       renderNeedsYou(panel, data.items || []);
     } catch (err) {
       console.warn('Needs-you lookup failed:', err);
-      setTodayHeading(panel, 0);
+      setTodayHeading(panel, 0, true);
       panel.querySelector('#needs-you-band').innerHTML = '';
     }
   }
@@ -988,16 +999,24 @@
     // interactive tile (renderDefrostToday/#today-defrost-tile) right next
     // to this one — without this filter the same reminder showed up
     // twice, once read-only here and once actionable there.
-    var task = (tasks || []).filter(function (t) {
+    var pending = (tasks || []).filter(function (t) {
       return t.task_date === today && t.status !== 'done' && t.task_type !== 'defrost';
-    })[0];
+    });
+    var task = pending[0];
     if (!task) { tile.hidden = true; tile.innerHTML = ''; return; }
     tile.hidden = false;
+    var more = pending.length - 1;
     tile.innerHTML =
       '<span class="tile-icon">' + ICONS.clock + '</span>' +
       '<span class="tile-eyebrow">Prep today</span>' +
       '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
-      (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : '');
+      // More than one pending task today outranks naming just the first
+      // one's meal — "+N more" is the more useful footer once there's a
+      // count worth surfacing (same shape as the defrost tile's own
+      // "+N more today").
+      (more > 0
+        ? '<span class="tile-foot">+' + more + ' more today</span>'
+        : (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : ''));
   }
 
   // ---------- The defrost tile ----------
@@ -1071,12 +1090,41 @@
         body: JSON.stringify({ prep_task_id: task.id, status: status })
       });
       if (!res.ok) throw new Error('defrost status update failed');
-      showToast(status === 'done' ? 'Moved to the fridge — nice.' : 'Skipped for today.');
+      if (status === 'skipped') {
+        // A skip is one tap, made in passing — an Undo right on the toast
+        // is the reversible-in-the-moment shape DESIGN_SYSTEM.md's learning
+        // etiquette asks for, cheaper here than a real one: this reverts
+        // check_off_prep_step's own write back to 'pending' (the same
+        // status the row started in), which the endpoint already accepts.
+        showToast('Skipped for today.', {
+          label: 'Undo',
+          onClick: function () { undoSkipDefrostTask(panel, task); }
+        });
+      } else {
+        showToast('Moved to the fridge — nice.');
+      }
     } catch (err) {
       console.warn('Defrost action failed, rolling back:', err);
       if (idx > -1) { tasks.splice(idx, 0, task); } else { tasks.push(task); }
       renderDefrostToday(panel);
       alert('Could not save that right now — try again in a moment.');
+    }
+  }
+
+  async function undoSkipDefrostTask(panel, task) {
+    try {
+      var res = await fetch('/api/cooker/check-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_task_id: task.id, status: 'pending' })
+      });
+      if (!res.ok) throw new Error('undo failed');
+      var tasks = panel._defrostTasks || [];
+      if (tasks.indexOf(task) === -1) tasks.unshift(task);
+      renderDefrostToday(panel);
+    } catch (err) {
+      console.warn('Undo skip failed:', err);
+      showToast('Could not undo — try again.');
     }
   }
 
@@ -4986,7 +5034,8 @@
     }
     var data = cookState.data;
     if (!data.weekly_plan_id) {
-      view.innerHTML = '<p class="cook-empty">No plan yet this week — plan one on the Plan tab first.</p>';
+      view.innerHTML = '<p class="cook-empty">No plan yet this week &mdash; ' +
+        '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>';
       if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
@@ -5022,7 +5071,7 @@
         cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
         cookAttentionHtml() +
         '<div class="cook-body">' +
-          cookPrepHtml(data) +
+          cookPrepHtml(data, meals[cookState.tonightIdx], cookState.tonightIdx) +
           cookRestOfWeekHtml(meals, data) +
         '</div>';
     }
@@ -5165,20 +5214,36 @@
 
   // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
   // a pair of small things rather than another stack of full-width cards.
-  function cookPrepHtml(data) {
+  function cookPrepHtml(data, tonightMeal, tonightIdx) {
     var tasks = data.prep_tasks || [];
     if (!tasks.length) return '';
     var done = data.prep_done || 0;
     var total = data.prep_total || tasks.length;
+    var allDone = total > 0 && done === total;
+    // Once every prep task is off the list there's nothing left to check
+    // here — the note stops counting and points at what's next instead.
+    // The hero above already carries a "Start cooking"/"Mark eaten" apricot
+    // primary whenever tonight has a real meal (cookHeroHtml/
+    // cookReheatHeroHtml), and Rule 5 (one apricot primary per screen)
+    // means this section must never add a second one on top of it — the
+    // fallback link below only appears on the (currently unreachable, but
+    // still correct to guard) case where tonight has no meal at all and so
+    // the hero offers no way in.
+    var heroHasPrimaryAction = !!tonightMeal;
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow cook-eyebrow-warm">Prep schedule</span>' +
         '<span class="cook-rule"></span>' +
-        '<span class="cook-sectionnote">' + done + ' of ' + total + ' done</span>' +
+        '<span class="cook-sectionnote">' + (allDone ? 'Prep’s done — the rest is tonight.' : (done + ' of ' + total + ' done')) + '</span>' +
         '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
           'aria-label="Hands-free: check off prep steps by voice" ' +
           'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>' +
       '</div>' +
+      (allDone && !heroHasPrimaryAction && tonightIdx !== null && tonightIdx !== undefined
+        ? '<button type="button" class="cook-hero-action cook-prep-startcooking" data-cook="focus" data-idx="' + tonightIdx + '" data-at="steps">' +
+            '<span>Start cooking</span>' + ICONS.arrow +
+          '</button>'
+        : '') +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
           var isDone = t.status === 'done';
@@ -5290,10 +5355,31 @@
       '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
       '<h4 class="cook-detail-head">Instructions</h4>' +
       cookInstructionsHtml(m, idx) +
+      // The end of the last step used to just stop — the only way back to
+      // "Mark cooked" was scrolling all the way back up to the hero. A
+      // small, quiet row right where the steps run out closes the loop:
+      // the same handler as the hero's own "Mark cooked" button (so this
+      // is never a second source of truth for that write), plus a plain
+      // way back. Only while there's really a recipe with steps to finish,
+      // and only until it's actually marked cooked — once it's done, this
+      // is just clutter under a screen that already says so.
+      ((m.instructions || []).length && m.cooked_status !== 'done'
+        ? cookFocusEndHtml(m)
+        : '') +
       (m.reasoning
         ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
           '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
         : '') +
+    '</div>';
+  }
+
+  function cookFocusEndHtml(m) {
+    return '<div class="cook-focus-end">' +
+      '<p class="cook-focus-end-note">That’s everything — how did it go?</p>' +
+      '<div class="cook-focus-end-actions">' +
+        '<button type="button" class="cook-focus-end-done" data-cook="focus-check" data-entry-id="' + m.entry_id + '" data-next="done">Mark it cooked</button>' +
+        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to the week</button>' +
+      '</div>' +
     '</div>';
   }
 
@@ -5623,6 +5709,7 @@
       return;
     }
     if (what === 'exit-focus') return cookExitFocus();
+    if (what === 'goto-plan') return setMealsView('plan');
     if (what === 'focus-check') return cookFocusCheckMeal(el);
     if (what === 'check-step') {
       var stepKey = el.getAttribute('data-idx') + ':' + el.getAttribute('data-step');
@@ -5827,9 +5914,30 @@
     }
   }
 
+  // Tomorrow's date, local — same construction as todayLocalStr, one day
+  // on. Used only to decide whether the post-rating toast below has
+  // somewhere useful to send "Show me tomorrow".
+  function tomorrowLocalStr() {
+    var d = new Date();
+    d.setDate(d.getDate() + 1);
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  // Read off data already on the client (this week's prep_tasks, general
+  // and defrost alike) rather than a new lookup — the rating toast just
+  // wants to know whether pointing at tomorrow is worth offering at all.
+  function cookTomorrowHasPrepOrDefrost() {
+    var tasks = (cookState.data && cookState.data.prep_tasks) || [];
+    var tomorrow = tomorrowLocalStr();
+    return tasks.some(function (t) { return t.task_date === tomorrow; });
+  }
+
   async function cookRateMeal(el) {
     var meal = el.getAttribute('data-meal');
     var notesEl = document.querySelector('[data-attn-notes="' + meal.replace(/"/g, '\\"') + '"]');
+    var hadAttention = (cookState.attention || []).length > 0;
     el.disabled = true;
     try {
       await cookPost('/api/recipe-feedback', {
@@ -5837,7 +5945,16 @@
         rating: el.getAttribute('data-rating'),
         notes: notesEl ? notesEl.value.trim() : ''
       });
-      refreshCookAttention();
+      await refreshCookAttention();
+      // Only the rating that actually empties the list earns the toast —
+      // rating one of several still leaves "attention" open, which isn't
+      // "noted, done" yet.
+      if (hadAttention && !(cookState.attention || []).length) {
+        showToast('Noted — that’ll steer next week.', cookTomorrowHasPrepOrDefrost() ? {
+          label: 'Show me tomorrow',
+          onClick: function () { activateTab('week', true, { mealsView: 'cook' }); }
+        } : undefined);
+      }
     } catch (err) {
       el.disabled = false;
       showToast('Couldn’t save that rating — try again.');
@@ -6291,10 +6408,18 @@
       if (!res.ok) throw new Error('Could not get link');
       var data = await res.json();
       var url = window.location.origin + '/share/' + data.token;
+      var copied = false;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        try { await navigator.clipboard.writeText(url); } catch (e) { /* fall through to prompt */ }
+        try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* fall through to the prompt */ }
       }
-      window.prompt('Read-only link — anyone with it can see this week\'s meal plan (nothing else). Copied to your clipboard if supported:', url);
+      if (copied) {
+        showToast('Link copied. Anyone with it sees this week’s meals, nothing else.');
+      } else {
+        // Only reached when the clipboard API itself isn't there (or
+        // refused) — the prompt's own text box is the fallback way to
+        // actually get the link off the screen.
+        window.prompt('Read-only link — anyone with it can see this week\'s meal plan (nothing else):', url);
+      }
     } catch (err) {
       alert('Could not create a share link right now: ' + err.message);
     }
@@ -7031,6 +7156,13 @@
         var key = btn.getAttribute('data-notif-action');
         var n = latestNotifications.filter(function (x) { return x.key === key; })[0];
         closeNotifPanel();
+        // Acting on a notification is as much a resolution as the explicit
+        // Dismiss button below — it shouldn't still be sitting in the feed
+        // next time the bell opens. Fire-and-forget, same as Dismiss: the
+        // navigation this is about to do shouldn't wait on it.
+        fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }).catch(function () { /* best-effort */ });
+        latestNotifications = latestNotifications.filter(function (x) { return x.key !== key; });
+        notifBadge.hidden = latestNotifications.length === 0;
         if (!n) return;
         if (n.tab) activateTab(n.tab, true);
         else if (n.href) followActionHref(n.href);
@@ -7048,7 +7180,8 @@
   function openNotifPanel() {
     notifScrim.hidden = false;
     notifPanel.hidden = false;
-    renderNotifPanel();
+    renderNotifPanel(); // whatever's already in hand, instantly
+    loadNotifications(); // then a quiet refetch — someone else in the house may have acted on one since this loaded (loadNotifications re-renders once the panel is visible)
   }
   function closeNotifPanel() {
     notifScrim.hidden = true;
