@@ -816,3 +816,78 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     assert note, "the week that bought the allergen cannot approve in silence"
     assert "Fruit Salad" in note, "name the meal that put it on the list"
     assert "pineapple" in note.lower()
+
+
+# ---------- 13. gluten/wheat aliases false-flagging gluten-free dishes ----------
+
+class TestGlutenAliasesDoNotFlagGlutenFreeDishes:
+    """
+    _ALLERGEN_ALIASES expands "gluten"/"wheat" into flour, pasta and
+    noodles so the check reaches "Wheat Pasta" — but that same expansion
+    used to flag "Gluten-Free Pasta" made with rice flour, because the
+    words "pasta" and "flour" don't know they're sitting in a dish or
+    ingredient line that says outright it's safe.
+    """
+
+    def _plan_with(self, meal: str) -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        return plan["weekly_plan_id"]
+
+    def test_gluten_free_pasta_with_rice_flour_does_not_flag(self, kitchen):
+        tools.add_recipe(
+            "Gluten-Free Pasta",
+            ingredients=[{"item": "rice flour", "qty": "200g"},
+                         {"item": "eggs", "qty": "2"}],
+        )
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Gluten-Free Pasta"))["conflicts"] == []
+
+    def test_wheat_pasta_still_flags(self, kitchen):
+        tools.add_recipe("Wheat Pasta", ingredients=[{"item": "durum wheat", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["wheat allergy"])
+
+        found = tools.check_plan_conflicts(self._plan_with("Wheat Pasta"))["conflicts"]
+
+        assert [c["meal"] for c in found] == ["Wheat Pasta"]
+
+    def test_soba_made_with_buckwheat_noodles_does_not_flag(self, kitchen):
+        tools.add_recipe("Soba", ingredients=[{"item": "buckwheat noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Soba"))["conflicts"] == []
+
+    def test_udon_noodles_still_flag(self, kitchen):
+        tools.add_recipe("Udon", ingredients=[{"item": "udon noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["wheat allergy"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Udon"))["conflicts"]
+
+    def test_chickpea_pasta_does_not_flag_gluten(self, kitchen):
+        tools.add_recipe("Chickpea Pasta Salad", ingredients=[{"item": "chickpea pasta", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Chickpea Pasta Salad"))["conflicts"] == []
+
+    def test_almond_flour_cake_is_not_gluten_but_is_still_a_nut(self, kitchen):
+        tools.add_recipe("Almond Flour Cake", ingredients=[{"item": "almond flour", "qty": "300g"}])
+
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+        assert tools.check_plan_conflicts(self._plan_with("Almond Flour Cake"))["conflicts"] == [], \
+            "almond flour is not gluten"
+
+        tools.set_member_dietary_restrictions("Emily", ["nut allergy"])
+        found = tools.check_plan_conflicts(self._plan_with("Almond Flour Cake"))["conflicts"]
+        assert [c["meal"] for c in found] == ["Almond Flour Cake"], \
+            "the same dish is still a clash for a nut allergy"
+
+    def test_gf_abbreviation_in_the_name_also_negates(self, kitchen):
+        tools.add_recipe("GF Noodle Bowl", ingredients=[{"item": "rice noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("GF Noodle Bowl"))["conflicts"] == []
