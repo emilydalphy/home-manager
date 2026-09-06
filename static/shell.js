@@ -355,7 +355,7 @@
           // auto-fit means the pair collapses to one full-width tile when
           // there is no prep task, rather than leaving a lonely half-tile.
           '<div class="today-tiles today-area-tiles">' +
-            '<div class="today-tile tile-prep" id="today-prep-tile" hidden></div>' +
+            '<button type="button" class="today-tile tile-prep" id="today-prep-tile" hidden></button>' +
             '<div class="today-tile tile-defrost" id="today-defrost-tile" hidden></div>' +
             '<button type="button" class="today-tile tile-grocery" id="grocery-summary-open">' +
               '<span class="tile-icon">' + ICONS.bag + '</span>' +
@@ -388,6 +388,12 @@
     panel.querySelector('#today-greeting').textContent = greetingForNow();
 
     panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
+    // The prep tile used to be read-only; there is somewhere useful for a
+    // tap to go — Cook mode, where prep is actually checked off — so it's
+    // a button now (Loop Board "core loop handoffs" item 1).
+    panel.querySelector('#today-prep-tile').addEventListener('click', function () {
+      activateTab('week', true, { mealsView: 'cook' });
+    });
 
     setupAskColumn(panel);
 
@@ -988,16 +994,24 @@
     // interactive tile (renderDefrostToday/#today-defrost-tile) right next
     // to this one — without this filter the same reminder showed up
     // twice, once read-only here and once actionable there.
-    var task = (tasks || []).filter(function (t) {
+    var pending = (tasks || []).filter(function (t) {
       return t.task_date === today && t.status !== 'done' && t.task_type !== 'defrost';
-    })[0];
+    });
+    var task = pending[0];
     if (!task) { tile.hidden = true; tile.innerHTML = ''; return; }
     tile.hidden = false;
+    var more = pending.length - 1;
     tile.innerHTML =
       '<span class="tile-icon">' + ICONS.clock + '</span>' +
       '<span class="tile-eyebrow">Prep today</span>' +
       '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
-      (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : '');
+      // More than one pending task today outranks naming just the first
+      // one's meal — "+N more" is the more useful footer once there's a
+      // count worth surfacing (same shape as the defrost tile's own
+      // "+N more today").
+      (more > 0
+        ? '<span class="tile-foot">+' + more + ' more today</span>'
+        : (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : ''));
   }
 
   // ---------- The defrost tile ----------
