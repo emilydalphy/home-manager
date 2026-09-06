@@ -587,6 +587,37 @@
         '</div>'
       );
     }
+    if (item.type === 'dinner_open') {
+      // An open slot the app already handed back on the Plan screen (see
+      // renderOpenSlots) — same shape of card, surfaced here too because
+      // that's exactly what needs-you is for. Resolves through the same
+      // path the Plan screen's own open-slot cards use (resolveOpenSlot /
+      // POST /api/week/{week_start}/slot), not the dinner_decision path
+      // above — that one only plans a brand-new slot; this one is
+      // replacing an existing open one.
+      var hasOptions = item.options && item.options.length;
+      return (
+        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_open">' +
+          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          (item.body ? '<div class="ny-summary">' + escapeHtml(item.body) + '</div>' : '') +
+          (hasOptions
+            ? '<div class="ny-options">' +
+                item.options.map(function (opt, i) {
+                  return (
+                    '<div class="ny-option" data-date="' + escapeHtml(item.date) + '" ' +
+                      'data-week-start="' + escapeHtml(item.week_start || '') + '" ' +
+                      'data-choice="' + escapeHtml(opt.label) + '" data-index="' + i + '">' +
+                      '<span class="ny-option-dish">' + escapeHtml(opt.label) + (opt.meta ? ' &middot; ' + escapeHtml(opt.meta) : '') + '</span>' +
+                      '<span class="ny-option-pick">Pick</span>' +
+                    '</div>'
+                  );
+                }).join('') +
+              '</div>'
+            : '<button type="button" class="btn-sand ny-open-talk" data-date="' + escapeHtml(item.date) + '">Tell me what you’d like instead</button>') +
+        '</div>'
+      );
+    }
     if (item.type === 'shop_run') {
       var summary = item.sample_items.slice(0, 4).join(', ') + (item.count > item.sample_items.length ? ', and more' : '');
       return (
@@ -614,6 +645,16 @@
     band.querySelectorAll('[data-card-type="dinner_decision"] .ny-option').forEach(function (row) {
       row.addEventListener('click', function () {
         resolveDinnerDecision(panel, row.dataset.date, row.dataset.meal, row.closest('.needs-you-card'));
+      });
+    });
+    band.querySelectorAll('[data-card-type="dinner_open"] .ny-option').forEach(function (row) {
+      row.addEventListener('click', function () {
+        resolveOpenDinner(panel, row.dataset.weekStart, row.dataset.date, row.dataset.choice, row.closest('.needs-you-card'));
+      });
+    });
+    band.querySelectorAll('[data-card-type="dinner_open"] .ny-open-talk').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openAskSheet('For ' + dayName(btn.dataset.date, { weekday: 'long' }) + '’s dinner, I’d like ');
       });
     });
     band.querySelectorAll('[data-card-type="shop_run"] .ny-shop-now').forEach(function (btn) {
@@ -660,6 +701,32 @@
       loadTonightsDinner(panel);
     } catch (err) {
       console.warn('Dinner resolve failed:', err);
+      alert('Could not save that pick right now — try again in a moment.');
+    }
+  }
+
+  // Settles an OPEN dinner slot picked from the needs-you band — the same
+  // endpoint the Plan screen's own open-slot cards use (resolveOpenSlot),
+  // since that one replaces the existing open row instead of inserting a
+  // second entry alongside it the way /api/needs-you/dinner would.
+  async function resolveOpenDinner(panel, weekStart, mealDate, choice, cardEl) {
+    if (!weekStart) {
+      alert('Could not save that pick right now — try again in a moment.');
+      return;
+    }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: mealDate, slot: 'dinner', choice: choice })
+      });
+      if (!res.ok) throw new Error('open dinner resolve failed');
+      await res.json();
+      showToast(choice + ' is on the plan.');
+      await loadNeedsYou(panel);
+      loadTonightsDinner(panel);
+    } catch (err) {
+      console.warn('Open dinner resolve failed:', err);
       alert('Could not save that pick right now — try again in a moment.');
     }
   }
