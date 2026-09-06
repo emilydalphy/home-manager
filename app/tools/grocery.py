@@ -229,14 +229,27 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     contributed some amount to a grocery line is being un-planned (see
     _reverse_meal_grocery_contributions) and that amount needs to come back
     out. Returns (resulting_quantity_string, fully_removed). When both sides
-    parse with the same unit, subtracts normally, treating a non-positive
-    remainder as "nothing left" (fully_removed=True, resulting string
-    blank). When they can't be reconciled (freeform text, mismatched units)
-    but the two strings are identical, that means this contribution *is*
-    the whole line (nothing else merged into it), so it's still safe to
-    remove entirely. Otherwise nothing is guessed — the line is left
+    parse and their units reconcile — the same unit, or two units in the
+    same measurable family (lb/oz, cup/tbsp/tsp, g/kg, ml/l; see
+    quantities._convert_to_unit) — subtracts normally, treating a
+    non-positive remainder as "nothing left" (fully_removed=True, resulting
+    string blank). When they can't be reconciled (freeform text, unrelated
+    units) but the two strings are identical, that means this contribution
+    *is* the whole line (nothing else merged into it), so it's still safe
+    to remove entirely. Otherwise nothing is guessed — the line is left
     exactly as-is (fully_removed=False, resulting string unchanged) rather
     than risk deleting an amount still needed for something else.
+
+    This is the fallback path now — a grocery line with other ledger rows
+    still on it is reconciled by summing what's LEFT instead (see
+    quantities._sum_ledger_quantities), which is what actually fixed the
+    lb/oz stranding this function alone couldn't: it only ever sees the
+    one subtraction in front of it, not that the line's display unit
+    rolled between when this contribution was recorded and now. This still
+    has to be unit-normalising itself, though, for the lines that never
+    had ledger rows to recompute from (a hand-added line with its own
+    quantity edit) and for the household's own standing wants, which are
+    never replaced by a recompute — see _reverse_meal_grocery_contributions.
 
     Whatever _try_consolidate_quantity can write, this has to be able to
     unwrite, or a swap leaves the list slowly drifting: the note a merged
@@ -253,13 +266,15 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
         return "", True
     current_parsed = _quantities._parse_quantity(current_qty)
     remove_parsed = _quantities._parse_quantity(remove_qty)
-    if current_parsed and remove_parsed and current_parsed[1] == remove_parsed[1]:
-        remainder = current_parsed[0] - remove_parsed[0]
-        if remainder <= 0.0001:
-            return "", True
-        return _quantities._with_note(
-            _quantities._humanize_grocery_quantity(remainder, current_parsed[1]), note
-        ), False
+    if current_parsed and remove_parsed:
+        remove_amount = _quantities._convert_to_unit(remove_parsed[0], remove_parsed[1], current_parsed[1])
+        if remove_amount is not None:
+            remainder = current_parsed[0] - remove_amount
+            if remainder <= 0.0001:
+                return "", True
+            return _quantities._with_note(
+                _quantities._humanize_grocery_quantity(remainder, current_parsed[1]), note
+            ), False
     current_base, current_count = _quantities._split_repeat_count(current_qty)
     remove_base, remove_count = _quantities._split_repeat_count(remove_qty)
     if current_base.lower() == remove_base.lower():
@@ -278,26 +293,53 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     swap_component_in_plan) so changing a planned meal actually replaces its
     ingredients on the grocery list instead of only ever piling the new
     meal's ingredients on top of the old ones. For each linked grocery line,
-    subtracts back out exactly the amount this meal contributed (see
-    _subtract_quantity) — removing the line entirely if nothing's left,
-    trimming it if something is, or leaving it untouched if the amounts
-    can't be safely reconciled. A line already moved to in_cart/purchased is
-    left alone regardless — the shopper has already acted on it, so this
-    won't yank something out of a cart mid-trip. Always clears the ledger
-    rows for this entry afterward, whether or not anything was adjusted.
+    puts the line back to what every OTHER meal still on the ledger for it
+    actually adds up to (see quantities._sum_ledger_quantities) —
+    removing the line entirely once no ledger row for it remains at all,
+    or updating it to that recomputed total otherwise. A line already
+    moved to in_cart/purchased is left alone regardless — the shopper has
+    already acted on it, so this won't yank something out of a cart
+    mid-trip. Always clears the ledger rows for this entry afterward,
+    whether or not anything was adjusted.
+
+    Recomputing from the ledger, rather than subtracting this one
+    contribution out of whatever the line currently displays, is what
+    keeps this exactly reversible regardless of what order a week's
+    reversals happen in (see clear_weekly_plan, which reverses a week's
+    entries in no particular order). A grocery line's display unit rolls
+    to whatever reads best AT ITS CURRENT TOTAL (see
+    quantities._humanize_grocery_quantity) — sequentially subtracting one
+    contribution at a time can walk that total down through a unit
+    boundary (a line at "1.25 lbs" becomes "8 oz" once it drops under a
+    pound), and the NEXT contribution still on the ledger was recorded
+    against the total as it stood at ingest, not against whatever unit the
+    line happens to display now. Recomputing the whole remaining total in
+    one pass sidesteps that entirely: it only ever asks what's left, never
+    what changed.
+
+    That recompute only ever replaces a line's quantity with something the
+    ledger can fully account for, which is true whenever the line's
+    source_weekly_plan_id is set — every dollar of it came from a
+    recipe, and the ledger has a row for each one. A line with no
+    source_weekly_plan_id (see add_grocery_item's keep_standing) has at
+    least one contribution the ledger doesn't know about — a person's own
+    standing want, or an amount they added by hand — so it falls back to
+    subtracting this one meal's share out of the current display instead
+    (see _subtract_quantity), and is never deleted by this at all: the
+    meals that borrowed space on it are gone, but the want isn't.
 
     A SEALED-PACKAGE line (one bottle of oil, one bag of granola — see
-    quantities.package_unit) is the exception, and has to be, because the
-    add side no longer adds one per meal: the whole week's oil is a single
-    bottle however many dinners named it. Subtracting a bottle per meal
-    would take the line off the list the first time any one of those meals
-    changed, while the rest still needed it. So a package line survives
-    until the LAST meal holding a link to it goes, and then goes with it —
-    which keeps clearing a whole week exactly symmetric with approving it,
-    and leaves the bottle alone when a single meal is swapped. A package
-    line with no source_weekly_plan_id was asked for by a person directly
-    and is never removed by this at all; the plan borrowed it, it doesn't
-    own it.
+    quantities.package_unit) is a separate exception, and has to be,
+    because the add side no longer adds one per meal: the whole week's oil
+    is a single bottle however many dinners named it. Subtracting a bottle
+    per meal would take the line off the list the first time any one of
+    those meals changed, while the rest still needed it. So a package line
+    survives until the LAST meal holding a link to it goes, and then goes
+    with it — which keeps clearing a whole week exactly symmetric with
+    approving it, and leaves the bottle alone when a single meal is
+    swapped. A package line with no source_weekly_plan_id was asked for by
+    a person directly and is never removed by this at all; the plan
+    borrowed it, it doesn't own it.
     """
     conn = get_conn()
     links = conn.execute(
@@ -322,10 +364,33 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
                 conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
                 removed_items.append(grocery_row["item"])
         elif grocery_row and grocery_row["status"] == "needed":
-            new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
+            is_standing_want = grocery_row["source_weekly_plan_id"] is None
+            other_rows = [] if is_standing_want else conn.execute(
+                "SELECT quantity FROM meal_plan_grocery_links "
+                "WHERE household_id = ? AND grocery_item_id = ? AND meal_plan_entry_id != ?",
+                (household_id(), link["grocery_item_id"], entry_id),
+            ).fetchall()
+            other_qtys = [row["quantity"] or "" for row in other_rows]
+            summed = None if is_standing_want else _quantities._sum_ledger_quantities(other_qtys)
+            if summed is not None:
+                # Fully accounted for by the ledger — recompute rather than
+                # subtract (see the docstring above for why).
+                current_note = _quantities._quantity_note(grocery_row["quantity"] or "")
+                new_qty = _quantities._with_note(summed, current_note) if summed else ""
+                fully_removed = not other_qtys
+            else:
+                # A standing want (or a line the ledger can't fully account
+                # for) — fall back to subtracting this one contribution out
+                # of the current display.
+                new_qty, fully_removed = _subtract_quantity(grocery_row["quantity"] or "", link["quantity"] or "")
             if fully_removed:
-                conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
-                removed_items.append(grocery_row["item"])
+                if is_standing_want:
+                    if new_qty != (grocery_row["quantity"] or ""):
+                        conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
+                        trimmed_items.append(grocery_row["item"])
+                else:
+                    conn.execute("DELETE FROM grocery_items WHERE id = ?", (grocery_row["id"],))
+                    removed_items.append(grocery_row["item"])
             elif new_qty != (grocery_row["quantity"] or ""):
                 conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
                 trimmed_items.append(grocery_row["item"])
