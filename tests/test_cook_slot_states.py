@@ -164,3 +164,43 @@ def test_a_plan_of_only_empty_slots_is_empty_rather_than_full_of_blanks():
 
     assert view["meals"] == []
     assert view["meals_total"] == 0
+    # Only 3 of the plan's 7 days were marked away — an ordinary
+    # under-planned week, not "everyone's away" (see the all_away tests
+    # below for that).
+    assert view["all_away"] is False
+
+
+class TestAllAwayFlag:
+    """
+    "core loop handoffs, slice 2" item C (Emily, 2026-09-05): a week where
+    every dinner is planned_empty gets a Cook empty state that says the
+    household is away, rather than the generic "nothing planned" line.
+    get_cooker_view carries the flag; static/shell.js supplies the copy.
+    """
+
+    def test_true_when_every_dinner_in_the_period_is_away(self):
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        for offset in range(7):
+            tools.plan_slot_empty(plan_id, _day(offset), "dinner", "Away all week.")
+
+        assert tools.get_cooker_view(plan_id)["all_away"] is True
+
+    def test_false_when_only_some_dinners_are_away(self):
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        for offset in range(3):
+            tools.plan_slot_empty(plan_id, _day(offset), "dinner", "Away midweek.")
+
+        assert tools.get_cooker_view(plan_id)["all_away"] is False
+
+    def test_false_when_a_real_meal_is_planned(self):
+        plan_id = _plan_with_one_real_dinner()
+
+        assert tools.get_cooker_view(plan_id)["all_away"] is False
+
+    def test_false_for_a_plan_with_no_meals_at_all(self):
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+
+        assert tools.get_cooker_view(plan_id)["all_away"] is False
+
+    def test_false_when_there_is_no_plan(self):
+        assert tools.get_cooker_view(999999)["all_away"] is False

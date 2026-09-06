@@ -587,6 +587,37 @@
         '</div>'
       );
     }
+    if (item.type === 'dinner_open') {
+      // An open slot the app already handed back on the Plan screen (see
+      // renderOpenSlots) — same shape of card, surfaced here too because
+      // that's exactly what needs-you is for. Resolves through the same
+      // path the Plan screen's own open-slot cards use (resolveOpenSlot /
+      // POST /api/week/{week_start}/slot), not the dinner_decision path
+      // above — that one only plans a brand-new slot; this one is
+      // replacing an existing open one.
+      var hasOptions = item.options && item.options.length;
+      return (
+        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_open">' +
+          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          (item.body ? '<div class="ny-summary">' + escapeHtml(item.body) + '</div>' : '') +
+          (hasOptions
+            ? '<div class="ny-options">' +
+                item.options.map(function (opt, i) {
+                  return (
+                    '<div class="ny-option" data-date="' + escapeHtml(item.date) + '" ' +
+                      'data-week-start="' + escapeHtml(item.week_start || '') + '" ' +
+                      'data-choice="' + escapeHtml(opt.label) + '" data-index="' + i + '">' +
+                      '<span class="ny-option-dish">' + escapeHtml(opt.label) + (opt.meta ? ' &middot; ' + escapeHtml(opt.meta) : '') + '</span>' +
+                      '<span class="ny-option-pick">Pick</span>' +
+                    '</div>'
+                  );
+                }).join('') +
+              '</div>'
+            : '<button type="button" class="btn-sand ny-open-talk" data-date="' + escapeHtml(item.date) + '">Tell me what you’d like instead</button>') +
+        '</div>'
+      );
+    }
     if (item.type === 'shop_run') {
       var summary = item.sample_items.slice(0, 4).join(', ') + (item.count > item.sample_items.length ? ', and more' : '');
       return (
@@ -616,6 +647,16 @@
         resolveDinnerDecision(panel, row.dataset.date, row.dataset.meal, row.closest('.needs-you-card'));
       });
     });
+    band.querySelectorAll('[data-card-type="dinner_open"] .ny-option').forEach(function (row) {
+      row.addEventListener('click', function () {
+        resolveOpenDinner(panel, row.dataset.weekStart, row.dataset.date, row.dataset.choice, row.closest('.needs-you-card'));
+      });
+    });
+    band.querySelectorAll('[data-card-type="dinner_open"] .ny-open-talk').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openAskSheet('For ' + dayName(btn.dataset.date, { weekday: 'long' }) + '’s dinner, I’d like ');
+      });
+    });
     band.querySelectorAll('[data-card-type="shop_run"] .ny-shop-now').forEach(function (btn) {
       btn.addEventListener('click', function () { activateTab('grocery', true); });
     });
@@ -643,7 +684,11 @@
     // the list without an explicit yes, and a card tap has no conversation
     // in which to ask — so the card asks for itself.
     var addIngredients = await askAboutIngredients(meal);
-    if (addIngredients === null) return;  // "Never mind" — nothing planned
+    // "core loop handoffs, slice 2" item F (Emily, 2026-09-05): "Never
+    // mind" used to close the dialog with no feedback at all — say
+    // plainly that nothing changed, per the calm-in-trouble/reassurance
+    // rule (DESIGN_SYSTEM.md §8): the answer is "nothing lost," said once.
+    if (addIngredients === null) { showToast('Left as it was.'); return; }
     try {
       var res = await fetch('/api/needs-you/dinner', {
         method: 'POST',
@@ -660,6 +705,32 @@
       loadTonightsDinner(panel);
     } catch (err) {
       console.warn('Dinner resolve failed:', err);
+      alert('Could not save that pick right now — try again in a moment.');
+    }
+  }
+
+  // Settles an OPEN dinner slot picked from the needs-you band — the same
+  // endpoint the Plan screen's own open-slot cards use (resolveOpenSlot),
+  // since that one replaces the existing open row instead of inserting a
+  // second entry alongside it the way /api/needs-you/dinner would.
+  async function resolveOpenDinner(panel, weekStart, mealDate, choice, cardEl) {
+    if (!weekStart) {
+      alert('Could not save that pick right now — try again in a moment.');
+      return;
+    }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: mealDate, slot: 'dinner', choice: choice })
+      });
+      if (!res.ok) throw new Error('open dinner resolve failed');
+      await res.json();
+      showToast(choice + ' is on the plan.');
+      await loadNeedsYou(panel);
+      loadTonightsDinner(panel);
+    } catch (err) {
+      console.warn('Open dinner resolve failed:', err);
       alert('Could not save that pick right now — try again in a moment.');
     }
   }
@@ -4915,7 +4986,7 @@
         cookAttentionHtml() +
         '<div class="cook-body">' +
           cookPrepHtml(data) +
-          cookRestOfWeekHtml(meals) +
+          cookRestOfWeekHtml(meals, data) +
         '</div>';
     }
 
@@ -5091,13 +5162,18 @@
   // Everything that is not tonight, subordinate: one dense row each. Tapping
   // a name enters the same focused screen tonight's hero does — a "quiet
   // scannable week list" per the ticket, not another accordion of recipes.
-  function cookRestOfWeekHtml(meals) {
+  function cookRestOfWeekHtml(meals, data) {
     var rest = meals
       .map(function (m, i) { return { m: m, i: i }; })
       .filter(function (x) { return x.i !== cookState.tonightIdx; });
     if (!rest.length) {
-      return meals.length
-        ? ''
+      if (meals.length) return '';
+      // Every dinner this period was deliberately marked away (cooker.py's
+      // all_away flag) — say that, rather than the generic "nothing
+      // planned" line, which would read as though the week was simply
+      // forgotten.
+      return data && data.all_away
+        ? '<p class="cook-empty">Nothing to cook this week — you’re away.</p>'
         : '<p class="cook-empty">No meals on this plan yet.</p>';
     }
     return '<section class="cook-section">' +
@@ -5543,8 +5619,23 @@
     return res.json().catch(function () { return {}; });
   }
 
+  // "core loop handoffs, slice 2" item E (Emily, 2026-09-05): marking a
+  // real cook done gets a toast confirming it was logged, with a "Rate it"
+  // action that opens the existing attention band rather than a new
+  // rating flow — the feedback nudge already lives there once the app has
+  // something to ask about. Reheat nights ("Mark eaten") are excluded:
+  // there's no separate cook to rate, the dish was already rated the
+  // night it was actually made.
+  function toastMealLogged() {
+    showToast('Logged. I’ll remember how it went.', {
+      label: 'Rate it',
+      onClick: function () { cookState.attentionOpen = true; renderCook(); },
+    });
+  }
+
   async function cookCheckMeal(el) {
     el.disabled = true;
+    var justCooked = el.getAttribute('data-next') === 'done' && el.getAttribute('aria-label') === 'Mark cooked';
     try {
       var view = await cookPost('/api/cooker/check-meal', {
         entry_id: parseInt(el.getAttribute('data-entry-id'), 10),
@@ -5555,6 +5646,7 @@
       // moves the week's "N of M cooked" everywhere else that counts it.
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      if (justCooked) toastMealLogged();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -5566,6 +5658,9 @@
   // you check the meal off") — there's nothing left to do on this screen
   // once it's done. Marking it back to not-cooked is an undo, not a
   // completion, so that one stays put in focus rather than bouncing out.
+  // Always a real cook, never a reheat (see cookHeroHtml/cookReheatHeroHtml
+  // — a reheat night never opens this focused screen), so no aria-label
+  // check is needed here the way cookCheckMeal above needs one.
   async function cookFocusCheckMeal(el) {
     el.disabled = true;
     var next = el.getAttribute('data-next');
@@ -5581,6 +5676,7 @@
       renderCookFrom(view);
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      if (next === 'done') toastMealLogged();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -6265,6 +6361,10 @@
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
+          // The post-change next-step chip (offerNextStepChip) navigates
+          // directly rather than sending a message — "Open the list" and
+          // "Plan my stops" are places to go, not things to ask about.
+          if (action.onClick) return action.onClick();
           // The grocery chip pre-fills and focuses instead of sending —
           // what to add is the household's call, not something to guess at
           // and send as a message. openAskSheet(prefill) already knows how
@@ -6274,6 +6374,50 @@
         });
       });
     });
+  }
+
+  // "core loop handoffs, slice 2" item B (Emily, 2026-09-05): once
+  // hideAskChips has fired (after the household's first message), the
+  // pre-conversation quick-action chips are gone for good — but a turn
+  // that actually changed something still has an obvious next step, and
+  // making the household type it out again is exactly the friction the
+  // quick-action chips exist to remove. So: after any turn whose actions
+  // (the same {tab, change} cards refreshStaleTabsFromActions reads) show
+  // a real change, recompute and show exactly ONE relevant chip. Purely
+  // client-side, per the ticket — no backend change, no new fields.
+  //
+  // Priority when a turn touched more than one area: an approval (which
+  // often ALSO carries a grocery action for the items it just added) beats
+  // a plain grocery edit, which beats an unapproved draft edit — the
+  // biggest life-cycle event wins.
+  function computeNextStepChip(actions) {
+    var weekAction = null, groceryAction = null;
+    (actions || []).forEach(function (a) {
+      if (a.tab === 'week') weekAction = a;
+      if (a.tab === 'grocery') groceryAction = a;
+    });
+    // approve_weekly_plan is the one 'week' tool whose action card's
+    // `change` text says "approved" (app/main.py's _categorize_tool
+    // special-cases it to "Week approved — your list is ready") — the
+    // only signal available here, without a backend change, that this
+    // turn was an approval rather than an ordinary draft edit.
+    if (weekAction && /approved/i.test(weekAction.change || '')) {
+      return { label: 'Open the list', onClick: function () { activateTab('grocery', true); } };
+    }
+    if (groceryAction) {
+      return { label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } };
+    }
+    if (weekAction) {
+      // Same label + message computeContextQuickActions already uses for
+      // "there's a draft, go approve it" — one wording for one meaning.
+      return { label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' };
+    }
+    return null;
+  }
+
+  function offerNextStepChip(actions) {
+    var chip = computeNextStepChip(actions);
+    if (chip) renderAskChips([chip]);
   }
 
   function splitTableRow(line) {
@@ -6578,6 +6722,7 @@
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
+      offerNextStepChip(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);

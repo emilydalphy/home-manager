@@ -354,36 +354,35 @@ def get_week_planning_nudge() -> dict:
 
     Suppressed once dismissed, and the dismissal key is the week itself —
     so "I won't ask again this week" is literally true, and next week's
-    offer isn't silenced by this week's dismissal. Also suppressed once
-    that week has a plan: there is nothing left to offer.
+    offer isn't silenced by this week's dismissal.
+
+    Emily's rule (2026-09-05): case 1 shows every morning until a plan
+    actually covers today again — including the morning after a plan's
+    last day has passed and nothing has replaced it. There used to be a
+    second guard here ("but this week was already filed under a plan"),
+    meant to stop a mid-week-onboarding household from being told Monday
+    was left unplanned when it simply didn't exist yet. In practice that
+    guard also silenced the nudge for the rest of ANY week whose plan ran
+    out early — the exact case this rule now says must keep nudging — so
+    it's gone. The only thing that still silences case 1 is a dismissal of
+    THIS suggested period specifically (below): dismissed, it stays quiet
+    until the suggestion changes; not dismissed, it asks again tomorrow.
     """
     today = date.today()
-    this_monday = today - timedelta(days=today.weekday())
     suggestion = suggest_planning_period()
 
     conn = get_conn()
     dismissed = _notifications._dismissed_keys(conn)
     covering = _live_plan_covering(conn, today.isoformat())
-    planned_week_keys = {
-        row["week_start_date"]
-        for row in conn.execute(
-            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ? AND status != 'retired'",
-            (household_id(),),
-        ).fetchall()
-    }
     conn.close()
 
     target = None
     target_days = suggestion["day_count"]
     is_current = False
-    if covering is None and this_monday.isoformat() not in planned_week_keys:
-        # Nothing covers today. The filing-key half of that test is what
-        # keeps a part-week honest: a plan filed under this Monday whose
-        # content deliberately starts on the Wednesday the household joined
-        # has NOT left Monday unplanned in any sense worth nudging about —
-        # those days went by before the household existed here. Without it,
-        # every mid-week onboarding would be met by an immediate offer to
-        # re-plan the week it had just been given.
+    if covering is None:
+        # Nothing covers today, full stop — offer to plan the current
+        # period. See the docstring above for why there's no additional
+        # "already filed this week" guard any more.
         target, is_current = date.fromisoformat(suggestion["start_date"]), True
     elif covering is not None:
         # The generalisation of "from Saturday onward, offer next week".
@@ -2255,12 +2254,32 @@ def get_needs_you_items() -> list[dict]:
     than a general prioritisation engine (that's future work):
 
       1. **Dinner decision** — the soonest of tonight's/tomorrow's dinner
-         slots that's still empty (the "within 48 hours" window from the
-         spec). Comes with up to two quick-recipe suggestions (see
-         _suggest_quick_dinners) so the card's "Pick" rows have something
-         real to offer — the card is omitted entirely if there isn't even
-         one recipe saved yet, since a decision card with nothing to pick
-         is worse than no card.
+         slots that still needs one. Two shapes of "needs one":
+
+         - No entry at all for that date/slot. Comes with up to two
+           quick-recipe suggestions (see _suggest_quick_dinners) so the
+           card's "Pick" rows have something real to offer — the card is
+           omitted entirely if there isn't even one recipe saved yet,
+           since a decision card with nothing to pick is worse than no
+           card.
+         - An 'open' slot — a decision the app already handed back on the
+           Plan screen (see plan_slot_open/resolve_open_slot), still
+           unsettled. "core loop handoffs, slice 2" item D (Emily,
+           2026-09-05): this used to be silently swallowed by the
+           "there's already a row for that date" check below, so an open
+           dinner never surfaced here even though it is, by definition,
+           exactly the kind of thing this band exists for. It carries the
+           slot's own options (open_options: label/meta, from
+           derived_from_json) and its open_reason as the body, and
+           resolves through the same path the Plan screen's open-slot
+           cards already use (resolve_open_slot / POST
+           /api/week/{week_start}/slot) rather than plan_meal — plan_meal
+           only inserts, so calling it here would leave the old open row
+           behind as a second, orphaned entry for the same date/slot.
+
+         A 'planned_empty' slot (the household said it's away) or an
+         ordinary 'planned' one both count as handled — nothing to surface
+         for either.
       2. **Shop run** — there are ungathered grocery items *and* something
          is actually planned (any slot, any meal) in the next 48 hours
          that hasn't been cooked yet. There's no ingredient-to-grocery-item
@@ -2281,18 +2300,43 @@ def get_needs_you_items() -> list[dict]:
 
     # ---- Rule 1: dinner decision ----
     dinner_rows = conn.execute(
-        "SELECT date FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
+        "SELECT date, slot_state, open_reason, derived_from_json, weekly_plan_id "
+        "FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
-    planned_dinner_dates = {r["date"] for r in dinner_rows}
+    dinner_by_date = {r["date"]: r for r in dinner_rows}
     for offset in (0, 1):
         candidate = (today + timedelta(days=offset)).isoformat()
-        if candidate in planned_dinner_dates:
-            continue
+        when = "Tonight" if offset == 0 else "Tomorrow"
+        row = dinner_by_date.get(candidate)
+
+        if row is not None and row["slot_state"] == "open":
+            derived = json.loads(row["derived_from_json"] or "{}")
+            week_start = None
+            if row["weekly_plan_id"] is not None:
+                plan_row = conn.execute(
+                    "SELECT week_start_date FROM weekly_plans WHERE id = ?", (row["weekly_plan_id"],)
+                ).fetchone()
+                week_start = plan_row["week_start_date"] if plan_row else None
+            items.append({
+                "type": "dinner_open",
+                "kicker": "DINNER",
+                "title": when + "’s dinner needs your call",
+                "urgency": "urgent",
+                "date": candidate,
+                "slot": "dinner",
+                "body": row["open_reason"] or "",
+                "options": derived.get("options") or [],
+                "week_start": week_start,
+            })
+            break  # only the soonest unsettled dinner becomes a card
+
+        if row is not None:
+            continue  # planned, or deliberately away — already handled
+
         options = _suggest_quick_dinners()
         if not options:
             break  # no recipes to suggest at all -- nothing later in the loop will differ, so stop
-        when = "Tonight" if offset == 0 else "Tomorrow"
         items.append({
             "type": "dinner_decision",
             "kicker": "DINNER",

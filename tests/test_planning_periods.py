@@ -442,6 +442,77 @@ class TestPlanningNudgeOpensBeforeTheReadyDay:
         assert tools.get_week_planning_nudge()["show"] is True
 
 
+# ---------- the nudge reappears daily once a plan's last day has passed ----------
+
+class TestPlanningNudgeReappearsDailyUntilReplanned:
+    """
+    "core loop handoffs, slice 2" item A (Emily, 2026-09-05): once nothing
+    covers today, the nudge shows every morning until a plan does — including
+    the morning after the household's last planned day has come and gone.
+
+    get_week_planning_nudge used to also check whether a plan had been FILED
+    under today's calendar-week Monday, meant to protect a mid-week-onboarding
+    household from being told Monday was "left unplanned" days before it
+    existed here. That guard had a side effect nobody wanted: a plan filed
+    under this week's own Monday but covering fewer than the full seven days
+    (this test's setup) went quiet for the rest of that calendar week the
+    moment its own last day passed — exactly the case this rule says must
+    keep nudging. The guard is gone; only a dismissal of the currently
+    suggested period silences it now.
+    """
+    MONDAY = "2026-08-31"  # a Monday; the plan below covers only Mon-Wed of it
+
+    class _FixedToday(datetime.date):
+        _value: "datetime.date | None" = None
+
+        @classmethod
+        def today(cls):
+            return cls._value
+
+    def _pin_today(self, monkeypatch, iso_date: str):
+        from app.tools import weekly_plan as _weekly_plan
+        self._FixedToday._value = datetime.date.fromisoformat(iso_date)
+        monkeypatch.setattr(_weekly_plan, "date", self._FixedToday)
+
+    def _make_partial_plan(self):
+        conn = get_conn()
+        conn.execute(
+            "INSERT INTO weekly_plans (household_id, week_start_date, status, content_start_date, day_count) "
+            "VALUES (1, ?, 'approved', ?, 3)",
+            (self.MONDAY, self.MONDAY),
+        )
+        conn.commit()
+        conn.close()
+
+    def test_shows_the_day_after_the_plan_expires(self, monkeypatch):
+        self._make_partial_plan()
+        self._pin_today(monkeypatch, "2026-09-03")  # Thursday: one day past Wed
+        nudge = tools.get_week_planning_nudge()
+        assert nudge["show"] is True
+        assert nudge["is_current_week"] is True
+
+    def test_still_shows_nine_days_after_the_plan_expires(self, monkeypatch):
+        self._make_partial_plan()
+        self._pin_today(monkeypatch, "2026-09-11")  # nine days after Wed 09-02
+        assert tools.get_week_planning_nudge()["show"] is True
+
+    def test_a_dismissal_hides_it_for_that_week_only(self, monkeypatch):
+        self._make_partial_plan()
+        self._pin_today(monkeypatch, "2026-09-03")  # Thursday
+        first = tools.get_week_planning_nudge()
+        assert first["show"] is True
+        tools.dismiss_notification(first["dismiss_key"])
+        assert tools.get_week_planning_nudge()["show"] is False
+
+        # Still within the same suggested week (Mon Aug31-Sun Sep6)...
+        self._pin_today(monkeypatch, "2026-09-05")  # Saturday
+        assert tools.get_week_planning_nudge()["show"] is False
+
+        # ...but a new suggested week (the next Monday) is unaffected.
+        self._pin_today(monkeypatch, "2026-09-07")  # the following Monday
+        assert tools.get_week_planning_nudge()["show"] is True
+
+
 # ---------- overlap takeover ----------
 
 class TestOverlapTakeover:
