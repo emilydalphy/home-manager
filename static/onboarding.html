@@ -606,6 +606,13 @@
     <button class="reveal-quiet-link" id="reveal-iterate-btn" type="button">or tweak it with me</button>
     <button class="next-btn secondary" id="reveal-chores-btn" type="button">Set up chores too</button>
   </div>
+  <!-- A failed generation shows this instead of reveal-actions above, never
+       both — "Looks good — take me in" sitting over zero days would be
+       saying the opposite of what actually happened. -->
+  <div class="reveal-actions" id="reveal-error-actions" style="display:none">
+    <button class="btn-primary reveal-primary-btn" id="reveal-retry-btn" type="button">Try again</button>
+    <button class="reveal-quiet-link" id="reveal-anyway-btn" type="button">Take me in anyway</button>
+  </div>
 </div>
 
 <div id="step-chores-q" style="display:none">
@@ -1447,25 +1454,42 @@ async function streamFirstPlan() {
   return finalPlan;
 }
 
+// Remembered so "Try again" (the failed-generation path below) can re-run
+// the exact same call without the caller having to thread answers through
+// a second time.
+let lastFirstPlanAnswers = null;
+
 async function generateFirstPlanAndReveal(answers) {
+  lastFirstPlanAnswers = answers;
   const accent = document.getElementById('reveal-accent');
   const status = document.getElementById('reveal-status');
   const actions = document.getElementById('reveal-actions');
+  const errorActions = document.getElementById('reveal-error-actions');
   const daysDiv = document.getElementById('reveal-days');
   accent.textContent = 'Putting together a real week from what you just told me…';
   status.hidden = false;
   actions.style.display = 'none';
+  errorActions.style.display = 'none';
   daysDiv.innerHTML = '';
+  let failed = false;
   try {
     const data = await streamFirstPlan();
     renderRevealDays(data.meals || []);
     accent.textContent = buildRevealCopy(answers);
   } catch (err) {
     console.warn('First-plan generation failed:', err);
-    accent.textContent = "Couldn't put a sample week together right now — no worries, just ask me for one any time in chat.";
+    failed = true;
+    accent.textContent = "That didn't come together — shall I have another go?";
   } finally {
     status.hidden = true;
-    actions.style.display = 'flex';
+    // The normal actions ("Looks good — take me in") assume a real week is
+    // sitting above them — on a failed generation there are zero days, so
+    // this shows the retry pair instead rather than the two overlapping.
+    if (failed) {
+      errorActions.style.display = 'flex';
+    } else {
+      actions.style.display = 'flex';
+    }
   }
   await renderInviteOffer(answers.member_names || []);
 }
@@ -1602,6 +1626,13 @@ document.getElementById('reveal-done-btn').onclick = () => { window.location.hre
 // then open the ask sheet with a prefill instead of a toast, and scrub
 // the param so a refresh doesn't reopen it.
 document.getElementById('reveal-iterate-btn').onclick = () => { window.location.href = '/week?tweak=1'; };
+// The failed-generation pair: "Try again" just re-runs the exact same
+// generation call (same answers, same code path a success would have
+// taken); "Take me in anyway" is deliberately plain '/week', not
+// '?firstplan=1' — that param's own toast ("Here's a first pass…") would
+// be describing a plan that was never actually made.
+document.getElementById('reveal-retry-btn').onclick = () => { generateFirstPlanAndReveal(lastFirstPlanAnswers); };
+document.getElementById('reveal-anyway-btn').onclick = () => { window.location.href = '/week'; };
 document.getElementById('reveal-chores-btn').onclick = () => {
   buildChoresQStep();
   showStep('chores-q');
