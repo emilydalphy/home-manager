@@ -161,6 +161,21 @@ from .notifications import (  # noqa: F401
     get_active_notifications,
     get_learning_summary,
 )
+# "Every meal is a full plate" (Emily, 2026-09-05) — see plates.py. Not
+# agent tools: the assistant doesn't decide the rule, generation applies it.
+# Aliased on the way out where the bare name would say nothing about plates
+# once it's sitting in this flat namespace (`missing_groups`, `is_complete`
+# and `get_sides` could each be about half a dozen things here).
+from .plates import (  # noqa: F401
+    complete_plate,
+    plate_rule,
+    sides_label,
+    side_ingredients,
+)
+from .plates import get_sides as get_plate_sides  # noqa: F401
+from .plates import has_food_groups as plate_has_food_groups  # noqa: F401
+from .plates import is_complete as plate_is_complete  # noqa: F401
+from .plates import missing_groups as plate_missing_groups  # noqa: F401
 from .pre_shop import (  # noqa: F401
     _PRE_SHOP_FRACTION_LEAD,
     _PRE_SHOP_FRACTION_TAIL,
@@ -246,10 +261,12 @@ from .rhythm import (  # noqa: F401
     LUNCH_LOCATIONS,
     MEALS_TOGETHER_OPTIONS,
     PLANNING_ANCHORS,
+    PLANNING_ANCHOR_WEEKDAYS,
     WEEKDAYS,
     clear_lunch_location_override,
     effective_lunch_location,
     get_household_rhythm,
+    planning_anchor_label,
     rhythm_completeness_signals,
     set_cooking_role,
     set_dinner_window,
@@ -367,6 +384,7 @@ from .weekly_plan import (  # noqa: F401
     get_week_menu,
     get_week_planning_nudge,
     get_weekly_plan,
+    mark_plates_intro_shown,
     plan_slot_empty,
     plan_slot_open,
     preview_plan_grocery_impact,

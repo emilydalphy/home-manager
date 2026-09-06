@@ -67,6 +67,13 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- Same idea as dinners_per_week, for the other two main meals.
     breakfasts_per_week INTEGER NOT NULL DEFAULT 7,
     lunches_per_week INTEGER NOT NULL DEFAULT 7,
+    -- Loop Board "Onboarding / meal setup: add a Snacks & desserts count"
+    -- (Emily, 2026-09-05). Same distinct-count-then-rotate rule as the three
+    -- above, just for snacks/desserts. Defaults to 3, not 7 like the others —
+    -- Emily's explicit call, since 7 was only ever an implicit default for
+    -- snacks (never actually asked) and 3 reads as the more honest "some
+    -- snacks most days" starting point for a household that's never answered.
+    snacks_per_week INTEGER NOT NULL DEFAULT 3,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate
@@ -77,9 +84,16 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- What the household has to cook with. The highest-value question the
     -- app wasn't asking: it prevents impossible suggestions outright.
     kitchen_kit_json TEXT NOT NULL DEFAULT '[]', -- ["slow_cooker", "air_fryer"]
-    -- How they feel about eating the same thing twice. This single answer
-    -- changes the structure of every week the app builds — whether it cooks
-    -- once and stretches it, or gives seven different dinners.
+    -- DEPRECATED (Loop Board "Onboarding asks about leftovers twice", Emily
+    -- 2026-09-05): this asked the same thing household_rhythm.leftovers_stance
+    -- does, one screen apart. leftovers_stance is now the single source of
+    -- truth the planner reads for how they feel about repeats/leftovers — see
+    -- tools/rhythm.py:set_leftovers_stance and generate_weekly_plan_llm's
+    -- prompt. Column kept (not dropped) so old data isn't lost and the
+    -- one-time migration in db.py has something to read from; still
+    -- readable/settable via edit_preference for anyone with old integrations,
+    -- but no longer asked in onboarding, shown on the setup screen, or read
+    -- by generation.
     repeats_tolerance TEXT NOT NULL DEFAULT '', -- cook_once_eat_twice | one_a_week | all_different
     -- A real number of minutes, distinct from cooking_time_preference's
     -- freeform "quick"/"moderate". 0 means unset — no cap.
@@ -90,6 +104,17 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- "a week I understand needs almost no correcting later."
     typical_week TEXT NOT NULL DEFAULT '',
     next_week_notes TEXT NOT NULL DEFAULT '',
+    -- "Every meal is a full plate" (Emily, 2026-09-05). ON by default: when
+    -- a generated meal falls short of the household's plate rule, the app
+    -- attaches a small side rather than leaving it short — see
+    -- app/tools/plates.py. Turning it off doesn't hide the rule, it just
+    -- stops the app acting on it: the pass logs what it would have added
+    -- and changes nothing.
+    complete_plates INTEGER NOT NULL DEFAULT 1,
+    -- The household is told this is deliberate exactly once. Set the first
+    -- time the review band actually serves that sentence, not the first
+    -- time a plate is completed — see weekly_plan.get_week_menu.
+    plates_intro_shown_at TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -440,6 +465,14 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- "entry_id:<n>" instead; that form is still accepted and resolved,
     -- but new writes should use the date:slot form above.
     derived_from_json TEXT NOT NULL DEFAULT '{}',
+    -- "Every meal is a full plate" (Emily, 2026-09-05). The side(s) the app
+    -- attached to THIS night's dish because its own food_groups were short
+    -- of the household's plate rule — see app/tools/plates.py for the rule,
+    -- the shape stored here, and the reasoning for why this is a column on
+    -- the entry rather than a rewrite of the recipe's ingredients_json (a
+    -- recipe is shared across weeks; a side belongs to one night).
+    -- '[]' for the overwhelming majority of entries.
+    sides_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -1054,7 +1087,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the seven call
+-- also why recording lives there instead of at each of the eight call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.

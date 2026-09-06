@@ -3930,6 +3930,13 @@
       '<div class="shell-card week-approve-card">' +
         '<div class="week-review-eyebrow">DRAFT · YOUR TURN</div>' +
         (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
+        // Said once, ever: the first week where the app rounded a meal out
+        // for them (app/tools/plates.py, weekly_plan.PLATES_INTRO). The
+        // server decides whether it appears and marks it as said, so this
+        // is simply "show it if it's there" — sitting under the status line
+        // and above the promise, because it explains something about the
+        // week they're being asked to approve.
+        (data.plates_note ? '<div class="week-note">' + escapeHtml(data.plates_note) + '</div>' : '') +
         // A possible allergy/must-avoid clash, named above the Approve
         // button rather than left for the household to catch. Server-worded
         // (see check_plan_conflicts) so the sentence lives with the data it
@@ -4042,8 +4049,9 @@
     // permanent entry point, it's the nudge with extra steps.
     // Where "this week" starts is the household's answer, not the
     // calendar's — planningPeriodDefault is the rhythm-derived suggestion
-    // from /api/week/planning-period (Monday for a household that plans on
-    // the Sunday before; today for one that plans midweek or as it goes).
+    // from /api/week/planning-period (the morning after their chosen
+    // ready day, e.g. Saturday for a household ready by Friday; today,
+    // three days, for a household planning as it goes).
     // Falls back to the Monday while that request is in flight or has
     // failed, which is exactly what this offered before it existed.
     var defaultStart = (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
@@ -4552,10 +4560,22 @@
         '<span class="wg2-tile-meta">Pick</span>' +
       '</div>';
     }
+    // "with a green salad", or "one-pot, nothing extra" — the plate note
+    // (app/tools/plates.py). Rendered as one more of the same chip the
+    // timing already uses, rather than a new element: it is the same kind
+    // of small fact about the meal, and the card has no room for a third
+    // line under the name.
+    var chips = [];
+    if (entry.meta) chips.push(entry.meta);
+    if (entry.plate_note) chips.push(entry.plate_note);
     return '<div class="' + cls + '">' +
       (entry.need ? '<div class="wg2-dinner-chips">' + needBadgeHtml(entry) + '</div>' : '') +
       '<span class="wg2-dinner-name">' + escapeHtml(entry.title) + '</span>' +
-      (entry.meta ? '<div class="wg2-dinner-chips"><span class="wg2-dinner-chip">' + escapeHtml(entry.meta) + '</span></div>' : '') +
+      (chips.length
+        ? '<div class="wg2-dinner-chips">' + chips.map(function (c) {
+            return '<span class="wg2-dinner-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
       wgWhyHtml(day, 'dinner', entry) +
     '</div>';
   }
@@ -4913,6 +4933,10 @@
     // (see cookServesChip); "Serves 4" for every ordinary night, unchanged.
     chips.push(cookServesChip(meal));
     if (meal.batch_note) chips.push('Bulk ×' + meal.meal_count);
+    // "with a green salad" — the side the app attached to fill out this
+    // plate (app/tools/plates.py). Its ingredients and steps are already
+    // folded into the recipe below; this is what says so on the hero.
+    if (meal.sides_label) chips.push(meal.sides_label);
     chips = chips.filter(Boolean);
 
     // Newsreader italic, once per screen. The reasoning is the honest thing
@@ -5269,6 +5293,10 @@
     // screen is where the ingredients are actually read off, so it is the
     // one place the number really has to be right in front of them.
     if (meal.covers_note && meal.servings) chips.push('for ' + meal.servings);
+    // The side that fills out this plate, named here too — this is the
+    // screen someone actually cooks from, and the "Alongside" steps at the
+    // bottom of the list want explaining before they're reached.
+    if (meal.sides_label) chips.push(meal.sides_label);
     var attChip = cookAttendanceChip(meal);
     if (attChip) chips.push(attChip);
 

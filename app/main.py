@@ -385,6 +385,7 @@ class OnboardingAnswersRequest(BaseModel):
     dinners_per_week: int = 7
     breakfasts_per_week: int = 7
     lunches_per_week: int = 7
+    snacks_per_week: int = 3
 
 
 class OnboardingRhythmRequest(BaseModel):
@@ -665,6 +666,7 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             dinners_per_week=req.dinners_per_week,
             breakfasts_per_week=req.breakfasts_per_week,
             lunches_per_week=req.lunches_per_week,
+            snacks_per_week=req.snacks_per_week,
         )
     except Exception as e:
         logger.exception("Onboarding answers save failed")
@@ -1134,6 +1136,17 @@ def week_menu(weekly_plan_id: int | None = None):
     """
     try:
         menu = tools.get_week_menu(weekly_plan_id)
+        # "I added a small side" — said once, and this is the moment it
+        # actually reaches a person, so this is where it gets marked as
+        # said. Not inside get_week_menu, which the assistant also calls
+        # mid-conversation: stamping it there would spend the household's
+        # one telling on a read nobody saw. Failing to stamp must not fail
+        # the screen — the worst case is the sentence shown twice.
+        if menu.get("plates_note"):
+            try:
+                tools.mark_plates_intro_shown()
+            except Exception:
+                logger.exception("Marking the plate-completion note as shown failed")
     except Exception as e:
         logger.exception("Week-menu lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2002,7 +2015,21 @@ def get_facts_view(category: str | None = None):
             preferences = {
                 "eating_style": memory.get("eating_style") or "",
                 "cuisines": memory.get("cuisine_preferences") or [],
+                # "Every meal is a full plate" (Emily, 2026-09-05). Shown
+                # here because the household is told once that the app does
+                # this, and a thing you're told once has to be findable
+                # afterwards — see app/tools/plates.py.
+                "complete_plates": bool(memory.get("complete_plates", True)),
             }
+        if category == "rhythm":
+            # leftovers_stance (Loop Board "Onboarding asks about leftovers
+            # twice", 2026-09-05) is the single source of truth for how the
+            # household feels about leftovers/repeats, and — like
+            # eating_style/cuisines on the Taste tab above — was previously
+            # editable nowhere after onboarding except by asking chat.
+            # Structured rhythm facts live in household_rhythm, not the
+            # freeform `facts` table this route otherwise reads.
+            preferences = {"leftovers_stance": tools.get_household_rhythm().get("leftovers_stance") or ""}
     except Exception as e:
         logger.exception("Facts lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

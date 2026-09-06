@@ -451,6 +451,10 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         "generate_weekly_plan_llm", "generate_component_plan_llm",
         "generate_prep_schedule_llm", "generate_recipe_detail_llm",
         "_scan_image_for_items", "generate_chore_recommendations", "run_agent_turn",
+        # "Every meal is a full plate" (Emily, 2026-09-05) — the small
+        # side call, one per short plate, capped per generated week. See
+        # agent.generate_sides_llm and app/tools/plates.py.
+        "generate_sides_llm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

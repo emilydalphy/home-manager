@@ -9,6 +9,7 @@ from . import attendance as _attendance
 from . import attention as _attention
 from . import inventory as _inventory
 from . import leftovers as _leftovers
+from . import plates as _plates
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
@@ -21,6 +22,25 @@ from . import weekly_plan as _weekly_plan
 _NOT_COOKABLE_SLOT_STATES = frozenset({"planned_empty", "open"})
 _NOT_COOKABLE_SLOT_STATES_ORDERED = tuple(sorted(_NOT_COOKABLE_SLOT_STATES))
 _NOT_COOKABLE_PLACEHOLDERS = ",".join("?" * len(_NOT_COOKABLE_SLOT_STATES_ORDERED))
+
+
+def _side_steps(sides: list[dict] | None) -> list[str]:
+    """
+    A side's own steps, worded so they read as what they are inside the
+    main recipe's numbered list: something happening ALONGSIDE the dish,
+    not step nine of it.
+
+    The side is named on its first step only. Naming it on every step
+    reads as a stutter in a list of four, and leaving it off entirely
+    makes two sides indistinguishable from each other.
+    """
+    steps = []
+    for side in sides or []:
+        name = (side.get("name") or "").strip()
+        own = [str(s).strip() for s in (side.get("instructions") or []) if str(s).strip()]
+        for i, step in enumerate(own):
+            steps.append(f"Alongside — {name}: {step}" if i == 0 and name else f"Alongside: {step}")
+    return steps
 
 
 def _singularize(word: str) -> str:
@@ -531,6 +551,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         if m.get("slot_state") in _NOT_COOKABLE_SLOT_STATES:
             continue
         recipe = recipes_by_name.get((m["meal"] or "").lower())
+        sides = m.get("sides") or []
         meals.append({
             "entry_id": m["entry_id"],
             "date": m["date"],
@@ -540,8 +561,18 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "slot_state": m.get("slot_state"),
             "cooked_status": m["cooked_status"],
             "reasoning": m.get("reasoning"),
-            "ingredients": recipe["ingredients"] if recipe else [],
-            "instructions": recipe["instructions"] if recipe else [],
+            # The dish, then whatever the app attached beside it to make a
+            # full plate (see plates.py). Folded into the SAME two lists
+            # rather than given their own section: someone cooking wants one
+            # shopping-shaped ingredient list and one ordered set of steps,
+            # not two recipes to interleave in their head. The side's steps
+            # go on the END, which also keeps advance_prep_step_indices —
+            # 1-based positions into `instructions` — pointing where they
+            # always did.
+            "ingredients": (recipe["ingredients"] if recipe else []) + _plates.side_ingredients(sides),
+            "instructions": (recipe["instructions"] if recipe else []) + _side_steps(sides),
+            "sides": sides,
+            "sides_label": _plates.sides_label(sides),
             "default_servings": recipe["default_servings"] if recipe else None,
             "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
             "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,

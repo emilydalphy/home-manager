@@ -58,6 +58,14 @@
   .wwk-footer-card { background: var(--hairline-strong); border-radius: 16px; padding: 14px 17px; margin-bottom: 16px; }
   .wwk-footer-text { font-family: var(--font-body); font-size: 0.86rem; color: var(--ink-secondary); margin: 0; line-height: 1.4; }
 
+  /* Quiet sign-out link, bottom of the sheet — same idiom as shell.css's
+     .week-setup-link/.plan-nudge-link (text-only, underline on hover), just
+     in --ink-secondary since this one isn't a next-step, it's an exit. Its
+     own row keeps the 44px tap target (Rule 6) without inflating the text. */
+  .wwk-signout-row { display: flex; justify-content: center; min-height: 44px; align-items: center; margin-top: 4px; }
+  .wwk-signout-link { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--ink-secondary); text-decoration: none; padding: 12px; }
+  .wwk-signout-link:hover { text-decoration: underline; }
+
   /* Stores tab extra */
   .wwk-store-block { border-top: 1px solid var(--hairline); padding: 13px 0; }
   .wwk-store-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
@@ -145,6 +153,8 @@
 
 <div class="wwk-content" id="wwk-content" role="tabpanel" aria-live="polite"><p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Loading…</p></div>
 
+<div class="wwk-signout-row"><a class="wwk-signout-link" href="/logout">Sign out</a></div>
+
 <div id="wwk-scrim" aria-hidden="true"></div>
 <div id="wwk-import-sheet" role="dialog" aria-modal="true" aria-labelledby="wwk-import-heading">
   <p style="font-family:var(--font-body);font-weight:800;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--apricot-label);margin:0">What you usually buy</p>
@@ -183,7 +193,7 @@ const TAB_META = {
   people: { intro: "Who I'm planning for, and what nobody will eat.", footer: "Tap any line to correct it. I'll re-check this week's plan against changes." },
   taste: { intro: 'What tends to work, so suggestions land the first time.', footer: "The more of these you fix, the fewer swaps you'll have to make." },
   rhythm: { intro: 'The shape of your week — I plan around these.', footer: "Tell me about a one-off week in the ask bar instead — these are the standing patterns." },
-  stores: { intro: 'Where things come from and what a week usually costs.', footer: 'I use these to decide which list an item lands on.' },
+  stores: { intro: "Where you shop. Tell me once and I'll sort your list by store.", footer: 'I use these to decide which list an item lands on.' },
 };
 
 // Which tab to open on. The Kitchen hub's Stores tile (and its Taste and
@@ -257,7 +267,7 @@ async function renderFactsTab(category) {
       html += `</div>`;
     }
     if (preferences) {
-      html += renderPreferenceCard(preferences);
+      html += category === 'rhythm' ? renderRhythmPreferenceCard(preferences) : renderPreferenceCard(preferences);
     }
     html += `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     facts.forEach(f => {
@@ -302,7 +312,10 @@ async function renderFactsTab(category) {
     html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
     content.innerHTML = html;
     wireFactsActions(category);
-    if (preferences) wirePreferenceActions(preferences);
+    if (preferences) {
+      if (category === 'rhythm') wireRhythmPreferenceActions();
+      else wirePreferenceActions(preferences);
+    }
   } catch (err) {
     content.innerHTML = '<p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
@@ -359,14 +372,90 @@ function renderPreferenceCard(prefs) {
   } else {
     html += `<div class="wwk-add-row" data-open-pref="cuisines">+ Add a cuisine</div>`;
   }
+
+  // "Every meal is a full plate" (Emily, 2026-09-05). The household is told
+  // once, on the review band, that the app rounds a short meal out — so the
+  // setting they were told about has to be somewhere they can find it
+  // afterwards, and this is the screen for things the app knows about them.
+  // Same fact-row idiom as everything above it; the value is the answer,
+  // not a switch widget (DESIGN_SYSTEM.md §8: the answer, not the question).
+  const platesOn = prefs.complete_plates !== false;
+  html += `<div class="wwk-fact-row" data-toggle-pref="complete_plates">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Rounding out meals</span> ${
+      platesOn
+        ? 'I add a small side when a meal comes out short'
+        : 'I leave your meals exactly as planned'
+    }</span>
+    <span class="wwk-fact-edit">${platesOn ? 'Stop' : 'Start'}</span>
+  </div>`;
   html += `</div>`;
   return html;
+}
+
+// The Rhythm tab's one editable structured fact: leftovers_stance (Loop
+// Board "Onboarding asks about leftovers twice", 2026-09-05). Before this,
+// the merged leftovers/repeats answer was only ever settable at onboarding
+// or by asking chat — same gap renderPreferenceCard above was built to
+// close for eating_style/cuisines on Taste, just for one single-select
+// fact here instead of free text/a list. Lives in household_rhythm, not
+// meal_preferences, so it saves through /api/onboarding/rhythm (the same
+// endpoint the rhythm onboarding step posts to) rather than
+// /api/memory/edit.
+const RHYTHM_LEFTOVERS_OPTIONS = [
+  { key: 'love_them', label: 'Love them — cook once, eat twice' },
+  { key: 'fine_sometimes', label: 'Fine now and then' },
+  { key: 'fresh_each_night', label: 'Fresh every night' },
+];
+
+function renderRhythmPreferenceCard(prefs) {
+  let html = `<div class="wwk-card"><p class="wwk-intro">From your setup answers — this shapes every week I plan.</p>`;
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Leftovers</span></span>
+  </div>`;
+  html += `<div class="wwk-pref-chips">`;
+  RHYTHM_LEFTOVERS_OPTIONS.forEach(o => {
+    const on = prefs.leftovers_stance === o.key;
+    html += `<button type="button" class="wwk-chip-add" data-set-leftovers="${o.key}"
+      style="${on ? 'background:var(--celadon-tint);color:var(--ink-on-celadon);border-style:solid;font-weight:800;' : ''}">${escapeHtml(o.label)}</button>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+async function saveLeftoversStance(value) {
+  const res = await fetch('/api/onboarding/rhythm', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ leftovers_stance: value }),
+  });
+  if (!res.ok) throw new Error('failed');
+}
+
+function wireRhythmPreferenceActions() {
+  const content = document.getElementById('wwk-content');
+  content.querySelectorAll('[data-set-leftovers]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await saveLeftoversStance(btn.getAttribute('data-set-leftovers'));
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
 }
 
 function wirePreferenceActions(prefs) {
   const content = document.getElementById('wwk-content');
   content.querySelectorAll('[data-open-pref]').forEach(el => {
     el.addEventListener('click', () => { openPrefEditor = el.getAttribute('data-open-pref'); render(); });
+  });
+  content.querySelectorAll('[data-toggle-pref]').forEach(el => {
+    el.addEventListener('click', async () => {
+      const next = prefs.complete_plates === false;
+      try {
+        await savePreference('complete_plates', next);
+        render();
+      } catch (err) { alert("Couldn't save that — try again."); }
+    });
   });
   content.querySelectorAll('[data-cancel-pref]').forEach(btn => {
     btn.addEventListener('click', () => { openPrefEditor = null; render(); });
