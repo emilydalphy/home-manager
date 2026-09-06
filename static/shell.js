@@ -131,10 +131,18 @@
   // a shared page rather than a page of their own. memory.html reads it on
   // load (openingTab) and exposes showKitchenTab() for the case where the
   // page is already open on a different tab.
+  // memory/stores share one page and one sheet title on purpose (Loop Board
+  // "I should be able to see all the onboarding information here"): the
+  // title used to stay 'Stores' even after switching to another tab inside
+  // the sheet, because it is set once at open time from whichever entry
+  // point was tapped (see openKitchenSheet) and switching tabs inside the
+  // iframe never told the sheet chrome to update it. Giving both entries
+  // the same fixed title sidesteps that without needing the sheet to poll
+  // or the iframe to call back out on every tab change.
   var KITCHEN_SHEETS = {
     memory: { title: 'What we know', src: '/static/memory.html', hash: 'people' },
     inventory: { title: 'Inventory', src: '/static/inventory.html' },
-    stores: { title: 'Stores', src: '/static/memory.html', hash: 'stores' }
+    stores: { title: 'What we know', src: '/static/memory.html', hash: 'stores' }
   };
 
   function currentTabKey() {
