@@ -5870,9 +5870,30 @@
     }
   }
 
+  // Tomorrow's date, local — same construction as todayLocalStr, one day
+  // on. Used only to decide whether the post-rating toast below has
+  // somewhere useful to send "Show me tomorrow".
+  function tomorrowLocalStr() {
+    var d = new Date();
+    d.setDate(d.getDate() + 1);
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  // Read off data already on the client (this week's prep_tasks, general
+  // and defrost alike) rather than a new lookup — the rating toast just
+  // wants to know whether pointing at tomorrow is worth offering at all.
+  function cookTomorrowHasPrepOrDefrost() {
+    var tasks = (cookState.data && cookState.data.prep_tasks) || [];
+    var tomorrow = tomorrowLocalStr();
+    return tasks.some(function (t) { return t.task_date === tomorrow; });
+  }
+
   async function cookRateMeal(el) {
     var meal = el.getAttribute('data-meal');
     var notesEl = document.querySelector('[data-attn-notes="' + meal.replace(/"/g, '\\"') + '"]');
+    var hadAttention = (cookState.attention || []).length > 0;
     el.disabled = true;
     try {
       await cookPost('/api/recipe-feedback', {
@@ -5880,7 +5901,16 @@
         rating: el.getAttribute('data-rating'),
         notes: notesEl ? notesEl.value.trim() : ''
       });
-      refreshCookAttention();
+      await refreshCookAttention();
+      // Only the rating that actually empties the list earns the toast —
+      // rating one of several still leaves "attention" open, which isn't
+      // "noted, done" yet.
+      if (hadAttention && !(cookState.attention || []).length) {
+        showToast('Noted — that’ll steer next week.', cookTomorrowHasPrepOrDefrost() ? {
+          label: 'Show me tomorrow',
+          onClick: function () { activateTab('week', true, { mealsView: 'cook' }); }
+        } : undefined);
+      }
     } catch (err) {
       el.disabled = false;
       showToast('Couldn’t save that rating — try again.');
