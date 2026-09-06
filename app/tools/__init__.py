@@ -179,6 +179,7 @@ from .preferences import (  # noqa: F401
     add_food_dislikes,
     add_store_typical_items,
     add_usual_stores,
+    dismiss_stores_prompt,
     get_meal_planning_setup_status,
     remove_item_from_all_stores_typical_list,
     remove_store_typical_item,

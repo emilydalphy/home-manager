@@ -959,6 +959,18 @@ def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
     return memory
 
 
+@app.post("/api/memory/stores-prompt-dismiss")
+def dismiss_stores_prompt_view():
+    """Quietly persist a decline of the Grocery tab's 'Where do you usually shop?' first-visit card — see tools.dismiss_stores_prompt."""
+    try:
+        tools.dismiss_stores_prompt()
+        memory = tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Dismissing stores prompt failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
 @app.get("/api/cooker-view")
 def get_cooker_view(weekly_plan_id: int | None = None):
     """Everything needed to cook the current (or given) weekly plan — powers the dedicated Cooker view page."""

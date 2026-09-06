@@ -1203,6 +1203,11 @@
     data: null,
     loadError: false,
     usualStores: [],        // household's saved stores, offered as triage pills
+    // Loop Board 19a: whether the Plan stops "Where do you usually shop?"
+    // first-visit card has been quietly declined ("One list is fine") —
+    // persisted server-side (meal_preferences.stores_prompt_dismissed_at)
+    // so it stays gone across visits, not just this page view.
+    storesPromptDismissed: false,
     itemStorePrefs: {},     // lowercased item name -> remembered store
     preShopFlags: [],
     preShopOpen: false,
@@ -1407,6 +1412,10 @@
         e.preventDefault();
         groAddItem();
       }
+      if (e.target.id === 'gro-stores-prompt-input') {
+        e.preventDefault();
+        panel.querySelector('[data-gro="stores-prompt-add"]').click();
+      }
     });
     setupDictation(panel.querySelector('#gro-add-item'), panel.querySelector('#gro-add-mic'));
 
@@ -1423,6 +1432,7 @@
       if (!res.ok) return;
       var memory = await res.json();
       groceryState.usualStores = memory.usual_stores || [];
+      groceryState.storesPromptDismissed = !!memory.stores_prompt_dismissed;
       if (groceryState.screen === 'plan') renderGrocery();
     } catch (err) { /* triage still works from what's tagged on the list */ }
   }
@@ -1828,10 +1838,61 @@
     );
   }
 
+  // ---------- First-visit "where do you usually shop?" (Loop Board 19a) ----------
+  // Stores used to be an onboarding question; Emily decided (2026-09-05) to
+  // ask just-in-time instead, right where it first matters — the first real
+  // trip, on Plan stops, rather than a question asked before there's even a
+  // list to sort. Short, editable presets for an Ontario household, plus
+  // free text for anything else. Picking one saves immediately through the
+  // same write path the Kitchen "What we know" Stores tab uses
+  // (edit_preference/usual_stores), so the triage pills below pick it up
+  // the moment this card disappears (usualStores.length becomes > 0).
+  var GRO_STORE_PROMPT_CHIPS = ['Costco', 'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'Walmart', 'Farm Boy', 'T&T', 'Whole Foods'];
+
+  function groStoresPromptShouldShow() {
+    return !groceryState.usualStores.length && !groceryState.storesPromptDismissed;
+  }
+
+  function groStoresPromptHtml() {
+    var chips = GRO_STORE_PROMPT_CHIPS.map(function (name) {
+      return '<button type="button" class="gro-pill" data-gro="stores-prompt-pick" data-store="' + escapeHtml(name) + '">' +
+        escapeHtml(name) + '</button>';
+    }).join('');
+    return (
+      '<div class="shell-card gro-stores-prompt">' +
+        '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
+        '<p class="gro-stores-prompt-sub">I&rsquo;ll sort the list by store and plan your stops.</p>' +
+        '<div class="gro-pills open">' + chips + '</div>' +
+        '<div class="gro-stores-prompt-add">' +
+          '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
+            'placeholder="Somewhere else?" aria-label="Add a store you usually shop at" />' +
+          '<button type="button" class="gro-linkbtn" data-gro="stores-prompt-add">Add</button>' +
+        '</div>' +
+        '<button type="button" class="gro-stores-prompt-dismiss" data-gro="stores-prompt-dismiss">One list is fine</button>' +
+      '</div>'
+    );
+  }
+
+  // Saves through the same field edit_preference/the Stores tab already
+  // uses — merges into whatever's already saved rather than replacing it,
+  // so two quick taps ("Costco", then "No Frills") don't clobber each
+  // other. Local state updates immediately so the triage pills below
+  // reflect the new store without waiting on a full grocery reload.
+  function groAddUsualStore(name) {
+    name = (name || '').trim();
+    if (!name || groceryState.usualStores.indexOf(name) !== -1) return Promise.resolve();
+    var merged = groceryState.usualStores.concat([name]);
+    return groPost('/api/memory/edit', { field: 'usual_stores', value: merged }).then(function () {
+      groceryState.usualStores = merged;
+      renderGrocery();
+    });
+  }
+
   // ---------- State: Plan your stops ----------
   function groPlanHtml(data) {
     var unsorted = groUnsorted(data);
     var buckets = groStoresWithNeeded(data);
+    var showStoresPrompt = (unsorted.length || buckets.length) && groStoresPromptShouldShow();
     if (unsorted.length || buckets.length) {
       // The list has needed items again — any justFinishedTrip signal left
       // over from an earlier stop in this same visit no longer describes
@@ -1858,7 +1919,7 @@
       return '<p class="gro-empty">Nothing on the list yet — add items from the To buy tab.</p>';
     }
 
-    var html = '';
+    var html = showStoresPrompt ? groStoresPromptHtml() : '';
     if (unsorted.length) {
       if (groceryState.planOpenId == null) groceryState.planOpenId = String(unsorted[0].id);
       var shown = unsorted.slice(0, groceryState.planPageSize);
@@ -2345,6 +2406,38 @@
       case 'sort-more':
         groceryState.planPageSize += 5;
         renderGrocery();
+        return;
+
+      // ----- "where do you usually shop?" first-visit card (Loop Board 19a) -----
+      case 'stores-prompt-pick':
+        el.disabled = true;
+        groAddUsualStore(el.dataset.store).catch(function () {
+          showToast("Couldn't save that — try again.");
+        }).then(function () { el.disabled = false; });
+        return;
+
+      case 'stores-prompt-add': {
+        var storesPromptPanel = groPanel();
+        var storesPromptInput = storesPromptPanel && storesPromptPanel.querySelector('#gro-stores-prompt-input');
+        if (!storesPromptInput) return;
+        var typedStore = storesPromptInput.value.trim();
+        if (!typedStore) { storesPromptInput.focus(); return; }
+        el.disabled = true;
+        groAddUsualStore(typedStore).catch(function () {
+          showToast("Couldn't save that — try again.");
+        }).then(function () { el.disabled = false; });
+        return;
+      }
+
+      case 'stores-prompt-dismiss':
+        el.disabled = true;
+        groPost('/api/memory/stores-prompt-dismiss', {}).then(function () {
+          groceryState.storesPromptDismissed = true;
+          renderGrocery();
+        }).catch(function () {
+          el.disabled = false;
+          showToast("Couldn't save that — try again.");
+        });
         return;
 
       case 'assign': {

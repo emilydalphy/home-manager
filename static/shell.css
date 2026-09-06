@@ -3121,6 +3121,63 @@ html, body {
   padding: 4px 0;
 }
 .gro-shop-done-link:hover { text-decoration: underline; }
+
+/* Plan stops' first-visit "Where do you usually shop?" card (Loop Board
+   19a, Emily 2026-09-05) — stores asked just-in-time at the first real
+   trip instead of during onboarding. Same shell-card/spacing rhythm as
+   the shop-done handoff above; chips reuse .gro-pill so a picked store
+   looks exactly like the triage pills it feeds. */
+.gro-stores-prompt {
+  padding: 15px 16px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gro-stores-prompt-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+.gro-stores-prompt-sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  margin: 0;
+}
+.gro-stores-prompt-add { display: flex; gap: 8px; align-items: center; }
+.gro-stores-prompt-input {
+  flex: 1 1 auto;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 0 12px;
+}
+.gro-stores-prompt-input::placeholder { color: var(--ink-placeholder); }
+.gro-stores-prompt-add .gro-linkbtn { min-height: 44px; padding: 0 4px; font-size: 13px; }
+.gro-stores-prompt-dismiss {
+  background: none;
+  border: none;
+  align-self: flex-start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+.gro-stores-prompt-dismiss:hover { color: var(--ink); text-decoration: underline; }
 .gro-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
