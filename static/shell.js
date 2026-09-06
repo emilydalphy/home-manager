@@ -3686,11 +3686,21 @@
   // and "Cook this" only on today, because cook mode can only start tonight's
   // meal — a future day gets "Swap it" alone rather than a button that would
   // open the wrong day's steps.
+  //
+  // A reheat night (day.dinner.source === 'leftovers' — see
+  // tools.get_week_menu's build_slot) is not a cook, so today's version of
+  // that button never says "Cook this" for one: nothing would be cooked by
+  // tapping it. The button still opens Cook mode (same handler below) —
+  // that screen already renders a confirmed chain's reheat night correctly
+  // (cooker.get_cooker_view / cookReheatHeroHtml) with its own "Mark eaten"
+  // action — this only fixes the label so it doesn't promise a cook that
+  // isn't going to happen.
   function dayActionsHtml(day) {
     if (!(day.dinner && day.dinner.state === 'planned' && !day.isPast)) return '';
     if (day.isToday) {
+      var isReheat = day.dinner.source === 'leftovers';
       return '<button type="button" class="hero-go" id="wk-cook-this">' +
-        '<span>Cook this</span>' + ICONS.arrow + '</button>' +
+        '<span>' + escapeHtml(isReheat ? REHEAT_ACTION_LABEL : 'Cook this') + '</span>' + ICONS.arrow + '</button>' +
         '<button type="button" class="hero-swap" id="wk-swap-it" aria-label="Swap it">Swap</button>';
     }
     return '<button type="button" class="hero-swap" id="wk-swap-it">Swap it</button>';

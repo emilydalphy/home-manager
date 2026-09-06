@@ -389,6 +389,9 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
         "meals": [{"entry_id": m["entry_id"], "meal": m["meal"], "cooked_status": m["cooked_status"]} for m in meal_rows],
+        # Counts a reheat night as its own item, same choice and same
+        # reasoning as get_cooker_view's meals_done/meals_total — see the
+        # comment there.
         "meals_done": sum(1 for m in meal_rows if m["cooked_status"] == "done"),
         "meals_total": len(meal_rows),
         "prep_tasks": prep_tasks,
@@ -688,6 +691,15 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         "planning_mode": plan["planning_mode"],
         "status": plan["status"],
         "meals": meals,
+        # "N of M cooked" (see the Cook screen's title row) counts a reheat
+        # night as its own item on both sides of the fraction, exactly like
+        # an ordinary cook — it keeps its own entry_id and cooked_status,
+        # and Emily's own name for checking it off is "Mark eaten"
+        # (REHEAT_ACTION_LABEL in shell.js), not "skip" or "already
+        # counted". The alternative — excluding reheats from the total —
+        # would make a chain's source night read as though it alone were
+        # "the whole week", which is less honest than counting each night
+        # the household actually has to deal with, cooked or reheated.
         "meals_done": sum(1 for m in meals if m["cooked_status"] == "done"),
         "meals_total": len(meals),
         "prep_tasks": prep_tasks,

@@ -1857,10 +1857,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     `dinner` keys — each either None (nothing planned, drives the "Pick"
     row) or `{title, meta, source}`.
 
-    `source`/`meta` have no backing column in meal_plan_entries, so they're
-    derived with a keyword heuristic against the entry's freeform text —
-    documented here as a judgment call, not a spec'd mapping:
-      - "leftover"/"leftovers" in the text -> source "leftovers", meta "reheat"
+    `source`/`meta` have no backing column in meal_plan_entries, so most of
+    them are derived with a keyword heuristic against the entry's freeform
+    text — documented here as a judgment call, not a spec'd mapping:
+      - a night in a CONFIRMED leftovers chain (both the entry and its
+        source agree — see leftovers.plan_leftover_chains) -> source
+        "leftovers", meta "reheat", title replaced with
+        leftovers.leftovers_headline naming the source dish and night,
+        checked before the text heuristic below because a chain entry can
+        carry a real recipe_id (the source's own dish) with nothing in its
+        own freeform text for a regex to catch.
+      - "leftover"/"leftovers" in the text (and no confirmed chain) ->
+        source "leftovers", meta "reheat"
       - "takeout"/"take-out"/"take out"/"delivery"/"order in" -> source
         "takeout", meta "takeout"
       - anything else (a saved recipe or a plain freeform entry) -> source
@@ -2002,6 +2010,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     conn.close()
     plate_rule = _plates.plate_rule(prefs["eating_style"] if prefs else "")
 
+    # Every confirmed cook-once-eat-twice pairing on this plan (see
+    # leftovers.py) — computed once for the whole week rather than per slot,
+    # since it's one query either way and build_slot needs it for every
+    # reheat night it might encounter. Only entries BOTH sides agree on come
+    # back here, same rule the Cook view (cooker._apply_leftover_chains)
+    # already applies: a reheat night is only rendered as one when the
+    # source it names also names it back.
+    from . import leftovers as _leftovers
+    chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])
+
     def plate_note(row, sides) -> str:
         """
         The one short line about this plate: "with a green salad" when the
@@ -2052,6 +2070,23 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "state": "planned", "reason": row["reasoning"] or None, "entry_id": row["id"],
             "sides": sides, "plate_note": plate_note(row, sides),
         }
+        # A confirmed chain (see `chains` above) takes priority over the
+        # freeform-text heuristic below: a chain entry can carry a REAL
+        # recipe_id (the source's own dish, so the reheat night can say
+        # what it's actually eating) with nothing in its freeform text for
+        # the regex to catch — which is exactly how this used to show up as
+        # "Korean Beef Bulgogi Lettuce Wraps · 35 min · Cook this" instead
+        # of the reheat it actually is (Loop Board). No time chip (nothing
+        # is cooked tonight) and no plate note (not a plate this app
+        # assembled tonight either — same reasoning as the freeform case
+        # just below).
+        leftover = chains["leftovers"].get(row["id"])
+        if leftover:
+            src = leftover["source"]
+            return {
+                "title": _leftovers.leftovers_headline(src["meal"], src["date"]),
+                "meta": "reheat", "source": "leftovers", **common, "plate_note": "",
+            }
         text = (row["freeform_meal"] or "").lower()
         # Neither a reheat nor takeout is a plate this app assembled, so
         # neither gets a plate note — "one-pot, nothing extra" over a night
