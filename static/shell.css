@@ -222,14 +222,17 @@ html, body {
   color: var(--celadon-label);
   margin-top: -4px;
 }
-/* Prep is celadon — the accent that reassures. Nothing on this tile is
-   urgent and it is deliberately not a control: prep gets ticked off in Cook
-   mode, which owns that flow. */
+/* Prep is celadon — the accent that reassures. It's a button now too (Loop
+   Board "core loop handoffs" item 1: it goes to Cook mode, where prep is
+   actually ticked off), so it gets the same cursor/hover treatment
+   .tile-grocery already has. */
 .tile-prep {
   background: var(--celadon-tint);
   border: 1.5px solid var(--celadon-edge);
   color: var(--ink-on-celadon);
+  cursor: pointer;
 }
+.tile-prep:hover { background: var(--celadon-edge); }
 .tile-prep .tile-icon,
 .tile-prep .tile-eyebrow { color: var(--celadon-label); }
 /* Defrost is celadon too — same "nudge, not the task" family as prep (§1
@@ -278,8 +281,7 @@ html, body {
   color: var(--celadon-label);
 }
 
-/* Grocery is the tile that goes somewhere, so it is the one that is a
-   button. */
+/* Grocery's own tile — a button, same as .tile-prep above. */
 .tile-grocery {
   background: var(--surface);
   border: 1.5px solid var(--hairline);
