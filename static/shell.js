@@ -6364,10 +6364,18 @@
       if (!res.ok) throw new Error('Could not get link');
       var data = await res.json();
       var url = window.location.origin + '/share/' + data.token;
+      var copied = false;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        try { await navigator.clipboard.writeText(url); } catch (e) { /* fall through to prompt */ }
+        try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* fall through to the prompt */ }
       }
-      window.prompt('Read-only link — anyone with it can see this week\'s meal plan (nothing else). Copied to your clipboard if supported:', url);
+      if (copied) {
+        showToast('Link copied. Anyone with it sees this week’s meals, nothing else.');
+      } else {
+        // Only reached when the clipboard API itself isn't there (or
+        // refused) — the prompt's own text box is the fallback way to
+        // actually get the link off the screen.
+        window.prompt('Read-only link — anyone with it can see this week\'s meal plan (nothing else):', url);
+      }
     } catch (err) {
       alert('Could not create a share link right now: ' + err.message);
     }
