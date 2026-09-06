@@ -251,7 +251,7 @@ why*, not duplicating the diff.
     `_reverse_meal_grocery_contributions` and `_release_plan_days` take an
     optional `conn=None`; given one they read and write on it and neither
     commit nor close, and left unset they behave exactly as before — which
-    matters, because the reversal has ~15 call sites and none of the others
+    matters, because the reversal has 7 call sites and none of the others
     changed. The in_cart/purchased rule is inherited unchanged, and there is
     a test driving it through a two-plan takeover to say so.
   - **Atomicity and deadlock-avoidance turned out to be the same
