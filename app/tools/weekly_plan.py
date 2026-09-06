@@ -126,6 +126,10 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str) -> int:
     ).fetchall()
     conn.close()
     for row in rows:
+        # If this row was reheating an earlier night's batch, tell that
+        # source before the row disappears out from under it — see
+        # _unlink_leftover_target.
+        _unlink_leftover_target(weekly_plan_id, row["id"])
         # Same care swap_meal_in_plan takes — anything this entry put on the
         # list comes back off, and anything already in a cart is left alone.
         _grocery._reverse_meal_grocery_contributions(row["id"])
@@ -519,6 +523,11 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
         )
 
     was_open = row["slot_state"] == "open"
+    # If the outgoing entry was reheating an earlier night's batch, tell
+    # that source before the row is gone — see _unlink_leftover_target. An
+    # open slot never links to anything, but this also serves the "change
+    # my mind about an already planned slot" path below.
+    _unlink_leftover_target(weekly_plan_id, row["id"])
     # Reverse anything the outgoing entry contributed before deleting it —
     # the same care swap_meal_in_plan takes. An open slot has contributed
     # nothing, but this also serves the "change my mind about an already
@@ -791,6 +800,147 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             ", ".join(f"{x['date']} {x['slot']} ({x['issue']})" for x in repaired),
         )
     return {"repaired": repaired, "confirmed": confirmed}
+
+
+def _make_double_note_text(targets: list[str]) -> str:
+    """
+    The same "I'll set aside a double batch..." sentence
+    repair_leftover_chains writes the first time a source is confirmed —
+    rebuilt here for a source that's losing a target (a swapped or cleared
+    reheat night) rather than gaining one. Reuses _join_with_and, the one
+    piece of that construction worth not copying a second time; the rest
+    is intentionally identical wording so a source note never reads
+    differently depending on which direction last touched it.
+    """
+    day_names = [
+        date.fromisoformat(t.split(":")[0]).strftime("%A")
+        for t in sorted(targets, key=lambda t: t.split(":")[0])
+    ]
+    return (
+        f"I’ll set aside a double batch tonight — {_join_with_and(day_names)} "
+        f"{'eats' if len(day_names) == 1 else 'eat'} the leftovers."
+    )
+
+
+def _unlink_leftover_target(weekly_plan_id: int, entry_id: int) -> None:
+    """
+    Tell a source entry that one of the nights it fed is about to be
+    removed or replaced — the other half of the fix repair_leftover_chains'
+    docstring already anticipates for the SOURCE side (see
+    swap_meal_in_plan's own docstring), but nothing wrote for this,
+    reverse direction. clear_plan_slot, resolve_open_slot and
+    swap_meal_in_plan all just deleted the target row outright, leaving
+    the source's make_double_for/make_double_note naming a night that no
+    longer exists — so the cook night kept a batch (and a grocery line)
+    sized for a reheat that isn't coming (Loop Board, "swapping a leftover
+    TARGET night leaves the source's make_double_for stale").
+
+    Must be called BEFORE `entry_id` itself is deleted — it reads that
+    row's own date/slot/derived_from.links_to to find its source. A no-op
+    for the overwhelming majority of removals: an entry with no links_to,
+    one whose links_to doesn't resolve to a real row in THIS plan, or one
+    the source never actually confirmed via make_double_for (nothing to
+    undo in any of those cases).
+
+    Only rewrites the source's derived_from_json here. Rescaling its
+    grocery contribution to the smaller batch is a separate, pricier step
+    a caller opts into explicitly — see _rescale_leftover_source_grocery —
+    because it only matters at all once the plan is approved.
+    """
+    conn = get_conn()
+    entry = conn.execute(
+        "SELECT date, slot, derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if not entry:
+        conn.close()
+        return
+    links_to = (json.loads(entry["derived_from_json"] or "{}").get("links_to") or "").strip()
+    if not links_to:
+        conn.close()
+        return
+    rows = conn.execute(
+        "SELECT id, date, slot, slot_state, recipe_id, freeform_meal, derived_from_json "
+        "FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL",
+        (weekly_plan_id, household_id()),
+    ).fetchall()
+    conn.close()
+
+    source = _resolve_leftover_source(links_to, {(r["date"], r["slot"]): r for r in rows}, {r["id"]: r for r in rows})
+    if source is None or source["id"] == entry_id:
+        return
+    source_derived = json.loads(source["derived_from_json"] or "{}")
+    targets = source_derived.get("make_double_for") or []
+    if isinstance(targets, str):  # tolerate the pre-fix scalar shape
+        targets = [targets]
+    target = f"{entry['date']}:{entry['slot']}"
+    if target not in targets:
+        return  # the source never actually confirmed this pairing — nothing to undo
+    targets = [t for t in targets if t != target]
+    if targets:
+        source_derived["make_double_for"] = targets
+        source_derived["make_double_note"] = _make_double_note_text(targets)
+    else:
+        # No target left at all — plan_leftover_chains stops treating this
+        # entry as a source the moment make_double_for is gone, which is
+        # exactly right: it's an ordinary cook again.
+        source_derived.pop("make_double_for", None)
+        source_derived.pop("make_double_note", None)
+
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+        (json.dumps(source_derived), source["id"]),
+    )
+    conn.commit()
+    conn.close()
+
+    if _weekly_plan_is_approved(weekly_plan_id):
+        _rescale_leftover_source_grocery(source["id"])
+
+
+def _rescale_leftover_source_grocery(source_entry_id: int) -> None:
+    """
+    Redo one already-approved SOURCE entry's grocery contribution after
+    _unlink_leftover_target shrinks (or clears) the batch it was scaled
+    to. _add_recipe_ingredients_for_entries scales a source by
+    plan_leftover_chains' confirmed targets at the moment it's called, so
+    reversing and re-running it here picks up whatever make_double_for now
+    actually says — the same reverse-then-reingest shape
+    _reingest_unlinked_entries uses for the opposite gap (an entry that
+    has never bought anything), just scoped to one already-linked entry
+    instead of a whole plan's unlinked ones.
+
+    A no-op for a freeform source: nothing structured to rescale, and a
+    freeform meal never reaches the grocery list to begin with (see
+    plan_meal). Re-ingests the recipe's own ingredients AND any side this
+    entry carries, in that order — both were reversed together (they
+    share one meal_plan_entry_id in the ledger), so leaving the side out
+    here would quietly drop a side that was never itself part of the
+    swap.
+    """
+    conn = get_conn()
+    entry = conn.execute(
+        "SELECT mpe.id, mpe.recipe_id, mpe.weekly_plan_id, mpe.sides_json, "
+        "r.ingredients_json, r.default_servings "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.id = ? AND mpe.household_id = ?",
+        (source_entry_id, household_id()),
+    ).fetchone()
+    conn.close()
+    if not entry or not entry["recipe_id"]:
+        return
+
+    _grocery._reverse_meal_grocery_contributions(source_entry_id)
+    _recipes._add_recipe_ingredients_for_entries(
+        [source_entry_id], json.loads(entry["ingredients_json"] or "[]"), entry["weekly_plan_id"],
+        default_servings=entry["default_servings"],
+    )
+    side_ingredients = _entry_side_ingredients(entry)
+    if side_ingredients:
+        _recipes._add_recipe_ingredients_for_entries(
+            [source_entry_id], side_ingredients, entry["weekly_plan_id"],
+        )
 
 
 def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None:
@@ -2973,6 +3123,11 @@ def swap_meal_in_plan(
         row["id"] in _leftovers.plan_leftover_chains(weekly_plan_id)["sources"] for row in old_entries
     )
     for row in old_entries:
+        # The reverse direction from was_a_leftovers_source above: if the
+        # OUTGOING entry was itself a reheat night, its source's
+        # make_double_for/make_double_note still names it after this swap
+        # deletes it — see _unlink_leftover_target.
+        _unlink_leftover_target(weekly_plan_id, row["id"])
         _grocery._reverse_meal_grocery_contributions(row["id"])
 
     conn = get_conn()
