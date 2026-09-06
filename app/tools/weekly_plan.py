@@ -896,51 +896,86 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int) -> None:
     conn.close()
 
     if _weekly_plan_is_approved(weekly_plan_id):
-        _rescale_leftover_source_grocery(source["id"])
+        _rescale_leftover_source_grocery(source["id"], entry_id)
 
 
-def _rescale_leftover_source_grocery(source_entry_id: int) -> None:
+def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: int) -> None:
     """
-    Redo one already-approved SOURCE entry's grocery contribution after
-    _unlink_leftover_target shrinks (or clears) the batch it was scaled
-    to. _add_recipe_ingredients_for_entries scales a source by
-    plan_leftover_chains' confirmed targets at the moment it's called, so
-    reversing and re-running it here picks up whatever make_double_for now
-    actually says — the same reverse-then-reingest shape
-    _reingest_unlinked_entries uses for the opposite gap (an entry that
-    has never bought anything), just scoped to one already-linked entry
-    instead of a whole plan's unlinked ones.
+    Redo an already-approved leftover SOURCE's grocery contribution — and
+    every OTHER already-approved entry in the plan that cooks the SAME
+    recipe — after _unlink_leftover_target shrinks (or clears) the batch
+    the source was scaled to.
+
+    Scoped to the whole recipe-week rather than just the source, for the
+    same reason approve_weekly_plan groups by recipe instead of by meal:
+    if some unrelated entry elsewhere in the plan happens to cook the
+    source's own recipe (a Thursday dinner of the dish a Tuesday source
+    also made, say), the two were bought TOGETHER as one recipe-week at
+    approval — one WeekGroceryBuffer, one rounding, on their combined raw
+    total (see WeekGroceryBuffer and _week_bought_amount). Reversing and
+    recomputing the source ALONE would round its new share a second time,
+    on its own, drifting from what a full-plan recompute would say the
+    same way ingesting meal-by-meal used to multiply spinach. So this
+    reverses and re-ingests every entry sharing the source's recipe_id as
+    one group through one shared buffer — the same reverse-then-reingest
+    shape _reingest_unlinked_entries uses for the opposite gap (entries
+    that have never bought anything); both now share
+    _ingest_recipe_group_and_sides rather than duplicating the
+    group/round/side logic.
+
+    `unlinked_entry_id` is the target _unlink_leftover_target just
+    unconfirmed — the entry the caller (clear_plan_slot or
+    swap_meal_in_plan) is about to delete or replace, and will reverse
+    itself right after this call returns. It is deliberately excluded
+    from the recipe group here even though it still physically exists in
+    the table at this instant: having just lost its confirmed pairing, it
+    would otherwise look like an ordinary same-recipe cook and get folded
+    into this rounding, only for the caller's own reversal a moment later
+    to subtract an apportioned share back out of a line that was never
+    rounded without it — the same drift, one step removed.
 
     A no-op for a freeform source: nothing structured to rescale, and a
     freeform meal never reaches the grocery list to begin with (see
-    plan_meal). Re-ingests the recipe's own ingredients AND any side this
-    entry carries, in that order — both were reversed together (they
-    share one meal_plan_entry_id in the ledger), so leaving the side out
-    here would quietly drop a side that was never itself part of the
-    swap.
+    plan_meal).
     """
     conn = get_conn()
-    entry = conn.execute(
-        "SELECT mpe.id, mpe.recipe_id, mpe.weekly_plan_id, mpe.sides_json, "
-        "r.ingredients_json, r.default_servings "
-        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
-        "WHERE mpe.id = ? AND mpe.household_id = ?",
+    source = conn.execute(
+        "SELECT recipe_id, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (source_entry_id, household_id()),
     ).fetchone()
+    if not source or not source["recipe_id"]:
+        conn.close()
+        return
+    entries = conn.execute(
+        "SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings, mpe.sides_json "
+        "FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.recipe_id = ? "
+        "AND mpe.component_category IS NULL AND mpe.id != ? "
+        # Source last. It carries the group's biggest single ledger share
+        # (scaled up for the whole batch), so reversing every other entry
+        # first keeps the running grocery-line remainder above
+        # _subtract_quantity's whole-unit rollup threshold (1 lb, under
+        # which _humanize_grocery_quantity switches the display to oz) for
+        # as long as possible. Reversing the source first can instead
+        # leave a sub-threshold remainder in a unit that doesn't match the
+        # next entry's own ledger record, which _subtract_quantity can't
+        # reconcile and silently leaves alone — stranding a phantom amount
+        # on the list this rescale was supposed to clear.
+        "ORDER BY (mpe.id = ?) ASC, mpe.date ASC, mpe.id ASC",
+        (
+            source["weekly_plan_id"], household_id(), source["recipe_id"], unlinked_entry_id,
+            source_entry_id,
+        ),
+    ).fetchall()
     conn.close()
-    if not entry or not entry["recipe_id"]:
+    if not entries:
         return
 
-    _grocery._reverse_meal_grocery_contributions(source_entry_id)
-    _recipes._add_recipe_ingredients_for_entries(
-        [source_entry_id], json.loads(entry["ingredients_json"] or "[]"), entry["weekly_plan_id"],
-        default_servings=entry["default_servings"],
-    )
-    side_ingredients = _entry_side_ingredients(entry)
-    if side_ingredients:
-        _recipes._add_recipe_ingredients_for_entries(
-            [source_entry_id], side_ingredients, entry["weekly_plan_id"],
-        )
+    for entry in entries:
+        _grocery._reverse_meal_grocery_contributions(entry["id"])
+    buffer = _recipes.WeekGroceryBuffer(source["weekly_plan_id"])
+    _ingest_recipe_group_and_sides(entries, source["weekly_plan_id"], buffer)
+    buffer.flush()
 
 
 def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None:
@@ -2686,28 +2721,26 @@ def _plate_sides(sides_json: str | None) -> list[dict]:
     return sides if isinstance(sides, list) else []
 
 
-def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
+def _ingest_recipe_group_and_sides(
+    entries: list, weekly_plan_id: int | None, buffer: "_recipes.WeekGroceryBuffer"
+) -> dict:
     """
-    Buy, for the first time, whatever this approved plan's entries have
-    never actually contributed to the grocery list — swap_meal_in_plan's
-    fix for the leftover-chain-swap gap its own docstring describes.
+    Put every one of `entries` (each exposing id/recipe_id/ingredients_json/
+    default_servings/sides_json) on the grocery list through ONE shared
+    buffer: grouped by recipe first — so a recipe cooked several nights
+    this pass still buys as one recipe-week, not one line per meal — then
+    each entry's own side, riding the same buffer so a side sharing an
+    ingredient with a recipe (or another side) rounds together with it
+    instead of separately. Does NOT flush the buffer; the caller owns
+    that, since the entire point of sharing one is letting it hold more
+    than one call's worth of lines before anything gets rounded.
 
-    Deliberately general rather than a special case for the chain it was
-    written for: it finds every entry with a real recipe and no
-    meal_plan_grocery_links row yet (_plan_grocery_candidate_entries, the
-    same query approve_weekly_plan and preview_plan_grocery_impact already
-    trust for "what hasn't been bought"), groups by recipe, and runs them
-    through the exact ingestion approve_weekly_plan uses for a first
-    approval — one WeekGroceryBuffer for the whole pass, so amounts that
-    land on the same line still consolidate and round together rather than
-    each being bought — and rounded — on its own.
+    Shared by _reingest_unlinked_entries (every never-bought entry in a
+    plan) and _rescale_leftover_source_grocery (one recipe's worth,
+    replayed after a leftover source's confirmed batch changes size), so
+    the recipe-grouping-plus-sides shape approve_weekly_plan defines for a
+    first approval lives in one place rather than drifting across copies.
     """
-    conn = get_conn()
-    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
-    conn.close()
-    if not entries:
-        return {"groceries_added": [], "already_have_skipped": []}
-
     by_recipe: dict[int, dict] = {}
     for entry in entries:
         group = by_recipe.setdefault(
@@ -2719,7 +2752,6 @@ def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
         )
         group["entry_ids"].append(entry["id"])
 
-    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
     added_items: list[str] = []
     already_have: list[str] = []
     for group in by_recipe.values():
@@ -2730,9 +2762,6 @@ def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
         added_items.extend(added)
         already_have.extend(have)
 
-    # Sides ride along the same way approve_weekly_plan brings them in —
-    # see its own comment on why they share this buffer rather than one of
-    # their own.
     for entry in entries:
         side_ingredients = _entry_side_ingredients(entry)
         if side_ingredients:
@@ -2741,8 +2770,35 @@ def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
             )
             added_items.extend(added)
             already_have.extend(have)
-    buffer.flush()
     return {"groceries_added": added_items, "already_have_skipped": already_have}
+
+
+def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
+    """
+    Buy, for the first time, whatever this approved plan's entries have
+    never actually contributed to the grocery list — swap_meal_in_plan's
+    fix for the leftover-chain-swap gap its own docstring describes.
+
+    Deliberately general rather than a special case for the chain it was
+    written for: it finds every entry with a real recipe and no
+    meal_plan_grocery_links row yet (_plan_grocery_candidate_entries, the
+    same query approve_weekly_plan and preview_plan_grocery_impact already
+    trust for "what hasn't been bought"), then runs them through
+    _ingest_recipe_group_and_sides with one WeekGroceryBuffer for the
+    whole pass, so amounts that land on the same line still consolidate
+    and round together rather than each being bought — and rounded — on
+    its own.
+    """
+    conn = get_conn()
+    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+    conn.close()
+    if not entries:
+        return {"groceries_added": [], "already_have_skipped": []}
+
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
+    result = _ingest_recipe_group_and_sides(entries, weekly_plan_id, buffer)
+    buffer.flush()
+    return result
 
 
 def _entry_shopping_ingredients(row) -> list[dict]:
