@@ -7104,6 +7104,13 @@
         var key = btn.getAttribute('data-notif-action');
         var n = latestNotifications.filter(function (x) { return x.key === key; })[0];
         closeNotifPanel();
+        // Acting on a notification is as much a resolution as the explicit
+        // Dismiss button below — it shouldn't still be sitting in the feed
+        // next time the bell opens. Fire-and-forget, same as Dismiss: the
+        // navigation this is about to do shouldn't wait on it.
+        fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }).catch(function () { /* best-effort */ });
+        latestNotifications = latestNotifications.filter(function (x) { return x.key !== key; });
+        notifBadge.hidden = latestNotifications.length === 0;
         if (!n) return;
         if (n.tab) activateTab(n.tab, true);
         else if (n.href) followActionHref(n.href);
@@ -7121,7 +7128,8 @@
   function openNotifPanel() {
     notifScrim.hidden = false;
     notifPanel.hidden = false;
-    renderNotifPanel();
+    renderNotifPanel(); // whatever's already in hand, instantly
+    loadNotifications(); // then a quiet refetch — someone else in the house may have acted on one since this loaded (loadNotifications re-renders once the panel is visible)
   }
   function closeNotifPanel() {
     notifScrim.hidden = true;
