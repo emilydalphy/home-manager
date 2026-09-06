@@ -65,6 +65,9 @@ from .defrost import (  # noqa: F401
     get_defrost_schedule,
     get_defrost_today,
     sync_defrost_tasks,
+    meat_items_for_plan,
+    confirm_frozen_items,
+    mark_defrost_asked,
 )
 from .coordination import (  # noqa: F401
     check_plan_conflicts,
