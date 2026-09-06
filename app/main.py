@@ -452,6 +452,27 @@ class MemoryDeleteRequest(BaseModel):
     item: str | None = None
 
 
+class MemberAgeGroupRequest(BaseModel):
+    """What We Know's People tab: set one member's age group. No JSON route
+    onto set_member_age_group existed anywhere before this — onboarding's
+    HouseholdOnboardingRequest carries age_group per member, but the
+    onboarding wizard's own UI (static/onboarding.html) never actually asks
+    for it, so most households reach this page with it unset."""
+    name: str
+    age_group: str
+
+
+class MemberRestrictionsRequest(BaseModel):
+    """What We Know's People tab: add to (replace=False, the merge path) or
+    replace outright (replace=True — how a single-item removal works here:
+    the client resends the full list minus the one being dropped) a
+    member's dietary restrictions. Mirrors set_member_dietary_restrictions'
+    own replace semantics exactly."""
+    name: str
+    restrictions: list[str]
+    replace: bool = False
+
+
 class StoreTypicalItemAddRequest(BaseModel):
     store: str
     item: str
@@ -967,6 +988,33 @@ def dismiss_stores_prompt_view():
         memory = tools.get_household_memory()
     except Exception as e:
         logger.exception("Dismissing stores prompt failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/member/age-group")
+def set_memory_member_age_group(req: MemberAgeGroupRequest):
+    """Set one member's age group — What We Know's People tab. No route onto
+    set_member_age_group existed before this (see MemberAgeGroupRequest)."""
+    try:
+        tools.set_member_age_group(req.name, req.age_group)
+        memory = tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Setting member age group failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/member/restrictions")
+def set_memory_member_restrictions(req: MemberRestrictionsRequest):
+    """Add or replace one member's dietary restrictions — What We Know's
+    People tab. Thin wrapper over set_member_dietary_restrictions, same
+    replace semantics (see MemberRestrictionsRequest)."""
+    try:
+        tools.set_member_dietary_restrictions(req.name, req.restrictions, replace=req.replace)
+        memory = tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Setting member dietary restrictions failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
 
@@ -2097,8 +2145,16 @@ def get_facts_view(category: str | None = None):
         onboarding = None
         preferences = None
         if category == "people":
-            setup = tools.get_meal_planning_setup_status()
-            onboarding = {"members": setup["members"], "household_dislikes": setup["dislikes"]}
+            # Loop Board "I should be able to see all the onboarding
+            # information here" — member age_group wasn't shown or editable
+            # anywhere before this (onboarding.html never asks for it, even
+            # though the backend has carried a field for it since the
+            # household-onboarding route was built). get_household_memory's
+            # member list already carries name/age_group/dietary_restrictions
+            # together, so it replaces get_meal_planning_setup_status's
+            # narrower member list here (that one has no age_group at all).
+            memory = tools.get_household_memory()
+            onboarding = {"members": memory["members"], "household_dislikes": memory["dislikes"]}
         if category == "taste":
             # Eating style and the cuisines someone said they were excited
             # about are collected during onboarding and then drive every
@@ -2108,6 +2164,14 @@ def get_facts_view(category: str | None = None):
             # the freeform `facts` table this route otherwise reads, which
             # is the same reason the People tab needs its `onboarding`
             # block above.
+            #
+            # protein_preferences/dislikes/the four per-week recipe counts/
+            # kitchen_kit are the rest of the onboarding answers that were
+            # missing from this tab (same Loop Board ticket) — all already
+            # readable straight off get_household_memory, and all already
+            # writable through the existing /api/memory/edit + /api/memory/delete
+            # routes (edit_preference/delete_preference), so no new routes
+            # were needed for any of them.
             memory = tools.get_household_memory()
             preferences = {
                 "eating_style": memory.get("eating_style") or "",
@@ -2117,6 +2181,13 @@ def get_facts_view(category: str | None = None):
                 # this, and a thing you're told once has to be findable
                 # afterwards — see app/tools/plates.py.
                 "complete_plates": bool(memory.get("complete_plates", True)),
+                "protein_preferences": memory.get("protein_preferences") or {},
+                "dislikes": memory.get("dislikes") or [],
+                "dinners_per_week": memory.get("dinners_per_week", 7),
+                "breakfasts_per_week": memory.get("breakfasts_per_week", 7),
+                "lunches_per_week": memory.get("lunches_per_week", 7),
+                "snacks_per_week": memory.get("snacks_per_week", 3),
+                "kitchen_kit": memory.get("kitchen_kit") or [],
             }
         if category == "rhythm":
             # leftovers_stance (Loop Board "Onboarding asks about leftovers
@@ -2126,7 +2197,24 @@ def get_facts_view(category: str | None = None):
             # editable nowhere after onboarding except by asking chat.
             # Structured rhythm facts live in household_rhythm, not the
             # freeform `facts` table this route otherwise reads.
-            preferences = {"leftovers_stance": tools.get_household_rhythm().get("leftovers_stance") or ""}
+            #
+            # lunch_location/meals_together/cooking_role/dinner_window/
+            # planning_anchor are the rest of the six locked rhythm
+            # questions (same Loop Board ticket as leftovers_stance above) —
+            # editable nowhere after onboarding except chat, until now.
+            # `members` rides along so the client can render one lunch-
+            # location row per person without a second request.
+            rhythm = tools.get_household_rhythm()
+            preferences = {
+                "leftovers_stance": rhythm.get("leftovers_stance") or "",
+                "lunch_location": rhythm.get("lunch_location") or {},
+                "meals_together": rhythm.get("meals_together"),
+                "cooking_role": rhythm.get("cooking_role"),
+                "dinner_window": rhythm.get("dinner_window"),
+                "planning_anchor": rhythm.get("planning_anchor"),
+                "planning_anchor_label": rhythm.get("planning_anchor_label") or "",
+                "members": [m["name"] for m in tools.list_members()],
+            }
     except Exception as e:
         logger.exception("Facts lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

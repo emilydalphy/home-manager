@@ -48,6 +48,34 @@
     font-size: 1.05rem; line-height: 1; padding: 6px; min-width: 32px; min-height: 32px;
   }
 
+  /* Number stepper for the four per-week recipe counts on Taste — mirrors
+     onboarding.html's .stepper (~line 180) so both screens read as the
+     same question, just laid out inline in a fact-row instead of full
+     width. 44x44 buttons keep Rule 6's tap-target floor. */
+  .wwk-stepper-row { justify-content: space-between; cursor: default; }
+  .wwk-stepper { display: flex; align-items: center; gap: 10px; }
+  .wwk-stepper-btn {
+    width: 44px; height: 44px; border-radius: 50%; flex: none;
+    border: 1px solid var(--ink-strong); background: var(--surface);
+    color: var(--ink-strong); font-size: 1.2rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .wwk-stepper-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.15rem; color: var(--ink-strong); min-width: 20px; text-align: center; }
+
+  /* Protein preference chips (Taste) — a 3-state cycle (unrated -> liked ->
+     disliked -> unrated) rather than a plain toggle, since the underlying
+     field is a 1-5 rating, not a yes/no. No existing onboarding UI collects
+     this, so PROTEIN_OPTIONS below is a new list, not a duplicated one. */
+  .wwk-chip-liked { background: var(--celadon-tint); color: var(--ink-on-celadon); border-style: solid; font-weight: 800; }
+  .wwk-chip-disliked { background: var(--sand); color: var(--ink-secondary); border-style: solid; text-decoration: line-through; }
+
+  /* Age group (People) — same single-select chip idiom as the rhythm
+     chips below, just for a fact that lives on `members`, not
+     `household_rhythm`. */
+  .wwk-member-block { border-top: 1px solid var(--hairline); padding: 13px 0; }
+  .wwk-member-name { font-family: var(--font-body); font-weight: 800; font-size: 0.98rem; color: var(--ink); margin: 0 0 8px; }
+  .wwk-member-field-label { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--ink-muted); margin: 10px 0 6px; }
+
   .wwk-editor { border-top: 1px solid var(--hairline); padding: 11px 0; }
   .wwk-editor textarea { width: 100%; box-sizing: border-box; border: 2px solid var(--ink-strong); border-radius: 12px; background: var(--surface); font-family: var(--font-body); font-size: 0.96rem; line-height: 1.45; padding: 12px 14px; height: 78px; resize: none; }
   .wwk-editor-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
@@ -214,6 +242,16 @@ let openEditorId = null; // fact id being edited, or 'new'
 // aren't facts — they live in meal_preferences.
 let openPrefEditor = null;
 let memoryCache = null;
+// The People tab's onboarding.members list from the last /api/facts load —
+// needed so removing a single restriction can resend the member's full
+// remaining list under replace=true (set_member_dietary_restrictions'
+// removal mechanism; see MemberRestrictionsRequest in app/main.py).
+let onboardingMembersCache = null;
+// True the moment "Mostly one person" is tapped but no one has been picked
+// yet — the "who" chips render from this before there's anything to save,
+// since set_cooking_role refuses value='one_person' with no who (rhythm.py).
+// Cleared on tab switch and once a real save (with a who) lands.
+let pendingCookingRoleOnePerson = false;
 
 // The one way this page changes tab, wherever the request comes from — its
 // own tab strip, the hash on load, or the shell asking for a specific tab
@@ -229,6 +267,8 @@ function showTab(tab) {
   if (!TAB_KEYS.includes(tab) || tab === activeTab) return;
   activeTab = tab;
   openEditorId = null;
+  openPrefEditor = null;
+  pendingCookingRoleOnePerson = false;
   paintTabStrip();
   render();
 }
@@ -256,15 +296,8 @@ async function renderFactsTab(category) {
     const meta = TAB_META[category];
     let html = '';
     if (onboarding && (onboarding.members || []).length) {
-      html += `<div class="wwk-card"><p class="wwk-intro">From onboarding — tell me in chat if anything's changed.</p>`;
-      onboarding.members.forEach(m => {
-        const restrictions = (m.dietary_restrictions || []).join(', ');
-        html += `<div class="wwk-fact-row"><span class="wwk-fact-text">${escapeHtml(m.name)}${restrictions ? ' — ' + escapeHtml(restrictions) : ''}</span></div>`;
-      });
-      if ((onboarding.household_dislikes || []).length) {
-        html += `<div class="wwk-fact-row"><span class="wwk-fact-text">Won't eat: ${escapeHtml(onboarding.household_dislikes.join(', '))}</span></div>`;
-      }
-      html += `</div>`;
+      onboardingMembersCache = onboarding.members;
+      html += renderPeopleOnboardingBlock(onboarding);
     }
     if (preferences) {
       html += category === 'rhythm' ? renderRhythmPreferenceCard(preferences) : renderPreferenceCard(preferences);
@@ -312,6 +345,7 @@ async function renderFactsTab(category) {
     html += `<div class="wwk-footer-card"><p class="wwk-footer-text">${meta.footer}</p></div>`;
     content.innerHTML = html;
     wireFactsActions(category);
+    if (onboarding && category === 'people') wirePeopleOnboardingActions();
     if (preferences) {
       if (category === 'rhythm') wireRhythmPreferenceActions();
       else wirePreferenceActions(preferences);
@@ -320,6 +354,139 @@ async function renderFactsTab(category) {
     content.innerHTML = '<p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
 }
+
+// ---------- People: age group + dietary restrictions ----------
+// Same four buckets (and labels) as onboarding.html's AGE_GROUP_OPTIONS —
+// onboarding asks this per person since 2026-09-06; keep the two lists
+// identical so the screens read as one question.
+const AGE_GROUP_OPTIONS = [
+  { key: 'adult', label: 'Adult' },
+  { key: 'teen', label: 'Teen' },
+  { key: 'child', label: 'Child' },
+  { key: 'toddler', label: 'Little one' },
+];
+
+function renderPeopleOnboardingBlock(onboarding) {
+  let html = `<div class="wwk-card"><p class="wwk-intro">From onboarding — tap anything below to update it.</p>`;
+  onboarding.members.forEach(m => { html += renderMemberBlock(m); });
+  if ((onboarding.household_dislikes || []).length) {
+    html += `<div class="wwk-fact-row"><span class="wwk-fact-text">Won't eat: ${escapeHtml(onboarding.household_dislikes.join(', '))}</span></div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function renderMemberBlock(m) {
+  let html = `<div class="wwk-member-block">
+    <p class="wwk-member-name">${escapeHtml(m.name)}</p>
+    <p class="wwk-member-field-label">Age group</p>
+    <div class="wwk-pref-chips">`;
+  AGE_GROUP_OPTIONS.forEach(o => {
+    const on = m.age_group === o.key;
+    html += `<button type="button" class="wwk-chip-add" data-set-age-group="${o.key}" data-member="${escapeHtml(m.name)}"
+      style="${on ? 'background:var(--celadon-tint);color:var(--ink-on-celadon);border-style:solid;font-weight:800;' : ''}">${escapeHtml(o.label)}</button>`;
+  });
+  html += `</div>`;
+  if (!m.age_group) html += `<p class="wwk-pref-empty" style="margin:6px 0 0">Not set yet</p>`;
+
+  html += `<p class="wwk-member-field-label">Dietary restrictions</p>
+    <div class="wwk-pref-chips" data-restrictions-chips="${escapeHtml(m.name)}">`;
+  const restrictions = m.dietary_restrictions || [];
+  if (restrictions.length) {
+    restrictions.forEach(r => {
+      html += `<span class="wwk-chip">${escapeHtml(r)}<button type="button" data-remove-restriction="${escapeHtml(r)}" data-member="${escapeHtml(m.name)}" aria-label="Remove ${escapeHtml(r)} for ${escapeHtml(m.name)}">&times;</button></span>`;
+    });
+  } else {
+    html += `<span class="wwk-pref-empty">None yet</span>`;
+  }
+  html += `<button type="button" class="wwk-chip-add" data-add-restriction="${escapeHtml(m.name)}">+ Add</button>`;
+  html += `</div></div>`;
+  return html;
+}
+
+function wirePeopleOnboardingActions() {
+  const content = document.getElementById('wwk-content');
+  content.querySelectorAll('[data-set-age-group]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await fetch('/api/memory/member/age-group', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: btn.getAttribute('data-member'), age_group: btn.getAttribute('data-set-age-group') }),
+        });
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-remove-restriction]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const member = btn.getAttribute('data-member');
+      const toRemove = btn.getAttribute('data-remove-restriction');
+      btn.disabled = true;
+      try {
+        const current = (onboardingMembersCache || []).find(mm => mm.name === member);
+        const next = (current ? current.dietary_restrictions : []).filter(r => r !== toRemove);
+        await fetch('/api/memory/member/restrictions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: member, restrictions: next, replace: true }),
+        });
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't remove that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-add-restriction]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const member = btn.getAttribute('data-add-restriction');
+      const wrap = document.querySelector(`[data-restrictions-chips="${CSS.escape(member)}"]`);
+      const row = document.createElement('div');
+      row.className = 'wwk-chip-input-row';
+      row.innerHTML = `<input type="text" class="wwk-chip-input" placeholder="e.g. peanut allergy" aria-label="Restriction for ${escapeHtml(member)}" /><button type="button" class="wwk-chip-add" data-confirm-restriction="${escapeHtml(member)}">Add</button>`;
+      btn.replaceWith(row);
+      const input = row.querySelector('input');
+      input.focus();
+      async function commit() {
+        const val = input.value.trim();
+        if (val) {
+          try {
+            await fetch('/api/memory/member/restrictions', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: member, restrictions: [val], replace: false }),
+            });
+          } catch (err) { /* ignore, re-render will just not show it */ }
+        }
+        render();
+      }
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+      row.querySelector('[data-confirm-restriction]').addEventListener('click', commit);
+    });
+  });
+}
+
+// Common proteins for the like/dislike chips below. No onboarding UI
+// collects protein preferences at all (static/onboarding.html has no such
+// step, even though meal_preferences.protein_preferences_json has existed
+// since the schema was first built), so this is a new list, not a
+// duplicated one.
+const PROTEIN_OPTIONS = ['Chicken', 'Beef', 'Pork', 'Fish', 'Shrimp', 'Tofu', 'Eggs', 'Beans'];
+
+// Duplicated from onboarding.html's KIT_OPTIONS (~line 1137, "Step B: kit")
+// rather than shared, since onboarding.html is a standalone wizard page
+// with no shared module to import from (same reasoning as its own
+// REVEAL_WEEK_SLOTS comment). Keep the two lists in sync by hand.
+const KIT_OPTIONS = [
+  { key: 'slow_cooker', label: 'Slow cooker' }, { key: 'air_fryer', label: 'Air fryer' },
+  { key: 'grill', label: 'Grill' }, { key: 'instant_pot', label: 'Instant Pot' },
+  { key: 'stand_mixer', label: 'Stand mixer' }, { key: 'blender', label: 'Blender' },
+  { key: 'cast_iron', label: 'Cast iron' }, { key: 'no_dishwasher', label: 'No dishwasher' },
+];
+
+const RECIPE_COUNT_FIELDS = [
+  { field: 'dinners_per_week', label: 'Dinners' },
+  { field: 'breakfasts_per_week', label: 'Breakfasts' },
+  { field: 'lunches_per_week', label: 'Lunches' },
+  { field: 'snacks_per_week', label: 'Snacks & desserts' },
+];
 
 // The two onboarding answers that drive every generated week and were,
 // until now, editable nowhere in the app — not here, not on the meal-setup
@@ -388,6 +555,79 @@ function renderPreferenceCard(prefs) {
     }</span>
     <span class="wwk-fact-edit">${platesOn ? 'Stop' : 'Start'}</span>
   </div>`;
+
+  // Won't eat: same add/remove list idiom as "Excited about" above.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Won't eat</span></span>
+  </div>`;
+  html += `<div class="wwk-pref-chips">`;
+  if ((prefs.dislikes || []).length) {
+    prefs.dislikes.forEach(d => {
+      html += `<span class="wwk-chip">${escapeHtml(d)}<button type="button" aria-label="Remove ${escapeHtml(d)}" data-remove-dislike="${escapeHtml(d)}">&times;</button></span>`;
+    });
+  } else {
+    html += `<span class="wwk-pref-empty">Nothing yet</span>`;
+  }
+  html += `</div>`;
+  if (openPrefEditor === 'dislikes') {
+    html += `<div class="wwk-editor">
+      <textarea id="wwk-pref-textarea" aria-label="Add something you won't eat" placeholder="One at a time, e.g. olives"></textarea>
+      <div class="wwk-editor-actions">
+        <button class="wwk-save-btn" data-save-pref="dislikes">Add</button>
+        <button class="wwk-cancel-btn" data-cancel-pref="1">Cancel</button>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="wwk-add-row" data-open-pref="dislikes">+ Add something you won't eat</div>`;
+  }
+
+  // Proteins: a 3-state cycle (unrated -> liked -> disliked -> unrated),
+  // since the stored value is a 1-5 rating, not a plain yes/no — tapping
+  // just walks it between "a favorite" (5) and "avoid" (1), and a third
+  // tap clears the rating outright.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Proteins</span> <span class="wwk-pref-empty">tap to say what you like or skip</span></span>
+  </div>`;
+  html += `<div class="wwk-pref-chips">`;
+  PROTEIN_OPTIONS.forEach(label => {
+    const key = label.toLowerCase();
+    const rating = (prefs.protein_preferences || {})[key];
+    const cls = rating >= 4 ? 'wwk-chip-liked' : (rating && rating <= 2) ? 'wwk-chip-disliked' : '';
+    html += `<button type="button" class="wwk-chip-add ${cls}" data-cycle-protein="${key}">${escapeHtml(label)}</button>`;
+  });
+  html += `</div>`;
+
+  // The four per-week recipe counts — same stepper idiom as onboarding's
+  // Q7, just laid out one fact-row per meal type instead of stacked full
+  // width (see .wwk-stepper* CSS).
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Recipes to plan each week</span></span>
+  </div>`;
+  RECIPE_COUNT_FIELDS.forEach(({ field, label }) => {
+    const value = prefs[field];
+    html += `<div class="wwk-fact-row wwk-stepper-row">
+      <span class="wwk-fact-text">${escapeHtml(label)}</span>
+      <div class="wwk-stepper">
+        <button type="button" class="wwk-stepper-btn" data-count-minus="${field}" aria-label="Fewer ${escapeHtml(label.toLowerCase())}">&minus;</button>
+        <span class="wwk-stepper-value">${value}</span>
+        <button type="button" class="wwk-stepper-btn" data-count-plus="${field}" aria-label="More ${escapeHtml(label.toLowerCase())}">+</button>
+      </div>
+    </div>`;
+  });
+
+  // Kitchen kit: multi-select, same look as the Rounding-out-meals/Proteins
+  // rows above — the value is the answer, tapped straight on.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">What's in your kitchen</span></span>
+  </div>`;
+  html += `<div class="wwk-pref-chips">`;
+  KIT_OPTIONS.forEach(k => {
+    const on = (prefs.kitchen_kit || []).includes(k.key);
+    html += `<button type="button" class="wwk-chip-add" data-toggle-kit="${k.key}"
+      style="${on ? 'background:var(--celadon-tint);color:var(--ink-on-celadon);border-style:solid;font-weight:800;' : ''}">${escapeHtml(k.label)}</button>`;
+  });
+  html += `</div>`;
+
   html += `</div>`;
   return html;
 }
@@ -407,25 +647,116 @@ const RHYTHM_LEFTOVERS_OPTIONS = [
   { key: 'fresh_each_night', label: 'Fresh every night' },
 ];
 
+// The rest of the six locked rhythm questions (Loop Board "Onboarding:
+// household rhythm without traditional assumptions" / "LOCKED: the six
+// rhythm questions", 2026-09-03) — duplicated from onboarding.html's own
+// constants of the same shape (LUNCH_LOCATION_OPTIONS ~751,
+// MEALS_TOGETHER_OPTIONS ~756, COOKING_ROLE_OPTIONS ~762,
+// DINNER_WINDOW_OPTIONS ~767, PLANNING_ANCHOR_OPTIONS ~776) so both screens
+// ask the same questions in the same words. Kept as separate copies, same
+// reasoning as onboarding.html's own REVEAL_WEEK_SLOTS comment: no shared
+// module between a standalone wizard page and this one.
+const RHYTHM_LUNCH_LOCATION_OPTIONS = [
+  { key: 'home', label: 'Home' },
+  { key: 'out', label: 'Out' },
+  { key: 'varies', label: 'Varies' },
+];
+const RHYTHM_MEALS_TOGETHER_OPTIONS = [
+  { key: 'dinner_only', label: 'Dinner only' },
+  { key: 'dinner_and_breakfast', label: 'Dinner + breakfast' },
+  { key: 'most_meals', label: 'Most meals' },
+  { key: 'varies', label: 'Varies' },
+];
+const RHYTHM_COOKING_ROLE_OPTIONS = [
+  { key: 'one_person', label: 'Mostly one person' },
+  { key: 'turns', label: 'We take turns' },
+  { key: 'whoever_free', label: 'Whoever’s free' },
+];
+const RHYTHM_DINNER_WINDOW_OPTIONS = [
+  { key: '5_6ish', label: '5–6ish' },
+  { key: '6_8', label: '6–8' },
+  { key: 'later', label: 'Later' },
+  { key: 'all_over', label: 'All over the place' },
+];
+const RHYTHM_PLANNING_ANCHOR_OPTIONS = [
+  { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' }, { key: 'wednesday', label: 'Wed' },
+  { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
+  { key: 'sunday', label: 'Sun' }, { key: 'as_we_go', label: 'As we go' },
+];
+
+// One active/inactive chip button, in the style every rhythm/preference
+// chip on this page already uses (see leftovers/kit/age-group above).
+function rhythmChip(label, key, dataAttr, on, extraAttrs) {
+  return `<button type="button" class="wwk-chip-add" data-${dataAttr}="${escapeHtml(key)}" ${extraAttrs || ''}
+    style="${on ? 'background:var(--celadon-tint);color:var(--ink-on-celadon);border-style:solid;font-weight:800;' : ''}">${escapeHtml(label)}</button>`;
+}
+
 function renderRhythmPreferenceCard(prefs) {
   let html = `<div class="wwk-card"><p class="wwk-intro">From your setup answers — this shapes every week I plan.</p>`;
-  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+
+  // Lunch location, one row per household member.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row"><span class="wwk-fact-text"><span class="wwk-pref-label">Lunch, on a normal day</span></span></div>`;
+  (prefs.members || []).forEach(name => {
+    const standing = ((prefs.lunch_location || {})[name] || {}).standing || '';
+    html += `<p class="wwk-member-field-label">${escapeHtml(name)}</p><div class="wwk-pref-chips">`;
+    RHYTHM_LUNCH_LOCATION_OPTIONS.forEach(o => {
+      html += rhythmChip(o.label, o.key, 'set-lunch-location', standing === o.key, `data-member="${escapeHtml(name)}"`);
+    });
+    html += `</div>`;
+  });
+
+  // Meals eaten together.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row" style="margin-top:8px"><span class="wwk-fact-text"><span class="wwk-pref-label">Meals eaten together</span></span></div><div class="wwk-pref-chips">`;
+  RHYTHM_MEALS_TOGETHER_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-meals-together', prefs.meals_together === o.key); });
+  html += `</div>`;
+
+  // Who cooks — a second row of names appears once "Mostly one person" has
+  // an actual person to point at (either already saved, or picked this
+  // visit; see pendingCookingRoleOnePerson).
+  const cookingRoleValue = prefs.cooking_role ? prefs.cooking_role.value : '';
+  const cookingRoleWho = prefs.cooking_role ? prefs.cooking_role.who : '';
+  html += `<div class="wwk-fact-row wwk-pref-chips-row" style="margin-top:8px"><span class="wwk-fact-text"><span class="wwk-pref-label">Who cooks</span></span></div><div class="wwk-pref-chips">`;
+  RHYTHM_COOKING_ROLE_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-cooking-role', cookingRoleValue === o.key); });
+  html += `</div>`;
+  if (cookingRoleValue === 'one_person' || pendingCookingRoleOnePerson) {
+    html += `<div class="wwk-pref-chips" style="margin-top:6px">`;
+    (prefs.members || []).forEach(name => { html += rhythmChip(name, name, 'set-cooking-who', cookingRoleWho === name); });
+    html += `</div>`;
+  }
+
+  // When dinner lands.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row" style="margin-top:8px"><span class="wwk-fact-text"><span class="wwk-pref-label">When dinner lands</span></span></div><div class="wwk-pref-chips">`;
+  RHYTHM_DINNER_WINDOW_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-dinner-window', prefs.dinner_window === o.key); });
+  html += `</div>`;
+
+  // Plan-ready day — the current answer read back in plain words
+  // (planning_anchor_label) above the picker, same as the completed-value
+  // idiom used on the Taste tab's Eating style row.
+  const anchorShown = prefs.planning_anchor_label
+    ? escapeHtml(prefs.planning_anchor_label)
+    : '<span class="wwk-pref-empty">Not set yet</span>';
+  html += `<div class="wwk-fact-row wwk-pref-chips-row" style="margin-top:8px"><span class="wwk-fact-text"><span class="wwk-pref-label">Plan ready by</span> ${anchorShown}</span></div><div class="wwk-pref-chips">`;
+  RHYTHM_PLANNING_ANCHOR_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-planning-anchor', prefs.planning_anchor === o.key); });
+  html += `</div>`;
+
+  // Leftovers (built earlier — Loop Board "Onboarding asks about leftovers twice").
+  html += `<div class="wwk-fact-row wwk-pref-chips-row" style="margin-top:8px">
     <span class="wwk-fact-text"><span class="wwk-pref-label">Leftovers</span></span>
   </div>`;
   html += `<div class="wwk-pref-chips">`;
-  RHYTHM_LEFTOVERS_OPTIONS.forEach(o => {
-    const on = prefs.leftovers_stance === o.key;
-    html += `<button type="button" class="wwk-chip-add" data-set-leftovers="${o.key}"
-      style="${on ? 'background:var(--celadon-tint);color:var(--ink-on-celadon);border-style:solid;font-weight:800;' : ''}">${escapeHtml(o.label)}</button>`;
-  });
+  RHYTHM_LEFTOVERS_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-leftovers', prefs.leftovers_stance === o.key); });
   html += `</div></div>`;
   return html;
 }
 
-async function saveLeftoversStance(value) {
+// One shared writer for all six rhythm facts — /api/onboarding/rhythm
+// happily accepts a partial body (only the fields present get written),
+// which is exactly what makes reusing it safe for a one-fact-at-a-time
+// correction here instead of resending all six every tap.
+async function saveRhythmFact(body) {
   const res = await fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ leftovers_stance: value }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error('failed');
 }
@@ -435,10 +766,64 @@ function wireRhythmPreferenceActions() {
   content.querySelectorAll('[data-set-leftovers]').forEach(btn => {
     btn.addEventListener('click', async () => {
       btn.disabled = true;
+      try { await saveRhythmFact({ leftovers_stance: btn.getAttribute('data-set-leftovers') }); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-lunch-location]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
       try {
-        await saveLeftoversStance(btn.getAttribute('data-set-leftovers'));
+        await saveRhythmFact({ lunch_location: { [btn.getAttribute('data-member')]: btn.getAttribute('data-set-lunch-location') } });
         render();
       } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-meals-together]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await saveRhythmFact({ meals_together: btn.getAttribute('data-set-meals-together') }); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-cooking-role]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const value = btn.getAttribute('data-set-cooking-role');
+      if (value === 'one_person') {
+        // set_cooking_role refuses value='one_person' with no who (see
+        // app/tools/rhythm.py) — reveal the who-chips instead of saving
+        // yet; the actual write happens once a name is tapped below.
+        pendingCookingRoleOnePerson = true;
+        render();
+        return;
+      }
+      btn.disabled = true;
+      try { await saveRhythmFact({ cooking_role: value }); pendingCookingRoleOnePerson = false; render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-cooking-who]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await saveRhythmFact({ cooking_role: 'one_person', cooking_role_who: btn.getAttribute('data-set-cooking-who') });
+        pendingCookingRoleOnePerson = false;
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-dinner-window]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await saveRhythmFact({ dinner_window: btn.getAttribute('data-set-dinner-window') }); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-planning-anchor]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await saveRhythmFact({ planning_anchor: btn.getAttribute('data-set-planning-anchor') }); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
     });
   });
 }
@@ -470,11 +855,13 @@ function wirePreferenceActions(prefs) {
           // Empty is a real answer here — it clears the style rather than
           // being an abandoned edit, unlike a blank freeform fact.
           await savePreference('eating_style', text);
-        } else {
+        } else if (which === 'cuisines' || which === 'dislikes') {
           if (!text) { openPrefEditor = null; render(); return; }
-          const next = (prefs.cuisines || []).slice();
+          const field = which === 'cuisines' ? 'cuisine_preferences' : 'dislikes';
+          const existing = which === 'cuisines' ? (prefs.cuisines || []) : (prefs.dislikes || []);
+          const next = existing.slice();
           if (!next.some(c => c.toLowerCase() === text.toLowerCase())) next.push(text);
-          await savePreference('cuisine_preferences', next);
+          await savePreference(field, next);
         }
         openPrefEditor = null;
         render();
@@ -493,6 +880,67 @@ function wirePreferenceActions(prefs) {
         if (!res.ok) throw new Error('failed');
         render();
       } catch (err) { btn.disabled = false; alert("Couldn't remove that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-remove-dislike]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/memory/delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ field: 'dislikes', item: btn.getAttribute('data-remove-dislike') }),
+        });
+        if (!res.ok) throw new Error('failed');
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't remove that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-cycle-protein]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.getAttribute('data-cycle-protein');
+      const current = (prefs.protein_preferences || {})[key];
+      btn.disabled = true;
+      try {
+        if (current === undefined) {
+          await savePreference('protein_preferences', { [key]: 5 });
+        } else if (current >= 4) {
+          await savePreference('protein_preferences', { [key]: 1 });
+        } else {
+          const res = await fetch('/api/memory/delete', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ field: 'protein_preferences', item: key }),
+          });
+          if (!res.ok) throw new Error('failed');
+        }
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-count-minus]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const field = btn.getAttribute('data-count-minus');
+      btn.disabled = true;
+      try { await savePreference(field, Math.max(0, (prefs[field] || 0) - 1)); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-count-plus]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const field = btn.getAttribute('data-count-plus');
+      btn.disabled = true;
+      try { await savePreference(field, Math.min(7, (prefs[field] || 0) + 1)); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-toggle-kit]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.getAttribute('data-toggle-kit');
+      const current = prefs.kitchen_kit || [];
+      const next = current.includes(key) ? current.filter(k => k !== key) : [...current, key];
+      btn.disabled = true;
+      try { await savePreference('kitchen_kit', next); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
     });
   });
 }
