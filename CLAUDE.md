@@ -480,6 +480,42 @@ why*, not duplicating the diff.
   - Contrast measured in-browser and recorded in `shell.css`: range
     endpoints 7.23:1 light / 8.46:1 dark, the days between 10.65:1 /
     10.37:1, the hint line 4.70:1 / 7.36:1. Tiles measured 44x44 at 390px.
+- **2026-09-06 — A multi-plan period takeover is now ONE transaction.
+  Branch `atomic-period-takeover` (NOT merged at the time of writing).**
+  The known debt from `planning-periods`: `retire_overlapping_plans`
+  settled every decision up front and then destroyed per plan in a loop
+  that committed many times, so a failure between two plans left the first
+  plan's meals, prep tasks and grocery reversal genuinely gone while the
+  caller raised and every screen said nothing had been saved.
+  - **The fix is a passed connection, not a second implementation.**
+    `_reverse_meal_grocery_contributions` and `_release_plan_days` take an
+    optional `conn=None`; given one they read and write on it and neither
+    commit nor close, and left unset they behave exactly as before — which
+    matters, because the reversal has 7 call sites and none of the others
+    changed. The in_cart/purchased rule is inherited unchanged, and there is
+    a test driving it through a two-plan takeover to say so.
+  - **Atomicity and deadlock-avoidance turned out to be the same
+    requirement.** SQLite gives one writer at a time, so any helper still
+    opening its own connection inside the open write transaction would wait
+    on the lock and then fail with "database is locked". That is the real
+    reason the connection is threaded rather than each helper being trusted
+    to commit politely — and `tests/test_planning_periods.py` now counts
+    `get_conn` calls during a takeover (exactly two: one read pass in
+    `_plan_takeover` before the transaction opens, one for the transaction)
+    so a well-meaning nested `get_conn` fails loudly instead of
+    intermittently.
+  - **No explicit `BEGIN` is needed and none was added.** `db.get_conn()`
+    leaves sqlite3's legacy `isolation_level=""`, so the first write opens a
+    transaction implicitly; reads on that connection see its own uncommitted
+    writes, which is what the loop has always relied on (plan two must not
+    find plan one's already-deleted entries). If that default is ever
+    changed to `isolation_level=None`, this function needs a real `BEGIN`.
+  - **Nothing long-running is inside the transaction.** The only LLM call in
+    this path happens far earlier in `agent.generate_weekly_plan`; the
+    takeover is the last step, after the plan is real, and the loop is
+    bounded by the number of overlapping plans. `_plan_takeover`'s read of
+    every live plan deliberately stays OUTSIDE, before the write connection
+    is opened.
 
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
@@ -774,17 +810,18 @@ why*, not duplicating the diff.
     resume date and invented five clashing days that did not exist before it
     ran. **The lesson is the same one the Plan the Week review taught: the
     author had verified all of it and still shipped those.**
-  - **STILL OPEN, and Emily's call: `retire_overlapping_plans` is not
-    atomic across plans.** Every decision is computed before anything is
-    destroyed, but each plan's meals, prep tasks and grocery reversal commit
-    before the next plan is touched. A failure mid-loop (a locked database,
-    a killed process) leaves the first plan's days genuinely gone while the
-    household sees an error saying nothing was saved. Only reachable when a
-    single generation takes over two or more plans at once. A real fix needs
-    one transaction spanning the loop, which fights the
-    connection-per-operation style and `_reverse_meal_grocery_contributions`
-    committing internally — worth doing deliberately, not as a footnote to
-    this branch.
+  - **~~STILL OPEN~~ CLOSED on branch `atomic-period-takeover`
+    (2026-09-06): `retire_overlapping_plans` is now one transaction.** It
+    was true as written — every decision was computed before anything was
+    destroyed, but each plan's meals, prep tasks and grocery reversal
+    committed before the next plan was touched, so a failure mid-loop (a
+    locked database, a killed process) left the first plan's days genuinely
+    gone while the household saw an error saying nothing was saved. Only
+    ever reachable when one generation took over two or more plans at once.
+    The fix is the one this bullet asked for: `_release_plan_days` and
+    `_reverse_meal_grocery_contributions` take an optional `conn`, so the
+    whole loop runs on one connection and commits once. See the 2026-09-06
+    Decision-log entry at the top.
   - UI is one light control on the plan card ("Pick my own days" → start
     day + length + a confirm naming the dates), inline rather than a sheet.
     Contrast measured in both schemes; lowest new value 4.58:1 light

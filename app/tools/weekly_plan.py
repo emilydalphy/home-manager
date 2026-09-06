@@ -1243,13 +1243,15 @@ def _plan_takeover(new_plan_id: int, period_start: str, day_count: int) -> list[
     date and invent a clash. Here, `claimed` starts as the new period's days
     and grows as each plan keeps its run, so a day can be awarded once.
 
-    And it makes the destructive half short. retire_overlapping_plans still
-    is not atomic — each plan's meals, prep tasks and grocery reversal
-    commit before the next plan is touched — but every decision is settled
-    first, so nothing can be destroyed on the strength of a calculation that
-    then throws. **The remaining non-atomicity is real and known: a failure
-    between two plans (a locked database, a killed process) leaves the first
-    one's days genuinely gone. Worth Emily's eyes.**
+    And it makes the destructive half short — short enough that
+    retire_overlapping_plans can now run the whole of it inside ONE
+    transaction on ONE connection, which is what finally closed the gap
+    this docstring used to flag: a failure between two plans left the first
+    one's days genuinely gone while the caller reported failure. Deciding
+    first is still what makes that possible, because nothing is destroyed
+    on the strength of a calculation that then throws — and because reading
+    every live plan happens HERE, before the write transaction is opened,
+    rather than from a second connection that would block against it.
 
     Returns one dict per affected plan, newest first, or [] when nothing
     overlaps — the ordinary case.
@@ -1392,6 +1394,53 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
     if not decisions:
         return result
 
+    # ONE connection, ONE commit, for the whole destruction loop. Every
+    # decision was already settled above; what was left was that acting on
+    # them was not atomic — each plan's meals, prep tasks and grocery
+    # reversal committed before the next plan was touched, so a failure
+    # partway through (a locked database, a killed process) left the first
+    # plan's days genuinely gone while the caller raised and every screen
+    # said nothing had been saved. sqlite3 connects with the legacy
+    # isolation_level of "", so the first write below opens a transaction
+    # implicitly and there is no BEGIN to issue; reads on this connection
+    # see the uncommitted writes, which is what the loop has always relied
+    # on (plan two must not find plan one's already-deleted entries).
+    # Nothing called from inside here opens a second connection — that
+    # would block on this one's write lock and time out — which is why
+    # _release_plan_days and _reverse_meal_grocery_contributions take the
+    # connection rather than making their own.
+    conn = get_conn()
+    try:
+        result = _apply_takeover(conn, result, decisions, new_plan_id, period_start, day_count)
+        conn.commit()
+    except Exception:
+        # All or nothing. A half-applied takeover is the worst outcome
+        # available: days destroyed under a plan the household is cooking
+        # from, and an error message saying it did not happen.
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    result["surrendered_dates"] = sorted(set(result["surrendered_dates"]))
+    result["orphaned_dates"] = sorted(set(result["orphaned_dates"]))
+    if result["orphaned_dates"]:
+        logger.warning(
+            "Plan %s left %d day(s) of an existing plan unplanned and unreplaced "
+            "(a plan cannot keep a window with a hole in it, so it kept the longer side): %s",
+            new_plan_id, len(result["orphaned_dates"]), ", ".join(result["orphaned_dates"]),
+        )
+    return result
+
+
+def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,
+                    period_start: str, day_count: int) -> dict:
+    """
+    The destructive half of retire_overlapping_plans, on a connection it
+    does not own — separated only so the transaction it runs inside is one
+    unmissable try/except/finally at the call site rather than a loop with
+    a commit buried at the bottom of it.
+    """
     for decision in decisions:
         other_id = decision["weekly_plan_id"]
         other_start, other_days = decision["previous_start"], decision["previous_day_count"]
@@ -1402,7 +1451,7 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
         new_day_count = decision["kept_day_count"]
         retired = decision["retired"]
 
-        removal = _release_plan_days(other_id, surrendered, include_components=component_based)
+        removal = _release_plan_days(other_id, surrendered, include_components=component_based, conn=conn)
         result["meals_removed"] += removal["meals_removed"]
         result["grocery_removed"].extend(removal["grocery_removed"])
         result["grocery_trimmed"].extend(removal["grocery_trimmed"])
@@ -1425,7 +1474,6 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
             "grocery_trimmed": removal["grocery_trimmed"],
             "grocery_kept_bought": removal["grocery_kept_bought"],
         }
-        conn = get_conn()
         conn.execute(
             "UPDATE weekly_plans SET content_start_date = ?, day_count = ?, status = ?, "
             "superseded_json = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
@@ -1435,22 +1483,11 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
                 json.dumps(record), other_id, household_id(),
             ),
         )
-        conn.commit()
-        conn.close()
         (result["retired_plan_ids"] if retired else result["shortened_plan_ids"]).append(other_id)
-
-    result["surrendered_dates"] = sorted(set(result["surrendered_dates"]))
-    result["orphaned_dates"] = sorted(set(result["orphaned_dates"]))
-    if result["orphaned_dates"]:
-        logger.warning(
-            "Plan %s left %d day(s) of an existing plan unplanned and unreplaced "
-            "(a plan cannot keep a window with a hole in it, so it kept the longer side): %s",
-            new_plan_id, len(result["orphaned_dates"]), ", ".join(result["orphaned_dates"]),
-        )
     return result
 
 
-def _release_plan_days(plan_id: int, dates: list[str], include_components: bool = False) -> dict:
+def _release_plan_days(plan_id: int, dates: list[str], include_components: bool = False, conn=None) -> dict:
     """
     Take a plan's meals for specific dates off it, reversing what each one
     put on the grocery list first.
@@ -1473,53 +1510,65 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
     retirement — still on the grocery list, attached to a plan no screen
     shows. Only ever true for a plan being surrendered WHOLE, because a
     subset of undated components is not a thing that exists.
+
+    `conn` is how retire_overlapping_plans keeps a multi-plan takeover
+    atomic: given a connection, everything here — the reads, the per-meal
+    grocery reversal, the prep-task and entry deletes — runs on it and
+    nothing is committed or closed, so the whole takeover lands or none of
+    it does. Left unset it owns one connection for the same work and
+    commits at the end, which is the behaviour the single call site had
+    before, minus the two extra connections it used to open and the three
+    commits it used to make along the way.
     """
     if not dates:
         return {"meals_removed": 0, "grocery_removed": [], "grocery_trimmed": [], "grocery_kept_bought": []}
-    conn = get_conn()
-    placeholders = ",".join("?" * len(dates))
-    entry_ids = [
-        r["id"] for r in conn.execute(
-            f"SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
-            f"AND (date IN ({placeholders})"
-            + (" OR component_category IS NOT NULL)" if include_components else ")"),
-            (plan_id, household_id(), *dates),
-        ).fetchall()
-    ]
-    kept_bought = []
-    if entry_ids:
-        entry_placeholders = ",".join("?" * len(entry_ids))
-        kept_bought = [
-            r["item"] for r in conn.execute(
-                f"SELECT DISTINCT g.item FROM meal_plan_grocery_links l "
-                f"JOIN grocery_items g ON g.id = l.grocery_item_id "
-                f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
-                f"AND g.status != 'needed'",
-                (household_id(), *entry_ids),
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    try:
+        placeholders = ",".join("?" * len(dates))
+        entry_ids = [
+            r["id"] for r in conn.execute(
+                f"SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+                f"AND (date IN ({placeholders})"
+                + (" OR component_category IS NOT NULL)" if include_components else ")"),
+                (plan_id, household_id(), *dates),
             ).fetchall()
         ]
-    conn.close()
+        kept_bought = []
+        if entry_ids:
+            entry_placeholders = ",".join("?" * len(entry_ids))
+            kept_bought = [
+                r["item"] for r in conn.execute(
+                    f"SELECT DISTINCT g.item FROM meal_plan_grocery_links l "
+                    f"JOIN grocery_items g ON g.id = l.grocery_item_id "
+                    f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
+                    f"AND g.status != 'needed'",
+                    (household_id(), *entry_ids),
+                ).fetchall()
+            ]
 
-    removed_items, trimmed_items = [], []
-    for entry_id in entry_ids:
-        reversal = _grocery._reverse_meal_grocery_contributions(entry_id)
-        removed_items.extend(reversal["removed_items"])
-        trimmed_items.extend(reversal["trimmed_items"])
-    if entry_ids:
-        conn = get_conn()
-        entry_placeholders = ",".join("?" * len(entry_ids))
-        # Prep tasks describe prepping meals that no longer exist, the same
-        # reasoning clear_weekly_plan applies when it empties a whole plan.
-        conn.execute(
-            f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({entry_placeholders})",
-            (household_id(), *entry_ids),
-        )
-        conn.execute(
-            f"DELETE FROM meal_plan_entries WHERE household_id = ? AND id IN ({entry_placeholders})",
-            (household_id(), *entry_ids),
-        )
-        conn.commit()
-        conn.close()
+        removed_items, trimmed_items = [], []
+        for entry_id in entry_ids:
+            reversal = _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+            removed_items.extend(reversal["removed_items"])
+            trimmed_items.extend(reversal["trimmed_items"])
+        if entry_ids:
+            # Prep tasks describe prepping meals that no longer exist, the same
+            # reasoning clear_weekly_plan applies when it empties a whole plan.
+            conn.execute(
+                f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({entry_placeholders})",
+                (household_id(), *entry_ids),
+            )
+            conn.execute(
+                f"DELETE FROM meal_plan_entries WHERE household_id = ? AND id IN ({entry_placeholders})",
+                (household_id(), *entry_ids),
+            )
+        if own_conn:
+            conn.commit()
+    finally:
+        if own_conn:
+            conn.close()
     return {
         "meals_removed": len(entry_ids),
         "grocery_removed": removed_items,
