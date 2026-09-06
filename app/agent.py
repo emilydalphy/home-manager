@@ -2204,6 +2204,10 @@ genuinely cannot choose a meal without guessing, send that slot with slot_state=
 real reason — never send nothing. (Dinners on nights the household is out are the one \
 exception, and they are handled outside this call: `skip_dinner_dates` below lists them, and \
 you must not send an entry for those.) Guidelines:
+- A week should read as composed — a shape across the days that plays off itself (a lighter \
+night after a heavier one, proteins that vary rather than repeat, a batch cooked once and eaten \
+again on purpose) — not seven independent daily decisions stapled together. Everything below is \
+in service of that shape.
 - Dinner gets full treatment same as always: a real, specific recipe with complete ingredients \
 and instructions. Breakfast, lunch, and snack should be genuinely real meals too, but \
 lower-effort by nature (a bowl of oatmeal, a sandwich, yogurt with fruit, hummus and veggies) — \
@@ -2345,17 +2349,27 @@ unknown — use your normal judgement.
 dinners in prep+cook minutes. A `rush` tag overrides it downwards, never upwards.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
 `intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
-`intake.freeform` is their own words: honour it exactly, including anything they say they've \
-already decided on — plan that meal where they said, don't plan over it, and still include its \
-ingredients so they aren't short on the night.
+`intake.freeform` is their own words, and a stated request in it is the week's ANCHOR, not an \
+isolated instruction to satisfy in a vacuum: put it exactly where they said — never plan over \
+it, and still include its ingredients so they aren't short on the night — and then build the \
+days around it in conversation with it, the same composed-week thinking as everywhere else in \
+this list: a lighter night after it if it was rich, a different protein on the days either side \
+so the week doesn't repeat itself, and any ingredient it needed in bulk (the rest of a pack of \
+buns, a bag of something) used up sensibly elsewhere in the week rather than left to go to \
+waste. Name that connection in the surrounding nights' reasoning ("lighter after burger night," \
+"using up the rest of the buns"). Delivering the literal request and nothing else — the rest of \
+the week planned as if it hadn't been said — is the failure mode this guards against, not the \
+goal. The one thing that overrides the placement itself is a night tag that makes that exact \
+night impossible (see the tag-collision rule directly below) — never a scheduling preference of \
+your own.
 - When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
-night" and also tagged Friday as a night nobody is home — the TAG wins, and you must say so \
-rather than quietly working around it. Move the meal to the nearest sensible night and let that \
-slot's reasoning name what happened ("moved from Friday — you're out"), or leave it unplanned \
-and say why. What you must never do is put it on a different day and describe it as though it \
-were on the day they asked for: a slot whose reasoning says "Friday" while sitting on Sunday is \
-a plan that lies about itself, and the household loses the ability to trust any of the other \
-reasons.
+night" and also tagged Friday as a night nobody is home — this is the ONE exception to putting \
+an anchored request exactly where they said it: the TAG wins, and you must say so rather than \
+quietly working around it. Move the meal to the nearest sensible night and let that slot's \
+reasoning name what happened ("moved from Friday — you're out"), or leave it unplanned and say \
+why. What you must never do is put it on a different day and describe it as though it were on \
+the day they asked for: a slot whose reasoning says "Friday" while sitting on Sunday is a plan \
+that lies about itself, and the household loses the ability to trust any of the other reasons.
 - Set `derived_from` on every entry: which tags applied, the binding constraint if there was \
 one, which mood/cuisine inputs drove it, the quoted span of their freeform text if that's what \
 drove it, and any inventory it was chosen to use up. Record what actually drove the choice, \
