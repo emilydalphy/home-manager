@@ -44,6 +44,21 @@ def _this_monday() -> str:
     return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 
+def _first_plan_monday() -> str:
+    """
+    The Monday onboarding files its first plan under, by the route's own
+    floor rule (app/main.py onboarding_generate_first_plan): this week's
+    Monday, except on a SUNDAY, when a one-day part-week is folded forward
+    into a full week starting tomorrow. Without this the three tests below
+    went red every Sunday for a behaviour that is deliberate.
+    """
+    today = datetime.date.today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    if today.weekday() == 6:
+        monday += datetime.timedelta(days=7)
+    return monday.isoformat()
+
+
 @pytest.fixture
 def stub_model(monkeypatch):
     """
@@ -68,9 +83,9 @@ def test_onboarding_files_its_first_plan_under_this_weeks_monday(signed_in, stub
     row = tools.get_weekly_plan(res.json()["weekly_plan_id"])
     week_start = row["week_start_date"]
 
-    assert week_start == _this_monday(), (
+    assert week_start == _first_plan_monday(), (
         f"onboarding filed its first plan under {week_start}, but the rest of "
-        f"the app keys this week to {_this_monday()}"
+        f"the app keys this week to {_first_plan_monday()}"
     )
     assert datetime.date.fromisoformat(week_start).weekday() == 0, "must be a Monday"
 
@@ -88,7 +103,7 @@ def test_the_screens_can_actually_find_the_plan_onboarding_just_made(signed_in, 
     assert res.status_code == 200
     expected_id = res.json()["weekly_plan_id"]
 
-    found = tools.get_plan_id_for_week(_this_monday())
+    found = tools.get_plan_id_for_week(_first_plan_monday())
 
     assert found == expected_id, (
         "the week screen looks up this week's plan by its Monday key and could "
@@ -115,7 +130,7 @@ def test_chat_and_the_screens_agree_about_the_plan_onboarding_made(signed_in, st
     assert res.status_code == 200
     plan_id = res.json()["weekly_plan_id"]
 
-    screens_see = tools.get_plan_id_for_week(_this_monday())
+    screens_see = tools.get_plan_id_for_week(_first_plan_monday())
 
     conn = get_conn()
     try:

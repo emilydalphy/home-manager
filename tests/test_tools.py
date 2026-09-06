@@ -23,6 +23,33 @@ def _week_start() -> str:
     return (today - datetime.timedelta(days=today.weekday())).isoformat()
 
 
+def _plan_covering_tomorrow(this_weeks_plan_id: int) -> int:
+    """
+    The plan id tomorrow's dinner belongs in. Usually this week's; on a
+    SUNDAY tomorrow is next Monday, outside this week's period, so a plan
+    for next week is created and returned instead. plan_meal refuses a date
+    outside the plan's period, so tests that planned "tomorrow" into this
+    week's plan failed every Sunday.
+    """
+    today = datetime.date.today()
+    if today.weekday() != 6:
+        return this_weeks_plan_id
+    next_monday = (today + datetime.timedelta(days=1)).isoformat()
+    return tools.create_weekly_plan(next_monday)["weekly_plan_id"]
+
+
+def _another_day_this_week() -> str:
+    """
+    A second day inside the plan keyed to _week_start(): tomorrow, unless
+    tomorrow is next Monday (i.e. today is Sunday), in which case yesterday.
+    plan_meal refuses a date outside the plan's period, so a test that
+    planned "tomorrow" into this week's plan failed every Sunday.
+    """
+    today = datetime.date.today()
+    step = -1 if today.weekday() == 6 else 1
+    return (today + datetime.timedelta(days=step)).isoformat()
+
+
 def _add_adult(name: str) -> None:
     """
     An adult, spelled the way onboarding actually spells it — "Adult",
@@ -426,7 +453,7 @@ class TestNeedsYouSurfacesAnOpenDinner:
         plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
         tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
         tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
-        tools.plan_meal(_today(1), "Chili", slot="dinner", weekly_plan_id=plan_id)
+        tools.plan_meal(_today(1), "Chili", slot="dinner", weekly_plan_id=_plan_covering_tomorrow(plan_id))
 
         items = tools.get_needs_you_items()
 
@@ -435,7 +462,7 @@ class TestNeedsYouSurfacesAnOpenDinner:
     def test_a_planned_empty_away_dinner_surfaces_nothing(self):
         plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
         tools.plan_slot_empty(plan_id, _today(), "dinner", "You're out — nothing planned or bought.")
-        tools.plan_slot_empty(plan_id, _today(1), "dinner", "You're out — nothing planned or bought.")
+        tools.plan_slot_empty(_plan_covering_tomorrow(plan_id), _today(1), "dinner", "You're out — nothing planned or bought.")
 
         items = tools.get_needs_you_items()
 
@@ -666,7 +693,7 @@ def test_the_draft_promise_matches_what_approval_actually_adds():
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}, {"item": "onions", "qty": "2"}])
     tools.add_recipe("Soup", ingredients=[{"item": "onions", "qty": "1"}, {"item": "stock", "qty": "1 l"}])
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
-    tools.plan_meal(_today(1), "Soup", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_another_day_this_week(), "Soup", slot="dinner", weekly_plan_id=plan_id)
 
     preview = tools.preview_plan_grocery_impact(plan_id)
     assert preview["would_add_count"] == 3, "beans, onions, stock — onions counted once"
