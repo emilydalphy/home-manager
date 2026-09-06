@@ -253,6 +253,33 @@ why*, not duplicating the diff.
   the band re-renders between taps — deliberate, the server re-gates every
   tap, so the worst case is one extra tap. Don't "fix" it by remembering
   the confirm on the client.
+- **2026-09-05 — Reversing a grocery contribution could strand a line when
+  its display unit rolled between lb/oz (or cup/tbsp) mid-week. Branch
+  `grocery-reversal-from-ledger`.** `_subtract_quantity` reversed a meal's
+  contribution by subtracting it out of whatever the line CURRENTLY
+  displayed. `_humanize_grocery_quantity` rolls a line's unit to whatever
+  reads best at its total, so a line at "1.25 lbs" becomes "8 oz" once the
+  first of two ledger rows is subtracted back out — but the second ledger
+  row was still written in lb (from ingest, before either reversal), so
+  reversing it against a line now in oz found two units that didn't
+  reconcile and left the line exactly as it was: stranded, and
+  `clear_weekly_plan` reverses a week's entries in no particular order, so
+  this could hit on either meal depending on iteration order.
+  `_reverse_meal_grocery_contributions` now recomputes a line from what
+  every OTHER meal still on the ledger for it adds up to
+  (`quantities._sum_ledger_quantities`, converting between units in the
+  same measurable family as it sums) instead of subtracting one
+  contribution out of the display — which makes reversal order-independent
+  and needs no ordering safeguard in `clear_weekly_plan` at all. That
+  recompute only ever replaces a line the ledger can fully account for
+  (`source_weekly_plan_id` set); a hand-added standing want falls back to
+  the old subtract-from-display path, now itself made unit-normalising,
+  and is never deleted by a reversal even when nothing else wants it —
+  only blanked back to an unspecified quantity. Packages are untouched
+  (already correct: link-count, not quantity). No schema change — the
+  ledger's own display strings carry enough (amount + unit) once
+  normalised through `quantities.py`'s existing conversion tables. New
+  test file `tests/test_grocery_reversal_ledger.py`.
 - **2026-09-05 — 17 peppers was arithmetic, and the arithmetic was wrong in
   two places. Branch `fix-produce-quantities` (on top of
   `fix-grocery-quantity-inflation`, NOT merged at the time of writing).**
