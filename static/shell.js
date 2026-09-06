@@ -510,15 +510,20 @@
     return 'Good evening';
   }
 
-  function setTodayHeading(panel, count) {
+  function setTodayHeading(panel, count, isError) {
     // Same sentence, same source, quieter place: this is the line under the
     // greeting now rather than the H1. The count still drives the tab badge.
+    // "You're clear" is a real answer from a real count — a failed lookup
+    // isn't that, and saying it anyway would be telling someone nothing
+    // needs them when the truth is just that the app couldn't check.
     var line = panel.querySelector('#today-h1');
     if (line) {
-      line.textContent = count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you');
-      line.classList.toggle('is-clear', count === 0);
+      line.textContent = isError
+        ? 'Couldn’t check just now — pull to refresh.'
+        : (count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you'));
+      line.classList.toggle('is-clear', !isError && count === 0);
     }
-    setTodayBadge(count);
+    setTodayBadge(isError ? 0 : count);
   }
 
   function setTodayBadge(count) {
@@ -569,7 +574,7 @@
       renderNeedsYou(panel, data.items || []);
     } catch (err) {
       console.warn('Needs-you lookup failed:', err);
-      setTodayHeading(panel, 0);
+      setTodayHeading(panel, 0, true);
       panel.querySelector('#needs-you-band').innerHTML = '';
     }
   }
