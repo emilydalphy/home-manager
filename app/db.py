@@ -1,4 +1,5 @@
 """SQLite connection helper."""
+import json
 import sqlite3
 import os
 
@@ -278,6 +279,21 @@ _MIGRATIONS = [
     # whole record, not just the fact that something happened. '' while a
     # plan has never been superseded. See weekly_plan.retire_overlapping_plans.
     ("weekly_plans", "superseded_json", "TEXT NOT NULL DEFAULT ''"),
+    # "Every meal is a full plate" (Emily, 2026-09-05) — see
+    # app/tools/plates.py for the rule and for why the sides attach to the
+    # ENTRY rather than to the recipe. '[]' on every existing row means
+    # "nothing was added here," which is the truth for every meal planned
+    # before this existed, so nothing is backfilled.
+    ("meal_plan_entries", "sides_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # The household's own say over that behaviour. Default ON, per Emily:
+    # the app fills out a plate because it is thinking about their health,
+    # says so once, and takes "don't" for an answer. Off = the pass only
+    # logs what it would have done and attaches nothing.
+    ("meal_preferences", "complete_plates", "INTEGER NOT NULL DEFAULT 1"),
+    # When the household was told, once, that the app completes plates. ''
+    # until the sentence has actually been served to a screen — see
+    # weekly_plan.get_week_menu and main.week_menu.
+    ("meal_preferences", "plates_intro_shown_at", "TEXT NOT NULL DEFAULT ''"),
     # Loop Board "Onboarding / meal setup: add a Snacks & desserts count"
     # (Emily, 2026-09-05). Existing households get 3, not 7 — see
     # schema.sql's comment on meal_preferences.snacks_per_week for why.
@@ -459,6 +475,100 @@ def _migrate_planning_anchor_values(conn):
     )
 
 
+def _backfill_allergy_notes_from_facts(conn):
+    """
+    Loop Board "Allergy: backfill existing allergy NOTES into member
+    restrictions" (Emily's decision 3a, 2026-09-05): a household that wrote
+    an allergy down as a freeform What-we-know note BEFORE the allergy
+    enforcement fix (see coordination.py's Decision log entry) has that
+    allergy sitting only in `facts` — nothing on the member record itself,
+    which is what the member's own profile/UI reads.
+
+    Reuses coordination's own fact parsing rather than re-deriving it: a
+    fact only becomes a restriction here if `_fact_keywords` (the same
+    avoidance-trigger regex and phrase-splitting `check_plan_conflicts`
+    already runs on every fact) finds something to avoid in it, AND
+    `_named_member` (same whole-word name match `_avoidances()` uses) says
+    the fact is about one specific person. A backfill using a different
+    rule for either of those than the live check would drift from it
+    silently, which is the one way this could quietly get it wrong.
+
+    A household-wide fact ("no pork in this house") names nobody and is
+    left alone on purpose — the planner and the conflict check already
+    read `facts` directly, so nothing there is actually missing; this only
+    fills in the member-record gap for a fact that names a person. Facts
+    are never edited or deleted, only read from.
+
+    Idempotent and safe to run every startup: appends `"allergy: <phrase>"`
+    only when that exact string (case-insensitively) isn't already in the
+    member's dietary_restrictions_json, so a second run is a no-op and a
+    hand-added "allergy: pineapple" is never duplicated.
+    """
+    # Local import to avoid a circular import: coordination.py (like every
+    # app.tools module) imports `get_conn` from this module at load time,
+    # so importing it back from here at module load time would be
+    # circular. Same call-time-import trick this file already uses for
+    # tools.grocery, above.
+    from .tools import coordination
+
+    households = conn.execute("SELECT id FROM households ORDER BY id ASC").fetchall()
+    for household in households:
+        hid = household["id"]
+        member_rows = conn.execute(
+            "SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ?",
+            (hid,),
+        ).fetchall()
+        member_names = [r["name"] for r in member_rows if (r["name"] or "").strip()]
+        if not member_names:
+            continue
+        fact_rows = conn.execute(
+            "SELECT text FROM facts WHERE household_id = ?", (hid,)
+        ).fetchall()
+        if not fact_rows:
+            continue
+
+        name_to_id = {r["name"]: r["id"] for r in member_rows}
+        # A working copy per member, updated as facts are read (not
+        # re-fetched from the row) so a second fact about the same person
+        # in the same run sees the first one's addition instead of
+        # clobbering it.
+        current = {r["id"]: json.loads(r["dietary_restrictions_json"]) for r in member_rows}
+        original = {mid: list(restrictions) for mid, restrictions in current.items()}
+
+        added = 0
+        for fact in fact_rows:
+            text = fact["text"] or ""
+            named = coordination._named_member(text, member_names)
+            if not named:
+                continue
+            phrases, _excepted = coordination._fact_keywords(
+                text, drop=coordination._name_words(named)
+            )
+            if not phrases:
+                continue
+            member_id = name_to_id[named]
+            restrictions = current[member_id]
+            seen_lower = {r.strip().lower() for r in restrictions}
+            for words in phrases:
+                label = f"allergy: {' '.join(words)}"
+                if label.lower() not in seen_lower:
+                    restrictions.append(label)
+                    seen_lower.add(label.lower())
+                    added += 1
+
+        for member_id, restrictions in current.items():
+            if restrictions != original[member_id]:
+                conn.execute(
+                    "UPDATE members SET dietary_restrictions_json = ? WHERE id = ?",
+                    (json.dumps(restrictions), member_id),
+                )
+        if added:
+            print(
+                f"[allergy backfill] household {hid}: added {added} "
+                "restriction(s) to member record(s) from existing facts"
+            )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -472,6 +582,7 @@ def _run_migrations(conn):
     _merge_duplicate_item_store_preferences(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
+    _backfill_allergy_notes_from_facts(conn)
 
 
 def init_db():

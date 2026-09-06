@@ -13,6 +13,7 @@ from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
 from . import notifications as _notifications
+from . import plates as _plates
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import week_intake as _week_intake
@@ -353,36 +354,35 @@ def get_week_planning_nudge() -> dict:
 
     Suppressed once dismissed, and the dismissal key is the week itself —
     so "I won't ask again this week" is literally true, and next week's
-    offer isn't silenced by this week's dismissal. Also suppressed once
-    that week has a plan: there is nothing left to offer.
+    offer isn't silenced by this week's dismissal.
+
+    Emily's rule (2026-09-05): case 1 shows every morning until a plan
+    actually covers today again — including the morning after a plan's
+    last day has passed and nothing has replaced it. There used to be a
+    second guard here ("but this week was already filed under a plan"),
+    meant to stop a mid-week-onboarding household from being told Monday
+    was left unplanned when it simply didn't exist yet. In practice that
+    guard also silenced the nudge for the rest of ANY week whose plan ran
+    out early — the exact case this rule now says must keep nudging — so
+    it's gone. The only thing that still silences case 1 is a dismissal of
+    THIS suggested period specifically (below): dismissed, it stays quiet
+    until the suggestion changes; not dismissed, it asks again tomorrow.
     """
     today = date.today()
-    this_monday = today - timedelta(days=today.weekday())
     suggestion = suggest_planning_period()
 
     conn = get_conn()
     dismissed = _notifications._dismissed_keys(conn)
     covering = _live_plan_covering(conn, today.isoformat())
-    planned_week_keys = {
-        row["week_start_date"]
-        for row in conn.execute(
-            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ? AND status != 'retired'",
-            (household_id(),),
-        ).fetchall()
-    }
     conn.close()
 
     target = None
     target_days = suggestion["day_count"]
     is_current = False
-    if covering is None and this_monday.isoformat() not in planned_week_keys:
-        # Nothing covers today. The filing-key half of that test is what
-        # keeps a part-week honest: a plan filed under this Monday whose
-        # content deliberately starts on the Wednesday the household joined
-        # has NOT left Monday unplanned in any sense worth nudging about —
-        # those days went by before the household existed here. Without it,
-        # every mid-week onboarding would be met by an immediate offer to
-        # re-plan the week it had just been given.
+    if covering is None:
+        # Nothing covers today, full stop — offer to plan the current
+        # period. See the docstring above for why there's no additional
+        # "already filed this week" guard any more.
         target, is_current = date.fromisoformat(suggestion["start_date"]), True
     elif covering is not None:
         # The generalisation of "from Saturday onward, offer next week".
@@ -1682,7 +1682,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         """
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
-               mpe.slot_state, mpe.open_reason
+               mpe.slot_state, mpe.open_reason, mpe.sides_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -1707,6 +1707,12 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
             # not by reading the code.
             "slot_state": m["slot_state"],
             "open_reason": m["open_reason"] or None,
+            # The side(s) the app attached to make this a full plate (see
+            # plates.py) — [] for the overwhelming majority of meals, and
+            # `sides_label` the ready-made "with a green salad" fragment so
+            # every screen says it the same way.
+            "sides": _plate_sides(m["sides_json"]),
+            "sides_label": _plates.sides_label(_plate_sides(m["sides_json"])),
         }
         for m in meals
     ]
@@ -1851,10 +1857,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     `dinner` keys — each either None (nothing planned, drives the "Pick"
     row) or `{title, meta, source}`.
 
-    `source`/`meta` have no backing column in meal_plan_entries, so they're
-    derived with a keyword heuristic against the entry's freeform text —
-    documented here as a judgment call, not a spec'd mapping:
-      - "leftover"/"leftovers" in the text -> source "leftovers", meta "reheat"
+    `source`/`meta` have no backing column in meal_plan_entries, so most of
+    them are derived with a keyword heuristic against the entry's freeform
+    text — documented here as a judgment call, not a spec'd mapping:
+      - a night in a CONFIRMED leftovers chain (both the entry and its
+        source agree — see leftovers.plan_leftover_chains) -> source
+        "leftovers", meta "reheat", title replaced with
+        leftovers.leftovers_headline naming the source dish and night,
+        checked before the text heuristic below because a chain entry can
+        carry a real recipe_id (the source's own dish) with nothing in its
+        own freeform text for a regex to catch.
+      - "leftover"/"leftovers" in the text (and no confirmed chain) ->
+        source "leftovers", meta "reheat"
       - "takeout"/"take-out"/"take out"/"delivery"/"order in" -> source
         "takeout", meta "takeout"
       - anything else (a saved recipe or a plain freeform entry) -> source
@@ -1981,6 +1995,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
+               mpe.food_groups_json, mpe.sides_json,
                r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -1988,7 +2003,45 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         """,
         (plan["weekly_plan_id"],),
     ).fetchall()
+    prefs = conn.execute(
+        "SELECT eating_style, plates_intro_shown_at FROM meal_preferences WHERE household_id = ?",
+        (household_id(),),
+    ).fetchone()
     conn.close()
+    plate_rule = _plates.plate_rule(prefs["eating_style"] if prefs else "")
+
+    # Every confirmed cook-once-eat-twice pairing on this plan (see
+    # leftovers.py) — computed once for the whole week rather than per slot,
+    # since it's one query either way and build_slot needs it for every
+    # reheat night it might encounter. Only entries BOTH sides agree on come
+    # back here, same rule the Cook view (cooker._apply_leftover_chains)
+    # already applies: a reheat night is only rendered as one when the
+    # source it names also names it back.
+    from . import leftovers as _leftovers
+    chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])
+
+    def plate_note(row, sides) -> str:
+        """
+        The one short line about this plate: "with a green salad" when the
+        app added something, "one-pot, nothing extra" when the dish covers
+        the household's plate rule on its own.
+
+        An added side is disclosed on EVERY slot — the household's shopping
+        list has it, so their card must say so. The reassurance half is
+        DINNER ONLY, deliberately: it is the answer to "why does Tuesday
+        say 'with a salad' and Wednesday say nothing", and repeating it
+        under all four slots of all seven days would be chrome, not an
+        answer. See plates.py.
+        """
+        label = _plates.sides_label(sides)
+        if label:
+            return label
+        if row["slot"] != "dinner":
+            return ""
+        entry = {"slot": row["slot"], "food_groups": json.loads(row["food_groups_json"] or "[]")}
+        if _plates.has_food_groups(entry) and _plates.is_complete(entry, plate_rule):
+            return "one-pot, nothing extra"
+        return ""
 
     def build_slot(row) -> dict | None:
         # The three states a slot can be in. Only a slot that is genuinely
@@ -2012,14 +2065,36 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # The 4-9 word "why" shown under the meal name. Generated with the
         # plan (see meal_plan_entries.reasoning) rather than improvised on
         # demand, so it can't contradict the actual reason.
+        sides = _plate_sides(row["sides_json"])
         common = {
             "state": "planned", "reason": row["reasoning"] or None, "entry_id": row["id"],
+            "sides": sides, "plate_note": plate_note(row, sides),
         }
+        # A confirmed chain (see `chains` above) takes priority over the
+        # freeform-text heuristic below: a chain entry can carry a REAL
+        # recipe_id (the source's own dish, so the reheat night can say
+        # what it's actually eating) with nothing in its freeform text for
+        # the regex to catch — which is exactly how this used to show up as
+        # "Korean Beef Bulgogi Lettuce Wraps · 35 min · Cook this" instead
+        # of the reheat it actually is (Loop Board). No time chip (nothing
+        # is cooked tonight) and no plate note (not a plate this app
+        # assembled tonight either — same reasoning as the freeform case
+        # just below).
+        leftover = chains["leftovers"].get(row["id"])
+        if leftover:
+            src = leftover["source"]
+            return {
+                "title": _leftovers.leftovers_headline(src["meal"], src["date"]),
+                "meta": "reheat", "source": "leftovers", **common, "plate_note": "",
+            }
         text = (row["freeform_meal"] or "").lower()
+        # Neither a reheat nor takeout is a plate this app assembled, so
+        # neither gets a plate note — "one-pot, nothing extra" over a night
+        # that reheats an earlier batch would be describing the wrong meal.
         if re.search(r"leftovers?\b", text):
-            return {"title": title, "meta": "reheat", "source": "leftovers", **common}
+            return {"title": title, "meta": "reheat", "source": "leftovers", **common, "plate_note": ""}
         if re.search(r"take[\s-]?out|delivery|order in", text):
-            return {"title": title, "meta": "takeout", "source": "takeout", **common}
+            return {"title": title, "meta": "takeout", "source": "takeout", **common, "plate_note": ""}
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
         total = prep + cook
@@ -2079,6 +2154,22 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "days": days,
         "menu_is_suggested": False,
         "headline": _week_headline(plan, days, intake),
+        # Told once, and only once — see PLATES_INTRO and
+        # mark_plates_intro_shown. None on every week after the first one
+        # where the app actually completed a plate, and None immediately if
+        # it never has. Deliberately NOT folded into `headline`, which says
+        # at most two things by design (see _week_headline) and would grow a
+        # sentence per feature if this were the third.
+        # Asked of the ROWS rather than of `days`, because `days` only
+        # carries breakfast/lunch/dinner — a side attached to a snack is
+        # still a side the household paid for and is owed the explanation
+        # about.
+        "plates_note": (
+            PLATES_INTRO
+            if (not (prefs["plates_intro_shown_at"] if prefs else "")
+                and any(_plate_sides(r["sides_json"]) for r in rows))
+            else None
+        ),
         # The trip banner ("Away Sat–Sun") — present only when the week
         # actually has one, so the ordinary week carries no extra chrome.
         "trip_summary": trip,
@@ -2198,12 +2289,32 @@ def get_needs_you_items() -> list[dict]:
     than a general prioritisation engine (that's future work):
 
       1. **Dinner decision** — the soonest of tonight's/tomorrow's dinner
-         slots that's still empty (the "within 48 hours" window from the
-         spec). Comes with up to two quick-recipe suggestions (see
-         _suggest_quick_dinners) so the card's "Pick" rows have something
-         real to offer — the card is omitted entirely if there isn't even
-         one recipe saved yet, since a decision card with nothing to pick
-         is worse than no card.
+         slots that still needs one. Two shapes of "needs one":
+
+         - No entry at all for that date/slot. Comes with up to two
+           quick-recipe suggestions (see _suggest_quick_dinners) so the
+           card's "Pick" rows have something real to offer — the card is
+           omitted entirely if there isn't even one recipe saved yet,
+           since a decision card with nothing to pick is worse than no
+           card.
+         - An 'open' slot — a decision the app already handed back on the
+           Plan screen (see plan_slot_open/resolve_open_slot), still
+           unsettled. "core loop handoffs, slice 2" item D (Emily,
+           2026-09-05): this used to be silently swallowed by the
+           "there's already a row for that date" check below, so an open
+           dinner never surfaced here even though it is, by definition,
+           exactly the kind of thing this band exists for. It carries the
+           slot's own options (open_options: label/meta, from
+           derived_from_json) and its open_reason as the body, and
+           resolves through the same path the Plan screen's open-slot
+           cards already use (resolve_open_slot / POST
+           /api/week/{week_start}/slot) rather than plan_meal — plan_meal
+           only inserts, so calling it here would leave the old open row
+           behind as a second, orphaned entry for the same date/slot.
+
+         A 'planned_empty' slot (the household said it's away) or an
+         ordinary 'planned' one both count as handled — nothing to surface
+         for either.
       2. **Shop run** — there are ungathered grocery items *and* something
          is actually planned (any slot, any meal) in the next 48 hours
          that hasn't been cooked yet. There's no ingredient-to-grocery-item
@@ -2224,18 +2335,43 @@ def get_needs_you_items() -> list[dict]:
 
     # ---- Rule 1: dinner decision ----
     dinner_rows = conn.execute(
-        "SELECT date FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
+        "SELECT date, slot_state, open_reason, derived_from_json, weekly_plan_id "
+        "FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' AND date >= ? AND date < ?",
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
-    planned_dinner_dates = {r["date"] for r in dinner_rows}
+    dinner_by_date = {r["date"]: r for r in dinner_rows}
     for offset in (0, 1):
         candidate = (today + timedelta(days=offset)).isoformat()
-        if candidate in planned_dinner_dates:
-            continue
+        when = "Tonight" if offset == 0 else "Tomorrow"
+        row = dinner_by_date.get(candidate)
+
+        if row is not None and row["slot_state"] == "open":
+            derived = json.loads(row["derived_from_json"] or "{}")
+            week_start = None
+            if row["weekly_plan_id"] is not None:
+                plan_row = conn.execute(
+                    "SELECT week_start_date FROM weekly_plans WHERE id = ?", (row["weekly_plan_id"],)
+                ).fetchone()
+                week_start = plan_row["week_start_date"] if plan_row else None
+            items.append({
+                "type": "dinner_open",
+                "kicker": "DINNER",
+                "title": when + "’s dinner needs your call",
+                "urgency": "urgent",
+                "date": candidate,
+                "slot": "dinner",
+                "body": row["open_reason"] or "",
+                "options": derived.get("options") or [],
+                "week_start": week_start,
+            })
+            break  # only the soonest unsettled dinner becomes a card
+
+        if row is not None:
+            continue  # planned, or deliberately away — already handled
+
         options = _suggest_quick_dinners()
         if not options:
             break  # no recipes to suggest at all -- nothing later in the loop will differ, so stop
-        when = "Tonight" if offset == 0 else "Tomorrow"
         items.append({
             "type": "dinner_decision",
             "kicker": "DINNER",
@@ -2329,10 +2465,16 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     preview_plan_grocery_impact (which only counts them), so the number the
     draft screen promises and the number approval actually delivers come
     from one query rather than two that can drift apart.
+
+    `sides_json` rides along because a side the app attached to complete a
+    plate is part of THAT MEAL's shopping, not a meal of its own (see
+    plates.py). Both callers read the combined list through
+    _entry_shopping_ingredients below, so the number promised and the
+    number delivered still come from one place.
     """
     return conn.execute(
         """
-        SELECT mpe.id, mpe.recipe_id, r.ingredients_json
+        SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings, mpe.sides_json
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
@@ -2344,6 +2486,137 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
         """,
         (weekly_plan_id, household_id()),
     ).fetchall()
+
+
+# What the household is told, once, the first time the app rounds a meal
+# out for them. Emily, 2026-09-05: they should hear that this is on purpose
+# and that they can stop it. DESIGN_SYSTEM.md §8 — state the thing, then the
+# way out, in that order and at that length. Not cheery, not an apology, and
+# it names the reason rather than hiding behind "for balance".
+PLATES_INTRO = (
+    "Where a meal came out short, I added a small side — I’m thinking about how you’re eating. "
+    "If you’d rather I left them alone, tell me and I’ll stop."
+)
+
+
+def mark_plates_intro_shown() -> dict:
+    """
+    Record that the household has now been told (see PLATES_INTRO).
+
+    Called by the /api/week-menu ROUTE, not by get_week_menu itself, and
+    that split is the whole point: get_week_menu is also a read the
+    assistant makes on the household's behalf mid-conversation, and burning
+    a once-in-a-lifetime sentence on a tool call nobody saw would mean the
+    household never gets told at all. The screen fetch is the one caller
+    that can honestly claim the sentence was delivered.
+
+    Idempotent: the first stamp wins, so a second screen fetch racing the
+    first doesn't rewrite the date.
+    """
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO meal_preferences (household_id, plates_intro_shown_at, updated_at) "
+        "VALUES (?, datetime('now'), datetime('now')) "
+        "ON CONFLICT(household_id) DO UPDATE SET "
+        "plates_intro_shown_at = CASE WHEN plates_intro_shown_at = '' "
+        "THEN datetime('now') ELSE plates_intro_shown_at END",
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+    return {"shown": True}
+
+
+def _plate_sides(sides_json: str | None) -> list[dict]:
+    """A row's sides_json as a list, tolerating anything stored badly."""
+    try:
+        sides = json.loads(sides_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    return sides if isinstance(sides, list) else []
+
+
+def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
+    """
+    Buy, for the first time, whatever this approved plan's entries have
+    never actually contributed to the grocery list — swap_meal_in_plan's
+    fix for the leftover-chain-swap gap its own docstring describes.
+
+    Deliberately general rather than a special case for the chain it was
+    written for: it finds every entry with a real recipe and no
+    meal_plan_grocery_links row yet (_plan_grocery_candidate_entries, the
+    same query approve_weekly_plan and preview_plan_grocery_impact already
+    trust for "what hasn't been bought"), groups by recipe, and runs them
+    through the exact ingestion approve_weekly_plan uses for a first
+    approval — one WeekGroceryBuffer for the whole pass, so amounts that
+    land on the same line still consolidate and round together rather than
+    each being bought — and rounded — on its own.
+    """
+    conn = get_conn()
+    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+    conn.close()
+    if not entries:
+        return {"groceries_added": [], "already_have_skipped": []}
+
+    by_recipe: dict[int, dict] = {}
+    for entry in entries:
+        group = by_recipe.setdefault(
+            entry["recipe_id"], {
+                "ingredients_json": entry["ingredients_json"],
+                "default_servings": entry["default_servings"],
+                "entry_ids": [],
+            },
+        )
+        group["entry_ids"].append(entry["id"])
+
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
+    added_items: list[str] = []
+    already_have: list[str] = []
+    for group in by_recipe.values():
+        added, have = _recipes._add_recipe_ingredients_for_entries(
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
+            default_servings=group["default_servings"], buffer=buffer,
+        )
+        added_items.extend(added)
+        already_have.extend(have)
+
+    # Sides ride along the same way approve_weekly_plan brings them in —
+    # see its own comment on why they share this buffer rather than one of
+    # their own.
+    for entry in entries:
+        side_ingredients = _entry_side_ingredients(entry)
+        if side_ingredients:
+            added, have = _recipes._add_recipe_ingredients_for_entries(
+                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
+            )
+            added_items.extend(added)
+            already_have.extend(have)
+    buffer.flush()
+    return {"groceries_added": added_items, "already_have_skipped": already_have}
+
+
+def _entry_shopping_ingredients(row) -> list[dict]:
+    """
+    Everything one plan entry puts on the shopping list: its recipe's own
+    ingredients, then any side the app attached to complete its plate.
+
+    Recorded against the SAME meal_plan_entry_id as the dish, which is what
+    makes removing the meal remove its side's shopping too —
+    _reverse_meal_grocery_contributions is keyed by entry, so the side needs
+    no unwinding logic of its own.
+    """
+    ingredients = json.loads(row["ingredients_json"] or "[]")
+    return ingredients + _entry_side_ingredients(row)
+
+
+def _entry_side_ingredients(row) -> list[dict]:
+    """Just the side's ingredients for one plan entry ('[]' when none)."""
+    sides = row["sides_json"] if "sides_json" in row.keys() else "[]"
+    try:
+        parsed = json.loads(sides or "[]")
+    except (TypeError, ValueError):
+        parsed = []
+    return _plates.side_ingredients(parsed if isinstance(parsed, list) else [])
 
 
 def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
@@ -2401,7 +2674,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     would_add: set[str] = set()
     already_have: set[str] = set()
     for entry in entries:
-        for ing in json.loads(entry["ingredients_json"]):
+        for ing in _entry_shopping_ingredients(entry):
             name = ing["item"].strip()
             if name.lower() in have_names:
                 already_have.add(name.lower())
@@ -2414,7 +2687,9 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     }
 
 
-def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
+def approve_weekly_plan(
+    weekly_plan_id: int, approved_by: str = "", confirm_hard_conflicts: bool = False
+) -> dict:
     """
     Approve a weekly plan — and, in the same step, put its meals'
     ingredients on the grocery list.
@@ -2456,24 +2731,22 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     and swap_component_in_plan.
 
     The returned `conflicts`/`conflicts_note` are the dietary/allergy check
-    (check_plan_conflicts) run automatically on the way through. Approval is
-    NOT blocked by them — the household may well mean it — but a clash is
-    said out loud rather than left to whether anyone thought to ask. Mention
-    any that come back when reporting the approval.
-    """
-    # Run before the approval work, so the warning describes the plan that
-    # was actually approved and a failure here can't half-approve a week.
-    conflicts, conflicts_note = [], None
-    try:
-        found = _coordination.check_plan_conflicts(weekly_plan_id)
-        conflicts = found["conflicts"]
-        # Not found["note"]: that sentence ends "before you approve", and
-        # this is the moment just after. Same clash, worded for a decision
-        # already made — see conflicts_note_after_approval.
-        conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
-    except Exception:
-        logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+    (check_plan_conflicts) run automatically on the way through. A SOFT one
+    (a standing dislike) never blocks — the household may well mean it —
+    but is still said out loud rather than left to whether anyone thought
+    to ask. Mention any that come back when reporting the approval.
 
+    A HARD one (an allergy/must-avoid, member restriction or hard fact) is
+    different: unless `confirm_hard_conflicts` is true, this does NOT
+    approve — it writes nothing at all — and instead returns
+    `{"status": "needs_confirmation", "conflicts", "conflicts_note",
+    "weekly_plan_id"}`. That is the household's explicit "I've seen it and
+    I still want this" tap, not something to pass as true on your own
+    initiative — ask first, every time (see app/agent.py's tool
+    description). Re-approving an already-approved plan is exempt: the
+    decision was already made, so it takes the guard's other branch below
+    (adds nothing, asks nothing) rather than this one.
+    """
     conn = get_conn()
     existing = conn.execute(
         "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -2483,6 +2756,39 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     was_already_approved = existing["status"] == "approved"
+
+    # Run before the approval work, so the warning (and the confirmation
+    # gate just below) describe the plan that was actually approved, and a
+    # failure here can't half-approve a week.
+    conflicts, note = [], None
+    try:
+        found = _coordination.check_plan_conflicts(weekly_plan_id)
+        conflicts = found["conflicts"]
+        note = found["note"]
+    except Exception:
+        logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+
+    if (
+        not was_already_approved
+        and not confirm_hard_conflicts
+        and any(c["severity"] == "hard" for c in conflicts)
+    ):
+        # `note` here, not conflicts_note_after_approval: nothing has been
+        # approved, so the sentence should still say "before you approve" —
+        # the same wording the draft's own review-band warning uses.
+        conn.close()
+        return {
+            "weekly_plan_id": weekly_plan_id,
+            "status": "needs_confirmation",
+            "conflicts": conflicts,
+            "conflicts_note": note,
+        }
+
+    # Not `note`: that sentence ends "before you approve", and this is the
+    # moment just after (or, for a hard clash, the moment the household
+    # confirmed past it). Same clash, worded for a decision already made —
+    # see conflicts_note_after_approval.
+    conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
     # A re-approval never overwrites the original approver/time — the
     # receipt names who actually settled the week, and the first yes is the
     # one that built the list. Only a genuine transition into 'approved'
@@ -2539,18 +2845,56 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     by_recipe: dict[int, dict] = {}
     for entry in entries:
         group = by_recipe.setdefault(
-            entry["recipe_id"], {"ingredients_json": entry["ingredients_json"], "entry_ids": []}
+            entry["recipe_id"], {
+                "ingredients_json": entry["ingredients_json"],
+                "default_servings": entry["default_servings"],
+                "entry_ids": [],
+            },
         )
         group["entry_ids"].append(entry["id"])
 
+    # One buffer for the WHOLE approval, not one per recipe. Grouping by
+    # recipe is the right unit for a sealed package (six breakfasts of the
+    # same dish, one bag of spinach) but the wrong one for rounding a
+    # per-portion amount: Emily's 17 peppers came from five DIFFERENT
+    # dinners, so five separate calls below each round their own share up
+    # and the week ends up buying a pepper more than it wants. The buffer
+    # holds every per-portion amount unrounded until all five have spoken,
+    # then writes one rounded line — see recipes.WeekGroceryBuffer.
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
     added_items = []
     already_have = []
     for group in by_recipe.values():
         added, have = _recipes._add_recipe_ingredients_for_entries(
-            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
+            default_servings=group["default_servings"], buffer=buffer,
         )
         added_items.extend(added)
         already_have.extend(have)
+
+    # A side the app attached to complete a plate belongs to ONE meal, not to
+    # the recipe, so it goes in as its own one-entry group (plates.py). It is
+    # still recorded against that entry's id, which is what lets removing the
+    # meal remove its side's shopping too. It goes through the SAME buffer as
+    # the recipe ingredients above rather than one of its own, and the buffer
+    # is flushed only once both loops are done: a side sharing an ingredient
+    # with the night's own recipe (or another night's) must round together
+    # with it, or the two independent roundings can each tip up and buy more
+    # than either alone would have asked for — the same class of bug as the
+    # 17 peppers. No default_servings is passed here: sides carry no
+    # servings of their own (see plates.py's sides_json shape), so
+    # servings_scale_factor falls back to attendance alone — that entry's
+    # eaters relative to the household, not a recipe-servings anchor that
+    # doesn't exist for a side.
+    for entry in entries:
+        side_ingredients = _entry_side_ingredients(entry)
+        if side_ingredients:
+            added, have = _recipes._add_recipe_ingredients_for_entries(
+                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
+            )
+            added_items.extend(added)
+            already_have.extend(have)
+    buffer.flush()
 
     # Counted as distinct names, matching preview_plan_grocery_impact, so
     # the number the draft promised and the number the receipt reports are
@@ -2598,13 +2942,36 @@ def swap_meal_in_plan(
     deleted, whatever the amount it contributed calls for — see
     _reverse_meal_grocery_contributions) so the grocery list reflects only
     the new meal afterward instead of carrying both.
+
+    A source night other nights were eating as leftovers (see leftovers.py)
+    reverses its WHOLE batch contribution above, same as any other swap —
+    the scaled amount that covered its own table plus every leftover night
+    it fed. Once the swap lands, plan_leftover_chains no longer confirms
+    that pairing: the new entry here carries no make_double_for of its own
+    (repair_leftover_chains, the only writer of that field, runs at
+    generation time, not here — see its docstring), so each former
+    leftover night is now, honestly, just an ordinary planned meal — one
+    that has never had its own ingredients bought, because a leftovers
+    night never contributes to the grocery list on its own (see
+    recipes._add_recipe_ingredients_for_entries). Nothing else re-buys them
+    on its own, so this does, via _reingest_unlinked_entries — the same
+    incremental top-up approve_weekly_plan's own candidate query already
+    performs for a slot planned after the week was approved.
     """
+    from . import leftovers as _leftovers
+
     conn = get_conn()
     old_entries = conn.execute(
         "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
         (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
     conn.close()
+    # Checked before anything is torn down: once the old entry is deleted,
+    # there is nothing left in the DB to ask whether it used to feed other
+    # nights' leftovers.
+    was_a_leftovers_source = any(
+        row["id"] in _leftovers.plan_leftover_chains(weekly_plan_id)["sources"] for row in old_entries
+    )
     for row in old_entries:
         _grocery._reverse_meal_grocery_contributions(row["id"])
 
@@ -2615,7 +2982,7 @@ def swap_meal_in_plan(
     )
     conn.commit()
     conn.close()
-    return _meal_plans.plan_meal(
+    result = _meal_plans.plan_meal(
         meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
         # Only put the new meal's ingredients on the list if this week has
         # already been approved — approval is what put the old meal's
@@ -2624,6 +2991,16 @@ def swap_meal_in_plan(
         # leaves the grocery list alone, exactly as generating it did.
         add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
     )
+    # See the docstring above: breaking a confirmed chain strands the
+    # former leftover night(s) with no grocery contribution of their own.
+    # Only worth the extra query when the swapped entry actually was a
+    # confirmed source and the plan is one whose list is live at all —
+    # the overwhelming majority of swaps are neither.
+    if was_a_leftovers_source and _weekly_plan_is_approved(weekly_plan_id):
+        reingested = _reingest_unlinked_entries(weekly_plan_id)
+        result["reingested_groceries_added"] = reingested["groceries_added"]
+        result["reingested_already_have_skipped"] = reingested["already_have_skipped"]
+    return result
 
 
 def swap_component_in_plan(

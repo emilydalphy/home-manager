@@ -365,6 +365,83 @@ def test_picking_tonights_dinner_only_adds_groceries_when_asked_to():
     assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
 
 
+class TestNeedsYouSurfacesAnOpenDinner:
+    """
+    "core loop handoffs, slice 2" item D (Emily, 2026-09-05): an 'open'
+    dinner slot — a decision the app already handed back on the Plan
+    screen (plan_slot_open) — used to be indistinguishable here from an
+    ordinary planned one, so it was silently swallowed by the "there's
+    already a row for that date" check and never reached the needs-you
+    band it's exactly meant for. A 'planned_empty' (away) or genuinely
+    'planned' dinner still surfaces nothing, correctly.
+    """
+
+    def test_an_open_dinner_surfaces_with_its_own_options_and_reason(self):
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        tools.plan_slot_open(
+            plan_id, _today(), "dinner",
+            "Nothing under 20 minutes that isn't chili again.",
+            options=[
+                {"label": "Order in", "meta": "10 min"},
+                {"label": "Breakfast for dinner", "meta": "15 min"},
+            ],
+        )
+
+        items = tools.get_needs_you_items()
+        dinner_items = [i for i in items if i["type"] == "dinner_open"]
+
+        assert len(dinner_items) == 1
+        item = dinner_items[0]
+        assert item["date"] == _today()
+        assert item["slot"] == "dinner"
+        assert item["body"] == "Nothing under 20 minutes that isn't chili again."
+        assert [o["label"] for o in item["options"]] == ["Order in", "Breakfast for dinner"]
+        assert item["week_start"] == _week_start()
+
+    def test_resolving_it_replaces_the_row_rather_than_duplicating_it(self):
+        """
+        plan_meal only ever inserts — calling it against an already-open
+        slot (the way an ordinary dinner_decision card does) would leave
+        the open row behind as a second, orphaned entry for the same
+        date/slot. The card has to resolve through resolve_open_slot
+        instead, the same path the Plan screen's own open-slot cards use.
+        """
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        tools.plan_slot_open(plan_id, _today(), "dinner", "Deciding nearer the time.")
+
+        tools.resolve_open_slot(plan_id, _today(), "dinner", "Tacos")
+
+        todays_dinners = [
+            e for e in tools.get_meal_plan(days_ahead=1)
+            if e["date"] == _today() and e["slot"] == "dinner"
+        ]
+        assert len(todays_dinners) == 1
+        assert todays_dinners[0]["meal"] == "Tacos"
+        assert [i for i in tools.get_needs_you_items() if i["type"] == "dinner_open"] == []
+
+    def test_a_planned_dinner_surfaces_nothing(self):
+        # Both nights in the 48h window are covered — an empty tomorrow
+        # would otherwise still earn its own dinner_decision card, which
+        # isn't what this test is checking.
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+        tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+        tools.plan_meal(_today(1), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+        items = tools.get_needs_you_items()
+
+        assert [i for i in items if i["type"] in ("dinner_open", "dinner_decision")] == []
+
+    def test_a_planned_empty_away_dinner_surfaces_nothing(self):
+        plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+        tools.plan_slot_empty(plan_id, _today(), "dinner", "You're out — nothing planned or bought.")
+        tools.plan_slot_empty(plan_id, _today(1), "dinner", "You're out — nothing planned or bought.")
+
+        items = tools.get_needs_you_items()
+
+        assert [i for i in items if i["type"] in ("dinner_open", "dinner_decision")] == []
+
+
 def test_swapping_a_meal_in_an_unapproved_draft_leaves_the_list_alone():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])

@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9e4d8;font-family:Karla,sans-serif}
+a{color:#66304e}a:hover{color:#8a4a6e}
+@keyframes popIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(111,184,76,.55)}70%{box-shadow:0 0 0 12px rgba(111,184,76,0)}100%{box-shadow:0 0 0 0 rgba(111,184,76,0)}}
+.hm-scroll::-webkit-scrollbar{width:0}
+</style>
+</helmet>
+
+<section style="padding:48px 44px 64px;display:flex;flex-direction:column;gap:28px;background:#e9e4d8;box-sizing:border-box">
+
+  <div style="display:flex;align-items:flex-start;gap:34px;flex-wrap:wrap">
+    <div style="width:430px;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#66304e;color:#f6efe1;font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:8px">4a</div>
+        <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#66304e">Kitchen + Cooker, merged</div>
+      </div>
+      <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:30px;color:#3a1f2e;line-height:1.18">One screen for cooking, not a list of everything</div>
+      <div style="font-family:Karla,sans-serif;font-size:16px;color:#6b5a63;line-height:1.6">The live Cooker view dumps progress bars, the whole prep schedule and every meal of the week into one scroll, so the thing you're doing right now is buried. This keeps all of it but sorts it: tonight's cook is the screen, the week is a second view, and inventory and what-we-know stay where they already live in Kitchen.</div>
+      <div style="height:1px;background:#d8cdb9;margin:3px 0"></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:Karla,sans-serif;font-size:15px;color:#3a1f2e;line-height:1.5">Walk the steps — mobile shows one at a time, desktop shows all six with the current one lit.</div>
+        <div style="font-family:Karla,sans-serif;font-size:15px;color:#3a1f2e;line-height:1.5">Change servings; quantities rescale and "to taste" gets flagged instead of guessed.</div>
+        <div style="font-family:Karla,sans-serif;font-size:15px;color:#3a1f2e;line-height:1.5">Check ingredients and do-ahead prep, then finish the last step to close the night out.</div>
+        <div style="font-family:Karla,sans-serif;font-size:15px;color:#3a1f2e;line-height:1.5">Tap hands-free, or switch to The week to check meals off.</div>
+      </div>
+      <div onClick="{{ reset }}" style="align-self:flex-start;background:#ecdfc8;color:#66304e;font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:12px 18px;border-radius:12px;cursor:pointer;margin-top:4px" style-hover="background:#e2d2b6">Reset</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0">
+      <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a7a82">Mobile · 390</div>
+      <div data-screen-label="kitchen mobile" style="width:390px;height:844px;background:#f6efe1;border-radius:34px;box-shadow:0 18px 50px rgba(58,31,46,.22);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0">
+
+        <div style="height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 4px;flex-shrink:0">
+          <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#3a1f2e">6:34</div>
+          <div style="display:flex;gap:5px;align-items:center"><div style="width:17px;height:11px;border-radius:2px;background:#3a1f2e"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #3a1f2e"></div></div>
+        </div>
+
+        <div style="padding:4px 20px 10px;flex-shrink:0;display:flex;flex-direction:column;gap:11px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between">
+            <div>
+              <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Tuesday, Aug 25</div>
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:29px;color:#3a1f2e">Kitchen</div>
+            </div>
+            <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#6b5a63;padding-bottom:6px">{{ weekProgress }}</div>
+          </div>
+          <div style="display:flex;background:#ecdfc8;border-radius:13px;padding:4px;gap:4px">
+            <div onClick="{{ showCook }}" style="flex:1;text-align:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:11px 0;border-radius:10px;cursor:pointer;background:{{ cookChipBg }};color:{{ cookChipInk }}">Cook tonight</div>
+            <div onClick="{{ showWeek }}" style="flex:1;text-align:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:11px 0;border-radius:10px;cursor:pointer;background:{{ weekChipBg }};color:{{ weekChipInk }}">The week</div>
+          </div>
+        </div>
+
+        <sc-if value="{{ isCook }}" hint-placeholder-val="{{ true }}">
+          <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:2px 20px 18px;display:flex;flex-direction:column;gap:12px">
+
+            <div style="background:#66304e;border-radius:20px;padding:19px 19px 17px;position:relative;flex-shrink:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px">
+                <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#f0b429">{{ heroKicker }}</div>
+                <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;color:rgba(255,255,255,.7)">{{ heroTime }}</div>
+              </div>
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:23px;color:#fff;line-height:1.26">Chicken Tikka with Basmati Rice</div>
+
+              <sc-if value="{{ notCooked }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top:15px">
+                  <div style="height:6px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden;margin-bottom:14px">
+                    <div style="height:6px;border-radius:4px;background:#6fb84c;width:{{ stepPct }}"></div>
+                  </div>
+                  <div style="background:rgba(255,255,255,.09);border-radius:14px;padding:15px 16px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                      <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#f0b429">{{ stepLabel }}</div>
+                      <div style="font-family:Karla,sans-serif;font-weight:800;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#3a2a0a;background:#f0b429;border-radius:8px;padding:2px 8px;display:{{ stepTagShow }}">{{ stepTag }}</div>
+                    </div>
+                    <div style="font-family:Karla,sans-serif;font-size:18px;line-height:1.5;color:#fff">{{ stepText }}</div>
+                  </div>
+                  <div style="display:flex;gap:9px;margin-top:13px">
+                    <div onClick="{{ prevStep }}" style="width:52px;height:52px;border-radius:13px;border:1.5px solid rgba(255,255,255,.35);color:{{ prevInk }};display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:19px;cursor:pointer;flex-shrink:0" style-hover="background:rgba(255,255,255,.12)">←</div>
+                    <div onClick="{{ nextStep }}" style="flex:1;height:52px;border-radius:13px;background:#f0b429;color:#3a2a0a;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#ffc63d">{{ nextLabel }}</div>
+                  </div>
+                  <div onClick="{{ toggleVoice }}" style="margin-top:9px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font-family:Karla,sans-serif;font-weight:700;font-size:15px;background:{{ voiceBg }};color:{{ voiceInk }};animation:{{ voiceAnim }}">
+                    <div style="width:9px;height:9px;border-radius:5px;background:{{ voiceDot }}"></div>{{ voiceLabel }}
+                  </div>
+                  <div style="font-family:Karla,sans-serif;font-size:14px;line-height:1.5;color:rgba(255,255,255,.72);margin-top:9px;display:{{ voiceHintShow }}">Say "next step", "how much yogurt", "log a substitution", or "mark this done".</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ cooked }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:15px;animation:popIn .22s ease">
+                  <div style="background:rgba(111,184,76,.22);border-radius:14px;padding:15px 16px">
+                    <div style="font-family:Karla,sans-serif;font-size:17px;line-height:1.5;color:#fff;margin-bottom:12px">Dinner's done and logged. How'd it go?</div>
+                    <div style="display:flex;gap:9px">
+                      <div onClick="{{ rateLiked }}" style="flex:1;height:48px;border-radius:12px;background:{{ likedBg }};color:{{ likedInk }};display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;cursor:pointer">Liked it</div>
+                      <div onClick="{{ rateMeh }}" style="flex:1;height:48px;border-radius:12px;background:{{ mehBg }};color:{{ mehInk }};display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;cursor:pointer">Not a hit</div>
+                    </div>
+                  </div>
+                  <div onClick="{{ reopen }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#f0b429;cursor:pointer;padding:12px 2px 0">Back to the steps</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;padding:16px 18px 6px;flex-shrink:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#3a1f2e">Ingredients</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="font-family:Karla,sans-serif;font-weight:600;font-size:13px;color:#6b5a63">Serves</div>
+                  <div onClick="{{ fewer }}" style="width:44px;height:44px;border-radius:12px;border:1.5px solid #66304e;color:#66304e;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:18px;cursor:pointer" style-hover="background:#f4e7ef">−</div>
+                  <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:18px;color:#66304e;min-width:20px;text-align:center">{{ servings }}</div>
+                  <div onClick="{{ more }}" style="width:44px;height:44px;border-radius:12px;border:1.5px solid #66304e;color:#66304e;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:18px;cursor:pointer" style-hover="background:#f4e7ef">+</div>
+                </div>
+              </div>
+              <sc-for list="{{ ingredients }}" as="g" hint-placeholder-count="6">
+                <div onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:13px;height:50px;border-bottom:1px solid #f1e8da;cursor:pointer">
+                  <div style="width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:14px;background:{{ g.fill }};border-color:{{ g.line }}">{{ g.tick }}</div>
+                  <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:{{ g.ink }};text-decoration:{{ g.strike }}">{{ g.label }}</div>
+                  <div style="font-family:Karla,sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#b98a12;display:{{ g.flagShow }}">eyeball</div>
+                </div>
+              </sc-for>
+              <div style="font-family:Karla,sans-serif;font-size:14px;font-style:italic;color:#8a7a82;line-height:1.5;padding:11px 0 12px;display:{{ scaleNoteShow }}">{{ scaleNote }}</div>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;padding:16px 18px 6px;border-top:4px solid #f0b429;flex-shrink:0">
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#b98a12;margin-bottom:3px">Do ahead · tonight and tomorrow</div>
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#3a1f2e;margin-bottom:4px">{{ prepHeading }}</div>
+              <sc-for list="{{ prep }}" as="p" hint-placeholder-count="3">
+                <div onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:13px;padding:11px 0;border-bottom:1px solid #f1e8da;cursor:pointer">
+                  <div style="width:24px;height:24px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:14px;background:{{ p.fill }};border-color:{{ p.line }}">{{ p.tick }}</div>
+                  <div style="flex:1">
+                    <div style="font-family:Karla,sans-serif;font-size:16px;color:{{ p.ink }};text-decoration:{{ p.strike }};line-height:1.35">{{ p.desc }}</div>
+                    <div style="font-family:Karla,sans-serif;font-size:13px;color:#9c8b93;margin-top:2px">{{ p.meta }}</div>
+                  </div>
+                  <div style="font-family:Karla,sans-serif;font-weight:800;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#3f7a29;background:rgba(111,184,76,.18);border-radius:8px;padding:3px 8px;display:{{ p.batchShow }}">batch ×2</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;padding:16px 18px 8px;flex-shrink:0">
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#3a1f2e;margin-bottom:2px">Running low</div>
+              <div style="display:flex;align-items:center;gap:12px;height:50px;border-bottom:1px solid #f1e8da"><div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e">Olive oil</div><div onClick="{{ addOil }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">{{ oilLabel }}</div></div>
+              <div style="display:flex;align-items:center;gap:12px;height:50px"><div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e">Basmati rice · half bag</div><div onClick="{{ addRice }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">{{ riceLabel }}</div></div>
+            </div>
+
+            <div style="background:#ecdfc8;border-radius:18px;padding:17px 19px;flex-shrink:0">
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:18px;color:#3a1f2e;margin-bottom:5px">What we know about you</div>
+              <div style="font-family:Karla,sans-serif;font-size:15px;color:#4a3a43;line-height:1.55;margin-bottom:7px">4 people · no pork · Sam won't eat peppers · Thursdays are tee-ball.</div>
+              <div style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">Correct or add something</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isWeekView }}" hint-placeholder-val="{{ false }}">
+          <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:2px 20px 18px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#fff;border-radius:18px;padding:17px 19px;display:flex;gap:20px;flex-shrink:0">
+              <div style="flex:1">
+                <div style="font-family:Karla,sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Meals cooked</div>
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#66304e;margin-bottom:6px">{{ mealsFrac }}</div>
+                <div style="height:6px;border-radius:4px;background:#ede2cc;overflow:hidden"><div style="height:6px;background:#6fb84c;width:{{ mealsPct }}"></div></div>
+              </div>
+              <div style="flex:1">
+                <div style="font-family:Karla,sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b5a63;margin-bottom:3px">Prep done</div>
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#66304e;margin-bottom:6px">{{ prepFrac }}</div>
+                <div style="height:6px;border-radius:4px;background:#ede2cc;overflow:hidden"><div style="height:6px;background:#6fb84c;width:{{ prepPct }}"></div></div>
+              </div>
+            </div>
+            <sc-for list="{{ weekMeals }}" as="m" hint-placeholder-count="7">
+              <div style="background:#fff;border-radius:18px;padding:14px 17px;display:flex;align-items:center;gap:13px;border-left:4px solid {{ m.edge }};flex-shrink:0">
+                <div onClick="{{ m.toggle }}" style="width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:16px;cursor:pointer;background:{{ m.fill }};border-color:{{ m.line }}">{{ m.tick }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:Karla,sans-serif;font-weight:600;font-size:16px;color:{{ m.ink }};text-decoration:{{ m.strike }};line-height:1.35">{{ m.dish }}</div>
+                  <div style="font-family:Karla,sans-serif;font-size:13px;color:#9c8b93;margin-top:2px">{{ m.meta }}</div>
+                </div>
+                <div onClick="{{ m.open }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#66304e;cursor:pointer;flex-shrink:0">{{ m.action }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="background:#fff;border-top:1px solid #ece1d0;padding:8px 12px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;flex-shrink:0">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:8px 0">
+              <div style="width:24px;height:24px;border-radius:8px;background:{{ t.chip }}"></div>
+              <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;color:{{ t.ink }}">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:20px;right:20px;bottom:112px;background:#3a1f2e;color:#fff;border-radius:14px;padding:14px 17px;font-family:Karla,sans-serif;font-weight:600;font-size:15px;animation:popIn .2s ease">{{ toast }}</div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;flex-shrink:0">
+      <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a7a82">Desktop · 1280</div>
+      <div data-screen-label="kitchen desktop" style="width:1280px;height:844px;background:#f6efe1;border-radius:20px;box-shadow:0 18px 50px rgba(58,31,46,.22);display:flex;overflow:hidden;position:relative;flex-shrink:0">
+
+        <div style="width:216px;flex-shrink:0;background:#fff;border-right:1px solid #ece1d0;padding:24px 16px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#66304e;padding:0 10px 18px">Home Manager</div>
+          <sc-for list="{{ rail }}" as="r" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;background:{{ r.bg }}">
+              <div style="width:22px;height:22px;border-radius:7px;background:{{ r.chip }};flex-shrink:0"></div>
+              <div style="flex:1;font-family:Karla,sans-serif;font-weight:700;font-size:16px;color:{{ r.ink }}">{{ r.label }}</div>
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;color:#fff;background:#e8562a;border-radius:10px;padding:2px 7px;display:{{ r.badgeShow }}">{{ r.badge }}</div>
+            </div>
+          </sc-for>
+          <div style="flex:1"></div>
+          <div style="background:#f6efe1;border-radius:14px;padding:15px 14px">
+            <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63;margin-bottom:7px">This week</div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;color:#3a1f2e;line-height:1.5;margin-bottom:9px">{{ mealsFrac }} meals cooked</div>
+            <div style="height:6px;border-radius:4px;background:#ede2cc;overflow:hidden;margin-bottom:12px"><div style="height:6px;background:#6fb84c;width:{{ mealsPct }}"></div></div>
+            <div style="font-family:Karla,sans-serif;font-size:14px;color:#3a1f2e;line-height:1.5;margin-bottom:9px">{{ prepFrac }} prep done</div>
+            <div style="height:6px;border-radius:4px;background:#ede2cc;overflow:hidden"><div style="height:6px;background:#6fb84c;width:{{ prepPct }}"></div></div>
+          </div>
+        </div>
+
+        <div class="hm-scroll" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+          <div style="padding:26px 30px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-shrink:0">
+            <div>
+              <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63;margin-bottom:4px">Tuesday, Aug 25 · dinner at 6:30</div>
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:31px;color:#3a1f2e">Kitchen</div>
+            </div>
+            <div style="display:flex;background:#ecdfc8;border-radius:13px;padding:4px;gap:4px;flex-shrink:0">
+              <div onClick="{{ showCook }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:11px 20px;border-radius:10px;cursor:pointer;background:{{ cookChipBg }};color:{{ cookChipInk }}">Cook tonight</div>
+              <div onClick="{{ showWeek }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:11px 20px;border-radius:10px;cursor:pointer;background:{{ weekChipBg }};color:{{ weekChipInk }}">The week</div>
+            </div>
+          </div>
+
+          <sc-if value="{{ isCook }}" hint-placeholder-val="{{ true }}">
+            <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 30px 26px;display:flex;gap:22px;align-items:flex-start">
+
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:16px">
+                <div style="background:#66304e;border-radius:22px;padding:24px 26px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px">
+                    <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#f0b429">{{ heroKicker }}</div>
+                    <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:rgba(255,255,255,.7)">{{ heroTime }}</div>
+                  </div>
+                  <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:31px;color:#fff;line-height:1.2;margin-bottom:18px">Chicken Tikka with Basmati Rice</div>
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden"><div style="height:6px;border-radius:4px;background:#6fb84c;width:{{ stepPct }}"></div></div>
+                    <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:rgba(255,255,255,.8);flex-shrink:0">{{ heroProgress }}</div>
+                    <div onClick="{{ toggleVoice }}" style="height:46px;border-radius:12px;padding:0 18px;display:flex;align-items:center;gap:9px;cursor:pointer;font-family:Karla,sans-serif;font-weight:700;font-size:15px;flex-shrink:0;background:{{ voiceBg }};color:{{ voiceInk }};animation:{{ voiceAnim }}">
+                      <div style="width:9px;height:9px;border-radius:5px;background:{{ voiceDot }}"></div>{{ voiceLabel }}
+                    </div>
+                  </div>
+                  <div style="font-family:Karla,sans-serif;font-size:15px;line-height:1.5;color:rgba(255,255,255,.75);margin-top:13px;display:{{ voiceHintShow }}">Listening — say "next step", "how much yogurt", "log a substitution", or "mark this done".</div>
+                </div>
+
+                <div style="background:#fff;border-radius:20px;padding:20px 24px 10px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:6px">
+                    <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#3a1f2e">Method</div>
+                    <div style="font-family:Karla,sans-serif;font-size:15px;color:#8a7a82">Click a step to jump · gold steps are make-ahead</div>
+                  </div>
+                  <sc-for list="{{ steps }}" as="s" hint-placeholder-count="6">
+                    <div onClick="{{ s.jump }}" style="display:flex;gap:16px;padding:15px 16px;margin:0 -16px;border-radius:14px;cursor:pointer;background:{{ s.bg }}" style-hover="background:#faf5ea">
+                      <div style="width:34px;height:34px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:Quicksand,sans-serif;font-weight:700;font-size:16px;background:{{ s.numBg }};color:{{ s.numInk }}">{{ s.num }}</div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-family:Karla,sans-serif;font-weight:800;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b98a12;margin-bottom:4px;display:{{ s.tagShow }}">Do ahead</div>
+                        <div style="font-family:Karla,sans-serif;font-size:17px;line-height:1.55;color:{{ s.ink }};font-weight:{{ s.weight }}">{{ s.text }}</div>
+                      </div>
+                      <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;color:#4d8a33;flex-shrink:0;display:{{ s.doneShow }}">done</div>
+                    </div>
+                  </sc-for>
+                  <div style="display:flex;gap:11px;padding:14px 0 16px">
+                    <div onClick="{{ prevStep }}" style="height:50px;border-radius:13px;border:1.5px solid #66304e;color:{{ prevInkD }};padding:0 22px;display:flex;align-items:center;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#f4e7ef">Back</div>
+                    <div onClick="{{ nextStep }}" style="height:50px;border-radius:13px;background:#66304e;color:#f0b429;padding:0 26px;display:flex;align-items:center;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#7a3a5d">{{ nextLabel }}</div>
+                    <div style="flex:1"></div>
+                    <div onClick="{{ reopen }}" style="height:50px;display:flex;align-items:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer;display:{{ reopenShow }}">Reopen the steps</div>
+                  </div>
+                </div>
+
+                <sc-if value="{{ cooked }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#fff;border-radius:20px;padding:20px 24px;border-left:4px solid #6fb84c;display:flex;align-items:center;gap:18px;animation:popIn .22s ease">
+                    <div style="flex:1;font-family:Karla,sans-serif;font-size:17px;color:#3a1f2e;line-height:1.5">Dinner's marked cooked and logged. How'd the tikka go?</div>
+                    <div onClick="{{ rateLiked }}" style="height:48px;border-radius:12px;padding:0 20px;display:flex;align-items:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;cursor:pointer;background:{{ likedBgD }};color:{{ likedInkD }};border:1.5px solid #dfd3c0">Liked it</div>
+                    <div onClick="{{ rateMeh }}" style="height:48px;border-radius:12px;padding:0 20px;display:flex;align-items:center;font-family:Karla,sans-serif;font-weight:700;font-size:15px;cursor:pointer;background:{{ mehBgD }};color:{{ mehInkD }};border:1.5px solid #dfd3c0">Not a hit</div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="width:352px;flex-shrink:0;display:flex;flex-direction:column;gap:16px">
+                <div style="background:#fff;border-radius:20px;padding:19px 21px 8px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+                    <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:20px;color:#3a1f2e">Ingredients</div>
+                    <div style="display:flex;align-items:center;gap:7px">
+                      <div style="font-family:Karla,sans-serif;font-weight:600;font-size:13px;color:#6b5a63">Serves</div>
+                      <div onClick="{{ fewer }}" style="width:40px;height:40px;border-radius:11px;border:1.5px solid #66304e;color:#66304e;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:18px;cursor:pointer" style-hover="background:#f4e7ef">−</div>
+                      <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:18px;color:#66304e;min-width:20px;text-align:center">{{ servings }}</div>
+                      <div onClick="{{ more }}" style="width:40px;height:40px;border-radius:11px;border:1.5px solid #66304e;color:#66304e;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:18px;cursor:pointer" style-hover="background:#f4e7ef">+</div>
+                    </div>
+                  </div>
+                  <sc-for list="{{ ingredients }}" as="g" hint-placeholder-count="6">
+                    <div onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:13px;height:48px;border-bottom:1px solid #f1e8da;cursor:pointer">
+                      <div style="width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:13px;background:{{ g.fill }};border-color:{{ g.line }}">{{ g.tick }}</div>
+                      <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:{{ g.ink }};text-decoration:{{ g.strike }}">{{ g.label }}</div>
+                      <div style="font-family:Karla,sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#b98a12;display:{{ g.flagShow }}">eyeball</div>
+                    </div>
+                  </sc-for>
+                  <div style="font-family:Karla,sans-serif;font-size:14px;font-style:italic;color:#8a7a82;line-height:1.5;padding:11px 0 12px;display:{{ scaleNoteShow }}">{{ scaleNote }}</div>
+                </div>
+
+                <div style="background:#fff;border-radius:20px;padding:19px 21px 8px;border-top:4px solid #f0b429">
+                  <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#b98a12;margin-bottom:3px">Do ahead</div>
+                  <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:20px;color:#3a1f2e;margin-bottom:4px">{{ prepHeading }}</div>
+                  <sc-for list="{{ prep }}" as="p" hint-placeholder-count="3">
+                    <div onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:13px;padding:11px 0;border-bottom:1px solid #f1e8da;cursor:pointer">
+                      <div style="width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:13px;background:{{ p.fill }};border-color:{{ p.line }}">{{ p.tick }}</div>
+                      <div style="flex:1">
+                        <div style="font-family:Karla,sans-serif;font-size:16px;color:{{ p.ink }};text-decoration:{{ p.strike }};line-height:1.35">{{ p.desc }}</div>
+                        <div style="font-family:Karla,sans-serif;font-size:13px;color:#9c8b93;margin-top:2px">{{ p.meta }}</div>
+                      </div>
+                      <div style="font-family:Karla,sans-serif;font-weight:800;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#3f7a29;background:rgba(111,184,76,.18);border-radius:8px;padding:3px 8px;display:{{ p.batchShow }}">batch ×2</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="background:#ecdfc8;border-radius:20px;padding:19px 21px">
+                  <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:19px;color:#3a1f2e;margin-bottom:6px">Running low</div>
+                  <div style="display:flex;align-items:center;gap:12px;height:46px;border-bottom:1px solid #ddcfb6"><div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e">Olive oil</div><div onClick="{{ addOil }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">{{ oilLabel }}</div></div>
+                  <div style="display:flex;align-items:center;gap:12px;height:46px"><div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e">Basmati rice · half bag</div><div onClick="{{ addRice }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer">{{ riceLabel }}</div></div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isWeekView }}" hint-placeholder-val="{{ false }}">
+            <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 30px 26px;display:flex;gap:22px;align-items:flex-start">
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px">
+                <sc-for list="{{ weekMeals }}" as="m" hint-placeholder-count="7">
+                  <div style="background:#fff;border-radius:18px;padding:17px 21px;display:flex;align-items:center;gap:16px;border-left:4px solid {{ m.edge }}">
+                    <div onClick="{{ m.toggle }}" style="width:32px;height:32px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:16px;cursor:pointer;background:{{ m.fill }};border-color:{{ m.line }}">{{ m.tick }}</div>
+                    <div style="width:112px;flex-shrink:0;font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e">{{ m.day }}</div>
+                    <div style="flex:1;min-width:0;font-family:Karla,sans-serif;font-size:17px;color:{{ m.ink }};text-decoration:{{ m.strike }}">{{ m.dish }}</div>
+                    <div style="font-family:Karla,sans-serif;font-size:15px;color:#9c8b93;flex-shrink:0">{{ m.meta }}</div>
+                    <div onClick="{{ m.open }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer;flex-shrink:0;padding-left:6px">{{ m.action }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="width:352px;flex-shrink:0;background:#fff;border-radius:20px;padding:19px 21px 8px;border-top:4px solid #f0b429">
+                <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#b98a12;margin-bottom:3px">Prep schedule</div>
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:20px;color:#3a1f2e;margin-bottom:4px">{{ prepHeading }}</div>
+                <sc-for list="{{ prep }}" as="p" hint-placeholder-count="3">
+                  <div onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:13px;padding:11px 0;border-bottom:1px solid #f1e8da;cursor:pointer">
+                    <div style="width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:13px;background:{{ p.fill }};border-color:{{ p.line }}">{{ p.tick }}</div>
+                    <div style="flex:1">
+                      <div style="font-family:Karla,sans-serif;font-size:16px;color:{{ p.ink }};text-decoration:{{ p.strike }};line-height:1.35">{{ p.desc }}</div>
+                      <div style="font-family:Karla,sans-serif;font-size:13px;color:#9c8b93;margin-top:2px">{{ p.meta }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="padding:0 30px 22px;flex-shrink:0">
+            <div style="background:#fff;border:2px solid #66304e;border-radius:16px;padding:15px 20px;display:flex;align-items:center;gap:14px">
+              <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#6b5a63">Ask or add anything — "I swapped in coconut milk", "double this for Sunday"…</div>
+              <div style="width:38px;height:38px;border-radius:11px;background:#ecdfc8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:17px;color:#66304e">↑</div>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:246px;bottom:28px;background:#3a1f2e;color:#fff;border-radius:14px;padding:15px 20px;font-family:Karla,sans-serif;font-weight:600;font-size:16px;animation:popIn .2s ease">{{ toast }}</div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1800,&quot;height&quot;:1100}}">
+const RECIPE_INGREDIENTS = [
+  { qty: 1.5, unit: "lb", item: "chicken breast, cubed" },
+  { qty: 1, unit: "cup", item: "plain whole-milk yogurt" },
+  { qty: 2, unit: "tbsp", item: "tikka masala paste" },
+  { qty: 1.5, unit: "cups", item: "basmati rice" },
+  { qty: 1, unit: "can", item: "crushed tomatoes" },
+  { text: "Cilantro, to taste", unscaled: true },
+  { text: "Salt and a knob of butter", unscaled: true }
+];
+
+const STEPS = [
+  { text: "Whisk the yogurt, tikka paste and a big pinch of salt, fold in the cubed chicken, and let it sit — overnight is best.", ahead: true },
+  { text: "Rinse the rice until the water runs clear, then start it: 1.5 cups rice to 2.25 cups water, lid on, lowest heat." },
+  { text: "Get a heavy pan properly hot. Sear the chicken in one layer, about 3 minutes a side, then move it to a plate." },
+  { text: "Tip the crushed tomatoes into the same pan and scrape up everything stuck to the bottom. Simmer 8 minutes." },
+  { text: "Return the chicken and any juices. Simmer 6 more minutes, until the sauce clings instead of pooling." },
+  { text: "Fluff the rice with butter, top the tikka with cilantro, and get it on the table." }
+];
+
+const BASE = {
+  view: "cook",
+  step: 1,
+  servings: 4,
+  checked: [],
+  prepDone: [0],
+  cookedDays: [0],
+  cooked: false,
+  rating: "",
+  voice: false,
+  extras: [],
+  toast: ""
+};
+
+const PREP = [
+  { desc: "Marinate the chicken for tonight's tikka", meta: "Tonight · do it now" },
+  { desc: "Batch-cook basmati rice for Wednesday's bowls too", meta: "Tonight · Wed lunch", batch: true },
+  { desc: "Move the salmon from the freezer to the fridge", meta: "Thursday · for Friday" }
+];
+
+const WEEK = [
+  { day: "Mon, Aug 24", dish: "Sheet-pan sausage & peppers", meta: "40 min" },
+  { day: "Tue, Aug 25", dish: "Chicken tikka with basmati rice", meta: "tonight · 6:30", tonight: true },
+  { day: "Wed, Aug 26", dish: "Sheet-pan fajitas", meta: "30 min" },
+  { day: "Thu, Aug 27", dish: "Turkey rice bowls", meta: "15 min" },
+  { day: "Fri, Aug 28", dish: "Salmon & sweet potato", meta: "35 min · thaw first" },
+  { day: "Sat, Aug 29", dish: "Pizza night", meta: "takeout" },
+  { day: "Sun, Aug 30", dish: "Leftovers night", meta: "no recipe saved", noRecipe: true }
+];
+
+function fmtQty(n) {
+  const r = Math.round(n * 100) / 100;
+  if (Math.abs(r - Math.round(r)) < 0.01) return String(Math.round(r));
+  if (Math.abs(r - Math.floor(r) - 0.5) < 0.01) return (Math.floor(r) ? Math.floor(r) + " " : "") + "½";
+  if (Math.abs(r - Math.floor(r) - 0.25) < 0.02) return (Math.floor(r) ? Math.floor(r) + " " : "") + "¼";
+  if (Math.abs(r - Math.floor(r) - 0.75) < 0.02) return (Math.floor(r) ? Math.floor(r) + " " : "") + "¾";
+  return String(r);
+}
+
+class Component extends DCLogic {
+  state = JSON.parse(JSON.stringify(BASE));
+
+  flash(t) {
+    this.setState({ toast: t });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: "" }), 2300);
+  }
+
+  toggleIn(key, idx) {
+    const cur = this.state[key];
+    const next = cur.includes(idx) ? cur.filter((x) => x !== idx) : [...cur, idx];
+    this.setState({ [key]: next });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const total = STEPS.length;
+    const step = STEPS[s.step - 1];
+    const scale = s.servings / 4;
+    const anyScaled = s.servings !== 4;
+
+    const ingredients = RECIPE_INGREDIENTS.map((g, i) => {
+      const on = s.checked.includes(i);
+      return {
+        label: g.text ? g.text : fmtQty(g.qty * scale) + " " + g.unit + " " + g.item,
+        flagShow: g.unscaled && anyScaled ? "block" : "none",
+        fill: on ? "#6fb84c" : "transparent",
+        line: on ? "#6fb84c" : "#c4b09c",
+        tick: on ? "✓" : "",
+        ink: on ? "#a3939b" : "#3a1f2e",
+        strike: on ? "line-through" : "none",
+        toggle: () => this.toggleIn("checked", i)
+      };
+    });
+
+    const steps = STEPS.map((st, i) => {
+      const n = i + 1;
+      const current = n === s.step && !s.cooked;
+      const past = n < s.step || s.cooked;
+      return {
+        num: n,
+        text: st.text,
+        tagShow: st.ahead ? "block" : "none",
+        bg: current ? "#f6efe1" : "transparent",
+        numBg: current ? "#66304e" : past ? "rgba(111,184,76,.2)" : st.ahead ? "rgba(240,180,41,.25)" : "#f1e8da",
+        numInk: current ? "#f0b429" : past ? "#3f7a29" : "#8a7a82",
+        ink: current ? "#3a1f2e" : past ? "#a3939b" : "#5c4c55",
+        weight: current ? "600" : "400",
+        doneShow: past ? "block" : "none",
+        jump: () => this.setState({ step: n, cooked: false })
+      };
+    });
+
+    const prep = PREP.map((p, i) => {
+      const on = s.prepDone.includes(i);
+      return {
+        desc: p.desc,
+        meta: p.meta,
+        batchShow: p.batch ? "block" : "none",
+        fill: on ? "#6fb84c" : "transparent",
+        line: on ? "#6fb84c" : "#c4b09c",
+        tick: on ? "✓" : "",
+        ink: on ? "#a3939b" : "#3a1f2e",
+        strike: on ? "line-through" : "none",
+        toggle: () => this.toggleIn("prepDone", i)
+      };
+    });
+
+    const weekMeals = WEEK.map((m, i) => {
+      const on = s.cookedDays.includes(i) || (i === 1 && s.cooked);
+      return {
+        day: m.day,
+        dish: m.dish,
+        meta: on ? "cooked" : m.meta,
+        edge: on ? "#6fb84c" : m.tonight ? "#66304e" : "#e7dcc4",
+        fill: on ? "#6fb84c" : "transparent",
+        line: on ? "#6fb84c" : "#c4b09c",
+        tick: on ? "✓" : "",
+        ink: on ? "#a3939b" : "#3a1f2e",
+        strike: on ? "line-through" : "none",
+        action: m.noRecipe ? "Write it" : m.tonight ? "Cook" : "Recipe",
+        toggle: () => {
+          if (i === 1) { this.setState({ cooked: !s.cooked }); return; }
+          this.toggleIn("cookedDays", i);
+        },
+        open: () => {
+          if (m.tonight) { this.setState({ view: "cook" }); return; }
+          this.flash(m.noRecipe ? "I'll write that recipe out and save it" : "Opening " + m.dish);
+        }
+      };
+    });
+
+    const cookedCount = WEEK.filter((m, i) => s.cookedDays.includes(i) || (i === 1 && s.cooked)).length;
+    const prepCount = s.prepDone.length;
+    const prepLeft = PREP.length - prepCount;
+
+    return {
+      isCook: s.view === "cook",
+      isWeekView: s.view === "week",
+      cookChipBg: s.view === "cook" ? "#fff" : "transparent",
+      cookChipInk: s.view === "cook" ? "#66304e" : "#7a6a72",
+      weekChipBg: s.view === "week" ? "#fff" : "transparent",
+      weekChipInk: s.view === "week" ? "#66304e" : "#7a6a72",
+      showCook: () => this.setState({ view: "cook" }),
+      showWeek: () => this.setState({ view: "week" }),
+
+      heroKicker: s.cooked ? "Cooked · Tuesday" : s.step === 1 ? "Start here · 35 min" : "Cooking now · 35 min",
+      heroTime: s.cooked ? "logged 7:12" : "on the table 6:30",
+      heroProgress: "Step " + s.step + " of " + total,
+      notCooked: !s.cooked,
+      cooked: s.cooked,
+      stepPct: Math.round((s.cooked ? total : s.step - 1) / total * 100) + "%",
+      stepLabel: "Step " + s.step + " of " + total,
+      stepText: step.text,
+      stepTag: "Do ahead",
+      stepTagShow: step.ahead ? "block" : "none",
+      nextLabel: s.step === total ? "Mark dinner cooked" : "Done — next step",
+      prevInk: s.step === 1 ? "rgba(255,255,255,.3)" : "#fff",
+      prevInkD: s.step === 1 ? "#bfa8b6" : "#66304e",
+      reopenShow: s.cooked ? "flex" : "none",
+      steps,
+      prevStep: () => this.setState({ step: Math.max(1, s.step - 1), cooked: false }),
+      nextStep: () => {
+        if (s.step === total) { this.setState({ cooked: true }); this.flash("Tikka logged as cooked — nice work"); return; }
+        this.setState({ step: s.step + 1 });
+      },
+      reopen: () => this.setState({ cooked: false, step: total }),
+
+      rateLiked: () => { this.setState({ rating: "liked" }); this.flash("Noted — I'll plan tikka again in a few weeks"); },
+      rateMeh: () => { this.setState({ rating: "meh" }); this.flash("Noted — I'll ease off on the tikka"); },
+      likedBg: s.rating === "liked" ? "#6fb84c" : "rgba(255,255,255,.16)",
+      likedInk: s.rating === "liked" ? "#fff" : "#fff",
+      mehBg: s.rating === "meh" ? "#e8562a" : "rgba(255,255,255,.16)",
+      mehInk: "#fff",
+      likedBgD: s.rating === "liked" ? "rgba(111,184,76,.18)" : "#fff",
+      likedInkD: s.rating === "liked" ? "#3f7a29" : "#3a1f2e",
+      mehBgD: s.rating === "meh" ? "rgba(232,86,42,.14)" : "#fff",
+      mehInkD: s.rating === "meh" ? "#c0431e" : "#3a1f2e",
+
+      voice: s.voice,
+      voiceLabel: s.voice ? "Listening — tap to stop" : "Hands-free",
+      voiceBg: s.voice ? "#6fb84c" : "rgba(255,255,255,.16)",
+      voiceInk: "#fff",
+      voiceDot: s.voice ? "#fff" : "#f0b429",
+      voiceAnim: s.voice ? "pulseRing 1.6s ease-out infinite" : "none",
+      voiceHintShow: s.voice ? "block" : "none",
+      toggleVoice: () => {
+        this.setState({ voice: !s.voice });
+        if (!s.voice) this.flash("Listening — hands stay in the pan");
+      },
+
+      servings: s.servings,
+      fewer: () => this.setState({ servings: Math.max(1, s.servings - 1) }),
+      more: () => this.setState({ servings: s.servings + 1 }),
+      ingredients,
+      scaleNoteShow: anyScaled ? "block" : "none",
+      scaleNote: "Scaled from 4 to " + s.servings + ". Cilantro, salt and butter don't scale cleanly — eyeball those.",
+
+      prep,
+      prepHeading: prepLeft === 0 ? "All prep is done" : prepLeft + " to do before Friday",
+      prepFrac: prepCount + " of " + PREP.length,
+      prepPct: Math.round(prepCount / PREP.length * 100) + "%",
+
+      weekMeals,
+      mealsFrac: cookedCount + " of " + WEEK.length,
+      mealsPct: Math.round(cookedCount / WEEK.length * 100) + "%",
+      weekProgress: cookedCount + "/" + WEEK.length + " cooked",
+
+      tabs: [
+        { label: "Today", key: "today" },
+        { label: "Week", key: "week" },
+        { label: "Grocery", key: "grocery" },
+        { label: "Kitchen", key: "kitchen" }
+      ].map((t) => ({
+        label: t.label,
+        chip: t.key === "kitchen" ? "#66304e" : "#d8c8b4",
+        ink: t.key === "kitchen" ? "#66304e" : "#6b5a63"
+      })),
+
+      rail: [
+        { label: "Today", badge: 1 },
+        { label: "Week", badge: 0 },
+        { label: "Grocery", badge: 0 },
+        { label: "Kitchen", badge: 0, active: true }
+      ].map((r) => ({
+        label: r.label,
+        bg: r.active ? "#f4e7ef" : "transparent",
+        chip: r.active ? "#66304e" : "#d8c8b4",
+        ink: r.active ? "#66304e" : "#5c4c55",
+        badge: r.badge,
+        badgeShow: r.badge ? "block" : "none"
+      })),
+
+      oilLabel: s.extras.includes("oil") ? "Added ✓" : "Add to list",
+      riceLabel: s.extras.includes("rice") ? "Added ✓" : "Add to list",
+      addOil: () => { if (!s.extras.includes("oil")) { this.setState({ extras: [...s.extras, "oil"] }); this.flash("Olive oil added to Costco"); } },
+      addRice: () => { if (!s.extras.includes("rice")) { this.setState({ extras: [...s.extras, "rice"] }); this.flash("Basmati rice added to Costco"); } },
+
+      toast: s.toast,
+      reset: () => this.setState(JSON.parse(JSON.stringify(BASE)))
+    };
+  }
+}
+</script>
+</body>
+</html>

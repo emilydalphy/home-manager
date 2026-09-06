@@ -9,6 +9,7 @@ from . import attendance as _attendance
 from . import attention as _attention
 from . import inventory as _inventory
 from . import leftovers as _leftovers
+from . import plates as _plates
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
@@ -21,6 +22,25 @@ from . import weekly_plan as _weekly_plan
 _NOT_COOKABLE_SLOT_STATES = frozenset({"planned_empty", "open"})
 _NOT_COOKABLE_SLOT_STATES_ORDERED = tuple(sorted(_NOT_COOKABLE_SLOT_STATES))
 _NOT_COOKABLE_PLACEHOLDERS = ",".join("?" * len(_NOT_COOKABLE_SLOT_STATES_ORDERED))
+
+
+def _side_steps(sides: list[dict] | None) -> list[str]:
+    """
+    A side's own steps, worded so they read as what they are inside the
+    main recipe's numbered list: something happening ALONGSIDE the dish,
+    not step nine of it.
+
+    The side is named on its first step only. Naming it on every step
+    reads as a stutter in a list of four, and leaving it off entirely
+    makes two sides indistinguishable from each other.
+    """
+    steps = []
+    for side in sides or []:
+        name = (side.get("name") or "").strip()
+        own = [str(s).strip() for s in (side.get("instructions") or []) if str(s).strip()]
+        for i, step in enumerate(own):
+            steps.append(f"Alongside — {name}: {step}" if i == 0 and name else f"Alongside: {step}")
+    return steps
 
 
 def _singularize(word: str) -> str:
@@ -369,6 +389,9 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
         "meals": [{"entry_id": m["entry_id"], "meal": m["meal"], "cooked_status": m["cooked_status"]} for m in meal_rows],
+        # Counts a reheat night as its own item, same choice and same
+        # reasoning as get_cooker_view's meals_done/meals_total — see the
+        # comment there.
         "meals_done": sum(1 for m in meal_rows if m["cooked_status"] == "done"),
         "meals_total": len(meal_rows),
         "prep_tasks": prep_tasks,
@@ -523,7 +546,28 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
-        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0}
+        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False}
+
+    # A week where every dinner was deliberately marked planned_empty
+    # (see _NOT_COOKABLE_SLOT_STATES above) — "core loop handoffs, slice 2"
+    # item C: the household said it would be away the whole period, so an
+    # empty Cook screen should say that rather than reading as though
+    # nothing was ever planned. Checked against the raw plan, before the
+    # filter below removes those slots from `meals`. Requires a dinner row
+    # for every day of the period (plan["day_count"]) — a plan that's only
+    # PARTLY marked away (a few nights out, the rest just never planned)
+    # is not "the household is away," it's an ordinary under-planned week.
+    # Component-based plans have no per-day dinner slot to test, so this
+    # is always False there.
+    if plan["planning_mode"] == "component_based":
+        all_away = False
+    else:
+        dinner_rows = [m for m in plan["meals"] if m.get("slot") == "dinner"]
+        all_away = (
+            bool(dinner_rows)
+            and len(dinner_rows) == plan["day_count"]
+            and all(m.get("slot_state") == "planned_empty" for m in dinner_rows)
+        )
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     meals = []
@@ -531,6 +575,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         if m.get("slot_state") in _NOT_COOKABLE_SLOT_STATES:
             continue
         recipe = recipes_by_name.get((m["meal"] or "").lower())
+        sides = m.get("sides") or []
         meals.append({
             "entry_id": m["entry_id"],
             "date": m["date"],
@@ -540,8 +585,18 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "slot_state": m.get("slot_state"),
             "cooked_status": m["cooked_status"],
             "reasoning": m.get("reasoning"),
-            "ingredients": recipe["ingredients"] if recipe else [],
-            "instructions": recipe["instructions"] if recipe else [],
+            # The dish, then whatever the app attached beside it to make a
+            # full plate (see plates.py). Folded into the SAME two lists
+            # rather than given their own section: someone cooking wants one
+            # shopping-shaped ingredient list and one ordered set of steps,
+            # not two recipes to interleave in their head. The side's steps
+            # go on the END, which also keeps advance_prep_step_indices —
+            # 1-based positions into `instructions` — pointing where they
+            # always did.
+            "ingredients": (recipe["ingredients"] if recipe else []) + _plates.side_ingredients(sides),
+            "instructions": (recipe["instructions"] if recipe else []) + _side_steps(sides),
+            "sides": sides,
+            "sides_label": _plates.sides_label(sides),
             "default_servings": recipe["default_servings"] if recipe else None,
             "prep_time_minutes": recipe["prep_time_minutes"] if recipe else None,
             "cook_time_minutes": recipe["cook_time_minutes"] if recipe else None,
@@ -636,9 +691,19 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         "planning_mode": plan["planning_mode"],
         "status": plan["status"],
         "meals": meals,
+        # "N of M cooked" (see the Cook screen's title row) counts a reheat
+        # night as its own item on both sides of the fraction, exactly like
+        # an ordinary cook — it keeps its own entry_id and cooked_status,
+        # and Emily's own name for checking it off is "Mark eaten"
+        # (REHEAT_ACTION_LABEL in shell.js), not "skip" or "already
+        # counted". The alternative — excluding reheats from the total —
+        # would make a chain's source night read as though it alone were
+        # "the whole week", which is less honest than counting each night
+        # the household actually has to deal with, cooked or reheated.
         "meals_done": sum(1 for m in meals if m["cooked_status"] == "done"),
         "meals_total": len(meals),
         "prep_tasks": prep_tasks,
         "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
         "prep_total": len(prep_tasks),
+        "all_away": all_away,
     }

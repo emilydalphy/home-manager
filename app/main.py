@@ -1148,6 +1148,17 @@ def week_menu(weekly_plan_id: int | None = None):
     """
     try:
         menu = tools.get_week_menu(weekly_plan_id)
+        # "I added a small side" — said once, and this is the moment it
+        # actually reaches a person, so this is where it gets marked as
+        # said. Not inside get_week_menu, which the assistant also calls
+        # mid-conversation: stamping it there would spend the household's
+        # one telling on a read nobody saw. Failing to stamp must not fail
+        # the screen — the worst case is the sentence shown twice.
+        if menu.get("plates_note"):
+            try:
+                tools.mark_plates_intro_shown()
+            except Exception:
+                logger.exception("Marking the plate-completion note as shown failed")
     except Exception as e:
         logger.exception("Week-menu lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1162,6 +1173,10 @@ def week_menu(weekly_plan_id: int | None = None):
 
 class WeekApproveRequest(BaseModel):
     approved_by: str = ""
+    # The household's explicit "I've seen the clash and I still want this"
+    # tap — see tools.approve_weekly_plan. False on every request until the
+    # confirm button (shell.js's showApproveConfirm) sends it back true.
+    confirm_hard_conflicts: bool = False
 
 
 class WeekIntakeRequest(BaseModel):
@@ -1718,12 +1733,28 @@ def approve_week(week_start: str, req: WeekApproveRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
-        result = tools.approve_weekly_plan(plan_id, approved_by=req.approved_by)
+        result = tools.approve_weekly_plan(
+            plan_id, approved_by=req.approved_by,
+            confirm_hard_conflicts=req.confirm_hard_conflicts,
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Week approval failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if result["status"] == "needs_confirmation":
+        # A hard allergen/must-avoid clash and no confirm tap yet — nothing
+        # was approved, nothing was written. Just the note and the clashes
+        # themselves, so shell.js can ask the one question that matters
+        # ("approve anyway, or fix it first?") instead of celebrating a week
+        # that isn't actually settled.
+        return {
+            "week_start": week_start,
+            "weekly_plan_id": result["weekly_plan_id"],
+            "status": "needs_confirmation",
+            "conflicts": result["conflicts"],
+            "conflicts_note": result["conflicts_note"],
+        }
     return {
         "week_start": week_start,
         "weekly_plan_id": result["weekly_plan_id"],
@@ -1733,9 +1764,10 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         "was_already_approved": result["was_already_approved"],
         "groceries_added": result["groceries_added_count"],
         "already_have_skipped": result["already_have_skipped_count"],
-        # Approving never blocks on these (see approve_weekly_plan), but the
-        # clash is passed on rather than dropped — the household deserves to
-        # know afterwards even if they approved past the draft's warning.
+        # A soft clash (a standing dislike) never blocks approval (see
+        # approve_weekly_plan), but is passed on rather than dropped — the
+        # household deserves to know afterwards even if they approved past
+        # the draft's warning.
         "conflicts": result["conflicts"],
         "conflicts_note": result["conflicts_note"],
     }
@@ -2016,6 +2048,11 @@ def get_facts_view(category: str | None = None):
             preferences = {
                 "eating_style": memory.get("eating_style") or "",
                 "cuisines": memory.get("cuisine_preferences") or [],
+                # "Every meal is a full plate" (Emily, 2026-09-05). Shown
+                # here because the household is told once that the app does
+                # this, and a thing you're told once has to be findable
+                # afterwards — see app/tools/plates.py.
+                "complete_plates": bool(memory.get("complete_plates", True)),
             }
         if category == "rhythm":
             # leftovers_stance (Loop Board "Onboarding asks about leftovers
@@ -2763,6 +2800,13 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             # turn still overwrites this one below, same as any other
             # "last call for this area wins" case.
             if name == "approve_weekly_plan":
+                # A hard allergen clash with no confirm tap yet writes
+                # nothing at all (see tools.approve_weekly_plan) — no card
+                # for either screen, because neither actually changed. The
+                # assistant's own reply is what has to carry the "there's a
+                # clash, want me to approve anyway?" question in this case.
+                if isinstance(result, dict) and result.get("status") != "approved":
+                    continue
                 by_category[category] = ChatAction(
                     kicker=_CATEGORY_KICKERS[category],
                     change="Week approved — your list is ready",

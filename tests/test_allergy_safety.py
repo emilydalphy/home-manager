@@ -23,7 +23,8 @@ import datetime
 
 import pytest
 
-from app import agent, tools
+from app import agent, db, tools
+from app.db import get_conn
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -210,6 +211,69 @@ class TestTheCheckFindsIt:
         assert result["note"] is None, "a preference is not a warning"
 
 
+class TestASideCanClashToo:
+    """
+    check_plan_conflicts used to read only the meal name and, for a saved
+    recipe, its own ingredients_json. A side the app attached to complete
+    the plate (see plates.py) lives on the SAME entry's sides_json, not on
+    the recipe — so an otherwise-clean dinner with an allergen hiding in
+    its side sailed through both the draft warning and the approve-time
+    confirm gate untouched.
+    """
+
+    def _plan_with_side(self, meal: str, side_item: str, side_name: str = "Pineapple salsa") -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        entry = tools.get_weekly_plan(plan["weekly_plan_id"])["meals"][0]
+        tools.plates.attach_sides(entry["entry_id"], [{
+            "name": side_name,
+            "covers": [],
+            "ingredients": [{"item": side_item, "qty": "1 cup", "category": "produce"}],
+            "instructions": [],
+            "minutes": 5,
+        }], groups_covered=[])
+        return plan["weekly_plan_id"]
+
+    def test_a_clean_dinner_with_an_allergen_in_its_side_is_caught(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        # Chili's own name and ingredients (beans, salt to taste) are clean
+        # — only the side attached to it carries the allergen.
+        plan_id = self._plan_with_side("Chili", "pineapple")
+
+        found = tools.check_plan_conflicts(plan_id)["conflicts"]
+
+        assert [c["meal"] for c in found] == ["Chili"]
+        assert found[0]["matched"] == "pineapple"
+        assert found[0]["severity"] == "hard"
+
+    def test_a_clean_side_raises_no_conflict(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        plan_id = self._plan_with_side("Chili", "romaine lettuce", side_name="Green salad")
+
+        assert tools.check_plan_conflicts(plan_id)["conflicts"] == []
+
+    def test_the_confirm_tap_is_required_for_a_side_clash_too(self, kitchen):
+        # The approve-time gate (approve_weekly_plan's confirm_hard_conflicts)
+        # runs check_plan_conflicts internally, so this is really the same
+        # fix seen from the other caller — confirming that fix reaches both.
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        plan_id = self._plan_with_side("Chili", "pineapple")
+
+        blocked = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+        assert blocked["status"] == "needs_confirmation"
+        assert blocked["conflicts_note"] and "Chili" in blocked["conflicts_note"]
+        assert tools.get_weekly_plan(plan_id)["status"] == "draft"
+
+        confirmed = tools.approve_weekly_plan(
+            plan_id, approved_by="Emily", confirm_hard_conflicts=True
+        )
+        assert confirmed["status"] == "approved"
+
+
 # ---------- 3. it runs on its own ----------
 
 def test_a_generated_draft_carries_its_conflict_without_anyone_asking(kitchen, monkeypatch):
@@ -242,11 +306,16 @@ def test_an_approved_week_is_not_nagged_about_a_decision_already_made(kitchen, m
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    # A hard clash needs the household's confirm tap (see the "confirm tap
+    # for a hard clash" section below) — this test is about the note's
+    # wording once they've given it, not about the gate itself.
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     # Approval says it out loud once...
     assert {c["meal"] for c in result["conflicts"]} == {"Pineapple Chicken"}
-    assert result["status"] == "approved", "a clash warns, it never blocks"
+    assert result["status"] == "approved", "a clash warns, it never blocks once confirmed"
     # ...and the settled week stops carrying the warning.
     assert tools.get_week_menu(plan["weekly_plan_id"])["conflicts"] == []
 
@@ -261,6 +330,142 @@ def test_a_clean_week_says_nothing_at_all(kitchen, monkeypatch):
     menu = tools.get_week_menu(plan["weekly_plan_id"])
     assert menu["conflicts"] == []
     assert menu["conflicts_note"] is None
+
+
+# ---------- 3b. a HARD clash needs a confirm tap (decision 1b, 2026-09-05) ----------
+#
+# A soft dislike stays warn-only, same as always. A hard clash — an
+# allergy, a member restriction, a hard fact — used to only warn too; now
+# approve_weekly_plan itself refuses until the household explicitly says
+# "approve anyway" (confirm_hard_conflicts=True). See
+# app/tools/weekly_plan.py's approve_weekly_plan and app/main.py's
+# /api/week/{week_start}/approve.
+
+def test_a_hard_clash_blocks_approval_until_confirmed(kitchen, monkeypatch):
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "needs_confirmation"
+    assert result["weekly_plan_id"] == plan["weekly_plan_id"]
+    note = result["conflicts_note"]
+    assert note and "Pineapple Chicken" in note, "name the meal, not just 'a clash'"
+    assert "before you approve" in note
+
+    # Nothing was written: the plan is still a draft, and nothing reached
+    # the grocery list.
+    assert tools.get_weekly_plan(plan["weekly_plan_id"])["status"] == "draft"
+    assert tools.list_grocery_list("needed") == []
+
+
+def test_confirming_the_hard_clash_approves_it(kitchen, monkeypatch):
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
+
+    assert result["status"] == "approved"
+    assert tools.get_weekly_plan(plan["weekly_plan_id"])["status"] == "approved"
+
+
+def test_a_soft_dislike_never_needs_a_confirm_tap(kitchen, monkeypatch):
+    week = _week_start()
+    tools.edit_preference("dislikes", ["pineapple"])
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "approved", "a dislike is a preference, never a safety block"
+
+
+def test_a_clean_week_needs_no_confirm_tap(kitchen, monkeypatch):
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Chili"))
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "approved"
+
+
+def test_the_confirm_flag_only_matters_on_the_way_in_not_on_a_re_approval(kitchen, monkeypatch):
+    """
+    Once a hard clash has actually been confirmed and approved, tapping
+    Approve again (the existing re-approval idempotency guard) must not
+    start demanding a fresh confirm tap — the decision was already made.
+    """
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+    tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"])
+
+    assert result["status"] == "approved"
+    assert result["was_already_approved"] is True
+
+
+def test_the_route_reports_needs_confirmation_without_the_success_fields(kitchen, monkeypatch):
+    """
+    main.py's approve route (app.main.approve_week) has to pass
+    needs_confirmation straight through rather than reshaping it into the
+    success payload — there's no approved_by/approved_at/groceries_added
+    to report, because nothing happened yet.
+    """
+    from app import main as app_main
+
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    response = app_main.approve_week(week, app_main.WeekApproveRequest(approved_by="Emily"))
+
+    assert response["status"] == "needs_confirmation"
+    assert "approved_by" not in response
+    assert "groceries_added" not in response
+    assert response["conflicts_note"] and "Pineapple Chicken" in response["conflicts_note"]
+
+
+def test_the_chat_tool_schema_never_lets_the_assistant_confirm_on_its_own():
+    """
+    confirm_hard_conflicts has to read as a household decision, not a
+    detail the assistant can default to true — see the schema in
+    app/agent.py's TOOLS list and the "Household coordination & trust"
+    system-prompt bullet right after check_plan_conflicts.
+    """
+    schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "approve_weekly_plan")
+    props = schema["input_schema"]["properties"]
+    assert "confirm_hard_conflicts" in props
+    assert props["confirm_hard_conflicts"]["type"] == "boolean"
+    flag_description = props["confirm_hard_conflicts"]["description"].lower()
+    assert "ask" in flag_description
+    assert "own initiative" in flag_description
+
+    assert "confirm_hard_conflicts" in agent.SYSTEM_PROMPT
+    assert "own initiative" in agent.SYSTEM_PROMPT
 
 
 # ---------- 4. the warning has to be about food ----------
@@ -521,7 +726,9 @@ def test_approval_hands_back_a_sentence_worded_for_a_decision_already_made(kitch
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     note = result["conflicts_note"]
     assert note and "Pineapple Chicken" in note
@@ -788,9 +995,11 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     The allergen was in the INGREDIENTS of an innocently-named dish, so the
     only place it ever became visible was the shopping list.
 
-    Approval still goes through — warn, never block, is the standing
-    default and promoting it to a block is Emily's call, still pending —
-    but the sentence handed back has to name the meal that put it there.
+    A hard clash now needs the household's confirm tap before approval
+    goes through at all (decision 1b, 2026-09-05 — see the "confirm tap
+    for a hard clash" section below for that gate itself); this test is
+    about what lands on the list and what the sentence says once they've
+    given it.
     """
     week = _week_start()
     tools.add_recipe(
@@ -804,15 +1013,221 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     # The list really does carry the allergen — this is the bug's evidence,
     # not an aside.
     bought = [i["item"].lower() for i in tools.list_grocery_list("needed")]
     assert any("pineapple" in item for item in bought)
 
-    assert result["status"] == "approved", "a clash warns, it never blocks"
+    assert result["status"] == "approved", "a confirmed hard clash still goes through"
     note = result["conflicts_note"]
     assert note, "the week that bought the allergen cannot approve in silence"
     assert "Fruit Salad" in note, "name the meal that put it on the list"
     assert "pineapple" in note.lower()
+
+
+# ---------- 13. gluten/wheat aliases false-flagging gluten-free dishes ----------
+
+class TestGlutenAliasesDoNotFlagGlutenFreeDishes:
+    """
+    _ALLERGEN_ALIASES expands "gluten"/"wheat" into flour, pasta and
+    noodles so the check reaches "Wheat Pasta" — but that same expansion
+    used to flag "Gluten-Free Pasta" made with rice flour, because the
+    words "pasta" and "flour" don't know they're sitting in a dish or
+    ingredient line that says outright it's safe.
+    """
+
+    def _plan_with(self, meal: str) -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        return plan["weekly_plan_id"]
+
+    def test_gluten_free_pasta_with_rice_flour_does_not_flag(self, kitchen):
+        tools.add_recipe(
+            "Gluten-Free Pasta",
+            ingredients=[{"item": "rice flour", "qty": "200g"},
+                         {"item": "eggs", "qty": "2"}],
+        )
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Gluten-Free Pasta"))["conflicts"] == []
+
+    def test_wheat_pasta_still_flags(self, kitchen):
+        tools.add_recipe("Wheat Pasta", ingredients=[{"item": "durum wheat", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["wheat allergy"])
+
+        found = tools.check_plan_conflicts(self._plan_with("Wheat Pasta"))["conflicts"]
+
+        assert [c["meal"] for c in found] == ["Wheat Pasta"]
+
+    def test_soba_made_with_buckwheat_noodles_does_not_flag(self, kitchen):
+        tools.add_recipe("Soba", ingredients=[{"item": "buckwheat noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Soba"))["conflicts"] == []
+
+    def test_udon_noodles_still_flag(self, kitchen):
+        tools.add_recipe("Udon", ingredients=[{"item": "udon noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["wheat allergy"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Udon"))["conflicts"]
+
+    def test_chickpea_pasta_does_not_flag_gluten(self, kitchen):
+        tools.add_recipe("Chickpea Pasta Salad", ingredients=[{"item": "chickpea pasta", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Chickpea Pasta Salad"))["conflicts"] == []
+
+    def test_almond_flour_cake_is_not_gluten_but_is_still_a_nut(self, kitchen):
+        tools.add_recipe("Almond Flour Cake", ingredients=[{"item": "almond flour", "qty": "300g"}])
+
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+        assert tools.check_plan_conflicts(self._plan_with("Almond Flour Cake"))["conflicts"] == [], \
+            "almond flour is not gluten"
+
+        tools.set_member_dietary_restrictions("Emily", ["nut allergy"])
+        found = tools.check_plan_conflicts(self._plan_with("Almond Flour Cake"))["conflicts"]
+        assert [c["meal"] for c in found] == ["Almond Flour Cake"], \
+            "the same dish is still a clash for a nut allergy"
+
+    def test_gf_abbreviation_in_the_name_also_negates(self, kitchen):
+        tools.add_recipe("GF Noodle Bowl", ingredients=[{"item": "rice noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("GF Noodle Bowl"))["conflicts"] == []
+
+
+# ---------- 14. backfilling allergy notes already sitting in facts ----------
+
+class TestBackfillAllergyNotesFromFacts:
+    """
+    Loop Board "Allergy: backfill existing allergy NOTES into member
+    restrictions" (Emily's decision 3a): a household that saved an allergy
+    as a freeform What-we-know note BEFORE the allergy enforcement fix (see
+    this file's module docstring) has that allergy sitting only in `facts`
+    — nothing on the member record, which is what a member's own profile
+    reads. db._backfill_allergy_notes_from_facts fills that specific gap,
+    reusing coordination's own fact parsing (`_fact_keywords`,
+    `_named_member`) rather than re-deciding what counts as an avoidance or
+    who it's about.
+    """
+
+    def _run_backfill(self):
+        """
+        Migration functions take a connection and leave commit/close to
+        the caller (see e.g. the existing
+        test_migration_merges_pre_existing_duplicate_rows_keeping_the_newest
+        in test_store_memory.py) — this wraps that so each test below
+        doesn't have to repeat it.
+        """
+        conn = get_conn()
+        db._backfill_allergy_notes_from_facts(conn)
+        conn.commit()
+        conn.close()
+
+    def test_a_hard_allergy_phrasing_lands_on_the_member(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert "allergy: pineapple" in member["dietary_restrictions"]
+
+    def test_the_cant_have_phrasing_is_recognised_too(self, kitchen):
+        tools.add_member("Moksha")
+        tools.add_fact("people", "Moksha can't have shellfish", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Moksha")
+        assert "allergy: shellfish" in member["dietary_restrictions"]
+
+    def test_a_household_wide_fact_is_left_alone(self, kitchen):
+        """
+        No member is named, so nothing is backfilled — the planner and
+        check_plan_conflicts already read `facts` directly for exactly this
+        case, so the member record has nothing missing to fill in.
+        """
+        tools.add_fact("people", "no pork in this house", hard=True)
+
+        self._run_backfill()
+
+        assert tools.list_members()[0]["dietary_restrictions"] == []
+
+    def test_a_requirement_fact_is_skipped(self, kitchen):
+        tools.add_fact("people", "Emily needs high-protein dinners", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert member["dietary_restrictions"] == []
+
+    def test_a_fact_naming_a_non_member_is_skipped(self, kitchen):
+        tools.add_fact("people", "Jordan is allergic to peanuts", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert member["dietary_restrictions"] == []
+
+    def test_running_twice_changes_nothing(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+        first = tools.list_members()[0]["dietary_restrictions"]
+        self._run_backfill()
+        second = tools.list_members()[0]["dietary_restrictions"]
+
+        assert first == second == ["allergy: pineapple"]
+
+    def test_an_existing_allergy_note_is_not_duplicated(self, kitchen):
+        tools.set_member_dietary_restrictions("Emily", ["allergy: pineapple"])
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert member["dietary_restrictions"].count("allergy: pineapple") == 1
+
+    def test_a_soft_fact_is_backfilled_too(self, kitchen):
+        """
+        `hard` gates the live safety check (check_plan_conflicts), not this
+        backfill: the What-we-know screen never sets `hard` itself (see
+        this file's docstring), so a household with a real, unenforced
+        allergy note almost never has it marked hard. Restricting the
+        backfill to hard=True facts would miss almost everything it exists
+        to catch.
+        """
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=False)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert "allergy: pineapple" in member["dietary_restrictions"]
+
+    def test_several_facts_about_the_same_person_all_land(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        tools.add_fact("people", "Emily can't have shellfish", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert "allergy: pineapple" in member["dietary_restrictions"]
+        assert "allergy: shellfish" in member["dietary_restrictions"]
+
+    def test_facts_are_never_edited_or_deleted(self, kitchen):
+        from app.tools import memory as _memory
+
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+
+        facts = _memory.get_facts()
+        assert any(f["text"] == "Emily is allergic to pineapple" for f in facts)

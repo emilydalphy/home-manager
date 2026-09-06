@@ -755,6 +755,11 @@ Household coordination & trust:
 - Right before approve_weekly_plan, call check_plan_conflicts and mention any flagged clashes \
 with a member's dietary restriction — this is a warning to weigh, not a block; still approve if \
 the user wants to proceed anyway (it may be a false positive, or intentional).
+- A HARD clash (severity 'hard': an allergy, a member restriction, a hard fact) is the one \
+exception to "not a block" above — approve_weekly_plan itself will refuse and return \
+needs_confirmation until confirm_hard_conflicts is true, so ask the household directly ("there's \
+a real clash with {meal} — approve anyway, or want to fix it first?") and only pass that flag \
+once they've said yes; never set it on your own initiative.
 - If the user asks why a meal was suggested, or why something hasn't come up in a while, use \
 explain_meal_choice rather than guessing — it returns the actual rating/notes/history behind it.
 - Near the start of a new conversation (not every message), call get_attention_items once — it \
@@ -1420,10 +1425,16 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "approve_weekly_plan",
-        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities.",
+        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities. If the plan has a HARD allergen/must-avoid clash (check_plan_conflicts severity 'hard') and confirm_hard_conflicts isn't true, this does NOT approve — it writes nothing — and instead returns status 'needs_confirmation' with the conflicts and a sentence describing them; a status of 'approved' is the only outcome that actually put anything on the list.",
         "input_schema": {
             "type": "object",
-            "properties": {"weekly_plan_id": {"type": "integer"}},
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "confirm_hard_conflicts": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The household's explicit yes to approving PAST a hard allergen/must-avoid clash — never set this true on your own initiative. If a first call comes back needs_confirmation, ASK the household directly whether they want to approve anyway (naming the clash), and only call again with this set to true if they say yes.",
+                },
+            },
             "required": ["weekly_plan_id"],
         },
     },
@@ -1648,12 +1659,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 1-7, each independent), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores"]},
-                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences."},
+                "field": {"type": "string", "enum": ["notes", "cooking_time_preference", "eating_style", "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "cuisine_preferences", "protein_preferences", "dislikes", "usual_stores", "complete_plates"]},
+                "value": {"description": "String for notes/cooking_time_preference/eating_style, integer for dinners_per_week/breakfasts_per_week/lunches_per_week, array for cuisine_preferences/dislikes/usual_stores, object for protein_preferences, boolean for complete_plates."},
             },
             "required": ["field", "value"],
         },
@@ -2140,7 +2151,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "type": "array", "items": {"type": "string"},
                             "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
                         },
-                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
+                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Set it to this household's own table (attendance.default_serves), not a generic 4 — the grocery list scales per-portion amounts by eaters/default_servings, so a mismatch is what turns a clean recipe into odd fractions on the list. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
@@ -2204,6 +2215,10 @@ genuinely cannot choose a meal without guessing, send that slot with slot_state=
 real reason — never send nothing. (Dinners on nights the household is out are the one \
 exception, and they are handled outside this call: `skip_dinner_dates` below lists them, and \
 you must not send an entry for those.) Guidelines:
+- A week should read as composed — a shape across the days that plays off itself (a lighter \
+night after a heavier one, proteins that vary rather than repeat, a batch cooked once and eaten \
+again on purpose) — not seven independent daily decisions stapled together. Everything below is \
+in service of that shape.
 - Dinner gets full treatment same as always: a real, specific recipe with complete ingredients \
 and instructions. Breakfast, lunch, and snack should be genuinely real meals too, but \
 lower-effort by nature (a bowl of oatmeal, a sandwich, yogurt with fruit, hummus and veggies) — \
@@ -2251,6 +2266,15 @@ main_protein or cuisine too many days in a row for dinner — check recent_histo
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
 rated 'liked' again is more forgivable than reaching for one rated 'disliked'.
+- Variety is about INGREDIENTS, not only dish names, proteins and cuisines. The same FRESH \
+ingredient — a vegetable or fruit, a fresh herb, a fresh dairy item — should appear in AT MOST \
+3 of the week's dinners. Two narrow exceptions: a genuine staple that quietly goes into \
+everything (onion, garlic, cooking oil, salt, pepper) doesn't count, and neither does something \
+the household actually asked for this week or has a standing preference for — those can show up \
+as often as they've earned. Everything else, spread out. This is not a style note: five of \
+seven dinners reaching for bell peppers is what put "17 bell peppers" on one real household's \
+shopping list, and no family of three is buying seventeen peppers. Before you finish, read \
+back over the week's dinners and count the produce.
 - household_memory's protein_preferences give a 1-5 rating of how much the household likes \
 each protein (5 = favorite, 1 = avoid) — treat this as a real constraint on the week's mix, \
 not just a tiebreaker: a protein rated 1 shouldn't appear at all, 2 should appear at most \
@@ -2345,17 +2369,27 @@ unknown — use your normal judgement.
 dinners in prep+cook minutes. A `rush` tag overrides it downwards, never upwards.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
 `intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
-`intake.freeform` is their own words: honour it exactly, including anything they say they've \
-already decided on — plan that meal where they said, don't plan over it, and still include its \
-ingredients so they aren't short on the night.
+`intake.freeform` is their own words, and a stated request in it is the week's ANCHOR, not an \
+isolated instruction to satisfy in a vacuum: put it exactly where they said — never plan over \
+it, and still include its ingredients so they aren't short on the night — and then build the \
+days around it in conversation with it, the same composed-week thinking as everywhere else in \
+this list: a lighter night after it if it was rich, a different protein on the days either side \
+so the week doesn't repeat itself, and any ingredient it needed in bulk (the rest of a pack of \
+buns, a bag of something) used up sensibly elsewhere in the week rather than left to go to \
+waste. Name that connection in the surrounding nights' reasoning ("lighter after burger night," \
+"using up the rest of the buns"). Delivering the literal request and nothing else — the rest of \
+the week planned as if it hadn't been said — is the failure mode this guards against, not the \
+goal. The one thing that overrides the placement itself is a night tag that makes that exact \
+night impossible (see the tag-collision rule directly below) — never a scheduling preference of \
+your own.
 - When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
-night" and also tagged Friday as a night nobody is home — the TAG wins, and you must say so \
-rather than quietly working around it. Move the meal to the nearest sensible night and let that \
-slot's reasoning name what happened ("moved from Friday — you're out"), or leave it unplanned \
-and say why. What you must never do is put it on a different day and describe it as though it \
-were on the day they asked for: a slot whose reasoning says "Friday" while sitting on Sunday is \
-a plan that lies about itself, and the household loses the ability to trust any of the other \
-reasons.
+night" and also tagged Friday as a night nobody is home — this is the ONE exception to putting \
+an anchored request exactly where they said it: the TAG wins, and you must say so rather than \
+quietly working around it. Move the meal to the nearest sensible night and let that slot's \
+reasoning name what happened ("moved from Friday — you're out"), or leave it unplanned and say \
+why. What you must never do is put it on a different day and describe it as though it were on \
+the day they asked for: a slot whose reasoning says "Friday" while sitting on Sunday is a plan \
+that lies about itself, and the household loses the ability to trust any of the other reasons.
 - Set `derived_from` on every entry: which tags applied, the binding constraint if there was \
 one, which mood/cuisine inputs drove it, the quoted span of their freeform text if that's what \
 drove it, and any inventory it was chosen to use up. Record what actually drove the choice, \
@@ -2385,6 +2419,15 @@ that list, full stop, even if something else would genuinely taste better or rou
 more traditionally. When in doubt about whether an ingredient is covered by the list, leave it \
 out rather than assume it's a reasonable addition. This applies to every slot, not only dinner. \
 If eating_style is blank, ignore this entirely.
+- EVERY MEAL IS A FULL PLATE. Lunch and dinner must cover protein AND vegetable AND carb — \
+protein and vegetable only, no carb, if eating_style reads as keto or low-carb. Breakfast and \
+snack are held to a lighter version of the same idea: at least TWO of the three groups, never \
+just a piece of fruit and never just a granola bar. If the dish itself doesn't cover that (a \
+plain roast chicken, a bowl of pasta), plan the side INTO the meal — put it in the meal_name, \
+its ingredients in the ingredient list, its steps in the instructions — and set food_groups to \
+what the whole plate then covers. A genuine one-pot dish that already covers the rule on its own \
+needs nothing added. Get this right here: anything short gets a side attached afterwards, which \
+works but is a repair, not the plan.
 - For each day, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if this is a recipe not already in saved_recipes. If you're reusing a \
 saved recipe, set is_new_recipe=false and just give its exact meal_name — don't re-invent \
@@ -2415,6 +2458,14 @@ belongs to (produce, dairy, meat/seafood, pantry, frozen, other) — pantry mean
 only; eggs, butter, and tofu are dairy; fresh vegetables/herbs are produce. This determines \
 which aisle it's grouped under when auto-added to the grocery list, so don't leave it blank \
 or default to pantry/other out of habit.
+- Set default_servings to THIS household's own table, not a generic 4: use \
+`attendance.default_serves` from the context above, which is how many people eat here \
+ordinarily. Then write every ingredient quantity for that many people. This is load-bearing for \
+the shopping list, which buys per portion — a recipe written for 4 in a household of 3 has \
+every quantity multiplied by three quarters on the way to the list, so "4 bell peppers" becomes \
+3 and a week of that arrives as odd fractions nobody wrote. Write it for the real table and the \
+list is simply what you wrote. (A slot listed in `attendance.slots_with_a_different_table` \
+still overrides this for that one meal — see the attendance bullet above.)
 - Write each ingredient's qty as how it's actually bought at the store, not how much ends up \
 used once prepped — "1 head" of cabbage, not "3 cups shredded"; "1 bunch" of cilantro, not "2 \
 tbsp chopped"; "1 lb" of carrots, not "1 cup diced". This is what shows up on the grocery list, \
@@ -2464,7 +2515,8 @@ soft lean, not a rule: don't force an odd combination, don't feel obligated to u
 the list, and don't let it override genuine variety/preference/novelty considerations — it only \
 matters as a tiebreaker-ish nudge among otherwise-reasonable options.
 - For any new recipe, fill in instructions (ordered cooking steps) so it's actually cookable \
-later, not just a shopping list — this powers the Cooker view. Also fill in default_servings, \
+later, not just a shopping list — this powers the Cooker view. Also fill in default_servings \
+(the household's own table — see the bullet on that above), \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes (e.g. "marinate at least 4 hours \
 ahead") whenever reasonably inferable — advance_prep_notes in particular feeds \
 generate_prep_schedule, so only set it when something is genuinely worth planning around ahead \
@@ -2564,7 +2616,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                             "type": "array", "items": {"type": "string"},
                             "description": "Ordered cooking steps — fill in for a new recipe so it's actually cookable, not just a shopping list.",
                         },
-                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Defaults to 4 if omitted."},
+                        "default_servings": {"type": "integer", "description": "What the ingredient quantities above are written for. Set it to this household's own table (attendance.default_serves), not a generic 4 — the grocery list scales per-portion amounts by eaters/default_servings, so a mismatch is what turns a clean recipe into odd fractions on the list. Defaults to 4 if omitted."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "advance_prep_notes": {"type": "string", "description": "Only for something genuinely worth planning around ahead of time — a marinate/soak/thaw/rise measured in hours (roughly 1+), or specifically overnight/the night before. e.g. 'marinate at least 4 hours ahead, can be done the night before'. A quick 10-30 minute step (a short marinate while you prep everything else, letting something come to room temp) is normal same-day cooking, NOT advance prep — leave this blank for those, even if the recipe technically says 'can marinate ahead.' Leave blank if nothing needs real advance prep."},
@@ -2629,6 +2681,13 @@ each protein (5 = favorite, 1 = avoid) and should shape which/how many proteins 
 protein rated 1 shouldn't appear at all, and 4-5 should show up more than once across the \
 protein items. (Older saved data may still have a frequency phrase instead of a number — \
 treat "several times a week"≈5, "1-2 times a week"≈4, "occasionally"≈3, "rarely"≈2, "avoid"≈1.)
+- Variety is about INGREDIENTS, not only proteins and cuisines. The same FRESH ingredient — a \
+vegetable or fruit, a fresh herb, a fresh dairy item — should appear in AT MOST 3 items across \
+the whole pool. A genuine staple that goes into everything (onion, garlic, cooking oil, salt, \
+pepper) doesn't count, and neither does something the household actually asked for or has a \
+standing preference for. Everything else, spread out: a pool where most items reach for bell \
+peppers is what puts "17 bell peppers" on the shopping list, and no family of three is buying \
+seventeen peppers. Same rule as the day-based prompt.
 - Honor any per-week constraints in constraints_notes exactly.
 - household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
 specific list of foods someone says they should be eating) is a hard constraint, treated with \
@@ -2640,6 +2699,14 @@ side ingredient, garnish, cooking fat, or flavoring — must come from that list
 if something else would genuinely round the dish out more traditionally. When in doubt whether \
 an ingredient is covered, leave it out rather than assume it's fine. This applies across every \
 category in the pool, not just proteins. If eating_style is blank, ignore this entirely.
+- EVERY MEAL IS A FULL PLATE, and here that is a rule about the POOL rather than about any one \
+item. Every plate the household assembles from this pool has to reach protein AND vegetable AND \
+carb — protein and vegetable only, no carb, if eating_style reads as keto or low-carb — and \
+breakfast/snack items at least two of the three. So the pool must actually carry enough of each \
+category to pair up across the whole week, and no category may be left thin because the proteins \
+were more interesting to write. This does NOT license bundling categories into one item: keep \
+every item standalone exactly as the rule above says, and make the plate work by what the pool \
+CONTAINS, not by what any single item hides inside itself.
 - For each item, set is_new_recipe=true and fill in ingredients/tags/food_groups/cuisine/ \
 main_protein only if it's not already in saved_recipes; otherwise is_new_recipe=false with just \
 the exact meal_name.
@@ -2688,6 +2755,11 @@ dish name descriptive are now separate items — "Chicken Skewers" or "Grilled C
 too generic. Keep the flavor profile, marinade, or prep method in the name even after splitting: \
 "Greek Lemon-Oregano Chicken Skewers", "Garlic Lime Shrimp", "Blackened Cajun Salmon" — specific \
 enough that picking it out of a pool of proteins tells you what it actually tastes like.
+- Set default_servings to THIS household's own table, not a generic 4: use \
+`attendance.default_serves` from the context above, and write every ingredient quantity for \
+that many people. The grocery list buys per portion, so a recipe written for 4 in a household \
+of 3 gets every quantity multiplied by three quarters on the way to the list. Write it for the \
+real table and the list is simply what you wrote. Same rule as the day-based prompt.
 - For any new recipe, fill in instructions (ordered cooking steps), default_servings, \
 prep_time_minutes/cook_time_minutes, and advance_prep_notes the same way as day-based planning \
 — see the equivalent guidance there. This powers the Cooker view and prep schedule.
@@ -3732,6 +3804,19 @@ def _finish_week_slots(
     # second time as missing. See tools.repair_leftover_chains.
     tools.repair_leftover_chains(plan_id)
 
+    # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
+    # whose own food_groups fall short of the household's plate rule gets a
+    # small side attached, rather than the week being regenerated. See
+    # _complete_plates_pass, which swallows its own failures: a plate is
+    # worth a model call, never a lost week.
+    #
+    # AFTER repair_leftover_chains, so a reheat night is identifiable as one
+    # and skipped (nothing is cooked on it, so nothing can be added to it),
+    # and BEFORE the audit below, so the sides land on a plan whose slots are
+    # already settled and the audit still answers the one question it exists
+    # to answer.
+    _complete_plates_pass(plan_id, household_memory, intake)
+
     audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
@@ -3767,6 +3852,285 @@ def _finish_week_slots(
     # all had their say. Anything that runs after this is a change the
     # warning didn't see.
     _log_plan_conflicts(plan_id, week_start_date)
+
+
+# ---------- "every meal is a full plate" ----------
+#
+# Emily, 2026-09-05. The rule itself, the low-carb classifier and the
+# attach-a-side mechanics all live in app/tools/plates.py; what lives here
+# is the one model call that invents a side, and the pass over a
+# just-generated week that decides which meals need one.
+
+_GENERATE_SIDES_TOOL = {
+    "name": "submit_sides",
+    "description": "Submit one or two small sides to serve alongside a meal that is short of a full plate.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "sides": {
+                "type": "array",
+                "description": "One side, or two at the very most. Never a second main dish.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "What it is, as you'd say it out loud: 'Lemony green salad', 'Buttered couscous'. No 'Side of'."},
+                        "covers": {
+                            "type": "array",
+                            "description": "Which of the missing food groups this side actually supplies. Only claim what it really is.",
+                            "items": {"type": "string", "enum": ["protein", "vegetable", "carb"]},
+                        },
+                        "ingredients": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "item": {"type": "string", "description": "The ingredient name with no prep descriptor — 'Baby spinach', never 'Baby spinach, chopped'."},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store ('1 head', '1 bunch', '1 lb', '1 box'), not a prepped measurement."},
+                                    "category": {
+                                        "type": "string",
+                                        "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
+                                        "description": "Grocery store section. Pantry means shelf-stable only; eggs/butter/tofu are dairy; fresh vegetables and herbs are produce.",
+                                    },
+                                },
+                                "required": ["item", "qty", "category"],
+                            },
+                        },
+                        "instructions": {
+                            "type": "array",
+                            "description": "Two to four steps. This is a side, not a project.",
+                            "items": {"type": "string"},
+                        },
+                        "minutes": {"type": "integer", "description": "Total hands-on minutes, prep and cook together."},
+                    },
+                    "required": ["name", "covers", "ingredients", "instructions", "minutes"],
+                },
+            },
+        },
+        "required": ["sides"],
+    },
+}
+
+# The static half of the side prompt, kept out of the f-string below and
+# cached, for exactly the reason generate_weekly_plan_llm's instructions are
+# (see the long comment there): this call fires up to six times per
+# generated week with the same instructions and a few hundred bytes of
+# different context each time, so gluing the context on the front would
+# make every one of those a cache miss.
+_SIDE_INSTRUCTIONS = """You are filling in what one planned meal is missing, for a household \
+whose app plans their week. The meal itself is already decided and is NOT being changed — you \
+are adding one small side dish beside it, or two at the very most.
+
+Rules:
+- Only supply the missing food group(s) you're given. Don't round the meal out further than \
+asked, and don't propose a side that mostly duplicates what the dish already has.
+- Small. A side is five to twenty minutes and a handful of ingredients — a dressed salad, a \
+tray of roasted vegetables, a pot of rice, a quick slaw, some crusty bread and butter. If \
+you're writing more than four steps, it's too big.
+- Honour every dietary restriction and the eating_style exactly as strictly as the main dish \
+does, and avoid every listed dislike. A restriction is never negotiable to make a side work; \
+pick a different side.
+- Respect max_minutes when it's given: that is the whole meal's real cap for that night, so a \
+side has to fit comfortably inside what the main leaves of it. When it's tight, reach for \
+something with no cooking at all.
+- It should taste like it belongs with the dish — same rough cuisine and register. Rice with a \
+curry, not couscous; a sharp slaw with something rich.
+- Write each ingredient's qty as it's actually bought at the store (a head, a bunch, a bag, a \
+lb, a box), and don't re-buy staples the household certainly has (salt, pepper, oil) — leave \
+those out of the ingredient list entirely even though the steps use them.
+- Set `covers` to what the side genuinely supplies. If you're asked for a vegetable and a carb \
+and one side honestly does both (a grain salad), say so and send just the one.
+
+Call submit_sides with the result."""
+
+
+def generate_sides_llm(context: dict) -> list[dict]:
+    """
+    One small model call: given a meal and the food group(s) its plate is
+    short of, come back with one or two sides to serve beside it.
+
+    Deliberately the cheapest shape of call this app makes — `utility`
+    effort, a tiny context (the dish, what's missing, the household's
+    dislikes/restrictions/eating_style, and the night's time cap), and a
+    cached instructions block. It is priced in the api_calls ledger under
+    the label 'generate_sides_llm' like every other call site here, so what
+    completing plates actually costs a household is a query, not a guess.
+
+    See app/tools/plates.complete_plate, which is what calls this and what
+    validates and attaches the result — nothing here writes anything.
+    """
+    client = _client()
+    response = _create_with_retry(
+        client,
+        label="generate_sides_llm",
+        model=MODEL,
+        max_tokens=1500,
+        tools=[_GENERATE_SIDES_TOOL],
+        tool_choice={"type": "tool", "name": "submit_sides"},
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": _SIDE_INSTRUCTIONS, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": f"The meal (JSON):\n{json.dumps(context, indent=2)}"},
+            ],
+        }],
+        output_config=_effort_config("utility"),
+    )
+    if response.stop_reason == "max_tokens":
+        logger.warning("generate_sides_llm hit max_tokens; the side may be incomplete")
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input.get("sides", [])
+    return []
+
+
+# At most this many side calls per generated week. Six is roughly "the
+# worst ordinary week" — a model that mostly follows the prompt leaves one
+# or two meals short, and a week needing more than six is a generation
+# problem to look at in the log, not something to spend twenty-eight model
+# calls papering over. Everything past the cap is logged by name so the
+# shortfall is visible rather than silently absorbed.
+MAX_PLATE_SIDE_CALLS = 6
+
+# Dinner first, then lunch, then the two light slots. This is the order the
+# cap is spent in, so a week that runs out of calls runs out on the snacks.
+_PLATE_SLOT_PRIORITY = {"dinner": 0, "lunch": 1, "breakfast": 2, "snack": 3}
+
+
+def _plate_minutes_cap(meal_date: str, intake: dict | None, household_memory: dict) -> int | None:
+    """
+    The real cap on how long this night's cooking may take, or None.
+
+    A `rush` tag wins (it's this week's explicit answer and it's the
+    tightest), then a weeknight cap if the household set one and the date
+    is Monday-Friday. Weekend nights with no rush tag have no cap, which is
+    the truth rather than a number invented to look precise.
+    """
+    tags = ((intake or {}).get("night_tags") or {}).get(meal_date) or []
+    if "rush" in tags:
+        return tools.RUSH_MAX_MINUTES
+    weeknight_cap = household_memory.get("weeknight_max_minutes") or 0
+    if weeknight_cap and datetime.date.fromisoformat(meal_date).weekday() < 5:
+        return weeknight_cap
+    return None
+
+
+def _complete_plates_pass(plan_id: int, household_memory: dict, intake: dict | None) -> None:
+    """
+    Attach a side to every planned meal that came back short of a full
+    plate. Emily, 2026-09-05: "we're thinking about your health, so I fill
+    out a plate."
+
+    What it skips, and why each one is a skip rather than an oversight:
+
+    - `planned_empty` and `open` slots. Neither is a meal yet; there is
+      nothing to complete.
+    - A reheat night (leftovers.plan_leftover_chains). Nothing is cooked on
+      it — the batch was made on an earlier night and that night's plate is
+      the one that has to be whole. Adding a salad to a reheat would buy
+      groceries for a night the household was told cooks nothing.
+    - A meal with NO recorded food groups. The app doesn't know what's on
+      that plate and won't guess; logged, not repaired. See plates.py.
+    - Everything, when the household has turned `complete_plates` off. The
+      pass still runs and still says in the log what it would have done —
+      the rule doesn't disappear, the app just stops acting on it.
+
+    Wrapped end to end in try/except, and again per meal. A week that
+    generated correctly must not be lost to a side dish: the worst outcome
+    available here is a plate that stays short, which is exactly the state
+    the plan was already in.
+    """
+    try:
+        enabled = household_memory.get("complete_plates", True)
+        rule = tools.plate_rule(household_memory.get("eating_style"))
+        plan = tools.get_weekly_plan(plan_id)
+        reheats = tools.plan_leftover_chains(plan_id)["leftovers"]
+
+        short = []
+        unknown = []
+        for meal in plan.get("meals") or []:
+            if meal.get("component_category") is not None:
+                continue
+            if meal.get("slot_state") != "planned" or not meal.get("meal"):
+                continue
+            if meal.get("entry_id") in reheats:
+                continue
+            if not tools.plate_has_food_groups(meal):
+                unknown.append(f"{meal['date']} {meal['slot']} ({meal['meal']})")
+                continue
+            missing = tools.plate_missing_groups(meal, rule)
+            if missing:
+                short.append((meal, missing))
+        if unknown:
+            logger.info(
+                "Plan %s: %d meal(s) recorded no food groups, so the plate rule can't speak to "
+                "them either way: %s", plan_id, len(unknown), ", ".join(unknown),
+            )
+        if not short:
+            return
+
+        short.sort(key=lambda pair: (_PLATE_SLOT_PRIORITY.get(pair[0]["slot"], 9), pair[0]["date"]))
+        if not enabled:
+            logger.info(
+                "Plan %s: complete_plates is off, so %d short plate(s) were left exactly as "
+                "generated: %s", plan_id, len(short),
+                ", ".join(
+                    f"{m['date']} {m['slot']} ({m['meal']}) needs {'+'.join(gaps)}"
+                    for m, gaps in short
+                ),
+            )
+            return
+
+        dislikes = household_memory.get("dislikes") or []
+        restrictions = sorted({
+            r
+            for member in household_memory.get("members") or []
+            for r in (member.get("dietary_restrictions") or [])
+        })
+        eating_style = household_memory.get("eating_style") or ""
+
+        completed = 0
+        for meal, missing in short[:MAX_PLATE_SIDE_CALLS]:
+            try:
+                result = tools.complete_plate(meal["entry_id"], {
+                    "meal": meal["meal"],
+                    "slot": meal["slot"],
+                    "date": meal["date"],
+                    "missing": missing,
+                    "dislikes": dislikes,
+                    "dietary_restrictions": restrictions,
+                    "eating_style": eating_style,
+                    "max_minutes": _plate_minutes_cap(meal["date"], intake, household_memory),
+                })
+            except Exception:
+                logger.exception(
+                    "Completing the plate for %s %s (%s) failed; leaving the meal as generated",
+                    meal["date"], meal["slot"], meal["meal"],
+                )
+                continue
+            if result["attached"]:
+                completed += 1
+                logger.info(
+                    "Plan %s: %s %s (%s) was missing %s — added %s",
+                    plan_id, meal["date"], meal["slot"], meal["meal"],
+                    "+".join(missing), ", ".join(result["attached"]),
+                )
+        overflow = short[MAX_PLATE_SIDE_CALLS:]
+        if overflow:
+            logger.warning(
+                "Plan %s: %d short plate(s) past the %d-side cap were left as generated: %s. "
+                "A week needing this many sides is a generation problem, not a repair one.",
+                plan_id, len(overflow), MAX_PLATE_SIDE_CALLS,
+                ", ".join(
+                    f"{m['date']} {m['slot']} ({m['meal']}) needs {'+'.join(gaps)}"
+                    for m, gaps in overflow
+                ),
+            )
+        if completed:
+            logger.info("Plan %s: completed %d plate(s) with a side.", plan_id, completed)
+    except Exception:
+        logger.exception(
+            "The complete-plates pass failed for plan %s; the week itself is unaffected", plan_id,
+        )
 
 
 _GENERATE_PREP_SCHEDULE_TOOL = {

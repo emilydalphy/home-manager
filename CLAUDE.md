@@ -240,6 +240,186 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-05 — 17 peppers was arithmetic, and the arithmetic was wrong in
+  two places. Branch `fix-produce-quantities` (on top of
+  `fix-grocery-quantity-inflation`, NOT merged at the time of writing).**
+  Emily, looking at the week the package fix had already cleaned up: "a
+  regular week for a family of 3 shouldn't have 17 peppers, it's not
+  normal — look into the root of this." The previous entry closed with
+  exactly this as **Open for Emily**, and answered it wrongly: the
+  seventeen were not honest arithmetic that might merely want a cap. Two
+  independent causes, plus the reason there were five pepper dinners at
+  all.
+  - **Nothing in the grocery path had ever looked at `default_servings`.**
+    Every recipe carries 4 (the `add_recipe` default, and what generation
+    writes), and the only scaling factor —
+    `attendance.grocery_scale_factor` — was deliberately anchored to the
+    HOUSEHOLD, returning 1.0 whenever no attendance row said otherwise. Its
+    docstring said so and said why: a recipe-servings anchor "would
+    silently re-quantify every meal in the app the moment this shipped,
+    which is a much bigger claim than this ticket gets to make on its own."
+    Correct scoping then; the claim has now been made, by Emily, on
+    evidence. `attendance.servings_scale_factor` composes the two —
+    `grocery_scale_factor` (headcount ÷ household_size) × (household_size ÷
+    default_servings) = **eaters ÷ default_servings**, the household size
+    cancelling so neither anchor is applied twice. It falls back to
+    attendance alone with no members on record or no default_servings,
+    so a household mid-onboarding still shops as it did.
+  - **Rounding happened once per recipe and then summed.** With the
+    servings scaling the five dinners want 2.25, 3, 1.5, 3 and 3 peppers;
+    rounded up individually that is 3+3+2+3+3 = **14**, when the week wants
+    12.75 → **13**. A shopper buys peppers once. `WeekGroceryBuffer` holds
+    per-portion amounts unrounded for the whole approval and rounds once
+    per grocery line (`_week_bought_amount`: ceil for countables, nearest
+    quarter for measurables, rolled up to the display unit FIRST so the
+    line and the ledger share a unit). **The recipe-week group was the
+    wrong unit for this** — grouping is right for a sealed package, but
+    Emily's peppers came from five DIFFERENT recipes, so only something
+    spanning the whole `approve_weekly_plan` can see them as one shopping
+    decision. `plan_meal` and the swap paths get a buffer of their own that
+    flushes on the way out.
+  - **Rounding once forces apportionment, and that is load-bearing, not
+    tidiness.** The line says 13; the meals behind it wanted 12.75. Ledger
+    rows carrying their own unrounded shares would leave a phantom quarter
+    pepper after `clear_weekly_plan` — which then displays as one whole
+    pepper for a dinner nobody is cooking. `_apportion` splits the rounded
+    total by largest remainder into whole quanta that sum to the line
+    exactly. A meal can land on a real `"0"`, never a blank: a blank tells
+    `_subtract_quantity` "this contribution IS the whole line".
+  - **Why five pepper dinners existed at all is a prompt gap, not a
+    quantity bug.** The generation prompt had variety rules for
+    `main_protein` and for cuisine and none for an ingredient. Both
+    instruction blocks now cap one fresh ingredient at 3 dinners a week
+    (staples and things the household asked for exempt) and tell the model
+    to set `default_servings` from `attendance.default_serves` rather than
+    a generic 4 — which, once it takes, means the ingest has nothing left
+    to rescale. `plan_quality.ingredient_repeat` measures it, warn-only.
+    Note `"pepper"` is deliberately NOT in `_STAPLE_FRESH_WORDS`: black
+    pepper is a staple, it is pantry so it never reaches the rule, and the
+    word sitting there would exempt Bell pepper from the rule written for
+    it.
+  - **This changes amounts for every household with members on record, and
+    that is Emily's to veto.** Four existing tests asserted the old
+    behaviour and were turned over on purpose, one of them
+    (`test_a_week_where_everyone_is_home_shops_exactly_as_before`) being
+    the explicit safety property of the earlier scoping decision; it is now
+    `..._buys_for_everyone_who_is_home` and says in its docstring why it
+    flipped. Two households of 2 with 4-serving recipes now buy half of
+    what they bought last week. The failure mode if this is wrong is
+    under-buying, which costs a trip.
+  - **Left open:** existing SAVED recipes still say 4, so the ingest is
+    doing the rescaling for every one of them and will keep doing it until
+    they are rewritten; nothing back-fills `default_servings`. And
+    re-quantifying an already-approved line when attendance changes
+    afterwards is still not done (the KNOWN LIMITATION in
+    `_add_recipe_ingredients_for_entries`, unchanged).
+
+- **2026-09-05 — A stated request is the week's ANCHOR, not an order. Branch
+  `plan-quality-anchor-not-order`.** Emily's decision 11a on the plan-quality
+  ticket: "I want burgers" means burgers exactly where she said AND a week
+  composed around them. The day-based instructions used to say "honour it
+  exactly … plan that meal where they said, don't plan over it" and stop
+  there — the literal-request-and-nothing-else behaviour she saw. Prompt-only
+  change: a stance sentence ("A week should read as composed — a shape across
+  the days …") near the top of the guidelines, the freeform bullet rewritten
+  (anchor it, then build the days around it, name the connection in
+  reasoning; the tag-collision rule is the ONE exception to placement), and
+  the collision paragraph reconciled with it. +1,328 chars in the cached
+  block (a one-time cache-write cost). No code path changed; no model or
+  effort change (her 12/13 wait on baseline data). Pinned by
+  `tests/test_prompt_anchor.py`.
+
+- **2026-09-05 — Every meal is a full plate, and a short one gets a side
+  rather than a regeneration. Branch `fix-full-plate` (NOT merged at the
+  time of writing).** Emily settled the question `plan_quality`'s
+  `full_plate` rule had been deliberately only WARNING about since it was
+  written. A plate is protein + vegetable, plus a carb unless the
+  household's `eating_style` reads low-carb; it applies to all four slots,
+  with a lighter floor on breakfast/snack. New `app/tools/plates.py` holds
+  the rule, the classifier and the attach mechanics; `agent.generate_sides_llm`
+  is the one new model call; `_complete_plates_pass` runs it over a
+  just-finished week.
+  - **The eating_style classifier is new and is a keyword list, not a model
+    call.** Nothing classified `eating_style` before — it was handed to the
+    model as free text. `plates.is_low_carb` is a documented phrase list
+    because it runs per entry per week, the cost of a wrong answer is one
+    unwanted side, and a list anyone can read and correct beats a judgment
+    nobody can see. It is deliberately literal: "clean eating" reads as
+    NOT low-carb and gets a carb, which is the app's default, not a harm.
+  - **"Never just a fruit / just a granola bar" reduces to a two-group
+    floor**, and that is the whole of the light rule (`LIGHT_SLOT_MIN_GROUPS`).
+    Both of those carry at most ONE food group, so a two-group floor
+    excludes them without the app keeping a list of foods it disapproves of.
+  - **A side attaches to the ENTRY (`meal_plan_entries.sides_json`), never
+    to the recipe.** A recipe is shared across weeks; rewriting its
+    `ingredients_json` to bolt a salad on would change every future plan
+    that reuses it and be indistinguishable later from the recipe's own
+    ingredients. `derived_from_json` was the other candidate (no migration
+    needed) and was rejected: it records what CAUSED a slot and is read as
+    provenance by four modules, while a side is content the grocery list
+    and Cooker have to consume. Recording it against the same entry_id is
+    also what makes removal symmetric for free —
+    `_reverse_meal_grocery_contributions` is keyed by entry.
+  - **An entry with NO recorded food groups is skipped and logged, never
+    guessed at** — the same stance `plan_quality`'s rule already took.
+  - **Six side calls per generated week, dinners first.** A week needing
+    more than six is a generation problem to read in the log, not one to
+    paper over with twenty-eight model calls; the overflow is logged by
+    name. ~$0.003–0.005 per call (cached instructions; see
+    `tools/usage.py`), so a capped worst-case week is about two cents.
+  - **The household is told once, and the telling is marked by the ROUTE,
+    not the tool.** `get_week_menu` is also a read the assistant makes
+    mid-conversation; stamping `plates_intro_shown_at` there would spend
+    the one telling on something nobody saw, so `/api/week-menu` does it.
+  - **`complete_plates` off means log-only, not silent.** The pass still
+    runs and still records what it would have added.
+  - **Known gap:** `cooker.deplete_inventory_for_meal` reads the RECIPE's
+    ingredients, so a side's ingredients are bought but never depleted from
+    tracked inventory when the meal is checked off. Deliberately out of
+    scope; own ticket. Also deliberately not built: Emily's "optional
+    add-ons" idea for keto (decision 7a) is a separate later ticket.
+- **2026-09-05 — Two decided fixes to the allergy check: gluten/wheat's own
+  false positive, and pre-enforcement allergy facts backfilled onto member
+  records. Branch `allergy-backfill-and-gluten` (NOT merged at the time of
+  writing).**
+  - **"Gluten-Free Pasta" made with rice flour stopped flagging itself.**
+    `_ALLERGEN_ALIASES["gluten"/"wheat"]` expands into flour/pasta/noodles so
+    the check reaches "Wheat Pasta" — but that same expansion flagged a dish
+    that is, by definition, safe for the restriction it tripped. Two fixes,
+    both via the existing mechanisms rather than a new one: alternative-flour
+    compounds (rice/almond/chickpea/buckwheat/corn/oat/coconut/tapioca
+    flour; rice/glass/soba/buckwheat noodles; chickpea/lentil/rice pasta)
+    added to `_COMPOUND_EXCEPTIONS`, and a new, narrower rule in `_matches`:
+    a segment (dish name or one ingredient line) that says "gluten-free" /
+    "gluten free" / "GF" outright is negated for the GLUTEN/WHEAT alias
+    words *in that segment only* — a nut or dairy restriction still sees it.
+    "Almond Flour Cake" is now correctly not-gluten but still a nut-allergy
+    clash, since the discount is per word, never per compound (same rule
+    `_COMPOUND_EXCEPTIONS` already followed for peanut butter/coconut milk).
+  - **Facts written down before the enforcement fix existed only in
+    `facts`, never on the member record (Emily's decision 3a).** The
+    planner and `check_plan_conflicts` read `facts` directly since
+    2026-09-04, but a member's own profile only ever showed
+    `dietary_restrictions_json` — so a household whose allergy was saved as
+    a What-we-know note before that fix looked, on their own profile, like
+    they had no allergy on file at all. `db._backfill_allergy_notes_from_facts`
+    runs every startup (same idempotent-migration shape as
+    `_backfill_member_colors`): for each fact naming an existing member and
+    yielding an avoidance phrase — via `coordination._fact_keywords` and a
+    newly-extracted `coordination._named_member`/`_name_words` (factored out
+    of `_avoidances()`, which now calls them too, so the backfill can never
+    silently drift from what the live check treats as an avoidance) — it
+    appends `"allergy: <phrase>"` to that member's restrictions when not
+    already present, case-insensitively. Deliberately **not** gated on
+    `fact.hard`: the What-we-know screen has never set that flag itself (see
+    the 2026-09-04 entry below), so gating on it would have backfilled
+    almost nothing. Household-wide facts (no member named, e.g. "no pork in
+    this house") are left alone on purpose — nothing is missing there to
+    fill in. Facts are never edited or deleted. Runs automatically on the
+    next deploy (wired into `_run_migrations`, called from `init_db()` at
+    app startup); to run it immediately without waiting for one, from
+    inside the deployed container: `railway ssh -- python -c "from app.db
+    import init_db; init_db()"`.
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
   merged at the time of writing).** Root cause of the original bug was three
@@ -320,6 +500,7 @@ why*, not duplicating the diff.
     from chat and nowhere else — the What-we-know screen cannot set or show
     it — so the whole hard-fact path depends on the assistant having chosen
     the flag when it wrote the note. Open, unchanged by this branch.
+
 - **2026-09-04 — The grocery list multiplied packages by how often a meal
   repeated. Branch `fix-grocery-quantity-inflation` (NOT merged at the time
   of writing; branched off `fix-leftovers-ordering`).** Emily's first
@@ -419,6 +600,11 @@ why*, not duplicating the diff.
     capped. 17 peppers is honest arithmetic — five dinners wanting 3, 4,
     2, 4 and 4 — and it is NOT capped or hidden; the list shows 17. It may
     still be more than anyone wants to read on one line.
+    **CLOSED, and this paragraph was wrong** — see the 2026-09-05 entry at
+    the top. It was not honest arithmetic: nothing scaled by
+    `default_servings`, so three people were buying four people's dinner,
+    and the per-recipe rounding added one more on top. No cap was needed;
+    the inputs were wrong again, one level up.
 
 - **2026-09-04 — A leftovers night is a reheat, not a second cook. Branch
   `leftovers-servings-scaling` (on top of `fix-leftovers-ordering`, NOT

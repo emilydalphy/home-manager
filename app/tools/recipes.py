@@ -4,6 +4,7 @@ Recipes: adding, listing, scaling, feedback and cooking notes.
 from __future__ import annotations
 
 import json
+import math
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
@@ -625,8 +626,176 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     return {"name": recipe_name, "temporarily_excluded": excluded}
 
 
+def _record_grocery_link(entry_id: int, item: str, grocery_item_id: int, qty: str) -> None:
+    """
+    Record exactly what THIS meal contributed to that grocery line, before
+    it got merged with anything else already there — see
+    grocery._reverse_meal_grocery_contributions, which is what lets
+    swap_meal_in_plan/swap_component_in_plan/clear_weekly_plan take this
+    back out precisely if the meal is later swapped or dropped.
+    """
+    link_conn = get_conn()
+    link_conn.execute(
+        "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (household_id(), entry_id, grocery_item_id, item, _quantities._strip_prep_descriptor(qty or "")),
+    )
+    link_conn.commit()
+    link_conn.close()
+
+
+_MEASURABLE_UNITS = {u for group in _quantities._UNIT_CONVERSION_GROUPS for u in group}
+
+
+def _measurable(unit: str | None) -> bool:
+    """A volume/weight unit that converts, as opposed to a countable thing
+    (a pepper, a clove, a tin) or no unit at all."""
+    return unit in _MEASURABLE_UNITS
+
+
+def _week_bought_amount(amount: float, unit: str | None) -> tuple[float, str | None, float]:
+    """
+    A week's worth of one per-portion ingredient, rounded to something a
+    person can actually buy — ONCE, on the total, in the unit the grocery
+    line will actually be written in.
+
+    Returns (rounded_amount, unit_to_write_it_in, quantum), where quantum
+    is the step that rounding moved in — 1 whole pepper, or a quarter of a
+    measurable unit. _apportion needs it to hand the rounded total back out
+    to the meals in the same currency the line is denominated in.
+
+    Rounding once is the point. Doing it per meal is why Emily's week asked
+    for 17 peppers and would still have asked for 14 after the servings
+    scaling below: five dinners wanting 2.25, 3, 1.5, 3 and 3 peppers each
+    round UP on their own to 3, 3, 2, 3, 3 = 14, when the week actually
+    wants 12.75 → 13. A shopper buys peppers once, so they get rounded
+    once.
+
+    A measurable unit is rolled up to its display unit FIRST (52 tbsp → 3.25
+    cups) and rounded there, so the line and the per-meal ledger rows that
+    reverse it are denominated the same way. Rounding in the recipe's own
+    unit and letting the display roll it up afterwards would leave "3.25
+    cups" on the list with "26 tbsp" in the ledger, and a swap would then
+    find nothing it could safely subtract.
+    """
+    if amount <= 0:
+        return 0.0, unit, (0.25 if _measurable(unit) else 1.0)
+    if not _measurable(unit):
+        # You cannot buy 12.75 peppers. Up, not nearest: an extra pepper
+        # costs a pepper, a missing one costs the dinner.
+        return float(math.ceil(amount - 1e-9)), unit, 1.0
+    rolled, rolled_unit = _quantities._roll_up_unit(amount, unit)
+    nice = _quantities._round_to_nice_fraction(rolled)
+    if nice <= 0:
+        nice = 0.25  # never round a real quantity away to nothing
+    return nice, rolled_unit, 0.25
+
+
+def _apportion(total: float, shares: list[float], quantum: float) -> list[float]:
+    """
+    Hand ONE rounded week total back out to the meals that asked for it, so
+    the ledger adds up to exactly what went on the list.
+
+    This is the price of rounding once. The list says 13 peppers; the five
+    dinners behind it wanted 2.25, 3, 1.5, 3 and 3. If each meal's ledger
+    row recorded its own unrounded share, clearing the week would subtract
+    12.75 from 13 and leave a phantom quarter of a pepper on the list,
+    which then displays as one whole pepper nobody is cooking. So the
+    rounded total is split by largest remainder — every row is a whole
+    quantum, and they sum to the line exactly. Clearing a week empties it;
+    swapping one dinner out takes a believable share with it.
+
+    A meal can legitimately come out at zero (a tiny share of an amount
+    that rounded down to nothing much). That is recorded as a real "0"
+    rather than a blank, because a blank means "this contribution IS the
+    whole line" to _subtract_quantity and would take the line away.
+    """
+    if not shares:
+        return []
+    n_quanta = int(round(total / quantum))
+    if n_quanta <= 0:
+        return [0.0] * len(shares)
+    weight_total = sum(shares)
+    if weight_total <= 0:
+        # No meal has a claim on it in proportion; give it all to the first.
+        return [n_quanta * quantum] + [0.0] * (len(shares) - 1)
+    exact = [n_quanta * s / weight_total for s in shares]
+    whole = [math.floor(e + 1e-9) for e in exact]
+    remaining = n_quanta - sum(whole)
+    order = sorted(
+        range(len(shares)),
+        key=lambda i: (-(exact[i] - whole[i]), -shares[i], i),
+    )
+    for i in order[:max(0, remaining)]:
+        whole[i] += 1
+    return [w * quantum for w in whole]
+
+
+class WeekGroceryBuffer:
+    """
+    Per-portion amounts held UNROUNDED until every recipe in an ingest pass
+    has had its say, then written to the list one line at a time with a
+    single rounding each.
+
+    It exists because the recipe-week grouping isn't a big enough unit of
+    work for rounding. Grouping fixed the sealed-package bug — one bag of
+    spinach for six breakfasts of the same recipe — but Emily's peppers came
+    from five DIFFERENT dinners, so they arrive here as five separate calls
+    to _add_recipe_ingredients_for_entries and only something that spans the
+    whole approval can see them as one shopping decision.
+
+    approve_weekly_plan makes one buffer for the whole week and flushes it
+    at the end. Anywhere with genuinely one meal to account for (plan_meal,
+    the swap paths) passes nothing and gets a buffer of its own that flushes
+    on the way out — one meal, one rounding, which is the right answer
+    there.
+
+    Freeform quantities ("a bunch", "to taste") never enter the buffer:
+    there is no number to sum, so they keep going straight onto the list
+    per meal, where _repeat_or_concatenate already knows what to do with
+    them. Sealed packages don't either — a package is a once-per-week
+    decision the grouped path already makes.
+    """
+
+    def __init__(self, weekly_plan_id: int | None):
+        self.weekly_plan_id = weekly_plan_id
+        # (merge key, unit, note) -> the one grocery line that will become.
+        # Two recipes writing the same item in units that don't reconcile
+        # ("2 cups beans" and "1 lb beans") stay two entries here and meet
+        # each other in add_grocery_item, which reports the disagreement
+        # honestly instead of guessing a conversion.
+        self._lines: dict[tuple, dict] = {}
+
+    def add(self, entry_id: int, item: str, category: str, amount: float, unit: str | None, note: str) -> None:
+        key = (_grocery._merge_key(item), unit, note)
+        line = self._lines.get(key)
+        if line is None:
+            line = self._lines[key] = {
+                "item": item, "category": category, "unit": unit, "note": note, "shares": {},
+            }
+        line["shares"][entry_id] = line["shares"].get(entry_id, 0.0) + amount
+
+    def flush(self) -> None:
+        for line in self._lines.values():
+            entry_ids = list(line["shares"])
+            shares = [line["shares"][e] for e in entry_ids]
+            rounded, unit, quantum = _week_bought_amount(sum(shares), line["unit"])
+            qty = _quantities._with_note(_quantities._format_quantity(rounded, unit), line["note"])
+            add_result = _grocery.add_grocery_item(
+                line["item"], quantity=qty, category=line["category"], added_by="ai",
+                source_weekly_plan_id=self.weekly_plan_id,
+            )
+            for entry_id, share in zip(entry_ids, _apportion(rounded, shares, quantum)):
+                _record_grocery_link(
+                    entry_id, line["item"], add_result["item_id"],
+                    _quantities._format_quantity(share, unit),
+                )
+        self._lines.clear()
+
+
 def _add_recipe_ingredients_to_grocery_list(
-    entry_id: int, recipe_ingredients: list[dict], weekly_plan_id: int | None
+    entry_id: int, recipe_ingredients: list[dict], weekly_plan_id: int | None,
+    default_servings: int | None = None,
 ) -> tuple[list[str], list[str]]:
     """
     One planned meal's ingredients onto the grocery list — the single-meal
@@ -634,11 +803,14 @@ def _add_recipe_ingredients_to_grocery_list(
     the behaviour lives. Used by plan_meal and the swap paths, where there
     genuinely is only one meal to account for.
     """
-    return _add_recipe_ingredients_for_entries([entry_id], recipe_ingredients, weekly_plan_id)
+    return _add_recipe_ingredients_for_entries(
+        [entry_id], recipe_ingredients, weekly_plan_id, default_servings=default_servings
+    )
 
 
 def _add_recipe_ingredients_for_entries(
-    entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None
+    entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None,
+    default_servings: int | None = None, buffer: "WeekGroceryBuffer | None" = None,
 ) -> tuple[list[str], list[str]]:
     """
     Put ONE RECIPE's ingredients onto the grocery list for every meal in
@@ -672,21 +844,41 @@ def _add_recipe_ingredients_for_entries(
 
     - Everything else is a PER-PORTION amount — 4 cups of beans, 3 bell
       peppers, a bunch of cilantro — and still adds up across every meal
-      that wants it, each meal scaled to its own headcount exactly as
-      before. Five dinners wanting 2-4 peppers each genuinely want the
-      sum.
+      that wants it. Five dinners wanting 2-4 peppers each genuinely want
+      the sum; what they do not want is the sum of five numbers each
+      written for a bigger table than the one they will be eaten at.
 
-    Quantities are scaled to each meal's actual HEADCOUNT before they reach
-    the list (Emily's deepened attendance model): a Thursday dinner only
-    one of two people is home for buys for one. The factor comes from
-    attendance.grocery_scale_factor, which is 1.0 — an exact no-op, leaving
-    every quantity byte-for-byte as the recipe writes it — unless that
-    specific meal has an explicit attendance row. Scaling stays per meal
-    rather than being folded into one recipe-week factor, so a week where
-    everyone is home shops precisely as it always has and the anchor
-    grocery_scale_factor deliberately chose (the household, not the
-    recipe's default_servings) is untouched here. A package is not scaled
-    at all — half a table still buys one bottle.
+    Quantities are scaled to the people who will actually EAT the meal
+    before they reach the list, and that is two things composed, not one:
+    the meal's own attendance (a Thursday dinner only one of two people is
+    home for buys for one) and the recipe's own default_servings (a recipe
+    written for 4 in a household of 3 buys three quarters of it). The
+    factor comes from attendance.servings_scale_factor, which multiplies
+    grocery_scale_factor's household-relative answer by
+    household_size / default_servings so the household size cancels and
+    what is left is eaters / default_servings — applied exactly once. It
+    falls back to attendance alone when there is nothing to anchor to (no
+    members on record, no default_servings on the recipe), so a household
+    mid-onboarding still shops the way it always has.
+
+    This is the second half of the 17-peppers fix, and the half Emily
+    actually asked for: "a regular week for a family of 3 shouldn't have 17
+    peppers." The first half stopped packages multiplying. This one stops
+    every recipe in the app being bought for four people when three live
+    here. A package is still not scaled at all — three quarters of a table
+    still buys one whole bottle.
+
+    A per-portion amount is then held UNROUNDED until the whole ingest pass
+    is done and rounded ONCE per grocery line — see WeekGroceryBuffer and
+    _week_bought_amount. Rounding each meal's share up on its own is how
+    12.75 peppers became 14 instead of 13; a shopper buys the peppers once,
+    so the arithmetic rounds once. Each meal's ledger row then carries an
+    apportioned whole share of that rounded total (_apportion), which is
+    what keeps reversal exactly symmetric — clearing the week empties the
+    line rather than leaving a phantom quarter-pepper behind.
+
+    A quantity with no number in it at all ("a bunch", "to taste") can't be
+    summed, so it skips the buffer and goes on per meal exactly as before.
 
     A cook-once-eat-twice chain moves that factor a second time, and moves
     the other night to zero. A LEFTOVERS entry contributes NOTHING at all
@@ -713,9 +905,10 @@ def _add_recipe_ingredients_for_entries(
 
     Every contributing meal gets its own meal_plan_grocery_links row, so
     reversal stays exactly symmetric with what was added: a per-portion
-    row carries that meal's own scaled share, and a package row carries
-    the package, with _reverse_meal_grocery_contributions holding the line
-    on the list until the last meal that named it is gone.
+    row carries that meal's apportioned share of the rounded line, and a
+    package row carries the package, with
+    _reverse_meal_grocery_contributions holding the line on the list until
+    the last meal that named it is gone.
 
     Deliberately never called from anywhere the household hasn't said yes
     — see plan_meal (opt-in flag, default off) and approve_weekly_plan
@@ -749,7 +942,7 @@ def _add_recipe_ingredients_for_entries(
     # per-entry query the single-meal path used to do would now repeat
     # itself for no reason.
     entry_conn = get_conn()
-    scaled_for_entry: dict[int, list[dict]] = {}
+    scale_for_entry: dict[int, float] = {}
     contributing_ids: list[int] = []
     chains_by_plan: dict[int, dict] = {}
     for entry_id in entry_ids:
@@ -758,7 +951,7 @@ def _add_recipe_ingredients_for_entries(
             (entry_id, household_id()),
         ).fetchone()
         scale = (
-            _attendance.grocery_scale_factor(entry_row["date"], entry_row["slot"])
+            _attendance.servings_scale_factor(entry_row["date"], entry_row["slot"], default_servings)
             if entry_row else 1.0
         )
         if entry_row and entry_row["weekly_plan_id"]:
@@ -777,10 +970,7 @@ def _add_recipe_ingredients_for_entries(
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     scale *= batch["servings"] / batch["cook_eaters"]
         contributing_ids.append(entry_id)
-        scaled_for_entry[entry_id] = (
-            _attendance.scale_ingredients(recipe_ingredients, scale)
-            if scale != 1.0 else recipe_ingredients
-        )
+        scale_for_entry[entry_id] = scale
     entry_conn.close()
     # Every meal in this group was a reheat, so the group buys nothing —
     # the same answer the single-meal path gives for a lone leftovers entry.
@@ -811,22 +1001,14 @@ def _add_recipe_ingredients_for_entries(
     # week (not an ad hoc one-off), so a later week's generation can
     # tell this ingredient apart from a genuine standing want and clear
     # it out once it's stale — see clear_stale_grocery_items.
-    def _record_link(entry_id: int, item: str, grocery_item_id: int, qty: str) -> None:
-        # Record exactly what THIS entry contributed to that grocery
-        # line, before it got merged with anything else already there —
-        # see _reverse_meal_grocery_contributions, which is what lets
-        # swap_meal_in_plan/swap_component_in_plan take this back out
-        # precisely if the meal is later swapped for something else.
-        link_conn = get_conn()
-        link_conn.execute(
-            "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (household_id(), entry_id, grocery_item_id, item, _quantities._strip_prep_descriptor(qty or "")),
-        )
-        link_conn.commit()
-        link_conn.close()
+    # A buffer of this group's own when nobody handed one down, so a single
+    # meal planned in chat still rounds exactly once and this function has
+    # only one code path.
+    own_buffer = buffer is None
+    if own_buffer:
+        buffer = WeekGroceryBuffer(weekly_plan_id)
 
-    for index, ing in enumerate(recipe_ingredients):
+    for ing in recipe_ingredients:
         if ing["item"].strip().lower() in have_names:
             already_have.append(ing["item"])
             continue
@@ -835,25 +1017,44 @@ def _add_recipe_ingredients_for_entries(
         # package (you cannot buy two thirds of a jar), so asking the
         # unscaled quantity keeps the classification stable across meals.
         raw_qty = ing.get("qty", "") or ""
+        category = ing.get("category", "other")
         if _quantities.package_unit(raw_qty):
             add_result = _grocery.add_grocery_item(
-                ing["item"], quantity=raw_qty, category=ing.get("category", "other"), added_by="ai",
+                ing["item"], quantity=raw_qty, category=category, added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max",
             )
             for entry_id in contributing_ids:
-                _record_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
+                _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
         else:
-            for entry_id in contributing_ids:
-                # This meal's own scaled copy of the same ingredient, by
-                # position — scale_ingredients preserves order and length.
-                scaled = scaled_for_entry[entry_id][index]
-                add_result = _grocery.add_grocery_item(
-                    scaled["item"], quantity=scaled.get("qty", ""), category=scaled.get("category", "other"),
-                    added_by="ai", source_weekly_plan_id=weekly_plan_id,
-                )
-                _record_link(entry_id, scaled["item"], add_result["item_id"], scaled.get("qty", ""))
+            # Split exactly the way _normalize_grocery_quantity does, so
+            # the amount and the note that rides with it ("1 bag (2 lb),
+            # frozen") come apart the same on both sides of the list.
+            # _parse_quantity strips a prep descriptor ("3, diced") itself.
+            core, note = _quantities._split_quantity_note(raw_qty.strip())
+            parsed = _quantities._parse_quantity(core)
+            if parsed:
+                # Into the buffer unrounded, one share per meal. Nothing
+                # reaches the list until every recipe in this pass has
+                # added its claim on the same item.
+                for entry_id in contributing_ids:
+                    buffer.add(
+                        entry_id, ing["item"], category,
+                        parsed[0] * scale_for_entry[entry_id], parsed[1], note,
+                    )
+            else:
+                # "A bunch", "to taste", blank. No number to scale or sum,
+                # so it goes on per meal exactly as it always has and
+                # _repeat_or_concatenate handles the repetition.
+                for entry_id in contributing_ids:
+                    add_result = _grocery.add_grocery_item(
+                        ing["item"], quantity=raw_qty, category=category,
+                        added_by="ai", source_weekly_plan_id=weekly_plan_id,
+                    )
+                    _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
         # Once per ingredient, not once per meal: this is the list of
         # NAMES that landed on the shopping list, and approve_weekly_plan
         # counts it distinctly anyway.
         added_items.append(ing["item"])
+    if own_buffer:
+        buffer.flush()
     return added_items, already_have

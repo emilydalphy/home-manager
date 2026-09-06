@@ -32,6 +32,7 @@ def _entry(date: str, slot: str = "dinner", **overrides) -> dict:
         # this explicitly on every entry they care about.
         "is_new_recipe": True,
         "links_to": None,
+        "ingredients": [],
     }
     base.update(overrides)
     return base
@@ -253,6 +254,100 @@ def test_full_plate_is_quiet_with_no_food_groups_data_at_all():
     plate — this rule has no business guessing which one it is."""
     entries = [_entry(MON, food_groups=[])]
     assert "full_plate" not in _rule_ids(check_week(entries, {}))
+
+
+# ---------- ingredient_repeat ----------
+
+_ALL_DAYS = [MON, TUE, WED, THU, FRI, SAT, SUN]
+
+
+def _pepper_dinners(count: int, **overrides) -> list[dict]:
+    """`count` dinners that all reach for the same fresh vegetable."""
+    return [
+        _entry(day, ingredients=[
+            {"item": "Bell peppers", "category": "produce"},
+            {"item": "Onion", "category": "produce"},
+        ], **overrides)
+        for day in _ALL_DAYS[:count]
+    ]
+
+
+def test_ingredient_repeat_fires_on_four_pepper_dinners():
+    """
+    Emily's week, measured: five of seven dinners had peppers in them and
+    nothing in the app noticed. Four is already over the line.
+    """
+    violations = check_week(_pepper_dinners(4), {})
+    assert "ingredient_repeat" in _rule_ids(violations)
+    fired = next(v for v in violations if v.rule == "ingredient_repeat")
+    assert fired.severity == "warn"
+    assert "Bell peppers" in fired.message and "4 of this week's dinners" in fired.message
+
+
+def test_ingredient_repeat_is_quiet_on_two_pepper_dinners():
+    assert "ingredient_repeat" not in _rule_ids(check_week(_pepper_dinners(2), {}))
+
+
+def test_ingredient_repeat_is_quiet_at_exactly_three():
+    """Three of seven is a household that likes peppers, not a problem."""
+    assert "ingredient_repeat" not in _rule_ids(check_week(_pepper_dinners(3), {}))
+
+
+def test_ingredient_repeat_exempts_the_staples():
+    """Onion is in all four of those dinners too and is never the
+    complaint — the rule would be noise if it flagged aromatics."""
+    violations = check_week(_pepper_dinners(4), {})
+    assert not any("Onion" in v.message for v in violations if v.rule == "ingredient_repeat")
+
+
+def test_a_bell_pepper_is_not_a_staple_because_of_the_word_pepper():
+    """
+    The trap in the staple list: black pepper genuinely is a staple, and
+    putting the word in the set would exempt the one ingredient this whole
+    rule was written for. Salt/pepper/oil are pantry and never reach here.
+    """
+    assert plan_quality._is_staple("bell pepper") is False
+    assert plan_quality._is_staple("bell peppers") is False
+    assert plan_quality._is_staple("yellow onion") is True
+    assert plan_quality._is_staple("butternut squash") is False
+
+
+def test_ingredient_repeat_exempts_something_the_household_asked_for():
+    """"We're on a pepper kick" is a request, and honoring it is not a
+    quality failure."""
+    context = {"household_asks": "we're on a bell peppers kick this week"}
+    assert "ingredient_repeat" not in _rule_ids(check_week(_pepper_dinners(5), context))
+
+
+def test_ingredient_repeat_only_counts_fresh_things():
+    """Rice in five dinners is not what Emily was looking at."""
+    entries = [
+        _entry(day, ingredients=[{"item": "Rice", "category": "pantry"}])
+        for day in _ALL_DAYS[:5]
+    ]
+    assert "ingredient_repeat" not in _rule_ids(check_week(entries, {}))
+
+
+def test_ingredient_repeat_does_not_charge_a_reheat_night_twice():
+    """
+    A leftovers night eats an earlier night's cooking. Counting it as a
+    second appearance would flag a week that only cooked the peppers three
+    times.
+    """
+    entries = _pepper_dinners(3) + [
+        _entry(THU, links_to=f"{WED}:dinner", ingredients=[
+            {"item": "Bell peppers", "category": "produce"}]),
+    ]
+    assert "ingredient_repeat" not in _rule_ids(check_week(entries, {}))
+
+
+def test_ingredient_repeat_ignores_lunches_and_breakfasts():
+    """The rule is about dinner, where the produce actually piles up."""
+    entries = [
+        _entry(day, slot="lunch", ingredients=[{"item": "Bell peppers", "category": "produce"}])
+        for day in _ALL_DAYS[:5]
+    ]
+    assert "ingredient_repeat" not in _rule_ids(check_week(entries, {}))
 
 
 # ---------- integration: wired into _finish_week_slots, read-only ----------
