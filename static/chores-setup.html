@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/theme.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Chores setup — Pomona</title>
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="icon" href="/static/icons/icon-192.png" />
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
+<style>
+  /*
+    Standalone chores setup — pulled out of onboarding.html (Emily,
+    2026-09-05, 20a): the chores questions used to be two more onboarding
+    steps after the first-week reveal, but the meal loop is the thing a
+    brand-new household actually came here for, so onboarding now ends at
+    the reveal. This page is that same questionnaire (markup and save
+    calls carried over as-is, not rebuilt), reached afterward from Today's
+    chores card ("Want help with chores too? Set them up") instead of
+    being forced on every household on day one.
+
+    Styles below are copied from onboarding.html's <style> block — same
+    look, since this is the same questionnaire, just relocated.
+  */
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+    background: var(--oat-cream);
+    color: var(--text-body);
+  }
+  .back-link {
+    display: inline-flex; align-items: center; min-height: 44px;
+    font-family: var(--font-body); font-size: 0.85rem; font-weight: 700;
+    color: var(--text-muted); text-decoration: none; cursor: pointer;
+  }
+  .back-link:hover { color: var(--ink-strong); }
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink-strong); margin: 12px 0 4px; }
+  p.subtitle { color: var(--text-muted); margin: 0 0 1.5rem; font-size: 0.95rem; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  input[type=text], input[type=number], textarea, select {
+    padding: 11px 12px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    width: 100%;
+    background: var(--surface-raised);
+    color: var(--text-body);
+    min-height: 44px;
+  }
+  input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
+    border-color: var(--ink-strong);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  textarea { resize: vertical; min-height: 60px; }
+  .remove-btn {
+    flex: 0 0 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--card-border);
+    background: var(--surface-raised);
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+  }
+  .remove-btn:hover { border-color: var(--electric-coral); color: var(--electric-coral); }
+  .add-btn {
+    background: transparent;
+    border: 1px solid var(--ink-strong);
+    color: var(--ink-strong);
+    font-family: var(--font-body);
+    font-weight: 700;
+    padding: 10px 16px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-bottom: 1.25rem;
+  }
+  .add-btn:hover { background: var(--violet-soft); }
+  label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--ink-strong); display: block; margin: 1rem 0 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 10px 16px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--card-border);
+    background: var(--surface-raised);
+    color: var(--text-body);
+    cursor: pointer;
+  }
+  .chip.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+  .chip.small { padding: 6px 12px; min-height: 32px; font-size: 0.75rem; }
+  .next-btn {
+    font-family: var(--font-body);
+    font-weight: 700;
+    background: var(--turmeric-gold);
+    color: var(--ink-strong);
+    border: none;
+    padding: 13px 22px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    margin-right: 10px;
+    transition: background 0.15s ease;
+  }
+  .next-btn:hover:not(:disabled) { background: var(--gold-hover); }
+  .next-btn:disabled { opacity: 0.6; cursor: default; }
+  .two-col { display: flex; gap: 10px; }
+  .two-col > div { flex: 1; }
+  .loading-note { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
+</style>
+<script src="/static/error-reporter.js"></script>
+</head>
+<body>
+
+<a class="back-link" href="/">&larr; Back to Today</a>
+
+<h1>Let&rsquo;s set up chores</h1>
+<p class="subtitle">Pets, what you&rsquo;re hoping I can help with, and a couple of quick questions about your home. Come back and change any of this whenever you like.</p>
+
+<label class="field-label">Any pets?</label>
+<div class="chip-row" id="has-pets-chips"></div>
+<div id="pets-detail" style="display:none; margin-top:10px">
+  <div id="pets"></div>
+  <button class="add-btn" id="add-pet" type="button">+ Add pet</button>
+</div>
+
+<label class="field-label">What are you hoping I can help with?</label>
+<textarea id="goals" rows="2" placeholder="Stay on top of chores, eat healthier, waste less food..."></textarea>
+
+<label class="field-label">Home type</label>
+<div class="chip-row" id="home-type-chips"></div>
+
+<div class="two-col" style="margin-top:1rem">
+  <div>
+    <label class="field-label">Bedrooms</label>
+    <input type="number" id="bedrooms" min="0" value="2" />
+  </div>
+  <div>
+    <label class="field-label">Bathrooms</label>
+    <input type="number" id="bathrooms" min="0" value="1" />
+  </div>
+</div>
+
+<label class="field-label">Do you have a yard or outdoor space to maintain?</label>
+<div class="chip-row" id="yard-chips"></div>
+
+<label class="field-label">How would you describe the upkeep you want?</label>
+<div class="chip-row" id="standard-chips"></div>
+
+<label class="field-label">Who's in the chore rotation?</label>
+<div class="chip-row" id="rotation-chips"></div>
+
+<label class="field-label">Any existing help (cleaning service, etc.)?</label>
+<div class="row">
+  <input type="text" id="existing-help" placeholder="e.g. cleaning service, or leave blank for none" style="flex:1.5" />
+  <input type="text" id="existing-help-freq" placeholder="How often?" style="flex:1" />
+</div>
+
+<label class="field-label">Anything you specifically want tracked?</label>
+<textarea id="include-notes" rows="2" placeholder="e.g. we always forget the air filter"></textarea>
+
+<label class="field-label">Anything to leave out?</label>
+<textarea id="exclude-notes" rows="2" placeholder="e.g. we have a dishwasher, skip dish reminders"></textarea>
+
+<div><button class="next-btn" id="chores-save-btn" type="button">Save chores</button></div>
+<p class="loading-note" id="chores-loading" style="display:none">Saving&hellip;</p>
+
+<script>
+const HOME_TYPES = ['House', 'Apartment / condo'];
+const STANDARD_OPTIONS = ['Relaxed', 'Standard', 'Meticulous'];
+
+function chipWithCustom(container, options, multi) {
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip';
+    btn.textContent = opt;
+    btn.dataset.value = opt;
+    btn.onclick = () => {
+      if (!multi) container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.toggle('active');
+    };
+    container.appendChild(btn);
+  });
+}
+function getActiveChips(container) {
+  return [...container.querySelectorAll('.chip.active')].map(c => c.dataset.value);
+}
+function getActiveChip(container) {
+  const el = container.querySelector('.chip.active');
+  return el ? el.dataset.value : '';
+}
+
+// ---------- Pets ----------
+const petsDiv = document.getElementById('pets');
+function addPetRow() {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <input type="text" class="pet-name" placeholder="Pet's name" style="flex:1.5">
+    <input type="text" class="pet-type" placeholder="Type (dog, cat...)" style="flex:1">
+    <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
+  `;
+  row.querySelector('.remove-btn').onclick = () => row.remove();
+  petsDiv.appendChild(row);
+}
+document.getElementById('add-pet').onclick = () => addPetRow();
+
+const hasPetsChips = document.getElementById('has-pets-chips');
+const petsDetail = document.getElementById('pets-detail');
+chipWithCustom(hasPetsChips, ['Yes', 'No'], false);
+hasPetsChips.querySelectorAll('.chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const yes = btn.dataset.value === 'Yes';
+    petsDetail.style.display = yes ? 'block' : 'none';
+    if (yes && !petsDiv.querySelector('.row')) addPetRow();
+    if (!yes) petsDiv.innerHTML = '';
+  });
+});
+function currentPets() {
+  return [...petsDiv.querySelectorAll('.row')].map(row => ({
+    name: row.querySelector('.pet-name').value.trim(),
+    pet_type: row.querySelector('.pet-type').value.trim(),
+  })).filter(p => p.name);
+}
+
+// ---------- Chores profile fields ----------
+chipWithCustom(document.getElementById('home-type-chips'), HOME_TYPES, false);
+chipWithCustom(document.getElementById('yard-chips'), ['Yes', 'No'], false);
+const standardChips = document.getElementById('standard-chips');
+chipWithCustom(standardChips, STANDARD_OPTIONS, false);
+standardChips.querySelector('[data-value="Standard"]').classList.add('active');
+
+// The rotation chips need this household's existing members — unlike
+// onboarding (where members were just typed in on an earlier step still
+// in memory), this page runs after onboarding, so members already exist
+// in the database and are fetched instead.
+async function loadMembersForRotation() {
+  const rotationChips = document.getElementById('rotation-chips');
+  try {
+    const res = await fetch('/api/onboarding/status');
+    const data = await res.json();
+    const members = (data.household && data.household.members) || [];
+    rotationChips.innerHTML = '';
+    members.forEach(m => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip active';
+      btn.textContent = m.name;
+      btn.dataset.value = m.name;
+      btn.onclick = () => btn.classList.toggle('active');
+      rotationChips.appendChild(btn);
+    });
+  } catch (err) {
+    console.warn('Could not load household members for chore rotation:', err);
+  }
+}
+loadMembersForRotation();
+
+function buildChoreProfile() {
+  return {
+    home_type: getActiveChip(document.getElementById('home-type-chips')),
+    bedrooms: parseInt(document.getElementById('bedrooms').value) || 0,
+    bathrooms: parseInt(document.getElementById('bathrooms').value) || 0,
+    has_yard: getActiveChip(document.getElementById('yard-chips')) === 'Yes',
+    standard: (getActiveChip(document.getElementById('standard-chips')) || 'Standard').toLowerCase(),
+    rotation_members: getActiveChips(document.getElementById('rotation-chips')),
+    existing_help: document.getElementById('existing-help').value.trim(),
+    existing_help_frequency: document.getElementById('existing-help-freq').value.trim(),
+    include_notes: document.getElementById('include-notes').value.trim(),
+    exclude_notes: document.getElementById('exclude-notes').value.trim(),
+  };
+}
+
+async function saveHouseholdExtras() {
+  // Pets + goals — same endpoint onboarding used, with an empty members
+  // list since this page never touches household membership.
+  await fetch('/api/onboarding/household', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ members: [], pets: currentPets(), goals: document.getElementById('goals').value.trim() }),
+  });
+}
+
+async function saveChoresProfile() {
+  const profile = buildChoreProfile();
+  const res = await fetch('/api/onboarding/chores-profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error('Could not save');
+}
+
+document.getElementById('chores-save-btn').onclick = async () => {
+  const btn = document.getElementById('chores-save-btn');
+  btn.disabled = true;
+  document.getElementById('chores-loading').style.display = 'block';
+  try {
+    await saveHouseholdExtras();
+    await saveChoresProfile();
+    window.location.href = '/';
+  } catch (err) {
+    console.error('Chores setup save failed:', err);
+    alert("Couldn't save your chores — try again in a moment.");
+  } finally {
+    btn.disabled = false;
+    document.getElementById('chores-loading').style.display = 'none';
+  }
+};
+</script>
+</body>
+</html>

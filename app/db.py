@@ -298,6 +298,13 @@ _MIGRATIONS = [
     # (Emily, 2026-09-05). Existing households get 3, not 7 — see
     # schema.sql's comment on meal_preferences.snacks_per_week for why.
     ("meal_preferences", "snacks_per_week", "INTEGER NOT NULL DEFAULT 3"),
+    # Loop Board 19a (Emily, 2026-09-05): stores are asked just-in-time on
+    # the Grocery tab's first real trip, not during onboarding — see the
+    # Plan stops "Where do you usually shop?" card in shell.js. Empty means
+    # "never asked or never dismissed"; a household that quietly declines
+    # ("One list is fine") gets a timestamp here so the card never nags
+    # them again, even though usual_stores itself stays empty.
+    ("meal_preferences", "stores_prompt_dismissed_at", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

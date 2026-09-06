@@ -104,6 +104,29 @@ def add_usual_stores(items: list[str]) -> dict:
     return {"usual_stores": merged}
 
 
+def dismiss_stores_prompt() -> dict:
+    """
+    Quietly persist that the household declined the Grocery tab's
+    just-in-time "Where do you usually shop?" first-visit card (Loop Board
+    19a, Emily 2026-09-05: stores are asked at the first real grocery
+    trip, not during onboarding) — the card's own "One list is fine" link.
+    Doesn't touch usual_stores itself, which stays empty; it only stops
+    the card from asking again. See meal_preferences.stores_prompt_dismissed_at.
+    """
+    conn = get_conn()
+    conn.execute(
+        """
+        INSERT INTO meal_preferences (household_id, stores_prompt_dismissed_at, updated_at)
+        VALUES (?, datetime('now'), datetime('now'))
+        ON CONFLICT(household_id) DO UPDATE SET stores_prompt_dismissed_at = excluded.stores_prompt_dismissed_at, updated_at = datetime('now')
+        """,
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+    return {"dismissed": True}
+
+
 def add_store_typical_items(
     store: str, items: list[str], log_event: bool = True, sync_preference: bool = True
 ) -> dict:

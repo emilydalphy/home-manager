@@ -169,6 +169,7 @@ def get_household_memory() -> dict:
     dislikes = json.loads(prefs["dislikes_json"]) if prefs else []
     cooking_time_pref = prefs["cooking_time_preference"] if prefs else ""
     usual_stores = json.loads(prefs["usual_stores_json"]) if prefs else []
+    stores_prompt_dismissed = bool(prefs and prefs["stores_prompt_dismissed_at"])
     eating_style = prefs["eating_style"] if prefs else ""
     goals = household["goals"] if household else ""
 
@@ -206,6 +207,7 @@ def get_household_memory() -> dict:
         "recipe_variety_insight": recipe_variety_insight,
         "planning_mode": prefs["planning_mode"] if prefs else "day_based",
         "usual_stores": usual_stores,
+        "stores_prompt_dismissed": stores_prompt_dismissed,
         "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},
         "eating_style": eating_style,
         "dinners_per_week": prefs["dinners_per_week"] if prefs else 7,
