@@ -305,6 +305,17 @@ _MIGRATIONS = [
     # ("One list is fine") gets a timestamp here so the card never nags
     # them again, even though usual_stores itself stays empty.
     ("meal_preferences", "stores_prompt_dismissed_at", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "Defrost check: ask at approval" (Emily, 2026-09-04): the
+    # freezer-check card shown right after a week is approved (see
+    # tools.defrost.meat_items_for_plan / confirm_frozen_items and the
+    # renderWeekApproval card in shell.js) asks once per plan. NULL means
+    # "never answered or dismissed" — the card keeps showing until it is;
+    # set the moment the household answers (with items or with "None — all
+    # fresh") or quietly dismisses it. Re-asking from the Cook view's
+    # "Something in the freezer?" link does not touch this column — it's
+    # only what gates the automatic card, not a ceiling on how many times
+    # the question can be answered.
+    ("weekly_plans", "defrost_asked_at", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

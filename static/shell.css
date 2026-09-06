@@ -2288,6 +2288,36 @@ html, body {
 }
 .plan-nudge-link:hover { text-decoration: underline; }
 
+/* The freezer-check ask card (Loop Board "Defrost check: ask at
+   approval") — a .plan-nudge-card instance, not a new card type: same
+   eyebrow/title/body/dismiss shape, just with a row of toggle chips and a
+   two-button .ny-actions row (borrowed as-is — see this file's own
+   comment above on why .ny-actions .btn-gold overrides gold to spruce: this
+   card's primary action must not be apricot, since the receipt above it
+   already used the screen's one apricot primary on "Take me to the
+   list"). */
+.defrost-ask-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.defrost-chip {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 14px;
+  min-height: 44px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--hairline);
+  cursor: pointer;
+}
+.defrost-chip:hover { background: var(--sand); }
+/* Selected reads as "settled, already true" rather than "urgent" — celadon
+   is the reassurance accent (DESIGN_SYSTEM.md §1), never apricot here. */
+.defrost-chip.is-selected {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  color: var(--ink-on-celadon);
+}
+
 /* The permanent entry point on Meals — same row shape as .week-reset-row
    below, which is what makes "it'll be waiting for you under Meals" a
    promise the screen actually keeps. */

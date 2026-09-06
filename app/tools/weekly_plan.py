@@ -2000,6 +2000,10 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         "approved_at": plan["approved_at"],
         "approved_grocery_added": plan["approved_grocery_added"],
         "approved_grocery_skipped": plan["approved_grocery_skipped"],
+        # The freezer-check ask card's own gate (Loop Board "Defrost check:
+        # ask at approval") — None until the household has answered it or
+        # quietly dismissed it once for this plan. See tools.defrost.
+        "defrost_asked_at": plan["defrost_asked_at"],
         # Which revision of the household's answers produced this week.
         "intake_id": plan["intake_id"],
         "constraints_notes": plan["constraints_notes"],
@@ -2146,6 +2150,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "approved_at": plan["approved_at"],
         "approved_grocery_added": plan["approved_grocery_added"],
         "approved_grocery_skipped": plan["approved_grocery_skipped"],
+        # Passed through so the Meals screen's approved receipt (the only
+        # place the freezer-check ask card shows itself) knows whether to
+        # offer it — see tools.defrost.meat_items_for_plan.
+        "defrost_asked_at": plan["defrost_asked_at"],
         "grocery_preview": None,
         # The dietary/allergy warning the review band shows above the
         # Approve button. Recomputed here rather than stored with the plan

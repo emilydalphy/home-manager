@@ -1835,6 +1835,56 @@ def approve_week(week_start: str, req: WeekApproveRequest):
     }
 
 
+class DefrostConfirmRequest(BaseModel):
+    # Plain ingredient names, exactly as handed back by GET .../defrost-items
+    # (meat_items_for_plan's own "item" values). Empty list is a real,
+    # complete answer ("None — all fresh"), not "nothing sent yet" — see
+    # confirm_week_defrost below.
+    items: list[str] = []
+
+
+@app.get("/api/week/{week_start}/defrost-items")
+def week_defrost_items(week_start: str):
+    """
+    The plan's own meat/seafood ingredients, each with the night(s) it
+    feeds — the freezer-check ask card's chip list (Loop Board "Defrost
+    check: ask at approval"). Read-only; never touches inventory, since the
+    whole point of asking is that inventory is deferred policy and most
+    households never track a freezer item there at all (see
+    tools.defrost.meat_items_for_plan).
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        items = tools.meat_items_for_plan(plan_id)
+    except Exception as e:
+        logger.exception("Defrost item lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"weekly_plan_id": plan_id, "items": items}
+
+
+@app.post("/api/week/{week_start}/defrost-confirm")
+def confirm_week_defrost(week_start: str, req: DefrostConfirmRequest):
+    """
+    The household's answer to the freezer-check ask card — which of this
+    week's meat/seafood ingredients are actually in the freezer, or none at
+    all. Schedules a defrost prep task per (item, cook night) via
+    tools.confirm_frozen_items, and always marks defrost_asked_at: an empty
+    `items` list ("None — all fresh") and a quiet dismiss both answer the
+    question for this plan just as completely as naming three items does,
+    so the automatic ask card is not shown again either way (re-asking
+    stays available from the Cook view's own link, which does not depend
+    on this column).
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        result = tools.confirm_frozen_items(plan_id, req.items)
+        tools.mark_defrost_asked(plan_id)
+    except Exception as e:
+        logger.exception("Defrost confirmation failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"weekly_plan_id": plan_id, "created": result["created"], "notes": result["notes"]}
+
+
 @app.get("/api/reset/preview")
 def reset_preview():
     """

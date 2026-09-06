@@ -3850,6 +3850,141 @@
   // than just leaving the offer up. See renderWeekApproval's handoff row.
   var weekReceiptHandoffDismissed = {};
 
+  // The freezer-check ask card's own state (Loop Board "Defrost check: ask
+  // at approval") — page-view only, same reasoning as
+  // weekReceiptHandoffDismissed just above: nothing here is the server's
+  // business except the eventual answer. `items` is null until fetched (or
+  // reset to null to force a fresh fetch — see openDefrostAskFromCook),
+  // then the plan's own meat/seafood ingredients once loaded; `selected`
+  // is which chips are currently tapped, keyed by item name.
+  // `forceShow` is a one-shot override so the Cook view's "Something in
+  // the freezer?" link can reopen this even after the household already
+  // answered for this plan — it does not touch defrost_asked_at itself,
+  // which stays what gates the AUTOMATIC card.
+  var defrostAskState = { planId: null, items: null, selected: {}, forceShow: false };
+
+  function defrostAskChipHtml(it) {
+    var selected = !!defrostAskState.selected[it.item];
+    return '<button type="button" class="defrost-chip' + (selected ? ' is-selected' : '') + '" ' +
+      'data-defrost-chip="' + escapeHtml(it.item) + '" aria-pressed="' + selected + '">' +
+      escapeHtml(it.item) +
+    '</button>';
+  }
+
+  function defrostAskCardHtml() {
+    var items = defrostAskState.items || [];
+    return (
+      '<div class="shell-card plan-nudge-card defrost-ask-card" id="defrost-ask-card">' +
+        '<div class="plan-nudge-top">' +
+          '<span class="plan-nudge-eyebrow">FREEZER CHECK</span>' +
+          '<button type="button" class="plan-nudge-dismiss" id="defrost-ask-dismiss">Not now</button>' +
+        '</div>' +
+        '<div class="plan-nudge-title">Any of this week’s meat in the freezer?</div>' +
+        '<div class="plan-nudge-body">Tap what’s frozen and I’ll tell you when to move it to the fridge.</div>' +
+        '<div class="defrost-ask-chips">' + items.map(defrostAskChipHtml).join('') + '</div>' +
+        '<div class="ny-actions">' +
+          '<button type="button" class="btn-gold" id="defrost-ask-confirm">Add to the schedule</button>' +
+          '<button type="button" class="btn-sand" id="defrost-ask-none">None — all fresh</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function wireDefrostAskCard(row, panel, data) {
+    var card = row.querySelector('#defrost-ask-card');
+    if (!card) return;
+    card.querySelectorAll('[data-defrost-chip]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var name = chip.getAttribute('data-defrost-chip');
+        defrostAskState.selected[name] = !defrostAskState.selected[name];
+        chip.classList.toggle('is-selected');
+        chip.setAttribute('aria-pressed', defrostAskState.selected[name] ? 'true' : 'false');
+      });
+    });
+    var dismissBtn = card.querySelector('#defrost-ask-dismiss');
+    if (dismissBtn) dismissBtn.addEventListener('click', function () { submitDefrostAsk(panel, data, []); });
+    var noneBtn = card.querySelector('#defrost-ask-none');
+    if (noneBtn) noneBtn.addEventListener('click', function () { submitDefrostAsk(panel, data, []); });
+    var confirmBtn = card.querySelector('#defrost-ask-confirm');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function () {
+        var chosen = Object.keys(defrostAskState.selected).filter(function (k) { return defrostAskState.selected[k]; });
+        submitDefrostAsk(panel, data, chosen);
+      });
+    }
+  }
+
+  // Fetched once per plan (see defrostAskState.planId), then cached —
+  // switching tabs and back must not refetch (nav rules: "nothing
+  // reloads"). Re-renders the approval row once the answer arrives, since
+  // the row already painted without the card while this was in flight.
+  async function ensureDefrostAskItems(panel, data) {
+    if (!data.weekly_plan_id) return;
+    if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null) return;
+    defrostAskState.planId = data.weekly_plan_id;
+    defrostAskState.items = null;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items');
+      if (!res.ok) throw new Error('defrost items lookup failed');
+      var body = await res.json();
+      if (defrostAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
+      defrostAskState.items = body.items || [];
+      renderWeekApproval(panel, data);
+    } catch (err) {
+      console.warn('Defrost item lookup failed:', err);
+      if (defrostAskState.planId === data.weekly_plan_id) defrostAskState.items = [];
+    }
+  }
+
+  async function submitDefrostAsk(panel, data, items) {
+    var card = panel.querySelector('#defrost-ask-card');
+    var buttons = card ? card.querySelectorAll('button') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items }),
+      });
+      if (!res.ok) throw new Error('defrost confirm failed');
+      var body = await res.json();
+      // Force a fresh defrost-items fetch next time this plan's card could
+      // show again (the Cook view's re-ask) — this plan just got an
+      // answer, but a re-ask can offer the same items again.
+      defrostAskState.items = null;
+      defrostAskState.selected = {};
+      var notes = (body.notes || []).map(function (n) { return n.note; });
+      if (notes.length) {
+        // Calm and plain (DESIGN_SYSTEM §8) — the note already IS the fact
+        // plus its way out, so it's shown as-is, held long enough to read.
+        showToast(notes[0], null, 9000);
+      } else if (items.length) {
+        showToast('Got it — I’ll remind you when to move ' + (items.length === 1 ? 'it' : 'them') + ' to the fridge.');
+      }
+      await loadWeekMenu(panel); // refetches defrost_asked_at so the card hides itself
+    } catch (err) {
+      console.warn('Defrost confirmation failed:', err);
+      buttons.forEach(function (b) { b.disabled = false; });
+      alert('Could not save that right now — try again in a moment.');
+    }
+  }
+
+  // The Cook view's "Something in the freezer?" re-ask (see cookPrepHtml).
+  // Lands on Meals' Plan state, where the ask card actually lives, forcing
+  // it open even if this plan already has an answer on file — re-asking is
+  // explicitly allowed any number of times, it just never resets
+  // defrost_asked_at (only a real answer/dismiss does that).
+  function openDefrostAskFromCook() {
+    defrostAskState.items = null;
+    defrostAskState.selected = {};
+    defrostAskState.forceShow = true;
+    activateTab('week', true, { mealsView: 'plan' });
+    var panel = panels['week'];
+    if (!panel) return;
+    if (weekState.data) renderWeekApproval(panel, weekState.data);
+    else loadWeekMenu(panel);
+  }
+
   function renderWeekApproval(panel, data) {
     var row = panel.querySelector('#week-approve-row');
     if (!row) return;
@@ -3881,6 +4016,26 @@
             '</div>' +
           '</div>';
       }
+
+      // The freezer-check ask card (Loop Board "Defrost check: ask at
+      // approval") — the same moment the "your list is ready" handoff
+      // above appears is the natural place to also ask what's frozen,
+      // since inventory is deferred policy and most households never
+      // track a freezer item any other way. Asked once per plan
+      // (data.defrost_asked_at gates it); forceShow is the one-shot
+      // override the Cook view's re-ask link sets, consumed here whether
+      // or not there turns out to be anything to ask about.
+      var forceDefrostShow = defrostAskState.forceShow;
+      defrostAskState.forceShow = false;
+      var defrostHtml = '';
+      if (!data.defrost_asked_at || forceDefrostShow) {
+        if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null) {
+          if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml();
+        } else {
+          ensureDefrostAskItems(panel, data); // re-renders this row once it resolves
+        }
+      }
+
       row.innerHTML =
         '<div class="shell-card week-receipt-card">' +
           '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
@@ -3897,7 +4052,9 @@
           // adds what's new. Removing items somebody may already have
           // bought is worse than a slightly long list.
           '<button type="button" class="week-reopen-btn" id="week-reopen-btn">Reopen the week</button>' +
-        '</div>';
+        '</div>' +
+        defrostHtml;
+      if (defrostHtml) wireDefrostAskCard(row, panel, data);
       row.querySelector('#week-reopen-btn').addEventListener('click', function () { reopenWeek(panel, data); });
       row.querySelector('#week-setup-link').addEventListener('click', openMealSetup);
       var goBtn = row.querySelector('#week-receipt-go');
@@ -4941,6 +5098,7 @@
         '<div class="cook-voice" id="cook-voice" hidden></div>' +
         cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
         cookAttentionHtml() +
+        cookDefrostLinkHtml() +
         '<div class="cook-body">' +
           cookPrepHtml(data) +
           cookRestOfWeekHtml(meals) +
@@ -5077,6 +5235,18 @@
           'title="' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '">' + COOK_ICONS.check + '</button>' +
       '</div>' +
     '</div>';
+  }
+
+  // Re-ask entry point (Loop Board "Defrost check: ask at approval") — a
+  // household can always find something extra was frozen after already
+  // answering, so this stays available regardless of whether there's a
+  // current prep schedule, not folded inside cookPrepHtml's tasks.length
+  // guard. Shares .week-reset-link/.week-tweak-link's exact quiet-text-link
+  // idiom (Newsreader italic, own 44px tap target) rather than inventing a
+  // second visual language for the same kind of action.
+  function cookDefrostLinkHtml() {
+    return '<button type="button" class="week-reset-link week-tweak-link cook-defrost-link" ' +
+      'data-cook="defrost-ask">Something in the freezer?</button>';
   }
 
   // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
@@ -5544,6 +5714,7 @@
     }
     if (what === 'check-meal') return cookCheckMeal(el);
     if (what === 'check-prep') return cookCheckPrep(el);
+    if (what === 'defrost-ask') return openDefrostAskFromCook();
     if (what === 'serves') return cookStepServings(el);
     if (what === 'fill') return cookFillRecipe(el);
     if (what === 'attn-toggle') { cookState.attentionOpen = !cookState.attentionOpen; renderCook(); return; }
