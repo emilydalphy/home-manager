@@ -353,36 +353,35 @@ def get_week_planning_nudge() -> dict:
 
     Suppressed once dismissed, and the dismissal key is the week itself —
     so "I won't ask again this week" is literally true, and next week's
-    offer isn't silenced by this week's dismissal. Also suppressed once
-    that week has a plan: there is nothing left to offer.
+    offer isn't silenced by this week's dismissal.
+
+    Emily's rule (2026-09-05): case 1 shows every morning until a plan
+    actually covers today again — including the morning after a plan's
+    last day has passed and nothing has replaced it. There used to be a
+    second guard here ("but this week was already filed under a plan"),
+    meant to stop a mid-week-onboarding household from being told Monday
+    was left unplanned when it simply didn't exist yet. In practice that
+    guard also silenced the nudge for the rest of ANY week whose plan ran
+    out early — the exact case this rule now says must keep nudging — so
+    it's gone. The only thing that still silences case 1 is a dismissal of
+    THIS suggested period specifically (below): dismissed, it stays quiet
+    until the suggestion changes; not dismissed, it asks again tomorrow.
     """
     today = date.today()
-    this_monday = today - timedelta(days=today.weekday())
     suggestion = suggest_planning_period()
 
     conn = get_conn()
     dismissed = _notifications._dismissed_keys(conn)
     covering = _live_plan_covering(conn, today.isoformat())
-    planned_week_keys = {
-        row["week_start_date"]
-        for row in conn.execute(
-            "SELECT DISTINCT week_start_date FROM weekly_plans WHERE household_id = ? AND status != 'retired'",
-            (household_id(),),
-        ).fetchall()
-    }
     conn.close()
 
     target = None
     target_days = suggestion["day_count"]
     is_current = False
-    if covering is None and this_monday.isoformat() not in planned_week_keys:
-        # Nothing covers today. The filing-key half of that test is what
-        # keeps a part-week honest: a plan filed under this Monday whose
-        # content deliberately starts on the Wednesday the household joined
-        # has NOT left Monday unplanned in any sense worth nudging about —
-        # those days went by before the household existed here. Without it,
-        # every mid-week onboarding would be met by an immediate offer to
-        # re-plan the week it had just been given.
+    if covering is None:
+        # Nothing covers today, full stop — offer to plan the current
+        # period. See the docstring above for why there's no additional
+        # "already filed this week" guard any more.
         target, is_current = date.fromisoformat(suggestion["start_date"]), True
     elif covering is not None:
         # The generalisation of "from Saturday onward, offer next week".
