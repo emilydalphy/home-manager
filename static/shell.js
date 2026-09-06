@@ -1724,7 +1724,7 @@
         '<input type="text" class="gro-m-store" value="' + escapeHtml(it.store || '') + '" placeholder="Store" aria-label="Store for ' + escapeHtml(it.item) + '" />' +
         '<button type="button" class="gro-m-save" data-gro="save-row" data-id="' + id + '">Save</button>' +
         '<button type="button" class="gro-m-have" data-gro="have" data-id="' + id + '">Have it</button>' +
-        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Elsewhere</button>' +
+        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Somewhere else</button>' +
         '<button type="button" class="gro-m-remove" data-gro="remove" data-id="' + id + '">Remove</button>' +
       '</div>';
   }
@@ -1893,6 +1893,12 @@
             // the list entirely because it turns out no store is needed.
             '<button type="button" class="gro-pill gro-pill-have" data-gro="already-have" data-id="' + id + '" ' +
               'aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>' +
+            // Same backend path as the To buy ⋯ menu's "Somewhere else" —
+            // covers the other reason an item leaves the to-sort list
+            // without a store here: it's already being picked up on a trip
+            // that isn't one of this household's stores.
+            '<button type="button" class="gro-pill gro-pill-else" data-gro="triage-exclude" data-id="' + id + '" ' +
+              'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
           '</div>' +
         '</div>';
       });
@@ -2380,6 +2386,23 @@
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/already-have');
         }, "Couldn't move that to the kitchen — try again.").then(function (ok) {
+          if (!ok) return;
+          var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
+          groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
+          renderGrocery();
+        });
+        return;
+
+      // Same backend path as the To buy ⋯ menu's "Somewhere else"
+      // (exclude): the item is getting picked up somewhere that isn't one
+      // of this household's stores, so it comes off the to-sort list the
+      // same way "Have it" does, and shows up under Review's "Getting
+      // elsewhere" instead.
+      case 'triage-exclude':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/exclude');
+        }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok) return;
           var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
           groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
