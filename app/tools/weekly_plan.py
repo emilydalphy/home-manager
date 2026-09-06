@@ -2536,6 +2536,65 @@ def _plate_sides(sides_json: str | None) -> list[dict]:
     return sides if isinstance(sides, list) else []
 
 
+def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
+    """
+    Buy, for the first time, whatever this approved plan's entries have
+    never actually contributed to the grocery list — swap_meal_in_plan's
+    fix for the leftover-chain-swap gap its own docstring describes.
+
+    Deliberately general rather than a special case for the chain it was
+    written for: it finds every entry with a real recipe and no
+    meal_plan_grocery_links row yet (_plan_grocery_candidate_entries, the
+    same query approve_weekly_plan and preview_plan_grocery_impact already
+    trust for "what hasn't been bought"), groups by recipe, and runs them
+    through the exact ingestion approve_weekly_plan uses for a first
+    approval — one WeekGroceryBuffer for the whole pass, so amounts that
+    land on the same line still consolidate and round together rather than
+    each being bought — and rounded — on its own.
+    """
+    conn = get_conn()
+    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+    conn.close()
+    if not entries:
+        return {"groceries_added": [], "already_have_skipped": []}
+
+    by_recipe: dict[int, dict] = {}
+    for entry in entries:
+        group = by_recipe.setdefault(
+            entry["recipe_id"], {
+                "ingredients_json": entry["ingredients_json"],
+                "default_servings": entry["default_servings"],
+                "entry_ids": [],
+            },
+        )
+        group["entry_ids"].append(entry["id"])
+
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
+    added_items: list[str] = []
+    already_have: list[str] = []
+    for group in by_recipe.values():
+        added, have = _recipes._add_recipe_ingredients_for_entries(
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
+            default_servings=group["default_servings"], buffer=buffer,
+        )
+        added_items.extend(added)
+        already_have.extend(have)
+
+    # Sides ride along the same way approve_weekly_plan brings them in —
+    # see its own comment on why they share this buffer rather than one of
+    # their own.
+    for entry in entries:
+        side_ingredients = _entry_side_ingredients(entry)
+        if side_ingredients:
+            added, have = _recipes._add_recipe_ingredients_for_entries(
+                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
+            )
+            added_items.extend(added)
+            already_have.extend(have)
+    buffer.flush()
+    return {"groceries_added": added_items, "already_have_skipped": already_have}
+
+
 def _entry_shopping_ingredients(row) -> list[dict]:
     """
     Everything one plan entry puts on the shopping list: its recipe's own
@@ -2883,13 +2942,36 @@ def swap_meal_in_plan(
     deleted, whatever the amount it contributed calls for — see
     _reverse_meal_grocery_contributions) so the grocery list reflects only
     the new meal afterward instead of carrying both.
+
+    A source night other nights were eating as leftovers (see leftovers.py)
+    reverses its WHOLE batch contribution above, same as any other swap —
+    the scaled amount that covered its own table plus every leftover night
+    it fed. Once the swap lands, plan_leftover_chains no longer confirms
+    that pairing: the new entry here carries no make_double_for of its own
+    (repair_leftover_chains, the only writer of that field, runs at
+    generation time, not here — see its docstring), so each former
+    leftover night is now, honestly, just an ordinary planned meal — one
+    that has never had its own ingredients bought, because a leftovers
+    night never contributes to the grocery list on its own (see
+    recipes._add_recipe_ingredients_for_entries). Nothing else re-buys them
+    on its own, so this does, via _reingest_unlinked_entries — the same
+    incremental top-up approve_weekly_plan's own candidate query already
+    performs for a slot planned after the week was approved.
     """
+    from . import leftovers as _leftovers
+
     conn = get_conn()
     old_entries = conn.execute(
         "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
         (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
     conn.close()
+    # Checked before anything is torn down: once the old entry is deleted,
+    # there is nothing left in the DB to ask whether it used to feed other
+    # nights' leftovers.
+    was_a_leftovers_source = any(
+        row["id"] in _leftovers.plan_leftover_chains(weekly_plan_id)["sources"] for row in old_entries
+    )
     for row in old_entries:
         _grocery._reverse_meal_grocery_contributions(row["id"])
 
@@ -2900,7 +2982,7 @@ def swap_meal_in_plan(
     )
     conn.commit()
     conn.close()
-    return _meal_plans.plan_meal(
+    result = _meal_plans.plan_meal(
         meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
         # Only put the new meal's ingredients on the list if this week has
         # already been approved — approval is what put the old meal's
@@ -2909,6 +2991,16 @@ def swap_meal_in_plan(
         # leaves the grocery list alone, exactly as generating it did.
         add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
     )
+    # See the docstring above: breaking a confirmed chain strands the
+    # former leftover night(s) with no grocery contribution of their own.
+    # Only worth the extra query when the swapped entry actually was a
+    # confirmed source and the plan is one whose list is live at all —
+    # the overwhelming majority of swaps are neither.
+    if was_a_leftovers_source and _weekly_plan_is_approved(weekly_plan_id):
+        reingested = _reingest_unlinked_entries(weekly_plan_id)
+        result["reingested_groceries_added"] = reingested["groceries_added"]
+        result["reingested_already_have_skipped"] = reingested["already_have_skipped"]
+    return result
 
 
 def swap_component_in_plan(
