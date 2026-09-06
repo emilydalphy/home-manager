@@ -9,6 +9,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import household as _household
 from . import memory as _memory
+from . import plates as _plates
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
 
@@ -677,6 +678,14 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         raw_segments = [name]
         if recipe:
             raw_segments += [(i.get("item") or "") for i in recipe.get("ingredients", [])]
+        # Any side the app attached to complete this plate (see plates.py)
+        # counts too — its ingredients are what's actually on the table,
+        # same as the dish's own. Without this, a clean dinner with a side
+        # containing the allergen slipped through entirely: the check only
+        # ever looked at the meal name and the recipe's own ingredients.
+        raw_segments += [
+            (i.get("item") or "") for i in _plates.side_ingredients(meal.get("sides"))
+        ]
         segments = [
             re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", s.lower())).strip()
             for s in raw_segments

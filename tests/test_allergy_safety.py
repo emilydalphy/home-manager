@@ -211,6 +211,69 @@ class TestTheCheckFindsIt:
         assert result["note"] is None, "a preference is not a warning"
 
 
+class TestASideCanClashToo:
+    """
+    check_plan_conflicts used to read only the meal name and, for a saved
+    recipe, its own ingredients_json. A side the app attached to complete
+    the plate (see plates.py) lives on the SAME entry's sides_json, not on
+    the recipe — so an otherwise-clean dinner with an allergen hiding in
+    its side sailed through both the draft warning and the approve-time
+    confirm gate untouched.
+    """
+
+    def _plan_with_side(self, meal: str, side_item: str, side_name: str = "Pineapple salsa") -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        entry = tools.get_weekly_plan(plan["weekly_plan_id"])["meals"][0]
+        tools.plates.attach_sides(entry["entry_id"], [{
+            "name": side_name,
+            "covers": [],
+            "ingredients": [{"item": side_item, "qty": "1 cup", "category": "produce"}],
+            "instructions": [],
+            "minutes": 5,
+        }], groups_covered=[])
+        return plan["weekly_plan_id"]
+
+    def test_a_clean_dinner_with_an_allergen_in_its_side_is_caught(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        # Chili's own name and ingredients (beans, salt to taste) are clean
+        # — only the side attached to it carries the allergen.
+        plan_id = self._plan_with_side("Chili", "pineapple")
+
+        found = tools.check_plan_conflicts(plan_id)["conflicts"]
+
+        assert [c["meal"] for c in found] == ["Chili"]
+        assert found[0]["matched"] == "pineapple"
+        assert found[0]["severity"] == "hard"
+
+    def test_a_clean_side_raises_no_conflict(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        plan_id = self._plan_with_side("Chili", "romaine lettuce", side_name="Green salad")
+
+        assert tools.check_plan_conflicts(plan_id)["conflicts"] == []
+
+    def test_the_confirm_tap_is_required_for_a_side_clash_too(self, kitchen):
+        # The approve-time gate (approve_weekly_plan's confirm_hard_conflicts)
+        # runs check_plan_conflicts internally, so this is really the same
+        # fix seen from the other caller — confirming that fix reaches both.
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        plan_id = self._plan_with_side("Chili", "pineapple")
+
+        blocked = tools.approve_weekly_plan(plan_id, approved_by="Emily")
+        assert blocked["status"] == "needs_confirmation"
+        assert blocked["conflicts_note"] and "Chili" in blocked["conflicts_note"]
+        assert tools.get_weekly_plan(plan_id)["status"] == "draft"
+
+        confirmed = tools.approve_weekly_plan(
+            plan_id, approved_by="Emily", confirm_hard_conflicts=True
+        )
+        assert confirmed["status"] == "approved"
+
+
 # ---------- 3. it runs on its own ----------
 
 def test_a_generated_draft_carries_its_conflict_without_anyone_asking(kitchen, monkeypatch):

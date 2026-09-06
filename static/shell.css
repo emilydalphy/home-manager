@@ -3550,6 +3550,11 @@ html, body {
    true" (design system §1) so it doesn't read as one more store option. */
 .gro-pill-have { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }
 .gro-pill-have:hover { border-color: var(--celadon-edge); }
+/* Same sand treatment as the To buy ⋯ menu's "Somewhere else" (.gro-m-else)
+   — a neutral secondary action, not a store choice and not a "settled,
+   already true" state like .gro-pill-have. */
+.gro-pill-else { background: var(--sand); color: var(--ink-secondary); }
+.gro-pill-else:hover { border-color: var(--hairline-strong); }
 .gro-sort-more {
   background: none;
   border: none;

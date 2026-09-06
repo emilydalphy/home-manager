@@ -1795,7 +1795,7 @@
         '<input type="text" class="gro-m-store" value="' + escapeHtml(it.store || '') + '" placeholder="Store" aria-label="Store for ' + escapeHtml(it.item) + '" />' +
         '<button type="button" class="gro-m-save" data-gro="save-row" data-id="' + id + '">Save</button>' +
         '<button type="button" class="gro-m-have" data-gro="have" data-id="' + id + '">Have it</button>' +
-        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Elsewhere</button>' +
+        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Somewhere else</button>' +
         '<button type="button" class="gro-m-remove" data-gro="remove" data-id="' + id + '">Remove</button>' +
       '</div>';
   }
@@ -1964,6 +1964,12 @@
             // the list entirely because it turns out no store is needed.
             '<button type="button" class="gro-pill gro-pill-have" data-gro="already-have" data-id="' + id + '" ' +
               'aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>' +
+            // Same backend path as the To buy ⋯ menu's "Somewhere else" —
+            // covers the other reason an item leaves the to-sort list
+            // without a store here: it's already being picked up on a trip
+            // that isn't one of this household's stores.
+            '<button type="button" class="gro-pill gro-pill-else" data-gro="triage-exclude" data-id="' + id + '" ' +
+              'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
           '</div>' +
         '</div>';
       });
@@ -2451,6 +2457,23 @@
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/already-have');
         }, "Couldn't move that to the kitchen — try again.").then(function (ok) {
+          if (!ok) return;
+          var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
+          groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
+          renderGrocery();
+        });
+        return;
+
+      // Same backend path as the To buy ⋯ menu's "Somewhere else"
+      // (exclude): the item is getting picked up somewhere that isn't one
+      // of this household's stores, so it comes off the to-sort list the
+      // same way "Have it" does, and shows up under Review's "Getting
+      // elsewhere" instead.
+      case 'triage-exclude':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/exclude');
+        }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok) return;
           var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
           groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
@@ -4126,10 +4149,20 @@
     // Falls back to the Monday while that request is in flight or has
     // failed, which is exactly what this offered before it existed.
     var defaultStart = (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
-    var followingStart = addDaysLocal(defaultStart, 7);
+    // The household's own period length (see tools.suggest_planning_period)
+    // — an as-we-go household gets 3, everyone else gets 7. "Next" used to
+    // hardcode +7 regardless, which put a from-Monday household planning in
+    // 3-day bursts a whole week ahead of where its own rhythm actually
+    // lands next.
+    var dayCount = (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    var followingStart = addDaysLocal(defaultStart, dayCount);
+    // "Week" only means something when the period actually is one; a
+    // shorter or longer period is named for what it is instead of
+    // borrowing a word that promises seven days it doesn't have.
+    var periodNoun = dayCount === 7 ? 'week' : 'stretch';
     var weeks = [
-      { start: defaultStart, label: 'This week' },
-      { start: followingStart, label: 'Next week' }
+      { start: defaultStart, label: 'This ' + periodNoun },
+      { start: followingStart, label: 'Next ' + periodNoun }
     ];
     row.innerHTML =
       '<div class="shell-card week-plan-row">' +
@@ -4142,9 +4175,9 @@
             // "Re-plan" rather than "Plan" when that week already has one,
             // so the button never understates what it's about to do.
             var planned = weekIsPlanned(data, w.start);
-            return '<button type="button" class="btn-outline-plum week-plan-btn" data-week="' + w.start + '">' +
+            return '<button type="button" class="btn-outline-plum week-plan-btn" data-week="' + w.start + '" data-days="' + dayCount + '">' +
               '<span class="week-plan-btn-label">' + (planned ? 'Re-plan ' : 'Plan ') + w.label.toLowerCase() + '</span>' +
-              '<span class="week-plan-btn-dates">' + escapeHtml(weekRangeLabel(w.start)) + '</span>' +
+              '<span class="week-plan-btn-dates">' + escapeHtml(weekRangeLabel(w.start, dayCount)) + '</span>' +
             '</button>';
           }).join('') +
         '</div>' +
@@ -4166,10 +4199,10 @@
       '<button type="button" class="week-setup-link" id="week-setup-standing">' +
         'Weeks not landing how you’d like? Let’s adjust your setup →</button>';
     row.querySelectorAll('.week-plan-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week); });
+      btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week, Number(btn.dataset.days) || 7); });
     });
     row.querySelector('#week-setup-standing').addEventListener('click', openMealSetup);
-    wirePeriodPicker(row, defaultStart);
+    wirePeriodPicker(row, defaultStart, dayCount);
   }
 
   // The custom-period picker: two rows of choices and one confirm, inline
@@ -4191,11 +4224,12 @@
     { days: 14, label: '2 weeks' }
   ];
 
-  function wirePeriodPicker(row, defaultStart) {
+  function wirePeriodPicker(row, defaultStart, dayCount) {
     var opener = row.querySelector('#week-period-open');
     var picker = row.querySelector('#week-period-picker');
     if (!opener || !picker) return;
-    var state = { start: todayLocalStr(), days: 7 };
+    var initialDays = dayCount || 7;
+    var state = { start: todayLocalStr(), days: initialDays };
 
     opener.addEventListener('click', function () {
       var opening = picker.hidden;
@@ -4203,7 +4237,7 @@
       opener.setAttribute('aria-expanded', opening ? 'true' : 'false');
       opener.textContent = opening ? 'Never mind' : 'Pick my own days';
       if (opening) {
-        state = { start: defaultStart, days: 7 };
+        state = { start: defaultStart, days: initialDays };
         renderPicker();
       }
     });
@@ -4297,12 +4331,15 @@
     return !!(data.weekly_plan_id && data.week_start_date === weekStart);
   }
 
-  function weekRangeLabel(weekStart) {
+  function weekRangeLabel(weekStart, dayCount) {
     // "Aug 31–Sep 6". Same shape as the server's _format_week_range, kept
-    // in step deliberately — the two are read side by side.
+    // in step deliberately — the two are read side by side. dayCount
+    // defaults to 7 (a plain week) for every existing caller; the "Plan a
+    // week" entry passes the household's real period length so a shorter
+    // or longer stretch shows its actual span instead of always six days on.
     var start = new Date(weekStart + 'T00:00:00');
     var end = new Date(start.getTime());
-    end.setDate(end.getDate() + 6);
+    end.setDate(end.getDate() + Math.max(1, dayCount || 7) - 1);
     var startMonth = start.toLocaleDateString('en-US', { month: 'short' });
     if (start.getMonth() === end.getMonth()) {
       return startMonth + ' ' + start.getDate() + '–' + end.getDate();
