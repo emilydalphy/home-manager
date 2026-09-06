@@ -438,6 +438,29 @@ def _matches(
     return None
 
 
+def _name_words(name: str) -> set[str]:
+    """A member's name, lowercased and split into words, for `drop=`."""
+    return {w for w in re.sub(r"[^a-z0-9\s]", " ", (name or "").lower()).split()}
+
+
+def _named_member(text: str, member_names: list[str]) -> str | None:
+    """
+    Which household member (if any) a freeform sentence names —
+    "Emily is allergic to pineapple" names Emily; "no shellfish in this
+    house" names nobody. Whole-word matched, case-insensitive.
+
+    Factored out of `_avoidances()` so `db._backfill_allergy_notes_from_facts`
+    can ask the identical question when deciding whose member record a
+    fact's phrases belong on — a backfill that used a different rule for
+    "who is this about" than the live check would drift from it silently.
+    """
+    lowered = (text or "").lower()
+    return next(
+        (n for n in member_names if re.search(r"\b" + re.escape(n.lower()) + r"\b", lowered)),
+        None,
+    )
+
+
 def _avoidances() -> list[dict]:
     """
     Everything the household has told us to keep off the table, from all
@@ -452,7 +475,7 @@ def _avoidances() -> list[dict]:
 
     out: list[dict] = []
     for m in members:
-        name_words = {w for w in re.sub(r"[^a-z0-9\s]", " ", (m["name"] or "").lower()).split()}
+        name_words = _name_words(m["name"])
         for restriction in m["dietary_restrictions"]:
             if not restriction.strip():
                 continue
@@ -477,13 +500,8 @@ def _avoidances() -> list[dict]:
         if not fact.get("hard"):
             continue
         text = fact.get("text") or ""
-        lowered = text.lower()
-        named = next(
-            (n for n in member_names if re.search(r"\b" + re.escape(n.lower()) + r"\b", lowered)),
-            None,
-        )
-        name_words = {w for w in re.sub(r"[^a-z0-9\s]", " ", (named or "").lower()).split()}
-        phrases, excepted = _fact_keywords(text, drop=name_words)
+        named = _named_member(text, member_names)
+        phrases, excepted = _fact_keywords(text, drop=_name_words(named))
         terms = _match_terms(phrases, excepted)
         if not terms:
             continue
