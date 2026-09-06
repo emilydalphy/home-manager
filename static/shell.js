@@ -684,7 +684,11 @@
     // the list without an explicit yes, and a card tap has no conversation
     // in which to ask — so the card asks for itself.
     var addIngredients = await askAboutIngredients(meal);
-    if (addIngredients === null) return;  // "Never mind" — nothing planned
+    // "core loop handoffs, slice 2" item F (Emily, 2026-09-05): "Never
+    // mind" used to close the dialog with no feedback at all — say
+    // plainly that nothing changed, per the calm-in-trouble/reassurance
+    // rule (DESIGN_SYSTEM.md §8): the answer is "nothing lost," said once.
+    if (addIngredients === null) { showToast('Left as it was.'); return; }
     try {
       var res = await fetch('/api/needs-you/dinner', {
         method: 'POST',
@@ -5514,8 +5518,23 @@
     return res.json().catch(function () { return {}; });
   }
 
+  // "core loop handoffs, slice 2" item E (Emily, 2026-09-05): marking a
+  // real cook done gets a toast confirming it was logged, with a "Rate it"
+  // action that opens the existing attention band rather than a new
+  // rating flow — the feedback nudge already lives there once the app has
+  // something to ask about. Reheat nights ("Mark eaten") are excluded:
+  // there's no separate cook to rate, the dish was already rated the
+  // night it was actually made.
+  function toastMealLogged() {
+    showToast('Logged. I’ll remember how it went.', {
+      label: 'Rate it',
+      onClick: function () { cookState.attentionOpen = true; renderCook(); },
+    });
+  }
+
   async function cookCheckMeal(el) {
     el.disabled = true;
+    var justCooked = el.getAttribute('data-next') === 'done' && el.getAttribute('aria-label') === 'Mark cooked';
     try {
       var view = await cookPost('/api/cooker/check-meal', {
         entry_id: parseInt(el.getAttribute('data-entry-id'), 10),
@@ -5526,6 +5545,7 @@
       // moves the week's "N of M cooked" everywhere else that counts it.
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      if (justCooked) toastMealLogged();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -5537,6 +5557,9 @@
   // you check the meal off") — there's nothing left to do on this screen
   // once it's done. Marking it back to not-cooked is an undo, not a
   // completion, so that one stays put in focus rather than bouncing out.
+  // Always a real cook, never a reheat (see cookHeroHtml/cookReheatHeroHtml
+  // — a reheat night never opens this focused screen), so no aria-label
+  // check is needed here the way cookCheckMeal above needs one.
   async function cookFocusCheckMeal(el) {
     el.disabled = true;
     var next = el.getAttribute('data-next');
@@ -5552,6 +5575,7 @@
       renderCookFrom(view);
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      if (next === 'done') toastMealLogged();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
