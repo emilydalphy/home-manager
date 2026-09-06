@@ -127,7 +127,29 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
         r"\b(?:almond|cashew|coconut|hazelnut|hemp|oat|pea|rice|soy|soya)\s+milks?\b"
     )),
     (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
+    # Gluten/wheat's own false positive: a naturally gluten-free flour,
+    # noodle or pasta still contains the word that means "gluten" to the
+    # alias table above. "Gluten-Free Pasta" made with rice flour flagged a
+    # dish that is, by definition, safe for the restriction it tripped.
+    (frozenset({"flour", "flours"}), re.compile(
+        r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca)\s+flours?\b"
+    )),
+    (frozenset({"noodle", "noodles"}), re.compile(
+        r"\b(?:rice|glass|soba|buckwheat)\s+noodles?\b"
+    )),
+    (frozenset({"pasta", "pastas"}), re.compile(
+        r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
+    )),
 )
+
+# The other half of that same fix: a dish or ingredient line that says
+# outright that it is gluten-free doesn't need a per-flour-type entry above
+# to be believed. Only cancels the GLUTEN/WHEAT alias words for the segment
+# it appears in — a segment naming another allergen (nuts, dairy...) is
+# untouched, so "Almond Flour Cake" is still a clash for a nut allergy even
+# though it is none for gluten.
+_GLUTEN_FREE_SEGMENT_RE = re.compile(r"\bgluten[\s-]?free\b|\bgf\b")
+_GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat"})
 
 
 # What turns a sentence into an avoidance. A hard What-we-know fact is
@@ -387,7 +409,11 @@ def _phrase_in(groups: list[set[str]], text: str) -> bool:
     return True
 
 
-def _matches(terms: list[tuple[str, list[set[str]]]], segments: list[str]) -> str | None:
+def _matches(
+    terms: list[tuple[str, list[set[str]]]],
+    segments: list[str],
+    gluten_free_segments: set[int] | None = None,
+) -> str | None:
     """
     The first avoidance found in any one of `segments`, or None.
 
@@ -395,12 +421,44 @@ def _matches(terms: list[tuple[str, list[set[str]]]], segments: list[str]) -> st
     stretch of text — the dish's name, or one ingredient line — because a
     two-word food spread across two unrelated ingredients is a coincidence,
     not a clash.
+
+    `gluten_free_segments` names the indices of segments that said outright
+    they're gluten-free ("Gluten-Free Pasta", "GF flour tortillas"). Those
+    segments are skipped only for a GLUTEN or WHEAT avoidance — a nut or
+    dairy restriction still has to look at them.
     """
+    gluten_free_segments = gluten_free_segments or set()
     for label, groups in terms:
-        for segment in segments:
+        skip_if_gluten_free = label in _GLUTEN_WHEAT_LABELS
+        for i, segment in enumerate(segments):
+            if skip_if_gluten_free and i in gluten_free_segments:
+                continue
             if _phrase_in(groups, segment):
                 return label
     return None
+
+
+def _name_words(name: str) -> set[str]:
+    """A member's name, lowercased and split into words, for `drop=`."""
+    return {w for w in re.sub(r"[^a-z0-9\s]", " ", (name or "").lower()).split()}
+
+
+def _named_member(text: str, member_names: list[str]) -> str | None:
+    """
+    Which household member (if any) a freeform sentence names —
+    "Emily is allergic to pineapple" names Emily; "no shellfish in this
+    house" names nobody. Whole-word matched, case-insensitive.
+
+    Factored out of `_avoidances()` so `db._backfill_allergy_notes_from_facts`
+    can ask the identical question when deciding whose member record a
+    fact's phrases belong on — a backfill that used a different rule for
+    "who is this about" than the live check would drift from it silently.
+    """
+    lowered = (text or "").lower()
+    return next(
+        (n for n in member_names if re.search(r"\b" + re.escape(n.lower()) + r"\b", lowered)),
+        None,
+    )
 
 
 def _avoidances() -> list[dict]:
@@ -417,7 +475,7 @@ def _avoidances() -> list[dict]:
 
     out: list[dict] = []
     for m in members:
-        name_words = {w for w in re.sub(r"[^a-z0-9\s]", " ", (m["name"] or "").lower()).split()}
+        name_words = _name_words(m["name"])
         for restriction in m["dietary_restrictions"]:
             if not restriction.strip():
                 continue
@@ -442,13 +500,8 @@ def _avoidances() -> list[dict]:
         if not fact.get("hard"):
             continue
         text = fact.get("text") or ""
-        lowered = text.lower()
-        named = next(
-            (n for n in member_names if re.search(r"\b" + re.escape(n.lower()) + r"\b", lowered)),
-            None,
-        )
-        name_words = {w for w in re.sub(r"[^a-z0-9\s]", " ", (named or "").lower()).split()}
-        phrases, excepted = _fact_keywords(text, drop=name_words)
+        named = _named_member(text, member_names)
+        phrases, excepted = _fact_keywords(text, drop=_name_words(named))
         terms = _match_terms(phrases, excepted)
         if not terms:
             continue
@@ -629,8 +682,11 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
             for s in raw_segments
         ]
         segments = [s for s in segments if s]
+        gluten_free_segments = {
+            i for i, s in enumerate(segments) if _GLUTEN_FREE_SEGMENT_RE.search(s)
+        }
         for avoidance in avoidances:
-            matched = _matches(avoidance["terms"], segments)
+            matched = _matches(avoidance["terms"], segments, gluten_free_segments)
             if not matched:
                 continue
             conflicts.append({

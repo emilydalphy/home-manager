@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Karla:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9e4d8;font-family:Karla,sans-serif}
+a{color:#66304e}a:hover{color:#8a4a6e}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.hm-scroll::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:24px;padding:44px 40px 60px;background:#e9e4d8;box-sizing:border-box">
+
+  <div style="width:1280px;display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-shrink:0">
+    <div style="max-width:780px;display:flex;flex-direction:column;gap:9px">
+      <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#66304e">Desktop · clickable</div>
+      <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:29px;color:#3a1f2e;line-height:1.15">Grocery on desktop, and shopping mode</div>
+      <div style="font-family:Karla,sans-serif;font-size:16px;color:#6b5a63;line-height:1.6">Check items off, filter on the left, assign an unsorted item without leaving the list, then start shopping to drop into the in-store screen. Two adults share the list — the initial on each row is who added it.</div>
+    </div>
+    <div onClick="{{ reset }}" style="background:#ecdfc8;color:#66304e;font-family:Karla,sans-serif;font-weight:700;font-size:15px;padding:12px 18px;border-radius:12px;cursor:pointer;flex-shrink:0" style-hover="background:#e2d2b6">Reset</div>
+  </div>
+
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="grocery desktop" style="width:1280px;height:800px;background:#f6efe1;border-radius:20px;box-shadow:0 18px 50px rgba(58,31,46,.2);display:flex;overflow:hidden;flex-shrink:0">
+
+      <div style="width:214px;flex-shrink:0;background:#fff;border-right:1px solid #ece1d0;padding:24px 16px;display:flex;flex-direction:column;gap:6px">
+        <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a8825c;padding:0 8px 8px">Stores</div>
+        <sc-for list="{{ storeFilters }}" as="f" hint-placeholder-count="4">
+          <div onClick="{{ f.pick }}" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:11px;cursor:pointer;background:{{ f.bg }}" style-hover="background:#f8f2e6">
+            <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;font-weight:{{ f.weight }};color:{{ f.ink }}">{{ f.label }}</div>
+            <div style="font-family:Karla,sans-serif;font-size:15px;color:{{ f.countInk }}">{{ f.count }}</div>
+          </div>
+        </sc-for>
+        <div style="height:1px;background:#ece1d0;margin:14px 8px"></div>
+        <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a8825c;padding:0 8px 8px">Show</div>
+        <sc-for list="{{ showFilters }}" as="f" hint-placeholder-count="3">
+          <div onClick="{{ f.pick }}" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:11px;cursor:pointer;background:{{ f.bg }}" style-hover="background:#f8f2e6">
+            <div style="width:18px;height:18px;border-radius:5px;flex-shrink:0;border:2px solid #c4b09c;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:11px;color:#fff;background:{{ f.fill }};border-color:{{ f.line }}">{{ f.tick }}</div>
+            <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e">{{ f.label }}</div>
+          </div>
+        </sc-for>
+        <div style="flex:1"></div>
+        <div style="background:#f6efe1;border-radius:13px;padding:14px 15px;font-family:Karla,sans-serif;font-size:15px;color:#4a3a43;line-height:1.5">{{ railNote }}</div>
+      </div>
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="padding:24px 28px 14px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-shrink:0">
+          <div>
+            <div style="font-family:Karla,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#6b5a63;margin-bottom:4px">{{ headerMeta }}</div>
+            <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:29px;color:#3a1f2e">Grocery</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;flex-shrink:0">
+            <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" placeholder="Add an item…" style="width:236px;border:1.5px solid #d8c8b4;border-radius:13px;outline:none;background:#fff;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e;padding:13px 16px"></input>
+            <div onClick="{{ addItem }}" style="background:#ecdfc8;color:#66304e;border-radius:13px;height:48px;display:flex;align-items:center;padding:0 18px;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#e2d2b6">Add</div>
+          </div>
+        </div>
+
+        <div class="hm-scroll" style="flex:1;overflow-y:auto;padding:0 28px 24px;display:flex;flex-direction:column;gap:14px">
+
+          <sc-if value="{{ hasUnassigned }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff;border-radius:20px;padding:18px 22px 14px;border:1.5px dashed #c4b09c;flex-shrink:0;animation:popIn .2s ease">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:20px;color:#3a1f2e">Unassigned</div>
+                <div style="flex:1;font-family:Karla,sans-serif;font-size:15px;color:#9c8b93">Pick a store and it moves into that list</div>
+              </div>
+              <sc-for list="{{ unassigned }}" as="u" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid #f1e8da">
+                  <div style="width:26px;height:26px;border-radius:13px;background:{{ u.whoBg }};color:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:12px">{{ u.who }}</div>
+                  <div style="flex:1;font-family:Karla,sans-serif;font-size:17px;color:#3a1f2e">{{ u.name }}</div>
+                  <div style="display:flex;gap:7px;flex-shrink:0">
+                    <sc-for list="{{ u.options }}" as="o" hint-placeholder-count="2">
+                      <div onClick="{{ o.assign }}" style="border:1.5px solid #d8c8b4;border-radius:20px;padding:9px 15px;font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer" style-hover="background:#f4e7ef">{{ o.label }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+            <div style="background:#fff;border-radius:20px;padding:18px 22px 12px;flex-shrink:0">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:4px">
+                <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:20px;color:#3a1f2e">{{ g.name }}</div>
+                <div style="flex:1;font-family:Karla,sans-serif;font-size:15px;color:#9c8b93">{{ g.meta }}</div>
+                <div onClick="{{ g.shop }}" style="font-family:Karla,sans-serif;font-weight:700;font-size:15px;color:#66304e;cursor:pointer;padding:4px 2px" style-hover="color:#8a4a6e">Shop this store</div>
+              </div>
+              <div style="font-family:Karla,sans-serif;font-size:14px;color:#9c8b93;line-height:1.5;margin-bottom:2px">Tick <strong style="color:#6b5a63">Got it</strong> as it goes in the cart. <strong style="color:#6b5a63">Already have it</strong> takes it off the list entirely.</div>
+              <sc-for list="{{ g.aisles }}" as="a" hint-placeholder-count="3">
+                <div>
+                  <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a8825c;padding:13px 0 5px;border-top:1px solid #f1e8da">{{ a.name }}</div>
+                  <sc-for list="{{ a.items }}" as="i" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:center;gap:14px;min-height:58px;border-bottom:1px solid #f8f2e6">
+                      <div onClick="{{ i.toggle }}" style="flex-shrink:0;display:flex;align-items:center;gap:9px;padding:7px 13px 7px 9px;border-radius:20px;cursor:pointer;border:1.5px solid {{ i.pillBorder }};background:{{ i.pillBg }}" style-hover="border-color:#66304e">
+                        <div style="width:22px;height:22px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid #c4b09c;color:#fff;font-weight:800;font-size:13px;background:{{ i.fill }};border-color:{{ i.line }}">{{ i.tick }}</div>
+                        <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:{{ i.pillInk }}">{{ i.pillLabel }}</div>
+                      </div>
+                      <div onClick="{{ i.toggle }}" style="flex:1;font-family:Karla,sans-serif;font-size:17px;cursor:pointer;color:{{ i.ink }};text-decoration:{{ i.strike }}">{{ i.name }}</div>
+                      <div style="font-family:Karla,sans-serif;font-size:15px;color:#9c8b93">{{ i.why }}</div>
+                      <div style="width:26px;height:26px;border-radius:13px;background:{{ i.whoBg }};color:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:800;font-size:12px;opacity:{{ i.opacity }}">{{ i.who }}</div>
+                      <div onClick="{{ i.have }}" style="flex-shrink:0;font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#8a7a82;padding:6px 4px;cursor:pointer" style-hover="color:#c0431e">Already have it</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{ allClear }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border-radius:20px;padding:26px 24px;flex-shrink:0;text-align:center">
+              <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#3a1f2e;margin-bottom:5px">Nothing left on this filter</div>
+              <div style="font-family:Karla,sans-serif;font-size:16px;color:#6b5a63">Switch to Everything on the left, or turn on “Already got”.</div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div style="width:304px;flex-shrink:0;background:#fff;border-left:1px solid #ece1d0;padding:24px 22px;display:flex;flex-direction:column;gap:17px">
+        <div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:21px;color:#3a1f2e;margin-bottom:4px">This trip</div>
+          <div style="font-family:Karla,sans-serif;font-size:15px;color:#6b5a63;line-height:1.5">{{ tripNote }}</div>
+        </div>
+        <div>
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a8825c;margin-bottom:6px">Aisle order · {{ tripStore }}</div>
+          <sc-for list="{{ aisleOrder }}" as="a" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1e8da">
+              <div style="width:6px;height:6px;border-radius:4px;flex-shrink:0;background:{{ a.dot }}"></div>
+              <div style="flex:1;font-family:Karla,sans-serif;font-size:16px;color:#3a1f2e">{{ a.name }}</div>
+              <div style="font-family:Karla,sans-serif;font-size:15px;color:#9c8b93">{{ a.count }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#f6efe1;border-radius:16px;padding:15px 17px">
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#66304e;margin-bottom:6px">Covers these meals</div>
+          <div style="font-family:Karla,sans-serif;font-size:15px;color:#3a1f2e;line-height:1.6">Tue tikka · Thu turkey bowls · Fri salmon</div>
+        </div>
+        <div style="background:#ecdfc8;border-radius:16px;padding:15px 17px">
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#66304e;margin-bottom:6px">Shared list</div>
+          <div style="font-family:Karla,sans-serif;font-size:15px;color:#3a1f2e;line-height:1.55">{{ sharedNote }}</div>
+        </div>
+        <div style="flex:1"></div>
+        <div onClick="{{ startShopping }}" style="background:#f0b429;color:#3a2a0a;border-radius:13px;height:52px;display:flex;align-items:center;justify-content:center;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#ffc63d">Start shopping {{ tripStore }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isShopping }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="shopping mode" style="width:1280px;height:800px;background:#66304e;border-radius:20px;box-shadow:0 18px 50px rgba(58,31,46,.2);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0">
+      <div style="padding:26px 34px 20px;display:flex;align-items:center;gap:20px;flex-shrink:0">
+        <div style="flex:1">
+          <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#f0b429;margin-bottom:5px">Shopping · {{ shopStore }}</div>
+          <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:30px;color:#fff">{{ shopHeading }}</div>
+        </div>
+        <div style="font-family:Quicksand,sans-serif;font-weight:700;font-size:28px;color:#fff">{{ shopGot }}<span style="color:rgba(255,255,255,.5);font-size:20px"> / {{ shopTotal }}</span></div>
+        <div onClick="{{ doneShopping }}" style="border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:13px;height:50px;display:flex;align-items:center;padding:0 20px;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:rgba(255,255,255,.12)">Done shopping</div>
+      </div>
+      <div class="hm-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:0 34px 20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-content:start">
+        <sc-for list="{{ shopAisles }}" as="a" hint-placeholder-count="4">
+          <div style="background:#f6efe1;border-radius:22px;padding:20px 26px 12px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div style="font-family:Karla,sans-serif;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#a8825c">{{ a.name }}</div>
+              <div style="flex:1;height:1px;background:#e2d7c4"></div>
+              <div style="font-family:Karla,sans-serif;font-weight:700;font-size:14px;color:#8a7a82">{{ a.left }}</div>
+            </div>
+            <sc-for list="{{ a.items }}" as="i" hint-placeholder-count="2">
+              <div onClick="{{ i.toggle }}" style="display:flex;align-items:center;gap:18px;padding:18px 0;border-bottom:1px solid #e2d7c4;cursor:pointer;opacity:{{ i.opacity }}">
+                <div style="width:34px;height:34px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2.5px solid #c4b09c;color:#fff;font-weight:800;font-size:18px;background:{{ i.fill }};border-color:{{ i.line }}">{{ i.tick }}</div>
+                <div style="flex:1;font-family:Karla,sans-serif;font-weight:600;font-size:22px;color:{{ i.ink }};text-decoration:{{ i.strike }}">{{ i.name }}</div>
+                <div style="font-family:Karla,sans-serif;font-size:16px;color:#8a7a82">{{ i.why }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:0 34px 26px;flex-shrink:0;display:flex;align-items:center;gap:16px">
+        <div style="flex:1;height:8px;border-radius:5px;background:rgba(255,255,255,.18);overflow:hidden"><div style="height:8px;background:#6fb84c;width:{{ shopPct }}"></div></div>
+        <div style="font-family:Karla,sans-serif;font-size:16px;color:rgba(255,255,255,.75)">{{ nextStoreNote }}</div>
+        <div onClick="{{ nextStore }}" style="background:#f0b429;color:#3a2a0a;border-radius:13px;height:50px;display:flex;align-items:center;padding:0 22px;font-family:Karla,sans-serif;font-weight:700;font-size:16px;cursor:pointer" style-hover="background:#ffc63d">{{ nextStoreLabel }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#3a1f2e;color:#fff;border-radius:14px;padding:14px 20px;font-family:Karla,sans-serif;font-weight:600;font-size:15px;animation:popIn .2s ease;box-shadow:0 10px 30px rgba(58,31,46,.3)">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1380,&quot;height&quot;:1000}}">
+const AISLE_DOT = { Produce: "#6fb84c", Dairy: "#f0b429", Meat: "#e8562a", Pantry: "#b0619a", Household: "#e8562a", Frozen: "#4f8fd6", Bakery: "#c9a24a" };
+const AISLE_ORDER = ["Produce", "Bakery", "Dairy", "Meat", "Frozen", "Pantry", "Household"];
+
+const BASE = {
+  view: "list",
+  shopStore: "Costco",
+  filter: "Everything",
+  showGot: false,
+  draft: "",
+  toast: "",
+  items: [
+    { name: "Chicken breast · 3 lb", store: "Costco", aisle: "Meat", why: "Thu dinner", got: false, who: "E" },
+    { name: "Sweet potatoes", store: "Costco", aisle: "Produce", why: "Fri dinner", got: false, who: "E" },
+    { name: "Baby spinach · 2 bags", store: "Costco", aisle: "Produce", why: "ran out", got: false, who: "M" },
+    { name: "Olive oil", store: "Costco", aisle: "Pantry", why: "running low", got: false, who: "E" },
+    { name: "Paper towels", store: "Costco", aisle: "Household", why: "running low", got: false, who: "M" },
+    { name: "Basmati rice · 10 lb", store: "Costco", aisle: "Pantry", why: "", got: true, who: "E" },
+    { name: "Whole milk", store: "Trader Joe's", aisle: "Dairy", why: "", got: false, who: "M" },
+    { name: "Plain yogurt", store: "Trader Joe's", aisle: "Dairy", why: "tikka", got: false, who: "E" },
+    { name: "Eggs · 2 dozen", store: "Trader Joe's", aisle: "Dairy", why: "", got: false, who: "M" },
+    { name: "Cilantro", store: "Trader Joe's", aisle: "Produce", why: "tikka", got: false, who: "E" },
+    { name: "Limes · 4", store: "Trader Joe's", aisle: "Produce", why: "", got: false, who: "E" },
+    { name: "Tortillas", store: null, aisle: "Bakery", why: "added by Marcus", got: false, who: "M" },
+    { name: "Birthday candles", store: null, aisle: "Household", why: "Maya's party", got: false, who: "M" },
+    { name: "Dish soap", store: null, aisle: "Household", why: "", got: false, who: "E" }
+  ]
+};
+
+class Component extends DCLogic {
+  state = JSON.parse(JSON.stringify(BASE));
+
+  flash(t) {
+    this.setState({ toast: t });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: "" }), 2200);
+  }
+
+  toggle(idx) {
+    this.setState({ items: this.state.items.map((o, j) => (j === idx ? { ...o, got: !o.got } : o)) });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const whoBg = (w) => (w === "E" ? "#66304e" : "#4d8a33");
+    const storeNames = ["Costco", "Trader Joe's"];
+    const unassignedItems = s.items.map((it, idx) => ({ it, idx })).filter((x) => !x.it.store && !x.it.got);
+    const visible = (it) => (s.showGot || !it.got) && (s.filter === "Everything" || it.store === s.filter);
+
+    const storeFilters = [{ label: "Everything", n: s.items.filter((i) => !i.got).length }]
+      .concat(storeNames.map((n) => ({ label: n, n: s.items.filter((i) => i.store === n && !i.got).length })))
+      .concat([{ label: "Unassigned", n: unassignedItems.length, warn: true }])
+      .map((f) => ({
+        label: f.label,
+        count: f.n,
+        bg: s.filter === f.label ? "#f4e7ef" : "transparent",
+        weight: s.filter === f.label ? "700" : "400",
+        ink: s.filter === f.label ? "#66304e" : f.warn ? "#b98a12" : "#3a1f2e",
+        countInk: s.filter === f.label ? "#66304e" : f.warn ? "#b98a12" : "#9c8b93",
+        pick: () => this.setState({ filter: f.label })
+      }));
+
+    const showFilters = [
+      { label: "Already got", on: s.showGot, pick: () => this.setState({ showGot: !s.showGot }) }
+    ].map((f) => ({
+      label: f.label,
+      bg: "transparent",
+      fill: f.on ? "#6fb84c" : "transparent",
+      line: f.on ? "#6fb84c" : "#c4b09c",
+      tick: f.on ? "✓" : "",
+      pick: f.pick
+    }));
+
+    const groups = storeNames
+      .filter((n) => s.filter === "Everything" || s.filter === n)
+      .map((name) => {
+        const rows = s.items.map((it, idx) => ({ it, idx })).filter((x) => x.it.store === name && visible(x.it));
+        const aisles = AISLE_ORDER.filter((a) => rows.some((x) => x.it.aisle === a)).map((a) => ({
+          name: a,
+          items: rows.filter((x) => x.it.aisle === a).map(({ it, idx }) => ({
+            name: it.name,
+            why: it.got ? "" : it.why,
+            who: it.who,
+            whoBg: whoBg(it.who),
+            fill: it.got ? "#6fb84c" : "transparent",
+            line: it.got ? "#6fb84c" : "#c4b09c",
+            tick: it.got ? "✓" : "",
+            ink: it.got ? "#a3939b" : "#3a1f2e",
+            strike: it.got ? "line-through" : "none",
+            opacity: it.got ? ".55" : "1",
+            pillLabel: it.got ? "Got it" : "Got it",
+            pillBg: it.got ? "#f0f7ea" : "#fff",
+            pillBorder: it.got ? "#b8dba4" : "#e0d3bf",
+            pillInk: it.got ? "#4d8a33" : "#8a7a82",
+            toggle: () => this.toggle(idx),
+            have: () => {
+              this.setState({ items: s.items.filter((o, j) => j !== idx) });
+              this.flash(it.name.split(" · ")[0] + " off the list — I'll assume you have it");
+            }
+          }))
+        }));
+        const left = rows.filter((x) => !x.it.got).length;
+        return {
+          name,
+          meta: (name === "Costco" ? "before Thursday · " : "on the way home · ") + left + " to get",
+          aisles,
+          shop: () => this.setState({ view: "shopping", shopStore: name })
+        };
+      })
+      .filter((g) => g.aisles.length);
+
+    const tripStore = s.filter === "Costco" || s.filter === "Trader Joe's" ? s.filter : "Costco";
+    const tripRows = s.items.filter((i) => i.store === tripStore && !i.got);
+    const aisleOrder = AISLE_ORDER.filter((a) => tripRows.some((i) => i.aisle === a)).map((a) => ({
+      name: a,
+      dot: AISLE_DOT[a] || "#c4b09c",
+      count: tripRows.filter((i) => i.aisle === a).length
+    }));
+
+    const shopRows = s.items.map((it, idx) => ({ it, idx })).filter((x) => x.it.store === s.shopStore);
+    const shopAisles = AISLE_ORDER.filter((a) => shopRows.some((x) => x.it.aisle === a)).map((a) => {
+      const rows = shopRows.filter((x) => x.it.aisle === a);
+      return {
+        name: a + " · " + rows.length + (rows.length === 1 ? " item" : " items"),
+        left: rows.filter((x) => !x.it.got).length + " left",
+        items: rows.map(({ it, idx }) => ({
+          name: it.name,
+          why: it.got ? "" : it.why,
+          fill: it.got ? "#6fb84c" : "transparent",
+          line: it.got ? "#6fb84c" : "#c4b09c",
+          tick: it.got ? "✓" : "",
+          ink: it.got ? "#8a7a82" : "#3a1f2e",
+          strike: it.got ? "line-through" : "none",
+          opacity: it.got ? ".5" : "1",
+          toggle: () => this.toggle(idx)
+        }))
+      };
+    });
+    const shopGot = shopRows.filter((x) => x.it.got).length;
+    const otherStore = s.shopStore === "Costco" ? "Trader Joe's" : "Costco";
+    const otherLeft = s.items.filter((i) => i.store === otherStore && !i.got).length;
+    const firstOpen = shopAisles.find((a) => a.items.some((i) => i.tick === ""));
+
+    const totalLeft = s.items.filter((i) => !i.got).length;
+
+    return {
+      isList: s.view === "list",
+      isShopping: s.view === "shopping",
+      storeFilters,
+      showFilters,
+      groups,
+      allClear: !groups.length && !(unassignedItems.length && (s.filter === "Everything" || s.filter === "Unassigned")),
+      hasUnassigned: unassignedItems.length > 0 && (s.filter === "Everything" || s.filter === "Unassigned"),
+      unassigned: unassignedItems.map(({ it, idx }) => ({
+        name: it.name,
+        who: it.who,
+        whoBg: whoBg(it.who),
+        options: storeNames.map((n) => ({
+          label: n,
+          assign: () => {
+            this.setState({ items: s.items.map((o, j) => (j === idx ? { ...o, store: n, why: o.why || "assigned" } : o)) });
+            this.flash(it.name + " → " + n);
+          }
+        }))
+      })),
+      headerMeta: (s.items.length - totalLeft) + " of " + s.items.length + " got · " + unassignedItems.length + " unassigned",
+      railNote: s.showGot ? "Showing everything, including what's already in the cart." : "Hiding " + s.items.filter((i) => i.got).length + " items you've already got.",
+      tripNote: tripStore === "Costco" ? "Costco has to happen before Thursday's tee-ball. Trader Joe's is on Emily's commute." : "Trader Joe's is on the commute home — five things, one stop.",
+      tripStore,
+      aisleOrder,
+      sharedNote: "Emily and Marcus both add here. Initials show who asked for what.",
+      draft: s.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      onDraftKey: (e) => { if (e.key === "Enter") this.addRow(); },
+      addItem: () => this.addRow(),
+      startShopping: () => this.setState({ view: "shopping", shopStore: tripStore }),
+      shopStore: s.shopStore,
+      shopHeading: firstOpen ? firstOpen.name.split(" · ")[0] + " first" : "Everything's in the cart",
+      shopGot,
+      shopTotal: shopRows.length,
+      shopAisles,
+      shopPct: (shopRows.length ? Math.round((shopGot / shopRows.length) * 100) : 0) + "%",
+      nextStoreNote: otherLeft ? otherStore + " next · " + otherLeft + " items" : "Last stop of the trip",
+      nextStoreLabel: otherLeft ? "Next store" : "Back to list",
+      nextStore: () => {
+        if (otherLeft) this.setState({ shopStore: otherStore });
+        else this.setState({ view: "list" });
+      },
+      doneShopping: () => { this.setState({ view: "list" }); this.flash("Trip saved — I'll remember what you bought where"); },
+      toast: s.toast,
+      reset: () => this.setState(JSON.parse(JSON.stringify(BASE)))
+    };
+  }
+
+  addRow() {
+    const t = this.state.draft.trim();
+    if (!t) return;
+    this.setState({ items: [...this.state.items, { name: t, store: null, aisle: "Household", why: "just added", got: false, who: "E" }], draft: "" });
+    this.flash(t + " added — pick a store for it");
+  }
+}
+</script>
+</body>
+</html>

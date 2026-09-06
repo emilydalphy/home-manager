@@ -23,7 +23,8 @@ import datetime
 
 import pytest
 
-from app import agent, tools
+from app import agent, db, tools
+from app.db import get_conn
 
 
 def _week_start(offset_weeks: int = 1) -> str:
@@ -963,3 +964,207 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     assert note, "the week that bought the allergen cannot approve in silence"
     assert "Fruit Salad" in note, "name the meal that put it on the list"
     assert "pineapple" in note.lower()
+
+
+# ---------- 13. gluten/wheat aliases false-flagging gluten-free dishes ----------
+
+class TestGlutenAliasesDoNotFlagGlutenFreeDishes:
+    """
+    _ALLERGEN_ALIASES expands "gluten"/"wheat" into flour, pasta and
+    noodles so the check reaches "Wheat Pasta" — but that same expansion
+    used to flag "Gluten-Free Pasta" made with rice flour, because the
+    words "pasta" and "flour" don't know they're sitting in a dish or
+    ingredient line that says outright it's safe.
+    """
+
+    def _plan_with(self, meal: str) -> int:
+        week = _week_start()
+        plan = tools.create_weekly_plan(week)
+        tools.plan_meal(
+            tools._week_dates(week)[0], meal, slot="dinner",
+            weekly_plan_id=plan["weekly_plan_id"],
+        )
+        return plan["weekly_plan_id"]
+
+    def test_gluten_free_pasta_with_rice_flour_does_not_flag(self, kitchen):
+        tools.add_recipe(
+            "Gluten-Free Pasta",
+            ingredients=[{"item": "rice flour", "qty": "200g"},
+                         {"item": "eggs", "qty": "2"}],
+        )
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Gluten-Free Pasta"))["conflicts"] == []
+
+    def test_wheat_pasta_still_flags(self, kitchen):
+        tools.add_recipe("Wheat Pasta", ingredients=[{"item": "durum wheat", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["wheat allergy"])
+
+        found = tools.check_plan_conflicts(self._plan_with("Wheat Pasta"))["conflicts"]
+
+        assert [c["meal"] for c in found] == ["Wheat Pasta"]
+
+    def test_soba_made_with_buckwheat_noodles_does_not_flag(self, kitchen):
+        tools.add_recipe("Soba", ingredients=[{"item": "buckwheat noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Soba"))["conflicts"] == []
+
+    def test_udon_noodles_still_flag(self, kitchen):
+        tools.add_recipe("Udon", ingredients=[{"item": "udon noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["wheat allergy"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Udon"))["conflicts"]
+
+    def test_chickpea_pasta_does_not_flag_gluten(self, kitchen):
+        tools.add_recipe("Chickpea Pasta Salad", ingredients=[{"item": "chickpea pasta", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Chickpea Pasta Salad"))["conflicts"] == []
+
+    def test_almond_flour_cake_is_not_gluten_but_is_still_a_nut(self, kitchen):
+        tools.add_recipe("Almond Flour Cake", ingredients=[{"item": "almond flour", "qty": "300g"}])
+
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+        assert tools.check_plan_conflicts(self._plan_with("Almond Flour Cake"))["conflicts"] == [], \
+            "almond flour is not gluten"
+
+        tools.set_member_dietary_restrictions("Emily", ["nut allergy"])
+        found = tools.check_plan_conflicts(self._plan_with("Almond Flour Cake"))["conflicts"]
+        assert [c["meal"] for c in found] == ["Almond Flour Cake"], \
+            "the same dish is still a clash for a nut allergy"
+
+    def test_gf_abbreviation_in_the_name_also_negates(self, kitchen):
+        tools.add_recipe("GF Noodle Bowl", ingredients=[{"item": "rice noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("GF Noodle Bowl"))["conflicts"] == []
+
+
+# ---------- 14. backfilling allergy notes already sitting in facts ----------
+
+class TestBackfillAllergyNotesFromFacts:
+    """
+    Loop Board "Allergy: backfill existing allergy NOTES into member
+    restrictions" (Emily's decision 3a): a household that saved an allergy
+    as a freeform What-we-know note BEFORE the allergy enforcement fix (see
+    this file's module docstring) has that allergy sitting only in `facts`
+    — nothing on the member record, which is what a member's own profile
+    reads. db._backfill_allergy_notes_from_facts fills that specific gap,
+    reusing coordination's own fact parsing (`_fact_keywords`,
+    `_named_member`) rather than re-deciding what counts as an avoidance or
+    who it's about.
+    """
+
+    def _run_backfill(self):
+        """
+        Migration functions take a connection and leave commit/close to
+        the caller (see e.g. the existing
+        test_migration_merges_pre_existing_duplicate_rows_keeping_the_newest
+        in test_store_memory.py) — this wraps that so each test below
+        doesn't have to repeat it.
+        """
+        conn = get_conn()
+        db._backfill_allergy_notes_from_facts(conn)
+        conn.commit()
+        conn.close()
+
+    def test_a_hard_allergy_phrasing_lands_on_the_member(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert "allergy: pineapple" in member["dietary_restrictions"]
+
+    def test_the_cant_have_phrasing_is_recognised_too(self, kitchen):
+        tools.add_member("Moksha")
+        tools.add_fact("people", "Moksha can't have shellfish", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Moksha")
+        assert "allergy: shellfish" in member["dietary_restrictions"]
+
+    def test_a_household_wide_fact_is_left_alone(self, kitchen):
+        """
+        No member is named, so nothing is backfilled — the planner and
+        check_plan_conflicts already read `facts` directly for exactly this
+        case, so the member record has nothing missing to fill in.
+        """
+        tools.add_fact("people", "no pork in this house", hard=True)
+
+        self._run_backfill()
+
+        assert tools.list_members()[0]["dietary_restrictions"] == []
+
+    def test_a_requirement_fact_is_skipped(self, kitchen):
+        tools.add_fact("people", "Emily needs high-protein dinners", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert member["dietary_restrictions"] == []
+
+    def test_a_fact_naming_a_non_member_is_skipped(self, kitchen):
+        tools.add_fact("people", "Jordan is allergic to peanuts", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert member["dietary_restrictions"] == []
+
+    def test_running_twice_changes_nothing(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+        first = tools.list_members()[0]["dietary_restrictions"]
+        self._run_backfill()
+        second = tools.list_members()[0]["dietary_restrictions"]
+
+        assert first == second == ["allergy: pineapple"]
+
+    def test_an_existing_allergy_note_is_not_duplicated(self, kitchen):
+        tools.set_member_dietary_restrictions("Emily", ["allergy: pineapple"])
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert member["dietary_restrictions"].count("allergy: pineapple") == 1
+
+    def test_a_soft_fact_is_backfilled_too(self, kitchen):
+        """
+        `hard` gates the live safety check (check_plan_conflicts), not this
+        backfill: the What-we-know screen never sets `hard` itself (see
+        this file's docstring), so a household with a real, unenforced
+        allergy note almost never has it marked hard. Restricting the
+        backfill to hard=True facts would miss almost everything it exists
+        to catch.
+        """
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=False)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert "allergy: pineapple" in member["dietary_restrictions"]
+
+    def test_several_facts_about_the_same_person_all_land(self, kitchen):
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+        tools.add_fact("people", "Emily can't have shellfish", hard=True)
+
+        self._run_backfill()
+
+        member = next(m for m in tools.list_members() if m["name"] == "Emily")
+        assert "allergy: pineapple" in member["dietary_restrictions"]
+        assert "allergy: shellfish" in member["dietary_restrictions"]
+
+    def test_facts_are_never_edited_or_deleted(self, kitchen):
+        from app.tools import memory as _memory
+
+        tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+
+        self._run_backfill()
+
+        facts = _memory.get_facts()
+        assert any(f["text"] == "Emily is allergic to pineapple" for f in facts)

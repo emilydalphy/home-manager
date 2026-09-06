@@ -378,6 +378,48 @@ why*, not duplicating the diff.
     tracked inventory when the meal is checked off. Deliberately out of
     scope; own ticket. Also deliberately not built: Emily's "optional
     add-ons" idea for keto (decision 7a) is a separate later ticket.
+- **2026-09-05 — Two decided fixes to the allergy check: gluten/wheat's own
+  false positive, and pre-enforcement allergy facts backfilled onto member
+  records. Branch `allergy-backfill-and-gluten` (NOT merged at the time of
+  writing).**
+  - **"Gluten-Free Pasta" made with rice flour stopped flagging itself.**
+    `_ALLERGEN_ALIASES["gluten"/"wheat"]` expands into flour/pasta/noodles so
+    the check reaches "Wheat Pasta" — but that same expansion flagged a dish
+    that is, by definition, safe for the restriction it tripped. Two fixes,
+    both via the existing mechanisms rather than a new one: alternative-flour
+    compounds (rice/almond/chickpea/buckwheat/corn/oat/coconut/tapioca
+    flour; rice/glass/soba/buckwheat noodles; chickpea/lentil/rice pasta)
+    added to `_COMPOUND_EXCEPTIONS`, and a new, narrower rule in `_matches`:
+    a segment (dish name or one ingredient line) that says "gluten-free" /
+    "gluten free" / "GF" outright is negated for the GLUTEN/WHEAT alias
+    words *in that segment only* — a nut or dairy restriction still sees it.
+    "Almond Flour Cake" is now correctly not-gluten but still a nut-allergy
+    clash, since the discount is per word, never per compound (same rule
+    `_COMPOUND_EXCEPTIONS` already followed for peanut butter/coconut milk).
+  - **Facts written down before the enforcement fix existed only in
+    `facts`, never on the member record (Emily's decision 3a).** The
+    planner and `check_plan_conflicts` read `facts` directly since
+    2026-09-04, but a member's own profile only ever showed
+    `dietary_restrictions_json` — so a household whose allergy was saved as
+    a What-we-know note before that fix looked, on their own profile, like
+    they had no allergy on file at all. `db._backfill_allergy_notes_from_facts`
+    runs every startup (same idempotent-migration shape as
+    `_backfill_member_colors`): for each fact naming an existing member and
+    yielding an avoidance phrase — via `coordination._fact_keywords` and a
+    newly-extracted `coordination._named_member`/`_name_words` (factored out
+    of `_avoidances()`, which now calls them too, so the backfill can never
+    silently drift from what the live check treats as an avoidance) — it
+    appends `"allergy: <phrase>"` to that member's restrictions when not
+    already present, case-insensitively. Deliberately **not** gated on
+    `fact.hard`: the What-we-know screen has never set that flag itself (see
+    the 2026-09-04 entry below), so gating on it would have backfilled
+    almost nothing. Household-wide facts (no member named, e.g. "no pork in
+    this house") are left alone on purpose — nothing is missing there to
+    fill in. Facts are never edited or deleted. Runs automatically on the
+    next deploy (wired into `_run_migrations`, called from `init_db()` at
+    app startup); to run it immediately without waiting for one, from
+    inside the deployed container: `railway ssh -- python -c "from app.db
+    import init_db; init_db()"`.
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
   merged at the time of writing).** Root cause of the original bug was three
