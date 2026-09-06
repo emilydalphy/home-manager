@@ -578,6 +578,34 @@ def _roll_up_unit(amount: float, unit: str) -> tuple[float, str]:
     return amount, unit
 
 
+def _convert_to_unit(amount: float, from_unit: str | None, to_unit: str | None) -> float | None:
+    """
+    Re-express `amount` in `to_unit`, when the two units are the same word
+    or both belong to one of the measurable-unit families above (lb<->oz,
+    cup<->tbsp<->tsp, g<->kg, ml<->l). Returns None when they can't be
+    reconciled this way — different families, a discrete count, freeform
+    text — so a caller can tell "genuinely nothing to convert" apart from
+    a real zero.
+
+    Exists because the grocery line and the per-meal ledger row that
+    reverses it don't always agree on which unit a measurable amount is
+    written in: _humanize_grocery_quantity rolls a quantity to whichever
+    unit in its family displays best AT THAT AMOUNT, so a line can read
+    "10 oz" one day and the ledger row still reversing into it reads
+    "0.75 lb" from the week it was bought. Same amount, different label —
+    this is what lets _subtract_quantity tell that apart from an actual
+    disagreement.
+    """
+    if from_unit == to_unit:
+        return amount
+    if not from_unit or not to_unit:
+        return None
+    for group in _UNIT_CONVERSION_GROUPS:
+        if from_unit in group and to_unit in group:
+            return amount * group[from_unit] / group[to_unit]
+    return None
+
+
 def _round_to_nice_fraction(amount: float) -> float:
     """Round to the nearest quarter — friendlier for a shopping list than a repeating decimal."""
     whole = math.floor(amount + 1e-9)
@@ -604,6 +632,61 @@ def _humanize_grocery_quantity(amount: float, unit: str | None) -> str:
     if nice_amount <= 0 and amount > 0:
         nice_amount = 0.25
     return _format_quantity(nice_amount, rolled_unit)
+
+
+def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
+    """
+    Recombine a grocery line's remaining per-meal ledger contributions into
+    one quantity, in the same units-and-rounding a grocery line is always
+    written in (see _humanize_grocery_quantity) — the recompute half of
+    grocery._reverse_meal_grocery_contributions, the only caller.
+
+    Each row is a bare "<amount> <unit>" string with no note or repeat
+    marker (see recipes._record_grocery_link / WeekGroceryBuffer.flush, the
+    only things that write one), so there is only ever a unit to
+    reconcile, never a note. Rows in the same measurable family (lb/oz,
+    cup/tbsp/tsp, g/kg, ml/l) are converted to that family's smallest unit
+    and summed together even when they were written in different units of
+    it — which is exactly the case that stranded a line: a week's line
+    rolls its display unit to whatever reads best at ITS total, and a
+    single meal's ledger row was written at ingest time against a
+    different total, so the two don't always agree on lb vs oz for the
+    same pound. Rows that are the same bare count (no unit) sum directly.
+    Rows in genuinely different families (a count next to a measured
+    amount, or two container words) are kept apart and their two
+    humanized amounts are concatenated with " + " — the same honest
+    disagreement _repeat_or_concatenate reports elsewhere in this module,
+    for the same reason: guessing a conversion that doesn't exist is worse
+    than showing both amounts.
+
+    Returns None when a row doesn't parse as a number at all (a freeform
+    contribution like "a bunch" that reached this grocery line before a
+    later contribution turned it into something summable) — the caller
+    falls back to subtracting this one contribution out of the current
+    display instead of guessing what the word means.
+    """
+    totals: dict[tuple, list] = {}
+    for raw in qty_strings:
+        text = (raw or "").strip()
+        if not text:
+            continue
+        parsed = _parse_quantity(text)
+        if not parsed:
+            return None
+        amount, unit = parsed
+        group = next((g for g in _UNIT_CONVERSION_GROUPS if unit in g), None)
+        if group:
+            base_unit = min(group, key=group.get)
+            key = ("measure", id(group))
+            bucket = totals.setdefault(key, [0.0, base_unit])
+            bucket[0] += amount * group[unit]
+        else:
+            key = ("discrete", unit)
+            bucket = totals.setdefault(key, [0.0, unit])
+            bucket[0] += amount
+    if not totals:
+        return ""
+    return " + ".join(_humanize_grocery_quantity(amount, unit) for amount, unit in totals.values())
 
 
 def _normalize_grocery_quantity(qty: str) -> str:
