@@ -381,6 +381,30 @@ def test_defrost_confirm_endpoint_can_be_answered_again_from_cook_view(signed_in
     assert len(res.json()["created"]) == 1
 
 
+def test_confirming_the_same_item_twice_keeps_one_task(signed_in):
+    """A re-ask from the Cook view, a double tap or a retried POST must not
+    book the same move twice -- one row per (cook night, item), even after
+    a plan regenerate has run its own defrost sync in between."""
+    _meat_recipe()
+    week = _week_start()
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(tools._week_dates(week)[3], "Chicken Skewers", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+
+    first = signed_in.post(f"/api/week/{week}/defrost-confirm", json={"items": ["Chicken Thighs"]}).json()
+    defrost.sync_defrost_tasks(plan["weekly_plan_id"])
+    second = signed_in.post(f"/api/week/{week}/defrost-confirm", json={"items": ["Chicken Thighs"]}).json()
+
+    conn = defrost.get_conn()
+    rows = conn.execute(
+        "SELECT id FROM prep_tasks WHERE weekly_plan_id = ? AND task_type = 'defrost'",
+        (plan["weekly_plan_id"],),
+    ).fetchall()
+    conn.close()
+    assert len(rows) == 1
+    assert len(first["created"]) == 1 and len(second["created"]) == 1
+    assert second["created"][0]["prep_task_id"] == first["created"][0]["prep_task_id"]
+
+
 def test_defrost_confirm_endpoint_too_late_answer_returns_the_note(signed_in):
     _meat_recipe()
     today = datetime.date.today().isoformat()

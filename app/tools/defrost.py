@@ -687,14 +687,30 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
 
         description = _describe(ing_name, m["meal"], m["date"])
         quantity = _batch_quantity(ing, batch_factor)
-        cur = conn.execute(
-            "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
-            "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
-            "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', NULL, ?, ?)",
-            (household_id(), weekly_plan_id, move_date_str, description, m["meal"], entry_id, quantity),
-        )
+        # Answering again (Cook-view re-ask, a double tap, a retried POST)
+        # must not book the same move twice: one row per (entry, item).
+        existing = conn.execute(
+            "SELECT id FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
+            "AND task_type = 'defrost' AND inventory_item_id IS NULL "
+            "AND meal_plan_entry_id IS ? AND description = ?",
+            (household_id(), weekly_plan_id, entry_id, description),
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ?",
+                (move_date_str, quantity, existing["id"]),
+            )
+            task_id = existing["id"]
+        else:
+            cur = conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
+                "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', NULL, ?, ?)",
+                (household_id(), weekly_plan_id, move_date_str, description, m["meal"], entry_id, quantity),
+            )
+            task_id = cur.lastrowid
         created.append({
-            "prep_task_id": cur.lastrowid, "item": ing_name, "task_date": move_date_str,
+            "prep_task_id": task_id, "item": ing_name, "task_date": move_date_str,
             "related_meal": m["meal"], "date": m["date"], "lead_hours": lead_hours, "lead_tier": tier,
         })
     conn.commit()
