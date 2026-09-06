@@ -270,7 +270,7 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     return current_qty, False
 
 
-def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
+def _reverse_meal_grocery_contributions(entry_id: int, conn=None) -> dict:
     """
     Undo whatever a meal_plan_entries row added to the grocery list, via the
     meal_plan_grocery_links ledger recorded at plan_meal() time — called
@@ -298,8 +298,20 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
     line with no source_weekly_plan_id was asked for by a person directly
     and is never removed by this at all; the plan borrowed it, it doesn't
     own it.
+
+    `conn` is for one caller and is not part of the assistant-facing API:
+    retire_overlapping_plans runs a whole multi-plan takeover inside ONE
+    write transaction, so it hands its connection down rather than letting
+    each meal's reversal commit on its own — a crash between two of those
+    commits used to leave the first plan's groceries reversed while the
+    caller reported failure. Given a connection, this reads and writes on
+    it and neither commits nor closes: the caller owns both. Left unset,
+    every other call site behaves exactly as before — its own connection,
+    its own commit, its own close.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     links = conn.execute(
         "SELECT id, grocery_item_id, item, quantity FROM meal_plan_grocery_links "
         "WHERE household_id = ? AND meal_plan_entry_id = ?",
@@ -330,8 +342,9 @@ def _reverse_meal_grocery_contributions(entry_id: int) -> dict:
                 conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, grocery_row["id"]))
                 trimmed_items.append(grocery_row["item"])
     conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
-    conn.commit()
-    conn.close()
+    if own_conn:
+        conn.commit()
+        conn.close()
     return {"removed_items": removed_items, "trimmed_items": trimmed_items}
 
 

@@ -32,6 +32,7 @@ import pytest
 
 from app import agent, tools
 from app.db import get_conn
+from app.tools import grocery, weekly_plan
 
 
 # ---------- helpers ----------
@@ -904,6 +905,252 @@ class TestGroceryReconciliationOnTakeover:
         assert new["took_over"]["grocery_removed"] == []
         assert "olive oil" in self._needed()
 
+
+# ---------- the takeover as ONE transaction ----------
+
+def _takeover_snapshot() -> dict:
+    """
+    Everything a takeover can destroy, read straight out of the database.
+
+    Compared as a whole rather than field by field because the property
+    under test is "nothing moved", and a test that lists the columns it
+    checks can only catch the damage it thought of. updated_at is left out
+    deliberately: it is the one column a rolled-back write cannot have
+    changed, and including it would make the snapshot depend on the clock.
+    """
+    conn = get_conn()
+
+    def rows(sql):
+        return [tuple(r) for r in conn.execute(sql).fetchall()]
+
+    snap = {
+        "plans": rows(
+            "SELECT id, week_start_date, content_start_date, day_count, status, "
+            "COALESCE(superseded_json, '') FROM weekly_plans ORDER BY id"
+        ),
+        "entries": rows(
+            "SELECT id, weekly_plan_id, date, slot, recipe_id, freeform_meal, slot_state, "
+            "cooked_status FROM meal_plan_entries ORDER BY id"
+        ),
+        "prep": rows(
+            "SELECT id, weekly_plan_id, meal_plan_entry_id, description, status "
+            "FROM prep_tasks ORDER BY id"
+        ),
+        "grocery": rows(
+            "SELECT id, item, quantity, status, source_weekly_plan_id "
+            "FROM grocery_items ORDER BY id"
+        ),
+        "links": rows(
+            "SELECT id, meal_plan_entry_id, grocery_item_id, item, quantity "
+            "FROM meal_plan_grocery_links ORDER BY id"
+        ),
+    }
+    conn.close()
+    return snap
+
+
+class TestTakeoverIsAtomic:
+    """
+    A takeover that touches two plans lands whole or not at all.
+
+    The debt this closes: every decision was settled up front, but acting
+    on them committed per plan — the first plan's meals, prep tasks and
+    grocery reversal were already gone by the time the second plan's turn
+    threw. The household then saw an error saying nothing had been saved,
+    over a week that had genuinely lost days.
+    """
+
+    def _two_plans_and_a_new_period(self, stub_model):
+        """
+        Two approved plans back to back, and a new period straddling the
+        join: it takes the last two days of the first and the first two of
+        the second, so BOTH are shortened and neither is retired.
+
+        The new plan is inserted directly rather than generated, so the
+        test drives retire_overlapping_plans itself — the thing that has to
+        be atomic — instead of the generation that wraps it.
+        """
+        week = _monday()
+        days = tools.period_dates(week, 14)
+        stub_model(_full_period(days[0], 4, meal="Chili"))
+        first = agent.generate_weekly_plan(days[0], day_count=4, period_start=days[0])
+        tools.approve_weekly_plan(first["weekly_plan_id"], approved_by="Emily")
+        stub_model(_full_period(days[4], 4, meal="Katsu"))
+        second = agent.generate_weekly_plan(days[4], day_count=4, period_start=days[4])
+        tools.approve_weekly_plan(second["weekly_plan_id"], approved_by="Emily")
+
+        conn = get_conn()
+        # A prep task hanging off a meal that IS being surrendered, so the
+        # happy path really deletes one and the failure path really has one
+        # to preserve. (save_prep_tasks writes general tasks with no entry
+        # id; the rows _release_plan_days deletes are the ones that carry
+        # one, so that is what this makes.)
+        for plan_id, day in ((first["weekly_plan_id"], days[2]), (second["weekly_plan_id"], days[4])):
+            entry = conn.execute(
+                "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? "
+                "AND slot = 'dinner'", (plan_id, day),
+            ).fetchone()
+            conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                "meal_plan_entry_id) VALUES (1, ?, ?, 'Soak the beans', ?)",
+                (plan_id, day, entry["id"]),
+            )
+        cur = conn.execute(
+            "INSERT INTO weekly_plans (household_id, week_start_date, content_start_date, "
+            "day_count, status) VALUES (1, ?, ?, 4, 'draft')",
+            (days[2], days[2]),
+        )
+        new_plan_id = cur.lastrowid
+        conn.commit()
+        conn.close()
+        return first["weekly_plan_id"], second["weekly_plan_id"], new_plan_id, days
+
+    def test_a_failure_between_two_plans_leaves_BOTH_untouched(
+        self, recipes, stub_model, monkeypatch
+    ):
+        # The whole ticket, stated once. Decisions are taken newest-first,
+        # so the second plan is released first and the first plan's release
+        # is what throws — which is exactly the window in which the old
+        # code had already committed a week's worth of destruction.
+        first_id, second_id, new_plan_id, days = self._two_plans_and_a_new_period(stub_model)
+        before = _takeover_snapshot()
+
+        real = weekly_plan._release_plan_days
+        calls = []
+
+        def flaky(*args, **kwargs):
+            calls.append(args[0])
+            if len(calls) == 2:
+                raise RuntimeError("database is locked")
+            return real(*args, **kwargs)
+
+        monkeypatch.setattr(weekly_plan, "_release_plan_days", flaky)
+
+        with pytest.raises(RuntimeError):
+            tools.retire_overlapping_plans(new_plan_id, days[2], 4)
+        assert calls == [second_id, first_id], "the failure has to land BETWEEN two plans"
+
+        # Nothing moved. Meals, prep tasks, grocery lines and their exact
+        # quantities, the ledger, and the plan rows themselves.
+        assert _takeover_snapshot() == before
+        # Said again in the terms the household would notice, because a
+        # dict comparison that goes wrong is hard to read.
+        assert _dates_on(first_id) == set(tools.period_dates(days[0], 4))
+        assert _dates_on(second_id) == set(tools.period_dates(days[4], 4))
+        for plan_id in (first_id, second_id):
+            row = _plan_row(plan_id)
+            assert row["status"] == "approved", "a plan was retired by a takeover that failed"
+            assert not row["superseded_json"], "a superseded record outlived its own rollback"
+
+    def test_the_takeover_opens_no_second_connection(self, recipes, stub_model, monkeypatch):
+        # The reason the reversal takes a `conn` at all. A helper that
+        # opened its own connection would sit behind this one's write lock,
+        # wait, and fail with "database is locked" — so the atomicity and
+        # the deadlock-avoidance are the same requirement, and this pins it
+        # against a well-meaning future edit that adds a nested get_conn.
+        first_id, second_id, new_plan_id, days = self._two_plans_and_a_new_period(stub_model)
+        opened = {"weekly_plan": 0, "grocery": 0}
+        for name, module in (("weekly_plan", weekly_plan), ("grocery", grocery)):
+            real_get_conn = module.get_conn
+
+            def counting(_name=name, _real=real_get_conn):
+                opened[_name] += 1
+                return _real()
+
+            monkeypatch.setattr(module, "get_conn", counting)
+
+        tools.retire_overlapping_plans(new_plan_id, days[2], 4)
+
+        # One to read every live plan (_plan_takeover, before any write),
+        # one for the transaction. Nothing else, on either module.
+        assert opened == {"weekly_plan": 2, "grocery": 0}
+
+    def test_the_happy_path_across_two_plans_lands_where_it_always_did(
+        self, recipes, stub_model
+    ):
+        # The counterpart to the rollback test: one transaction has to
+        # produce the same end state the many-commit version produced.
+        # Every assertion here was measured against the parent commit.
+        first_id, second_id, new_plan_id, days = self._two_plans_and_a_new_period(stub_model)
+        result = tools.retire_overlapping_plans(new_plan_id, days[2], 4)
+
+        assert sorted(result["shortened_plan_ids"]) == sorted([first_id, second_id])
+        assert result["retired_plan_ids"] == []
+        assert result["surrendered_dates"] == [days[2], days[3], days[4], days[5]]
+        assert result["orphaned_dates"] == []
+        assert result["meals_removed"] == 4 * len(tools.WEEK_SLOTS)
+        assert result["grocery_kept_bought"] == []
+
+        # Each keeps the longest run still available to it: the first ends
+        # the day before the new period, the second resumes the day after.
+        assert tools.plan_period(_plan_row(first_id)) == (days[0], 2)
+        assert tools.plan_period(_plan_row(second_id)) == (days[6], 2)
+        assert _dates_on(first_id) == {days[0], days[1]}
+        assert _dates_on(second_id) == {days[6], days[7]}
+        assert _live_day_owners() == {}
+        for plan_id in (first_id, second_id):
+            record = json.loads(_plan_row(plan_id)["superseded_json"])
+            assert record["by_plan_id"] == new_plan_id
+            assert record["by_period"] == {"start_date": days[2], "day_count": 4}
+
+        conn = get_conn()
+        # The prep tasks went with the meals they described...
+        assert conn.execute("SELECT COUNT(*) AS n FROM prep_tasks").fetchone()["n"] == 0
+        # ...and no ledger row outlived the entry it pointed at.
+        assert conn.execute(
+            "SELECT COUNT(*) AS n FROM meal_plan_grocery_links l "
+            "LEFT JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id WHERE e.id IS NULL"
+        ).fetchone()["n"] == 0
+        conn.close()
+        # Both surviving prefixes still shop for themselves.
+        assert {i["item"] for i in tools.list_grocery_list(status="needed")} == {"beans", "panko"}
+
+    def test_a_bought_line_survives_a_TWO_plan_takeover(self, recipes, stub_model):
+        # The in_cart/purchased guarantee, exercised through the shared
+        # connection rather than through one reversal that owns its own.
+        # Somebody has bought that food; a takeover mid-shop must not empty
+        # a cart, however many plans it walks on the way.
+        first_id, second_id, new_plan_id, days = self._two_plans_and_a_new_period(stub_model)
+        needed = {i["item"]: i for i in tools.list_grocery_list(status="needed")}
+        beans, panko = needed["beans"], needed["panko"]
+        tools.mark_grocery_item(beans["id"], "purchased")
+        tools.mark_grocery_item(panko["id"], "in_cart")
+
+        result = tools.retire_overlapping_plans(new_plan_id, days[2], 4)
+
+        conn = get_conn()
+        after = {
+            r["id"]: (r["item"], r["quantity"], r["status"])
+            for r in conn.execute("SELECT id, item, quantity, status FROM grocery_items").fetchall()
+        }
+        conn.close()
+        assert after[beans["id"]] == ("beans", beans["quantity"], "purchased")
+        assert after[panko["id"]] == ("panko", panko["quantity"], "in_cart")
+        # And the household is told, once per plan that gave up a meal
+        # linked to it — the ledger is the only place that fact survives.
+        assert sorted(set(result["grocery_kept_bought"])) == ["beans", "panko"]
+
+    def test_a_single_plan_takeover_behaves_exactly_as_before(self, recipes, stub_model):
+        # The ordinary case, and the one that was never broken: it must not
+        # have changed shape on the way to being made atomic.
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        stub_model(_full_period(week, 7))
+        old = agent.generate_weekly_plan(week, day_count=7, period_start=week)
+        tools.approve_weekly_plan(old["weekly_plan_id"], approved_by="Emily")
+
+        stub_model(_full_period(days[3], 4, meal="Katsu"))
+        new = agent.generate_weekly_plan(days[3], day_count=4, period_start=days[3])
+        took = new["took_over"]
+
+        assert took["shortened_plan_ids"] == [old["weekly_plan_id"]]
+        assert took["retired_plan_ids"] == []
+        assert took["surrendered_dates"] == days[3:7]
+        assert took["orphaned_dates"] == []
+        assert took["meals_removed"] == 4 * len(tools.WEEK_SLOTS)
+        assert tools.plan_period(_plan_row(old["weekly_plan_id"])) == (week, 3)
+        assert _dates_on(old["weekly_plan_id"]) == set(tools.period_dates(week, 3))
+        assert _live_day_owners() == {}
 
 # ---------- the streaming path ----------
 
