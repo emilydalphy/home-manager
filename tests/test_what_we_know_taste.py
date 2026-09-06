@@ -66,9 +66,17 @@ def test_the_other_tabs_are_unaffected(signed_in, household_with_taste):
     assert people["onboarding"] is not None, "People lost its onboarding block"
     assert people.get("preferences") is None, "People should not get the taste card"
 
+    # Rhythm has grown further still (Loop Board "I should be able to see
+    # all the onboarding information here") to carry the rest of the six
+    # locked rhythm questions — but "eating_style"/"cuisines" (the Taste
+    # tab's own card) must never leak across, which is the actual thing
+    # this test guards against.
     rhythm = signed_in.get("/api/facts?category=rhythm").json()
-    assert set(rhythm.get("preferences") or {}) == {"leftovers_stance"}, \
-        "rhythm should get its own leftovers card, not the taste card"
+    rhythm_prefs = rhythm.get("preferences") or {}
+    assert set(rhythm_prefs) == {
+        "leftovers_stance", "lunch_location", "meals_together", "cooking_role",
+        "dinner_window", "planning_anchor", "planning_anchor_label", "members",
+    }, "rhythm should get its own rhythm card, not the taste card"
     assert rhythm.get("onboarding") is None, "rhythm should not get the onboarding block"
 
     stores = signed_in.get("/api/facts?category=stores").json()
@@ -134,6 +142,11 @@ def test_a_household_that_answered_nothing_still_gets_a_usable_tab(signed_in):
     body = signed_in.get("/api/facts?category=taste").json()
     # complete_plates is on for a household that has said nothing: the app
     # rounds a short meal out unless told otherwise (Emily, 2026-09-05).
+    # The four per-week counts default the same way get_household_memory
+    # itself defaults them for a brand-new household (schema.sql defaults).
     assert body["preferences"] == {
         "eating_style": "", "cuisines": [], "complete_plates": True,
+        "protein_preferences": {}, "dislikes": [],
+        "dinners_per_week": 7, "breakfasts_per_week": 7, "lunches_per_week": 7, "snacks_per_week": 3,
+        "kitchen_kit": [],
     }
