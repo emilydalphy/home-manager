@@ -2893,6 +2893,14 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     }
 
 
+# Shown above Approve when the allergy check itself could not run. Calm and
+# plain (DESIGN_SYSTEM §8: safety copy states the thing and its way out).
+_CHECK_FAILED_NOTE = (
+    "I couldn't check this week against your household's allergies just now. "
+    "Approve anyway, or try again in a moment."
+)
+
+
 def approve_weekly_plan(
     weekly_plan_id: int, approved_by: str = "", confirm_hard_conflicts: bool = False
 ) -> dict:
@@ -2967,17 +2975,27 @@ def approve_weekly_plan(
     # gate just below) describe the plan that was actually approved, and a
     # failure here can't half-approve a week.
     conflicts, note = [], None
+    check_failed = False
     try:
         found = _coordination.check_plan_conflicts(weekly_plan_id)
         conflicts = found["conflicts"]
         note = found["note"]
     except Exception:
+        # Logged, not swallowed: the gate below treats a check that could
+        # not run the same as a check that found something. Approving past
+        # an allergy because the allergy check crashed is exactly the
+        # failure this confirm exists to prevent.
         logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+        check_failed = True
 
+    # A check that CRASHED fails closed: the household is asked rather than
+    # waved through, because "we couldn't look" is not "nothing was found".
+    # The note says so plainly and the flag still approves — a broken check
+    # must not lock a household out of its week.
     if (
         not was_already_approved
         and not confirm_hard_conflicts
-        and any(c["severity"] == "hard" for c in conflicts)
+        and (check_failed or any(c["severity"] == "hard" for c in conflicts))
     ):
         # `note` here, not conflicts_note_after_approval: nothing has been
         # approved, so the sentence should still say "before you approve" —
@@ -2987,7 +3005,8 @@ def approve_weekly_plan(
             "weekly_plan_id": weekly_plan_id,
             "status": "needs_confirmation",
             "conflicts": conflicts,
-            "conflicts_note": note,
+            "conflicts_note": _CHECK_FAILED_NOTE if check_failed else note,
+            "check_failed": check_failed,
         }
 
     # Not `note`: that sentence ends "before you approve", and this is the

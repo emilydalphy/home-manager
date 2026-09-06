@@ -1765,6 +1765,9 @@ def approve_week(week_start: str, req: WeekApproveRequest):
             "status": "needs_confirmation",
             "conflicts": result["conflicts"],
             "conflicts_note": result["conflicts_note"],
+            # True when the allergy check itself could not run and the
+            # approval was stopped for that reason (fail closed).
+            "check_failed": result.get("check_failed", False),
         }
     return {
         "week_start": week_start,

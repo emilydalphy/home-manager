@@ -1231,3 +1231,40 @@ class TestBackfillAllergyNotesFromFacts:
 
         facts = _memory.get_facts()
         assert any(f["text"] == "Emily is allergic to pineapple" for f in facts)
+
+
+def test_a_crashed_allergy_check_asks_rather_than_waving_the_week_through(kitchen, monkeypatch):
+    """
+    Fail closed. The confirm exists to stop a week going past an allergy;
+    a check that crashed has not found nothing, it has found out nothing,
+    and approving on that is the exact gap the confirm was built to close.
+    """
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+    from app.tools import coordination as _coordination
+
+    def boom(*_a, **_k):
+        raise RuntimeError("keyword table exploded")
+
+    monkeypatch.setattr(_coordination, "check_plan_conflicts", boom)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "needs_confirmation"
+    assert result["check_failed"] is True
+    assert result["conflicts"] == []
+    assert "couldn" in result["conflicts_note"] and "allergies" in result["conflicts_note"]
+    assert tools.get_weekly_plan(plan["weekly_plan_id"])["status"] == "draft"
+    assert tools.list_grocery_list("needed") == []
+
+    # The flag still approves: a broken check must not lock the household
+    # out of its own week.
+    confirmed = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
+    assert confirmed["status"] == "approved"
+    assert tools.get_weekly_plan(plan["weekly_plan_id"])["status"] == "approved"

@@ -240,6 +240,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-06 — A crashed allergy check fails CLOSED at approval.** Found
+  by an independent review of the confirm-tap work: `check_plan_conflicts`
+  raising inside `approve_weekly_plan` was logged and the week approved
+  anyway — tolerable when the check only produced a warning, not once a
+  hard clash needs a confirm tap, because the crash silently bypassed the
+  gate. A failed check now returns `needs_confirmation` with
+  `check_failed: true` and a plain note ("I couldn't check this week
+  against your household's allergies just now"); the flag still approves,
+  so a broken check cannot lock a household out of its week. Also worth
+  knowing: the armed "Approve anyway" state is client-only and resets if
+  the band re-renders between taps — deliberate, the server re-gates every
+  tap, so the worst case is one extra tap. Don't "fix" it by remembering
+  the confirm on the client.
 - **2026-09-05 — 17 peppers was arithmetic, and the arithmetic was wrong in
   two places. Branch `fix-produce-quantities` (on top of
   `fix-grocery-quantity-inflation`, NOT merged at the time of writing).**
