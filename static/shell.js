@@ -5028,7 +5028,7 @@
         cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
         cookAttentionHtml() +
         '<div class="cook-body">' +
-          cookPrepHtml(data) +
+          cookPrepHtml(data, meals[cookState.tonightIdx], cookState.tonightIdx) +
           cookRestOfWeekHtml(meals, data) +
         '</div>';
     }
@@ -5171,20 +5171,36 @@
 
   // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
   // a pair of small things rather than another stack of full-width cards.
-  function cookPrepHtml(data) {
+  function cookPrepHtml(data, tonightMeal, tonightIdx) {
     var tasks = data.prep_tasks || [];
     if (!tasks.length) return '';
     var done = data.prep_done || 0;
     var total = data.prep_total || tasks.length;
+    var allDone = total > 0 && done === total;
+    // Once every prep task is off the list there's nothing left to check
+    // here — the note stops counting and points at what's next instead.
+    // The hero above already carries a "Start cooking"/"Mark eaten" apricot
+    // primary whenever tonight has a real meal (cookHeroHtml/
+    // cookReheatHeroHtml), and Rule 5 (one apricot primary per screen)
+    // means this section must never add a second one on top of it — the
+    // fallback link below only appears on the (currently unreachable, but
+    // still correct to guard) case where tonight has no meal at all and so
+    // the hero offers no way in.
+    var heroHasPrimaryAction = !!tonightMeal;
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow cook-eyebrow-warm">Prep schedule</span>' +
         '<span class="cook-rule"></span>' +
-        '<span class="cook-sectionnote">' + done + ' of ' + total + ' done</span>' +
+        '<span class="cook-sectionnote">' + (allDone ? 'Prep’s done — the rest is tonight.' : (done + ' of ' + total + ' done')) + '</span>' +
         '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
           'aria-label="Hands-free: check off prep steps by voice" ' +
           'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>' +
       '</div>' +
+      (allDone && !heroHasPrimaryAction && tonightIdx !== null && tonightIdx !== undefined
+        ? '<button type="button" class="cook-hero-action cook-prep-startcooking" data-cook="focus" data-idx="' + tonightIdx + '" data-at="steps">' +
+            '<span>Start cooking</span>' + ICONS.arrow +
+          '</button>'
+        : '') +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
           var isDone = t.status === 'done';

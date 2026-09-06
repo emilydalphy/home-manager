@@ -4337,6 +4337,10 @@ html, body {
 }
 
 /* ---------- Prep: the supporting two-up rail ---------- */
+/* Only ever rendered when tonight has no meal of its own to offer a
+   "Start cooking" primary already (see cookPrepHtml) — a fallback way in,
+   never a second apricot alongside the hero's own. */
+.cook-prep-startcooking { margin-bottom: 12px; }
 .cook-prep-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .cook-prep-card {
   min-height: 100px;
