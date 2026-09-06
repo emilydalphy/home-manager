@@ -755,6 +755,11 @@ Household coordination & trust:
 - Right before approve_weekly_plan, call check_plan_conflicts and mention any flagged clashes \
 with a member's dietary restriction — this is a warning to weigh, not a block; still approve if \
 the user wants to proceed anyway (it may be a false positive, or intentional).
+- A HARD clash (severity 'hard': an allergy, a member restriction, a hard fact) is the one \
+exception to "not a block" above — approve_weekly_plan itself will refuse and return \
+needs_confirmation until confirm_hard_conflicts is true, so ask the household directly ("there's \
+a real clash with {meal} — approve anyway, or want to fix it first?") and only pass that flag \
+once they've said yes; never set it on your own initiative.
 - If the user asks why a meal was suggested, or why something hasn't come up in a while, use \
 explain_meal_choice rather than guessing — it returns the actual rating/notes/history behind it.
 - Near the start of a new conversation (not every message), call get_attention_items once — it \
@@ -1420,10 +1425,16 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "approve_weekly_plan",
-        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities.",
+        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities. If the plan has a HARD allergen/must-avoid clash (check_plan_conflicts severity 'hard') and confirm_hard_conflicts isn't true, this does NOT approve — it writes nothing — and instead returns status 'needs_confirmation' with the conflicts and a sentence describing them; a status of 'approved' is the only outcome that actually put anything on the list.",
         "input_schema": {
             "type": "object",
-            "properties": {"weekly_plan_id": {"type": "integer"}},
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "confirm_hard_conflicts": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The household's explicit yes to approving PAST a hard allergen/must-avoid clash — never set this true on your own initiative. If a first call comes back needs_confirmation, ASK the household directly whether they want to approve anyway (naming the clash), and only call again with this set to true if they say yes.",
+                },
+            },
             "required": ["weekly_plan_id"],
         },
     },

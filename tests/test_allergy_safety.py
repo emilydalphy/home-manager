@@ -242,11 +242,16 @@ def test_an_approved_week_is_not_nagged_about_a_decision_already_made(kitchen, m
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    # A hard clash needs the household's confirm tap (see the "confirm tap
+    # for a hard clash" section below) — this test is about the note's
+    # wording once they've given it, not about the gate itself.
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     # Approval says it out loud once...
     assert {c["meal"] for c in result["conflicts"]} == {"Pineapple Chicken"}
-    assert result["status"] == "approved", "a clash warns, it never blocks"
+    assert result["status"] == "approved", "a clash warns, it never blocks once confirmed"
     # ...and the settled week stops carrying the warning.
     assert tools.get_week_menu(plan["weekly_plan_id"])["conflicts"] == []
 
@@ -261,6 +266,142 @@ def test_a_clean_week_says_nothing_at_all(kitchen, monkeypatch):
     menu = tools.get_week_menu(plan["weekly_plan_id"])
     assert menu["conflicts"] == []
     assert menu["conflicts_note"] is None
+
+
+# ---------- 3b. a HARD clash needs a confirm tap (decision 1b, 2026-09-05) ----------
+#
+# A soft dislike stays warn-only, same as always. A hard clash — an
+# allergy, a member restriction, a hard fact — used to only warn too; now
+# approve_weekly_plan itself refuses until the household explicitly says
+# "approve anyway" (confirm_hard_conflicts=True). See
+# app/tools/weekly_plan.py's approve_weekly_plan and app/main.py's
+# /api/week/{week_start}/approve.
+
+def test_a_hard_clash_blocks_approval_until_confirmed(kitchen, monkeypatch):
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "needs_confirmation"
+    assert result["weekly_plan_id"] == plan["weekly_plan_id"]
+    note = result["conflicts_note"]
+    assert note and "Pineapple Chicken" in note, "name the meal, not just 'a clash'"
+    assert "before you approve" in note
+
+    # Nothing was written: the plan is still a draft, and nothing reached
+    # the grocery list.
+    assert tools.get_weekly_plan(plan["weekly_plan_id"])["status"] == "draft"
+    assert tools.list_grocery_list("needed") == []
+
+
+def test_confirming_the_hard_clash_approves_it(kitchen, monkeypatch):
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
+
+    assert result["status"] == "approved"
+    assert tools.get_weekly_plan(plan["weekly_plan_id"])["status"] == "approved"
+
+
+def test_a_soft_dislike_never_needs_a_confirm_tap(kitchen, monkeypatch):
+    week = _week_start()
+    tools.edit_preference("dislikes", ["pineapple"])
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "approved", "a dislike is a preference, never a safety block"
+
+
+def test_a_clean_week_needs_no_confirm_tap(kitchen, monkeypatch):
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Chili"))
+    plan = agent.generate_weekly_plan(week)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+
+    assert result["status"] == "approved"
+
+
+def test_the_confirm_flag_only_matters_on_the_way_in_not_on_a_re_approval(kitchen, monkeypatch):
+    """
+    Once a hard clash has actually been confirmed and approved, tapping
+    Approve again (the existing re-approval idempotency guard) must not
+    start demanding a fresh confirm tap — the decision was already made.
+    """
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+    tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"])
+
+    assert result["status"] == "approved"
+    assert result["was_already_approved"] is True
+
+
+def test_the_route_reports_needs_confirmation_without_the_success_fields(kitchen, monkeypatch):
+    """
+    main.py's approve route (app.main.approve_week) has to pass
+    needs_confirmation straight through rather than reshaping it into the
+    success payload — there's no approved_by/approved_at/groceries_added
+    to report, because nothing happened yet.
+    """
+    from app import main as app_main
+
+    week = _week_start()
+    tools.add_fact("people", "Emily is allergic to pineapple", hard=True)
+    monkeypatch.setattr(
+        agent, "generate_weekly_plan_llm", lambda ctx: _full_week(week, meal="Pineapple Chicken")
+    )
+    plan = agent.generate_weekly_plan(week)
+
+    response = app_main.approve_week(week, app_main.WeekApproveRequest(approved_by="Emily"))
+
+    assert response["status"] == "needs_confirmation"
+    assert "approved_by" not in response
+    assert "groceries_added" not in response
+    assert response["conflicts_note"] and "Pineapple Chicken" in response["conflicts_note"]
+
+
+def test_the_chat_tool_schema_never_lets_the_assistant_confirm_on_its_own():
+    """
+    confirm_hard_conflicts has to read as a household decision, not a
+    detail the assistant can default to true — see the schema in
+    app/agent.py's TOOLS list and the "Household coordination & trust"
+    system-prompt bullet right after check_plan_conflicts.
+    """
+    schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "approve_weekly_plan")
+    props = schema["input_schema"]["properties"]
+    assert "confirm_hard_conflicts" in props
+    assert props["confirm_hard_conflicts"]["type"] == "boolean"
+    flag_description = props["confirm_hard_conflicts"]["description"].lower()
+    assert "ask" in flag_description
+    assert "own initiative" in flag_description
+
+    assert "confirm_hard_conflicts" in agent.SYSTEM_PROMPT
+    assert "own initiative" in agent.SYSTEM_PROMPT
 
 
 # ---------- 4. the warning has to be about food ----------
@@ -521,7 +662,9 @@ def test_approval_hands_back_a_sentence_worded_for_a_decision_already_made(kitch
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     note = result["conflicts_note"]
     assert note and "Pineapple Chicken" in note
@@ -788,9 +931,11 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     The allergen was in the INGREDIENTS of an innocently-named dish, so the
     only place it ever became visible was the shopping list.
 
-    Approval still goes through — warn, never block, is the standing
-    default and promoting it to a block is Emily's call, still pending —
-    but the sentence handed back has to name the meal that put it there.
+    A hard clash now needs the household's confirm tap before approval
+    goes through at all (decision 1b, 2026-09-05 — see the "confirm tap
+    for a hard clash" section below for that gate itself); this test is
+    about what lands on the list and what the sentence says once they've
+    given it.
     """
     week = _week_start()
     tools.add_recipe(
@@ -804,14 +949,16 @@ def test_an_approved_weeks_groceries_are_reported_as_a_clash(kitchen, monkeypatc
     )
     plan = agent.generate_weekly_plan(week)
 
-    result = tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    result = tools.approve_weekly_plan(
+        plan["weekly_plan_id"], approved_by="Emily", confirm_hard_conflicts=True
+    )
 
     # The list really does carry the allergen — this is the bug's evidence,
     # not an aside.
     bought = [i["item"].lower() for i in tools.list_grocery_list("needed")]
     assert any("pineapple" in item for item in bought)
 
-    assert result["status"] == "approved", "a clash warns, it never blocks"
+    assert result["status"] == "approved", "a confirmed hard clash still goes through"
     note = result["conflicts_note"]
     assert note, "the week that bought the allergen cannot approve in silence"
     assert "Fruit Salad" in note, "name the meal that put it on the list"

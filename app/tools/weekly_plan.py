@@ -2549,7 +2549,9 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     }
 
 
-def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
+def approve_weekly_plan(
+    weekly_plan_id: int, approved_by: str = "", confirm_hard_conflicts: bool = False
+) -> dict:
     """
     Approve a weekly plan — and, in the same step, put its meals'
     ingredients on the grocery list.
@@ -2591,24 +2593,22 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
     and swap_component_in_plan.
 
     The returned `conflicts`/`conflicts_note` are the dietary/allergy check
-    (check_plan_conflicts) run automatically on the way through. Approval is
-    NOT blocked by them — the household may well mean it — but a clash is
-    said out loud rather than left to whether anyone thought to ask. Mention
-    any that come back when reporting the approval.
-    """
-    # Run before the approval work, so the warning describes the plan that
-    # was actually approved and a failure here can't half-approve a week.
-    conflicts, conflicts_note = [], None
-    try:
-        found = _coordination.check_plan_conflicts(weekly_plan_id)
-        conflicts = found["conflicts"]
-        # Not found["note"]: that sentence ends "before you approve", and
-        # this is the moment just after. Same clash, worded for a decision
-        # already made — see conflicts_note_after_approval.
-        conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
-    except Exception:
-        logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+    (check_plan_conflicts) run automatically on the way through. A SOFT one
+    (a standing dislike) never blocks — the household may well mean it —
+    but is still said out loud rather than left to whether anyone thought
+    to ask. Mention any that come back when reporting the approval.
 
+    A HARD one (an allergy/must-avoid, member restriction or hard fact) is
+    different: unless `confirm_hard_conflicts` is true, this does NOT
+    approve — it writes nothing at all — and instead returns
+    `{"status": "needs_confirmation", "conflicts", "conflicts_note",
+    "weekly_plan_id"}`. That is the household's explicit "I've seen it and
+    I still want this" tap, not something to pass as true on your own
+    initiative — ask first, every time (see app/agent.py's tool
+    description). Re-approving an already-approved plan is exempt: the
+    decision was already made, so it takes the guard's other branch below
+    (adds nothing, asks nothing) rather than this one.
+    """
     conn = get_conn()
     existing = conn.execute(
         "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -2618,6 +2618,39 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     was_already_approved = existing["status"] == "approved"
+
+    # Run before the approval work, so the warning (and the confirmation
+    # gate just below) describe the plan that was actually approved, and a
+    # failure here can't half-approve a week.
+    conflicts, note = [], None
+    try:
+        found = _coordination.check_plan_conflicts(weekly_plan_id)
+        conflicts = found["conflicts"]
+        note = found["note"]
+    except Exception:
+        logger.exception("Conflict check failed for plan %s", weekly_plan_id)
+
+    if (
+        not was_already_approved
+        and not confirm_hard_conflicts
+        and any(c["severity"] == "hard" for c in conflicts)
+    ):
+        # `note` here, not conflicts_note_after_approval: nothing has been
+        # approved, so the sentence should still say "before you approve" —
+        # the same wording the draft's own review-band warning uses.
+        conn.close()
+        return {
+            "weekly_plan_id": weekly_plan_id,
+            "status": "needs_confirmation",
+            "conflicts": conflicts,
+            "conflicts_note": note,
+        }
+
+    # Not `note`: that sentence ends "before you approve", and this is the
+    # moment just after (or, for a hard clash, the moment the household
+    # confirmed past it). Same clash, worded for a decision already made —
+    # see conflicts_note_after_approval.
+    conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
     # A re-approval never overwrites the original approver/time — the
     # receipt names who actually settled the week, and the first yes is the
     # one that built the list. Only a genuine transition into 'approved'

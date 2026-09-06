@@ -4268,14 +4268,22 @@
     } else if (people.length === 1) {
       approvedBy = people[0];
     }
+    await submitWeekApproval(panel, data, approvedBy, false);
+  }
 
+  // Posts the approval. `confirmHardConflicts` is only ever true right
+  // after the household has tapped the "Approve anyway" button that
+  // showApproveConfirm renders below — never inferred, never set on the
+  // first tap.
+  async function submitWeekApproval(panel, data, approvedBy, confirmHardConflicts) {
     var btn = panel.querySelector('#week-approve-btn');
+    var restoreLabel = btn ? btn.textContent : 'Approve the week';
     if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_by: approvedBy })
+        body: JSON.stringify({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts })
       });
       if (!res.ok) throw new Error('approve failed');
       // The approve endpoint answers with the dietary check it ran on the
@@ -4286,6 +4294,18 @@
       // clash; being quiet about it is not.
       var approval = {};
       try { approval = (await res.json()) || {}; } catch (e) { approval = {}; }
+
+      if (approval.status === 'needs_confirmation') {
+        // A HARD clash and no confirm tap yet — nothing was approved,
+        // nothing was written. Same idiom as the open-slots label above
+        // (approveWithOpenLabel: say what tapping again will do), except
+        // this one needs an actual second tap rather than just a relabeled
+        // button, because what's at stake here is a real allergy clash,
+        // not an empty slot.
+        showApproveConfirm(panel, data, approval, approvedBy);
+        return;
+      }
+
       var openListAction = {
         label: 'Open the list',
         onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); }
@@ -4304,9 +4324,63 @@
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Week approval failed:', err);
-      if (btn) { btn.disabled = false; btn.textContent = 'Approve the week'; }
+      if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
       alert('Could not approve the week right now — try again in a moment.');
     }
+  }
+
+  // The one-clash-away state: the review band above already names the
+  // clash (data.conflicts_note, rendered before anyone even tapped
+  // Approve), so this only has to offer the two ways through — approve
+  // past it, or back out and fix the plan first. Only
+  // submitWeekApproval's needs_confirmation branch ever calls this.
+  function showApproveConfirm(panel, data, approval, approvedBy) {
+    var band = panel.querySelector('#week-review-band');
+    var card = band && band.querySelector('.week-approve-card');
+    var btn = card && card.querySelector('#week-approve-btn');
+    if (!card || !btn) return;
+
+    var meals = [];
+    (approval.conflicts || []).forEach(function (c) {
+      if (c.meal && meals.indexOf(c.meal) === -1) meals.push(c.meal);
+    });
+    // Named when it's cheap (one dish sitting right there); a generic
+    // "the clash" once there's more than one, same call the server's own
+    // conflicts_note sentence makes.
+    var label = (meals.length === 1)
+      ? 'Approve anyway — I’ve seen the ' + meals[0] + ' clash'
+      : 'Approve anyway — I’ve seen the clash';
+    btn.textContent = label;
+    btn.disabled = false;
+    // Swap the handler rather than stack a second listener on top of the
+    // original "approve the week" one — this tap now means something
+    // different.
+    var freshBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(freshBtn, btn);
+    freshBtn.addEventListener('click', function () {
+      submitWeekApproval(panel, data, approvedBy, true);
+    });
+
+    // A quiet way out — same idiom as "or tweak it with me" just below,
+    // not a second button competing with the confirm for attention.
+    // Reloading the week menu is what takes both of them back to the
+    // ordinary draft state, same as tryAgain/reopenWeek already do after
+    // their own actions.
+    var tweakLink = card.querySelector('#week-tweak-btn');
+    var fixLink = card.querySelector('#week-fix-first-link');
+    if (!fixLink) {
+      fixLink = document.createElement('button');
+      fixLink.type = 'button';
+      fixLink.id = 'week-fix-first-link';
+      fixLink.className = 'week-reset-link week-tweak-link';
+      fixLink.textContent = 'Let me fix it first';
+      if (tweakLink && tweakLink.parentNode) {
+        tweakLink.parentNode.insertBefore(fixLink, tweakLink);
+      } else {
+        card.appendChild(fixLink);
+      }
+    }
+    fixLink.onclick = function () { loadWeekMenu(panel); };
   }
 
   function renderWeekMenu(panel, data) {
