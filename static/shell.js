@@ -1085,12 +1085,41 @@
         body: JSON.stringify({ prep_task_id: task.id, status: status })
       });
       if (!res.ok) throw new Error('defrost status update failed');
-      showToast(status === 'done' ? 'Moved to the fridge — nice.' : 'Skipped for today.');
+      if (status === 'skipped') {
+        // A skip is one tap, made in passing — an Undo right on the toast
+        // is the reversible-in-the-moment shape DESIGN_SYSTEM.md's learning
+        // etiquette asks for, cheaper here than a real one: this reverts
+        // check_off_prep_step's own write back to 'pending' (the same
+        // status the row started in), which the endpoint already accepts.
+        showToast('Skipped for today.', {
+          label: 'Undo',
+          onClick: function () { undoSkipDefrostTask(panel, task); }
+        });
+      } else {
+        showToast('Moved to the fridge — nice.');
+      }
     } catch (err) {
       console.warn('Defrost action failed, rolling back:', err);
       if (idx > -1) { tasks.splice(idx, 0, task); } else { tasks.push(task); }
       renderDefrostToday(panel);
       alert('Could not save that right now — try again in a moment.');
+    }
+  }
+
+  async function undoSkipDefrostTask(panel, task) {
+    try {
+      var res = await fetch('/api/cooker/check-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_task_id: task.id, status: 'pending' })
+      });
+      if (!res.ok) throw new Error('undo failed');
+      var tasks = panel._defrostTasks || [];
+      if (tasks.indexOf(task) === -1) tasks.unshift(task);
+      renderDefrostToday(panel);
+    } catch (err) {
+      console.warn('Undo skip failed:', err);
+      showToast('Could not undo — try again.');
     }
   }
 
