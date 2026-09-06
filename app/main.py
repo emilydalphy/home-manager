@@ -1096,13 +1096,24 @@ def chores_today():
     etc. — is a small direct-read endpoint for a UI page rather than a
     chat round-trip. See the Step 2 note in the README's build-order log
     for why this exists despite that doc's "no new endpoints" line.
+
+    `chores_set_up` rides along on this same response (Emily, 2026-09-05,
+    20a: chores setup moved out of onboarding onto its own page) so the
+    Today card can decide whether to offer "Want help with chores too? Set
+    them up" without a second round-trip. True once either a chores
+    profile was saved or any chore actually exists — either one means the
+    household already went through setup, even if nothing happens to be
+    due today.
     """
     try:
         chores = tools.get_chores_due_today()
+        profile = tools.get_chores_profile()
+        household = tools.get_household_setup_status()
+        chores_set_up = bool(profile.get("has_profile")) or bool(household.get("has_chores"))
     except Exception as e:
         logger.exception("Today's-chores lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"chores": chores}
+    return {"chores": chores, "chores_set_up": chores_set_up}
 
 
 @app.post("/api/chores/{instance_id}/status")
@@ -3048,6 +3059,20 @@ def meal_setup_page():
     chat — plus an embedded chat for the things a stepper can't express.
     """
     return FileResponse(os.path.join(static_dir, "meal-setup.html"))
+
+
+@app.get("/chores-setup")
+def chores_setup_page():
+    """
+    The chores questionnaire (pets, home type, upkeep standard, rotation,
+    etc.) — pulled out of first-run onboarding onto its own page (Emily,
+    2026-09-05, 20a) so the meal loop isn't interrupted by an unrelated
+    module's setup on day one. Reached from Today's chores card ("Want
+    help with chores too? Set them up"); saves through the same
+    /api/onboarding/household and /api/onboarding/chores-profile routes
+    onboarding always used.
+    """
+    return FileResponse(os.path.join(static_dir, "chores-setup.html"))
 
 
 @app.get("/memory")

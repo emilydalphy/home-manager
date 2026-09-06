@@ -368,6 +368,15 @@
             '<div class="shell-card chores-card">' +
               '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
               '<div id="chores-list"></div>' +
+              // Chores setup moved out of first-run onboarding onto its own
+              // page (Emily, 2026-09-05, 20a) so a brand-new household's
+              // first stop is the meal loop, not a chores questionnaire.
+              // This is how it stays reachable — shown only for a household
+              // that has never gone through it (see renderChores below).
+              // Reuses .week-setup-link (the Meals tab's own "way into the
+              // revisitable setup screen" link) rather than inventing a new
+              // component for the same job — DESIGN_SYSTEM.md §9 Tier 1.
+              '<a href="/chores-setup" class="week-setup-link" id="chores-setup-link" style="display:none">Want help with chores too? Set them up</a>' +
             '</div>' +
           '</div>' +
           '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
@@ -1140,7 +1149,7 @@
       var res = await fetch('/api/chores/today');
       if (!res.ok) throw new Error('chores lookup failed');
       var data = await res.json();
-      renderChores(panel, data.chores || []);
+      renderChores(panel, data.chores || [], !!data.chores_set_up);
     } catch (err) {
       console.warn('Chores lookup failed:', err);
       listEl.innerHTML = '<div class="empty-row">Couldn\'t load chores right now.</div>';
@@ -1148,9 +1157,19 @@
     }
   }
 
-  function renderChores(panel, chores) {
+  function renderChores(panel, chores, choresSetUp) {
     var listEl = panel.querySelector('#chores-list');
     var countEl = panel.querySelector('#chores-count');
+    var setupLink = panel.querySelector('#chores-setup-link');
+    // Only offered to a household that's never been through chores setup —
+    // once they have (a profile saved, or any chore exists), there's
+    // nothing left to "set up", whether or not one happens to be due today.
+    // choresSetUp is omitted by toggleChore's re-renders (a checkbox tap
+    // doesn't change setup status), so the link is left exactly as
+    // loadChores last set it rather than guessed at here.
+    if (setupLink && choresSetUp !== undefined) {
+      setupLink.style.display = choresSetUp ? 'none' : 'block';
+    }
     var done = chores.filter(function (c) { return c.status === 'done'; }).length;
     countEl.textContent = chores.length ? (done + ' of ' + chores.length) : '';
     countEl.className = 'chores-count' + (chores.length && done === chores.length ? ' all-done' : '');

@@ -604,7 +604,6 @@
   <div class="reveal-actions" id="reveal-actions" style="display:none">
     <button class="btn-primary reveal-primary-btn" id="reveal-done-btn" type="button">Looks good — take me in</button>
     <button class="reveal-quiet-link" id="reveal-iterate-btn" type="button">or tweak it with me</button>
-    <button class="next-btn secondary" id="reveal-chores-btn" type="button">Set up chores too</button>
   </div>
   <!-- A failed generation shows this instead of reveal-actions above, never
        both — "Looks good — take me in" sitting over zero days would be
@@ -615,70 +614,25 @@
   </div>
 </div>
 
-<div id="step-chores-q" style="display:none">
-  <h1>A few more things, then you're all set</h1>
-  <p class="subtitle">Pets, what you're hoping I can help with, and a couple of quick questions about your home — you can review and change anything before it's saved.</p>
-
-  <label class="field-label">Any pets?</label>
-  <div class="chip-row" id="has-pets-chips"></div>
-  <div id="pets-detail" style="display:none; margin-top:10px">
-    <div id="pets"></div>
-    <button class="add-btn" id="add-pet" type="button">+ Add pet</button>
-  </div>
-
-  <label class="field-label">What are you hoping I can help with?</label>
-  <textarea id="goals" rows="2" placeholder="Stay on top of chores, eat healthier, waste less food..."></textarea>
-
-  <label class="field-label">Home type</label>
-  <div class="chip-row" id="home-type-chips"></div>
-
-  <div class="two-col" style="margin-top:1rem">
-    <div>
-      <label class="field-label">Bedrooms</label>
-      <input type="number" id="bedrooms" min="0" value="2" />
-    </div>
-    <div>
-      <label class="field-label">Bathrooms</label>
-      <input type="number" id="bathrooms" min="0" value="1" />
-    </div>
-  </div>
-
-  <label class="field-label">Do you have a yard or outdoor space to maintain?</label>
-  <div class="chip-row" id="yard-chips"></div>
-
-  <label class="field-label">How would you describe the upkeep you want?</label>
-  <div class="chip-row" id="standard-chips"></div>
-
-  <label class="field-label">Who's in the chore rotation?</label>
-  <div class="chip-row" id="rotation-chips"></div>
-
-  <label class="field-label">Any existing help (cleaning service, etc.)?</label>
-  <div class="row">
-    <input type="text" id="existing-help" placeholder="e.g. cleaning service, or leave blank for none" style="flex:1.5" />
-    <input type="text" id="existing-help-freq" placeholder="How often?" style="flex:1" />
-  </div>
-
-  <label class="field-label">Anything you specifically want tracked?</label>
-  <textarea id="include-notes" rows="2" placeholder="e.g. we always forget the air filter"></textarea>
-
-  <label class="field-label">Anything to leave out?</label>
-  <textarea id="exclude-notes" rows="2" placeholder="e.g. we have a dishwasher, skip dish reminders"></textarea>
-
-  <div><button class="next-btn" id="chores-q-next" type="button">Save and start using the app</button></div>
-  <p class="loading-note" id="chores-loading" style="display:none">Saving...</p>
-  <span class="back-link" id="chores-q-back">&larr; Back</span>
-</div>
-
-<div id="step-chores-review" style="display:none">
-  <h1>Here's what I'd suggest</h1>
-  <p class="subtitle">Uncheck anything you don't want, edit frequency or who's responsible, or add your own below.</p>
-
-  <div id="chore-list"></div>
-  <button class="add-btn" id="add-chore-row" type="button">+ Add a chore</button>
-
-  <div><button class="next-btn" id="finish-btn" type="button">Save and start using the app</button></div>
-  <span class="back-link" data-back="chores-q">&larr; Back</span>
-</div>
+<!-- Chores questions (pets, home type, upkeep standard, rotation, etc.) used
+     to live here as two more onboarding steps after the reveal. Emily
+     decided 2026-09-05 (20a) they come OUT of first-run onboarding, so the
+     meal loop — the thing a brand-new household actually came here for —
+     ends at the reveal instead of being followed by an unrelated
+     questionnaire. The markup and save logic weren't thrown away: they
+     moved as-is to static/chores-setup.html, a standalone page reached via
+     "Want help with chores too? Set them up" on Today's chores card (see
+     shell.js's renderChores) and served at GET /chores-setup. The backend
+     routes (/api/onboarding/chores-profile, /api/onboarding/chores/save,
+     /api/onboarding/chores/recommend) are unchanged and still work exactly
+     as before — only who calls them, and when, changed.
+     The old step-chores-review div (a recommend-and-edit checklist) is not
+     part of that move: nothing in this file ever navigated to it — the
+     original chores-q-next handler saved the raw profile and redirected
+     directly, skipping it — so it was already dead markup wired to nothing.
+     It was dropped rather than resurrected in the new page, since building
+     out that unfinished recommend/review flow is a bigger call than this
+     ticket ("don't rebuild the questions") is meant to make. -->
 
 <script>
 // "Allergy" and "Other" (2026-09-05, Loop Board "Onboarding restrictions:
@@ -703,9 +657,8 @@ const CUISINES = [
   'Greek', 'Lebanese', 'Turkish',
   'French', 'Spanish', 'Ethiopian',
 ];
-const HOME_TYPES = ['House', 'Apartment / condo'];
-const STANDARD_OPTIONS = ['Relaxed', 'Standard', 'Meticulous'];
-const FREQUENCIES = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'once'];
+// HOME_TYPES/STANDARD_OPTIONS/FREQUENCIES moved to static/chores-setup.html
+// with the chores questions that used them (Emily, 2026-09-05, 20a).
 
 function escapeHtmlLocal(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
@@ -1500,7 +1453,10 @@ async function generateFirstPlanAndReveal(answers) {
 // added to both the step list and the progress dots so the shared
 // indicator at the top of the page still reflects true position across
 // the whole wizard rather than just the original eight.
-const ALL_STEPS = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal', 'chores-q', 'chores-review'];
+// 'reveal' is the last step (Emily, 2026-09-05, 20a) — chores questions
+// used to follow it as 'chores-q'/'chores-review' but now live on their
+// own page (see the comment above step-reveal's old chores markup).
+const ALL_STEPS = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal'];
 
 function renderProgress() {
   const progress = document.getElementById('progress');
@@ -1609,14 +1565,12 @@ document.querySelectorAll('[data-back]').forEach(el => {
   el.addEventListener('click', () => showStep(el.dataset.back));
 });
 
-// ---------- Post-reveal: chores (optional) ----------
-// The friend beta is meals-only by decision (Emily, 2026-09-01), so the
-// first thing a new household sees after their week shouldn't be an offer
-// to go and set up a different module. Flip this back to true when chores
-// are part of what's being tested; nothing else needs changing, and the
-// whole chores flow below stays wired up and working in the meantime.
-const OFFER_CHORES_AFTER_REVEAL = false;
-
+// ---------- Post-reveal ----------
+// The reveal is the last onboarding step (Emily, 2026-09-05, 20a) — its two
+// actions below are how onboarding ends. Chores questions used to be a
+// third, optional path out of this screen ("Set up chores too"); that path
+// is gone (see the comment above the old step-chores-q markup) — chores
+// setup is reachable afterward from Today's chores card instead.
 document.getElementById('reveal-done-btn').onclick = () => { window.location.href = '/week?firstplan=1'; };
 // The iterate path (Loop Board "add an iterate/feedback path at the end")
 // — a quiet secondary next to the one apricot primary, straight into
@@ -1633,218 +1587,6 @@ document.getElementById('reveal-iterate-btn').onclick = () => { window.location.
 // be describing a plan that was never actually made.
 document.getElementById('reveal-retry-btn').onclick = () => { generateFirstPlanAndReveal(lastFirstPlanAnswers); };
 document.getElementById('reveal-anyway-btn').onclick = () => { window.location.href = '/week'; };
-document.getElementById('reveal-chores-btn').onclick = () => {
-  buildChoresQStep();
-  showStep('chores-q');
-};
-if (!OFFER_CHORES_AFTER_REVEAL) {
-  document.getElementById('reveal-chores-btn').style.display = 'none';
-}
-
-const petsDiv = document.getElementById('pets');
-function addPetRow() {
-  const row = document.createElement('div');
-  row.className = 'row';
-  row.innerHTML = `
-    <input type="text" class="pet-name" placeholder="Pet's name" style="flex:1.5">
-    <input type="text" class="pet-type" placeholder="Type (dog, cat...)" style="flex:1">
-    <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
-  `;
-  row.querySelector('.remove-btn').onclick = () => row.remove();
-  petsDiv.appendChild(row);
-}
-document.getElementById('add-pet').onclick = () => addPetRow();
-
-const hasPetsChips = document.getElementById('has-pets-chips');
-const petsDetail = document.getElementById('pets-detail');
-let petsChipsBuilt = false;
-function buildPetsChips() {
-  if (petsChipsBuilt) return;
-  chipWithCustom(hasPetsChips, ['Yes', 'No'], false);
-  hasPetsChips.querySelectorAll('.chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const yes = btn.dataset.value === 'Yes';
-      petsDetail.style.display = yes ? 'block' : 'none';
-      if (yes && !petsDiv.querySelector('.row')) addPetRow();
-      if (!yes) petsDiv.innerHTML = '';
-    });
-  });
-  petsChipsBuilt = true;
-}
-function currentPets() {
-  return [...petsDiv.querySelectorAll('.row')].map(row => ({
-    name: row.querySelector('.pet-name').value.trim(),
-    pet_type: row.querySelector('.pet-type').value.trim(),
-  })).filter(p => p.name);
-}
-
-let choresChipsBuilt = false;
-function buildChoresQStep() {
-  buildPetsChips();
-  if (!choresChipsBuilt) {
-    chipWithCustom(document.getElementById('home-type-chips'), HOME_TYPES, false);
-    chipWithCustom(document.getElementById('yard-chips'), ['Yes', 'No'], false);
-    const standardChips = document.getElementById('standard-chips');
-    chipWithCustom(standardChips, STANDARD_OPTIONS, false);
-    standardChips.querySelector('[data-value="Standard"]').classList.add('active');
-    choresChipsBuilt = true;
-  }
-  const rotationChips = document.getElementById('rotation-chips');
-  rotationChips.innerHTML = '';
-  currentMembers().forEach(m => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip active';
-    btn.textContent = m.name;
-    btn.dataset.value = m.name;
-    btn.onclick = () => btn.classList.toggle('active');
-    rotationChips.appendChild(btn);
-  });
-}
-
-function buildChoreProfile() {
-  return {
-    home_type: getActiveChip(document.getElementById('home-type-chips')),
-    bedrooms: parseInt(document.getElementById('bedrooms').value) || 0,
-    bathrooms: parseInt(document.getElementById('bathrooms').value) || 0,
-    has_yard: getActiveChip(document.getElementById('yard-chips')) === 'Yes',
-    standard: (getActiveChip(document.getElementById('standard-chips')) || 'Standard').toLowerCase(),
-    rotation_members: getActiveChips(document.getElementById('rotation-chips')),
-    existing_help: document.getElementById('existing-help').value.trim(),
-    existing_help_frequency: document.getElementById('existing-help-freq').value.trim(),
-    include_notes: document.getElementById('include-notes').value.trim(),
-    exclude_notes: document.getElementById('exclude-notes').value.trim(),
-  };
-}
-
-async function saveHouseholdExtras() {
-  // Pets + goals weren't asked in the minimum-viable question set — they
-  // live here instead, right before chores (which is where pets/goals
-  // actually matter: litter box, walks, "keep the house tidier").
-  await fetch('/api/onboarding/household', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ members: [], pets: currentPets(), goals: document.getElementById('goals').value.trim() }),
-  });
-}
-
-async function saveChoresProfile() {
-  const profile = buildChoreProfile();
-  const res = await fetch('/api/onboarding/chores-profile', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile),
-  });
-  if (!res.ok) throw new Error('Could not save');
-}
-
-async function requestChoreRecommendations() {
-  const profile = buildChoreProfile();
-  const res = await fetch('/api/onboarding/chores/recommend', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile),
-  });
-  if (!res.ok) throw new Error('Could not get recommendations');
-  const data = await res.json();
-  return { chores: data.chores || [], rotation_members: profile.rotation_members };
-}
-
-let lastRotationMembers = [];
-function renderChoreList(chores) {
-  const listDiv = document.getElementById('chore-list');
-  listDiv.innerHTML = '';
-  chores.forEach(c => addChoreRow(c));
-}
-function addChoreRow(c) {
-  c = c || { name: '', category: 'cleaning', frequency: 'weekly', assignee_names: [] };
-  const listDiv = document.getElementById('chore-list');
-  const row = document.createElement('div');
-  row.className = 'chore-row';
-  row.innerHTML = `
-    <div class="chore-top">
-      <input type="checkbox" class="chore-include" checked>
-      <input type="text" class="chore-name" value="${(c.name || '').replace(/"/g, '&quot;')}" placeholder="Chore name">
-      <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
-    </div>
-    <div class="chore-controls">
-      <select class="chore-category">
-        <option value="cleaning">Cleaning</option>
-        <option value="maintenance">Maintenance</option>
-        <option value="other">Other</option>
-      </select>
-      <select class="chore-frequency"></select>
-      <div class="chip-row chore-assignees"></div>
-    </div>
-  `;
-  row.querySelector('.chore-category').value = c.category || 'cleaning';
-  const freqSelect = row.querySelector('.chore-frequency');
-  FREQUENCIES.forEach(f => {
-    const opt = document.createElement('option');
-    opt.value = f; opt.textContent = f;
-    freqSelect.appendChild(opt);
-  });
-  freqSelect.value = c.frequency || 'weekly';
-
-  const assigneesDiv = row.querySelector('.chore-assignees');
-  lastRotationMembers.forEach(name => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip small';
-    btn.textContent = name;
-    btn.dataset.value = name;
-    if ((c.assignee_names || []).includes(name)) btn.classList.add('active');
-    btn.onclick = () => btn.classList.toggle('active');
-    assigneesDiv.appendChild(btn);
-  });
-
-  row.querySelector('.chore-include').addEventListener('change', (e) => {
-    row.classList.toggle('excluded', !e.target.checked);
-  });
-  row.querySelector('.remove-btn').onclick = () => row.remove();
-  listDiv.appendChild(row);
-}
-document.getElementById('add-chore-row').onclick = () => addChoreRow();
-
-function collectChoresForSave() {
-  return [...document.querySelectorAll('.chore-row')]
-    .filter(row => row.querySelector('.chore-include').checked)
-    .map(row => ({
-      name: row.querySelector('.chore-name').value.trim(),
-      category: row.querySelector('.chore-category').value,
-      frequency: row.querySelector('.chore-frequency').value,
-      assignee_names: getActiveChips(row.querySelector('.chore-assignees')),
-    }))
-    .filter(c => c.name);
-}
-
-document.getElementById('chores-q-next').onclick = async () => {
-  const btn = document.getElementById('chores-q-next');
-  btn.disabled = true;
-  document.getElementById('chores-loading').style.display = 'block';
-  try {
-    await saveHouseholdExtras();
-    await saveChoresProfile();
-    window.location.href = '/week?firstplan=1';
-  } catch (err) {
-    console.error('Chores-profile save failed:', err);
-    alert("Couldn't save your chores — try again in a moment.");
-  } finally {
-    btn.disabled = false;
-    document.getElementById('chores-loading').style.display = 'none';
-  }
-};
-
-document.getElementById('finish-btn').onclick = async () => {
-  try {
-    await fetch('/api/onboarding/chores/save', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chores: collectChoresForSave() }),
-    });
-  } catch (err) {
-    console.error('Chores save failed:', err);
-    alert("Couldn't save your chores — try again in a moment.");
-    return;
-  }
-  window.location.href = '/week?firstplan=1';
-};
-
-document.getElementById('chores-q-back').addEventListener('click', () => showStep('reveal'));
 
 renderProgress();
 </script>
