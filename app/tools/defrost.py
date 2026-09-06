@@ -199,8 +199,15 @@ def _batch_quantity(ing: dict, batch_factor: float) -> str:
     ordinary meal, which leaves the recipe's own wording untouched, byte
     for byte; more than that for a night cooking for its own table plus a
     later night's leftovers. Rounded the way an amount you handle is
-    written rather than the way the division lands — the same
-    attendance.scale_ingredients the shopping list already goes through.
+    written rather than the way the division lands, via
+    attendance.scale_ingredients.
+
+    That helper is now this module's alone: the shopping list used to go
+    through it too, but the grocery ingest holds its amounts unrounded
+    until the whole week is in and rounds once per line instead (see
+    recipes.WeekGroceryBuffer). Nothing to unify — a defrost is one
+    person taking one thing out of one freezer, so per-item rounding is
+    exactly right here.
     """
     qty = (ing.get("qty") or "").strip()
     if batch_factor == 1.0 or not qty:

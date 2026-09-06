@@ -2395,7 +2395,7 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     """
     return conn.execute(
         """
-        SELECT mpe.id, mpe.recipe_id, r.ingredients_json, mpe.sides_json
+        SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings, mpe.sides_json
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
@@ -2707,15 +2707,29 @@ def approve_weekly_plan(
     by_recipe: dict[int, dict] = {}
     for entry in entries:
         group = by_recipe.setdefault(
-            entry["recipe_id"], {"ingredients_json": entry["ingredients_json"], "entry_ids": []}
+            entry["recipe_id"], {
+                "ingredients_json": entry["ingredients_json"],
+                "default_servings": entry["default_servings"],
+                "entry_ids": [],
+            },
         )
         group["entry_ids"].append(entry["id"])
 
+    # One buffer for the WHOLE approval, not one per recipe. Grouping by
+    # recipe is the right unit for a sealed package (six breakfasts of the
+    # same dish, one bag of spinach) but the wrong one for rounding a
+    # per-portion amount: Emily's 17 peppers came from five DIFFERENT
+    # dinners, so five separate calls below each round their own share up
+    # and the week ends up buying a pepper more than it wants. The buffer
+    # holds every per-portion amount unrounded until all five have spoken,
+    # then writes one rounded line — see recipes.WeekGroceryBuffer.
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
     added_items = []
     already_have = []
     for group in by_recipe.values():
         added, have = _recipes._add_recipe_ingredients_for_entries(
-            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id
+            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
+            default_servings=group["default_servings"], buffer=buffer,
         )
         added_items.extend(added)
         already_have.extend(have)
@@ -2723,15 +2737,26 @@ def approve_weekly_plan(
     # A side the app attached to complete a plate belongs to ONE meal, not to
     # the recipe, so it goes in as its own one-entry group (plates.py). It is
     # still recorded against that entry's id, which is what lets removing the
-    # meal remove its side's shopping too.
+    # meal remove its side's shopping too. It goes through the SAME buffer as
+    # the recipe ingredients above rather than one of its own, and the buffer
+    # is flushed only once both loops are done: a side sharing an ingredient
+    # with the night's own recipe (or another night's) must round together
+    # with it, or the two independent roundings can each tip up and buy more
+    # than either alone would have asked for — the same class of bug as the
+    # 17 peppers. No default_servings is passed here: sides carry no
+    # servings of their own (see plates.py's sides_json shape), so
+    # servings_scale_factor falls back to attendance alone — that entry's
+    # eaters relative to the household, not a recipe-servings anchor that
+    # doesn't exist for a side.
     for entry in entries:
         side_ingredients = _entry_side_ingredients(entry)
         if side_ingredients:
             added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id
+                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
             )
             added_items.extend(added)
             already_have.extend(have)
+    buffer.flush()
 
     # Counted as distinct names, matching preview_plan_grocery_impact, so
     # the number the draft promised and the number the receipt reports are

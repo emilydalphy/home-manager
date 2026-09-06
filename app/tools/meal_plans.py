@@ -143,7 +143,8 @@ def plan_meal(
     already_have = []
     if recipe and add_ingredients_to_grocery_list:
         added_items, already_have = _recipes._add_recipe_ingredients_to_grocery_list(
-            entry_id, recipe_ingredients, weekly_plan_id
+            entry_id, recipe_ingredients, weekly_plan_id,
+            default_servings=recipe["default_servings"],
         )
 
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]
