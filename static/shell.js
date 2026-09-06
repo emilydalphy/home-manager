@@ -921,7 +921,12 @@
         chips += '<span class="hero-chip">Serves ' + escapeHtml(meal.default_servings) + '</span>';
       }
       var dish = isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner');
-      var accent = isReheat ? (meal.reheat_note || '') : (meal.reasoning || '');
+      // Same priority Cook's own hero uses (cookHeroHtml's `note`): the
+      // batch note outranks the plan's reasoning, because it's the reason
+      // this card says "Serves 6" instead of the recipe's own baseline —
+      // without it the chip reads as a plain fact with nothing explaining
+      // where the extra servings came from.
+      var accent = isReheat ? (meal.reheat_note || '') : (meal.covers_note || meal.reasoning || '');
       card.hidden = false;
       card.innerHTML =
         '<div class="hero-top">' +
