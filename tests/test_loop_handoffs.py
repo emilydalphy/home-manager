@@ -169,6 +169,27 @@ def test_approving_the_week_with_nothing_added_skips_the_grocery_card():
     assert {a.tab for a in actions} == {"week"}
 
 
+def test_a_needs_confirmation_approval_raises_no_card_at_all():
+    """
+    A hard allergen clash without confirm_hard_conflicts writes nothing
+    (decision 1b, 2026-09-05 — see tools.approve_weekly_plan): neither the
+    week nor the list actually changed, so neither card should appear. A
+    "Week approved" card here would tell Emily something happened that
+    didn't.
+    """
+    before, after = _turn_with_tool_call(
+        "approve_weekly_plan",
+        {"weekly_plan_id": 1, "approved_by": "Emily"},
+        {
+            "weekly_plan_id": 1, "status": "needs_confirmation",
+            "conflicts": [{"meal": "Pineapple Chicken", "severity": "hard"}],
+            "conflicts_note": "Pineapple Chicken looks like a clash — worth a look before you approve.",
+        },
+    )
+    actions = app_main.summarize_chat_actions(before, after)
+    assert actions == []
+
+
 def test_approving_the_week_pluralizes_a_single_item_correctly():
     before, after = _turn_with_tool_call(
         "approve_weekly_plan",
