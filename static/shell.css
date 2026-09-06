@@ -4162,6 +4162,24 @@ html, body {
   margin: 0;
 }
 .cook-error { color: var(--urgent-label); }
+/* "plan one on the Plan tab first" — the whole reason the empty state
+   exists is to send someone there, so it's the tappable part of the
+   sentence rather than dead text. Inline-flex keeps it sitting in the
+   paragraph's own flow while still getting the full 44px target (Rule 6),
+   the same idiom .week-tweak-link already uses for an in-prose link. */
+.cook-empty-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.cook-empty-link:hover { color: var(--apricot-label-hover); }
 
 /* ---------- The hero: tonight ---------- */
 .cook-hero {

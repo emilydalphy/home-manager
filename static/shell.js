@@ -4992,7 +4992,8 @@
     }
     var data = cookState.data;
     if (!data.weekly_plan_id) {
-      view.innerHTML = '<p class="cook-empty">No plan yet this week — plan one on the Plan tab first.</p>';
+      view.innerHTML = '<p class="cook-empty">No plan yet this week &mdash; ' +
+        '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>';
       if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
@@ -5666,6 +5667,7 @@
       return;
     }
     if (what === 'exit-focus') return cookExitFocus();
+    if (what === 'goto-plan') return setMealsView('plan');
     if (what === 'focus-check') return cookFocusCheckMeal(el);
     if (what === 'check-step') {
       var stepKey = el.getAttribute('data-idx') + ':' + el.getAttribute('data-step');
