@@ -49,24 +49,26 @@ the beta (`OFFER_CHORES_AFTER_REVEAL = false` in `static/onboarding.html`).
 If you're picking this repo up fresh, run `git log --oneline -15` to confirm
 this is still accurate.
 
-**Known live bug at the time of writing:** `/api/chat/stream` crashes on any
-chat turn that returns an action card — `_sse_event` serialises a pydantic
-`ChatAction` with plain `json.dumps` (`jsonable_encoder` appears nowhere in
-`app/`). Reproduced on `main` 2026-09-04.
+**The "known live bug" this section used to carry is FIXED — corrected
+2026-09-06.** For two days this file told every fresh session that
+`/api/chat/stream` crashes on any turn returning an action card, and that
+"no fix exists in this repository". Both sentences were true when written
+and are now false: commit `6f81027` ("Fix TypeError crash in
+/api/chat/stream when a reply carries an action card") is on `main`,
+`app/main.py` imports `jsonable_encoder` (line 8), and `_sse_event` ends
+with `json.dumps(jsonable_encoder(data))`. Verified against `main`, not
+taken from a ticket.
 
-Note the symptom carefully, because it is worse than "chat writes don't
-work": the tool call and the database write **do** commit, and the crash
-happens afterwards while encoding the frame. So the change really happens
-while the screen says `Error: Request failed` — and `streamChatMessage` has
-no fallback to `/api/chat`, so that is all the user sees. It invites doing
-the thing twice.
+Left as a warning rather than quietly deleted, because the failure was the
+briefing and not the code. This file is the first thing any session reads,
+so a stale "known live bug" is believed — it sends whoever reads it hunting
+something that isn't there, and it survived two days precisely because it
+looked authoritative. **If you record a live bug here, delete the entry in
+the same change that fixes it.**
 
-**No fix exists in this repository.** A fix was reportedly built in a
-worktree outside this repo (branch name `fix-chat-stream-actions`) and never
-pushed — it is not on `origin` and not in any local branch or worktree here,
-so don't go looking for it. The test gap that let this ship is real too:
-`tests/test_streaming_endpoints.py` stubs `summarize_chat_actions` to return
-`[]`, so no test ever puts a real `ChatAction` through the encoder.
+The test gap that let the original bug ship is still real and still worth
+knowing: `tests/test_streaming_endpoints.py` stubs `summarize_chat_actions`
+to return `[]`, so no test puts a real `ChatAction` through the encoder.
 
 ## Working style established so far
 
