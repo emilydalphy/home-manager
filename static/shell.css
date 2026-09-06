@@ -4524,6 +4524,47 @@ span.cook-week-name { cursor: default; }
 .cook-detail.on-spruce .cook-why-text { color: var(--apricot-light); }
 .cook-why-text[hidden] { display: none; }
 
+/* The small row that closes out the last step — a quiet echo of the hero's
+   own "Mark cooked", not a second accent moment (Rule 5's one-apricot-per-
+   screen already spent on the hero above), so it reuses the plain
+   spruce-outline vocabulary .cook-why/.btn-secondary already use on this
+   same card. */
+.cook-focus-end {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cook-focus-end-note { margin: 0; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-secondary); }
+.cook-focus-end-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cook-focus-end-done {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.cook-focus-end-done:hover { background: var(--sand); }
+.cook-focus-end-back {
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.cook-focus-end-back:hover { color: var(--apricot-label-hover); }
+
 /* Serving stepper — live re-scale, no plan reload. */
 .cook-serves { display: flex; align-items: center; gap: 8px; }
 .cook-serves-label { font-family: var(--font-body); font-size: 12px; font-weight: 700; color: var(--ink-secondary); }

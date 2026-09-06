@@ -5312,10 +5312,31 @@
       '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
       '<h4 class="cook-detail-head">Instructions</h4>' +
       cookInstructionsHtml(m, idx) +
+      // The end of the last step used to just stop — the only way back to
+      // "Mark cooked" was scrolling all the way back up to the hero. A
+      // small, quiet row right where the steps run out closes the loop:
+      // the same handler as the hero's own "Mark cooked" button (so this
+      // is never a second source of truth for that write), plus a plain
+      // way back. Only while there's really a recipe with steps to finish,
+      // and only until it's actually marked cooked — once it's done, this
+      // is just clutter under a screen that already says so.
+      ((m.instructions || []).length && m.cooked_status !== 'done'
+        ? cookFocusEndHtml(m)
+        : '') +
       (m.reasoning
         ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
           '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
         : '') +
+    '</div>';
+  }
+
+  function cookFocusEndHtml(m) {
+    return '<div class="cook-focus-end">' +
+      '<p class="cook-focus-end-note">That’s everything — how did it go?</p>' +
+      '<div class="cook-focus-end-actions">' +
+        '<button type="button" class="cook-focus-end-done" data-cook="focus-check" data-entry-id="' + m.entry_id + '" data-next="done">Mark it cooked</button>' +
+        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to the week</button>' +
+      '</div>' +
     '</div>';
   }
 
