@@ -13,6 +13,7 @@ from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
 from . import notifications as _notifications
+from . import plates as _plates
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import week_intake as _week_intake
@@ -1682,7 +1683,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         """
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
-               mpe.slot_state, mpe.open_reason
+               mpe.slot_state, mpe.open_reason, mpe.sides_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -1707,6 +1708,12 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
             # not by reading the code.
             "slot_state": m["slot_state"],
             "open_reason": m["open_reason"] or None,
+            # The side(s) the app attached to make this a full plate (see
+            # plates.py) — [] for the overwhelming majority of meals, and
+            # `sides_label` the ready-made "with a green salad" fragment so
+            # every screen says it the same way.
+            "sides": _plate_sides(m["sides_json"]),
+            "sides_label": _plates.sides_label(_plate_sides(m["sides_json"])),
         }
         for m in meals
     ]
@@ -1981,6 +1988,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
+               mpe.food_groups_json, mpe.sides_json,
                r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -1988,7 +1996,35 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         """,
         (plan["weekly_plan_id"],),
     ).fetchall()
+    prefs = conn.execute(
+        "SELECT eating_style, plates_intro_shown_at FROM meal_preferences WHERE household_id = ?",
+        (household_id(),),
+    ).fetchone()
     conn.close()
+    plate_rule = _plates.plate_rule(prefs["eating_style"] if prefs else "")
+
+    def plate_note(row, sides) -> str:
+        """
+        The one short line about this plate: "with a green salad" when the
+        app added something, "one-pot, nothing extra" when the dish covers
+        the household's plate rule on its own.
+
+        An added side is disclosed on EVERY slot — the household's shopping
+        list has it, so their card must say so. The reassurance half is
+        DINNER ONLY, deliberately: it is the answer to "why does Tuesday
+        say 'with a salad' and Wednesday say nothing", and repeating it
+        under all four slots of all seven days would be chrome, not an
+        answer. See plates.py.
+        """
+        label = _plates.sides_label(sides)
+        if label:
+            return label
+        if row["slot"] != "dinner":
+            return ""
+        entry = {"slot": row["slot"], "food_groups": json.loads(row["food_groups_json"] or "[]")}
+        if _plates.has_food_groups(entry) and _plates.is_complete(entry, plate_rule):
+            return "one-pot, nothing extra"
+        return ""
 
     def build_slot(row) -> dict | None:
         # The three states a slot can be in. Only a slot that is genuinely
@@ -2012,14 +2048,19 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # The 4-9 word "why" shown under the meal name. Generated with the
         # plan (see meal_plan_entries.reasoning) rather than improvised on
         # demand, so it can't contradict the actual reason.
+        sides = _plate_sides(row["sides_json"])
         common = {
             "state": "planned", "reason": row["reasoning"] or None, "entry_id": row["id"],
+            "sides": sides, "plate_note": plate_note(row, sides),
         }
         text = (row["freeform_meal"] or "").lower()
+        # Neither a reheat nor takeout is a plate this app assembled, so
+        # neither gets a plate note — "one-pot, nothing extra" over a night
+        # that reheats an earlier batch would be describing the wrong meal.
         if re.search(r"leftovers?\b", text):
-            return {"title": title, "meta": "reheat", "source": "leftovers", **common}
+            return {"title": title, "meta": "reheat", "source": "leftovers", **common, "plate_note": ""}
         if re.search(r"take[\s-]?out|delivery|order in", text):
-            return {"title": title, "meta": "takeout", "source": "takeout", **common}
+            return {"title": title, "meta": "takeout", "source": "takeout", **common, "plate_note": ""}
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
         total = prep + cook
@@ -2079,6 +2120,22 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "days": days,
         "menu_is_suggested": False,
         "headline": _week_headline(plan, days, intake),
+        # Told once, and only once — see PLATES_INTRO and
+        # mark_plates_intro_shown. None on every week after the first one
+        # where the app actually completed a plate, and None immediately if
+        # it never has. Deliberately NOT folded into `headline`, which says
+        # at most two things by design (see _week_headline) and would grow a
+        # sentence per feature if this were the third.
+        # Asked of the ROWS rather than of `days`, because `days` only
+        # carries breakfast/lunch/dinner — a side attached to a snack is
+        # still a side the household paid for and is owed the explanation
+        # about.
+        "plates_note": (
+            PLATES_INTRO
+            if (not (prefs["plates_intro_shown_at"] if prefs else "")
+                and any(_plate_sides(r["sides_json"]) for r in rows))
+            else None
+        ),
         # The trip banner ("Away Sat–Sun") — present only when the week
         # actually has one, so the ordinary week carries no extra chrome.
         "trip_summary": trip,
@@ -2329,10 +2386,16 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     preview_plan_grocery_impact (which only counts them), so the number the
     draft screen promises and the number approval actually delivers come
     from one query rather than two that can drift apart.
+
+    `sides_json` rides along because a side the app attached to complete a
+    plate is part of THAT MEAL's shopping, not a meal of its own (see
+    plates.py). Both callers read the combined list through
+    _entry_shopping_ingredients below, so the number promised and the
+    number delivered still come from one place.
     """
     return conn.execute(
         """
-        SELECT mpe.id, mpe.recipe_id, r.ingredients_json
+        SELECT mpe.id, mpe.recipe_id, r.ingredients_json, mpe.sides_json
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
@@ -2344,6 +2407,78 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
         """,
         (weekly_plan_id, household_id()),
     ).fetchall()
+
+
+# What the household is told, once, the first time the app rounds a meal
+# out for them. Emily, 2026-09-05: they should hear that this is on purpose
+# and that they can stop it. DESIGN_SYSTEM.md §8 — state the thing, then the
+# way out, in that order and at that length. Not cheery, not an apology, and
+# it names the reason rather than hiding behind "for balance".
+PLATES_INTRO = (
+    "Where a meal came out short, I added a small side — I’m thinking about how you’re eating. "
+    "If you’d rather I left them alone, tell me and I’ll stop."
+)
+
+
+def mark_plates_intro_shown() -> dict:
+    """
+    Record that the household has now been told (see PLATES_INTRO).
+
+    Called by the /api/week-menu ROUTE, not by get_week_menu itself, and
+    that split is the whole point: get_week_menu is also a read the
+    assistant makes on the household's behalf mid-conversation, and burning
+    a once-in-a-lifetime sentence on a tool call nobody saw would mean the
+    household never gets told at all. The screen fetch is the one caller
+    that can honestly claim the sentence was delivered.
+
+    Idempotent: the first stamp wins, so a second screen fetch racing the
+    first doesn't rewrite the date.
+    """
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO meal_preferences (household_id, plates_intro_shown_at, updated_at) "
+        "VALUES (?, datetime('now'), datetime('now')) "
+        "ON CONFLICT(household_id) DO UPDATE SET "
+        "plates_intro_shown_at = CASE WHEN plates_intro_shown_at = '' "
+        "THEN datetime('now') ELSE plates_intro_shown_at END",
+        (household_id(),),
+    )
+    conn.commit()
+    conn.close()
+    return {"shown": True}
+
+
+def _plate_sides(sides_json: str | None) -> list[dict]:
+    """A row's sides_json as a list, tolerating anything stored badly."""
+    try:
+        sides = json.loads(sides_json or "[]")
+    except (TypeError, ValueError):
+        return []
+    return sides if isinstance(sides, list) else []
+
+
+def _entry_shopping_ingredients(row) -> list[dict]:
+    """
+    Everything one plan entry puts on the shopping list: its recipe's own
+    ingredients, then any side the app attached to complete its plate.
+
+    Recorded against the SAME meal_plan_entry_id as the dish, which is what
+    makes removing the meal remove its side's shopping too —
+    _reverse_meal_grocery_contributions is keyed by entry, so the side needs
+    no unwinding logic of its own.
+    """
+    ingredients = json.loads(row["ingredients_json"] or "[]")
+    return ingredients + _entry_side_ingredients(row)
+
+
+def _entry_side_ingredients(row) -> list[dict]:
+    """Just the side's ingredients for one plan entry ('[]' when none)."""
+    sides = row["sides_json"] if "sides_json" in row.keys() else "[]"
+    try:
+        parsed = json.loads(sides or "[]")
+    except (TypeError, ValueError):
+        parsed = []
+    return _plates.side_ingredients(parsed if isinstance(parsed, list) else [])
 
 
 def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
@@ -2401,7 +2536,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     would_add: set[str] = set()
     already_have: set[str] = set()
     for entry in entries:
-        for ing in json.loads(entry["ingredients_json"]):
+        for ing in _entry_shopping_ingredients(entry):
             name = ing["item"].strip()
             if name.lower() in have_names:
                 already_have.add(name.lower())
@@ -2551,6 +2686,19 @@ def approve_weekly_plan(weekly_plan_id: int, approved_by: str = "") -> dict:
         )
         added_items.extend(added)
         already_have.extend(have)
+
+    # A side the app attached to complete a plate belongs to ONE meal, not to
+    # the recipe, so it goes in as its own one-entry group (plates.py). It is
+    # still recorded against that entry's id, which is what lets removing the
+    # meal remove its side's shopping too.
+    for entry in entries:
+        side_ingredients = _entry_side_ingredients(entry)
+        if side_ingredients:
+            added, have = _recipes._add_recipe_ingredients_for_entries(
+                [entry["id"]], side_ingredients, weekly_plan_id
+            )
+            added_items.extend(added)
+            already_have.extend(have)
 
     # Counted as distinct names, matching preview_plan_grocery_impact, so
     # the number the draft promised and the number the receipt reports are

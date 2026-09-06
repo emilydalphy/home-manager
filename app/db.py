@@ -278,6 +278,21 @@ _MIGRATIONS = [
     # whole record, not just the fact that something happened. '' while a
     # plan has never been superseded. See weekly_plan.retire_overlapping_plans.
     ("weekly_plans", "superseded_json", "TEXT NOT NULL DEFAULT ''"),
+    # "Every meal is a full plate" (Emily, 2026-09-05) — see
+    # app/tools/plates.py for the rule and for why the sides attach to the
+    # ENTRY rather than to the recipe. '[]' on every existing row means
+    # "nothing was added here," which is the truth for every meal planned
+    # before this existed, so nothing is backfilled.
+    ("meal_plan_entries", "sides_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # The household's own say over that behaviour. Default ON, per Emily:
+    # the app fills out a plate because it is thinking about their health,
+    # says so once, and takes "don't" for an answer. Off = the pass only
+    # logs what it would have done and attaches nothing.
+    ("meal_preferences", "complete_plates", "INTEGER NOT NULL DEFAULT 1"),
+    # When the household was told, once, that the app completes plates. ''
+    # until the sentence has actually been served to a screen — see
+    # weekly_plan.get_week_menu and main.week_menu.
+    ("meal_preferences", "plates_intro_shown_at", "TEXT NOT NULL DEFAULT ''"),
     # Loop Board "Onboarding / meal setup: add a Snacks & desserts count"
     # (Emily, 2026-09-05). Existing households get 3, not 7 — see
     # schema.sql's comment on meal_preferences.snacks_per_week for why.
