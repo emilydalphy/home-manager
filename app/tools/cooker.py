@@ -523,7 +523,28 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
-        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0}
+        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False}
+
+    # A week where every dinner was deliberately marked planned_empty
+    # (see _NOT_COOKABLE_SLOT_STATES above) — "core loop handoffs, slice 2"
+    # item C: the household said it would be away the whole period, so an
+    # empty Cook screen should say that rather than reading as though
+    # nothing was ever planned. Checked against the raw plan, before the
+    # filter below removes those slots from `meals`. Requires a dinner row
+    # for every day of the period (plan["day_count"]) — a plan that's only
+    # PARTLY marked away (a few nights out, the rest just never planned)
+    # is not "the household is away," it's an ordinary under-planned week.
+    # Component-based plans have no per-day dinner slot to test, so this
+    # is always False there.
+    if plan["planning_mode"] == "component_based":
+        all_away = False
+    else:
+        dinner_rows = [m for m in plan["meals"] if m.get("slot") == "dinner"]
+        all_away = (
+            bool(dinner_rows)
+            and len(dinner_rows) == plan["day_count"]
+            and all(m.get("slot_state") == "planned_empty" for m in dinner_rows)
+        )
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     meals = []
@@ -641,4 +662,5 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         "prep_tasks": prep_tasks,
         "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
         "prep_total": len(prep_tasks),
+        "all_away": all_away,
     }

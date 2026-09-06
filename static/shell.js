@@ -4822,7 +4822,7 @@
         cookAttentionHtml() +
         '<div class="cook-body">' +
           cookPrepHtml(data) +
-          cookRestOfWeekHtml(meals) +
+          cookRestOfWeekHtml(meals, data) +
         '</div>';
     }
 
@@ -4994,13 +4994,18 @@
   // Everything that is not tonight, subordinate: one dense row each. Tapping
   // a name enters the same focused screen tonight's hero does — a "quiet
   // scannable week list" per the ticket, not another accordion of recipes.
-  function cookRestOfWeekHtml(meals) {
+  function cookRestOfWeekHtml(meals, data) {
     var rest = meals
       .map(function (m, i) { return { m: m, i: i }; })
       .filter(function (x) { return x.i !== cookState.tonightIdx; });
     if (!rest.length) {
-      return meals.length
-        ? ''
+      if (meals.length) return '';
+      // Every dinner this period was deliberately marked away (cooker.py's
+      // all_away flag) — say that, rather than the generic "nothing
+      // planned" line, which would read as though the week was simply
+      // forgotten.
+      return data && data.all_away
+        ? '<p class="cook-empty">Nothing to cook this week — you’re away.</p>'
         : '<p class="cook-empty">No meals on this plan yet.</p>';
     }
     return '<section class="cook-section">' +
