@@ -240,6 +240,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-05 — A stated request is the week's ANCHOR, not an order. Branch
+  `plan-quality-anchor-not-order`.** Emily's decision 11a on the plan-quality
+  ticket: "I want burgers" means burgers exactly where she said AND a week
+  composed around them. The day-based instructions used to say "honour it
+  exactly … plan that meal where they said, don't plan over it" and stop
+  there — the literal-request-and-nothing-else behaviour she saw. Prompt-only
+  change: a stance sentence ("A week should read as composed — a shape across
+  the days …") near the top of the guidelines, the freeform bullet rewritten
+  (anchor it, then build the days around it, name the connection in
+  reasoning; the tag-collision rule is the ONE exception to placement), and
+  the collision paragraph reconciled with it. +1,328 chars in the cached
+  block (a one-time cache-write cost). No code path changed; no model or
+  effort change (her 12/13 wait on baseline data). Pinned by
+  `tests/test_prompt_anchor.py`.
+
 - **2026-09-04 — A written-down allergy now reaches the food, and the check
   that finds it stopped crying wolf. Branch `fix-allergy-enforcement` (NOT
   merged at the time of writing).** Root cause of the original bug was three
