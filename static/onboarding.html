@@ -875,6 +875,11 @@ function renderLunchPeople() {
   const card = wrap.closest('.rhythm-card');
   wrap.innerHTML = '';
   const lunchMembers = currentMembers().filter(isCookEligible);
+  // A lunch answer given while someone counted as an adult must not ship
+  // once they've been reclassified as a child (or removed) — same rule as
+  // the cook pick below.
+  const eligibleNames = new Set(lunchMembers.map(m => m.name));
+  Object.keys(rhythmLunchLocation).forEach(name => { if (!eligibleNames.has(name)) delete rhythmLunchLocation[name]; });
   // A household of only a child/toddler has nothing to show here — hide
   // the whole card rather than leaving an empty box under a question with
   // no rows to answer it.

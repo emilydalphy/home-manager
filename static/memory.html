@@ -356,16 +356,14 @@ async function renderFactsTab(category) {
 }
 
 // ---------- People: age group + dietary restrictions ----------
-// Onboarding never asks for age group in its own UI (static/onboarding.html
-// has no age-group step at all, though the backend has carried the field
-// since the household-onboarding route was built) — these are a new list,
-// not a duplicated one, matching household.py's set_member_age_group
-// docstring examples.
+// Same four buckets (and labels) as onboarding.html's AGE_GROUP_OPTIONS —
+// onboarding asks this per person since 2026-09-06; keep the two lists
+// identical so the screens read as one question.
 const AGE_GROUP_OPTIONS = [
   { key: 'adult', label: 'Adult' },
   { key: 'teen', label: 'Teen' },
   { key: 'child', label: 'Child' },
-  { key: 'toddler', label: 'Toddler' },
+  { key: 'toddler', label: 'Little one' },
 ];
 
 function renderPeopleOnboardingBlock(onboarding) {
