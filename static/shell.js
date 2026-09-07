@@ -875,7 +875,10 @@
         // itself and re-reads the card, rather than taking someone to a
         // recipe screen that would have nothing on it.
         if (isReheat) return markTonightEaten(panel, meal);
-        activateTab('week', true, { mealsView: 'cook', mealsFocus: true });
+        activateTab('week', true, {
+          mealsView: 'cook',
+          mealsFocus: meal.entry_id != null ? { entryId: meal.entry_id } : true
+        });
       });
       card.querySelector('#dinner-swap').addEventListener('click', function () {
         openAskSheet('Swap tonight for something faster');
@@ -3638,7 +3641,20 @@
       });
     });
     var cookBtn = wrap.querySelector('#wk-cook-this');
-    if (cookBtn) cookBtn.addEventListener('click', function () { activateTab('week', true, { mealsView: 'cook', mealsFocus: true }); });
+    if (cookBtn) cookBtn.addEventListener('click', function () {
+      // Everything that identifies THIS dinner, so the Cook view can find
+      // it whatever shape the plan is (day-based cards carry entry ids and
+      // dates; a component-based week's menu only carries titles).
+      activateTab('week', true, {
+        mealsView: 'cook',
+        mealsFocus: {
+          entryId: day.dinner ? day.dinner.entry_id : null,
+          date: day.date,
+          slot: 'dinner',
+          title: day.dinner ? day.dinner.title : ''
+        }
+      });
+    });
     var swapBtn = wrap.querySelector('#wk-swap-it');
     if (swapBtn) swapBtn.addEventListener('click', function () {
       openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s dinner for something else');
@@ -4873,7 +4889,12 @@
     screen: 'overview',
     focusIdx: null,      // index into cookState.data.meals, while focused
     focusScrollTo: null, // 'ingredients' | null — landed-on section, once
-    pendingFocusTonight: false, // set by a "Start cooking"/"Cook this" deep link that arrives before the view has ever loaded
+    // Set by a "Start cooking"/"Cook this" deep link that arrives before the
+    // view has ever loaded. Either `true` (the old "focus whatever tonight
+    // turns out to be" behaviour, still used by callers that have no
+    // specific meal in hand) or `{ entryId }` naming the exact meal_plan
+    // entry to land on — see cookResolveFocusIndex.
+    pendingFocusTarget: false,
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     focusStepsChecked: {},      // 'idx:stepPos' -> true — tap-to-check on Do-ahead/Day-of steps, client-side only (see cookStepLi)
     voiceSession: null,
@@ -4901,13 +4922,18 @@
   // Meals path stays /week either way, exactly as Grocery's three segments
   // are all /grocery. Deep links into cooking come through the entry points
   // (Today's "Start cooking", Meals' "Cook this"), not through a URL.
-  // focusTonight is how Today's "Start cooking" and Meals' own "Cook this"
-  // land directly in the focused screen for tonight's meal, rather than on
-  // the Cook overview — the literal "entering 'Start cooking' on a meal
-  // opens that ONE meal full-screen" the ticket asks for. Clicking the
-  // Plan/Cook segmented control itself never passes this, so a deliberate
-  // switch to Cook still lands on the overview, same as always.
-  function setMealsView(view, focusTonight) {
+  // focusTarget is how Today's "Start cooking" and Meals' own "Cook this"
+  // land directly in the focused screen for ONE meal, rather than on the
+  // Cook overview — the literal "entering 'Start cooking' on a meal opens
+  // that ONE meal full-screen" the ticket asks for. It's `{ entryId }` when
+  // the caller knows exactly which meal_plan entry it means (see
+  // cookResolveFocusIndex), or the legacy `true` for a caller that only
+  // means "tonight, whatever that turns out to be" — a generic flag with no
+  // meal identity, which is how this used to land on the morning's
+  // breakfast when tapped before dinner (Loop Board, Emily 2026-09-07).
+  // Clicking the Plan/Cook segmented control itself never passes this, so a
+  // deliberate switch to Cook still lands on the overview, same as always.
+  function setMealsView(view, focusTarget) {
     var panel = cookPanel();
     if (!panel || !panel.dataset.built) return;
     var isCook = view === 'cook';
@@ -4932,15 +4958,61 @@
       cookView.dataset.built = '1';
       cookView.innerHTML = '<p class="cook-empty">Loading&hellip;</p>';
       cookView.addEventListener('click', onCookClick);
-      cookState.pendingFocusTonight = !!focusTonight;
+      cookState.pendingFocusTarget = focusTarget || false;
       loadCook();
       return;
     }
-    // Already built and loaded: a repeat "Start cooking" tap should land
-    // back in tonight's focus, not wherever the screen was left.
-    if (isCook && focusTonight && cookState.data && cookState.tonightIdx !== null && cookState.tonightIdx !== undefined) {
-      cookEnterFocus(cookState.tonightIdx);
+    // Already built and loaded: a repeat "Start cooking"/"Cook this" tap
+    // should land back in the meal it named, not wherever the screen was
+    // left — and never in a DIFFERENT meal than the one asked for.
+    if (isCook && focusTarget && cookState.data) {
+      var idx = cookResolveFocusIndex(cookState.data.meals || [], focusTarget);
+      if (idx !== null && cookState.data.meals[idx]) cookEnterFocus(idx);
     }
+  }
+
+  // Turns a mealsFocus target into an index into cookState.data.meals — or
+  // null when there's nothing to focus. `true` (no meal identity given)
+  // falls back to the old "tonight" guess; `{ entryId }` matches the exact
+  // meal_plan entry, checking a merged card's `entry_ids` too (component
+  // batching collapses several plan entries into one card — see
+  // get_cooker_view). An entryId that names a real target but isn't in
+  // THIS cooker view (a reheat night with nothing to cook, or the plan
+  // changed under it) deliberately returns null rather than falling back
+  // to tonightIdx — landing on the overview beats landing on a different
+  // meal than the one that was tapped.
+  function cookResolveFocusIndex(meals, target) {
+    if (target && typeof target === 'object') {
+      var list = meals || [];
+      var i, m;
+      // Most exact first: the entry itself (or a merged card carrying it).
+      if (target.entryId != null) {
+        for (i = 0; i < list.length; i++) {
+          m = list[i];
+          if (m.entry_id === target.entryId) return i;
+          if (m.entry_ids && m.entry_ids.indexOf(target.entryId) !== -1) return i;
+        }
+      }
+      // Then the same date + slot — a day-based card that lost its id.
+      if (target.date && target.slot) {
+        for (i = 0; i < list.length; i++) {
+          m = list[i];
+          if (m.date === target.date && m.slot === target.slot) return i;
+        }
+      }
+      // Then the dish by name — a component-based week's menu carries no
+      // entry ids or real dates, only titles, and its cook cards are
+      // merged by name (get_cooker_view), so the name IS the identity.
+      if (target.title) {
+        var want = String(target.title).trim().toLowerCase();
+        for (i = 0; i < list.length; i++) {
+          if (String(list[i].meal || '').trim().toLowerCase() === want) return i;
+        }
+      }
+      // Nothing matched: the overview, never a different meal.
+      return null;
+    }
+    return target ? cookState.tonightIdx : null;
   }
 
   async function loadCook() {
@@ -4972,13 +5044,17 @@
     }
     // A "Start cooking"/"Cook this" deep link that arrived before this
     // view had ever loaded (the common case — Cook is lazy-built) asked
-    // for tonight's meal in focus, not the overview; honor it now that
-    // tonight is actually known.
-    if (cookState.pendingFocusTonight) {
-      cookState.pendingFocusTonight = false;
-      if (!cookState.loadError && cookState.tonightIdx !== null && cookState.tonightIdx !== undefined) {
-        cookEnterFocus(cookState.tonightIdx);
-        return;
+    // for one meal in focus, not the overview; honor it now that the data
+    // (and, for the legacy `true` case, tonight's index) is actually known.
+    if (cookState.pendingFocusTarget) {
+      var target = cookState.pendingFocusTarget;
+      cookState.pendingFocusTarget = false;
+      if (!cookState.loadError) {
+        var idx = cookResolveFocusIndex(cookState.data.meals || [], target);
+        if (idx !== null && cookState.data.meals[idx]) {
+          cookEnterFocus(idx);
+          return;
+        }
       }
     }
     renderCook();
