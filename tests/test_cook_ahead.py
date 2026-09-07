@@ -380,3 +380,40 @@ def test_the_route_cannot_reach_another_households_plan(client):
 
     assert res.status_code == 400
     assert "make_double_for" not in _derived_from(ids[MON])
+
+
+# ---------- the plan tab and the planner's own repair pass ----------
+
+def test_plan_tab_says_made_ahead_for_a_cooked_ahead_morning():
+    """Emily: the plan must align with the cook schedule. The week view
+    uses the same wording the Cook tab does for a day the household chose
+    to cook ahead for -- "Made ahead", never "Leftovers"."""
+    _household()
+    _eggs()
+    plan_id, ids = _breakfast_week()
+
+    tools.set_cook_ahead(ids[MON], [ids[TUE]])
+
+    menu = tools.get_week_menu(plan_id)
+    covered = next(d for d in menu["days"] if d["date"] == TUE)["breakfast"]
+    assert covered["title"].startswith("Made ahead")
+    assert covered["source"] == "leftovers"
+    assert covered["meta"] == "reheat"
+
+
+def test_repair_leftover_chains_keeps_a_breakfast_cook_ahead_chain():
+    """repair_leftover_chains rejects breakfast sources for the planner's
+    own pairings. A household's cook-ahead is the one legitimate
+    breakfast -> breakfast chain and must survive a repair pass intact:
+    running it over such a plan used to clear the covered mornings."""
+    _household()
+    _eggs()
+    plan_id, ids = _breakfast_week()
+
+    tools.set_cook_ahead(ids[MON], [ids[TUE], ids[WED]])
+    tools.repair_leftover_chains(plan_id)
+
+    chains = tools.plan_leftover_chains(plan_id)
+    assert set(chains["leftovers"]) == {ids[TUE], ids[WED]}
+    assert ids[MON] in chains["sources"]
+    assert set(_cards(plan_id)) >= {ids[MON], ids[TUE], ids[WED]}

@@ -735,7 +735,11 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             issue = "a meal that hasn’t happened yet"
         elif source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
             issue = "a night nothing was actually cooked"
-        elif source["slot"] not in ("lunch", "dinner"):
+        elif source["slot"] not in ("lunch", "dinner") and not derived.get("cook_ahead"):
+            # A household's own cook-ahead (cook_ahead.set_cook_ahead) is
+            # the one chain that legitimately runs breakfast -> breakfast:
+            # the person said "make Monday's batch cover Tuesday", so the
+            # source being a breakfast is the point, not a mix-up.
             issue = "a breakfast"
         else:
             source_derived = json.loads(source["derived_from_json"] or "{}")
@@ -2325,8 +2329,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         leftover = chains["leftovers"].get(row["id"])
         if leftover:
             src = leftover["source"]
+            # Same wording rule as the Cook tab (cooker.py): a day the
+            # household chose to cook ahead for reads "Made ahead", not
+            # "Leftovers" — the plan and the cook schedule must agree.
+            headline = (
+                _leftovers.made_ahead_headline(src["meal"], src["date"])
+                if leftover.get("cook_ahead")
+                else _leftovers.leftovers_headline(src["meal"], src["date"])
+            )
             return {
-                "title": _leftovers.leftovers_headline(src["meal"], src["date"]),
+                "title": headline,
                 "meta": "reheat", "source": "leftovers", **common, "plate_note": "",
             }
         text = (row["freeform_meal"] or "").lower()
