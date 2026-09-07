@@ -160,14 +160,49 @@ async def record_unhandled_errors(request: Request, exc: Exception):
 
 
 @app.middleware("http")
-async def no_index_headers(request: Request, call_next):
+async def security_headers(request: Request, call_next):
     """
-    Keep the app out of search results. It holds the household's dietary
-    notes and members, and even behind a password there is no reason for
-    any of it to be crawled or cached by an index.
+    Response headers that hold for every route, public ones included.
+
+    X-Robots-Tag keeps the app out of search results. It holds the
+    household's dietary notes and members, and even behind a password
+    there is no reason for any of it to be crawled or cached by an index.
+
+    The rest close the "no security headers at all" gap found by the
+    2026-09-04 security-audit pass. Each is deliberately narrow, because a
+    header set by omission is a decision nobody made:
+
+    - `frame-ancestors 'self'` (and its X-Frame-Options twin for older
+      browsers) is same-origin rather than `none`, because this app really
+      does frame its own pages -- the Kitchen tab hosts What we know and
+      Inventory in an iframe. `none` would break that screen.
+      This is the ONLY CSP directive sent. A default-src policy would
+      break the app immediately: every page carries inline <style> and
+      <script>, so a real CSP needs nonces or hashes threaded through
+      about twenty hand-written HTML files. That is its own ticket, not a
+      side effect of this one.
+
+    - Referrer-Policy earns its place here more than usual: a share URL
+      (`/share/<token>`, `/member-share/<token>`) carries a bearer token
+      in the path, and those links get pasted into messages and opened
+      from other sites. Sending only the origin cross-origin means the
+      token cannot ride out in a Referer header.
+
+    - HSTS only on a request that arrived over https (see _is_https --
+      Railway terminates TLS at its proxy, so the app itself sees http),
+      and deliberately WITHOUT includeSubDomains. A browser honours HSTS
+      for a year and there is no way to take it back early, so the pin is
+      scoped to the exact host already known to be https-only rather than
+      to subdomains that don't exist yet and might not be.
     """
     response = await call_next(request)
     response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if _is_https(request):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
     return response
 
 
