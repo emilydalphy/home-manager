@@ -701,6 +701,37 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # already ticked and the reheat cards they produced agree.
         _cook_ahead.attach_cook_ahead(plan["weekly_plan_id"], meals)
 
+        # A plain night — no chain, no reheat — was left at the recipe's
+        # own default_servings even when the table it's actually for is a
+        # different size, so the card could say "for 2" (attendance, read
+        # off the same date+slot) right next to a "Serves 4" stepper (still
+        # the recipe's own baseline) — two different answers to the same
+        # question (Emily, 2026-09-07). Scale the recipe to who is actually
+        # eating, same arithmetic _scale_card_to_batch uses for a chain.
+        #
+        # Deliberately NOT calling _scale_card_to_batch itself: it also
+        # sets `servings`, which is reserved for "this card covers a batch
+        # bigger than one night" (the source's "for 6" chip) — see that
+        # field's docstring above and test_leftovers_batch's
+        # test_a_chain_nobody_validated_changes_nothing, which pins
+        # servings=None for an ordinary cook. Scaling every plain card to
+        # its own attendance would make that signal fire on nearly every
+        # card, not just batch nights. default_servings is what the
+        # stepper (cookDetailHtml, shell.js) actually reads, so correcting
+        # it alone is enough to make the two numbers agree.
+        chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])
+        chained_entry_ids = set(chains["sources"].keys()) | set(chains["leftovers"].keys())
+        for m in meals:
+            if m["entry_id"] in chained_entry_ids:
+                continue
+            if not m.get("has_full_recipe") or not m.get("default_servings"):
+                continue
+            eaters = _leftovers.eaters_at(m["date"], m["slot"])
+            if eaters:
+                scaled = _recipes.scale_recipe(m["meal"], eaters)
+                m["ingredients"] = scaled["scaled_ingredients"]
+                m["default_servings"] = eaters
+
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
     return {
         "weekly_plan_id": plan["weekly_plan_id"],

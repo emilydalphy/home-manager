@@ -152,22 +152,89 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     # ServerErrorMiddleware expects one back and only sends it if the
     # handler returns; raising from here skipped that, so uvicorn's
     # protocol-level fallback answered instead — same status and body, but
-    # the keep-alive connection was dropped on every 500. (The no-index
-    # header still isn't applied either way: no_index_headers is a user
+    # the keep-alive connection was dropped on every 500. (None of the
+    # security headers are applied either way: security_headers is a user
     # middleware and sits inside this one, so it never sees this response.
-    # A 500 body carries nothing worth not indexing.)
+    # A 500 body is the string "Internal Server Error" — nothing there
+    # needs protecting from an index, a sniff or a frame.)
     return PlainTextResponse("Internal Server Error", status_code=500)
 
 
 @app.middleware("http")
-async def no_index_headers(request: Request, call_next):
+async def security_headers(request: Request, call_next):
     """
-    Keep the app out of search results. It holds the household's dietary
-    notes and members, and even behind a password there is no reason for
-    any of it to be crawled or cached by an index.
+    Response headers for every response this middleware sees -- public
+    routes, static files, redirects, and the 401 auth_middleware returns
+    without ever reaching a route.
+
+    That coverage depends on registration ORDER, which is easy to undo by
+    accident: this is registered after `auth_middleware` above, and
+    Starlette inserts each new middleware at the front, so this one ends
+    up OUTSIDE it and therefore sees the responses auth_middleware makes
+    itself. Register it before auth_middleware and every unauthenticated
+    response silently loses all of these. `tests/test_security_headers.py`
+    has a test whose only job is to catch that.
+
+    The one response path NOT covered is an unhandled 500: that is
+    answered by `record_unhandled_errors` running in Starlette's
+    ServerErrorMiddleware, which sits outside all user middleware (see the
+    note in that function). The body there is the string "Internal Server
+    Error", so nothing it carries needs protecting.
+
+    X-Robots-Tag keeps the app out of search results. It holds the
+    household's dietary notes and members, and even behind a password
+    there is no reason for any of it to be crawled or cached by an index.
+
+    The rest close the "no security headers at all" gap found by the
+    2026-09-04 security-audit pass. What is in the CSP and what is left
+    out are two separate decisions, because a header set by omission is a
+    decision nobody made:
+
+    - `frame-ancestors 'self'` (and its X-Frame-Options twin for older
+      browsers) is same-origin rather than `none`, because this app really
+      does frame its own pages -- the Kitchen tab hosts What we know and
+      Inventory in an iframe. `none` would break that screen.
+
+    - `base-uri`, `form-action` and `object-src` ride along because they
+      cost nothing here: there is no <base> tag and no <object>/<embed>
+      anywhere in static/, and the only form with an action attribute
+      posts to /login on this same origin (static/login.html). They are
+      listed separately from frame-ancestors so nobody later assumes the
+      reason below covers them -- it doesn't.
+
+    - Deliberately absent: default-src, script-src and style-src. Every
+      page carries inline <style> and <script>, so those need nonces or
+      hashes threaded through about twenty hand-written HTML files. Adding
+      one would not fail loudly -- the pages still return 200 and the
+      browser simply refuses to run them. That is its own ticket.
+
+    - Referrer-Policy is not doing as much as it looks: every current
+      browser already defaults to exactly this value, so it changes
+      nothing on them. It is here to make the guarantee a property of the
+      app rather than of whatever browser turns up, which matters because
+      a share URL (`/share/<token>`) carries a bearer token in its path
+      and gets pasted into messages. If that token is ever judged worth
+      real protection, `no-referrer` on the two share routes is the change
+      that would actually add something -- this one does not.
+
+    - HSTS only on a request that arrived over https (see _is_https --
+      Railway terminates TLS at its proxy, so the app itself sees http).
+      Without `includeSubDomains`, since there are no subdomains of this
+      host to cover and a browser honours HSTS for a year with no way to
+      withdraw it early; and necessarily without `preload`, which
+      *requires* includeSubDomains and is a poor fit for a host on the
+      shared `up.railway.app` suffix.
     """
     response = await call_next(request)
     response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Content-Security-Policy"] = (
+        "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    )
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if _is_https(request):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
     return response
 
 
