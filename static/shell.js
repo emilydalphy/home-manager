@@ -3642,10 +3642,17 @@
     });
     var cookBtn = wrap.querySelector('#wk-cook-this');
     if (cookBtn) cookBtn.addEventListener('click', function () {
-      var entryId = day.dinner && day.dinner.entry_id;
+      // Everything that identifies THIS dinner, so the Cook view can find
+      // it whatever shape the plan is (day-based cards carry entry ids and
+      // dates; a component-based week's menu only carries titles).
       activateTab('week', true, {
         mealsView: 'cook',
-        mealsFocus: entryId != null ? { entryId: entryId } : true
+        mealsFocus: {
+          entryId: day.dinner ? day.dinner.entry_id : null,
+          date: day.date,
+          slot: 'dinner',
+          title: day.dinner ? day.dinner.title : ''
+        }
       });
     });
     var swapBtn = wrap.querySelector('#wk-swap-it');
@@ -4975,12 +4982,34 @@
   // to tonightIdx — landing on the overview beats landing on a different
   // meal than the one that was tapped.
   function cookResolveFocusIndex(meals, target) {
-    if (target && typeof target === 'object' && target.entryId != null) {
-      for (var i = 0; i < (meals || []).length; i++) {
-        var m = meals[i];
-        if (m.entry_id === target.entryId) return i;
-        if (m.entry_ids && m.entry_ids.indexOf(target.entryId) !== -1) return i;
+    if (target && typeof target === 'object') {
+      var list = meals || [];
+      var i, m;
+      // Most exact first: the entry itself (or a merged card carrying it).
+      if (target.entryId != null) {
+        for (i = 0; i < list.length; i++) {
+          m = list[i];
+          if (m.entry_id === target.entryId) return i;
+          if (m.entry_ids && m.entry_ids.indexOf(target.entryId) !== -1) return i;
+        }
       }
+      // Then the same date + slot — a day-based card that lost its id.
+      if (target.date && target.slot) {
+        for (i = 0; i < list.length; i++) {
+          m = list[i];
+          if (m.date === target.date && m.slot === target.slot) return i;
+        }
+      }
+      // Then the dish by name — a component-based week's menu carries no
+      // entry ids or real dates, only titles, and its cook cards are
+      // merged by name (get_cooker_view), so the name IS the identity.
+      if (target.title) {
+        var want = String(target.title).trim().toLowerCase();
+        for (i = 0; i < list.length; i++) {
+          if (String(list[i].meal || '').trim().toLowerCase() === want) return i;
+        }
+      }
+      // Nothing matched: the overview, never a different meal.
       return null;
     }
     return target ? cookState.tonightIdx : null;
