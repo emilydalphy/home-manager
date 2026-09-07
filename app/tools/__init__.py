@@ -46,6 +46,14 @@ from .chores import (  # noqa: F401
     set_chores_profile,
     update_chore,
 )
+# The household's own "cook these days now" pick (see cook_ahead.py). Not
+# an agent tool: the picker is a set of chips on the Cook card, and a
+# choice about which mornings to cook for is the household's to make by
+# tapping, not the assistant's to make by inferring.
+from .cook_ahead import (  # noqa: F401
+    cook_ahead_options,
+    set_cook_ahead,
+)
 from .cooker import (  # noqa: F401
     _find_inventory_match,
     _singularize,

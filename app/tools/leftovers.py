@@ -132,14 +132,25 @@ def plan_leftover_chains(weekly_plan_id: int) -> dict:
         if f"{r['date']}:{r['slot']}" not in confirmed:
             continue
 
+        # Was this pairing the household's own "cook these days now" pick
+        # (cook_ahead.set_cook_ahead) rather than the planner's leftovers?
+        # The chain itself is identical either way — this only decides
+        # which words the screens use for it, so it is read here rather
+        # than making every caller open derived_from a second time.
+        chosen_ahead = bool(derived.get("cook_ahead"))
+
         entry = sources.setdefault(source["id"], {
             "entry_id": source["id"], "date": source["date"], "slot": source["slot"],
             "meal": source["meal"], "note": source_derived.get("make_double_note") or "",
-            "targets": [],
+            "cook_ahead": False, "targets": [],
         })
-        entry["targets"].append({"entry_id": r["id"], "date": r["date"], "slot": r["slot"]})
+        entry["cook_ahead"] = entry["cook_ahead"] or chosen_ahead
+        entry["targets"].append({
+            "entry_id": r["id"], "date": r["date"], "slot": r["slot"], "cook_ahead": chosen_ahead,
+        })
         leftovers[r["id"]] = {
             "entry_id": r["id"], "date": r["date"], "slot": r["slot"],
+            "cook_ahead": chosen_ahead,
             "source": {
                 "entry_id": source["id"], "date": source["date"],
                 "slot": source["slot"], "meal": source["meal"],
@@ -210,9 +221,36 @@ def covers_note(source: dict, servings: int, today: str | None = None) -> str:
     return f"Cooking for {servings} — covers {cook_label} and leftovers on {days}."
 
 
+def cook_ahead_note(source: dict, servings: int) -> str:
+    """
+    covers_note's wording for a batch the household chose to cook ahead
+    (cook_ahead.set_cook_ahead): "Cooking for 6 — enough for Monday,
+    Wednesday, and Friday."
+
+    Same sentence, different truth. covers_note says "covers tonight and
+    leftovers on Thursday" because that is what a planner-written chain
+    is: one dinner, then what is left of it. A household that ticked three
+    mornings is not making leftovers, it is making three mornings' worth
+    at once — so this names every day the batch is for, the cook day
+    included, and never says "leftovers" about portions nobody has eaten
+    yet.
+    """
+    days = _join_days([_weekday(source["date"])] + [_weekday(t["date"]) for t in source["targets"]])
+    return f"Cooking for {servings} — enough for {days}."
+
+
 def leftovers_headline(source_meal: str, source_date: str) -> str:
     """"Leftovers — Wednesday's Korean Beef Bulgogi Lettuce Wraps"."""
     return f"Leftovers — {_weekday(source_date)}’s {source_meal}"
+
+
+def made_ahead_headline(source_meal: str, source_date: str) -> str:
+    """"Made ahead — Monday's Egg White Bites" — leftovers_headline for a
+    day the household deliberately cooked the portions for in advance.
+    Same shape, one honest word different: a portion set aside on purpose
+    on Monday morning isn't leftovers by Wednesday, it's what Wednesday
+    was always going to be."""
+    return f"Made ahead — {_weekday(source_date)}’s {source_meal}"
 
 
 def reheat_note(recipe: dict | None) -> str:

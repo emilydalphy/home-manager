@@ -242,6 +242,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-07 — The same breakfast on five mornings meant five cooks.**
+  Emily, on a plan with Egg White Bites every morning: "We don't want to
+  make egg bites every morning." A day-based plan writes each morning as
+  its own entry, so the Cook screen showed each as its own cook. New
+  `app/tools/cook_ahead.py` lets the household tick the days one batch
+  should cover, and writes exactly the leftover-chain shape
+  `repair_leftover_chains` writes (both halves, or
+  `plan_leftover_chains` ignores it) plus a `cook_ahead: true` flag on the
+  covered day — which changes nothing about the chain and only changes the
+  words: "Made ahead — Monday's Egg White Bites", not "Leftovers".
+  Groceries are deliberately untouched (the week still eats the same
+  portions; only the cooking is consolidated), which is why this does NOT
+  reuse `_unlink_leftover_target` — that one rescales, correctly, for a
+  night being removed outright. One thing left standing: a BREAKFAST
+  source is still invalid to `repair_leftover_chains` (it only accepts
+  lunch/dinner sources), so a cook-ahead chain on breakfasts would be
+  reopened if that ever ran over an existing plan. It only runs during
+  generation today, so it can't reach one — but widening that rule is the
+  fix if it ever does.
 - **2026-09-06 — A crashed allergy check fails CLOSED at approval.** Found
   by an independent review of the confirm-tap work: `check_plan_conflicts`
   raising inside `approve_weekly_plan` was logged and the week approved

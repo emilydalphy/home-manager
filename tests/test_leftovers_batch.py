@@ -377,9 +377,17 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         "const COOK_ICONS = { check: '<svg data-icon=\"check\"></svg>' };\n"
         "const REHEAT_ACTION_LABEL = 'Mark eaten';\n"
         "const REHEAT_UNDO_LABEL = 'Mark not eaten';\n"
-        "const cookState = { tonightIdx: 99 };\n"
+        "const cookState = { tonightIdx: 99, cookAheadPicks: {} };\n"
         "function dayName(d){ return 'Tue'; }\n"
+        "function dayNameShort(d){ return 'Tue'; }\n"
         + _extract("cookServesChip", src) + "\n"
+        # The cook hero also carries the cook-ahead picker (cook_ahead.py);
+        # these are the three functions that build it. A meal with no
+        # repeats — every meal in this file — renders none of it, which is
+        # itself worth keeping true.
+        + _extract("cookSlotWord", src) + "\n"
+        + _extract("cookAheadPicks", src) + "\n"
+        + _extract("cookAheadHtml", src) + "\n"
         + _extract("cookReheatCardHtml", src) + "\n"
         + _extract("cookReheatHeroHtml", src) + "\n"
         + _extract("cookHeroHtml", src) + "\n"

@@ -4400,6 +4400,67 @@ html, body {
 .cook-hero-check { color: var(--ivory-ink-muted); }
 .cook-hero-check.checked { background: var(--celadon); color: var(--on-accent-ink); }
 
+/* ---------- Cook ahead: one batch, several days of the same dish ----------
+   Emily, 2026-09-07: the same breakfast on every morning shouldn't mean
+   cooking it every morning. The picker lives inside the spruce hero,
+   beside the chips it changes, so its chips take the same on-spruce
+   treatment .cook-meta-chip does (--spruce-raised, never a light fill on
+   ivory). A ticked day is celadon — the accent that reassures, and the
+   same "already true" .defrost-chip.is-selected uses for picking days
+   elsewhere — never apricot, which the one action on this screen already
+   owns (DESIGN_SYSTEM.md §2, rules 1 and 5). */
+.cook-ahead { display: flex; flex-direction: column; gap: 8px; }
+.cook-ahead-ask {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ivory-ink-muted);
+}
+.cook-ahead-days { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cook-ahead-day {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-chip);
+  background: var(--spruce-raised);
+  color: var(--ivory-ink-muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cook-ahead-day:hover { background: var(--spruce-hover); }
+.cook-ahead-day.is-on { background: var(--celadon); color: var(--on-accent-ink); }
+.cook-ahead-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cook-ahead-count {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ivory-ink-muted);
+}
+/* Quiet outline on spruce — the treatment .cook-focus-check.is-done
+   already uses for an action that matters and still isn't the screen's
+   one apricot. */
+.cook-ahead-go {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--apricot-rule);
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ivory-ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.cook-ahead-go:hover { background: var(--spruce-hover); }
+.cook-ahead-go:disabled { opacity: .6; cursor: default; }
+
 /* ---------- Focused single-meal cook mode ----------
    A state of this same screen (never a route), exactly like Grocery's
    shopping mode — see .gro-hero-back, the precedent this back link copies.

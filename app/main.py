@@ -555,6 +555,14 @@ class CheckOffMealRequest(BaseModel):
     status: str = "done"  # pending | done
 
 
+class CookAheadRequest(BaseModel):
+    source_entry_id: int
+    # The days this batch should cover, as they stand after the tap —
+    # never a delta. An empty list is a real answer (cook each day on its
+    # own again), which is why it has no default.
+    covered_entry_ids: list[int]
+
+
 class CheckOffPrepRequest(BaseModel):
     prep_task_id: int
     status: str = "done"  # pending | done | skipped
@@ -1128,6 +1136,32 @@ def cooker_check_meal(req: CheckOffMealRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Cooker check-meal failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
+@app.post("/api/cooker/cook-ahead")
+def cooker_cook_ahead(req: CookAheadRequest):
+    """
+    Cook one batch for several days of the same dish, straight from the
+    Cook card (Emily, 2026-09-07: the same breakfast on every morning
+    shouldn't mean cooking it every morning).
+
+    set_cook_ahead answers a refusal with the sentence to show rather than
+    an exception — a day that already belongs to another batch is a thing
+    to say, not a server error — so a string comes back as a 400 carrying
+    that exact wording, and anything else as the refreshed view every
+    other /api/cooker/* write returns.
+    """
+    try:
+        result = tools.set_cook_ahead(req.source_entry_id, req.covered_entry_ids)
+        if isinstance(result, str):
+            raise HTTPException(status_code=400, detail=result)
+        view = tools.get_cooker_view()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Cooker cook-ahead failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
 

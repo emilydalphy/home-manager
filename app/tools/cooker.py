@@ -7,6 +7,7 @@ from ..db import get_conn
 from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import attention as _attention
+from . import cook_ahead as _cook_ahead
 from . import inventory as _inventory
 from . import leftovers as _leftovers
 from . import plates as _plates
@@ -466,7 +467,14 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         ]
         if batch["servings"] > 0:
             _scale_card_to_batch(card, batch["servings"])
-            card["covers_note"] = _leftovers.covers_note(source, batch["servings"])
+            # Same note, two truths: a chain the household picked itself
+            # (cook_ahead.py) is portions cooked ahead on purpose, not
+            # leftovers of a dinner. See leftovers.cook_ahead_note.
+            card["covers_note"] = (
+                _leftovers.cook_ahead_note(source, batch["servings"])
+                if source.get("cook_ahead")
+                else _leftovers.covers_note(source, batch["servings"])
+            )
         else:
             # Nothing countable to scale to (no members on record yet).
             # The pairing is still real, so still say it — in the words
@@ -480,7 +488,11 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         src = leftover["source"]
         card["is_leftovers"] = True
         card["leftovers_from"] = src
-        card["leftovers_headline"] = _leftovers.leftovers_headline(src["meal"], src["date"])
+        card["leftovers_headline"] = (
+            _leftovers.made_ahead_headline(src["meal"], src["date"])
+            if leftover.get("cook_ahead")
+            else _leftovers.leftovers_headline(src["meal"], src["date"])
+        )
         card["reheat_note"] = _leftovers.reheat_note(recipes_by_name.get((src["meal"] or "").lower()))
         card["servings"] = _leftovers.eaters_at(leftover["date"], leftover["slot"]) or None
         # A reheat is not a cook. Emptied rather than left in place so no
@@ -683,6 +695,11 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # The day-based equivalent of the merge above: a night whose batch
         # also feeds a later night's leftovers cooks once, for everyone.
         _apply_leftover_chains(plan["weekly_plan_id"], meals, recipes_by_name)
+        # ...and the offer to make one: the later days each card could
+        # cook its portions for now (Emily, 2026-09-07, on a plan with the
+        # same breakfast every morning). Runs after the chains so the days
+        # already ticked and the reheat cards they produced agree.
+        _cook_ahead.attach_cook_ahead(plan["weekly_plan_id"], meals)
 
         # A plain night — no chain, no reheat — was left at the recipe's
         # own default_servings even when the table it's actually for is a
