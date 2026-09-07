@@ -4876,6 +4876,7 @@
     pendingFocusTonight: false, // set by a "Start cooking"/"Cook this" deep link that arrives before the view has ever loaded
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     focusStepsChecked: {},      // 'idx:stepPos' -> true — tap-to-check on Do-ahead/Day-of steps, client-side only (see cookStepLi)
+    cookAheadPicks: {},         // source entry_id -> { covered entry_id: true } — the cook-ahead chips as they stand between taps; seeded from the server's own `selected` and dropped again on every load or write (see cookAheadPicks)
     voiceSession: null,
     voiceContext: null, // { type: 'prep' } | { type: 'meal', idx }
     voiceStepCursor: {},
@@ -5062,6 +5063,13 @@
       return;
     }
     var data = cookState.data;
+    // Every fresh view — a load, or the one a write hands back — is the
+    // truth about which days are ticked, so the cook-ahead chips go back
+    // to reading it rather than to whatever was tapped before it arrived.
+    if (cookState.cookAheadFrom !== data) {
+      cookState.cookAheadFrom = data;
+      cookState.cookAheadPicks = {};
+    }
     if (!data.weekly_plan_id) {
       view.innerHTML = '<p class="cook-empty">No plan yet this week — plan one on the Plan tab first.</p>';
       if (scrollEl) scrollEl.scrollTop = keepScroll;
@@ -5129,6 +5137,87 @@
   function cookServesChip(meal) {
     if (meal.covers_note && meal.servings) return 'for ' + meal.servings;
     return meal.default_servings ? 'Serves ' + meal.default_servings : '';
+  }
+
+  // ---------- Cook ahead: one batch, several days of the same dish ----------
+  // Emily, 2026-09-07, on a plan with the same breakfast every morning:
+  // "We don't want to make egg bites every morning... the user can mark
+  // off the days of the week it's on the plan that we should cook the
+  // portions for now." get_cooker_view hands each cook card the later
+  // days it could cover (cook_ahead.days, each with its own eaters and
+  // whether it is already ticked); this is the picker over them.
+
+  // "morning" / "mornings" — the meal of the day this repeat is, said the
+  // way a person would. Dinner is a night, because that is what the rest
+  // of this screen calls it.
+  function cookSlotWord(slot, count) {
+    var one = slot === 'breakfast' ? 'morning' : (slot === 'lunch' ? 'lunch' : 'night');
+    if (count === 1) return one;
+    return one === 'lunch' ? 'lunches' : one + 's';
+  }
+
+  // Which days are ticked right now. Seeded from the server's own answer
+  // (a card that already cooks ahead comes back with those days selected),
+  // then owned by the screen until the next write or load — ticking a chip
+  // must not wait for a round trip to show.
+  function cookAheadPicks(meal) {
+    var picks = cookState.cookAheadPicks[meal.entry_id];
+    if (!picks) {
+      picks = {};
+      ((meal.cook_ahead && meal.cook_ahead.days) || []).forEach(function (d) {
+        if (d.selected) picks[d.entry_id] = true;
+      });
+      cookState.cookAheadPicks[meal.entry_id] = picks;
+    }
+    return picks;
+  }
+
+  function cookAheadHtml(meal) {
+    var days = (meal.cook_ahead && meal.cook_ahead.days) || [];
+    if (!days.length) return '';
+    var picks = cookAheadPicks(meal);
+    var ticked = days.filter(function (d) { return !!picks[d.entry_id]; });
+    // Only a change asks to be confirmed. Chips that still match what the
+    // plan already says are the state, not a decision, so there is nothing
+    // to press — the button comes back the moment one is tapped.
+    var changed = days.some(function (d) { return !!picks[d.entry_id] !== !!d.selected; });
+
+    // The live arithmetic: this day plus every ticked one, and the people
+    // sitting down to all of them. attendance is null only where there is
+    // no real day to count (see get_cooker_view), and then the count line
+    // simply says how many days, which is still true.
+    var count = ticked.length + 1;
+    var eaters = meal.attendance ? meal.attendance.headcount : 0;
+    if (eaters) {
+      ticked.forEach(function (d) { eaters += d.eaters || 0; });
+    }
+    var summary = 'Makes ' + count + ' ' + cookSlotWord(meal.slot, count) +
+      (eaters ? ' · for ' + eaters : '');
+
+    // Unticking everything is a real answer, and it deserves its own
+    // words: this is not "cook for these," it is putting each day back to
+    // cooking for itself.
+    var action = !changed ? '' : (ticked.length ? 'Cook for these' : 'Cook each on its own');
+
+    return '<div class="cook-ahead">' +
+      '<p class="cook-ahead-ask">Cooking ahead? Tick the ' +
+        cookSlotWord(meal.slot, 2) + ' this batch should cover.</p>' +
+      '<div class="cook-ahead-days">' +
+        days.map(function (d) {
+          var on = !!picks[d.entry_id];
+          return '<button type="button" class="cook-ahead-day' + (on ? ' is-on' : '') + '" ' +
+            'data-cook="ahead-day" data-source-id="' + meal.entry_id + '" data-day-id="' + d.entry_id + '" ' +
+            'aria-pressed="' + on + '">' + escapeHtml(dayNameShort(d.date)) + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="cook-ahead-foot">' +
+        '<span class="cook-ahead-count">' + escapeHtml(summary) + '</span>' +
+        (action
+          ? '<button type="button" class="cook-ahead-go" data-cook="ahead-go" ' +
+              'data-source-id="' + meal.entry_id + '">' + escapeHtml(action) + '</button>'
+          : '') +
+      '</div>' +
+    '</div>';
   }
 
   // A reheat night, in place of the cook hero. Emily, 2026-09-04: the dish
@@ -5217,6 +5306,9 @@
             return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
           }).join('') + '</div>'
         : '') +
+      // Beside the "for 6" chip and the note that explains it: the offer to
+      // make this one batch cover the other days it is planned for.
+      cookAheadHtml(meal) +
       '<div class="cook-hero-actions">' +
         // The apricot action, and the only one on this screen. It no longer
         // expands the recipe in place below the fold — it takes the whole
@@ -5587,6 +5679,10 @@
               return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
             }).join('') + '</div>'
           : '') +
+        // Same picker as the overview hero — the focused screen is where
+        // the ingredients are actually read off, so it is where changing
+        // the batch has to be possible too.
+        cookAheadHtml(meal) +
         '<button type="button" class="cook-hero-action cook-focus-check' + (isDone ? ' is-done' : '') + '" ' +
           'data-cook="focus-check" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
           '<span>' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '</span>' + (isDone ? '' : ICONS.arrow) +
@@ -5712,6 +5808,16 @@
       if (text) text.hidden = !text.hidden;
       return;
     }
+    if (what === 'ahead-day') {
+      var sourceId = el.getAttribute('data-source-id');
+      var picks = cookState.cookAheadPicks[sourceId] ||
+        (cookState.cookAheadPicks[sourceId] = {});
+      var dayId = el.getAttribute('data-day-id');
+      if (picks[dayId]) delete picks[dayId]; else picks[dayId] = true;
+      renderCook();
+      return;
+    }
+    if (what === 'ahead-go') return cookSetCookAhead(el);
     if (what === 'check-meal') return cookCheckMeal(el);
     if (what === 'check-prep') return cookCheckPrep(el);
     if (what === 'defrost-ask') return openDefrostAskFromCook();
@@ -5730,7 +5836,15 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
     });
-    if (!res.ok) throw new Error('request failed');
+    if (!res.ok) {
+      // Some of these routes answer a refusal with the sentence to show
+      // (see /api/cooker/cook-ahead) rather than with a failure to
+      // explain — carry it on the error so the caller can say it out loud.
+      var err = new Error('request failed');
+      var payload = await res.json().catch(function () { return {}; });
+      if (typeof (payload || {}).detail === 'string') err.detail = payload.detail;
+      throw err;
+    }
     return res.json().catch(function () { return {}; });
   }
 
@@ -5775,6 +5889,31 @@
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
+    }
+  }
+
+  // Confirming the picker: one write, then the whole screen re-renders
+  // from the view it hands back — the covered days become "made ahead"
+  // cards and this one starts cooking for all of them.
+  async function cookSetCookAhead(el) {
+    var sourceId = parseInt(el.getAttribute('data-source-id'), 10);
+    var picks = cookState.cookAheadPicks[sourceId] || {};
+    var covered = Object.keys(picks)
+      .filter(function (k) { return picks[k]; })
+      .map(function (k) { return parseInt(k, 10); });
+    el.disabled = true;
+    try {
+      var view = await cookPost('/api/cooker/cook-ahead', {
+        source_entry_id: sourceId,
+        covered_entry_ids: covered
+      });
+      renderCookFrom(view);
+      // Consolidating cooks changes what Today's dinner hero and the
+      // week's prep rail read, exactly as checking a meal off does.
+      refreshPlanSurfacesAfterCook();
+    } catch (err) {
+      el.disabled = false;
+      showToast(err && err.detail ? err.detail : 'That didn’t save — try again.');
     }
   }
 
