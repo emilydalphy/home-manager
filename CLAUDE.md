@@ -1422,9 +1422,17 @@ Findings 1/2/3/5/6/7/12/13/17 are fixed and now live on `main`.
   `inventory.html` rather than rebuild them this pass. **#16 (two navigation
   systems) largely goes with it** — the shell no longer navigates the
   browser out of itself anywhere.
-- **#10** — no shared `api.js`; ~26 hand-written `fetch('/api/...')` call
-  sites, and pages carry 30–60 KB of inline CSS/JS each that can't be
-  cached separately from the page.
+- **#10** — no shared `api.js`; **130** hand-written `fetch('/api/...')`
+  call sites, and pages carry 30–60 KB of inline CSS/JS each that can't be
+  cached separately from the page. **The count said "~26" until 2026-09-08;
+  it is 130** — counted twice, two ways, over `static/*.html` and
+  `static/*.js`, and every root-relative `fetch(` in the frontend is an
+  `/api` call. Worst: `shell.js` 45, `memory.html` 19, `cooker.html` 14,
+  `inventory.html` 13. The five-fold undercount matters because it is the
+  number this finding is sized by, and because every one of those sites is
+  origin-bound — so it is also the real cost of the Capacitor/App Store
+  ticket, which cannot work until they stop assuming the app is served by
+  its own backend.
 - ~~**#11** — three overlapping color vocabularies in `theme.css`.~~
   **Done 2026-09-02** — closed by the Pomona rebrand pass (see Decision
   log): `theme.css` now has one canonical set named after the brand guide,
