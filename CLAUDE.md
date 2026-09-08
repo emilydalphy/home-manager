@@ -90,6 +90,13 @@ against `/api/chores/today`, `app/main.py:1238`) and drawn by
 `renderChores` (`static/shell.js:1042`). So a beta household does see
 chores, on Today.
 
+**Cook-mode hands-free voice is hidden — Emily, 2026-09-08.** "Let's just
+drop the cook mode voice for now. Just hide it, and we can rebuild it
+later." `COOK_VOICE_ENABLED` in `static/shell.js` (beside `TABS`) gates it:
+false means the mic button, spoken steps, and voice commands on the Cook
+screen render nothing and create no `SpeechRecognition`/`speechSynthesis`
+session. Code is intact, not deleted, for a later rebuild.
+
 **And the chores questions are not in onboarding at all any more** — Emily's
 2026-09-05 decision (20a) took them out so first-run ends at the reveal.
 They moved as-is to `static/chores-setup.html`, served at `GET /chores-setup`
