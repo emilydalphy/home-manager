@@ -4223,6 +4223,12 @@
           '<button type="button" class="week-redo-btn" id="week-try-again">Try again</button>' +
           '<button type="button" class="week-redo-btn" id="week-change-answers">Change my answers</button>' +
         '</div>' +
+        // Empty and hidden until "Try again" is tapped — the rebuild is a
+        // ~30-second call that until now showed nothing but a disabled
+        // button, so this is where the rotating waiting line goes
+        // (static/waiting-lines.js, the same component the first-week
+        // reveal and /plan-week's drafting step use).
+        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
       '</div>';
     band.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
     band.querySelector('#week-tweak-btn').addEventListener('click', function () {
@@ -4260,6 +4266,19 @@
     // "Change my answers", goes back to Q1 with everything prefilled.
     var btn = panel.querySelector('#week-try-again');
     if (btn) { btn.disabled = true; btn.textContent = 'Rebuilding…'; }
+    // This one posts to the plain /generate, which streams nothing back —
+    // there are no real stages to key to, so it gets the generic lines
+    // rather than a stage it can't honestly claim to be in.
+    var waitEl = panel.querySelector('#week-redo-waiting');
+    var waiter = null;
+    if (waitEl && window.PomonaWaiting) {
+      waitEl.hidden = false;
+      waiter = window.PomonaWaiting.startWaitingLines(waitEl, { stage: 'generic' });
+    }
+    function stopWaiting() {
+      if (waiter) { waiter.stop(); waiter = null; }
+      if (waitEl) { waitEl.hidden = true; waitEl.textContent = ''; }
+    }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/generate', {
         method: 'POST',
@@ -4276,10 +4295,14 @@
       });
       if (!res.ok) throw new Error('regenerate failed');
       await res.json();
+      // Before loadWeekMenu, which rebuilds this band from scratch and
+      // would otherwise leave the interval ticking against a detached node.
+      stopWaiting();
       showToast('Same answers, a different week.');
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Regenerating the week failed:', err);
+      stopWaiting();
       if (btn) { btn.disabled = false; btn.textContent = 'Try again'; }
       alert('Could not rebuild the week right now — try again in a moment.');
     }
