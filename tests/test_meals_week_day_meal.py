@@ -284,15 +284,35 @@ def test_the_custom_days_picker_moved_rather_than_being_rebuilt():
     _assert_in("PERIOD_PICKER_COPY.open", SHELL_JS, "the picker's own copy", "shell.js")
 
 
-def test_the_draft_review_band_still_renders_above_the_card():
-    """Approving is untouched by this slice: the band is still the first
-    child of the plan view and still hidden on the deeper steps."""
-    _assert_in("function renderWeekReviewBand(", SHELL_JS, "the review band", "shell.js")
-    _assert_in("'<div id=\"week-review-band\"></div>' +", SHELL_JS,
-               "the review band's place above the week card", "shell.js")
-    _assert_in("if (band) band.hidden = !onRoot;", SHELL_JS,
-               "the band belonging to the root only", "shell.js")
-    _assert_in("Approve the week", SHELL_JS, "the Approve button", "shell.js")
+def test_the_draft_review_band_is_gone_and_the_decision_moved_under_the_card():
+    """
+    UPDATED 2026-09-08 (flows-3-review-and-receipt), deliberately, per the
+    honesty rule this file's sibling states at the top of
+    tests/test_frontend_restored_2026_09_08.py.
+
+    This test used to assert that `renderWeekReviewBand` still rendered
+    `#week-review-band` above the week card, and that its button still read
+    "Approve the week" — true for flows 2, which said in its own decision-log
+    entry that "flows 3 replaces the band". Flows 3 did: review IS the week
+    card, so the band, its DRAFT · YOUR TURN eyebrow, its status line and its
+    grocery promise are gone, and the decision is one apricot plus one quiet
+    link directly under the card (weekDecideHtml). The assertion is inverted
+    rather than deleted — the band must not come back — and the two things
+    that mattered about it (a draft has an Approve button, and it belongs to
+    the ROOT only) are asserted in their new place. Approval itself is
+    untouched: see tests/test_flows_3_review_and_receipt.py.
+    """
+    assert "function renderWeekReviewBand(" not in SHELL_JS, (
+        "renderWeekReviewBand is back. Emily's approved 2026-09-08 design "
+        "removed the review band: review is the week card itself."
+    )
+    assert '<div id="week-review-band">' not in SHELL_JS, (
+        "#week-review-band is back above the week card."
+    )
+    _assert_in("function weekDecideHtml(", SHELL_JS, "the draft's decision row", "shell.js")
+    _assert_in("Approve this week", SHELL_JS, "the Approve button", "shell.js")
+    _assert_in("if (approve) approve.hidden = !onRoot;", SHELL_JS,
+               "the band above the card belonging to the root only", "shell.js")
 
 
 def test_the_day_step_is_three_equal_cards():
