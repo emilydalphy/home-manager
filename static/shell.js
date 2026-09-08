@@ -94,6 +94,23 @@
   var REHEAT_ACTION_LABEL = 'Mark eaten';
   var REHEAT_UNDO_LABEL = 'Mark not eaten';
 
+  // The beta is meals-only (Emily, 2026-09-08, option 1b on the Chores
+  // ticket) — Chores hasn't been validated yet, so Today's "Your chores"
+  // card is hidden rather than shown to every beta household. This is the
+  // one flag that decides it: false means buildTodayPanel never renders
+  // the chores card markup and never calls loadChores (so no
+  // /api/chores/today request either). The chores backend, the
+  // /chores-setup page, and loadChores/renderChores themselves are all
+  // untouched — flipping this back to true is the whole reversal.
+  var SHOW_CHORES_ON_TODAY = false;
+
+  // Cook-mode hands-free voice, hidden not deleted (Emily, 2026-09-08):
+  // "Let's just drop the cook mode voice for now. Just hide it, and we can
+  // rebuild it later." While false: no mic button renders in Cook, no
+  // SpeechRecognition/speechSynthesis session is ever created, and no mic
+  // permission prompt fires. Flip to true to bring it back.
+  var COOK_VOICE_ENABLED = false;
+
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
     { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
@@ -372,12 +389,18 @@
             '</button>' +
           '</div>' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
-          '<div class="today-area-chores">' +
-            '<div class="shell-card chores-card">' +
-              '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
-              '<div id="chores-list"></div>' +
-            '</div>' +
-          '</div>' +
+          // SHOW_CHORES_ON_TODAY (2026-09-08): the beta is meals-only, so
+          // this card is left out of the markup entirely while the flag
+          // is false — not just hidden, so there's nothing for a stray
+          // selector to find.
+          (SHOW_CHORES_ON_TODAY ?
+            '<div class="today-area-chores">' +
+              '<div class="shell-card chores-card">' +
+                '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
+                '<div id="chores-list"></div>' +
+              '</div>' +
+            '</div>'
+          : '') +
           '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
             '<div class="ask-messages" id="today-ask-messages"></div>' +
             '<div class="ask-chips" id="today-ask-chips"></div>' +
@@ -404,7 +427,10 @@
       loadNeedsYou(panel),
       loadTonightsDinner(panel),
       loadDefrostToday(panel),
-      loadChores(panel),
+      // SHOW_CHORES_ON_TODAY (2026-09-08): skip the call, not just the
+      // render — no chores card means no reason to hit
+      // /api/chores/today.
+      (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve()),
       loadGrocerySummary(panel)
     ]);
   }
@@ -5185,7 +5211,7 @@
       // questions on the way in.
       view.innerHTML =
         cookTitleRowHtml(data) +
-        '<div class="cook-voice" id="cook-voice" hidden></div>' +
+        (COOK_VOICE_ENABLED ? '<div class="cook-voice" id="cook-voice" hidden></div>' : '') +
         cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
         cookAttentionHtml() +
         cookDefrostLinkHtml() +
@@ -5435,9 +5461,11 @@
         '<span class="cook-eyebrow cook-eyebrow-warm">Prep schedule</span>' +
         '<span class="cook-rule"></span>' +
         '<span class="cook-sectionnote">' + done + ' of ' + total + ' done</span>' +
-        '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
-          'aria-label="Hands-free: check off prep steps by voice" ' +
-          'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>' +
+        (COOK_VOICE_ENABLED
+          ? '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
+              'aria-label="Hands-free: check off prep steps by voice" ' +
+              'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>'
+          : '') +
       '</div>' +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
@@ -5533,9 +5561,11 @@
               '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="1" aria-label="More servings">+</button>' +
             '</div>'
           : '') +
-        '<button type="button" class="cook-mic" data-cook="voice" data-ctx="meal" data-idx="' + idx + '" ' +
-          'aria-label="Hands-free for this recipe" ' +
-          'title="Hands-free: read steps, ask amounts, log a substitution">' + COOK_ICONS.mic + '</button>' +
+        (COOK_VOICE_ENABLED
+          ? '<button type="button" class="cook-mic" data-cook="voice" data-ctx="meal" data-idx="' + idx + '" ' +
+              'aria-label="Hands-free for this recipe" ' +
+              'title="Hands-free: read steps, ask amounts, log a substitution">' + COOK_ICONS.mic + '</button>'
+          : '') +
       '</div>' +
       (m.advance_prep_notes
         ? '<h4 class="cook-detail-head">Advance prep</h4><p class="cook-detail-p">' + escapeHtml(m.advance_prep_notes) + '</p>'
@@ -6170,6 +6200,11 @@
   }
 
   function cookToggleVoice(el) {
+    // Belt-and-suspenders: the mic buttons that dispatch here don't render
+    // while COOK_VOICE_ENABLED is false, but this guard means no
+    // SpeechRecognition/speechSynthesis session (and no permission prompt)
+    // can be created even if something still reaches this function.
+    if (!COOK_VOICE_ENABLED) return;
     var ctxType = el.getAttribute('data-ctx');
     var btnIdx = el.getAttribute('data-idx');
     var isThisActive = cookState.voiceSession && cookState.voiceSession.isActive() && cookState.voiceContext &&
