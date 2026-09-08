@@ -77,8 +77,16 @@ Approve button, plus a revisitable setup screen at `/meal-setup`. Read
 or the assistant's voice.
 
 The four native tabs are **Today / Meals / Grocery / Kitchen** (`TABS` in
-`static/shell.js`). Cooking is a *state* of the Meals tab, not its own tab.
-Chores still have no tab of their own. **Updated 2026-09-08 (Emily, option
+`static/shell.js`). **Cooking lives on KITCHEN as of 2026-09-08** — it used
+to be a *state* of the Meals tab (a `Plan | Cook` segmented control at
+`/week`) and this file said so for two days after it stopped being true.
+Kitchen is the cook's tab now: its root is today's cooks, the prep sessions
+that feed them and the rest of the week, and cook mode (the focused
+single-meal screen) is a *step* of it. Meals is Plan only; the segmented
+control is gone. Everything Kitchen used to say about the household — "What
+we know" and "Something not working?" — is in a **Preferences** sheet behind
+a gear in the header of every root screen. See the 2026-09-08 decision-log
+entry for the whole shape. Chores still have no tab of their own. **Updated 2026-09-08 (Emily, option
 1b on the Chores ticket):** the beta is meals-only, so Today's "Your
 chores" card is hidden behind one front-end constant,
 `SHOW_CHORES_ON_TODAY` in `static/shell.js` (next to `REHEAT_ACTION_LABEL`),
@@ -306,6 +314,119 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — Kitchen is the cook's tab, and everything the app knows
+  about the household is a sheet. Branch
+  `flows-4-kitchen-and-preferences`.** Emily's approved design. KITCHEN
+  answers "what's cooking, and what's in the house?": title, a subtitle
+  saying the day and the count ("Monday · 1 cook tonight" — "tonight" only
+  while every cook left today is a dinner), then **Cooking today** (one
+  line per cook or reheat, "start by 5:35 · 55 min" read off
+  `/api/today/moves` so Today and Kitchen cannot disagree about when to
+  start, a Cook / cooked / Reheat / eaten badge, a tick, and the dish name
+  opening cook mode), **Prep sessions** (`cookPrepSessionsHtml`, moved
+  unchanged), **The rest of the week** (one line per remaining cook day,
+  collapsed after three behind "+ N more cooks"), and two quiet tiles,
+  Inventory and Recipes. **Cook mode is a STEP of this tab**, not a state
+  of Meals: `cookPanel()` returns the Kitchen panel, the focused screen
+  renders into `#kit-cook-view`, and the back link is "‹ Kitchen" (up a
+  level by name, never `history.back()` — the same rule Meals' steps
+  follow). Every entry point now passes `activateTab('kitchen', true,
+  {cookFocus})` — Today's moves (`runTodayMoveAction`, and `moves.py`'s own
+  action target, which used to name `{tab: "week", mealsView: "cook"}`),
+  Meals' Day/Meal "Cook this", and Grocery's shop-done handoff — resolved
+  by the unchanged `cookResolveFocusIndex` (id → date+slot → title → the
+  root, never a wrong meal). `setMealsView`, `loadCook` and
+  `refreshCookView` are gone: `kitchenEnterCook`, `loadKitchen` and
+  `refreshKitchenPanel` do those jobs, and `loadKitchen` is one
+  `Promise.all` over cooker-view + attention + today's moves — **no new
+  route**, because the moves payload already carries the start-by
+  arithmetic. **The rule that changed:** DESIGN_SYSTEM §6/Rule 5 said
+  Kitchen has no primary action at all. It still has none on its ROOT; cook
+  mode's "Mark it cooked" is the tab's apricot, one step deeper.
+  **PREFERENCES** is a bottom sheet behind `prefsGearHtml()`, rendered in
+  the header of all four roots and hidden on every deeper step (Meals' Day
+  and Meal, Grocery's shopping mode, and Kitchen's cook mode, which
+  replaces the root outright). Five rows read the household back plainly
+  from ONE cached `/api/memory` per open (Who's here · Your rhythm · Prep
+  days · How you eat · Stores), each opening the What we know tab that owns
+  that answer through the existing Kitchen entry sheet; then "Something not
+  working?" (`snwTile()`, the same component, moved off Kitchen) and "Sign
+  out" (a one-line `confirm`, then `GET /logout`). The chat refresher's
+  href branch feeds `prefsInvalidate()` now instead of the Kitchen hub.
+  **Removed, and where each piece went:** the "what we know" hero and its
+  four count chips (Preferences), the "Worth doing sometime" card (nothing
+  behind it was ever built), the Cook overview's spruce "Tonight" hero
+  (`cookHeroHtml` — today's cooks are lines, and the "for 6" batch chip and
+  covers-note live on the focused screen, which is where the ingredients
+  are actually read off), its "This week / N of M cooked" title row, and
+  its "Prep schedule" two-up rail (`cookPrepHtml` — its rows are Today's
+  fridge/prep moves, its prep-cut exclusion moved into
+  `cookFocusPrepTasks`, and its done-count note and hands-free mic moved
+  into `cookFocusPrepHtml`, so the voice feature keeps both entry points).
+  Four source-marker tests were updated honestly rather than deleted, each
+  with a note saying what moved: `test_prep_days` (two), `test_leftovers_batch`
+  (its node-run hero tests now render the Kitchen line;
+  the "for 6" chip is the one thing they no longer cover — `cookFocusHtml`
+  is not a pure function), `test_feedback_reports` (the tile renders in
+  Preferences; `kit-hero-error` went with the hero) and
+  `test_meals_week_day_meal` (`cookFocus` for `mealsFocus`).
+  `tests/test_kitchen_and_preferences.py` is the new guard, 31 tests.
+  **Left out honestly:** there is no Recipes page in this repo, so the
+  Recipes tile opens the ask bar on "What recipes do we have saved?", which
+  the assistant answers off `list_recipes` — it does not pretend to be a
+  browser. "The rest of the week" shows the days AHEAD only; a cook that
+  was missed on a past day is no longer tickable from Kitchen. And the
+  browser check was run in **jsdom** driving the real `shell.js` against a
+  real uvicorn on a seeded throwaway DB (every flow above verified, console
+  clean) — not in a real browser: the Chrome extension was not connected
+  and no Playwright browsers are installed in this environment, so the
+  390px and desktop LAYOUTS are unverified.
+- **2026-09-08 — Five things the Kitchen/Preferences slice got wrong, on
+  the same branch (`flows-4-kitchen-and-preferences`).** Found on review of
+  the entry above, fixed in one pass. (1) **Preferences invented a fact.**
+  `meal_preferences.snacks_per_week` is `NOT NULL DEFAULT 3`, so nothing in
+  the row could tell "they said three" from "we assumed three" — "How you
+  eat" duly told a brand-new household it eats *3 snacks a week*. New
+  column `snacks_per_week_set` (schema.sql + db.py `_MIGRATIONS`), written
+  only when an EXPLICIT `snacks_per_week` reaches
+  `preferences.set_household_meal_preferences`, cleared by
+  `delete_preference`, surfaced as `snacks_per_week_set` on
+  `get_household_memory`, read by `prefsEatingLine`. Existing households
+  are backfilled from `preference_events`
+  (`snacks_per_week` / `onboarding_meals_per_week`), never from the number
+  itself — `db._backfill_snacks_per_week_set`. The other four rows were
+  audited and were already honest: members, `usual_stores` and the rhythm
+  facts are empty/NULL until answered. Their five empty-state lines now all
+  read **"Not set yet"** (the people row used to say "Nobody on record
+  yet"). (2) **`cookFocusPrepTasks` orphaned general prep.** A `prep_tasks`
+  row with no `meal_plan_entry_id`, no name-matching `related_meal` and a
+  date that is not a prep day ("Soak the beans", +2d) rendered NOWHERE —
+  not in a session, not on a cook screen, and Today only shows today. The
+  Kitchen root now carries **"Prep to do"** directly under Prep sessions
+  (`kitchenLoosePrepTasks` / `kitchenPrepTodoHtml`): every *pending* task no
+  session and no cook screen already shows, dated, with a tick. It is a
+  net, not a third list — nothing appears in two places. (3) **"Show me
+  tomorrow" didn't show tomorrow.** The rating toast's action went to the
+  Kitchen root with no focus, which shows tomorrow only when tomorrow
+  happens to be a prep-session day. `cookShowTomorrow` opens tomorrow's
+  first cook in slot order (`cookTomorrowFocusTarget`, reheats skipped —
+  they have no cook screen) and otherwise lands on the root scrolled onto
+  the prep; the action is offered when tomorrow has a cook OR prep
+  (`cookTomorrowHasSomethingToShow`). (4) Four nits: a check-off now
+  re-reads `/api/today/moves` into `kitchenState.moves`
+  (`refreshKitchenMoves`, off `refreshPlanSurfacesAfterCook`) and a cooked
+  row drops its start-by chip; the subtitle says "1 cook **left** tonight"
+  / "nothing left to cook today" once anything today is ticked, with done
+  read from the plan row and the move together; cook mode's apricot says
+  **"Mark it cooked"**, the same words as the end-of-recipe button (the
+  root's checkbox `aria-label` stays "Mark cooked" — `cookCheckMeal` reads
+  that exact string); and `runTodayMoveAction` translates a stale cached
+  `{tab:'week', mealsView:'cook', mealsFocus}` target into a `cookFocus`
+  instead of dropping the tap on the plan. `tests/test_kitchen_and_
+  preferences.py` grew 21 tests (31 -> 52), most of them running the
+  screen's own functions under node rather than reading the source for a
+  marker; `test_prep_days`'s section-order marker was updated honestly for
+  the new "Prep to do" line. Suite 1474 -> 1495.
 - **2026-09-08 — "The ask bar can do it" is not the same as "a person should
   spend a model turn on it" — three Grocery row actions came back. Same
   branch `flows-5-grocery-sort-step`, verifier pass.** The entry below says

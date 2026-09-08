@@ -510,11 +510,29 @@ SHELL_JS = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.j
 
 
 def test_the_cook_view_renders_the_sessions_card_from_the_payload():
+    """
+    UPDATED 2026-09-08 (flows-4-kitchen-and-preferences), deliberately: the
+    Cook OVERVIEW this used to describe is the Kitchen root now, and the
+    "Prep schedule" rail the sessions card used to sit above (cookPrepHtml)
+    came out with it — a fridge move or a prep task due today is a line on
+    Today's timeline, and the rows that belong to the meal being cooked are
+    on the focused screen. The sessions card itself moved unchanged, and it
+    still sits between what is cooking today and the rest of the week,
+    which is what this assertion was really pinning.
+
+    UPDATED AGAIN 2026-09-08, same branch: one line now sits between the
+    sessions card and the rest of the week — kitchenPrepTodoHtml, the
+    "Prep to do" net for a pending prep task that no session and no cook
+    screen shows (see tests/test_kitchen_and_preferences.py). The ordering
+    this pins is unchanged; the new section is inside it.
+    """
     assert "function cookPrepSessionsHtml(data)" in SHELL_JS
     assert "data.prep_sessions || []" in SHELL_JS
-    # ...and it sits inside the Cook view's own body, between the hero and
-    # the rest-of-the-week list.
-    assert "cookPrepSessionsHtml(data) +\n          cookPrepHtml(" in SHELL_JS
+    assert (
+        "kitchenCookingTodayHtml(rows) +\n      cookPrepSessionsHtml(data) +\n"
+        "      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +\n"
+        "      cookRestOfWeekHtml(" in SHELL_JS
+    )
 
 
 def test_the_quiet_offer_when_no_prep_days_are_set():
@@ -532,9 +550,16 @@ def test_the_session_focus_screen_exists_and_can_be_left():
 
 
 def test_prep_cuts_are_not_shown_twice_on_the_cook_screen():
-    """They belong to their session; the week's prep rail leaves them out
-    and recounts from what it actually shows."""
+    """They belong to their session; every other prep list leaves them out.
+
+    UPDATED 2026-09-08 (flows-4-kitchen-and-preferences): the exclusion used
+    to live in the Cook overview's prep rail. That rail is gone, so the same
+    line now lives in cookFocusPrepTasks — the focused screen's own list,
+    which is the one that could otherwise repeat a prep-cut the session
+    already holds (a prep_cut row carries the entry it feeds).
+    """
     assert "return t.task_type !== 'prep_cut';" in SHELL_JS
+    assert "function cookFocusPrepTasks(" in SHELL_JS
 
 
 def test_the_cook_view_never_touches_todays_panel():

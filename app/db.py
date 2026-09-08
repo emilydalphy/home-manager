@@ -298,6 +298,13 @@ _MIGRATIONS = [
     # (Emily, 2026-09-05). Existing households get 3, not 7 — see
     # schema.sql's comment on meal_preferences.snacks_per_week for why.
     ("meal_preferences", "snacks_per_week", "INTEGER NOT NULL DEFAULT 3"),
+    # ...and whether that number is an answer or the default. The column
+    # above is NOT NULL DEFAULT 3, so nothing in the row could tell the two
+    # apart, and the Preferences sheet's "How you eat" line duly told a
+    # brand-new household it eats "3 snacks a week" (2026-09-08). 0 means
+    # "never answered"; see schema.sql's comment and
+    # preferences.set_household_meal_preferences, the only writer.
+    ("meal_preferences", "snacks_per_week_set", "INTEGER NOT NULL DEFAULT 0"),
     # Loop Board 19a (Emily, 2026-09-05): stores are asked just-in-time on
     # the Grocery tab's first real trip, not during onboarding — see the
     # Plan stops "Where do you usually shop?" card in shell.js. Empty means
@@ -600,6 +607,35 @@ def _backfill_allergy_notes_from_facts(conn):
             )
 
 
+def _backfill_snacks_per_week_set(conn):
+    """
+    Households that answered the snacks question BEFORE snacks_per_week_set
+    existed would otherwise be told the app has never been told — the same
+    lie as the one this column fixes, pointing the other way.
+
+    The signal is preference_events, not the number itself: every write path
+    that carries a real snacks answer logs one ('snacks_per_week' from
+    edit_preference, which the meal-setup screen and chat both route
+    through, and 'onboarding_meals_per_week' from save_onboarding_answers,
+    whose caller always sends snacks_per_week). A household with neither
+    event has never been asked, whatever their stored number says.
+
+    Idempotent and safe to run every startup: only ever flips 0 -> 1, and
+    only for a household with such an event on record.
+    """
+    conn.execute(
+        """
+        UPDATE meal_preferences SET snacks_per_week_set = 1
+        WHERE snacks_per_week_set = 0
+          AND household_id IN (
+            SELECT household_id FROM preference_events
+            WHERE action = 'write'
+              AND field IN ('snacks_per_week', 'onboarding_meals_per_week')
+          )
+        """
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -614,6 +650,7 @@ def _run_migrations(conn):
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)
+    _backfill_snacks_per_week_set(conn)
 
 
 def init_db():

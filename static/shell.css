@@ -3935,111 +3935,23 @@ html, body {
   padding: 0 20px;
 }
 
-/* ---------- The hero: the household itself ---------- */
-.kit-hero {
-  background: var(--spruce);
-  border-radius: 0 0 var(--radius-hero) var(--radius-hero);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-  box-shadow: var(--shadow-hero);
-}
-.kit-hero-top { display: flex; align-items: center; gap: 10px; }
-.kit-hero-chip {
-  height: 26px;
-  padding: 0 11px;
-  border-radius: var(--radius-badge-sm);
-  background: var(--celadon);
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--on-accent-ink);
-  white-space: nowrap;
-}
-.kit-hero-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--apricot-rule); }
-.kit-hero-icon {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-badge);
-  background: var(--spruce-raised);
-  color: var(--apricot-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.kit-hero-icon svg { width: 17px; height: 17px; }
-.kit-hero-line { display: flex; flex-direction: column; gap: 6px; }
-.kit-hero-headline {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 31px;
-  letter-spacing: -0.038em;
-  line-height: 1.05;
-  color: var(--ivory-ink);
-  margin: 0;
-}
-/* The one Newsreader italic on this screen. Two and it becomes a serif brand. */
-.kit-hero-note {
-  font-family: var(--font-accent);
-  font-style: italic;
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1.3;
-  color: var(--apricot-light);
-  margin: 0;
-}
-.kit-hero-error {
-  font-family: var(--font-body);
-  font-size: 15px;
-  color: var(--ivory-ink-muted);
-  margin: 0;
-}
-.kit-chips { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.kit-chip {
-  height: 32px;
-  padding: 0 12px;
-  border: none;
-  border-radius: var(--radius-chip);
-  background: var(--spruce-raised);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ivory-ink-muted);
-  cursor: pointer;
-}
-.kit-chip:hover { background: var(--spruce-hover); }
-.kit-chip-num { font-weight: 800; color: var(--apricot-light); }
-/* Spruce-raised, NOT apricot — see the block comment above. */
-.kit-hero-action {
-  min-height: 52px;
-  border: none;
-  border-radius: var(--radius-action);
-  background: var(--spruce-raised);
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 0 16px;
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ivory-ink);
-}
-.kit-hero-action span { flex: 1 1 auto; text-align: left; }
-.kit-hero-action svg { width: 18px; height: 18px; color: var(--apricot-light); }
-.kit-hero-action:hover { background: var(--spruce-hover); }
+/* The "what we know" hero and its four count chips (.kit-hero*, .kit-chip*)
+   left this screen on 2026-09-08: everything the app knows about the
+   household is in the Preferences sheet now, and Kitchen is the cook's
+   tab. The Kitchen root has no hero at all — three sections of lines and
+   two quiet tiles, and nothing on it is urgent. */
 
-/* ---------- Entry tiles ---------- */
+/* The day, under the title: "Monday · 1 cook tonight". */
+.kit-sub {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  margin: -8px 0 0;
+  padding: 0 20px;
+}
+#kit-root-view[hidden], #kit-cook-view[hidden] { display: none; }
+
 .kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
 .kit-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .kit-tile {
@@ -4079,35 +3991,9 @@ html, body {
    work waiting for the household. */
 .kit-tile-quiet .kit-tile-icon { color: var(--ink-placeholder); }
 
-.kit-worth {
-  border-radius: var(--radius-card);
-  background: var(--sand);
-  border: 1.5px solid var(--sand-deep);
-  padding: 15px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  cursor: pointer;
-}
-.kit-worth-top { display: flex; align-items: center; gap: 9px; }
-.kit-worth-icon { display: block; width: 19px; height: 19px; color: var(--apricot-label); }
-.kit-worth-icon svg { display: block; width: 19px; height: 19px; }
-.kit-worth-eyebrow {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--apricot-label);
-}
-.kit-worth-text {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
-  margin: 0;
-}
+/* The "Worth doing sometime" card (.kit-worth*) went with the old hub on
+   2026-09-08 — it was an entry point to something that was never built,
+   and the cook's tab is not where a wishlist belongs. */
 
 /* ---------- The Kitchen entry sheet ---------- */
 /* Same scrim/sheet language as the ask and week sheets. Taller than those
@@ -4175,17 +4061,11 @@ html, body {
 /* =====================================================================
    COOK — the Meals tab's second state (Stage 2 slice 3, InnCooker)
    ===================================================================== */
-.meals-seg {
-  padding: 10px 20px 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-/* A class rule that sets `display` outranks the UA's [hidden] rule — the
-   same guard .dinner-hero[hidden] already carries, for
-   the same reason. */
-.meals-seg[hidden] { display: none; }
-#week-cook-view[hidden], #week-plan-view[hidden] { display: none; }
+/* The Plan | Cook segmented control (.meals-seg) went with the Cook state
+   on 2026-09-08 — cooking is a step of the Kitchen tab now, so Meals has
+   one job and no control saying otherwise. The Preferences gear row sits
+   where it used to. */
+#week-plan-view[hidden] { display: none; }
 /* The plan's rows used to be direct children of .week-content, which is a
    flex column with `gap: 12px` — so wrapping them in #week-plan-view to
    give Cook something to swap with collapsed them into ONE flex item and
@@ -4194,63 +4074,10 @@ html, body {
    carries the same layout the rows lost. Cook is a plain block instead:
    its sections carry their own spacing. */
 #week-plan-view { display: flex; flex-direction: column; gap: 12px; }
-.meals-seg-btn {
-  min-height: 44px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.meals-seg-btn svg { width: 16px; height: 16px; }
-.meals-seg-btn:hover { background: var(--surface); }
-.meals-seg-btn.active {
-  background: var(--spruce);
-  border-color: var(--spruce);
-  color: var(--ivory-ink);
-  font-weight: 800;
-}
-.meals-seg-btn.active svg { color: var(--apricot-light); }
-
-.cook-titlerow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 20px 8px;
-}
-.cook-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 30px;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-  color: var(--ink);
-  margin: 0;
-}
-.cook-count {
-  height: 30px;
-  padding: 0 12px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-badge);
-  background: var(--celadon-tint);
-  border: 1.5px solid var(--celadon-edge);
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--celadon-label);
-  white-space: nowrap;
-}
+/* The Cook overview's title row (.cook-titlerow / .cook-title /
+   .cook-count) went with the overview on 2026-09-08: the Kitchen root has
+   its own title and subtitle (.kit-title / .kit-sub), and "N of M cooked"
+   is not what a cook opens the tab to find out. */
 .cook-empty, .cook-error {
   font-family: var(--font-body);
   font-size: 15px;
@@ -4516,7 +4343,6 @@ html, body {
 /* Only ever rendered when tonight has no meal of its own to offer a
    "Start cooking" primary already (see cookPrepHtml) — a fallback way in,
    never a second apricot alongside the hero's own. */
-.cook-prep-startcooking { margin-bottom: 12px; }
 .cook-prep-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .cook-prep-card {
   min-height: 100px;
@@ -4542,7 +4368,6 @@ html, body {
 .cook-prep-card.is-done .cook-prep-date { color: var(--ink-muted); }
 .cook-prep-text { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; line-height: 1.35; }
 .cook-prep-card.is-done .cook-prep-text { color: var(--ink-inactive); text-decoration: line-through; }
-.cook-prep-meal { color: var(--ink-secondary); font-weight: 500; }
 
 /* The check control, everywhere it appears. 26px of visible box, 44px of
    tap target via the ::after inset — this screen is read at arm's length
@@ -4568,6 +4393,21 @@ html, body {
 .cook-box:disabled { opacity: .55; cursor: default; }
 .cook-week-row .cook-box { border-color: var(--sand-deep); background: var(--ground); }
 .cook-week-row .cook-box.checked { background: var(--celadon); border-color: var(--celadon); }
+
+/* The second line of a "Cooking today" row: "start by 5:35 · 55 min",
+   read off the same moves payload Today's timeline uses. Indented past the
+   tick so it lines up under the dish rather than under the box. */
+.cook-week-sub {
+  margin: -4px 0 8px;
+  padding-left: 34px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-inactive);
+}
+.cook-week-item.is-done .cook-week-sub { color: var(--ink-done-soft); }
+/* "+ 3 more cooks" — the rest of the week is three lines until asked. */
+.cook-more-link { padding-left: 2px; }
 
 /* ---------- The rest of the week: subordinate, dense on purpose ---------- */
 .cook-week {
@@ -4828,6 +4668,11 @@ span.cook-week-name { cursor: default; }
 .cook-voice-note { display: block; margin-top: 6px; color: var(--celadon-label); font-size: 12px; }
 
 /* ---------- Needs your attention ---------- */
+/* The Kitchen root renders this inside .kit-body, which already carries
+   the 20px gutter — so the band's own horizontal margin is zeroed there
+   rather than doubling it. */
+.kit-body > .cook-attention { margin-left: 0; margin-right: 0; }
+.kit-body > .cook-voice { margin-left: 0; margin-right: 0; }
 .cook-attention {
   margin: 14px 20px 0;
   border-radius: var(--radius-card);
@@ -4948,19 +4793,14 @@ span.cook-week-name { cursor: default; }
   .kitchen-content { max-width: 720px; }
   .kit-titlerow { padding: 22px 28px 0; }
   .kit-title { padding: 0 28px; font-size: 36px; }
-  .kit-hero { padding: 24px 28px; }
-  .kit-hero-headline { font-size: 38px; }
+  .kit-sub { padding: 0 28px; }
   .kit-body { padding: 18px 28px 0; }
 
-  /* Cooking is one column given room to breathe, the same 720px the Grocery
-     and Kitchen screens take — not the plan view's width. The plan view is
-     wide on purpose (its 7-column week grid needs it); a recipe read at
-     1040px is a line of ingredients stretched across a monitor. Scoped to
-     the Cook state so switching back to Plan gets the grid's width again. */
-  #panel-week[data-meals-view="cook"] .week-content { max-width: 720px; }
-
-  .meals-seg { padding: 14px 28px 0; }
-  .cook-titlerow { padding: 18px 28px 8px; }
+  /* Cooking is one column given room to breathe: it lives inside
+     .kitchen-content, which is already 720px wide here, so it needs no
+     width rule of its own any more (it used to be scoped to the Meals
+     tab's Cook state, which no longer exists). */
+  .prefs-gear-row { padding: 12px 28px 0; }
   .cook-hero { padding: 18px 28px; }
   .cook-hero-headline { font-size: 38px; }
   .cook-body { padding: 16px 28px 0; }
@@ -4992,7 +4832,7 @@ span.cook-week-name { cursor: default; }
      lifts on a lighter fill (--spruce goes to #22422F) plus a hairline.
      An inset ring rather than a border: it follows the panel's radius and
      costs no layout, and these panels are joined to the top edge. */
-  .dinner-hero, .day-hero, .kit-hero, .cook-hero {
+  .dinner-hero, .day-hero, .cook-hero {
     box-shadow: var(--shadow-hero), inset 0 0 0 1.5px var(--spruce-edge);
   }
 
@@ -5061,7 +4901,122 @@ span.cook-week-name { cursor: default; }
    inventing a second one. Nothing here is apricot-filled: Kitchen has zero
    primary actions by design (Rule 5), and a "tell me what broke" box is
    not the exception that earns the screen's first one. */
-.snw-tile {
+
+/* =====================================================================
+   PREFERENCES — the gear, and the sheet behind it
+   =====================================================================
+   Emily's approved design, 2026-09-08. Everything the app knows about the
+   household moved off the Kitchen tab and behind one gear that every ROOT
+   screen carries in its header. Nothing here is apricot: no line in this
+   sheet is urgent and none of it is a task (Rule 5). */
+.prefs-gear {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-tile);
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+}
+/* Rule 6: the visible control is 34px so it sits inside a title row
+   without shouting, and its tap target is the full 44px. */
+.prefs-gear::after { content: ''; position: absolute; inset: -5px; }
+.prefs-gear:hover { background: var(--sand); }
+.prefs-gear svg { width: 17px; height: 17px; }
+.prefs-gear[hidden] { display: none; }
+/* Meals' root header belongs to the week card, so its gear gets a row of
+   its own — right-aligned, and hidden as a unit on the Day and Meal steps
+   (renderMealsStep), exactly as the Plan | Cook control it replaced was. */
+.prefs-gear-row { display: flex; justify-content: flex-end; padding: 10px 20px 0; }
+.prefs-gear-row[hidden] { display: none; }
+
+#prefs-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#prefs-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 88%;
+  background: var(--ground);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 12px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#prefs-scrim[hidden], #prefs-sheet[hidden] { display: none; }
+.prefs-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  margin: 0;
+  padding: 0 18px;
+  flex: 0 0 auto;
+}
+.prefs-rows {
+  padding: 4px 18px 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+.prefs-row {
+  width: 100%;
+  min-height: 58px; /* Rule 6 */
+  border: none;
+  border-bottom: 1.5px solid var(--hairline);
+  background: none;
+  padding: 11px 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+.prefs-row:last-of-type { border-bottom: none; }
+.prefs-row:hover { background: var(--surface); }
+.prefs-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prefs-row-title {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.prefs-row-sub {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-inactive);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prefs-row svg { width: 17px; height: 17px; flex: 0 0 auto; color: var(--ink-inactive); }
+/* The second group — a way out of a bad moment, and the way out of the
+   app — sits under a rule as its own pair, reusing the quiet tile the
+   Kitchen tab used to carry rather than defining a second one. */
+.prefs-group2 { border-top: 1.5px solid var(--hairline); margin-top: 10px; padding-bottom: 2px; }
+
+.snw-tile, .prefs-tile {
   width: 100%;
   margin-top: 12px;
   border-radius: var(--radius-card);
@@ -5076,7 +5031,7 @@ span.cook-week-name { cursor: default; }
   color: var(--ink);
   min-height: 44px; /* Rule 6 */
 }
-.snw-tile:hover { border-color: var(--hairline-strong); }
+.snw-tile:hover, .prefs-tile:hover { border-color: var(--hairline-strong); }
 /* The quietest stroke on the screen, like .kit-tile-quiet's — this is a
    door, not a task waiting to be done. */
 .snw-tile-icon { display: block; width: 22px; height: 22px; flex: 0 0 auto; color: var(--ink-placeholder); }

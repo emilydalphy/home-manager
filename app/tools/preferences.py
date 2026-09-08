@@ -344,12 +344,19 @@ def set_household_meal_preferences(
     merged_snacks_per_week = snacks_per_week if snacks_per_week is not None else (
         existing["snacks_per_week"] if existing else 3
     )
+    # Only an EXPLICIT snacks_per_week is an answer. The merge above keeps
+    # the stored number (or the default 3) otherwise, and a default nobody
+    # was ever asked for must not read back as a fact — see schema.sql's
+    # comment on snacks_per_week_set and shell.js's prefsEatingLine.
+    merged_snacks_per_week_set = 1 if snacks_per_week is not None else (
+        (1 if existing["snacks_per_week_set"] else 0) if existing else 0
+    )
 
     conn.execute(
         """
         INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, onboarding_complete, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET
             notes = excluded.notes,
             protein_preferences_json = excluded.protein_preferences_json,
@@ -361,6 +368,7 @@ def set_household_meal_preferences(
             breakfasts_per_week = excluded.breakfasts_per_week,
             lunches_per_week = excluded.lunches_per_week,
             snacks_per_week = excluded.snacks_per_week,
+            snacks_per_week_set = excluded.snacks_per_week_set,
             onboarding_complete = excluded.onboarding_complete,
             updated_at = datetime('now')
         """,
@@ -376,6 +384,7 @@ def set_household_meal_preferences(
             merged_breakfasts_per_week,
             merged_lunches_per_week,
             merged_snacks_per_week,
+            merged_snacks_per_week_set,
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
@@ -392,6 +401,7 @@ def set_household_meal_preferences(
         "breakfasts_per_week": merged_breakfasts_per_week,
         "lunches_per_week": merged_lunches_per_week,
         "snacks_per_week": merged_snacks_per_week,
+        "snacks_per_week_set": bool(merged_snacks_per_week_set),
         "onboarding_complete": bool(mark_complete),
     }
 

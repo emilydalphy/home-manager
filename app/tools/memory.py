@@ -214,6 +214,14 @@ def get_household_memory() -> dict:
         "breakfasts_per_week": prefs["breakfasts_per_week"] if prefs else 7,
         "lunches_per_week": prefs["lunches_per_week"] if prefs else 7,
         "snacks_per_week": prefs["snacks_per_week"] if prefs else 3,
+        # Whether that number is the household's own answer or the column's
+        # NOT NULL DEFAULT 3. Nothing else in this payload can tell, and
+        # the Preferences sheet's "How you eat" row printed the default
+        # back as a fact until this existed (2026-09-08) — a brand-new
+        # household was told it eats three snacks a week. Every other row
+        # in that sheet already reads a nullable fact (the rhythm answers,
+        # members, usual_stores), so this is the only one that needed it.
+        "snacks_per_week_set": bool(prefs["snacks_per_week_set"]) if prefs else False,
         # design_handoff_plan_the_week. kitchen_kit is the highest-value
         # constraint the app wasn't collecting — it stops impossible
         # suggestions outright rather than filtering them afterwards. And
@@ -610,8 +618,12 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             (household_id(),),
         )
     elif field == "snacks_per_week":
+        # Back to the default AND back to "never answered" — forgetting the
+        # answer has to forget that there was one, or the sheet keeps
+        # reading 3 back as a fact.
         conn.execute(
-            "UPDATE meal_preferences SET snacks_per_week = 3, updated_at = datetime('now') WHERE household_id = ?",
+            "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_week_set = 0, "
+            "updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )
     else:

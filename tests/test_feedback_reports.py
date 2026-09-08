@@ -348,12 +348,21 @@ def _shell_js():
 
 def test_the_kitchen_tile_exists():
     """
-    Emily's option a: a quiet tile on Kitchen, which by design has no
-    primary action — so this must never become an apricot button.
+    Emily's option a: a quiet tile, never an apricot button.
+
+    UPDATED 2026-09-08 (flows-4-kitchen-and-preferences), deliberately: the
+    tile itself is unchanged and still the only definition of this entry
+    point, but it renders in the Preferences sheet now rather than on the
+    Kitchen tab. Kitchen became the cook's tab in the same change, and
+    "tell Emily what broke" is not something a cook's tab holds — it sits
+    with Sign out, one tap behind the gear that every root screen carries.
     """
     source = _shell_js()
     assert "Something not working?" in source
-    assert "snwTile()" in source, "the Kitchen renderer does not insert the tile"
+    assert "snwTile()" in source, "nothing renders the tile any more"
+    assert "snwTile() +" in source.split("function renderPrefsRows")[1][:1400], (
+        "the Preferences sheet no longer offers the way to report a problem"
+    )
     assert 'data-snw="open"' in source
     assert "btn-primary" not in source.split("function snwTile")[1][:600], (
         "the quiet tile grew a primary button"
@@ -368,7 +377,10 @@ def test_the_error_states_offer_the_same_sheet():
     """
     source = _shell_js()
     assert "Something not working? Tell Emily" in source
-    for marker in ["gro-error", "cook-error", "kit-hero-error"]:
+    # `kit-hero-error` was the Kitchen "what we know" hero's error line; the
+    # hero left the tab on 2026-09-08 and the Kitchen root's own failure
+    # state is a `cook-error` paragraph, already in this list.
+    for marker in ["gro-error", "cook-error"]:
         line = next(l for l in source.splitlines() if marker in l and "Couldn" in l)
         assert "snwLink(" in line, f"the {marker} state lost its way to report it"
 
