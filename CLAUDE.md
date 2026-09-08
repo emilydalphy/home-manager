@@ -306,6 +306,59 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — Meals is three steps, not one stack. Branch
+  `flows-2-meals-week-day-meal`.** Emily's approved design: the Meals PLAN
+  state answers "what are we eating this week, and is it settled?" as
+  **WEEK -> DAY -> MEAL**, all three states of the same tab (like Plan/Cook,
+  never routes — `/week` throughout). WEEK is one card of seven rows, three
+  dot-prefixed lines each (apricot = a cook, celadon = made ahead, grey =
+  out/none, apricot outline = "Pick a lunch"), names truncated to ONE line
+  (Emily: seven days truncated beats five in full), today's row tinted
+  celadon, a SET/DRAFT/NOTHING YET badge in the header and a subtitle saying
+  the shape of the week ("Sep 7–13 · 4 cooks, 3 made ahead"). DAY is three
+  EQUAL cards — no hero, because a day is three meals and the old dinner
+  hero said otherwise — each with an eyebrow carrying the household's real
+  slot hour ("Dinner · 6:30", from `get_week_menu`'s new `slot_times`, which
+  reads moves.py's mapping so Today and Meals cannot disagree) or, for a
+  made-ahead night, "made ahead Monday". MEAL is one meal: "The plate"
+  (components as chips plus "Protein, carb, veg. Nothing to thaw."), the
+  Cook view's own cook-ahead picker reused verbatim (`cookAheadHtml` +
+  `cookSetCookAhead`, re-inked for an ivory card — its own rules are written
+  for the spruce cook hero), "Why this night", and the screen's one apricot
+  "Cook this". **Left the root, all in `static/shell.js`:** the framing
+  line, the day rail, the day card (dinner hero + sides tiles), the whole-
+  week row, the "or start over" reset link, the Plan-a-week card, the
+  standing setup link, the open-slot cards, the desktop `#week-header` paper
+  menu and the desktop 7x3 grid (`wg2*`). Where each went: the seven-row
+  card IS the whole-week overview at every width, which is why the grid came
+  out rather than sitting under a card saying the same thing; the open-slot
+  resolver moved inside the day it belongs to, revealed by "Pick"; and every
+  rare action — Re-plan this week, Pick my own days (the existing picker,
+  moved unchanged), Try again, Change my answers, Adjust your setup, Start
+  over, plus See the whole week so the share link keeps an entry point —
+  moved into a new "More" bottom sheet. **Kept exactly as they were:** the
+  draft review band and the approved receipt (with its freezer check and
+  cook-ahead ask), now rendered above the card and hidden on the deeper
+  steps; flows 3 replaces the band. Three judgment calls worth knowing: (1)
+  "Cook this" is now offered on ANY non-past day, not only today — the
+  old restriction ("cook mode can only start tonight's meal") predates
+  `42d422a`'s entry-id focus target, which lands on the exact meal; (2)
+  back LINKS go up a level by name and never call `history.back()`, because
+  after any wandering the previous entry is not the parent and a link
+  saying "This week" must not land on a meal — the back GESTURE keeps
+  history's own meaning through the one popstate listener, and a refresh
+  lands on WEEK; (3) `#week-review-band` was missing from the gutter list in
+  `shell.css`, so a draft's Approve button had always sat flush to the
+  screen edge — invisible above a day rail that started at the edge too,
+  obvious above a card that doesn't. Payload additions, all read and never
+  guessed: `slot_times`, per-entry `food_groups`, `defrost` (the plan's own
+  `prep_tasks` row, the one Today's fridge move ticks) and `leftover_from`
+  (source dish + date + `cook_ahead`, kept apart from the headline built out
+  of them). `tests/test_meals_week_day_meal.py` is the new guard; two
+  markers in `tests/test_frontend_restored_2026_09_08.py` were updated
+  honestly rather than deleted (the desktop grid's chip class, and the
+  reheat test which widened from dinner-only to all three slots), and its
+  line-count floor was raised to 8600 per its own instruction.
 - **2026-09-08 — Today is a ranked timeline of moves, not a stack of
   cards. Branch `flows-1-today-next-up`.** Emily's approved design: the
   screen answers "what's next for us?" with exactly two blocks — one

@@ -135,6 +135,7 @@
   // carried.
   var ASK_HINTS = {
     today: 'Ask me anything about today\u2026',
+    week: 'Tweak this week with me\u2026',
     _default: 'The more you tell me, the less you\u2019ll swap\u2026'
   };
 
@@ -361,7 +362,14 @@
     }
   }
 
-  window.addEventListener('popstate', function () { activateTab(currentTabKey(), false); });
+  // One listener decides what Back means. Meals' three steps push their own
+  // history entries at the same /week path (pushMealsStepHistory), so the
+  // Android/browser back gesture steps out one level there before it leaves
+  // the tab at all; every other tab is unaffected.
+  window.addEventListener('popstate', function (e) {
+    activateTab(currentTabKey(), false);
+    if (currentTabKey() === 'week') applyMealsStepFromHistory(e && e.state);
+  });
 
   // ---------- Today ----------
   // README §4/§7: heading, needs-you band, tonight's dinner, chores,
@@ -633,7 +641,7 @@
     }
     if (item.type === 'dinner_open') {
       // An open slot the app already handed back on the Plan screen (see
-      // renderOpenSlots) — same shape of card, surfaced here too because
+      // openSlotCardHtml) — same shape of card, surfaced here too because
       // that's exactly what needs-you is for. Resolves through the same
       // path the Plan screen's own open-slot cards use (resolveOpenSlot /
       // POST /api/week/{week_start}/slot), not the dinner_decision path
@@ -3368,7 +3376,15 @@
   // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
   // drained by applyPendingDayFocus once the days for that week are
   // actually loaded. Null the rest of the time.
-  var weekState = { selectedIndex: null, days: [], data: null, pendingDayFocus: null };
+  // step / mealSlot: which of the three Meals steps is showing and, on the
+  // Meal step, which slot of the selected day. Both are page state, not
+  // routes — a refresh starts at 'week' by design (see the step machine
+  // below), because the week is the answer and a deep step is where you
+  // happened to be, not where you asked to land.
+  var weekState = {
+    selectedIndex: null, days: [], data: null, pendingDayFocus: null,
+    step: 'week', mealSlot: 'dinner'
+  };
 
   async function buildWeekPanel(panel) {
     panel.innerHTML =
@@ -3394,58 +3410,21 @@
         '</div>' +
         '<div id="week-cook-view" hidden></div>' +
         '<div id="week-plan-view">' +
-        // The review moment (Loop Board: "After generating a week, land on
-        // the review moment — not the top of the Plan screen"). First child
-        // of #week-plan-view so it renders above #week-header/#week-mobile
-        // at BOTH breakpoints without any scroll — a draft's decision no
-        // longer waits behind the day rail, the day card and "the whole
-        // week" row. Populated by renderWeekReviewBand, which leaves this
-        // empty whenever there's no plan or the plan is already approved,
-        // so an approved week's layout is completely untouched (its receipt
-        // still renders in #week-approve-row exactly as before).
+        // The two bands that belong to the WEEK rather than to any day of
+        // it, above the card and hidden on the Day and Meal steps (see
+        // renderMealsStep). The review band is a draft's decision — first
+        // child so it needs no scroll, which is the whole of the "land on
+        // the review moment" change. The approve row is its other half:
+        // the receipt, the freezer check and the cook-ahead offer once the
+        // week is settled.
         '<div id="week-review-band"></div>' +
-        '<div class="menu-header shell-card" id="week-header"><div class="menu-loading">Loading your menu&hellip;</div></div>' +
-        '<div class="week-mobile" id="week-mobile">' +
-          '<div class="week-framing" id="week-framing"></div>' +
-          '<div class="day-rail" id="day-rail"></div>' +
-          '<div id="day-card-wrap"></div>' +
-          '<div class="whole-week-row shell-card" id="whole-week-row">' +
-            '<div class="whole-week-text">' +
-              '<div class="whole-week-title">The whole week</div>' +
-              '<div class="whole-week-sub" id="whole-week-sub">Loading&hellip;</div>' +
-            '</div>' +
-            '<button type="button" class="btn-sand">Open</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="week-grid" id="week-grid" hidden></div>' +
-        // Approve / approved receipt (design_handoff_plan_the_week).
-        // Sibling of #week-mobile and #week-grid for the same reason the
-        // reset row below is one — the single entry point has to show at
-        // both breakpoints, and #week-header is desktop-only. Sits above
-        // the reset row: approving the week is the primary thing to do
-        // here, starting over is the last resort.
-        // The one place an open slot is answered — see renderOpenSlots.
-        // Above Approve because it's the only thing on this screen the
-        // household actually has to act on.
-        '<div id="week-open-row"></div>' +
         '<div id="week-approve-row"></div>' +
-        // InnMeals pairs the apricot "Approve this week" with a quiet
-        // italic "or start over" immediately under it — so the reset entry
-        // point moves up here from the bottom of the screen. Same button,
-        // same handler, same dialog; it is the last resort presented as one
-        // rather than as another card competing with the primary action.
-        '<div class="week-reset-row" id="week-reset-row">' +
-          '<button type="button" class="week-reset-link" id="week-reset-btn">or start over</button>' +
-        '</div>' +
-        // The permanent way into the two question screens — see
-        // renderPlanWeekEntry. Below Approve because approving the week
-        // you already have comes before planning the next one.
-        '<div id="week-plan-row"></div>' +
+        // Week -> Day -> Meal. One container, three renderings; see
+        // renderMealsStep.
+        '<div id="week-steps"><div class="menu-loading">Loading your week&hellip;</div></div>' +
         '</div>' +
       '</div>';
 
-    panel.querySelector('#whole-week-row').addEventListener('click', function () { openWeekSheet(); });
-    panel.querySelector('#week-reset-btn').addEventListener('click', function () { openResetDialog(); });
     panel.querySelectorAll('.meals-seg-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { setMealsView(btn.getAttribute('data-meals-view')); });
     });
@@ -3538,7 +3517,7 @@
       refreshCookView();
     } catch (err) {
       console.warn('Week menu lookup failed:', err);
-      panel.querySelector('#week-header').innerHTML = '<div class="menu-loading">Couldn\'t load your menu right now.</div>';
+      panel.querySelector('#week-steps').innerHTML = '<div class="menu-loading">Couldn\'t load your week right now.</div>';
     }
   }
 
@@ -3591,97 +3570,6 @@
     return { hasEmpty: hasEmpty, needsDecision: needsDecision, isToday: isToday, isPast: isPast, status: status, ribbon: ribbon };
   }
 
-  function computeWeekGapSummary(days) {
-    var gaps = [];
-    days.forEach(function (day) {
-      if (day.isPast) return;
-      WEEK_SLOTS.forEach(function (slot) {
-        if (!day[slot]) gaps.push({ date: day.date, slot: slot });
-      });
-    });
-    if (!gaps.length) return 'All seven days planned · 21 meals';
-    var first = gaps[0];
-    var countLabel = gaps.length === 1 ? 'One gap left' : (gaps.length + ' gaps left');
-    return countLabel + ' · ' + dayName(first.date, { weekday: 'long' }) + ' ' + SLOT_LABELS[first.slot].toLowerCase();
-  }
-
-  function renderWeekFraming(panel, data, statusLine) {
-    // InnMeals: "This week" with the week's dates as an apricot badge beside
-    // it, and one freshness note under it. Still one line and no recap — the
-    // per-slot reasons carry the detail, and `headline` is computed
-    // server-side so it says at most one thing.
-    //
-    // The note is the same sentence the desktop header has always shown
-    // (the draft's server headline, else the "N meals still need a decision"
-    // count), passed in rather than recomputed so the two can't drift.
-    // periodRangeLabel(x, 7) is what weekRangeLabel used to be, character
-    // for character. It only survives as a fallback for a payload with no
-    // week_label; the server's own label already knows the real span.
-    var range = data.week_label || (data.week_start_date ? periodRangeLabel(data.week_start_date, 7) : '');
-    panel.querySelector('#week-framing').innerHTML =
-      '<div class="week-head">' +
-        '<h1>This week</h1>' +
-        (range ? '<span class="week-badge">' + escapeHtml(range) + '</span>' : '') +
-        // The trip chip (WeekWithTrip mock) — present only on a week that
-        // actually has an away stretch, so an ordinary week gains no chrome.
-        (data.trip_summary
-          ? '<span class="week-trip">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
-              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-              '<rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>' +
-              escapeHtml(data.trip_summary) +
-            '</span>'
-          : '') +
-      '</div>' +
-      (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
-      // A component-based household has no real day mapping underneath —
-      // get_week_menu spreads its component pool across seven days so this
-      // screen has something to show, and flags it. Saying so on mobile too:
-      // it used to be desktop-header-only, so the phone (which is where this
-      // screen actually lives) presented a suggested arrangement as if it
-      // were a schedule.
-      (data.menu_is_suggested
-        ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
-        : '');
-  }
-
-  function renderDayRail(panel, days) {
-    // The notched moment (InnMeals): seven day tiles bottom-aligned, and the
-    // selected one grows taller, fills spruce and squares off its bottom
-    // corners so it pours into the hero panel directly beneath instead of
-    // floating above it. The date number is new here and is real —
-    // day.date's own day-of-month; the strip used to show weekday letters
-    // alone, which made "which week am I looking at" unanswerable.
-    panel.querySelector('#day-rail').innerHTML = days.map(function (day, i) {
-      var cls = 'day-rail-cell' +
-        (i === weekState.selectedIndex ? ' selected' : '') +
-        (day.isToday ? ' is-today' : '') +
-        (day.isPast ? ' is-past' : '') +
-        (day.needsDecision ? ' needs-decision' : '');
-      return (
-        '<button type="button" class="' + cls + '" data-index="' + i + '" aria-pressed="' + (i === weekState.selectedIndex) + '">' +
-          '<span class="day-rail-label">' + dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase() + '</span>' +
-          '<span class="day-rail-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
-          '<span class="day-rail-dot"></span>' +
-        '</button>'
-      );
-    }).join('');
-    panel.querySelectorAll('#day-rail .day-rail-cell').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        weekState.selectedIndex = Number(btn.dataset.index);
-        renderDayRail(panel, weekState.days);
-        renderDayCard(panel, weekState.days[weekState.selectedIndex]);
-      });
-    });
-  }
-
-  // ---------- The selected day, split in two (InnMeals) ----------
-  // Dinner is the hero: a spruce panel joined to the day strip above it.
-  // Breakfast and lunch are subordinate rows in a plain card below — same
-  // entries, same three states, deliberately much quieter, because "one
-  // hero moment per screen" means the other two slots must not compete
-  // with it. Every state courseHtml handled is handled here; the difference
-  // is where it renders and how loudly.
   // ---------- derived trip states (WeekWithTrip mock) ----------
   // Per Emily's progressive-disclosure decision these appear ONLY when a
   // trip or an override has created the need — an ordinary week's slots
@@ -3770,195 +3658,12 @@
     }
   }
 
-  function dinnerHeroHtml(day) {
-    var entry = day.dinner;
-    var tag = day.status
-      // Apricot only when the tag itself says a decision is wanted. Keying
-      // this off day.needsDecision instead put an apricot "TONIGHT" on any
-      // day that merely had an unplanned breakfast — colouring the word
-      // "Tonight" as urgent when the urgency belonged to a different slot,
-      // and putting a third apricot fill on a screen whose one primary
-      // action is Approve. classifyDay only ever writes 'Needs you' on a
-      // future day that genuinely wants one (shell.js, classifyDay).
-      ? '<span class="hero-tag' + (day.status === 'Needs you' ? ' hero-tag-urgent' : '') + '">' + escapeHtml(day.status) + '</span>'
-      : '';
-    var top =
-      '<div class="hero-top">' +
-        '<span class="hero-eyebrow">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + ' dinner</span>' +
-        '<span class="hero-rule"></span>' + tag +
-      '</div>';
-
-    // The one deliberately empty slot in a week. A statement, not a gap and
-    // not a question — it gets the hero's quiet voice and no action at all,
-    // because offering to change it is exactly what planned_empty exists to
-    // prevent.
-    if (entry && entry.state === 'planned_empty') {
-      // A need declared before the week was generated has no meal to show
-      // yet, but it still has something to SAY — the badge and, for a
-      // ready-made slot, the recommendation waiting on a yes.
-      var emptyLine = awayLineFor(entry) ||
-        (entry.need === 'ready_made' ? 'Something already made' :
-         entry.need === 'quick' ? 'Something quick' : 'Nothing yet');
-      return top +
-        (entry.need && entry.need !== 'away'
-          ? '<div class="hero-needs">' + needBadgeHtml(entry) + '</div>' : '') +
-        '<div class="hero-dish hero-dish-out">' + escapeHtml(emptyLine) + '</div>' +
-        // An away slot's reason says the same thing its headline just said
-        // ("nothing planned, nothing bought"), so it is deliberately not
-        // repeated here — the household was told once, plainly. Other
-        // empty states keep their reason, which adds something.
-        (entry.need !== 'away' && (entry.need_reason || entry.reason)
-          ? '<div class="hero-accent">' + escapeHtml(entry.need_reason || entry.reason) + '</div>'
-          : '') +
-        readyMadeHtml(day);
-    }
-
-    // A decision handed back. The question and its answers live in one place
-    // only — the card in #week-open-row below — so the hero says what the
-    // slot IS and nothing more.
-    //
-    // The open_reason deliberately does NOT repeat here. It read well in
-    // isolation, but the reason also renders in .week-open-reason a few
-    // hundred pixels down the same unscrolled screen, so the household was
-    // asked the same question twice in one glance. Same rule the pre-Pomona
-    // day card followed (it showed the bare title too) — restored after the
-    // independent verification pass caught the duplicate.
-    if (entry && entry.state === 'open') {
-      return top +
-        '<div class="hero-dish hero-dish-open">' + escapeHtml(entry.title) + '</div>';
-    }
-
-    if (entry) {
-      return top +
-        (entry.need ? '<div class="hero-needs">' + needBadgeHtml(entry) + '</div>' : '') +
-        '<div class="hero-dish' + dishSizeClass(entry.title) + '">' + escapeHtml(entry.title) + '</div>' +
-        (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '') +
-        readyMadeHtml(day) +
-        '<div class="hero-chips">' +
-          (entry.meta ? '<span class="hero-chip">' + escapeHtml(entry.meta) + '</span>' : '') +
-          '<span class="hero-chips-spacer"></span>' +
-          dayActionsHtml(day) +
-        '</div>';
-    }
-
-    return top +
-      '<div class="hero-dish hero-dish-' + (day.isPast ? 'blank' : 'empty') + '">' +
-        (day.isPast ? 'Not planned' : 'Nothing yet') +
-      '</div>';
-  }
-
-  // Unchanged rules, restyled: only a genuinely planned dinner gets actions,
-  // and "Cook this" only on today, because cook mode can only start tonight's
-  // meal — a future day gets "Swap it" alone rather than a button that would
-  // open the wrong day's steps.
-  //
-  // A reheat night (day.dinner.source === 'leftovers' — see
-  // tools.get_week_menu's build_slot) is not a cook, so today's version of
-  // that button never says "Cook this" for one: nothing would be cooked by
-  // tapping it. The button still opens Cook mode (same handler below) —
-  // that screen already renders a confirmed chain's reheat night correctly
-  // (cooker.get_cooker_view / cookReheatHeroHtml) with its own "Mark eaten"
-  // action — this only fixes the label so it doesn't promise a cook that
-  // isn't going to happen.
-  function dayActionsHtml(day) {
-    if (!(day.dinner && day.dinner.state === 'planned' && !day.isPast)) return '';
-    if (day.isToday) {
-      var isReheat = day.dinner.source === 'leftovers';
-      return '<button type="button" class="hero-go" id="wk-cook-this">' +
-        '<span>' + escapeHtml(isReheat ? REHEAT_ACTION_LABEL : 'Cook this') + '</span>' + ICONS.arrow + '</button>' +
-        '<button type="button" class="hero-swap" id="wk-swap-it" aria-label="Swap it">Swap</button>';
-    }
-    return '<button type="button" class="hero-swap" id="wk-swap-it">Swap it</button>';
-  }
-
-  // A tinted tile per slot (InnMeals redesign) — same three states as
-  // always, restyled off the old hairline-divided row list to match the
-  // grid below it and the tile language the rest of the app already uses
-  // (Today's "Before bed"/"Tonight" pair is the same move).
-  function sideCourseHtml(day, slot) {
-    var entry = day[slot];
-    var body;
-    if (entry && entry.state === 'planned_empty') {
-      body = '<span class="side-tile-dish side-tile-dish-out">' +
-        escapeHtml(awayLineFor(entry) || 'Nothing planned') + '</span>';
-    } else if (entry && entry.state === 'open') {
-      body = '<span class="side-tile-dish side-tile-dish-open">' + escapeHtml(entry.title) + '</span>';
-    } else if (entry) {
-      body = '<span class="side-tile-dish">' + escapeHtml(entry.title) + '</span>';
-    } else {
-      // No fill flow was ever designed for breakfast/lunch — plain and
-      // non-interactive, so it never dead-ends like a fake "Pick" would.
-      body = '<span class="side-tile-dish side-tile-dish-blank">' +
-        (day.isPast ? 'Not planned' : 'Not planned yet') + '</span>';
-    }
-    return '<div class="side-tile">' +
-      '<div class="side-tile-row">' +
-        '<span class="side-tile-label">' + SLOT_LABELS[slot] + '</span>' +
-        needBadgeHtml(entry) +
-      '</div>' +
-      body +
-    '</div>';
-  }
-
   // Quick-dinner-pick suggestions (day.dinner_suggestions, from
   // _suggest_quick_dinners) remain turned off per household feedback: the
   // "Nothing yet" empty state stays, without the inline pick rows. The
   // backend plumbing (get_week_menu's dinner_suggestions, POST
   // /api/needs-you/dinner) and fillWeekDinner below are untouched, so this
   // is still easy to turn back on.
-
-  function renderDayCard(panel, day) {
-    var eyebrow = (day.isToday ? 'Today · ' : '') + dayName(day.date, { weekday: 'long' });
-    panel.querySelector('#day-card-wrap').innerHTML =
-      '<div class="day-hero">' + dinnerHeroHtml(day) + '</div>' +
-      '<div class="day-sides shell-card">' +
-        '<span class="day-sides-eyebrow">' + escapeHtml(eyebrow) + '</span>' +
-        '<div class="day-sides-grid">' +
-          WEEK_SLOTS.filter(function (s) { return s !== 'dinner'; })
-            .map(function (s) { return sideCourseHtml(day, s); }).join('') +
-        '</div>' +
-      '</div>';
-
-    var wrap = panel.querySelector('#day-card-wrap');
-    wrap.querySelectorAll('.wk-suggest-row').forEach(function (btn) {
-      btn.addEventListener('click', function () { fillWeekDinner(panel, btn.dataset.date, btn.dataset.meal); });
-    });
-    // Confirm / Choose differently on a ready-made recommendation. Emily's
-    // standing rule: the system recommends, the household confirms —
-    // nothing acts on the earmark until this is tapped.
-    wrap.querySelectorAll('.ready-made-confirm').forEach(function (btn) {
-      btn.addEventListener('click', function () { confirmReadyMade(panel, btn.dataset.date, true); });
-    });
-    wrap.querySelectorAll('.ready-made-other').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        // "Choose differently" declines the earmark and hands the question
-        // to chat, which is where an actual alternative gets chosen — the
-        // engine stores one recommendation, not a menu to pick from.
-        confirmReadyMade(panel, btn.dataset.date, false);
-        openAskSheet('Something else for ' + dayName(btn.dataset.date, { weekday: 'long' }) +
-          '’s dinner — I’ll be back from a trip, so nothing that needs real cooking');
-      });
-    });
-    var cookBtn = wrap.querySelector('#wk-cook-this');
-    if (cookBtn) cookBtn.addEventListener('click', function () {
-      // Everything that identifies THIS dinner, so the Cook view can find
-      // it whatever shape the plan is (day-based cards carry entry ids and
-      // dates; a component-based week's menu only carries titles).
-      activateTab('week', true, {
-        mealsView: 'cook',
-        mealsFocus: {
-          entryId: day.dinner ? day.dinner.entry_id : null,
-          date: day.date,
-          slot: 'dinner',
-          title: day.dinner ? day.dinner.title : ''
-        }
-      });
-    });
-    var swapBtn = wrap.querySelector('#wk-swap-it');
-    if (swapBtn) swapBtn.addEventListener('click', function () {
-      openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s dinner for something else');
-    });
-  }
 
   async function fillWeekDinner(panel, mealDate, meal) {
     // Same confirm as the Today card — see resolveDinnerDecision.
@@ -3986,48 +3691,719 @@
     }
   }
 
-  function renderWholeWeekRow(panel, days) {
-    panel.querySelector('#whole-week-sub').textContent = computeWeekGapSummary(days);
+  // ---------- Meals: Week -> Day -> Meal (Emily's approved design, 2026-09-08) ----
+  //
+  // Meals answers one question — "what are we eating this week, and is it
+  // settled?" — in three steps, and the whole redesign is that they are
+  // STEPS rather than a stack. The root used to carry a review band, a
+  // framing line, a day rail, a day card, a whole-week row, an approve row,
+  // a reset link, a Plan-a-week card with its own picker and a setup link,
+  // all at once; every one of them was a different question asked in the
+  // same breath. Now:
+  //
+  //   WEEK  the answer, in one card: seven rows, three lines each, and a
+  //         badge saying whether the week is settled. Rare actions live
+  //         behind "More".
+  //   DAY   one day, three equal cards — no hero, because a day is three
+  //         meals and pretending one of them is the day was the old
+  //         screen's other problem.
+  //   MEAL  one meal in full: the plate, cooking ahead, why this night.
+  //
+  // They are states of the Meals tab, exactly as Plan/Cook are (NavBlueprint:
+  // "never a new page with its own header"). Back links and the browser's
+  // own back gesture step out one level (see pushMealsStepHistory and the
+  // popstate handler at the top of this file); a refresh lands on WEEK,
+  // because weekState.step starts there and nothing restores it.
+
+  var WEEK_BADGES = { set: 'SET', draft: 'DRAFT', none: 'NOTHING YET' };
+
+  function weekPlanState(data) {
+    if (!data || !data.weekly_plan_id || !(data.days || []).length) return 'none';
+    return data.status === 'approved' ? 'set' : 'draft';
+  }
+
+  // The dish as it should READ on a card, which for a made-ahead night is
+  // the dish itself ("Egg White Bites") and not the whole sentence the
+  // headline makes ("Made ahead — Sunday's Egg White Bites"). The sentence
+  // is still true and still shown — it just belongs in the eyebrow, where
+  // "made ahead Sunday" is one short fact rather than half the name.
+  function mealDisplayName(entry) {
+    if (!entry) return '';
+    if (entry.leftover_from && entry.leftover_from.meal) return entry.leftover_from.meal;
+    return entry.title || '';
+  }
+
+  // "4 cooks, 3 made ahead" — the shape of the week in one clause. Takeout
+  // is deliberately neither: nobody cooks it and nobody made it ahead, and
+  // counting it as a cook would overstate the week's work.
+  function weekCountsLabel(days) {
+    var cooks = 0, ahead = 0;
+    (days || []).forEach(function (day) {
+      WEEK_SLOTS.forEach(function (slot) {
+        var entry = day[slot];
+        if (!entry || entry.state !== 'planned') return;
+        if (entry.source === 'leftovers') ahead++;
+        else if (entry.source !== 'takeout') cooks++;
+      });
+    });
+    var parts = [];
+    if (cooks) parts.push(cooks + (cooks === 1 ? ' cook' : ' cooks'));
+    if (ahead) parts.push(ahead + ' made ahead');
+    return parts.join(', ');
+  }
+
+  function weekStepHeadHtml(data, days) {
+    var state = weekPlanState(data);
+    var dayCount = data.day_count || days.length || 7;
+    // periodRangeLabel is the fallback only; the server's own week_label
+    // already knows the real span of a custom period.
+    var range = data.week_label ||
+      (data.week_start_date ? periodRangeLabel(data.week_start_date, dayCount) : '');
+    // Seven days is "this week" because that is what a week is called. A
+    // household on a different rhythm is not living a week, so its own
+    // dates are the title and the subtitle doesn't repeat them.
+    var isWeek = dayCount === 7;
+    var title = isWeek || !range ? 'This week' : range;
+    var sub = [];
+    if (isWeek && range) sub.push(range);
+    var counts = weekCountsLabel(days);
+    if (counts) sub.push(counts);
+    if (data.trip_summary) sub.push(data.trip_summary);
+    return '<div class="wk-head">' +
+      '<div class="wk-head-row">' +
+        '<h1 class="wk-title">' + escapeHtml(title) + '</h1>' +
+        '<span class="wk-state is-' + state + '">' + WEEK_BADGES[state] + '</span>' +
+      '</div>' +
+      (sub.length ? '<div class="wk-sub">' + escapeHtml(sub.join(' · ')) + '</div>' : '') +
+      // A component-based household has no real day mapping underneath —
+      // get_week_menu spreads its pool across the days so this screen has
+      // something to show, and says so rather than presenting a suggested
+      // arrangement as a schedule.
+      (data.menu_is_suggested
+        ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
+        : '') +
+    '</div>';
+  }
+
+  // One line of one row. The dot is the whole legend: apricot = somebody
+  // cooks, celadon = it is already made, grey = nothing to do. Names
+  // truncate to one line in CSS rather than wrapping — Emily's call, seven
+  // days truncated beats five days in full, because the question this card
+  // answers is "is the week settled", not "what exactly is Thursday".
+  function weekRowLineHtml(day, slot) {
+    var entry = day[slot];
+    var dot = 'is-none';
+    var quiet = ' is-quiet';
+    var text;
+    if (entry && entry.state === 'planned') {
+      quiet = '';
+      if (entry.source === 'leftovers') { dot = 'is-ahead'; text = mealDisplayName(entry); }
+      else { dot = 'is-cook'; text = entry.title; }
+    } else if (entry && entry.state === 'open') {
+      dot = 'is-open';
+      text = 'Pick a ' + slot;
+    } else if (entry && entry.state === 'planned_empty') {
+      text = awayLineFor(entry) || entry.title || 'Nothing planned';
+    } else {
+      text = day.isPast ? 'Not planned' : 'Nothing yet';
+    }
+    return '<span class="wk-line' + quiet + '">' +
+      '<span class="wk-dot ' + dot + '"></span>' +
+      '<span class="wk-line-name">' + escapeHtml(text) + '</span>' +
+    '</span>';
+  }
+
+  function weekRowHtml(day, i) {
+    return '<button type="button" class="wk-day-row' +
+        (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
+        '" data-wk-day="' + i + '">' +
+      '<span class="wk-day-col">' +
+        '<span class="wk-day-dow">' + dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase() + '</span>' +
+        '<span class="wk-day-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
+      '</span>' +
+      '<span class="wk-day-meals">' +
+        WEEK_SLOTS.map(function (slot) { return weekRowLineHtml(day, slot); }).join('') +
+      '</span>' +
+    '</button>';
+  }
+
+  function weekStepHtml(data, days) {
+    var state = weekPlanState(data);
+    // NOTHING YET: the card has nothing to be, so the existing plan-a-week
+    // entry takes its place — same buttons, same handlers, rendered into
+    // #week-plan-row by renderPlanWeekEntry after this lands.
+    if (state === 'none') {
+      return weekStepHeadHtml(data, days) +
+        '<div id="week-plan-row"></div>';
+    }
+    var dayCount = data.day_count || days.length || 7;
+    return weekStepHeadHtml(data, days) +
+      '<div class="shell-card wk-week-card">' +
+        days.map(weekRowHtml).join('') +
+      '</div>' +
+      // Everything rare is one tap away and nothing rare is on the page.
+      '<div class="wk-foot">' +
+        '<button type="button" class="wk-foot-link" id="wk-plan-next">' +
+          escapeHtml(planEntryLabel(dayCount, 'next', false)) + ' ›</button>' +
+        '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
+      '</div>';
+  }
+
+  // ---------- DAY ----------
+
+  // "both home tonight". Read off dinner's own attendance (get_week_menu's
+  // _decorate_with_needs), never guessed from the household roster: the
+  // point of the line is who is actually eating, and a roster count would
+  // say two on a night one of them is away.
+  function dayAttendanceLine(day) {
+    var entry = day.dinner;
+    if (!entry) return '';
+    var present = entry.present_names || [];
+    var away = entry.away_names || [];
+    var guests = entry.guest_count || 0;
+    var line = '';
+    if (away.length && !present.length) line = 'everyone out tonight';
+    else if (away.length) line = joinList(away) + ' away tonight';
+    else if (present.length === 1) line = 'just ' + present[0] + ' tonight';
+    else if (present.length === 2) line = 'both home tonight';
+    else if (present.length > 2) line = 'all ' + present.length + ' home tonight';
+    if (guests) line += (line ? ', ' : '') + guests + (guests === 1 ? ' guest' : ' guests');
+    return line;
+  }
+
+  function daySubtitle(day) {
+    var parts = [dayName(day.date, { month: 'short', day: 'numeric' })];
+    var att = dayAttendanceLine(day);
+    if (att) parts.push(att);
+    return parts.join(' · ');
+  }
+
+  // "Dinner · 6:30" — the hour this household actually eats, from the
+  // dinner_window rhythm fact by way of get_week_menu's slot_times, which
+  // reads moves.py's own mapping so Today's timeline and this card can't
+  // put different times on the same meal.
+  function slotEyebrow(day, slot) {
+    var label = SLOT_LABELS[slot];
+    var entry = day[slot];
+    if (entry && entry.leftover_from) {
+      var when = dayName(entry.leftover_from.date, { weekday: 'long' });
+      return label + ' · ' + (entry.leftover_from.cook_ahead
+        ? 'made ahead ' + when
+        : 'leftovers from ' + when);
+    }
+    var times = (weekState.data && weekState.data.slot_times) || {};
+    return times[slot] ? label + ' · ' + times[slot] : label;
+  }
+
+  // The plate in words: the sides the app attached, else the one-line note
+  // it already wrote about this plate. Nothing is invented here — an entry
+  // with neither gets no chips rather than a plausible guess.
+  function plateChips(entry) {
+    var chips = ((entry && entry.sides) || []).map(function (s) { return s.name; })
+      .filter(Boolean);
+    if (!chips.length && entry && entry.plate_note) chips = [entry.plate_note];
+    return chips;
+  }
+
+  function chipsRowHtml(chips, cls) {
+    chips = (chips || []).filter(Boolean);
+    if (!chips.length) return '';
+    return '<span class="' + (cls || 'wk-chips') + '">' +
+      chips.map(function (c) { return '<span class="wk-chip">' + escapeHtml(c) + '</span>'; }).join('') +
+    '</span>';
+  }
+
+  // "Cook this · 55 min". meta is "35 min" for a real cook and the words
+  // "reheat"/"takeout" for the two things that aren't one — those carry no
+  // cooking time, so they carry no time chip either.
+  function cookTimeChip(entry) {
+    var meta = entry && entry.meta;
+    return (meta && meta !== 'reheat' && meta !== 'takeout') ? meta : '';
+  }
+
+  // The two-segment control. Which primary a slot gets is entirely a
+  // function of its state: a cook is cooked, a made-ahead night is eaten,
+  // an open slot is answered, and an away night is offered nothing at all —
+  // offering to change it is exactly what the away state exists to prevent.
+  function slotActionsHtml(day, slot, apricot) {
+    var entry = day[slot];
+    var primaryCls = 'wk-act wk-act-primary' + (apricot ? ' is-apricot' : '');
+    var swap = '<button type="button" class="wk-act wk-act-swap" data-wk-swap="' + slot + '">Swap</button>';
+    if (entry && entry.state === 'planned') {
+      if (day.isPast) return '';
+      var time = cookTimeChip(entry);
+      var label = entry.source === 'leftovers'
+        ? REHEAT_ACTION_LABEL
+        : 'Cook this' + (time ? ' · ' + time : '');
+      return '<div class="wk-acts">' +
+        '<button type="button" class="' + primaryCls + '" data-wk-cook="' + slot + '">' +
+          escapeHtml(label) + '</button>' + swap +
+      '</div>';
+    }
+    if (entry && entry.state === 'open') {
+      return '<div class="wk-acts">' +
+        '<button type="button" class="' + primaryCls + '" data-wk-pick="' + slot + '">Pick</button>' +
+        swap +
+      '</div>';
+    }
+    if (entry && entry.state === 'planned_empty') {
+      if (entry.need === 'away' || day.isPast) return '';
+      return '<div class="wk-acts">' + swap + '</div>';
+    }
+    if (!entry && !day.isPast) {
+      // Nothing here at all. Chat is the way out rather than a dead end —
+      // there is no inline fill flow for breakfast or lunch, and a fake
+      // "Pick" that opened nothing would be worse than no button.
+      return '<div class="wk-acts">' +
+        '<button type="button" class="' + primaryCls + '" data-wk-ask="' + slot + '">Pick</button>' +
+      '</div>';
+    }
+    return '';
+  }
+
+  function daySlotCardHtml(day, slot) {
+    var entry = day[slot];
+    var openable = !!(entry && entry.state === 'planned');
+    var name, quiet = '';
+    if (entry && entry.state === 'planned') name = mealDisplayName(entry);
+    else if (entry && entry.state === 'open') { name = 'Your call'; quiet = ' is-quiet'; }
+    else if (entry && entry.state === 'planned_empty') {
+      name = awayLineFor(entry) || entry.title || 'Nothing planned';
+      quiet = ' is-quiet';
+    } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
+
+    var body =
+      '<span class="wk-slot-eyebrow">' + escapeHtml(slotEyebrow(day, slot)) + '</span>' +
+      '<span class="wk-slot-name' + quiet + '">' + escapeHtml(name) + '</span>' +
+      (entry && entry.need ? '<span class="wk-slot-need">' + needBadgeHtml(entry) + '</span>' : '') +
+      chipsRowHtml(plateChips(entry));
+
+    return '<div class="shell-card wk-slot-card" data-wk-slot="' + slot + '">' +
+      (openable
+        ? '<button type="button" class="wk-slot-body" data-wk-meal="' + slot + '">' + body + '</button>'
+        : '<div class="wk-slot-body is-flat">' + body + '</div>') +
+      // The ready-made recommendation still belongs to dinner and to
+      // nothing else — it is an answer to "the first one back tonight",
+      // not a property of a slot.
+      (slot === 'dinner' ? readyMadeHtml(day) : '') +
+      slotActionsHtml(day, slot, false) +
+      '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' +
+        (entry && entry.state === 'open' ? openSlotCardHtml(day.date, slot, entry) : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  function dayStepHtml(day) {
+    return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
+      '<div class="wk-head">' +
+        '<div class="wk-head-row"><h1 class="wk-title">' +
+          escapeHtml(dayName(day.date, { weekday: 'long' })) + '</h1></div>' +
+        '<div class="wk-sub">' + escapeHtml(daySubtitle(day)) + '</div>' +
+      '</div>' +
+      '<div class="wk-slots">' +
+        WEEK_SLOTS.map(function (slot) { return daySlotCardHtml(day, slot); }).join('') +
+      '</div>';
+  }
+
+  // ---------- MEAL ----------
+
+  var PLATE_GROUP_LABELS = { protein: 'protein', carb: 'carb', vegetable: 'veg' };
+
+  // "Protein, carb, veg. Nothing to thaw." Both halves are read, never
+  // guessed: the groups are the ones the entry recorded (plates.py never
+  // invents them either), and the thaw line is the plan's own defrost task
+  // — the same prep_tasks row Today's fridge move ticks.
+  function plateCardHtml(entry) {
+    var groups = (entry.food_groups || [])
+      .map(function (g) { return PLATE_GROUP_LABELS[g] || g; });
+    var chips = groups.map(capitalizeFirst)
+      .concat(((entry.sides) || []).map(function (s) { return s.name; }));
+    var lines = [];
+    if (groups.length) lines.push(capitalizeFirst(groups.join(', ')) + '.');
+    lines.push(entry.defrost && entry.defrost.note
+      ? entry.defrost.note.replace(/\.?$/, '.')
+      : 'Nothing to thaw.');
+    return '<div class="shell-card wk-card">' +
+      '<div class="wk-card-title">The plate</div>' +
+      chipsRowHtml(chips) +
+      '<div class="wk-card-line">' + escapeHtml(lines.join(' ')) + '</div>' +
+    '</div>';
+  }
+
+  // The cook card this entry is on, in the Cook view's own data. The
+  // cook-ahead picker is that view's control, reused here verbatim
+  // (cookAheadHtml) rather than rebuilt — one picker, one POST, one set of
+  // rules about which days a batch may cover.
+  function cookMealForEntry(entryId) {
+    if (entryId === null || entryId === undefined) return null;
+    var meals = (cookState.data && cookState.data.meals) || [];
+    for (var i = 0; i < meals.length; i++) {
+      if (meals[i].entry_id === entryId) return meals[i];
+      if (meals[i].entry_ids && meals[i].entry_ids.indexOf(entryId) !== -1) return meals[i];
+    }
+    return null;
+  }
+
+  // Fetched once and cached on cookState, so opening a meal never costs a
+  // round trip twice and the Cook view finds it already loaded. Silent on
+  // failure: the picker is an offer, and a meal that renders without one is
+  // still a correct meal.
+  async function ensureCookDataForMeals(panel) {
+    if (cookState.data || cookState.mealsCookFetch) return;
+    cookState.mealsCookFetch = true;
+    try {
+      var res = await fetch('/api/cooker-view');
+      if (!res.ok) throw new Error('cooker-view failed');
+      cookState.data = await res.json();
+      if (weekState.step === 'meal') renderMealsStep(panel);
+    } catch (err) {
+      console.warn('Cook-ahead lookup failed:', err);
+    } finally {
+      cookState.mealsCookFetch = false;
+    }
+  }
+
+  function mealStepHtml(day, slot) {
+    var entry = day[slot];
+    var chips = [
+      cookTimeChip(entry),
+      entry.serves ? 'Serves ' + entry.serves : '',
+      entry.plate_note
+    ];
+    var cookMeal = cookMealForEntry(entry.entry_id);
+    var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
+    return '<button type="button" class="wk-back" data-wk-back="day">‹ ' +
+        escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
+      '<div class="wk-head">' +
+        '<div class="wk-head-row"><h1 class="wk-title">' +
+          escapeHtml(mealDisplayName(entry)) + '</h1></div>' +
+        chipsRowHtml(chips, 'wk-chips wk-chips-head') +
+      '</div>' +
+      plateCardHtml(entry) +
+      (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
+      // Why this night, when the plan actually recorded a reason. Written
+      // at generation (meal_plan_entries.reasoning), so it can't contradict
+      // the real one.
+      (entry.reason
+        ? '<div class="shell-card wk-card">' +
+            '<div class="wk-card-title">Why this night</div>' +
+            '<div class="wk-card-line">' + escapeHtml(entry.reason) + '</div>' +
+          '</div>'
+        : '') +
+      // The screen's one apricot primary (Rule 5) — the Day step's own
+      // segments are quiet for exactly this reason.
+      slotActionsHtml(day, slot, true);
+  }
+
+  // ---------- the step machine ----------
+
+  function mealsCurrentDay() {
+    var i = weekState.selectedIndex;
+    return (i !== null && weekState.days[i]) ? weekState.days[i] : null;
+  }
+
+  function pushMealsStepHistory() {
+    // Same path either way — Meals is /week in all three steps, exactly as
+    // Grocery is /grocery in all three of its. The state object is what the
+    // back gesture reads; the URL never claims a page that doesn't exist.
+    window.history.pushState({
+      tab: 'week',
+      mealsStep: weekState.step,
+      mealsDay: weekState.selectedIndex,
+      mealsSlot: weekState.mealSlot
+    }, '', '/week');
+  }
+
+  function goMealsStep(step, opts) {
+    opts = opts || {};
+    weekState.step = step;
+    if (opts.dayIndex !== undefined && opts.dayIndex !== null) weekState.selectedIndex = opts.dayIndex;
+    if (opts.slot) weekState.mealSlot = opts.slot;
+    if (opts.push !== false) pushMealsStepHistory();
+    var panel = panels['week'];
+    if (!panel || !panel.dataset.built) return;
+    renderMealsStep(panel);
+    // A step change is a screen change, so it starts at the top — the same
+    // rule Cook's focus screen and Grocery's shopping mode already follow.
+    if (scrollEl) scrollEl.scrollTop = 0;
+  }
+
+  // The browser's own back gesture, one level out. Called from the shell's
+  // single popstate listener so there is one place that decides what Back
+  // means, rather than a second listener racing the first.
+  function applyMealsStepFromHistory(state) {
+    var panel = panels['week'];
+    if (!panel || !panel.dataset.built) return;
+    var step = (state && state.mealsStep) || 'week';
+    if (state && state.mealsDay !== undefined && state.mealsDay !== null) {
+      weekState.selectedIndex = state.mealsDay;
+    }
+    if (state && state.mealsSlot) weekState.mealSlot = state.mealsSlot;
+    weekState.step = step;
+    renderMealsStep(panel);
+  }
+
+  function renderMealsStep(panel) {
+    var steps = panel.querySelector('#week-steps');
+    if (!steps) return;
+    var data = weekState.data || {};
+    var day = mealsCurrentDay();
+    // A day or a meal that stopped existing under the step (the week was
+    // re-planned, the slot swapped out) falls back to the root rather than
+    // rendering a step about nothing.
+    if (weekState.step === 'meal' &&
+        !(day && day[weekState.mealSlot] && day[weekState.mealSlot].state === 'planned')) {
+      weekState.step = day ? 'day' : 'week';
+    }
+    if (weekState.step === 'day' && !day) weekState.step = 'week';
+
+    var onRoot = weekState.step === 'week';
+    var band = panel.querySelector('#week-review-band');
+    var approve = panel.querySelector('#week-approve-row');
+    // The draft's decision and the approved receipt belong to the week, not
+    // to one day of it — they sit above the card on the root and nowhere
+    // else, the same way Cook's focus screen hides the Plan/Cook control.
+    if (band) band.hidden = !onRoot;
+    if (approve) approve.hidden = !onRoot;
+    var seg = panel.querySelector('#meals-seg');
+    if (seg && panel.dataset.mealsView !== 'cook') seg.hidden = !onRoot;
+
+    if (weekState.step === 'meal') {
+      steps.innerHTML = mealStepHtml(day, weekState.mealSlot);
+      ensureCookDataForMeals(panel);
+    } else if (weekState.step === 'day') {
+      steps.innerHTML = dayStepHtml(day);
+    } else {
+      steps.innerHTML = weekStepHtml(data, weekState.days);
+      if (weekPlanState(data) === 'none') renderPlanWeekEntry(steps, data);
+    }
+    wireMealsStep(panel, steps);
+  }
+
+  function wireMealsStep(panel, steps) {
+    steps.querySelectorAll('[data-wk-day]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        goMealsStep('day', { dayIndex: Number(row.getAttribute('data-wk-day')) });
+      });
+    });
+    steps.querySelectorAll('[data-wk-back]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // Up one level, named — "‹ This week" goes to the week, always.
+        // Deliberately NOT history.back(): back goes to the PREVIOUS view,
+        // which after any wandering (a day, a meal, back, another day) is
+        // not the same thing as the parent, and a link that says "This
+        // week" must not land on a meal. The back gesture keeps its own,
+        // correct meaning through the popstate handler.
+        goMealsStep(btn.getAttribute('data-wk-back'));
+      });
+    });
+    steps.querySelectorAll('[data-wk-meal]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal') });
+      });
+    });
+    steps.querySelectorAll('[data-wk-cook]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        var slot = btn.getAttribute('data-wk-cook');
+        var entry = day && day[slot];
+        // Everything that identifies THIS meal, so Cook lands on it
+        // whatever shape the plan is — the same target dayActionsHtml used
+        // to pass, now available from any day rather than only today.
+        activateTab('week', true, {
+          mealsView: 'cook',
+          mealsFocus: {
+            entryId: entry ? entry.entry_id : null,
+            date: day ? day.date : null,
+            slot: slot,
+            title: entry ? entry.title : ''
+          }
+        });
+      });
+    });
+    steps.querySelectorAll('[data-wk-swap]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
+        openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
+          btn.getAttribute('data-wk-swap') + ' for something else');
+      });
+    });
+    steps.querySelectorAll('[data-wk-ask]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
+        openAskSheet('For ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
+          btn.getAttribute('data-wk-ask') + ', I’d like ');
+      });
+    });
+    // "Pick" on an open slot reveals the resolver the app already had — the
+    // question and its options, unchanged, in the day they belong to
+    // instead of stacked at the bottom of the root.
+    steps.querySelectorAll('[data-wk-pick]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var box = steps.querySelector('#wk-open-' + btn.getAttribute('data-wk-pick'));
+        if (!box) return;
+        box.hidden = false;
+        btn.hidden = true;
+      });
+    });
+    wireOpenSlotOptions(panel, steps);
+    // The ready-made earmark's two answers. Emily's standing rule: the
+    // system recommends, the household confirms — nothing acts on the
+    // earmark until one of these is tapped. They used to be wired by
+    // renderDayCard; they render on the Day step's dinner card now
+    // (readyMadeHtml, unchanged) and need wiring in the same breath.
+    steps.querySelectorAll('.ready-made-confirm').forEach(function (btn) {
+      btn.addEventListener('click', function () { confirmReadyMade(panel, btn.dataset.date, true); });
+    });
+    steps.querySelectorAll('.ready-made-other').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // "Choose differently" declines the earmark and hands the question
+        // to chat, which is where an actual alternative gets chosen — the
+        // engine stores one recommendation, not a menu to pick from.
+        confirmReadyMade(panel, btn.dataset.date, false);
+        openAskSheet('Something else for ' + dayName(btn.dataset.date, { weekday: 'long' }) +
+          '’s dinner — I’ll be back from a trip, so nothing that needs real cooking');
+      });
+    });
+    // The cook-ahead picker, borrowed whole from the Cook view: the chips
+    // are local state until confirmed, and confirming goes through
+    // cookSetCookAhead so there is exactly one place that writes it.
+    steps.querySelectorAll('[data-cook="ahead-day"]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var sourceId = chip.getAttribute('data-source-id');
+        var picks = cookState.cookAheadPicks[sourceId] ||
+          (cookState.cookAheadPicks[sourceId] = {});
+        var dayId = chip.getAttribute('data-day-id');
+        if (picks[dayId]) delete picks[dayId]; else picks[dayId] = true;
+        renderMealsStep(panel);
+      });
+    });
+    steps.querySelectorAll('[data-cook="ahead-go"]').forEach(function (go) {
+      go.addEventListener('click', async function () {
+        await cookSetCookAhead(go);
+        // Consolidating cooks changes what this week says about itself —
+        // the covered days become made-ahead lines on the root card.
+        await loadWeekMenu(panel);
+      });
+    });
+    var next = steps.querySelector('#wk-plan-next');
+    if (next) next.addEventListener('click', function () {
+      var dayCount = (weekState.data && weekState.data.day_count) ||
+        (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+      var start = (weekState.data && (weekState.data.period_start_date || weekState.data.week_start_date)) ||
+        (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+      startPlanningWeek(addDaysLocal(start, dayCount), dayCount);
+    });
+    var more = steps.querySelector('#wk-more');
+    if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
+  }
+
+  // ---------- "More": every rare action, one tap off the root ----------
+  // The root used to carry all of these at once. None of them is wrong —
+  // they are just not what the screen is for, and a screen that shows its
+  // rare actions permanently is a screen that never finishes answering its
+  // own question. A sheet, not a page (NavBlueprint): it slides over Meals
+  // and dismisses down.
+
+  var mealsMoreScrim = document.getElementById('meals-more-scrim');
+  var mealsMoreSheet = document.getElementById('meals-more-sheet');
+
+  function mealsMoreRowHtml(id, label, sub) {
+    return '<button type="button" class="wk-more-row" id="' + id + '">' +
+      '<span class="wk-more-label">' + escapeHtml(label) + '</span>' +
+      (sub ? '<span class="wk-more-sub">' + escapeHtml(sub) + '</span>' : '') +
+    '</button>';
+  }
+
+  function renderMealsMoreSheet() {
+    var rows = document.getElementById('meals-more-rows');
+    if (!rows) return;
+    var data = weekState.data || {};
+    var hasPlan = !!data.weekly_plan_id;
+    var dayCount = data.day_count ||
+      (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    var start = data.period_start_date || data.week_start_date ||
+      (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+    rows.innerHTML =
+      mealsMoreRowHtml('wk-more-replan',
+        planEntryLabel(dayCount, 'current', hasPlan), periodRangeLabel(start, dayCount)) +
+      // The custom-range picker, unchanged — same opener id, same picker
+      // id, same wirePeriodPicker. It only moved.
+      '<button type="button" class="wk-more-row" id="week-period-open" aria-expanded="false">' +
+        '<span class="wk-more-label">' + escapeHtml(PERIOD_PICKER_COPY.open) + '</span></button>' +
+      '<div class="week-period-picker" id="week-period-picker" hidden></div>' +
+      (hasPlan && data.status !== 'approved'
+        ? mealsMoreRowHtml('wk-more-try-again', 'Try again', 'Same answers, a different week') +
+          mealsMoreRowHtml('wk-more-change', 'Change my answers')
+        : '') +
+      mealsMoreRowHtml('wk-more-whole-week', 'See the whole week', 'All the meals, and the link to share them') +
+      mealsMoreRowHtml('wk-more-setup', 'Adjust your setup') +
+      mealsMoreRowHtml('wk-more-reset', 'Start over');
+
+    var panel = panels['week'];
+    function on(id, fn) {
+      var el = rows.querySelector('#' + id);
+      if (el) el.addEventListener('click', fn);
+    }
+    on('wk-more-replan', function () { closeMealsMoreSheet(); startPlanningWeek(start, dayCount); });
+    on('wk-more-try-again', function () { closeMealsMoreSheet(); tryAgain(panel, data); });
+    on('wk-more-change', function () {
+      closeMealsMoreSheet();
+      startPlanningWeek(data.week_start_date, data.day_count || 7);
+    });
+    on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
+    on('wk-more-setup', function () { closeMealsMoreSheet(); openMealSetup(); });
+    on('wk-more-reset', function () { closeMealsMoreSheet(); openResetDialog(); });
+    // The picker's own confirm navigates away to /plan-week, so it needs no
+    // dismissal of its own.
+    wirePeriodPicker(rows, start, dayCount);
+  }
+
+  function openMealsMoreSheet() {
+    if (!mealsMoreSheet) return;
+    closeAskSheet();
+    closeWeekSheet();
+    renderMealsMoreSheet();
+    mealsMoreScrim.hidden = false;
+    mealsMoreSheet.hidden = false;
+  }
+  function closeMealsMoreSheet() {
+    if (!mealsMoreScrim) return;
+    mealsMoreScrim.hidden = true;
+    mealsMoreSheet.hidden = true;
+  }
+  if (mealsMoreScrim) {
+    mealsMoreScrim.addEventListener('click', closeMealsMoreSheet);
+    document.getElementById('meals-more-handle').addEventListener('click', closeMealsMoreSheet);
+    document.getElementById('meals-more-close').addEventListener('click', closeMealsMoreSheet);
   }
 
   // ---------- Settling a slot the app handed back ----------
 
-  // The one place an open slot is answered, shown at both breakpoints —
-  // the mobile day card is display:none on desktop, and a grid cell is far
-  // too small to carry a real question. Amber, and the reason names the
-  // CONSTRAINT that caused it, so the ask reads as diligence rather than
-  // failure.
-  function renderOpenSlots(panel, data) {
-    var row = panel.querySelector('#week-open-row');
-    if (!row) return;
-    var open = [];
-    (data.days || []).forEach(function (day) {
-      WEEK_SLOTS.forEach(function (slot) {
-        if (day[slot] && day[slot].state === 'open') {
-          open.push({ date: day.date, slot: slot, entry: day[slot] });
-        }
-      });
-    });
-    if (!open.length) { row.innerHTML = ''; return; }
-
-    row.innerHTML = open.map(function (o) {
-      return (
-        '<div class="shell-card week-open-card" data-open-date="' + o.date + '" data-open-slot="' + o.slot + '">' +
-          '<div class="week-open-reason">' + escapeHtml(o.entry.open_reason || '') + '</div>' +
-          (o.entry.options && o.entry.options.length
-            ? '<div class="week-open-options">' + o.entry.options.map(function (opt) {
-                return '<button type="button" class="week-open-option" data-choice="' + escapeHtml(opt.label) + '">' +
-                  '<span class="week-open-option-label">' + escapeHtml(opt.label) + '</span>' +
-                  '<span class="week-open-option-meta">' + escapeHtml(opt.meta || '—') + '</span>' +
-                '</button>';
-              }).join('') + '</div>'
-            // No options offered — chat is the escape hatch for anything
-            // the screens can't express, rather than a dead end.
-            : '<button type="button" class="week-open-talk">Tell me what you’d like instead →</button>') +
-        '</div>'
-      );
-    }).join('');
-    wireOpenSlotOptions(panel, row);
+  // The one place an open slot is answered. It used to be a stack of cards
+  // at the bottom of the root, one per open slot and none of them beside
+  // the day it was about; now it is revealed by "Pick" inside that day's
+  // own card (see daySlotCardHtml). Same question, same options, same
+  // write — amber, and the reason names the CONSTRAINT that caused it, so
+  // the ask reads as diligence rather than failure.
+  function openSlotCardHtml(date, slot, entry) {
+    return (
+      '<div class="shell-card week-open-card" data-open-date="' + date + '" data-open-slot="' + slot + '">' +
+        '<div class="week-open-reason">' + escapeHtml(entry.open_reason || '') + '</div>' +
+        (entry.options && entry.options.length
+          ? '<div class="week-open-options">' + entry.options.map(function (opt) {
+              return '<button type="button" class="week-open-option" data-choice="' + escapeHtml(opt.label) + '">' +
+                '<span class="week-open-option-label">' + escapeHtml(opt.label) + '</span>' +
+                '<span class="week-open-option-meta">' + escapeHtml(opt.meta || '—') + '</span>' +
+              '</button>';
+            }).join('') + '</div>'
+          // No options offered — chat is the escape hatch for anything the
+          // screens can't express, rather than a dead end.
+          : '<button type="button" class="week-open-talk">Tell me what you’d like instead →</button>') +
+      '</div>'
+    );
   }
 
   function wireOpenSlotOptions(panel, scope) {
@@ -4292,6 +4668,11 @@
     defrostAskState.items = null;
     defrostAskState.selected = {};
     defrostAskState.forceShow = true;
+    // The ask card lives above the week card and shows on the ROOT only
+    // (renderMealsStep hides both bands on the Day and Meal steps), so a
+    // re-ask arriving while a day is open has to come back out to the
+    // week — otherwise it forces open a card nobody can see.
+    weekState.step = 'week';
     activateTab('week', true, { mealsView: 'plan' });
     var panel = panels['week'];
     if (!panel) return;
@@ -4469,6 +4850,11 @@
     cookAheadAskState.items = null;
     cookAheadAskState.picks = {};
     cookAheadAskState.forceShow = true;
+    // The ask card lives above the week card and shows on the ROOT only
+    // (renderMealsStep hides both bands on the Day and Meal steps), so a
+    // re-ask arriving while a day is open has to come back out to the
+    // week — otherwise it forces open a card nobody can see.
+    weekState.step = 'week';
     activateTab('week', true, { mealsView: 'plan' });
     var panel = panels['week'];
     if (!panel) return;
@@ -5193,277 +5579,45 @@
   }
 
   function renderWeekMenu(panel, data) {
-    var headerEl = panel.querySelector('#week-header');
-    var mobileEl = panel.querySelector('#week-mobile');
-    var gridEl = panel.querySelector('#week-grid');
     weekState.data = data;
+    var todayStr = todayLocalStr();
+    var days = (data.days || []).map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
+    weekState.days = days;
 
-    if (!data.weekly_plan_id || !data.days.length) {
-      headerEl.innerHTML =
-        '<div class="menu-rule-line">EST. 2019</div>' +
-        '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Pomona') + '</h1>' +
-        '<div class="menu-subtitle">No meal plan yet</div>' +
-        '<div class="menu-dots">&bull;&bull;&bull;</div>' +
-        '<div class="menu-status">Ask Pomona to plan your week to get started.</div>';
-      mobileEl.querySelector('#week-framing').innerHTML =
-        '<div class="week-head"><h1>This week</h1></div>' +
-        '<div class="week-note">No meal plan yet.</div>';
-      mobileEl.querySelector('#day-rail').innerHTML = '';
-      // The empty state keeps the screen's shape — a spruce hero with
-      // nothing in it rather than a missing hero — so "no plan yet" reads
-      // as a state of this screen instead of as a broken one.
-      mobileEl.querySelector('#day-card-wrap').innerHTML =
-        '<div class="day-hero">' +
-          '<div class="hero-top"><span class="hero-eyebrow">This week</span><span class="hero-rule"></span></div>' +
-          '<div class="hero-dish hero-dish-empty">No meal plan yet</div>' +
-          '<div class="hero-accent">Ask Pomona to plan your week to get started.</div>' +
-        '</div>';
-      mobileEl.querySelector('#whole-week-sub').textContent = '';
-      gridEl.innerHTML = '';
-      renderWeekReviewBand(panel, data, '');
-      renderOpenSlots(panel, data);
-      renderWeekApproval(panel, data);
-      renderPlanWeekEntry(panel, data);
-      weekState.days = [];
-      return;
+    // The one sentence about the state of the week, kept exactly as it
+    // was: a draft says whatever the server's headline says, an approved
+    // week says it's set, and anything with a gap counts the gaps. It
+    // feeds the review band; the root card's own subtitle says the shape
+    // of the week instead ("4 cooks, 3 made ahead"), which is a different
+    // fact and deliberately not the same sentence twice.
+    var emptyAheadCount = days.filter(function (d) { return d.needsDecision; }).length;
+    var statusLine = '';
+    if (data.weekly_plan_id && days.length) {
+      statusLine = (data.status !== 'approved' && data.headline)
+        ? data.headline
+        : (emptyAheadCount === 0
+            ? 'Your week is set.'
+            : (emptyAheadCount === 1 ? 'One meal still needs a decision.' : emptyAheadCount + ' meals still need a decision.'));
     }
 
-    var todayStr = todayLocalStr();
-    var days = data.days.map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
-    weekState.days = days;
-    var emptyAheadCount = days.filter(function (d) { return d.needsDecision; }).length;
-    // The desktop header carries the same one line the mobile framing does
-    // — #week-framing lives inside #week-mobile, which is display:none at
-    // this breakpoint, so without this the headline simply wouldn't exist
-    // on desktop and the two layouts would say different things about the
-    // same week.
-    var statusLine = (data.status !== 'approved' && data.headline)
-      ? data.headline
-      : (emptyAheadCount === 0
-          ? 'Your week is set.'
-          : (emptyAheadCount === 1 ? 'One meal still needs a decision.' : emptyAheadCount + ' meals still need a decision.'));
-
-    headerEl.innerHTML =
-      '<div class="menu-rule-line">EST. 2019</div>' +
-      '<h1 class="menu-household">' + escapeHtml(data.household_name || 'Pomona') + '</h1>' +
-      '<div class="menu-subtitle">menu for the week of ' + dayName(data.week_start_date, { month: 'long', day: 'numeric' }) + '</div>' +
-      '<div class="menu-dots">&bull;&bull;&bull;</div>' +
-      '<div class="menu-status">' + escapeHtml(statusLine) + '</div>' +
-      (data.menu_is_suggested ? '<div class="menu-suggested-note">One example arrangement — your household assembles freely.</div>' : '');
-
-    // Default the day rail's selection to today the first time this loads;
-    // preserve whatever the household already had selected across a
-    // refresh (e.g. right after filling a dinner from this same card).
-    if (weekState.selectedIndex === null || weekState.selectedIndex >= days.length) {
+    // Default the day pointer to today the first time this loads; preserve
+    // whatever day the household was already on across a refresh (settling
+    // a slot, a chat edit) so the screen never moves under their thumb.
+    if (!days.length) {
+      weekState.selectedIndex = null;
+      weekState.step = 'week';
+    } else if (weekState.selectedIndex === null || weekState.selectedIndex >= days.length) {
       var todayIndexForSelect = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
       weekState.selectedIndex = todayIndexForSelect >= 0 ? todayIndexForSelect : 0;
     }
 
     renderWeekReviewBand(panel, data, statusLine);
-    renderWeekFraming(panel, data, statusLine);
-    renderDayRail(panel, days);
-    renderDayCard(panel, days[weekState.selectedIndex]);
-    renderWholeWeekRow(panel, days);
-    renderOpenSlots(panel, data);
     renderWeekApproval(panel, data);
-    renderPlanWeekEntry(panel, data);
+    renderMealsStep(panel);
     renderWeekSheetRows(days);
     // Chat's "See your week" chip may have asked for a specific day before
     // this week's days existed — now they do. No-op unless one is pending.
     applyPendingDayFocus(panel);
-
-    var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
-    gridEl.innerHTML =
-      '<div class="shell-card week-grid-sheet">' +
-        '<div class="wg2-grid">' +
-          '<div class="wg2-row wg2-row-head">' +
-            '<div class="wg2-label"></div>' +
-            days.map(function (day, i) {
-              return wgHeadCellHtml(day, i === todayIndex);
-            }).join(WG_SPINE) +
-          '</div>' +
-          WEEK_SLOTS.map(function (slot) {
-            var isDinner = slot === 'dinner';
-            return (
-              '<div class="wg2-row' + (isDinner ? ' wg2-row-dinner' : '') + '">' +
-                (isDinner
-                  ? '<div class="wg2-label wg2-label-dinner"><span class="wg2-dot"></span>' + SLOT_LABELS[slot] + '</div>'
-                  : '<div class="wg2-label">' + SLOT_LABELS[slot] + '</div>') +
-                days.map(function (day, i) {
-                  var isToday = i === todayIndex;
-                  return isDinner
-                    ? wgDinnerTileHtml(day, isToday)
-                    : wgSideTileHtml(day, slot, isToday);
-                }).join(WG_SPINE) +
-              '</div>'
-            );
-          }).join('') +
-        '</div>' +
-      '</div>';
-
-    // "Pick" tap target -> Today, where the (future, Step 5) decision card
-    // resolves it. Nothing else on the menu is tappable, per README §5.
-    // "Pick" tap target on the desktop grid -> Today, where the needs-you
-    // card resolves it. The mobile day card's own "Pick" rows (courseHtml,
-    // above) fill inline instead via fillWeekDinner.
-    panel.querySelectorAll('.wg2-tile-empty').forEach(function (el) {
-      var go = function () { activateTab('today', true); };
-      el.addEventListener('click', go);
-      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-    });
-
-    // An open slot on the grid selects that day and scrolls the day card
-    // into view — the question and its options are too long to answer in a
-    // grid cell, and a truncated question is worse than a pointer to it.
-    panel.querySelectorAll('.wg2-tile-open').forEach(function (el) {
-      var go = function () {
-        var card = panel.querySelector('.week-open-card[data-open-date="' + el.dataset.date +
-          '"][data-open-slot="' + el.dataset.slot + '"]');
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      };
-      el.addEventListener('click', go);
-      el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-    });
-
-    // The grid's own "Why this?" toggle — the per-meal reasoning decision
-    // (stored at generation, revealed on demand) applies here exactly like
-    // it already does in Cook's recipe detail (.cook-why). A plain hide/show
-    // toggle, no re-render, so it can't disturb anything else mid-tap.
-    panel.querySelectorAll('.wg2-why').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var text = panel.querySelector('#wg2-why-' + btn.dataset.key);
-        if (!text) return;
-        text.hidden = !text.hidden;
-        btn.setAttribute('aria-expanded', String(!text.hidden));
-      });
-    });
-  }
-
-  // ---------- Desktop week grid tiles (InnMeals week-grid redesign) ----------
-  // The joined-tile motif: today's column is square on every edge it shares
-  // with another tile in the same column and tinted, so the header + three
-  // slot rows read as one poured shape running top to bottom — everywhere
-  // else rounds freely and floats with its own margin. See DESIGN_SYSTEM.md
-  // §4. A soft 3px rounded spine stands in for the old hairline cell border
-  // between one day's column and the next.
-  var WG_SPINE = '<span class="wg2-spine"></span>';
-
-  function wgHeadCellHtml(day, isToday) {
-    return '<div class="wg2-head-cell' + (isToday ? ' is-today' : '') + '">' +
-      '<span class="wg2-head-day">' + dayName(day.date, { weekday: 'short' }) + '</span>' +
-      '<span class="wg2-head-date">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
-    '</div>';
-  }
-
-  // A unique, DOM-safe key for a slot's "Why this?" panel — a date is
-  // already safe as an id fragment (YYYY-MM-DD).
-  function wgWhyKey(day, slot) { return day.date + '-' + slot; }
-
-  function wgWhyHtml(day, slot, entry) {
-    if (!entry || !entry.reason) return '';
-    var key = wgWhyKey(day, slot);
-    return '<button type="button" class="wg2-why" data-wg="why" data-key="' + key + '" aria-expanded="false">' +
-        ICONS.info + '<span>Why this?</span>' +
-      '</button>' +
-      '<p class="wg2-why-text" id="wg2-why-' + key + '" hidden>' + escapeHtml(entry.reason) + '</p>';
-  }
-
-  // Breakfast/lunch: subordinate, compact, quiet — same three slot states
-  // sideCourseHtml already handles, restyled as a floating soft tile instead
-  // of a hairline table cell.
-  function wgSideTileHtml(day, slot, isToday) {
-    var entry = day[slot];
-    var cls = 'wg2-tile wg2-tile-' + slot + (isToday ? ' is-today' : '');
-    if (entry && entry.state === 'planned_empty') {
-      return '<div class="' + cls + '">' +
-        '<div class="wg2-tile-row">' +
-          '<span class="wg2-tile-name wg2-tile-away">' + escapeHtml(awayLineFor(entry) || entry.title) + '</span>' +
-          (entry.need && entry.need !== 'away' ? needBadgeHtml(entry) : '') +
-        '</div>' +
-      '</div>';
-    }
-    if (entry && entry.state === 'open') {
-      // Tapping through to the day card is where the options live — the
-      // grid cell is too small to answer in, and a truncated question is
-      // worse than a pointer to it.
-      return '<div class="' + cls + ' wg2-tile-open" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
-        '<div class="wg2-tile-row">' +
-          '<span class="wg2-tile-name">Your call</span>' +
-          '<span class="wg2-tile-meta">Answer</span>' +
-        '</div>' +
-      '</div>';
-    }
-    if (!entry) {
-      if (day.isPast) {
-        return '<div class="' + cls + '"><div class="wg2-tile-row"><span class="wg2-tile-name wg2-tile-away">Not planned</span></div></div>';
-      }
-      return '<div class="' + cls + ' wg2-tile-empty" data-date="' + day.date + '" data-slot="' + slot + '" role="button" tabindex="0">' +
-        '<div class="wg2-tile-row">' +
-          '<span class="wg2-tile-name wg2-tile-blank">Choose a ' + slot + '</span>' +
-          '<span class="wg2-tile-meta">Pick</span>' +
-        '</div>' +
-      '</div>';
-    }
-    return '<div class="' + cls + '">' +
-      '<div class="wg2-tile-row">' +
-        '<span class="wg2-tile-name">' + escapeHtml(entry.title) + '</span>' +
-        (entry.need ? needBadgeHtml(entry) : '') +
-      '</div>' +
-      wgWhyHtml(day, slot, entry) +
-    '</div>';
-  }
-
-  // Dinner: the dominant row — it's the starred meal. Larger tile, a spruce
-  // accent border standing in for the hero's own spruce, time/servings as
-  // small chips. No interactive actions here (Swap, Cook this, the
-  // ready-made confirm) — those stay on the day hero above, the same way an
-  // "open" tile here only points at the day card rather than answering
-  // inline.
-  function wgDinnerTileHtml(day, isToday) {
-    var entry = day.dinner;
-    var cls = 'wg2-dinner-tile' + (isToday ? ' is-today' : '');
-    if (entry && entry.state === 'planned_empty') {
-      var emptyLine = awayLineFor(entry) ||
-        (entry.need === 'ready_made' ? 'Something already made' :
-         entry.need === 'quick' ? 'Something quick' : 'Nothing yet');
-      return '<div class="' + cls + '">' +
-        (entry.need && entry.need !== 'away' ? '<div class="wg2-dinner-chips">' + needBadgeHtml(entry) + '</div>' : '') +
-        '<span class="wg2-dinner-away">' + escapeHtml(emptyLine) + '</span>' +
-      '</div>';
-    }
-    if (entry && entry.state === 'open') {
-      return '<div class="' + cls + ' wg2-tile-open" data-date="' + day.date + '" data-slot="dinner" role="button" tabindex="0">' +
-        '<span class="wg2-dinner-name">Your call</span>' +
-        '<span class="wg2-tile-meta">Answer</span>' +
-      '</div>';
-    }
-    if (!entry) {
-      if (day.isPast) {
-        return '<div class="' + cls + '"><span class="wg2-dinner-away">Not planned</span></div>';
-      }
-      return '<div class="' + cls + ' wg2-tile-empty" data-date="' + day.date + '" data-slot="dinner" role="button" tabindex="0">' +
-        '<span class="wg2-dinner-name wg2-tile-blank">Choose a dinner</span>' +
-        '<span class="wg2-tile-meta">Pick</span>' +
-      '</div>';
-    }
-    // "with a green salad", or "one-pot, nothing extra" — the plate note
-    // (app/tools/plates.py). Rendered as one more of the same chip the
-    // timing already uses, rather than a new element: it is the same kind
-    // of small fact about the meal, and the card has no room for a third
-    // line under the name.
-    var chips = [];
-    if (entry.meta) chips.push(entry.meta);
-    if (entry.plate_note) chips.push(entry.plate_note);
-    return '<div class="' + cls + '">' +
-      (entry.need ? '<div class="wg2-dinner-chips">' + needBadgeHtml(entry) + '</div>' : '') +
-      '<span class="wg2-dinner-name">' + escapeHtml(entry.title) + '</span>' +
-      (chips.length
-        ? '<div class="wg2-dinner-chips">' + chips.map(function (c) {
-            return '<span class="wg2-dinner-chip">' + escapeHtml(c) + '</span>';
-          }).join('') + '</div>'
-        : '') +
-      wgWhyHtml(day, 'dinner', entry) +
-    '</div>';
   }
 
   // ---------- Cook: the Meals tab's second state (InnCooker) ----------
@@ -5565,6 +5719,10 @@
     var cookView = panel.querySelector('#week-cook-view');
     if (planView) planView.hidden = isCook;
     if (cookView) cookView.hidden = !isCook;
+    // Coming back from Cook: the Plan side decides for itself whether the
+    // segmented control shows (a Day or Meal step hides it, same rule
+    // Cook's focus screen follows), and Cook may have left it hidden.
+    if (!isCook && weekState.data) renderMealsStep(panel);
 
     panel.querySelectorAll('.meals-seg-btn').forEach(function (btn) {
       var on = btn.getAttribute('data-meals-view') === (isCook ? 'cook' : 'plan');
@@ -7412,11 +7570,8 @@
 
     document.getElementById('week-sheet-rows').querySelectorAll('.week-sheet-row').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var panel = panels['week'];
-        weekState.selectedIndex = Number(btn.dataset.index);
-        renderDayRail(panel, weekState.days);
-        renderDayCard(panel, weekState.days[weekState.selectedIndex]);
         closeWeekSheet();
+        goMealsStep('day', { dayIndex: Number(btn.dataset.index) });
       });
     });
 
@@ -7849,16 +8004,11 @@
     weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
     if (index < 0) return; // the change landed outside the week on screen
     weekState.pendingDayFocus = null;
-    // Exactly what a day-rail tap does (see renderDayRail's own handler) —
-    // one selection mechanism, so this can't drift from the real one.
-    weekState.selectedIndex = index;
-    renderDayRail(panel, weekState.days);
-    renderDayCard(panel, weekState.days[index]);
-    // Dinner is the hero; breakfast and lunch live together in the sides
-    // card, which is the smallest thing that reliably contains them both
-    // without teaching this function the sides card's internals.
-    var wrap = panel.querySelector('#day-card-wrap');
-    var target = wrap && wrap.querySelector(pending.slot === 'dinner' ? '.day-hero' : '.day-sides');
+    // The Day step is where a changed meal is legible — the root card
+    // truncates every name to one line, which is right for "is the week
+    // settled" and wrong for "look what I changed".
+    goMealsStep('day', { dayIndex: index });
+    var target = panel.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
     if (!target) return;
     target.classList.add('just-changed');
     // Long enough to notice, short enough that it's gone before it can be
@@ -8235,6 +8385,7 @@
   function openAskSheet(prefill) {
     ensureAskSheetBuilt();
     closeWeekSheet();
+    closeMealsMoreSheet();
     if (isDesktopAsk()) {
       var col = document.getElementById('today-ask-input');
       if (prefill) col.value = prefill;
