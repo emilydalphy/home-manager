@@ -1238,7 +1238,7 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
 @app.get("/api/chores/today")
 def chores_today():
     """
-    Chore instances due today — powers the app-shell Today screen's chores
+    Chore instances due today — backs the app-shell Today screen's chores
     card (design_handoff_shell/README.md §4). Added for Step 2 of that
     redesign: no chores read endpoint existed before this (list_chores was
     chat-agent-only), so this — like /api/cooker-view, /api/grocery-list,
@@ -1246,17 +1246,22 @@ def chores_today():
     chat round-trip. See the Step 2 note in the README's build-order log
     for why this exists despite that doc's "no new endpoints" line.
 
+    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
+    is meals-only, so the Today card this endpoint feeds is hidden behind
+    `SHOW_CHORES_ON_TODAY` in static/shell.js — while that flag is false,
+    shell.js never calls this route at all (no wasted request), so in
+    practice nothing hits this endpoint from the shell right now. The
+    route itself, `chores_set_up`, and the rest of the chores backend are
+    untouched; flipping that one constant back to true is the whole
+    reversal, no server change needed.
+
     `chores_set_up` rides along on this same response (Emily, 2026-09-05,
-    20a: chores setup moved out of onboarding onto its own page) so the
-    Today card can decide whether to offer "Want help with chores too? Set
-    them up" without a second round-trip. NOTE (2026-09-08): the Today card
-    does not actually offer that yet -- `chores_set_up` is returned here and
-    read nowhere in static/shell.js, and /chores-setup has no link into it.
-    The field is ready for that offer, not evidence it exists. True once
-    either a chores
-    profile was saved or any chore actually exists — either one means the
-    household already went through setup, even if nothing happens to be
-    due today.
+    20a: chores setup moved out of onboarding onto its own page) so a
+    future Today card could decide whether to offer "Want help with
+    chores too? Set them up" without a second round-trip. True once
+    either a chores profile was saved or any chore actually exists —
+    either one means the household already went through setup, even if
+    nothing happens to be due today.
     """
     try:
         chores = tools.get_chores_due_today()
@@ -3384,12 +3389,15 @@ def chores_setup_page():
     /api/onboarding/household and /api/onboarding/chores-profile routes
     onboarding always used.
 
-    CORRECTED 2026-09-08: this docstring used to say the page is "Reached
-    from Today's chores card ("Want help with chores too? Set them up")".
-    It is not reached from anywhere -- that string exists in no frontend
-    file, and nothing in static/ links or navigates to /chores-setup. The
-    page is live but orphaned; whether to link it before Chores is
-    validated is Emily's call, open on the Chores ticket.
+    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
+    is meals-only, so Today's chores card is hidden behind
+    `SHOW_CHORES_ON_TODAY` in static/shell.js -- there was never a link
+    from that card to here anyway (that "Want help with chores too? Set
+    them up" string exists in no frontend file). This page is not linked
+    from anywhere in static/; it is live but orphaned, reachable only by
+    visiting /chores-setup directly. Whether to surface Chores at all is
+    Emily's call, open on the Chores ticket; flipping the flag back is
+    the whole reversal on the Today side.
     """
     return FileResponse(os.path.join(static_dir, "chores-setup.html"))
 
