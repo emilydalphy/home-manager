@@ -2933,12 +2933,13 @@ html, body {
   flex-shrink: 0;
 }
 
-/* ---------- Title row: "Grocery", a hairline, and the two icon buttons ---------- */
-.gro-titlerow {
+/* ---------- Step head: the title, the TO SORT badge, the two icon buttons ---------- */
+.gro-head { padding: 10px 20px 0; }
+.gro-head-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px 6px;
+  padding-bottom: 6px;
 }
 .gro-title {
   font-family: var(--font-display);
@@ -2983,141 +2984,95 @@ html, body {
 }
 @keyframes gro-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .72; } }
 
-/* ---------- The hero: the state of the trip ---------- */
-.gro-hero {
-  background: var(--spruce);
-  border-radius: 0 0 var(--radius-hero) var(--radius-hero);
-  padding: 14px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  box-shadow: var(--shadow-hero);
+/* ---------- The rest of the step head: badge, subtitle, back link ----------
+   There is no spruce hero on Grocery any more, and no three-way segmented
+   control. Emily's approved design (2026-09-08) answers each of the four
+   steps with a title and one line under it — the same shape Meals' Week /
+   Day / Meal steps use — and puts the screen's one apricot at the FOOT,
+   under the thumb, rather than in a panel at the top. Rule 5 is about how
+   many primaries a screen has, not where one sits. */
+.gro-sub {
+  padding: 0 0 8px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
 }
-.gro-hero-top { display: flex; align-items: center; gap: 10px; }
-.gro-hero-chip {
-  height: 26px;
-  padding: 0 11px;
-  border-radius: 9px;
+.gro-sub[hidden] { display: none; }
+/* "3 TO SORT" — the only way into the SORT step, so it is a real 44px
+   target: 22px drawn, the rest claimed by the pseudo-element, exactly the
+   trick .gro-icon-btn above uses. Apricot fill carrying --on-accent-ink
+   (Rule 1). */
+.gro-sortbadge {
+  position: relative;
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 9px;
+  border: none;
+  border-radius: var(--radius-badge-sm);
   background: var(--apricot);
-  display: flex;
-  align-items: center;
+  color: var(--on-accent-ink);
   font-family: var(--font-body);
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--on-accent-ink);
+  letter-spacing: .13em;
+  cursor: pointer;
   white-space: nowrap;
 }
-.gro-hero-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--apricot-rule); }
-.gro-hero-count {
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 9px;
-  background: var(--spruce-raised);
-  display: flex;
-  align-items: center;
+.gro-sortbadge::after { content: ''; position: absolute; inset: -11px; }
+.gro-sortbadge[hidden] { display: none; }
+/* Back links go UP a level by name, never history.back() — see the
+   'step-back' handler. Same shape and reasoning as Meals' .wk-back. */
+.gro-back {
+  align-self: flex-start;
+  min-height: 44px;
+  margin: 8px 12px 0;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  cursor: pointer;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--ivory-ink-muted);
-  white-space: nowrap;
+  color: var(--ink-secondary);
 }
-.gro-hero-line { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
-.gro-hero-headline {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 32px;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: var(--ivory-ink);
-}
-/* The one Newsreader italic on this screen. */
-.gro-hero-note {
-  font-family: var(--font-accent);
-  font-style: italic;
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1.2;
-  color: var(--apricot-light);
-}
-.gro-hero-track {
-  height: 8px;
-  border-radius: 4px;
-  background: var(--spruce-raised);
-  display: flex;
-  overflow: hidden;
-}
-.gro-hero-fill { background: var(--apricot); display: block; border-radius: 4px; transition: width .18s ease; }
-.gro-hero-action {
-  height: 52px;
+.gro-back:hover { color: var(--ink-strong); }
+.gro-back[hidden] { display: none; }
+
+/* ---------- The foot: the step's one action ---------- */
+.gro-foot { padding-top: 16px; gap: 4px; }
+.gro-foot:empty { display: none; }
+.gro-primary {
+  width: 100%;
+  min-height: 52px;
   border-radius: var(--radius-action);
   background: var(--apricot);
   border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
   color: var(--on-accent-ink);
   font-family: var(--font-display);
-  font-size: 17px;
   font-weight: 700;
+  font-size: 17px;
   letter-spacing: -0.02em;
   cursor: pointer;
-  box-shadow: var(--shadow-action);
-  width: 100%;
+  box-shadow: var(--shadow-hero);
 }
-.gro-hero-action:hover { background: var(--apricot-light); }
-.gro-hero-action:disabled { opacity: .6; cursor: default; box-shadow: none; }
-.gro-hero-action svg { width: 18px; height: 18px; }
-/* Stepping back out of a store, inside the tab. Not a page back button — it
-   returns to a sibling STATE, which is why it is a quiet text control on the
-   hero rather than a chrome-level arrow. */
-.gro-hero-back {
+.gro-primary:hover { background: var(--apricot-light); }
+.gro-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
+/* "Add something" — quiet on purpose: adding is a side errand next to
+   starting the trip, and a second filled button would fight it. */
+.gro-quiet {
+  width: 100%;
+  min-height: 44px;
   background: none;
   border: none;
-  padding: 0;
-  align-self: flex-start;
   font-family: var(--font-body);
-  font-size: 13px;
   font-weight: 700;
-  color: var(--apricot-light);
-  cursor: pointer;
-  min-height: 32px;
-}
-.gro-hero-back:hover { color: var(--ivory-ink); }
-
-/* ---------- Segmented control: the three real tabs ---------- */
-.gro-seg {
-  padding: 8px 20px 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-/* A class rule that sets `display` outranks the UA stylesheet's
-   [hidden] { display: none }, so hiding these by setting .hidden silently
-   did nothing until this existed. Same guard .dinner-hero[hidden] already
-   carries, for the same reason. */
-.gro-seg[hidden] { display: none; }
-.gro-seg-btn {
-  min-height: 44px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink-secondary);
+  font-size: 14px;
+  color: var(--ink-strong);
   cursor: pointer;
 }
-.gro-seg-btn:hover { background: var(--surface); }
-.gro-seg-btn.active {
-  background: var(--spruce);
-  border-color: var(--spruce);
-  color: var(--ivory-ink);
-  font-weight: 800;
-}
+.gro-quiet:hover { color: var(--apricot-label-hover); }
 
 /* ---------- Body ---------- */
 .gro-body {
@@ -3350,19 +3305,6 @@ html, body {
   display: flex;
   flex-direction: column;
 }
-.gro-store-head {
-  min-height: 48px;
-  padding: 9px 0;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-}
 .gro-store-avatar {
   width: 30px;
   height: 30px;
@@ -3388,28 +3330,53 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.gro-store-left {
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 9px;
-  background: var(--sand);
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--apricot-label);
-  white-space: nowrap;
-}
 .gro-chev { color: var(--ink-inactive); flex: 0 0 auto; display: flex; }
 .gro-chev svg { width: 17px; height: 17px; }
 
-/* A store that is collapsed reads as one quiet row, not as another full card
-   — "break the uniform card stack". */
-.gro-store.collapsed { padding: 0 14px; }
-.gro-store.collapsed .gro-store-head { min-height: 50px; padding: 0; }
-.gro-store.collapsed .gro-store-avatar { width: 28px; height: 28px; border-radius: 9px; font-size: 12px; background: var(--sand-deep); color: var(--ink-secondary); }
-.gro-store.collapsed .gro-store-name { font-size: 15px; }
+/* The store card's head — "Costco · 14". A div, not a button: the card no
+   longer collapses, so there is nothing to toggle. */
+.gro-card-head {
+  min-height: 48px;
+  padding: 9px 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+/* A LIST row is a name and a quantity, and nothing is tappable on it — the
+   per-item ⋯ menu is gone, and changing a thing is the ask bar's job now. */
+.gro-listrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 5px 0;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-listrow-name {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  min-width: 0;
+}
+/* "+ 11 more" — a card shows four things and then says how many it is
+   holding back, so a 40-item shop doesn't become the whole screen. */
+.gro-more-link {
+  background: none;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.gro-more-link:hover { color: var(--apricot-label-hover); }
 
 /* Aisle spine + name */
 .gro-aisle {
@@ -3474,58 +3441,6 @@ html, body {
   white-space: nowrap;
 }
 .gro-row.done .gro-qty { background: transparent; color: var(--ink-done-soft); }
-.gro-more {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-done-soft);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.gro-more:hover { color: var(--ink-secondary); }
-/* 28px drawn, 44px tappable. This is the ONLY way into an item's actions, and
-   the page this replaced guarded it the same way (min-height:44px there). */
-.gro-more { position: relative; }
-.gro-more::after { content: ''; position: absolute; inset: -8px; }
-.gro-more svg { width: 17px; height: 17px; }
-
-/* The per-item menu — edit quantity/section/store, "Have it", "Elsewhere",
-   remove. Folded under the row it belongs to rather than floating over it. */
-.gro-menu { display: none; flex-wrap: wrap; gap: 6px; padding: 2px 0 12px; }
-.gro-menu.open { display: flex; }
-.gro-menu input, .gro-menu select {
-  padding: 9px 10px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  font-family: var(--font-body);
-  font-size: 13px;
-  background: var(--ground);
-  color: var(--ink);
-  min-height: 40px;
-  flex: 1 1 110px;
-  min-width: 0;
-}
-.gro-menu button {
-  border: none;
-  border-radius: var(--radius-control);
-  padding: 9px 12px;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  min-height: 40px;
-}
-.gro-menu button:disabled { opacity: .6; cursor: default; }
-.gro-menu .gro-m-save { background: var(--spruce); color: var(--ivory-ink); }
-.gro-menu .gro-m-have { background: var(--celadon-tint); color: var(--celadon-label); border: 1.5px solid var(--celadon-edge); }
-.gro-menu .gro-m-else { background: var(--sand); color: var(--ink-secondary); }
-.gro-menu .gro-m-remove { background: transparent; color: var(--urgent-label); border: 1.5px solid var(--hairline-strong); }
-
 /* ---------- The Done row (collapsed by default) ---------- */
 .gro-done {
   border-radius: 18px;
@@ -3563,90 +3478,36 @@ html, body {
 .gro-done-label { flex: 1 1 auto; font-family: var(--font-body); font-size: 15px; font-weight: 700; color: var(--ink-secondary); }
 .gro-done-body { border-top: 1.5px solid var(--hairline); padding-bottom: 6px; }
 
-/* ---------- Add an item ---------- */
-.gro-add[hidden] { display: none; }
-.gro-add {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 4px;
-}
-.gro-add-row { display: flex; gap: 8px; align-items: center; }
-.gro-add-row input {
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--ground);
-  padding: 11px 12px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink);
-  min-height: 44px;
-  min-width: 0;
-}
-.gro-add-item { flex: 1 1 auto; min-width: 0; }
-.gro-add-qty { flex: 0 0 90px; width: 90px; }
-/* Spruce, not apricot. Apricot marks the ONE most likely next move on a
-   screen and the hero already has it ("Start shopping"); a second apricot
-   button here would be a demotion of the first. */
-.gro-add-btn {
-  flex: 1 1 auto;
-  border: 1.5px solid var(--spruce);
-  background: var(--spruce);
-  color: var(--ivory-ink);
-  border-radius: var(--radius-control);
-  padding: 11px 16px;
+/* ---------- SORT: one thing at a time, and its pills ----------
+   The step exists only while something has no store. The card is the thing
+   being sorted; the pills under it are the household's stores plus the three
+   answers that aren't a store (Any, Have it, Somewhere else). */
+.gro-sortcard { padding: 16px 14px 4px; }
+.gro-sort-item {
   font-family: var(--font-display);
   font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+  color: var(--ink);
+  margin: 0;
+}
+.gro-sort-qty {
+  font-family: var(--font-body);
   font-size: 14px;
-  cursor: pointer;
-  min-height: 44px;
-}
-.gro-add-btn:hover { background: var(--spruce-raised); border-color: var(--spruce-raised); }
-.gro-add-btn:disabled { opacity: .6; cursor: default; }
-.gro-add-mic {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-control);
-  border: 1.5px solid var(--hairline-strong);
-  background: var(--ground);
   color: var(--ink-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
+  margin: 3px 0 0;
 }
-.gro-add-mic svg { width: 18px; height: 18px; }
-.gro-add-mic.active { background: var(--spruce); border-color: var(--spruce); color: var(--apricot-light); }
-
-/* ---------- Plan your stops ---------- */
-.gro-sort {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  padding: 0 14px;
+.gro-sortcard .gro-pills { padding-top: 13px; }
+.gro-sort-progress {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--ink-secondary);
+  text-align: center;
+  margin: 2px 0 0;
 }
-.gro-sort-row { border-top: 1.5px solid var(--hairline); }
-.gro-sort-row:first-child { border-top: none; }
-.gro-sort-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 0;
-  cursor: pointer;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-}
-.gro-sort-name { font-family: var(--font-body); font-weight: 700; font-size: 16px; color: var(--ink); }
-.gro-sort-qty { flex: 1 1 auto; font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
 .gro-pills { display: none; flex-wrap: wrap; gap: 8px; padding: 0 0 13px; }
 .gro-pills.open { display: flex; }
 .gro-pill {
@@ -3672,47 +3533,6 @@ html, body {
    already true" state like .gro-pill-have. */
 .gro-pill-else { background: var(--sand); color: var(--ink-secondary); }
 .gro-pill-else:hover { border-color: var(--hairline-strong); }
-.gro-sort-more {
-  background: none;
-  border: none;
-  width: 100%;
-  padding: 12px 0;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--ink-secondary);
-  cursor: pointer;
-  min-height: 44px;
-}
-.gro-bucket-count { font-family: var(--font-body); font-size: 12px; color: var(--ink-inactive); white-space: nowrap; }
-/* Name, tag, quantity and up to two actions do not fit on one 375px line.
-   Rather than break the item name mid-word, the row wraps: name (and its
-   "usually here" tag) on top, the actions beneath it. */
-.gro-bucket-row {
-  min-height: 44px;
-  padding: 6px 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-}
-.gro-bucket-name { flex: 1 1 55%; font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink); min-width: 0; }
-.gro-bucket-row .gro-linkbtn { margin-left: auto; }
-.gro-bucket-row .gro-linkbtn ~ .gro-linkbtn { margin-left: 0; }
-/* An assignment that came from a remembered item->store preference rather
-   than from a choice made this week. "not this time" clears the row without
-   forgetting the preference. */
-.gro-usually {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: .04em;
-  color: var(--celadon-label);
-  background: var(--celadon-tint);
-  border-radius: 999px;
-  padding: 4px 8px;
-  white-space: nowrap;
-}
 .gro-linkbtn {
   background: none;
   border: none;
@@ -3727,25 +3547,6 @@ html, body {
 }
 .gro-linkbtn:hover { color: var(--apricot-label-hover); }
 .gro-linkbtn:disabled { opacity: .6; cursor: default; }
-/* Same "already have" celadon treatment as .gro-pill-have, for the store-
-   bucket row's version of the action. */
-.gro-linkbtn-have { color: var(--celadon-label); }
-.gro-linkbtn-have:hover { color: var(--celadon-label); }
-.gro-shop-btn {
-  margin: 10px 0 12px;
-  width: 100%;
-  background: var(--spruce);
-  color: var(--ivory-ink);
-  border: none;
-  border-radius: var(--radius-control);
-  padding: 13px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-  min-height: 48px;
-}
-.gro-shop-btn:hover { background: var(--spruce-raised); }
 
 /* ---------- Review ---------- */
 .gro-flag {
@@ -3818,24 +3619,6 @@ html, body {
 .gro-fix button:disabled { opacity: .6; cursor: default; }
 .gro-fix-note { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 6px; }
 
-.gro-summary {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  padding: 12px 14px;
-}
-.gro-summary-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 40px;
-  border-top: 1.5px solid var(--hairline);
-  font-family: var(--font-body);
-}
-.gro-summary-row:first-of-type { border-top: none; }
-.gro-summary-row .gro-s-name { font-weight: 600; font-size: 15px; color: var(--ink); }
-.gro-summary-row .gro-s-count { font-size: 13px; color: var(--ink-secondary); }
-
 .gro-allclear {
   font-family: var(--font-body);
   font-size: 14px;
@@ -3845,26 +3628,6 @@ html, body {
   border-radius: var(--radius-card);
   padding: 13px 15px;
 }
-.gro-cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  background: var(--spruce);
-  color: var(--ivory-ink);
-  border: none;
-  border-radius: var(--radius-card);
-  padding: 15px 18px;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 15px;
-  text-align: left;
-  width: 100%;
-  min-height: 52px;
-}
-.gro-cta:hover { background: var(--spruce-raised); }
-.gro-cta svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--apricot-light); }
 
 /* ---------- Hands-free voice log ---------- */
 .gro-voice {
@@ -3885,16 +3648,74 @@ html, body {
 .gro-voice-log li:first-child { border-top: none; }
 .gro-voice-note { display: block; margin-top: 8px; color: var(--ink-muted); font-size: 12px; }
 
+/* ---------- WRAP UP ----------
+   What didn't make it into the cart, two answers each, and the trip's own
+   count. The two answers are equal weight on purpose — neither "couldn't
+   find it" nor "getting it somewhere else" is the expected one. */
+.gro-wrap-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-height: 44px;
+  padding: 8px 0;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-wrap-row:first-of-type { border-top: none; }
+.gro-wrap-name {
+  flex: 1 1 100%;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  min-width: 0;
+}
+.gro-wrap-row.kept .gro-wrap-name { color: var(--ink-secondary); }
+.gro-wrap-seg { display: flex; gap: 8px; margin-left: auto; }
+.gro-wrap-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gro-wrap-btn:hover { border-color: var(--apricot); }
+.gro-wrap-btn:disabled { opacity: .6; cursor: default; }
+.gro-wrap-kept {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--celadon-label);
+  background: var(--celadon-tint);
+  border-radius: 999px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+.gro-wrap-summary {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 4px 2px 0;
+  margin: 0;
+}
+
 /* ---------- Wide screens ----------
    The blueprint scopes the old bespoke 3-column desktop grocery OUT of this
    pass, so this is the same single column, given room to breathe — not a
    second layout to keep in step with the first. */
 @media (min-width: 1100px) {
   .grocery-content { max-width: 720px; }
-  .gro-titlerow { padding: 18px 28px 8px; }
-  .gro-hero { padding: 18px 28px 18px; }
-  .gro-hero-headline { font-size: 38px; }
-  .gro-seg { padding: 12px 28px 0; }
+  .gro-head { padding: 18px 28px 0; }
+  .gro-back { margin: 12px 24px 0; }
+  .gro-title { font-size: 36px; }
   .gro-body { padding: 12px 28px 0; }
   .gro-voice { margin: 12px 28px 0; }
 }
@@ -5017,7 +4838,7 @@ span.cook-week-name { cursor: default; }
      lifts on a lighter fill (--spruce goes to #22422F) plus a hairline.
      An inset ring rather than a border: it follows the panel's radius and
      costs no layout, and these panels are joined to the top edge. */
-  .dinner-hero, .day-hero, .gro-hero, .kit-hero, .cook-hero {
+  .dinner-hero, .day-hero, .kit-hero, .cook-hero {
     box-shadow: var(--shadow-hero), inset 0 0 0 1.5px var(--spruce-edge);
   }
 
