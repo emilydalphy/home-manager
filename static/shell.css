@@ -2297,7 +2297,12 @@ html, body {
    already used the screen's one apricot primary on "Take me to the
    list"). */
 .defrost-ask-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.defrost-chip {
+/* The cook-ahead ask card (Loop Board "Cook ahead: ask at approval", Emily
+   2026-09-08) is the same card family sitting directly below, so its day
+   chips share these rules outright rather than growing a second chip
+   look — the Cook card's own .cook-ahead-day can't be reused here because
+   it's painted for the spruce cook hero, not for an ivory nudge card. */
+.defrost-chip, .ca-ask-day {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-body);
@@ -2309,13 +2314,34 @@ html, body {
   border: 1.5px solid var(--hairline);
   cursor: pointer;
 }
-.defrost-chip:hover { background: var(--sand); }
+.defrost-chip:hover, .ca-ask-day:hover { background: var(--sand); }
 /* Selected reads as "settled, already true" rather than "urgent" — celadon
    is the reassurance accent (DESIGN_SYSTEM.md §1), never apricot here. */
-.defrost-chip.is-selected {
+.defrost-chip.is-selected, .ca-ask-day.is-on {
   background: var(--celadon-tint);
   border-color: var(--celadon-edge);
   color: var(--ink-on-celadon);
+}
+
+/* One block per repeated dish inside the cook-ahead ask card: the sentence,
+   its day chips, and the live "Makes 3 mornings · for 9" line underneath.
+   Blocks are separated by a hairline rather than by cards, so a week with
+   three repeats still reads as one question with one answer. */
+.ca-ask-block { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+.ca-ask-block + .ca-ask-block { border-top: 1px solid var(--hairline); }
+.ca-ask-line {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.ca-ask-days { display: flex; flex-wrap: wrap; gap: 8px; }
+.ca-ask-count {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 /* The permanent entry point on Meals — same row shape as .week-reset-row

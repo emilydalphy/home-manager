@@ -2008,6 +2008,9 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         # ask at approval") — None until the household has answered it or
         # quietly dismissed it once for this plan. See tools.defrost.
         "defrost_asked_at": plan["defrost_asked_at"],
+        # The approval-time cook-ahead card's gate, same shape and same
+        # reason. See tools.cook_ahead.cook_ahead_repeats.
+        "cook_ahead_asked_at": plan["cook_ahead_asked_at"],
         # Which revision of the household's answers produced this week.
         "intake_id": plan["intake_id"],
         "constraints_notes": plan["constraints_notes"],
@@ -2158,6 +2161,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # place the freezer-check ask card shows itself) knows whether to
         # offer it — see tools.defrost.meat_items_for_plan.
         "defrost_asked_at": plan["defrost_asked_at"],
+        # Same passthrough for the cook-ahead ask card, which sits on the
+        # same receipt right below the freezer check — see
+        # tools.cook_ahead.cook_ahead_repeats.
+        "cook_ahead_asked_at": plan["cook_ahead_asked_at"],
         "grocery_preview": None,
         # The dietary/allergy warning the review band shows above the
         # Approve button. Recomputed here rather than stored with the plan

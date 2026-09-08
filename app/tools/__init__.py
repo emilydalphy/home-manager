@@ -52,6 +52,8 @@ from .chores import (  # noqa: F401
 # tapping, not the assistant's to make by inferring.
 from .cook_ahead import (  # noqa: F401
     cook_ahead_options,
+    cook_ahead_repeats,
+    mark_cook_ahead_asked,
     set_cook_ahead,
 )
 from .cooker import (  # noqa: F401
