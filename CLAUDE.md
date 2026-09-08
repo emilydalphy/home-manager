@@ -306,6 +306,40 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — A merge resolved shell.js by taking one side whole, and
+  a day of front-end work vanished.** `2d69951` ("Merge custom-date-range",
+  2026-09-06, a different session) hit a conflict in `static/shell.js` and
+  resolved it with the branch's whole file: `2d69951:static/shell.js` is
+  byte-identical to `2d69951^2:static/shell.js` (890 lines changed, net
+  -681). The branch had forked at `eb54fd3`, so every shell.js change from
+  the nine merges that landed between `eb54fd3` and `ca97720` on 2026-09-05
+  was erased in one commit — the "Somewhere else" grocery triage chip
+  (`0725d09`), the next-step chip (`6e9899c`), the Cook empty-state link to
+  Plan and the end-of-cook handoffs (`a2c4973`), the Plan tab's
+  reheat-as-leftovers label (`dbe458a`), the chores-setup link and the
+  just-in-time stores prompt on Grocery (`606f655`), the full-plate side
+  chips (`0d26635`) and the hard-allergy confirm sheet (`ea41834`).
+  Nothing failed: there is no JS test harness in this repo, and every
+  backend half was untouched, so the suite stayed green at 1161. Found only
+  by reading the file. `static/shell.css`, `static/onboarding.html`,
+  `static/chores-setup.html` and all of `app/` and `tests/` were verified
+  hunk by hunk against the same nine merges and are intact — the loss was
+  shell.js alone. Restored on `restore-dropped-frontend-work` by redoing
+  `2d69951` as a real three-way merge (base `eb54fd3`, ours `ca97720`,
+  theirs `acff198`) and re-applying that result onto today's main, keeping
+  main's newer code at every overlap. Two hunks are deliberately NOT
+  restored, because newer work supersedes them rather than main having lost
+  them: `0725d09`'s `weekRangeLabel`/`periodNoun` planning-period wording
+  (custom-date-range replaced it with `periodRangeLabel`/`planEntryLabel`,
+  which does the same job better) and `6e9899c`'s singular
+  `computeNextStepChip` (`tweak-sheet-see-your-week`, merged as `462d506`,
+  had already re-added the pair in its plural form — the one piece of the
+  loss that came back on its own). **The rule: when a merge conflicts in
+  `static/shell.js`, resolve it hunk by hunk — keep both sides — and run
+  the source-marker tests; never take one side wholesale.**
+  `tests/test_frontend_restored_2026_09_08.py` is the tripwire: one
+  assertion per restored feature plus a blunt line-count floor, because a
+  wholesale resolution always shows up as a large sudden shrink.
 - **2026-09-07 — The same breakfast on five mornings meant five cooks.**
   Emily, on a plan with Egg White Bites every morning: "We don't want to
   make egg bites every morning." A day-based plan writes each morning as
