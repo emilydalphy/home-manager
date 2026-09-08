@@ -661,12 +661,18 @@ def _clash_sentence(c: dict) -> str:
     member = c["member"]
     when = _weekday(c.get("date"))
     subject = f"{when}’s {meal}" if when else meal
-    terms = [t for t in (c.get("matched") or []) if t]
+    matched = c.get("matched") or []
+    if isinstance(matched, str):
+        matched = [matched]
+    terms = [t for t in matched if t]
     # The matched term only earns a clause when it says something the dish's
     # own name doesn't already say. "Pineapple Salsa has pineapple" is
     # noise; "Pineapple Salsa" plus the person is the whole fact.
     term = terms[0] if terms else ""
-    has = f"{subject} has {term}" if term and term.lower() not in meal.lower() else subject
+    # Always a full sentence, even when the dish name already says it:
+    # "Pineapple Salsa Bowls has pineapple, which Emily is allergic to."
+    # A fragment is the wrong shape for the one card about someone's allergy.
+    has = f"{subject} has {term}" if term else f"{subject} is on the plan"
     if member:
         tail = (
             f"which {member} is allergic to"

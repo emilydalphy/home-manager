@@ -4955,7 +4955,12 @@
       // plan has no dates), never a dead end.
       var index = -1;
       weekState.days.forEach(function (d, i) { if (d.date === settle.date) index = i; });
-      if (index < 0) return;
+      if (index < 0) {
+        // No day to land on (a component plan has no dates): hand it to
+        // the ask sheet with the swap already worded, never a dead tap.
+        openAskSheet('Swap ' + settle.meal + ' for something else');
+        return;
+      }
       var slot = weekSettleTargetSlot(weekState.days[index], settle.meal);
       if (slot) goMealsStep('meal', { dayIndex: index, slot: slot });
       else goMealsStep('day', { dayIndex: index });
@@ -5029,20 +5034,23 @@
     // by their own asked_at column, with forceShow the one-shot override
     // the Cook view's re-ask links set. Only the presentation changed.
     var forceDefrostShow = defrostAskState.forceShow;
-    defrostAskState.forceShow = false;
     var defrostHtml = '';
     if (!data.defrost_asked_at || forceDefrostShow) {
       if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null) {
+        // The one-shot override is spent only once the line can actually
+        // render — the first pass often just starts the fetch, and the
+        // re-render it triggers must still see the override.
+        defrostAskState.forceShow = false;
         if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml();
       } else {
         ensureDefrostAskItems(panel, data); // re-renders this row once it resolves
       }
     }
     var forceCookAheadShow = cookAheadAskState.forceShow;
-    cookAheadAskState.forceShow = false;
     var cookAheadAskHtml = '';
     if (!data.cook_ahead_asked_at || forceCookAheadShow) {
       if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
+        cookAheadAskState.forceShow = false;
         if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml();
       } else {
         ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves

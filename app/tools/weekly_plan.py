@@ -2123,10 +2123,9 @@ def _slot_clock_labels() -> dict:
 # One to twelve as words, digits above (Emily, 2026-09-08). Kept separate
 # from coordination._NUMBER_WORDS, which stops at ten and feeds different
 # copy — widening that one would silently reword the allergy warnings.
-_RECEIPT_NUMBER_WORDS = {
-    1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
-    7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve",
-}
+# Digits, to match the week card's own subtitle ("4 cooks, 3 made ahead")
+# and the ask lines — one number style per screen (verifier, 2026-09-08).
+_RECEIPT_NUMBER_WORDS: dict[int, str] = {}
 
 
 def _receipt_number(n: int) -> str:

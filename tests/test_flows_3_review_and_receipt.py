@@ -104,7 +104,7 @@ def test_a_reheat_night_is_a_meal_but_not_a_cook():
 
     assert receipt["meals"] == 2
     assert receipt["cooks"] == 1
-    assert receipt["title"].startswith("Two meals, one cook")
+    assert receipt["title"].startswith("2 meals, 1 cook")
 
 
 def test_an_away_night_is_neither_a_meal_nor_a_cook():
@@ -132,7 +132,7 @@ def test_an_empty_list_says_so_instead_of_promising_a_list_of_nothing():
     receipt = _receipt(plan_id)
 
     assert receipt["list_count"] == 0
-    assert receipt["title"] == "One meal, one cook, nothing left to buy."
+    assert receipt["title"] == "1 meal, 1 cook, nothing left to buy."
 
 
 def test_the_list_size_is_what_is_still_to_buy():
@@ -145,14 +145,14 @@ def test_the_list_size_is_what_is_still_to_buy():
     receipt = _receipt(plan_id)
 
     assert receipt["list_count"] == 3
-    assert "one list of three things" in receipt["title"]
+    assert "one list of 3 things" in receipt["title"]
 
 
 @pytest.mark.parametrize(
     "count,expected",
-    [(1, "one list of one thing"), (12, "one list of twelve things"), (13, "one list of 13 things")],
+    [(1, "one list of 1 thing"), (12, "one list of 12 things"), (13, "one list of 13 things")],
 )
-def test_numbers_run_out_at_twelve(count, expected):
+def test_counts_are_digits_like_the_week_card_subtitle(count, expected):
     """Emily, 2026-09-08: one to twelve as words, digits above."""
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     plan_id = _plan()
@@ -178,7 +178,7 @@ def test_something_to_thaw_is_counted_not_listed():
     receipt = _receipt(plan_id)
 
     assert receipt["thaw_count"] == 2
-    assert receipt["thaw_line"] == "Two things to move to the fridge this week."
+    assert receipt["thaw_line"] == "2 things to move to the fridge this week."
 
 
 def test_one_thing_to_thaw_is_singular():
@@ -187,7 +187,7 @@ def test_one_thing_to_thaw_is_singular():
     tools.plan_meal(ISO_TOMORROW, "Chili", slot="dinner", weekly_plan_id=plan_id)
     _defrost_task(plan_id, ISO_TODAY, "Move the beef to the fridge")
 
-    assert _receipt(plan_id)["thaw_line"] == "One thing to move to the fridge this week."
+    assert _receipt(plan_id)["thaw_line"] == "1 thing to move to the fridge this week."
 
 
 def test_nothing_to_thaw_names_the_next_cook():
@@ -225,7 +225,7 @@ def test_an_approved_week_carries_its_receipt_and_a_draft_does_not():
     approved = tools.get_week_menu()
 
     assert approved["receipt"]["meals"] == 1
-    assert approved["receipt"]["title"].startswith("One meal, one cook,")
+    assert approved["receipt"]["title"].startswith("1 meal, 1 cook,")
 
 
 # ---------- the draft's two clash sentences ----------
@@ -246,8 +246,9 @@ def test_a_hard_clash_names_the_night_the_dish_and_the_person():
     assert settle["meal"] == "Pineapple Salsa"
     assert settle["date"] == ISO_TOMORROW
     # The allergen is in the dish's own name, so the sentence does not
-    # repeat it back — "Pineapple Salsa has pineapple" is noise.
-    assert settle["note"] == f"{when}’s Pineapple Salsa, which Emily is allergic to."
+    # Always a full sentence, even when the dish name already says it —
+    # a fragment is the wrong shape for the one card about an allergy.
+    assert settle["note"] == f"{when}’s Pineapple Salsa has pineapple, which Emily is allergic to."
 
 
 def test_a_hard_clash_that_is_not_an_allergy_says_cannot_have():
