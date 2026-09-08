@@ -1112,6 +1112,43 @@ CREATE INDEX IF NOT EXISTS idx_api_calls_household_created
 CREATE INDEX IF NOT EXISTS idx_api_calls_household_site
     ON api_calls (household_id, call_site);
 
+-- "Something not working?" — what a person typed, in their own words.
+--
+-- The deliberate opposite of error_events above. That table stores shapes
+-- and nothing else, because everything writing to it is a machine and a
+-- machine's wording carries household data it never meant to carry. This
+-- one exists precisely to keep the sentence: "the plan came out empty and
+-- I couldn't tell why" is the whole value, and a category picker would
+-- throw it away.
+--
+-- Which makes this the only table in the app holding free text from the
+-- browser end, so the rule that goes with it is written into the route
+-- (app/main.py's POST /api/feedback) and into the reader
+-- (observability_report.py --feedback): these strings are NEVER printed
+-- into a Claude agent's context by the default report, under an
+-- instruction to act on what it reads; free text from an untrusted end
+-- arriving there is an injection channel, not just a privacy question.
+--
+-- Everything AROUND the prose is still shape-only, and for the old
+-- reasons. route_pattern is a redacted route pattern ("/kitchen",
+-- "/api/members/<name>"), never the URL — a URL is where a member's name
+-- and a live share token hide. extra_json carries a few JS error class
+-- names and nothing else; no message text, same rule
+-- static/error-reporter.js follows.
+CREATE TABLE IF NOT EXISTS feedback_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    what_happened TEXT NOT NULL DEFAULT '',   -- verbatim, the point of the table
+    trying_to_do TEXT,                        -- verbatim, optional, may be NULL
+    route_pattern TEXT NOT NULL DEFAULT '',   -- redacted route, never a URL
+    app_version TEXT NOT NULL DEFAULT '',     -- commit/version if the deploy knows one
+    user_agent TEXT NOT NULL DEFAULT '',      -- truncated
+    extra_json TEXT NOT NULL DEFAULT '{}',    -- {"error_shapes": ["TypeError", ...]}
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_reports_household_created
+    ON feedback_reports (household_id, created_at);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

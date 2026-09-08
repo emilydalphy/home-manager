@@ -1537,7 +1537,7 @@
       hero.innerHTML = '';
       seg.innerHTML = '';
       body.innerHTML = groceryState.loadError
-        ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.</p>'
+        ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       panel.querySelector('#gro-add').hidden = true;
       panel.querySelector('#gro-confirm-slot').innerHTML = '';
@@ -2838,7 +2838,7 @@
     if (!hero || !body) return;
 
     if (kitchenState.loadError || !kitchenState.memory) {
-      hero.innerHTML = '<p class="kit-hero-error">Couldn’t load what I know about your household right now.</p>';
+      hero.innerHTML = '<p class="kit-hero-error">Couldn’t load what I know about your household right now.' + snwLink(true) + '</p>';
       body.innerHTML = '';
       return;
     }
@@ -2907,7 +2907,9 @@
           '<span class="kit-worth-eyebrow">Worth doing sometime</span>' +
         '</div>' +
         '<p class="kit-worth-text">Scan a fridge photo, so I stop suggesting what you already have.</p>' +
-      '</div>';
+      '</div>' +
+      // Quiet, and last: a way out of a bad moment, not a chore.
+      snwTile();
   }
 
   function kitChip(label, count, sheet) {
@@ -5134,7 +5136,7 @@
     // back like every other path here — a chat turn that fails to reload can
     // otherwise throw a reader who was halfway down the week to the top.
     if (cookState.loadError || !cookState.data) {
-      view.innerHTML = '<p class="cook-error">Couldn’t load the cook view right now — switch tabs and back to try again.</p>';
+      view.innerHTML = '<p class="cook-error">Couldn’t load the cook view right now — switch tabs and back to try again.' + snwLink() + '</p>';
       if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
@@ -7344,6 +7346,181 @@
     activateTab(currentTabKey(), false);
     loadNotifications();
   })();
+
+  // ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------
+  //
+  // One box, one send, in the person's own words. No categories: a picker
+  // is the app deciding in advance what can go wrong, which is the thing
+  // it is worst at — and "the list looked finished but the eggs weren't on
+  // it" fits no category anyone would have written down.
+  //
+  // Two ways in, and no third. A quiet tile on Kitchen (Kitchen has no
+  // primary action by design — Nav rule / Rule 5 — so this is a tile, and
+  // never an apricot button), and a small link on the error states the app
+  // already shows, where the question is being asked anyway. Everything
+  // below is new: the only edits to existing renderers are the tile string
+  // in renderKitchen and one snwLink() append per error paragraph.
+  //
+  // What travels with the note is shape and nothing else — the current
+  // path, and a few JS error class names. Names only, never a message: the
+  // same rule static/error-reporter.js follows, for the same reason (an
+  // error message in this app can carry a recipe or a member's name).
+  // The server re-checks both anyway; the browser is the untrusted end.
+
+  var SNW_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.2a7.7 7.7 0 0 1-8.3 7.7L5 20.8l1-6.4a7.7 7.7 0 1 1 14.5-2.2z"/><path d="M12 8.6v3.6"/><path d="M12 15.4h.01"/></svg>';
+
+  var SNW_SHAPE_RE = /^[A-Za-z][A-Za-z0-9_]{0,38}(Error|Exception)$/;
+  var snwShapes = [];
+
+  function snwRecordShape(name) {
+    // Class names only. Anything else — a sentence, a URL, an empty
+    // reason — is dropped rather than trimmed, because there is no way to
+    // tell a browser's own wording from an interpolated recipe name.
+    var text = String(name || '');
+    if (!SNW_SHAPE_RE.test(text)) return;
+    if (snwShapes[snwShapes.length - 1] === text) return;
+    snwShapes.push(text);
+    if (snwShapes.length > 5) snwShapes.shift();
+  }
+
+  window.addEventListener('error', function (e) {
+    snwRecordShape(e && e.error && e.error.name);
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    snwRecordShape(e && e.reason && e.reason.name);
+  });
+
+  // The Kitchen tile. Quiet on purpose, and last on the screen: it is a
+  // way out of a bad moment, not a chore the household is being handed.
+  function snwTile() {
+    return '<button type="button" class="snw-tile" data-snw="open">' +
+      '<span class="snw-tile-icon">' + SNW_ICON + '</span>' +
+      '<span class="snw-tile-text">' +
+        '<span class="snw-tile-title">Something not working?</span>' +
+        '<span class="snw-tile-sub">Tell Emily what happened</span>' +
+      '</span>' +
+    '</button>';
+  }
+
+  // The in-prose link for an error state. `onSpruce` is for the one error
+  // paragraph that sits inside a spruce hero, where the apricot label
+  // colour has to lift off a dark ground instead of a light one.
+  function snwLink(onSpruce) {
+    return ' <button type="button" class="snw-link' + (onSpruce ? ' snw-link-hero' : '') +
+      '" data-snw="open">Something not working? Tell Emily</button>';
+  }
+
+  var snwSheetEl = null;
+  var snwScrimEl = null;
+
+  function buildSnwSheet() {
+    if (snwSheetEl) return;
+    snwScrimEl = document.createElement('div');
+    snwScrimEl.id = 'snw-scrim';
+    snwScrimEl.hidden = true;
+    snwSheetEl = document.createElement('div');
+    snwSheetEl.id = 'snw-sheet';
+    snwSheetEl.hidden = true;
+    snwSheetEl.setAttribute('role', 'dialog');
+    snwSheetEl.setAttribute('aria-modal', 'true');
+    snwSheetEl.setAttribute('aria-labelledby', 'snw-title');
+    snwSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="snw-handle"></div>' +
+      '<div class="snw-titlerow">' +
+        '<span class="snw-title" id="snw-title">Something not working?</span>' +
+        '<span class="snw-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="snw-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="snw-body" id="snw-body"></div>';
+    // Body level, like every other sheet here: position:fixed has to sit
+    // outside the tab panel's stacking and scroll context.
+    document.body.appendChild(snwScrimEl);
+    document.body.appendChild(snwSheetEl);
+    snwScrimEl.addEventListener('click', closeSnwSheet);
+    snwSheetEl.querySelector('#snw-handle').addEventListener('click', closeSnwSheet);
+    snwSheetEl.querySelector('#snw-close').addEventListener('click', closeSnwSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && snwSheetEl && !snwSheetEl.hidden) closeSnwSheet();
+    });
+  }
+
+  function snwFormHtml() {
+    return '' +
+      '<label class="snw-label" for="snw-what">What happened?</label>' +
+      '<textarea id="snw-what" class="snw-input" rows="4" ' +
+        'placeholder="Even half a sentence helps"></textarea>' +
+      '<label class="snw-label" for="snw-trying">What were you trying to do?' +
+        '<span class="snw-optional">Optional</span></label>' +
+      '<textarea id="snw-trying" class="snw-input" rows="2"></textarea>' +
+      '<button type="button" class="snw-send" id="snw-send" disabled>Send</button>';
+  }
+
+  function openSnwSheet() {
+    buildSnwSheet();
+    // One sheet at a time, the same rule the Kitchen sheets follow.
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    var body = snwSheetEl.querySelector('#snw-body');
+    body.innerHTML = snwFormHtml();
+    var what = body.querySelector('#snw-what');
+    var send = body.querySelector('#snw-send');
+    what.addEventListener('input', function () {
+      send.disabled = !what.value.trim();
+    });
+    send.addEventListener('click', function () {
+      sendSnwReport(what.value, (body.querySelector('#snw-trying') || {}).value);
+    });
+    snwScrimEl.hidden = false;
+    snwSheetEl.hidden = false;
+    what.focus();
+  }
+
+  function closeSnwSheet() {
+    if (!snwSheetEl) return;
+    snwScrimEl.hidden = true;
+    snwSheetEl.hidden = true;
+  }
+
+  function sendSnwReport(whatHappened, tryingToDo) {
+    var text = String(whatHappened || '').trim();
+    if (!text) return;
+
+    // Confirmed before the request resolves, and confirmed either way. A
+    // send that failed is not worth telling someone about here: they are
+    // already reporting one thing that went wrong, and "that didn't send
+    // either" turns one bad moment into two — the same reason
+    // /api/feedback answers 204 whatever happens to the row.
+    var body = snwSheetEl.querySelector('#snw-body');
+    body.innerHTML =
+      '<p class="snw-done">Got it — Emily reads every one of these. ' +
+      'If it&rsquo;s blocking you, text her too.</p>' +
+      '<button type="button" class="snw-send" id="snw-done-close">Close</button>';
+    body.querySelector('#snw-done-close').addEventListener('click', closeSnwSheet);
+
+    try {
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          what_happened: text,
+          trying_to_do: String(tryingToDo || '').trim(),
+          where: location.pathname,
+          error_shapes: snwShapes.slice(-5)
+        })
+      }).catch(function () { /* see above */ });
+    } catch (err) { /* see above */ }
+  }
+
+  // Delegated, so the tile and every error-state link work without any
+  // renderer having to wire a listener — and so nothing here has to be
+  // re-bound when a panel re-renders under it.
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-snw]');
+    if (target) openSnwSheet();
+  });
 
   // ---------- Service worker registration ----------
   // This used to live only in static/index.html, which registered it the
