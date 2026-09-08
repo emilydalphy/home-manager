@@ -2092,6 +2092,27 @@ def _menu_dates(plan: dict) -> list[str]:
     return lead_in + _week_intake.period_dates(period_start, day_count)
 
 
+def _slot_clock_labels() -> dict:
+    """
+    "8:00" / "12:30" / "6:30" — when this household's three meals actually
+    land, said the way a person says a time (DESIGN_SYSTEM §8).
+
+    Read out of moves.py rather than re-derived here, deliberately: Today's
+    timeline and the Meals day card now put the same hour on screen for the
+    same meal, and two copies of the dinner_window mapping is exactly how
+    they would come to disagree. Imported inside the function because
+    moves.py reads this module's cooker view — a module-level import would
+    close the cycle at import time.
+    """
+    from . import moves as _moves
+
+    dinner = _moves._dinner_clock()
+    return {
+        slot: _moves._clock(_moves._slot_time(slot, dinner))
+        for slot in ("breakfast", "lunch", "dinner")
+    }
+
+
 def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     """
     The weekly menu for the Week tab (design_handoff_shell/
@@ -2143,7 +2164,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
 
     plan = get_weekly_plan(weekly_plan_id)
     if not plan.get("weekly_plan_id"):
-        return {"weekly_plan_id": None, "week_start_date": None, "household_name": household_name, "days": [], "menu_is_suggested": False}
+        return {
+            "weekly_plan_id": None, "week_start_date": None,
+            "household_name": household_name, "days": [], "menu_is_suggested": False,
+            "slot_times": _slot_clock_labels(),
+        }
 
     # design_handoff_plan_the_week: the Meals screen is where a week is
     # approved, so it needs both halves of that state — whether this plan
@@ -2239,6 +2264,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "household_name": household_name,
             "days": days,
             "menu_is_suggested": True,
+            "slot_times": _slot_clock_labels(),
             **approval,
         }
 
@@ -2260,7 +2286,24 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "SELECT eating_style, plates_intro_shown_at FROM meal_preferences WHERE household_id = ?",
         (household_id(),),
     ).fetchone()
+    # Every freezer-to-fridge move this plan already has on the books, keyed
+    # by the entry it feeds. The Meal step's "The plate" card ends with
+    # either the thaw this dish needs or "Nothing to thaw", and that has to
+    # be the SAME row Today's fridge move reads (moves.py) rather than a
+    # second guess at what is frozen. A task with no meal_plan_entry_id
+    # (a ready-made earmark, see defrost.py) belongs to no single slot and
+    # is deliberately skipped.
+    defrost_rows = conn.execute(
+        "SELECT meal_plan_entry_id, task_date, description FROM prep_tasks "
+        "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+        "AND meal_plan_entry_id IS NOT NULL ORDER BY task_date",
+        (household_id(), plan["weekly_plan_id"]),
+    ).fetchall()
     conn.close()
+    defrost_by_entry = {
+        r["meal_plan_entry_id"]: {"date": r["task_date"], "note": r["description"]}
+        for r in defrost_rows
+    }
     plate_rule = _plates.plate_rule(prefs["eating_style"] if prefs else "")
 
     # Every confirmed cook-once-eat-twice pairing on this plan (see
@@ -2322,6 +2365,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         common = {
             "state": "planned", "reason": row["reasoning"] or None, "entry_id": row["id"],
             "sides": sides, "plate_note": plate_note(row, sides),
+            # The plate in its own words, for the Meal step's "The plate"
+            # card: which of protein/carb/vegetable this dish records, and
+            # the thaw it needs (or doesn't). Both are already stored —
+            # this only stops the Meals screen having to ask a second
+            # endpoint for what it needs to describe one meal.
+            "food_groups": json.loads(row["food_groups_json"] or "[]"),
+            "defrost": defrost_by_entry.get(row["id"]),
         }
         # A confirmed chain (see `chains` above) takes priority over the
         # freeform-text heuristic below: a chain entry can carry a REAL
@@ -2347,6 +2397,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             return {
                 "title": headline,
                 "meta": "reheat", "source": "leftovers", **common, "plate_note": "",
+                # The same two facts the headline is built from, kept apart
+                # from it so a caller can say "made ahead Sunday" in an
+                # eyebrow and "Egg White Bites" as the dish name without
+                # having to unpick the sentence. cook_ahead is the one word
+                # of difference between the two headlines above.
+                "leftover_from": {
+                    "date": src["date"],
+                    "meal": src["meal"],
+                    "cook_ahead": bool(leftover.get("cook_ahead")),
+                },
             }
         text = (row["freeform_meal"] or "").lower()
         # Neither a reheat nor takeout is a plate this app assembled, so
@@ -2414,6 +2474,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "household_name": household_name,
         "days": days,
         "menu_is_suggested": False,
+        # When breakfast/lunch/dinner land for this household — the Day
+        # step's eyebrows ("Dinner · 6:30"). See _slot_clock_labels.
+        "slot_times": _slot_clock_labels(),
         "headline": _week_headline(plan, days, intake),
         # Told once, and only once — see PLATES_INTRO and
         # mark_plates_intro_shown. None on every week after the first one

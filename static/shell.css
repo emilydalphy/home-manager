@@ -1328,12 +1328,13 @@ html, body {
   box-sizing: border-box;
   width: 100%;
 }
-#week-header,
-#week-grid,
-#week-open-row,
-#week-approve-row,
-#week-plan-row,
-.week-reset-row { padding-left: 20px; padding-right: 20px; }
+/* #week-review-band was missing from this list, so a draft's promise and
+   its Approve button sat flush to the screen edge while everything around
+   them kept the 20px gutter (DESIGN_SYSTEM §4). Invisible while the band
+   sat above a day rail that started at the edge too; obvious the moment
+   it sits above a card that doesn't. */
+#week-review-band,
+#week-approve-row { padding-left: 20px; padding-right: 20px; }
 
 /* #week-header (the big paper "EST. 2019 / household name" menu header) is
    desktop-only now — the new mobile This Week (option 6a, below) has its
@@ -1537,49 +1538,6 @@ html, body {
      square bottom at dinner, square throughout in between) — easier to
      say per row than to fight out of a single grid's uniform gap. */
   .wg2-grid { display: flex; flex-direction: column; }
-  .wg2-row { display: flex; align-items: stretch; }
-  .wg2-spine { width: 3px; flex: 0 0 3px; border-radius: 2px; background: var(--hairline); align-self: stretch; }
-
-  .wg2-label {
-    width: 130px;
-    flex: 0 0 130px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 14px;
-    font-family: var(--font-body);
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-  }
-  .wg2-row-head .wg2-label { width: 150px; flex: 0 0 150px; }
-  .wg2-label-dinner { color: var(--ink-strong); font-weight: 800; font-size: 11px; letter-spacing: .12em; gap: 6px; }
-  .wg2-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot); flex: 0 0 auto; }
-
-  .wg2-head-cell {
-    flex: 1 1 0;
-    min-height: 60px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-  }
-  .wg2-head-day {
-    font-family: var(--font-body);
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-inactive);
-  }
-  .wg2-head-date { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--ink-secondary); }
-  .wg2-head-cell.is-today { background: var(--spruce); border-radius: 12px 12px 0 0; }
-  .wg2-head-cell.is-today .wg2-head-day { color: var(--apricot-light); }
-  .wg2-head-cell.is-today .wg2-head-date { color: var(--ivory-ink); font-weight: 800; }
-
   /* Breakfast/lunch: floating soft tiles, quiet on purpose — the dinner row
      below is the one this screen leads with. */
   .wg2-tile {
@@ -1595,22 +1553,6 @@ html, body {
     gap: 4px;
     min-height: 46px;
   }
-  .wg2-tile-lunch { min-height: 54px; }
-  .wg2-tile-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .wg2-tile-name {
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 13.5px;
-    line-height: 1.3;
-    color: var(--ink);
-  }
-  .wg2-tile-meta { font-family: var(--font-body); font-size: 11px; font-weight: 700; color: var(--apricot-label); flex: 0 0 auto; }
-  .wg2-tile-away, .wg2-tile-blank { font-style: italic; font-weight: 400; color: var(--ink-done); }
-  .wg2-tile.is-today { margin: 0 3px; border-radius: 0; background: rgba(27, 51, 40, .055); }
-  .wg2-tile-open, .wg2-tile-empty { cursor: pointer; }
-  .wg2-tile-open:hover, .wg2-tile-empty:hover { background: var(--sand); }
-  .wg2-tile.is-today.wg2-tile-open:hover, .wg2-tile.is-today.wg2-tile-empty:hover { background: rgba(27, 51, 40, .09); }
-
   /* The per-meal "Why this?" tap-to-reveal — stored reasoning stays out of
      the cell until asked for, same pattern as Cook's .cook-why. */
   .wg2-why {
@@ -1633,17 +1575,6 @@ html, body {
      but nothing tappable is under 44x44px — same invisible-hitbox trick
      .cook-attn-btn already uses. */
   .wg2-why::after { content: ''; position: absolute; inset: -15px -8px; }
-  .wg2-why svg { width: 11px; height: 11px; flex: 0 0 auto; }
-  .wg2-why-text {
-    margin: 2px 0 0;
-    font-family: var(--font-body);
-    font-style: italic;
-    font-size: 12px;
-    line-height: 1.35;
-    color: var(--ink-secondary);
-  }
-  .wg2-why-text[hidden] { display: none; }
-
   /* Dinner: the dominant row — it's the starred meal. Bigger tile, a spruce
      accent border standing in for the hero it echoes. */
   .wg2-dinner-tile {
@@ -1660,38 +1591,6 @@ html, body {
     gap: 8px;
     min-height: 108px;
   }
-  .wg2-dinner-tile.is-today { margin: 0 3px 6px; border-radius: 0 0 16px 16px; background: rgba(27, 51, 40, .07); }
-  .wg2-dinner-tile.wg2-tile-open, .wg2-dinner-tile.wg2-tile-empty { cursor: pointer; }
-  .wg2-dinner-tile.wg2-tile-open:hover, .wg2-dinner-tile.wg2-tile-empty:hover { background: var(--sand); }
-  .wg2-dinner-tile.is-today.wg2-tile-open:hover, .wg2-dinner-tile.is-today.wg2-tile-empty:hover { background: rgba(27, 51, 40, .1); }
-  .wg2-dinner-name {
-    font-family: var(--font-display);
-    font-size: 15.5px;
-    font-weight: 700;
-    letter-spacing: -.015em;
-    line-height: 1.28;
-    /* --ink-strong, not --spruce directly: this text sits on --surface,
-       and spruce itself becomes a dark panel fill in dark mode (theme.css)
-       — --ink-strong is the token that swaps to a legible ink there. */
-    color: var(--ink-strong);
-  }
-  .wg2-dinner-away { font-family: var(--font-body); font-style: italic; font-size: 14px; color: var(--ink-done); }
-  .wg2-dinner-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .wg2-dinner-chip {
-    height: 22px;
-    padding: 0 9px;
-    border-radius: 8px;
-    background: var(--sand);
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    color: var(--apricot-label);
-  }
-
   #week-header { display: none; }
 }
 
@@ -2993,32 +2892,18 @@ html, body {
    the desktop grid block above, every one of them lost to the later
    single-class rule it was meant to beat.
 
-   The desktop Meals screen used to *replace* the phone one: #week-mobile went
-   display:none and the paper grid stood alone, so the day strip, the hero and
-   the approve promise all vanished on a wide screen — desktop got a strictly
-   worse version of the same screen. Now the phone layout is the primary
-   column here too, capped and centred, with the 7x3 grid underneath it as the
-   whole-week overview it always was. Both are built from the same fetch, so
-   nothing new is rendered and every handler on the grid still works. */
+   There is no separate desktop Meals screen any more, and that is the point.
+   It used to be a 7x3 paper grid that REPLACED the phone layout; then (as
+   the comment here used to say) the phone column plus that grid underneath
+   it. Emily's approved Week/Day/Meal design makes the seven-row card the
+   whole-week overview at every width, so the grid came out rather than
+   sitting under a card that says the same thing. What's left is the same
+   column, capped and centred, with a wider gutter. */
 @media (min-width: 1100px) {
   .week-content { max-width: 1040px; }
-  .week-framing { padding: 32px 32px 14px; }
-  .week-head h1 { font-size: 38px; }
-  .day-rail { padding: 0 32px; }
-  .day-hero { margin: 0 32px; padding: 26px 28px 24px; }
-  .day-hero .hero-dish { font-size: 38px; }
-  .day-hero .hero-dish-sm { font-size: 30px; }
-  .day-hero .hero-dish-xs { font-size: 25px; }
-  .day-sides { margin: 18px 32px 0; }
-  #week-grid,
-  #week-open-row,
-  #week-approve-row,
-  #week-plan-row,
-  .week-reset-row { padding-left: 32px; padding-right: 32px; }
-  /* The "whole week" sheet is the phone's way to see all 21 meals. The grid
-     below already is that on a wide screen, so the row that opens it would
-     be a second door into the same room. */
-  .whole-week-row { display: none; }
+  #week-review-band,
+  #week-approve-row { padding-left: 32px; padding-right: 32px; }
+  #week-steps > #week-plan-row { padding-left: 32px; padding-right: 32px; }
 }
 
 /* ===========================================================================
@@ -5147,17 +5032,6 @@ span.cook-week-name { cursor: default; }
   #ask-scrim { background: var(--scrim); }
   #notif-scrim { background: var(--scrim); }
   #ask-sheet { box-shadow: var(--shadow-sheet); }
-
-  /* --- Washes tuned for a light ground ---
-     A spruce tint marks today's joined column on the week grid. On a dark
-     ground a dark tint is invisible; the same idea inverts to a light one. */
-  .wg2-tile.is-today,
-  .wg2-dinner-tile.is-today { background: rgba(246, 238, 225, .07); }
-  .wg2-tile.is-today.wg2-tile-open:hover,
-  .wg2-tile.is-today.wg2-tile-empty:hover,
-  .wg2-dinner-tile.is-today.wg2-tile-open:hover,
-  .wg2-dinner-tile.is-today.wg2-tile-empty:hover { background: rgba(246, 238, 225, .12); }
-
   /* --- Accent fills whose ink flips ---
      --urgent becomes a LIGHT accent on dark (see theme.css), so the ivory
      text these carried has to become --on-accent-ink with it. */
@@ -5371,3 +5245,376 @@ span.cook-week-name { cursor: default; }
   color: var(--ink);
   margin: 10px 0 0;
 }
+
+/* ===========================================================================
+   Meals — Week / Day / Meal (Emily's approved design, 2026-09-08)
+   ---------------------------------------------------------------------------
+   Three steps of one tab, not three pages (DESIGN_SYSTEM §6). The root is a
+   single card of seven rows; a day is three equal cards; a meal is one meal
+   in full. Deliberately at the end of the file, the same reason the desktop
+   Meals block above gives: these are the live Meals rules and nothing later
+   should be quietly beating them.
+
+   One hero per screen (Rule 4): none of these steps has a spruce hero at
+   all — the old day card's dinner hero is gone, because a day is three
+   meals and the hero said otherwise. One apricot per screen (Rule 5): the
+   root's is the draft's Approve button, the Day step's segments are quiet
+   sand, and only the Meal step's "Cook this" is apricot.
+   =========================================================================== */
+
+#week-steps { display: flex; flex-direction: column; }
+/* The NOTHING YET state puts the existing Plan-a-week card in the week
+   card's place (see weekStepHtml), so it needs the same gutter the card has
+   rather than the one #week-plan-row used to get as a sibling of the root. */
+#week-steps > #week-plan-row { padding-left: 20px; padding-right: 20px; }
+
+/* ---------- shared head ---------- */
+.wk-head { padding: 22px 20px 12px; }
+.wk-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wk-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+.wk-sub {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+  margin-top: 6px;
+}
+/* The state badge. Celadon says settled (it is the token for "already
+   true"); the urgent TINT — not the urgent fill — says a decision is
+   waiting, because a draft wants attention without being an emergency
+   (Rule 3); an unplanned week gets the warm neutral and no colour at all. */
+.wk-state {
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-badge-sm);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  white-space: nowrap;
+}
+.wk-state.is-set { background: var(--celadon); color: var(--on-accent-ink); }
+.wk-state.is-draft { background: var(--urgent-tint); color: var(--urgent-label); }
+.wk-state.is-none { background: var(--sand); color: var(--ink-secondary); }
+
+/* ---------- WEEK: one card, seven rows ---------- */
+.wk-week-card { margin: 0 20px; padding: 4px 0; overflow: hidden; }
+.wk-day-row {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.wk-day-row + .wk-day-row { border-top: 1.5px solid var(--hairline); border-radius: 0; }
+.wk-day-row:hover { background: var(--sand); }
+/* Today, tinted — the one row that says "you are here". Its own hairline
+   goes with it so the tint reads as one block rather than a striped row. */
+.wk-day-row.is-today { background: var(--celadon-tint); }
+.wk-day-row.is-today + .wk-day-row { border-top-color: var(--celadon-edge); }
+.wk-day-row.is-today:hover { background: var(--celadon-tint); }
+.wk-day-row.is-past { opacity: .62; }
+.wk-day-col {
+  flex: 0 0 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+}
+.wk-day-dow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  color: var(--ink-muted);
+}
+.wk-day-num {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.wk-day-row.is-today .wk-day-num { color: var(--ink-strong); }
+.wk-day-meals { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.wk-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* The whole legend, in three dots: apricot cooks, celadon is already made,
+   grey is nothing to do, and an outline is a question still open. */
+.wk-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--hairline-strong);
+  box-sizing: border-box;
+}
+.wk-dot.is-cook { background: var(--apricot-deep); }
+.wk-dot.is-ahead { background: var(--celadon); }
+.wk-dot.is-open { background: transparent; border: 1.5px solid var(--apricot-deep); }
+/* One line, always. Emily's call: seven days truncated beats five in full —
+   this card answers "is the week settled", and the Day step answers "what
+   exactly is Thursday". */
+.wk-line-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.wk-line.is-quiet .wk-line-name { color: var(--ink-secondary); font-weight: 500; }
+
+/* ---------- the one quiet row under the card ---------- */
+.wk-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 20px 4px;
+}
+.wk-foot-link, .wk-foot-more {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.wk-foot-more { color: var(--ink-secondary); letter-spacing: .02em; }
+.wk-foot-link:hover, .wk-foot-more:hover { color: var(--apricot-label-hover); }
+
+/* ---------- DAY / MEAL: the back link ---------- */
+.wk-back {
+  align-self: flex-start;
+  min-height: 44px;
+  margin: 8px 12px 0;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+}
+.wk-back:hover { color: var(--ink-strong); }
+
+/* ---------- DAY: three equal cards ---------- */
+.wk-slots { display: flex; flex-direction: column; gap: 12px; padding: 0 20px; }
+.wk-slot-card { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.wk-slot-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.wk-slot-body.is-flat { cursor: default; }
+.wk-slot-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wk-slot-name {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.028em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.wk-slot-name.is-quiet { font-size: 17px; color: var(--ink-secondary); }
+.wk-slot-need { display: inline-flex; }
+.wk-slot-open[hidden] { display: none; }
+.wk-slot-open .week-open-card { margin: 0; }
+
+/* ---------- chips (the plate, in words) ---------- */
+.wk-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wk-chips-head { padding: 8px 0 0; }
+.wk-chip {
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-chip);
+  background: var(--sand);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+}
+
+/* ---------- the two-segment control ---------- */
+.wk-acts { display: flex; gap: 8px; }
+.wk-act {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--sand);
+  color: var(--ink-strong);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.wk-act-primary { flex: 1 1 auto; }
+.wk-act-swap { flex: 0 0 auto; }
+.wk-act:hover { background: var(--sand-deep); }
+/* The Meal step's one apricot (Rule 5). The Day step passes apricot=false
+   for exactly this reason — three apricot fills on one screen would be
+   three primaries, which is none. */
+.wk-act.is-apricot {
+  background: var(--apricot);
+  border-color: var(--apricot);
+  color: var(--on-accent-ink);
+  box-shadow: var(--shadow-action);
+}
+.wk-act.is-apricot:hover { background: var(--apricot-light); }
+
+/* ---------- MEAL: the plate, cooking ahead, why this night ---------- */
+.wk-card { margin: 0 20px 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.wk-card-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.wk-card-line {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+#week-steps > .wk-acts { padding: 4px 20px 0; }
+/* The cook-ahead picker, borrowed whole from the Cook view (cookAheadHtml)
+   and re-inked for an ivory card. Its own rules are written for the spruce
+   cook hero — ivory text on a spruce-raised chip — which on --surface is
+   the exact inversion Rule 1 exists to prevent. Same control, same markup,
+   same POST; only the ink changes with the ground it sits on. */
+.wk-card .cook-ahead { margin: 0; padding: 0; border: 0; }
+.wk-card .cook-ahead-ask,
+.wk-card .cook-ahead-count { color: var(--ink-secondary); }
+.wk-card .cook-ahead-day { background: var(--sand); color: var(--ink-strong); }
+.wk-card .cook-ahead-day:hover { background: var(--sand-deep); }
+.wk-card .cook-ahead-day.is-on { background: var(--celadon); color: var(--on-accent-ink); }
+.wk-card .cook-ahead-go {
+  border-color: var(--hairline-strong);
+  color: var(--ink-strong);
+}
+.wk-card .cook-ahead-go:hover { background: var(--sand); }
+
+/* ---------- the "More" sheet ---------- */
+#meals-more-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#meals-more-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 84%;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#meals-more-scrim[hidden], #meals-more-sheet[hidden] { display: none; }
+.wk-more-rows { display: flex; flex-direction: column; }
+.wk-more-row {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 56px;
+  padding: 10px 6px;
+  border: 0;
+  border-bottom: 1.5px solid var(--hairline);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font: inherit;
+}
+.wk-more-row:last-child { border-bottom: 0; }
+.wk-more-row:hover { background: var(--sand); }
+.wk-more-label {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+.wk-more-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+.wk-more-rows .week-period-picker { padding: 4px 0 10px; }
+
+/* Desktop: the same column, capped and centred — the seven-row card IS the
+   whole-week overview at every width, which is why the old 7x3 desktop grid
+   came out rather than sitting under a card that says the same thing. */
+@media (min-width: 1100px) {
+  .wk-head { padding: 32px 32px 14px; }
+  .wk-title { font-size: 38px; }
+  .wk-week-card { margin: 0 32px; }
+  .wk-foot { padding: 8px 32px 4px; }
+  .wk-slots, .wk-card { margin-left: 12px; margin-right: 12px; }
+  .wk-slots { padding: 0 32px; }
+  .wk-card { margin: 0 32px 12px; }
+  #week-steps > .wk-acts { padding: 4px 32px 0; }
+  .wk-back { margin: 12px 24px 0; }
+}
+
+.wk-foot-solo { justify-content: flex-end; }

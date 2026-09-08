@@ -71,9 +71,22 @@ def _assert_in(needle: str, haystack: str, what: str, where: str) -> None:
 # --- 0d26635 fix-full-plate: every meal is a full plate -------------------
 
 def test_full_plate_note_and_side_chips_render():
-    """The week view shows the plates note and each dinner's side chips."""
+    """
+    The week view shows the plates note and each dish's side chips.
+
+    UPDATED 2026-09-08 (flows-2-meals-week-day-meal), deliberately, per this
+    file's own instruction at the top: `wg2-dinner-chip` was the chip class
+    on the DESKTOP 7x3 week grid, and that grid is gone. Emily's approved
+    Meals design makes the seven-row card the whole-week overview at every
+    width, so a second grid saying the same thing underneath it came out
+    with the day rail and the day card. The side chips themselves did NOT
+    go: `entry.plate_note` still renders (as a chip on the Day step's slot
+    card and in the Meal step's "The plate" card, via plateChips), and
+    `meal.sides_label` still renders on the Cook hero, which this slice did
+    not touch. The marker moved; the disclosure did not.
+    """
     _assert_in("data.plates_note", SHELL_JS, "the full-plate week note", "shell.js")
-    _assert_in("wg2-dinner-chip", SHELL_JS, "the dinner chip row", "shell.js")
+    _assert_in("wk-chip", SHELL_JS, "the plate chip", "shell.js")
     _assert_in("entry.plate_note", SHELL_JS, "the per-entry plate note chip", "shell.js")
     _assert_in("meal.sides_label", SHELL_JS, "the sides label chip", "shell.js")
 
@@ -197,9 +210,19 @@ def test_onboarding_offers_a_retry():
 # --- dbe458a leftover-chain-followups: a reheat reads as leftovers --------
 
 def test_plan_tab_labels_a_reheat_as_leftovers():
-    """The Plan tab's action says "reheat", not "Cook this", when the night
-    is a leftover of an earlier batch."""
-    _assert_in("day.dinner.source === 'leftovers'", SHELL_JS, "the reheat test", "shell.js")
+    """
+    The Plan tab's action says "reheat", not "Cook this", when the night is
+    a leftover of an earlier batch.
+
+    UPDATED 2026-09-08 (flows-2-meals-week-day-meal), deliberately, per this
+    file's own instruction at the top: the test used to read
+    `day.dinner.source === 'leftovers'` because dayActionsHtml only ever
+    looked at dinner. The rule now applies to all three slots — a made-ahead
+    breakfast is not a cook either — so the same test is written against the
+    slot's own entry in slotActionsHtml. The behaviour widened; it did not
+    go away.
+    """
+    _assert_in("entry.source === 'leftovers'", SHELL_JS, "the reheat test", "shell.js")
     _assert_in("REHEAT_ACTION_LABEL", SHELL_JS, "the reheat action label", "shell.js")
     _assert_in("meal.reheat_note", SHELL_JS, "the reheat accent note", "shell.js")
 
@@ -241,7 +264,10 @@ def test_shell_js_did_not_lose_a_third_of_itself():
     named marker above. Raise the floor when the file grows; only lower it
     for a deletion you can point at."""
     lines = SHELL_JS.count("\n") + 1
-    assert lines > 7600, (
+    # Raised from 7600 on 2026-09-08 (flows-2-meals-week-day-meal), per this
+    # docstring's own instruction: the Meals rebuild is a net add (the
+    # Week/Day/Meal steps in, the day rail, day card and desktop grid out).
+    assert lines > 8600, (
         f"static/shell.js is {lines} lines — suspiciously short. Merge "
         "2d69951 shrank it from 7412 to 6982 by resolving a conflict "
         "one-side-wholesale. Check `git log -p --follow static/shell.js` "
