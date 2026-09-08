@@ -384,6 +384,7 @@
   [hidden] { display: none !important; }
 </style>
 <script src="/static/error-reporter.js"></script>
+<script src="/static/waiting-lines.js"></script>
 </head>
 <body>
 
@@ -474,7 +475,9 @@
     <h1>Building your week</h1>
     <div class="draft-status" id="draft-status">
       <span class="draft-spinner" aria-hidden="true"></span>
-      <span id="draft-status-text">Getting started&hellip;</span>
+      <!-- Taken over by the rotating waiting line (static/waiting-lines.js)
+           as soon as drafting starts; this text is the fallback. -->
+      <span class="waiting-line" id="draft-status-text">Getting started&hellip;</span>
     </div>
     <div class="draft-days" id="draft-days"></div>
   </section>
@@ -1343,6 +1346,15 @@
   // place of a single ~30-second spinner. See the "Make chat responses
   // faster" ticket: the wait itself isn't shorter, but something real
   // shows up within a couple of seconds instead of a blank button.
+  // The rotating waiting line beside the spinner (static/waiting-lines.js),
+  // the same component onboarding's first-week reveal uses. Held here so
+  // both the success and the failure path can stop it.
+  var draftWaiter = null;
+
+  function stopDraftWaiter() {
+    if (draftWaiter) { draftWaiter.stop(); draftWaiter = null; }
+  }
+
   function showDraftProgress() {
     $('q1').hidden = true;
     $('q2').hidden = true;
@@ -1352,6 +1364,10 @@
     section.classList.remove('done');
     $('draft-status-text').textContent = 'Getting started…';
     $('draft-days').textContent = '';
+    stopDraftWaiter();
+    if (window.PomonaWaiting) {
+      draftWaiter = window.PomonaWaiting.startWaitingLines($('draft-status-text'), { stage: 'reading' });
+    }
   }
 
   function addDraftDay(day) {
@@ -1403,8 +1419,14 @@
       if (!dataLines.length) return;
       var body = JSON.parse(dataLines.join('\n'));
       if (eventName === 'status') {
-        $('draft-status-text').textContent = body.message || 'Working on it…';
+        // The server sends one constant message here; what it really
+        // signals is "the request landed, context is being assembled",
+        // which is what the 'reading' lines say. The plain message stays
+        // as the fallback when the helper isn't loaded.
+        if (draftWaiter) draftWaiter.setStage('reading');
+        else $('draft-status-text').textContent = body.message || 'Working on it…';
       } else if (eventName === 'day') {
+        if (draftWaiter) draftWaiter.setStage('filling');
         addDraftDay(body);
       } else if (eventName === 'done') {
         plan = body;
@@ -1424,6 +1446,9 @@
       for (var i = 0; i < frames.length; i++) handleFrame(frames[i]);
     }
     if (!plan) throw new Error('generate failed');
+    // Stop before writing the final line, or the next rotation would
+    // overwrite it four seconds later.
+    stopDraftWaiter();
     $('draft-progress').classList.add('done');
     $('draft-status-text').textContent = 'Your week is ready.';
     return plan;
@@ -1474,6 +1499,7 @@
       // A failure partway through drafting must not strand the household
       // on a spinner that will never resolve — back to Q2 so "draft my
       // week" is tappable again.
+      stopDraftWaiter();
       if (!$('draft-progress').hidden) {
         $('draft-progress').hidden = true;
         $('q2').hidden = false;

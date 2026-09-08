@@ -2536,6 +2536,11 @@ html, body {
    labelled "Redo" could only be one of them, and would be the wrong one
    half the time. */
 .week-redo-row { display: flex; gap: 10px; }
+/* Placement only — the waiting line's own styling is .waiting-line in
+   theme.css (see static/waiting-lines.js). Sits centred under the redo
+   row whose "Try again" started it. */
+.week-redo-waiting { margin-top: 8px; text-align: center; }
+.week-redo-waiting[hidden] { display: none; }
 .week-redo-btn {
   flex: 1;
   background: none;

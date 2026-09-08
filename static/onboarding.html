@@ -385,6 +385,7 @@
   }
 </style>
 <script src="/static/error-reporter.js"></script>
+<script src="/static/waiting-lines.js"></script>
 </head>
 <body>
 
@@ -597,7 +598,11 @@
   </div>
   <div class="reveal-status" id="reveal-status">
     <span class="reveal-spinner" aria-hidden="true"></span>
-    <span id="reveal-status-text">Drafting your week&hellip;</span>
+    <!-- The rotating waiting line (static/waiting-lines.js) takes this
+         span over the moment generation starts. Its markup text is only
+         what shows in the split second before that, and if the helper
+         somehow didn't load. -->
+    <span class="waiting-line" id="reveal-status-text">Drafting your week&hellip;</span>
   </div>
   <div id="reveal-days" class="reveal-days"></div>
   <div id="invite-section"></div>
@@ -1443,7 +1448,10 @@ async function renderInviteOffer(memberNames) {
 // this wires it up). Manual fetch + reader rather than EventSource
 // because EventSource can't carry a POST body — same reasoning as
 // plan-week.html's own comment on streamGenerate.
-async function streamFirstPlan() {
+// `waiter` is the rotating waiting line (static/waiting-lines.js), moved
+// between stages by the same frames that drive the day cards — so the line
+// only ever claims what the stream says is happening.
+async function streamFirstPlan(waiter) {
   revealStreamDays.clear();
   const res = await fetch('/api/onboarding/generate-first-plan/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   if (!res.ok || !res.body) throw new Error('Could not generate plan');
@@ -1462,9 +1470,19 @@ async function streamFirstPlan() {
     if (!dataStr) return;
     const payload = JSON.parse(dataStr);
     if (eventName === 'status') {
-      const statusText = document.getElementById('reveal-status-text');
-      if (statusText) statusText.textContent = payload.message || 'Drafting your week…';
+      // The server's own message is a single constant ("Drafting your
+      // week…"); what it actually tells us is that the request landed and
+      // context is being assembled. The waiting line says that at more
+      // length, so it takes the slot — with the plain message as the
+      // fallback if the helper isn't there.
+      if (waiter) {
+        waiter.setStage('reading');
+      } else {
+        const statusText = document.getElementById('reveal-status-text');
+        if (statusText) statusText.textContent = payload.message || 'Drafting your week…';
+      }
     } else if (eventName === 'day') {
+      if (waiter) waiter.setStage('filling');
       upsertRevealDay(payload);
     } else if (eventName === 'done') {
       finalPlan = payload;
@@ -1505,8 +1523,14 @@ async function generateFirstPlanAndReveal(answers) {
   errorActions.style.display = 'none';
   daysDiv.innerHTML = '';
   let failed = false;
+  // Starts in 'reading' rather than waiting for the first frame: the
+  // request is already out and context assembly has already begun, so the
+  // line is true from the moment the screen appears.
+  const waiter = window.PomonaWaiting
+    ? window.PomonaWaiting.startWaitingLines(document.getElementById('reveal-status-text'), { stage: 'reading' })
+    : null;
   try {
-    const data = await streamFirstPlan();
+    const data = await streamFirstPlan(waiter);
     renderRevealDays(data.meals || []);
     accent.textContent = buildRevealCopy(answers);
   } catch (err) {
@@ -1514,6 +1538,7 @@ async function generateFirstPlanAndReveal(answers) {
     failed = true;
     accent.textContent = "That didn't come together — shall I have another go?";
   } finally {
+    if (waiter) waiter.stop();
     status.hidden = true;
     // The normal actions ("Looks good — take me in") assume a real week is
     // sitting above them — on a failed generation there are zero days, so
