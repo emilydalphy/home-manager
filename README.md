@@ -154,13 +154,31 @@ anchor per meal type, not a cluttered one-off per message.
    ends with one primary action, "I'm all set — show me my week," which
    lands you on the Meals tab.
 
-   **The chores step after the reveal is deliberately switched off for the
-   beta** (`OFFER_CHORES_AFTER_REVEAL = false` in `static/onboarding.html`),
-   per Emily's meals-only-beta decision. The whole chores flow — the profile
-   questions about pets, home type, cleanliness standard, rotation and so on
-   — is still wired and working underneath, and flipping that one constant
-   brings it back. Every chip group has a "type your own" option for
-   anything not listed.
+   **Corrected 2026-09-08: there is no chores step after the reveal any
+   more.** This paragraph used to say it was "deliberately switched off for
+   the beta" via `OFFER_CHORES_AFTER_REVEAL = false` in
+   `static/onboarding.html`. That is doubly stale: the constant is gone from
+   `static/` and `app/` entirely (the only surviving mention is
+   `tests/test_chores_setup_split.py`, asserting its absence), and the step
+   was not switched off — **Emily decided 2026-09-05 (20a) that the chores
+   questions come out of first-run onboarding**, so the meal loop ends at
+   the reveal rather than being followed by an unrelated questionnaire.
+
+   The questions themselves were not thrown away: the markup and save logic
+   moved as-is to `static/chores-setup.html`, served at `GET /chores-setup`
+   (`app/main.py`, `chores_setup_page`), and the backend routes are unchanged. Every chip
+   group still has a "type your own" option for anything not listed.
+
+   **Two things a reader should know before acting on this.** Today renders
+   a "Your chores" card unconditionally — `loadChores`
+   (`static/shell.js:1027`) against `/api/chores/today`
+   (`app/main.py:1238`), empty state "Nothing due today." — so a beta
+   household does see a chores surface. But `chores-setup.html` is
+   **orphaned**: nothing anywhere links to it. The comment at
+   `static/onboarding.html` claiming it is reached from Today's chores card
+   was checked and is false — that string does not exist in
+   `static/shell.js`. So the card can show chores and offers no way to
+   create any. Resolving that is Emily's call, open on the Chores ticket.
 
    After onboarding you land in the app shell and can talk to the assistant
    from the ask sheet on any tab:

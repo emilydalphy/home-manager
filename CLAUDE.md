@@ -24,7 +24,42 @@ Railway, auto-deploying from `main` on push. Live at
 visual.** Tokens, hard rules, components, nav rules, voice, and who's allowed
 to change what are all there.
 
-## Current state (as of 2026-09-04)
+## Current state (as of 2026-09-08)
+
+Landed on `main` on or after 2026-09-06 — the **complete** first-parent list
+for that window, verified in `git log origin/main --first-parent`, newest
+first. (Mostly merges; `ca97720` is a direct commit.)
+(Merges between 2026-09-04 and 09-06 are deliberately not enumerated: there
+are 44 in the full range since this section was last dated, so run
+`git log` rather than trusting any list here to be exhaustive.)
+
+`4b8fbd2` cook-ahead · `42d422a` Cook-this focus fix · `2027f3c` security
+response headers (on every app route — an unhandled 500 is produced inside
+the framework's error layer and gets none) · `fa5ba6e` a previous correction
+to this file · `a0b487d` defrost ask at approval · `1a943f1` adult-or-child
+onboarding · `fe1d3f6` What we know showing every onboarding answer ·
+`1e6117a` five tests stop failing every Sunday · `5687ef4` main merged into
+the custom-date-range + atomic-period-takeover merge · `0cdaf62`
+atomic period takeover · `2d69951` custom date range · `ca97720` allergy
+check confirm-tap.
+
+**Two of those matter more than the rest, because the Decision log below
+still labels them "NOT merged at the time of writing":** `0cdaf62`
+(atomic-period-takeover) and `2d69951` (custom-date-range). They are on
+`main`. The log's own preamble says those headlines are point-in-time, but
+these are the two where believing the headline would cost you real work.
+(`ca97720`, the allergy confirm-tap, is also on `main`; its Decision log
+entry carries no merge-status label either way, so it misleads nobody.)
+
+For completeness, since a partial list is its own trap: **every** entry in
+the Decision log still carrying "NOT merged at the time of writing" is in
+fact merged. All five checked on 2026-09-08 — `custom-date-range` and
+`atomic-period-takeover` (above), plus `fix-grocery-quantity-inflation`
+(`6a01a9d`), `fix-full-plate` (`0d26635`) and `planning-periods` (its
+`plan_period`/`content_start_date` work is live in
+`app/tools/weekly_plan.py`). `allergy-backfill-and-gluten` (`30a7b0b`) is
+merged too. Treat that phrase anywhere below as "was true on the branch,"
+never as current state.
 
 `main` is live on Railway. Everything the Decision log below describes as
 built has since **merged** — the entries were written on their branches and
@@ -43,8 +78,32 @@ or the assistant's voice.
 
 The four native tabs are **Today / Meals / Grocery / Kitchen** (`TABS` in
 `static/shell.js`). Cooking is a *state* of the Meals tab, not its own tab.
-Chores have a working backend but no tab, and are deliberately hidden from
-the beta (`OFFER_CHORES_AFTER_REVEAL = false` in `static/onboarding.html`).
+Chores still have no tab of their own, but **"hidden from the beta" is no
+longer true and the flag this file named no longer exists** — corrected
+2026-09-08. `OFFER_CHORES_AFTER_REVEAL` is gone from `static/` and `app/`
+(grep both: zero matches; the only surviving mention is
+`tests/test_chores_setup_split.py`, asserting its absence — and `README.md`
+carried the same stale prose until this same change), and Today renders a
+"Your chores" card **unconditionally** — its empty state is "Nothing due
+today," not a hidden card — fetched by `loadChores` (`static/shell.js:1027`,
+against `/api/chores/today`, `app/main.py:1238`) and drawn by
+`renderChores` (`static/shell.js:1042`). So a beta household does see
+chores, on Today.
+
+**And the chores questions are not in onboarding at all any more** — Emily's
+2026-09-05 decision (20a) took them out so first-run ends at the reveal.
+They moved as-is to `static/chores-setup.html`, served at `GET /chores-setup`
+(`app/main.py`, `chores_setup_page`). **That page is orphaned: nothing links to it.** The
+comment in `static/onboarding.html` (the chores block, ~line 617) used to say it is "reached via 'Want
+help with chores too? Set them up' on Today's chores card (see shell.js's
+renderChores)" — no such string exists anywhere in `static/shell.js`, and
+`renderChores` has no link in it. Corrected in that file too, in this same
+change; recorded here because the false comment misled a reviewer tonight,
+which is the whole argument for keeping these claims true.
+
+Correct the claim rather than the code: whether the Today card should be
+there, and whether the setup page should be linked, before Chores is
+validated is Emily's call, and the Chores ticket has it open.
 
 If you're picking this repo up fresh, run `git log --oneline -15` to confirm
 this is still accurate.
@@ -66,9 +125,21 @@ something that isn't there, and it survived two days precisely because it
 looked authoritative. **If you record a live bug here, delete the entry in
 the same change that fixes it.**
 
-The test gap that let the original bug ship is still real and still worth
-knowing: `tests/test_streaming_endpoints.py` stubs `summarize_chat_actions`
-to return `[]`, so no test puts a real `ChatAction` through the encoder.
+**That test gap is now CLOSED — corrected 2026-09-08.** This paragraph used
+to say the gap "is still real": that
+`tests/test_streaming_endpoints.py` stubs `summarize_chat_actions` to return
+`[]`, so no test puts a real `ChatAction` through the encoder. Two of that
+file's nine tests do still use the `[]` stub (five never touch
+`summarize_chat_actions` at all), but two now push a real `ChatAction`
+through on purpose —
+`test_chat_stream_generator_delivers_a_reply_that_carries_an_action_card`
+returns a real `ChatAction`, drives `_stream_chat_turn` directly, and
+asserts the serialized `done` payload. It fails on the pre-fix `json.dumps`.
+
+Same lesson as the entry above, one level down: the *fix* was recorded here
+and the *test* that closed the gap was not, so this file kept advertising a
+hole in the suite that had been filled. When you close a gap this file
+names, correct the claim in the same change.
 
 ## Working style established so far
 

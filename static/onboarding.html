@@ -620,9 +620,19 @@
      meal loop — the thing a brand-new household actually came here for —
      ends at the reveal instead of being followed by an unrelated
      questionnaire. The markup and save logic weren't thrown away: they
-     moved as-is to static/chores-setup.html, a standalone page reached via
-     "Want help with chores too? Set them up" on Today's chores card (see
-     shell.js's renderChores) and served at GET /chores-setup. The backend
+     moved as-is to static/chores-setup.html, a standalone page served at
+     GET /chores-setup (app/main.py, chores_setup_page). CORRECTED 2026-09-08: this
+     comment used to say the page was "reached via 'Want help with chores
+     too? Set them up' on Today's chores card (see shell.js's
+     renderChores)". There is no such link — that string appears nowhere in
+     static/shell.js, renderChores contains no link, and no file in static/
+     navigates to /chores-setup — within static/ the name occurs only
+     inside comments (this one, two JS comments further down this file, and
+     chores-setup.html's own header). The page is orphaned, and whether to
+     link it before Chores is validated is Emily's call. The same false
+     claim was corrected in the same change at app/main.py's /chores-setup
+     route docstring and in static/chores-setup.html. The
+     backend
      routes (/api/onboarding/chores-profile, /api/onboarding/chores/save,
      /api/onboarding/chores/recommend) are unchanged and still work exactly
      as before — only who calls them, and when, changed.
