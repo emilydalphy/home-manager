@@ -4751,6 +4751,63 @@ Call submit_chore_recommendations with the result."""
     return []
 
 
+# The two prefills the shell puts in the composer when the household taps
+# "or tweak it with me" under a draft week (static/shell.js: the
+# week-tweak-link on the everyday review band, and the first-week reveal's
+# own twin). The household types the rest after the dash, so this is a
+# prefix match, not an equality one — and it is the ONLY marker available,
+# since the chat endpoint carries no context field of its own.
+TWEAK_CONTEXT_PREFIXES = (
+    "let's tweak this week",
+    "let's tweak my first sample week",
+)
+
+
+def _is_tweak_context(user_message: str) -> bool:
+    """True when THIS message came from the draft week's "tweak it with me".
+
+    Deliberately per-message, not sticky for the rest of the conversation:
+    every chat surface shares one backend session ("default"), so a flag
+    that outlived the exchange would quietly shorten unrelated later
+    answers in the same session. The cost is that a follow-up typed
+    without the prefill ("actually make it Friday") gets an ordinary-length
+    reply. Worth revisiting with Emily if that reads badly in practice.
+    """
+    text = (user_message or "").replace("’", "'").strip().lower()
+    return text.startswith(TWEAK_CONTEXT_PREFIXES)
+
+
+# Loop Board "Tweak-the-week chat: after a swap the flow dies" (Emily,
+# 2026-09-08): in this one flow the household is LOOKING at the week while
+# they talk, and every change already renders its own receipt card under
+# the reply. A full ordinary chat answer here — the balanced-plate nudge,
+# the grocery-list explanation, a recap of the day — buries the two cards
+# that are the actual answer. So: scoped to this flow only, one or two
+# sentences, and the plate nudge off. Deliberately an appended block
+# rather than an edit to SYSTEM_PROMPT, which is frozen and cached and
+# governs every other kind of turn.
+_TWEAK_REPLY_BLOCK = {
+    "type": "text",
+    "text": (
+        "This turn came from \"or tweak it with me\" under the household's draft week. They "
+        "are looking at that week while they talk to you, and anything you change is already "
+        "shown to them as its own card under your reply, with a link straight to it.\n"
+        "So in THIS conversation only:\n"
+        "- Keep the reply to one or two sentences. Say what changed, and — while the plan is "
+        "still a draft — that nothing reaches the grocery list until they approve it. Once, in "
+        "one clause. Let the cards carry the detail.\n"
+        "- Do not offer the balanced-plate suggestion, even when plan_meal reports "
+        "food_groups_missing. Skip it entirely here. Still tag food_groups as usual.\n"
+        "- Do not explain how the grocery list works beyond that one clause, do not recap the "
+        "rest of the week back to them, and do not ask what else they would like — they can see "
+        "the week, and they will say.\n"
+        "The length and tone to match: \"Swapped Thursday to classic beef burgers — nothing's "
+        "on your list until you approve.\"\n"
+        "If they asked a question rather than asking for a change, answer it just as briefly."
+    ),
+}
+
+
 def _build_proactive_check_block() -> dict | None:
     """
     Run the household's highest-value "worth a heads-up" checks in code and
@@ -4855,6 +4912,11 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
         proactive_block = _build_proactive_check_block()
         if proactive_block:
             system_blocks.append(proactive_block)
+
+    # Scoped to the draft week's "tweak it with me" flow only — every other
+    # kind of turn keeps the ordinary reply length and the plate nudge.
+    if _is_tweak_context(user_message):
+        system_blocks.append(_TWEAK_REPLY_BLOCK)
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps

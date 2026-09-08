@@ -1761,6 +1761,28 @@ html, body {
   color: var(--ink-muted);
 }
 .day-sides-grid { display: flex; gap: 12px; }
+
+/* "See your week" (chat's post-tweak chip) lands here and rings the meal
+   that just changed for a couple of seconds — the dinner hero, or the
+   sides card when it was breakfast/lunch. Celadon, not apricot: this says
+   handled/already true, and the apricot on this screen belongs to the
+   Approve button (one apricot per screen). An outline rather than a
+   box-shadow so the hero keeps its own --shadow-hero lift underneath, and
+   outline follows the element's border-radius. JS removes the class on the
+   same 2s beat; the fade just means it's already gone when it does. */
+.just-changed {
+  outline: 2.5px solid var(--celadon);
+  outline-offset: 3px;
+  animation: justChangedRing 2s ease-out 1 forwards;
+}
+@keyframes justChangedRing {
+  0%, 65% { outline-color: var(--celadon); }
+  100% { outline-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Same two seconds, no fade — the ring simply appears and is removed. */
+  .just-changed { animation: none; outline-color: var(--celadon); }
+}
 .side-tile {
   flex: 1 1 0;
   min-width: 0;
@@ -2536,6 +2558,11 @@ html, body {
    labelled "Redo" could only be one of them, and would be the wrong one
    half the time. */
 .week-redo-row { display: flex; gap: 10px; }
+/* Placement only — the waiting line's own styling is .waiting-line in
+   theme.css (see static/waiting-lines.js). Sits centred under the redo
+   row whose "Try again" started it. */
+.week-redo-waiting { margin-top: 8px; text-align: center; }
+.week-redo-waiting[hidden] { display: none; }
 .week-redo-btn {
   flex: 1;
   background: none;
