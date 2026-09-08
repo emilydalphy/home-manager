@@ -5131,8 +5131,9 @@ span.cook-week-name { cursor: default; }
 /* The one error paragraph that lives inside a spruce hero (Kitchen's).
    --apricot-label is tuned for a light ground; on spruce the lifted
    apricot is the one that reads. */
-.snw-link-hero { color: var(--apricot-light); }
-.snw-link-hero:hover { color: var(--apricot-light); text-decoration: underline; }
+/* On Kitchen's spruce hero the link stays ivory: Kitchen carries no apricot by design (nothing there is urgent). */
+.snw-link-hero { color: var(--ivory-ink-muted); text-decoration: underline; text-decoration-color: var(--apricot-rule); }
+.snw-link-hero:hover { color: var(--ivory-ink); }
 
 #snw-scrim {
   position: fixed;
