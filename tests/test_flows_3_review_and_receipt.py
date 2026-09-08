@@ -431,6 +431,11 @@ def test_the_two_asks_are_lines_that_expand_in_place():
     _assert_in("data.defrost_asked_at", SHELL_JS, "the defrost asked_at gate", "shell.js")
     _assert_in("data.cook_ahead_asked_at", SHELL_JS, "the cook-ahead asked_at gate", "shell.js")
     _assert_in(".wk-quick-body", SHELL_CSS, "the expanded ask's styling", "shell.css")
+    # Found in the browser, not in review: an author `display` beats the UA
+    # sheet's [hidden] rule, so without this guard both asks rendered open
+    # and the card was as tall as the two it replaced.
+    _assert_in(".wk-quick-body[hidden] { display: none; }", SHELL_CSS,
+               "the collapsed ask's hidden guard", "shell.css")
 
 
 def test_the_receipt_is_dismissed_per_plan_for_this_session_only():

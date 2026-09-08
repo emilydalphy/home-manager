@@ -2769,6 +2769,9 @@ html, body {
   gap: 9px;
   padding: 2px 0 12px;
 }
+/* An author `display` beats the UA sheet's [hidden] rule, so a collapsed ask
+   would render open. Same guard every sheet in this file carries. */
+.wk-quick-body[hidden] { display: none; }
 .wk-quick-body-line {
   font-family: var(--font-body);
   font-size: 14px;

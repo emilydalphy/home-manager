@@ -306,6 +306,72 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — Review IS the week card; approval ends in one receipt.
+  Branch `flows-3-review-and-receipt`.** Emily's approved design, the third
+  of the three flows: on the new Week root the draft review band was ~410px
+  and, after approval, the receipt plus two nudge cards filled a phone
+  viewport, so the seven-row card — the answer the screen exists to give —
+  started below the fold in both states. **DRAFT** is now the week itself:
+  the DRAFT badge, a subtitle that says "a draft, your turn" instead of the
+  shape of the week, the rows as the review (tap a row, Day, Swap, all as
+  built), and under the card one apricot "Approve this week" plus a quiet
+  "Tweak it with me" (`weekDecideHtml`). Above the card, only for a HARD
+  allergen clash, one urgent-tint "One thing to settle" card
+  (`renderWeekSettle`) with "Swap the <dish>" (straight to that Meal step)
+  and "Keep it anyway" — which is deliberately the ORDINARY approve path,
+  so `approve_weekly_plan` still answers `needs_confirmation` and the
+  second explicit tap is still what the backend waits for
+  (`showApproveConfirm` now works on `.wk-decide` and scrolls the button
+  into view). A soft conflict gets no card ever: one line under the card
+  (`weekNotesHtml`), where the once-ever plates note went too. **SET** shows
+  a celadon receipt — an eyebrow, one counted sentence and one thaw line —
+  plus "Two quick ones before you go", the freezer check and the cook-ahead
+  offer folded from two full cards into two LINES with an "Ask" that expands
+  each ask's existing chip UI in place. Same state, same `asked_at` gates,
+  same `/defrost-confirm` and `/cook-ahead-confirm`; only the frame changed.
+  Two segments close it: apricot "Open the list" (Grocery → Plan stops) and
+  "See the week", which **dismisses the receipt via `sessionStorage`, keyed
+  by `weekly_plan_id`** (`pomona.weekReceiptDismissed.<id>`) — it has to
+  survive a tab switch, since the panel re-renders every time Meals comes
+  back, but not a new session, since a week approved yesterday should open
+  on the card. Nothing about it is the server's business, which is why it
+  isn't a column; the Cook view's two re-ask links clear it. **Removed:**
+  `#week-review-band` and `renderWeekReviewBand` outright, with
+  `groceryPromiseText` (the promise line), `receiptBodyText` (the long "All
+  set. I've put N items…" paragraph), `approvedAtLabel` (the APPROVED BY
+  eyebrow), the "your list is ready" handoff and its dismissal map, the
+  "Not now" on the freezer ask, and the review band's Try again / Change my
+  answers pair (already in the More sheet since flows 2 — only the
+  `#week-redo-waiting` line moved, onto the page under the card, since the
+  sheet closes the moment you tap). "Reopen the week" and "Adjust your
+  setup" left the receipt for the More sheet with every other rare action.
+  **New on the server, deliberately, because copy that counts things must
+  not drift from the things it counts** (and shell.js has no JS test
+  harness): `weekly_plan.week_receipt(days, plan_id)` returns
+  meals/cooks/list_count/thaw_count plus the two sentences — a reheat night
+  is a meal but not a cook and an away night is neither (same rule as the
+  card's own subtitle), the list is the `needed` view the Grocery tab
+  opens on and an empty one says "nothing left to buy" rather than
+  promising a list of nothing, numbers run one-to-twelve as words and
+  digits above (Emily), and the thaw line is either "<N> things to move to
+  the fridge this week." or "Nothing to thaw before <the plan's next cook
+  day>." — the free-until fact, dropping to "this week" when the week has
+  no cook left to name. `coordination._settle` / `_soft_note` write the two
+  clash sentences beside the data; "is allergic to" is only ever said when
+  the restriction actually says allergy, otherwise "can't have". Both ride
+  in `get_week_menu` (`receipt` for an approved week, `settle`/`soft_note`
+  for a draft only). `tests/test_flows_3_review_and_receipt.py` is the new
+  guard (40 tests); `test_the_draft_review_band_still_renders_above_the_card`
+  in `tests/test_meals_week_day_meal.py` was INVERTED rather than deleted
+  and renamed to say so — flows 2's own entry said "flows 3 replaces the
+  band", and this is that. One bug found only in the browser: an author
+  `display` beats the UA sheet's `[hidden]`, so both asks rendered open
+  until `.wk-quick-body[hidden] { display: none; }` went in. One thing left
+  alone: `approveWeek`'s who's-approving step is unreachable today because
+  `get_week_menu` only fills `other_adults` once a plan HAS an approver, so
+  a draft always sees an empty list — pre-existing, untouched here, and
+  worth a ticket of its own rather than a change smuggled into a design
+  slice.
 - **2026-09-08 — Meals is three steps, not one stack. Branch
   `flows-2-meals-week-day-meal`.** Emily's approved design: the Meals PLAN
   state answers "what are we eating this week, and is it settled?" as
