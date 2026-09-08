@@ -156,17 +156,30 @@ html, body {
   color: var(--ink);
   margin: 7px 0 0;
 }
-/* The needs-you count. It used to be the H1; the greeting is the H1 now and
-   the dinner panel is the hero, so this is a supporting line — same
-   sentence, same source, far less shouting. */
-.today-status {
+/* "3 of 4 done" — the day's own progress, under the title. Quiet by
+   design: it reports, it doesn't ask. */
+.today-progress {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
-  color: var(--urgent-label);
+  color: var(--ink-secondary);
   margin-top: 5px;
 }
-.today-status.is-clear { color: var(--ink-secondary); }
+
+/* WEEK SET / DRAFT / NOTHING PLANNED, at the far end of the date's own
+   hairline. An eyebrow, not a badge with a fill — the date strip is a rule
+   across the top of the screen and a coloured pill would break it. */
+.today-weekstate {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-muted);
+}
+.today-weekstate.is-set { color: var(--celadon-label); }
+.today-weekstate[hidden] { display: none; }
 
 .today-area-nudge { padding: 0 20px; }
 .today-area-nudge:not(:empty) { padding-bottom: 14px; }
@@ -178,119 +191,176 @@ html, body {
   padding: 16px 20px 0;
 }
 .today-area-chores { display: flex; flex-direction: column; gap: 12px; }
+.today-area-rest { display: flex; flex-direction: column; gap: 12px; }
 .today-area-ask { display: none; } /* the Ask column only exists at >=1024px — see §7 */
 
-/* "Break the uniform card stack" (NavBlueprint §03): a two-up pair of short
-   tiles, then the wider attention cards, then a plain list. auto-fit means a
-   single tile — no prep task today — fills the row rather than leaving a
-   lonely half-width card next to a hole. */
-.today-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+/* ---------- Next up (Today, 2026-09-08) ----------
+   The compact form of .dinner-hero: about a third of the screen rather than
+   the tall panel that used to sit here, because it is one move out of a
+   day's worth rather than the answer to the whole screen. Same spruce, same
+   one apricot action, smaller type and tighter padding. */
+.nextup-hero { padding: 18px 20px 16px; gap: 11px; }
+.nextup-dish { font-size: 26px; letter-spacing: -0.032em; line-height: 1.08; }
+.nextup-when {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ivory-ink-muted);
+  white-space: nowrap;
 }
-.today-tile {
-  min-height: 112px;
-  box-sizing: border-box;
-  border-radius: var(--radius-card);
-  padding: 14px;
+/* The action and the tick share the last row: one thing to tap to DO it,
+   one to say it's already handled. */
+.nextup-foot { display: flex; align-items: center; gap: 10px; }
+.nextup-foot .hero-action { flex: 1 1 auto; height: 48px; }
+
+/* ---------- The tick ----------
+   44x44 of tap target (Rule 6), 20px of visual inside it. Empty is a ring;
+   filled is celadon — the accent that reassures, "already true". */
+.tick {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.tick-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid var(--hairline-strong);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.tick-box svg { display: block; width: 12px; height: 12px; }
+.tick:hover .tick-box { border-color: var(--celadon); }
+.tick.is-done .tick-box {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink); /* RULE ONE: dark ink on a light accent fill */
+}
+/* On spruce the ring has to lift off the panel rather than off the ground. */
+.nextup-foot .tick-box { border-color: var(--apricot-rule); }
+.nextup-foot .tick:hover .tick-box { border-color: var(--apricot-light); }
+
+/* ---------- The rest of today ---------- */
+.rest-card { padding: 4px 14px 6px; }
+.rest-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 14px 0 2px;
+}
+.rest-list { display: flex; flex-direction: column; }
+.rest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  border-top: 1.5px solid var(--hairline);
+}
+.rest-list .rest-row:first-child { border-top: none; }
+.rest-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 2px;
+  padding: 8px 0;
   text-align: left;
+  background: none;
+  border: none;
   font: inherit;
 }
-.today-tile[hidden] { display: none; }
-.tile-icon { display: block; width: 22px; height: 22px; }
-.tile-icon svg { display: block; width: 22px; height: 22px; }
-.tile-eyebrow {
+.rest-row-open { cursor: pointer; }
+.rest-row-title {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+}
+.rest-row-detail {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+/* Done items fade rather than vanish — a day's work should still be
+   visible at the end of it, and the tick has to stay tappable to undo. */
+.rest-row.is-done .rest-row-title { color: var(--ink-done); text-decoration: line-through; }
+.rest-row.is-done .rest-row-detail { color: var(--ink-done); }
+.rest-done { margin-top: 10px; }
+.rest-done-head {
   font-family: var(--font-body);
   font-weight: 800;
   font-size: 10px;
   letter-spacing: .14em;
   text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 8px 0 4px;
 }
-.tile-body {
+
+/* Nothing left today: name tomorrow's first move rather than showing a
+   blank screen. Celadon-tint — the settled, non-urgent tile. */
+.tomorrow-card {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  color: var(--ink-on-celadon);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tomorrow-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--celadon-label);
+}
+.tomorrow-lead {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
-  line-height: 1.35;
-}
-.tile-foot {
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--celadon-label);
-  margin-top: -4px;
-}
-/* Prep is celadon — the accent that reassures. It's a button now too (Loop
-   Board "core loop handoffs" item 1: it goes to Cook mode, where prep is
-   actually ticked off), so it gets the same cursor/hover treatment
-   .tile-grocery already has. */
-.tile-prep {
-  background: var(--celadon-tint);
-  border: 1.5px solid var(--celadon-edge);
-  color: var(--ink-on-celadon);
-  cursor: pointer;
-}
-.tile-prep:hover { background: var(--celadon-edge); }
-.tile-prep .tile-icon,
-.tile-prep .tile-eyebrow { color: var(--celadon-label); }
-/* Defrost is celadon too — same "nudge, not the task" family as prep (§1
-   token table) — but unlike prep it IS a control: there's no Cook-mode
-   moment for it (the move happens days before cooking starts), so the
-   one-tap done/skip lives right here. Neither button is apricot: Today's
-   hero already spends this screen's one apricot primary (Rule 5), and a
-   quiet in-tile action doesn't need to compete with it. */
-.tile-defrost {
-  background: var(--celadon-tint);
-  border: 1.5px solid var(--celadon-edge);
   color: var(--ink-on-celadon);
 }
-.tile-defrost .tile-icon,
-.tile-defrost .tile-eyebrow { color: var(--celadon-label); }
-.tile-defrost-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: auto;
-}
-.tile-defrost-btn {
-  flex: 1;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: var(--radius-control);
-  font-family: var(--font-body);
+.tomorrow-title {
+  font-family: var(--font-display);
   font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  color: var(--ink-on-celadon);
+  margin-top: 2px;
+}
+.tomorrow-detail {
+  font-family: var(--font-body);
+  font-weight: 600;
   font-size: 12px;
-  cursor: pointer;
-}
-.tile-defrost-btn svg { display: block; width: 16px; height: 16px; }
-/* Done is the affirmative half of the pair — a filled celadon fill (Rule 1:
-   dark ink on a light accent fill, always) so it reads slightly heavier
-   than Skip without reaching for apricot. */
-.tile-defrost-done {
-  background: var(--celadon);
-  border: none;
-  color: var(--on-accent-ink);
-}
-.tile-defrost-skip {
-  background: transparent;
-  border: 1.5px solid var(--celadon-edge);
   color: var(--celadon-label);
+}
+.today-empty {
+  padding: 18px 14px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink-secondary);
 }
 
-/* Grocery's own tile — a button, same as .tile-prep above. */
-.tile-grocery {
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  color: var(--ink);
-  cursor: pointer;
+@media (prefers-reduced-motion: reduce) {
+  /* The tick still changes, it just stops sliding into its new colour. */
+  .tick-box { transition: none; }
 }
-.tile-grocery:hover { background: var(--surface-raised); border-color: var(--hairline-strong); }
-.tile-grocery .tile-icon { color: var(--apricot-deep); }
-.tile-grocery .tile-eyebrow { color: var(--ink-muted); }
 
 /* Named .shell-card, not .card — theme.css already defines .card with a
    cream fill for older pages; this is deliberately a distinct white-card
@@ -1182,6 +1252,12 @@ html, body {
   .today-heading { padding: 32px 32px 20px; }
   .today-area-nudge { padding: 0 32px; }
   .dinner-hero { border-radius: var(--radius-hero); margin: 0 32px; padding: 26px 28px 24px; }
+  .nextup-hero { padding: 20px 28px 18px; }
+  /* Wide enough that the one action stops being a full-width slab — but it
+     shares its row with the tick, so it shrinks rather than left-aligning
+     the way the old hero's did. */
+  .dinner-hero.nextup-hero .hero-action { align-self: auto; flex: 0 0 auto; padding: 0 32px; }
+  .dinner-hero.nextup-hero .nextup-foot { justify-content: flex-start; }
   .dinner-hero .hero-dish { font-size: 38px; }
   .dinner-hero .hero-dish-sm { font-size: 30px; }
   .dinner-hero .hero-dish-xs { font-size: 25px; }
@@ -1196,14 +1272,14 @@ html, body {
     display: grid;
     grid-template-columns: 1.5fr 1fr 1fr;
     grid-template-areas:
-      "tiles chores ask"
-      "needsyou chores ask";
+      "needsyou chores ask"
+      "rest chores ask";
     gap: 24px;
     align-items: start;
     padding: 24px 32px 0;
   }
-  .today-area-tiles { grid-area: tiles; }
   .today-area-needsyou { grid-area: needsyou; }
+  .today-area-rest { grid-area: rest; }
   .today-area-chores { grid-area: chores; }
   .today-area-ask {
     grid-area: ask;
@@ -3128,8 +3204,8 @@ html, body {
 }
 /* A class rule that sets `display` outranks the UA stylesheet's
    [hidden] { display: none }, so hiding these by setting .hidden silently
-   did nothing until this existed. Same guard .today-tile[hidden] and
-   .dinner-hero[hidden] already carry, for the same reason. */
+   did nothing until this existed. Same guard .dinner-hero[hidden] already
+   carries, for the same reason. */
 .gro-seg[hidden] { display: none; }
 .gro-seg-btn {
   min-height: 44px;
@@ -4239,8 +4315,8 @@ html, body {
   gap: 6px;
 }
 /* A class rule that sets `display` outranks the UA's [hidden] rule — the
-   same guard .gro-seg[hidden], .today-tile[hidden] and .dinner-hero[hidden]
-   already carry, for the same reason. */
+   same guard .gro-seg[hidden] and .dinner-hero[hidden] already carry, for
+   the same reason. */
 .meals-seg[hidden] { display: none; }
 #week-cook-view[hidden], #week-plan-view[hidden] { display: none; }
 /* The plan's rows used to be direct children of .week-content, which is a
