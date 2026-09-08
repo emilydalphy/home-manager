@@ -381,6 +381,52 @@ why*, not duplicating the diff.
   clean) — not in a real browser: the Chrome extension was not connected
   and no Playwright browsers are installed in this environment, so the
   390px and desktop LAYOUTS are unverified.
+- **2026-09-08 — Five things the Kitchen/Preferences slice got wrong, on
+  the same branch (`flows-4-kitchen-and-preferences`).** Found on review of
+  the entry above, fixed in one pass. (1) **Preferences invented a fact.**
+  `meal_preferences.snacks_per_week` is `NOT NULL DEFAULT 3`, so nothing in
+  the row could tell "they said three" from "we assumed three" — "How you
+  eat" duly told a brand-new household it eats *3 snacks a week*. New
+  column `snacks_per_week_set` (schema.sql + db.py `_MIGRATIONS`), written
+  only when an EXPLICIT `snacks_per_week` reaches
+  `preferences.set_household_meal_preferences`, cleared by
+  `delete_preference`, surfaced as `snacks_per_week_set` on
+  `get_household_memory`, read by `prefsEatingLine`. Existing households
+  are backfilled from `preference_events`
+  (`snacks_per_week` / `onboarding_meals_per_week`), never from the number
+  itself — `db._backfill_snacks_per_week_set`. The other four rows were
+  audited and were already honest: members, `usual_stores` and the rhythm
+  facts are empty/NULL until answered. Their five empty-state lines now all
+  read **"Not set yet"** (the people row used to say "Nobody on record
+  yet"). (2) **`cookFocusPrepTasks` orphaned general prep.** A `prep_tasks`
+  row with no `meal_plan_entry_id`, no name-matching `related_meal` and a
+  date that is not a prep day ("Soak the beans", +2d) rendered NOWHERE —
+  not in a session, not on a cook screen, and Today only shows today. The
+  Kitchen root now carries **"Prep to do"** directly under Prep sessions
+  (`kitchenLoosePrepTasks` / `kitchenPrepTodoHtml`): every *pending* task no
+  session and no cook screen already shows, dated, with a tick. It is a
+  net, not a third list — nothing appears in two places. (3) **"Show me
+  tomorrow" didn't show tomorrow.** The rating toast's action went to the
+  Kitchen root with no focus, which shows tomorrow only when tomorrow
+  happens to be a prep-session day. `cookShowTomorrow` opens tomorrow's
+  first cook in slot order (`cookTomorrowFocusTarget`, reheats skipped —
+  they have no cook screen) and otherwise lands on the root scrolled onto
+  the prep; the action is offered when tomorrow has a cook OR prep
+  (`cookTomorrowHasSomethingToShow`). (4) Four nits: a check-off now
+  re-reads `/api/today/moves` into `kitchenState.moves`
+  (`refreshKitchenMoves`, off `refreshPlanSurfacesAfterCook`) and a cooked
+  row drops its start-by chip; the subtitle says "1 cook **left** tonight"
+  / "nothing left to cook today" once anything today is ticked, with done
+  read from the plan row and the move together; cook mode's apricot says
+  **"Mark it cooked"**, the same words as the end-of-recipe button (the
+  root's checkbox `aria-label` stays "Mark cooked" — `cookCheckMeal` reads
+  that exact string); and `runTodayMoveAction` translates a stale cached
+  `{tab:'week', mealsView:'cook', mealsFocus}` target into a `cookFocus`
+  instead of dropping the tap on the plan. `tests/test_kitchen_and_
+  preferences.py` grew 21 tests (31 -> 52), most of them running the
+  screen's own functions under node rather than reading the source for a
+  marker; `test_prep_days`'s section-order marker was updated honestly for
+  the new "Prep to do" line. Suite 1474 -> 1495.
 - **2026-09-08 — Review IS the week card; approval ends in one receipt.
   Branch `flows-3-review-and-receipt`.** Emily's approved design, the third
   of the three flows: on the new Week root the draft review band was ~410px

@@ -1170,6 +1170,15 @@
     if (target.tab === 'kitchen' && target.cookFocus) {
       return activateTab('kitchen', true, { cookFocus: target.cookFocus });
     }
+    // The same thing, in the shape moves.py wrote it before 2026-09-08,
+    // when cook mode was a state of the Meals tab. A payload cached by the
+    // service worker (or held on a tab left open across the deploy) still
+    // carries it, and the tab it names has no cook state any more — so
+    // translate it rather than dropping the tap on the plan, where it
+    // would silently do nothing.
+    if (target.tab === 'week' && target['mealsView'] === 'cook') {
+      return activateTab('kitchen', true, { cookFocus: target['mealsFocus'] || true });
+    }
     if (target.tab) return activateTab(target.tab, true);
   }
 
@@ -3021,7 +3030,12 @@
     moves: [],
     loading: false,
     // "+ 3 more cooks" — the rest of the week is three lines until asked.
-    restExpanded: false
+    restExpanded: false,
+    // Set by a caller that wants the root's prep to be the thing you land
+    // on rather than the top of the tab — the rating toast's "Show me
+    // tomorrow" when tomorrow has prep but no cook. Cleared by the render
+    // that honours it, so it never fires twice.
+    scrollToPrep: false
   };
 
   var KITCHEN_ICONS = {
@@ -3173,14 +3187,18 @@
       if (meal.date !== todayIso) return;
       var move = byEntry[meal.entry_id] || null;
       var isReheat = !!meal.is_leftovers;
-      var done = meal.cooked_status === 'done';
+      // The plan row and the move say the same thing about "cooked" — the
+      // move's `done` is read off cooked_status (app/tools/moves.py) — but
+      // either one can be the fresher of the two after a tick, so a row is
+      // done if either says so rather than whichever happened to reload.
+      var done = meal.cooked_status === 'done' || !!(move && move.done);
       rows.push({
         idx: idx,
         entryId: meal.entry_id,
         isReheat: isReheat,
         done: done,
         title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
-        line: kitchenTodayLine(meal, move, isReheat),
+        line: kitchenTodayLine(meal, move, isReheat, done),
         // "Cook" / "Reheat" while it is still ahead of you, and the past
         // tense of whichever it was once it is done — a reheat night was
         // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
@@ -3193,11 +3211,15 @@
   // "start by 5:35 · 55 min" for a cook; "leftovers from Sunday · reheat ·
   // 6:30" for a reheat — both read off the move rather than restated here,
   // so the words match the ones Today uses for the same meal.
-  function kitchenTodayLine(meal, move, isReheat) {
+  function kitchenTodayLine(meal, move, isReheat, done) {
     if (isReheat) return move ? move.detail : 'reheat';
     var bits = [];
     ((move && move.chips) || []).forEach(function (chip) {
-      if (/^Start by /.test(chip)) bits.unshift('start by ' + chip.slice('Start by '.length));
+      // A cook that is already done has no start-by left to make: the
+      // moves payload keeps the chip (it is arithmetic about the slot, not
+      // about the tick), so the row drops it rather than telling someone
+      // who has just cooked when they should have started.
+      if (/^Start by /.test(chip)) { if (!done) bits.unshift('start by ' + chip.slice('Start by '.length)); }
       else bits.push(chip);
     });
     if (!bits.length) {
@@ -3212,18 +3234,26 @@
   // really is a dinner — a lunch to make at eleven in the morning is not
   // tonight, and saying so would be the kind of small lie that stops
   // anyone trusting the line.
+  //
+  // Once anything today has been ticked the count says "left": at eight in
+  // the evening with two of three cooked, "3 cooks today" is a number
+  // nobody recognises and it reads as though the evening has not started.
+  // The done state is the rows' own, which is the plan's and the moves'
+  // taken together (kitchenTodayRows).
   function kitchenSubtitle(rows, meals, todayIso) {
     var day = dayName(todayIso, { weekday: 'long' });
     var cooks = rows.filter(function (r) { return !r.isReheat && !r.done; });
+    var anyDone = rows.some(function (r) { return r.done; });
     if (!cooks.length) {
-      return rows.length ? day + ' · nothing left to cook' : day + ' · nothing to cook today';
+      return rows.length ? day + ' · nothing left to cook today' : day + ' · nothing to cook today';
     }
     var allDinner = cooks.every(function (r) {
       var meal = (meals || [])[r.idx];
       return meal && meal.slot === 'dinner';
     });
     var noun = cooks.length === 1 ? 'cook' : 'cooks';
-    return day + ' · ' + cooks.length + ' ' + noun + (allDinner ? ' tonight' : ' today');
+    return day + ' · ' + cooks.length + ' ' + noun + (anyDone ? ' left' : '') +
+      (allDinner ? ' tonight' : ' today');
   }
 
   function kitchenCookingTodayHtml(rows) {
@@ -3260,6 +3290,63 @@
       '</div>' +
       (row.line ? '<p class="cook-week-sub">' + escapeHtml(row.line) + '</p>' : '') +
     '</div>';
+  }
+
+  // Prep that nothing else on this tab shows.
+  //
+  // Three places a prep_tasks row can surface: its prep day's session
+  // (cookPrepSessionsHtml, which only picks up rows dated ON a prep day),
+  // the focused cook screen of the meal it feeds (cookFocusPrepTasks,
+  // which needs either a meal_plan_entry_id or a related_meal that matches
+  // a dish by name), and Today's timeline, which only ever shows today.
+  // A general task with neither link, dated on an ordinary day — "Soak the
+  // beans", two days out — fell through all three and rendered NOWHERE.
+  // A task the app wrote and then hid is worse than one it never wrote, so
+  // the root collects the leftovers: every pending row no session and no
+  // cook screen already carries, dated, with a tick.
+  //
+  // Done rows are left out on purpose: this is the "nothing is invisible"
+  // net, not a second progress list, and a finished task is not lost.
+  function kitchenLoosePrepTasks(data) {
+    var tasks = (data && data.prep_tasks) || [];
+    if (!tasks.length) return [];
+    var shown = {};
+    ((data && data.prep_sessions) || []).forEach(function (session) {
+      (session.items || []).forEach(function (item) {
+        if (item.prep_task_id != null) shown[item.prep_task_id] = true;
+      });
+    });
+    ((data && data.meals) || []).forEach(function (meal) {
+      cookFocusPrepTasks(data, meal).forEach(function (t) { shown[t.id] = true; });
+    });
+    return tasks.filter(function (t) {
+      return t.status !== 'done' && !shown[t.id];
+    });
+  }
+
+  function kitchenPrepTodoHtml(tasks) {
+    if (!tasks.length) return '';
+    return '<section class="cook-section" id="kit-prep-todo">' +
+      '<div class="cook-sectionhead">' +
+        '<span class="cook-eyebrow">Prep to do</span>' +
+        '<span class="cook-rule"></span>' +
+      '</div>' +
+      '<div class="cook-week">' +
+        tasks.map(function (t) {
+          var day = t.task_date ? dayNameShort(t.task_date).toUpperCase() : '';
+          return '<div class="cook-week-item">' +
+            '<div class="cook-week-row">' +
+              '<button type="button" class="cook-box" data-cook="check-prep" ' +
+                'data-prep-id="' + t.id + '" data-next="done" aria-label="Mark done">' +
+                COOK_ICONS.check +
+              '</button>' +
+              (day ? '<span class="cook-week-day">' + escapeHtml(day) + '</span>' : '') +
+              '<span class="cook-week-name">' + escapeHtml(t.description) + '</span>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</section>';
   }
 
   // The two quiet ways out of the cook's tab and into the house's
@@ -3320,6 +3407,7 @@
       cookAttentionHtml() +
       kitchenCookingTodayHtml(rows) +
       cookPrepSessionsHtml(data) +
+      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +
       cookRestOfWeekHtml(meals, data, todayIso, kitchenState.restExpanded) +
       cookDefrostLinkHtml() +
       cookAheadAskLinkHtml() +
@@ -6067,6 +6155,16 @@
     // ticked — keeps the reader's place.
     if (scrollEl) scrollEl.scrollTop = cookState.pendingScrollTop ? 0 : keepScroll;
     cookState.pendingScrollTop = false;
+    // ...and the one thing that overrides both, after the restore rather
+    // than before it: someone was promised prep and sent here to see it
+    // (the rating toast's "Show me tomorrow", with no cook to focus).
+    // Whichever section actually holds it — the loose "Prep to do" list if
+    // there is one, the prep sessions otherwise.
+    if (onRoot && kitchenState.scrollToPrep) {
+      kitchenState.scrollToPrep = false;
+      var prepEl = rootView.querySelector('#kit-prep-todo') || rootView.querySelector('#kit-prep-sessions');
+      if (prepEl && prepEl.scrollIntoView) prepEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
   }
 
   // ---------- Cook ahead: one batch, several days of the same dish ----------
@@ -6263,7 +6361,7 @@
       return '<p class="cook-empty">Prep ahead? ' +
         '<button type="button" class="cook-empty-link" data-cook="prep-days">Tell Pomona which days you prep</button>.</p>';
     }
-    return '<section class="cook-section">' +
+    return '<section class="cook-section" id="kit-prep-sessions">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow">Prep sessions</span>' +
         '<span class="cook-rule"></span>' +
@@ -6899,7 +6997,10 @@
         cookPrepCutHtml(data, meal) +
         '<button type="button" class="cook-hero-action cook-focus-check' + (isDone ? ' is-done' : '') + '" ' +
           'data-cook="focus-check" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
-          '<span>' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '</span>' + (isDone ? '' : ICONS.arrow) +
+          // The same words as the end-of-recipe button below it
+          // (cookFocusEndHtml) — one action, written once, said the same
+          // way in both places a cook meets it.
+          '<span>' + (isDone ? 'Mark not cooked' : 'Mark it cooked') + '</span>' + (isDone ? '' : ICONS.arrow) +
         '</button>' +
       '</div>' +
       '<div class="cook-body">' +
@@ -7189,6 +7290,25 @@
   // made in chat.
   function refreshPlanSurfacesAfterCook() {
     refreshTodayMoves();
+    refreshKitchenMoves();
+  }
+
+  // The Kitchen root's start-by lines and its done state are read off
+  // /api/today/moves, and no /api/cooker/* write hands that payload back —
+  // so renderCookFrom refreshed cookState.data and left kitchenState.moves
+  // exactly as it was. One small re-read closes the gap; a failure is
+  // silent, because the row's own facts are already correct and a toast
+  // about a background read is noise.
+  async function refreshKitchenMoves() {
+    if (!kitchenIsBuilt()) return;
+    try {
+      var res = await fetch('/api/today/moves');
+      if (!res.ok) return;
+      kitchenState.moves = (await res.json()).moves || [];
+    } catch (err) {
+      return;
+    }
+    renderCook();
   }
 
   // Live re-scale without a plan reload. Non-numeric quantities ("a pinch",
@@ -7294,6 +7414,48 @@
     return tasks.some(function (t) { return t.task_date === tomorrow; });
   }
 
+  // Tomorrow's first real cook, as a cookFocus target — the screen that
+  // actually shows tomorrow. Slot order, so it is breakfast before dinner
+  // and not whatever the plan happened to list first. A reheat night is
+  // skipped: it has no cook screen at all (see kitchenTodayRowHtml), so
+  // focusing it would land on a card rather than on tomorrow.
+  function cookTomorrowFocusTarget() {
+    var tomorrow = tomorrowLocalStr();
+    var cooks = ((cookState.data && cookState.data.meals) || [])
+      .map(function (m, i) { return { m: m, i: i }; })
+      .filter(function (x) { return x.m.date === tomorrow && !x.m.is_leftovers; })
+      .sort(function (a, b) { return cookSlotRank(a.m) - cookSlotRank(b.m); });
+    if (!cooks.length) return null;
+    var m = cooks[0].m;
+    return { entryId: m.entry_id, date: m.date, slot: m.slot, title: m.meal || '' };
+  }
+
+  // Offer the action only when there is something tomorrow to be shown —
+  // a cook counts as well as prep, since the cook is what the tap opens
+  // when there is one.
+  function cookTomorrowHasSomethingToShow() {
+    return cookTomorrowHasPrepOrDefrost() || !!cookTomorrowFocusTarget();
+  }
+
+  // "Show me tomorrow" used to land on the Kitchen ROOT with no focus,
+  // which shows tomorrow only when tomorrow happens to be a prep-session
+  // day — the rest of the time it promised tomorrow and delivered today.
+  // Now it opens tomorrow's first cook when there is one, and otherwise
+  // the root aimed at the prep it was offered for.
+  function cookShowTomorrow() {
+    var focus = cookTomorrowFocusTarget();
+    if (focus) {
+      activateTab('kitchen', true, { cookFocus: focus });
+      return;
+    }
+    kitchenState.scrollToPrep = true;
+    cookState.screen = 'overview';
+    activateTab('kitchen', true);
+    // Already-built tabs are not re-rendered by activateTab, so the flag
+    // above would sit unread; a fresh build renders on its own load.
+    if (kitchenIsBuilt()) renderCook();
+  }
+
   async function cookRateMeal(el) {
     var meal = el.getAttribute('data-meal');
     var notesEl = document.querySelector('[data-attn-notes="' + meal.replace(/"/g, '\\"') + '"]');
@@ -7310,9 +7472,9 @@
       // rating one of several still leaves "attention" open, which isn't
       // "noted, done" yet.
       if (hadAttention && !(cookState.attention || []).length) {
-        showToast('Noted — that’ll steer next week.', cookTomorrowHasPrepOrDefrost() ? {
+        showToast('Noted — that’ll steer next week.', cookTomorrowHasSomethingToShow() ? {
           label: 'Show me tomorrow',
-          onClick: function () { activateTab('kitchen', true); }
+          onClick: cookShowTomorrow
         } : undefined);
       }
     } catch (err) {
@@ -8744,7 +8906,10 @@
 
   function prefsPeopleLine(mem) {
     var members = (mem && mem.members) || [];
-    if (!members.length) return 'Nobody on record yet';
+    // The same words as the other four rows. Five different ways of
+    // saying "you haven't told me" read as five different states; one
+    // reads as one sheet with nothing in it yet.
+    if (!members.length) return 'Not set yet';
     var names = members.map(function (m) { return m.name; }).join(', ');
     var avoid = [];
     members.forEach(function (m) {
@@ -8790,12 +8955,25 @@
     'fresh_each_night': 'fresh every night'
   };
 
+  // Every line in this sheet says "Not set yet" until the household has
+  // actually said something — a sheet titled "What Pomona knows about your
+  // household" may not print a schema default back as a fact. The other
+  // four rows get that for free (members and usual_stores are empty until
+  // filled; the rhythm answers are NULL until answered), but
+  // snacks_per_week is NOT NULL DEFAULT 3, so it needs the API to say
+  // whether the 3 was answered or assumed — snacks_per_week_set
+  // (app/tools/memory.py). Without it a brand-new household was told it
+  // eats three snacks a week, which nobody had ever said.
   function prefsEatingLine(mem) {
     var bits = [];
     var stance = ((mem && mem.rhythm) || {}).leftovers_stance || '';
     if (PREFS_LEFTOVERS[stance]) bits.push(PREFS_LEFTOVERS[stance]);
-    var snacks = mem && mem.snacks_per_week;
-    if (snacks) bits.push(snacks + ' snack' + (snacks === 1 ? '' : 's') + ' a week');
+    if (mem && mem.snacks_per_week_set) {
+      var snacks = mem.snacks_per_week || 0;
+      // "no snacks" is a real answer and gets real words rather than being
+      // quietly dropped as a falsy number.
+      bits.push(snacks ? snacks + ' snack' + (snacks === 1 ? '' : 's') + ' a week' : 'no snacks');
+    }
     return bits.length ? bits.join(' · ') : 'Not set yet';
   }
 

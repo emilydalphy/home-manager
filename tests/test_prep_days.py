@@ -519,11 +519,18 @@ def test_the_cook_view_renders_the_sessions_card_from_the_payload():
     on the focused screen. The sessions card itself moved unchanged, and it
     still sits between what is cooking today and the rest of the week,
     which is what this assertion was really pinning.
+
+    UPDATED AGAIN 2026-09-08, same branch: one line now sits between the
+    sessions card and the rest of the week — kitchenPrepTodoHtml, the
+    "Prep to do" net for a pending prep task that no session and no cook
+    screen shows (see tests/test_kitchen_and_preferences.py). The ordering
+    this pins is unchanged; the new section is inside it.
     """
     assert "function cookPrepSessionsHtml(data)" in SHELL_JS
     assert "data.prep_sessions || []" in SHELL_JS
     assert (
         "kitchenCookingTodayHtml(rows) +\n      cookPrepSessionsHtml(data) +\n"
+        "      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +\n"
         "      cookRestOfWeekHtml(" in SHELL_JS
     )
 

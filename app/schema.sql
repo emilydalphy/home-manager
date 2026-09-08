@@ -74,6 +74,16 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- snacks (never actually asked) and 3 reads as the more honest "some
     -- snacks most days" starting point for a household that's never answered.
     snacks_per_week INTEGER NOT NULL DEFAULT 3,
+    -- Whether the number above is an ANSWER or just the column default.
+    -- snacks_per_week is NOT NULL DEFAULT 3, so "3" on a household that has
+    -- never been asked and "3" from a household that said three are the
+    -- same value -- and the Preferences sheet's "How you eat" row read the
+    -- default back as a fact ("3 snacks a week") to households who had
+    -- never said a word about snacks. Set to 1 only when an explicit
+    -- snacks_per_week reaches set_household_meal_preferences (onboarding,
+    -- the meal-setup screen, or edit_preference); reset to 0 by
+    -- delete_preference, which puts the number back to the default too.
+    snacks_per_week_set INTEGER NOT NULL DEFAULT 0,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate
