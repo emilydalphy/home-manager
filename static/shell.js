@@ -94,6 +94,23 @@
   var REHEAT_ACTION_LABEL = 'Mark eaten';
   var REHEAT_UNDO_LABEL = 'Mark not eaten';
 
+  // The beta is meals-only (Emily, 2026-09-08, option 1b on the Chores
+  // ticket) — Chores hasn't been validated yet, so Today's "Your chores"
+  // card is hidden rather than shown to every beta household. This is the
+  // one flag that decides it: false means buildTodayPanel never renders
+  // the chores card markup and never calls loadChores (so no
+  // /api/chores/today request either). The chores backend, the
+  // /chores-setup page, and loadChores/renderChores themselves are all
+  // untouched — flipping this back to true is the whole reversal.
+  var SHOW_CHORES_ON_TODAY = false;
+
+  // Cook-mode hands-free voice, hidden not deleted (Emily, 2026-09-08):
+  // "Let's just drop the cook mode voice for now. Just hide it, and we can
+  // rebuild it later." While false: no mic button renders in Cook, no
+  // SpeechRecognition/speechSynthesis session is ever created, and no mic
+  // permission prompt fires. Flip to true to bring it back.
+  var COOK_VOICE_ENABLED = false;
+
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
     { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
@@ -372,12 +389,18 @@
             '</button>' +
           '</div>' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
-          '<div class="today-area-chores">' +
-            '<div class="shell-card chores-card">' +
-              '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
-              '<div id="chores-list"></div>' +
-            '</div>' +
-          '</div>' +
+          // SHOW_CHORES_ON_TODAY (2026-09-08): the beta is meals-only, so
+          // this card is left out of the markup entirely while the flag
+          // is false — not just hidden, so there's nothing for a stray
+          // selector to find.
+          (SHOW_CHORES_ON_TODAY ?
+            '<div class="today-area-chores">' +
+              '<div class="shell-card chores-card">' +
+                '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
+                '<div id="chores-list"></div>' +
+              '</div>' +
+            '</div>'
+          : '') +
           '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
             '<div class="ask-messages" id="today-ask-messages"></div>' +
             '<div class="ask-chips" id="today-ask-chips"></div>' +
@@ -404,7 +427,10 @@
       loadNeedsYou(panel),
       loadTonightsDinner(panel),
       loadDefrostToday(panel),
-      loadChores(panel),
+      // SHOW_CHORES_ON_TODAY (2026-09-08): skip the call, not just the
+      // render — no chores card means no reason to hit
+      // /api/chores/today.
+      (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve()),
       loadGrocerySummary(panel)
     ]);
   }
@@ -1225,6 +1251,18 @@
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // Review's confirmation section
     expandedStores: {},     // store name -> bool (default true)
     doneOpen: false,
+    inCartOpen: false,      // "In your cart" group on To buy — see groBuyHtml
+    // Ids resolved via the Plan stops "Any" pill this page view. "Any" saves
+    // store: '' (see stores.set_grocery_item_store's docstring — an empty
+    // store is a deliberate, remembered-nothing "no particular store" skip,
+    // not a placeholder), which is indistinguishable on the wire from an
+    // item that has simply never been triaged: both land in the
+    // 'Unassigned' bucket. groUnsorted() below excludes ids in this set so
+    // an "Any" choice leaves the to-sort queue exactly the way a real store
+    // choice already does (see the 'assign' handler). Client-side and
+    // page-view only, like justFinishedTrip below — a reload re-triages an
+    // "Any" item, which matches "skip" being one-off, not permanent.
+    anyStoreIds: {},
     openMenuId: null,
     planOpenId: null,
     planPageSize: 5,
@@ -1298,7 +1336,8 @@
   function groUnsorted(data) {
     var u = data.stores['Unassigned'];
     if (!u) return [];
-    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, []);
+    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, [])
+      .filter(function (it) { return !groceryState.anyStoreIds[String(it.id)]; });
   }
   function groStoresWithNeeded(data) {
     return Object.keys(data.stores).filter(function (n) {
@@ -1719,6 +1758,32 @@
             : '<p class="gro-empty">Nothing checked off yet.</p>') + '</div>'
         : '') +
     '</div>';
+
+    // Items already found and in the trolley (status in_cart) used to be
+    // invisible here — they drop out of every store's needed list but
+    // weren't rendered anywhere on To buy until the trip was finished, so
+    // there was no way to see what was in the cart or un-pick something
+    // mid-trip. Same collapsed-group shape as Done just above (reusing its
+    // classes and groDoneRowHtml's row/put-back interaction as-is — "put it
+    // back" is exactly "uncheck", status -> needed, whether the row came
+    // from purchased or in_cart), kept as its own group rather than folded
+    // into Done because in_cart is "found, still in the trolley," not
+    // "bought" (see groTotals' comment on the same distinction).
+    var allInCart = [];
+    names.forEach(function (n) { data.stores[n].inCart.forEach(function (it) { allInCart.push(it); }); });
+    if (allInCart.length) {
+      var cartOpen = groceryState.inCartOpen;
+      html += '<div class="gro-done' + (cartOpen ? ' open' : '') + '">' +
+        '<button type="button" class="gro-done-head" data-gro="toggle-incart" aria-expanded="' + cartOpen + '">' +
+          '<span class="gro-done-tick">' + GRO_ICONS.basket + '</span>' +
+          '<span class="gro-done-label">In your cart (' + allInCart.length + ')</span>' +
+          '<span class="gro-chev">' + (cartOpen ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+        '</button>' +
+        (cartOpen
+          ? '<div class="gro-done-body">' + allInCart.map(groDoneRowHtml).join('') + '</div>'
+          : '') +
+      '</div>';
+    }
     return html;
   }
 
@@ -2242,6 +2307,11 @@
         renderGrocery();
         return;
 
+      case 'toggle-incart':
+        groceryState.inCartOpen = !groceryState.inCartOpen;
+        renderGrocery();
+        return;
+
       case 'check':
         groDo(function () {
           return groPost('/api/grocery-list/' + id + '/status', { status: 'purchased' });
@@ -2370,6 +2440,12 @@
           return groPost('/api/grocery-list/' + id + '/store', { store: toStore }).then(function (r) { assignResult = r; return r; });
         }, "Couldn't assign that — try again.").then(function (ok) {
           if (!ok) return;
+          // The "Any" pill sends an empty store, same as never-triaged —
+          // see anyStoreIds' declaration above. Mark it resolved (only on
+          // success) so groUnsorted drops it from the to-sort queue exactly
+          // like a real store pick already does, instead of leaving it
+          // looking untouched and blocking the auto-advance below.
+          if (!toStore) groceryState.anyStoreIds[id] = true;
           // Auto-advance to the next thing still needing a store, and open
           // the store it just landed in so the shopper sees where it went.
           var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
@@ -3079,7 +3155,10 @@
   //     event signal this app doesn't have — omitted rather than invented.
   var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
   var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];
-  var weekState = { selectedIndex: null, days: [], data: null };
+  // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
+  // drained by applyPendingDayFocus once the days for that week are
+  // actually loaded. Null the rest of the time.
+  var weekState = { selectedIndex: null, days: [], data: null, pendingDayFocus: null };
 
   async function buildWeekPanel(panel) {
     panel.innerHTML =
@@ -4695,6 +4774,9 @@
     renderWeekApproval(panel, data);
     renderPlanWeekEntry(panel, data);
     renderWeekSheetRows(days);
+    // Chat's "See your week" chip may have asked for a specific day before
+    // this week's days existed — now they do. No-op unless one is pending.
+    applyPendingDayFocus(panel);
 
     var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
     gridEl.innerHTML =
@@ -5202,7 +5284,7 @@
       // questions on the way in.
       view.innerHTML =
         cookTitleRowHtml(data) +
-        '<div class="cook-voice" id="cook-voice" hidden></div>' +
+        (COOK_VOICE_ENABLED ? '<div class="cook-voice" id="cook-voice" hidden></div>' : '') +
         cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
         cookAttentionHtml() +
         cookDefrostLinkHtml() +
@@ -5452,9 +5534,11 @@
         '<span class="cook-eyebrow cook-eyebrow-warm">Prep schedule</span>' +
         '<span class="cook-rule"></span>' +
         '<span class="cook-sectionnote">' + done + ' of ' + total + ' done</span>' +
-        '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
-          'aria-label="Hands-free: check off prep steps by voice" ' +
-          'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>' +
+        (COOK_VOICE_ENABLED
+          ? '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
+              'aria-label="Hands-free: check off prep steps by voice" ' +
+              'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>'
+          : '') +
       '</div>' +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
@@ -5550,9 +5634,11 @@
               '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="1" aria-label="More servings">+</button>' +
             '</div>'
           : '') +
-        '<button type="button" class="cook-mic" data-cook="voice" data-ctx="meal" data-idx="' + idx + '" ' +
-          'aria-label="Hands-free for this recipe" ' +
-          'title="Hands-free: read steps, ask amounts, log a substitution">' + COOK_ICONS.mic + '</button>' +
+        (COOK_VOICE_ENABLED
+          ? '<button type="button" class="cook-mic" data-cook="voice" data-ctx="meal" data-idx="' + idx + '" ' +
+              'aria-label="Hands-free for this recipe" ' +
+              'title="Hands-free: read steps, ask amounts, log a substitution">' + COOK_ICONS.mic + '</button>'
+          : '') +
       '</div>' +
       (m.advance_prep_notes
         ? '<h4 class="cook-detail-head">Advance prep</h4><p class="cook-detail-p">' + escapeHtml(m.advance_prep_notes) + '</p>'
@@ -6187,6 +6273,11 @@
   }
 
   function cookToggleVoice(el) {
+    // Belt-and-suspenders: the mic buttons that dispatch here don't render
+    // while COOK_VOICE_ENABLED is false, but this guard means no
+    // SpeechRecognition/speechSynthesis session (and no permission prompt)
+    // can be created even if something still reaches this function.
+    if (!COOK_VOICE_ENABLED) return;
     var ctxType = el.getAttribute('data-ctx');
     var btnIdx = el.getAttribute('data-idx');
     var isThisActive = cookState.voiceSession && cookState.voiceSession.isActive() && cookState.voiceContext &&
@@ -6694,6 +6785,11 @@
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
+          // The post-change next-step chips (offerNextStepChips) navigate
+          // directly rather than sending a message — "Open the list",
+          // "Plan my stops" and "See your week" are places to go, not
+          // things to ask about.
+          if (action.onClick) return action.onClick();
           // The grocery chip pre-fills and focuses instead of sending —
           // what to add is the household's call, not something to guess at
           // and send as a message. openAskSheet(prefill) already knows how
@@ -6703,6 +6799,122 @@
         });
       });
     });
+  }
+
+  // "core loop handoffs, slice 2" item B (Emily, 2026-09-05): once
+  // hideAskChips has fired (after the household's first message), the
+  // pre-conversation quick-action chips are gone for good — but a turn
+  // that actually changed something still has an obvious next step, and
+  // making the household type it out again is exactly the friction the
+  // quick-action chips exist to remove. So: after any turn whose actions
+  // (the same {tab, change} cards refreshStaleTabsFromActions reads) show
+  // a real change, recompute and show the relevant chip(s). A turn that
+  // changed nothing — a question answered — gets none, which is the point
+  // of gating on `actions` rather than on "a turn happened."
+  //
+  // NOTE (2026-09-08): this pair was added by e2024a4 and then silently
+  // lost from main in merge 2d69951 ("Merge custom-date-range"), which
+  // took the other side of the conflicted region wholesale. Restored here
+  // alongside the "See your week" chip below, because that chip has
+  // nowhere to live without it.
+  //
+  // Priority for the PRIMARY chip when a turn touched more than one area:
+  // an approval (which often ALSO carries a grocery action for the items
+  // it just added) beats a plain grocery edit, which beats an unapproved
+  // draft edit — the biggest life-cycle event wins.
+  //
+  // "See your week" (Emily, 2026-09-08, Loop Board "Tweak-the-week chat:
+  // after a swap the flow dies") rides ahead of that primary whenever the
+  // turn edited a draft week: after a swap the receipt card says WEEK
+  // UPDATED but every other affordance here only sends another message,
+  // so there was no way to go LOOK at what just changed without hunting
+  // for the tab yourself. It goes FIRST because looking is free and
+  // reversible and approving is neither — see, then approve.
+  function computeNextStepChips(actions) {
+    var weekAction = null, groceryAction = null;
+    (actions || []).forEach(function (a) {
+      if (a.tab === 'week') weekAction = a;
+      if (a.tab === 'grocery') groceryAction = a;
+    });
+    // approve_weekly_plan is the one 'week' tool whose action card's
+    // `change` text says "approved" (app/main.py's _categorize_tool
+    // special-cases it to "Week approved — your list is ready") — the
+    // only signal available here that this turn was an approval rather
+    // than an ordinary draft edit.
+    var weekApproved = !!(weekAction && /approved/i.test(weekAction.change || ''));
+    var chips = [];
+    if (weekAction && !weekApproved) {
+      chips.push({
+        label: 'See your week',
+        // The receipt card's own View does activateTab(action.tab) after
+        // closeAskSheet(); this does the same, plus the two things the
+        // card can't: it pins the Plan state (not Cook) and lands on the
+        // day that changed. closeAskSheet() is a no-op at desktop widths,
+        // where the Ask column is always visible and the week is already
+        // on screen beside it — there, this just selects the day.
+        onClick: function () {
+          closeAskSheet();
+          focusChangedWeekDay(weekAction.date, weekAction.slot);
+        }
+      });
+    }
+    if (weekApproved) {
+      chips.push({ label: 'Open the list', onClick: function () { activateTab('grocery', true); } });
+    } else if (groceryAction) {
+      chips.push({ label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } });
+    } else if (weekAction) {
+      // Same label + message computeContextQuickActions already uses for
+      // "there's a draft, go approve it" — one wording for one meaning.
+      chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
+    }
+    return chips;
+  }
+
+  function offerNextStepChips(actions) {
+    var chips = computeNextStepChips(actions);
+    if (chips.length) renderAskChips(chips);
+  }
+
+  // Land on Meals → Plan, on the day that just changed, with the changed
+  // meal briefly ringed so the eye finds it without a caption telling it
+  // to. `date`/`slot` come off the action card (app/main.py's ChatAction),
+  // and are both optional: a component-based plan's swap has no date at
+  // all, and an older cached reply won't carry the fields — in either case
+  // this still does the useful half and just shows the week as it stands.
+  //
+  // weekState.pendingDayFocus is the handoff, because activateTab may only
+  // just have *started* building the panel (buildWeekPanel → loadWeekMenu
+  // is async): renderWeekMenu drains it once the days actually exist, and
+  // the direct call below covers the already-built case, whichever wins.
+  function focusChangedWeekDay(date, slot) {
+    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner' } : null;
+    activateTab('week', true, { mealsView: 'plan' });
+    var panel = panels['week'];
+    if (panel && panel.dataset.built) applyPendingDayFocus(panel);
+  }
+
+  function applyPendingDayFocus(panel) {
+    var pending = weekState.pendingDayFocus;
+    if (!pending || !weekState.days.length) return;
+    var index = -1;
+    weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
+    if (index < 0) return; // the change landed outside the week on screen
+    weekState.pendingDayFocus = null;
+    // Exactly what a day-rail tap does (see renderDayRail's own handler) —
+    // one selection mechanism, so this can't drift from the real one.
+    weekState.selectedIndex = index;
+    renderDayRail(panel, weekState.days);
+    renderDayCard(panel, weekState.days[index]);
+    // Dinner is the hero; breakfast and lunch live together in the sides
+    // card, which is the smallest thing that reliably contains them both
+    // without teaching this function the sides card's internals.
+    var wrap = panel.querySelector('#day-card-wrap');
+    var target = wrap && wrap.querySelector(pending.slot === 'dinner' ? '.day-hero' : '.day-sides');
+    if (!target) return;
+    target.classList.add('just-changed');
+    // Long enough to notice, short enough that it's gone before it can be
+    // mistaken for a state the day is now in.
+    setTimeout(function () { target.classList.remove('just-changed'); }, 2000);
   }
 
   function splitTableRow(line) {
@@ -7007,6 +7219,7 @@
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
+      offerNextStepChips(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);

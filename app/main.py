@@ -418,6 +418,16 @@ class ChatAction(BaseModel):
     change: str
     tab: str | None = None
     href: str | None = None
+    # Which day/slot of the plan this touched, when the tool said so
+    # (plan_meal / swap_meal_in_plan's own meal_date + slot). Only ever set
+    # on a `week` card, and absent whenever the change wasn't about one
+    # specific day — a whole-week generation, an approval, a
+    # component-based plan's swap, which has no date at all. The shell's
+    # "See your week" chip uses it to land on the day that changed instead
+    # of wherever the day rail happened to be pointing; with no date it
+    # still shows the week, just without selecting a day.
+    date: str | None = None
+    slot: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -1238,7 +1248,7 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
 @app.get("/api/chores/today")
 def chores_today():
     """
-    Chore instances due today — powers the app-shell Today screen's chores
+    Chore instances due today — backs the app-shell Today screen's chores
     card (design_handoff_shell/README.md §4). Added for Step 2 of that
     redesign: no chores read endpoint existed before this (list_chores was
     chat-agent-only), so this — like /api/cooker-view, /api/grocery-list,
@@ -1246,17 +1256,22 @@ def chores_today():
     chat round-trip. See the Step 2 note in the README's build-order log
     for why this exists despite that doc's "no new endpoints" line.
 
+    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
+    is meals-only, so the Today card this endpoint feeds is hidden behind
+    `SHOW_CHORES_ON_TODAY` in static/shell.js — while that flag is false,
+    shell.js never calls this route at all (no wasted request), so in
+    practice nothing hits this endpoint from the shell right now. The
+    route itself, `chores_set_up`, and the rest of the chores backend are
+    untouched; flipping that one constant back to true is the whole
+    reversal, no server change needed.
+
     `chores_set_up` rides along on this same response (Emily, 2026-09-05,
-    20a: chores setup moved out of onboarding onto its own page) so the
-    Today card can decide whether to offer "Want help with chores too? Set
-    them up" without a second round-trip. NOTE (2026-09-08): the Today card
-    does not actually offer that yet -- `chores_set_up` is returned here and
-    read nowhere in static/shell.js, and /chores-setup has no link into it.
-    The field is ready for that offer, not evidence it exists. True once
-    either a chores
-    profile was saved or any chore actually exists — either one means the
-    household already went through setup, even if nothing happens to be
-    due today.
+    20a: chores setup moved out of onboarding onto its own page) so a
+    future Today card could decide whether to offer "Want help with
+    chores too? Set them up" without a second round-trip. True once
+    either a chores profile was saved or any chore actually exists —
+    either one means the household already went through setup, even if
+    nothing happens to be due today.
     """
     try:
         chores = tools.get_chores_due_today()
@@ -3003,6 +3018,32 @@ def _humanize_change(tool_name: str, args: dict, result) -> str | None:
     return f"{verb} {noun}"
 
 
+_DAY_SLOTS = {"breakfast", "lunch", "dinner", "snack"}
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _changed_day(category: str, args) -> tuple[str | None, str | None]:
+    """The one day/slot a `week` tool call touched, or (None, None).
+
+    Only plan_meal and swap_meal_in_plan name a single day (`meal_date`);
+    generate_weekly_plan rewrites the whole week and swap_component_in_plan
+    edits a category rather than a date, so neither has an answer here and
+    both correctly fall through. Anything not shaped like an ISO date or a
+    known slot is dropped rather than passed on — this is a hint for where
+    to point the screen, so a wrong one is worse than none.
+    """
+    if category != "week" or not isinstance(args, dict):
+        return None, None
+    date = args.get("meal_date")
+    if not isinstance(date, str) or not _ISO_DATE_RE.match(date.strip()):
+        return None, None
+    slot = args.get("slot")
+    slot = slot.strip().lower() if isinstance(slot, str) else ""
+    # plan_meal and swap_meal_in_plan both default slot to "dinner"; an
+    # omitted slot means the same thing here.
+    return date.strip(), (slot if slot in _DAY_SLOTS else "dinner")
+
+
 _READ_ONLY_PREFIXES = ("get_", "list_")
 
 
@@ -3078,7 +3119,11 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                     )
                 continue
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
-            by_category[category] = ChatAction(kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href)
+            day_date, day_slot = _changed_day(category, args)
+            by_category[category] = ChatAction(
+                kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href,
+                date=day_date, slot=day_slot,
+            )
 
     return list(by_category.values())
 
@@ -3317,12 +3362,15 @@ def chores_setup_page():
     /api/onboarding/household and /api/onboarding/chores-profile routes
     onboarding always used.
 
-    CORRECTED 2026-09-08: this docstring used to say the page is "Reached
-    from Today's chores card ("Want help with chores too? Set them up")".
-    It is not reached from anywhere -- that string exists in no frontend
-    file, and nothing in static/ links or navigates to /chores-setup. The
-    page is live but orphaned; whether to link it before Chores is
-    validated is Emily's call, open on the Chores ticket.
+    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
+    is meals-only, so Today's chores card is hidden behind
+    `SHOW_CHORES_ON_TODAY` in static/shell.js -- there was never a link
+    from that card to here anyway (that "Want help with chores too? Set
+    them up" string exists in no frontend file). This page is not linked
+    from anywhere in static/; it is live but orphaned, reachable only by
+    visiting /chores-setup directly. Whether to surface Chores at all is
+    Emily's call, open on the Chores ticket; flipping the flag back is
+    the whole reversal on the Today side.
     """
     return FileResponse(os.path.join(static_dir, "chores-setup.html"))
 

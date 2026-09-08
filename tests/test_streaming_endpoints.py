@@ -279,8 +279,12 @@ def test_chat_stream_generator_delivers_a_reply_that_carries_an_action_card(monk
     assert names[-1] == "done"
     done_payload = next(p for e, p in events if e == "done")
     assert done_payload["reply"] == "Added milk to your grocery list."
+    # date/slot are the day a `week` card points the "See your week" chip
+    # at (see main.ChatAction) — always null on a grocery card, but they
+    # still have to survive serialization, which is what this test is for.
     assert done_payload["actions"] == [
-        {"kicker": "Grocery list", "change": "Added milk", "tab": "grocery", "href": None},
+        {"kicker": "Grocery list", "change": "Added milk", "tab": "grocery", "href": None,
+         "date": None, "slot": None},
     ]
 
 
