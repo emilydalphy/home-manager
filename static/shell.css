@@ -5095,3 +5095,170 @@ span.cook-week-name { cursor: default; }
      clarity — 8.46:1 either way. */
   .chore-row.done .chore-checkbox { color: var(--on-accent-ink); }
 }
+
+/* ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------
+   A quiet tile at the bottom of Kitchen, a small in-prose link on the
+   error states, and the sheet both open. Every colour is a token; the
+   sheet reuses the existing scrim/sheet geometry (#kit-sheet) rather than
+   inventing a second one. Nothing here is apricot-filled: Kitchen has zero
+   primary actions by design (Rule 5), and a "tell me what broke" box is
+   not the exception that earns the screen's first one. */
+.snw-tile {
+  width: 100%;
+  margin-top: 12px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  min-height: 44px; /* Rule 6 */
+}
+.snw-tile:hover { border-color: var(--hairline-strong); }
+/* The quietest stroke on the screen, like .kit-tile-quiet's — this is a
+   door, not a task waiting to be done. */
+.snw-tile-icon { display: block; width: 22px; height: 22px; flex: 0 0 auto; color: var(--ink-placeholder); }
+.snw-tile-icon svg { display: block; width: 22px; height: 22px; }
+.snw-tile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.snw-tile-title {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.snw-tile-sub {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-inactive);
+}
+
+/* Sits inside the error sentence it belongs to — same inline-flex idiom as
+   .cook-empty-link, which is how an in-prose link gets a full 44px target
+   (Rule 6) without breaking the paragraph's flow. */
+.snw-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.snw-link:hover { color: var(--apricot-label-hover); }
+/* The one error paragraph that lives inside a spruce hero (Kitchen's).
+   --apricot-label is tuned for a light ground; on spruce the lifted
+   apricot is the one that reads. */
+/* On Kitchen's spruce hero the link stays ivory: Kitchen carries no apricot by design (nothing there is urgent). */
+.snw-link-hero { color: var(--ivory-ink-muted); text-decoration: underline; text-decoration-color: var(--apricot-rule); }
+.snw-link-hero:hover { color: var(--ivory-ink); }
+
+#snw-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#snw-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 88%;
+  background: var(--ground);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 12px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#snw-scrim[hidden], #snw-sheet[hidden] { display: none; }
+.snw-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  flex: 0 0 auto;
+}
+.snw-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.snw-hairline { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
+.snw-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 18px 0;
+  overflow-y: auto;
+}
+.snw-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  margin-top: 6px;
+}
+.snw-optional {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.snw-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  padding: 11px 12px;
+  font-family: var(--font-body);
+  /* 16px: anything smaller and iOS Safari zooms the page on focus. */
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+  resize: vertical;
+}
+/* Spruce, not apricot — see the note at the top of this section. */
+.snw-send {
+  margin-top: 12px;
+  min-height: 48px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.snw-send:hover { background: var(--spruce-hover); }
+.snw-send:disabled { opacity: .45; cursor: default; }
+.snw-done {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 10px 0 0;
+}

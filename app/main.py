@@ -3594,6 +3594,113 @@ def report_client_error(request: Request, req: ClientErrorRequest):
     return Response(status_code=204)
 
 
+def _app_version() -> str:
+    """
+    Which build this is, when the deployment happens to know.
+
+    Railway injects RAILWAY_GIT_COMMIT_SHA into the container; nothing else
+    in this app records a version, so there is no constant to read and no
+    build step to add one. Empty string when neither variable is set (a
+    laptop, a test run), and a report from an unknown build is still worth
+    having — this is a hint for reading a report, not a key.
+    """
+    sha = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")
+    return (os.environ.get("APP_VERSION") or sha[:12] or "")[:80]
+
+
+_MAX_FEEDBACK_SHAPES = 5
+
+
+class FeedbackRequest(BaseModel):
+    what_happened: str = ""
+    trying_to_do: str = ""
+    # Where the person was, as the browser knows it — a pathname or a tab
+    # key. Redacted and shape-checked server-side before it is stored, the
+    # same way the browser error reporter's `where` is: the browser is the
+    # untrusted end, so the check belongs here.
+    where: str = ""
+    # A few JS error class names the shell saw on this page load. Types
+    # only; the server drops anything that isn't one.
+    error_shapes: list[str] = []
+
+
+@app.post("/api/feedback")
+def submit_feedback(request: Request, req: FeedbackRequest):
+    """
+    "Something not working?" — one person, one box, their own words.
+
+    The error tables record shapes, which is right for them and useless
+    here: "TypeError on /grocery" cannot say that the list looked finished
+    when it wasn't. So this one stores the sentence verbatim, and it is
+    the only place in the app that stores free text from the browser end.
+
+    That is exactly why the prose never reaches the morning report. The
+    client-error path keeps shapes and discards wording because those
+    strings are printed into a Claude agent's context by
+    observability_report.py, under an instruction to act on what it reads;
+    free text from an untrusted end arriving there is an injection
+    channel, not just a privacy question. The same sentence is the reason
+    this route has no GET beside it in the default report: reports are
+    read by a person, at a terminal, with
+    `python observability_report.py --feedback`, which prints them clearly
+    marked as untrusted quoted text and prints nothing without the flag.
+
+    Everything around the prose is shape-only on the old rules —
+    _safe_client_where for the route (a pattern, never the URL, because a
+    URL is where a member's name and a live share token hide) and
+    _safe_client_detail for each error shape.
+
+    Rate-limited with the ordinary buckets and deliberately returns 204,
+    never an error of its own: this is reached by someone who is already
+    having a bad time, and a failure to report a failure must not become a
+    second failure.
+    """
+    try:
+        _enforce_rate_limit(request, "feedback", record=False)
+    except HTTPException:
+        return Response(status_code=204)
+    try:
+        shapes = [
+            _safe_client_detail(s) for s in (req.error_shapes or [])[:_MAX_FEEDBACK_SHAPES]
+        ]
+        tools.record_feedback_report(
+            what_happened=req.what_happened,
+            trying_to_do=req.trying_to_do,
+            route_pattern=_safe_client_where(req.where),
+            app_version=_app_version(),
+            user_agent=request.headers.get("user-agent", ""),
+            error_shapes=shapes,
+        )
+    except Exception:
+        logger.exception("Filing a feedback report failed")
+    return Response(status_code=204)
+
+
+@app.get("/api/feedback")
+def read_feedback(days: int = 30):
+    """
+    Emily's read path for the reports her household filed — and the whole
+    reason there is no /api/admin/feedback.
+
+    Household-scoped like every other read here: it answers with this
+    household's own reports and there is no way to ask about another,
+    which is what an "admin" view would have had to invent.
+
+    The prose in here is untrusted quoted text. The only caller in this
+    repo is observability_report.py's --feedback flag, which prints it
+    under that warning and is not part of the default report output —
+    because these strings would otherwise be printed into a Claude agent's
+    context, under an instruction to act on what it reads, and free text
+    from an untrusted end arriving there is an injection channel, not just
+    a privacy question.
+    """
+    try:
+        return {"reports": tools.get_feedback_reports(days=days)}
+    except Exception as e:
+        logger.exception("Feedback lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/observability")
 def observability(days: int = 1):
     """
@@ -3605,11 +3712,19 @@ def observability(days: int = 1):
     Household-scoped like everything else. Run it per household rather than
     asking for an all-households view, which would be the one query in the
     app reading across the isolation boundary.
+
+    `feedback_waiting` is a COUNT and never a word of what was written —
+    see the no-prose rule in POST /api/feedback's docstring. A count is
+    the most this response is allowed to carry and the least the report
+    needs to be able to say "three notes are waiting; read them with
+    --feedback", which is the difference between a read path Emily uses
+    and one she never learns is full.
     """
     try:
         return {
             "errors": tools.get_recent_errors(days=days),
             "usage": tools.get_usage_summary(days=max(days, 7)),
+            "feedback_waiting": tools.count_feedback_reports(days=max(days, 7)),
         }
     except Exception as e:
         logger.exception("Observability summary failed")

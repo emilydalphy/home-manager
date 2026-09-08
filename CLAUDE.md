@@ -1368,6 +1368,25 @@ why*, not duplicating the diff.
   reached via the agent choosing the wrong week to generate for in the
   first place.
 
+- **"Something not working?" stores prose, and that is why it is fenced**
+  (Emily's option a, 2026-09-08). `feedback_reports` is the only table in
+  the app holding free text from the browser end — deliberately, since the
+  sentence is the whole point and a category picker would decide in
+  advance what can go wrong. Everything around it stays shape-only on the
+  existing rules (`_safe_client_where` for the route, `_safe_client_detail`
+  for error shapes), and the prose itself is kept out of the morning
+  report: `/api/observability` carries a COUNT only, and the reports are
+  printed by `observability_report.py --feedback`, fenced as untrusted
+  quoted text. The reason is the one in the client-error comment — that
+  output is printed into a Claude agent's context under an instruction to
+  act on what it reads, and free text from an untrusted end arriving there
+  is an injection channel, not just a privacy question. Nothing about
+  feedback is registered in `agent.TOOL_FUNCTIONS`, and
+  `tests/test_feedback_reports.py` pins that, the no-prose default output
+  and the fence. There is deliberately no `/api/admin/feedback`: the read
+  is household-scoped like every other read here, so no view crosses the
+  isolation boundary.
+
 ## Deploying
 
 Push to `main` on GitHub; Railway auto-deploys from there. CI runs the smoke
