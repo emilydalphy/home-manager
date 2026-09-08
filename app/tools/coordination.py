@@ -4,6 +4,7 @@ feedback nudges, and who is in the household.
 """
 from __future__ import annotations
 
+import logging
 import re
 from ..db import get_conn
 from ._shared import household_id
@@ -11,7 +12,10 @@ from . import household as _household
 from . import memory as _memory
 from . import plates as _plates
 from . import recipes as _recipes
+from . import taste_verdict as _taste_verdict
 from . import weekly_plan as _weekly_plan
+
+logger = logging.getLogger("home_manager")
 
 
 # Words that describe a restriction rather than name the food it is about.
@@ -634,7 +638,13 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         (set_member_dietary_restrictions),
       - a What-we-know fact marked hard (add_fact with hard=true) — an
         allergy written as a note is still an allergy,
-      - a standing household dislike, at a lower severity.
+      - a standing household dislike, at a lower severity,
+      - a dish somebody EATING THAT NIGHT is personally on record as
+        disliking (see taste_verdict.plan_taste_conflicts), also soft.
+        One hater at the table vetoes the dish for that table, and a night
+        they aren't eating is the overrule — which is why this one is
+        computed per slot, against that slot's attendance, rather than
+        once against the household.
 
     Matched by keyword against BOTH the meal's name and, when it's a saved
     recipe, its ingredient list. The name matters on its own: "Pineapple
@@ -655,12 +665,29 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
     if plan.get("weekly_plan_id") is None:
         return {"weekly_plan_id": None, "conflicts": [], "note": None}
 
+    # Computed whatever the household has (or hasn't) written down to
+    # avoid: a per-person taste veto is a different question from an
+    # allergy, and a household with no restrictions on file at all still
+    # has people with opinions. Never allowed to cost the check its
+    # allergy half if it fails.
+    try:
+        taste_conflicts = _taste_verdict.plan_taste_conflicts(plan["meals"])
+    except Exception:
+        logger.exception("Per-person taste check failed for plan %s", plan["weekly_plan_id"])
+        taste_conflicts = []
+
     avoidances = _avoidances()
     if not avoidances:
-        return {"weekly_plan_id": plan["weekly_plan_id"], "conflicts": [], "note": None}
+        return {
+            "weekly_plan_id": plan["weekly_plan_id"],
+            "conflicts": taste_conflicts,
+            # Only ever about the hard ones (see _conflicts_note), and a
+            # taste veto is never hard.
+            "note": None,
+        }
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
-    conflicts = []
+    conflicts = list(taste_conflicts)
     for meal in plan["meals"]:
         name = (meal.get("meal") or "").strip()
         # A slot with nothing in it, or one deliberately left empty/open,

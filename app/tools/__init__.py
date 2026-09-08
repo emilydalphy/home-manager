@@ -347,6 +347,13 @@ from .stores import (  # noqa: F401
     set_grocery_item_store,
     set_item_store,
 )
+from .taste_verdict import (  # noqa: F401
+    conflict_sentence,
+    dish_verdict,
+    generation_taste_lines,
+    per_person_feedback,
+    plan_taste_conflicts,
+)
 from .usage import (  # noqa: F401
     get_month_to_date_cost,
     get_recent_errors,

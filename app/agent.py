@@ -1395,7 +1395,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "swap_meal_in_plan",
-        "description": "Replace one day's meal in an already-generated weekly plan without regenerating the rest of the week.",
+        "description": "Replace one day's meal in an already-generated weekly plan without regenerating the rest of the week. If the result carries taste_verdict, it is the shared verdict on the new dish for whoever actually eats that night — verdict 'avoid' means someone at that table is on record as disliking it (reason says who); say so in the same breath and offer an alternative, but the swap has already happened either way. 'favourite' means everyone eating it is on record as liking it — worth a word, no action needed.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2337,6 +2337,18 @@ several present people are known to like, and steer away from one someone at the
 to dislike, when doing so doesn't conflict with the primary rating/variety/restriction rules \
 above. A member missing from `member_taste` simply has no per-person history yet — fall back to \
 the household's shared rating for them, exactly as always.
+- `taste_verdicts` is that same per-person feedback already resolved into ONE SHARED verdict per \
+table, and where it speaks it outranks the lean above — read it as a rule, not a preference. \
+Each line is `table — avoid: dishes | loved: dishes`. The `whole table` line is everyone home: a \
+dish listed under `avoid:` has somebody in this house who won't eat it, and ONE person not \
+eating it vetoes it for the whole table however many others love it, so don't plan it on a night \
+they're there. A dish under `loved:` is one everybody at that table is on record as liking — a \
+small nudge toward it, never a reason to break the variety, novelty or repeat rules above. Any \
+line naming a date and slot is a table that's different that night, and it REPLACES the whole- \
+table line for that one slot: a dish only the absent person dislikes is fair game on a night \
+they aren't eating, and that is exactly the night to reach for it. Only dishes somebody has \
+actually rated personally appear here; a dish that isn't listed has no verdict and is governed \
+by the rules above as usual.
 - `slot_needs` carries the derived needs around a trip. Honour each one: \
 `slot_needs.away_slots` are meals nobody is home for — plan NOTHING for them (they are \
 enforced empty regardless, so anything you put there is discarded); `slot_needs.quick_slots` \
@@ -3407,6 +3419,19 @@ def _generate_weekly_plan(
     # the household's usual table. See the `personal_context` bullet in the
     # instructions above for exactly how this is meant to be used.
     _attach_personal_context_for_subset_slots(context["attendance"])
+    # Loop Board "Taste UI: whose verdict?" (Emily, 2026-09-08): the same
+    # per-person feedback, resolved into ONE shared verdict per table, so
+    # the model is handed a decision rather than two people's opinions to
+    # reconcile itself. Built from the attendance context just enriched
+    # above, so it costs no extra attendance reads, and left off the
+    # context entirely when the household has no per-person feedback yet.
+    # See the `taste_verdicts` bullet in the instructions above.
+    try:
+        taste_lines = tools.generation_taste_lines(context["attendance"])
+        if taste_lines:
+            context["taste_verdicts"] = taste_lines
+    except Exception:
+        logger.exception("Could not build taste verdicts; generation continues without them")
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
@@ -3633,6 +3658,16 @@ def _generate_weekly_plan(
                 )
 
 
+def _weekday_for_conflict(iso_date: str | None) -> str:
+    """"Thursday" for a conflict's date, or "" when there isn't one."""
+    if not iso_date:
+        return ""
+    try:
+        return datetime.date.fromisoformat(iso_date).strftime("%A")
+    except (TypeError, ValueError):
+        return ""
+
+
 def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
     """
     The allergy check, run because a week was generated rather than because
@@ -3651,13 +3686,35 @@ def _log_plan_conflicts(plan_id: int, week_start_date: str) -> None:
     """
     try:
         conflicts = tools.check_plan_conflicts(plan_id)["conflicts"]
-        if conflicts:
+        # Split out the per-person taste vetoes (see
+        # tools.taste_verdict.plan_taste_conflicts). They ride in the same
+        # list, in the same shape, so the draft payload and the UI need no
+        # change — but calling "Vineeth doesn't like the risotto" a
+        # DIETARY clash in the log would be wrong in the one place someone
+        # reads to find out whether the week is safe.
+        taste = [c for c in conflicts if c.get("source") == "member_taste"]
+        dietary = [c for c in conflicts if c.get("source") != "member_taste"]
+        if dietary:
             # Deduplicated: one dish planned on several nights is one clash
             # worth reading, not seven identical log lines' worth.
-            pairs = sorted({f"{c['meal']} vs {c['restriction']}" for c in conflicts})
+            pairs = sorted({f"{c['meal']} vs {c['restriction']}" for c in dietary})
             logger.warning(
                 "Week %s has %d possible dietary clash(es): %s",
                 week_start_date, len(pairs), ", ".join(pairs),
+            )
+        for c in taste:
+            # Named per NIGHT rather than deduplicated by dish: the whole
+            # point of the shared-verdict rule is that the same dish is a
+            # problem on the nights its hater eats and fine on the ones
+            # they don't, so collapsing the dates would throw away the
+            # only fact that makes the warning actionable. Soft, always —
+            # nothing here blocks a plan or an approval.
+            weekday = _weekday_for_conflict(c.get("date"))
+            logger.warning(
+                "Week %s taste [soft]%s: %s",
+                week_start_date,
+                f" {c['date']}" if c.get("date") else "",
+                tools.conflict_sentence(c, weekday),
             )
     except Exception:
         # A failed warning must never cost the household a generated week.
