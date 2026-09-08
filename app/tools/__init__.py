@@ -448,4 +448,5 @@ from .weekly_plan import (  # noqa: F401
     set_week_constraints,
     swap_component_in_plan,
     swap_meal_in_plan,
+    week_receipt,
 )
