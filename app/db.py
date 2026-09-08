@@ -326,6 +326,16 @@ _MIGRATIONS = [
     # link reopens the card without touching this column, exactly as the
     # freezer check's own re-ask does — this gates the AUTOMATIC card only.
     ("weekly_plans", "cook_ahead_asked_at", "TEXT"),
+    # Loop Board "Prep days" (Emily, 2026-09-04 / 2026-09-08): the standing
+    # answer — which days the household preps ahead on — is a household
+    # rhythm fact (tools/rhythm.py:set_prep_days). This is the ONE-OFF
+    # beside it: "I can't prep this Sunday" is true of one plan, not of the
+    # household, so it is a flag on the plan rather than a correction to
+    # the standing days. 0 (the default every existing row keeps) means
+    # "prep runs as usual"; 1 means tools.prep_sessions_for_plan returns
+    # nothing for THIS plan and every other plan is untouched. Set through
+    # set_prep_days(this_week_only=True).
+    ("weekly_plans", "skip_prep_this_week", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

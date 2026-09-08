@@ -456,6 +456,21 @@
     <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
   </div>
 
+  <!-- Prep days (Loop Board "Prep days"; Emily 2026-09-04, again 09-08):
+       "I like to do some prep on Sunday to make the week easier... and then
+       do another prep Wednesday/Thursday depending on the week." Skippable,
+       unlike the six locked questions above it — a household that doesn't
+       prep ahead has answered nothing wrong, so this never blocks the CTA. -->
+  <div class="rhythm-card">
+    <h2>Do you like to prep ahead?</h2>
+    <p class="rhythm-helper" style="margin-bottom:8px">Which days, and roughly how long? Up to two &mdash; skip it if that isn&rsquo;t how your week runs.</p>
+    <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
+    <div id="rhythm-prep-minutes-wrap" style="display:none">
+      <p class="rhythm-helper" style="margin:10px 0 8px">Roughly how long?</p>
+      <div class="rhythm-chip-row" id="rhythm-prep-minutes-chips"></div>
+    </div>
+  </div>
+
   <div><button class="btn-primary rhythm-cta" id="rhythm-2-next" type="button" disabled>Save my rhythm</button></div>
   <span class="back-link" data-back="rhythm-1">&larr; Back</span>
 </div>
@@ -841,6 +856,32 @@ const LEFTOVERS_STANCE_OPTIONS = [
   { key: 'fresh_each_night', label: 'Fresh every night' },
 ];
 
+// Prep days (Loop Board "Prep days", Emily 2026-09-04/09-08) — the one
+// SKIPPABLE rhythm question, and the only multi-select one. Sunday leads
+// the list because a prep week starts there in Emily's own description
+// ("some prep on Sunday... then another prep Wednesday/Thursday"), and
+// because the payload is built by walking THIS list rather than by tap
+// order, that ordering is also what the saved answer reads back in
+// ("Preps on Sunday (about an hour) and Wednesday.").
+const PREP_DAY_OPTIONS = [
+  { key: 'sunday', label: 'Sun' },
+  { key: 'monday', label: 'Mon' },
+  { key: 'tuesday', label: 'Tue' },
+  { key: 'wednesday', label: 'Wed' },
+  { key: 'thursday', label: 'Thu' },
+  { key: 'friday', label: 'Fri' },
+  { key: 'saturday', label: 'Sat' },
+];
+// One length for both days — the question is "roughly how long", not a
+// stopwatch per session, and asking twice for a two-day answer would cost
+// more taps than the precision is worth. Matches rhythm.PREP_MINUTES_CHOICES.
+const PREP_MINUTES_OPTIONS = [
+  { key: 30, label: '30 min' },
+  { key: 60, label: 'About an hour' },
+  { key: 120, label: 'Longer' },
+];
+const MAX_PREP_DAYS = 2;
+
 let rhythmLunchLocation = {}; // member name -> 'home' | 'out' | 'varies'
 let rhythmMealsTogether = '';
 let rhythmCookingRole = '';
@@ -848,6 +889,8 @@ let rhythmCookingWho = '';
 let rhythmDinnerWindow = '';
 let rhythmPlanningAnchor = '';
 let rhythmLeftoversStance = '';
+let rhythmPrepDays = [];      // ['sunday', 'wednesday'] — which chips are on
+let rhythmPrepMinutes = 0;    // 30 | 60 | 120, or 0 for "they didn't say"
 
 // Single-select chip row: renders `options` into `container`, marking
 // `currentValue` active, and calls `onSelect(key)` when a chip is tapped.
@@ -1011,7 +1054,53 @@ function renderLeftoversChips() {
     updateRhythm2ContinueState();
   });
 }
+// Multi-select chips, capped. Tapping a day past the cap is ignored rather
+// than swapping one out: "up to two" is already on screen above these
+// chips, and silently dropping a day the person picked earlier is the kind
+// of thing they only notice after saving.
+function renderPrepDayChips() {
+  const row = document.getElementById('rhythm-prep-day-chips');
+  row.innerHTML = '';
+  PREP_DAY_OPTIONS.forEach(opt => {
+    const on = rhythmPrepDays.indexOf(opt.key) !== -1;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rhythm-chip' + (on ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.dataset.value = opt.key;
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      if (on) rhythmPrepDays = rhythmPrepDays.filter(k => k !== opt.key);
+      else if (rhythmPrepDays.length < MAX_PREP_DAYS) rhythmPrepDays.push(opt.key);
+      else return;
+      renderPrepDayChips();
+      renderPrepMinutesChips();
+    });
+    row.appendChild(btn);
+  });
+}
+// The length question only exists once there's a day to ask it about.
+function renderPrepMinutesChips() {
+  const wrap = document.getElementById('rhythm-prep-minutes-wrap');
+  wrap.style.display = rhythmPrepDays.length ? 'block' : 'none';
+  if (!rhythmPrepDays.length) { rhythmPrepMinutes = 0; return; }
+  buildSingleSelectChips(document.getElementById('rhythm-prep-minutes-chips'), PREP_MINUTES_OPTIONS, rhythmPrepMinutes, (key) => {
+    rhythmPrepMinutes = rhythmPrepMinutes === key ? 0 : key;
+    renderPrepMinutesChips();
+  });
+}
+// Built by walking PREP_DAY_OPTIONS, not by reading rhythmPrepDays — so a
+// household that tapped Wednesday before Sunday still saves Sunday first,
+// and the summary reads in week order rather than in tap order.
+function currentPrepDays() {
+  return PREP_DAY_OPTIONS
+    .filter(o => rhythmPrepDays.indexOf(o.key) !== -1)
+    .map(o => ({ weekday: o.key, minutes: rhythmPrepMinutes || null }));
+}
+
 function rhythm2Complete() {
+  // Prep days are deliberately absent from this: they're skippable, and a
+  // household that doesn't prep ahead must still be able to save.
   return !!(rhythmDinnerWindow && rhythmPlanningAnchor && rhythmLeftoversStance);
 }
 function updateRhythm2ContinueState() {
@@ -1021,6 +1110,8 @@ function buildRhythmStep2() {
   renderDinnerWindowChips();
   renderPlanningAnchorChips();
   renderLeftoversChips();
+  renderPrepDayChips();
+  renderPrepMinutesChips();
   updateRhythm2ContinueState();
 }
 
@@ -1037,6 +1128,10 @@ async function saveRhythmAnswers() {
     dinner_window: rhythmDinnerWindow,
     planning_anchor: rhythmPlanningAnchor,
     leftovers_stance: rhythmLeftoversStance,
+    // Always sent, even empty: [] is the real answer "we don't prep
+    // ahead", and the route only leaves the fact alone when the key is
+    // absent entirely (see OnboardingRhythmRequest.prep_days).
+    prep_days: currentPrepDays(),
   };
   const res = await fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),

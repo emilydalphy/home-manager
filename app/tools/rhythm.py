@@ -22,6 +22,8 @@ preferences) is what memory._CONTEXT_SIGNALS' weighting reflects.
 """
 from __future__ import annotations
 
+import json
+
 from ..db import get_conn
 from ._shared import household_id
 from . import household as _household
@@ -51,6 +53,35 @@ DINNER_WINDOWS = ("5_6ish", "6_8", "later", "all_over")
 PLANNING_ANCHOR_WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 PLANNING_ANCHORS = PLANNING_ANCHOR_WEEKDAYS + ("as_we_go",)
 LEFTOVERS_STANCES = ("love_them", "fine_sometimes", "fresh_each_night")
+
+# Emily, 2026-09-04 and again 2026-09-08: "I like to do some prep on Sunday
+# to make the week easier, make some things fresh during the week, and then
+# do another prep Wednesday/Thursday depending on the week."
+#
+# A prep day is a seventh rhythm fact, not one of the six locked ones — it
+# is skippable in onboarding and deliberately absent from
+# rhythm_completeness_signals below, because a household that simply
+# doesn't prep ahead has answered nothing wrong and shouldn't be scored as
+# incomplete for it.
+#
+# Stored as ONE row (fact_type='prep_days', member_name='', weekday='')
+# whose value is a JSON list of {weekday, minutes, note}, rather than one
+# row per day. Two reasons: the household's own ORDER is part of the answer
+# ("Sunday, then Wednesday" — the big prep first, the top-up second, which
+# is what the summary reads back), and household_rhythm's UNIQUE key is
+# (household, member, weekday, fact_type), so a per-day row would silently
+# reuse the weekday column that already means "a per-weekday override of a
+# standing answer" for lunch_location. This is a list-valued household
+# fact, not seven weekday facts.
+PREP_DAY_WEEKDAYS = PLANNING_ANCHOR_WEEKDAYS  # 'monday' ... 'sunday'
+# Two to start (Emily's own rhythm is exactly two). Not a technical limit —
+# the storage is a list — but the question is asked as "up to two" on both
+# screens, and a setter that accepted five would make those screens lie.
+MAX_PREP_DAYS = 2
+# What the onboarding/What-we-know chips offer. Any positive integer is
+# accepted (chat can say "about 40 minutes"); these are just the three
+# buckets the chips ask in.
+PREP_MINUTES_CHOICES = (30, 60, 120)
 
 
 def _upsert(conn, member_name: str, weekday: str, fact_type: str, value: str, who: str, source: str) -> None:
@@ -229,13 +260,141 @@ def set_leftovers_stance(value: str, source: str = "onboarding") -> dict:
     return {"leftovers_stance": value}
 
 
+def _normalize_prep_days(days) -> list[dict]:
+    """
+    The stored shape, from whatever a caller handed in: a list of
+    {"weekday": 'sunday', "minutes": int|None, "note": str|None}, deduped
+    by weekday, in the order given, capped at MAX_PREP_DAYS.
+
+    Order is preserved rather than sorted into week order on purpose — see
+    PREP_DAY_WEEKDAYS above. Both screens build their payload by walking
+    their own chip list, so a tap order never reaches this.
+    """
+    out: list[dict] = []
+    seen: set[str] = set()
+    for raw in days or []:
+        if isinstance(raw, str):  # tolerate ["sunday", "wednesday"]
+            raw = {"weekday": raw}
+        weekday = (str(raw.get("weekday") or "")).strip().lower()
+        if weekday not in PREP_DAY_WEEKDAYS:
+            raise ValueError(f"weekday must be one of {PREP_DAY_WEEKDAYS}, not {raw.get('weekday')!r}.")
+        if weekday in seen:
+            continue
+        minutes = raw.get("minutes")
+        if minutes in ("", None):
+            minutes = None
+        else:
+            minutes = int(minutes)
+            if minutes <= 0:
+                raise ValueError("minutes must be a positive number of minutes, or omitted.")
+        note = (raw.get("note") or "").strip() or None
+        out.append({"weekday": weekday, "minutes": minutes, "note": note})
+        seen.add(weekday)
+    if len(out) > MAX_PREP_DAYS:
+        raise ValueError(
+            f"At most {MAX_PREP_DAYS} prep days for now — {len(out)} were given."
+        )
+    return out
+
+
+def set_prep_days(days: list | None = None, this_week_only: bool = False, source: str = "onboarding") -> dict:
+    """
+    Set (or correct) the days the household preps ahead on: a list of at
+    most two {"weekday": 'sunday'...'saturday', "minutes": int|None,
+    "note": str|None}. An empty list is a real answer — "we don't prep
+    ahead" — and clears the fact rather than leaving the old days standing.
+
+    `this_week_only=True` is the one-off, and it does NOT touch the
+    standing answer: it flips `skip_prep_this_week` on the household's
+    current plan instead. Empty/omitted `days` with this_week_only means
+    "not this week" ("I can't prep this Sunday"); a non-empty `days` with
+    this_week_only means "prep is back on this week" and clears the flag —
+    it does not write a different set of days for one week, which is a
+    plan-level shape nothing reads yet.
+
+    Correcting the standing answer is the same write, not a separate "fix
+    a mistake" tool, exactly like every other setter in this module: "we
+    prep on Saturdays now" is set_prep_days([{"weekday": "saturday"}]).
+    """
+    if this_week_only:
+        # Local import: prep_sessions imports this module for the standing
+        # answer, so the plan-level flag is reached at call time (the
+        # package's alias convention — see app/tools/__init__.py).
+        from . import prep_sessions as _prep_sessions
+
+        skip = not _normalize_prep_days(days)
+        result = _prep_sessions.set_skip_prep_this_week(skip)
+        _household._log_preference_event("rhythm:prep_days:this_week", "write")
+        return {
+            "this_week_only": True,
+            "skip_prep_this_week": result["skip_prep_this_week"],
+            "weekly_plan_id": result["weekly_plan_id"],
+            "prep_days": get_household_rhythm()["prep_days"],
+        }
+
+    normalized = _normalize_prep_days(days)
+    conn = get_conn()
+    _upsert(conn, "", "", "prep_days", json.dumps(normalized), "", source)
+    conn.commit()
+    conn.close()
+    _household._log_preference_event("rhythm:prep_days", "write")
+    return {"prep_days": normalized, "prep_days_summary": prep_days_summary(normalized)}
+
+
+def prep_minutes_label(minutes: int | None) -> str:
+    """
+    How long a prep session runs, said the way a person would say it
+    (DESIGN_SYSTEM.md §8) rather than as a number of minutes. '' when no
+    length was given — an unanswered half of the question should read as
+    unanswered, not as a default length.
+    """
+    if not minutes:
+        return ""
+    if minutes <= 40:
+        return "about half an hour"
+    if minutes <= 75:
+        return "about an hour"
+    return "a longer stretch"
+
+
+def _join_weekdays(labels: list[str]) -> str:
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f"{labels[0]} and {labels[1]}"
+    return ", ".join(labels[:-1]) + f", and {labels[-1]}"
+
+
+def prep_days_summary(days: list[dict] | None = None) -> str:
+    """
+    The one line What We Know and chat read this fact back as: "Preps on
+    Sunday (about an hour) and Wednesday." Returns '' when the household
+    has no prep days on record, so an unanswered question says nothing at
+    all rather than saying "no prep days" — same rule
+    planning_anchor_label follows for an unset anchor.
+
+    Pass the stored list to avoid a second read; omit it to look up.
+    """
+    if days is None:
+        days = get_household_rhythm()["prep_days"]
+    if not days:
+        return ""
+    parts = []
+    for day in days:
+        label = day["weekday"].capitalize()
+        minutes = prep_minutes_label(day.get("minutes"))
+        parts.append(f"{label} ({minutes})" if minutes else label)
+    return f"Preps on {_join_weekdays(parts)}."
+
+
 def get_household_rhythm() -> dict:
     """
     Everything on record about the household's standing rhythm: the six
     locked onboarding facts (lunch location per person, meals eaten
     together, who cooks, when dinner lands, when the week should be ready,
-    leftovers stance) plus any per-weekday lunch-location overrides learned
-    since. Powers the getting-to-know-you hero's Rhythm count, the
+    leftovers stance), the days they prep ahead on (prep_days — skippable,
+    see set_prep_days), plus any per-weekday lunch-location overrides
+    learned since. Powers the getting-to-know-you hero's Rhythm count, the
     completeness scoring (see memory._build_context_completeness /
     rhythm_completeness_signals below), the packed-lunch default (see
     week_intake.get_week_intake_prefill), and — for dinner_window and
@@ -254,6 +413,7 @@ def get_household_rhythm() -> dict:
     dinner_window = None
     planning_anchor = None
     leftovers_stance = None
+    prep_days: list[dict] = []
     for row in rows:
         if row["fact_type"] == "lunch_location":
             entry = lunch_location.setdefault(row["member_name"], {"standing": None, "overrides": {}})
@@ -271,6 +431,16 @@ def get_household_rhythm() -> dict:
             planning_anchor = row["value"]
         elif row["fact_type"] == "leftovers_stance":
             leftovers_stance = row["value"]
+        elif row["fact_type"] == "prep_days":
+            # A list-valued fact (see PREP_DAY_WEEKDAYS). A row written
+            # before this was list-shaped, or hand-edited into something
+            # that isn't JSON, reads as "no prep days" rather than
+            # exploding the whole rhythm read for every other caller.
+            try:
+                parsed = json.loads(row["value"] or "[]")
+            except ValueError:
+                parsed = []
+            prep_days = parsed if isinstance(parsed, list) else []
 
     return {
         "lunch_location": lunch_location,
@@ -280,6 +450,8 @@ def get_household_rhythm() -> dict:
         "planning_anchor": planning_anchor,
         "planning_anchor_label": planning_anchor_label(planning_anchor or ""),
         "leftovers_stance": leftovers_stance,
+        "prep_days": prep_days,
+        "prep_days_summary": prep_days_summary(prep_days),
     }
 
 

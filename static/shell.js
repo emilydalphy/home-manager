@@ -5549,7 +5549,17 @@
     // prep-rail + week-list screen this always starts on; 'focus' takes
     // the whole screen over for one meal until "back to the week" or a
     // check-off returns you. See cookEnterFocus/cookExitFocus.
+    // 'session' is the third state of this same screen (Loop Board "Prep
+    // days"): one prep day's whole list, ticked off item by item. Same
+    // shape as 'focus' and reached the same way — never a route, never a
+    // page with a header of its own.
     screen: 'overview',
+    sessionDate: null,   // which prep session is focused, by its ISO date —
+                         // an id would not survive a re-render, since a
+                         // session is computed rather than stored
+    prepCutPicks: {},    // entry_id -> { ingredient item: true } — which raw
+                         // components are ticked in the "Prep-cut on Sunday?"
+                         // offer, until the write lands (see cookPrepCutHtml)
     focusIdx: null,      // index into cookState.data.meals, while focused
     focusScrollTo: null, // 'ingredients' | null — landed-on section, once
     // Set by a "Start cooking"/"Cook this" deep link that arrives before the
@@ -5786,7 +5796,7 @@
     // control (renderGrocery: "while it is on, the control goes away rather
     // than lying about where you are").
     var mealsSeg = panel && panel.querySelector('#meals-seg');
-    if (mealsSeg) mealsSeg.hidden = cookState.screen === 'focus';
+    if (mealsSeg) mealsSeg.hidden = cookState.screen !== 'overview';
 
     // Hold the scroll across a re-render — the same rule the Grocery panel
     // follows, and it matters more here: a re-render happens every time a
@@ -5831,8 +5841,15 @@
     if (cookState.screen === 'focus' && !meals[cookState.focusIdx]) {
       cookState.screen = 'overview';
     }
+    // ...and the same guard for a prep session that stopped existing
+    // (prep days corrected, the week skipped, the last item cleared).
+    if (cookState.screen === 'session' && !cookSessionOn(data, cookState.sessionDate)) {
+      cookState.screen = 'overview';
+    }
 
-    if (cookState.screen === 'focus') {
+    if (cookState.screen === 'session') {
+      view.innerHTML = cookSessionHtml(data, cookSessionOn(data, cookState.sessionDate), meals);
+    } else if (cookState.screen === 'focus') {
       view.innerHTML = cookFocusHtml(data, meals, cookState.focusIdx);
       wireCookFocusScroll(view);
     } else {
@@ -5849,6 +5866,10 @@
         cookDefrostLinkHtml() +
         cookAheadAskLinkHtml() +
         '<div class="cook-body">' +
+          // Between "Cooking today" (the hero) and the rest of the week —
+          // a prep day is about the days ahead, so it sits above the list
+          // of them and below the one thing happening now.
+          cookPrepSessionsHtml(data) +
           cookPrepHtml(data, meals[cookState.tonightIdx], cookState.tonightIdx) +
           cookRestOfWeekHtml(meals, data) +
         '</div>';
@@ -6096,13 +6117,252 @@
       'data-cook="cook-ahead-ask">Cooking ahead?</button>';
   }
 
+  // ---------- Prep sessions: the work one prep day holds ----------
+  // Emily, 2026-09-04 and again 2026-09-08: "I like to do some prep on
+  // Sunday to make the week easier, make some things fresh during the
+  // week, and then do another prep Wednesday/Thursday depending on the
+  // week." get_cooker_view hands the whole thing over on `prep_sessions`
+  // (tools/prep_sessions.py): the batch cooks, fridge moves and prep-cuts
+  // already on this plan, gathered onto the day they happen on. Nothing
+  // here invents work — every item is something the week already asked
+  // for, shown on the day the household chose to do it.
+
+  // "about 50 min" / "about an hour" — time the way a person says it
+  // (DESIGN_SYSTEM.md §8), never "Est. 50m".
+  function cookMinutesLabel(minutes) {
+    if (!minutes) return '';
+    if (minutes < 45) return 'about ' + minutes + ' min';
+    if (minutes < 75) return 'about an hour';
+    var hours = Math.round(minutes / 30) / 2;
+    return 'about ' + hours + ' hour' + (hours === 1 ? '' : 's');
+  }
+
+  // "covers Mon–Wed" — the days this session's work actually feeds, read
+  // off what the items cover rather than off a fixed window after the prep
+  // day, so it is a claim about this plan and not a guess about a week.
+  function cookCoversLabel(dates) {
+    var days = (dates || []).slice().sort();
+    if (!days.length) return '';
+    if (days.length === 1) return 'covers ' + dayNameShort(days[0]);
+    return 'covers ' + dayNameShort(days[0]) + '–' + dayNameShort(days[days.length - 1]);
+  }
+
+  function cookSessionOn(data, dateStr) {
+    var sessions = (data && data.prep_sessions) || [];
+    for (var i = 0; i < sessions.length; i++) {
+      if (sessions[i].date === dateStr) return sessions[i];
+    }
+    return null;
+  }
+
+  function cookPrepSessionsHtml(data) {
+    var sessions = data.prep_sessions || [];
+    if (!sessions.length) {
+      // A household that told us its prep days and simply has a quiet one
+      // gets nothing here — asking again for an answer they already gave
+      // is the app not listening. Only a household that has never said
+      // gets the offer, and it is one quiet line, not a card.
+      if (data.prep_days_set) return '';
+      return '<p class="cook-empty">Prep ahead? ' +
+        '<button type="button" class="cook-empty-link" data-cook="prep-days">Tell Pomona which days you prep</button>.</p>';
+    }
+    return '<section class="cook-section">' +
+      '<div class="cook-sectionhead">' +
+        '<span class="cook-eyebrow">Prep sessions</span>' +
+        '<span class="cook-rule"></span>' +
+      '</div>' +
+      '<div class="cook-week">' +
+        sessions.map(function (s) {
+          var allDone = s.items_total > 0 && s.items_done === s.items_total;
+          var line = [s.weekday + ' prep', cookMinutesLabel(s.total_minutes_estimate), cookCoversLabel(s.covers)]
+            .filter(Boolean).join(' · ');
+          return '<div class="cook-week-item' + (allDone ? ' is-done' : '') + '">' +
+            '<div class="cook-week-row">' +
+              '<span class="cook-week-day">' + escapeHtml(dayNameShort(s.date).toUpperCase()) + '</span>' +
+              '<button type="button" class="cook-week-name" data-cook="session" data-date="' + escapeHtml(s.date) + '">' +
+                escapeHtml(line) +
+              '</button>' +
+              '<span class="cook-badge' + (allDone ? '' : ' cook-badge-warm') + '">' +
+                s.items_done + ' of ' + s.items_total + ' done' +
+              '</span>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</section>';
+  }
+
+  // The session's own screen: the same shape the focused cook screen takes
+  // (one hero, a back link, then the list) because it is the same kind of
+  // thing — one job on screen while your hands are busy. No apricot
+  // primary of its own: the work here IS the ticking, so a second call to
+  // action would be competing with the list it sits above (Rule 5).
+  function cookSessionHtml(data, session, meals) {
+    if (!session) return '';
+    var chips = [cookMinutesLabel(session.total_minutes_estimate), cookCoversLabel(session.covers)].filter(Boolean);
+    var allDone = session.items_total > 0 && session.items_done === session.items_total;
+    var note = allDone
+      ? 'That’s the prep done — the week is easier from here.'
+      : (session.note || '');
+    return '<div class="cook-focus">' +
+      '<div class="cook-hero">' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-session">&larr; Back to the week</button>' +
+        '<div class="cook-hero-top">' +
+          '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
+          '<span class="cook-hero-rule"></span>' +
+          '<span class="cook-hero-tag">' + session.items_done + ' of ' + session.items_total + '</span>' +
+        '</div>' +
+        '<div class="cook-hero-line">' +
+          '<h2 class="cook-hero-headline' + (allDone ? ' is-done' : '') + '">' +
+            escapeHtml(session.weekday + ' prep') +
+          '</h2>' +
+          (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
+        '</div>' +
+        (chips.length
+          ? '<div class="cook-hero-chips">' + chips.map(function (c) {
+              return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
+            }).join('') + '</div>'
+          : '') +
+      '</div>' +
+      '<div class="cook-body">' +
+        '<section class="cook-section">' +
+          '<div class="cook-sectionhead">' +
+            '<span class="cook-eyebrow cook-eyebrow-warm">On the list</span>' +
+            '<span class="cook-rule"></span>' +
+          '</div>' +
+          '<div class="cook-week">' +
+            session.items.map(function (item) {
+              return cookSessionItemHtml(item, meals);
+            }).join('') +
+          '</div>' +
+        '</section>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function cookSessionItemHtml(item, meals) {
+    var isDone = !!item.done;
+    // A batch cook is checked off by cooking it, so its box opens the
+    // recipe rather than being a second place cooked_status can be set —
+    // two boxes for one fact is how they drift apart. A fridge move or a
+    // prep-cut is a real prep_tasks row and ticks in place.
+    var isCook = item.kind === 'cook_ahead';
+    var idx = isCook ? cookResolveFocusIndex(meals || [], { entryId: item.entry_id }) : null;
+    var canOpen = isCook && idx !== null;
+    var label = isCook
+      ? (isDone ? 'Cooked' : 'Cook it')
+      : (isDone ? 'Mark not done' : 'Mark done');
+    var box = canOpen
+      ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+          'data-cook="focus" data-idx="' + idx + '" data-at="steps" ' +
+          'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
+      : (item.prep_task_id != null
+        ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+            'data-cook="check-prep" data-prep-id="' + item.prep_task_id + '" ' +
+            'data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+            'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
+        : '<span class="cook-box' + (isDone ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>');
+    var name = canOpen
+      ? '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + idx + '" data-at="steps">' +
+          escapeHtml(item.title) + '</button>'
+      : '<span class="cook-week-name">' + escapeHtml(item.title) + '</span>';
+    return '<div class="cook-week-item' + (isDone ? ' is-done' : '') + '">' +
+      '<div class="cook-week-row">' +
+        box +
+        name +
+        (item.feeds && item.feeds !== item.title
+          ? '<span class="cook-badge">' + escapeHtml(item.feeds) + '</span>'
+          : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  // ---------- "Prep-cut on Sunday?" ----------
+  // The one thing a prep day holds that nothing else produced: the raw
+  // components — the salad ingredients for the bowls. Deliberately
+  // household-driven and deterministic (no model guessing what "raw" is):
+  // it offers this meal's produce ingredients, and the household ticks
+  // what they actually want to cut. Lives on the focused cook screen
+  // because that is where the ingredients are read off, and because the
+  // overview stays quiet.
+  function cookPrepCutOptions(data, meal) {
+    if (!meal || meal.is_leftovers) return [];
+    var sessions = (data && data.prep_sessions) || [];
+    // Only a prep day that comes before this meal can prep for it.
+    var before = sessions.filter(function (s) { return !meal.date || s.date <= meal.date; });
+    if (!before.length) return [];
+    var entryIds = meal.entry_ids || [meal.entry_id];
+    var already = {};
+    ((data && data.prep_tasks) || []).forEach(function (t) {
+      if (t.task_type === 'prep_cut' && entryIds.indexOf(t.meal_plan_entry_id) !== -1) {
+        already[(t.description || '').trim().toLowerCase()] = true;
+      }
+    });
+    // Produce only, read off the ingredient's own category (the same
+    // field plan_quality's fresh-ingredient rule reads). A recipe whose
+    // ingredients carry no category offers nothing rather than having the
+    // screen guess which of them are raw — an honest empty, not a
+    // degraded one.
+    return (meal.ingredients || [])
+      .filter(function (i) { return (i.category || '').trim().toLowerCase() === 'produce' && (i.item || '').trim(); })
+      .map(function (i) { return { item: (i.item || '').trim(), description: cookPrepCutDescription(i.item) }; })
+      .filter(function (o) { return !already[o.description.toLowerCase()]; });
+  }
+
+  // The words the task is stored and read back in — "Cut up romaine", the
+  // way a person would say it, not "prep_cut: romaine".
+  function cookPrepCutDescription(item) {
+    return 'Cut up ' + String(item || '').trim();
+  }
+
+  function cookPrepCutPicks(meal) {
+    var picks = cookState.prepCutPicks[meal.entry_id];
+    if (!picks) picks = cookState.prepCutPicks[meal.entry_id] = {};
+    return picks;
+  }
+
+  function cookPrepCutHtml(data, meal) {
+    var options = cookPrepCutOptions(data, meal);
+    if (!options.length) return '';
+    var sessions = (data.prep_sessions || []).filter(function (s) { return !meal.date || s.date <= meal.date; });
+    // The nearest prep day before the meal — the one a household would
+    // actually mean by "prep it ahead".
+    var session = sessions[sessions.length - 1];
+    var picks = cookPrepCutPicks(meal);
+    var ticked = options.filter(function (o) { return !!picks[o.item]; });
+    return '<div class="cook-ahead">' +
+      '<p class="cook-ahead-ask">Prep-cut on ' + escapeHtml(session.weekday) + '? Tick what you’d rather cut then.</p>' +
+      '<div class="cook-ahead-days">' +
+        options.map(function (o) {
+          var on = !!picks[o.item];
+          return '<button type="button" class="cook-ahead-day' + (on ? ' is-on' : '') + '" ' +
+            'data-cook="prep-cut-pick" data-entry-id="' + meal.entry_id + '" ' +
+            'data-item="' + escapeHtml(o.item) + '" aria-pressed="' + on + '">' +
+            escapeHtml(o.item) + '</button>';
+        }).join('') +
+      '</div>' +
+      (ticked.length
+        ? '<div class="cook-ahead-foot">' +
+            '<span class="cook-ahead-count">' + ticked.length + ' to cut on ' + escapeHtml(session.weekday) + '</span>' +
+            '<button type="button" class="cook-ahead-go" data-cook="prep-cut-go" ' +
+              'data-entry-id="' + meal.entry_id + '" data-date="' + escapeHtml(session.date) + '">Add to that day</button>' +
+          '</div>'
+        : '') +
+    '</div>';
+  }
+
   // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
   // a pair of small things rather than another stack of full-width cards.
   function cookPrepHtml(data, tonightMeal, tonightIdx) {
-    var tasks = data.prep_tasks || [];
+    // prep_cut rows belong to their prep session (cookPrepSessionsHtml)
+    // and are left out here — the same reminder in two cards on one screen
+    // is what the Today prep tile's own defrost exclusion exists to stop.
+    // The counts are recomputed from what is actually shown rather than
+    // read off prep_done/prep_total, which count every row.
+    var tasks = (data.prep_tasks || []).filter(function (t) { return t.task_type !== 'prep_cut'; });
     if (!tasks.length) return '';
-    var done = data.prep_done || 0;
-    var total = data.prep_total || tasks.length;
+    var done = tasks.filter(function (t) { return t.status === 'done'; }).length;
+    var total = tasks.length;
     var allDone = total > 0 && done === total;
     // Once every prep task is off the list there's nothing left to check
     // here — the note stops counting and points at what's next instead.
@@ -6346,6 +6606,55 @@
     renderCook();
   }
 
+  // A prep session, by its date — see cookState.sessionDate for why the
+  // date is the handle and not an index.
+  function cookEnterSession(dateStr) {
+    if (!cookSessionOn(cookState.data, dateStr)) return;
+    cookState.screen = 'session';
+    cookState.sessionDate = dateStr;
+    cookState.pendingScrollTop = true;
+    renderCook();
+  }
+
+  // "Tell Pomona which days you prep" — the standing answer lives on What
+  // we know's Rhythm tab, and that is a sheet over whatever tab you're on
+  // (§6: everything that isn't one of the four screens is a state, a sheet
+  // or a step), so Cook opens it in place rather than navigating away from
+  // a half-cooked week.
+  function openRhythmFromCook() {
+    openKitchenSheet('memory', 'rhythm');
+  }
+
+  // Hand this meal's ticked raw components to the prep day. One call per
+  // component (the route takes one description and the meals it feeds);
+  // the last response is the refreshed view every /api/cooker/* write
+  // returns, so the session's count updates without a reload.
+  async function cookAddPrepCuts(el) {
+    var entryId = parseInt(el.getAttribute('data-entry-id'), 10);
+    var prepDate = el.getAttribute('data-date');
+    var picks = cookState.prepCutPicks[entryId] || {};
+    var items = Object.keys(picks).filter(function (k) { return picks[k]; });
+    if (!items.length) return;
+    el.disabled = true;
+    try {
+      var view = null;
+      for (var i = 0; i < items.length; i++) {
+        view = await cookPost('/api/prep-cut', {
+          prep_date: prepDate,
+          description: cookPrepCutDescription(items[i]),
+          entry_ids: [entryId],
+          weekly_plan_id: cookState.data ? cookState.data.weekly_plan_id : null
+        });
+      }
+      cookState.prepCutPicks[entryId] = {};
+      if (view) renderCookFrom(view);
+      showToast('Added to your ' + dayName(prepDate, { weekday: 'long' }) + ' prep.');
+    } catch (err) {
+      el.disabled = false;
+      showToast('That didn’t save — try again.');
+    }
+  }
+
   // Prep for just this meal: a defrost task carries the entry it feeds
   // (meal_plan_entry_id, set by defrost.sync_defrost_tasks — see
   // get_prep_schedule), which also covers a merged bulk-cook card via its
@@ -6488,6 +6797,11 @@
         // the ingredients are actually read off, so it is where changing
         // the batch has to be possible too.
         cookAheadHtml(meal) +
+        // ...and, for the same reason, where the raw components get
+        // handed to a prep day. Only here, not on the overview hero: the
+        // overview is the "what am I making now" screen and this is a
+        // question about a different day.
+        cookPrepCutHtml(data, meal) +
         '<button type="button" class="cook-hero-action cook-focus-check' + (isDone ? ' is-done' : '') + '" ' +
           'data-cook="focus-check" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '">' +
           '<span>' + (isDone ? 'Mark not cooked' : 'Mark cooked') + '</span>' + (isDone ? '' : ICONS.arrow) +
@@ -6601,6 +6915,17 @@
       return;
     }
     if (what === 'exit-focus') return cookExitFocus();
+    if (what === 'session') return cookEnterSession(el.getAttribute('data-date'));
+    if (what === 'exit-session') return cookExitFocus();
+    if (what === 'prep-days') return openRhythmFromCook();
+    if (what === 'prep-cut-pick') {
+      var cutPicks = cookPrepCutPicks({ entry_id: el.getAttribute('data-entry-id') });
+      var cutItem = el.getAttribute('data-item');
+      if (cutPicks[cutItem]) delete cutPicks[cutItem]; else cutPicks[cutItem] = true;
+      renderCook();
+      return;
+    }
+    if (what === 'prep-cut-go') return cookAddPrepCuts(el);
     if (what === 'goto-plan') return setMealsView('plan');
     if (what === 'focus-check') return cookFocusCheckMeal(el);
     if (what === 'check-step') {
