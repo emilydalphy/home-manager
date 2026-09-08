@@ -380,7 +380,7 @@
           // auto-fit means the pair collapses to one full-width tile when
           // there is no prep task, rather than leaving a lonely half-tile.
           '<div class="today-tiles today-area-tiles">' +
-            '<div class="today-tile tile-prep" id="today-prep-tile" hidden></div>' +
+            '<button type="button" class="today-tile tile-prep" id="today-prep-tile" hidden></button>' +
             '<div class="today-tile tile-defrost" id="today-defrost-tile" hidden></div>' +
             '<button type="button" class="today-tile tile-grocery" id="grocery-summary-open">' +
               '<span class="tile-icon">' + ICONS.bag + '</span>' +
@@ -398,6 +398,15 @@
               '<div class="shell-card chores-card">' +
                 '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
                 '<div id="chores-list"></div>' +
+                // Chores setup moved out of first-run onboarding onto its own
+                // page (Emily, 2026-09-05, 20a) so a brand-new household's
+                // first stop is the meal loop, not a chores questionnaire.
+                // This is how it stays reachable — shown only for a household
+                // that has never gone through it (see renderChores below).
+                // Reuses .week-setup-link (the Meals tab's own "way into the
+                // revisitable setup screen" link) rather than inventing a new
+                // component for the same job — DESIGN_SYSTEM.md §9 Tier 1.
+                '<a href="/chores-setup" class="week-setup-link" id="chores-setup-link" style="display:none">Want help with chores too? Set them up</a>' +
               '</div>' +
             '</div>'
           : '') +
@@ -419,6 +428,12 @@
     panel.querySelector('#today-greeting').textContent = greetingForNow();
 
     panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
+    // The prep tile used to be read-only; there is somewhere useful for a
+    // tap to go — Cook mode, where prep is actually checked off — so it's
+    // a button now (Loop Board "core loop handoffs" item 1).
+    panel.querySelector('#today-prep-tile').addEventListener('click', function () {
+      activateTab('week', true, { mealsView: 'cook' });
+    });
 
     setupAskColumn(panel);
 
@@ -542,15 +557,20 @@
     return 'Good evening';
   }
 
-  function setTodayHeading(panel, count) {
+  function setTodayHeading(panel, count, isError) {
     // Same sentence, same source, quieter place: this is the line under the
     // greeting now rather than the H1. The count still drives the tab badge.
+    // "You're clear" is a real answer from a real count — a failed lookup
+    // isn't that, and saying it anyway would be telling someone nothing
+    // needs them when the truth is just that the app couldn't check.
     var line = panel.querySelector('#today-h1');
     if (line) {
-      line.textContent = count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you');
-      line.classList.toggle('is-clear', count === 0);
+      line.textContent = isError
+        ? 'Couldn’t check just now — pull to refresh.'
+        : (count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you'));
+      line.classList.toggle('is-clear', !isError && count === 0);
     }
-    setTodayBadge(count);
+    setTodayBadge(isError ? 0 : count);
   }
 
   function setTodayBadge(count) {
@@ -601,7 +621,7 @@
       renderNeedsYou(panel, data.items || []);
     } catch (err) {
       console.warn('Needs-you lookup failed:', err);
-      setTodayHeading(panel, 0);
+      setTodayHeading(panel, 0, true);
       panel.querySelector('#needs-you-band').innerHTML = '';
     }
   }
@@ -622,6 +642,37 @@
               );
             }).join('') +
           '</div>' +
+        '</div>'
+      );
+    }
+    if (item.type === 'dinner_open') {
+      // An open slot the app already handed back on the Plan screen (see
+      // renderOpenSlots) — same shape of card, surfaced here too because
+      // that's exactly what needs-you is for. Resolves through the same
+      // path the Plan screen's own open-slot cards use (resolveOpenSlot /
+      // POST /api/week/{week_start}/slot), not the dinner_decision path
+      // above — that one only plans a brand-new slot; this one is
+      // replacing an existing open one.
+      var hasOptions = item.options && item.options.length;
+      return (
+        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_open">' +
+          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          (item.body ? '<div class="ny-summary">' + escapeHtml(item.body) + '</div>' : '') +
+          (hasOptions
+            ? '<div class="ny-options">' +
+                item.options.map(function (opt, i) {
+                  return (
+                    '<div class="ny-option" data-date="' + escapeHtml(item.date) + '" ' +
+                      'data-week-start="' + escapeHtml(item.week_start || '') + '" ' +
+                      'data-choice="' + escapeHtml(opt.label) + '" data-index="' + i + '">' +
+                      '<span class="ny-option-dish">' + escapeHtml(opt.label) + (opt.meta ? ' &middot; ' + escapeHtml(opt.meta) : '') + '</span>' +
+                      '<span class="ny-option-pick">Pick</span>' +
+                    '</div>'
+                  );
+                }).join('') +
+              '</div>'
+            : '<button type="button" class="btn-sand ny-open-talk" data-date="' + escapeHtml(item.date) + '">Tell me what you’d like instead</button>') +
         '</div>'
       );
     }
@@ -654,6 +705,16 @@
         resolveDinnerDecision(panel, row.dataset.date, row.dataset.meal, row.closest('.needs-you-card'));
       });
     });
+    band.querySelectorAll('[data-card-type="dinner_open"] .ny-option').forEach(function (row) {
+      row.addEventListener('click', function () {
+        resolveOpenDinner(panel, row.dataset.weekStart, row.dataset.date, row.dataset.choice, row.closest('.needs-you-card'));
+      });
+    });
+    band.querySelectorAll('[data-card-type="dinner_open"] .ny-open-talk').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openAskSheet('For ' + dayName(btn.dataset.date, { weekday: 'long' }) + '’s dinner, I’d like ');
+      });
+    });
     band.querySelectorAll('[data-card-type="shop_run"] .ny-shop-now').forEach(function (btn) {
       btn.addEventListener('click', function () { activateTab('grocery', true); });
     });
@@ -681,7 +742,11 @@
     // the list without an explicit yes, and a card tap has no conversation
     // in which to ask — so the card asks for itself.
     var addIngredients = await askAboutIngredients(meal);
-    if (addIngredients === null) return;  // "Never mind" — nothing planned
+    // "core loop handoffs, slice 2" item F (Emily, 2026-09-05): "Never
+    // mind" used to close the dialog with no feedback at all — say
+    // plainly that nothing changed, per the calm-in-trouble/reassurance
+    // rule (DESIGN_SYSTEM.md §8): the answer is "nothing lost," said once.
+    if (addIngredients === null) { showToast('Left as it was.'); return; }
     try {
       var res = await fetch('/api/needs-you/dinner', {
         method: 'POST',
@@ -698,6 +763,32 @@
       loadTonightsDinner(panel);
     } catch (err) {
       console.warn('Dinner resolve failed:', err);
+      alert('Could not save that pick right now — try again in a moment.');
+    }
+  }
+
+  // Settles an OPEN dinner slot picked from the needs-you band — the same
+  // endpoint the Plan screen's own open-slot cards use (resolveOpenSlot),
+  // since that one replaces the existing open row instead of inserting a
+  // second entry alongside it the way /api/needs-you/dinner would.
+  async function resolveOpenDinner(panel, weekStart, mealDate, choice, cardEl) {
+    if (!weekStart) {
+      alert('Could not save that pick right now — try again in a moment.');
+      return;
+    }
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: mealDate, slot: 'dinner', choice: choice })
+      });
+      if (!res.ok) throw new Error('open dinner resolve failed');
+      await res.json();
+      showToast(choice + ' is on the plan.');
+      await loadNeedsYou(panel);
+      loadTonightsDinner(panel);
+    } catch (err) {
+      console.warn('Open dinner resolve failed:', err);
       alert('Could not save that pick right now — try again in a moment.');
     }
   }
@@ -877,7 +968,12 @@
         chips += '<span class="hero-chip">Serves ' + escapeHtml(meal.default_servings) + '</span>';
       }
       var dish = isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner');
-      var accent = isReheat ? (meal.reheat_note || '') : (meal.reasoning || '');
+      // Same priority Cook's own hero uses (cookHeroHtml's `note`): the
+      // batch note outranks the plan's reasoning, because it's the reason
+      // this card says "Serves 6" instead of the recipe's own baseline —
+      // without it the chip reads as a plain fact with nothing explaining
+      // where the extra servings came from.
+      var accent = isReheat ? (meal.reheat_note || '') : (meal.covers_note || meal.reasoning || '');
       card.hidden = false;
       card.innerHTML =
         '<div class="hero-top">' +
@@ -958,16 +1054,24 @@
     // interactive tile (renderDefrostToday/#today-defrost-tile) right next
     // to this one — without this filter the same reminder showed up
     // twice, once read-only here and once actionable there.
-    var task = (tasks || []).filter(function (t) {
+    var pending = (tasks || []).filter(function (t) {
       return t.task_date === today && t.status !== 'done' && t.task_type !== 'defrost';
-    })[0];
+    });
+    var task = pending[0];
     if (!task) { tile.hidden = true; tile.innerHTML = ''; return; }
     tile.hidden = false;
+    var more = pending.length - 1;
     tile.innerHTML =
       '<span class="tile-icon">' + ICONS.clock + '</span>' +
       '<span class="tile-eyebrow">Prep today</span>' +
       '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
-      (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : '');
+      // More than one pending task today outranks naming just the first
+      // one's meal — "+N more" is the more useful footer once there's a
+      // count worth surfacing (same shape as the defrost tile's own
+      // "+N more today").
+      (more > 0
+        ? '<span class="tile-foot">+' + more + ' more today</span>'
+        : (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : ''));
   }
 
   // ---------- The defrost tile ----------
@@ -1041,12 +1145,41 @@
         body: JSON.stringify({ prep_task_id: task.id, status: status })
       });
       if (!res.ok) throw new Error('defrost status update failed');
-      showToast(status === 'done' ? 'Moved to the fridge — nice.' : 'Skipped for today.');
+      if (status === 'skipped') {
+        // A skip is one tap, made in passing — an Undo right on the toast
+        // is the reversible-in-the-moment shape DESIGN_SYSTEM.md's learning
+        // etiquette asks for, cheaper here than a real one: this reverts
+        // check_off_prep_step's own write back to 'pending' (the same
+        // status the row started in), which the endpoint already accepts.
+        showToast('Skipped for today.', {
+          label: 'Undo',
+          onClick: function () { undoSkipDefrostTask(panel, task); }
+        });
+      } else {
+        showToast('Moved to the fridge — nice.');
+      }
     } catch (err) {
       console.warn('Defrost action failed, rolling back:', err);
       if (idx > -1) { tasks.splice(idx, 0, task); } else { tasks.push(task); }
       renderDefrostToday(panel);
       alert('Could not save that right now — try again in a moment.');
+    }
+  }
+
+  async function undoSkipDefrostTask(panel, task) {
+    try {
+      var res = await fetch('/api/cooker/check-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_task_id: task.id, status: 'pending' })
+      });
+      if (!res.ok) throw new Error('undo failed');
+      var tasks = panel._defrostTasks || [];
+      if (tasks.indexOf(task) === -1) tasks.unshift(task);
+      renderDefrostToday(panel);
+    } catch (err) {
+      console.warn('Undo skip failed:', err);
+      showToast('Could not undo — try again.');
     }
   }
 
@@ -1057,7 +1190,7 @@
       var res = await fetch('/api/chores/today');
       if (!res.ok) throw new Error('chores lookup failed');
       var data = await res.json();
-      renderChores(panel, data.chores || []);
+      renderChores(panel, data.chores || [], !!data.chores_set_up);
     } catch (err) {
       console.warn('Chores lookup failed:', err);
       listEl.innerHTML = '<div class="empty-row">Couldn\'t load chores right now.</div>';
@@ -1065,9 +1198,19 @@
     }
   }
 
-  function renderChores(panel, chores) {
+  function renderChores(panel, chores, choresSetUp) {
     var listEl = panel.querySelector('#chores-list');
     var countEl = panel.querySelector('#chores-count');
+    var setupLink = panel.querySelector('#chores-setup-link');
+    // Only offered to a household that's never been through chores setup —
+    // once they have (a profile saved, or any chore exists), there's
+    // nothing left to "set up", whether or not one happens to be due today.
+    // choresSetUp is omitted by toggleChore's re-renders (a checkbox tap
+    // doesn't change setup status), so the link is left exactly as
+    // loadChores last set it rather than guessed at here.
+    if (setupLink && choresSetUp !== undefined) {
+      setupLink.style.display = choresSetUp ? 'none' : 'block';
+    }
     var done = chores.filter(function (c) { return c.status === 'done'; }).length;
     countEl.textContent = chores.length ? (done + ' of ' + chores.length) : '';
     countEl.className = 'chores-count' + (chores.length && done === chores.length ? ' all-done' : '');
@@ -1244,6 +1387,11 @@
     data: null,
     loadError: false,
     usualStores: [],        // household's saved stores, offered as triage pills
+    // Loop Board 19a: whether the Plan stops "Where do you usually shop?"
+    // first-visit card has been quietly declined ("One list is fine") —
+    // persisted server-side (meal_preferences.stores_prompt_dismissed_at)
+    // so it stays gone across visits, not just this page view.
+    storesPromptDismissed: false,
     itemStorePrefs: {},     // lowercased item name -> remembered store
     preShopFlags: [],
     preShopOpen: false,
@@ -1461,6 +1609,10 @@
         e.preventDefault();
         groAddItem();
       }
+      if (e.target.id === 'gro-stores-prompt-input') {
+        e.preventDefault();
+        panel.querySelector('[data-gro="stores-prompt-add"]').click();
+      }
     });
     setupDictation(panel.querySelector('#gro-add-item'), panel.querySelector('#gro-add-mic'));
 
@@ -1477,6 +1629,7 @@
       if (!res.ok) return;
       var memory = await res.json();
       groceryState.usualStores = memory.usual_stores || [];
+      groceryState.storesPromptDismissed = !!memory.stores_prompt_dismissed;
       if (groceryState.screen === 'plan') renderGrocery();
     } catch (err) { /* triage still works from what's tagged on the list */ }
   }
@@ -1804,7 +1957,7 @@
         '<input type="text" class="gro-m-store" value="' + escapeHtml(it.store || '') + '" placeholder="Store" aria-label="Store for ' + escapeHtml(it.item) + '" />' +
         '<button type="button" class="gro-m-save" data-gro="save-row" data-id="' + id + '">Save</button>' +
         '<button type="button" class="gro-m-have" data-gro="have" data-id="' + id + '">Have it</button>' +
-        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Elsewhere</button>' +
+        '<button type="button" class="gro-m-else" data-gro="exclude" data-id="' + id + '">Somewhere else</button>' +
         '<button type="button" class="gro-m-remove" data-gro="remove" data-id="' + id + '">Remove</button>' +
       '</div>';
   }
@@ -1908,10 +2061,61 @@
     );
   }
 
+  // ---------- First-visit "where do you usually shop?" (Loop Board 19a) ----------
+  // Stores used to be an onboarding question; Emily decided (2026-09-05) to
+  // ask just-in-time instead, right where it first matters — the first real
+  // trip, on Plan stops, rather than a question asked before there's even a
+  // list to sort. Short, editable presets for an Ontario household, plus
+  // free text for anything else. Picking one saves immediately through the
+  // same write path the Kitchen "What we know" Stores tab uses
+  // (edit_preference/usual_stores), so the triage pills below pick it up
+  // the moment this card disappears (usualStores.length becomes > 0).
+  var GRO_STORE_PROMPT_CHIPS = ['Costco', 'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'Walmart', 'Farm Boy', 'T&T', 'Whole Foods'];
+
+  function groStoresPromptShouldShow() {
+    return !groceryState.usualStores.length && !groceryState.storesPromptDismissed;
+  }
+
+  function groStoresPromptHtml() {
+    var chips = GRO_STORE_PROMPT_CHIPS.map(function (name) {
+      return '<button type="button" class="gro-pill" data-gro="stores-prompt-pick" data-store="' + escapeHtml(name) + '">' +
+        escapeHtml(name) + '</button>';
+    }).join('');
+    return (
+      '<div class="shell-card gro-stores-prompt">' +
+        '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
+        '<p class="gro-stores-prompt-sub">I&rsquo;ll sort the list by store and plan your stops.</p>' +
+        '<div class="gro-pills open">' + chips + '</div>' +
+        '<div class="gro-stores-prompt-add">' +
+          '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
+            'placeholder="Somewhere else?" aria-label="Add a store you usually shop at" />' +
+          '<button type="button" class="gro-linkbtn" data-gro="stores-prompt-add">Add</button>' +
+        '</div>' +
+        '<button type="button" class="gro-stores-prompt-dismiss" data-gro="stores-prompt-dismiss">One list is fine</button>' +
+      '</div>'
+    );
+  }
+
+  // Saves through the same field edit_preference/the Stores tab already
+  // uses — merges into whatever's already saved rather than replacing it,
+  // so two quick taps ("Costco", then "No Frills") don't clobber each
+  // other. Local state updates immediately so the triage pills below
+  // reflect the new store without waiting on a full grocery reload.
+  function groAddUsualStore(name) {
+    name = (name || '').trim();
+    if (!name || groceryState.usualStores.indexOf(name) !== -1) return Promise.resolve();
+    var merged = groceryState.usualStores.concat([name]);
+    return groPost('/api/memory/edit', { field: 'usual_stores', value: merged }).then(function () {
+      groceryState.usualStores = merged;
+      renderGrocery();
+    });
+  }
+
   // ---------- State: Plan your stops ----------
   function groPlanHtml(data) {
     var unsorted = groUnsorted(data);
     var buckets = groStoresWithNeeded(data);
+    var showStoresPrompt = (unsorted.length || buckets.length) && groStoresPromptShouldShow();
     if (unsorted.length || buckets.length) {
       // The list has needed items again — any justFinishedTrip signal left
       // over from an earlier stop in this same visit no longer describes
@@ -1938,7 +2142,7 @@
       return '<p class="gro-empty">Nothing on the list yet — add items from the To buy tab.</p>';
     }
 
-    var html = '';
+    var html = showStoresPrompt ? groStoresPromptHtml() : '';
     if (unsorted.length) {
       if (groceryState.planOpenId == null) groceryState.planOpenId = String(unsorted[0].id);
       var shown = unsorted.slice(0, groceryState.planPageSize);
@@ -1973,6 +2177,12 @@
             // the list entirely because it turns out no store is needed.
             '<button type="button" class="gro-pill gro-pill-have" data-gro="already-have" data-id="' + id + '" ' +
               'aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>' +
+            // Same backend path as the To buy ⋯ menu's "Somewhere else" —
+            // covers the other reason an item leaves the to-sort list
+            // without a store here: it's already being picked up on a trip
+            // that isn't one of this household's stores.
+            '<button type="button" class="gro-pill gro-pill-else" data-gro="triage-exclude" data-id="' + id + '" ' +
+              'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
           '</div>' +
         '</div>';
       });
@@ -2432,6 +2642,38 @@
         renderGrocery();
         return;
 
+      // ----- "where do you usually shop?" first-visit card (Loop Board 19a) -----
+      case 'stores-prompt-pick':
+        el.disabled = true;
+        groAddUsualStore(el.dataset.store).catch(function () {
+          showToast("Couldn't save that — try again.");
+        }).then(function () { el.disabled = false; });
+        return;
+
+      case 'stores-prompt-add': {
+        var storesPromptPanel = groPanel();
+        var storesPromptInput = storesPromptPanel && storesPromptPanel.querySelector('#gro-stores-prompt-input');
+        if (!storesPromptInput) return;
+        var typedStore = storesPromptInput.value.trim();
+        if (!typedStore) { storesPromptInput.focus(); return; }
+        el.disabled = true;
+        groAddUsualStore(typedStore).catch(function () {
+          showToast("Couldn't save that — try again.");
+        }).then(function () { el.disabled = false; });
+        return;
+      }
+
+      case 'stores-prompt-dismiss':
+        el.disabled = true;
+        groPost('/api/memory/stores-prompt-dismiss', {}).then(function () {
+          groceryState.storesPromptDismissed = true;
+          renderGrocery();
+        }).catch(function () {
+          el.disabled = false;
+          showToast("Couldn't save that — try again.");
+        });
+        return;
+
       case 'assign': {
         var toStore = el.dataset.store;
         el.disabled = true;
@@ -2471,6 +2713,23 @@
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/already-have');
         }, "Couldn't move that to the kitchen — try again.").then(function (ok) {
+          if (!ok) return;
+          var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
+          groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
+          renderGrocery();
+        });
+        return;
+
+      // Same backend path as the To buy ⋯ menu's "Somewhere else"
+      // (exclude): the item is getting picked up somewhere that isn't one
+      // of this household's stores, so it comes off the to-sort list the
+      // same way "Have it" does, and shows up under Review's "Getting
+      // elsewhere" instead.
+      case 'triage-exclude':
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/grocery-list/' + id + '/exclude');
+        }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok) return;
           var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
           groceryState.planOpenId = stillUnsorted.length ? String(stillUnsorted[0].id) : null;
@@ -3643,11 +3902,21 @@
   // and "Cook this" only on today, because cook mode can only start tonight's
   // meal — a future day gets "Swap it" alone rather than a button that would
   // open the wrong day's steps.
+  //
+  // A reheat night (day.dinner.source === 'leftovers' — see
+  // tools.get_week_menu's build_slot) is not a cook, so today's version of
+  // that button never says "Cook this" for one: nothing would be cooked by
+  // tapping it. The button still opens Cook mode (same handler below) —
+  // that screen already renders a confirmed chain's reheat night correctly
+  // (cooker.get_cooker_view / cookReheatHeroHtml) with its own "Mark eaten"
+  // action — this only fixes the label so it doesn't promise a cook that
+  // isn't going to happen.
   function dayActionsHtml(day) {
     if (!(day.dinner && day.dinner.state === 'planned' && !day.isPast)) return '';
     if (day.isToday) {
+      var isReheat = day.dinner.source === 'leftovers';
       return '<button type="button" class="hero-go" id="wk-cook-this">' +
-        '<span>Cook this</span>' + ICONS.arrow + '</button>' +
+        '<span>' + escapeHtml(isReheat ? REHEAT_ACTION_LABEL : 'Cook this') + '</span>' + ICONS.arrow + '</button>' +
         '<button type="button" class="hero-swap" id="wk-swap-it" aria-label="Swap it">Swap</button>';
     }
     return '<button type="button" class="hero-swap" id="wk-swap-it">Swap it</button>';
@@ -4393,6 +4662,13 @@
       '<div class="shell-card week-approve-card">' +
         '<div class="week-review-eyebrow">DRAFT · YOUR TURN</div>' +
         (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
+        // Said once, ever: the first week where the app rounded a meal out
+        // for them (app/tools/plates.py, weekly_plan.PLATES_INTRO). The
+        // server decides whether it appears and marks it as said, so this
+        // is simply "show it if it's there" — sitting under the status line
+        // and above the promise, because it explains something about the
+        // week they're being asked to approve.
+        (data.plates_note ? '<div class="week-note">' + escapeHtml(data.plates_note) + '</div>' : '') +
         // A possible allergy/must-avoid clash, named above the Approve
         // button rather than left for the household to catch. Server-worded
         // (see check_plan_conflicts) so the sentence lives with the data it
@@ -4853,14 +5129,22 @@
     } else if (people.length === 1) {
       approvedBy = people[0];
     }
+    await submitWeekApproval(panel, data, approvedBy, false);
+  }
 
+  // Posts the approval. `confirmHardConflicts` is only ever true right
+  // after the household has tapped the "Approve anyway" button that
+  // showApproveConfirm renders below — never inferred, never set on the
+  // first tap.
+  async function submitWeekApproval(panel, data, approvedBy, confirmHardConflicts) {
     var btn = panel.querySelector('#week-approve-btn');
+    var restoreLabel = btn ? btn.textContent : 'Approve the week';
     if (btn) { btn.disabled = true; btn.textContent = 'Approving…'; }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_by: approvedBy })
+        body: JSON.stringify({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts })
       });
       if (!res.ok) throw new Error('approve failed');
       // The approve endpoint answers with the dietary check it ran on the
@@ -4871,6 +5155,18 @@
       // clash; being quiet about it is not.
       var approval = {};
       try { approval = (await res.json()) || {}; } catch (e) { approval = {}; }
+
+      if (approval.status === 'needs_confirmation') {
+        // A HARD clash and no confirm tap yet — nothing was approved,
+        // nothing was written. Same idiom as the open-slots label above
+        // (approveWithOpenLabel: say what tapping again will do), except
+        // this one needs an actual second tap rather than just a relabeled
+        // button, because what's at stake here is a real allergy clash,
+        // not an empty slot.
+        showApproveConfirm(panel, data, approval, approvedBy);
+        return;
+      }
+
       var openListAction = {
         label: 'Open the list',
         onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); }
@@ -4889,9 +5185,63 @@
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Week approval failed:', err);
-      if (btn) { btn.disabled = false; btn.textContent = 'Approve the week'; }
+      if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
       alert('Could not approve the week right now — try again in a moment.');
     }
+  }
+
+  // The one-clash-away state: the review band above already names the
+  // clash (data.conflicts_note, rendered before anyone even tapped
+  // Approve), so this only has to offer the two ways through — approve
+  // past it, or back out and fix the plan first. Only
+  // submitWeekApproval's needs_confirmation branch ever calls this.
+  function showApproveConfirm(panel, data, approval, approvedBy) {
+    var band = panel.querySelector('#week-review-band');
+    var card = band && band.querySelector('.week-approve-card');
+    var btn = card && card.querySelector('#week-approve-btn');
+    if (!card || !btn) return;
+
+    var meals = [];
+    (approval.conflicts || []).forEach(function (c) {
+      if (c.meal && meals.indexOf(c.meal) === -1) meals.push(c.meal);
+    });
+    // Named when it's cheap (one dish sitting right there); a generic
+    // "the clash" once there's more than one, same call the server's own
+    // conflicts_note sentence makes.
+    var label = (meals.length === 1)
+      ? 'Approve anyway — I’ve seen the ' + meals[0] + ' clash'
+      : 'Approve anyway — I’ve seen the clash';
+    btn.textContent = label;
+    btn.disabled = false;
+    // Swap the handler rather than stack a second listener on top of the
+    // original "approve the week" one — this tap now means something
+    // different.
+    var freshBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(freshBtn, btn);
+    freshBtn.addEventListener('click', function () {
+      submitWeekApproval(panel, data, approvedBy, true);
+    });
+
+    // A quiet way out — same idiom as "or tweak it with me" just below,
+    // not a second button competing with the confirm for attention.
+    // Reloading the week menu is what takes both of them back to the
+    // ordinary draft state, same as tryAgain/reopenWeek already do after
+    // their own actions.
+    var tweakLink = card.querySelector('#week-tweak-btn');
+    var fixLink = card.querySelector('#week-fix-first-link');
+    if (!fixLink) {
+      fixLink = document.createElement('button');
+      fixLink.type = 'button';
+      fixLink.id = 'week-fix-first-link';
+      fixLink.className = 'week-reset-link week-tweak-link';
+      fixLink.textContent = 'Let me fix it first';
+      if (tweakLink && tweakLink.parentNode) {
+        tweakLink.parentNode.insertBefore(fixLink, tweakLink);
+      } else {
+        card.appendChild(fixLink);
+      }
+    }
+    fixLink.onclick = function () { loadWeekMenu(panel); };
   }
 
   function renderWeekMenu(panel, data) {
@@ -5148,10 +5498,22 @@
         '<span class="wg2-tile-meta">Pick</span>' +
       '</div>';
     }
+    // "with a green salad", or "one-pot, nothing extra" — the plate note
+    // (app/tools/plates.py). Rendered as one more of the same chip the
+    // timing already uses, rather than a new element: it is the same kind
+    // of small fact about the meal, and the card has no room for a third
+    // line under the name.
+    var chips = [];
+    if (entry.meta) chips.push(entry.meta);
+    if (entry.plate_note) chips.push(entry.plate_note);
     return '<div class="' + cls + '">' +
       (entry.need ? '<div class="wg2-dinner-chips">' + needBadgeHtml(entry) + '</div>' : '') +
       '<span class="wg2-dinner-name">' + escapeHtml(entry.title) + '</span>' +
-      (entry.meta ? '<div class="wg2-dinner-chips"><span class="wg2-dinner-chip">' + escapeHtml(entry.meta) + '</span></div>' : '') +
+      (chips.length
+        ? '<div class="wg2-dinner-chips">' + chips.map(function (c) {
+            return '<span class="wg2-dinner-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
       wgWhyHtml(day, 'dinner', entry) +
     '</div>';
   }
@@ -5448,7 +5810,8 @@
       cookState.cookAheadPicks = {};
     }
     if (!data.weekly_plan_id) {
-      view.innerHTML = '<p class="cook-empty">No plan yet this week — plan one on the Plan tab first.</p>';
+      view.innerHTML = '<p class="cook-empty">No plan yet this week &mdash; ' +
+        '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>';
       if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
@@ -5486,8 +5849,8 @@
         cookDefrostLinkHtml() +
         cookAheadAskLinkHtml() +
         '<div class="cook-body">' +
-          cookPrepHtml(data) +
-          cookRestOfWeekHtml(meals) +
+          cookPrepHtml(data, meals[cookState.tonightIdx], cookState.tonightIdx) +
+          cookRestOfWeekHtml(meals, data) +
         '</div>';
     }
 
@@ -5660,6 +6023,10 @@
     // (see cookServesChip); "Serves 4" for every ordinary night, unchanged.
     chips.push(cookServesChip(meal));
     if (meal.batch_note) chips.push('Bulk ×' + meal.meal_count);
+    // "with a green salad" — the side the app attached to fill out this
+    // plate (app/tools/plates.py). Its ingredients and steps are already
+    // folded into the recipe below; this is what says so on the hero.
+    if (meal.sides_label) chips.push(meal.sides_label);
     chips = chips.filter(Boolean);
 
     // Newsreader italic, once per screen. The reasoning is the honest thing
@@ -5731,22 +6098,38 @@
 
   // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
   // a pair of small things rather than another stack of full-width cards.
-  function cookPrepHtml(data) {
+  function cookPrepHtml(data, tonightMeal, tonightIdx) {
     var tasks = data.prep_tasks || [];
     if (!tasks.length) return '';
     var done = data.prep_done || 0;
     var total = data.prep_total || tasks.length;
+    var allDone = total > 0 && done === total;
+    // Once every prep task is off the list there's nothing left to check
+    // here — the note stops counting and points at what's next instead.
+    // The hero above already carries a "Start cooking"/"Mark eaten" apricot
+    // primary whenever tonight has a real meal (cookHeroHtml/
+    // cookReheatHeroHtml), and Rule 5 (one apricot primary per screen)
+    // means this section must never add a second one on top of it — the
+    // fallback link below only appears on the (currently unreachable, but
+    // still correct to guard) case where tonight has no meal at all and so
+    // the hero offers no way in.
+    var heroHasPrimaryAction = !!tonightMeal;
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow cook-eyebrow-warm">Prep schedule</span>' +
         '<span class="cook-rule"></span>' +
-        '<span class="cook-sectionnote">' + done + ' of ' + total + ' done</span>' +
+        '<span class="cook-sectionnote">' + (allDone ? 'Prep’s done — the rest is tonight.' : (done + ' of ' + total + ' done')) + '</span>' +
         (COOK_VOICE_ENABLED
           ? '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
               'aria-label="Hands-free: check off prep steps by voice" ' +
               'title="Hands-free: check off prep steps by voice">' + COOK_ICONS.mic + '</button>'
           : '') +
       '</div>' +
+      (allDone && !heroHasPrimaryAction && tonightIdx !== null && tonightIdx !== undefined
+        ? '<button type="button" class="cook-hero-action cook-prep-startcooking" data-cook="focus" data-idx="' + tonightIdx + '" data-at="steps">' +
+            '<span>Start cooking</span>' + ICONS.arrow +
+          '</button>'
+        : '') +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
           var isDone = t.status === 'done';
@@ -5767,13 +6150,18 @@
   // Everything that is not tonight, subordinate: one dense row each. Tapping
   // a name enters the same focused screen tonight's hero does — a "quiet
   // scannable week list" per the ticket, not another accordion of recipes.
-  function cookRestOfWeekHtml(meals) {
+  function cookRestOfWeekHtml(meals, data) {
     var rest = meals
       .map(function (m, i) { return { m: m, i: i }; })
       .filter(function (x) { return x.i !== cookState.tonightIdx; });
     if (!rest.length) {
-      return meals.length
-        ? ''
+      if (meals.length) return '';
+      // Every dinner this period was deliberately marked away (cooker.py's
+      // all_away flag) — say that, rather than the generic "nothing
+      // planned" line, which would read as though the week was simply
+      // forgotten.
+      return data && data.all_away
+        ? '<p class="cook-empty">Nothing to cook this week — you’re away.</p>'
         : '<p class="cook-empty">No meals on this plan yet.</p>';
     }
     return '<section class="cook-section">' +
@@ -5855,10 +6243,31 @@
       '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
       '<h4 class="cook-detail-head">Instructions</h4>' +
       cookInstructionsHtml(m, idx) +
+      // The end of the last step used to just stop — the only way back to
+      // "Mark cooked" was scrolling all the way back up to the hero. A
+      // small, quiet row right where the steps run out closes the loop:
+      // the same handler as the hero's own "Mark cooked" button (so this
+      // is never a second source of truth for that write), plus a plain
+      // way back. Only while there's really a recipe with steps to finish,
+      // and only until it's actually marked cooked — once it's done, this
+      // is just clutter under a screen that already says so.
+      ((m.instructions || []).length && m.cooked_status !== 'done'
+        ? cookFocusEndHtml(m)
+        : '') +
       (m.reasoning
         ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
           '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
         : '') +
+    '</div>';
+  }
+
+  function cookFocusEndHtml(m) {
+    return '<div class="cook-focus-end">' +
+      '<p class="cook-focus-end-note">That’s everything — how did it go?</p>' +
+      '<div class="cook-focus-end-actions">' +
+        '<button type="button" class="cook-focus-end-done" data-cook="focus-check" data-entry-id="' + m.entry_id + '" data-next="done">Mark it cooked</button>' +
+        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to the week</button>' +
+      '</div>' +
     '</div>';
   }
 
@@ -6045,6 +6454,10 @@
     // screen is where the ingredients are actually read off, so it is the
     // one place the number really has to be right in front of them.
     if (meal.covers_note && meal.servings) chips.push('for ' + meal.servings);
+    // The side that fills out this plate, named here too — this is the
+    // screen someone actually cooks from, and the "Alongside" steps at the
+    // bottom of the list want explaining before they're reached.
+    if (meal.sides_label) chips.push(meal.sides_label);
     var attChip = cookAttendanceChip(meal);
     if (attChip) chips.push(attChip);
 
@@ -6188,6 +6601,7 @@
       return;
     }
     if (what === 'exit-focus') return cookExitFocus();
+    if (what === 'goto-plan') return setMealsView('plan');
     if (what === 'focus-check') return cookFocusCheckMeal(el);
     if (what === 'check-step') {
       var stepKey = el.getAttribute('data-idx') + ':' + el.getAttribute('data-step');
@@ -6241,8 +6655,23 @@
     return res.json().catch(function () { return {}; });
   }
 
+  // "core loop handoffs, slice 2" item E (Emily, 2026-09-05): marking a
+  // real cook done gets a toast confirming it was logged, with a "Rate it"
+  // action that opens the existing attention band rather than a new
+  // rating flow — the feedback nudge already lives there once the app has
+  // something to ask about. Reheat nights ("Mark eaten") are excluded:
+  // there's no separate cook to rate, the dish was already rated the
+  // night it was actually made.
+  function toastMealLogged() {
+    showToast('Logged. I’ll remember how it went.', {
+      label: 'Rate it',
+      onClick: function () { cookState.attentionOpen = true; renderCook(); },
+    });
+  }
+
   async function cookCheckMeal(el) {
     el.disabled = true;
+    var justCooked = el.getAttribute('data-next') === 'done' && el.getAttribute('aria-label') === 'Mark cooked';
     try {
       var view = await cookPost('/api/cooker/check-meal', {
         entry_id: parseInt(el.getAttribute('data-entry-id'), 10),
@@ -6253,6 +6682,7 @@
       // moves the week's "N of M cooked" everywhere else that counts it.
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      if (justCooked) toastMealLogged();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -6264,6 +6694,9 @@
   // you check the meal off") — there's nothing left to do on this screen
   // once it's done. Marking it back to not-cooked is an undo, not a
   // completion, so that one stays put in focus rather than bouncing out.
+  // Always a real cook, never a reheat (see cookHeroHtml/cookReheatHeroHtml
+  // — a reheat night never opens this focused screen), so no aria-label
+  // check is needed here the way cookCheckMeal above needs one.
   async function cookFocusCheckMeal(el) {
     el.disabled = true;
     var next = el.getAttribute('data-next');
@@ -6279,6 +6712,7 @@
       renderCookFrom(view);
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      if (next === 'done') toastMealLogged();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');
@@ -6417,9 +6851,30 @@
     }
   }
 
+  // Tomorrow's date, local — same construction as todayLocalStr, one day
+  // on. Used only to decide whether the post-rating toast below has
+  // somewhere useful to send "Show me tomorrow".
+  function tomorrowLocalStr() {
+    var d = new Date();
+    d.setDate(d.getDate() + 1);
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  // Read off data already on the client (this week's prep_tasks, general
+  // and defrost alike) rather than a new lookup — the rating toast just
+  // wants to know whether pointing at tomorrow is worth offering at all.
+  function cookTomorrowHasPrepOrDefrost() {
+    var tasks = (cookState.data && cookState.data.prep_tasks) || [];
+    var tomorrow = tomorrowLocalStr();
+    return tasks.some(function (t) { return t.task_date === tomorrow; });
+  }
+
   async function cookRateMeal(el) {
     var meal = el.getAttribute('data-meal');
     var notesEl = document.querySelector('[data-attn-notes="' + meal.replace(/"/g, '\\"') + '"]');
+    var hadAttention = (cookState.attention || []).length > 0;
     el.disabled = true;
     try {
       await cookPost('/api/recipe-feedback', {
@@ -6427,7 +6882,16 @@
         rating: el.getAttribute('data-rating'),
         notes: notesEl ? notesEl.value.trim() : ''
       });
-      refreshCookAttention();
+      await refreshCookAttention();
+      // Only the rating that actually empties the list earns the toast —
+      // rating one of several still leaves "attention" open, which isn't
+      // "noted, done" yet.
+      if (hadAttention && !(cookState.attention || []).length) {
+        showToast('Noted — that’ll steer next week.', cookTomorrowHasPrepOrDefrost() ? {
+          label: 'Show me tomorrow',
+          onClick: function () { activateTab('week', true, { mealsView: 'cook' }); }
+        } : undefined);
+      }
     } catch (err) {
       el.disabled = false;
       showToast('Couldn’t save that rating — try again.');
@@ -6886,10 +7350,18 @@
       if (!res.ok) throw new Error('Could not get link');
       var data = await res.json();
       var url = window.location.origin + '/share/' + data.token;
+      var copied = false;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        try { await navigator.clipboard.writeText(url); } catch (e) { /* fall through to prompt */ }
+        try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* fall through to the prompt */ }
       }
-      window.prompt('Read-only link — anyone with it can see this week\'s meal plan (nothing else). Copied to your clipboard if supported:', url);
+      if (copied) {
+        showToast('Link copied. Anyone with it sees this week’s meals, nothing else.');
+      } else {
+        // Only reached when the clipboard API itself isn't there (or
+        // refused) — the prompt's own text box is the fallback way to
+        // actually get the link off the screen.
+        window.prompt('Read-only link — anyone with it can see this week\'s meal plan (nothing else):', url);
+      }
     } catch (err) {
       alert('Could not create a share link right now: ' + err.message);
     }
@@ -7699,6 +8171,13 @@
         var key = btn.getAttribute('data-notif-action');
         var n = latestNotifications.filter(function (x) { return x.key === key; })[0];
         closeNotifPanel();
+        // Acting on a notification is as much a resolution as the explicit
+        // Dismiss button below — it shouldn't still be sitting in the feed
+        // next time the bell opens. Fire-and-forget, same as Dismiss: the
+        // navigation this is about to do shouldn't wait on it.
+        fetch('/api/notifications/dismiss', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: key }) }).catch(function () { /* best-effort */ });
+        latestNotifications = latestNotifications.filter(function (x) { return x.key !== key; });
+        notifBadge.hidden = latestNotifications.length === 0;
         if (!n) return;
         if (n.tab) activateTab(n.tab, true);
         else if (n.href) followActionHref(n.href);
@@ -7716,7 +8195,8 @@
   function openNotifPanel() {
     notifScrim.hidden = false;
     notifPanel.hidden = false;
-    renderNotifPanel();
+    renderNotifPanel(); // whatever's already in hand, instantly
+    loadNotifications(); // then a quiet refetch — someone else in the house may have acted on one since this loaded (loadNotifications re-renders once the panel is visible)
   }
   function closeNotifPanel() {
     notifScrim.hidden = true;
