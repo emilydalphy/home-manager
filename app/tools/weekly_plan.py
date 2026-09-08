@@ -2113,6 +2113,144 @@ def _slot_clock_labels() -> dict:
     }
 
 
+# ---------- The approved receipt's two lines (flows 3) -------------------
+# Emily's approved 2026-09-08 design ends approval in ONE short receipt:
+# a title that counts the week, and a line about the freezer. Both are built
+# here rather than in shell.js so the numbers and the sentence they live in
+# cannot drift apart, and so they can be tested at all — shell.js has no JS
+# test harness in this repo.
+
+# One to twelve as words, digits above (Emily, 2026-09-08). Kept separate
+# from coordination._NUMBER_WORDS, which stops at ten and feeds different
+# copy — widening that one would silently reword the allergy warnings.
+_RECEIPT_NUMBER_WORDS = {
+    1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+    7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve",
+}
+
+
+def _receipt_number(n: int) -> str:
+    return _RECEIPT_NUMBER_WORDS.get(n, str(n))
+
+
+def _is_cook(entry: dict | None) -> bool:
+    """
+    A slot somebody actually cooks. A reheat night and a made-ahead night
+    are meals but not cooks (the cooking already happened), and takeout is
+    neither cooked nor made ahead — counting it would overstate the week's
+    work. Same rule as the week card's own "4 cooks, 3 made ahead" subtitle
+    (shell.js weekCountsLabel), deliberately, so the receipt and the card
+    can't put different numbers on the same week.
+    """
+    if not entry or entry.get("state") != "planned":
+        return False
+    return entry.get("source") not in ("leftovers", "takeout")
+
+
+def _pending_thaw_count(weekly_plan_id: int) -> int:
+    """
+    Every freezer-to-fridge move still outstanding on this plan — including
+    a ready-made earmark, which has no meal_plan_entry_id but is still
+    something to move. get_week_menu's per-entry `defrost` deliberately
+    skips those (a task belonging to no single slot can't sit on one card);
+    the receipt counts the whole week, so it counts them.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM prep_tasks "
+        "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+        "AND status = 'pending'",
+        (household_id(), weekly_plan_id),
+    ).fetchone()
+    conn.close()
+    return row["n"] if row else 0
+
+
+def week_receipt(days: list[dict], weekly_plan_id: int) -> dict:
+    """
+    The approved week in one sentence plus one line.
+
+    Returns `meals`, `cooks`, `list_count`, `thaw_count` and the two strings
+    built out of them:
+
+      title      "16 meals, five cooks, one list of 23 things."
+      thaw_line  "Two things to move to the fridge this week." when there is
+                 something to thaw, else "Nothing to thaw before Wednesday."
+                 — Wednesday being the next day of the plan somebody cooks,
+                 which is the day the question would next come up. With no
+                 cook left in the plan it drops to "Nothing to thaw this
+                 week." rather than naming a day that isn't there.
+
+    `days` is get_week_menu's own day list, so an away night ("Out —
+    nothing to cook", state planned_empty) and an open slot count as
+    neither a meal nor a cook, and a reheat night counts as a meal only.
+
+    `list_count` is what is still to buy — the same 'needed' view the
+    Grocery tab opens on, which is where "Open the list" lands. Zero is not
+    a failure (a household whose kitchen already had everything), so the
+    sentence drops that clause instead of promising a list of nothing.
+    """
+    meals = 0
+    cooks = 0
+    for day in days:
+        for slot in WEEK_SLOTS:
+            entry = day.get(slot)
+            if not entry or entry.get("state") != "planned":
+                continue
+            meals += 1
+            if _is_cook(entry):
+                cooks += 1
+
+    list_count = len(_grocery.list_grocery_list("needed"))
+    thaw_count = _pending_thaw_count(weekly_plan_id)
+
+    parts: list[str] = []
+    if meals:
+        parts.append(f"{_receipt_number(meals)} {'meal' if meals == 1 else 'meals'}")
+    if cooks:
+        parts.append(f"{_receipt_number(cooks)} {'cook' if cooks == 1 else 'cooks'}")
+    if list_count:
+        parts.append(
+            f"one list of {_receipt_number(list_count)} "
+            f"{'thing' if list_count == 1 else 'things'}"
+        )
+    else:
+        parts.append("nothing left to buy")
+    title = ", ".join(parts)
+    title = f"{title[0].upper()}{title[1:]}." if title else "Your week is set."
+
+    if thaw_count:
+        thing = "thing" if thaw_count == 1 else "things"
+        count = _receipt_number(thaw_count)
+        thaw_line = f"{count[0].upper()}{count[1:]} {thing} to move to the fridge this week."
+    else:
+        today_str = date.today().isoformat()
+        next_cook = next(
+            (
+                d["date"] for d in days
+                if d["date"] >= today_str
+                and any(_is_cook(d.get(s)) for s in WEEK_SLOTS)
+            ),
+            None,
+        )
+        when = _weekday_label(next_cook)
+        thaw_line = f"Nothing to thaw before {when}." if when else "Nothing to thaw this week."
+
+    return {
+        "meals": meals, "cooks": cooks, "list_count": list_count,
+        "thaw_count": thaw_count, "title": title, "thaw_line": thaw_line,
+    }
+
+
+def _weekday_label(date_str: str | None) -> str:
+    if not date_str:
+        return ""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%A")
+    except (TypeError, ValueError):
+        return ""
+
+
 def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     """
     The weekly menu for the Week tab (design_handoff_shell/
@@ -2168,6 +2306,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "weekly_plan_id": None, "week_start_date": None,
             "household_name": household_name, "days": [], "menu_is_suggested": False,
             "slot_times": _slot_clock_labels(),
+            "receipt": None,
         }
 
     # design_handoff_plan_the_week: the Meals screen is where a week is
@@ -2198,6 +2337,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # would be a scold rather than a help.
         "conflicts": [],
         "conflicts_note": None,
+        # The two halves of that warning, as the approved 2026-09-08 Meals
+        # design renders them: `settle` is the hard clash's own card above
+        # the week card (note/meal/date/member/count), `soft_note` the one
+        # quiet line under it. See coordination._settle / _soft_note.
+        "settle": None,
+        "soft_note": None,
     }
     if plan["status"] != "approved":
         approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
@@ -2205,6 +2350,8 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             found = _coordination.check_plan_conflicts(plan["weekly_plan_id"])
             approval["conflicts"] = found["conflicts"]
             approval["conflicts_note"] = found["note"]
+            approval["settle"] = found.get("settle")
+            approval["soft_note"] = found.get("soft_note")
         except Exception:
             # The Meals screen must still render if the check itself breaks.
             logger.exception("Conflict check failed for plan %s", plan["weekly_plan_id"])
@@ -2265,6 +2412,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "days": days,
             "menu_is_suggested": True,
             "slot_times": _slot_clock_labels(),
+            # Only an approved week has a receipt to show — a draft's
+            # question is still "is this right", not "here's what you did".
+            "receipt": (
+                week_receipt(days, plan["weekly_plan_id"])
+                if plan["status"] == "approved" else None
+            ),
             **approval,
         }
 
@@ -2497,6 +2650,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # The trip banner ("Away Sat–Sun") — present only when the week
         # actually has one, so the ordinary week carries no extra chrome.
         "trip_summary": trip,
+        # The approved receipt's counts and its two lines (week_receipt).
+        # None while the week is a draft: a receipt is what you get for
+        # having decided, and a draft hasn't.
+        "receipt": (
+            week_receipt(days, plan["weekly_plan_id"])
+            if plan["status"] == "approved" else None
+        ),
         **approval,
     }
 

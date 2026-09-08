@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import re
+from datetime import datetime
 from ..db import get_conn
 from ._shared import household_id
 from . import household as _household
@@ -617,6 +618,123 @@ def _conflicts_note(conflicts: list[dict], closing: str = _DRAFT_CLOSING) -> str
     )
 
 
+# ---------- The draft's "One thing to settle" card (flows 3) -------------
+# Emily's approved 2026-09-08 Meals design replaces the old review band with
+# the week card itself, and gives a HARD allergen clash one urgent-tint card
+# above it. That card's sentence is written here, beside the data, for the
+# same reason _conflicts_note is: the UI must not be the place that decides
+# what a clash means.
+#
+# Two sentences rather than one, because the two moments are different:
+# _conflicts_note ends "worth a look before you approve" (a nudge attached
+# to a button); this one is the whole content of a card that already says
+# "One thing to settle" above it and offers the two ways out below it, so
+# it only has to state the fact.
+
+_ALLERGY_LABEL_RE = re.compile(r"\ballerg\w*", re.I)
+
+
+def _weekday(date_str: str | None) -> str:
+    """"Wednesday" for an ISO date, or "" for a plan with no real dates."""
+    if not date_str:
+        return ""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").strftime("%A")
+    except (TypeError, ValueError):
+        return ""
+
+
+def _clash_sentence(c: dict) -> str:
+    """
+    "Wednesday's Pineapple Salsa has pineapple, which Emily is allergic to."
+
+    The dish is named as the plan spells it, never shortened — a guessed
+    short form ("the salsa") is a guess about someone's food, and getting it
+    wrong on an allergy card is the one place this app cannot afford to be
+    approximately right.
+
+    "is allergic to" only when the restriction actually says allergy;
+    anything else the household wrote down is "can't have", which is true of
+    every avoidance including an allergy.
+    """
+    meal = c["meal"]
+    member = c["member"]
+    when = _weekday(c.get("date"))
+    subject = f"{when}’s {meal}" if when else meal
+    terms = [t for t in (c.get("matched") or []) if t]
+    # The matched term only earns a clause when it says something the dish's
+    # own name doesn't already say. "Pineapple Salsa has pineapple" is
+    # noise; "Pineapple Salsa" plus the person is the whole fact.
+    term = terms[0] if terms else ""
+    has = f"{subject} has {term}" if term and term.lower() not in meal.lower() else subject
+    if member:
+        tail = (
+            f"which {member} is allergic to"
+            if _ALLERGY_LABEL_RE.search(c.get("restriction") or "")
+            else f"which {member} can’t have"
+        )
+    else:
+        tail = "which you’ve asked me to avoid"
+    return f"{has}, {tail}."
+
+
+def _settle(conflicts: list[dict]) -> dict | None:
+    """
+    The hard clash the draft has to settle, or None when there isn't one.
+
+    `count` is in MEALS, same as _conflicts_note counts them: one dish on
+    five nights is one thing to settle, and one dish tripping two facts is
+    also one. Above one meal the card falls back to _conflicts_note's own
+    wording rather than inventing a second multi-clash sentence — and
+    `meal`/`date` still name the FIRST one, because "Swap it" has to land
+    somewhere and the earliest clash is the one the household meets first.
+    """
+    hard = [c for c in conflicts if c["severity"] == "hard"]
+    if not hard:
+        return None
+    hard = sorted(hard, key=lambda c: (c.get("date") or "", c["meal"]))
+    meals: list[str] = []
+    for c in hard:
+        if c["meal"] not in meals:
+            meals.append(c["meal"])
+    first = hard[0]
+    return {
+        "note": _clash_sentence(first) if len(meals) == 1 else _conflicts_note(hard),
+        "meal": first["meal"],
+        "date": first.get("date"),
+        "member": first["member"],
+        "count": len(meals),
+    }
+
+
+def _soft_note(conflicts: list[dict]) -> str | None:
+    """
+    "Vineeth isn't keen on Thursday's Thai Green Curry." — the one quiet line
+    under the week card. A taste veto is a preference, so it never gets a
+    card and never gates approval; it is said once, plainly, and left there.
+
+    Above one it stops naming names: three sentences about who dislikes what
+    is a list, and a list of preferences under a week nobody has to change is
+    exactly the chrome this screen's redesign removed.
+    """
+    soft = [c for c in conflicts if c["severity"] == "soft" and c["member"]]
+    if not soft:
+        return None
+    soft = sorted(soft, key=lambda c: (c.get("date") or "", c["meal"]))
+    seen = {(c["member"], c["date"], c["meal"]) for c in soft}
+    if len(seen) == 1:
+        c = soft[0]
+        when = _weekday(c.get("date"))
+        dish = f"{when}’s {c['meal']}" if when else c["meal"]
+        return f"{c['member']} isn’t keen on {dish}."
+    n = len({(c["date"], c["meal"]) for c in soft})
+    subject = _spell(n)
+    return (
+        f"{subject[0].upper()}{subject[1:]} meals have somebody at the table "
+        "who isn’t keen."
+    )
+
+
 def conflicts_note_after_approval(conflicts: list[dict]) -> str | None:
     """
     The same warning, worded for a week that has already been approved.
@@ -659,11 +777,17 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
 
     Returns `conflicts` (each with meal/member/restriction/severity/source/
     matched/date/component_category) and `note` — a single ready-to-show
-    sentence for the review band, or None when there is nothing to warn about.
+    sentence, or None when there is nothing to warn about — plus the two
+    pieces the Meals draft renders in different places: `settle` (the hard
+    clash's card: note/meal/date/member/count, or None) and `soft_note` (the
+    one quiet line about a taste veto, or None).
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
-        return {"weekly_plan_id": None, "conflicts": [], "note": None}
+        return {
+            "weekly_plan_id": None, "conflicts": [], "note": None,
+            "settle": None, "soft_note": None,
+        }
 
     # Computed whatever the household has (or hasn't) written down to
     # avoid: a per-person taste veto is a different question from an
@@ -684,6 +808,8 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
             # Only ever about the hard ones (see _conflicts_note), and a
             # taste veto is never hard.
             "note": None,
+            "settle": None,
+            "soft_note": _soft_note(taste_conflicts),
         }
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
@@ -741,6 +867,11 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         "weekly_plan_id": plan["weekly_plan_id"],
         "conflicts": conflicts,
         "note": _conflicts_note(conflicts),
+        # The two halves the Meals draft renders separately (flows 3): a
+        # hard clash is a card above the week with two ways out, a soft one
+        # is a single line under it.
+        "settle": _settle(conflicts),
+        "soft_note": _soft_note(conflicts),
     }
 
 
