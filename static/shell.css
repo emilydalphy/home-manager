@@ -3528,9 +3528,9 @@ html, body {
    true" (design system §1) so it doesn't read as one more store option. */
 .gro-pill-have { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }
 .gro-pill-have:hover { border-color: var(--celadon-edge); }
-/* Same sand treatment as the To buy ⋯ menu's "Somewhere else" (.gro-m-else)
-   — a neutral secondary action, not a store choice and not a "settled,
-   already true" state like .gro-pill-have. */
+/* A neutral secondary action — not a store choice, and not a "settled,
+   already true" state like .gro-pill-have. (It used to share this sand with
+   the per-row ⋯ menu's "Somewhere else"; that menu is gone.) */
 .gro-pill-else { background: var(--sand); color: var(--ink-secondary); }
 .gro-pill-else:hover { border-color: var(--hairline-strong); }
 .gro-linkbtn {
@@ -3652,6 +3652,7 @@ html, body {
    What didn't make it into the cart, two answers each, and the trip's own
    count. The two answers are equal weight on purpose — neither "couldn't
    find it" nor "getting it somewhere else" is the expected one. */
+.gro-wrap-list { padding-bottom: 6px; }
 .gro-wrap-row {
   display: flex;
   align-items: center;
@@ -4028,7 +4029,7 @@ html, body {
   gap: 6px;
 }
 /* A class rule that sets `display` outranks the UA's [hidden] rule — the
-   same guard .gro-seg[hidden] and .dinner-hero[hidden] already carry, for
+   same guard .dinner-hero[hidden] already carries, for
    the same reason. */
 .meals-seg[hidden] { display: none; }
 #week-cook-view[hidden], #week-plan-view[hidden] { display: none; }
