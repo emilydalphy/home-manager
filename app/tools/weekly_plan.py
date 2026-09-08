@@ -3306,7 +3306,36 @@ def swap_meal_in_plan(
         reingested = _reingest_unlinked_entries(weekly_plan_id)
         result["reingested_groceries_added"] = reingested["groceries_added"]
         result["reingested_already_have_skipped"] = reingested["already_have_skipped"]
+    # The same shared verdict generation is held to (see
+    # taste_verdict.dish_verdict), for the dish CHAT just picked and the
+    # people actually eating that night. Reported, never enforced: a swap
+    # the household asked for by name still happens. It's here rather than
+    # left to the model's own memory because chat is the one place a dish
+    # gets chosen with no candidate list in front of it — and because "not
+    # on Thursday, Vineeth's home" is a thing to say back in the same
+    # breath, not after the fact.
+    verdict = _taste_verdict_for_slot(new_meal, meal_date, slot)
+    if verdict:
+        result["taste_verdict"] = verdict
     return result
+
+
+def _taste_verdict_for_slot(meal: str, meal_date: str, slot: str) -> dict | None:
+    """
+    dish_verdict for one planned slot, or None when there's nothing worth
+    saying (no per-person feedback on this dish, or it couldn't be
+    computed). Never raises — a swap must not fail over an advisory.
+    """
+    from . import attendance as _attendance
+    from . import taste_verdict as _taste_verdict
+
+    try:
+        eaters = _attendance.get_slot_attendance(meal_date, slot)["present_names"]
+        verdict = _taste_verdict.dish_verdict(meal, eaters)
+        return verdict if verdict["verdict"] != _taste_verdict.NEUTRAL else None
+    except Exception:
+        logger.exception("Taste verdict failed for %s on %s %s", meal, meal_date, slot)
+        return None
 
 
 def swap_component_in_plan(

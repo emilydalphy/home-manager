@@ -1527,3 +1527,15 @@ visual/screen-reader verification of the whole app is still an open gap.
    urgent — good candidates for "what should we work on next" rather than
    anything blocking. Note #15 (bare "Loading…" states) is now more visible
    next to copy written to `VOICE.md`.
+
+### 2026-09-08 — Taste: one hater vetoes a shared night; a solo night can overrule
+
+Emily's rule: a dish is a shared verdict by default — if anyone eating that night
+has marked it disliked, it is not served that night. If one person loved it and
+another disliked it, it may be suggested on a night only the lover eats.
+`app/tools/taste_verdict.py` computes the verdict per slot against that slot's
+eaters (attendance-aware); `_generate_weekly_plan` hands the planner compact
+verdict lines only for dishes with per-person feedback; `check_plan_conflicts`
+adds a SOFT `member_taste` conflict when a plan slips (never a hard block, so the
+approval gate is unchanged). UI half (whose-verdict tap, solo-night flag) is a
+follow-up on the Taste UI card.
