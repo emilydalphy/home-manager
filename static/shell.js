@@ -6622,7 +6622,8 @@
   // or a step), so Cook opens it in place rather than navigating away from
   // a half-cooked week.
   function openRhythmFromCook() {
-    openKitchenSheet('memory', 'rhythm');
+    // 'tab/anchor': What we know opens Rhythm and scrolls to the prep-days block.
+    openKitchenSheet('memory', 'rhythm/prep-days');
   }
 
   // Hand this meal's ticked raw components to the prep day. One call per

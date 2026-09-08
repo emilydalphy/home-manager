@@ -542,3 +542,27 @@ def test_the_cook_view_never_touches_todays_panel():
     was written — this branch's Cook work must not have reached into it."""
     assert "function buildTodayPanel" in SHELL_JS  # still there, untouched
     assert "prep_sessions" not in SHELL_JS.split("function buildTodayPanel")[1].split("\n  function ")[0]
+
+
+def test_a_prep_cut_naming_only_stray_entries_is_dropped_not_filed_unattached():
+    """Every id was stray (the plan moved under the screen): drop the tick,
+    never file an unattached cut nobody asked for."""
+    _household()
+    tools.set_prep_days([{"weekday": "sunday", "minutes": 60}])
+    plan_id, _ids = _emilys_sunday()
+    res = tools.add_prep_cut(plan_id, SUN, "Cut up kale", [999999])
+    assert res["added"] is False and res.get("dropped") is True
+    items = [i for s_ in tools.prep_sessions_for_plan(plan_id) for i in s_["items"]]
+    assert not any("kale" in (i.get("title") or i.get("description") or "").lower() for i in items)
+
+
+def test_skipping_prep_on_someone_elses_plan_reports_no_change():
+    """The UPDATE is household-scoped; the return must not claim a write."""
+    _household()
+    beta = households.create_household("The Beta Testers", "beta-prep-passphrase")
+    tools.set_prep_days([{"weekday": "sunday", "minutes": 60}])
+    plan_id, _ids = _emilys_sunday()
+    with tools.use_household(beta):
+        res = tools.set_skip_prep_this_week(True, weekly_plan_id=plan_id)
+    assert res["changed"] is False and res["skip_prep_this_week"] is None
+    assert len(tools.prep_sessions_for_plan(plan_id)) == 1

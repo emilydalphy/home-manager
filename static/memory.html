@@ -230,9 +230,23 @@ const TAB_META = {
 // the alternative would have been a second page saying the same things.
 // An unrecognised or absent hash falls back to People exactly as before.
 const TAB_KEYS = ['people', 'taste', 'rhythm', 'stores'];
+// A hash may carry a spot inside the tab after a slash — "rhythm/prep-days"
+// opens Rhythm and scrolls to the prep-days block (the Cook tab's "tell
+// Pomona which days you prep" link lands there, not on lunch locations).
+let pendingAnchor = null;
 function openingTab() {
-  const wanted = (window.location.hash || '').replace(/^#/, '');
+  const raw = (window.location.hash || '').replace(/^#/, '');
+  const [wanted, anchor] = raw.split('/');
+  pendingAnchor = anchor ? 'wwk-' + anchor : null;
   return TAB_KEYS.includes(wanted) ? wanted : 'people';
+}
+function scrollToPendingAnchor() {
+  if (!pendingAnchor) return;
+  const id = pendingAnchor; pendingAnchor = null;
+  requestAnimationFrame(() => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
 }
 
 let activeTab = openingTab();
@@ -264,13 +278,17 @@ let pendingCookingRoleOnePerson = false;
 // tile reopened on whatever tab was last tapped inside the sheet, under a
 // header still saying "Stores".
 function showTab(tab) {
-  if (!TAB_KEYS.includes(tab) || tab === activeTab) return;
-  activeTab = tab;
+  const [key, anchor] = String(tab || '').split('/');
+  if (anchor) pendingAnchor = 'wwk-' + anchor;
+  if (!TAB_KEYS.includes(key)) return;
+  if (key === activeTab) { scrollToPendingAnchor(); return; }
+  activeTab = key;
   openEditorId = null;
   openPrefEditor = null;
   pendingCookingRoleOnePerson = false;
   paintTabStrip();
   render();
+  scrollToPendingAnchor();
 }
 window.showKitchenTab = showTab;
 
@@ -1258,6 +1276,7 @@ function paintTabStrip() {
 // startup is not enough on its own. Listening as well makes the Kitchen
 // hub's chips land on the right tab either way.
 window.addEventListener('hashchange', () => showTab(openingTab()));
+window.addEventListener('load', scrollToPendingAnchor);
 
 paintTabStrip();
 render();

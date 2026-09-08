@@ -93,13 +93,16 @@ def set_skip_prep_this_week(skip: bool = True, weekly_plan_id: int | None = None
             conn.close()
             return {"weekly_plan_id": None, "skip_prep_this_week": bool(skip)}
         weekly_plan_id = row["id"]
-    conn.execute(
+    cur = conn.execute(
         "UPDATE weekly_plans SET skip_prep_this_week = ? WHERE id = ? AND household_id = ?",
         (1 if skip else 0, weekly_plan_id, household_id()),
     )
+    changed = cur.rowcount > 0
     conn.commit()
     conn.close()
-    return {"weekly_plan_id": weekly_plan_id, "skip_prep_this_week": bool(skip)}
+    # A plan that is not this household's is left alone and says so, rather
+    # than reporting a write that never happened.
+    return {"weekly_plan_id": weekly_plan_id, "skip_prep_this_week": bool(skip) if changed else None, "changed": changed}
 
 
 def add_prep_cut(weekly_plan_id: int, prep_date: str, description: str, entry_ids: list[int] | None = None) -> dict:
@@ -147,6 +150,11 @@ def add_prep_cut(weekly_plan_id: int, prep_date: str, description: str, entry_id
     # screen that sends these is looking at one plan's cards, so a stray id
     # means the plan moved under it, not that the whole tick was wrong.
     chosen = [by_id[e] for e in dict.fromkeys(targets) if e in by_id]
+    if targets and not chosen:
+        # Every id named was stray: the plan moved under the screen. Drop
+        # the tick rather than filing an unattached cut nobody asked for.
+        conn.close()
+        return {"prep_task_id": None, "entry_id": None, "added": False, "dropped": True}
 
     created: list[dict] = []
     # No entries named at all is still a real prep-cut ("cut the onions"),
