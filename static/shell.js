@@ -971,7 +971,7 @@
   function tomorrowCardHtml(move) {
     return '<div class="shell-card tomorrow-card">' +
       '<div class="tomorrow-eyebrow">TOMORROW</div>' +
-      '<div class="tomorrow-lead">That&rsquo;s today handled. First thing tomorrow:</div>' +
+      '<div class="tomorrow-lead">That&rsquo;s today handled. Tomorrow starts with</div>' +
       '<div class="tomorrow-title">' + escapeHtml(move.title) + '</div>' +
       (move.detail ? '<div class="tomorrow-detail">' + escapeHtml(move.detail) + '</div>' : '') +
     '</div>';

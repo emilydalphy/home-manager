@@ -627,3 +627,18 @@ def test_today_still_has_no_day_rail_and_keeps_the_open_dinner_card():
 def test_chores_stay_gated_off_rather_than_being_swept_away():
     assert "var SHOW_CHORES_ON_TODAY = false;" in SHELL_JS
     assert "function renderChores(" in SHELL_JS
+
+
+def test_a_deadline_within_the_hour_takes_the_card_over_a_bigger_move():
+    """Emily, 2026-09-08: importance wins, except a deadline inside the next
+    hour wins over everything."""
+    from datetime import datetime
+    from app.tools import moves as mv
+    now = datetime(2026, 9, 7, 21, 15)
+    fridge = {"id": "fridge:1", "kind": "fridge", "done": False, "weight": 2,
+              "window_start": "2026-09-07T00:00:00", "window_end": "2026-09-07T22:00:00"}
+    cook = {"id": "cook:2", "kind": "cook", "done": False, "weight": 3,
+            "window_start": "2026-09-07T20:30:00", "window_end": "2026-09-07T23:30:00"}
+    assert mv.featured_move_id([cook, fridge], now=now) == "fridge:1"
+    # Three hours earlier the fridge move is not urgent yet, so the cook wins.
+    assert mv.featured_move_id([cook, fridge], now=datetime(2026, 9, 7, 18, 15)) == "cook:2"

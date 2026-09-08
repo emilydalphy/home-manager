@@ -1274,10 +1274,13 @@ html, body {
      material), chores keep the middle, Ask keeps the right. */
   .today-body {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr;
+    /* Two columns while SHOW_CHORES_ON_TODAY is false (2026-09-08): the
+       middle "chores" track sat empty at 245px and pushed "The rest of
+       today" narrow. When chores return, give them a track again. */
+    grid-template-columns: 1.5fr 1fr;
     grid-template-areas:
-      "needsyou chores ask"
-      "rest chores ask";
+      "needsyou ask"
+      "rest ask";
     gap: 24px;
     align-items: start;
     padding: 24px 32px 0;

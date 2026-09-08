@@ -82,6 +82,7 @@ SLOT_WINDOW_HOURS = 2
 # How far ahead a move can be and still be offered as "next up". Four hours
 # is the difference between "start the slow cooker now" and a card that
 # tells you at eight in the morning to cook dinner.
+URGENT_HOURS = 1  # a deadline this close takes the card whatever its weight (Emily, 2026-09-08)
 LOOKAHEAD_HOURS = 4
 
 # A cook needing shopping this far out is close enough that the shop is
@@ -438,7 +439,14 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     ]
     if not candidates:
         return None
-    candidates.sort(key=lambda m: (-m["weight"], m["window_start"], m["id"]))
+    # Emily, 2026-09-08: importance wins, except that a deadline inside the
+    # next hour wins over everything — the chicken that has to move to the
+    # fridge by tonight beats a cook whose window only just opened.
+    urgent_by = (now + timedelta(hours=URGENT_HOURS)).isoformat()
+    def _rank(m):
+        urgent = bool(m.get("overdue")) or m["window_end"] <= urgent_by
+        return (0 if urgent else 1, -m["weight"], m["window_start"], m["id"])
+    candidates.sort(key=_rank)
     return candidates[0]["id"]
 
 
