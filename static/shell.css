@@ -1538,49 +1538,6 @@ html, body {
      square bottom at dinner, square throughout in between) — easier to
      say per row than to fight out of a single grid's uniform gap. */
   .wg2-grid { display: flex; flex-direction: column; }
-  .wg2-row { display: flex; align-items: stretch; }
-  .wg2-spine { width: 3px; flex: 0 0 3px; border-radius: 2px; background: var(--hairline); align-self: stretch; }
-
-  .wg2-label {
-    width: 130px;
-    flex: 0 0 130px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 14px;
-    font-family: var(--font-body);
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-  }
-  .wg2-row-head .wg2-label { width: 150px; flex: 0 0 150px; }
-  .wg2-label-dinner { color: var(--ink-strong); font-weight: 800; font-size: 11px; letter-spacing: .12em; gap: 6px; }
-  .wg2-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot); flex: 0 0 auto; }
-
-  .wg2-head-cell {
-    flex: 1 1 0;
-    min-height: 60px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-  }
-  .wg2-head-day {
-    font-family: var(--font-body);
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--ink-inactive);
-  }
-  .wg2-head-date { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--ink-secondary); }
-  .wg2-head-cell.is-today { background: var(--spruce); border-radius: 12px 12px 0 0; }
-  .wg2-head-cell.is-today .wg2-head-day { color: var(--apricot-light); }
-  .wg2-head-cell.is-today .wg2-head-date { color: var(--ivory-ink); font-weight: 800; }
-
   /* Breakfast/lunch: floating soft tiles, quiet on purpose — the dinner row
      below is the one this screen leads with. */
   .wg2-tile {
@@ -1596,22 +1553,6 @@ html, body {
     gap: 4px;
     min-height: 46px;
   }
-  .wg2-tile-lunch { min-height: 54px; }
-  .wg2-tile-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .wg2-tile-name {
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 13.5px;
-    line-height: 1.3;
-    color: var(--ink);
-  }
-  .wg2-tile-meta { font-family: var(--font-body); font-size: 11px; font-weight: 700; color: var(--apricot-label); flex: 0 0 auto; }
-  .wg2-tile-away, .wg2-tile-blank { font-style: italic; font-weight: 400; color: var(--ink-done); }
-  .wg2-tile.is-today { margin: 0 3px; border-radius: 0; background: rgba(27, 51, 40, .055); }
-  .wg2-tile-open, .wg2-tile-empty { cursor: pointer; }
-  .wg2-tile-open:hover, .wg2-tile-empty:hover { background: var(--sand); }
-  .wg2-tile.is-today.wg2-tile-open:hover, .wg2-tile.is-today.wg2-tile-empty:hover { background: rgba(27, 51, 40, .09); }
-
   /* The per-meal "Why this?" tap-to-reveal — stored reasoning stays out of
      the cell until asked for, same pattern as Cook's .cook-why. */
   .wg2-why {
@@ -1634,17 +1575,6 @@ html, body {
      but nothing tappable is under 44x44px — same invisible-hitbox trick
      .cook-attn-btn already uses. */
   .wg2-why::after { content: ''; position: absolute; inset: -15px -8px; }
-  .wg2-why svg { width: 11px; height: 11px; flex: 0 0 auto; }
-  .wg2-why-text {
-    margin: 2px 0 0;
-    font-family: var(--font-body);
-    font-style: italic;
-    font-size: 12px;
-    line-height: 1.35;
-    color: var(--ink-secondary);
-  }
-  .wg2-why-text[hidden] { display: none; }
-
   /* Dinner: the dominant row — it's the starred meal. Bigger tile, a spruce
      accent border standing in for the hero it echoes. */
   .wg2-dinner-tile {
@@ -1661,38 +1591,6 @@ html, body {
     gap: 8px;
     min-height: 108px;
   }
-  .wg2-dinner-tile.is-today { margin: 0 3px 6px; border-radius: 0 0 16px 16px; background: rgba(27, 51, 40, .07); }
-  .wg2-dinner-tile.wg2-tile-open, .wg2-dinner-tile.wg2-tile-empty { cursor: pointer; }
-  .wg2-dinner-tile.wg2-tile-open:hover, .wg2-dinner-tile.wg2-tile-empty:hover { background: var(--sand); }
-  .wg2-dinner-tile.is-today.wg2-tile-open:hover, .wg2-dinner-tile.is-today.wg2-tile-empty:hover { background: rgba(27, 51, 40, .1); }
-  .wg2-dinner-name {
-    font-family: var(--font-display);
-    font-size: 15.5px;
-    font-weight: 700;
-    letter-spacing: -.015em;
-    line-height: 1.28;
-    /* --ink-strong, not --spruce directly: this text sits on --surface,
-       and spruce itself becomes a dark panel fill in dark mode (theme.css)
-       — --ink-strong is the token that swaps to a legible ink there. */
-    color: var(--ink-strong);
-  }
-  .wg2-dinner-away { font-family: var(--font-body); font-style: italic; font-size: 14px; color: var(--ink-done); }
-  .wg2-dinner-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .wg2-dinner-chip {
-    height: 22px;
-    padding: 0 9px;
-    border-radius: 8px;
-    background: var(--sand);
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    color: var(--apricot-label);
-  }
-
   #week-header { display: none; }
 }
 
@@ -5134,17 +5032,6 @@ span.cook-week-name { cursor: default; }
   #ask-scrim { background: var(--scrim); }
   #notif-scrim { background: var(--scrim); }
   #ask-sheet { box-shadow: var(--shadow-sheet); }
-
-  /* --- Washes tuned for a light ground ---
-     A spruce tint marks today's joined column on the week grid. On a dark
-     ground a dark tint is invisible; the same idea inverts to a light one. */
-  .wg2-tile.is-today,
-  .wg2-dinner-tile.is-today { background: rgba(246, 238, 225, .07); }
-  .wg2-tile.is-today.wg2-tile-open:hover,
-  .wg2-tile.is-today.wg2-tile-empty:hover,
-  .wg2-dinner-tile.is-today.wg2-tile-open:hover,
-  .wg2-dinner-tile.is-today.wg2-tile-empty:hover { background: rgba(246, 238, 225, .12); }
-
   /* --- Accent fills whose ink flips ---
      --urgent becomes a LIGHT accent on dark (see theme.css), so the ivory
      text these carried has to become --on-accent-ink with it. */
@@ -5729,3 +5616,5 @@ span.cook-week-name { cursor: default; }
   #week-steps > .wk-acts { padding: 4px 32px 0; }
   .wk-back { margin: 12px 24px 0; }
 }
+
+.wk-foot-solo { justify-content: flex-end; }

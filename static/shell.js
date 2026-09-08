@@ -3834,7 +3834,11 @@
     // #week-plan-row by renderPlanWeekEntry after this lands.
     if (state === 'none') {
       return weekStepHeadHtml(data, days) +
-        '<div id="week-plan-row"></div>';
+        '<div id="week-plan-row"></div>' +
+        // Setup and the other rare actions stay one tap away here too.
+        '<div class="wk-foot wk-foot-solo">' +
+          '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
+        '</div>';
     }
     var dayCount = data.day_count || days.length || 7;
     return weekStepHeadHtml(data, days) +
@@ -3891,6 +3895,10 @@
         ? 'made ahead ' + when
         : 'leftovers from ' + when);
     }
+    // A reheat the planner wrote in words ("Leftovers from last night")
+    // has no chain to point at, but it is still not a cook: say so rather
+    // than showing a cook time beside a Mark eaten button.
+    if (entry && entry.source === 'leftovers') return label + ' · leftovers';
     var times = (weekState.data && weekState.data.slot_times) || {};
     return times[slot] ? label + ' · ' + times[slot] : label;
   }
