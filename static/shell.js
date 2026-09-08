@@ -104,12 +104,45 @@
   // untouched — flipping this back to true is the whole reversal.
   var SHOW_CHORES_ON_TODAY = false;
 
+  // The notifications bell and its feed left the app with the Today
+  // redesign (Emily, 2026-09-08). Today is a timeline of moves now, and
+  // everything time-bound the feed used to carry — a dinner to cook, a
+  // thing to take out of the freezer, a shop to do — is a move on it. A
+  // second inbox sitting beside that list is the exact thing the screen was
+  // rebuilt to remove; the feed's remaining, non-time-bound items are
+  // dropped for now rather than rehomed.
+  //
+  // Hidden behind one constant rather than deleted, the same way
+  // SHOW_CHORES_ON_TODAY above is: /api/notifications and
+  // /api/notifications/dismiss are untouched (the plan-week nudge still
+  // uses the dismiss route), loadNotifications and the panel's own code are
+  // intact, and flipping this back to true puts the button back in its old
+  // slot beside the ask bar. While false, the bell is taken out of the
+  // document and /api/notifications is never requested.
+  var SHOW_NOTIF_BELL = false;
+
   // Cook-mode hands-free voice, hidden not deleted (Emily, 2026-09-08):
   // "Let's just drop the cook mode voice for now. Just hide it, and we can
   // rebuild it later." While false: no mic button renders in Cook, no
   // SpeechRecognition/speechSynthesis session is ever created, and no mic
   // permission prompt fires. Flip to true to bring it back.
   var COOK_VOICE_ENABLED = false;
+
+  // The ask bar is shell chrome — one composer above the tab bar on all four
+  // screens (NavBlueprint §7) — so its hint is the one thing about it that
+  // can be per-screen. Today's names what Today is for now that the screen
+  // is a timeline of moves; the others keep the line the bar has always
+  // carried.
+  var ASK_HINTS = {
+    today: 'Ask me anything about today\u2026',
+    _default: 'The more you tell me, the less you\u2019ll swap\u2026'
+  };
+
+  function setAskHintForTab(key) {
+    var hint = ASK_HINTS[key] || ASK_HINTS._default;
+    var docked = document.querySelector('#ask-bar .ask-placeholder');
+    if (docked) docked.textContent = hint;
+  }
 
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
@@ -261,6 +294,7 @@
     document.querySelectorAll('.rail-row').forEach(function (el) {
       el.classList.toggle('active', el.dataset.tab === key);
     });
+    setAskHintForTab(key);
 
     var panel = panels[key];
     // Lazy-build Today's real content the first time it's shown.
@@ -332,63 +366,63 @@
   // ---------- Today ----------
   // README §4/§7: heading, needs-you band, tonight's dinner, chores,
   // grocery summary — same cards on every breakpoint, just rearranged.
-  // Mobile stacks them in DOM order (needs-you, dinner, chores+grocery).
-  // Desktop (Step 6, §7) lays the same DOM out as a CSS grid: the dinner
-  // card spans the full width on its own row, then a 1.5fr/1fr/1fr row of
-  // needs-you / chores+grocery / Ask — no JS-side breakpoint branching,
-  // `.today-body`'s grid-template-areas (shell.css) does the rearranging.
-  // The Ask column only exists (is only ever shown) at >=1024px — see
-  // "Ask sheet vs. Ask column" below for how the same conversation renders
-  // into both surfaces depending on which one exists at the moment.
+  // Mobile stacks them in DOM order (next-up, needs-you, the rest).
+  // Desktop lays the same DOM out as a CSS grid: the next-up card spans the
+  // full width on its own row, then a 1.5fr/1fr/1fr row of needs-you + the
+  // rest / chores / Ask — no JS-side breakpoint branching, `.today-body`'s
+  // grid-template-areas (shell.css) does the rearranging. The Ask column
+  // only exists (is only ever shown) at >=1024px — see "Ask sheet vs. Ask
+  // column" below for how the same conversation renders into both surfaces
+  // depending on which one exists at the moment.
+  // ---------- Today: one timeline of moves ----------
+  // Emily's approved Today design, 2026-09-08. The screen answers "what's
+  // next for us?" with two blocks and nothing else: ONE compact spruce
+  // "Next up" card carrying a single action, and "The rest of today" — a
+  // plain list of every other move, each with a round tick.
   //
-  // Judgment call: the spec's 3-column desktop row only names needs-you /
-  // chores / Ask — no mention of the grocery-summary card. Dropping it
-  // outright would lose real functionality with nothing to replace it, so
-  // it's kept stacked below Chores in that same middle column instead.
+  // Both come from one fetch, /api/today/moves (app/tools/moves.py), which
+  // ranks the day's cooks, reheats, fridge moves, prep and shopping against
+  // each other. The ranking lives on the server precisely so this screen
+  // never has to decide what matters, only how to say it — and so the rule
+  // is testable, which a shell.js rule would not be.
+  //
+  // What this replaced, and where each piece went: the tall dinner hero and
+  // its "Start cooking" (now the cook move, and the card only when it is
+  // genuinely next), the read-only "Before bed" prep tile (now prep moves),
+  // the defrost tile (now fridge moves, ticked instead of done/skipped),
+  // the grocery-count tile (now the shop move, which only appears when
+  // there is a cook close enough for it to matter) and the notifications
+  // bell (see SHOW_NOTIF_BELL). The one thing deliberately kept beside them
+  // is the open-dinner card in the needs-you band: when tonight's dinner is
+  // an unanswered question, that decision IS what's next, so it takes the
+  // card's place rather than sitting above a second one.
   async function buildTodayPanel(panel) {
     panel.innerHTML =
       '<div class="today-content">' +
-        // Pomona: the greeting, with the date as an eyebrow that runs into a
-        // hairline (InnToday). The needs-you count kept its element and its
-        // id — it is just no longer the H1, because the screen's H1 is now
-        // the greeting and the blueprint allows exactly one hero, which is
-        // the dinner panel below.
+        // The date as an eyebrow running into a hairline (InnToday), now
+        // with the week's state at the far end of the same rule — one
+        // glance says what day it is and whether there's a plan behind it.
         '<div class="today-heading">' +
           '<div class="today-datestrip">' +
             '<span class="today-date" id="today-date"></span>' +
             '<span class="today-hairline"></span>' +
+            '<span class="today-weekstate" id="today-week-state" hidden></span>' +
           '</div>' +
-          '<h1 class="today-greeting" id="today-greeting"></h1>' +
-          '<div class="today-status" id="today-h1">You&rsquo;re clear</div>' +
+          '<h1 class="today-greeting">Today</h1>' +
+          '<div class="today-progress" id="today-progress"></div>' +
         '</div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
         // .today-body is a named-area grid on desktop, and an area whose
-        // only child is display:none still leaves its row's gap behind. As
-        // a child of the flex column instead, it disappears completely when
-        // there's no offer to make. Above everything because it is an
-        // offer, not a demand — it can be read and ignored, rather than
-        // mixed in with things that genuinely need a decision today.
+        // only child is display:none still leaves its row's gap behind.
         '<div id="plan-week-nudge" class="today-area-nudge"></div>' +
-        // The hero, and the only one on this screen. A direct child of
+        // The hero, and the only one on this screen — a direct child of
         // .today-content rather than of .today-body, because it bleeds the
         // full width of the panel while everything else sits inside the
-        // 20px gutter — a grid child cannot escape its parent's padding.
-        '<div id="today-dinner-card" class="dinner-hero today-area-dinner" hidden></div>' +
+        // 20px gutter, and a grid child cannot escape its parent's padding.
+        '<div id="today-next-up" class="dinner-hero nextup-hero" hidden></div>' +
         '<div class="today-body">' +
-          // "Break the uniform card stack": a two-up pair of small tiles,
-          // then the wider attention cards, then the quiet chores list.
-          // auto-fit means the pair collapses to one full-width tile when
-          // there is no prep task, rather than leaving a lonely half-tile.
-          '<div class="today-tiles today-area-tiles">' +
-            '<button type="button" class="today-tile tile-prep" id="today-prep-tile" hidden></button>' +
-            '<div class="today-tile tile-defrost" id="today-defrost-tile" hidden></div>' +
-            '<button type="button" class="today-tile tile-grocery" id="grocery-summary-open">' +
-              '<span class="tile-icon">' + ICONS.bag + '</span>' +
-              '<span class="tile-eyebrow">Grocery run</span>' +
-              '<span class="tile-body" id="grocery-summary-sub">Loading&hellip;</span>' +
-            '</button>' +
-          '</div>' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
+          '<div id="today-rest" class="today-area-rest"></div>' +
           // SHOW_CHORES_ON_TODAY (2026-09-08): the beta is meals-only, so
           // this card is left out of the markup entirely while the flag
           // is false — not just hidden, so there's nothing for a stray
@@ -414,7 +448,7 @@
             '<div class="ask-messages" id="today-ask-messages"></div>' +
             '<div class="ask-chips" id="today-ask-chips"></div>' +
             '<form id="today-ask-composer" class="ask-composer-bar">' +
-              '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="The more you tell me, the less you&rsquo;ll swap&hellip;" autocomplete="off"></textarea>' +
+              '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="Ask me anything about today&hellip;" autocomplete="off"></textarea>' +
               '<button type="button" id="today-ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">' +
                 '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>' +
               '</button>' +
@@ -425,28 +459,16 @@
       '</div>';
 
     panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
-    panel.querySelector('#today-greeting').textContent = greetingForNow();
-
-    panel.querySelector('#grocery-summary-open').addEventListener('click', function () { activateTab('grocery', true); });
-    // The prep tile used to be read-only; there is somewhere useful for a
-    // tap to go — Cook mode, where prep is actually checked off — so it's
-    // a button now (Loop Board "core loop handoffs" item 1).
-    panel.querySelector('#today-prep-tile').addEventListener('click', function () {
-      activateTab('week', true, { mealsView: 'cook' });
-    });
 
     setupAskColumn(panel);
 
     await Promise.all([
       loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
-      loadTonightsDinner(panel),
-      loadDefrostToday(panel),
+      loadTodayMoves(panel),
       // SHOW_CHORES_ON_TODAY (2026-09-08): skip the call, not just the
-      // render — no chores card means no reason to hit
-      // /api/chores/today.
-      (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve()),
-      loadGrocerySummary(panel)
+      // render — no chores card means no reason to hit /api/chores/today.
+      (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve())
     ]);
   }
 
@@ -544,32 +566,12 @@
     return '';
   }
 
-  function greetingForNow() {
-    // The mockup greets by first name ("Good evening, Emily"). This app has
-    // no per-person identity — see CLAUDE.md's open item 4: approving a week
-    // has to *ask* which adult is present, because nothing else knows. A
-    // name here would therefore be a guess, and wrong half the time in a
-    // two-adult household, so the greeting is time-of-day only and the date
-    // eyebrow above it carries the specificity instead.
-    var h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
-
   function setTodayHeading(panel, count, isError) {
-    // Same sentence, same source, quieter place: this is the line under the
-    // greeting now rather than the H1. The count still drives the tab badge.
-    // "You're clear" is a real answer from a real count — a failed lookup
-    // isn't that, and saying it anyway would be telling someone nothing
-    // needs them when the truth is just that the app couldn't check.
-    var line = panel.querySelector('#today-h1');
-    if (line) {
-      line.textContent = isError
-        ? 'Couldn’t check just now — pull to refresh.'
-        : (count === 0 ? "You're clear" : (count === 1 ? '1 thing needs you' : count + ' things need you'));
-      line.classList.toggle('is-clear', !isError && count === 0);
-    }
+    // The needs-you count no longer has a line of its own on Today — the
+    // line under the title is "N of M done", written by renderTodayMoves —
+    // but it still drives the tab badge, which is the one place a count of
+    // unanswered questions is worth carrying. A failed lookup badges zero
+    // rather than badging a guess.
     setTodayBadge(isError ? 0 : count);
   }
 
@@ -588,31 +590,15 @@
   // ---------- Needs-you band (Step 5, README §4/§6) ----------
   // "Start with two hardcoded rules" per §9's build order: an undecided
   // dinner within 48h (with up to two quick-recipe suggestions to pick
-  // from inline) and a shop run needed before an upcoming meal. At most
-  // one card per rule for now (0-3 is the spec's headroom for later
-  // rules). "Later" on the shop-run card is a same-device, until-tomorrow-
-  // evening dismissal — there's no per-user account concept in this app to
-  // hang a server-side dismissal on, so localStorage is the reasonable
-  // judgment call rather than a wasted backend round-trip for something
-  // this ephemeral.
-  var SHOP_RUN_SNOOZE_KEY = 'hm_shop_run_snoozed_until';
-
-  function isShopRunSnoozed() {
-    try {
-      var until = Number(localStorage.getItem(SHOP_RUN_SNOOZE_KEY) || 0);
-      return Date.now() < until;
-    } catch (e) { return false; }
-  }
-
-  function snoozeShopRunUntilTomorrowEvening() {
-    try {
-      var d = new Date();
-      d.setDate(d.getDate() + 1);
-      d.setHours(18, 0, 0, 0); // "tomorrow evening" ~6pm, a reasonable stand-in for a real per-household evening time
-      localStorage.setItem(SHOP_RUN_SNOOZE_KEY, String(d.getTime()));
-    } catch (e) { /* localStorage unavailable — the card just won't stay dismissed, not fatal */ }
-  }
-
+  // from inline) and a shop run needed before an upcoming meal.
+  //
+  // The shop-run card is no longer drawn here (2026-09-08). It said the
+  // same thing as Today's own shop move — "the list still has things on it
+  // and there's a cook coming" — and two cards making one point, one of
+  // them ranked against everything else and one of them not, is exactly
+  // the pile the redesign took apart. The rule is still in
+  // /api/needs-you (other surfaces read it); Today just renders the move
+  // instead, so its localStorage "Later" snooze went with the card.
   async function loadNeedsYou(panel) {
     try {
       var res = await fetch('/api/needs-you');
@@ -676,29 +662,36 @@
         '</div>'
       );
     }
-    if (item.type === 'shop_run') {
-      var summary = item.sample_items.slice(0, 4).join(', ') + (item.count > item.sample_items.length ? ', and more' : '');
-      return (
-        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="shop_run">' +
-          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
-          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
-          '<div class="ny-summary">' + escapeHtml(item.count + (item.count === 1 ? ' item' : ' items')) + (summary ? ': ' + escapeHtml(summary) : '') + '</div>' +
-          '<div class="ny-actions">' +
-            '<button type="button" class="btn-gold ny-shop-now">Shop now</button>' +
-            '<button type="button" class="btn-sand ny-later">Later</button>' +
-          '</div>' +
-        '</div>'
-      );
-    }
     return '';
   }
 
   function renderNeedsYou(panel, items) {
-    var visible = items.filter(function (it) { return !(it.type === 'shop_run' && isShopRunSnoozed()); });
+    // Only the dinner decisions reach this band on Today now — see the
+    // note above needsYouCardHtml. Everything else /api/needs-you returns
+    // is either a move on the timeline or nothing this screen shows.
+    var visible = items.filter(function (it) {
+      return it.type === 'dinner_open' || it.type === 'dinner_decision';
+    });
     setTodayHeading(panel, visible.length);
 
     var band = panel.querySelector('#needs-you-band');
     band.innerHTML = visible.map(needsYouCardHtml).join('');
+
+    // The one card allowed to stand in for the "Next up" card (Emily,
+    // 2026-09-08): when TONIGHT's dinner is still an open question, that
+    // decision IS what's next, so the timeline steps aside rather than
+    // stacking a second card on top of it. Recorded here, acted on in
+    // renderTodayMoves — the two loads race on first build, so whichever
+    // lands second re-renders with the answer.
+    //
+    // Scoped to today's date on purpose: this band also carries "Tomorrow
+    // needs a dinner", which is a question about a different day and has no
+    // business hiding what to do in the next four hours.
+    var todayStr = todayLocalStr();
+    panel._openDinnerCard = visible.some(function (it) {
+      return (it.type === 'dinner_open' || it.type === 'dinner_decision') && it.date === todayStr;
+    });
+    if (panel._moves) renderTodayMoves(panel, panel._moves);
 
     band.querySelectorAll('[data-card-type="dinner_decision"] .ny-option').forEach(function (row) {
       row.addEventListener('click', function () {
@@ -713,16 +706,6 @@
     band.querySelectorAll('[data-card-type="dinner_open"] .ny-open-talk').forEach(function (btn) {
       btn.addEventListener('click', function () {
         openAskSheet('For ' + dayName(btn.dataset.date, { weekday: 'long' }) + '’s dinner, I’d like ');
-      });
-    });
-    band.querySelectorAll('[data-card-type="shop_run"] .ny-shop-now').forEach(function (btn) {
-      btn.addEventListener('click', function () { activateTab('grocery', true); });
-    });
-    band.querySelectorAll('[data-card-type="shop_run"] .ny-later').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        snoozeShopRunUntilTomorrowEvening();
-        var card = btn.closest('.needs-you-card');
-        dismissNeedsYouCard(panel, card, items.filter(function (it) { return it.type !== 'shop_run'; }));
       });
     });
   }
@@ -757,10 +740,10 @@
       var data = await res.json();
       showToast(dinnerPlannedToast(meal, data));
       dismissNeedsYouCard(panel, cardEl, data.items || []);
-      // The dinner card and (if it's today) the Week menu both just
+      // Today's timeline and (if it's today) the Week menu both just
       // changed — refresh what's already on screen rather than requiring
       // a manual reload, same "cascades must be visible" spirit as §6.
-      loadTonightsDinner(panel);
+      loadTodayMoves(panel);
     } catch (err) {
       console.warn('Dinner resolve failed:', err);
       alert('Could not save that pick right now — try again in a moment.');
@@ -786,7 +769,7 @@
       await res.json();
       showToast(choice + ' is on the plan.');
       await loadNeedsYou(panel);
-      loadTonightsDinner(panel);
+      loadTodayMoves(panel);
     } catch (err) {
       console.warn('Open dinner resolve failed:', err);
       alert('Could not save that pick right now — try again in a moment.');
@@ -921,266 +904,249 @@
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, holdMs || (action ? 6000 : 2200));
   }
 
-  // ---------- The hero: tonight's dinner (InnToday) ----------
-  // Same endpoint, same fields, same two actions as before — this is the
-  // Pomona presentation of them. Every chip is a real value or absent:
-  //   35 min      prep_time_minutes + cook_time_minutes
-  //   Serves 4    default_servings
-  //   accent line the plan's own `reasoning` (the 4-9 word "why")
-  // The mockup's celadon "All in the fridge" chip has no binding anywhere in
-  // this app — nothing on Today checks a recipe's ingredients against the
-  // kitchen — so it is not drawn. Same for its "on the table by a quarter
-  // past seven": there is no serve-time field, and the reasoning line is the
-  // real sentence that belongs in that Newsreader italic slot.
-  async function loadTonightsDinner(panel) {
-    var card = panel.querySelector('#today-dinner-card');
-    try {
-      var res = await fetch('/api/cooker-view');
-      if (!res.ok) throw new Error('cooker-view failed');
-      var data = await res.json();
-      renderPrepNudge(panel, data.prep_tasks || []);
-      var today = todayLocalStr();
-      var meal = (data.meals || []).filter(function (m) { return m.date === today && m.slot === 'dinner'; })[0];
-      if (!meal) {
-        // No dinner planned/plannable for tonight (or the household is on a
-        // component-based plan, which has no per-day dinner at all). The
-        // real "no plan yet, decide now" affordance is the needs-you band —
-        // Step 5. Still just doesn't show, deliberately: a spruce panel
-        // reading "nothing planned tonight" would be a flat lie to a
-        // component-based household, which has a full week and no per-day
-        // dinner rows for it to be read out of.
-        card.hidden = true;
-        return;
-      }
-      // Tonight is a reheat, not a cook (Emily, 2026-09-04): the dish was
-      // cooked on an earlier night in a batch big enough to cover this
-      // one. So the hero names what it is and where it came from, drops
-      // the timings and the flame, and offers the one thing there is to
-      // do — never "Start cooking", which would open a cook flow for a
-      // meal nobody is cooking.
-      var isReheat = !!meal.is_leftovers;
-      var minutes = (meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0);
-      var chips = '';
-      if (!isReheat && minutes) chips += '<span class="hero-chip">' + minutes + ' min</span>';
-      if (isReheat && meal.servings) {
-        chips += '<span class="hero-chip">for ' + escapeHtml(meal.servings) + '</span>';
-      } else if (!isReheat && meal.default_servings) {
-        chips += '<span class="hero-chip">Serves ' + escapeHtml(meal.default_servings) + '</span>';
-      }
-      var dish = isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner');
-      // Same priority Cook's own hero uses (cookHeroHtml's `note`): the
-      // batch note outranks the plan's reasoning, because it's the reason
-      // this card says "Serves 6" instead of the recipe's own baseline —
-      // without it the chip reads as a plain fact with nothing explaining
-      // where the extra servings came from.
-      var accent = isReheat ? (meal.reheat_note || '') : (meal.covers_note || meal.reasoning || '');
-      card.hidden = false;
-      card.innerHTML =
-        '<div class="hero-top">' +
-          '<span class="hero-badge">Tonight&rsquo;s dinner</span>' +
-          '<span class="hero-rule"></span>' +
-          (isReheat ? '' : '<span class="hero-icon">' + ICONS.flame + '</span>') +
-        '</div>' +
-        '<div class="hero-dish' + dishSizeClass(dish) + '">' + escapeHtml(dish) + '</div>' +
-        (accent ? '<div class="hero-accent">' + escapeHtml(accent) + '</div>' : '') +
-        (chips ? '<div class="hero-chips">' + chips + '</div>' : '') +
-        '<button type="button" class="hero-action" id="dinner-cook-mode">' +
-          '<span>' + escapeHtml(
-            isReheat
-              ? (meal.cooked_status === 'done' ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
-              : 'Start cooking'
-          ) + '</span>' + ICONS.arrow +
+  // ---------- The moves themselves ----------
+  // Shapes, ticks and actions for /api/today/moves. Everything below reads
+  // the payload the server already ranked; nothing here re-derives it.
+
+  // 20px of visual inside a 44px tap target (DESIGN_SYSTEM.md rule 6).
+  var TICK_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
+
+  function moveTickHtml(move) {
+    // Not every move has a tick behind it — a shop move's "done" dispatch is
+    // a no-op (moves.set_move_done's own `kind == "shop"` branch), so
+    // ticking it used to fill the circle in and have it silently snap back,
+    // with a toast that lied about it. `tickable` (from moves.py) says
+    // whether the done dispatch actually flips anything; when it doesn't,
+    // render an empty same-size spacer so the row's height (and the tick
+    // column other rows share) doesn't jump around.
+    if (!move.tickable) return '<span class="tick tick-empty" aria-hidden="true"></span>';
+    return '<button type="button" class="tick' + (move.done ? ' is-done' : '') + '" ' +
+      'data-move-tick="' + escapeHtml(move.id) + '" ' +
+      'aria-pressed="' + (move.done ? 'true' : 'false') + '" ' +
+      'aria-label="' + (move.done ? 'Put it back on the list' : 'Tick it off') + '">' +
+      '<span class="tick-box">' + TICK_ICON + '</span>' +
+    '</button>';
+  }
+
+  function nextUpCardHtml(move) {
+    var chips = move.chips || [];
+    return '<div class="hero-top">' +
+        '<span class="hero-eyebrow">NEXT UP</span>' +
+        '<span class="hero-rule"></span>' +
+        (move.time_label ? '<span class="nextup-when">' + escapeHtml(move.time_label) + '</span>' : '') +
+      '</div>' +
+      '<div class="hero-dish nextup-dish' + dishSizeClass(move.title) + '">' + escapeHtml(move.title) + '</div>' +
+      // The one Newsreader italic line on the screen (theme.css: "two lines
+      // and it becomes a serif brand") — the move's own reason, never copy
+      // written for the slot.
+      (move.reason ? '<div class="hero-accent">' + escapeHtml(move.reason) + '</div>' : '') +
+      (chips.length
+        ? '<div class="hero-chips">' + chips.map(function (c) {
+            return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
+      '<div class="nextup-foot">' +
+        '<button type="button" class="hero-action" data-move-action="' + escapeHtml(move.id) + '">' +
+          '<span>' + escapeHtml((move.action && move.action.label) || 'Do it') + '</span>' + ICONS.arrow +
         '</button>' +
-        '<button type="button" class="hero-quiet" id="dinner-swap">Swap tonight for something else</button>';
-      card.querySelector('#dinner-cook-mode').addEventListener('click', function () {
-        // A reheat has no cook flow to open, so its action does the thing
-        // itself and re-reads the card, rather than taking someone to a
-        // recipe screen that would have nothing on it.
-        if (isReheat) return markTonightEaten(panel, meal);
-        activateTab('week', true, {
-          mealsView: 'cook',
-          mealsFocus: meal.entry_id != null ? { entryId: meal.entry_id } : true
-        });
+        moveTickHtml(move) +
+      '</div>';
+  }
+
+  function moveRowHtml(move) {
+    // A done row has nothing left to open, so its text stops being a
+    // button — the tick is the only control on it, and it undoes.
+    var text =
+      '<span class="rest-row-title">' + escapeHtml(move.title) + '</span>' +
+      (move.detail ? '<span class="rest-row-detail">' + escapeHtml(move.detail) + '</span>' : '');
+    return '<div class="rest-row' + (move.done ? ' is-done' : '') + '">' +
+      (move.done
+        ? '<span class="rest-row-text">' + text + '</span>'
+        : '<button type="button" class="rest-row-text rest-row-open" data-move-action="' + escapeHtml(move.id) + '">' + text + '</button>') +
+      moveTickHtml(move) +
+    '</div>';
+  }
+
+  function tomorrowCardHtml(move) {
+    return '<div class="shell-card tomorrow-card">' +
+      '<div class="tomorrow-eyebrow">TOMORROW</div>' +
+      '<div class="tomorrow-lead">That&rsquo;s today handled. Tomorrow starts with</div>' +
+      '<div class="tomorrow-title">' + escapeHtml(move.title) + '</div>' +
+      (move.detail ? '<div class="tomorrow-detail">' + escapeHtml(move.detail) + '</div>' : '') +
+    '</div>';
+  }
+
+  var WEEK_STATE_LABELS = { set: 'WEEK SET', draft: 'DRAFT', none: 'NOTHING PLANNED' };
+
+  function renderTodayMoves(panel, data) {
+    if (!data) return;
+    panel._moves = data;
+    var moves = data.moves || [];
+
+    var badge = panel.querySelector('#today-week-state');
+    if (badge) {
+      var label = WEEK_STATE_LABELS[data.week_state || 'none'];
+      badge.textContent = label || '';
+      badge.hidden = !label;
+      badge.className = 'today-weekstate is-' + (data.week_state || 'none');
+    }
+
+    var progress = panel.querySelector('#today-progress');
+    if (progress) {
+      progress.textContent = moves.length
+        ? (data.done || 0) + ' of ' + moves.length + ' done'
+        : 'Nothing planned for today yet';
+    }
+
+    // The one exception to "the card is whatever the server ranked first"
+    // (Emily, 2026-09-08): an unanswered dinner is itself the decision, and
+    // its needs-you card is already on screen — a second card above it
+    // would be two answers to the same question.
+    var featured = null;
+    if (!panel._openDinnerCard) {
+      featured = moves.filter(function (m) { return m.id === data.featured; })[0] || null;
+    }
+
+    var nextUp = panel.querySelector('#today-next-up');
+    if (nextUp) {
+      nextUp.hidden = !featured;
+      nextUp.innerHTML = featured ? nextUpCardHtml(featured) : '';
+    }
+
+    var rest = moves.filter(function (m) { return !featured || m.id !== featured.id; });
+    var pending = rest.filter(function (m) { return !m.done; });
+    var settled = rest.filter(function (m) { return m.done; });
+
+    var restEl = panel.querySelector('#today-rest');
+    if (!restEl) return;
+    var html = '';
+    if (pending.length || settled.length) {
+      html += '<div class="shell-card rest-card">' +
+        (pending.length
+          ? '<h2 class="rest-title">The rest of today</h2>' +
+            '<div class="rest-list">' + pending.map(moveRowHtml).join('') + '</div>'
+          : '') +
+        (settled.length
+          ? '<div class="rest-done">' +
+              '<div class="rest-done-head">Done today</div>' +
+              '<div class="rest-list">' + settled.map(moveRowHtml).join('') + '</div>' +
+            '</div>'
+          : '') +
+      '</div>';
+    }
+    // Nothing left to do today. Say so, and — when there is one — name
+    // tomorrow's first move rather than leaving a blank screen.
+    if (!featured && !pending.length && !panel._openDinnerCard) {
+      html += data.tomorrow
+        ? tomorrowCardHtml(data.tomorrow)
+        : '<div class="shell-card today-empty">' +
+            (settled.length ? 'That&rsquo;s everything for today.' : 'Nothing on your list today.') +
+          '</div>';
+    }
+    restEl.innerHTML = html;
+
+    panel.querySelectorAll('[data-move-tick]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-move-tick');
+        var m = (panel._moves.moves || []).filter(function (x) { return x.id === id; })[0];
+        if (m) toggleTodayMove(panel, id, !m.done);
       });
-      card.querySelector('#dinner-swap').addEventListener('click', function () {
-        openAskSheet('Swap tonight for something faster');
+    });
+    panel.querySelectorAll('[data-move-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
+    });
+  }
+
+  function renderTodayMovesError(panel) {
+    var nextUp = panel.querySelector('#today-next-up');
+    if (nextUp) { nextUp.hidden = true; nextUp.innerHTML = ''; }
+    var progress = panel.querySelector('#today-progress');
+    // "Nothing to do" is a real answer from a real count; a failed lookup
+    // is not that, and saying it anyway would tell someone the day is clear
+    // when the truth is only that the app couldn't check.
+    if (progress) progress.textContent = 'Couldn’t check just now — pull to refresh.';
+    var restEl = panel.querySelector('#today-rest');
+    if (restEl) restEl.innerHTML = '';
+  }
+
+  async function loadTodayMoves(panel) {
+    try {
+      var res = await fetch('/api/today/moves');
+      if (!res.ok) throw new Error('today moves lookup failed');
+      renderTodayMoves(panel, await res.json());
     } catch (err) {
-      console.warn('Tonight\'s dinner lookup failed:', err);
-      card.hidden = true;
-      renderPrepNudge(panel, []);
+      console.warn('Today lookup failed:', err);
+      renderTodayMovesError(panel);
     }
   }
 
-  // Today's one action on a reheat night. Same endpoint Cook mode's
-  // check-off uses (/api/cooker/check-meal), same as the defrost tile
-  // reuses /api/cooker/check-prep rather than inventing its own — then
-  // re-read the card so it comes back showing the night as handled.
-  async function markTonightEaten(panel, meal) {
-    var btn = panel.querySelector('#dinner-cook-mode');
-    if (btn) btn.disabled = true;
-    var next = meal.cooked_status === 'done' ? 'pending' : 'done';
+  // Every other surface that changes something Today shows calls this —
+  // see refreshStaleTabsFromActions and DESIGN_SYSTEM.md §6's refresh
+  // policy ("a panel that's built once and never told to refresh goes
+  // stale silently").
+  function refreshTodayMoves() {
+    if (panels.today && panels.today.dataset.built) loadTodayMoves(panels.today);
+  }
+
+  async function toggleTodayMove(panel, moveId, done) {
+    var data = panel._moves;
+    var move = ((data && data.moves) || []).filter(function (m) { return m.id === moveId; })[0];
+    if (!move) return;
+    var was = move.done;
+    // Optimistic: the row drops into (or climbs out of) "Done today" on the
+    // tap, before the server confirms — §6, "the common case never waits".
+    move.done = done;
+    data.done = (data.moves || []).filter(function (m) { return m.done; }).length;
+    renderTodayMoves(panel, data);
     try {
-      var res = await fetch('/api/cooker/check-meal', {
+      var res = await fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: meal.entry_id, status: next })
+        body: JSON.stringify({ done: done })
       });
-      if (!res.ok) throw new Error('check-meal failed');
-      showToast(next === 'done' ? 'Marked eaten.' : 'Back to not eaten.');
-      loadTonightsDinner(panel);
+      if (!res.ok) throw new Error('move check-off failed');
+      var fresh = await res.json();
+      renderTodayMoves(panel, fresh);
+      // Only claim it worked if the server's own re-derived move agrees —
+      // a shop move (or anything else non-tickable) dispatches to nothing,
+      // so its `done` never actually moves, and the toast should not say it
+      // did. See moves.py's `tickable` note and moveTickHtml above.
+      var updated = ((fresh && fresh.moves) || []).filter(function (m) { return m.id === moveId; })[0];
+      if (updated && updated.done === done) {
+        showToast(done ? 'Ticked off.' : 'Back on the list.');
+      }
+      // The same rows are the Cook screen's check-offs — keep the two from
+      // showing different answers to the same question.
       refreshCookView();
     } catch (err) {
-      console.warn('Could not mark tonight eaten:', err);
-      if (btn) btn.disabled = false;
+      console.warn('Could not save that tick:', err);
+      move.done = was;
+      data.done = (data.moves || []).filter(function (m) { return m.done; }).length;
+      renderTodayMoves(panel, data);
       showToast('That didn’t save — try again.');
     }
   }
 
-  // ---------- The prep tile (InnToday's "Before bed" card) ----------
-  // The design asks for a prep nudge and the panel had none — but the data
-  // is real and already in hand: /api/cooker-view returns the plan's
-  // prep_tasks (tools.get_prep_schedule), which Today was fetching and
-  // discarding. Read-only, exactly like the mockup's tile: no new endpoint,
-  // and no check-off control invented for it (prep is ticked off in Cook
-  // mode, which owns that flow). Only a task dated today and still pending
-  // is shown — a task for Thursday is not a nudge on Tuesday, and a done one
-  // is not a nudge at all.
-  function renderPrepNudge(panel, tasks) {
-    var tile = panel.querySelector('#today-prep-tile');
-    if (!tile) return;
-    var today = todayLocalStr();
-    // Excludes task_type === 'defrost': that kind gets its own dedicated,
-    // interactive tile (renderDefrostToday/#today-defrost-tile) right next
-    // to this one — without this filter the same reminder showed up
-    // twice, once read-only here and once actionable there.
-    var pending = (tasks || []).filter(function (t) {
-      return t.task_date === today && t.status !== 'done' && t.task_type !== 'defrost';
-    });
-    var task = pending[0];
-    if (!task) { tile.hidden = true; tile.innerHTML = ''; return; }
-    tile.hidden = false;
-    var more = pending.length - 1;
-    tile.innerHTML =
-      '<span class="tile-icon">' + ICONS.clock + '</span>' +
-      '<span class="tile-eyebrow">Prep today</span>' +
-      '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
-      // More than one pending task today outranks naming just the first
-      // one's meal — "+N more" is the more useful footer once there's a
-      // count worth surfacing (same shape as the defrost tile's own
-      // "+N more today").
-      (more > 0
-        ? '<span class="tile-foot">+' + more + ' more today</span>'
-        : (task.related_meal ? '<span class="tile-foot">for ' + escapeHtml(task.related_meal) + '</span>' : ''));
-  }
-
-  // ---------- The defrost tile ----------
-  // Unlike the read-only prep tile just above, this one is interactive —
-  // Loop Board "First-class 'defrost' prep step" specifically asks for a
-  // one-tap done/skip right here, because a defrost decision made days
-  // before cooking has no natural moment inside Cook mode (which owns
-  // check-off for everything else prep-related) to happen in. Backed by
-  // /api/prep/defrost-today (app/tools/defrost.get_defrost_today) — pending
-  // task_type='defrost' prep_tasks due today. Marking one done/skipped
-  // reuses the existing /api/cooker/check-prep endpoint, same table as
-  // Cook mode's own prep check-off, just called from here instead.
-  async function loadDefrostToday(panel) {
-    try {
-      var res = await fetch('/api/prep/defrost-today');
-      if (!res.ok) throw new Error('defrost lookup failed');
-      var data = await res.json();
-      panel._defrostTasks = data.tasks || [];
-    } catch (err) {
-      console.warn('Defrost-today lookup failed:', err);
-      panel._defrostTasks = [];
+  function runTodayMoveAction(panel, moveId) {
+    var move = ((panel._moves && panel._moves.moves) || []).filter(function (m) { return m.id === moveId; })[0];
+    if (!move) return;
+    var target = (move.action && move.action.target) || {};
+    // A move whose action IS the tick (a reheat's "Mark eaten", a fridge
+    // move's "Done") does the thing here rather than navigating somewhere
+    // that would have nothing on it.
+    if (target.kind === 'check_meal' || target.kind === 'check_prep') {
+      return toggleTodayMove(panel, move.id, !move.done);
     }
-    renderDefrostToday(panel);
-  }
-
-  function renderDefrostToday(panel) {
-    var tile = panel.querySelector('#today-defrost-tile');
-    if (!tile) return;
-    var tasks = panel._defrostTasks || [];
-    if (!tasks.length) { tile.hidden = true; tile.innerHTML = ''; return; }
-    var task = tasks[0];
-    var more = tasks.length - 1;
-    tile.hidden = false;
-    tile.innerHTML =
-      '<span class="tile-icon">' + ICONS.clock + '</span>' +
-      '<span class="tile-eyebrow">Defrost tonight</span>' +
-      '<span class="tile-body">' + escapeHtml(task.description || '') + '</span>' +
-      (more > 0 ? '<span class="tile-foot">+' + more + ' more today</span>' : '') +
-      '<div class="tile-defrost-actions">' +
-        '<button type="button" class="tile-defrost-btn tile-defrost-done" aria-label="Done — moved to the fridge">' +
-          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' +
-          '<span>Done</span>' +
-        '</button>' +
-        '<button type="button" class="tile-defrost-btn tile-defrost-skip" aria-label="Skip this reminder">' +
-          '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
-          '<span>Skip</span>' +
-        '</button>' +
-      '</div>';
-    tile.querySelector('.tile-defrost-done').addEventListener('click', function (e) {
-      e.stopPropagation();
-      actOnDefrostTask(panel, task, 'done');
-    });
-    tile.querySelector('.tile-defrost-skip').addEventListener('click', function (e) {
-      e.stopPropagation();
-      actOnDefrostTask(panel, task, 'skipped');
-    });
-  }
-
-  async function actOnDefrostTask(panel, task, status) {
-    var tasks = panel._defrostTasks || [];
-    var idx = tasks.indexOf(task);
-    // Optimistic, same shape as toggleChore below: remove from the local
-    // list and re-render immediately (a resolved task no longer belongs
-    // in "pending, due today"), roll back on failure.
-    if (idx > -1) tasks.splice(idx, 1);
-    renderDefrostToday(panel);
-    try {
-      var res = await fetch('/api/cooker/check-prep', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prep_task_id: task.id, status: status })
+    if (target.tab === 'week') {
+      return activateTab('week', true, {
+        mealsView: target.mealsView || 'cook',
+        mealsFocus: target.mealsFocus || true
       });
-      if (!res.ok) throw new Error('defrost status update failed');
-      if (status === 'skipped') {
-        // A skip is one tap, made in passing — an Undo right on the toast
-        // is the reversible-in-the-moment shape DESIGN_SYSTEM.md's learning
-        // etiquette asks for, cheaper here than a real one: this reverts
-        // check_off_prep_step's own write back to 'pending' (the same
-        // status the row started in), which the endpoint already accepts.
-        showToast('Skipped for today.', {
-          label: 'Undo',
-          onClick: function () { undoSkipDefrostTask(panel, task); }
-        });
-      } else {
-        showToast('Moved to the fridge — nice.');
-      }
-    } catch (err) {
-      console.warn('Defrost action failed, rolling back:', err);
-      if (idx > -1) { tasks.splice(idx, 0, task); } else { tasks.push(task); }
-      renderDefrostToday(panel);
-      alert('Could not save that right now — try again in a moment.');
     }
-  }
-
-  async function undoSkipDefrostTask(panel, task) {
-    try {
-      var res = await fetch('/api/cooker/check-prep', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prep_task_id: task.id, status: 'pending' })
-      });
-      if (!res.ok) throw new Error('undo failed');
-      var tasks = panel._defrostTasks || [];
-      if (tasks.indexOf(task) === -1) tasks.unshift(task);
-      renderDefrostToday(panel);
-    } catch (err) {
-      console.warn('Undo skip failed:', err);
-      showToast('Could not undo — try again.');
-    }
+    if (target.tab) return activateTab(target.tab, true);
   }
 
   async function loadChores(panel) {
@@ -1265,23 +1231,6 @@
       console.warn('Chore toggle failed, rolling back:', err);
       chore.status = prevStatus;
       renderChores(panel, chores);
-    }
-  }
-
-  async function loadGrocerySummary(panel) {
-    var sub = panel.querySelector('#grocery-summary-sub');
-    try {
-      var res = await fetch('/api/grocery-list?status=needed');
-      if (!res.ok) throw new Error('grocery-list failed');
-      var data = await res.json();
-      var count = (data.sections || []).reduce(function (n, s) { return n + s.items.length; }, 0);
-      // README's mock subtitle includes a "needed before Thursday" clause —
-      // there's no due-date field on grocery items in this schema, so that
-      // part is left out rather than invented; the count itself is real.
-      sub.textContent = count === 0 ? 'All picked up' : (count + (count === 1 ? ' item to get' : ' items to get'));
-    } catch (err) {
-      console.warn('Grocery summary lookup failed:', err);
-      sub.textContent = 'Couldn\'t load the grocery list right now.';
     }
   }
 
@@ -4024,14 +3973,12 @@
       if (!res.ok) throw new Error('dinner resolve failed');
       var fillData = await res.json();
       showToast(dinnerPlannedToast(meal, fillData));
-      // Today's needs-you band / tonight card may cover this same date —
+      // Today's needs-you band and its timeline may cover this same date —
       // if Today has already been built this session, refresh it too so
       // the two tabs never show stale, contradictory states side by side.
       var todayPanel = panels['today'];
-      if (todayPanel && todayPanel.dataset.built) {
-        loadNeedsYou(todayPanel);
-        loadTonightsDinner(todayPanel);
-      }
+      if (todayPanel && todayPanel.dataset.built) loadNeedsYou(todayPanel);
+      refreshTodayMoves();
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Week dinner fill failed:', err);
@@ -4205,8 +4152,9 @@
     // — throwing the whole screen away, scroll position and all — because a
     // second document was the only handle the shell had on it.
     refreshGroceryPanel();
-    var todayPanel = panels['today'];
-    if (todayPanel && todayPanel.dataset.built) loadGrocerySummary(todayPanel);
+    // Today's shop move is a reading of the same list — it appears and
+    // disappears with it.
+    refreshTodayMoves();
   }
 
   // Keyed by weekly_plan_id, page-view only (no fetch, no server write) —
@@ -5854,7 +5802,7 @@
       wireCookFocusScroll(view);
     } else {
       // The hero leads — one hero per screen, same rule Today follows (its
-      // needs-you band sits below #today-dinner-card, never above).
+      // needs-you band sits below #today-next-up, never above).
       // Attention items come after it, folded by default per the
       // inventory-is-quiet policy: a count you can open, not a wall of
       // questions on the way in.
@@ -7084,14 +7032,12 @@
     }
   }
 
-  // Cooking changes what Today shows (its dinner hero and its prep tile read
-  // the same rows), so the other screens are told rather than left to go
-  // stale — the freshness policy applies to a write made here exactly as it
-  // does to one made in chat.
+  // Cooking changes what Today shows — its moves are read off the same
+  // rows — so the other screens are told rather than left to go stale; the
+  // freshness policy applies to a write made here exactly as it does to one
+  // made in chat.
   function refreshPlanSurfacesAfterCook() {
-    // One call covers both: loadTonightsDinner reads /api/cooker-view and
-    // renders the dinner hero AND the prep tile off the same response.
-    if (panels.today && panels.today.dataset.built) loadTonightsDinner(panels.today);
+    refreshTodayMoves();
   }
 
   // Live re-scale without a plan reload. Non-numeric quantities ("a pinch",
@@ -7641,11 +7587,8 @@
     // leave Cook holding a plan that no longer exists.
     if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
     if (panels.today && panels.today.dataset.built) {
-      if (clearedMealPlan) {
-        loadNeedsYou(panels.today);
-        loadTonightsDinner(panels.today);
-      }
-      loadGrocerySummary(panels.today);
+      if (clearedMealPlan) loadNeedsYou(panels.today);
+      loadTodayMoves(panels.today);
     }
     if (clearedGroceryList || clearedMealPlan) refreshGroceryPanel();
   }
@@ -8092,13 +8035,12 @@
         // tile.
         refreshKitchenPanel();
         refreshCookView();
-        // check_off_prep_step is also how a defrost task gets marked
-        // done/skipped from chat ("mark the chicken thighs done") — same
-        // table, same tool, just called from a different surface than the
-        // Today tile's own buttons. Without this, Today's defrost tile
-        // would go on showing an already-handled reminder until the next
-        // full panel rebuild.
-        if (panels.today && panels.today.dataset.built) loadDefrostToday(panels.today);
+        // check_off_prep_step is also how a fridge move gets ticked from
+        // chat ("mark the chicken thighs done") — same table, same tool,
+        // just called from a different surface than Today's own ticks.
+        // Without this, Today would go on listing an already-handled move
+        // until the next full panel rebuild.
+        refreshTodayMoves();
       } else if (!action.tab && hrefSheetKey(action.href)) {
         // Household/preferences writes carry no tab at all — they carry
         // href: '/memory' (app/main.py's _MEMORY_HREF_TOOLS), because when
@@ -8110,13 +8052,12 @@
         refreshKitchenPanel();
       } else if (action.tab === 'grocery') {
         refreshGroceryPanel();
-        // The list changing also changes Today's "Grocery run" tile, which
-        // is a count of the same items.
-        if (panels.today && panels.today.dataset.built) loadGrocerySummary(panels.today);
+        // The list changing also changes Today's shop move, which is a
+        // reading of the same items.
+        refreshTodayMoves();
       } else if (action.tab === 'today' && panels.today && panels.today.dataset.built) {
         loadNeedsYou(panels.today);
-        loadTonightsDinner(panels.today);
-        loadGrocerySummary(panels.today);
+        loadTodayMoves(panels.today);
       }
     });
   }
@@ -8538,6 +8479,13 @@
 
   function placeNotifBell() {
     if (!notifBell) return;
+    if (!SHOW_NOTIF_BELL) {
+      // Removed, not `hidden`: `.notif-bell`'s own `display: flex` beats the
+      // attribute — a lesson this element already taught once, see
+      // loadNotifications below.
+      if (notifBell.parentNode) notifBell.parentNode.removeChild(notifBell);
+      return;
+    }
     var slot = document.getElementById(bellIsDesktop.matches ? 'bell-home-rail' : 'bell-home-dock');
     if (slot && notifBell.parentNode !== slot) slot.appendChild(notifBell);
   }
@@ -8553,6 +8501,10 @@
   if (notifPanelClose) notifPanelClose.addEventListener('click', closeNotifPanel);
 
   async function loadNotifications() {
+    // SHOW_NOTIF_BELL (2026-09-08): no bell means no way into the panel, so
+    // there is nothing for this to feed — skip the request rather than
+    // fetching a feed nobody can open.
+    if (!SHOW_NOTIF_BELL) return;
     try {
       var res = await fetch('/api/notifications');
       if (!res.ok) throw new Error('failed');

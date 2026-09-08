@@ -586,6 +586,15 @@ class CheckOffPrepRequest(BaseModel):
     status: str = "done"  # pending | done | skipped
 
 
+class MoveDoneRequest(BaseModel):
+    done: bool = True
+    # Which day's timeline to hand back. Ticking a move that isn't on TODAY's
+    # timeline (tomorrow's fridge move, ticked from a "still to do" row) used
+    # to always re-render today's — this brings the POST in line with the
+    # GET, which already accepts ?date=.
+    date: str | None = None
+
+
 class FillRecipeRequest(BaseModel):
     recipe_name: str
 
@@ -1325,6 +1334,52 @@ def defrost_today():
         logger.exception("Today's-defrost lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"tasks": tasks}
+
+
+@app.get("/api/today/moves")
+def today_moves(date: str | None = None):
+    """
+    Today's timeline — every move for the day, which one is the "Next up"
+    card, the done count, the week-state badge, and tomorrow's first move
+    for the days with nothing left on them. Powers the whole Today screen
+    (Emily's approved design, 2026-09-08), replacing the four separate
+    fetches it used to make. See app/tools/moves.py for the ranking rule.
+    """
+    try:
+        payload = tools.today_moves(date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Today's-moves lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return payload
+
+
+@app.post("/api/today/moves/{move_id}/done")
+def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None):
+    """
+    Tick (or untick) one move. Dispatches to the tool that owns the state
+    behind it — check_off_meal, check_off_prep_step — rather than writing a
+    second record of "is this done?"; see moves.set_move_done. Returns the
+    refreshed timeline, the same way every /api/cooker/* write returns the
+    refreshed cooker view.
+
+    Accepts the target day as a query param (?date=, matching the GET) or in
+    the body — either defaults to today, same as GET's own `date=None`. The
+    day matters because the same tick can be made from a non-today row (a
+    "still to do" overdue fridge move, or tomorrow's card) and the response
+    should render the day the caller is actually looking at, not always
+    today's.
+    """
+    try:
+        tools.set_move_done(move_id, req.done)
+        payload = tools.today_moves(date or req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Today's-move check-off failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return payload
 
 
 @app.get("/api/week-menu")

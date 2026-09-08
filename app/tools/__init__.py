@@ -176,6 +176,16 @@ from .memory import (  # noqa: F401
     get_household_memory,
     update_fact,
 )
+# Today's one timeline of "what's next for us?" (see moves.py). Not agent
+# tools: this is a reading of state the assistant's own tools already own,
+# built for one screen, and the model has better ways to answer the same
+# question (get_cooker_view, get_defrost_today, the grocery list).
+from .moves import (  # noqa: F401
+    featured_move_id,
+    moves_for_day,
+    set_move_done,
+    today_moves,
+)
 from .notifications import (  # noqa: F401
     _dismissed_keys,
     dismiss_notification,

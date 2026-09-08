@@ -163,7 +163,21 @@ def test_end_of_cook_offers_the_next_step():
 
 
 def test_defrost_and_share_handoffs():
-    _assert_in("function undoSkipDefrostTask(", SHELL_JS, "the defrost undo", "shell.js")
+    """
+    UPDATED 2026-09-08 (flows-1-today-next-up), deliberately, per this
+    file's own instruction at the top: `undoSkipDefrostTask` — the undo on
+    Today's standalone defrost tile — is gone because the tile is gone.
+    Emily's approved Today redesign replaced every separate card on that
+    screen with one timeline of moves, so a defrost reminder is now a
+    "fridge move" line with a tick, and undoing it is the same tick tapped
+    again (toggleTodayMove, which posts done:false). The reversibility this
+    assertion was guarding is still there — it just isn't a toast action on
+    a tile any more, so the marker moved rather than the behaviour being
+    dropped.
+    """
+    _assert_in("function toggleTodayMove(", SHELL_JS, "the move tick (and its undo)", "shell.js")
+    _assert_in("data-move-tick", SHELL_JS, "the tick control", "shell.js")
+    _assert_in(".tick.is-done", SHELL_CSS, "the filled tick style", "shell.css")
     _assert_in(
         "Link copied. Anyone with it sees this week’s meals, nothing else.",
         SHELL_JS,

@@ -306,6 +306,42 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — Today is a ranked timeline of moves, not a stack of
+  cards. Branch `flows-1-today-next-up`.** Emily's approved design: the
+  screen answers "what's next for us?" with exactly two blocks — one
+  compact spruce **Next up** card carrying a single action, and **The rest
+  of today**, a list of every other move with a round tick, done items
+  fading into a "Done today" group at the bottom. New `app/tools/moves.py`
+  is where that lives: `moves_for_day(date, now=None)` turns the day's
+  cooks, reheats (a cooker-view card with `is_leftovers`), fridge moves
+  (`task_type='defrost'`), other prep and a shop run into one shape with a
+  window and a weight, and `today_moves()` ranks them — **open now or
+  within 4h, highest weight first, then earliest `window_start`**, with
+  reheats never featured (Emily: made-ahead food "is a line, never the
+  card"). Two endpoints, `GET /api/today/moves` and
+  `POST /api/today/moves/{id}/done`. Three things about it worth knowing
+  before changing it: (1) there is **no moves table** — `done` is derived
+  from `cooked_status`/`prep_tasks.status` and a tick dispatches to
+  `check_off_meal`/`check_off_prep_step`, so Today and Cook cannot
+  disagree; (2) the shop move's window deliberately opens at **00:00**,
+  which is what makes it beat the dinner it is for on the equal-weight
+  tie-break, and it is never "done" — it stops existing when the list
+  empties; (3) dinner's hour comes from the `dinner_window` rhythm fact
+  through `defrost._DINNER_CLOCK_BY_WINDOW` rather than a second copy of
+  that mapping. Removed from Today, all in `static/shell.js`: the tall
+  dinner hero, the "Before bed" prep tile, the defrost tile, the
+  grocery-count tile, and the needs-you band's `shop_run` card (it said
+  the same thing as the shop move — the last of the duplication the
+  redesign existed to remove). The open-dinner needs-you card stays and is
+  the one card allowed to stand in for Next up, scoped to **tonight's**
+  date so "Tomorrow needs a dinner" cannot hide what to do in the next
+  four hours. The notifications bell is hidden behind `SHOW_NOTIF_BELL`
+  in shell.js — same pattern as `SHOW_CHORES_ON_TODAY`, routes and panel
+  code untouched, one line to reverse; its time-bound contents are moves
+  now and the rest is dropped for now. A prep-session source is a `TODO`
+  in moves.py: nothing on `main` reports one yet. Left out honestly:
+  `moves_for_day` reads the **current** plan, so a tomorrow that belongs
+  to a different plan comes back empty rather than wrong.
 - **2026-09-08 — A merge resolved shell.js by taking one side whole, and
   a day of front-end work vanished.** `2d69951` ("Merge custom-date-range",
   2026-09-06, a different session) hit a conflict in `static/shell.js` and
