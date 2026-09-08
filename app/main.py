@@ -2005,6 +2005,73 @@ def confirm_week_defrost(week_start: str, req: DefrostConfirmRequest):
     return {"weekly_plan_id": plan_id, "created": result["created"], "notes": result["notes"]}
 
 
+class CookAheadChoiceRequest(BaseModel):
+    """One repeated dish's answer: the day that cooks, and the later days
+    that batch covers. An empty `covered_entry_ids` is "leave this one
+    alone" — set_cook_ahead reads it as "cook each on its own," which for
+    a dish with no chain yet is a no-op, exactly as intended."""
+    source_entry_id: int
+    covered_entry_ids: list[int] = []
+
+
+class WeekCookAheadConfirmRequest(BaseModel):
+    # Empty list is a real, complete answer ("Cook each on its own") — see
+    # confirm_week_cook_ahead below.
+    choices: list[CookAheadChoiceRequest] = []
+
+
+@app.get("/api/week/{week_start}/cook-ahead-items")
+def week_cook_ahead_items(week_start: str):
+    """
+    Every dish this plan repeats in the same slot on two or more days with
+    no chain on it yet — the approval-time cook-ahead card's blocks (Loop
+    Board "Cook ahead: ask at approval", Emily 2026-09-08). Read-only, and
+    computed from cook_ahead_options like the Cook card's own chips, so
+    the two surfaces can't offer different days for the same dish.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        items = tools.cook_ahead_repeats(plan_id)
+    except Exception as e:
+        logger.exception("Cook-ahead repeat lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"weekly_plan_id": plan_id, "items": items}
+
+
+@app.post("/api/week/{week_start}/cook-ahead-confirm")
+def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
+    """
+    The household's answer to the cook-ahead ask card — one choice per
+    repeated dish, applied with the same set_cook_ahead the Cook card
+    writes through.
+
+    Deliberately NOT all-or-nothing. Each block on the card is its own
+    question about its own dish, so one refusal (a day claimed by another
+    batch in the seconds since the card was drawn) must not throw away the
+    two answers either side of it: refusals come back in `refused` with
+    the sentence to show, the rest are written, and the card is marked
+    asked either way. An empty `choices` list ("Cook each on its own")
+    answers the question just as completely as ticking days does, so it
+    marks asked too — re-asking stays available from the Cook view's own
+    "Cooking ahead?" link, which doesn't depend on this column.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    applied: list[dict] = []
+    refused: list[dict] = []
+    try:
+        for choice in req.choices:
+            result = tools.set_cook_ahead(choice.source_entry_id, choice.covered_entry_ids)
+            if isinstance(result, str):
+                refused.append({"source_entry_id": choice.source_entry_id, "note": result})
+            else:
+                applied.append(result)
+        tools.mark_cook_ahead_asked(plan_id)
+    except Exception as e:
+        logger.exception("Cook-ahead confirmation failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"weekly_plan_id": plan_id, "applied": applied, "refused": refused}
+
+
 @app.get("/api/reset/preview")
 def reset_preview():
     """

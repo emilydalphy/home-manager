@@ -316,6 +316,16 @@ _MIGRATIONS = [
     # only what gates the automatic card, not a ceiling on how many times
     # the question can be answered.
     ("weekly_plans", "defrost_asked_at", "TEXT"),
+    # Loop Board "Cook ahead: ask at approval" (Emily, 2026-09-08, item 8):
+    # the same question the Cook card's chips ask, asked once for the whole
+    # week at the moment it's approved — see tools.cook_ahead
+    # .cook_ahead_repeats / mark_cook_ahead_asked and the renderWeekApproval
+    # card in shell.js. NULL means "never answered or dismissed"; set the
+    # moment the household answers, whether that answer is "cook ahead for
+    # these" or "cook each on its own". The Cook view's "Cooking ahead?"
+    # link reopens the card without touching this column, exactly as the
+    # freezer check's own re-ask does — this gates the AUTOMATIC card only.
+    ("weekly_plans", "cook_ahead_asked_at", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

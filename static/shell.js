@@ -4082,6 +4082,183 @@
     else loadWeekMenu(panel);
   }
 
+  // ---------- Cook ahead, asked once for the whole week ----------
+  // Emily, 2026-09-08 (item 8): ask at approval too, not only on the Cook
+  // card, and no cap on days. The Cook card's picker asks one card at a
+  // time, so a week of the same breakfast only meets the question five
+  // cards in; the receipt is where the shape of the week is actually
+  // visible. Same state shape and same reasoning as defrostAskState just
+  // above (page-view only, `items` null until fetched, `forceShow` the
+  // one-shot override the Cook view's link sets) — `picks` is which later
+  // days are ticked, keyed source entry_id -> covered entry_id. Nothing
+  // starts ticked: cooking ahead is a choice, not a default.
+  var cookAheadAskState = { planId: null, items: null, picks: {}, forceShow: false };
+
+  function cookAheadAskPicks(item) {
+    var picks = cookAheadAskState.picks[item.first.entry_id];
+    if (!picks) picks = cookAheadAskState.picks[item.first.entry_id] = {};
+    return picks;
+  }
+
+  function cookAheadAskBlockHtml(item) {
+    var later = item.later || [];
+    var picks = cookAheadAskPicks(item);
+    var ticked = later.filter(function (d) { return !!picks[d.entry_id]; });
+    // The live arithmetic, same as the Cook card's: this day plus every
+    // ticked one, and the people sitting down to all of them. Eaters can be
+    // 0 for a household with nobody on record, and then the line just says
+    // how many days — still true.
+    var count = ticked.length + 1;
+    var eaters = item.first.eaters || 0;
+    if (eaters) ticked.forEach(function (d) { eaters += d.eaters || 0; });
+    var total = later.length + 1;
+    return '<div class="ca-ask-block">' +
+      '<div class="ca-ask-line">' +
+        escapeHtml(item.dish + ' is on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?') +
+      '</div>' +
+      '<div class="ca-ask-days">' +
+        later.map(function (d) {
+          var on = !!picks[d.entry_id];
+          return '<button type="button" class="ca-ask-day' + (on ? ' is-on' : '') + '" ' +
+            'data-ca-source="' + item.first.entry_id + '" data-ca-day="' + d.entry_id + '" ' +
+            'aria-pressed="' + on + '">' + escapeHtml(dayNameShort(d.date)) + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="ca-ask-count">' +
+        escapeHtml('Makes ' + count + ' ' + cookSlotWord(item.slot, count) + (eaters ? ' · for ' + eaters : '')) +
+      '</div>' +
+    '</div>';
+  }
+
+  function cookAheadAskCardHtml() {
+    var items = cookAheadAskState.items || [];
+    return (
+      '<div class="shell-card plan-nudge-card cook-ahead-ask-card" id="cook-ahead-ask-card">' +
+        '<div class="plan-nudge-top">' +
+          '<span class="plan-nudge-eyebrow">COOK AHEAD</span>' +
+        '</div>' +
+        '<div class="plan-nudge-title">One batch, several days?</div>' +
+        '<div class="plan-nudge-body">Tick the days a batch should cover and they become one cook.</div>' +
+        items.map(cookAheadAskBlockHtml).join('') +
+        // One answer for the whole card, and no second apricot: the
+        // receipt above already spent this screen's one apricot primary on
+        // "Take me to the list" (Rule 5), and .ny-actions .btn-gold is
+        // spruce here for exactly that reason.
+        '<div class="ny-actions">' +
+          '<button type="button" class="btn-gold" id="cook-ahead-ask-confirm">Cook ahead for these</button>' +
+          '<button type="button" class="btn-sand" id="cook-ahead-ask-none">Cook each on its own</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function wireCookAheadAskCard(row, panel, data) {
+    var card = row.querySelector('#cook-ahead-ask-card');
+    if (!card) return;
+    card.querySelectorAll('[data-ca-day]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var picks = cookAheadAskState.picks[chip.getAttribute('data-ca-source')] ||
+          (cookAheadAskState.picks[chip.getAttribute('data-ca-source')] = {});
+        var dayId = chip.getAttribute('data-ca-day');
+        if (picks[dayId]) delete picks[dayId]; else picks[dayId] = true;
+        // Re-render rather than toggling in place: the count line under
+        // this block has to change with the chip, and it is the whole
+        // point of ticking one.
+        renderWeekApproval(panel, data);
+      });
+    });
+    var confirmBtn = card.querySelector('#cook-ahead-ask-confirm');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function () {
+        var choices = [];
+        (cookAheadAskState.items || []).forEach(function (item) {
+          var picks = cookAheadAskState.picks[item.first.entry_id] || {};
+          var covered = (item.later || [])
+            .filter(function (d) { return !!picks[d.entry_id]; })
+            .map(function (d) { return d.entry_id; });
+          // A dish nobody ticked is left alone entirely — sending it with
+          // no days would be a write that says nothing.
+          if (covered.length) {
+            choices.push({ source_entry_id: item.first.entry_id, covered_entry_ids: covered });
+          }
+        });
+        submitCookAheadAsk(panel, data, choices);
+      });
+    }
+    var noneBtn = card.querySelector('#cook-ahead-ask-none');
+    if (noneBtn) noneBtn.addEventListener('click', function () { submitCookAheadAsk(panel, data, []); });
+  }
+
+  // Fetched once per plan and then cached, exactly as the defrost items
+  // are — switching tabs and back must not refetch (nav rules: "nothing
+  // reloads"). Re-renders the approval row once the answer arrives, since
+  // the row already painted without the card while this was in flight.
+  async function ensureCookAheadAskItems(panel, data) {
+    if (!data.weekly_plan_id) return;
+    if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) return;
+    cookAheadAskState.planId = data.weekly_plan_id;
+    cookAheadAskState.items = null;
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/cook-ahead-items');
+      if (!res.ok) throw new Error('cook-ahead items lookup failed');
+      var body = await res.json();
+      if (cookAheadAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
+      cookAheadAskState.items = body.items || [];
+      renderWeekApproval(panel, data);
+    } catch (err) {
+      console.warn('Cook-ahead item lookup failed:', err);
+      if (cookAheadAskState.planId === data.weekly_plan_id) cookAheadAskState.items = [];
+    }
+  }
+
+  async function submitCookAheadAsk(panel, data, choices) {
+    var card = panel.querySelector('#cook-ahead-ask-card');
+    var buttons = card ? card.querySelectorAll('button') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/cook-ahead-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ choices: choices }),
+      });
+      if (!res.ok) throw new Error('cook-ahead confirm failed');
+      var body = await res.json();
+      cookAheadAskState.items = null;
+      cookAheadAskState.picks = {};
+      var refused = (body.refused || []);
+      var applied = (body.applied || []);
+      if (refused.length) {
+        // The refusal already IS the fact plus its way out (see
+        // set_cook_ahead), so it's shown as-is and held long enough to read.
+        showToast(refused[0].note, null, 9000);
+      } else if (applied.length) {
+        showToast('Got it — one batch covers those days now.');
+      }
+      await loadWeekMenu(panel); // refetches cook_ahead_asked_at so the card hides itself
+      loadCook(); // the Cook view, if it's built, now has fewer cooks and some made-ahead days
+    } catch (err) {
+      console.warn('Cook-ahead confirmation failed:', err);
+      buttons.forEach(function (b) { b.disabled = false; });
+      alert('Could not save that right now — try again in a moment.');
+    }
+  }
+
+  // The Cook view's "Cooking ahead?" re-ask (see cookAheadAskLinkHtml),
+  // mirroring openDefrostAskFromCook: lands on Meals' Plan state where the
+  // card lives and forces it open even once this plan has an answer on
+  // file. Re-asking never resets cook_ahead_asked_at — that column only
+  // gates the automatic card.
+  function openCookAheadAskFromCook() {
+    cookAheadAskState.items = null;
+    cookAheadAskState.picks = {};
+    cookAheadAskState.forceShow = true;
+    activateTab('week', true, { mealsView: 'plan' });
+    var panel = panels['week'];
+    if (!panel) return;
+    if (weekState.data) renderWeekApproval(panel, weekState.data);
+    else loadWeekMenu(panel);
+  }
+
   function renderWeekApproval(panel, data) {
     var row = panel.querySelector('#week-approve-row');
     if (!row) return;
@@ -4133,6 +4310,21 @@
         }
       }
 
+      // The cook-ahead ask, directly under the freezer check — the same
+      // once-per-plan shape (cook_ahead_asked_at gates it, forceShow is
+      // the Cook view's one-shot override) and, like it, rendered only
+      // when there is actually a repeated dish to ask about.
+      var forceCookAheadShow = cookAheadAskState.forceShow;
+      cookAheadAskState.forceShow = false;
+      var cookAheadAskHtml = '';
+      if (!data.cook_ahead_asked_at || forceCookAheadShow) {
+        if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
+          if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml();
+        } else {
+          ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves
+        }
+      }
+
       row.innerHTML =
         '<div class="shell-card week-receipt-card">' +
           '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
@@ -4150,8 +4342,10 @@
           // bought is worse than a slightly long list.
           '<button type="button" class="week-reopen-btn" id="week-reopen-btn">Reopen the week</button>' +
         '</div>' +
-        defrostHtml;
+        defrostHtml +
+        cookAheadAskHtml;
       if (defrostHtml) wireDefrostAskCard(row, panel, data);
+      if (cookAheadAskHtml) wireCookAheadAskCard(row, panel, data);
       row.querySelector('#week-reopen-btn').addEventListener('click', function () { reopenWeek(panel, data); });
       row.querySelector('#week-setup-link').addEventListener('click', openMealSetup);
       var goBtn = row.querySelector('#week-receipt-go');
@@ -5290,6 +5484,7 @@
         cookHeroHtml(meals[cookState.tonightIdx], cookState.tonightIdx) +
         cookAttentionHtml() +
         cookDefrostLinkHtml() +
+        cookAheadAskLinkHtml() +
         '<div class="cook-body">' +
           cookPrepHtml(data) +
           cookRestOfWeekHtml(meals) +
@@ -5522,6 +5717,16 @@
   function cookDefrostLinkHtml() {
     return '<button type="button" class="week-reset-link week-tweak-link cook-defrost-link" ' +
       'data-cook="defrost-ask">Something in the freezer?</button>';
+  }
+
+  // The same re-ask entry point for the whole-week cook-ahead card (Loop
+  // Board "Cook ahead: ask at approval") — a household that answered "cook
+  // each on its own" at approval can change its mind mid-week, so this
+  // stays available whatever cook_ahead_asked_at says. Same quiet-text-link
+  // idiom as the freezer link it sits beside.
+  function cookAheadAskLinkHtml() {
+    return '<button type="button" class="week-reset-link week-tweak-link cook-ahead-ask-link" ' +
+      'data-cook="cook-ahead-ask">Cooking ahead?</button>';
   }
 
   // The supporting rail: the prep that feeds tonight. Two-up, so it reads as
@@ -6008,6 +6213,7 @@
     if (what === 'check-meal') return cookCheckMeal(el);
     if (what === 'check-prep') return cookCheckPrep(el);
     if (what === 'defrost-ask') return openDefrostAskFromCook();
+    if (what === 'cook-ahead-ask') return openCookAheadAskFromCook();
     if (what === 'serves') return cookStepServings(el);
     if (what === 'fill') return cookFillRecipe(el);
     if (what === 'attn-toggle') { cookState.attentionOpen = !cookState.attentionOpen; renderCook(); return; }

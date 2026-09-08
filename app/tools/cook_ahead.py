@@ -145,6 +145,82 @@ def cook_ahead_options(weekly_plan_id: int) -> dict[int, list[dict]]:
     return options
 
 
+def cook_ahead_repeats(weekly_plan_id: int) -> list[dict]:
+    """
+    The same question the Cook card's chips ask, gathered for the whole
+    week: every dish this plan repeats in the same slot on two or more
+    days with no chain on it yet.
+
+    Emily, 2026-09-08: ask at approval too, not only on the Cook card — the
+    moment a week is approved is when a household is actually looking at
+    the shape of it, and "Egg White Bites is on 5 mornings" is easier to
+    answer then than five cards later.
+
+    One entry per repeated dish:
+    {dish, slot, first: {entry_id, date, eaters}, later: [{entry_id, date,
+    eaters}], eaters_total}. `first` is the earliest day — the one that
+    would do the cooking — and `later` is exactly what cook_ahead_options
+    offers that day, so the two surfaces can never disagree about which
+    days are claimable or why.
+
+    A dish with ANY chain already on it (a cook-ahead the household
+    already made, a leftovers night the planner wrote) is left out
+    entirely: that batch has an owner, and the Cook card's own picker is
+    where it gets changed. So is a repeat whose first day is a reheat, and
+    a dish that appears once — neither has a "cook it all now" to offer.
+    """
+    rows = [r for r in _plan_rows(weekly_plan_id) if _is_cookable(r)]
+    options = cook_ahead_options(weekly_plan_id)
+    chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+    chained = set(chains["leftovers"]) | set(chains["sources"])
+
+    groups: dict[tuple[str, str], list] = {}
+    for row in rows:
+        groups.setdefault(((row["meal"] or "").strip().lower(), row["slot"]), []).append(row)
+
+    items: list[dict] = []
+    for members in groups.values():
+        if len(members) < 2 or any(m["id"] in chained for m in members):
+            continue
+        members.sort(key=lambda r: r["date"])
+        first = members[0]
+        later = options.get(first["id"]) or []
+        if not later:
+            continue
+        first_eaters = _leftovers.eaters_at(first["date"], first["slot"])
+        items.append({
+            "dish": (first["meal"] or "").strip(),
+            "slot": first["slot"],
+            "first": {"entry_id": first["id"], "date": first["date"], "eaters": first_eaters},
+            "later": [
+                {"entry_id": d["entry_id"], "date": d["date"], "eaters": d["eaters"]}
+                for d in later
+            ],
+            "eaters_total": first_eaters + sum(d["eaters"] or 0 for d in later),
+        })
+    # The week's own order: the day that cooks first comes first.
+    items.sort(key=lambda i: (i["first"]["date"], i["slot"], i["dish"].lower()))
+    return items
+
+
+def mark_cook_ahead_asked(weekly_plan_id: int) -> None:
+    """
+    Records that the approval-time cook-ahead card has been answered for
+    this plan — its own gate, the same shape defrost.mark_defrost_asked
+    uses and for the same reason. Set unconditionally: "cook each on its
+    own" answers the question as completely as ticking days does, and the
+    Cook view's "Cooking ahead?" link may reopen and re-answer it any
+    number of times.
+    """
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET cook_ahead_asked_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
 def attach_cook_ahead(weekly_plan_id: int, meals: list[dict]) -> None:
     """
     Hang the picker's data on the Cook view's cards as
