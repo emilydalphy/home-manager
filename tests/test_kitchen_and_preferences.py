@@ -230,8 +230,8 @@ def test_the_gear_is_in_the_header_of_every_root_screen():
     assert "gearRow.hidden = !onRoot;" in _function("renderMealsStep"), (
         "the gear still shows on Meals' Day and Meal steps"
     )
-    assert "groGear.hidden = screen === 'shop';" in _function("renderGrocery"), (
-        "the gear still shows while shopping a store"
+    assert "groGear.hidden = step !== 'list';" in _function("renderGrocery"), (
+        "the gear still shows on a Grocery step other than the list (merged with flows 5: Grocery is steps now)"
     )
 
 

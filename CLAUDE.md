@@ -427,6 +427,91 @@ why*, not duplicating the diff.
   screen's own functions under node rather than reading the source for a
   marker; `test_prep_days`'s section-order marker was updated honestly for
   the new "Prep to do" line. Suite 1474 -> 1495.
+- **2026-09-08 — "The ask bar can do it" is not the same as "a person should
+  spend a model turn on it" — three Grocery row actions came back. Same
+  branch `flows-5-grocery-sort-step`, verifier pass.** The entry below says
+  item management is the ask bar's job now; that was too broad and this
+  corrects it rather than quietly changing the code under it. Back on LIST,
+  all `static/shell.js`: (1) a quiet per-row ⋯ (`groRowMenuHtml`, 44px hit
+  area, inline under the row, no apricot) with the old menu's verbs on the
+  old routes — quantity via `/update` (the old `save-row`/`fix-qty`), store
+  via `/store` with the pills plus "Any" (the old `move`/`not-this-time`: an
+  empty store, which does NOT forget the remembered item→store preference)
+  and "Somewhere else" (`/exclude`), and `/remove` with an Undo that re-adds
+  the line, since `remove_grocery_item` is a hard delete and the undo can
+  only give back the line, not the row id; (2) an inline add row in LIST's
+  foot (`groAddItem`, spruce not apricot, Enter or the button) posting
+  straight to `/api/grocery-list/add` exactly as `groHandleVoiceCommand`
+  does — an item added with no store lands in the TO SORT count; the ask bar
+  stays for anything wordier and `ASK_HINTS.grocery` still says so; (3)
+  Review's duplicate detection, MOVED not rewritten out of `groReviewHtml`
+  (`groDuplicateGroups`, same trimmed-lowercased key) and said as one quiet
+  line above the store cards — "Two rows of spinach · Merge" — running the
+  old `merge` handler, confirm included. Four fixes rode along: `groListHtml`
+  concatenated the `unsorted` ARRAY into copy ("[object Object],…") where it
+  meant `.length`; `groSetScreen` sent the receipt's "open the list" to SORT
+  whenever anything was unsorted and now always lands on LIST (the badge is
+  the way into SORT); the whole-trip toast said "Stop saved", the per-stop
+  line, and now says "Trip finished — 21 things home." off `tripBought`; and
+  two comments quoting a string `tests/test_flows_3_review_and_receipt.py`
+  asserts is gone were reworded, which is what made the suite red after the
+  main merge. Guarded by six more tests in `tests/test_grocery_steps.py`
+  (22 there now), and driven headlessly against the real API on a throwaway
+  DB (36 assertions: every verb actually wrote what it claims). **Still not
+  verified in a browser** — no browser tooling in this session either, so the
+  ⋯ menu's and the add row's LAYOUT at 390px is unchecked.
+- **2026-09-08 — Grocery is four steps, not three segments. Branch
+  `flows-5-grocery-sort-step`.** Emily's approved design: the tab answers
+  "what do we need, and where?" as **LIST -> SORT -> TRIP -> WRAP UP**, four
+  states of the same tab at `/grocery` throughout, copied off Meals'
+  `goMealsStep`/`pushMealsStepHistory` pair (now `goGroceryStep` /
+  `pushGroceryStepHistory`, wired into the shell's one popstate listener; a
+  refresh lands on LIST). LIST is one card per store ("Costco · 14", four
+  things then "+ 10 more"), a subtitle saying the shape of the shop
+  ("23 things · 2 stops"), an apricot "3 TO SORT" badge in the head that is
+  the only way into SORT, and one apricot "Start the trip" plus a quiet "Add
+  something" that opens the ask sheet prefilled `"Add "`. SORT is ONE
+  unsorted thing at a time with the existing chips and their existing
+  semantics (store pills / Any / Have it / Somewhere else = `/exclude`),
+  a "2 of 3" progress line, and an auto-return to LIST with "All sorted." on
+  the last choice. TRIP is one stop at a time — stops **snapshotted** at
+  "Start the trip" so finishing one can't renumber the rest, "Any" things
+  riding with the first stop, nothing from another store on screen, the
+  existing collapsed "In your cart · N" group with its put-back, and "Done at
+  Costco → Metro" / "Done shopping"; "‹ Pause the trip" keeps the trip.
+  WRAP UP is what didn't make it in ("Couldn't find it" / "Somewhere else"
+  per row), the Review segment's confirmation half kept whole ("Already
+  sorted this week" + both undos), a per-trip "Bought 21 of 23", and
+  "Finish the trip". **Left the root, all `static/shell.js`:** the three-way
+  segmented control, the spruce trip hero and its progress wheel, the per-row
+  ⋯ menu (edit quantity/category/store, Remove), the inline "Add an item"
+  card, the store-bucket rows with move/not-this-time, the Done group on To
+  buy, and Review's three flag cards (missing quantity, no store, possible
+  duplicate + Merge). Where they went: item management is the ask bar's job
+  now, which is what "Add something" opens and why `ASK_HINTS.grocery` is
+  "Add oat milk and lemons…"; everything else was a question the four steps
+  already answer. **Three things worth knowing before changing it:** (1) no
+  backend change at all — every step reuses the existing
+  `/api/grocery-list*` routes and the needed/in_cart/purchased/excluded
+  statuses, and `groSetScreen` survives only as a shim mapping the old
+  `opts.groScreen: 'plan'` (the approved-week receipt, its toast twin, the
+  ask sheet's chip) onto LIST-or-SORT, so nothing outside the Grocery region
+  had to be touched; (2) "Bought N of M" counts THIS trip
+  (`tripBought`/`tripTotal`), never `groTotals().done`, which sums purchased
+  rows over the household's lifetime — the same trap `justFinishedTrip`
+  already existed to avoid; (3) `anyStoreIds` keeps its **known limit** — an
+  "Any" choice is client-side and page-view only, so a reload puts that thing
+  back in the to-sort queue. Two DESIGN_SYSTEM.md pointers were corrected in
+  the same change, honestly rather than quietly: Rule 4 now reads "at most
+  one hero, not exactly one" (Grocery's hero and Meals' day hero are both
+  gone), and §5's segmented-control row points at `.meals-seg` alone.
+  `tests/test_grocery_steps.py` is the new guard (16 source markers);
+  `test_frontend_restored_2026_09_08.py`'s "Somewhere else" and
+  `groStoresPromptHtml` markers still pass untouched. **Not verified in a
+  browser** — no browser tooling was reachable in that session; the whole
+  flow was driven headlessly instead (the region evaluated against the real
+  API on a seeded throwaway DB, 44 assertions), so the LAYOUT at 390px and on
+  desktop is the one thing still unchecked.
 - **2026-09-08 — Review IS the week card; approval ends in one receipt.
   Branch `flows-3-review-and-receipt`.** Emily's approved design, the third
   of the three flows: on the new Week root the draft review band was ~410px
