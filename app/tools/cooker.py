@@ -11,6 +11,7 @@ from . import cook_ahead as _cook_ahead
 from . import inventory as _inventory
 from . import leftovers as _leftovers
 from . import plates as _plates
+from . import prep_sessions as _prep_sessions
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
@@ -298,7 +299,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
 
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
-    """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule, general or defrost) as done, skipped, or back to pending. 'skipped' is the defrost tile's one-tap decline — see static/shell.js's Today defrost tile — but is valid for any prep task, not defrost-specific."""
+    """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule — general, defrost, or a prep_cut added on a prep day) as done, skipped, or back to pending. 'skipped' is the defrost tile's one-tap decline — see static/shell.js's Today defrost tile — but is valid for any prep task, not defrost-specific."""
     if status not in ("pending", "done", "skipped"):
         raise ValueError(f"status must be one of pending/done/skipped, not {status!r}.")
     conn = get_conn()
@@ -558,7 +559,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
-        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False}
+        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False}
 
     # A week where every dinner was deliberately marked planned_empty
     # (see _NOT_COOKABLE_SLOT_STATES above) — "core loop handoffs, slice 2"
@@ -753,5 +754,17 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         "prep_tasks": prep_tasks,
         "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
         "prep_total": len(prep_tasks),
+        # The prep days themselves, gathered into sessions (Loop Board
+        # "Prep days", Emily 2026-09-04/09-08). Carried on THIS payload
+        # rather than fetched separately by the Cook screen for the same
+        # reason cook_ahead rides along: every /api/cooker/* write returns
+        # the whole refreshed view, so ticking an item in a session
+        # re-renders its "N of M done" without a round trip of its own.
+        # Additive — nothing already on this payload changed shape.
+        "prep_sessions": _prep_sessions.prep_sessions_for_plan(plan["weekly_plan_id"]),
+        # "No sessions" means two different things — never asked, or asked
+        # and answered with a day that happens to be quiet. Only the first
+        # gets the Cook screen's offer to say which days you prep.
+        "prep_days_set": _prep_sessions.has_prep_days(),
         "all_away": all_away,
     }

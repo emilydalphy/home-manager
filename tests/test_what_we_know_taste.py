@@ -68,14 +68,18 @@ def test_the_other_tabs_are_unaffected(signed_in, household_with_taste):
 
     # Rhythm has grown further still (Loop Board "I should be able to see
     # all the onboarding information here") to carry the rest of the six
-    # locked rhythm questions — but "eating_style"/"cuisines" (the Taste
-    # tab's own card) must never leak across, which is the actual thing
-    # this test guards against.
+    # locked rhythm questions, and again for the skippable seventh
+    # (prep_days / prep_days_summary — Loop Board "Prep days", Emily
+    # 2026-09-04/09-08) — but "eating_style"/"cuisines" (the Taste tab's
+    # own card) must never leak across, which is the actual thing this
+    # test guards against. Add a rhythm fact's keys here when you add one;
+    # never add a taste one.
     rhythm = signed_in.get("/api/facts?category=rhythm").json()
     rhythm_prefs = rhythm.get("preferences") or {}
     assert set(rhythm_prefs) == {
         "leftovers_stance", "lunch_location", "meals_together", "cooking_role",
-        "dinner_window", "planning_anchor", "planning_anchor_label", "members",
+        "dinner_window", "planning_anchor", "planning_anchor_label",
+        "prep_days", "prep_days_summary", "members",
     }, "rhythm should get its own rhythm card, not the taste card"
     assert rhythm.get("onboarding") is None, "rhythm should not get the onboarding block"
 

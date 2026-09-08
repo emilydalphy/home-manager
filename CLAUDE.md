@@ -1421,6 +1421,40 @@ why*, not duplicating the diff.
   is household-scoped like every other read here, so no view crosses the
   isolation boundary.
 
+- **Prep days ship as a question and a view; the planner is deliberately
+  untouched** (2026-09-08, from Emily 2026-09-04/09-08: "I like to do some
+  prep on Sunday to make the week easier... and then do another prep
+  Wednesday/Thursday depending on the week"). Two slices landed. **A**, the
+  question: a seventh household rhythm fact, `prep_days`
+  (`tools/rhythm.py` — `set_prep_days`/`prep_days_summary`, stored as ONE
+  list-valued row rather than one row per weekday, because
+  `household_rhythm`'s `weekday` column already means "a per-weekday
+  override" and the household's own ORDER is part of the answer). Asked
+  once, skippably, in onboarding's rhythm step; editable on What we know;
+  correctable in chat via the `set_prep_days` tool. It is deliberately
+  **absent from `rhythm_completeness_signals`** — a household that doesn't
+  prep ahead has answered nothing wrong and must not be scored incomplete
+  for it. **B**, the view: `tools/prep_sessions.py` gathers what a prep day
+  already holds — a cook-ahead chain whose source night falls on it, a
+  fridge move `defrost.py` already dated there, and the one new row type
+  (`prep_tasks.task_type='prep_cut'`) — onto a "Prep sessions" card and a
+  session screen in the Cook view. **C**, the planner, was explicitly left
+  out: generation still knows nothing about prep days.
+  Three judgment calls worth not re-litigating: (1) this module **gathers,
+  never generates** — in particular it never re-dates a defrost row, since
+  a thaw date is a food-safety answer and moving it to suit a prep day
+  would be this module overruling the one that knows why the date is what
+  it is; (2) the one-off ("I can't prep this Sunday") is
+  `weekly_plans.skip_prep_this_week`, a flag on the PLAN, because it is
+  true of one week and not of the household — `set_prep_days(...,
+  this_week_only=True)` never edits the standing answer; (3) `prep_cut`
+  rows are one per (description, entry) rather than one row covering
+  several meals, because `meal_plan_entry_id` is singular (defrost uses it
+  the same way) and a per-meal row is what lets a session say honestly
+  what each cut feeds. The Cook view's own prep rail filters `prep_cut`
+  out and recounts from what it shows, so the same reminder never appears
+  in two cards — the same rule Today's prep tile follows for defrost.
+
 ## Deploying
 
 Push to `main` on GitHub; Railway auto-deploys from there. CI runs the smoke

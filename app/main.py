@@ -481,6 +481,14 @@ class OnboardingRhythmRequest(BaseModel):
     dinner_window: str = ""
     planning_anchor: str = ""
     leftovers_stance: str = ""
+    # The seventh, skippable question (Loop Board "Prep days", Emily
+    # 2026-09-04/09-08): a list of {"weekday": 'sunday'..., "minutes":
+    # int|null, "note": str|null}, at most two. None means "this request
+    # isn't about prep days" and leaves the fact alone — an empty LIST
+    # means "we don't prep ahead" and clears it, which is why this is
+    # `| None` rather than defaulting to []. Every other field on this
+    # model reads its own falsy value the same way.
+    prep_days: list[dict] | None = None
 
 
 class ChoreProfileRequest(BaseModel):
@@ -787,7 +795,8 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
     location per person, meals eaten together, who cooks, when dinner
     lands, when the week should be ready, and the household's leftovers
     stance (Loop Board "Onboarding: household rhythm without traditional
-    assumptions"). Called directly by the onboarding wizard's two rhythm
+    assumptions") — plus the skippable seventh, prep_days (Loop Board
+    "Prep days"). Called directly by the onboarding wizard's two rhythm
     steps, placed after household members and before the food questions
     per Emily's stated learning hierarchy (rhythm before habits before
     preferences). The same six facts are also settable/correctable via
@@ -811,6 +820,8 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
             tools.set_planning_anchor(req.planning_anchor, source="onboarding")
         if req.leftovers_stance:
             tools.set_leftovers_stance(req.leftovers_stance, source="onboarding")
+        if req.prep_days is not None:
+            tools.set_prep_days(req.prep_days, source="onboarding")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -2072,6 +2083,72 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
     return {"weekly_plan_id": plan_id, "applied": applied, "refused": refused}
 
 
+@app.get("/api/week/{week_start}/prep-sessions")
+def week_prep_sessions(week_start: str):
+    """
+    The prep days that fall inside this week's plan, each gathered into
+    one session (Loop Board "Prep days", Emily 2026-09-04/09-08).
+
+    Read-only, and empty for a household that never answered the
+    prep-days question, for a plan whose period contains none of their
+    prep days, and for a plan they skipped prep on this week — see
+    tools.prep_sessions_for_plan, which is also what the Cook view reads
+    off /api/cooker-view's own `prep_sessions`. This endpoint exists for
+    anything holding a week rather than "the current plan".
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        sessions = tools.prep_sessions_for_plan(plan_id)
+    except Exception as e:
+        logger.exception("Prep session lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"weekly_plan_id": plan_id, "sessions": sessions}
+
+
+class PrepCutRequest(BaseModel):
+    """
+    One raw component to cut up on a prep day, and the meal(s) it feeds.
+
+    weekly_plan_id is optional so the Cook screen can send what it already
+    has; omitted, it resolves to the current plan the same way every other
+    plan-scoped tool does. `entry_ids` may be empty — "cut the onions" is
+    still a real prep-cut when it isn't attached to one meal.
+    """
+    prep_date: str
+    description: str
+    entry_ids: list[int] = []
+    weekly_plan_id: int | None = None
+
+
+@app.post("/api/prep-cut")
+def add_prep_cut_view(req: PrepCutRequest):
+    """
+    Add a prep-cut to a prep day, from the Cook screen's "Prep-cut on
+    Sunday?" tick list.
+
+    Returns the refreshed cooker view, exactly as every /api/cooker/*
+    write does — the sessions card and its "N of M done" are on that
+    payload, so the screen re-renders from the response instead of
+    re-fetching. Checking one OFF again reuses /api/cooker/check-prep;
+    these are ordinary prep_tasks rows and never needed a second
+    check-off route.
+    """
+    plan_id = req.weekly_plan_id
+    if plan_id is None:
+        plan = tools.get_weekly_plan()
+        plan_id = plan.get("weekly_plan_id")
+        if plan_id is None:
+            raise HTTPException(status_code=404, detail="No current plan to add prep to.")
+    try:
+        tools.add_prep_cut(plan_id, req.prep_date, req.description, req.entry_ids)
+        return tools.get_cooker_view(plan_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Prep-cut add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/reset/preview")
 def reset_preview():
     """
@@ -2400,6 +2477,12 @@ def get_facts_view(category: str | None = None):
                 "dinner_window": rhythm.get("dinner_window"),
                 "planning_anchor": rhythm.get("planning_anchor"),
                 "planning_anchor_label": rhythm.get("planning_anchor_label") or "",
+                # The seventh rhythm fact (Loop Board "Prep days") — a list
+                # rather than a single-select, so the summary rides along
+                # for the "read the answer back plainly" line above the
+                # chips, exactly as planning_anchor_label does.
+                "prep_days": rhythm.get("prep_days") or [],
+                "prep_days_summary": rhythm.get("prep_days_summary") or "",
                 "members": [m["name"] for m in tools.list_members()],
             }
     except Exception as e:
