@@ -1249,7 +1249,11 @@ def chores_today():
     `chores_set_up` rides along on this same response (Emily, 2026-09-05,
     20a: chores setup moved out of onboarding onto its own page) so the
     Today card can decide whether to offer "Want help with chores too? Set
-    them up" without a second round-trip. True once either a chores
+    them up" without a second round-trip. NOTE (2026-09-08): the Today card
+    does not actually offer that yet -- `chores_set_up` is returned here and
+    read nowhere in static/shell.js, and /chores-setup has no link into it.
+    The field is ready for that offer, not evidence it exists. True once
+    either a chores
     profile was saved or any chore actually exists — either one means the
     household already went through setup, even if nothing happens to be
     due today.
@@ -3309,10 +3313,16 @@ def chores_setup_page():
     The chores questionnaire (pets, home type, upkeep standard, rotation,
     etc.) — pulled out of first-run onboarding onto its own page (Emily,
     2026-09-05, 20a) so the meal loop isn't interrupted by an unrelated
-    module's setup on day one. Reached from Today's chores card ("Want
-    help with chores too? Set them up"); saves through the same
+    module's setup on day one. Saves through the same
     /api/onboarding/household and /api/onboarding/chores-profile routes
     onboarding always used.
+
+    CORRECTED 2026-09-08: this docstring used to say the page is "Reached
+    from Today's chores card ("Want help with chores too? Set them up")".
+    It is not reached from anywhere -- that string exists in no frontend
+    file, and nothing in static/ links or navigates to /chores-setup. The
+    page is live but orphaned; whether to link it before Chores is
+    validated is Emily's call, open on the Chores ticket.
     """
     return FileResponse(os.path.join(static_dir, "chores-setup.html"))
 

@@ -19,9 +19,15 @@
     steps after the first-week reveal, but the meal loop is the thing a
     brand-new household actually came here for, so onboarding now ends at
     the reveal. This page is that same questionnaire (markup and save
-    calls carried over as-is, not rebuilt), reached afterward from Today's
-    chores card ("Want help with chores too? Set them up") instead of
-    being forced on every household on day one.
+    calls carried over as-is, not rebuilt), meant to be reached afterward
+    instead of being forced on every household on day one.
+
+    CORRECTED 2026-09-08: this comment used to say the page is "reached
+    afterward from Today's chores card ("Want help with chores too? Set
+    them up")". Nothing links here — that string is in no frontend file,
+    and no file in static/ navigates to /chores-setup. The page works if
+    you visit it directly, but a household cannot get to it. Whether to
+    link it before Chores is validated is Emily's call.
 
     Styles below are copied from onboarding.html's <style> block — same
     look, since this is the same questionnaire, just relocated.
