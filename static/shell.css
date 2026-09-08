@@ -1328,12 +1328,10 @@ html, body {
   box-sizing: border-box;
   width: 100%;
 }
-/* #week-review-band was missing from this list, so a draft's promise and
-   its Approve button sat flush to the screen edge while everything around
-   them kept the 20px gutter (DESIGN_SYSTEM §4). Invisible while the band
-   sat above a day rail that started at the edge too; obvious the moment
-   it sits above a card that doesn't. */
-#week-review-band,
+/* The one band above the week card — a draft's "One thing to settle", or a
+   settled week's receipt. It keeps the 20px gutter everything around it
+   keeps (DESIGN_SYSTEM §4); #week-review-band, which used to share this
+   rule, is gone with the review band itself. */
 #week-approve-row { padding-left: 20px; padding-right: 20px; }
 
 /* #week-header (the big paper "EST. 2019 / household name" menu header) is
@@ -2602,70 +2600,25 @@ html, body {
   padding: 10px 19px 4px;
 }
 #week-plan-row > .week-setup-link { padding-top: 12px; }
-.week-receipt-card .week-setup-link { padding: 6px 0 0; }
 .week-setup-link:hover { text-decoration: underline; }
 
-.week-reopen-btn {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 6px 0 0;
-}
-.week-reopen-btn:hover { color: var(--ink-strong); }
+/* .week-reopen-btn went with the receipt it sat in — "Reopen the week" is a
+   row in the More sheet now (Emily's approved design, 2026-09-08: the
+   receipt is a receipt, and rare actions live behind More). */
 
 /* ---------- Approve the week / approved receipt ----------
-   design_handoff_plan_the_week. Two states of one slot: the promise plus
-   the button while the week is a draft, and the green receipt once it has
-   been approved. A sibling of #week-mobile/#week-grid for the same reason
-   .week-reset-row below is one — the entry point has to exist at both
-   breakpoints, and #week-header is desktop-only. */
-/* The draft's promise is plain copy on the ground, not another card — it
-   is the sentence above the button, and boxing it made a third rounded
-   rectangle out of one line of text. The receipt stays a card, because a
-   receipt is an object. */
-.week-approve-card {
-  background: none;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  flex-shrink: 0;
-}
-.week-receipt-card {
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-  flex-shrink: 0;
-}
-.week-approve-promise {
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--ink-secondary);
-}
-/* The review band's draft badge (Loop Board: "land on the review moment").
-   Same 10px/800/uppercase eyebrow shape as .week-receipt-eyebrow below,
-   apricot-label rather than celadon-label — apricot is "the accent that
-   acts" (DESIGN_SYSTEM §1), which is the point of this whole band: there's
-   a decision waiting, not a settled fact to read. Text only, no fill, so
-   it doesn't compete with .week-approve-btn as a second apricot surface
-   (Rule 5). */
-.week-review-eyebrow {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .14em;
-  color: var(--apricot-label);
-}
-/* The one primary action on Meals (NavBlueprint §03). */
+   design_handoff_plan_the_week, as Emily's 2026-09-08 design leaves it: the
+   draft's decision sits UNDER the week card it is about (.wk-decide), and
+   the receipt sits above it (#week-approve-row) until it is dismissed. */
+/* The draft's Approve button and the settled week's receipt. The band that
+   used to sit above the week card (.week-approve-card, .week-review-eyebrow,
+   .week-approve-promise) is gone with it, and so are the receipt's long body
+   paragraph (.week-receipt-body) and its "your list is ready" handoff
+   (.week-receipt-handoff*): between them they filled a phone viewport and
+   pushed the week itself below the fold. Emily's approved design, 2026-09-08. */
+
+/* The one primary action on Meals while a week is a draft (Rule 5). It sits
+   in .wk-decide, directly under the seven rows it is about. */
 .week-approve-btn {
   width: 100%;
   height: 54px;
@@ -2684,13 +2637,16 @@ html, body {
 .week-approve-btn:hover:not(:disabled) { background: var(--apricot-light); }
 .week-approve-btn:disabled { opacity: .6; cursor: default; }
 
-/* The receipt reads as a settled, positive state — green rule and green
-   eyebrow, matching the "I'll…" acknowledgement colour used through the
-   rest of this flow (--good-ink, #4f6b5b). */
+/* The receipt reads as a settled, positive state — celadon tint and a
+   celadon eyebrow, the token for "already true" (DESIGN_SYSTEM §1). */
 .week-receipt-card {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
   border-color: var(--celadon-edge);
   background: var(--celadon-tint);
-  gap: 7px;
 }
 .week-receipt-eyebrow {
   font-family: var(--font-body);
@@ -2699,50 +2655,129 @@ html, body {
   letter-spacing: .14em;
   color: var(--celadon-label);
 }
-.week-receipt-body {
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--plum-ink);
+/* The whole week in one counted sentence (weekly_plan.week_receipt). Card
+   headline size — it is the thing you read, not a label on something else. */
+.week-receipt-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  line-height: 1.2;
+  color: var(--ink-on-celadon);
 }
+.week-receipt-line {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+.week-receipt-acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+.week-receipt-go, .week-receipt-see {
+  min-height: 46px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  padding: 0 12px;
+}
+/* The SET state's one apricot (Rule 5) — the draft's Approve button is gone
+   by the time this exists, and the asks below it are deliberately quiet. */
+.week-receipt-go {
+  border: none;
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+}
+.week-receipt-go:hover { background: var(--apricot-light); }
+.week-receipt-see {
+  background: none;
+  border: 1.5px solid var(--celadon-edge);
+  color: var(--ink-on-celadon);
+}
+.week-receipt-see:hover { background: var(--surface); }
 
-/* The loop-forward offer on the approved receipt (Emily, 2026-09-04: "ask
-   me if I want to go plan my grocery trip from here"). Its primary is the
-   one apricot on this screen (Rule 5) — renderWeekReviewBand is empty once
-   a week is approved, so nothing else here competes for it. */
-.week-receipt-handoff {
+/* "Two quick ones before you go" — the freezer check and the cook-ahead
+   offer, folded from two full cards into two lines in one. Each line is a
+   44px+ tap target that expands the ask's own UI in place (.wk-quick-body);
+   nothing about the asks themselves changed. */
+.wk-quick-card {
+  padding: 13px 16px 6px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.wk-quick-title {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wk-quick-line + .wk-quick-line { border-top: 1.5px solid var(--hairline); }
+.wk-quick-head {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-quick-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wk-quick-q {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+}
+/* The chips, collapsed to one line — it truncates rather than wrapping, the
+   same call the week card's own meal names make (Emily: one line beats a
+   complete list, the full set is one tap away). */
+.wk-quick-sub {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wk-quick-ask {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.wk-quick-head:hover .wk-quick-ask { color: var(--apricot-label-hover); }
+.wk-quick-body {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  padding-top: 2px;
+  padding: 2px 0 12px;
 }
-.week-receipt-handoff-line {
+/* An author `display` beats the UA sheet's [hidden] rule, so a collapsed ask
+   would render open. Same guard every sheet in this file carries. */
+.wk-quick-body[hidden] { display: none; }
+.wk-quick-body-line {
   font-family: var(--font-body);
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--ink-secondary);
 }
-.week-receipt-handoff-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.week-receipt-handoff-actions .btn-gold {
-  text-align: center;
-  height: 46px;
-  min-height: 46px;
-  padding: 0 12px;
-  border-radius: var(--radius-control);
-  font-size: 14px;
-}
-.week-receipt-not-now {
-  background: none;
-  border: 1.5px solid var(--hairline-strong);
-  border-radius: var(--radius-control);
-  color: var(--ink-secondary);
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  min-height: 46px;
-}
-.week-receipt-not-now:hover { background: var(--sand); }
 
 /* "Who's approving?" picker — one button per adult, stacked. Uses the
    shared dialog scrim/panel styling defined with the reset dialog below. */
@@ -2901,7 +2936,6 @@ html, body {
    column, capped and centred, with a wider gutter. */
 @media (min-width: 1100px) {
   .week-content { max-width: 1040px; }
-  #week-review-band,
   #week-approve-row { padding-left: 32px; padding-right: 32px; }
   #week-steps > #week-plan-row { padding-left: 32px; padding-right: 32px; }
 }
@@ -5209,6 +5243,80 @@ span.cook-week-name { cursor: default; }
 }
 .wk-line.is-quiet .wk-line-name { color: var(--ink-secondary); font-weight: 500; }
 
+/* ---------- under the card: the notes, then the decision ---------- */
+/* A soft conflict (somebody at the table isn't keen) and the once-ever
+   plates note. One line each, on the ground rather than in a card — boxing
+   a sentence makes a third rounded rectangle out of one fact, and neither
+   of these asks for anything. */
+.wk-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 20px 0;
+}
+.wk-note {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+/* The draft's decision, directly under the week it is about. */
+.wk-decide {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 20px 2px;
+}
+
+/* ---------- "One thing to settle": a hard allergen clash ---------- */
+/* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3
+   reserves the fill itself for something worse than that. The only card
+   allowed above the week card in a draft, and only when there is one. */
+.wk-settle-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--urgent-tint);
+  border-color: var(--urgent-tint);
+}
+.wk-settle-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--urgent-label);
+}
+.wk-settle-note {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+/* Two segments, equal weight: neither swapping nor keeping is the app's
+   recommendation — the household's allergy is theirs to judge. Both quiet,
+   because the screen's one apricot is the Approve button below (Rule 5). */
+.wk-settle-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
+.wk-settle-swap, .wk-settle-keep {
+  min-height: 46px;
+  padding: 0 10px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wk-settle-swap:hover, .wk-settle-keep:hover { background: var(--sand); }
+.wk-settle-keep { color: var(--ink-secondary); }
+
 /* ---------- the one quiet row under the card ---------- */
 .wk-foot {
   display: flex;
@@ -5431,6 +5539,8 @@ span.cook-week-name { cursor: default; }
   .wk-head { padding: 32px 32px 14px; }
   .wk-title { font-size: 38px; }
   .wk-week-card { margin: 0 32px; }
+  .wk-notes { padding: 12px 32px 0; }
+  .wk-decide { padding: 16px 32px 2px; }
   .wk-foot { padding: 8px 32px 4px; }
   .wk-slots, .wk-card { margin-left: 12px; margin-right: 12px; }
   .wk-slots { padding: 0 32px; }

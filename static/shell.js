@@ -1395,9 +1395,9 @@
     openFlagKey: null,
     voiceSession: null,
     voiceLog: [],
-    // Page-view only, like weekReceiptHandoffDismissed — "I'll come back to
-    // it" on the shop-done handoff just collapses the offer for this visit,
-    // no persistence.
+    // Page-view only — "I'll come back to
+    // it" on the shop-done handoff (Plan stops, everything bought) just
+    // collapses the offer for this visit, no persistence.
     shopDoneHandoffDismissed: false,
     // Whether a trip was finished in THIS page view (see 'finish-trip').
     // groTotals().done can't answer "did anything get bought this cycle" —
@@ -3223,14 +3223,14 @@
         '</div>' +
         '<div id="week-cook-view" hidden></div>' +
         '<div id="week-plan-view">' +
-        // The two bands that belong to the WEEK rather than to any day of
+        // The one band that belongs to the WEEK rather than to any day of
         // it, above the card and hidden on the Day and Meal steps (see
-        // renderMealsStep). The review band is a draft's decision — first
-        // child so it needs no scroll, which is the whole of the "land on
-        // the review moment" change. The approve row is its other half:
-        // the receipt, the freezer check and the cook-ahead offer once the
-        // week is settled.
-        '<div id="week-review-band"></div>' +
+        // renderMealsStep). It carries at most one thing at a time
+        // (renderWeekApproval): a draft's hard-allergen "One thing to
+        // settle" card, or — until it is dismissed — the approved week's
+        // receipt and its two remaining asks. The old #week-review-band
+        // that used to sit above it is gone: review IS the week card now,
+        // and its Approve button sits under the card (weekStepHtml).
         '<div id="week-approve-row"></div>' +
         // Week -> Day -> Meal. One container, three renderings; see
         // renderMealsStep.
@@ -3579,8 +3579,16 @@
     var title = isWeek || !range ? 'This week' : range;
     var sub = [];
     if (isWeek && range) sub.push(range);
-    var counts = weekCountsLabel(days);
-    if (counts) sub.push(counts);
+    // A DRAFT's subtitle says whose turn it is, not the shape of the week:
+    // the shape is what the seven rows underneath are for, and the one
+    // thing the badge can't say on its own is that nothing happens until
+    // somebody here decides (Emily's approved design, 2026-09-08).
+    if (state === 'draft') {
+      sub.push('a draft, your turn');
+    } else {
+      var counts = weekCountsLabel(days);
+      if (counts) sub.push(counts);
+    }
     if (data.trip_summary) sub.push(data.trip_summary);
     return '<div class="wk-head">' +
       '<div class="wk-head-row">' +
@@ -3658,12 +3666,57 @@
       '<div class="shell-card wk-week-card">' +
         days.map(weekRowHtml).join('') +
       '</div>' +
+      weekNotesHtml(data) +
+      weekDecideHtml(data) +
       // Everything rare is one tap away and nothing rare is on the page.
       '<div class="wk-foot">' +
         '<button type="button" class="wk-foot-link" id="wk-plan-next">' +
           escapeHtml(planEntryLabel(dayCount, 'next', false)) + ' ›</button>' +
         '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
       '</div>';
+  }
+
+  // The quiet lines under the card. A SOFT conflict — somebody at the table
+  // isn't keen — gets no card and no button: it is a preference, it never
+  // gates approval, and it is said once in one line (server-worded, see
+  // coordination._soft_note). The plates note rides here too, for the one
+  // week it is ever shown: it explains something about the week being
+  // approved, and it used to live in the review band that this design
+  // removes.
+  function weekNotesHtml(data) {
+    var notes = [];
+    if (data.plates_note) notes.push(data.plates_note);
+    if (weekPlanState(data) === 'draft' && data.soft_note) notes.push(data.soft_note);
+    if (!notes.length) return '';
+    return '<div class="wk-notes">' + notes.map(function (n) {
+      return '<div class="wk-note">' + escapeHtml(n) + '</div>';
+    }).join('') + '</div>';
+  }
+
+  // A draft's decision, directly under the week it is about — the screen's
+  // one apricot (Rule 5) and one quiet text action beside it. This is what
+  // replaced #week-review-band: the review is the card above, so the band's
+  // eyebrow, its status line and its grocery promise all went, and what is
+  // left is the decision itself.
+  function weekDecideHtml(data) {
+    if (weekPlanState(data) !== 'draft') return '';
+    var openCount = countOpenSlots(data);
+    return '<div class="wk-decide">' +
+      // Approving with a slot still open is allowed, but named — never a
+      // silent shortfall. That is the only thing allowed to reword this
+      // button (Emily's copy is "Approve this week").
+      '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+        (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve this week') +
+      '</button>' +
+      '<button type="button" class="week-reset-link week-tweak-link" id="week-tweak-btn">Tweak it with me</button>' +
+      // Empty and hidden until "Try again" is tapped in the More sheet —
+      // the rebuild is a ~30-second call, so this is where the rotating
+      // waiting line goes (static/waiting-lines.js). It followed the redo
+      // actions out of the band and into the sheet's handler, but the line
+      // itself has to be on the page you are looking at, not inside a
+      // sheet that closes the moment you tap.
+      '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
+    '</div>';
   }
 
   // ---------- DAY ----------
@@ -3979,12 +4032,13 @@
     if (weekState.step === 'day' && !day) weekState.step = 'week';
 
     var onRoot = weekState.step === 'week';
-    var band = panel.querySelector('#week-review-band');
     var approve = panel.querySelector('#week-approve-row');
-    // The draft's decision and the approved receipt belong to the week, not
+    // The clash to settle and the approved receipt belong to the week, not
     // to one day of it — they sit above the card on the root and nowhere
     // else, the same way Cook's focus screen hides the Plan/Cook control.
-    if (band) band.hidden = !onRoot;
+    // (The draft's Approve button is inside the root's own markup now, so
+    // it needs no hiding of its own — weekStepHtml simply doesn't build it
+    // on the Day or Meal step.)
     if (approve) approve.hidden = !onRoot;
     var seg = panel.querySelector('#meals-seg');
     if (seg && panel.dataset.mealsView !== 'cook') seg.hidden = !onRoot;
@@ -4119,6 +4173,17 @@
     });
     var more = steps.querySelector('#wk-more');
     if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
+    // The draft's decision, now that it lives under the card rather than in
+    // a band of its own. Same two handlers as before, same approveWeek /
+    // openAskSheet — only the surface moved.
+    var approveBtn = steps.querySelector('#week-approve-btn');
+    if (approveBtn) approveBtn.addEventListener('click', function () {
+      approveWeek(panel, weekState.data || {});
+    });
+    var tweakBtn = steps.querySelector('#week-tweak-btn');
+    if (tweakBtn) tweakBtn.addEventListener('click', function () {
+      openAskSheet('Let’s tweak this week — ');
+    });
   }
 
   // ---------- "More": every rare action, one tap off the root ----------
@@ -4159,6 +4224,16 @@
         ? mealsMoreRowHtml('wk-more-try-again', 'Try again', 'Same answers, a different week') +
           mealsMoreRowHtml('wk-more-change', 'Change my answers')
         : '') +
+      // Reopening followed the receipt's own buttons in here (Emily's
+      // approved design, 2026-09-08: the receipt is a receipt, and once
+      // it's dismissed a settled week is header + card + foot). Not
+      // "un-approve": it lets the week be edited again and never takes
+      // anything off the shopping list — re-approving only adds what's new,
+      // and removing something somebody may already have bought is worse
+      // than a slightly long list.
+      (hasPlan && data.status === 'approved'
+        ? mealsMoreRowHtml('wk-more-reopen', 'Reopen the week', 'Edit it again — your list stays as it is')
+        : '') +
       mealsMoreRowHtml('wk-more-whole-week', 'See the whole week', 'All the meals, and the link to share them') +
       mealsMoreRowHtml('wk-more-setup', 'Adjust your setup') +
       mealsMoreRowHtml('wk-more-reset', 'Start over');
@@ -4174,6 +4249,7 @@
       closeMealsMoreSheet();
       startPlanningWeek(data.week_start_date, data.day_count || 7);
     });
+    on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
     on('wk-more-setup', function () { closeMealsMoreSheet(); openMealSetup(); });
     on('wk-more-reset', function () { closeMealsMoreSheet(); openResetDialog(); });
@@ -4268,80 +4344,17 @@
   // Approval is the one thing that puts a week's ingredients on the
   // shopping list, and it is a BUTTON — not a sentence the assistant has to
   // remember to offer. Everything below is the Meals screen's half of that:
-  // the promise while the week is a draft, and the receipt once it isn't.
-
-  function approvedAtLabel(approvedAt) {
-    // approved_at is SQLite's datetime('now') — UTC, no zone marker. Told
-    // explicitly that it's UTC ('Z'), so it renders in the household's own
-    // local time rather than an hours-off "9:41AM" that never matches when
-    // they actually tapped it.
-    if (!approvedAt) return '';
-    var d = new Date(approvedAt.replace(' ', 'T') + 'Z');
-    if (isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\s/g, '').toUpperCase();
-  }
-
-  function groceryPromiseText(preview) {
-    var n = (preview && preview.would_add_count) || 0;
-    // The spec's promise names a real number. When that number is zero
-    // there is nothing to promise, and the verbatim line would read "0
-    // items" — so this case gets its own honest sentence instead. It is
-    // not hypothetical: a week planned before approval gated the list
-    // already has its ingredients on there (see DECISIONS.md's closing
-    // note), and approving it genuinely adds nothing.
-    if (!n) {
-      return 'Everything this week needs is already on your shopping list. Approving won’t add anything to it.';
-    }
-    // The spec's line ended ", less whatever's already in your kitchen",
-    // which promised a subtraction that has in fact already happened: n is
-    // the count AFTER the kitchen was checked (see
-    // preview_plan_grocery_impact, which puts each ingredient in exactly
-    // one of the two buckets). So it read as "n items, and then fewer than
-    // that" when the truth is "n items, which is what's left".
-    //
-    // Now it says what actually happened, in the same shape as the receipt
-    // below — and says nothing at all when nothing was subtracted, which is
-    // every household that hasn't done the inventory intake.
-    // (Emily's call, 2026-09-02. COPY.md and SPEC.md updated to match.)
-    var have = (preview && preview.already_have_count) || 0;
-    var line = 'I haven’t put anything on your shopping list yet. Approve the week and I’ll build it — ' +
-      n + (n === 1 ? ' item' : ' items') + '.';
-    if (have) {
-      line += ' ' + have + (have === 1 ? ' more was' : ' more were') +
-        ' already in your kitchen, so I’ve left ' + (have === 1 ? 'that' : 'those') + ' off.';
-    }
-    return line;
-  }
-
-  function receiptBodyText(data) {
-    var added = data.approved_grocery_added || 0;
-    var skipped = data.approved_grocery_skipped || 0;
-    var others = data.other_adults || [];
-    var text;
-    if (!added) {
-      // Same reason as groceryPromiseText's zero case — "I've put 0 items
-      // on your shopping list" is worse than saying what actually happened.
-      text = 'All set. Your shopping list already had everything this week needs, so I left it as it was.';
-    } else {
-      text = 'All set. I’ve put ' + added + (added === 1 ? ' item' : ' items') + ' on your shopping list';
-      // The "already in your kitchen" clause only earns its place when
-      // something was actually left off. Writing "0 were already in your
-      // kitchen" is noise.
-      text += skipped
-        ? ' — ' + skipped + (skipped === 1 ? ' was' : ' were') + ' already in your kitchen, so I left ' +
-          (skipped === 1 ? 'that' : 'those') + ' off.'
-        : '.';
-    }
-    // "Marcus has been told the week is settled" is only written when there
-    // IS another adult, and it is true when written: approving raises a
-    // household-wide "N approved the week" notification (see
-    // tools.get_active_notifications #4) the other adult sees on their next
-    // visit. A one-adult household gets no sentence about nobody.
-    if (others.length) {
-      text += ' ' + others.join(' and ') + (others.length === 1 ? ' has' : ' have') + ' been told the week is settled.';
-    }
-    return text;
-  }
+  // the decision under a draft's week card, and the receipt above a settled
+  // one.
+  //
+  // Three copy helpers used to live here and are gone with the surfaces
+  // that carried them (Emily's approved design, 2026-09-08):
+  // approvedAtLabel (the receipt's "APPROVED BY EMILY · 9:41AM" eyebrow —
+  // the eyebrow is "Your week is set" now), groceryPromiseText (the review
+  // band's promise line) and receiptBodyText (the receipt's long "All set.
+  // I've put N items…" paragraph). The receipt says the same week in one
+  // counted sentence instead — see weekly_plan.week_receipt, which builds
+  // it on the server where the numbers are.
 
   function refreshGrocerySurfaces() {
     // Both surfaces that show groceries are this script's own now, so both
@@ -4354,16 +4367,9 @@
     refreshTodayMoves();
   }
 
-  // Keyed by weekly_plan_id, page-view only (no fetch, no server write) —
-  // Emily's ask was to walk the loop forward, not to remember a "no" past
-  // this visit, and reopening this exact question every time the approved
-  // receipt re-renders (a tab switch away and back, say) would be worse
-  // than just leaving the offer up. See renderWeekApproval's handoff row.
-  var weekReceiptHandoffDismissed = {};
-
   // The freezer-check ask card's own state (Loop Board "Defrost check: ask
-  // at approval") — page-view only, same reasoning as
-  // weekReceiptHandoffDismissed just above: nothing here is the server's
+  // at approval") — page-view only, same reasoning as the receipt's own
+  // dismissal flag (weekReceiptDismissed): nothing here is the server's
   // business except the eventual answer. `items` is null until fetched (or
   // reset to null to force a fresh fetch — see openDefrostAskFromCook),
   // then the plan's own meat/seafood ingredients once loaded; `selected`
@@ -4382,16 +4388,19 @@
     '</button>';
   }
 
+  // The ask itself, unchanged in everything but its frame: it used to be a
+  // full .plan-nudge-card of its own under the receipt (eyebrow FREEZER
+  // CHECK, a title, a body line, then the chips), and it is now the body
+  // that "Anything in the freezer?" expands in place — so the chips and the
+  // two answers are what is left, and the question is the line above it
+  // (Emily's approved design, 2026-09-08). Same id, so wireDefrostAskCard
+  // and submitDefrostAsk find it exactly as before.
   function defrostAskCardHtml() {
     var items = defrostAskState.items || [];
     return (
-      '<div class="shell-card plan-nudge-card defrost-ask-card" id="defrost-ask-card">' +
-        '<div class="plan-nudge-top">' +
-          '<span class="plan-nudge-eyebrow">FREEZER CHECK</span>' +
-          '<button type="button" class="plan-nudge-dismiss" id="defrost-ask-dismiss">Not now</button>' +
-        '</div>' +
-        '<div class="plan-nudge-title">Any of this week’s meat in the freezer?</div>' +
-        '<div class="plan-nudge-body">Tap what’s frozen and I’ll tell you when to move it to the fridge.</div>' +
+      '<div class="wk-quick-body defrost-ask-card" id="defrost-ask-card"' +
+          (weekQuickOpen.defrost ? '' : ' hidden') + '>' +
+        '<div class="wk-quick-body-line">Tap what’s frozen and I’ll tell you when to move it to the fridge.</div>' +
         '<div class="defrost-ask-chips">' + items.map(defrostAskChipHtml).join('') + '</div>' +
         '<div class="ny-actions">' +
           '<button type="button" class="btn-gold" id="defrost-ask-confirm">Add to the schedule</button>' +
@@ -4412,8 +4421,9 @@
         chip.setAttribute('aria-pressed', defrostAskState.selected[name] ? 'true' : 'false');
       });
     });
-    var dismissBtn = card.querySelector('#defrost-ask-dismiss');
-    if (dismissBtn) dismissBtn.addEventListener('click', function () { submitDefrostAsk(panel, data, []); });
+    // "Not now" went with the card's own header: a line that is collapsed
+    // until you tap it is already "not now", and a dismiss button inside it
+    // would answer a question you had to open in order to decline.
     var noneBtn = card.querySelector('#defrost-ask-none');
     if (noneBtn) noneBtn.addEventListener('click', function () { submitDefrostAsk(panel, data, []); });
     var confirmBtn = card.querySelector('#defrost-ask-confirm');
@@ -4489,10 +4499,13 @@
     defrostAskState.items = null;
     defrostAskState.selected = {};
     defrostAskState.forceShow = true;
-    // The ask card lives above the week card and shows on the ROOT only
-    // (renderMealsStep hides both bands on the Day and Meal steps), so a
-    // re-ask arriving while a day is open has to come back out to the
-    // week — otherwise it forces open a card nobody can see.
+    // The ask is a line inside the receipt now, so forcing it open means
+    // three things rather than one: un-dismiss the receipt (it may have
+    // been sent away with "See the week" this session), expand this line,
+    // and come back out to the ROOT, since the band above the week card is
+    // hidden on the Day and Meal steps (renderMealsStep).
+    if (weekState.data) setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+    weekQuickOpen.defrost = true;
     weekState.step = 'week';
     activateTab('week', true, { mealsView: 'plan' });
     var panel = panels['week'];
@@ -4549,20 +4562,21 @@
     '</div>';
   }
 
+  // Same fold as the freezer check just above: the blocks and the two
+  // answers, expanded in place by the "… Cook ahead?" line rather than
+  // stacked as a second full card under the receipt. Same id, so
+  // wireCookAheadAskCard and submitCookAheadAsk are untouched.
   function cookAheadAskCardHtml() {
     var items = cookAheadAskState.items || [];
     return (
-      '<div class="shell-card plan-nudge-card cook-ahead-ask-card" id="cook-ahead-ask-card">' +
-        '<div class="plan-nudge-top">' +
-          '<span class="plan-nudge-eyebrow">COOK AHEAD</span>' +
-        '</div>' +
-        '<div class="plan-nudge-title">One batch, several days?</div>' +
-        '<div class="plan-nudge-body">Tick the days a batch should cover and they become one cook.</div>' +
+      '<div class="wk-quick-body cook-ahead-ask-card" id="cook-ahead-ask-card"' +
+          (weekQuickOpen.cookAhead ? '' : ' hidden') + '>' +
+        '<div class="wk-quick-body-line">Tick the days a batch should cover and they become one cook.</div>' +
         items.map(cookAheadAskBlockHtml).join('') +
-        // One answer for the whole card, and no second apricot: the
-        // receipt above already spent this screen's one apricot primary on
-        // "Take me to the list" (Rule 5), and .ny-actions .btn-gold is
-        // spruce here for exactly that reason.
+        // One answer for the whole ask, and no second apricot: the receipt
+        // above already spent this screen's one apricot primary on "Open
+        // the list" (Rule 5), and .ny-actions .btn-gold is spruce here for
+        // exactly that reason.
         '<div class="ny-actions">' +
           '<button type="button" class="btn-gold" id="cook-ahead-ask-confirm">Cook ahead for these</button>' +
           '<button type="button" class="btn-sand" id="cook-ahead-ask-none">Cook each on its own</button>' +
@@ -4671,10 +4685,11 @@
     cookAheadAskState.items = null;
     cookAheadAskState.picks = {};
     cookAheadAskState.forceShow = true;
-    // The ask card lives above the week card and shows on the ROOT only
-    // (renderMealsStep hides both bands on the Day and Meal steps), so a
-    // re-ask arriving while a day is open has to come back out to the
-    // week — otherwise it forces open a card nobody can see.
+    // Same three things as openDefrostAskFromCook just above: un-dismiss
+    // the receipt this line lives in, expand the line, and come back out to
+    // the ROOT, where the band above the week card is shown.
+    if (weekState.data) setWeekReceiptDismissed(weekState.data.weekly_plan_id, false);
+    weekQuickOpen.cookAhead = true;
     weekState.step = 'week';
     activateTab('week', true, { mealsView: 'plan' });
     var panel = panels['week'];
@@ -4683,191 +4698,263 @@
     else loadWeekMenu(panel);
   }
 
+  // ---------- Above the week card: one thing at a time ----------
+  // Emily's approved 2026-09-08 design gives #week-approve-row exactly one
+  // job per state, and never two cards stacked:
+  //
+  //   DRAFT  a hard allergen clash, and nothing else. Review IS the week
+  //          card below; its Approve button sits under it (weekDecideHtml).
+  //   SET    the receipt and the two asks that are still open — until it is
+  //          dismissed, after which the week card is the top of the screen.
+  //
+  // What went: the old #week-review-band with its "DRAFT · YOUR TURN"
+  // eyebrow, status line and grocery promise; and the receipt's own long
+  // body, its "your list is ready" handoff and the two full-height nudge
+  // cards under it. Between them they filled a phone viewport and pushed
+  // the week itself below the fold, which is the whole problem this
+  // redesign exists to fix.
   function renderWeekApproval(panel, data) {
     var row = panel.querySelector('#week-approve-row');
     if (!row) return;
     if (!data.weekly_plan_id) { row.innerHTML = ''; return; }
-
-    if (data.status === 'approved') {
-      var who = (data.approved_by || '').trim();
-      var time = approvedAtLabel(data.approved_at);
-      var eyebrow = '✓ APPROVED' + (who ? ' BY ' + who.toUpperCase() : '') + (time ? ' · ' + time : '');
-      // The loop nudge (Emily, 2026-09-04): the receipt already says the
-      // list is built, so it's the natural place to ask whether she wants
-      // to go plan the trip from here. Only offered when approving
-      // actually put something on the list — a week that needed nothing
-      // has nowhere useful to send her. This is also the screen's one
-      // apricot primary (Rule 5): renderWeekReviewBand renders nothing
-      // once a week is approved, so nothing else on Meals is competing
-      // for it.
-      var added = data.approved_grocery_added || 0;
-      var handoffHtml = '';
-      if (added && !weekReceiptHandoffDismissed[data.weekly_plan_id]) {
-        handoffHtml =
-          '<div class="week-receipt-handoff">' +
-            '<div class="week-receipt-handoff-line">' +
-              escapeHtml('Your list is ready — ' + added + (added === 1 ? ' item.' : ' items.')) +
-            '</div>' +
-            '<div class="week-receipt-handoff-actions">' +
-              '<button type="button" class="btn-gold" id="week-receipt-go">Take me to the list</button>' +
-              '<button type="button" class="week-receipt-not-now" id="week-receipt-not-now">Not now</button>' +
-            '</div>' +
-          '</div>';
-      }
-
-      // The freezer-check ask card (Loop Board "Defrost check: ask at
-      // approval") — the same moment the "your list is ready" handoff
-      // above appears is the natural place to also ask what's frozen,
-      // since inventory is deferred policy and most households never
-      // track a freezer item any other way. Asked once per plan
-      // (data.defrost_asked_at gates it); forceShow is the one-shot
-      // override the Cook view's re-ask link sets, consumed here whether
-      // or not there turns out to be anything to ask about.
-      var forceDefrostShow = defrostAskState.forceShow;
-      defrostAskState.forceShow = false;
-      var defrostHtml = '';
-      if (!data.defrost_asked_at || forceDefrostShow) {
-        if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null) {
-          if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml();
-        } else {
-          ensureDefrostAskItems(panel, data); // re-renders this row once it resolves
-        }
-      }
-
-      // The cook-ahead ask, directly under the freezer check — the same
-      // once-per-plan shape (cook_ahead_asked_at gates it, forceShow is
-      // the Cook view's one-shot override) and, like it, rendered only
-      // when there is actually a repeated dish to ask about.
-      var forceCookAheadShow = cookAheadAskState.forceShow;
-      cookAheadAskState.forceShow = false;
-      var cookAheadAskHtml = '';
-      if (!data.cook_ahead_asked_at || forceCookAheadShow) {
-        if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
-          if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml();
-        } else {
-          ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves
-        }
-      }
-
-      row.innerHTML =
-        '<div class="shell-card week-receipt-card">' +
-          '<div class="week-receipt-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
-          '<div class="week-receipt-body">' + escapeHtml(receiptBodyText(data)) + '</div>' +
-          handoffHtml +
-          // The receipt is the moment a household is most likely to notice
-          // the week wasn't quite right, so the way to fix that permanently
-          // is offered right here rather than only on the settings screen
-          // they'd have to go looking for.
-          '<button type="button" class="week-setup-link" id="week-setup-link">' +
-            'Weeks not landing how you’d like? Let’s adjust your setup →</button>' +
-          // Not "un-approve". Reopening lets the week be edited again and
-          // never takes anything off the shopping list — re-approving only
-          // adds what's new. Removing items somebody may already have
-          // bought is worse than a slightly long list.
-          '<button type="button" class="week-reopen-btn" id="week-reopen-btn">Reopen the week</button>' +
-        '</div>' +
-        defrostHtml +
-        cookAheadAskHtml;
-      if (defrostHtml) wireDefrostAskCard(row, panel, data);
-      if (cookAheadAskHtml) wireCookAheadAskCard(row, panel, data);
-      row.querySelector('#week-reopen-btn').addEventListener('click', function () { reopenWeek(panel, data); });
-      row.querySelector('#week-setup-link').addEventListener('click', openMealSetup);
-      var goBtn = row.querySelector('#week-receipt-go');
-      if (goBtn) {
-        goBtn.addEventListener('click', function () {
-          // Plan stops is the screen that's actually about the trip Emily
-          // just asked to be walked toward, not just the list itself.
-          activateTab('grocery', true, { groScreen: 'plan' });
-        });
-      }
-      var notNowBtn = row.querySelector('#week-receipt-not-now');
-      if (notNowBtn) {
-        notNowBtn.addEventListener('click', function () {
-          weekReceiptHandoffDismissed[data.weekly_plan_id] = true;
-          var handoff = row.querySelector('.week-receipt-handoff');
-          if (handoff) handoff.remove();
-        });
-      }
-      return;
-    }
-
-    // A draft's Approve/Try again/Change my answers now render up in
-    // #week-review-band (renderWeekReviewBand, called from renderWeekMenu)
-    // instead of here — that's the whole point of the review-landing
-    // change: the decision is above the fold, not after the day rail and
-    // day card. Leaving this row empty (rather than duplicating the same
-    // apricot button in two places) also keeps Rule 5 — one apricot
-    // primary per screen.
-    row.innerHTML = '';
+    if (data.status === 'approved') renderWeekReceipt(row, panel, data);
+    else renderWeekSettle(row, panel, data);
   }
 
-  // ---------- The review band (Loop Board: "land on the review moment") ----
-  // First child of #week-plan-view (see buildWeekPanel), so a draft's
-  // decision is the first thing on the Meals screen at both breakpoints —
-  // no scroll, no separate arrival screen. Renders nothing once the week is
-  // approved (renderWeekApproval's receipt, further down, takes over) or
-  // when there's no plan at all yet.
-  function renderWeekReviewBand(panel, data, statusLine) {
-    var band = panel.querySelector('#week-review-band');
-    if (!band) return;
-    if (!data.weekly_plan_id || data.status === 'approved') { band.innerHTML = ''; return; }
+  // ---------- DRAFT: "One thing to settle" ----------
+  // Only ever a HARD clash — an allergy or a must-avoid. A soft one (a
+  // dislike, somebody at the table not keen) gets no card at all: it is a
+  // preference, it never gates approval, and it is one quiet line under the
+  // card instead (weekNotesHtml). The sentence and the count are the
+  // server's (coordination._settle), so the wording lives with the data.
+  function weekSettleTargetSlot(day, meal) {
+    var found = null;
+    WEEK_SLOTS.forEach(function (slot) {
+      var entry = day && day[slot];
+      if (!found && entry && entry.state === 'planned' && entry.title === meal) found = slot;
+    });
+    return found;
+  }
 
-    var openCount = countOpenSlots(data);
-    band.innerHTML =
-      '<div class="shell-card week-approve-card">' +
-        '<div class="week-review-eyebrow">DRAFT · YOUR TURN</div>' +
-        (statusLine ? '<div class="week-note">' + escapeHtml(statusLine) + '</div>' : '') +
-        // Said once, ever: the first week where the app rounded a meal out
-        // for them (app/tools/plates.py, weekly_plan.PLATES_INTRO). The
-        // server decides whether it appears and marks it as said, so this
-        // is simply "show it if it's there" — sitting under the status line
-        // and above the promise, because it explains something about the
-        // week they're being asked to approve.
-        (data.plates_note ? '<div class="week-note">' + escapeHtml(data.plates_note) + '</div>' : '') +
-        // A possible allergy/must-avoid clash, named above the Approve
-        // button rather than left for the household to catch. Server-worded
-        // (see check_plan_conflicts) so the sentence lives with the data it
-        // describes, and absent entirely when there's nothing to say.
-        (data.conflicts_note
-          ? '<div class="week-note week-conflict-note">' + escapeHtml(data.conflicts_note) + '</div>'
-          : '') +
-        '<div class="week-approve-promise">' + escapeHtml(groceryPromiseText(data.grocery_preview)) + '</div>' +
-        // Approving with a slot still open is allowed, but named — never a
-        // silent shortfall.
-        '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
-          (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve the week') +
-        '</button>' +
-        // Same idiom as "or start over" (.week-reset-link) — one quiet
-        // Newsreader-italic text link under the primary button, not a
-        // second button competing with it. Prefills the composer rather
-        // than opening a blank chat, echoing the first-week-reveal
-        // branch's "or tweak it with me" pattern for the everyday flow.
-        '<button type="button" class="week-reset-link week-tweak-link" id="week-tweak-btn">or tweak it with me</button>' +
-        // DECISIONS.md #3: two actions, because they're different needs.
-        // One button labelled "Redo" can only be one of them, and would be
-        // the wrong one half the time.
-        '<div class="week-redo-row">' +
-          '<button type="button" class="week-redo-btn" id="week-try-again">Try again</button>' +
-          '<button type="button" class="week-redo-btn" id="week-change-answers">Change my answers</button>' +
+  // "Swap the salsa" — the dish's last word, which is what a person calls
+  // it once the sentence above has already named it in full. Kept to the
+  // last word so the two segments stay side by side at 390px; a one-word
+  // dish is its own short name.
+  function dishShortName(meal) {
+    var words = String(meal || '').trim().split(/\s+/);
+    var last = words[words.length - 1] || '';
+    if (words.length < 2 || last.length < 4) return meal;
+    return last.toLowerCase();
+  }
+
+  function renderWeekSettle(row, panel, data) {
+    var settle = data.settle;
+    if (!settle || !settle.note) { row.innerHTML = ''; return; }
+    var count = settle.count || 1;
+    var title = count === 1 ? 'One thing to settle' : spellSmallNumber(count) + ' things to settle';
+    row.innerHTML =
+      '<div class="shell-card wk-settle-card">' +
+        '<div class="wk-settle-title">' + escapeHtml(title) + '</div>' +
+        '<div class="wk-settle-note">' + escapeHtml(settle.note) + '</div>' +
+        '<div class="wk-settle-acts">' +
+          '<button type="button" class="wk-settle-swap" id="wk-settle-swap">' +
+            escapeHtml('Swap the ' + dishShortName(settle.meal)) + '</button>' +
+          '<button type="button" class="wk-settle-keep" id="wk-settle-keep">Keep it anyway</button>' +
         '</div>' +
-        // Empty and hidden until "Try again" is tapped — the rebuild is a
-        // ~30-second call that until now showed nothing but a disabled
-        // button, so this is where the rotating waiting line goes
-        // (static/waiting-lines.js, the same component the first-week
-        // reveal and /plan-week's drafting step use).
-        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
       '</div>';
-    band.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
-    band.querySelector('#week-tweak-btn').addEventListener('click', function () {
-      openAskSheet('Let’s tweak this week — ');
+    row.querySelector('#wk-settle-swap').addEventListener('click', function () {
+      // Straight to the meal the clash is about, where Swap already lives —
+      // the Day step if the exact slot can't be identified (a component
+      // plan has no dates), never a dead end.
+      var index = -1;
+      weekState.days.forEach(function (d, i) { if (d.date === settle.date) index = i; });
+      if (index < 0) {
+        // No day to land on (a component plan has no dates): hand it to
+        // the ask sheet with the swap already worded, never a dead tap.
+        openAskSheet('Swap ' + settle.meal + ' for something else');
+        return;
+      }
+      var slot = weekSettleTargetSlot(weekState.days[index], settle.meal);
+      if (slot) goMealsStep('meal', { dayIndex: index, slot: slot });
+      else goMealsStep('day', { dayIndex: index });
     });
-    band.querySelector('#week-try-again').addEventListener('click', function () { tryAgain(panel, data); });
-    band.querySelector('#week-change-answers').addEventListener('click', function () {
-      // The same day count tryAgain() already passes when it rebuilds this
-      // plan — changing your answers must not also silently change how
-      // many days you are answering about.
-      startPlanningWeek(data.week_start_date, data.day_count || 7);
+    row.querySelector('#wk-settle-keep').addEventListener('click', function () {
+      // Deliberately the ordinary approve path, not a shortcut past it:
+      // approve_weekly_plan answers a hard clash with needs_confirmation and
+      // writes nothing, so this posts, comes back refused, and
+      // showApproveConfirm turns the Approve button under the card into
+      // "Approve anyway — I've seen the … clash". Keeping it anyway still
+      // costs the second, explicit tap that a real allergy clash is owed.
+      approveWeek(panel, data);
     });
+  }
+
+  // ---------- SET: the receipt, and the two asks still open ----------
+  // Dismissal is per weekly_plan_id in sessionStorage, deliberately: it has
+  // to survive a tab switch (the panel re-renders every time Meals comes
+  // back, and a receipt that reappeared after "See the week" would be
+  // ignoring the tap) but NOT a new session — a week approved yesterday
+  // opens on the week card, not on a receipt for a decision already made.
+  // Nothing here is the server's business, which is why it isn't a column.
+  var WEEK_RECEIPT_DISMISS_KEY = 'pomona.weekReceiptDismissed.';
+
+  function weekReceiptDismissed(planId) {
+    try { return sessionStorage.getItem(WEEK_RECEIPT_DISMISS_KEY + planId) === '1'; }
+    catch (err) { return false; }
+  }
+  function setWeekReceiptDismissed(planId, dismissed) {
+    try {
+      if (dismissed) sessionStorage.setItem(WEEK_RECEIPT_DISMISS_KEY + planId, '1');
+      else sessionStorage.removeItem(WEEK_RECEIPT_DISMISS_KEY + planId);
+    } catch (err) { /* private mode: the receipt just stays up for this view */ }
+  }
+
+  // Which of the two asks is expanded, page-view only. Held outside the
+  // render because the cook-ahead chips re-render this whole row on every
+  // tap (the count line under them has to change with the chip), and a
+  // question that collapsed under your thumb would be unusable.
+  var weekQuickOpen = { defrost: false, cookAhead: false };
+
+  function spellSmallNumber(n) {
+    var words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven',
+                 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
+    return words[n] || String(n);
+  }
+
+  // One ask, folded to a line: the question, what it is about, and "Ask".
+  // The ask's own UI is still exactly the one it always had — it is just
+  // hidden until this line is tapped, rather than being a card of its own.
+  function weekQuickLineHtml(line) {
+    var open = !!line.open;
+    return '<div class="wk-quick-line">' +
+      '<button type="button" class="wk-quick-head" data-quick="' + line.key + '" ' +
+          'aria-expanded="' + open + '">' +
+        '<span class="wk-quick-text">' +
+          '<span class="wk-quick-q">' + escapeHtml(line.q) + '</span>' +
+          (line.sub ? '<span class="wk-quick-sub">' + escapeHtml(line.sub) + '</span>' : '') +
+        '</span>' +
+        '<span class="wk-quick-ask">' + (open ? 'Close' : 'Ask') + '</span>' +
+      '</button>' +
+      line.body +
+    '</div>';
+  }
+
+  function renderWeekReceipt(row, panel, data) {
+    if (weekReceiptDismissed(data.weekly_plan_id)) { row.innerHTML = ''; return; }
+
+    // The freezer check (Loop Board "Defrost check: ask at approval") and
+    // the cook-ahead offer, both gated exactly as they were: once per plan
+    // by their own asked_at column, with forceShow the one-shot override
+    // the Cook view's re-ask links set. Only the presentation changed.
+    var forceDefrostShow = defrostAskState.forceShow;
+    var defrostHtml = '';
+    if (!data.defrost_asked_at || forceDefrostShow) {
+      if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null) {
+        // The one-shot override is spent only once the line can actually
+        // render — the first pass often just starts the fetch, and the
+        // re-render it triggers must still see the override.
+        defrostAskState.forceShow = false;
+        if (defrostAskState.items.length) defrostHtml = defrostAskCardHtml();
+      } else {
+        ensureDefrostAskItems(panel, data); // re-renders this row once it resolves
+      }
+    }
+    var forceCookAheadShow = cookAheadAskState.forceShow;
+    var cookAheadAskHtml = '';
+    if (!data.cook_ahead_asked_at || forceCookAheadShow) {
+      if (cookAheadAskState.planId === data.weekly_plan_id && cookAheadAskState.items !== null) {
+        cookAheadAskState.forceShow = false;
+        if (cookAheadAskState.items.length) cookAheadAskHtml = cookAheadAskCardHtml();
+      } else {
+        ensureCookAheadAskItems(panel, data); // re-renders this row once it resolves
+      }
+    }
+
+    var lines = [];
+    if (defrostHtml) {
+      lines.push({
+        key: 'defrost', open: weekQuickOpen.defrost, body: defrostHtml,
+        q: 'Anything in the freezer?',
+        sub: defrostAskSummary()
+      });
+    }
+    if (cookAheadAskHtml) {
+      lines.push({
+        key: 'cookAhead', open: weekQuickOpen.cookAhead, body: cookAheadAskHtml,
+        q: cookAheadAskQuestion(),
+        sub: cookAheadAskSummary()
+      });
+    }
+
+    var receipt = data.receipt || {};
+    row.innerHTML =
+      '<div class="shell-card week-receipt-card">' +
+        '<div class="week-receipt-eyebrow">YOUR WEEK IS SET</div>' +
+        '<div class="week-receipt-title">' + escapeHtml(receipt.title || 'Your week is set.') + '</div>' +
+        (receipt.thaw_line
+          ? '<div class="week-receipt-line">' + escapeHtml(receipt.thaw_line) + '</div>' : '') +
+        '<div class="week-receipt-acts">' +
+          // The screen's one apricot in the SET state (Rule 5) — the draft's
+          // Approve button is gone by now, and the asks below are quiet.
+          '<button type="button" class="btn-gold week-receipt-go" id="week-receipt-go">Open the list</button>' +
+          '<button type="button" class="week-receipt-see" id="week-receipt-see">See the week</button>' +
+        '</div>' +
+      '</div>' +
+      (lines.length
+        ? '<div class="shell-card wk-quick-card">' +
+            '<div class="wk-quick-title">' +
+              (lines.length === 1 ? 'One quick one before you go' : 'Two quick ones before you go') +
+            '</div>' +
+            lines.map(weekQuickLineHtml).join('') +
+          '</div>'
+        : '');
+
+    if (defrostHtml) wireDefrostAskCard(row, panel, data);
+    if (cookAheadAskHtml) wireCookAheadAskCard(row, panel, data);
+    row.querySelectorAll('[data-quick]').forEach(function (head) {
+      head.addEventListener('click', function () {
+        var key = head.getAttribute('data-quick');
+        weekQuickOpen[key] = !weekQuickOpen[key];
+        renderWeekApproval(panel, data);
+      });
+    });
+    row.querySelector('#week-receipt-go').addEventListener('click', function () {
+      // Plan stops is the screen that's actually about the trip the receipt
+      // just promised, not just the list itself.
+      activateTab('grocery', true, { groScreen: 'plan' });
+    });
+    row.querySelector('#week-receipt-see').addEventListener('click', function () {
+      setWeekReceiptDismissed(data.weekly_plan_id, true);
+      renderWeekApproval(panel, data);
+      if (scrollEl) scrollEl.scrollTop = 0;
+    });
+  }
+
+  // "Chicken thighs · Salmon · Ground beef" — the chips, collapsed. Three
+  // and a count, because a line is a line: the rest are all still there the
+  // moment the ask is opened.
+  function defrostAskSummary() {
+    var items = (defrostAskState.items || []).map(function (it) { return it.item; });
+    if (!items.length) return '';
+    if (items.length <= 3) return items.join(' · ');
+    return items.slice(0, 3).join(' · ') + ' · +' + (items.length - 3);
+  }
+
+  function cookAheadAskQuestion() {
+    var items = cookAheadAskState.items || [];
+    if (items.length !== 1) return 'Cook anything ahead?';
+    var item = items[0];
+    var total = (item.later || []).length + 1;
+    return item.dish + ' on ' + total + ' ' + cookSlotWord(item.slot, total) + '. Cook ahead?';
+  }
+
+  function cookAheadAskSummary() {
+    var items = cookAheadAskState.items || [];
+    if (items.length < 2) return '';
+    return items.map(function (item) {
+      var total = (item.later || []).length + 1;
+      return item.dish + ' on ' + total + ' ' + cookSlotWord(item.slot, total);
+    }).join(' · ');
   }
 
   function countOpenSlots(data) {
@@ -5345,14 +5432,19 @@
     }
   }
 
-  // The one-clash-away state: the review band above already names the
-  // clash (data.conflicts_note, rendered before anyone even tapped
-  // Approve), so this only has to offer the two ways through — approve
-  // past it, or back out and fix the plan first. Only
+  // The one-clash-away state: the "One thing to settle" card above the week
+  // already names the clash (data.settle, rendered before anyone even
+  // tapped Approve), so this only has to offer the two ways through —
+  // approve past it, or back out and fix the plan first. Only
   // submitWeekApproval's needs_confirmation branch ever calls this.
+  //
+  // It works on the decision row under the week card now (weekDecideHtml)
+  // rather than inside the removed review band; everything else about it —
+  // the relabelled button, the swapped handler, the quiet way out — is
+  // unchanged, and the second, explicit tap is still what the backend is
+  // waiting for.
   function showApproveConfirm(panel, data, approval, approvedBy) {
-    var band = panel.querySelector('#week-review-band');
-    var card = band && band.querySelector('.week-approve-card');
+    var card = panel.querySelector('.wk-decide');
     var btn = card && card.querySelector('#week-approve-btn');
     if (!card || !btn) return;
 
@@ -5376,6 +5468,10 @@
     freshBtn.addEventListener('click', function () {
       submitWeekApproval(panel, data, approvedBy, true);
     });
+    // "Keep it anyway" on the settle card comes through here too, and it is
+    // tapped ABOVE the week card while this button sits below it — so the
+    // confirm has to be brought to the eye rather than left offscreen.
+    if (freshBtn.scrollIntoView) freshBtn.scrollIntoView({ block: 'center' });
 
     // A quiet way out — same idiom as "or tweak it with me" just below,
     // not a second button competing with the confirm for attention.
@@ -5405,21 +5501,13 @@
     var days = (data.days || []).map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
     weekState.days = days;
 
-    // The one sentence about the state of the week, kept exactly as it
-    // was: a draft says whatever the server's headline says, an approved
-    // week says it's set, and anything with a gap counts the gaps. It
-    // feeds the review band; the root card's own subtitle says the shape
-    // of the week instead ("4 cooks, 3 made ahead"), which is a different
-    // fact and deliberately not the same sentence twice.
-    var emptyAheadCount = days.filter(function (d) { return d.needsDecision; }).length;
-    var statusLine = '';
-    if (data.weekly_plan_id && days.length) {
-      statusLine = (data.status !== 'approved' && data.headline)
-        ? data.headline
-        : (emptyAheadCount === 0
-            ? 'Your week is set.'
-            : (emptyAheadCount === 1 ? 'One meal still needs a decision.' : emptyAheadCount + ' meals still need a decision.'));
-    }
+    // The review band's status line went with the band (Emily's approved
+    // design, 2026-09-08). Everything it said, the screen now says in the
+    // place that owns the fact: the badge and subtitle say whether the week
+    // is a draft and whose turn it is, the seven rows say where the gaps
+    // are, and the receipt says what a settled week came to. One sentence
+    // repeating all three above the card was the top of the fold spent on
+    // a summary of what was directly underneath it.
 
     // Default the day pointer to today the first time this loads; preserve
     // whatever day the household was already on across a refresh (settling
@@ -5432,7 +5520,6 @@
       weekState.selectedIndex = todayIndexForSelect >= 0 ? todayIndexForSelect : 0;
     }
 
-    renderWeekReviewBand(panel, data, statusLine);
     renderWeekApproval(panel, data);
     renderMealsStep(panel);
     renderWeekSheetRows(days);
