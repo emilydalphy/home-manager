@@ -3181,7 +3181,10 @@
         done: done,
         title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
         line: kitchenTodayLine(meal, move, isReheat),
-        badge: done ? 'cooked' : (isReheat ? 'Reheat' : 'Cook')
+        // "Cook" / "Reheat" while it is still ahead of you, and the past
+        // tense of whichever it was once it is done — a reheat night was
+        // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
+        badge: done ? (isReheat ? 'eaten' : 'cooked') : (isReheat ? 'Reheat' : 'Cook')
       });
     });
     return rows;
@@ -6376,7 +6379,14 @@
   function cookRestOfWeekHtml(meals, data, todayIso, expanded) {
     var rest = (meals || [])
       .map(function (m, i) { return { m: m, i: i }; })
-      .filter(function (x) { return x.m.date !== todayIso; });
+      // The days AHEAD — "the rest of the week" is not a place a Monday
+      // that already happened belongs. A component-based plan carries a
+      // placeholder date (week_start, see get_weekly_plan) rather than a
+      // real day, so those are kept on their own terms rather than being
+      // filtered out as "past".
+      .filter(function (x) {
+        return !x.m.date || x.m.component_category || x.m.date > todayIso;
+      });
     if (!rest.length) {
       if ((meals || []).length) return '';
       // Every dinner this period was deliberately marked away (cooker.py's
@@ -6554,15 +6564,15 @@
       '<ol class="cook-steps cook-steps-check">' + dayOf.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>';
   }
 
-  // ---------- Cook: focused single-meal mode ----------
-  // Entering "Start cooking" (the hero, a week row, or a Today/Meals deep
-  // link) takes the whole Cook screen over for one meal — the ticket's
-  // whole point: "no stack of twenty other cards underneath, no scroll
-  // position to lose". Leaving is the quiet "← Back to the week" text
-  // control on the focused hero, the same shape Grocery's shopping mode
-  // uses to step back out of a store into Plan your stops (groShopHeroHtml/
-  // .gro-hero-back) — a state of this screen, never a page with its own
-  // header or back button.
+  // ---------- Cook mode: one meal, the whole screen ----------
+  // Tapping a cook — on the Kitchen root, on Today, or on a Meals day —
+  // takes the whole tab over for that one meal: the ticket's whole point,
+  // "no stack of twenty other cards underneath, no scroll position to
+  // lose". Leaving is the quiet "‹ Kitchen" text control on the focused
+  // hero, the same shape Grocery's shopping mode uses to step back out of
+  // a store into Plan your stops (groShopHeroHtml/.gro-hero-back) — a step
+  // of this tab, never a page with its own header or back button, and a
+  // link that goes UP a level by name rather than calling history.back().
   function cookEnterFocus(idx) {
     if (!cookState.data || !(cookState.data.meals || [])[idx]) return;
     cookState.screen = 'focus';
