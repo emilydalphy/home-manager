@@ -1251,6 +1251,18 @@
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // Review's confirmation section
     expandedStores: {},     // store name -> bool (default true)
     doneOpen: false,
+    inCartOpen: false,      // "In your cart" group on To buy — see groBuyHtml
+    // Ids resolved via the Plan stops "Any" pill this page view. "Any" saves
+    // store: '' (see stores.set_grocery_item_store's docstring — an empty
+    // store is a deliberate, remembered-nothing "no particular store" skip,
+    // not a placeholder), which is indistinguishable on the wire from an
+    // item that has simply never been triaged: both land in the
+    // 'Unassigned' bucket. groUnsorted() below excludes ids in this set so
+    // an "Any" choice leaves the to-sort queue exactly the way a real store
+    // choice already does (see the 'assign' handler). Client-side and
+    // page-view only, like justFinishedTrip below — a reload re-triages an
+    // "Any" item, which matches "skip" being one-off, not permanent.
+    anyStoreIds: {},
     openMenuId: null,
     planOpenId: null,
     planPageSize: 5,
@@ -1324,7 +1336,8 @@
   function groUnsorted(data) {
     var u = data.stores['Unassigned'];
     if (!u) return [];
-    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, []);
+    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, [])
+      .filter(function (it) { return !groceryState.anyStoreIds[String(it.id)]; });
   }
   function groStoresWithNeeded(data) {
     return Object.keys(data.stores).filter(function (n) {
@@ -1745,6 +1758,32 @@
             : '<p class="gro-empty">Nothing checked off yet.</p>') + '</div>'
         : '') +
     '</div>';
+
+    // Items already found and in the trolley (status in_cart) used to be
+    // invisible here — they drop out of every store's needed list but
+    // weren't rendered anywhere on To buy until the trip was finished, so
+    // there was no way to see what was in the cart or un-pick something
+    // mid-trip. Same collapsed-group shape as Done just above (reusing its
+    // classes and groDoneRowHtml's row/put-back interaction as-is — "put it
+    // back" is exactly "uncheck", status -> needed, whether the row came
+    // from purchased or in_cart), kept as its own group rather than folded
+    // into Done because in_cart is "found, still in the trolley," not
+    // "bought" (see groTotals' comment on the same distinction).
+    var allInCart = [];
+    names.forEach(function (n) { data.stores[n].inCart.forEach(function (it) { allInCart.push(it); }); });
+    if (allInCart.length) {
+      var cartOpen = groceryState.inCartOpen;
+      html += '<div class="gro-done' + (cartOpen ? ' open' : '') + '">' +
+        '<button type="button" class="gro-done-head" data-gro="toggle-incart" aria-expanded="' + cartOpen + '">' +
+          '<span class="gro-done-tick">' + GRO_ICONS.basket + '</span>' +
+          '<span class="gro-done-label">In your cart (' + allInCart.length + ')</span>' +
+          '<span class="gro-chev">' + (cartOpen ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+        '</button>' +
+        (cartOpen
+          ? '<div class="gro-done-body">' + allInCart.map(groDoneRowHtml).join('') + '</div>'
+          : '') +
+      '</div>';
+    }
     return html;
   }
 
@@ -2268,6 +2307,11 @@
         renderGrocery();
         return;
 
+      case 'toggle-incart':
+        groceryState.inCartOpen = !groceryState.inCartOpen;
+        renderGrocery();
+        return;
+
       case 'check':
         groDo(function () {
           return groPost('/api/grocery-list/' + id + '/status', { status: 'purchased' });
@@ -2396,6 +2440,12 @@
           return groPost('/api/grocery-list/' + id + '/store', { store: toStore }).then(function (r) { assignResult = r; return r; });
         }, "Couldn't assign that — try again.").then(function (ok) {
           if (!ok) return;
+          // The "Any" pill sends an empty store, same as never-triaged —
+          // see anyStoreIds' declaration above. Mark it resolved (only on
+          // success) so groUnsorted drops it from the to-sort queue exactly
+          // like a real store pick already does, instead of leaving it
+          // looking untouched and blocking the auto-advance below.
+          if (!toStore) groceryState.anyStoreIds[id] = true;
           // Auto-advance to the next thing still needing a store, and open
           // the store it just landed in so the shopper sees where it went.
           var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
