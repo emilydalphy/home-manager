@@ -265,6 +265,20 @@ only thing it never does is merge (or push without her go-ahead); those stay her
    "A few" means a few — run them in parallel with delegated agents (see Sub-agents and
    Emily's model rule: Opus for complex/design/risky/safety work, Sonnet for well-specified
    execution and reviews), one worktree each.
+   **Claim it the moment you pick it (rule added 2026-09-08 after two sessions built the
+   same three tickets on 2026-09-05).** Emily often has more than one session running —
+   a live desktop session, a cloud session, the overnight routine — and they all read the
+   same board. Before any investigation or branch: (a) `git fetch origin` and look for an
+   existing branch whose name or last commit matches the card (`git branch -r`,
+   `git log origin/<branch> -1`); if one exists, that card is taken — build on that
+   branch or leave it, never start a parallel one; (b) set the card's Status to
+   **In progress** immediately and put a first line in its Notes property of the form
+   `CLAIMED 2026-09-08 14:05 ET · branch <name> · <desktop live / cloud / overnight>`;
+   (c) every session, including the overnight routine, skips a card whose Notes begin with
+   `CLAIMED` unless the claim is more than 24 hours old AND no branch by that name exists
+   on origin or locally, in which case it may re-claim and say so. When the branch merges,
+   the CLAIMED line is replaced by the merge note. A card that was set In progress without
+   a CLAIMED line by an older session counts as claimed for 24 hours from its last edit.
 2. **Investigate** per "Working a ticket" steps 1-2: real code, real root cause, file:line.
 3. **Verify the finding** with a fresh sub-agent before anything is built on it.
 4. **Build it — on a branch, in a worktree, never on `main`** ("Working a ticket" step 3).
@@ -315,6 +329,10 @@ check recent runs, read the exact current prompt) via `RemoteTrigger` using its 
 `trig_017u9zjSpCY18QezqHpi1Lma`, or point Emily to https://claude.ai/code/routines.
 
 **Queue logic (fixed 2026-08-31 — the first version had two real bugs):**
+0. Before anything else, skip every card whose Notes begin with `CLAIMED` (see "Running the
+   loop", step 1) — another session owns it. A card set In progress by someone else within
+   the last 24 hours counts the same. Never push a branch for a card another branch already
+   covers; check `git branch -r` for a name or last-commit match first.
 1. If any cards have "Work Tonight" checked, **that's the queue, regardless of Status**
    (except Done/Archived, which just get the checkbox cleared as an assumed mistake) —
    uncapped, ordered by Priority then oldest createdTime. The original version filtered to
