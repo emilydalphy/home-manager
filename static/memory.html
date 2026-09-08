@@ -230,9 +230,23 @@ const TAB_META = {
 // the alternative would have been a second page saying the same things.
 // An unrecognised or absent hash falls back to People exactly as before.
 const TAB_KEYS = ['people', 'taste', 'rhythm', 'stores'];
+// A hash may carry a spot inside the tab after a slash — "rhythm/prep-days"
+// opens Rhythm and scrolls to the prep-days block (the Cook tab's "tell
+// Pomona which days you prep" link lands there, not on lunch locations).
+let pendingAnchor = null;
 function openingTab() {
-  const wanted = (window.location.hash || '').replace(/^#/, '');
+  const raw = (window.location.hash || '').replace(/^#/, '');
+  const [wanted, anchor] = raw.split('/');
+  pendingAnchor = anchor ? 'wwk-' + anchor : null;
   return TAB_KEYS.includes(wanted) ? wanted : 'people';
+}
+function scrollToPendingAnchor() {
+  if (!pendingAnchor) return;
+  const id = pendingAnchor; pendingAnchor = null;
+  requestAnimationFrame(() => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
 }
 
 let activeTab = openingTab();
@@ -264,13 +278,17 @@ let pendingCookingRoleOnePerson = false;
 // tile reopened on whatever tab was last tapped inside the sheet, under a
 // header still saying "Stores".
 function showTab(tab) {
-  if (!TAB_KEYS.includes(tab) || tab === activeTab) return;
-  activeTab = tab;
+  const [key, anchor] = String(tab || '').split('/');
+  if (anchor) pendingAnchor = 'wwk-' + anchor;
+  if (!TAB_KEYS.includes(key)) return;
+  if (key === activeTab) { scrollToPendingAnchor(); return; }
+  activeTab = key;
   openEditorId = null;
   openPrefEditor = null;
   pendingCookingRoleOnePerson = false;
   paintTabStrip();
   render();
+  scrollToPendingAnchor();
 }
 window.showKitchenTab = showTab;
 
@@ -347,7 +365,7 @@ async function renderFactsTab(category) {
     wireFactsActions(category);
     if (onboarding && category === 'people') wirePeopleOnboardingActions();
     if (preferences) {
-      if (category === 'rhythm') wireRhythmPreferenceActions();
+      if (category === 'rhythm') wireRhythmPreferenceActions(preferences);
       else wirePreferenceActions(preferences);
     }
   } catch (err) {
@@ -678,6 +696,24 @@ const RHYTHM_DINNER_WINDOW_OPTIONS = [
   { key: 'later', label: 'Later' },
   { key: 'all_over', label: 'All over the place' },
 ];
+// Prep days (Loop Board "Prep days", Emily 2026-09-04/09-08) — the one
+// multi-select rhythm fact, and the only skippable one. Same options, same
+// order and same words as onboarding.html's PREP_DAY_OPTIONS /
+// PREP_MINUTES_OPTIONS, kept as a separate copy for the same reason every
+// other constant on this page is (no shared module between the standalone
+// wizard and this page).
+const RHYTHM_PREP_DAY_OPTIONS = [
+  { key: 'sunday', label: 'Sun' }, { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' },
+  { key: 'wednesday', label: 'Wed' }, { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' },
+  { key: 'saturday', label: 'Sat' },
+];
+const RHYTHM_PREP_MINUTES_OPTIONS = [
+  { key: 30, label: '30 min' },
+  { key: 60, label: 'About an hour' },
+  { key: 120, label: 'Longer' },
+];
+const RHYTHM_MAX_PREP_DAYS = 2;
+
 const RHYTHM_PLANNING_ANCHOR_OPTIONS = [
   { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' }, { key: 'wednesday', label: 'Wed' },
   { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
@@ -745,7 +781,28 @@ function renderRhythmPreferenceCard(prefs) {
   </div>`;
   html += `<div class="wwk-pref-chips">`;
   RHYTHM_LEFTOVERS_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-leftovers', prefs.leftovers_stance === o.key); });
-  html += `</div></div>`;
+  html += `</div>`;
+
+  // Prep days — the summary read back plainly above the chips, the same
+  // completed-value idiom the Plan-ready row above uses. Multi-select, up
+  // to two; the length applies to both, as it does in onboarding.
+  const prepDays = prefs.prep_days || [];
+  const prepKeys = prepDays.map(d => d.weekday);
+  const prepMinutes = (prepDays.find(d => d.minutes) || {}).minutes || 0;
+  const prepShown = prefs.prep_days_summary
+    ? escapeHtml(prefs.prep_days_summary)
+    : '<span class="wwk-pref-empty">Not set yet</span>';
+  html += `<div class="wwk-fact-row wwk-pref-chips-row" id="wwk-prep-days" style="margin-top:8px">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Prep days</span> ${prepShown}</span>
+  </div><div class="wwk-pref-chips">`;
+  RHYTHM_PREP_DAY_OPTIONS.forEach(o => { html += rhythmChip(o.label, o.key, 'set-prep-day', prepKeys.indexOf(o.key) !== -1); });
+  html += `</div>`;
+  if (prepKeys.length) {
+    html += `<p class="wwk-member-field-label">Roughly how long?</p><div class="wwk-pref-chips">`;
+    RHYTHM_PREP_MINUTES_OPTIONS.forEach(o => { html += rhythmChip(o.label, String(o.key), 'set-prep-minutes', prepMinutes === o.key); });
+    html += `</div>`;
+  }
+  html += `</div>`;
   return html;
 }
 
@@ -761,7 +818,7 @@ async function saveRhythmFact(body) {
   if (!res.ok) throw new Error('failed');
 }
 
-function wireRhythmPreferenceActions() {
+function wireRhythmPreferenceActions(prefs) {
   const content = document.getElementById('wwk-content');
   content.querySelectorAll('[data-set-leftovers]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -824,6 +881,42 @@ function wireRhythmPreferenceActions() {
       btn.disabled = true;
       try { await saveRhythmFact({ planning_anchor: btn.getAttribute('data-set-planning-anchor') }); render(); }
       catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  // Prep days: the whole list is the fact, so every tap sends the whole
+  // list. Built by walking RHYTHM_PREP_DAY_OPTIONS rather than by tap
+  // order, so the saved answer always reads back in week order — the same
+  // rule onboarding's currentPrepDays follows.
+  const prepDaysNow = (prefs.prep_days || []);
+  const prepMinutesNow = (prepDaysNow.find(d => d.minutes) || {}).minutes || null;
+  function prepDaysPayload(keys, minutes) {
+    return RHYTHM_PREP_DAY_OPTIONS
+      .filter(o => keys.indexOf(o.key) !== -1)
+      .map(o => ({ weekday: o.key, minutes: minutes || null }));
+  }
+  content.querySelectorAll('[data-set-prep-day]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const key = btn.getAttribute('data-set-prep-day');
+      let keys = prepDaysNow.map(d => d.weekday);
+      if (keys.indexOf(key) !== -1) keys = keys.filter(k => k !== key);
+      else if (keys.length < RHYTHM_MAX_PREP_DAYS) keys = keys.concat([key]);
+      else return;  // "up to two" — a third tap does nothing, as in onboarding
+      btn.disabled = true;
+      try { await saveRhythmFact({ prep_days: prepDaysPayload(keys, prepMinutesNow) }); render(); }
+      catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
+    });
+  });
+  content.querySelectorAll('[data-set-prep-minutes]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const picked = parseInt(btn.getAttribute('data-set-prep-minutes'), 10);
+      // Tapping the length that's already on clears it back to "they
+      // didn't say", which is a real answer here — the days stay.
+      const minutes = prepMinutesNow === picked ? null : picked;
+      btn.disabled = true;
+      try {
+        await saveRhythmFact({ prep_days: prepDaysPayload(prepDaysNow.map(d => d.weekday), minutes) });
+        render();
+      } catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
     });
   });
 }
@@ -1183,6 +1276,7 @@ function paintTabStrip() {
 // startup is not enough on its own. Listening as well makes the Kitchen
 // hub's chips land on the right tab either way.
 window.addEventListener('hashchange', () => showTab(openingTab()));
+window.addEventListener('load', scrollToPendingAnchor);
 
 paintTabStrip();
 render();

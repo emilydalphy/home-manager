@@ -2071,8 +2071,44 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "set_prep_days",
+        "description": (
+            "Set (or correct) the days the household preps ahead on, household-level: up to two days, each "
+            "{weekday: 'monday'...'sunday', minutes: roughly how long (optional), note: anything they said about it (optional)}. "
+            "\"We prep on Saturdays now\" is set_prep_days(days=[{\"weekday\": \"saturday\"}]); \"we don't prep ahead any more\" is "
+            "set_prep_days(days=[]), which clears the answer. "
+            "Use this_week_only=true for a ONE-OFF that must not change the standing answer: \"I can't prep this Sunday\" is "
+            "set_prep_days(days=[], this_week_only=true), which skips prep on this week's plan only; "
+            "set_prep_days(days=[{\"weekday\": \"sunday\"}], this_week_only=true) puts it back on for this week. "
+            "A one-off never edits the standing days, and correcting the standing days never affects a week already skipped."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {
+                    "type": "array",
+                    "description": "Up to two prep days, in the order the household says them (the big prep first).",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "weekday": {"type": "string", "enum": list(tools.PREP_DAY_WEEKDAYS)},
+                            "minutes": {"type": "integer", "description": "Roughly how long that prep runs, in minutes. Omit if they didn't say."},
+                            "note": {"type": "string", "description": "Anything they said about that day, in their words. Omit if there's nothing."},
+                        },
+                        "required": ["weekday"],
+                    },
+                },
+                "this_week_only": {
+                    "type": "boolean",
+                    "description": "True for a one-off change to THIS week's plan only, leaving the standing answer alone.",
+                },
+            },
+            "required": ["days"],
+        },
+    },
+    {
         "name": "get_household_rhythm",
-        "description": "Get the household's standing rhythm: per-person lunch location (with any per-weekday overrides), which meals are eaten together, who cooks, when dinner lands, when the week should be ready, and the household's leftovers stance. This is separate from get_facts(category='rhythm')'s freeform notes — use this for the structured answers, that for freeform routine notes.",
+        "description": "Get the household's standing rhythm: per-person lunch location (with any per-weekday overrides), which meals are eaten together, who cooks, when dinner lands, when the week should be ready, the household's leftovers stance, and the days they prep ahead on (prep_days, with prep_days_summary as the one-line version). This is separate from get_facts(category='rhythm')'s freeform notes — use this for the structured answers, that for freeform routine notes.",
         "input_schema": {"type": "object", "properties": {}},
     },
 ]
@@ -4716,6 +4752,7 @@ TOOL_FUNCTIONS = {
     "set_dinner_window": tools.set_dinner_window,
     "set_planning_anchor": tools.set_planning_anchor,
     "set_leftovers_stance": tools.set_leftovers_stance,
+    "set_prep_days": tools.set_prep_days,
     "get_household_rhythm": tools.get_household_rhythm,
 }
 

@@ -221,6 +221,14 @@ from .pre_shop import (  # noqa: F401
     mark_grocery_item_already_have_reviewed,
     undo_pre_shop_drop,
 )
+from .prep_sessions import (  # noqa: F401
+    PREP_CUT_TASK_TYPE,
+    add_prep_cut,
+    has_prep_days,
+    prep_sessions_for_current_plan,
+    prep_sessions_for_plan,
+    set_skip_prep_this_week,
+)
 from .preferences import (  # noqa: F401
     add_food_dislikes,
     add_store_typical_items,
@@ -291,14 +299,19 @@ from .rhythm import (  # noqa: F401
     DINNER_WINDOWS,
     LEFTOVERS_STANCES,
     LUNCH_LOCATIONS,
+    MAX_PREP_DAYS,
     MEALS_TOGETHER_OPTIONS,
     PLANNING_ANCHORS,
     PLANNING_ANCHOR_WEEKDAYS,
+    PREP_DAY_WEEKDAYS,
+    PREP_MINUTES_CHOICES,
     WEEKDAYS,
     clear_lunch_location_override,
     effective_lunch_location,
     get_household_rhythm,
     planning_anchor_label,
+    prep_days_summary,
+    prep_minutes_label,
     rhythm_completeness_signals,
     set_cooking_role,
     set_dinner_window,
@@ -306,6 +319,7 @@ from .rhythm import (  # noqa: F401
     set_lunch_location,
     set_meals_together,
     set_planning_anchor,
+    set_prep_days,
 )
 from .sharing import (  # noqa: F401
     eater_add_dietary_restriction,
