@@ -418,6 +418,16 @@ class ChatAction(BaseModel):
     change: str
     tab: str | None = None
     href: str | None = None
+    # Which day/slot of the plan this touched, when the tool said so
+    # (plan_meal / swap_meal_in_plan's own meal_date + slot). Only ever set
+    # on a `week` card, and absent whenever the change wasn't about one
+    # specific day — a whole-week generation, an approval, a
+    # component-based plan's swap, which has no date at all. The shell's
+    # "See your week" chip uses it to land on the day that changed instead
+    # of wherever the day rail happened to be pointing; with no date it
+    # still shows the week, just without selecting a day.
+    date: str | None = None
+    slot: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -3003,6 +3013,32 @@ def _humanize_change(tool_name: str, args: dict, result) -> str | None:
     return f"{verb} {noun}"
 
 
+_DAY_SLOTS = {"breakfast", "lunch", "dinner", "snack"}
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _changed_day(category: str, args) -> tuple[str | None, str | None]:
+    """The one day/slot a `week` tool call touched, or (None, None).
+
+    Only plan_meal and swap_meal_in_plan name a single day (`meal_date`);
+    generate_weekly_plan rewrites the whole week and swap_component_in_plan
+    edits a category rather than a date, so neither has an answer here and
+    both correctly fall through. Anything not shaped like an ISO date or a
+    known slot is dropped rather than passed on — this is a hint for where
+    to point the screen, so a wrong one is worse than none.
+    """
+    if category != "week" or not isinstance(args, dict):
+        return None, None
+    date = args.get("meal_date")
+    if not isinstance(date, str) or not _ISO_DATE_RE.match(date.strip()):
+        return None, None
+    slot = args.get("slot")
+    slot = slot.strip().lower() if isinstance(slot, str) else ""
+    # plan_meal and swap_meal_in_plan both default slot to "dinner"; an
+    # omitted slot means the same thing here.
+    return date.strip(), (slot if slot in _DAY_SLOTS else "dinner")
+
+
 _READ_ONLY_PREFIXES = ("get_", "list_")
 
 
@@ -3078,7 +3114,11 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                     )
                 continue
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
-            by_category[category] = ChatAction(kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href)
+            day_date, day_slot = _changed_day(category, args)
+            by_category[category] = ChatAction(
+                kicker=_CATEGORY_KICKERS[category], change=change, tab=tab, href=href,
+                date=day_date, slot=day_slot,
+            )
 
     return list(by_category.values())
 
