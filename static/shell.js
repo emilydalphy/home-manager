@@ -94,6 +94,16 @@
   var REHEAT_ACTION_LABEL = 'Mark eaten';
   var REHEAT_UNDO_LABEL = 'Mark not eaten';
 
+  // The beta is meals-only (Emily, 2026-09-08, option 1b on the Chores
+  // ticket) — Chores hasn't been validated yet, so Today's "Your chores"
+  // card is hidden rather than shown to every beta household. This is the
+  // one flag that decides it: false means buildTodayPanel never renders
+  // the chores card markup and never calls loadChores (so no
+  // /api/chores/today request either). The chores backend, the
+  // /chores-setup page, and loadChores/renderChores themselves are all
+  // untouched — flipping this back to true is the whole reversal.
+  var SHOW_CHORES_ON_TODAY = false;
+
   var TABS = [
     { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
     { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
@@ -372,12 +382,18 @@
             '</button>' +
           '</div>' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
-          '<div class="today-area-chores">' +
-            '<div class="shell-card chores-card">' +
-              '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
-              '<div id="chores-list"></div>' +
-            '</div>' +
-          '</div>' +
+          // SHOW_CHORES_ON_TODAY (2026-09-08): the beta is meals-only, so
+          // this card is left out of the markup entirely while the flag
+          // is false — not just hidden, so there's nothing for a stray
+          // selector to find.
+          (SHOW_CHORES_ON_TODAY ?
+            '<div class="today-area-chores">' +
+              '<div class="shell-card chores-card">' +
+                '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
+                '<div id="chores-list"></div>' +
+              '</div>' +
+            '</div>'
+          : '') +
           '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
             '<div class="ask-messages" id="today-ask-messages"></div>' +
             '<div class="ask-chips" id="today-ask-chips"></div>' +
@@ -404,7 +420,10 @@
       loadNeedsYou(panel),
       loadTonightsDinner(panel),
       loadDefrostToday(panel),
-      loadChores(panel),
+      // SHOW_CHORES_ON_TODAY (2026-09-08): skip the call, not just the
+      // render — no chores card means no reason to hit
+      // /api/chores/today.
+      (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve()),
       loadGrocerySummary(panel)
     ]);
   }

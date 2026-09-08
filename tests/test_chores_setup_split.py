@@ -40,6 +40,7 @@ from app import tools
 REPO = Path(__file__).resolve().parent.parent
 ONBOARDING = (REPO / "static" / "onboarding.html").read_text()
 CHORES_SETUP = (REPO / "static" / "chores-setup.html").read_text()
+SHELL_JS = (REPO / "static" / "shell.js").read_text()
 
 
 @pytest.fixture
@@ -227,3 +228,35 @@ def test_chores_setup_page_reuses_the_same_save_route():
     """
     assert "/api/onboarding/household" in CHORES_SETUP
     assert "/api/onboarding/chores-profile" in CHORES_SETUP
+
+
+def test_today_chores_card_is_hidden_behind_one_constant():
+    """
+    Emily decided 2026-09-08 (option 1b on the Chores ticket) that the
+    beta is meals-only: Today's "Your chores" card must not render, and
+    must not fetch /api/chores/today, while Chores is unvalidated. That
+    is expressed as a single named constant in static/shell.js rather
+    than scattered conditionals, so flipping it back on is a one-line
+    change.
+
+    This pins three things at the source level: the constant exists and
+    is currently false, the chores card markup is only emitted when it is
+    true (not merely hidden via CSS), and the loadChores() call — the one
+    that hits /api/chores/today — is gated by the same constant so a
+    false flag means zero network traffic, not just an invisible card.
+    """
+    m = re.search(r"var\s+SHOW_CHORES_ON_TODAY\s*=\s*(true|false)\s*;", SHELL_JS)
+    assert m, "SHOW_CHORES_ON_TODAY constant not found in static/shell.js"
+    assert m.group(1) == "false", "chores must stay hidden on Today until Chores is validated"
+
+    # The chores card markup (the div that loadChores/renderChores fill
+    # in) is only built when the flag is true — not present unconditionally.
+    chores_card_idx = SHELL_JS.index('class="shell-card chores-card"')
+    guard_idx = SHELL_JS.rindex("SHOW_CHORES_ON_TODAY ?", 0, chores_card_idx)
+    assert guard_idx != -1, "chores card markup must be gated by SHOW_CHORES_ON_TODAY"
+
+    # loadChores() — the fetch('/api/chores/today') caller — is only
+    # invoked when the flag is true, so a false flag skips the request.
+    load_chores_call_idx = SHELL_JS.index("loadChores(panel)", SHELL_JS.index("await Promise.all"))
+    call_guard_idx = SHELL_JS.rindex("SHOW_CHORES_ON_TODAY ?", 0, load_chores_call_idx)
+    assert call_guard_idx != -1, "the loadChores(panel) call site must be gated by SHOW_CHORES_ON_TODAY"
