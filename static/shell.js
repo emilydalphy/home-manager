@@ -1251,6 +1251,18 @@
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // Review's confirmation section
     expandedStores: {},     // store name -> bool (default true)
     doneOpen: false,
+    inCartOpen: false,      // "In your cart" group on To buy — see groBuyHtml
+    // Ids resolved via the Plan stops "Any" pill this page view. "Any" saves
+    // store: '' (see stores.set_grocery_item_store's docstring — an empty
+    // store is a deliberate, remembered-nothing "no particular store" skip,
+    // not a placeholder), which is indistinguishable on the wire from an
+    // item that has simply never been triaged: both land in the
+    // 'Unassigned' bucket. groUnsorted() below excludes ids in this set so
+    // an "Any" choice leaves the to-sort queue exactly the way a real store
+    // choice already does (see the 'assign' handler). Client-side and
+    // page-view only, like justFinishedTrip below — a reload re-triages an
+    // "Any" item, which matches "skip" being one-off, not permanent.
+    anyStoreIds: {},
     openMenuId: null,
     planOpenId: null,
     planPageSize: 5,
@@ -1324,7 +1336,8 @@
   function groUnsorted(data) {
     var u = data.stores['Unassigned'];
     if (!u) return [];
-    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, []);
+    return u.sections.reduce(function (acc, s) { return acc.concat(s.items); }, [])
+      .filter(function (it) { return !groceryState.anyStoreIds[String(it.id)]; });
   }
   function groStoresWithNeeded(data) {
     return Object.keys(data.stores).filter(function (n) {
@@ -1563,7 +1576,7 @@
       hero.innerHTML = '';
       seg.innerHTML = '';
       body.innerHTML = groceryState.loadError
-        ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.</p>'
+        ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       panel.querySelector('#gro-add').hidden = true;
       panel.querySelector('#gro-confirm-slot').innerHTML = '';
@@ -1745,6 +1758,32 @@
             : '<p class="gro-empty">Nothing checked off yet.</p>') + '</div>'
         : '') +
     '</div>';
+
+    // Items already found and in the trolley (status in_cart) used to be
+    // invisible here — they drop out of every store's needed list but
+    // weren't rendered anywhere on To buy until the trip was finished, so
+    // there was no way to see what was in the cart or un-pick something
+    // mid-trip. Same collapsed-group shape as Done just above (reusing its
+    // classes and groDoneRowHtml's row/put-back interaction as-is — "put it
+    // back" is exactly "uncheck", status -> needed, whether the row came
+    // from purchased or in_cart), kept as its own group rather than folded
+    // into Done because in_cart is "found, still in the trolley," not
+    // "bought" (see groTotals' comment on the same distinction).
+    var allInCart = [];
+    names.forEach(function (n) { data.stores[n].inCart.forEach(function (it) { allInCart.push(it); }); });
+    if (allInCart.length) {
+      var cartOpen = groceryState.inCartOpen;
+      html += '<div class="gro-done' + (cartOpen ? ' open' : '') + '">' +
+        '<button type="button" class="gro-done-head" data-gro="toggle-incart" aria-expanded="' + cartOpen + '">' +
+          '<span class="gro-done-tick">' + GRO_ICONS.basket + '</span>' +
+          '<span class="gro-done-label">In your cart (' + allInCart.length + ')</span>' +
+          '<span class="gro-chev">' + (cartOpen ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
+        '</button>' +
+        (cartOpen
+          ? '<div class="gro-done-body">' + allInCart.map(groDoneRowHtml).join('') + '</div>'
+          : '') +
+      '</div>';
+    }
     return html;
   }
 
@@ -2268,6 +2307,11 @@
         renderGrocery();
         return;
 
+      case 'toggle-incart':
+        groceryState.inCartOpen = !groceryState.inCartOpen;
+        renderGrocery();
+        return;
+
       case 'check':
         groDo(function () {
           return groPost('/api/grocery-list/' + id + '/status', { status: 'purchased' });
@@ -2396,6 +2440,12 @@
           return groPost('/api/grocery-list/' + id + '/store', { store: toStore }).then(function (r) { assignResult = r; return r; });
         }, "Couldn't assign that — try again.").then(function (ok) {
           if (!ok) return;
+          // The "Any" pill sends an empty store, same as never-triaged —
+          // see anyStoreIds' declaration above. Mark it resolved (only on
+          // success) so groUnsorted drops it from the to-sort queue exactly
+          // like a real store pick already does, instead of leaving it
+          // looking untouched and blocking the auto-advance below.
+          if (!toStore) groceryState.anyStoreIds[id] = true;
           // Auto-advance to the next thing still needing a store, and open
           // the store it just landed in so the shopper sees where it went.
           var stillUnsorted = groceryState.data ? groUnsorted(groceryState.data) : [];
@@ -2864,7 +2914,7 @@
     if (!hero || !body) return;
 
     if (kitchenState.loadError || !kitchenState.memory) {
-      hero.innerHTML = '<p class="kit-hero-error">Couldn’t load what I know about your household right now.</p>';
+      hero.innerHTML = '<p class="kit-hero-error">Couldn’t load what I know about your household right now.' + snwLink(true) + '</p>';
       body.innerHTML = '';
       return;
     }
@@ -2933,7 +2983,9 @@
           '<span class="kit-worth-eyebrow">Worth doing sometime</span>' +
         '</div>' +
         '<p class="kit-worth-text">Scan a fridge photo, so I stop suggesting what you already have.</p>' +
-      '</div>';
+      '</div>' +
+      // Quiet, and last: a way out of a bad moment, not a chore.
+      snwTile();
   }
 
   function kitChip(label, count, sheet) {
@@ -3105,7 +3157,10 @@
   //     event signal this app doesn't have — omitted rather than invented.
   var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
   var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];
-  var weekState = { selectedIndex: null, days: [], data: null };
+  // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
+  // drained by applyPendingDayFocus once the days for that week are
+  // actually loaded. Null the rest of the time.
+  var weekState = { selectedIndex: null, days: [], data: null, pendingDayFocus: null };
 
   async function buildWeekPanel(panel) {
     panel.innerHTML =
@@ -4364,6 +4419,12 @@
           '<button type="button" class="week-redo-btn" id="week-try-again">Try again</button>' +
           '<button type="button" class="week-redo-btn" id="week-change-answers">Change my answers</button>' +
         '</div>' +
+        // Empty and hidden until "Try again" is tapped — the rebuild is a
+        // ~30-second call that until now showed nothing but a disabled
+        // button, so this is where the rotating waiting line goes
+        // (static/waiting-lines.js, the same component the first-week
+        // reveal and /plan-week's drafting step use).
+        '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
       '</div>';
     band.querySelector('#week-approve-btn').addEventListener('click', function () { approveWeek(panel, data); });
     band.querySelector('#week-tweak-btn').addEventListener('click', function () {
@@ -4401,6 +4462,19 @@
     // "Change my answers", goes back to Q1 with everything prefilled.
     var btn = panel.querySelector('#week-try-again');
     if (btn) { btn.disabled = true; btn.textContent = 'Rebuilding…'; }
+    // This one posts to the plain /generate, which streams nothing back —
+    // there are no real stages to key to, so it gets the generic lines
+    // rather than a stage it can't honestly claim to be in.
+    var waitEl = panel.querySelector('#week-redo-waiting');
+    var waiter = null;
+    if (waitEl && window.PomonaWaiting) {
+      waitEl.hidden = false;
+      waiter = window.PomonaWaiting.startWaitingLines(waitEl, { stage: 'generic' });
+    }
+    function stopWaiting() {
+      if (waiter) { waiter.stop(); waiter = null; }
+      if (waitEl) { waitEl.hidden = true; waitEl.textContent = ''; }
+    }
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/generate', {
         method: 'POST',
@@ -4417,10 +4491,14 @@
       });
       if (!res.ok) throw new Error('regenerate failed');
       await res.json();
+      // Before loadWeekMenu, which rebuilds this band from scratch and
+      // would otherwise leave the interval ticking against a detached node.
+      stopWaiting();
       showToast('Same answers, a different week.');
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Regenerating the week failed:', err);
+      stopWaiting();
       if (btn) { btn.disabled = false; btn.textContent = 'Try again'; }
       alert('Could not rebuild the week right now — try again in a moment.');
     }
@@ -4892,6 +4970,9 @@
     renderWeekApproval(panel, data);
     renderPlanWeekEntry(panel, data);
     renderWeekSheetRows(days);
+    // Chat's "See your week" chip may have asked for a specific day before
+    // this week's days existed — now they do. No-op unless one is pending.
+    applyPendingDayFocus(panel);
 
     var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
     gridEl.innerHTML =
@@ -5354,7 +5435,7 @@
     // back like every other path here — a chat turn that fails to reload can
     // otherwise throw a reader who was halfway down the week to the top.
     if (cookState.loadError || !cookState.data) {
-      view.innerHTML = '<p class="cook-error">Couldn’t load the cook view right now — switch tabs and back to try again.</p>';
+      view.innerHTML = '<p class="cook-error">Couldn’t load the cook view right now — switch tabs and back to try again.' + snwLink() + '</p>';
       if (scrollEl) scrollEl.scrollTop = keepScroll;
       return;
     }
@@ -6912,6 +6993,11 @@
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
+          // The post-change next-step chips (offerNextStepChips) navigate
+          // directly rather than sending a message — "Open the list",
+          // "Plan my stops" and "See your week" are places to go, not
+          // things to ask about.
+          if (action.onClick) return action.onClick();
           // The grocery chip pre-fills and focuses instead of sending —
           // what to add is the household's call, not something to guess at
           // and send as a message. openAskSheet(prefill) already knows how
@@ -6921,6 +7007,122 @@
         });
       });
     });
+  }
+
+  // "core loop handoffs, slice 2" item B (Emily, 2026-09-05): once
+  // hideAskChips has fired (after the household's first message), the
+  // pre-conversation quick-action chips are gone for good — but a turn
+  // that actually changed something still has an obvious next step, and
+  // making the household type it out again is exactly the friction the
+  // quick-action chips exist to remove. So: after any turn whose actions
+  // (the same {tab, change} cards refreshStaleTabsFromActions reads) show
+  // a real change, recompute and show the relevant chip(s). A turn that
+  // changed nothing — a question answered — gets none, which is the point
+  // of gating on `actions` rather than on "a turn happened."
+  //
+  // NOTE (2026-09-08): this pair was added by e2024a4 and then silently
+  // lost from main in merge 2d69951 ("Merge custom-date-range"), which
+  // took the other side of the conflicted region wholesale. Restored here
+  // alongside the "See your week" chip below, because that chip has
+  // nowhere to live without it.
+  //
+  // Priority for the PRIMARY chip when a turn touched more than one area:
+  // an approval (which often ALSO carries a grocery action for the items
+  // it just added) beats a plain grocery edit, which beats an unapproved
+  // draft edit — the biggest life-cycle event wins.
+  //
+  // "See your week" (Emily, 2026-09-08, Loop Board "Tweak-the-week chat:
+  // after a swap the flow dies") rides ahead of that primary whenever the
+  // turn edited a draft week: after a swap the receipt card says WEEK
+  // UPDATED but every other affordance here only sends another message,
+  // so there was no way to go LOOK at what just changed without hunting
+  // for the tab yourself. It goes FIRST because looking is free and
+  // reversible and approving is neither — see, then approve.
+  function computeNextStepChips(actions) {
+    var weekAction = null, groceryAction = null;
+    (actions || []).forEach(function (a) {
+      if (a.tab === 'week') weekAction = a;
+      if (a.tab === 'grocery') groceryAction = a;
+    });
+    // approve_weekly_plan is the one 'week' tool whose action card's
+    // `change` text says "approved" (app/main.py's _categorize_tool
+    // special-cases it to "Week approved — your list is ready") — the
+    // only signal available here that this turn was an approval rather
+    // than an ordinary draft edit.
+    var weekApproved = !!(weekAction && /approved/i.test(weekAction.change || ''));
+    var chips = [];
+    if (weekAction && !weekApproved) {
+      chips.push({
+        label: 'See your week',
+        // The receipt card's own View does activateTab(action.tab) after
+        // closeAskSheet(); this does the same, plus the two things the
+        // card can't: it pins the Plan state (not Cook) and lands on the
+        // day that changed. closeAskSheet() is a no-op at desktop widths,
+        // where the Ask column is always visible and the week is already
+        // on screen beside it — there, this just selects the day.
+        onClick: function () {
+          closeAskSheet();
+          focusChangedWeekDay(weekAction.date, weekAction.slot);
+        }
+      });
+    }
+    if (weekApproved) {
+      chips.push({ label: 'Open the list', onClick: function () { activateTab('grocery', true); } });
+    } else if (groceryAction) {
+      chips.push({ label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } });
+    } else if (weekAction) {
+      // Same label + message computeContextQuickActions already uses for
+      // "there's a draft, go approve it" — one wording for one meaning.
+      chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
+    }
+    return chips;
+  }
+
+  function offerNextStepChips(actions) {
+    var chips = computeNextStepChips(actions);
+    if (chips.length) renderAskChips(chips);
+  }
+
+  // Land on Meals → Plan, on the day that just changed, with the changed
+  // meal briefly ringed so the eye finds it without a caption telling it
+  // to. `date`/`slot` come off the action card (app/main.py's ChatAction),
+  // and are both optional: a component-based plan's swap has no date at
+  // all, and an older cached reply won't carry the fields — in either case
+  // this still does the useful half and just shows the week as it stands.
+  //
+  // weekState.pendingDayFocus is the handoff, because activateTab may only
+  // just have *started* building the panel (buildWeekPanel → loadWeekMenu
+  // is async): renderWeekMenu drains it once the days actually exist, and
+  // the direct call below covers the already-built case, whichever wins.
+  function focusChangedWeekDay(date, slot) {
+    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner' } : null;
+    activateTab('week', true, { mealsView: 'plan' });
+    var panel = panels['week'];
+    if (panel && panel.dataset.built) applyPendingDayFocus(panel);
+  }
+
+  function applyPendingDayFocus(panel) {
+    var pending = weekState.pendingDayFocus;
+    if (!pending || !weekState.days.length) return;
+    var index = -1;
+    weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
+    if (index < 0) return; // the change landed outside the week on screen
+    weekState.pendingDayFocus = null;
+    // Exactly what a day-rail tap does (see renderDayRail's own handler) —
+    // one selection mechanism, so this can't drift from the real one.
+    weekState.selectedIndex = index;
+    renderDayRail(panel, weekState.days);
+    renderDayCard(panel, weekState.days[index]);
+    // Dinner is the hero; breakfast and lunch live together in the sides
+    // card, which is the smallest thing that reliably contains them both
+    // without teaching this function the sides card's internals.
+    var wrap = panel.querySelector('#day-card-wrap');
+    var target = wrap && wrap.querySelector(pending.slot === 'dinner' ? '.day-hero' : '.day-sides');
+    if (!target) return;
+    target.classList.add('just-changed');
+    // Long enough to notice, short enough that it's gone before it can be
+    // mistaken for a state the day is now in.
+    setTimeout(function () { target.classList.remove('just-changed'); }, 2000);
   }
 
   function splitTableRow(line) {
@@ -7225,6 +7427,7 @@
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
+      offerNextStepChips(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);
@@ -7585,6 +7788,181 @@
     activateTab(currentTabKey(), false);
     loadNotifications();
   })();
+
+  // ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------
+  //
+  // One box, one send, in the person's own words. No categories: a picker
+  // is the app deciding in advance what can go wrong, which is the thing
+  // it is worst at — and "the list looked finished but the eggs weren't on
+  // it" fits no category anyone would have written down.
+  //
+  // Two ways in, and no third. A quiet tile on Kitchen (Kitchen has no
+  // primary action by design — Nav rule / Rule 5 — so this is a tile, and
+  // never an apricot button), and a small link on the error states the app
+  // already shows, where the question is being asked anyway. Everything
+  // below is new: the only edits to existing renderers are the tile string
+  // in renderKitchen and one snwLink() append per error paragraph.
+  //
+  // What travels with the note is shape and nothing else — the current
+  // path, and a few JS error class names. Names only, never a message: the
+  // same rule static/error-reporter.js follows, for the same reason (an
+  // error message in this app can carry a recipe or a member's name).
+  // The server re-checks both anyway; the browser is the untrusted end.
+
+  var SNW_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.2a7.7 7.7 0 0 1-8.3 7.7L5 20.8l1-6.4a7.7 7.7 0 1 1 14.5-2.2z"/><path d="M12 8.6v3.6"/><path d="M12 15.4h.01"/></svg>';
+
+  var SNW_SHAPE_RE = /^[A-Za-z][A-Za-z0-9_]{0,38}(Error|Exception)$/;
+  var snwShapes = [];
+
+  function snwRecordShape(name) {
+    // Class names only. Anything else — a sentence, a URL, an empty
+    // reason — is dropped rather than trimmed, because there is no way to
+    // tell a browser's own wording from an interpolated recipe name.
+    var text = String(name || '');
+    if (!SNW_SHAPE_RE.test(text)) return;
+    if (snwShapes[snwShapes.length - 1] === text) return;
+    snwShapes.push(text);
+    if (snwShapes.length > 5) snwShapes.shift();
+  }
+
+  window.addEventListener('error', function (e) {
+    snwRecordShape(e && e.error && e.error.name);
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    snwRecordShape(e && e.reason && e.reason.name);
+  });
+
+  // The Kitchen tile. Quiet on purpose, and last on the screen: it is a
+  // way out of a bad moment, not a chore the household is being handed.
+  function snwTile() {
+    return '<button type="button" class="snw-tile" data-snw="open">' +
+      '<span class="snw-tile-icon">' + SNW_ICON + '</span>' +
+      '<span class="snw-tile-text">' +
+        '<span class="snw-tile-title">Something not working?</span>' +
+        '<span class="snw-tile-sub">Tell Emily what happened</span>' +
+      '</span>' +
+    '</button>';
+  }
+
+  // The in-prose link for an error state. `onSpruce` is for the one error
+  // paragraph that sits inside a spruce hero, where the apricot label
+  // colour has to lift off a dark ground instead of a light one.
+  function snwLink(onSpruce) {
+    return ' <button type="button" class="snw-link' + (onSpruce ? ' snw-link-hero' : '') +
+      '" data-snw="open">Something not working? Tell Emily</button>';
+  }
+
+  var snwSheetEl = null;
+  var snwScrimEl = null;
+
+  function buildSnwSheet() {
+    if (snwSheetEl) return;
+    snwScrimEl = document.createElement('div');
+    snwScrimEl.id = 'snw-scrim';
+    snwScrimEl.hidden = true;
+    snwSheetEl = document.createElement('div');
+    snwSheetEl.id = 'snw-sheet';
+    snwSheetEl.hidden = true;
+    snwSheetEl.setAttribute('role', 'dialog');
+    snwSheetEl.setAttribute('aria-modal', 'true');
+    snwSheetEl.setAttribute('aria-labelledby', 'snw-title');
+    snwSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="snw-handle"></div>' +
+      '<div class="snw-titlerow">' +
+        '<span class="snw-title" id="snw-title">Something not working?</span>' +
+        '<span class="snw-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="snw-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="snw-body" id="snw-body"></div>';
+    // Body level, like every other sheet here: position:fixed has to sit
+    // outside the tab panel's stacking and scroll context.
+    document.body.appendChild(snwScrimEl);
+    document.body.appendChild(snwSheetEl);
+    snwScrimEl.addEventListener('click', closeSnwSheet);
+    snwSheetEl.querySelector('#snw-handle').addEventListener('click', closeSnwSheet);
+    snwSheetEl.querySelector('#snw-close').addEventListener('click', closeSnwSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && snwSheetEl && !snwSheetEl.hidden) closeSnwSheet();
+    });
+  }
+
+  function snwFormHtml() {
+    return '' +
+      '<label class="snw-label" for="snw-what">What happened?</label>' +
+      '<textarea id="snw-what" class="snw-input" rows="4" ' +
+        'placeholder="Even half a sentence helps"></textarea>' +
+      '<label class="snw-label" for="snw-trying">What were you trying to do?' +
+        '<span class="snw-optional">Optional</span></label>' +
+      '<textarea id="snw-trying" class="snw-input" rows="2"></textarea>' +
+      '<button type="button" class="snw-send" id="snw-send" disabled>Send</button>';
+  }
+
+  function openSnwSheet() {
+    buildSnwSheet();
+    // One sheet at a time, the same rule the Kitchen sheets follow.
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    var body = snwSheetEl.querySelector('#snw-body');
+    body.innerHTML = snwFormHtml();
+    var what = body.querySelector('#snw-what');
+    var send = body.querySelector('#snw-send');
+    what.addEventListener('input', function () {
+      send.disabled = !what.value.trim();
+    });
+    send.addEventListener('click', function () {
+      sendSnwReport(what.value, (body.querySelector('#snw-trying') || {}).value);
+    });
+    snwScrimEl.hidden = false;
+    snwSheetEl.hidden = false;
+    what.focus();
+  }
+
+  function closeSnwSheet() {
+    if (!snwSheetEl) return;
+    snwScrimEl.hidden = true;
+    snwSheetEl.hidden = true;
+  }
+
+  function sendSnwReport(whatHappened, tryingToDo) {
+    var text = String(whatHappened || '').trim();
+    if (!text) return;
+
+    // Confirmed before the request resolves, and confirmed either way. A
+    // send that failed is not worth telling someone about here: they are
+    // already reporting one thing that went wrong, and "that didn't send
+    // either" turns one bad moment into two — the same reason
+    // /api/feedback answers 204 whatever happens to the row.
+    var body = snwSheetEl.querySelector('#snw-body');
+    body.innerHTML =
+      '<p class="snw-done">Got it — Emily reads every one of these. ' +
+      'If it&rsquo;s blocking you, text her too.</p>' +
+      '<button type="button" class="snw-send" id="snw-done-close">Close</button>';
+    body.querySelector('#snw-done-close').addEventListener('click', closeSnwSheet);
+
+    try {
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          what_happened: text,
+          trying_to_do: String(tryingToDo || '').trim(),
+          where: location.pathname,
+          error_shapes: snwShapes.slice(-5)
+        })
+      }).catch(function () { /* see above */ });
+    } catch (err) { /* see above */ }
+  }
+
+  // Delegated, so the tile and every error-state link work without any
+  // renderer having to wire a listener — and so nothing here has to be
+  // re-bound when a panel re-renders under it.
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-snw]');
+    if (target) openSnwSheet();
+  });
 
   // ---------- Service worker registration ----------
   // This used to live only in static/index.html, which registered it the

@@ -85,6 +85,14 @@ from .coordination import (  # noqa: F401
     get_feedback_nudge,
     get_household_people,
 )
+# Deliberately NOT wired into agent.TOOL_FUNCTIONS — see feedback.py's
+# module docstring. Re-exported here only so app/main.py and
+# observability_report.py reach it the same way they reach record_error.
+from .feedback import (  # noqa: F401
+    count_feedback_reports,
+    get_feedback_reports,
+    record_feedback_report,
+)
 from .grocery import (  # noqa: F401
     _reverse_meal_grocery_contributions,
     _subtract_quantity,

@@ -27,6 +27,13 @@ LIMITS = {
     # fill the error table with the same row. Generous enough that a real
     # burst of distinct failures still gets through.
     "client_error": [(20, 60), (200, 3600)],
+    # "Something not working?" reports. Typed by a person, so the honest
+    # ceiling is much lower than the browser reporter's — nobody writes
+    # five paragraphs a minute — and this is the one table in the app
+    # holding free text, so a script hammering it is the case worth
+    # capping. Generous enough for someone sending two or three notes
+    # about the same bad evening.
+    "feedback": [(5, 60), (40, 3600)],
 }
 
 _lock = threading.Lock()

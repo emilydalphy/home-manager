@@ -502,6 +502,47 @@ summary:focus-visible,
 .dictate-row textarea { flex: 1; min-width: 0; }
 .dictate-row .dictate-btn { margin-top: 2px; }
 
+/* ---------- Waiting line ---------- */
+
+/*
+  The rotating line beside the spinner while a week is being planned —
+  static/waiting-lines.js writes the words, this is the whole of its
+  styling. Lives here rather than in a page's own <style> because all
+  three screens that plan a week (onboarding's first-week reveal,
+  /plan-week's drafting step, Meals' rebuild) load theme.css and nothing
+  else in common.
+
+  Deliberately quiet: --ink-secondary at supporting-copy size, no fill, no
+  border. It sits under a headline that has already said what is going on;
+  a second loud line would compete with it.
+*/
+.waiting-line {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.waiting-line-in { animation: waitingLineIn .32s ease-out; }
+@keyframes waitingLineIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+/*
+  Reduced motion: the line still fades, it just stops moving. The blanket
+  rule below already cuts every animation to nothing, but this says the
+  intent explicitly rather than relying on that — opacity is the only
+  animation this component is allowed under the OS request, and a future
+  edit to the blanket rule shouldn't quietly give it back its slide.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .waiting-line-in { animation: waitingLineFade .32s ease-out; }
+  @keyframes waitingLineFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
 /* ---------- Motion ---------- */
 
 /*
