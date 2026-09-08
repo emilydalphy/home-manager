@@ -78,17 +78,18 @@ or the assistant's voice.
 
 The four native tabs are **Today / Meals / Grocery / Kitchen** (`TABS` in
 `static/shell.js`). Cooking is a *state* of the Meals tab, not its own tab.
-Chores still have no tab of their own, but **"hidden from the beta" is no
-longer true and the flag this file named no longer exists** — corrected
-2026-09-08. `OFFER_CHORES_AFTER_REVEAL` is gone from `static/` and `app/`
-(grep both: zero matches; the only surviving mention is
-`tests/test_chores_setup_split.py`, asserting its absence — and `README.md`
-carried the same stale prose until this same change), and Today renders a
-"Your chores" card **unconditionally** — its empty state is "Nothing due
-today," not a hidden card — fetched by `loadChores` (`static/shell.js:1027`,
-against `/api/chores/today`, `app/main.py:1238`) and drawn by
-`renderChores` (`static/shell.js:1042`). So a beta household does see
-chores, on Today.
+Chores still have no tab of their own. **Updated 2026-09-08 (Emily, option
+1b on the Chores ticket):** the beta is meals-only, so Today's "Your
+chores" card is hidden behind one front-end constant,
+`SHOW_CHORES_ON_TODAY` in `static/shell.js` (next to `REHEAT_ACTION_LABEL`),
+currently `false` — when false, `buildTodayPanel` neither renders the card
+nor calls `loadChores`, so `/api/chores/today` (`app/main.py:1238`) isn't
+requested either. Nothing else changed: `loadChores`/`renderChores`
+(`static/shell.js`), the chores backend, and the standalone,
+still-orphaned `/chores-setup` page (`app/main.py`, `chores_setup_page`)
+are all untouched, and flipping that one constant back to `true` is the
+whole reversal. Whether `/chores-setup` should be linked from anywhere
+remains open on the Chores ticket — Emily's call.
 
 **Cook-mode hands-free voice is hidden — Emily, 2026-09-08.** "Let's just
 drop the cook mode voice for now. Just hide it, and we can rebuild it
@@ -96,21 +97,6 @@ later." `COOK_VOICE_ENABLED` in `static/shell.js` (beside `TABS`) gates it:
 false means the mic button, spoken steps, and voice commands on the Cook
 screen render nothing and create no `SpeechRecognition`/`speechSynthesis`
 session. Code is intact, not deleted, for a later rebuild.
-
-**And the chores questions are not in onboarding at all any more** — Emily's
-2026-09-05 decision (20a) took them out so first-run ends at the reveal.
-They moved as-is to `static/chores-setup.html`, served at `GET /chores-setup`
-(`app/main.py`, `chores_setup_page`). **That page is orphaned: nothing links to it.** The
-comment in `static/onboarding.html` (the chores block, ~line 617) used to say it is "reached via 'Want
-help with chores too? Set them up' on Today's chores card (see shell.js's
-renderChores)" — no such string exists anywhere in `static/shell.js`, and
-`renderChores` has no link in it. Corrected in that file too, in this same
-change; recorded here because the false comment misled a reviewer tonight,
-which is the whole argument for keeping these claims true.
-
-Correct the claim rather than the code: whether the Today card should be
-there, and whether the setup page should be linked, before Chores is
-validated is Emily's call, and the Chores ticket has it open.
 
 If you're picking this repo up fresh, run `git log --oneline -15` to confirm
 this is still accurate.
