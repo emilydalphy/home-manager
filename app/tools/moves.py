@@ -218,11 +218,13 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             "action": {
                 "label": "Cook this",
                 # Exactly the focus payload Meals' own "Cook this" passes —
-                # see shell.js activateTab('week', …, {mealsView, mealsFocus}).
+                # see shell.js activateTab('kitchen', …, {cookFocus}). Cook
+                # mode is a step of the Kitchen tab as of 2026-09-08; it was
+                # a state of Meals ({tab: "week", mealsView: "cook"}) until
+                # then, and nothing but this dict decided which.
                 "target": {
-                    "tab": "week",
-                    "mealsView": "cook",
-                    "mealsFocus": {
+                    "tab": "kitchen",
+                    "cookFocus": {
                         "entryId": meal["entry_id"],
                         "date": day_str,
                         "slot": slot,

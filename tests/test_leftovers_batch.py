@@ -368,7 +368,18 @@ def _extract(name: str, source: str) -> str:
 
 
 def _render(fn: str, arg, extra_args: str = "") -> str:
-    """Run one of the screen's render functions under node and return its HTML."""
+    """Run one of the screen's render functions under node and return its HTML.
+
+    UPDATED 2026-09-08 (flows-4-kitchen-and-preferences): the spruce
+    "Tonight" hero these tests used to render (cookHeroHtml /
+    cookReheatHeroHtml / cookServesChip) went with the Cook overview when
+    cooking moved to the Kitchen tab. The rules it enforced did not go with
+    it — they moved to the Kitchen root's "Cooking today" lines, which is
+    what the tests below render now. The one thing genuinely no longer
+    covered here is the hero's "for 6" batch chip: it lives on the focused
+    cook screen (cookFocusHtml), which is not a pure function and cannot be
+    lifted out this way. See test_the_batch_note_is_carried_on_the_line.
+    """
     src = SHELL_JS.read_text()
     harness = (
         "function escapeHtml(s){return String(s == null ? '' : s)"
@@ -380,23 +391,27 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         "const cookState = { tonightIdx: 99, cookAheadPicks: {} };\n"
         "function dayName(d){ return 'Tue'; }\n"
         "function dayNameShort(d){ return 'Tue'; }\n"
-        + _extract("cookServesChip", src) + "\n"
-        # The cook hero also carries the cook-ahead picker (cook_ahead.py);
-        # these are the three functions that build it. A meal with no
-        # repeats — every meal in this file — renders none of it, which is
-        # itself worth keeping true.
-        + _extract("cookSlotWord", src) + "\n"
-        + _extract("cookAheadPicks", src) + "\n"
-        + _extract("cookAheadHtml", src) + "\n"
-        + _extract("cookReheatCardHtml", src) + "\n"
-        + _extract("cookReheatHeroHtml", src) + "\n"
-        + _extract("cookHeroHtml", src) + "\n"
+        + _extract("kitchenTodayLine", src) + "\n"
+        + _extract("kitchenTodayRows", src) + "\n"
+        + _extract("kitchenTodayRowHtml", src) + "\n"
+        + _extract("kitchenCookingTodayHtml", src) + "\n"
+        + _extract("cookRestRowHtml", src) + "\n"
         + _extract("cookRestOfWeekHtml", src) + "\n"
+        # The Kitchen root builds its rows and renders them in one breath
+        # (renderKitchen); this is that pair, so a test can hand in the
+        # meals and the moves the way the screen gets them.
+        + "function _card(meals, moves, iso){ "
+          "return kitchenCookingTodayHtml(kitchenTodayRows(meals, moves, iso)); }\n"
         + f"console.log(JSON.stringify({fn}({json.dumps(arg)}{extra_args})));\n"
     )
     res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
+
+
+def _card(meals: list, iso: str, moves: list | None = None) -> str:
+    """The Kitchen root's "Cooking today" card, as the screen builds it."""
+    return _render("_card", meals, f", {json.dumps(moves or [])}, {json.dumps(iso)}")
 
 
 _REHEAT_MEAL = {
@@ -418,28 +433,44 @@ _COOK_MEAL = {
 
 
 @_needs_node
-def test_the_reheat_hero_offers_one_action_and_no_cook_flow():
-    html = _render("cookHeroHtml", _REHEAT_MEAL, ", 0")
+def test_a_reheat_today_offers_one_action_and_no_cook_flow():
+    """Emily's rule, on the line that replaced the hero: the dish is cooked
+    on ONE night, and the night that eats it is not a second cook — no
+    recipe to open, no "Cook" badge, one action and it says "eaten"."""
+    html = _card([_REHEAT_MEAL], THU)
     assert "Leftovers — Tuesday’s Bulgogi Wraps" in html
     assert "Mark eaten" in html
-    assert "Start cooking" not in html
     assert 'data-cook="focus"' not in html, "nothing to open — there is no recipe here"
-    assert "Bulk ×" not in html
-    assert "for 3" in html
+    assert ">Reheat<" in html
+    assert ">Cook<" not in html
 
 
 @_needs_node
-def test_the_cook_hero_leads_with_the_batch_and_the_note():
-    html = _render("cookHeroHtml", _COOK_MEAL, ", 0")
-    assert "for 6" in html
-    assert "Serves" not in html
-    assert "covers Tuesday and leftovers on Thursday" in html
-    assert "Start cooking" in html
+def test_a_cook_today_is_a_line_that_opens_the_recipe():
+    html = _card([_COOK_MEAL], TUE)
+    assert "Bulgogi Wraps" in html
+    assert ">Cook<" in html
+    assert 'data-cook="focus"' in html, "the cook line opens the focused screen"
+
+
+@_needs_node
+def test_the_batch_note_is_carried_on_the_line():
+    """The hero's "for 6" chip and its covers-note went to the focused cook
+    screen (cookFocusHtml), which is where the ingredients are actually read
+    off. What the Kitchen line has to get right instead is the *clock* — the
+    start-by the moves engine works out — so that is what is pinned here."""
+    move = {
+        "kind": "cook", "entry_id": 3,
+        "chips": ["55 min", "Start by 5:35"],
+        "time_label": "6:30 tonight", "detail": "dinner · 55 min · 6:30",
+    }
+    html = _card([_COOK_MEAL], TUE, [move])
+    assert "start by 5:35 · 55 min" in html
 
 
 @_needs_node
 def test_a_reheat_row_in_the_week_list_is_not_a_way_into_a_recipe():
-    html = _render("cookRestOfWeekHtml", [_REHEAT_MEAL, _COOK_MEAL])
+    html = _render("cookRestOfWeekHtml", [_REHEAT_MEAL, _COOK_MEAL], ', {}, "1999-01-01", true')
     assert '<span class="cook-week-name">Leftovers — Tuesday’s Bulgogi Wraps</span>' in html
     assert ">Reheat<" in html
     assert 'data-cook="focus" data-idx="0"' not in html, "the reheat row is text, not a button"

@@ -317,9 +317,17 @@ def test_the_day_step_offers_cook_this_and_swap():
 
 def test_cook_this_still_passes_the_exact_meal():
     """The focus target is the mechanism 42d422a built — an entry id, then
-    date+slot, then the dish name — so Cook lands on the meal that was
-    tapped and never on a different one."""
-    _assert_in("mealsFocus: {", SHELL_JS, "the cook focus target", "shell.js")
+    date+slot, then the dish name — so cook mode lands on the meal that was
+    tapped and never on a different one.
+
+    UPDATED 2026-09-08 (flows-4-kitchen-and-preferences), deliberately: the
+    key is `cookFocus` rather than `mealsFocus`, because cook mode is a step
+    of the Kitchen tab now rather than a state of Meals. The resolver it
+    feeds (cookResolveFocusIndex) and the four fields it carries are
+    unchanged — only the tab it aims at moved.
+    """
+    _assert_in("cookFocus: {", SHELL_JS, "the cook focus target", "shell.js")
+    _assert_in("activateTab('kitchen', true, {", SHELL_JS, "the cook mode entry", "shell.js")
     _assert_in("entryId: entry ? entry.entry_id : null", SHELL_JS, "the focused entry", "shell.js")
     _assert_in("function cookResolveFocusIndex(", SHELL_JS, "the focus resolver", "shell.js")
 
