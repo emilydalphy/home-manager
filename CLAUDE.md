@@ -306,6 +306,39 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — "The ask bar can do it" is not the same as "a person should
+  spend a model turn on it" — three Grocery row actions came back. Same
+  branch `flows-5-grocery-sort-step`, verifier pass.** The entry below says
+  item management is the ask bar's job now; that was too broad and this
+  corrects it rather than quietly changing the code under it. Back on LIST,
+  all `static/shell.js`: (1) a quiet per-row ⋯ (`groRowMenuHtml`, 44px hit
+  area, inline under the row, no apricot) with the old menu's verbs on the
+  old routes — quantity via `/update` (the old `save-row`/`fix-qty`), store
+  via `/store` with the pills plus "Any" (the old `move`/`not-this-time`: an
+  empty store, which does NOT forget the remembered item→store preference)
+  and "Somewhere else" (`/exclude`), and `/remove` with an Undo that re-adds
+  the line, since `remove_grocery_item` is a hard delete and the undo can
+  only give back the line, not the row id; (2) an inline add row in LIST's
+  foot (`groAddItem`, spruce not apricot, Enter or the button) posting
+  straight to `/api/grocery-list/add` exactly as `groHandleVoiceCommand`
+  does — an item added with no store lands in the TO SORT count; the ask bar
+  stays for anything wordier and `ASK_HINTS.grocery` still says so; (3)
+  Review's duplicate detection, MOVED not rewritten out of `groReviewHtml`
+  (`groDuplicateGroups`, same trimmed-lowercased key) and said as one quiet
+  line above the store cards — "Two rows of spinach · Merge" — running the
+  old `merge` handler, confirm included. Four fixes rode along: `groListHtml`
+  concatenated the `unsorted` ARRAY into copy ("[object Object],…") where it
+  meant `.length`; `groSetScreen` sent the receipt's "open the list" to SORT
+  whenever anything was unsorted and now always lands on LIST (the badge is
+  the way into SORT); the whole-trip toast said "Stop saved", the per-stop
+  line, and now says "Trip finished — 21 things home." off `tripBought`; and
+  two comments quoting a string `tests/test_flows_3_review_and_receipt.py`
+  asserts is gone were reworded, which is what made the suite red after the
+  main merge. Guarded by six more tests in `tests/test_grocery_steps.py`
+  (22 there now), and driven headlessly against the real API on a throwaway
+  DB (36 assertions: every verb actually wrote what it claims). **Still not
+  verified in a browser** — no browser tooling in this session either, so the
+  ⋯ menu's and the add row's LAYOUT at 390px is unchecked.
 - **2026-09-08 — Grocery is four steps, not three segments. Branch
   `flows-5-grocery-sort-step`.** Emily's approved design: the tab answers
   "what do we need, and where?" as **LIST -> SORT -> TRIP -> WRAP UP**, four

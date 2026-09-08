@@ -3093,20 +3093,42 @@ html, body {
 }
 .gro-primary:hover { background: var(--apricot-light); }
 .gro-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
-/* "Add something" — quiet on purpose: adding is a side errand next to
-   starting the trip, and a second filled button would fight it. */
-.gro-quiet {
-  width: 100%;
+/* The inline add row under the trip button. Spruce, not apricot: adding one
+   thing is a side errand next to starting the trip, and a second apricot
+   would break Rule 5. One line at 390px — name, a narrow Qty, Add. */
+.gro-add {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+}
+.gro-add-item, .gro-add-qty {
   min-height: 44px;
-  background: none;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  padding: 0 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  min-width: 0;
+}
+.gro-add-item { flex: 1 1 auto; }
+.gro-add-qty { flex: 0 0 62px; width: 62px; padding: 0 8px; }
+.gro-add-btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 18px;
   border: none;
+  border-radius: var(--radius-control);
+  background: var(--spruce);
+  color: var(--ivory-ink);
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
-  color: var(--ink-strong);
   cursor: pointer;
 }
-.gro-quiet:hover { color: var(--apricot-label-hover); }
+.gro-add-btn:hover { background: var(--spruce-hover); }
+.gro-add-btn:disabled { opacity: .6; cursor: default; }
 
 /* ---------- Body ---------- */
 .gro-body {
@@ -3376,14 +3398,15 @@ html, body {
   align-items: center;
   gap: 11px;
 }
-/* A LIST row is a name and a quantity, and nothing is tappable on it — the
-   per-item ⋯ menu is gone, and changing a thing is the ask bar's job now. */
+/* A LIST row is a name, a quantity and one quiet ⋯ — the row's own actions
+   (quantity, store, remove) live behind it, so a correction never costs a
+   model turn. Nothing else on the row is tappable. */
 .gro-listrow {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 38px;
-  padding: 5px 0;
+  min-height: 44px;
+  padding: 2px 0;
   border-top: 1.5px solid var(--hairline);
 }
 .gro-listrow-name {
@@ -3394,6 +3417,102 @@ html, body {
   color: var(--ink);
   min-width: 0;
 }
+/* The ⋯ itself: a full 44px target, muted until touched. Quiet is the whole
+   point — it must not compete with "Start the trip". */
+.gro-rowmore {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink-inactive);
+  cursor: pointer;
+}
+.gro-rowmore svg { width: 20px; height: 20px; }
+.gro-rowmore:hover { color: var(--ink-secondary); }
+.gro-listrow.open .gro-rowmore { color: var(--ink-strong); }
+/* The row's open menu, inline under the row rather than over the screen —
+   it belongs to one line of a list, and a sheet would hide the list it is
+   about. No apricot anywhere in it (Rule 5: LIST's one apricot is the
+   trip). */
+.gro-rowmenu {
+  padding: 10px 0 4px;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-rowmenu-qty { display: flex; gap: 8px; padding: 0 0 12px; }
+.gro-rowmenu-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  padding: 0 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+}
+.gro-rowmenu-save {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.gro-rowmenu-save:disabled { opacity: .6; cursor: default; }
+.gro-rowmenu-remove {
+  width: 100%;
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.gro-rowmenu-remove:hover { color: var(--ink-strong); }
+.gro-rowmenu-remove:disabled { opacity: .6; cursor: default; }
+/* "Two rows of spinach · Merge" — one quiet line above the store cards.
+   A line, not a card: something to notice on the way past. */
+.gro-dupe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.gro-dupe-text { min-width: 0; }
+.gro-dupe-dot { color: var(--ink-inactive); }
+.gro-dupe-merge {
+  background: none;
+  border: none;
+  padding: 0;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+.gro-dupe-merge:hover { color: var(--apricot-label-hover); }
+.gro-dupe-merge:disabled { opacity: .6; cursor: default; }
 /* "+ 11 more" — a card shows four things and then says how many it is
    holding back, so a 40-item shop doesn't become the whole screen. */
 .gro-more-link {
@@ -3563,8 +3682,8 @@ html, body {
 .gro-pill-have { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }
 .gro-pill-have:hover { border-color: var(--celadon-edge); }
 /* A neutral secondary action — not a store choice, and not a "settled,
-   already true" state like .gro-pill-have. (It used to share this sand with
-   the per-row ⋯ menu's "Somewhere else"; that menu is gone.) */
+   already true" state like .gro-pill-have. Shared by SORT's chip and the
+   LIST row's ⋯ menu, which both mean the same thing on the same route. */
 .gro-pill-else { background: var(--sand); color: var(--ink-secondary); }
 .gro-pill-else:hover { border-color: var(--hairline-strong); }
 .gro-linkbtn {

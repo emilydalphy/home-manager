@@ -103,14 +103,111 @@ def test_the_to_sort_badge_only_exists_when_something_is_unsorted():
     )
 
 
-def test_list_carries_the_screens_one_apricot_and_a_quiet_add():
+def test_list_carries_the_screens_one_apricot_and_an_inline_add():
+    """One apricot ("Start the trip"), and under it an add row that is a
+    plain POST. Adding one thing must never cost a model turn, which is why
+    the "Add something" button that opened the ask sheet is gone — see
+    test_adding_one_thing_never_costs_a_model_turn below."""
     _in("data-gro=\"start-trip\"", SHELL_JS, "Start the trip", "shell.js")
     _in(">Start the trip<", SHELL_JS, "its copy", "shell.js")
-    _in("data-gro=\"add-something\"", SHELL_JS, "Add something", "shell.js")
-    _in(">Add something<", SHELL_JS, "its copy", "shell.js")
-    _in("openAskSheet('Add ');", SHELL_JS, "the ask-sheet prefill", "shell.js")
     _in("grocery: 'Add oat milk and lemons", SHELL_JS, "the Grocery ask hint", "shell.js")
     _in(".gro-primary", SHELL_CSS, "the primary action style", "shell.css")
+    _not_in("data-gro=\"add-something\"", SHELL_JS, "the ask-sheet Add something button", "shell.js")
+
+
+def test_adding_one_thing_never_costs_a_model_turn():
+    """The LIST foot's inline add row POSTs /api/grocery-list/add directly —
+    the same route groHandleVoiceCommand's "add oat milk" and the old root's
+    "Add an item" card used. The ask bar above the tab bar is still there for
+    anything wordier; it just isn't the only way to add a carton of milk."""
+    _in("function groAddItem(", SHELL_JS, "the inline add", "shell.js")
+    _in("'/api/grocery-list/add'", SHELL_JS, "the add route", "shell.js")
+    _in("id=\"gro-add-item\"", SHELL_JS, "the name field", "shell.js")
+    _in("id=\"gro-add-qty\"", SHELL_JS, "the optional quantity field", "shell.js")
+    _in("data-gro=\"add\"", SHELL_JS, "the Add button", "shell.js")
+    _in("case 'add':", SHELL_JS, "its handler", "shell.js")
+    # Enter in either field adds, so a list can be filled without reaching
+    # for the button.
+    _in("e.target.id === 'gro-add-item' || e.target.id === 'gro-add-qty'", SHELL_JS,
+        "the Enter-to-add wiring", "shell.js")
+    # Spruce, not apricot: LIST's one apricot is the trip (Rule 5).
+    add_btn = SHELL_CSS.split(".gro-add-btn {", 1)[1][:400]
+    assert "var(--spruce)" in add_btn and "var(--apricot)" not in add_btn, (
+        "The inline Add button is spruce — LIST's one apricot is "
+        "\"Start the trip\" (DESIGN_SYSTEM.md Rule 5)."
+    )
+
+
+def test_a_list_row_keeps_its_quiet_row_action():
+    """The per-row ⋯ came back with the three verbs it always had, on the
+    routes it always used: quantity via /update, store via /store (the pills,
+    with "Any" as the old move / not-this-time and "Somewhere else" on
+    /exclude), and /remove with an undo. Quiet — no apricot: the row is never
+    what the screen is for."""
+    _in("function groRowMenuHtml(", SHELL_JS, "the row menu", "shell.js")
+    _in("data-gro=\"row-menu\"", SHELL_JS, "the ⋯ control", "shell.js")
+    _in("GRO_ICONS.dots", SHELL_JS, "its ⋯ glyph", "shell.js")
+    _in("openRowId", SHELL_JS, "the one-open-at-a-time state", "shell.js")
+    # The three verbs, and the endpoints each one actually calls.
+    _in("data-gro=\"row-qty\"", SHELL_JS, "edit quantity", "shell.js")
+    _in("'/update', { quantity: rowQty }", SHELL_JS, "its update call", "shell.js")
+    _in("data-gro=\"row-store\"", SHELL_JS, "change store", "shell.js")
+    _in("'/store', { store: rowStore }", SHELL_JS, "its store call", "shell.js")
+    _in("data-gro=\"row-remove\"", SHELL_JS, "remove", "shell.js")
+    _in("'/remove');", SHELL_JS, "its remove call", "shell.js")
+    _in("'Remove</button>'", SHELL_JS, "its copy", "shell.js")
+    # The store pills, including the two non-store answers.
+    _in("function groPillStores(", SHELL_JS, "the shared store pills", "shell.js")
+    _in("data-gro=\"row-exclude\"", SHELL_JS, "the Somewhere else pill", "shell.js")
+    # Remove is reversible in the moment — /remove is a hard delete, so the
+    # undo puts the line back through /add.
+    _in("label: 'Undo',", SHELL_JS, "the remove undo", "shell.js")
+    _in(".gro-rowmore", SHELL_CSS, "the ⋯ style", "shell.css")
+    _in(".gro-rowmenu", SHELL_CSS, "the row menu style", "shell.css")
+    rowmore = SHELL_CSS.split(".gro-rowmore {", 1)[1][:400]
+    assert "width: 44px" in rowmore and "height: 44px" in rowmore, (
+        "The ⋯ needs a full 44px hit area — it is a thumb target on a phone."
+    )
+    rowmenu = SHELL_CSS.split(".gro-rowmenu {", 1)[1][:900]
+    assert "--apricot" not in rowmenu, (
+        "The row menu is quiet — LIST's one apricot is \"Start the trip\"."
+    )
+
+
+def test_two_rows_of_the_same_thing_get_one_quiet_line():
+    """Review's "Possible duplicate" flag card moved here whole: the same
+    grouping key, the same Merge, said as a line above the store cards rather
+    than as a card of its own."""
+    _in("function groDuplicateGroups(", SHELL_JS, "the duplicate detection", "shell.js")
+    _in("(it.item || '').trim().toLowerCase()", SHELL_JS, "its grouping key", "shell.js")
+    _in("return g.length > 1;", SHELL_JS, "what counts as a duplicate", "shell.js")
+    _in("function groDuplicatesHtml(", SHELL_JS, "the line", "shell.js")
+    _in("' rows of '", SHELL_JS, "its copy — \"Two rows of spinach\"", "shell.js")
+    _in("function groCountWord(", SHELL_JS, "the number as a word", "shell.js")
+    _in("html += groDuplicatesHtml(data);", SHELL_JS, "it rendering at the top of LIST", "shell.js")
+    _in("data-gro=\"merge\"", SHELL_JS, "the Merge control", "shell.js")
+    _in("case 'merge':", SHELL_JS, "the old merge handler", "shell.js")
+    _in(".gro-dupe", SHELL_CSS, "its style", "shell.css")
+
+
+def test_the_unsorted_line_says_a_number():
+    """`unsorted` is the array of rows; the badge it points at says a count,
+    so this line has to say the same count and not "[object Object],…"."""
+    _in("unsorted.length + ' TO SORT above", SHELL_JS, "the unsorted count in copy", "shell.js")
+    _not_in("unsorted + ' TO SORT above", SHELL_JS, "the array concatenated into copy", "shell.js")
+
+
+def test_open_the_list_lands_on_the_list():
+    """The receipt's grocery segment, its toast twin and the ask sheet's
+    chip all mean "open the list". They land on LIST every time — an unsorted
+    item is not a reason to drop somebody into a one-at-a-time queue they
+    didn't ask for. The TO SORT badge is how you get to SORT."""
+    _in("function groSetScreen(", SHELL_JS, "the compatibility shim", "shell.js")
+    shim = SHELL_JS.split("function groSetScreen(", 1)[1].split("\n  }", 1)[0]
+    assert "goGroceryStep('list')" in shim and "'sort'" not in shim, (
+        "groSetScreen must land on LIST, never SORT — the badge is the way "
+        "into SORT. Found:\n" + shim
+    )
 
 
 def test_the_stores_prompt_still_stands_in_for_the_store_cards():
@@ -218,4 +315,17 @@ def test_finishing_writes_purchases_and_lands_back_on_the_list():
     _in("{ status: 'purchased' }", SHELL_JS, "the purchase write", "shell.js")
     _in("'/api/shopping-trips/close'", SHELL_JS, "the trip row", "shell.js")
     _in("function groFinishAnyRemainingCarts(", SHELL_JS, "the stranded-cart sweep", "shell.js")
-    _in("Stop saved — I’ll remember what you bought where", SHELL_JS, "the receipt toast", "shell.js")
+
+
+def test_the_finish_toast_is_about_the_trip_not_a_stop():
+    """"Finish the trip" ends the whole trip, so the line says so. It used to
+    say "Stop saved — I'll remember what you bought where", which was the
+    per-stop line and undersold what had just happened. The count is
+    tripBought — THIS trip — never groTotals().done, which sums every
+    purchase the household has ever made."""
+    _in("'Trip finished — ' + groPlural(home, 'thing', 'things') + ' home.'", SHELL_JS,
+        "the trip-level finish toast", "shell.js")
+    _in("var home = groceryState.tripBought;", SHELL_JS, "what it counts", "shell.js")
+    _not_in("showToast('Stop saved", SHELL_JS, "the old per-stop toast", "shell.js")
+    # Calm, not cheery (DESIGN_SYSTEM.md §8): no exclamation mark.
+    assert "Trip finished!" not in SHELL_JS, "The finish line takes no exclamation mark."
