@@ -241,6 +241,10 @@ html, body {
   transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 .tick-box svg { display: block; width: 12px; height: 12px; }
+/* Same footprint as a real tick (keeps the row height / action-row layout
+   stable), no box inside it — nothing to tap for a move with no tick
+   behind it (moveTickHtml, moves.py's `tickable`). */
+.tick-empty { cursor: default; }
 .tick:hover .tick-box { border-color: var(--celadon); }
 .tick.is-done .tick-box {
   background: var(--celadon);

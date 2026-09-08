@@ -12,8 +12,17 @@ A move is a thing the household has to actually do today, with a window in
 which doing it makes sense:
 
     {id, kind, title, detail, reason, date, slot, window_start, window_end,
-     weight, action: {label, target}, done, entry_id, task_id, duration_min,
-     time_label, chips}
+     weight, action: {label, target}, done, tickable, overdue, entry_id,
+     task_id, duration_min, time_label, chips}
+
+`tickable` is true only when ticking the move actually does something —
+set_move_done dispatches cook/reheat to check_off_meal and fridge/prep to
+check_off_prep_step, but a shop move has nothing behind its tick to flip
+(see set_move_done's own `kind == "shop"` branch), so it renders with no
+tick at all rather than one that fills in and silently snaps back.
+
+`overdue` is true for an undone fridge/prep move whose window has closed
+for the day — see _prep_moves and featured_move_id below.
 
 Nothing here is new state. Every move is derived from something that
 already exists — a cooker-view card, a prep_tasks row, the grocery list —
@@ -174,6 +183,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "weight": WEIGHT_LOW,
                 "action": {"label": REHEAT_ACTION_LABEL, "target": {"kind": "check_meal", "entryId": meal["entry_id"]}},
                 "done": done,
+                "tickable": True,
+                "overdue": False,
                 "entry_id": meal["entry_id"],
                 "task_id": None,
                 "duration_min": 0,
@@ -219,6 +230,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 },
             },
             "done": done,
+            "tickable": True,
+            "overdue": False,
             "entry_id": meal["entry_id"],
             "task_id": None,
             "duration_min": duration,
@@ -228,17 +241,37 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
     return moves
 
 
-def _prep_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
+def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
     Fridge moves (task_type='defrost') and the rest of the day's prep.
 
     Both are all-day moves with a deadline rather than a start time: taking
     something out of the freezer at nine in the morning and at four in the
-    afternoon are both fine, and only the "by" time is real. The deadline
-    is dinner, which is what every one of these is ultimately for.
+    afternoon are both fine, and only the "by" time is real.
+
+    Two different clocks are in play here, and conflating them was the bug:
+
+    - `window_end`, the hard end of this move's day — 22:00, not tonight's
+      dinner. A defrost row due TODAY is always for a LATER day's meal
+      (defrost._move_date never schedules the cook's own day; it floors at
+      one full day of buffer), so tying the window's *close* to tonight's
+      dinner_clock meant an undone fridge move failed featured_move_id's
+      `window_end >= now` test the moment dinner passed and dropped out of
+      the candidate set entirely — the evening card could never say "take
+      tomorrow's chicken out" because the move it needed had already
+      (wrongly) expired mid-evening.
+    - the household's ordinary evening hour (dinner_clock) still marks the
+      point after which this move is running late — not because the fridge
+      move is FOR tonight's dinner, but because "tonight" as a household
+      concept has, by then, effectively started. Past it, the move is
+      `overdue` and the copy switches from the forward-looking "by tonight"
+      to the plainer "still to do"; before it, the window is still fully
+      open. Either way it stays a candidate all the way to `window_end`
+      (and even past it, per `overdue`) — see featured_move_id.
     """
     day_str = day.isoformat()
-    deadline = datetime.combine(day, dinner_clock)
+    window_end = datetime.combine(day, time(22, 0))
+    evening = datetime.combine(day, dinner_clock)
     open_from = datetime.combine(day, time(0, 0))
     moves = []
     for task in view.get("prep_tasks") or []:
@@ -252,26 +285,31 @@ def _prep_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
         head, _, tail = description.partition(" — ")
         title = (head or description).rstrip(".")
         reason = tail.rstrip(".")
+        # 'skipped' is a resolution too — check_off_prep_step accepts it
+        # and the Today tile used to offer it — so it counts as handled,
+        # not as still waiting.
+        done = task.get("status") in ("done", "skipped")
+        overdue = (not done) and evening < now
+        when = "still to do" if overdue else "by tonight"
         moves.append({
             "id": ("fridge:" if is_fridge else "prep:") + str(task["id"]),
             "kind": "fridge" if is_fridge else "prep",
             "title": title or ("Fridge move" if is_fridge else "Prep"),
-            "detail": ("fridge move" if is_fridge else "prep") + f" · by {_clock(dinner_clock)}",
+            "detail": ("fridge move" if is_fridge else "prep") + f" · {when}",
             "reason": reason or (task.get("related_meal") and f"for {task['related_meal']}") or "",
             "date": day_str,
             "slot": None,
             "window_start": open_from.isoformat(),
-            "window_end": deadline.isoformat(),
+            "window_end": window_end.isoformat(),
             "weight": WEIGHT_MEDIUM,
             "action": {"label": "Done", "target": {"kind": "check_prep", "taskId": task["id"]}},
-            # 'skipped' is a resolution too — check_off_prep_step accepts it
-            # and the Today tile used to offer it — so it counts as handled,
-            # not as still waiting.
-            "done": task.get("status") in ("done", "skipped"),
+            "done": done,
+            "tickable": True,
+            "overdue": overdue,
             "entry_id": task.get("meal_plan_entry_id"),
             "task_id": task["id"],
             "duration_min": 0,
-            "time_label": f"by {_clock(dinner_clock)}",
+            "time_label": when,
             "chips": [],
         })
     return moves
@@ -327,6 +365,12 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # list has needed items on it, so it is never "done" — it stops
         # being a move instead.
         "done": False,
+        # Nothing to tick: set_move_done's "shop" branch is a no-op (see its
+        # own docstring) — there is no flag here for a tick to flip, so the
+        # UI renders no tick at all rather than one that fills in and snaps
+        # back. See the module docstring's `tickable` note.
+        "tickable": False,
+        "overdue": False,
         "entry_id": None,
         "task_id": None,
         "duration_min": 0,
@@ -363,7 +407,7 @@ def moves_for_day(
 
     moves = (
         _cook_and_reheat_moves(view, target, dinner_clock)
-        + _prep_moves(view, target, dinner_clock)
+        + _prep_moves(view, target, now, dinner_clock)
         + _shop_move(view, target, now, dinner_clock)
     )
     moves.sort(key=lambda m: (m["window_start"], -m["weight"], m["id"]))
@@ -375,6 +419,12 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     Which move is the card. See the module docstring: open now or within
     four hours, highest weight, then earliest window. A reheat never
     features — Emily, 2026-09-08: made-ahead food is a line, never the card.
+
+    An `overdue` move (an undone fridge/prep task whose window has already
+    closed for the day — see _prep_moves) stays a candidate even though its
+    own window_end is in the past: that flag exists precisely so a fridge
+    move due today doesn't drop out of contention the moment the (wrong,
+    dinner-shaped) deadline it used to carry passed.
     """
     now = now or datetime.now()
     horizon = (now + timedelta(hours=LOOKAHEAD_HOURS)).isoformat()
@@ -384,7 +434,7 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
         if not m["done"]
         and m["kind"] != "reheat"
         and m["window_start"] <= horizon
-        and m["window_end"] >= now_iso
+        and (m.get("overdue") or m["window_end"] >= now_iso)
     ]
     if not candidates:
         return None

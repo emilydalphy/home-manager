@@ -913,6 +913,14 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>';
 
   function moveTickHtml(move) {
+    // Not every move has a tick behind it — a shop move's "done" dispatch is
+    // a no-op (moves.set_move_done's own `kind == "shop"` branch), so
+    // ticking it used to fill the circle in and have it silently snap back,
+    // with a toast that lied about it. `tickable` (from moves.py) says
+    // whether the done dispatch actually flips anything; when it doesn't,
+    // render an empty same-size spacer so the row's height (and the tick
+    // column other rows share) doesn't jump around.
+    if (!move.tickable) return '<span class="tick tick-empty" aria-hidden="true"></span>';
     return '<button type="button" class="tick' + (move.done ? ' is-done' : '') + '" ' +
       'data-move-tick="' + escapeHtml(move.id) + '" ' +
       'aria-pressed="' + (move.done ? 'true' : 'false') + '" ' +
@@ -1100,8 +1108,16 @@
         body: JSON.stringify({ done: done })
       });
       if (!res.ok) throw new Error('move check-off failed');
-      renderTodayMoves(panel, await res.json());
-      showToast(done ? 'Ticked off.' : 'Back on the list.');
+      var fresh = await res.json();
+      renderTodayMoves(panel, fresh);
+      // Only claim it worked if the server's own re-derived move agrees —
+      // a shop move (or anything else non-tickable) dispatches to nothing,
+      // so its `done` never actually moves, and the toast should not say it
+      // did. See moves.py's `tickable` note and moveTickHtml above.
+      var updated = ((fresh && fresh.moves) || []).filter(function (m) { return m.id === moveId; })[0];
+      if (updated && updated.done === done) {
+        showToast(done ? 'Ticked off.' : 'Back on the list.');
+      }
       // The same rows are the Cook screen's check-offs — keep the two from
       // showing different answers to the same question.
       refreshCookView();

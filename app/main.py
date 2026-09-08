@@ -588,6 +588,11 @@ class CheckOffPrepRequest(BaseModel):
 
 class MoveDoneRequest(BaseModel):
     done: bool = True
+    # Which day's timeline to hand back. Ticking a move that isn't on TODAY's
+    # timeline (tomorrow's fridge move, ticked from a "still to do" row) used
+    # to always re-render today's — this brings the POST in line with the
+    # GET, which already accepts ?date=.
+    date: str | None = None
 
 
 class FillRecipeRequest(BaseModel):
@@ -1351,17 +1356,24 @@ def today_moves(date: str | None = None):
 
 
 @app.post("/api/today/moves/{move_id}/done")
-def today_move_done(move_id: str, req: MoveDoneRequest):
+def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None):
     """
     Tick (or untick) one move. Dispatches to the tool that owns the state
     behind it — check_off_meal, check_off_prep_step — rather than writing a
     second record of "is this done?"; see moves.set_move_done. Returns the
     refreshed timeline, the same way every /api/cooker/* write returns the
     refreshed cooker view.
+
+    Accepts the target day as a query param (?date=, matching the GET) or in
+    the body — either defaults to today, same as GET's own `date=None`. The
+    day matters because the same tick can be made from a non-today row (a
+    "still to do" overdue fridge move, or tomorrow's card) and the response
+    should render the day the caller is actually looking at, not always
+    today's.
     """
     try:
         tools.set_move_done(move_id, req.done)
-        payload = tools.today_moves()
+        payload = tools.today_moves(date or req.date)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

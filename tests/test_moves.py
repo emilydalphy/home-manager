@@ -275,20 +275,51 @@ def test_dinners_hour_comes_from_the_households_rhythm(window, hour, minute, lab
     assert cook["time_label"] == label
 
 
-def test_a_fridge_move_is_open_all_day_and_due_by_dinner():
+def test_a_fridge_move_at_07_00_says_by_tonight():
+    """
+    Before the household's ordinary evening hour, the window is fully open
+    and forward-looking — never a specific dinner time the fridge move
+    doesn't actually mean (it's for a LATER day's meal; see
+    defrost._move_date). window_end itself is 22:00, not dinner.
+    """
     _household()
     plan_id = _plan()
     _fridge_task(plan_id)
     tools.set_dinner_window("5_6ish")
 
-    fridge = _by_kind(tools.today_moves(now=_at(9)))["fridge"]
+    fridge = _by_kind(tools.today_moves(now=_at(7)))["fridge"]
 
     assert fridge["window_start"] == _at(0, 0).isoformat()
-    assert fridge["window_end"] == _at(17, 30).isoformat()
-    assert fridge["time_label"] == "by 5:30"
+    assert fridge["window_end"] == _at(22, 0).isoformat()
+    assert fridge["time_label"] == "by tonight"
+    assert fridge["overdue"] is False
+    assert fridge["tickable"] is True
     # The sentence splits into a title and the one italic line under it.
     assert fridge["title"] == "Move the chicken thighs to the fridge"
     assert fridge["reason"] == "for Thursday’s skewers"
+
+
+def test_an_undone_fridge_move_is_still_featured_and_overdue_once_evening_has_come():
+    """
+    The bug: at 19:30 the old dinner-clock deadline (6:30) had already
+    passed, so an undone fridge move failed featured_move_id's
+    window_end >= now test and dropped out of the candidate set entirely —
+    the evening card could never say "take tomorrow's chicken out". It now
+    stays the card, flagged overdue, with "still to do" copy instead of a
+    dinner time it never meant.
+    """
+    _household()
+    plan_id = _plan()
+    task_id = _fridge_task(plan_id)
+
+    payload = tools.today_moves(now=_at(19, 30))
+
+    assert payload["featured"] == f"fridge:{task_id}"
+    fridge = _by_kind(payload)["fridge"]
+    assert fridge["overdue"] is True
+    assert fridge["time_label"] == "still to do"
+    # The hard end of the day, not tonight's dinner — still hours away.
+    assert fridge["window_end"] == _at(22, 0).isoformat()
 
 
 def test_general_prep_is_a_move_too_and_is_not_a_fridge_move():
@@ -374,6 +405,32 @@ def test_set_move_done_dispatches_to_the_tool_that_owns_the_state():
         tools.set_move_done("nonsense:1", True)
 
 
+def test_a_shop_move_is_not_tickable_and_ticking_it_is_a_no_op():
+    """
+    The bug: every move used to render a tick, including shop's — but
+    set_move_done's "shop" branch dispatches to nothing (there is no flag
+    behind a standing grocery list to flip), so the tick filled in and then
+    silently snapped back, with a toast that lied about what happened.
+    `tickable` says so up front, and the dispatch really is a no-op.
+    """
+    _household()
+    _recipe("Chicken Skewers")
+    plan_id = _plan()
+    tools.plan_meal(ISO_TODAY, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb")
+
+    shop = _by_kind(tools.today_moves(now=_at(18)))["shop"]
+    assert shop["tickable"] is False
+
+    result = tools.set_move_done(shop["id"], True)
+    assert result["dispatched_to"] is None
+    assert result["done"] is False
+    # Nothing about the shop move changed — it's derived from the list, not
+    # from a flag this call could have flipped.
+    after = _by_kind(tools.today_moves(now=_at(18)))["shop"]
+    assert after["done"] is False
+
+
 # ---------- the routes ----------
 
 def test_the_endpoints_answer_and_the_tick_round_trips(signed_in):
@@ -392,6 +449,32 @@ def test_the_endpoints_answer_and_the_tick_round_trips(signed_in):
     assert res.json()["moves"][0]["done"] is True
 
     res = signed_in.post(f"/api/today/moves/cook:{entry_id}/done", json={"done": False})
+    assert res.json()["moves"][0]["done"] is False
+
+
+def test_posting_done_with_a_date_renders_that_days_moves(signed_in):
+    """
+    The GET has always taken ?date=; the POST used to ignore it entirely and
+    always hand back today's timeline — so ticking a move from a non-today
+    row (tomorrow's card, say) rendered the wrong day back. Accepts the date
+    as a query param or in the body; either should work.
+    """
+    _household()
+    _recipe("Chicken Skewers")
+    plan_id = _plan()
+    tools.plan_meal(ISO_TOMORROW, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
+    entry_id = _entry_id(ISO_TOMORROW, "dinner")
+
+    res = signed_in.post(f"/api/today/moves/cook:{entry_id}/done?date={ISO_TOMORROW}", json={"done": True})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["date"] == ISO_TOMORROW
+    assert body["moves"][0]["id"] == f"cook:{entry_id}"
+    assert body["moves"][0]["done"] is True
+
+    # Same thing, date in the body instead of the query string.
+    res = signed_in.post(f"/api/today/moves/cook:{entry_id}/done", json={"done": False, "date": ISO_TOMORROW})
+    assert res.json()["date"] == ISO_TOMORROW
     assert res.json()["moves"][0]["done"] is False
 
 
@@ -484,6 +567,20 @@ def test_today_renders_the_two_blocks_and_their_ticks(marker):
 @pytest.mark.parametrize("style", [".tick", ".tick.is-done", ".nextup-hero", ".rest-row", ".tomorrow-card"])
 def test_today_carries_the_styles_for_them(style):
     assert style in SHELL_CSS, f"static/shell.css is missing {style}"
+
+
+def test_move_tick_html_is_guarded_by_tickable():
+    """
+    Source-level guard for the shop-tick bug: moveTickHtml has to check
+    move.tickable and render nothing (a same-size, non-interactive spacer)
+    rather than a live tick for a move whose done dispatch is a no-op — see
+    moves.py's `tickable` field and set_move_done's "shop" branch.
+    """
+    body = SHELL_JS[SHELL_JS.index("function moveTickHtml("):SHELL_JS.index("function nextUpCardHtml(")]
+    assert "move.tickable" in body, "moveTickHtml doesn't consult move.tickable"
+    assert "data-move-tick" not in body.split("if (!move.tickable)")[0], (
+        "the tickable guard must come before the live tick markup, not after it"
+    )
 
 
 def test_the_bell_is_gone_from_the_ui_but_not_from_the_codebase():
