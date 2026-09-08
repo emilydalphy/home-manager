@@ -3155,7 +3155,10 @@
   //     event signal this app doesn't have — omitted rather than invented.
   var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
   var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];
-  var weekState = { selectedIndex: null, days: [], data: null };
+  // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
+  // drained by applyPendingDayFocus once the days for that week are
+  // actually loaded. Null the rest of the time.
+  var weekState = { selectedIndex: null, days: [], data: null, pendingDayFocus: null };
 
   async function buildWeekPanel(panel) {
     panel.innerHTML =
@@ -4748,6 +4751,9 @@
     renderWeekApproval(panel, data);
     renderPlanWeekEntry(panel, data);
     renderWeekSheetRows(days);
+    // Chat's "See your week" chip may have asked for a specific day before
+    // this week's days existed — now they do. No-op unless one is pending.
+    applyPendingDayFocus(panel);
 
     var todayIndex = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
     gridEl.innerHTML =
@@ -6756,6 +6762,11 @@
       chipsEl.querySelectorAll('.ask-chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var action = actions[Number(chip.dataset.i)];
+          // The post-change next-step chips (offerNextStepChips) navigate
+          // directly rather than sending a message — "Open the list",
+          // "Plan my stops" and "See your week" are places to go, not
+          // things to ask about.
+          if (action.onClick) return action.onClick();
           // The grocery chip pre-fills and focuses instead of sending —
           // what to add is the household's call, not something to guess at
           // and send as a message. openAskSheet(prefill) already knows how
@@ -6765,6 +6776,122 @@
         });
       });
     });
+  }
+
+  // "core loop handoffs, slice 2" item B (Emily, 2026-09-05): once
+  // hideAskChips has fired (after the household's first message), the
+  // pre-conversation quick-action chips are gone for good — but a turn
+  // that actually changed something still has an obvious next step, and
+  // making the household type it out again is exactly the friction the
+  // quick-action chips exist to remove. So: after any turn whose actions
+  // (the same {tab, change} cards refreshStaleTabsFromActions reads) show
+  // a real change, recompute and show the relevant chip(s). A turn that
+  // changed nothing — a question answered — gets none, which is the point
+  // of gating on `actions` rather than on "a turn happened."
+  //
+  // NOTE (2026-09-08): this pair was added by e2024a4 and then silently
+  // lost from main in merge 2d69951 ("Merge custom-date-range"), which
+  // took the other side of the conflicted region wholesale. Restored here
+  // alongside the "See your week" chip below, because that chip has
+  // nowhere to live without it.
+  //
+  // Priority for the PRIMARY chip when a turn touched more than one area:
+  // an approval (which often ALSO carries a grocery action for the items
+  // it just added) beats a plain grocery edit, which beats an unapproved
+  // draft edit — the biggest life-cycle event wins.
+  //
+  // "See your week" (Emily, 2026-09-08, Loop Board "Tweak-the-week chat:
+  // after a swap the flow dies") rides ahead of that primary whenever the
+  // turn edited a draft week: after a swap the receipt card says WEEK
+  // UPDATED but every other affordance here only sends another message,
+  // so there was no way to go LOOK at what just changed without hunting
+  // for the tab yourself. It goes FIRST because looking is free and
+  // reversible and approving is neither — see, then approve.
+  function computeNextStepChips(actions) {
+    var weekAction = null, groceryAction = null;
+    (actions || []).forEach(function (a) {
+      if (a.tab === 'week') weekAction = a;
+      if (a.tab === 'grocery') groceryAction = a;
+    });
+    // approve_weekly_plan is the one 'week' tool whose action card's
+    // `change` text says "approved" (app/main.py's _categorize_tool
+    // special-cases it to "Week approved — your list is ready") — the
+    // only signal available here that this turn was an approval rather
+    // than an ordinary draft edit.
+    var weekApproved = !!(weekAction && /approved/i.test(weekAction.change || ''));
+    var chips = [];
+    if (weekAction && !weekApproved) {
+      chips.push({
+        label: 'See your week',
+        // The receipt card's own View does activateTab(action.tab) after
+        // closeAskSheet(); this does the same, plus the two things the
+        // card can't: it pins the Plan state (not Cook) and lands on the
+        // day that changed. closeAskSheet() is a no-op at desktop widths,
+        // where the Ask column is always visible and the week is already
+        // on screen beside it — there, this just selects the day.
+        onClick: function () {
+          closeAskSheet();
+          focusChangedWeekDay(weekAction.date, weekAction.slot);
+        }
+      });
+    }
+    if (weekApproved) {
+      chips.push({ label: 'Open the list', onClick: function () { activateTab('grocery', true); } });
+    } else if (groceryAction) {
+      chips.push({ label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } });
+    } else if (weekAction) {
+      // Same label + message computeContextQuickActions already uses for
+      // "there's a draft, go approve it" — one wording for one meaning.
+      chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
+    }
+    return chips;
+  }
+
+  function offerNextStepChips(actions) {
+    var chips = computeNextStepChips(actions);
+    if (chips.length) renderAskChips(chips);
+  }
+
+  // Land on Meals → Plan, on the day that just changed, with the changed
+  // meal briefly ringed so the eye finds it without a caption telling it
+  // to. `date`/`slot` come off the action card (app/main.py's ChatAction),
+  // and are both optional: a component-based plan's swap has no date at
+  // all, and an older cached reply won't carry the fields — in either case
+  // this still does the useful half and just shows the week as it stands.
+  //
+  // weekState.pendingDayFocus is the handoff, because activateTab may only
+  // just have *started* building the panel (buildWeekPanel → loadWeekMenu
+  // is async): renderWeekMenu drains it once the days actually exist, and
+  // the direct call below covers the already-built case, whichever wins.
+  function focusChangedWeekDay(date, slot) {
+    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner' } : null;
+    activateTab('week', true, { mealsView: 'plan' });
+    var panel = panels['week'];
+    if (panel && panel.dataset.built) applyPendingDayFocus(panel);
+  }
+
+  function applyPendingDayFocus(panel) {
+    var pending = weekState.pendingDayFocus;
+    if (!pending || !weekState.days.length) return;
+    var index = -1;
+    weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
+    if (index < 0) return; // the change landed outside the week on screen
+    weekState.pendingDayFocus = null;
+    // Exactly what a day-rail tap does (see renderDayRail's own handler) —
+    // one selection mechanism, so this can't drift from the real one.
+    weekState.selectedIndex = index;
+    renderDayRail(panel, weekState.days);
+    renderDayCard(panel, weekState.days[index]);
+    // Dinner is the hero; breakfast and lunch live together in the sides
+    // card, which is the smallest thing that reliably contains them both
+    // without teaching this function the sides card's internals.
+    var wrap = panel.querySelector('#day-card-wrap');
+    var target = wrap && wrap.querySelector(pending.slot === 'dinner' ? '.day-hero' : '.day-sides');
+    if (!target) return;
+    target.classList.add('just-changed');
+    // Long enough to notice, short enough that it's gone before it can be
+    // mistaken for a state the day is now in.
+    setTimeout(function () { target.classList.remove('just-changed'); }, 2000);
   }
 
   function splitTableRow(line) {
@@ -7069,6 +7196,7 @@
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', data.reply, data.actions);
       refreshStaleTabsFromActions(data.actions);
+      offerNextStepChips(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       addAskMessage('assistant', 'Error: ' + err.message);
