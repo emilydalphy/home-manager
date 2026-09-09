@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
@@ -301,6 +302,13 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     directly; anything freeform (like "a pinch" or "to taste") is left
     as-is rather than guessed, and flagged in unscaled_items so the Cooker
     knows to eyeball it themselves.
+
+    Scaling happens on the COOKING amounts (see cooking_ingredients below),
+    never on the shopping ones — this is the Cook screen's serving stepper
+    and the chat's "cooking for 6 tonight", both of which are questions
+    about the pan. Halving "1 bottle olive oil" used to produce "0.5
+    bottles" (Julia, 2026-09-08); it now halves "2 tbsp" to "1 tbsp", and
+    the untouched shopping amount rides along as `shopping_qty`.
     """
     recipe = get_recipe(recipe_name)
     base_servings = recipe["default_servings"] or 4
@@ -310,11 +318,21 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
 
     scaled_ingredients = []
     unscaled_items = []
-    for ing in recipe["ingredients"]:
+    for ing in cooking_ingredients(recipe["ingredients"], servings=base_servings):
+        # cook_qty is the amount at base_servings and has already been read
+        # into qty above; carrying it further would let a second pass scale
+        # from the baseline again.
+        ing.pop("cook_qty", None)
         parsed = _quantities._parse_quantity(ing.get("qty", ""))
         if parsed:
             amount, unit = parsed
-            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(amount * ratio, unit)})
+            scaled = amount * ratio
+            if unit in _DISCRETE_UNITS:
+                # "0.5 heads of garlic" is not an amount anyone measures.
+                # Same rounding cooking_quantity applies, so the two agree
+                # about a thing that only comes whole.
+                scaled = max(1.0, round(scaled))
+            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(scaled, unit)})
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -326,6 +344,514 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
         "target_servings": target_servings,
         "scaled_ingredients": scaled_ingredients,
         "unscaled_items": unscaled_items,
+    }
+
+
+# ---------- cooking measurements (Julia, 2026-09-08) ----------
+#
+# "The recipe quantities are not specific enough. It's saying stuff like
+# 'one bottle olive oil' which is incorrect. It should give actual
+# measurements in the cooking view."
+#
+# She is right, and the "1 bottle" is not the model making something up —
+# it is this app asking for it. generate_weekly_plan_llm's ingredient
+# bullet tells the model to "write each ingredient's qty as how it's
+# actually bought at the store, not how much ends up used once prepped",
+# because that string IS the grocery line (see
+# _add_recipe_ingredients_for_entries below, and quantities._PACKAGE_UNITS,
+# which buys one bottle a week however many dinners name it). For the LIST
+# that is correct and stays. For the COOK it never was — nobody pours a
+# bottle of oil into a pan — and scale_recipe made it worse by halving it
+# to "0.5 bottles".
+#
+# So a recipe ingredient carries two amounts, not one:
+#
+#   qty       — how it is BOUGHT. Unchanged; still what grocery reads.
+#   cook_qty  — how much goes in the pan, at the recipe's default_servings.
+#               Optional: where a recipe hasn't got one, the table below
+#               derives it deterministically.
+#
+# Nothing in the grocery path reads cook_qty and nothing in the cook path
+# shows a package word — that split is the whole fix. Both live inside
+# ingredients_json, so there is no migration: an ingredient dict is stored
+# as given.
+
+COOKING_BASE_SERVINGS = 4
+
+# Package words a cook can never act on. Rejected outright in a cooking
+# quantity. Deliberately WIDER than quantities._PACKAGE_UNITS (the sealed-
+# package set the grocery list buys once a week): that set answers "does
+# one of these last a household a week", this one answers "can I put this
+# in a pan", and a box of pasta fails the second while passing the first.
+_COOKING_PACKAGE_UNITS = {
+    "bag", "bottle", "box", "carton", "container", "jar", "pack", "packet",
+    "punnet", "sachet", "tub",
+}
+
+# "1 can (14 oz)" is the exception a household really does cook from — a
+# sized can of tomatoes IS the measurement. Kept for canned goods with a
+# size on them; a can of olive oil is still nonsense (_NEVER_CANNED_WORDS).
+_CANNED_UNITS = {"can", "tin"}
+
+_NEVER_CANNED_WORDS = {
+    "oil", "vinegar", "salt", "pepper", "spice", "powder", "seasoning",
+    "flour", "sugar", "herbs",
+}
+
+# Kitchen units that state a real amount but don't convert, so
+# quantities._measure_units() (tsp/tbsp/cup/oz/lb/g/kg/ml/l) doesn't hold
+# them.
+_EXTRA_MEASURED_UNITS = {
+    "pint", "quart", "gallon", "stick", "clove", "slice", "sprig", "handful",
+}
+
+# Of those, the ones that only come whole: you use three cloves of garlic
+# or two, never one and a half.
+_DISCRETE_UNITS = {"stick", "clove", "slice", "sprig", "stalk", "head", "bunch"}
+
+# Freeform amounts that are honest cooking instructions rather than
+# vagueness — "salt to taste" is how recipes are written, and
+# test_cook_ahead pins one.
+_FREEFORM_COOKING_OK = {
+    "to taste", "a pinch", "pinch", "a dash", "dash", "a splash", "splash",
+    "as needed", "for serving", "for garnish", "to serve", "optional",
+}
+
+# Items a bare count says nothing about — there is no such thing as "2
+# olive oil". A pepper is countable; pepper is not.
+_NEEDS_MEASURE_WORDS = {
+    "oil", "vinegar", "sauce", "syrup", "honey", "broth", "stock", "wine",
+    "milk", "cream", "yogurt", "juice", "salt", "pepper", "spice", "powder",
+    "flour", "sugar", "rice", "quinoa", "couscous", "oats", "butter",
+    "paste", "extract", "seasoning", "breadcrumbs", "mayonnaise", "mayo",
+    "mustard", "ketchup", "tahini", "hummus", "cheese", "lentils", "granola",
+}
+
+# The normalisation table: what one of this actually is, in the pan, for
+# FOUR people (COOKING_BASE_SERVINGS), scaled linearly to whatever the card
+# is really for.
+#
+# It exists so the fallback is deterministic rather than another model
+# call: "1 bottle olive oil" becomes "2 tbsp olive oil" the same way every
+# time, offline, in a test. Keys are matched whole-word against the
+# ingredient name, longest first, so "black pepper" beats "pepper" and a
+# "bell pepper" stays a vegetable instead of becoming a spice.
+#
+# A starting vocabulary, not a cookbook: the everyday staples a household's
+# week is built from, plus every class the generation prompt itself calls
+# out as a "leave qty blank on later recipes" staple (oils, vinegars,
+# condiments, spices, salt, pepper, sugar) — those are precisely the ones
+# that reach the cook view with no amount on them at all. Anything not
+# here falls through to _CLASS_DEFAULTS rather than to a package word.
+COOKING_QUANTITIES_PER_4 = {
+    # fats and oils
+    "olive oil": "2 tbsp", "extra virgin olive oil": "2 tbsp", "vegetable oil": "2 tbsp",
+    "canola oil": "2 tbsp", "avocado oil": "2 tbsp", "coconut oil": "2 tbsp",
+    "sesame oil": "1 tsp", "cooking oil": "2 tbsp", "butter": "2 tbsp", "ghee": "2 tbsp",
+    # acids, condiments, sweeteners
+    "vinegar": "1 tbsp", "balsamic vinegar": "1 tbsp", "red wine vinegar": "1 tbsp",
+    "rice vinegar": "1 tbsp", "apple cider vinegar": "1 tbsp", "white vinegar": "1 tbsp",
+    "soy sauce": "2 tbsp", "fish sauce": "1 tbsp", "worcestershire sauce": "1 tbsp",
+    "hot sauce": "1 tsp", "sriracha": "1 tsp", "ketchup": "2 tbsp",
+    "mustard": "1 tbsp", "dijon mustard": "1 tbsp", "mayonnaise": "2 tbsp",
+    "honey": "1 tbsp", "maple syrup": "1 tbsp", "tomato paste": "2 tbsp",
+    "tahini": "2 tbsp", "peanut butter": "2 tbsp", "pesto": "1/4 cup",
+    "salsa": "1 cup", "hummus": "1 cup",
+    # salt, pepper, dried spices and herbs
+    "salt": "1 tsp", "kosher salt": "1 tsp", "sea salt": "1 tsp",
+    "black pepper": "1/2 tsp", "white pepper": "1/4 tsp",
+    "garlic powder": "1 tsp", "onion powder": "1 tsp", "paprika": "1 tsp",
+    "smoked paprika": "1 tsp", "cumin": "1 tsp", "ground coriander": "1 tsp",
+    "chili powder": "1 tsp", "cayenne": "1/4 tsp", "red pepper flakes": "1/2 tsp",
+    "cinnamon": "1 tsp", "nutmeg": "1/4 tsp", "turmeric": "1 tsp",
+    "curry powder": "1 tbsp", "garam masala": "1 tbsp", "italian seasoning": "1 tsp",
+    "taco seasoning": "1 tbsp", "dried oregano": "1 tsp", "oregano": "1 tsp",
+    "dried thyme": "1 tsp", "thyme": "1 tsp", "dried basil": "1 tsp",
+    "rosemary": "1 tsp", "bay leaf": "1", "ground ginger": "1 tsp",
+    "sesame seeds": "1 tbsp", "vanilla extract": "1 tsp",
+    # baking and dry pantry
+    "flour": "2 cups", "sugar": "1/2 cup", "brown sugar": "1/2 cup",
+    "baking powder": "1 tsp", "baking soda": "1/2 tsp", "cornstarch": "1 tbsp",
+    "breadcrumbs": "1 cup", "panko": "1 cup", "oats": "2 cups", "granola": "2 cups",
+    "rice": "1.5 cups", "brown rice": "1.5 cups", "jasmine rice": "1.5 cups",
+    "quinoa": "1 cup", "couscous": "1 cup", "pasta": "12 oz", "spaghetti": "12 oz",
+    "noodles": "12 oz", "lentils": "1 cup", "almonds": "1/2 cup",
+    "walnuts": "1/2 cup", "chia seeds": "2 tbsp",
+    # dairy
+    "milk": "1 cup", "heavy cream": "1/2 cup", "sour cream": "1/2 cup",
+    "yogurt": "1 cup", "greek yogurt": "1 cup", "cream cheese": "4 oz",
+    "cottage cheese": "1 cup", "parmesan": "1/2 cup", "cheddar": "1 cup",
+    "mozzarella": "1 cup", "feta": "1/2 cup", "goat cheese": "1/2 cup",
+    "cheese": "1 cup",
+    # produce sold by the bag or bunch but cooked by volume
+    "spinach": "4 cups", "baby spinach": "4 cups", "kale": "4 cups",
+    "arugula": "4 cups", "mixed greens": "6 cups", "lettuce": "6 cups",
+    "romaine": "1 head", "cabbage": "4 cups", "coleslaw mix": "4 cups",
+    "cilantro": "1/4 cup", "parsley": "1/4 cup", "fresh basil": "1/4 cup",
+    "dill": "2 tbsp", "chives": "2 tbsp", "green onions": "4",
+    "mushrooms": "8 oz", "cherry tomatoes": "1 cup", "broccoli": "4 cups",
+    "cauliflower": "4 cups", "green beans": "1 lb", "peas": "2 cups",
+    "corn": "2 cups", "carrots": "3", "celery": "3 stalks",
+    "potatoes": "1.5 lb", "sweet potatoes": "1.5 lb", "onion": "1",
+    "red onion": "1", "garlic": "3 cloves", "ginger": "1 tbsp",
+    "bell pepper": "2", "jalapeno": "1", "lemon": "1", "lime": "1",
+    "avocado": "2", "cucumber": "1", "zucchini": "2", "blueberries": "2 cups",
+    "strawberries": "2 cups", "banana": "2", "apple": "2",
+    # proteins
+    "chicken breast": "1.5 lb", "chicken thighs": "1.5 lb", "chicken": "1.5 lb",
+    "ground beef": "1 lb", "ground turkey": "1 lb", "ground pork": "1 lb",
+    "steak": "1.5 lb", "pork chops": "4", "salmon": "1.5 lb", "shrimp": "1 lb",
+    "white fish": "1.5 lb", "tofu": "14 oz", "tempeh": "8 oz", "eggs": "4",
+    "egg whites": "1 cup", "bacon": "6 slices", "sausage": "1 lb",
+    "deli turkey": "8 oz",
+    # liquids and canned goods
+    "broth": "4 cups", "chicken broth": "4 cups", "vegetable broth": "4 cups",
+    "beef broth": "4 cups", "stock": "4 cups", "white wine": "1/2 cup",
+    "coconut milk": "1 can (14 oz)", "crushed tomatoes": "1 can (28 oz)",
+    "diced tomatoes": "1 can (14 oz)", "tomato sauce": "1 can (14 oz)",
+    "black beans": "1 can (15 oz)", "chickpeas": "1 can (15 oz)",
+    "kidney beans": "1 can (15 oz)",
+    # carriers
+    "tortillas": "8", "bread": "8 slices", "buns": "4", "pita": "4", "naan": "4",
+}
+
+_COOKING_KEYS_LONGEST_FIRST = sorted(COOKING_QUANTITIES_PER_4, key=len, reverse=True)
+
+# What to say when the item isn't in the table at all. Keyed on a word in
+# the ingredient's name and checked in order, so an unknown "chipotle
+# aioli" still reads as a sauce rather than as a bottle. The last resort
+# is the package word itself — a bag of some unknown thing is about two
+# cups of it — because any honest measure beats showing a cook a package.
+_CLASS_DEFAULTS = (
+    (("oil",), "2 tbsp"),
+    (("vinegar", "sauce", "syrup", "dressing", "marinade", "glaze", "aioli"), "2 tbsp"),
+    (("spice", "powder", "seasoning", "seeds"), "1 tsp"),
+    (("juice", "milk", "broth", "stock"), "1 cup"),
+    (("cheese", "yogurt", "cream"), "1 cup"),
+    (("greens", "lettuce", "spinach", "salad"), "4 cups"),
+    (("beans", "rice", "grain", "pasta", "flour", "sugar"), "1 cup"),
+)
+
+_PACKAGE_WORD_DEFAULTS = {
+    "bottle": "2 tbsp", "jar": "2 tbsp", "sachet": "1 tsp", "packet": "1 tsp",
+    "tub": "1 cup", "container": "1 cup", "carton": "2 cups", "bag": "2 cups",
+    "box": "2 cups", "pack": "1 cup", "punnet": "1 cup",
+}
+
+
+def _measured_units() -> set[str]:
+    return _quantities._measure_units() | _EXTRA_MEASURED_UNITS
+
+
+def _clean_item(item: str) -> str:
+    """The ingredient name lowercased and stripped of the prep descriptor
+    the grocery layer already ignores ("Baby spinach, chopped")."""
+    return (item or "").split(",", 1)[0].strip().lower()
+
+
+def _item_matches(text: str, word: str) -> bool:
+    """Whole-word (plus simple plural) containment, so "salt" matches
+    "kosher salt" but not "salted butter"."""
+    return re.search(rf"(?<![a-z]){re.escape(word)}e?s?(?![a-z])", text) is not None
+
+
+def _table_lookup(item: str) -> str | None:
+    """The table's per-4-servings amount for an ingredient name, longest
+    matching key first ("black pepper" before "pepper")."""
+    clean = _clean_item(item)
+    if not clean:
+        return None
+    for key in _COOKING_KEYS_LONGEST_FIRST:
+        if _item_matches(clean, key):
+            return COOKING_QUANTITIES_PER_4[key]
+    return None
+
+
+def _needs_measure(item: str) -> bool:
+    """
+    True for a substance a bare count says nothing about — oil, salt,
+    flour, broth.
+
+    The table gets a veto but not a vote: an item it counts ("carrots":
+    "3", "bell pepper": "2") is countable, which is what stops "pepper"
+    matching "bell pepper" and turning a vegetable into a spice. It does
+    NOT work the other way round — the table measuring lettuce in cups
+    doesn't make "1 head" wrong, because a head is something a cook can
+    act on. Only the keyword list can say an item genuinely needs a
+    measure.
+    """
+    clean = _clean_item(item)
+    if not clean:
+        return False
+    table = _table_lookup(item)
+    if table is not None:
+        parsed = _quantities._parse_quantity(table)
+        if parsed and (parsed[1] is None or parsed[1] in _DISCRETE_UNITS):
+            return False
+    return any(_item_matches(clean, word) for word in _NEEDS_MEASURE_WORDS)
+
+
+def _is_canned_good(item: str) -> bool:
+    """
+    Whether "1 can" is a sane thing to say about this ingredient at all.
+
+    The table decides where it has an opinion — it measures paprika in
+    teaspoons and tomatoes by the can, so a tin of paprika is a package
+    word and a can of tomatoes is a measurement. An item the table has
+    never heard of is given the benefit of the doubt (a can of something
+    unfamiliar is probably genuinely canned), unless it is one of the
+    things that plainly never comes in one.
+    """
+    table = _table_lookup(item)
+    if table is not None:
+        parsed = _quantities._parse_quantity(table)
+        return bool(parsed and parsed[1] and parsed[1].partition(" (")[0] in _CANNED_UNITS)
+    return not any(_item_matches(_clean_item(item), w) for w in _NEVER_CANNED_WORDS)
+
+
+def _quantity_problem(item: str, qty: str) -> str | None:
+    """
+    Why this quantity can't be cooked from, or None if it can. The single
+    rule both validate_measured_quantities and cooking_ingredients ask, so
+    the validator and the repair can never disagree about what is wrong.
+    """
+    text = (qty or "").strip()
+    if not text:
+        return "missing"
+    if text.lower() in _FREEFORM_COOKING_OK:
+        return None
+    parsed = _quantities._parse_quantity(text)
+    if not parsed:
+        return "unmeasured"
+    _amount, unit = parsed
+    if unit is None:
+        # A bare count: fine for eggs and lemons, meaningless for oil.
+        return "unmeasured" if _needs_measure(item) else None
+    head, size = _quantities._split_package_size(unit)
+    word = head.rpartition(" ")[2]
+    if word in _COOKING_PACKAGE_UNITS:
+        return "package_unit"
+    if word in _CANNED_UNITS:
+        if not _is_canned_good(item):
+            return "package_unit"  # a can of olive oil is not a measurement
+        return None if size else "unsized_can"
+    if word in _measured_units():
+        return None
+    # Some other container word — head, bunch, loaf, stick. A real per-meal
+    # amount for produce, still nonsense for a substance.
+    return "unmeasured" if _needs_measure(item) else None
+
+
+def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
+    """
+    What actually goes in the pan for `item`, for `servings` people —
+    derived deterministically from COOKING_QUANTITIES_PER_4, then the class
+    defaults, then the package word itself. None only when there is
+    genuinely nothing better to say than whatever the recipe already has.
+
+    This is the deterministic fallback the recipe-fill path lands on when
+    the model won't produce a measured line (agent.fill_in_recipe), and the
+    same derivation the Cooker view uses for every recipe saved before
+    cook_qty existed.
+    """
+    base = _table_lookup(item)
+    if base is None:
+        clean = _clean_item(item)
+        for words, default in _CLASS_DEFAULTS:
+            if any(_item_matches(clean, w) for w in words):
+                base = default
+                break
+    if base is None and shopping_qty:
+        parsed = _quantities._parse_quantity(shopping_qty)
+        if parsed and parsed[1]:
+            head, _size = _quantities._split_package_size(parsed[1])
+            base = _PACKAGE_WORD_DEFAULTS.get(head.rpartition(" ")[2])
+    if base is None:
+        return None
+    if not servings or servings == COOKING_BASE_SERVINGS:
+        return base
+    parsed = _quantities._parse_quantity(base)
+    if not parsed:
+        return base
+    amount, unit = parsed
+    head = (unit or "").partition(" (")[0]
+    if head in _CANNED_UNITS:
+        # You open a can or you don't. "0.5 cans (14 oz)" is not a smaller
+        # amount of anything, it's a package word wearing a fraction.
+        return base
+    scaled = amount * servings / COOKING_BASE_SERVINGS
+    if unit is None or unit in _DISCRETE_UNITS:
+        # Things that come in whole units — half a bay leaf, 1.5 eggs, 1.5
+        # cloves of garlic — read as precision nobody has. Round, and never
+        # all the way down to nothing.
+        scaled = max(1.0, round(scaled))
+    return _quantities._format_quantity(round(scaled, 3), unit)
+
+
+def validate_measured_quantities(ingredients: list[dict], field: str = "qty") -> dict:
+    """
+    Check that ingredient quantities are amounts a person can measure into
+    a pan — the recipe-side rule Julia's "one bottle olive oil" broke.
+
+    Rejected: a package unit nobody cooks by (bottle, jar, bag, box, pack,
+    carton, tub, container, sachet, punnet); a can or tin with no size on
+    it, or one hung on an oil/vinegar/spice; a bare count of a substance
+    ("2 olive oil"); a blank quantity; freeform text that isn't one of the
+    few real cooking phrases ("to taste", "a pinch").
+
+    Accepted: a measured unit (tsp, tbsp, cup, ml, l, g, kg, oz, lb, and
+    the kitchen units that don't convert — pint, stick, clove, slice), a
+    bare count of a countable thing ("2 lemons"), a sized can of a canned
+    good ("1 can (14 oz) diced tomatoes"), and "to taste".
+
+    Returns {"ok": bool, "problems": [{"item", "qty", "reason",
+    "suggested"}]}, where `suggested` is what cooking_quantity would write
+    instead — so a caller can repair a line without asking anyone twice.
+    `field` (default "qty") lets the same rule check a stored cook_qty.
+    """
+    problems = []
+    for ing in ingredients or []:
+        # An ingredient list is normally dicts, but a caller handing this a
+        # bare list of names has nothing to validate rather than a crash.
+        if not isinstance(ing, dict):
+            continue
+        item = (ing.get("item") or "").strip()
+        if not item:
+            continue
+        qty = (ing.get(field) or "").strip()
+        reason = _quantity_problem(item, qty)
+        if reason:
+            problems.append({
+                "item": item,
+                "qty": qty,
+                "reason": reason,
+                "suggested": cooking_quantity(item, shopping_qty=qty),
+            })
+    return {"ok": not problems, "problems": problems}
+
+
+def cooking_ingredients(ingredients: list[dict], servings: int | None = None) -> list[dict]:
+    """
+    The same ingredient list rewritten so every quantity is one a cook can
+    act on — what the Cooker view and scale_recipe show.
+
+    A stored `cook_qty` wins (that is the measured amount the recipe-fill
+    saved). Failing that, the existing qty is kept whenever it already
+    measures something and replaced from cooking_quantity when it doesn't.
+    The shopping amount is never lost — it moves to `shopping_qty` — since
+    it is still the honest answer to "how much do I buy", a different
+    question that stays the grocery list's.
+
+    Never invents an amount it has no basis for: an unknown item with a
+    blank qty comes back blank rather than guessed at.
+    """
+    out = []
+    for ing in ingredients or []:
+        if not isinstance(ing, dict):
+            out.append(ing)
+            continue
+        item = (ing.get("item") or "").strip()
+        qty = (ing.get("qty") or "").strip()
+        stored = (ing.get("cook_qty") or "").strip()
+        if stored and not _quantity_problem(item, stored):
+            out.append({**ing, "qty": stored, "shopping_qty": qty})
+            continue
+        if not _quantity_problem(item, qty):
+            out.append(dict(ing))
+            continue
+        suggested = cooking_quantity(item, servings=servings, shopping_qty=qty)
+        out.append({**ing, "qty": suggested, "shopping_qty": qty} if suggested else dict(ing))
+    return out
+
+
+def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -> dict:
+    """
+    Write per-ingredient cooking amounts ({"Olive oil": "2 tbsp"}) onto a
+    saved recipe, leaving every shopping qty exactly as it was — used by
+    the recipe-fill path once the model's measured lines have been
+    validated. An item name that isn't already on the recipe is ignored
+    rather than appended: this corrects a recipe, it doesn't rewrite one.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, ingredients_json FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        (household_id(), recipe_name),
+    ).fetchone()
+    if not row:
+        conn.close()
+        raise ValueError(f"No saved recipe named '{recipe_name}'.")
+    by_item = {_clean_item(k): v for k, v in (cook_quantities or {}).items()}
+    ingredients = json.loads(row["ingredients_json"] or "[]")
+    for ing in ingredients:
+        measured = (by_item.get(_clean_item(ing.get("item") or "")) or "").strip()
+        if measured:
+            ing["cook_qty"] = measured
+    conn.execute(
+        "UPDATE recipes SET ingredients_json = ? WHERE id = ?",
+        (json.dumps(ingredients), row["id"]),
+    )
+    conn.commit()
+    conn.close()
+    return {"name": recipe_name, "ingredients": ingredients}
+
+
+# Words a step names without the ingredient list ever having to.
+_STEP_ONLY_WORDS = {"water", "ice"}
+
+
+def check_steps_ingredients_consistency(ingredients: list[dict], instructions: list[str]) -> dict:
+    """
+    A soft accuracy check on a recipe: does the method match the list?
+
+    Two ways a generated recipe quietly goes wrong, both of which read to a
+    household as "the recipe details are not accurate" (Julia, 2026-09-08):
+
+    - an ingredient bought and then never used — it appears in no step;
+    - a step reaching for something that was never on the list ("stir in
+      the heavy cream", no cream anywhere), which is how a household finds
+      out mid-cook that they didn't buy it.
+
+    Only the second half needs a vocabulary of food words, and it uses the
+    measurement table's own keys as that vocabulary — one list to maintain
+    rather than two that drift. A known food word in a step is evidence; an
+    unknown one is not, and is passed over rather than guessed at. That
+    asymmetry is deliberate: a false "you forgot to buy shallots" is worse
+    than a missed one, and this only ever logs.
+
+    Returns {"ok", "unused_ingredients", "missing_from_list"} and never
+    raises — an observation, not a gate.
+    """
+    names = [
+        n for n in (
+            (ing.get("item") or "").strip() if isinstance(ing, dict) else str(ing).strip()
+            for ing in ingredients or []
+        ) if n
+    ]
+    steps = [s for s in (instructions or []) if (s or "").strip()]
+    if not names or not steps:
+        return {"ok": True, "unused_ingredients": [], "missing_from_list": []}
+
+    text = " ".join(steps).lower()
+    unused = []
+    for name in names:
+        # Any word of the name is enough: "Baby spinach" is "the spinach"
+        # in step 3, and "Boneless chicken thighs" is "the chicken".
+        words = [w for w in re.findall(r"[a-z]+", _clean_item(name)) if len(w) > 2]
+        if words and not any(_item_matches(text, w) for w in words):
+            unused.append(name)
+
+    listed = " ".join(_clean_item(n) for n in names)
+    matched = [
+        key for key in COOKING_QUANTITIES_PER_4
+        if key not in _STEP_ONLY_WORDS and _item_matches(text, key) and not _item_matches(listed, key)
+    ]
+    # Report the longest name for a thing, not every fragment of it:
+    # "heavy cream", never "heavy cream" and "cream".
+    missing = [m for m in matched if not any(m != other and m in other for other in matched)]
+    return {
+        "ok": not unused and not missing,
+        "unused_ingredients": unused,
+        "missing_from_list": sorted(missing),
     }
 
 

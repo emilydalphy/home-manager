@@ -314,6 +314,57 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — A recipe ingredient has two amounts now: one for the
+  shop, one for the pan. Branch `recipe-quantities-measured`.** Julia
+  (first beta tester): "The recipe quantities are not specific enough.
+  It's saying stuff like 'one bottle olive oil' which is incorrect. It
+  should give actual measurements in the cooking view." **Root cause: the
+  app asked for it.** `generate_weekly_plan_llm`'s ingredient bullet
+  (agent.py, the "write each ingredient's qty as how it's actually bought
+  at the store" bullet) tells the model to write shopping-shaped
+  quantities because that string IS the grocery line —
+  `recipes._add_recipe_ingredients_for_entries` reads it and
+  `quantities._PACKAGE_UNITS` buys one bottle for the whole week however
+  many dinners name it. Correct for the list. `get_cooker_view` then
+  showed the same string to the cook, and `scale_recipe` halved it to
+  "0.5 bottles". Neither the packaging step nor a rounding helper wrote
+  anything back into the recipe; nothing was ever converted, which is the
+  bug.
+  **The fix is a split, not a rewrite.** An ingredient dict may now carry
+  `cook_qty` beside `qty` (inside `ingredients_json` — no migration).
+  `recipes.validate_measured_quantities` is the rule (package words
+  rejected; a can kept only for a canned good with a size; a bare count
+  only for something countable; "to taste" allowed), and
+  `recipes.COOKING_QUANTITIES_PER_4` — 176 everyday items, per four
+  servings, plus seven class defaults and a per-package-word last resort —
+  is the deterministic fallback, so "1 bottle olive oil" becomes "2 tbsp"
+  offline, in a test, every time. `cooking_ingredients` is a presentation
+  pass at the END of `get_cooker_view` (after batch/chain/attendance
+  scaling) and the first step of `scale_recipe`; **the grocery path was
+  not touched and the list still says "1 bottle"**, which is right.
+  `fill_in_recipe` asks for measured amounts, validates them, makes ONE
+  repair call for only the offending lines, then falls to the table.
+  **Cost delta (chars/4 estimate — no working API key here, see the effort
+  note in agent.py):** the fill call's prompt names only the ingredients
+  that actually fail the validator, and the `cooking_quantities` schema
+  property is attached only for those recipes, so a recipe already written
+  in measurements pays **+10.3% input / +13.4% call (+$0.001)** and the
+  reported case pays **+31.9% input / +35.8% call (+$0.0025)**. That is
+  over the ~10%-per-call budget this work was given, and deliberately: the
+  overage is the measured lines themselves plus the richer steps
+  (temperature/time/doneness cue) that answer the second half of Julia's
+  report. Absolute impact against the $1/household/month target is a
+  fraction of a cent per fill, and a fill is a button press on a recipe
+  with no instructions, not a per-week cost. The repair call is its own
+  ledger row (`generate_recipe_detail_llm.repair`) so its real frequency
+  is measurable rather than guessed.
+  Also added: `recipes.check_steps_ingredients_consistency` (an ingredient
+  no step uses; a step naming something the list never bought) as a
+  log-only `steps_match_ingredients` **info** note in `plan_quality` and
+  at fill time. It uses the measurement table's own keys as its food
+  vocabulary and passes over words it doesn't know — a false "you forgot
+  to buy shallots" is worse than a missed one.
+
 - **2026-09-08 — Onboarding, second pass: Julia's beta feedback, and the
   "asked for next week, planned this week" bug. Branch
   `onboarding-copy-v2`.** Julia is the first beta tester to go through

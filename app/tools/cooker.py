@@ -733,6 +733,26 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
                 m["ingredients"] = scaled["scaled_ingredients"]
                 m["default_servings"] = eaters
 
+    # Last, once every card's ingredients and servings are final (batch
+    # scaling, leftover chains, attendance): rewrite the amounts into ones
+    # a cook can act on. Julia, 2026-09-08 — "it's saying stuff like 'one
+    # bottle olive oil'... it should give actual measurements in the
+    # cooking view."
+    #
+    # Deliberately a presentation pass at the very end rather than a change
+    # to what a recipe stores: the SAME ingredient row is both a shopping
+    # line and a cooking line, and the grocery list's "1 bottle olive oil"
+    # is correct where it is (recipes._add_recipe_ingredients_for_entries
+    # buys one bottle a week however many dinners name it). Only the cook
+    # sees a measurement; `shopping_qty` carries the bought amount along
+    # for anything that still wants it. Cards already put through
+    # scale_recipe come back untouched — those quantities are measured
+    # already, so nothing here fires twice.
+    for m in meals:
+        m["ingredients"] = _recipes.cooking_ingredients(
+            m["ingredients"], servings=m.get("default_servings") or m.get("servings"),
+        )
+
     prep_tasks = get_prep_schedule(plan["weekly_plan_id"])
     return {
         "weekly_plan_id": plan["weekly_plan_id"],

@@ -455,6 +455,11 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # side call, one per short plate, capped per generated week. See
         # agent.generate_sides_llm and app/tools/plates.py.
         "generate_sides_llm",
+        # The one follow-up call the recipe fill makes when the model hands
+        # back an amount nobody can cook from ("1 bottle olive oil") —
+        # only the offending lines, and only when the validator rejects
+        # something. See agent._repair_cooking_quantities_llm.
+        "generate_recipe_detail_llm.repair",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added
