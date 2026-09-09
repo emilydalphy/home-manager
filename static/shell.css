@@ -5512,6 +5512,54 @@ span.cook-week-name { cursor: default; }
 }
 .wk-act.is-apricot:hover { background: var(--apricot-light); }
 
+/* ---------- the swap line ---------- */
+/* One quiet line under a slot's actions, saying whichever of three things
+   is true: the wordier way out, the call being out, or the reason for the
+   dish that just landed plus its Undo. It carries no accent fill — the
+   screen's one apricot is the primary above it (Rule 5), and a swap that
+   competed with "Cook this" for the eye would be telling the household the
+   wrong thing is important. */
+.wk-swap-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-height: 44px;
+}
+.wk-swap-said,
+.wk-swap-working {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+  flex: 1 1 auto;
+}
+.wk-swap-tell,
+.wk-swap-undo {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.wk-swap-tell:hover,
+.wk-swap-undo:hover { color: var(--apricot-label-hover); }
+/* Undo is the one of the two that reverses something, so it reads as a
+   chip rather than as a link — still no fill. */
+.wk-swap-undo {
+  padding: 0 11px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-chip);
+  min-height: 44px;
+  color: var(--ink-strong);
+}
+.wk-swap-undo:hover { background: var(--sand); color: var(--ink-strong); }
+
 /* ---------- MEAL: the plate, cooking ahead, why this night ---------- */
 .wk-card { margin: 0 20px 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .wk-card-title {
