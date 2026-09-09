@@ -274,6 +274,47 @@
   .reveal-slot-dish { color: var(--ink); font-weight: 600; }
   .reveal-slot-dish-open { color: var(--apricot-label); font-weight: 600; }
   .reveal-slot-dish-empty { color: var(--ink-done); font-style: italic; font-weight: 400; }
+  /* The end-of-setup receipt (Emily + Julia, 2026-09-08: "tell me plainly
+     that setup is done, what you did, and the one thing to do next"). It is
+     the same pattern as the approval receipt on Meals — celadon tint,
+     celadon eyebrow, one display title, plain lines under it (shell.css
+     .week-receipt-*) — so the two moments a week gets settled look like the
+     same app saying the same kind of thing. Restated here rather than
+     shared because onboarding.html is a standalone wizard page and never
+     loads shell.css. */
+  .reveal-receipt {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    background: var(--celadon-tint);
+    border: 1.5px solid var(--celadon-edge);
+    border-radius: var(--radius-card);
+    padding: 16px 18px;
+    margin-top: 14px;
+  }
+  /* A flex container needs its own [hidden] rule or display:flex wins —
+     the same guard pair .reveal-status and .reveal-days already carry. */
+  .reveal-receipt[hidden] { display: none; }
+  .reveal-receipt-eyebrow {
+    font-family: var(--font-body); font-weight: 800; font-size: 10px;
+    letter-spacing: 0.14em; color: var(--celadon-label); margin: 0;
+  }
+  .reveal-receipt-title {
+    font-family: var(--font-display); font-weight: 700; font-size: 21px;
+    letter-spacing: -0.028em; line-height: 1.2; color: var(--ink-on-celadon);
+    margin: 0;
+  }
+  .reveal-receipt-line {
+    font-family: var(--font-body); font-size: 14px; line-height: 1.45;
+    color: var(--ink-secondary); margin: 0;
+  }
+  /* The failure twin: the same block with the celadon taken off it. Celadon
+     means "already true and good" (DESIGN_SYSTEM §1), and a settled tint
+     over "the first week didn't come together" would be saying the opposite
+     of what happened — see §8's calm-in-trouble rule. */
+  .reveal-receipt-failed { background: var(--surface); border-color: var(--hairline-strong); }
+  .reveal-receipt-failed .reveal-receipt-eyebrow { color: var(--ink-secondary); }
+  .reveal-receipt-failed .reveal-receipt-title { color: var(--ink); }
   .invite-card {
     background: var(--celadon-tint);
     border: 1px solid var(--celadon-edge);
@@ -642,6 +683,15 @@
          somehow didn't load. -->
     <span class="waiting-line" id="reveal-status-text">Drafting your week&hellip;</span>
   </div>
+  <!-- How setup ends (Emily + Julia, 2026-09-08). Empty and hidden until
+       the week has finished building — or failed — because it is the
+       answer to "am I done?", and there is no answer yet while the plan is
+       still coming in. Above the day list on purpose: what was saved, what
+       Pomona did and the one thing to do next, and then the week itself to
+       look over. renderRevealReceipt / renderRevealFailedReceipt fill it,
+       and nothing else in the app repeats it — the answers themselves live
+       on Preferences from here on. -->
+  <div id="reveal-receipt" class="reveal-receipt" hidden></div>
   <!-- Empty AND hidden until the first real day arrives: an empty
        .reveal-days still contributes its 14px gap and its own shape to the
        screen, which is the blank menu Julia saw. revealShowDays() is the
@@ -649,7 +699,10 @@
   <div id="reveal-days" class="reveal-days" hidden></div>
   <div id="invite-section"></div>
   <div class="reveal-actions" id="reveal-actions" style="display:none">
-    <button class="btn-primary reveal-primary-btn" id="reveal-done-btn" type="button">Looks good — take me in</button>
+    <!-- The receipt above says the one thing to do next; this is that thing.
+         It replaces "Looks good — take me in", which named no next step and
+         landed on whatever week today happens to sit in. -->
+    <button class="btn-primary reveal-primary-btn" id="reveal-done-btn" type="button">Review my week</button>
     <button class="reveal-quiet-link" id="reveal-iterate-btn" type="button">or tweak it with me</button>
   </div>
   <!-- A failed generation shows this instead of reveal-actions above, never
@@ -1594,18 +1647,14 @@ function revealShowDays() {
   document.getElementById('reveal-title').textContent = REVEAL_TITLE_READY;
 }
 
+// Only ever called with a real week. A finished generation that produced
+// nothing used to be handled here, with its own "No meals generated yet —
+// you can ask for a weekly plan any time in chat." box; a week that never
+// arrived is now the failure receipt's to say (renderRevealFailedReceipt),
+// which says it once, in the same words as a generation that threw, and
+// with Try again beside it rather than an instruction to go find chat.
 function renderRevealDays(meals) {
   const daysDiv = document.getElementById('reveal-days');
-  if (!meals.length) {
-    // A finished generation that produced nothing: the box is shown,
-    // because this sentence is the answer and hiding it would leave the
-    // screen claiming a week that never arrived. The title stops saying
-    // it is still working, without claiming a sample week either.
-    daysDiv.hidden = false;
-    document.getElementById('reveal-title').textContent = 'Your first week';
-    daysDiv.innerHTML = '<p style="color:var(--ink-secondary);font-size:0.9rem">No meals generated yet — you can ask for a weekly plan any time in chat.</p>';
-    return;
-  }
   revealShowDays();
   daysDiv.innerHTML = groupRevealMealsByDay(meals).map(revealDayCardHtml).join('');
 }
@@ -1661,6 +1710,143 @@ function buildRevealCopy(answers) {
   }
   const rhythm = revealRhythmClause();
   return rhythm ? `${base}, ${rhythm}.` : `${base}.`;
+}
+
+// ---------- The end-of-setup receipt ----------
+// "I want to be told plainly that setup is complete, what Pomona did, and
+// the one thing to do next, so I never wonder whether I missed a step"
+// (Emily + Julia, 2026-09-08). Three lines, in that order, and each one is
+// built from something that actually happened — the answers this household
+// gave, and the plan that came back. Nothing here is a template with a
+// number dropped into it: a fact nobody gave is left out of the sentence
+// rather than guessed at.
+const REVEAL_RECEIPT_EYEBROW = "YOU'RE SET UP";
+const REVEAL_RECEIPT_TITLE = "That's everything I need.";
+const REVEAL_RECEIPT_NEXT = "Next: look it over and approve it, then I'll write your list.";
+// The failure twin. Plain, and paired with its way out in the same breath
+// (DESIGN_SYSTEM §8) — the answers really are saved, so that is said first.
+const REVEAL_FAILED_TITLE = 'Your answers are saved.';
+const REVEAL_FAILED_LINE = "The first week didn't come together — tap Try again, or I'll draft it when you open the app.";
+
+// Numbers are digits here, deliberately, and not the words-to-twelve rule
+// the approved-week receipt follows (weekly_plan._receipt_number): this
+// block is a count-back of what was saved, and digits are what makes it
+// scannable as one.
+const REVEAL_DINNER_WINDOW_FACT = {
+  '5_6ish': 'dinner around 5 or 6',
+  '6_8': 'dinner between 6 and 8',
+  'later': 'dinner on the later side',
+  // 'all_over' says nothing specific enough to read back as a fact, so it
+  // is left out of the line entirely rather than padded into it.
+};
+
+function revealTitleCase(word) {
+  return word ? word.charAt(0).toUpperCase() + word.slice(1) : '';
+}
+
+function revealJoinWords(items) {
+  if (items.length <= 1) return items[0] || '';
+  if (items.length === 2) return items[0] + ' and ' + items[1];
+  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+}
+
+// Line 1: what was saved. `facts` is {people, allergies, dinnerWindow,
+// prepDays} — see revealSetupFacts for where each one comes from.
+function revealSetupLine(facts) {
+  const parts = [];
+  const people = facts.people || 0;
+  if (people === 1) parts.push('just you');
+  else if (people > 1) parts.push(people + ' of you');
+  const allergies = facts.allergies || 0;
+  // Said either way: "no allergies" is an answer this household gave, and
+  // seeing it read back is the point of the whole block.
+  parts.push(allergies ? allergies + (allergies === 1 ? ' allergy' : ' allergies') : 'no allergies');
+  const dinner = REVEAL_DINNER_WINDOW_FACT[facts.dinnerWindow];
+  if (dinner) parts.push(dinner);
+  const prepDays = (facts.prepDays || []).map(revealTitleCase).filter(Boolean);
+  if (prepDays.length) parts.push('prep on ' + revealJoinWords(prepDays));
+  if (!parts.length) return '';
+  return revealTitleCase(parts.join(', ')) + '.';
+}
+
+// Line 2: what Pomona did, counted off the plan that just came back. Same
+// rule as the approved-week receipt (weekly_plan._is_cook): a reheat night
+// and a takeout night are meals but not cooks, and an away or still-open
+// slot is neither. A first plan has no confirmed leftover chains yet, so
+// the freeform-text test is the whole of it here — the same regex pair
+// get_week_menu uses on the same text.
+const REVEAL_NOT_A_COOK = /leftovers?\b|take[\s-]?out|delivery|order in/i;
+
+function revealPlanCounts(meals) {
+  let mealCount = 0;
+  let cookCount = 0;
+  (meals || []).forEach(m => {
+    if (!m || !m.meal) return;
+    if (m.slot_state && m.slot_state !== 'planned') return;
+    mealCount += 1;
+    if (!REVEAL_NOT_A_COOK.test(m.meal)) cookCount += 1;
+  });
+  return { meals: mealCount, cooks: cookCount };
+}
+
+function revealPlanLine(counts) {
+  const parts = [];
+  if (counts.meals) parts.push(counts.meals + (counts.meals === 1 ? ' meal' : ' meals'));
+  if (counts.cooks) parts.push(counts.cooks + (counts.cooks === 1 ? ' cook' : ' cooks'));
+  if (!parts.length) return '';
+  return 'Your first week is drafted: ' + parts.join(', ') + '.';
+}
+
+// The answers actually given, read from the same places the save calls read
+// them: the answer body for people and restrictions, the rhythm step's own
+// globals for the dinner window and the prep days.
+function revealSetupFacts(answers) {
+  const restrictions = (answers && answers.household_restrictions) || {};
+  let allergies = 0;
+  Object.keys(restrictions).forEach(name => {
+    (restrictions[name] || []).forEach(item => {
+      // currentRestrictions() writes an allergy as "allergy: peanuts", one
+      // entry per thing — so this counts things, not people.
+      if (String(item).toLowerCase().indexOf('allergy:') === 0) allergies += 1;
+    });
+  });
+  return {
+    people: ((answers && answers.member_names) || []).length,
+    allergies: allergies,
+    dinnerWindow: rhythmDinnerWindow,
+    prepDays: currentPrepDays().map(d => d.weekday),
+  };
+}
+
+function revealReceiptLinesHtml(lines) {
+  return lines
+    .filter(Boolean)
+    .map(line => `<p class="reveal-receipt-line">${escapeHtmlLocal(line)}</p>`)
+    .join('');
+}
+
+function renderRevealReceipt(answers, meals) {
+  const box = document.getElementById('reveal-receipt');
+  box.classList.remove('reveal-receipt-failed');
+  box.innerHTML =
+    `<p class="reveal-receipt-eyebrow">${REVEAL_RECEIPT_EYEBROW}</p>` +
+    `<p class="reveal-receipt-title">${escapeHtmlLocal(REVEAL_RECEIPT_TITLE)}</p>` +
+    revealReceiptLinesHtml([
+      revealSetupLine(revealSetupFacts(answers)),
+      revealPlanLine(revealPlanCounts(meals)),
+      REVEAL_RECEIPT_NEXT,
+    ]);
+  box.hidden = false;
+}
+
+function renderRevealFailedReceipt() {
+  const box = document.getElementById('reveal-receipt');
+  box.classList.add('reveal-receipt-failed');
+  box.innerHTML =
+    `<p class="reveal-receipt-eyebrow">${REVEAL_RECEIPT_EYEBROW}</p>` +
+    `<p class="reveal-receipt-title">${escapeHtmlLocal(REVEAL_FAILED_TITLE)}</p>` +
+    revealReceiptLinesHtml([REVEAL_FAILED_LINE]);
+  box.hidden = false;
 }
 
 async function renderInviteOffer(memberNames) {
@@ -1772,6 +1958,16 @@ async function streamFirstPlan(waiter) {
 // a second time.
 let lastFirstPlanAnswers = null;
 
+// The week the first plan was actually filed under, straight off the plan
+// that came back. "Review my week" carries it, because the first plan is
+// not always the week today sits in — a household that chose "Next week",
+// or a Sunday household whose part-week folded forward, gets a plan filed
+// under a Monday that ISN'T this one, and the Meals tab defaults to
+// whichever week contains today. Same fact, same query param and same
+// handling as /plan-week's own hand-back (shell.js buildWeekPanel reads
+// ?drafted=<Monday> into weekState.showWeekStart).
+let firstPlanWeekStart = '';
+
 async function generateFirstPlanAndReveal(answers) {
   lastFirstPlanAnswers = answers;
   const accent = document.getElementById('reveal-accent');
@@ -1788,6 +1984,12 @@ async function generateFirstPlanAndReveal(answers) {
   // rather than to the shape of the week that just failed.
   daysDiv.innerHTML = '';
   daysDiv.hidden = true;
+  // Same reason: "That's everything I need" over a week being rebuilt is a
+  // receipt for something that hasn't happened yet.
+  const receiptBox = document.getElementById('reveal-receipt');
+  receiptBox.innerHTML = '';
+  receiptBox.hidden = true;
+  firstPlanWeekStart = '';
   let failed = false;
   // Starts in 'reading' rather than waiting for the first frame: the
   // request is already out and context assembly has already begun, so the
@@ -1797,8 +1999,15 @@ async function generateFirstPlanAndReveal(answers) {
     : null;
   try {
     const data = await streamFirstPlan(waiter);
-    renderRevealDays(data.meals || []);
+    const meals = data.meals || [];
+    // A generation that finished and produced nothing is the same news as
+    // one that threw, and gets told the same way: a week that isn't there
+    // is a week that isn't there, whichever way it didn't arrive.
+    if (!meals.length) throw new Error('The first plan came back with no meals');
+    firstPlanWeekStart = data.week_start_date || '';
+    renderRevealDays(meals);
     accent.textContent = buildRevealCopy(answers);
+    renderRevealReceipt(answers, meals);
   } catch (err) {
     console.warn('First-plan generation failed:', err);
     failed = true;
@@ -1806,12 +2015,15 @@ async function generateFirstPlanAndReveal(answers) {
     // calm-in-trouble rule in DESIGN_SYSTEM.md §8.
     document.getElementById('reveal-title').textContent = 'Your first week';
     accent.textContent = "That didn't come together — shall I have another go?";
+    renderRevealFailedReceipt();
   } finally {
     if (waiter) waiter.stop();
     status.hidden = true;
-    // The normal actions ("Looks good — take me in") assume a real week is
-    // sitting above them — on a failed generation there are zero days, so
-    // this shows the retry pair instead rather than the two overlapping.
+    // The normal actions ("Review my week") assume a real week is sitting
+    // above them — on a failed generation there are zero days, so this
+    // shows the retry pair instead rather than the two overlapping. Try
+    // again is the one primary there, beside the failure receipt that just
+    // named it.
     if (failed) {
       errorActions.style.display = 'flex';
     } else {
@@ -1982,7 +2194,21 @@ document.querySelectorAll('[data-back]').forEach(el => {
 // third, optional path out of this screen ("Set up chores too"); that path
 // is gone (see the comment above the old step-chores-q markup) — chores
 // setup is reachable afterward from Today's chores card instead.
-document.getElementById('reveal-done-btn').onclick = () => { window.location.href = '/week?firstplan=1'; };
+// The one thing to do next, and the receipt above says so: land on the
+// Meals tab looking at the DRAFT this reveal just built — the week card
+// with its DRAFT badge, its rows and its "Approve this week" under them
+// (flows 3). ?drafted=<the plan's own Monday> is what makes it that week
+// rather than whichever week today falls in: shell.js's buildWeekPanel
+// reads it into weekState.showWeekStart, the same hand-back /plan-week
+// already uses, and its arrival line ("Here's your week — change anything
+// before you approve it.") is the same next step in the same words.
+// Replaces '?firstplan=1', whose toast ("Here's a first pass…") the
+// receipt now says at more length and with the next step named.
+document.getElementById('reveal-done-btn').onclick = () => {
+  window.location.href = firstPlanWeekStart
+    ? '/week?drafted=' + encodeURIComponent(firstPlanWeekStart)
+    : '/week';
+};
 // The iterate path (Loop Board "add an iterate/feedback path at the end")
 // — a quiet secondary next to the one apricot primary, straight into
 // chat rather than a bespoke feedback form, since chat is already how
