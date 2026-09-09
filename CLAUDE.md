@@ -351,6 +351,48 @@ why*, not duplicating the diff.
   generation applies, and "we fixed your repetitive snack by giving you
   one you're allergic to" is the worse bug.
 
+- **2026-09-08 — Swap is one small call now, not a chat turn. Branch
+  `swap-one-meal-in-place`.** Julia (first beta tester): "be able to click
+  on the one recipe and meal that the user wants to switch and then have it
+  regenerate just the one on the spot." Meals' "Swap" used to open the ask
+  sheet with a prefilled sentence and spend a whole chat turn. It is now
+  `POST /api/week/{week_start}/swap-in-place {entry_id, avoid?}` →
+  `app/tools/swap_in_place.py`, one forced `submit_swap` tool call at the
+  `utility` effort route, priced in the api_calls ledger under the new call
+  site **`swap_in_place`**. Four things worth knowing before changing it:
+  (1) **the pick is applied through the existing `swap_meal_in_plan`**, so
+  leftover chains, groceries-only-on-approval, plate sides and the shared
+  `taste_verdict` behave exactly as a chat swap — this module deliberately
+  owns no second swap implementation, and the two fields plan_meal can't be
+  told about from in there (`reasoning`, `derived_from`) are written
+  straight after; (2) **the allergen check runs on the pick BEFORE anything
+  is written**, through a new `coordination.check_meal_conflicts` — the
+  per-dish half of `check_plan_conflicts`, pulled out so both use one
+  matcher rather than two that can disagree. A hard clash costs exactly one
+  retry with that dish added to `avoid`, then a plain refusal and nothing
+  saved. Checking after applying would have meant reversing a swap the
+  household never asked for, dragging the grocery list and any chain
+  through it; (3) **`derived_from.swapped_from` is written once** — a
+  second swap carries the ORIGINAL forward, so Undo means "put back what
+  was there before I started tapping", not "step back one dish"
+  (`POST .../swap-undo`, also through `swap_meal_in_plan`); (4) the
+  outgoing dish is on `avoid` from the first call and stays on the list
+  handed back, which is what the screen sends as the next tap's `avoid`.
+  Front end, `static/shell.js` Day and Meal steps only: `swapLineHtml` is
+  one quiet line under a slot's actions saying whichever of three things is
+  true — "Tell me what instead" (the old ask-sheet path, same prefill,
+  `openAskSheet` itself untouched), "Finding something else…" while the
+  call is out, then the model's one-line reason plus an Undo chip for 8s.
+  No second apricot (Rule 5). **Cost measured off the call's own shape:**
+  ~1,450 input tokens (≈700 instructions, cached after the first swap of a
+  session; ≈390 tool schema; ≈350 household context) and ~550 output, so
+  **≈$0.009 for the first swap and ≈$0.006 warm**, roughly double if the
+  allergen retry fires — against a chat turn's ~16k-token context for the
+  same edit. Left out honestly: `plan_quality.check_and_log` doesn't run on
+  a swapped slot (it is a whole-week rule engine and log-only), and an
+  undo restores the dish but not a leftover chain the swap broke — that is
+  `swap_meal_in_plan`'s pre-existing behaviour, shared with every chat
+  swap, not something this path adds.
 - **2026-09-08 — Kitchen is the cook's tab, and everything the app knows
   about the household is a sheet. Branch
   `flows-4-kitchen-and-preferences`.** Emily's approved design. KITCHEN

@@ -1790,6 +1790,58 @@ def generate_week_stream(week_start: str, req: WeekGenerateRequest):
     )
 
 
+class SwapInPlaceRequest(BaseModel):
+    """
+    One tap on "Swap". `avoid` is what this sitting has already turned down
+    for that slot — the screen sends back what the last swap handed it, so
+    tapping twice never offers the same dish again.
+    """
+    entry_id: int
+    avoid: list[str] | None = None
+
+
+class SwapUndoRequest(BaseModel):
+    entry_id: int
+
+
+@app.post("/api/week/{week_start}/swap-in-place")
+def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
+    """
+    Replace one meal on the spot, for one small model call — the Meals
+    screen's Swap (Julia, 2026-09-08). Household-scoped like every other
+    week route: the entry is looked up against this household's plan, so an
+    id from somewhere else is a 404, not a swap.
+
+    A 200 can still say no: `status` 'refused' means the picks clashed with
+    something the household can't have and nothing was written. That is a
+    real answer, not an error, and it carries the sentence to show.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        # The friendly sentence this error type exists to carry, shown as-is.
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Swap in place failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/swap-undo")
+def week_swap_undo(week_start: str, req: SwapUndoRequest):
+    """Put back the dish that was on this slot before it was swapped."""
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.undo_meal_swap(plan_id, req.entry_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Swap undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class WeekSlotRequest(BaseModel):
     date: str
     slot: str = "dinner"
