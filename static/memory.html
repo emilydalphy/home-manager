@@ -503,8 +503,16 @@ const RECIPE_COUNT_FIELDS = [
   { field: 'dinners_per_week', label: 'Dinners' },
   { field: 'breakfasts_per_week', label: 'Breakfasts' },
   { field: 'lunches_per_week', label: 'Lunches' },
-  { field: 'snacks_per_week', label: 'Snacks & desserts' },
 ];
+
+// Snacks left this list on 2026-09-08 (Julia, first beta tester): the
+// question onboarding asks is how many snacks a DAY, not how many distinct
+// snack recipes a week, so it gets its own row under its own heading
+// rather than a fourth line under "Recipes to plan each week" that would
+// read back a different question from the one that was asked. Its ceiling
+// is a day's worth of sittings (see memory.edit_preference), not a week's
+// worth of recipes, which is why the stepper carries its own max.
+const SNACKS_PER_DAY_FIELD = { field: 'snacks_per_day', label: 'Snacks a day', max: 6 };
 
 // The two onboarding answers that drive every generated week and were,
 // until now, editable nowhere in the app — not here, not on the meal-setup
@@ -621,17 +629,21 @@ function renderPreferenceCard(prefs) {
   html += `<div class="wwk-fact-row wwk-pref-chips-row">
     <span class="wwk-fact-text"><span class="wwk-pref-label">Recipes to plan each week</span></span>
   </div>`;
-  RECIPE_COUNT_FIELDS.forEach(({ field, label }) => {
-    const value = prefs[field];
-    html += `<div class="wwk-fact-row wwk-stepper-row">
+  const stepperRow = ({ field, label, max }) => `<div class="wwk-fact-row wwk-stepper-row">
       <span class="wwk-fact-text">${escapeHtml(label)}</span>
       <div class="wwk-stepper">
         <button type="button" class="wwk-stepper-btn" data-count-minus="${field}" aria-label="Fewer ${escapeHtml(label.toLowerCase())}">&minus;</button>
-        <span class="wwk-stepper-value">${value}</span>
-        <button type="button" class="wwk-stepper-btn" data-count-plus="${field}" aria-label="More ${escapeHtml(label.toLowerCase())}">+</button>
+        <span class="wwk-stepper-value">${prefs[field]}</span>
+        <button type="button" class="wwk-stepper-btn" data-count-plus="${field}" data-count-max="${max || 7}" aria-label="More ${escapeHtml(label.toLowerCase())}">+</button>
       </div>
     </div>`;
-  });
+  RECIPE_COUNT_FIELDS.forEach(f => { html += stepperRow(f); });
+
+  // How many snacks a day — its own question, its own heading.
+  html += `<div class="wwk-fact-row wwk-pref-chips-row">
+    <span class="wwk-fact-text"><span class="wwk-pref-label">Snacks</span></span>
+  </div>`;
+  html += stepperRow(SNACKS_PER_DAY_FIELD);
 
   // Kitchen kit: multi-select, same look as the Rounding-out-meals/Proteins
   // rows above — the value is the answer, tapped straight on.
@@ -1022,7 +1034,8 @@ function wirePreferenceActions(prefs) {
     btn.addEventListener('click', async () => {
       const field = btn.getAttribute('data-count-plus');
       btn.disabled = true;
-      try { await savePreference(field, Math.min(7, (prefs[field] || 0) + 1)); render(); }
+      const max = Number(btn.getAttribute('data-count-max')) || 7;
+      try { await savePreference(field, Math.min(max, (prefs[field] || 0) + 1)); render(); }
       catch (err) { btn.disabled = false; alert("Couldn't save that — try again."); }
     });
   });

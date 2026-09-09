@@ -222,6 +222,12 @@ def get_household_memory() -> dict:
         # in that sheet already reads a nullable fact (the rhythm answers,
         # members, usual_stores), so this is the only one that needed it.
         "snacks_per_week_set": bool(prefs["snacks_per_week_set"]) if prefs else False,
+        # How many snacks a DAY (Julia, 2026-09-08) — the question
+        # onboarding asks now, and a different quantity from the distinct-
+        # recipe count above. Guarded by the same snacks_per_week_set flag,
+        # since both are written by the one snacks answer.
+        "snacks_per_day": prefs["snacks_per_day"] if prefs else 2,
+        "snacks_per_day_set": bool(prefs["snacks_per_day_set"]) if prefs else False,
         # design_handoff_plan_the_week. kitchen_kit is the highest-value
         # constraint the app wasn't collecting — it stops impossible
         # suggestions outright rather than filtering them afterwards. And
@@ -428,6 +434,7 @@ def edit_preference(field: str, value) -> dict:
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
         "dislikes", "novelty_preference", "usual_stores", "eating_style",
         "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week",
+        "snacks_per_day",
         "kitchen_kit", "weeknight_max_minutes", "complete_plates",
         *simple_text_columns,
     }
@@ -446,6 +453,18 @@ def edit_preference(field: str, value) -> dict:
         if not 0 <= count <= 7:
             raise ValueError(f"{field} must be from 0 to 7, not {count}.")
         value = count
+    # Snacks a DAY, so the ceiling is a day's worth of sittings rather than
+    # a week's worth of distinct recipes — a different range because it is
+    # a different quantity. 6 is generous on purpose; the onboarding chips
+    # offer 0-3.
+    if field == "snacks_per_day":
+        try:
+            per_day = int(value)
+        except (TypeError, ValueError):
+            raise ValueError("snacks_per_day must be a whole number from 0 to 6.")
+        if not 0 <= per_day <= 6:
+            raise ValueError(f"snacks_per_day must be from 0 to 6, not {per_day}.")
+        value = per_day
     if field == "weeknight_max_minutes":
         try:
             minutes = int(value)
@@ -538,6 +557,15 @@ def edit_preference(field: str, value) -> dict:
         return _preferences.set_household_meal_preferences(lunches_per_week=int(value), mark_complete=False)
     if field == "snacks_per_week":
         return _preferences.set_household_meal_preferences(snacks_per_week=int(value), mark_complete=False)
+    if field == "snacks_per_day":
+        # Both numbers move together, exactly as onboarding writes them, so
+        # correcting one on What we know can never leave the other saying
+        # something the household never said.
+        return _preferences.set_household_meal_preferences(
+            snacks_per_day=int(value),
+            snacks_per_week=_preferences.snacks_per_week_from_per_day(int(value)),
+            mark_complete=False,
+        )
     return _preferences.set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
 
@@ -622,7 +650,16 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         # answer has to forget that there was one, or the sheet keeps
         # reading 3 back as a fact.
         conn.execute(
-            "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_week_set = 0, "
+            "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_day = 2, "
+            "snacks_per_week_set = 0, snacks_per_day_set = 0, "
+            "updated_at = datetime('now') WHERE household_id = ?",
+            (household_id(),),
+        )
+    elif field == "snacks_per_day":
+        # The same forget, reached from the other name for the same answer.
+        conn.execute(
+            "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_day = 2, "
+            "snacks_per_week_set = 0, snacks_per_day_set = 0, "
             "updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )

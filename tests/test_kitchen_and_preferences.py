@@ -452,9 +452,15 @@ def test_forgetting_the_snacks_answer_forgets_that_there_was_one(signed_in):
 
 
 def test_onboarding_counts_as_answering_the_snacks_question(signed_in):
-    """The wizard always sends snacks_per_week (static/onboarding.html), so
-    a household that finished it HAS answered — even when their answer
-    happens to equal the default."""
+    """A household that finished the wizard HAS answered the snacks
+    question — even when their answer happens to equal the default.
+
+    CORRECTED 2026-09-08: this used to say "the wizard always sends
+    snacks_per_week". It doesn't any more — static/onboarding.html asks
+    snacks per DAY now (Julia, first beta tester) and sends
+    snacks_per_day. An explicit snacks_per_week is still accepted and
+    still counts, which is what this pins; the per-day path has its own
+    test in tests/test_onboarding_copy_v2.py."""
     res = signed_in.post("/api/onboarding/answers", json={
         "member_names": ["Emily"],
         "household_restrictions": {},

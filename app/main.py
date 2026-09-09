@@ -462,7 +462,13 @@ class OnboardingAnswersRequest(BaseModel):
     dinners_per_week: int = 7
     breakfasts_per_week: int = 7
     lunches_per_week: int = 7
-    snacks_per_week: int = 3
+    # Snacks are asked PER DAY now (Julia, first beta tester, 2026-09-08) —
+    # chips 0/1/2/3, default 2. snacks_per_week stays accepted because a
+    # caller that predates this still sends it, and an explicit one still
+    # wins; when only snacks_per_day arrives, save_onboarding_answers
+    # derives the per-week distinct-recipe count from it.
+    snacks_per_week: int | None = None
+    snacks_per_day: int | None = None
 
 
 class OnboardingRhythmRequest(BaseModel):
@@ -790,6 +796,7 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             breakfasts_per_week=req.breakfasts_per_week,
             lunches_per_week=req.lunches_per_week,
             snacks_per_week=req.snacks_per_week,
+            snacks_per_day=req.snacks_per_day,
         )
     except Exception as e:
         logger.exception("Onboarding answers save failed")
@@ -857,8 +864,66 @@ def get_member_share_link(name: str):
     return link
 
 
+class FirstPlanRequest(BaseModel):
+    """
+    Which period onboarding's first plan is for. 'this_week' (the default,
+    and what every pre-existing caller means by sending nothing) is the
+    household's CURRENT period; 'next_week' is the one after it.
+
+    Added 2026-09-08 from Julia's "I asked for next week and it planned
+    this week". Onboarding's own copy had been talking about the week
+    ahead for two steps running — the plan-ready day says "your week
+    starts the next morning", and the calendar box asks what's already
+    booked — while both first-plan endpoints computed the current calendar
+    week and nothing carried the answer across.
+    """
+    start: str = "this_week"
+
+
+def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
+    """
+    The (filing key, day count, content start) onboarding's first plan is
+    generated for. One function, called by BOTH first-plan endpoints, so
+    the streamed reveal and the plain JSON route can no longer disagree
+    about which days a household's first week covers — they did, and the
+    streaming one (the path the reveal actually takes) was the one with no
+    part-week logic at all: it filed a full seven days from this week's
+    Monday no matter what day the household signed up on.
+
+    Where the period comes from is the household's own plan-ready day,
+    through tools.suggest_planning_period — the same function the Meals tab
+    already uses to answer "where does this household's week start". A
+    household that has never answered gets 'sunday' from that function,
+    i.e. the Monday week, which is exactly what this route hardcoded
+    before, so nothing changes for them.
+
+    Then one of two things:
+
+    - 'next week' shifts forward by a whole period and generates all of
+      it. The filing key IS that period's start, the same shape the Meals
+      tab files a Thursday-to-Thursday period under.
+    - 'this week' keeps the current period's filing key but starts the
+      CONTENT today, which is the part-week (Loop Board "Build a real
+      part-week for households who onboard mid-week"). Its floor rule is
+      unchanged: a part-week with one day left in it folds forward into
+      the next whole period instead, because a one-day plan is a lot of
+      machinery for a single dinner.
+    """
+    today = datetime.date.today()
+    period = tools.suggest_planning_period(from_date=today.isoformat())
+    start = datetime.date.fromisoformat(period["start_date"])
+    day_count = int(period["day_count"]) or 7
+    if not start_next_week:
+        content = today if today > start else start
+        remaining = day_count - (content - start).days
+        if remaining > 1:
+            return start.isoformat(), remaining, content.isoformat()
+    nxt = start + datetime.timedelta(days=day_count)
+    return nxt.isoformat(), day_count, nxt.isoformat()
+
+
 @app.post("/api/onboarding/generate-first-plan")
-def onboarding_generate_first_plan():
+def onboarding_generate_first_plan(req: FirstPlanRequest | None = None):
     """
     Generate and save a real first weekly plan from what was just entered in
     onboarding (household composition, dietary restrictions, protein/cuisine/
@@ -899,20 +964,18 @@ def onboarding_generate_first_plan():
     being covered by "the plan" at all. A 2-day part-week (Saturday
     onboarding) is left as a genuine part-week rather than folded in the
     same way — two real days felt worth planning for rather than skipping.
+
+    All of that arithmetic now lives in _first_plan_window, shared with the
+    streaming twin below (which had none of it), and it answers to the
+    household's plan-ready day and to their "start next week" choice rather
+    than to the calendar alone. It is expressed as period_start rather than
+    skip_days — the two are the same statement (see _generate_weekly_plan)
+    and period_start is the one the streaming path can carry.
     """
+    req = req or FirstPlanRequest()
     try:
-        today = datetime.date.today()
-        monday = today - datetime.timedelta(days=today.weekday())
-        skip_days = today.weekday()  # 0=Monday .. 6=Sunday
-        day_count = 7 - skip_days
-        if day_count <= 1:
-            # Sunday: fold forward into next week's full plan rather than
-            # generating a 1-day part-week. See the floor-rule note above.
-            monday = monday + datetime.timedelta(days=7)
-            skip_days = 0
-            day_count = 7
-        week_start = monday.isoformat()
-        plan = generate_weekly_plan(week_start, day_count=day_count, skip_days=skip_days)
+        week_start, day_count, period_start = _first_plan_window(req.start == "next_week")
+        plan = generate_weekly_plan(week_start, day_count=day_count, period_start=period_start)
     except AssistantUnavailableError as e:
         logger.warning("First-plan generation hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
@@ -923,7 +986,7 @@ def onboarding_generate_first_plan():
 
 
 @app.post("/api/onboarding/generate-first-plan/stream")
-def onboarding_generate_first_plan_stream():
+def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
     """
     Streaming twin of /api/onboarding/generate-first-plan (see it for the
     week-key rationale) -- reuses the exact same _stream_week_generation
@@ -937,11 +1000,24 @@ def onboarding_generate_first_plan_stream():
     of one long silence. The plain endpoint stays as the tested,
     unstreamed path other callers (and the existing onboarding tests)
     still use, same rationale as generate_week_stream's own docstring.
+
+    CORRECTED 2026-09-08 (Julia's "I asked for next week and it planned
+    this week"). "Same generation, same saved plan" was not true of the
+    DAYS: this route computed a bare Monday and let day_count default to
+    seven, so it had none of the part-week or fold-forward logic its plain
+    twin's docstring spends four paragraphs on -- and this is the route
+    the reveal actually calls, so the documented behaviour was the one
+    nobody was getting. Both now go through _first_plan_window, which is
+    also where the household's plan-ready day and their start-week choice
+    are read.
     """
-    today = datetime.date.today()
-    week_start = (today - datetime.timedelta(days=today.weekday())).isoformat()
+    req = req or FirstPlanRequest()
+    week_start, day_count, period_start = _first_plan_window(req.start == "next_week")
     return StreamingResponse(
-        _stream_week_generation(week_start=week_start, constraints_notes="", intake_id=None),
+        _stream_week_generation(
+            week_start=week_start, constraints_notes="", intake_id=None,
+            day_count=day_count, period_start=period_start,
+        ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -2506,6 +2582,11 @@ def get_facts_view(category: str | None = None):
                 "breakfasts_per_week": memory.get("breakfasts_per_week", 7),
                 "lunches_per_week": memory.get("lunches_per_week", 7),
                 "snacks_per_week": memory.get("snacks_per_week", 3),
+                # Snacks a DAY — the answer onboarding collects now
+                # (Julia, 2026-09-08), and the number this tab shows and
+                # edits. snacks_per_week rides along because it is still
+                # the distinct-recipe count generation prorates.
+                "snacks_per_day": memory.get("snacks_per_day", 2),
                 "kitchen_kit": memory.get("kitchen_kit") or [],
             }
         if category == "rhythm":
