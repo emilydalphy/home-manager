@@ -1,5 +1,6 @@
 """
-Deterministic, LOG-AND-WARN-ONLY quality checks for a generated week.
+Deterministic quality checks for a generated week — log-and-warn only,
+with ONE exception, named below.
 
 Scope: check_and_log is invoked from _finish_week_slots, which only the
 DAY-BASED generation branch calls (pre-existing placement, agent.py). A
@@ -14,14 +15,25 @@ already eaten in the last three weeks, write a real reason instead of
 generic filler, surface at least one new recipe, use at most one open slot
 and never for breakfast/lunch. Nothing downstream ever checked whether the
 model actually did any of that -- see the VERIFIED FINDINGS this module
-was built against. This is a first pass at closing that gap WITHOUT
-changing behaviour: it only observes and logs. It does not repair
-anything, does not touch the plan, and does not decide anything Emily
-hasn't decided yet (the "does every dinner need a vegetable" plate rule,
-and exactly how a wrong-direction leftover link should be fixed, are both
-still open -- see leftover_direction/full_plate below).
+was built against. This was a first pass at closing that gap WITHOUT
+changing behaviour: with the one exception named below, it only observes
+and logs. It does not repair anything else, does not otherwise touch the
+plan, and does not decide anything Emily hasn't decided yet (the "does
+every dinner need a vegetable" plate rule, and exactly how a
+wrong-direction leftover link should be fixed, are both still open -- see
+leftover_direction/full_plate below).
 
-Two halves:
+The exception, and the only thing in here that writes: repair_snack_clashes
+(2026-09-08, Julia's "same recommendation for breakfast and for snack on
+the same day"). A snack that repeats something else eaten that day is traded
+onto a day where it doesn't — or, when it fits nowhere, gives its slot to
+another day's snack. Either way the week's OWN snacks are the whole
+supply, so nothing reaches the plan that generation's restriction,
+dislike and allergy handling never saw. It runs from _finish_week_slots
+immediately before check_and_log, so the log reports only what could not
+be fixed. Everything else here still observes and changes nothing.
+
+Two halves (three, with the repair):
 
 - check_week(plan_entries, context) is the pure rule engine. Given a plain
   list of entry dicts and a small context dict (see their shapes below),
@@ -115,6 +127,12 @@ _BANNED_REASONING_PHRASES = {
 
 _WEEKDAYS = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
 
+# All seven, lowercased — a different question from _WEEKDAYS above (which
+# is "is this a weeknight?"): whether a line of copy names a day at all.
+_WEEKDAY_NAMES = (
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+)
+
 # How many dinners one fresh ingredient may turn up in before it stops
 # being a coincidence and starts being a shopping-list problem. Three of
 # seven is a household that likes peppers; five is Emily's week, and
@@ -140,6 +158,56 @@ _FRESH_CATEGORIES = {"produce", "dairy"}
 _STAPLE_FRESH_WORDS = {
     "onion", "onions", "garlic", "shallot", "shallots", "ginger", "butter",
 }
+
+# Words in a dish name that say nothing about WHAT it is, so two names
+# sharing only these are not the same food. Short and arguable on purpose,
+# same spirit as _STAPLE_FRESH_WORDS above — extend it when a real false
+# positive shows up rather than trying to infer meaning.
+_NAME_STOPWORDS = {
+    "a", "an", "and", "the", "of", "on", "in", "with", "plus", "side", "sides",
+    "homemade", "fresh", "quick", "easy", "simple", "little", "mini", "small",
+    "big", "half", "slice", "sliced", "cup", "bowl", "plate", "board", "bite",
+    "topped", "served", "style", "our", "your", "some", "warm", "cold", "hot",
+}
+
+
+def _stem(word: str) -> str:
+    """
+    Crude singular form, enough to see that "pancakes" and "pancake", or
+    "berries" and "berry", are the same food. Not a real stemmer, and it
+    doesn't need to be: it only ever compares two dish names to each other.
+    """
+    if len(word) > 3 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 3 and word.endswith("es") and word.endswith(("shes", "ches", "xes", "ses")):
+        return word[:-2]
+    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+
+def _name_stems(name: str | None) -> set[str]:
+    """The identifying words of a dish name, singularized and stripped of
+    the words every dish name has."""
+    words = re.findall(r"[a-z]+", (name or "").lower())
+    return {_stem(w) for w in words if w not in _NAME_STOPWORDS and len(w) > 2} - _NAME_STOPWORDS
+
+
+def shared_food(name_a: str | None, name_b: str | None) -> str | None:
+    """
+    The food two dish names have in common, or None. "Banana pancakes" and
+    "Banana with peanut butter" share `banana`; "Oatmeal" and "Yogurt with
+    berries" share nothing.
+
+    Julia, first beta tester, 2026-09-08: the planner "gave the same
+    recommendation for breakfast and for snack on the same day, or super
+    similar ones." A name-stem match is a deliberately blunt instrument —
+    it can't see that a smoothie and a parfait are both yogurt — but it
+    catches the case she actually hit, which is the same word showing up
+    twice on one day, and it never needs a model call to do it.
+    """
+    shared = sorted(_name_stems(name_a) & _name_stems(name_b))
+    return shared[0] if shared else None
 
 
 @dataclass(frozen=True)
@@ -443,6 +511,61 @@ def _ingredient_repeat(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
+def _by_date(entries: list[dict]) -> dict[str, dict[str, list[dict]]]:
+    """Planned entries grouped as {date: {"snacks": [...], "meals": [...]}}."""
+    days: dict[str, dict[str, list[dict]]] = {}
+    for entry in entries:
+        if not _is_planned(entry) or not entry.get("date"):
+            continue
+        day = days.setdefault(entry["date"], {"snacks": [], "meals": []})
+        day["snacks" if entry.get("slot") == "snack" else "meals"].append(entry)
+    return days
+
+
+def snack_clashes(entries: list[dict]) -> list[dict]:
+    """
+    Every snack on the week that repeats something else eaten the same day
+    — either one of that day's own meals, or the day's other snack.
+
+    Returns one record per offending SNACK ({date, entry, food, other}),
+    ordered by date, so the same computation can be logged as a violation
+    and acted on as a repair (see repair_snack_clashes) without the two
+    disagreeing about what is wrong.
+
+    Only snacks are ever the offender: breakfast is what the household
+    asked for, the snack is the thing the app chose to put beside it, so
+    the snack is the one that moves.
+    """
+    found = []
+    for date_str, day in sorted(_by_date(entries).items()):
+        snacks = day["snacks"]
+        for i, snack in enumerate(snacks):
+            others = day["meals"] + snacks[:i]
+            for other in others:
+                food = shared_food(snack.get("meal_name"), other.get("meal_name"))
+                if food:
+                    found.append({"date": date_str, "entry": snack, "food": food, "other": other})
+                    break
+    return found
+
+
+def _snack_variety(entries: list[dict], context: dict) -> list[Violation]:
+    violations = []
+    for clash in snack_clashes(entries):
+        other, snack = clash["other"], clash["entry"]
+        same_slot = other.get("slot") == "snack"
+        what = "the day’s other snack" if same_slot else f"that day’s {other.get('slot')}"
+        violations.append(Violation(
+            rule="snacks_distinct_per_day" if same_slot else "snack_echoes_a_meal",
+            severity="warn", date=clash["date"], slot="snack",
+            message=(
+                f"{clash['date']}: the snack '{snack.get('meal_name')}' repeats {what} "
+                f"('{other.get('meal_name')}') — both are {clash['food']}."
+            ),
+        ))
+    return violations
+
+
 def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     """
     Pure rule engine over an already-assembled week. Takes plain dicts
@@ -462,6 +585,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _leftover_direction(plan_entries, context)
     violations += _full_plate(plan_entries, context)
     violations += _ingredient_repeat(plan_entries, context)
+    violations += _snack_variety(plan_entries, context)
     return violations
 
 
@@ -469,7 +593,7 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal_name,
                r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked,
                r.ingredients_json
@@ -486,6 +610,9 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
     for r in rows:
         derived_from = json.loads(r["derived_from_json"] or "{}")
         entries.append({
+            # The row itself, so a repair can act on the exact entry a rule
+            # objected to instead of matching it back by name.
+            "entry_id": r["id"],
             "date": r["date"],
             "slot": r["slot"],
             "slot_state": r["slot_state"],
@@ -509,6 +636,151 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             "ingredients": json.loads(r["ingredients_json"] or "[]"),
         })
     return entries
+
+
+def _would_clash(snack: dict, day: dict, ignoring: dict | None = None) -> bool:
+    """Whether `snack` repeats anything else planned on `day` (see
+    _by_date's shape), optionally ignoring one entry — the snack currently
+    sitting there, when asking whether a trade would work."""
+    ignore_id = (ignoring or {}).get("entry_id")
+    for other in day["meals"] + day["snacks"]:
+        if other.get("entry_id") == snack.get("entry_id") or other.get("entry_id") == ignore_id:
+            continue
+        if shared_food(snack.get("meal_name"), other.get("meal_name")):
+            return True
+    return False
+
+
+def repair_snack_clashes(plan_id: int) -> list[dict]:
+    """
+    Move a snack that repeats something else eaten the same day onto a day
+    where it doesn't, trading it with that day's snack. Called from
+    _finish_week_slots just before check_and_log, so the log below reports
+    only what could NOT be fixed.
+
+    A trade rather than an invention, deliberately. Every snack in this
+    plan has already been through the restrictions, the dislikes, the
+    allergy facts and the household's own asks; a replacement conjured from
+    a hard-coded list here would have been through none of them, and
+    "we fixed your repetitive snack by giving you one you're allergic to"
+    is a far worse bug than the one being fixed. So the week's own snacks
+    are the entire supply, and a clash with nothing to trade into is left
+    alone and logged rather than papered over.
+
+    Returns one record per snack actually moved. Never raises: like
+    everything else in this module, a generated week must not fail over
+    the quality pass.
+    """
+    from . import weekly_plan as _weekly_plan
+
+    moved: list[dict] = []
+    try:
+        # One fix per pass, recomputed each time — a trade changes two days
+        # at once, so the next clash has to be judged against the week as
+        # it now stands. Bounded well above any real week's snack count, so
+        # a rule and a repair that disagreed could not spin here forever.
+        for _ in range(64):
+            days = _by_date(_load_plan_entries(plan_id))
+            clashes = snack_clashes([e for day in days.values() for e in day["meals"] + day["snacks"]])
+            fix = _plan_a_fix(clashes, days)
+            if not fix:
+                break
+            clash, candidate, kind = fix
+            snack = clash["entry"]
+            if kind == "trade":
+                _swap_entry_dates(snack["entry_id"], candidate["entry_id"])
+            else:
+                _weekly_plan.swap_meal_in_plan(
+                    plan_id, clash["date"], candidate["meal_name"], slot="snack",
+                    old_meal=snack["meal_name"],
+                    reasoning="something different from the rest of the day",
+                )
+            moved.append({
+                "date": clash["date"], "was": snack["meal_name"],
+                "now": candidate["meal_name"], "from": candidate["date"],
+                "repeated": clash["food"], "kind": kind,
+            })
+            logger.info(
+                "Plan %s snack repair (%s): '%s' repeated %s on %s, so %s took its place "
+                "(from %s)",
+                plan_id, kind, snack["meal_name"], clash["food"], clash["date"],
+                candidate["meal_name"], candidate["date"],
+            )
+    except Exception:
+        logger.exception(
+            "Snack repair failed for plan %s; the plan itself is unaffected", plan_id
+        )
+    return moved
+
+
+def _plan_a_fix(clashes: list[dict], days: dict) -> tuple[dict, dict, str] | None:
+    """
+    The first clash that can be fixed, as (clash, donor snack, kind).
+
+    Two kinds, tried in that order for every clash before moving on to the
+    next one:
+
+    - "trade": the clashing snack and the donor change places. Preferred,
+      because it keeps the week's snack mix exactly as generated — the
+      same ideas, the same number of each, just on different days.
+    - "copy": the donor's dish takes the clashing snack's place and the
+      clashing one is dropped. Needed when the clashing snack fits nowhere
+      else (a week whose every breakfast is oatmeal has no day the oatmeal
+      cookies can move to), and cheap in what it costs: a snack idea
+      appearing on one more day than planned is explicitly fine, where the
+      same food twice in one day is the thing being fixed.
+
+    Both draw only on snacks already in this week, so nothing reaches the
+    plan that generation's restriction/dislike/allergy handling never saw.
+    """
+    for clash in clashes:
+        snack, here = clash["entry"], days[clash["date"]]
+        donors = [
+            (date_str, candidate)
+            for date_str, day in sorted(days.items()) if date_str != clash["date"]
+            for candidate in day["snacks"]
+            if not _would_clash(candidate, here, ignoring=snack)
+        ]
+        for date_str, candidate in donors:
+            if not _would_clash(snack, days[date_str], ignoring=candidate):
+                return clash, candidate, "trade"
+        if donors:
+            return clash, donors[0][1], "copy"
+    return None
+
+
+def _swap_entry_dates(entry_id_a: int, entry_id_b: int) -> None:
+    """Exchange two entries' dates. Only ever called on two snacks of one
+    plan (see repair_snack_clashes), where nothing else is keyed to the
+    date yet — the week is still a draft at this point, so no grocery
+    contribution and no prep task has been written against either row."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, date FROM meal_plan_entries WHERE id IN (?, ?) AND household_id = ?",
+        (entry_id_a, entry_id_b, household_id()),
+    ).fetchall()
+    dates = {r["id"]: r["date"] for r in rows}
+    if len(dates) != 2:
+        conn.close()
+        raise ValueError(f"Can't trade entries {entry_id_a} and {entry_id_b} — one of them is gone.")
+    for entry_id, new_date in ((entry_id_a, dates[entry_id_b]), (entry_id_b, dates[entry_id_a])):
+        conn.execute(
+            "UPDATE meal_plan_entries SET date = ? WHERE id = ? AND household_id = ?",
+            (new_date, entry_id, household_id()),
+        )
+        # A reasoning that names a weekday is now naming the wrong one —
+        # "a slot whose reasoning says Friday while sitting on Sunday is a
+        # plan that lies about itself" (the generation prompt's own words).
+        # Rare on a snack, and saying nothing beats saying something false.
+        conn.execute(
+            "UPDATE meal_plan_entries SET reasoning = '' WHERE id = ? AND household_id = ? "
+            "AND reasoning IS NOT NULL AND (" + " OR ".join(
+                "LOWER(reasoning) LIKE ?" for _ in _WEEKDAY_NAMES
+            ) + ")",
+            (entry_id, household_id(), *(f"%{day}%" for day in _WEEKDAY_NAMES)),
+        )
+    conn.commit()
+    conn.close()
 
 
 def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:

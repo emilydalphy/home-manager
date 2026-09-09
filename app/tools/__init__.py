@@ -231,6 +231,7 @@ from .prep_sessions import (  # noqa: F401
     set_skip_prep_this_week,
 )
 from .preferences import (  # noqa: F401
+    DEFAULT_SNACKS_PER_DAY,
     add_food_dislikes,
     add_store_typical_items,
     add_usual_stores,
@@ -238,6 +239,7 @@ from .preferences import (  # noqa: F401
     get_meal_planning_setup_status,
     remove_item_from_all_stores_typical_list,
     remove_store_typical_item,
+    resolve_snacks_per_day,
     save_onboarding_answers,
     set_household_meal_preferences,
 )
@@ -406,6 +408,7 @@ from .week_intake import (  # noqa: F401
     save_week_intake,
 )
 from .weekly_plan import (  # noqa: F401
+    DAY_SLOTS,
     WEEK_SLOTS,
     _COMPONENT_CATEGORY_ORDER,
     _build_day_based_menu,

@@ -314,6 +314,43 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — "The chat said it changed a snack and it didn't change it
+  in the meal plan" was the SCREEN, not the swap. Branch
+  `snack-swap-applies`.** Julia, first beta tester. Root cause:
+  `weekly_plan.get_week_menu` — the one backend ask behind the Meals
+  screen — built its days from `slots = ("breakfast", "lunch", "dinner")`
+  and dropped every `slot='snack'` row on the floor. The swap tool always
+  accepted `slot='snack'` (nothing in `swap_meal_in_plan` ever checked the
+  slot), the chat schema always offered it, the action card always routed
+  to `week` with the right date/slot — the write landed and had nowhere to
+  appear, so the app told the household about a change they could not see.
+  `WEEK_SLOTS` is the 21-slot GUARANTEE, not the list of slots a day HAS;
+  reading it as the latter is what caused this, so `DAY_SLOTS` now exists
+  beside it and `get_week_menu`/`_build_day_based_menu` return a `snacks`
+  list (plus `snack`, the first of them) per day. **shell.js still
+  hard-codes its own `WEEK_SLOTS` of three and will not draw them until it
+  reads `day.snacks`** — payload is additive, so nothing breaks meanwhile.
+  Three more things in the same branch: `swap_meal_in_plan` takes
+  `old_meal` (a day has two snacks; a swap about one of them must not
+  delete both) and refuses a slot that isn't one; a reply claiming a
+  change on a turn where no write tool succeeded is replaced with
+  `agent.CHANGE_CLAIM_RETRACTION` (`verify_change_claim` — nothing in the
+  loop had ever checked that "I've swapped that" was true); and snacks
+  default to TWO DIFFERENT ones a day
+  (`preferences.resolve_snacks_per_day` — `snacks_per_day` if the
+  household was asked, else an EXPLICIT `snacks_per_week` spread over
+  seven and floored at one, else 2, because `snacks_per_week`'s stored 3
+  is a column default nobody answered). Julia's other report — the same
+  food for breakfast and for the snack that day — is a `plan_quality` rule
+  (`snack_echoes_a_meal` / `snacks_distinct_per_day`, name-stem match) and
+  the one thing in that module that REPAIRS rather than logs:
+  `repair_snack_clashes` trades the offending snack onto a day it fits, or
+  failing that gives its slot to another day's snack. Only ever the week's
+  own snacks — a replacement invented from a hard-coded list would have
+  been through none of the restriction/dislike/allergy handling that
+  generation applies, and "we fixed your repetitive snack by giving you
+  one you're allergic to" is the worse bug.
+
 - **2026-09-08 — Swap is one small call now, not a chat turn. Branch
   `swap-one-meal-in-place`.** Julia (first beta tester): "be able to click
   on the one recipe and meal that the user wants to switch and then have it

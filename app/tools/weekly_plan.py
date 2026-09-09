@@ -23,6 +23,16 @@ logger = logging.getLogger("home_manager")
 
 WEEK_SLOTS = ("breakfast", "lunch", "dinner")
 
+# Every slot a day can actually hold, snacks included. WEEK_SLOTS above is
+# deliberately narrower — it is the 21-slot GUARANTEE (what audit_plan_slots
+# demands and _finish_week_slots fills), and snacks are not part of that
+# promise. But a snack is still a real, planned, swappable entry, and
+# reading the guarantee as if it were the list of slots that exist is what
+# left snacks off the Meals screen entirely (Julia, 2026-09-08 — "the chat
+# said it changed a snack and it didn't change it in the meal plan"). Use
+# this one wherever the question is "which slots can a day have?"
+DAY_SLOTS = WEEK_SLOTS + ("snack",)
+
 # The longest period the app will plan in one go. Not a data-model limit —
 # nothing below cares — but a guard on the generation call, which asks the
 # model for every day at once and is already the slowest thing in the app at
@@ -1785,9 +1795,22 @@ def _build_day_based_menu(meal_dicts: list[dict]) -> list[dict]:
             continue
         day = by_date.setdefault(
             m["date"],
-            {"date": m["date"], **{s: None for s in slots}, **{f"{s}_reasoning": None for s in slots}},
+            {
+                "date": m["date"], **{s: None for s in slots},
+                **{f"{s}_reasoning": None for s in slots}, "snacks": [],
+            },
         )
         slot = m["slot"] if m["slot"] in slots else "dinner"
+        # A day has two snacks by default (see
+        # preferences.resolve_snacks_per_day), and the single `snack` key
+        # can only hold one of them — first planned wins, rather than last
+        # written silently replacing it. `snacks` beside it is the whole
+        # truth, and the key a caller showing a day's snacks should read.
+        if slot == "snack":
+            if m["meal"]:
+                day["snacks"].append(m["meal"])
+            if day["snack"] is not None:
+                continue
         day[slot] = m["meal"]
         day[f"{slot}_reasoning"] = m.get("reasoning")
     return [by_date[d] for d in sorted(by_date)]
@@ -2385,7 +2408,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # part-week-aware yet (see the day-based branch below for the
             # real field) — always False here so the key exists either way.
             day = {"date": d, "before_plan_start": False}
-            for s in slots:
+            for s in slots + ("snack",):
                 title = row.get(s)
                 # `state` matters even here, where every slot is "planned"
                 # by construction: the Meals screen keys "Cook this" /
@@ -2395,6 +2418,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                     {"title": title, "meta": None, "source": "plan", "state": "planned", "reason": None}
                     if title else None
                 )
+            # Same two shapes as the day-based branch below, so one caller
+            # can render either kind of plan. A suggested schedule spreads
+            # one snack per day, so the list is never longer than one here.
+            day["snacks"] = [day["snack"]] if day["snack"] else []
             if day["dinner"] is None and d >= today_str:
                 if suggestions is None:
                     suggestions = _suggest_quick_dinners()
@@ -2575,9 +2602,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         return {"title": title, "meta": meta, "source": "plan", **common}
 
     by_date_slot = {}
-    for r in rows:
+    # Snacks are a LIST per day, not one entry: two different snacks a day
+    # is the default (preferences.resolve_snacks_per_day), so keying them
+    # by (date, slot) like the other three would silently keep only the
+    # last one. Ordered by entry id — the order they were planned in.
+    snacks_by_date: dict[str, list[dict]] = {}
+    for r in sorted(rows, key=lambda row: row["id"]):
         if r["slot"] in slots:
             by_date_slot[(r["date"], r["slot"])] = build_slot(r)
+        elif r["slot"] == "snack":
+            built = build_slot(r)
+            if built:
+                snacks_by_date.setdefault(r["date"], []).append(built)
 
     # The day list is the plan's period plus any filing days ahead of it —
     # see _menu_dates, which keeps an ordinary week at exactly the seven days
@@ -2592,7 +2628,19 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # reproduces the exact previous shape of this response.
     content_start = plan["period_start_date"]
     days = [
-        {"date": d, "before_plan_start": d < content_start, **{s: by_date_slot.get((d, s)) for s in slots}}
+        {
+            "date": d, "before_plan_start": d < content_start,
+            **{s: by_date_slot.get((d, s)) for s in slots},
+            # Both shapes, deliberately: `snacks` is the honest one (a day
+            # has two by default), `snack` the first of them for a caller
+            # that only has room for one. Before 2026-09-08 neither
+            # existed, so a snack the chat had genuinely swapped could not
+            # appear on the Meals screen at all — the swap wrote, the
+            # screen had nowhere to draw it, and the household was told a
+            # change had happened that they could not see (Julia).
+            "snacks": snacks_by_date.get(d, []),
+            "snack": (snacks_by_date.get(d) or [None])[0],
+        }
         for d in dates
     ]
 
@@ -3456,6 +3504,8 @@ def swap_meal_in_plan(
     new_meal: str,
     slot: str = "dinner",
     food_groups: list[str] | None = None,
+    old_meal: str | None = None,
+    reasoning: str = "",
 ) -> dict:
     """
     Replace the meal on one day/slot of an already-generated weekly plan,
@@ -3480,15 +3530,44 @@ def swap_meal_in_plan(
     on its own, so this does, via _reingest_unlinked_entries — the same
     incremental top-up approve_weekly_plan's own candidate query already
     performs for a slot planned after the week was approved.
+
+    slot is any of DAY_SLOTS — `snack` included, and a snack swap is an
+    ordinary swap in every respect. Anything else raises rather than
+    silently deleting nothing and planning a meal into a slot no screen
+    reads.
+
+    A day can hold MORE than one entry in one slot: two different snacks a
+    day is the default (see preferences.resolve_snacks_per_day), and
+    nothing about that is a duplicate to be cleaned up. Pass `old_meal` to
+    say WHICH of them is being replaced — without it a slot holding two
+    snacks would lose both to a swap that was only ever about one of them.
+    An old_meal that matches nothing in the slot raises, rather than
+    quietly adding a third snack to the day.
     """
     from . import leftovers as _leftovers
 
+    if slot not in DAY_SLOTS:
+        raise ValueError(
+            f"'{slot}' is not a slot a day has — expected one of {', '.join(DAY_SLOTS)}."
+        )
+
     conn = get_conn()
     old_entries = conn.execute(
-        "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
+        "SELECT mpe.id AS id, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.date = ? AND mpe.slot = ? AND mpe.household_id = ?",
         (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
     conn.close()
+    if old_meal is not None:
+        wanted = old_meal.strip().lower()
+        matched = [r for r in old_entries if (r["meal"] or "").strip().lower() == wanted]
+        if not matched:
+            have = ", ".join(f"'{r['meal']}'" for r in old_entries) or "nothing"
+            raise ValueError(
+                f"No '{old_meal}' in the {slot} slot on {meal_date} — that slot holds {have}."
+            )
+        old_entries = matched
     # Checked before anything is torn down: once the old entry is deleted,
     # there is nothing left in the DB to ask whether it used to feed other
     # nights' leftovers.
@@ -3504,14 +3583,23 @@ def swap_meal_in_plan(
         _grocery._reverse_meal_grocery_contributions(row["id"])
 
     conn = get_conn()
-    conn.execute(
-        "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? AND household_id = ?",
-        (weekly_plan_id, meal_date, slot, household_id()),
+    # By id, not by (date, slot): a slot legitimately holding two snacks
+    # must lose only the one being replaced. With no old_meal this is
+    # every row in the slot, which is exactly what the by-slot DELETE this
+    # replaced did.
+    conn.executemany(
+        "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        [(row["id"], household_id()) for row in old_entries],
     )
     conn.commit()
     conn.close()
     result = _meal_plans.plan_meal(
         meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
+        # Blank for a swap the household asked for in chat — there is no
+        # "why this?" beyond their asking, and inventing one would be the
+        # plan explaining itself back to the person who chose it. Set by
+        # an automatic repair, which does owe the card a reason.
+        reasoning=reasoning,
         # Only put the new meal's ingredients on the list if this week has
         # already been approved — approval is what put the old meal's
         # ingredients there in the first place, and the reversal above just
