@@ -146,11 +146,17 @@ def test_a_household_that_answered_nothing_still_gets_a_usable_tab(signed_in):
     body = signed_in.get("/api/facts?category=taste").json()
     # complete_plates is on for a household that has said nothing: the app
     # rounds a short meal out unless told otherwise (Emily, 2026-09-05).
-    # The four per-week counts default the same way get_household_memory
-    # itself defaults them for a brand-new household (schema.sql defaults).
+    # The counts default the same way get_household_memory itself defaults
+    # them for a brand-new household (schema.sql defaults) — including
+    # snacks_per_day, which joined this payload on 2026-09-08 when
+    # onboarding started asking snacks per DAY instead of per week (Julia).
+    # Both snack numbers ride along: the per-day one is what the tab shows
+    # and edits, the per-week one is still the distinct-recipe count
+    # generation prorates.
     assert body["preferences"] == {
         "eating_style": "", "cuisines": [], "complete_plates": True,
         "protein_preferences": {}, "dislikes": [],
         "dinners_per_week": 7, "breakfasts_per_week": 7, "lunches_per_week": 7, "snacks_per_week": 3,
+        "snacks_per_day": 2,
         "kitchen_kit": [],
     }

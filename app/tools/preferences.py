@@ -51,8 +51,11 @@ def resolve_snacks_per_day(memory: dict | None = None) -> int:
         conn.close()
         memory = dict(row) if row else {}
 
+    # snacks_per_day is NOT NULL DEFAULT 2 once the onboarding column
+    # exists, so "is not None" would never fall through; the flag is what
+    # says the household actually answered (verifier, 2026-09-08).
     explicit = memory.get("snacks_per_day")
-    if explicit is not None:
+    if explicit is not None and memory.get("snacks_per_day_set", "snacks_per_day_set" not in memory):
         return max(0, int(explicit))
 
     # snacks_per_week_set is how a real answer is told apart from the
@@ -348,6 +351,7 @@ def set_household_meal_preferences(
     breakfasts_per_week: int | None = None,
     lunches_per_week: int | None = None,
     snacks_per_week: int | None = None,
+    snacks_per_day: int | None = None,
     mark_complete: bool = True,
 ) -> dict:
     """
@@ -366,8 +370,10 @@ def set_household_meal_preferences(
     lunches_per_week/snacks_per_week (each 0-7, how many DISTINCT meals of
     that kind a typical week should actually plan — a household that's only
     home for dinner 4 nights doesn't need all 7 filled in, same idea for
-    breakfast/lunch/snacks). Any field can be omitted/partial — pass what
-    you have. By default this marks meal-planning onboarding as complete;
+    breakfast/lunch/snacks), and snacks_per_day (0-6, how many snacks a
+    DAY — a different quantity from snacks_per_week, which counts distinct
+    snack recipes; onboarding asks this one and the planner reads it). Any
+    field can be omitted/partial — pass what you have. By default this marks meal-planning onboarding as complete;
     pass mark_complete=False if you're saving a partial update
     mid-conversation.
     """
@@ -404,15 +410,24 @@ def set_household_meal_preferences(
     # the stored number (or the default 3) otherwise, and a default nobody
     # was ever asked for must not read back as a fact — see schema.sql's
     # comment on snacks_per_week_set and shell.js's prefsEatingLine.
+    merged_snacks_per_day = snacks_per_day if snacks_per_day is not None else (
+        existing["snacks_per_day"] if existing else 2
+    )
     merged_snacks_per_week_set = 1 if snacks_per_week is not None else (
         (1 if existing["snacks_per_week_set"] else 0) if existing else 0
+    )
+    # snacks_per_day is NOT NULL DEFAULT 2 and so has exactly the same
+    # problem snacks_per_week_set was invented for. Tracked separately from
+    # the per-week flag because the two numbers can be set separately.
+    merged_snacks_per_day_set = 1 if snacks_per_day is not None else (
+        (1 if existing["snacks_per_day_set"] else 0) if existing else 0
     )
 
     conn.execute(
         """
         INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, snacks_per_day, snacks_per_day_set, onboarding_complete, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(household_id) DO UPDATE SET
             notes = excluded.notes,
             protein_preferences_json = excluded.protein_preferences_json,
@@ -425,6 +440,8 @@ def set_household_meal_preferences(
             lunches_per_week = excluded.lunches_per_week,
             snacks_per_week = excluded.snacks_per_week,
             snacks_per_week_set = excluded.snacks_per_week_set,
+            snacks_per_day = excluded.snacks_per_day,
+            snacks_per_day_set = excluded.snacks_per_day_set,
             onboarding_complete = excluded.onboarding_complete,
             updated_at = datetime('now')
         """,
@@ -441,6 +458,8 @@ def set_household_meal_preferences(
             merged_lunches_per_week,
             merged_snacks_per_week,
             merged_snacks_per_week_set,
+            merged_snacks_per_day,
+            merged_snacks_per_day_set,
             1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
         ),
     )
@@ -458,8 +477,24 @@ def set_household_meal_preferences(
         "lunches_per_week": merged_lunches_per_week,
         "snacks_per_week": merged_snacks_per_week,
         "snacks_per_week_set": bool(merged_snacks_per_week_set),
+        "snacks_per_day": merged_snacks_per_day,
+        "snacks_per_day_set": bool(merged_snacks_per_day_set),
         "onboarding_complete": bool(mark_complete),
     }
+
+
+# The bridge between the two snack numbers. "Two snacks a day" is 14 snack
+# SITTINGS a week, but snacks_per_week has always meant something else —
+# how many DISTINCT snack recipes a week should hold — and it is documented,
+# validated and read as 0-7 everywhere (schema.sql, edit_preference,
+# _prorate_meal_count, the setup steppers). Writing 14 into it would not
+# "keep it in step", it would make every one of those readers wrong. So the
+# conversion is capped at a week's worth: one or more snacks a day means the
+# week wants a distinct snack every day, and none means none. The precise
+# answer lives in snacks_per_day, which is the column the planner reads.
+def snacks_per_week_from_per_day(snacks_per_day: int | None) -> int:
+    per_day = int(snacks_per_day or 0)
+    return 0 if per_day <= 0 else min(7, per_day * 7)
 
 
 def save_onboarding_answers(
@@ -471,7 +506,8 @@ def save_onboarding_answers(
     dinners_per_week: int,
     breakfasts_per_week: int = 7,
     lunches_per_week: int = 7,
-    snacks_per_week: int = 3,
+    snacks_per_week: int | None = None,
+    snacks_per_day: int | None = None,
 ) -> dict:
     """
     Save all onboarding-redesign questions in one call: household
@@ -480,7 +516,14 @@ def save_onboarding_answers(
     entry), a freeform eating style, standing dislikes ("won't eat, no
     matter what"), cuisines/foods to lean into, and how many
     breakfasts/lunches/dinners/snacks a typical week should plan. This
-    is the entire pre-first-plan question set per the onboarding redesign —
+    Snacks are asked PER DAY by the wizard now (Julia, first beta tester,
+    2026-09-08) and arrive as snacks_per_day. snacks_per_week is derived
+    from it when the caller doesn't send one of its own — see
+    snacks_per_week_from_per_day for the (deliberately lossy) conversion
+    and why it is capped. Passing snacks_per_week explicitly still works
+    and still wins, so every pre-existing caller is unaffected.
+
+    This is the entire pre-first-plan question set per the onboarding redesign —
     everything else (favorite proteins, casual dislikes beyond this list,
     cuisine depth beyond this list, feedback) is deliberately NOT asked
     here; it accumulates through ordinary chat/UI use afterward.
@@ -528,12 +571,20 @@ def save_onboarding_answers(
     conn.close()
     _household._log_preference_event("onboarding_wont_eat", "write")
 
+    # Neither given means the snacks question was never put to this
+    # household, and it stays unanswered — the columns keep their defaults
+    # and neither answered-flag is set. The wizard always sends
+    # snacks_per_day, so this branch is only reachable by a caller that
+    # genuinely didn't ask.
+    if snacks_per_day is not None and snacks_per_week is None:
+        snacks_per_week = snacks_per_week_from_per_day(snacks_per_day)
     set_household_meal_preferences(
         cuisine_preferences=excited_about,
         dinners_per_week=dinners_per_week,
         breakfasts_per_week=breakfasts_per_week,
         lunches_per_week=lunches_per_week,
         snacks_per_week=snacks_per_week,
+        snacks_per_day=snacks_per_day,
         mark_complete=True,
     )
     _household._log_preference_event("onboarding_excited_about", "write")

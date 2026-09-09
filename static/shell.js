@@ -9317,11 +9317,19 @@
     var bits = [];
     var stance = ((mem && mem.rhythm) || {}).leftovers_stance || '';
     if (PREFS_LEFTOVERS[stance]) bits.push(PREFS_LEFTOVERS[stance]);
-    if (mem && mem.snacks_per_week_set) {
-      var snacks = mem.snacks_per_week || 0;
-      // "no snacks" is a real answer and gets real words rather than being
-      // quietly dropped as a falsy number.
-      bits.push(snacks ? snacks + ' snack' + (snacks === 1 ? '' : 's') + ' a week' : 'no snacks');
+    // Two snack numbers, two answered-flags, and this line reads back
+    // whichever question the household was actually asked. Onboarding asks
+    // per DAY since 2026-09-08 (Julia), so that one wins when both are on;
+    // a household whose only snacks answer predates that column still sees
+    // their own per-week number rather than a per-day default nobody said.
+    // "no snacks" is a real answer either way and gets real words rather
+    // than being dropped as a falsy number.
+    if (mem && mem.snacks_per_day_set) {
+      var perDay = mem.snacks_per_day || 0;
+      bits.push(perDay ? perDay + ' snack' + (perDay === 1 ? '' : 's') + ' a day' : 'no snacks');
+    } else if (mem && mem.snacks_per_week_set) {
+      var perWeek = mem.snacks_per_week || 0;
+      bits.push(perWeek ? perWeek + ' snack' + (perWeek === 1 ? '' : 's') + ' a week' : 'no snacks');
     }
     return bits.length ? bits.join(' · ') : 'Not set yet';
   }

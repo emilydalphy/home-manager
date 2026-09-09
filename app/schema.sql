@@ -84,6 +84,26 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- the meal-setup screen, or edit_preference); reset to 0 by
     -- delete_preference, which puts the number back to the default too.
     snacks_per_week_set INTEGER NOT NULL DEFAULT 0,
+    -- How many snacks a day (Julia, first beta tester, 2026-09-08). The
+    -- question onboarding actually asks now: a household knows it has a
+    -- mid-morning and a mid-afternoon snack, not that it rotates three
+    -- snack RECIPES a week, which is what snacks_per_week above measures.
+    -- The two are different quantities and both are kept: snacks_per_day
+    -- is what the planner reads for "two different snacks a day";
+    -- snacks_per_week stays the distinct-recipe count every existing
+    -- reader (generation proration, the setup steppers, edit_preference)
+    -- already understands. Onboarding writes both in one call. Default 2
+    -- matches the chip default; snacks_per_week_set is the flag that says
+    -- whether either number was ever actually answered.
+    snacks_per_day INTEGER NOT NULL DEFAULT 2,
+    -- Its own answered-flag, for exactly the reason snacks_per_week_set
+    -- exists: this column is NOT NULL DEFAULT 2 too. It is a SECOND flag
+    -- rather than a shared one because the two numbers can be answered
+    -- separately — chat can still set a per-week distinct-recipe count
+    -- without anyone having said a word about how many snacks a day — and
+    -- one flag covering both would make the Preferences sheet read the
+    -- wrong sentence back at whichever question was not the one asked.
+    snacks_per_day_set INTEGER NOT NULL DEFAULT 0,
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate
