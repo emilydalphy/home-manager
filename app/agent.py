@@ -5023,7 +5023,10 @@ _CHANGE_VERBS = (
 _CHANGE_OBJECTS = (
     r"snacks?|breakfasts?|lunch(?:es)?|dinners?|meals?|plans?|weeks?|lists?|recipes?|items?|"
     r"slots?|groceries|days?|nights?|mornings?|mondays?|tuesdays?|wednesdays?|thursdays?|"
-    r"fridays?|saturdays?|sundays?|tonight|tomorrow"
+    r"fridays?|saturdays?|sundays?|tonight|tomorrow|"
+    # "I've updated that for you" is a claim about the plan too; "my mind"
+    # and "a new city" are not, and neither is in this list.
+    r"that|it|this|those|these|everything|both"
 )
 # A claim needs a change verb AND something on the plan in the same clause:
 # "I changed my mind" and "I just moved to a new city" are not claims, while
