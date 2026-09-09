@@ -3709,6 +3709,59 @@
   //     event signal this app doesn't have — omitted rather than invented.
   var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
   var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];
+
+  // ---------- Snacks render too (2026-09-08, "snack-swap-applies") ----------
+  // day.snacks is a LIST (a day normally has two), not a fourth WEEK_SLOTS
+  // entry — WEEK_SLOTS stays exactly the three real meals on purpose, so
+  // weekCountsLabel and every open-slot count below (which read WEEK_SLOTS)
+  // keep never counting a snack as a cook or an open slot to fill. Snack
+  // entries get their own slot KEYS instead: 'snack' for day.snacks[0] —
+  // matching day.snack, the shorthand the backend already hands back, and
+  // the bare 'snack' the chat's action card sends (app/main.py ChatAction,
+  // swap_meal_in_plan) — then 'snack2', 'snack3', ... for the rest. That
+  // means a pendingDayFocus naming slot 'snack' (see applyPendingDayFocus)
+  // rings the first snack card without any extra lookup.
+  function isSnackSlot(slot) {
+    return slot === 'snack' || /^snack\d+$/.test(slot);
+  }
+  function snackSlotKey(i) {
+    return i === 0 ? 'snack' : 'snack' + (i + 1);
+  }
+  // Resolves either a real WEEK_SLOTS key or a snack key back to its entry,
+  // so daySlotCardHtml/slotEyebrow/slotActionsHtml/mealStepHtml can share one
+  // lookup instead of every caller knowing snacks live in a list.
+  function daySlotEntry(day, slot) {
+    if (!day) return null;
+    if (slot === 'snack') return day.snack || (day.snacks && day.snacks[0]) || null;
+    var m = /^snack(\d+)$/.exec(slot);
+    if (m) return (day.snacks && day.snacks[Number(m[1]) - 1]) || null;
+    return day[slot];
+  }
+  // The word a sentence should use for this slot — every real slot by its
+  // own name, any snack key collapsed to the plain word "snack" (nobody
+  // says "swap Thursday's snack2").
+  function slotWord(slot) {
+    return isSnackSlot(slot) ? 'snack' : slot;
+  }
+  // "Snack" when the day has one, "Snack 1"/"Snack 2" when it has more —
+  // SLOT_LABELS has no fixed word for this because the count decides it.
+  function slotEyebrowLabel(day, slot) {
+    if (!isSnackSlot(slot)) return SLOT_LABELS[slot];
+    var snacks = (day && day.snacks) || [];
+    if (snacks.length <= 1) return 'Snack';
+    var idx = slot === 'snack' ? 1 : Number(slot.slice(5));
+    return 'Snack ' + idx;
+  }
+  // "Has a real recipe to make" vs. grab-and-go — the same test
+  // weekly_plan.py's _is_cook applies server-side (source outside
+  // leftovers/takeout), narrowed by the one more thing this payload can
+  // show that isn't already implied by source: an actual prep/cook time
+  // (cookTimeChip's own `meta`). A freeform "apple slices" snack has
+  // neither a recipe row nor a time, so it reads as what it is — nothing to
+  // cook — rather than earning the same apricot dot a real cook gets.
+  function isRealCook(entry) {
+    return !!(entry && entry.source !== 'leftovers' && entry.source !== 'takeout' && entry.meta);
+  }
   // pendingDayFocus: {date, slot} set by the chat's "See your week" chip,
   // drained by applyPendingDayFocus once the days for that week are
   // actually loaded. Null the rest of the time.
@@ -4144,6 +4197,35 @@
     '</span>';
   }
 
+  // One line per snack, same legend as weekRowLineHtml, narrowed by one
+  // more rule (Emily's approved 2026-09-08 design): a snack only earns the
+  // apricot cook dot when it's a real recipe (isRealCook) — most are
+  // grab-and-go, and an apricot dot on a whole row of those would claim
+  // somebody cooks food nobody actually cooks. A day with zero snacks
+  // contributes nothing here, so an ordinary row is unchanged.
+  function weekSnackLineHtml(entry) {
+    var dot = 'is-none';
+    var quiet = ' is-quiet';
+    var text;
+    if (entry.state === 'planned') {
+      quiet = '';
+      if (entry.source === 'leftovers') { dot = 'is-ahead'; text = mealDisplayName(entry); }
+      else if (isRealCook(entry)) { dot = 'is-cook'; text = entry.title; }
+      else { text = entry.title; }
+    } else if (entry.state === 'open') {
+      dot = 'is-open';
+      text = 'Pick a snack';
+    } else if (entry.state === 'planned_empty') {
+      text = awayLineFor(entry) || entry.title || 'Nothing planned';
+    } else {
+      text = entry.title || 'Nothing planned';
+    }
+    return '<span class="wk-line' + quiet + '">' +
+      '<span class="wk-dot ' + dot + '"></span>' +
+      '<span class="wk-line-name">' + escapeHtml(text) + '</span>' +
+    '</span>';
+  }
+
   function weekRowHtml(day, i) {
     return '<button type="button" class="wk-day-row' +
         (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
@@ -4154,6 +4236,7 @@
       '</span>' +
       '<span class="wk-day-meals">' +
         WEEK_SLOTS.map(function (slot) { return weekRowLineHtml(day, slot); }).join('') +
+        (day.snacks || []).map(weekSnackLineHtml).join('') +
       '</span>' +
     '</button>';
   }
@@ -4263,8 +4346,8 @@
   // reads moves.py's own mapping so Today's timeline and this card can't
   // put different times on the same meal.
   function slotEyebrow(day, slot) {
-    var label = SLOT_LABELS[slot];
-    var entry = day[slot];
+    var label = slotEyebrowLabel(day, slot);
+    var entry = daySlotEntry(day, slot);
     if (entry && entry.leftover_from) {
       var when = dayName(entry.leftover_from.date, { weekday: 'long' });
       return label + ' · ' + (entry.leftover_from.cook_ahead
@@ -4340,7 +4423,7 @@
   // an Undo chip. One line that changes is why the card doesn't jump.
   function swapLineHtml(day, slot) {
     var state = swapStateFor(day.date, slot);
-    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slot + '">' +
+    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slotWord(slot) + '">' +
       'Tell me what instead</button>';
     if (state && state.busy) {
       return '<div class="wk-swap-line"><span class="wk-swap-working">Finding something else…</span></div>';
@@ -4365,7 +4448,7 @@
   // an open slot is answered, and an away night is offered nothing at all —
   // offering to change it is exactly what the away state exists to prevent.
   function slotActionsHtml(day, slot, apricot) {
-    var entry = day[slot];
+    var entry = daySlotEntry(day, slot);
     var primaryCls = 'wk-act wk-act-primary' + (apricot ? ' is-apricot' : '');
     var swap = '<button type="button" class="wk-act wk-act-swap" data-wk-swap="' + slot + '">Swap</button>';
     // Rides with the Swap button wherever it is offered, and nowhere else:
@@ -4374,9 +4457,14 @@
     if (entry && entry.state === 'planned') {
       if (day.isPast) return '';
       var time = cookTimeChip(entry);
+      // A snack without a real recipe is grab-and-go — "Cook this" would be
+      // asking the household to cook nothing, so it gets the same primary
+      // a reheat night gets: tap it once it's eaten.
       var label = entry.source === 'leftovers'
         ? REHEAT_ACTION_LABEL
-        : 'Cook this' + (time ? ' · ' + time : '');
+        : (isSnackSlot(slot) && !isRealCook(entry))
+          ? REHEAT_ACTION_LABEL
+          : 'Cook this' + (time ? ' · ' + time : '');
       return '<div class="wk-acts">' +
         '<button type="button" class="' + primaryCls + '" data-wk-cook="' + slot + '">' +
           escapeHtml(label) + '</button>' + swap +
@@ -4404,7 +4492,7 @@
   }
 
   function daySlotCardHtml(day, slot) {
-    var entry = day[slot];
+    var entry = daySlotEntry(day, slot);
     var openable = !!(entry && entry.state === 'planned');
     var name, quiet = '';
     if (entry && entry.state === 'planned') name = mealDisplayName(entry);
@@ -4435,6 +4523,16 @@
     '</div>';
   }
 
+  // One card per snack, after the three meal cards — reusing daySlotCardHtml
+  // whole rather than a second card shape, so a snack gets the exact same
+  // eyebrow/name/actions/tap-to-open-Meal-step wiring any other slot does.
+  // A day with zero snacks contributes nothing here.
+  function daySnackCardsHtml(day) {
+    return (day.snacks || []).map(function (_, i) {
+      return daySlotCardHtml(day, snackSlotKey(i));
+    }).join('');
+  }
+
   function dayStepHtml(day) {
     return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
       '<div class="wk-head">' +
@@ -4444,6 +4542,7 @@
       '</div>' +
       '<div class="wk-slots">' +
         WEEK_SLOTS.map(function (slot) { return daySlotCardHtml(day, slot); }).join('') +
+        daySnackCardsHtml(day) +
       '</div>';
   }
 
@@ -4455,6 +4554,17 @@
   // guessed: the groups are the ones the entry recorded (plates.py never
   // invents them either), and the thaw line is the plan's own defrost task
   // — the same prep_tasks row Today's fridge move ticks.
+  // A grab-and-go snack has nothing to say here — no food groups recorded,
+  // no added sides, no thaw task — and "Nothing to thaw." on its own isn't
+  // information, it's an empty card wearing a caption. Hide rather than
+  // show it; a real meal (which always carries at least a food-group read)
+  // never trips this.
+  function plateCardIsEmpty(entry) {
+    return !((entry.food_groups && entry.food_groups.length) ||
+      (entry.sides && entry.sides.length) ||
+      (entry.defrost && entry.defrost.note));
+  }
+
   function plateCardHtml(entry) {
     var groups = (entry.food_groups || [])
       .map(function (g) { return PLATE_GROUP_LABELS[g] || g; });
@@ -4506,7 +4616,7 @@
   }
 
   function mealStepHtml(day, slot) {
-    var entry = day[slot];
+    var entry = daySlotEntry(day, slot);
     var chips = [
       cookTimeChip(entry),
       entry.serves ? 'Serves ' + entry.serves : '',
@@ -4521,7 +4631,10 @@
           escapeHtml(mealDisplayName(entry)) + '</h1></div>' +
         chipsRowHtml(chips, 'wk-chips wk-chips-head') +
       '</div>' +
-      plateCardHtml(entry) +
+      // A real meal always carries at least a food-group read, so this only
+      // ever actually hides the card for a grab-and-go snack — the plate
+      // card stays exactly as it was for breakfast/lunch/dinner.
+      ((isSnackSlot(slot) && plateCardIsEmpty(entry)) ? '' : plateCardHtml(entry)) +
       (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
       // Why this night, when the plan actually recorded a reason. Written
       // at generation (meal_plan_entries.reasoning), so it can't contradict
@@ -4594,7 +4707,7 @@
     // re-planned, the slot swapped out) falls back to the root rather than
     // rendering a step about nothing.
     if (weekState.step === 'meal' &&
-        !(day && day[weekState.mealSlot] && day[weekState.mealSlot].state === 'planned')) {
+        !(day && daySlotEntry(day, weekState.mealSlot) && daySlotEntry(day, weekState.mealSlot).state === 'planned')) {
       weekState.step = day ? 'day' : 'week';
     }
     if (weekState.step === 'day' && !day) weekState.step = 'week';
@@ -4651,15 +4764,18 @@
       btn.addEventListener('click', function () {
         var day = mealsCurrentDay();
         var slot = btn.getAttribute('data-wk-cook');
-        var entry = day && day[slot];
+        var entry = day && daySlotEntry(day, slot);
         // Everything that identifies THIS meal, so cook mode lands on it
         // whatever shape the plan is — the same target dayActionsHtml used
-        // to pass, now aimed at Kitchen, where cooking lives.
+        // to pass, now aimed at Kitchen, where cooking lives. cookFocus.slot
+        // is the fallback match (date+slot) behind entryId — Kitchen's own
+        // rows carry the backend's plain 'snack', never our 'snack2' index
+        // key, so that's what goes here too.
         activateTab('kitchen', true, {
           cookFocus: {
             entryId: entry ? entry.entry_id : null,
             date: day ? day.date : null,
-            slot: slot,
+            slot: isSnackSlot(slot) ? 'snack' : slot,
             title: entry ? entry.title : ''
           }
         });
@@ -4797,7 +4913,7 @@
   }
 
   async function runSwapInPlace(panel, day, slot) {
-    var entry = day[slot];
+    var entry = daySlotEntry(day, slot);
     var weekStart = weekStartForSwap();
     if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
     // Whatever this sitting has already turned down for this slot. Carried
@@ -4851,7 +4967,7 @@
   }
 
   async function runSwapUndo(panel, day, slot) {
-    var entry = day[slot];
+    var entry = daySlotEntry(day, slot);
     var weekStart = weekStartForSwap();
     if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
     clearSwapUndoTimer();
