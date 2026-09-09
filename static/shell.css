@@ -4960,14 +4960,16 @@ span.cook-week-name { cursor: default; }
 .prefs-gear-row { display: flex; justify-content: flex-end; padding: 10px 20px 0; }
 .prefs-gear-row[hidden] { display: none; }
 
-#prefs-scrim {
+#prefs-scrim,
+#tips-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 40;
 }
-#prefs-sheet {
+#prefs-sheet,
+#tips-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -4983,7 +4985,8 @@ span.cook-week-name { cursor: default; }
   gap: 8px;
   animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
 }
-#prefs-scrim[hidden], #prefs-sheet[hidden] { display: none; }
+#prefs-scrim[hidden], #prefs-sheet[hidden],
+#tips-scrim[hidden], #tips-sheet[hidden] { display: none; }
 .prefs-sub {
   font-family: var(--font-body);
   font-size: 13px;
@@ -5696,3 +5699,146 @@ span.cook-week-name { cursor: default; }
 }
 
 .wk-foot-solo { justify-content: flex-end; }
+
+/* ---------- Onboarding coaching (Emily + Julia, 2026-09-08) ----------
+   "This is how to talk to me": example prompts under the ask bar, the
+   one-time card on Today, and the Helpful tips sheet. Nothing new visually
+   — the chips are .ask-chip, the card is a .plan-nudge-card, and the sheet
+   is the Preferences sheet's own furniture. No apricot in any of it: the
+   card is a word, not an action, and Today's hero owns that colour. */
+
+/* .ask-chips is display:flex, which beats the bare [hidden] attribute — the
+   same trap #reveal-days hit on the onboarding branch. Both the quick-action
+   containers and the coaching ones need this. */
+.ask-chips[hidden] { display: none; }
+
+/* The dock is a row (bar + bell). The examples wrap onto their own line
+   ABOVE it — below would collide with the tab bar — via order, rather than
+   by wrapping the bar in a new element and re-cutting the dock's layout. */
+#ask-bar-dock { flex-wrap: wrap; }
+#ask-examples { flex: 1 0 100%; order: -1; margin-bottom: 2px; }
+
+.ask-tips-btn {
+  flex-shrink: 0;
+  /* 44px is the floor for anything tappable (DESIGN_SYSTEM.md); the ring
+     is drawn smaller with a box-shadow so it still reads as a small "?". */
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ask-tips-btn:hover { color: var(--ink-strong); border-color: var(--ink-placeholder); }
+
+/* Desktop: the examples sit above the Ask column's input, with the same
+   "?" on the end of the row. */
+.ask-examples-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ask-examples-row .ask-chips { flex: 1 1 auto; }
+
+/* ---------- the how-and-why card ---------- */
+.coach-card .coach-lines {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.coach-card .coach-lines li {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+  padding-left: 14px;
+  position: relative;
+}
+.coach-card .coach-lines li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--celadon);
+}
+.coach-actions { display: flex; align-items: center; gap: 18px; margin-top: 2px; }
+.coach-actions .plan-nudge-link { min-height: 44px; }
+.coach-tips { color: var(--ink-secondary); }
+
+/* ---------- Helpful tips sheet ---------- */
+/* The scrim and the sheet itself are the Preferences sheet's own rules,
+   extended to #tips-scrim/#tips-sheet above rather than restated here —
+   one sheet mechanism, one set of numbers (DESIGN_SYSTEM §9 Tier 1). */
+.tips-body {
+  padding: 4px 18px 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tips-group { display: flex; flex-direction: column; gap: 2px; }
+.tips-group-tab {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.tips-group-line {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.tips-group-example {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--celadon-label);
+}
+.tips-closers {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tips-closers li {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+.tips-after {
+  background: var(--celadon-tint);
+  border: 1px solid var(--celadon-edge);
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tips-after-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--celadon-label);
+}
+.tips-after-line {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-on-celadon);
+}

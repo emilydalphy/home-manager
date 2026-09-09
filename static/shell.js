@@ -314,6 +314,10 @@
       el.classList.toggle('active', el.dataset.tab === key);
     });
     setAskHintForTab(key);
+    // Onboarding coaching part 1: this tab's two example prompts, for its
+    // first three visits. Counted here rather than in each build*Panel,
+    // because a re-visit to an already-built panel is still a visit.
+    coachOnTabShown(key);
 
     var panel = panels[key];
     // Lazy-build Today's real content the first time it's shown.
@@ -459,11 +463,21 @@
         // .today-body is a named-area grid on desktop, and an area whose
         // only child is display:none still leaves its row's gap behind.
         '<div id="plan-week-nudge" class="today-area-nudge"></div>' +
+        // Onboarding coaching, part 2 (2026-09-08): the one-time "This is
+        // how to talk to me" card. Outside .today-body for the same reason
+        // the nudge above it is — see that comment. Empty (and so
+        // display:none) on every load but the one it is shown on.
         // The hero, and the only one on this screen — a direct child of
         // .today-content rather than of .today-body, because it bleeds the
         // full width of the panel while everything else sits inside the
         // 20px gutter, and a grid child cannot escape its parent's padding.
         '<div id="today-next-up" class="dinner-hero nextup-hero" hidden></div>' +
+        // Onboarding coaching, part 2 (2026-09-08): the one-time "This is
+        // how to talk to me" card. BELOW the next-up card, never above it —
+        // the day's one action stays on the first screen even on a short
+        // phone (verifier, 2026-09-09). Empty (and so display:none) on
+        // every load but the one it is shown on.
+        '<div id="coach-card-slot" class="today-area-nudge"></div>' +
         '<div class="today-body">' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +
@@ -491,6 +505,13 @@
           '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
             '<div class="ask-messages" id="today-ask-messages"></div>' +
             '<div class="ask-chips" id="today-ask-chips"></div>' +
+            // Coaching part 1 + part 3 on desktop: the per-tab example
+            // prompts sit above the Ask column's input, with the same
+            // "?" into Helpful tips the mobile dock carries.
+            '<div class="ask-examples-row">' +
+              '<div class="ask-chips ask-examples" id="today-ask-examples" hidden></div>' +
+              '<button type="button" class="ask-tips-btn" data-tips="open" aria-label="Helpful tips" title="Helpful tips">?</button>' +
+            '</div>' +
             '<form id="today-ask-composer" class="ask-composer-bar">' +
               '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="Ask me anything about today&hellip;" autocomplete="off"></textarea>' +
               '<button type="button" id="today-ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">' +
@@ -514,6 +535,11 @@
       // render — no chores card means no reason to hit /api/chores/today.
       (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve())
     ]);
+
+    // The how-and-why card's slot only exists once this panel has been
+    // built, and /api/coaching may well have answered before that — so the
+    // card is rendered from both ends, and renderCoachCard is idempotent.
+    renderCoachCard();
   }
 
   // ---------- The offer to plan a week ----------
@@ -8404,6 +8430,11 @@
   // dangling under real messages.
   function hideAskChips() {
     askChipTargets().forEach(function (chipsEl) { chipsEl.innerHTML = ''; chipsEl.hidden = true; });
+    // The coaching example prompts go with them, and for the same reason:
+    // a household that has just typed its own sentence has no more use for
+    // a suggested one. (renderAskExamples is defined further down; this
+    // whole file is one IIFE, so the declaration is hoisted.)
+    renderAskExamples(null);
   }
 
   // Context-aware quick actions (Loop Board: "Pomona: rethink the chat's
@@ -9519,6 +9550,18 @@
           ICONS.arrow +
         '</button>';
       }).join('') +
+      // Onboarding coaching part 3 (2026-09-08): the permanent way back to
+      // "Helpful tips". A .prefs-row like the five above it, but it opens a
+      // sheet instead of a "What we know" tab, so it is written out here
+      // rather than added to PREFS_ROWS (whose rows all read a memory field
+      // back).
+      '<button type="button" class="prefs-row" data-tips="open">' +
+        '<span class="prefs-row-text">' +
+          '<span class="prefs-row-title">Helpful tips</span>' +
+          '<span class="prefs-row-sub">How to ask me for things</span>' +
+        '</span>' +
+        ICONS.arrow +
+      '</button>' +
       // The second group: a way out of a bad moment, and the way out of the
       // app. Same quiet tile the Kitchen tab used to carry — one component,
       // one place it is defined.
@@ -9598,6 +9641,318 @@
       }
     }
   });
+
+  // ---------- Onboarding coaching (Emily + Julia, 2026-09-08) ----------
+  //
+  // Julia is the first person to reach this app never having talked to one.
+  // She finished setup, landed on Today, and had no idea what she was meant
+  // to say. Three parts, all teaching the same one thing — the ask bar is
+  // the app, and the buttons are the shortcuts:
+  //
+  //   1. Two tappable example prompts under the ask bar, per tab, on the
+  //      first three visits to that tab and then gone for good. They send
+  //      through sendAskMessage, the same path the quick-action chips use,
+  //      and they are .ask-chip like every other chip here.
+  //   2. One card on Today the first time the shell opens after setup — the
+  //      household has a plan and has never dismissed it.
+  //   3. A "Helpful tips" sheet, behind a Preferences row and a "?" beside
+  //      the ask bar, for anyone who wants the whole thing back later.
+  //
+  // Where each piece of state lives, and why the two differ: the per-tab
+  // visit counters are localStorage, per household, because they are a
+  // per-device teaching aid and a lost count costs one chip. The card's
+  // dismissal is on the SERVER (households.coaching_seen_at, GET/POST
+  // /api/coaching) — being handed "here's how this works" again on the
+  // phone after reading it on the laptop is the opposite of being coached.
+
+  var COACH_VISITS_TO_SHOW = 3;
+
+  // Two per tab, in the household's own words rather than in command form —
+  // the point is that a sentence works, not that there is a syntax. Grocery
+  // deliberately echoes ASK_HINTS.grocery: that line is grey placeholder
+  // text inside the bar, and this is the tappable proof that it does what it
+  // says.
+  var COACH_EXAMPLES = {
+    today: ['What’s next tonight?', 'Vineeth is out Thursday'],
+    week: ['Swap Thursday for something lighter', 'Less chicken, more fish this week'],
+    grocery: ['Add oat milk and lemons', 'We already have rice'],
+    kitchen: ['What can I make with the chicken thighs?', 'I’m short on time tonight']
+  };
+
+  var coachState = {
+    ready: false,
+    householdId: null,
+    hasPlan: false,
+    // Starts true so nothing can flash before /api/coaching answers: a card
+    // that appears and vanishes is worse than one that appears a beat late.
+    seen: true
+  };
+
+  function coachVisitsKey() {
+    return 'pomona.coaching.visits.h' + (coachState.householdId == null ? 'x' : coachState.householdId);
+  }
+
+  // Every read and write is wrapped: Safari in private mode throws on
+  // localStorage rather than returning null, and a thrown teaching aid
+  // would take the tab switch down with it.
+  function coachReadVisits() {
+    try {
+      var raw = window.localStorage.getItem(coachVisitsKey());
+      var parsed = raw ? JSON.parse(raw) : null;
+      return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (err) { return {}; }
+  }
+
+  function coachWriteVisits(visits) {
+    try { window.localStorage.setItem(coachVisitsKey(), JSON.stringify(visits)); } catch (err) { /* see above */ }
+  }
+
+  // Which visit this is, 1-based. Stops WRITING past the limit — the
+  // counter's only question is "have the three been spent", and a number
+  // that keeps climbing answers nothing extra — but keeps RETURNING the
+  // incremented value, so the fourth visit reads 4 and shows nothing.
+  function coachCountVisit(key) {
+    var visits = coachReadVisits();
+    var n = (Number(visits[key]) || 0) + 1;
+    if (n <= COACH_VISITS_TO_SHOW) {
+      visits[key] = n;
+      coachWriteVisits(visits);
+    }
+    return n;
+  }
+
+  function coachExampleTargets() {
+    var t = [document.getElementById('ask-examples'), document.getElementById('today-ask-examples')];
+    return t.filter(function (el) { return !!el; });
+  }
+
+  // Both surfaces at once, the same reason askChipTargets does it: the
+  // mobile dock's row and Today's Ask column can both be in the document,
+  // and resizing across 1024px must not leave the other one stale.
+  function renderAskExamples(prompts) {
+    coachExampleTargets().forEach(function (el) {
+      if (!prompts || !prompts.length) {
+        el.innerHTML = '';
+        el.hidden = true;
+        return;
+      }
+      el.hidden = false;
+      el.innerHTML = prompts.map(function (text, i) {
+        return '<button type="button" class="ask-chip ask-chip-example" data-i="' + i + '">' +
+          escapeHtml(text) + '</button>';
+      }).join('');
+      el.querySelectorAll('.ask-chip-example').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          var text = prompts[Number(chip.dataset.i)];
+          // The existing send path, unchanged: open whichever surface the
+          // conversation lives on at this width, then send. Without the
+          // open, a phone would fire a message into a hidden sheet and
+          // appear to have done nothing.
+          openAskSheet();
+          sendAskMessage(text);
+        });
+      });
+    });
+  }
+
+  // Called on every tab activation (and once when /api/coaching answers,
+  // for whichever tab the app opened on).
+  function coachOnTabShown(key) {
+    // Hoisted, and called from activateTab far above this section — so on a
+    // synchronous first activation `coachState` is still an uninitialised
+    // `var`. Nothing to count against, and nowhere to put it.
+    if (!coachState) return;
+    coachState.tab = key;
+    if (!coachState.ready) return;
+    // Once the household has said something of their own, examples are a
+    // lesson they have already passed.
+    if (askConversationStarted) return renderAskExamples(null);
+    var prompts = COACH_EXAMPLES[key];
+    if (!prompts) return renderAskExamples(null);
+    renderAskExamples(coachCountVisit(key) <= COACH_VISITS_TO_SHOW ? prompts : null);
+  }
+
+  // ---------- the how-and-why card ----------
+
+  var COACH_CARD_LINES = [
+    'Ask for anything in plain words — a swap, a change of plan, a question about tonight.',
+    'The more you tell me about your week, the better the plan fits. Away nights, guests, a craving.',
+    'Buttons do the common things. Words do the rest.'
+  ];
+
+  // A .plan-nudge-card instance, not a new card type — same eyebrow / title
+  // / body shape as Today's other quiet card (DESIGN_SYSTEM §9 Tier 1).
+  // No apricot anywhere in it: Today's own hero owns that colour, and this
+  // is a word, not an action.
+  function coachCardHtml() {
+    return '<div class="shell-card plan-nudge-card coach-card">' +
+      '<div class="plan-nudge-eyebrow">A QUICK WORD</div>' +
+      '<div class="plan-nudge-title">This is how to talk to me</div>' +
+      '<ul class="coach-lines">' +
+        COACH_CARD_LINES.map(function (line) {
+          return '<li>' + escapeHtml(line) + '</li>';
+        }).join('') +
+      '</ul>' +
+      '<div class="coach-actions">' +
+        '<button type="button" class="plan-nudge-link coach-got-it" data-coach="got-it">Got it</button>' +
+        '<button type="button" class="plan-nudge-link coach-tips" data-coach="tips">Show me tips</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderCoachCard() {
+    if (!coachState) return; // see coachOnTabShown
+    var slot = document.getElementById('coach-card-slot');
+    if (!slot) return;
+    var show = coachState.ready && coachState.hasPlan && !coachState.seen;
+    if (!show) { slot.innerHTML = ''; return; }
+    if (slot.dataset.built === '1') return;
+    slot.dataset.built = '1';
+    slot.innerHTML = coachCardHtml();
+  }
+
+  // Both buttons dismiss it, because both mean "I've read this" — the card
+  // is shown exactly once and "Show me tips" is the longer answer to the
+  // same question, not a way of putting the card off.
+  function coachDismissCard() {
+    coachState.seen = true;
+    var slot = document.getElementById('coach-card-slot');
+    if (slot) slot.innerHTML = '';
+    // Fire-and-forget: a failed write costs one repeated card on the next
+    // load, which is not worth an error message on a screen whose whole job
+    // is a warm first impression.
+    try {
+      fetch('/api/coaching/seen', { method: 'POST', keepalive: true })
+        .catch(function () { /* see above */ });
+    } catch (err) { /* see above */ }
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-coach]');
+    if (!target) return;
+    coachDismissCard();
+    if (target.getAttribute('data-coach') === 'tips') openTipsSheet();
+  });
+
+  // ---------- "Helpful tips" ----------
+  //
+  // One screen, no scroll on a phone if it can be helped: four groups, one
+  // real example each, and the line that answers the question nobody asks
+  // out loud — what actually happens when you press send.
+
+  var TIPS_OPENING = 'Say it however it comes out. There’s no right way to phrase it.';
+
+  var TIPS_GROUPS = [
+    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
+    { tab: 'Meals', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
+    { tab: 'Grocery', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
+    { tab: 'Kitchen', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
+  ];
+
+  var TIPS_CLOSERS = [
+    'The more you tell me about your week, the better the plan fits.',
+    'Buttons do the common things. Words do the rest.'
+  ];
+
+  var TIPS_AFTER_SEND = 'I’ll say what changed, and the screen updates. If I couldn’t, I’ll say that too.';
+
+  var tipsSheetEl = null;
+  var tipsScrimEl = null;
+
+  function buildTipsSheet() {
+    if (tipsSheetEl) return;
+    tipsScrimEl = document.createElement('div');
+    tipsScrimEl.id = 'tips-scrim';
+    tipsScrimEl.hidden = true;
+    tipsSheetEl = document.createElement('div');
+    tipsSheetEl.id = 'tips-sheet';
+    tipsSheetEl.hidden = true;
+    tipsSheetEl.setAttribute('role', 'dialog');
+    tipsSheetEl.setAttribute('aria-modal', 'true');
+    tipsSheetEl.setAttribute('aria-labelledby', 'tips-title');
+    tipsSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="tips-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="tips-title">Helpful tips</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="tips-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<p class="prefs-sub">' + escapeHtml(TIPS_OPENING) + '</p>' +
+      '<div class="tips-body">' +
+        TIPS_GROUPS.map(function (g) {
+          return '<div class="tips-group">' +
+            '<div class="tips-group-tab">' + escapeHtml(g.tab) + '</div>' +
+            '<div class="tips-group-line">' + escapeHtml(g.line) + '</div>' +
+            '<div class="tips-group-example">&ldquo;' + escapeHtml(g.example) + '&rdquo;</div>' +
+          '</div>';
+        }).join('') +
+        '<ul class="tips-closers">' +
+          TIPS_CLOSERS.map(function (line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('') +
+        '</ul>' +
+        '<div class="tips-after">' +
+          '<div class="tips-after-label">AFTER YOU SEND</div>' +
+          '<div class="tips-after-line">' + escapeHtml(TIPS_AFTER_SEND) + '</div>' +
+        '</div>' +
+      '</div>';
+    // Body level, like every other sheet here: position:fixed has to sit
+    // outside the tab panel's stacking and scroll context.
+    document.body.appendChild(tipsScrimEl);
+    document.body.appendChild(tipsSheetEl);
+    tipsScrimEl.addEventListener('click', closeTipsSheet);
+    tipsSheetEl.querySelector('#tips-handle').addEventListener('click', closeTipsSheet);
+    tipsSheetEl.querySelector('#tips-close').addEventListener('click', closeTipsSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && tipsSheetEl && !tipsSheetEl.hidden) closeTipsSheet();
+    });
+  }
+
+  function openTipsSheet() {
+    buildTipsSheet();
+    // One sheet at a time, the rule every other sheet here follows.
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    closePrefsSheet();
+    closeSnwSheet();
+    tipsScrimEl.hidden = false;
+    tipsSheetEl.hidden = false;
+  }
+
+  function closeTipsSheet() {
+    if (!tipsSheetEl) return;
+    tipsScrimEl.hidden = true;
+    tipsSheetEl.hidden = true;
+  }
+
+  // Delegated, so the Preferences row and both "?" buttons (the mobile dock
+  // and Today's Ask column, which is re-rendered whenever Today rebuilds)
+  // work without anything wiring a listener.
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-tips]');
+    if (target) openTipsSheet();
+  });
+
+  // ---------- boot ----------
+
+  function loadCoachingState() {
+    fetch('/api/coaching')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .catch(function () { return null; })
+      .then(function (state) {
+        coachState.ready = true;
+        if (state) {
+          coachState.householdId = state.household_id;
+          coachState.hasPlan = !!state.has_plan;
+          coachState.seen = !!state.coaching_seen_at;
+        }
+        // Whatever tab the app opened on never got counted, because the
+        // household wasn't known yet.
+        coachOnTabShown(coachState.tab || currentTabKey());
+        renderCoachCard();
+      });
+  }
+
+  loadCoachingState();
 
   // ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------
   //

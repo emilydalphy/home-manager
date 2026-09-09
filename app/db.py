@@ -240,6 +240,11 @@ _MIGRATIONS = [
     # Touched in security._call_as_household — see there for why it isn't
     # a write on every single request.
     ("households", "last_active_at", "TEXT"),
+    # Onboarding coaching ("This is how to talk to me", 2026-09-08) — when
+    # the household dismissed the one-time how-and-why card on Today. Stored
+    # on the household, not in localStorage, so a second device doesn't show
+    # a card the household has already read. NULL means never seen.
+    ("households", "coaching_seen_at", "TEXT"),
     # Per-person attendance (Emily's deepened week-planning model,
     # 2026-09-03). Both default to '[]' = "the whole household", which is
     # precisely what these two tables meant before attendance existed — so

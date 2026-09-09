@@ -314,6 +314,46 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-09 — Nobody had told the household how to talk to the app.
+  Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
+  Pomona never having talked to one: she finished setup, landed on Today,
+  and had no idea what she was allowed to say. Three parts, all teaching the
+  same thing — the ask bar IS the app and the buttons are its shortcuts.
+  (1) **Two tappable example prompts under the ask bar, per tab**, on that
+  tab's first three visits and then gone (`COACH_EXAMPLES`,
+  `coachOnTabShown`, `renderAskExamples` in `static/shell.js`; a new
+  `#ask-examples` row in the mobile dock and `#today-ask-examples` above the
+  desktop Ask column's input). They are `.ask-chip`, the component the
+  quick-action chips already use, and tapping one goes through
+  `openAskSheet()` + `sendAskMessage()` — the existing path, not a second
+  one. (2) **One how-and-why card on Today**, eyebrow "A quick word", shown
+  when the household has a plan and has never dismissed it; a
+  `.plan-nudge-card` instance, no apricot (the hero owns it), two quiet
+  `.plan-nudge-link` outs. (3) **A "Helpful tips" sheet** — eight lines,
+  four tab groups with one example each plus what happens after you send —
+  behind a Preferences row and a small "?" beside the ask bar at both
+  widths; it reuses `#prefs-sheet`'s own CSS rules rather than restating
+  them. **Where the state lives, and why the two differ:** the per-tab visit
+  counters are localStorage keyed per household (a per-device teaching aid;
+  a lost count costs one chip), but the card's dismissal is a new
+  `households.coaching_seen_at` column behind `GET /api/coaching` /
+  `POST /api/coaching/seen` — being handed "here's how this works" again on
+  the phone after reading it on the laptop is the opposite of being coached.
+  The write is write-once, so "when did they first see it" stays answerable.
+  Two traps worth remembering: `.ask-chips` is `display:flex`, which beats
+  the bare `[hidden]` attribute (the same trap `#reveal-days` hit on the
+  onboarding branch — fixed for the existing quick-action containers too),
+  and `coachOnTabShown` is hoisted and called from `activateTab` hundreds of
+  lines above its own `var coachState`, so it guards against being called
+  before that runs. `tests/test_coaching.py` is the guard, 22 tests (the
+  front-end half RUNS shell.js's own functions under node against a small
+  DOM stub rather than reading the source for markers); 1713 total. One
+  existing assertion in `tests/test_feedback_reports.py` widened its source
+  window from 1400 to 2200 chars — the new Preferences row pushed
+  `snwTile()` down inside the same renderer; the assertion itself is
+  unchanged. **Not verified in a browser** — no browser tooling in this
+  session, so the examples row's wrap in the dock and the tips sheet's
+  layout at 390px are unchecked.
 - **2026-09-08 — Setup ends on a receipt, not on a shrug. Branch
   `onboarding-done-receipt`.** The reveal used to end on "Looks good — take
   me in" over a list of days: nothing said setup was finished, nothing said

@@ -1095,6 +1095,30 @@ def onboarding_chores_save(req: ChoreSaveRequest):
     return {"saved": True, "created": len(req.chores)}
 
 
+@app.get("/api/coaching")
+def coaching_state():
+    """
+    Onboarding coaching state for the shell: which household this is, whether
+    it has a plan yet, and whether the "This is how to talk to me" card has
+    already been read. See tools.get_coaching_state.
+    """
+    try:
+        return tools.get_coaching_state()
+    except Exception as e:
+        logger.exception("Coaching state lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/coaching/seen")
+def coaching_seen():
+    """The how-and-why card's "Got it" — write-once, and idempotent."""
+    try:
+        return tools.mark_coaching_seen()
+    except Exception as e:
+        logger.exception("Marking coaching seen failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/memory")
 def get_memory():
     """Everything the app has saved about this household's meal preferences — powers the 'what we know' view."""
