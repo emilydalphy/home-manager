@@ -314,6 +314,44 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — Setup ends on a receipt, not on a shrug. Branch
+  `onboarding-done-receipt`.** The reveal used to end on "Looks good — take
+  me in" over a list of days: nothing said setup was finished, nothing said
+  what had been saved, and nothing named a next step (Emily + Julia). It
+  now ends on the same block Meals shows when a week is approved — eyebrow
+  "YOU'RE SET UP", title "That's everything I need.", then three lines in
+  one fixed order: what was saved ("2 of you, 1 allergy, dinner between 6
+  and 8, prep on Sunday and Wednesday."), what Pomona did ("Your first week
+  is drafted: 16 meals, 5 cooks.") and the one next step ("Next: look it
+  over and approve it, then I'll write your list."). Every clause is built
+  from an answer actually given — a fact nobody gave ("all over the place"
+  as a dinner window, no prep days) is left out of the sentence rather than
+  padded into it — and the counts follow `weekly_plan._is_cook`'s rule so
+  the reveal and the approved-week receipt can't put different numbers on
+  the same week: a reheat or takeout night is a meal but not a cook, an
+  away or open slot is neither. **Numbers are digits here** (Emily), not
+  the words-to-twelve rule `_receipt_number` follows — flagged because it
+  is a deliberate split between the two receipts, and it is one function
+  (`revealSetupLine`/`revealPlanLine`) to reverse. The one apricot is
+  "Review my week" and it lands on the DRAFT, not on the plain week:
+  `/week?drafted=<the plan's own Monday>`, the existing hand-back
+  `/plan-week` already uses, because a household that chose "Next week" (or
+  a Sunday one folding forward) has its first plan filed under a Monday
+  that isn't this one, and Meals otherwise opens on whichever week contains
+  today — the same failure class as the `?drafted` bug this param was added
+  for. `?firstplan=1` and its toast are gone from onboarding; the receipt
+  says more, and `?drafted`'s own arrival line names the same next step.
+  A **failed or empty** generation gets the same block with the celadon
+  taken off it and no counts on it — "Your answers are saved." / "The first
+  week didn't come together — tap Try again, or I'll draft it when you open
+  the app." — with the existing Try again pair below; a generation that
+  finished with zero meals now takes that path too, which retired
+  `renderRevealDays`'s own "No meals generated yet… ask in chat" box (two
+  different sentences for one piece of news, one of them pointing away from
+  the retry button sitting right there). Not repeated anywhere later:
+  Preferences already holds the answers. `tests/
+  test_onboarding_done_receipt.py` is the guard, 15 tests (the three line
+  builders run for real under node, the rest source-level); 1706 total.
 - **2026-09-08 — A recipe ingredient has two amounts now: one for the
   shop, one for the pan. Branch `recipe-quantities-measured`.** Julia
   (first beta tester): "The recipe quantities are not specific enough.
