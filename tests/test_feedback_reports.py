@@ -360,7 +360,12 @@ def test_the_kitchen_tile_exists():
     source = _shell_js()
     assert "Something not working?" in source
     assert "snwTile()" in source, "nothing renders the tile any more"
-    assert "snwTile() +" in source.split("function renderPrefsRows")[1][:1400], (
+    # The window grew from 1400 on 2026-09-09 (branch
+    # `coaching-how-to-talk-to-me`): the sheet gained a "Helpful tips" row
+    # above the second group, which pushed the tile further down the same
+    # renderer. The assertion is unchanged — the tile is still rendered by
+    # renderPrefsRows and nowhere else.
+    assert "snwTile() +" in source.split("function renderPrefsRows")[1][:2200], (
         "the Preferences sheet no longer offers the way to report a problem"
     )
     assert 'data-snw="open"' in source

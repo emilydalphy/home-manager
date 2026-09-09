@@ -54,10 +54,21 @@
       <div id="shell-scroll"></div>
 
       <div id="ask-bar-dock">
+        <!-- Onboarding coaching, part 1 (2026-09-08): two tappable example
+             prompts for whichever tab you're on, for the first three visits
+             to it and then never again. Same .ask-chip component the ask
+             sheet's quick actions already use — no new visual language.
+             Filled and emptied by renderAskExamples() in shell.js; it wraps
+             onto its own line above the bar (see #ask-examples in
+             shell.css). -->
+        <div class="ask-chips ask-examples" id="ask-examples" hidden></div>
         <button type="button" id="ask-bar">
           <span class="ask-placeholder">The more you tell me, the less you&rsquo;ll swap&hellip;</span>
           <span class="ask-send">&uarr;</span>
         </button>
+        <!-- The always-there way into "Helpful tips" — a sibling of the bar,
+             not a child of it, because the bar is itself a button. -->
+        <button type="button" class="ask-tips-btn" id="ask-tips-btn" data-tips="open" aria-label="Helpful tips" title="Helpful tips">?</button>
         <span id="bell-home-dock"></span>
       </div>
 

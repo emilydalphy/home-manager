@@ -47,6 +47,55 @@ def get_household_setup_status() -> dict:
     }
 
 
+def get_coaching_state() -> dict:
+    """
+    What the shell needs to decide whether to show the one-time "This is how
+    to talk to me" card, and which household's chip counters to read.
+
+    Three fields, no judgement call baked in — the shell owns the rule
+    (a plan exists AND coaching has never been seen), because the same
+    payload also feeds the per-tab example chips, which don't care about
+    either flag.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT coaching_seen_at FROM households WHERE id = ?", (household_id(),)
+    ).fetchone()
+    plans = conn.execute(
+        "SELECT COUNT(*) AS c FROM weekly_plans WHERE household_id = ?", (household_id(),)
+    ).fetchone()["c"]
+    conn.close()
+    return {
+        "household_id": household_id(),
+        "has_plan": plans > 0,
+        "coaching_seen_at": (row["coaching_seen_at"] if row else None) or None,
+    }
+
+
+def mark_coaching_seen() -> dict:
+    """
+    Remember that this household has read the how-and-why card.
+
+    Write-once: a second call leaves the original timestamp alone, so
+    "when did they first see it" stays answerable and two devices racing
+    the same dismissal can't disagree about it.
+    """
+    conn = get_conn()
+    conn.execute(
+        """
+        UPDATE households SET coaching_seen_at = datetime('now')
+        WHERE id = ? AND (coaching_seen_at IS NULL OR coaching_seen_at = '')
+        """,
+        (household_id(),),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT coaching_seen_at FROM households WHERE id = ?", (household_id(),)
+    ).fetchone()
+    conn.close()
+    return {"coaching_seen_at": row["coaching_seen_at"] if row else None}
+
+
 def add_member(name: str) -> dict:
     """Add a household member (person who can be assigned chores)."""
     conn = get_conn()
