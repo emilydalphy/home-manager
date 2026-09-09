@@ -385,7 +385,19 @@
   // (pushMealsStepHistory / pushGroceryStepHistory), so the Android/browser
   // back gesture steps out one level there before it leaves the tab at all;
   // every other tab is unaffected.
+  //
+  // The ask sheet (openAskSheet/closeAskSheet below) cooperates the same
+  // way: opening it on mobile/tablet pushes one entry with askSheet:true at
+  // the same path. If that entry is the one we're leaving (askSheetHistoryPushed
+  // is still set, and the state we're arriving at isn't itself one of
+  // those), this is the back gesture asking to close the sheet, not to
+  // change tabs or steps — closeAskSheet() handles it and nothing else
+  // below runs, since the URL never actually changed.
   window.addEventListener('popstate', function (e) {
+    if (askSheetHistoryPushed && !(e && e.state && e.state.askSheet)) {
+      closeAskSheet();
+      return;
+    }
     activateTab(currentTabKey(), false);
     if (currentTabKey() === 'week') applyMealsStepFromHistory(e && e.state);
     if (currentTabKey() === 'grocery') applyGroceryStepFromHistory(e && e.state);
@@ -8661,6 +8673,16 @@
     if (bar) bar.classList.toggle('is-grown', next > oneLineHeight(textarea) + 2);
   }
 
+  // The sheet pushes one history entry while it's open (mobile/tablet only
+  // — the desktop Ask column never touches history) so the Android/browser
+  // back gesture closes it before it leaves the tab underneath, same as
+  // Meals' and Grocery's own step history. This flag is how the shell's
+  // shared popstate listener (below) tells "the back gesture just left our
+  // pushed entry" apart from an ordinary tab/step change, and how
+  // openAskSheet avoids double-pushing on a prefill while the sheet is
+  // already open.
+  var askSheetHistoryPushed = false;
+
   function openAskSheet(prefill) {
     ensureAskSheetBuilt();
     closeWeekSheet();
@@ -8674,6 +8696,10 @@
     }
     askScrim.hidden = false;
     askSheet.hidden = false;
+    if (!askSheetHistoryPushed) {
+      window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
+      askSheetHistoryPushed = true;
+    }
     if (prefill) {
       askInput.value = prefill;
       autoGrowAskInput(askInput);
@@ -8682,13 +8708,34 @@
       askInput.focus();
     }
   }
+  // Every caller — scrim tap, the Back button, Escape, a sent message, and
+  // the shell's popstate listener on the back gesture — just forgets the
+  // pushed entry rather than calling history.back() on it: deliberately
+  // NOT history.back(), same reasoning as goMealsStep's wk-back link above
+  // (see its comment) — an immediate, unrelated pushState elsewhere in the
+  // same tap (e.g. an action card's "View" jumping to another tab right
+  // after closing the sheet) would race a queued back-traversal in
+  // unpredictable ways. Leaving the stale entry in place when the sheet
+  // closes without the browser having moved costs nothing more than one
+  // invisible extra back-press later landing back on the same tab/path —
+  // the same trade every forward-only push in this file already makes.
   function closeAskSheet() {
     askScrim.hidden = true;
     askSheet.hidden = true;
+    askSheetHistoryPushed = false;
   }
 
   askScrim.addEventListener('click', closeAskSheet);
   document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet);
+  document.getElementById('ask-sheet-back').addEventListener('click', closeAskSheet);
+  // Escape closes the sheet on a desktop keyboard (narrower windows below
+  // the 1024px Ask-column breakpoint still use the sheet, and any keyboard
+  // can be attached at that width). isDesktopAsk() width means the column
+  // is showing instead and #ask-sheet is already hidden, so this is a no-op
+  // there — the desktop column itself is unchanged.
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !askSheet.hidden) closeAskSheet();
+  });
   // Enter-to-send is deliberately NOT wired here. #ask-input is the sheet
   // used on phone widths and on any narrower/tablet window below the
   // permanent desktop column's 1024px breakpoint (the same split this

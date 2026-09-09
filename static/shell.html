@@ -94,6 +94,16 @@
   <div id="ask-scrim" hidden></div>
   <div id="ask-sheet" hidden role="dialog" aria-label="Ask Pomona">
     <div class="ask-sheet-handle" id="ask-sheet-handle"></div>
+    <!-- Julia (first beta tester, 2026-09-08): the handle alone was too
+         thin/fiddly to tap reliably as a way back to the main screen. This
+         button is the real close control — always visible, a proper 44x44
+         target, named the way she thinks of the gesture ("back" to the main
+         screen, not "close" a dialog). The handle stays too, as a secondary
+         affordance for anyone who already reaches for it. -->
+    <button type="button" id="ask-sheet-back" class="ask-sheet-back" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18"><path d="M15 5l-7 7 7 7"/></svg>
+      Back
+    </button>
     <div class="ask-sheet-title">Tell me what to change</div>
     <div class="ask-messages" id="ask-messages"></div>
     <div class="ask-chips" id="ask-chips"></div>
