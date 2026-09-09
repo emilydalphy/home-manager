@@ -301,6 +301,16 @@ only thing it never does is merge (or push without her go-ahead); those stay her
 Stop there. Pushing needs her go-ahead in a live session; merging is hers every time; once
 she has merged, close the ticket ("Working a ticket" step 6) rather than asking twice.
 
+## Writing a card (rule added 2026-09-08)
+
+Emily: "break these down into user stories so that the direction on what we need to build
+is clear in the cards." Every card's page body opens with `## User story` — *As a …, I want
+…, so that …* — followed by `## Acceptance criteria` (testable bullets; copy verbatim where
+Emily gave it) and `## Source` (who said it, when, the quote). A design card uses `## What
+"done" looks like` and `## Decision needed from Emily` instead of criteria. One story per
+outcome: a feedback dump becomes several cards grouped by the screen or rule they change.
+The Notes property stays the one-paragraph summary plus the CLAIMED line.
+
 ## Automation rules (unattended/scheduled runs only)
 
 Per Emily's 2026-08-30 decision, a **scheduled or unattended** run (not a live conversation
