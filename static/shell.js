@@ -9675,17 +9675,43 @@
   // deliberately echoes ASK_HINTS.grocery: that line is grey placeholder
   // text inside the bar, and this is the tappable proof that it does what it
   // says.
+  //
+  // Today's second example carries a name, and it has to be one of THIS
+  // household's. It shipped hardcoded as "Vineeth is out Thursday" — the
+  // developer's own partner — which every beta household then read as an
+  // example about their own week. `example_name` comes from /api/coaching;
+  // until it answers, and for a household with nobody on record yet, the
+  // name-free sentence teaches exactly the same thing.
   var COACH_EXAMPLES = {
-    today: ['What’s next tonight?', 'Vineeth is out Thursday'],
+    today: ['What’s next tonight?', null],
     week: ['Swap Thursday for something lighter', 'Less chicken, more fish this week'],
     grocery: ['Add oat milk and lemons', 'We already have rice'],
     kitchen: ['What can I make with the chicken thighs?', 'I’m short on time tonight']
   };
 
+  // The one example built from household data rather than written down.
+  function coachAwayExample() {
+    var name = coachState && coachState.exampleName;
+    return name ? name + ' is out Thursday' : 'One of us is out Thursday';
+  }
+
+  // COACH_EXAMPLES holds a null where that sentence goes, so the tab's two
+  // chips stay one list in one place; this fills it at render time, when the
+  // name is known.
+  function coachExamplesFor(key) {
+    var prompts = COACH_EXAMPLES[key];
+    if (!prompts) return null;
+    return prompts.map(function (p) { return p === null ? coachAwayExample() : p; });
+  }
+
   var coachState = {
     ready: false,
     householdId: null,
     hasPlan: false,
+    // One of this household's own adults, for Today's "someone is out"
+    // example. Null until /api/coaching answers, and for a household with
+    // no members yet — coachAwayExample() has a name-free sentence for both.
+    exampleName: null,
     // Starts true so nothing can flash before /api/coaching answers: a card
     // that appears and vanishes is worse than one that appears a beat late.
     seen: true
@@ -9770,7 +9796,7 @@
     // Once the household has said something of their own, examples are a
     // lesson they have already passed.
     if (askConversationStarted) return renderAskExamples(null);
-    var prompts = COACH_EXAMPLES[key];
+    var prompts = coachExamplesFor(key);
     if (!prompts) return renderAskExamples(null);
     renderAskExamples(coachCountVisit(key) <= COACH_VISITS_TO_SHOW ? prompts : null);
   }
@@ -9947,6 +9973,7 @@
           coachState.householdId = state.household_id;
           coachState.hasPlan = !!state.has_plan;
           coachState.seen = !!state.coaching_seen_at;
+          coachState.exampleName = state.example_name || null;
         }
         // Whatever tab the app opened on never got counted, because the
         // household wasn't known yet.
