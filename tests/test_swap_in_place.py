@@ -490,3 +490,40 @@ class TestTheDayAndMealMarkup:
                      "That didn’t work just now — nothing changed."):
             assert line in SHELL_JS
             assert "!" not in line
+
+
+
+# ---------- verifier findings, 2026-09-08 ----------
+
+class TestVerifierFindings:
+    def test_a_component_plan_entry_is_refused_and_nothing_is_deleted(self):
+        """A component-based plan keys rows by category on one placeholder
+        date+slot; the day-based delete would wipe every component. Refuse."""
+        tools.add_member("Emily")
+        for name in ("Chili", "Roasted Broccoli", "Rice"):
+            tools.add_recipe(name, ingredients=[{"item": name, "qty": "1", "category": "produce"}])
+        tools.set_planning_mode("component_based")
+        plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+        for name, cat in (("Chili", "protein"), ("Roasted Broccoli", "vegetable"), ("Rice", "carb")):
+            tools.plan_meal(WEEK_START, name, weekly_plan_id=plan_id, component_category=cat)
+        conn = get_conn()
+        entry_id = conn.execute("SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND component_category = 'protein'", (plan_id,)).fetchone()["id"]
+        before = conn.execute("SELECT COUNT(*) FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)).fetchone()[0]
+        conn.close()
+        with pytest.raises(ValueError):
+            tools.swap_meal_in_place(plan_id, entry_id, picker=_recorder(_pick()))
+        conn = get_conn()
+        after = conn.execute("SELECT COUNT(*) FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)).fetchone()[0]
+        conn.close()
+        assert before == after == 3
+
+    def test_a_dish_an_eater_dislikes_is_retried_like_a_clash(self, week):
+        """The taste rule is a gate, not a suggestion: Vineeth dislikes the
+        first pick and is home, so the second pick lands instead."""
+        tools.add_recipe("Mushroom Risotto", ingredients=[{"item": "rice", "qty": "1 cup"}])
+        tools.attribute_recipe_feedback("Mushroom Risotto", "Vineeth", rating="disliked")
+        picker = _recorder(_pick("Mushroom Risotto"), _pick("Lemon Chicken Traybake"))
+        result = tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        assert result["status"] == "swapped"
+        assert result["meal"] == "Lemon Chicken Traybake"
+        assert "Mushroom Risotto" in result["avoid"]

@@ -101,7 +101,8 @@ def _entry(weekly_plan_id: int, entry_id: int) -> dict:
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                mpe.food_groups_json, mpe.reasoning, mpe.slot_state,
-               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+               mpe.derived_from_json, mpe.component_category,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?
@@ -111,6 +112,11 @@ def _entry(weekly_plan_id: int, entry_id: int) -> dict:
     conn.close()
     if not row:
         raise ValueError(f"No meal {entry_id} on that week's plan.")
+    if row["component_category"]:
+        # A component-based plan keys its rows by category, not by date and
+        # slot: swap_meal_in_plan's date+slot delete would take every
+        # component with it. Those plans swap through the component path.
+        raise ValueError("That plan is built from components, not meals — swap it in chat for now.")
     return {
         "entry_id": row["id"],
         "date": row["date"],
@@ -535,11 +541,21 @@ def swap_meal_in_place(
         pick["meal_name"] = name
         clash = _hard_clash(pick)
         if not clash:
-            break
-        logger.warning(
-            "swap_in_place picked %r, which clashes with %s (attempt %d)",
-            name, [c.get("restriction") for c in clash], attempt,
-        )
+            # Emily's taste rule (2026-09-08): one person who dislikes a dish
+            # vetoes it for the whole table that night. The prompt already
+            # says so; this makes it a gate rather than a request.
+            verdict = _weekly_plan._taste_verdict_for_slot(name, entry["date"], entry["slot"])
+            if not (verdict and verdict.get("verdict") == "avoid"):
+                break
+            logger.warning(
+                "swap_in_place picked %r, which %s would rather not eat (attempt %d)",
+                name, ", ".join(verdict.get("vetoed_by") or []) or "someone", attempt,
+            )
+        else:
+            logger.warning(
+                "swap_in_place picked %r, which clashes with %s (attempt %d)",
+                name, [c.get("restriction") for c in clash], attempt,
+            )
         # The clashing dish joins `avoid` so the retry cannot land on it
         # again, and stays there afterwards for the same reason.
         tried.append(name)
