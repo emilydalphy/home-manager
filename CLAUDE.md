@@ -354,6 +354,44 @@ why*, not duplicating the diff.
   unchanged. **Not verified in a browser** — no browser tooling in this
   session, so the examples row's wrap in the dock and the tips sheet's
   layout at 390px are unchecked.
+- **2026-09-08 — Setup ends on a receipt, not on a shrug. Branch
+  `onboarding-done-receipt`.** The reveal used to end on "Looks good — take
+  me in" over a list of days: nothing said setup was finished, nothing said
+  what had been saved, and nothing named a next step (Emily + Julia). It
+  now ends on the same block Meals shows when a week is approved — eyebrow
+  "YOU'RE SET UP", title "That's everything I need.", then three lines in
+  one fixed order: what was saved ("2 of you, 1 allergy, dinner between 6
+  and 8, prep on Sunday and Wednesday."), what Pomona did ("Your first week
+  is drafted: 16 meals, 5 cooks.") and the one next step ("Next: look it
+  over and approve it, then I'll write your list."). Every clause is built
+  from an answer actually given — a fact nobody gave ("all over the place"
+  as a dinner window, no prep days) is left out of the sentence rather than
+  padded into it — and the counts follow `weekly_plan._is_cook`'s rule so
+  the reveal and the approved-week receipt can't put different numbers on
+  the same week: a reheat or takeout night is a meal but not a cook, an
+  away or open slot is neither. **Numbers are digits here** (Emily), not
+  the words-to-twelve rule `_receipt_number` follows — flagged because it
+  is a deliberate split between the two receipts, and it is one function
+  (`revealSetupLine`/`revealPlanLine`) to reverse. The one apricot is
+  "Review my week" and it lands on the DRAFT, not on the plain week:
+  `/week?drafted=<the plan's own Monday>`, the existing hand-back
+  `/plan-week` already uses, because a household that chose "Next week" (or
+  a Sunday one folding forward) has its first plan filed under a Monday
+  that isn't this one, and Meals otherwise opens on whichever week contains
+  today — the same failure class as the `?drafted` bug this param was added
+  for. `?firstplan=1` and its toast are gone from onboarding; the receipt
+  says more, and `?drafted`'s own arrival line names the same next step.
+  A **failed or empty** generation gets the same block with the celadon
+  taken off it and no counts on it — "Your answers are saved." / "The first
+  week didn't come together — tap Try again, or I'll draft it when you open
+  the app." — with the existing Try again pair below; a generation that
+  finished with zero meals now takes that path too, which retired
+  `renderRevealDays`'s own "No meals generated yet… ask in chat" box (two
+  different sentences for one piece of news, one of them pointing away from
+  the retry button sitting right there). Not repeated anywhere later:
+  Preferences already holds the answers. `tests/
+  test_onboarding_done_receipt.py` is the guard, 15 tests (the three line
+  builders run for real under node, the rest source-level); 1706 total.
 - **2026-09-08 — A recipe ingredient has two amounts now: one for the
   shop, one for the pan. Branch `recipe-quantities-measured`.** Julia
   (first beta tester): "The recipe quantities are not specific enough.
@@ -2156,3 +2194,40 @@ verdict lines only for dishes with per-person feedback; `check_plan_conflicts`
 adds a SOFT `member_taste` conflict when a plan slips (never a hard block, so the
 approval gate is unchanged). UI half (whose-verdict tap, solo-night flag) is a
 follow-up on the Taste UI card.
+
+### 2026-09-08 — Snacks finally render on Meals. Branch `meals-renders-snacks`.
+
+The other half of "snack-swap-applies": the backend fix made `get_week_menu`
+return `day.snacks` (a list, same shape as `day.breakfast`/`lunch`/`dinner`)
+plus `day.snack` (the first), but shell.js's own `WEEK_SLOTS` stayed the
+hard-coded three and never drew them — the decision log said so plainly.
+`static/shell.js` now does, in all three Meals steps, and `WEEK_SLOTS` is
+left exactly as it was on purpose: it stays the three real meals so
+`weekCountsLabel`/`countOpenSlots` (which read it) keep never treating a
+snack as a cook or an open slot. Snacks get their own slot KEYS instead —
+`daySlotEntry`'s new lookup, `'snack'` for `day.snacks[0]` (matching both
+`day.snack` and the bare `'snack'` app/main.py's ChatAction already sends)
+and `'snack2'`/`'snack3'`/... for the rest — so `applyPendingDayFocus`'s
+existing ring selector lands on the right card with no change of its own.
+Week: `weekRowHtml`/`weekSnackLineHtml` add one line per snack after the
+three meal lines, grey/none dot unless `isRealCook` (source outside
+leftovers/takeout AND a real prep/cook time) says otherwise — most snacks
+are grab-and-go. Day: `daySnackCardsHtml` reuses `daySlotCardHtml` verbatim
+per snack, eyebrow "Snack" solo or "Snack 1"/"Snack 2" when there's more
+than one (`slotEyebrowLabel`), primary action "Mark eaten" unless
+`isRealCook` (`slotActionsHtml`). Meal: `mealStepHtml` hides "The plate"
+card for a snack with nothing to say about it (`plateCardIsEmpty` — no
+food groups, no sides, no thaw task); a real-recipe snack keeps it exactly
+as any other slot would. Swap: `runSwapInPlace`/`runSwapUndo` and the
+Day/Meal step's meal-validity guard (`renderMealsStep`) all switched from
+`day[slot]` to `daySlotEntry(day, slot)` — without that a swap or a tap
+into the second snack's Meal step would have silently done nothing, since
+`day['snack2']` was never a real property. Left out honestly: a hard
+allergen clash's "One thing to settle" card (`weekSettleTargetSlot`) still
+only searches WEEK_SLOTS, so a clash on a snack won't deep-link there yet;
+and the pending-focus ring can't disambiguate WHICH snack changed (the
+action card carries no index), so it always lands on the first, same as
+`day.snack` already does. `tests/test_meals_week_day_meal.py` covers the
+new render functions by running them under node (8 more tests, 1644 total)
+rather than reading the source for the right words — the original bug was
+exactly a case a source-marker test cannot catch.
