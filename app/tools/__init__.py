@@ -80,6 +80,7 @@ from .defrost import (  # noqa: F401
     mark_defrost_asked,
 )
 from .coordination import (  # noqa: F401
+    check_meal_conflicts,
     check_plan_conflicts,
     explain_meal_choice,
     get_feedback_nudge,
@@ -230,6 +231,7 @@ from .prep_sessions import (  # noqa: F401
     set_skip_prep_this_week,
 )
 from .preferences import (  # noqa: F401
+    DEFAULT_SNACKS_PER_DAY,
     add_food_dislikes,
     add_store_typical_items,
     add_usual_stores,
@@ -237,6 +239,7 @@ from .preferences import (  # noqa: F401
     get_meal_planning_setup_status,
     remove_item_from_all_stores_typical_list,
     remove_store_typical_item,
+    resolve_snacks_per_day,
     save_onboarding_answers,
     set_household_meal_preferences,
 )
@@ -410,6 +413,7 @@ from .week_intake import (  # noqa: F401
     save_week_intake,
 )
 from .weekly_plan import (  # noqa: F401
+    DAY_SLOTS,
     WEEK_SLOTS,
     _COMPONENT_CATEGORY_ORDER,
     _build_day_based_menu,
@@ -454,4 +458,12 @@ from .weekly_plan import (  # noqa: F401
     swap_component_in_plan,
     swap_meal_in_plan,
     week_receipt,
+)
+# One meal, replaced on the spot for one small model call — the Meals
+# screen's "Swap" (Julia, 2026-09-08). Not an agent tool: chat already has
+# swap_meal_in_plan and a whole conversation to choose with, and this
+# exists precisely to avoid spending that turn.
+from .swap_in_place import (  # noqa: F401
+    swap_meal_in_place,
+    undo_meal_swap,
 )

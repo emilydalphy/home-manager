@@ -385,7 +385,19 @@
   // (pushMealsStepHistory / pushGroceryStepHistory), so the Android/browser
   // back gesture steps out one level there before it leaves the tab at all;
   // every other tab is unaffected.
+  //
+  // The ask sheet (openAskSheet/closeAskSheet below) cooperates the same
+  // way: opening it on mobile/tablet pushes one entry with askSheet:true at
+  // the same path. If that entry is the one we're leaving (askSheetHistoryPushed
+  // is still set, and the state we're arriving at isn't itself one of
+  // those), this is the back gesture asking to close the sheet, not to
+  // change tabs or steps — closeAskSheet() handles it and nothing else
+  // below runs, since the URL never actually changed.
   window.addEventListener('popstate', function (e) {
+    if (askSheetHistoryPushed && !(e && e.state && e.state.askSheet)) {
+      closeAskSheet();
+      return;
+    }
     activateTab(currentTabKey(), false);
     if (currentTabKey() === 'week') applyMealsStepFromHistory(e && e.state);
     if (currentTabKey() === 'grocery') applyGroceryStepFromHistory(e && e.state);
@@ -4293,6 +4305,61 @@
     return (meta && meta !== 'reheat' && meta !== 'takeout') ? meta : '';
   }
 
+  // ---------- Swap, in place ----------
+  // Julia (first beta tester, 2026-09-08): "click on the one recipe and
+  // meal that the user wants to switch and then have it regenerate just
+  // the one on the spot." Swap used to open the ask sheet and cost a whole
+  // chat turn; it is now one small call to /api/week/{week}/swap-in-place
+  // and the card answers in place.
+  //
+  // One at a time on purpose: the household is tapping Swap on one meal,
+  // not on three at once, and a map of per-slot states would be state to
+  // keep true across every re-render for a case that doesn't happen.
+  // `avoid` rides on it so a second tap says "not that one either" rather
+  // than re-offering what was just turned down.
+  var swapState = null;
+  var swapUndoTimer = null;
+  // Long enough to notice and reach, short enough that the line doesn't
+  // become permanent furniture on the card.
+  var SWAP_UNDO_MS = 8000;
+  // Calm and plain, and it says what's true of the plan — see the
+  // calm-in-trouble rule in DESIGN_SYSTEM.md §8.
+  var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';
+
+  function swapStateFor(date, slot) {
+    return (swapState && swapState.date === date && swapState.slot === slot) ? swapState : null;
+  }
+
+  function clearSwapUndoTimer() {
+    if (swapUndoTimer) { clearTimeout(swapUndoTimer); swapUndoTimer = null; }
+  }
+
+  // The one quiet line under a slot's actions. It is always the same line;
+  // only what it says changes — the wordier way out when nothing is
+  // happening, the working line while the call is out, then the reason and
+  // an Undo chip. One line that changes is why the card doesn't jump.
+  function swapLineHtml(day, slot) {
+    var state = swapStateFor(day.date, slot);
+    var tell = '<button type="button" class="wk-swap-tell" data-wk-tell="' + slot + '">' +
+      'Tell me what instead</button>';
+    if (state && state.busy) {
+      return '<div class="wk-swap-line"><span class="wk-swap-working">Finding something else…</span></div>';
+    }
+    if (state && state.message) {
+      return '<div class="wk-swap-line">' +
+        '<span class="wk-swap-said">' + escapeHtml(state.message) + '</span>' + tell +
+      '</div>';
+    }
+    if (state && state.reason) {
+      return '<div class="wk-swap-line">' +
+        '<span class="wk-swap-said">' + escapeHtml(state.reason) + '</span>' +
+        '<button type="button" class="wk-swap-undo" data-wk-undo="' + slot + '">Undo</button>' +
+        tell +
+      '</div>';
+    }
+    return '<div class="wk-swap-line">' + tell + '</div>';
+  }
+
   // The two-segment control. Which primary a slot gets is entirely a
   // function of its state: a cook is cooked, a made-ahead night is eaten,
   // an open slot is answered, and an away night is offered nothing at all —
@@ -4301,6 +4368,9 @@
     var entry = day[slot];
     var primaryCls = 'wk-act wk-act-primary' + (apricot ? ' is-apricot' : '');
     var swap = '<button type="button" class="wk-act wk-act-swap" data-wk-swap="' + slot + '">Swap</button>';
+    // Rides with the Swap button wherever it is offered, and nowhere else:
+    // a slot with no way to change it has nothing to say about changing it.
+    var swapLine = swapLineHtml(day, slot);
     if (entry && entry.state === 'planned') {
       if (day.isPast) return '';
       var time = cookTimeChip(entry);
@@ -4310,17 +4380,17 @@
       return '<div class="wk-acts">' +
         '<button type="button" class="' + primaryCls + '" data-wk-cook="' + slot + '">' +
           escapeHtml(label) + '</button>' + swap +
-      '</div>';
+      '</div>' + swapLine;
     }
     if (entry && entry.state === 'open') {
       return '<div class="wk-acts">' +
         '<button type="button" class="' + primaryCls + '" data-wk-pick="' + slot + '">Pick</button>' +
         swap +
-      '</div>';
+      '</div>' + swapLine;
     }
     if (entry && entry.state === 'planned_empty') {
       if (entry.need === 'away' || day.isPast) return '';
-      return '<div class="wk-acts">' + swap + '</div>';
+      return '<div class="wk-acts">' + swap + '</div>' + swapLine;
     }
     if (!entry && !day.isPast) {
       // Nothing here at all. Chat is the way out rather than a dead end —
@@ -4595,12 +4665,31 @@
         });
       });
     });
+    // Swap is the in-place action now: one call, one new dish, answered on
+    // the card. A second tap swaps again and carries the dish just turned
+    // down along as something not to offer.
     steps.querySelectorAll('[data-wk-swap]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = mealsCurrentDay();
         if (!day) return;
+        runSwapInPlace(panel, day, btn.getAttribute('data-wk-swap'));
+      });
+    });
+    steps.querySelectorAll('[data-wk-undo]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
+        runSwapUndo(panel, day, btn.getAttribute('data-wk-undo'));
+      });
+    });
+    // The wordier way, kept: the same sentence Swap used to send, opening
+    // the same sheet the same way. openAskSheet itself is untouched.
+    steps.querySelectorAll('[data-wk-tell]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
         openAskSheet('Swap ' + dayName(day.date, { weekday: 'long' }) + '’s ' +
-          btn.getAttribute('data-wk-swap') + ' for something else');
+          btn.getAttribute('data-wk-tell') + ' for something else');
       });
     });
     steps.querySelectorAll('[data-wk-ask]').forEach(function (btn) {
@@ -4683,6 +4772,108 @@
     if (tweakBtn) tweakBtn.addEventListener('click', function () {
       openAskSheet('Let’s tweak this week — ');
     });
+  }
+
+  // ---------- Swap, in place: the two calls ----------
+
+  // The changed day, folded into the week the screen is already holding,
+  // so the new dish is on the card before the full refresh comes back —
+  // the refresh policy's "you change something → the screen updates on
+  // tap" (DESIGN_SYSTEM.md §6). The backend hands back get_week_menu's own
+  // day dict for exactly this, so there is no second shape to render.
+  function spliceSwappedDay(freshDay) {
+    if (!freshDay || !freshDay.date) return;
+    var todayStr = todayLocalStr();
+    for (var i = 0; i < weekState.days.length; i++) {
+      if (weekState.days[i].date === freshDay.date) {
+        weekState.days[i] = Object.assign({}, freshDay, classifyDay(freshDay, todayStr));
+        return;
+      }
+    }
+  }
+
+  function weekStartForSwap() {
+    return (weekState.data && weekState.data.week_start_date) || null;
+  }
+
+  async function runSwapInPlace(panel, day, slot) {
+    var entry = day[slot];
+    var weekStart = weekStartForSwap();
+    if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
+    // Whatever this sitting has already turned down for this slot. Carried
+    // rather than recomputed: the server is the one that knows what it
+    // offered, and it hands the list back each time.
+    var carried = (swapStateFor(day.date, slot) || {}).avoid || [];
+    clearSwapUndoTimer();
+    swapState = { date: day.date, slot: slot, busy: true, avoid: carried };
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-in-place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: entry.entry_id, avoid: carried })
+      });
+      if (!res.ok) throw new Error('swap failed');
+      var data = await res.json();
+      // A 200 that says no. The sentence is the server's — it is the one
+      // that knows what it couldn't work around — and nothing changed.
+      if (data.status !== 'swapped') {
+        swapState = {
+          date: day.date, slot: slot,
+          avoid: data.avoid || carried, message: data.message || SWAP_TROUBLE
+        };
+        renderMealsStep(panel);
+        return;
+      }
+      swapState = {
+        date: day.date, slot: slot,
+        avoid: data.avoid || carried, reason: data.reason || '', canUndo: true
+      };
+      spliceSwappedDay(data.day);
+      renderMealsStep(panel);
+      // Then the rest of the week, quietly: a swap can change the badge,
+      // the subtitle, the draft's clash line and Kitchen's reading of the
+      // same week. loadWeekMenu is the one place that keeps all of those
+      // in step, and it re-renders the step with the swap line intact.
+      await loadWeekMenu(panel);
+      clearSwapUndoTimer();
+      swapUndoTimer = setTimeout(function () {
+        swapUndoTimer = null;
+        // The reason goes with the chip: it is saved on the meal as its
+        // "Why this night", so the card doesn't have to keep holding it.
+        if (swapStateFor(day.date, slot)) { swapState = null; renderMealsStep(panel); }
+      }, SWAP_UNDO_MS);
+    } catch (err) {
+      console.warn('Swap failed:', err);
+      swapState = { date: day.date, slot: slot, avoid: carried, message: SWAP_TROUBLE };
+      renderMealsStep(panel);
+    }
+  }
+
+  async function runSwapUndo(panel, day, slot) {
+    var entry = day[slot];
+    var weekStart = weekStartForSwap();
+    if (!entry || entry.entry_id === null || entry.entry_id === undefined || !weekStart) return;
+    clearSwapUndoTimer();
+    swapState = { date: day.date, slot: slot, busy: true, avoid: [] };
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-undo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: entry.entry_id })
+      });
+      if (!res.ok) throw new Error('undo failed');
+      var data = await res.json();
+      swapState = null;
+      spliceSwappedDay(data.day);
+      renderMealsStep(panel);
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('Undo failed:', err);
+      swapState = { date: day.date, slot: slot, avoid: [], message: SWAP_TROUBLE };
+      renderMealsStep(panel);
+    }
   }
 
   // ---------- "More": every rare action, one tap off the root ----------
@@ -8661,6 +8852,16 @@
     if (bar) bar.classList.toggle('is-grown', next > oneLineHeight(textarea) + 2);
   }
 
+  // The sheet pushes one history entry while it's open (mobile/tablet only
+  // — the desktop Ask column never touches history) so the Android/browser
+  // back gesture closes it before it leaves the tab underneath, same as
+  // Meals' and Grocery's own step history. This flag is how the shell's
+  // shared popstate listener (below) tells "the back gesture just left our
+  // pushed entry" apart from an ordinary tab/step change, and how
+  // openAskSheet avoids double-pushing on a prefill while the sheet is
+  // already open.
+  var askSheetHistoryPushed = false;
+
   function openAskSheet(prefill) {
     ensureAskSheetBuilt();
     closeWeekSheet();
@@ -8674,6 +8875,10 @@
     }
     askScrim.hidden = false;
     askSheet.hidden = false;
+    if (!askSheetHistoryPushed) {
+      window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
+      askSheetHistoryPushed = true;
+    }
     if (prefill) {
       askInput.value = prefill;
       autoGrowAskInput(askInput);
@@ -8682,13 +8887,34 @@
       askInput.focus();
     }
   }
+  // Every caller — scrim tap, the Back button, Escape, a sent message, and
+  // the shell's popstate listener on the back gesture — just forgets the
+  // pushed entry rather than calling history.back() on it: deliberately
+  // NOT history.back(), same reasoning as goMealsStep's wk-back link above
+  // (see its comment) — an immediate, unrelated pushState elsewhere in the
+  // same tap (e.g. an action card's "View" jumping to another tab right
+  // after closing the sheet) would race a queued back-traversal in
+  // unpredictable ways. Leaving the stale entry in place when the sheet
+  // closes without the browser having moved costs nothing more than one
+  // invisible extra back-press later landing back on the same tab/path —
+  // the same trade every forward-only push in this file already makes.
   function closeAskSheet() {
     askScrim.hidden = true;
     askSheet.hidden = true;
+    askSheetHistoryPushed = false;
   }
 
   askScrim.addEventListener('click', closeAskSheet);
   document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet);
+  document.getElementById('ask-sheet-back').addEventListener('click', closeAskSheet);
+  // Escape closes the sheet on a desktop keyboard (narrower windows below
+  // the 1024px Ask-column breakpoint still use the sheet, and any keyboard
+  // can be attached at that width). isDesktopAsk() width means the column
+  // is showing instead and #ask-sheet is already hidden, so this is a no-op
+  // there — the desktop column itself is unchanged.
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !askSheet.hidden) closeAskSheet();
+  });
   // Enter-to-send is deliberately NOT wired here. #ask-input is the sheet
   // used on phone widths and on any narrower/tablet window below the
   // permanent desktop column's 1024px breakpoint (the same split this

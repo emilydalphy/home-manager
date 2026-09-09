@@ -365,6 +365,85 @@ why*, not duplicating the diff.
   vocabulary and passes over words it doesn't know — a false "you forgot
   to buy shallots" is worse than a missed one.
 
+- **2026-09-08 — "The chat said it changed a snack and it didn't change it
+  in the meal plan" was the SCREEN, not the swap. Branch
+  `snack-swap-applies`.** Julia, first beta tester. Root cause:
+  `weekly_plan.get_week_menu` — the one backend ask behind the Meals
+  screen — built its days from `slots = ("breakfast", "lunch", "dinner")`
+  and dropped every `slot='snack'` row on the floor. The swap tool always
+  accepted `slot='snack'` (nothing in `swap_meal_in_plan` ever checked the
+  slot), the chat schema always offered it, the action card always routed
+  to `week` with the right date/slot — the write landed and had nowhere to
+  appear, so the app told the household about a change they could not see.
+  `WEEK_SLOTS` is the 21-slot GUARANTEE, not the list of slots a day HAS;
+  reading it as the latter is what caused this, so `DAY_SLOTS` now exists
+  beside it and `get_week_menu`/`_build_day_based_menu` return a `snacks`
+  list (plus `snack`, the first of them) per day. **shell.js still
+  hard-codes its own `WEEK_SLOTS` of three and will not draw them until it
+  reads `day.snacks`** — payload is additive, so nothing breaks meanwhile.
+  Three more things in the same branch: `swap_meal_in_plan` takes
+  `old_meal` (a day has two snacks; a swap about one of them must not
+  delete both) and refuses a slot that isn't one; a reply claiming a
+  change on a turn where no write tool succeeded is replaced with
+  `agent.CHANGE_CLAIM_RETRACTION` (`verify_change_claim` — nothing in the
+  loop had ever checked that "I've swapped that" was true); and snacks
+  default to TWO DIFFERENT ones a day
+  (`preferences.resolve_snacks_per_day` — `snacks_per_day` if the
+  household was asked, else an EXPLICIT `snacks_per_week` spread over
+  seven and floored at one, else 2, because `snacks_per_week`'s stored 3
+  is a column default nobody answered). Julia's other report — the same
+  food for breakfast and for the snack that day — is a `plan_quality` rule
+  (`snack_echoes_a_meal` / `snacks_distinct_per_day`, name-stem match) and
+  the one thing in that module that REPAIRS rather than logs:
+  `repair_snack_clashes` trades the offending snack onto a day it fits, or
+  failing that gives its slot to another day's snack. Only ever the week's
+  own snacks — a replacement invented from a hard-coded list would have
+  been through none of the restriction/dislike/allergy handling that
+  generation applies, and "we fixed your repetitive snack by giving you
+  one you're allergic to" is the worse bug.
+
+- **2026-09-08 — Swap is one small call now, not a chat turn. Branch
+  `swap-one-meal-in-place`.** Julia (first beta tester): "be able to click
+  on the one recipe and meal that the user wants to switch and then have it
+  regenerate just the one on the spot." Meals' "Swap" used to open the ask
+  sheet with a prefilled sentence and spend a whole chat turn. It is now
+  `POST /api/week/{week_start}/swap-in-place {entry_id, avoid?}` →
+  `app/tools/swap_in_place.py`, one forced `submit_swap` tool call at the
+  `utility` effort route, priced in the api_calls ledger under the new call
+  site **`swap_in_place`**. Four things worth knowing before changing it:
+  (1) **the pick is applied through the existing `swap_meal_in_plan`**, so
+  leftover chains, groceries-only-on-approval, plate sides and the shared
+  `taste_verdict` behave exactly as a chat swap — this module deliberately
+  owns no second swap implementation, and the two fields plan_meal can't be
+  told about from in there (`reasoning`, `derived_from`) are written
+  straight after; (2) **the allergen check runs on the pick BEFORE anything
+  is written**, through a new `coordination.check_meal_conflicts` — the
+  per-dish half of `check_plan_conflicts`, pulled out so both use one
+  matcher rather than two that can disagree. A hard clash costs exactly one
+  retry with that dish added to `avoid`, then a plain refusal and nothing
+  saved. Checking after applying would have meant reversing a swap the
+  household never asked for, dragging the grocery list and any chain
+  through it; (3) **`derived_from.swapped_from` is written once** — a
+  second swap carries the ORIGINAL forward, so Undo means "put back what
+  was there before I started tapping", not "step back one dish"
+  (`POST .../swap-undo`, also through `swap_meal_in_plan`); (4) the
+  outgoing dish is on `avoid` from the first call and stays on the list
+  handed back, which is what the screen sends as the next tap's `avoid`.
+  Front end, `static/shell.js` Day and Meal steps only: `swapLineHtml` is
+  one quiet line under a slot's actions saying whichever of three things is
+  true — "Tell me what instead" (the old ask-sheet path, same prefill,
+  `openAskSheet` itself untouched), "Finding something else…" while the
+  call is out, then the model's one-line reason plus an Undo chip for 8s.
+  No second apricot (Rule 5). **Cost measured off the call's own shape:**
+  ~1,450 input tokens (≈700 instructions, cached after the first swap of a
+  session; ≈390 tool schema; ≈350 household context) and ~550 output, so
+  **≈$0.009 for the first swap and ≈$0.006 warm**, roughly double if the
+  allergen retry fires — against a chat turn's ~16k-token context for the
+  same edit. Left out honestly: `plan_quality.check_and_log` doesn't run on
+  a swapped slot (it is a whole-week rule engine and log-only), and an
+  undo restores the dish but not a leftover chain the swap broke — that is
+  `swap_meal_in_plan`'s pre-existing behaviour, shared with every chat
+  swap, not something this path adds.
 - **2026-09-08 — Kitchen is the cook's tab, and everything the app knows
   about the household is a sheet. Branch
   `flows-4-kitchen-and-preferences`.** Emily's approved design. KITCHEN
