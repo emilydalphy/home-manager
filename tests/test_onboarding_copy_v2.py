@@ -587,3 +587,12 @@ def test_a_request_with_no_body_still_means_this_week(signed_in, recipe, monkeyp
     res = signed_in.post("/api/onboarding/generate-first-plan")
     assert res.status_code == 200
     assert res.json()["week_start_date"] == this_monday.isoformat()
+
+
+def test_snacks_per_day_default_is_not_mistaken_for_an_answer():
+    """The column is NOT NULL DEFAULT 2, so only the _set flag says the
+    household answered; an explicit weekly answer still wins over it."""
+    from app.tools import preferences
+    assert preferences.resolve_snacks_per_day({"snacks_per_day": 2, "snacks_per_day_set": 0, "snacks_per_week": 5, "snacks_per_week_set": 1}) == 1
+    assert preferences.resolve_snacks_per_day({"snacks_per_day": 3, "snacks_per_day_set": 1, "snacks_per_week": 7, "snacks_per_week_set": 1}) == 3
+    assert preferences.resolve_snacks_per_day({"snacks_per_day": 2, "snacks_per_day_set": 0, "snacks_per_week": 3, "snacks_per_week_set": 0}) == 2

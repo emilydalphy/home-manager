@@ -12,6 +12,65 @@ from . import household as _household
 from . import memory as _memory
 
 
+# Two different snacks a day, unless the household has said otherwise —
+# Julia, first beta tester, 2026-09-08: "snacks should default to two
+# different snacks per day." One snack repeated morning and afternoon is
+# the shape she was actually getting, and one snack that echoed that
+# morning's breakfast at that.
+DEFAULT_SNACKS_PER_DAY = 2
+
+
+def resolve_snacks_per_day(memory: dict | None = None) -> int:
+    """
+    How many DISTINCT snacks a day this household's week should plan.
+
+    Three sources, in order:
+
+    1. `snacks_per_day` when the household has actually been asked (the
+       onboarding question, added separately — read here whether or not
+       that column exists yet, so neither branch has to land first).
+    2. Otherwise, an EXPLICIT snacks_per_week answer, divided across the
+       seven days and rounded — with a floor of one, since a household
+       that asked for some snacks must not be rounded down into none.
+       Zero stays zero: "none, thanks" is a real answer, and
+       _finish_week_slots empties the slot for the whole week on it.
+    3. Otherwise DEFAULT_SNACKS_PER_DAY. snacks_per_week's stored 3 is a
+       NOT NULL DEFAULT nobody was ever asked for (see schema.sql and
+       snacks_per_week_set) — deriving 3/7 -> 0 snacks a day from it would
+       be inventing an answer out of a column default, and the wrong one.
+
+    Pass `memory` (get_household_memory's dict, or the prorated copy
+    generation builds from it) to answer from what the caller already has;
+    omit it to read the household's row directly.
+    """
+    if memory is None:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        conn.close()
+        memory = dict(row) if row else {}
+
+    # snacks_per_day is NOT NULL DEFAULT 2 once the onboarding column
+    # exists, so "is not None" would never fall through; the flag is what
+    # says the household actually answered (verifier, 2026-09-08).
+    explicit = memory.get("snacks_per_day")
+    if explicit is not None and memory.get("snacks_per_day_set", "snacks_per_day_set" not in memory):
+        return max(0, int(explicit))
+
+    # snacks_per_week_set is how a real answer is told apart from the
+    # column default — see memory.get_household_memory.
+    if not memory.get("snacks_per_week_set"):
+        return DEFAULT_SNACKS_PER_DAY
+    per_week = memory.get("snacks_per_week")
+    if per_week is None:
+        return DEFAULT_SNACKS_PER_DAY
+    per_week = int(per_week)
+    if per_week <= 0:
+        return 0
+    return max(1, round(per_week / 7))
+
+
 def get_meal_planning_setup_status() -> dict:
     """
     Check whether meal-planning onboarding (dietary restrictions + household
