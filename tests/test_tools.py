@@ -765,6 +765,93 @@ def test_the_other_adult_is_who_the_receipt_names():
     assert tools.get_week_menu()["other_adults"] == ["Marcus"]
 
 
+def test_a_two_adult_household_is_asked_who_is_approving_on_a_draft():
+    """
+    The who's-approving step reads approving_adults, and used to read
+    other_adults — which is every adult but the one who ALREADY approved.
+    A draft has no approver, so that list was always empty, the step was
+    always skipped, and no week was ever approved by a named adult.
+    """
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "Child")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    draft = tools.get_week_menu()
+    assert draft["status"] == "draft"
+    # Both adults, no child — more than one, so the screen asks.
+    assert draft["approving_adults"] == ["Emily", "Marcus"]
+    # The old field is still empty on a draft, which is correct for what it
+    # means; that is exactly why it could not answer this question.
+    assert draft["other_adults"] == []
+
+
+def test_nobody_is_offered_as_the_approver_once_the_week_is_approved():
+    """There is nothing left to approve, so there is nobody to ask about."""
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+    assert tools.get_week_menu()["approving_adults"] == []
+
+
+def test_a_one_adult_household_is_not_asked_who_is_approving():
+    """
+    One name is not a question. The list is still filled honestly — the
+    screen is what decides there is nothing to ask (approveWeek only opens
+    the picker for more than one) — so a household that later adds a second
+    adult starts being asked with no backend change.
+    """
+    _add_adult("Emily")
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    assert tools.get_week_menu()["approving_adults"] == ["Emily"]
+
+
+def test_the_name_the_picker_returns_lands_on_the_week(signed_in):
+    """
+    The whole point of asking. Driven over HTTP because the payload and the
+    approve route are two different endpoints and the picker's answer has to
+    survive the round trip between them.
+    """
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    week = _week_start()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+    tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    menu = signed_in.get("/api/week-menu").json()
+    assert menu["approving_adults"] == ["Emily", "Marcus"], "the picker has something to ask"
+
+    res = signed_in.post(f"/api/week/{week}/approve", json={"approved_by": "Marcus"})
+    assert res.status_code == 200
+    assert tools.get_week_menu()["approved_by"] == "Marcus"
+
+
+def test_the_approve_button_reads_the_field_that_is_filled_on_a_draft():
+    """
+    The backend half is useless if the screen still reads the empty list.
+    A source marker rather than a run, because approveWeek is an async DOM
+    handler inside shell.js's IIFE — but the whole bug was one field name,
+    so the field name is the thing worth pinning.
+    """
+    import pathlib
+
+    shell_js = (pathlib.Path(__file__).resolve().parents[1]
+                / "static" / "shell.js").read_text(encoding="utf-8")
+    assert "var people = (data.approving_adults || []);" in shell_js
+    assert "var people = (data.other_adults || []);" not in shell_js
+
+
 def test_adults_are_found_whatever_the_casing_of_age_group():
     """
     age_group is freeform and onboarding writes "Adult", not "adult". The

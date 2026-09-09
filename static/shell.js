@@ -6195,13 +6195,16 @@
     // honest way to name one on the receipt is to ask which one is here —
     // a single tap, and it is also the household's confirm step. One adult
     // (or none) needs no question: approve straight away.
-    var people = (data.other_adults || []);
+    //
+    // `approving_adults`, not `other_adults`: the latter is every adult but
+    // the one who ALREADY approved, so on a draft — the only state this
+    // button exists in — it was always empty and this step never once ran.
+    // See get_week_menu, where both fields are set side by side.
+    var people = (data.approving_adults || []);
     var approvedBy = '';
     if (people.length > 1) {
       approvedBy = await askWhoIsApproving(people);
       if (approvedBy === null) return;
-    } else if (people.length === 1) {
-      approvedBy = people[0];
     }
     await submitWeekApproval(panel, data, approvedBy, false);
   }
