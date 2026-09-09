@@ -56,6 +56,7 @@ row already scoped to one plan):
         "is_new_recipe": False,
         "links_to": "2026-09-02:dinner" | None,
         "ingredients": [{"item": "Bell peppers", "category": "produce"}, ...],
+        "instructions": ["Preheat the oven to 400F...", ...],
     }
 
 context shape (what check_week expects -- distinct from the larger
@@ -88,6 +89,7 @@ import re
 from dataclasses import dataclass
 
 from ..db import get_conn
+from . import recipes as _recipes
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
 
@@ -443,6 +445,58 @@ def _ingredient_repeat(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
+def steps_ingredients_message(result: dict) -> str:
+    """
+    One sentence describing a failed recipes.check_steps_ingredients_
+    consistency result. Shared with agent.fill_in_recipe, which runs the
+    same check on a single recipe at fill time and logs it the same way —
+    two callers, one wording.
+    """
+    parts = []
+    if result.get("missing_from_list"):
+        parts.append(
+            "step(s) use " + ", ".join(result["missing_from_list"]) + ", which isn't on the ingredient list"
+        )
+    if result.get("unused_ingredients"):
+        parts.append(
+            ", ".join(result["unused_ingredients"]) + " never appear(s) in any step"
+        )
+    return "; ".join(parts)
+
+
+def _steps_match_ingredients(entries: list[dict], context: dict) -> list[Violation]:
+    """
+    The method and the ingredient list have to describe the same dish.
+
+    Julia, 2026-09-08: "Recipe generation quality is low. The dishes sound
+    good, but the recipe details are not accurate." A step reaching for
+    cream that nobody bought, or three ingredients on the list that no step
+    ever touches, is that complaint in a form a machine can see — see
+    recipes.check_steps_ingredients_consistency for how conservatively it
+    looks (a known food word in a step is evidence; an unknown one is
+    passed over). "info", not "warn": it is a soft signal about a recipe,
+    not a broken rule about the week, and like everything here it only
+    logs.
+    """
+    violations = []
+    for entry in entries:
+        if not _is_planned(entry) or not entry.get("instructions"):
+            continue
+        result = _recipes.check_steps_ingredients_consistency(
+            entry.get("ingredients") or [], entry.get("instructions") or [],
+        )
+        if result["ok"]:
+            continue
+        violations.append(Violation(
+            rule="steps_match_ingredients",
+            severity="info",
+            date=entry["date"],
+            slot=entry["slot"],
+            message=f"{entry['meal_name']}: {steps_ingredients_message(result)}.",
+        ))
+    return violations
+
+
 def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     """
     Pure rule engine over an already-assembled week. Takes plain dicts
@@ -462,6 +516,7 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _leftover_direction(plan_entries, context)
     violations += _full_plate(plan_entries, context)
     violations += _ingredient_repeat(plan_entries, context)
+    violations += _steps_match_ingredients(plan_entries, context)
     return violations
 
 
@@ -472,7 +527,7 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
         SELECT mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal_name,
                r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked,
-               r.ingredients_json
+               r.ingredients_json, r.instructions_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
@@ -507,6 +562,10 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # list — no data, which _ingredient_repeat treats as nothing to
             # count rather than as a clean week.
             "ingredients": json.loads(r["ingredients_json"] or "[]"),
+            # For _steps_match_ingredients. A freeform meal has no recipe
+            # row and so no steps — nothing to check rather than a clean
+            # recipe, same as its empty ingredient list above.
+            "instructions": json.loads(r["instructions_json"] or "[]"),
         })
     return entries
 

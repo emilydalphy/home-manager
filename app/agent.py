@@ -7,6 +7,7 @@ Agent SDK, since our tool set is small and we want full control over the
 loop for a product we may eventually ship.
 """
 import contextvars
+import copy
 import datetime
 import logging
 import os
@@ -4418,7 +4419,7 @@ _FILL_RECIPE_DETAIL_TOOL = {
         "properties": {
             "instructions": {
                 "type": "array", "items": {"type": "string"},
-                "description": "Ordered, specific cooking steps — enough to actually cook the dish from, not a vague summary.",
+                "description": "Ordered, specific cooking steps — enough to actually cook the dish from, not a vague summary. Each carries its own temperature/heat, time, and doneness cue.",
             },
             "default_servings": {"type": "integer", "description": "What the existing ingredient quantities are written for. Keep the recipe's current value unless it's clearly wrong."},
             "prep_time_minutes": {"type": "integer"},
@@ -4431,6 +4432,61 @@ _FILL_RECIPE_DETAIL_TOOL = {
             },
         },
         "required": ["instructions", "default_servings", "prep_time_minutes", "cook_time_minutes", "advance_prep_notes", "advance_prep_step_indices"],
+    },
+}
+
+
+# Added to the tool above ONLY for a recipe that actually has quantities a
+# cook can't use — the property, its two fields and their descriptions are
+# ~100 input tokens, and a recipe already written in measurements has no
+# reason to pay them. See _fill_recipe_tool.
+_COOKING_QUANTITIES_PROPERTY = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "item": {"type": "string"},
+            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count. Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
+        },
+        "required": ["item", "cook_qty"],
+    },
+    "description": "Only the ingredients the prompt names.",
+}
+
+
+def _fill_recipe_tool(with_quantities: bool) -> dict:
+    """The fill tool, carrying the cooking_quantities property only when
+    this recipe has lines that need one."""
+    if not with_quantities:
+        return _FILL_RECIPE_DETAIL_TOOL
+    tool = copy.deepcopy(_FILL_RECIPE_DETAIL_TOOL)
+    tool["input_schema"]["properties"]["cooking_quantities"] = _COOKING_QUANTITIES_PROPERTY
+    tool["input_schema"]["required"].append("cooking_quantities")
+    return tool
+
+
+# The repair call. One round trip, only the lines that failed, nothing else
+# in it — the instructions from the first call are already good, and asking
+# for them again would pay for them twice.
+_COOK_QTY_REPAIR_TOOL = {
+    "name": "submit_cooking_quantities",
+    "description": "Re-submit just the ingredient amounts that weren't real cooking measurements.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "cooking_quantities": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "item": {"type": "string"},
+                        "cook_qty": {"type": "string", "description": "A measurement: tsp, tbsp, cup, ml, l, g, kg, oz, lb, a count, or a sized can. Never a package word."},
+                    },
+                    "required": ["item", "cook_qty"],
+                },
+            },
+        },
+        "required": ["cooking_quantities"],
     },
 }
 
@@ -4448,6 +4504,21 @@ def generate_recipe_detail_llm(recipe: dict) -> dict:
     call instead.
     """
     client = _client()
+    # Which ingredients actually need a cooking amount is decided here,
+    # deterministically, BEFORE the call — not left to the model to work
+    # out for every line. A recipe whose quantities already measure
+    # something pays nothing for this at all, and the one that reads
+    # "1 bottle olive oil" is asked about exactly those lines. See the
+    # cost note in CLAUDE.md's 2026-09-08 entry.
+    unmeasured = tools.validate_measured_quantities(recipe.get("ingredients") or [])["problems"]
+    quantity_ask = ""
+    if unmeasured:
+        names = ", ".join(f'"{p["item"]}"' for p in unmeasured)
+        quantity_ask = (
+            f"\n- cooking_quantities for {names} — their qty above is a SHOPPING amount (or "
+            "blank), not a cooking one. Give what actually goes IN at default_servings. Never a "
+            "package word.\n"
+        )
     prompt = f"""Recipe (JSON):
 {json.dumps(recipe, indent=2)}
 
@@ -4458,13 +4529,18 @@ advance_prep_notes (leave advance_prep_notes as an empty string if nothing needs
 ahead of time — don't invent advance prep that isn't really needed). Keep default_servings the \
 same as the recipe's current value unless it's obviously wrong for the ingredient quantities.
 
+The household cooks from this, so:
+{quantity_ask}- Every step carries the real detail: heat or oven temperature, how long, and the \
+doneness cue ("until the edges brown, about 4 minutes"). Use every listed ingredient, and \
+nothing that isn't listed.
+
 Call submit_recipe_detail with the result."""
 
     response = _create_with_retry(client,
         label="generate_recipe_detail_llm",
         model=MODEL,
         max_tokens=2048,
-        tools=[_FILL_RECIPE_DETAIL_TOOL],
+        tools=[_fill_recipe_tool(bool(unmeasured))],
         tool_choice={"type": "tool", "name": "submit_recipe_detail"},
         messages=[{"role": "user", "content": prompt}],
         output_config=_effort_config("utility"),
@@ -4475,12 +4551,139 @@ Call submit_recipe_detail with the result."""
     return {}
 
 
+def _quantities_by_item(proposed: list[dict]) -> dict[str, str]:
+    """A model's cooking_quantities list as {normalized item name: qty}."""
+    out = {}
+    for line in proposed or []:
+        item = (line.get("item") or "").strip()
+        qty = (line.get("cook_qty") or "").strip()
+        if item and qty:
+            out[tools.recipes._clean_item(item)] = qty
+    return out
+
+
+def _repair_cooking_quantities_llm(recipe_name: str, servings: int, problems: list[dict]) -> dict[str, str]:
+    """
+    One follow-up call for JUST the ingredient lines that came back
+    unmeasurable — the offending items and why, nothing else. Deliberately
+    not a re-run of the whole fill: the instructions from the first call
+    are fine, and regenerating them would pay for them twice for the sake
+    of two lines. Failure here is not an error; the caller has a
+    deterministic table to fall back on.
+    """
+    lines = "\n".join(
+        f"- {p['item']}: {p['qty'] or '(blank)'} — {_COOK_QTY_PROBLEM_TEXT.get(p['reason'], p['reason'])}"
+        for p in problems
+    )
+    prompt = f"""These ingredient amounts for "{recipe_name}" (written for {servings} people) \
+can't be cooked from:
+
+{lines}
+
+Give each one a real cooking measurement — tsp, tbsp, cup, ml, l, g, kg, oz, lb, a plain count \
+for countable things, or a sized can ("1 can (14 oz)") for a canned good. No package words \
+(bottle, jar, bag, box, pack, carton, tub, container), no blanks.
+
+Call submit_cooking_quantities with one line per item above."""
+    try:
+        response = _create_with_retry(_client(),
+            label="generate_recipe_detail_llm.repair",
+            model=MODEL,
+            max_tokens=512,
+            tools=[_COOK_QTY_REPAIR_TOOL],
+            tool_choice={"type": "tool", "name": "submit_cooking_quantities"},
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_effort_config("utility"),
+        )
+    except Exception:
+        logger.exception("Cooking-quantity repair call failed for %s; using the table instead", recipe_name)
+        return {}
+    for block in response.content:
+        if block.type == "tool_use":
+            return _quantities_by_item((block.input or {}).get("cooking_quantities"))
+    return {}
+
+
+_COOK_QTY_PROBLEM_TEXT = {
+    "package_unit": "that's a package, not an amount anyone can cook with",
+    "unsized_can": "a can with no size on it doesn't say how much",
+    "unmeasured": "not a measurement",
+    "missing": "no amount given at all",
+}
+
+
+def measured_cooking_quantities(recipe: dict, proposed: list[dict], servings: int) -> dict[str, str]:
+    """
+    Turn the model's proposed cooking amounts into ones that are actually
+    measurements — {item name: qty}, one per ingredient, guaranteed to pass
+    recipes.validate_measured_quantities.
+
+    Three tiers, cheapest last resort first in cost order: what the model
+    said, if it validates; ONE repair call for only the lines that didn't
+    (_repair_cooking_quantities_llm); then the deterministic normalisation
+    table (recipes.cooking_quantity), which needs no model at all. The
+    table is what makes this safe to depend on — "1 bottle olive oil"
+    becomes "2 tbsp" with the API unreachable, in a test, every time.
+    """
+    by_item = _quantities_by_item(proposed)
+    ingredients = []
+    for ing in recipe.get("ingredients") or []:
+        item = (ing.get("item") or "").strip()
+        if not item:
+            continue
+        # What the model said for this line; failing that, the recipe's own
+        # quantity where that is already a measurement ("2 lb chicken" needs
+        # no second opinion, and the prompt never asked for one).
+        qty = by_item.get(tools.recipes._clean_item(item), "")
+        if not qty and not tools.recipes._quantity_problem(item, ing.get("qty") or ""):
+            qty = (ing.get("qty") or "").strip()
+        ingredients.append({"item": item, "qty": qty})
+    check = tools.validate_measured_quantities(ingredients)
+    if check["problems"]:
+        logger.info(
+            "Recipe fill for %s came back with %d unmeasurable quantity/quantities (%s); repairing",
+            recipe.get("name"), len(check["problems"]),
+            ", ".join(f"{p['item']}={p['qty'] or 'blank'}" for p in check["problems"]),
+        )
+        repaired = _repair_cooking_quantities_llm(recipe.get("name") or "", servings, check["problems"])
+        for ing in ingredients:
+            key = tools.recipes._clean_item(ing["item"])
+            if key in repaired:
+                ing["qty"] = repaired[key]
+        # Whatever is still wrong after the one repair falls to the table,
+        # including anything the repair call itself answered with another
+        # package word.
+        shopping = {
+            tools.recipes._clean_item(i.get("item") or ""): (i.get("qty") or "")
+            for i in recipe.get("ingredients") or []
+        }
+        for problem in tools.validate_measured_quantities(ingredients)["problems"]:
+            fallback = tools.cooking_quantity(
+                problem["item"], servings=servings,
+                shopping_qty=shopping.get(tools.recipes._clean_item(problem["item"]), ""),
+            )
+            if not fallback:
+                continue
+            for ing in ingredients:
+                if ing["item"] == problem["item"]:
+                    ing["qty"] = fallback
+    return {ing["item"]: ing["qty"] for ing in ingredients if ing["qty"]}
+
+
 def fill_in_recipe(recipe_name: str) -> dict:
     """
     Generate and save a full step-by-step for a recipe that's missing one —
     used by the Cooker view's "Fill in this recipe" button. Idempotent: if
     the recipe already has instructions by the time this runs, just returns
     it as-is rather than overwriting.
+
+    Also saves the COOKING amounts the fill came back with (validated, see
+    measured_cooking_quantities) alongside the recipe's shopping ones, so
+    the Cook screen shows "2 tbsp olive oil" where the grocery list still
+    says "1 bottle" — Julia, 2026-09-08. And logs the steps-vs-ingredients
+    consistency check: a step reaching for something nobody bought is the
+    other half of "the recipe details are not accurate", and log-only is
+    all it does, exactly like plan_quality.
     """
     recipe = tools.get_recipe(recipe_name)
     if recipe["instructions"]:
@@ -4488,6 +4691,24 @@ def fill_in_recipe(recipe_name: str) -> dict:
     detail = generate_recipe_detail_llm(recipe)
     if not detail.get("instructions"):
         raise ValueError("Couldn't generate instructions for this recipe — try again.")
+    servings = detail.get("default_servings") or recipe.get("default_servings") or 4
+    try:
+        measured = measured_cooking_quantities(recipe, detail.get("cooking_quantities"), servings)
+        if measured:
+            tools.save_cooking_quantities(recipe_name, measured)
+    except Exception:
+        logger.exception("Saving cooking quantities for %s failed; the recipe itself is unaffected", recipe_name)
+    try:
+        consistency = tools.check_steps_ingredients_consistency(
+            recipe.get("ingredients") or [], detail.get("instructions") or [],
+        )
+        if not consistency["ok"]:
+            logger.warning(
+                "Recipe %s quality [steps_match_ingredients/info]: %s",
+                recipe_name, plan_quality.steps_ingredients_message(consistency),
+            )
+    except Exception:
+        logger.exception("Recipe consistency check failed for %s", recipe_name)
     return tools.update_recipe_details(
         recipe_name,
         instructions=detail.get("instructions"),

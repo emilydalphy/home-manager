@@ -279,6 +279,9 @@ from .recipes import (  # noqa: F401
     _maybe_auto_attribute_solo_night,
     add_recipe,
     attribute_recipe_feedback,
+    check_steps_ingredients_consistency,
+    cooking_ingredients,
+    cooking_quantity,
     flag_recipe_temporary,
     get_member_taste,
     get_recipe,
@@ -287,8 +290,10 @@ from .recipes import (  # noqa: F401
     log_cooking_deviation,
     log_recipe_note,
     mark_recipe_feedback,
+    save_cooking_quantities,
     scale_recipe,
     update_recipe_details,
+    validate_measured_quantities,
 )
 from .reset import (  # noqa: F401
     clear_weekly_plan,
