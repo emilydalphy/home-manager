@@ -2216,7 +2216,11 @@ document.getElementById('reveal-done-btn').onclick = () => {
 // buildWeekPanel the same way ?firstplan=1 already is: land on the week,
 // then open the ask sheet with a prefill instead of a toast, and scrub
 // the param so a refresh doesn't reopen it.
-document.getElementById('reveal-iterate-btn').onclick = () => { window.location.href = '/week?tweak=1'; };
+document.getElementById('reveal-iterate-btn').onclick = () => {
+  // Same week the receipt points at: a "next week" first plan must not land
+  // the tweak on an empty current week.
+  window.location.href = '/week?tweak=1' + (firstPlanWeekStart ? '&drafted=' + encodeURIComponent(firstPlanWeekStart) : '');
+};
 // The failed-generation pair: "Try again" just re-runs the exact same
 // generation call (same answers, same code path a success would have
 // taken); "Take me in anyway" is deliberately plain '/week', not
