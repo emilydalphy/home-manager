@@ -314,6 +314,58 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-08 — Onboarding, second pass: Julia's beta feedback, and the
+  "asked for next week, planned this week" bug. Branch
+  `onboarding-copy-v2`.** Julia is the first beta tester to go through
+  onboarding cold. **Copy** (Emily's exact strings): the plan-ready day is
+  "When do you want the meal plan for the week ready?", prep days opens
+  "Do you like meal prepping?", restrictions is "Dietary preferences or
+  restrictions", won't-eat is "Anything I should never recommend?", and
+  the counts step asks per meal type ("How many different breakfasts do
+  you want?", ×3) instead of one generic "How many different recipes a
+  week?". The typical-week step lost its why-panel, its five-bullet
+  "worth mentioning" list and its second explanatory paragraph — one line,
+  one short example. **Chips before typing**: eating-style and won't-eat
+  were bare text boxes and now lead with presets, keeping the box as an
+  optional "Anything else?". **A household of exactly one adult** is no
+  longer asked which meals it eats together or who cooks — two questions
+  with one possible answer each. Both are filled in (`most_meals`,
+  `one_person` + that person) and saved through the ordinary path, so What
+  we know reads them back as answers, which is what they are; a second
+  person of any age group makes both questions real again and clears them.
+  **Snacks are per DAY** now (chips 0/1/2/3, default 2): new
+  `meal_preferences.snacks_per_day` + `snacks_per_day_set`, its own
+  answered-flag for the same reason `snacks_per_week_set` exists (both
+  columns are NOT NULL DEFAULT). `snacks_per_week` is still written
+  alongside it and still means DISTINCT snack recipes, so the conversion is
+  **capped at 7** (`preferences.snacks_per_week_from_per_day`) rather than
+  the literal ×7 — that column is documented and validated 0-7 in five
+  places and writing 14 into it would make every one of those readers
+  wrong, not keep them in step. The precise answer is `snacks_per_day`,
+  which is what the planner reads. **The reveal** shows nothing
+  menu-shaped until the first real day arrives: `#reveal-days` ships empty
+  AND `hidden` (with its own `[hidden]` rule, since `display:flex` beats
+  the attribute), and the title only says "Here's your sample week" once
+  there is one — until then it is the hero plus the shared waiting lines.
+  **The next-week bug, root-caused:** onboarding never asked which week
+  the first plan was for. Its own copy had been talking about the week
+  ahead for two steps running ("your week starts the next morning";
+  "anything already on the calendar?") while both first-plan endpoints
+  computed the current calendar week from `today.weekday()` and ignored
+  the household's `planning_anchor` entirely — and the STREAMING one (the
+  route the reveal actually calls) also had none of the part-week or
+  Sunday fold-forward logic its plain twin's docstring spends four
+  paragraphs describing, so a Wednesday household's reveal showed Monday
+  and Tuesday. Both now go through one `main._first_plan_window`, which
+  takes the period from `tools.suggest_planning_period` (i.e. from the
+  plan-ready day the household just gave) and shifts it forward one whole
+  period when they picked "Next week" on the new start chips. Expressed as
+  `period_start` rather than `skip_days` — the two are the same statement
+  and only `period_start` can travel through `_stream_week_generation`. A
+  household that never answered the anchor gets 'sunday' from that
+  function, i.e. the Monday week, so nothing changes for them and every
+  existing week-key/part-week test is untouched. `tests/
+  test_onboarding_copy_v2.py` is the guard, 34 tests; 1551 total.
 - **2026-09-08 — "The chat said it changed a snack and it didn't change it
   in the meal plan" was the SCREEN, not the swap. Branch
   `snack-swap-applies`.** Julia, first beta tester. Root cause:

@@ -305,6 +305,20 @@ _MIGRATIONS = [
     # "never answered"; see schema.sql's comment and
     # preferences.set_household_meal_preferences, the only writer.
     ("meal_preferences", "snacks_per_week_set", "INTEGER NOT NULL DEFAULT 0"),
+    # How many snacks a day (Julia, first beta tester, 2026-09-08) — the
+    # question onboarding asks now, and a different quantity from
+    # snacks_per_week above, which counts DISTINCT snack recipes. Existing
+    # households get the default 2 without being asked, exactly like
+    # snacks_per_week's own default 3, and snacks_per_week_set stays the
+    # one flag saying whether the household ever answered the snacks
+    # question at all. See schema.sql's comment on the column.
+    ("meal_preferences", "snacks_per_day", "INTEGER NOT NULL DEFAULT 2"),
+    # ...and whether THAT number is an answer, same reason and same shape
+    # as snacks_per_week_set above. No backfill: every existing household
+    # answered the per-week question if they answered anything at all, and
+    # inventing a per-day answer for them from a per-week number would be
+    # the exact "print a default back as a fact" bug this pair prevents.
+    ("meal_preferences", "snacks_per_day_set", "INTEGER NOT NULL DEFAULT 0"),
     # Loop Board 19a (Emily, 2026-09-05): stores are asked just-in-time on
     # the Grocery tab's first real trip, not during onboarding — see the
     # Plan stops "Where do you usually shop?" card in shell.js. Empty means

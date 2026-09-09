@@ -93,11 +93,11 @@
     color: var(--text-muted); cursor: pointer;
   }
   .skip-link:hover { color: var(--ink-strong); }
-  /* Plain "worth mentioning" list under the normal-week textarea — a prompt,
-     not a set of tappable chips (Emily, 2026-09-05). */
-  .typical-week-hint-label { font-family: var(--font-body); font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 12px 0 4px; }
-  ul.typical-week-hints { margin: 0 0 6px; padding-left: 1.1rem; }
-  ul.typical-week-hints li { font-family: var(--font-body); font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); margin-bottom: 2px; }
+  /* The "worth mentioning" prompt list under the normal-week textarea was
+     dropped 2026-09-08 (Julia, first beta tester): the step had far too
+     many words, and a five-bullet list of things to type is the opposite
+     of "less typing, more tapping". One short line and one short example
+     placeholder is the whole step now. */
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 16px;
@@ -238,6 +238,9 @@
   }
   @keyframes reveal-spin { to { transform: rotate(360deg); } }
   .reveal-days { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  /* Same guard pair .reveal-status carries: a flex container needs its own
+     [hidden] rule or display:flex wins and the empty box keeps its margin. */
+  .reveal-days[hidden] { display: none; }
   .reveal-day {
     background: var(--surface);
     border: 1.5px solid var(--hairline);
@@ -416,12 +419,19 @@
     <div id="rhythm-lunch-people"></div>
   </div>
 
-  <div class="rhythm-card">
+  <!-- Both of these cards are HIDDEN for a household of exactly one adult
+       (Julia, 2026-09-08): asking a person living alone which meals they
+       eat together, and then who does the cooking, is asking them to
+       answer a question that has only one answer. buildRhythmStep1 fills
+       in that answer instead — all meals together, that person cooks —
+       and What we know reads it back like any other given answer, because
+       it IS the answer, not a guess we're hiding. -->
+  <div class="rhythm-card" id="rhythm-meals-together-card">
     <h2>Which meals do you usually eat together?</h2>
     <div class="rhythm-chip-row" id="rhythm-meals-together-chips"></div>
   </div>
 
-  <div class="rhythm-card">
+  <div class="rhythm-card" id="rhythm-cooking-card">
     <h2>Who does the cooking?</h2>
     <div class="rhythm-chip-row" id="rhythm-cooking-role-chips"></div>
     <div id="rhythm-cooking-who-wrap" style="display:none">
@@ -445,10 +455,12 @@
     <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
   </div>
 
+  <!-- Reworded 2026-09-08 (Julia; Emily's exact wording). "Your weekly
+       plan" made people ask which plan — this names the thing. -->
   <div class="rhythm-card">
-    <h2>When should your weekly plan be ready?</h2>
+    <h2>When do you want the meal plan for the week ready?</h2>
     <div class="rhythm-chip-row" id="rhythm-planning-anchor-chips"></div>
-    <p class="rhythm-helper">I'll have the plan and the list ready that day; your week starts the next morning. As we go means I plan a few days at a time.</p>
+    <p class="rhythm-helper">Plan and list ready that day; your week starts the next morning. As we go means a few days at a time.</p>
   </div>
 
   <div class="rhythm-card">
@@ -462,7 +474,7 @@
        unlike the six locked questions above it — a household that doesn't
        prep ahead has answered nothing wrong, so this never blocks the CTA. -->
   <div class="rhythm-card">
-    <h2>Do you like to prep ahead?</h2>
+    <h2>Do you like meal prepping?</h2>
     <p class="rhythm-helper" style="margin-bottom:8px">Which days, and roughly how long? Up to two &mdash; skip it if that isn&rsquo;t how your week runs.</p>
     <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
     <div id="rhythm-prep-minutes-wrap" style="display:none">
@@ -477,30 +489,38 @@
 
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
-  <h1>Anyone I cook carefully around?</h1>
-  <p class="subtitle">Allergies, restrictions, or approaches I'll always follow — and who they're for.</p>
+  <h1>Dietary preferences or restrictions</h1>
+  <p class="subtitle">Anything I should always follow, and who it's for.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
   <span class="back-link" data-back="rhythm-2">&larr; Back</span>
 </div>
 
-<!-- Q4: eating style -->
+<!-- Q4: eating style. Chips first, typing optional (Julia, 2026-09-08:
+     "less typing, more clicking of preset options"). This used to be a
+     bare textarea, which is the most typing an optional question can
+     possibly ask for. -->
 <div id="step-eating-style" style="display:none">
   <h1>Is there a certain way you'd like meals to lean?</h1>
-  <p class="subtitle">Keto, low-carb, high-protein, high-fiber — whatever fits, in your own words. Totally optional.</p>
-  <textarea id="eating-style" rows="4" placeholder="e.g. high-protein, low-carb"></textarea>
+  <p class="subtitle">Tap what fits. Skip it if nothing does.</p>
+  <div class="chip-row" id="eating-style-chips"></div>
+  <label class="field-label" for="eating-style">Anything else?</label>
+  <textarea id="eating-style" rows="2" placeholder="In your own words — optional."></textarea>
   <div><button class="next-btn" id="eating-style-next" type="button">Continue</button></div>
   <span class="back-link" data-back="restrictions">&larr; Back</span>
 </div>
 
-<!-- Q5: won't eat -->
+<!-- Q5: won't eat. Same change as the step above — the presets are the
+     answer most households give, and the box is for the one they don't. -->
 <div id="step-wont-eat" style="display:none">
-  <h1>Anything the house just won't eat, no matter what?</h1>
+  <h1>Anything I should never recommend?</h1>
   <p class="subtitle">I'll steer clear of it completely.</p>
-  <div class="chip-row" id="wont-eat-chips"></div>
-  <div class="row" style="margin-top:10px">
-    <input type="text" id="wont-eat-input" placeholder="Type something and press Enter" />
+  <div class="chip-row" id="wont-eat-presets"></div>
+  <label class="field-label" for="wont-eat-input">Anything else?</label>
+  <div class="row">
+    <input type="text" id="wont-eat-input" placeholder="Type it and press Enter" />
   </div>
+  <div class="chip-row" id="wont-eat-chips"></div>
   <div><button class="next-btn" id="wont-eat-next" type="button">Continue</button></div>
   <span class="back-link" data-back="eating-style">&larr; Back</span>
 </div>
@@ -510,69 +530,67 @@
   <h1>What are you excited to eat more of lately?</h1>
   <p class="subtitle">Cuisines, styles, anything sounding good right now.</p>
   <div class="chip-row" id="excited-chips"></div>
-  <div class="row" style="margin-top:10px">
-    <input type="text" id="excited-custom" placeholder="Something not listed? Type it and press Enter" />
+  <label class="field-label" for="excited-custom">Anything else?</label>
+  <div class="row">
+    <input type="text" id="excited-custom" placeholder="Type it and press Enter" />
   </div>
   <div><button class="next-btn" id="excited-next" type="button">Continue</button></div>
   <span class="back-link" data-back="wont-eat">&larr; Back</span>
 </div>
 
 <!-- Q7: meals per week -->
+<!-- One generic heading ("How many different recipes a week?") was doing
+     the work of three questions and none of them clearly — Julia,
+     2026-09-08. Each meal type asks for itself now, in Emily's exact
+     wording, and the snacks question is a different question entirely:
+     per DAY, on chips, not a per-week stepper. See SNACKS_PER_DAY_OPTIONS. -->
 <div id="step-dinners" style="display:none">
   <h1>How many different recipes a week?</h1>
-  <p class="subtitle">Pick how many breakfasts, lunches and dinners you'll actually cook. I'll fill the rest of the week with those — leftovers included — unless you tell me you're away.</p>
-  <p class="stepper-hint" style="margin-top:0">Breakfasts</p>
+  <p class="subtitle">I'll fill the rest of the week from these — leftovers included.</p>
+  <p class="stepper-hint" style="margin-top:0">How many different breakfasts do you want?</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="breakfasts-minus" aria-label="Fewer">&minus;</button>
     <span class="stepper-value-group"><span class="stepper-value" id="breakfasts-value">7</span><span class="stepper-unit">recipes</span></span>
     <button class="stepper-btn" type="button" id="breakfasts-plus" aria-label="More">+</button>
   </div>
-  <p class="stepper-hint">Lunches</p>
+  <p class="stepper-hint">How many different lunches do you want?</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="lunches-minus" aria-label="Fewer">&minus;</button>
     <span class="stepper-value-group"><span class="stepper-value" id="lunches-value">7</span><span class="stepper-unit">recipes</span></span>
     <button class="stepper-btn" type="button" id="lunches-plus" aria-label="More">+</button>
   </div>
-  <p class="stepper-hint">Dinners</p>
+  <p class="stepper-hint">How many different dinners do you want?</p>
   <div class="stepper">
     <button class="stepper-btn" type="button" id="dinners-minus" aria-label="Fewer">&minus;</button>
     <span class="stepper-value-group"><span class="stepper-value" id="dinners-value">5</span><span class="stepper-unit">recipes</span></span>
     <button class="stepper-btn" type="button" id="dinners-plus" aria-label="More">+</button>
   </div>
-  <p class="stepper-hint">Snacks &amp; desserts</p>
-  <div class="stepper">
-    <button class="stepper-btn" type="button" id="snacks-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value-group"><span class="stepper-value" id="snacks-value">3</span><span class="stepper-unit">recipes</span></span>
-    <button class="stepper-btn" type="button" id="snacks-plus" aria-label="More">+</button>
-  </div>
+  <p class="stepper-hint">How many snacks a day?</p>
+  <div class="chip-row" id="snacks-per-day-chips"></div>
   <div><button class="next-btn" id="dinners-next" type="button">Continue</button></div>
   <span class="back-link" data-back="excited-about">&larr; Back</span>
 </div>
 
 <!-- Step A: a normal week (design_handoff_plan_the_week §8).
-     The single highest-value thing a household can tell the app, and it was
-     not being asked at all. Both fields are free text and both are
-     skippable — a plain "worth mentioning" list points at what to include
-     rather than leaving a blank page (Emily, 2026-09-05: the old chips only
-     pasted canned sentences, which didn't earn their place). -->
+     Cut to one line 2026-09-08 (Julia): the why-panel, the five-bullet
+     "worth mentioning" list and the second explanatory paragraph were
+     three blocks of prose asking for two paragraphs of typing on a
+     skippable step. One line, one short example, one tap for when to
+     start. Everything the bullets prompted for is still welcome in the
+     box; it just isn't a checklist any more.
+
+     The start chips are the fix for "asked for next week, it planned this
+     week" — the box below them says "next week" and always did, while
+     both first-plan endpoints hardcoded the current calendar week. It is
+     asked here rather than inferred, because a household who onboards on
+     a Thursday genuinely might mean either one. -->
 <div id="step-typical-week" style="display:none">
   <h1>What does a normal week look like at yours?</h1>
-  <div class="why-panel">
-    <b>Why I&rsquo;m asking:</b> the more I know about how your week runs, the more this plan
-    will feel like yours. It&rsquo;ll get sharper as you correct me.
-  </div>
-  <label class="field-label" for="typical-week">A normal week at yours</label>
-  <textarea id="typical-week" rows="4" placeholder="Tuesdays we're both home early so dinner's around 5:30. Fridays are usually takeout. One of us travels most other weeks."></textarea>
-  <p class="typical-week-hint-label">Worth mentioning:</p>
-  <ul class="typical-week-hints">
-    <li>Who&rsquo;s home for which meals, and when work runs late</li>
-    <li>Nights you eat out</li>
-    <li>How breakfast and lunch actually happen</li>
-    <li>Anything you always cook or never will</li>
-    <li>When you like to prep ahead</li>
-  </ul>
-  <label class="field-label" for="next-week-notes">Next week specifically</label>
-  <p class="subtitle" style="margin:0 0 6px">Anything already on the calendar? I&rsquo;ll build your very first week around it rather than guessing.</p>
+  <p class="subtitle">The more I know, the more the plan feels like yours.</p>
+  <textarea id="typical-week" rows="3" placeholder="Fridays are usually takeout."></textarea>
+  <label class="field-label">When should your first plan start?</label>
+  <div class="rhythm-chip-row" id="first-plan-start-chips"></div>
+  <label class="field-label" for="next-week-notes">Anything already on the calendar?</label>
   <textarea id="next-week-notes" rows="2" placeholder="My parents are here Thursday to Sunday."></textarea>
   <div><button class="next-btn" id="typical-week-next" type="button">Continue</button></div>
   <span class="skip-link" id="typical-week-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
@@ -607,8 +625,13 @@
      throughout — see the .reveal-* rules below. -->
 <div id="step-reveal" style="display:none">
   <div class="reveal-hero">
+    <!-- The title claims a sample week only once one exists. Until the
+         first real day lands, the screen says what is actually happening
+         (Julia, 2026-09-08: "never show a blank sample menu while it's
+         loading"). REVEAL_TITLE_WAITING / REVEAL_TITLE_READY below are the
+         two strings, and generateFirstPlanAndReveal owns the swap. -->
     <p class="reveal-eyebrow">First sample week</p>
-    <h1 class="reveal-title" id="reveal-title">Here's your sample week.</h1>
+    <h1 class="reveal-title" id="reveal-title">Cooking up your first week&hellip;</h1>
     <p class="reveal-accent" id="reveal-accent">Putting together a real week from what you just told me&hellip;</p>
   </div>
   <div class="reveal-status" id="reveal-status">
@@ -619,7 +642,11 @@
          somehow didn't load. -->
     <span class="waiting-line" id="reveal-status-text">Drafting your week&hellip;</span>
   </div>
-  <div id="reveal-days" class="reveal-days"></div>
+  <!-- Empty AND hidden until the first real day arrives: an empty
+       .reveal-days still contributes its 14px gap and its own shape to the
+       screen, which is the blank menu Julia saw. revealShowDays() is the
+       one place that unhides it. -->
+  <div id="reveal-days" class="reveal-days" hidden></div>
   <div id="invite-section"></div>
   <div class="reveal-actions" id="reveal-actions" style="display:none">
     <button class="btn-primary reveal-primary-btn" id="reveal-done-btn" type="button">Looks good — take me in</button>
@@ -671,6 +698,19 @@
 // buildRestrictionsStep/currentRestrictions below. Replaces the old single
 // "Nut allergy" preset, which could only ever mean one specific allergen.
 const DIET_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free', 'Allergy', 'Other', 'None'];
+// Julia, 2026-09-08: "less typing, more clicking of preset options; typing
+// is optional for extra detail, never mandatory." These two lists are what
+// the eating-style and never-recommend steps offer before their (still
+// optional) "Anything else?" box. Deliberately short — a preset nobody
+// taps costs a scan, and both steps keep the free-text escape hatch.
+const EATING_STYLE_OPTIONS = [
+  'High-protein', 'Low-carb', 'Keto', 'High-fibre',
+  'Mediterranean', 'Plant-forward', 'Whole foods', 'Budget-friendly',
+];
+const NEVER_RECOMMEND_OPTIONS = [
+  'Mushrooms', 'Olives', 'Seafood', 'Shellfish', 'Liver / offal',
+  'Blue cheese', 'Beetroot', 'Very spicy food', 'Tofu',
+];
 // Loop Board: "Break broad cuisine options into specific ones" (2026-09-03).
 // The old list (Italian, Mexican, Asian, Mediterranean, American, Indian) was
 // too broad to power real recommendations — "Asian" and "Mediterranean" each
@@ -1007,6 +1047,44 @@ function renderCookingRoleChips() {
   });
 }
 
+// A household of exactly one adult and nobody else (Julia, 2026-09-08).
+// "Which meals do you usually eat together?" and "Who does the cooking?"
+// each have exactly one possible answer for a person living alone, and
+// asking a question whose answer you already know is the tax this whole
+// pass exists to cut. A second person of ANY age group — including a
+// toddler, who eats with them — makes both questions real again.
+function isSoloAdultHousehold() {
+  const members = currentMembers();
+  return members.length === 1 && members[0].age_group === 'adult';
+}
+// Set when the two answers below were filled in FOR the household rather
+// than BY them, so going back and adding someone clears them again instead
+// of shipping a default nobody ever saw.
+let rhythmSoloDefaultsApplied = false;
+// 'most_meals' is the closest thing MEALS_TOGETHER_OPTIONS has to "all of
+// them", and a household of one takes every meal with itself. The cook is
+// that same person, by the same arithmetic. Both are written through the
+// ordinary save path, so What we know reads them back as given answers —
+// which is what they are, not a guess the app is hiding.
+function applySoloAdultDefaults() {
+  const solo = isSoloAdultHousehold();
+  const togetherCard = document.getElementById('rhythm-meals-together-card');
+  const cookingCard = document.getElementById('rhythm-cooking-card');
+  if (solo) {
+    rhythmMealsTogether = 'most_meals';
+    rhythmCookingRole = 'one_person';
+    rhythmCookingWho = currentMembers()[0].name;
+    rhythmSoloDefaultsApplied = true;
+  } else if (rhythmSoloDefaultsApplied) {
+    rhythmMealsTogether = '';
+    rhythmCookingRole = '';
+    rhythmCookingWho = '';
+    rhythmSoloDefaultsApplied = false;
+  }
+  if (togetherCard) togetherCard.style.display = solo ? 'none' : '';
+  if (cookingCard) cookingCard.style.display = solo ? 'none' : '';
+}
+
 function rhythm1Complete() {
   const members = currentMembers();
   if (!members.length) return false;
@@ -1026,6 +1104,8 @@ function updateRhythm1ContinueState() {
   document.getElementById('rhythm-1-next').disabled = !rhythm1Complete();
 }
 function buildRhythmStep1() {
+  // Before the chip renders below, so they draw the filled-in answers.
+  applySoloAdultDefaults();
   renderLunchPeople();
   renderMealsTogetherChips();
   renderCookingRoleChips();
@@ -1202,8 +1282,38 @@ function currentRestrictions() {
   return out;
 }
 
-// ---------- Q5: won't eat (chip-add list) ----------
+// ---------- Q4: eating style (presets + optional box) ----------
+// Multi-select presets joined with the typed line, so "High-protein" and
+// "no red meat on weeknights" arrive as one eating_style string — the
+// column is one freeform value and always has been.
+let eatingStyleBuilt = false;
+function buildEatingStyleStep() {
+  if (eatingStyleBuilt) return;
+  chipWithCustom(document.getElementById('eating-style-chips'), EATING_STYLE_OPTIONS, true);
+  eatingStyleBuilt = true;
+}
+function currentEatingStyle() {
+  const chips = getActiveChips(document.getElementById('eating-style-chips'));
+  const typed = document.getElementById('eating-style').value.trim();
+  return chips.concat(typed ? [typed] : []).join(', ');
+}
+
+// ---------- Q5: won't eat (presets + chip-add list) ----------
 const wontEatItems = [];
+// The presets are their own multi-select row, separate from the removable
+// chips below: a tapped preset and a typed food are the same answer, and
+// currentWontEat() is the one place that joins them.
+let wontEatPresetsBuilt = false;
+function buildWontEatStep() {
+  if (wontEatPresetsBuilt) return;
+  chipWithCustom(document.getElementById('wont-eat-presets'), NEVER_RECOMMEND_OPTIONS, true);
+  wontEatPresetsBuilt = true;
+}
+function currentWontEat() {
+  const presets = getActiveChips(document.getElementById('wont-eat-presets'));
+  const seen = new Set(presets.map(p => p.toLowerCase()));
+  return presets.concat(wontEatItems.filter(i => !seen.has(i.toLowerCase())));
+}
 function renderWontEatChips() {
   const container = document.getElementById('wont-eat-chips');
   container.innerHTML = wontEatItems.map((item, i) => `
@@ -1260,15 +1370,29 @@ function commitExcitedCustom() {
 let dinnersPerWeek = 5;
 let breakfastsPerWeek = 7;
 let lunchesPerWeek = 7;
-// Default 3, not 7 like the other three — Emily's explicit call (Loop
-// Board "Onboarding / meal setup: add a Snacks & desserts count",
-// 2026-09-05): 7 was only ever an implicit default for snacks, never
-// actually asked, and 3 is the more honest starting point.
-let snacksPerWeek = 3;
+// Snacks are asked PER DAY now, on chips, default 2 (Julia, 2026-09-08).
+// "How many different snacks a week" was asking for a number nobody thinks
+// in — a household knows it has a mid-morning and a mid-afternoon snack,
+// not that it rotates three snack recipes. snacks_per_day is the new
+// stored fact (meal_preferences.snacks_per_day) and the planner reads it;
+// snacks_per_week is still written alongside it so nothing downstream
+// changes shape — see saveOnboardingAnswers.
+const SNACKS_PER_DAY_OPTIONS = [
+  { key: 0, label: 'None' },
+  { key: 1, label: '1' },
+  { key: 2, label: '2' },
+  { key: 3, label: '3' },
+];
+let snacksPerDay = 2;
+function renderSnacksPerDayChips() {
+  buildSingleSelectChips(
+    document.getElementById('snacks-per-day-chips'), SNACKS_PER_DAY_OPTIONS, snacksPerDay,
+    (key) => { snacksPerDay = key; renderSnacksPerDayChips(); }
+  );
+}
 function renderDinnersValue() { document.getElementById('dinners-value').textContent = dinnersPerWeek; }
 function renderBreakfastsValue() { document.getElementById('breakfasts-value').textContent = breakfastsPerWeek; }
 function renderLunchesValue() { document.getElementById('lunches-value').textContent = lunchesPerWeek; }
-function renderSnacksValue() { document.getElementById('snacks-value').textContent = snacksPerWeek; }
 // Floor of 0, not 1, on all four: "none, thanks" is a real answer, and
 // above zero these are counts of DISTINCT meals spread across the week
 // rather than a number of days to plan (see the setup screen's copy).
@@ -1296,22 +1420,32 @@ document.getElementById('lunches-plus').addEventListener('click', () => {
   lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
   renderLunchesValue();
 });
-document.getElementById('snacks-minus').addEventListener('click', () => {
-  snacksPerWeek = Math.max(0, snacksPerWeek - 1);
-  renderSnacksValue();
-});
-document.getElementById('snacks-plus').addEventListener('click', () => {
-  snacksPerWeek = Math.min(7, snacksPerWeek + 1);
-  renderSnacksValue();
-});
 renderDinnersValue();
 renderBreakfastsValue();
 renderLunchesValue();
-renderSnacksValue();
+renderSnacksPerDayChips();
 
 // ---------- Step A: a normal week ----------
-// The "worth mentioning" prompts are a plain static list in the markup now
-// (Emily, 2026-09-05) — no chips to build, nothing to wire up here.
+// The "worth mentioning" prompt list is gone (Julia, 2026-09-08 — the step
+// had far too many words). What is left to wire up is the start choice.
+//
+// "Asked for next week, it planned this week": onboarding's own copy has
+// always talked about the week AHEAD ("your week starts the next morning",
+// "anything already on the calendar?") while both first-plan endpoints
+// hardcoded the current calendar week. This is the question that was
+// missing, and it is a question rather than an inference because a
+// household onboarding on a Thursday can honestly mean either.
+const FIRST_PLAN_START_OPTIONS = [
+  { key: 'this_week', label: 'This week' },
+  { key: 'next_week', label: 'Next week' },
+];
+let firstPlanStart = 'this_week';
+function renderFirstPlanStartChips() {
+  buildSingleSelectChips(
+    document.getElementById('first-plan-start-chips'), FIRST_PLAN_START_OPTIONS, firstPlanStart,
+    (key) => { firstPlanStart = key; renderFirstPlanStartChips(); }
+  );
+}
 
 // ---------- Step B: kit ----------
 const KIT_OPTIONS = [
@@ -1368,13 +1502,17 @@ async function saveOnboardingAnswers() {
   const body = {
     member_names: currentMembers().map(m => m.name),
     household_restrictions: currentRestrictions(),
-    eating_style: document.getElementById('eating-style').value.trim(),
-    wont_eat: wontEatItems,
+    eating_style: currentEatingStyle(),
+    wont_eat: currentWontEat(),
     excited_about: getActiveChips(document.getElementById('excited-chips')),
     dinners_per_week: dinnersPerWeek,
     breakfasts_per_week: breakfastsPerWeek,
     lunches_per_week: lunchesPerWeek,
-    snacks_per_week: snacksPerWeek,
+    // The new fact. The route derives snacks_per_week from it (capped at
+    // the column's documented 0-7 "distinct meals" range) and marks the
+    // snacks question answered, so every existing reader keeps working
+    // while the planner reads snacks_per_day.
+    snacks_per_day: snacksPerDay,
   };
   const res = await fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -1442,12 +1580,33 @@ function revealDayCardHtml(day) {
   </div>`;
 }
 
+// Nothing menu-shaped is on screen until this runs (Julia, 2026-09-08).
+// While the plan is generating, the reveal is a hero, a waiting line and
+// nothing else — an empty day list reads as a sample menu with no food in
+// it, which is a worse first impression than an honest wait. The title
+// stops saying "here's your sample week" until there is one, too.
+const REVEAL_TITLE_WAITING = 'Cooking up your first week…';
+const REVEAL_TITLE_READY = "Here's your sample week.";
+function revealShowDays() {
+  const daysDiv = document.getElementById('reveal-days');
+  if (!daysDiv.hidden) return;
+  daysDiv.hidden = false;
+  document.getElementById('reveal-title').textContent = REVEAL_TITLE_READY;
+}
+
 function renderRevealDays(meals) {
   const daysDiv = document.getElementById('reveal-days');
   if (!meals.length) {
+    // A finished generation that produced nothing: the box is shown,
+    // because this sentence is the answer and hiding it would leave the
+    // screen claiming a week that never arrived. The title stops saying
+    // it is still working, without claiming a sample week either.
+    daysDiv.hidden = false;
+    document.getElementById('reveal-title').textContent = 'Your first week';
     daysDiv.innerHTML = '<p style="color:var(--ink-secondary);font-size:0.9rem">No meals generated yet — you can ask for a weekly plan any time in chat.</p>';
     return;
   }
+  revealShowDays();
   daysDiv.innerHTML = groupRevealMealsByDay(meals).map(revealDayCardHtml).join('');
 }
 
@@ -1461,6 +1620,8 @@ function upsertRevealDay(m) {
   if (!m || !m.date || !m.slot) return;
   if (!revealStreamDays.has(m.date)) revealStreamDays.set(m.date, { date: m.date, slots: {} });
   revealStreamDays.get(m.date).slots[m.slot] = m;
+  // The first real day is what turns the waiting screen into a menu.
+  revealShowDays();
   const ordered = Array.from(revealStreamDays.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
   document.getElementById('reveal-days').innerHTML = ordered.map(revealDayCardHtml).join('');
 }
@@ -1548,7 +1709,13 @@ async function renderInviteOffer(memberNames) {
 // only ever claims what the stream says is happening.
 async function streamFirstPlan(waiter) {
   revealStreamDays.clear();
-  const res = await fetch('/api/onboarding/generate-first-plan/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  const res = await fetch('/api/onboarding/generate-first-plan/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // The step-A answer, not a guess: the endpoint files the plan for the
+    // household's NEXT period when this says so.
+    body: JSON.stringify({ start: firstPlanStart }),
+  });
   if (!res.ok || !res.body) throw new Error('Could not generate plan');
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -1612,11 +1779,15 @@ async function generateFirstPlanAndReveal(answers) {
   const actions = document.getElementById('reveal-actions');
   const errorActions = document.getElementById('reveal-error-actions');
   const daysDiv = document.getElementById('reveal-days');
+  document.getElementById('reveal-title').textContent = REVEAL_TITLE_WAITING;
   accent.textContent = 'Putting together a real week from what you just told me…';
   status.hidden = false;
   actions.style.display = 'none';
   errorActions.style.display = 'none';
+  // Emptied AND re-hidden, so "Try again" goes back to a waiting screen
+  // rather than to the shape of the week that just failed.
   daysDiv.innerHTML = '';
+  daysDiv.hidden = true;
   let failed = false;
   // Starts in 'reading' rather than waiting for the first frame: the
   // request is already out and context assembly has already begun, so the
@@ -1631,6 +1802,9 @@ async function generateFirstPlanAndReveal(answers) {
   } catch (err) {
     console.warn('First-plan generation failed:', err);
     failed = true;
+    // Calm and plain, and the title stops promising a week — see the
+    // calm-in-trouble rule in DESIGN_SYSTEM.md §8.
+    document.getElementById('reveal-title').textContent = 'Your first week';
     accent.textContent = "That didn't come together — shall I have another go?";
   } finally {
     if (waiter) waiter.stop();
@@ -1736,8 +1910,14 @@ document.getElementById('rhythm-2-next').onclick = async () => {
     btn.disabled = !rhythm2Complete();
   }
 };
-document.getElementById('restrictions-next').onclick = () => showStep('eating-style');
-document.getElementById('eating-style-next').onclick = () => showStep('wont-eat');
+document.getElementById('restrictions-next').onclick = () => {
+  buildEatingStyleStep();
+  showStep('eating-style');
+};
+document.getElementById('eating-style-next').onclick = () => {
+  buildWontEatStep();
+  showStep('wont-eat');
+};
 document.getElementById('wont-eat-next').onclick = () => {
   commitWontEatInput();
   buildExcitedStep();
@@ -1752,6 +1932,7 @@ document.getElementById('excited-next').onclick = () => {
 // meal counts and the first-week reveal, so the very first plan is built
 // from real answers rather than a guess.
 document.getElementById('dinners-next').onclick = () => {
+  renderFirstPlanStartChips();
   showStep('typical-week');
 };
 document.getElementById('typical-week-next').onclick = () => {
