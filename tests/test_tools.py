@@ -837,6 +837,26 @@ def test_the_name_the_picker_returns_lands_on_the_week(signed_in):
     assert tools.get_week_menu()["approved_by"] == "Marcus"
 
 
+def test_the_picker_does_not_promise_a_name_the_app_never_shows():
+    """
+    The dialog used to say the name goes on the week "so the other of you
+    knows who settled it". Flows 3 removed both surfaces that showed
+    approved_by, so that sentence promised something the app no longer does
+    — and "the other of you" was wrong for a three-adult household, which
+    the picker happily lists in full. The name IS recorded, so the copy may
+    say that; it may not say anyone will see it. Put the promise back only
+    together with a surface that keeps it.
+    """
+    import pathlib
+
+    shell_html = (pathlib.Path(__file__).resolve().parents[1]
+                  / "static" / "shell.html").read_text(encoding="utf-8")
+    note_start = shell_html.index('id="approve-who-note"')
+    note = shell_html[note_start:shell_html.index("</p>", note_start)]
+    assert "the other of you" not in note, "assumes exactly two adults"
+    assert "knows who settled it" not in note, "promises a surface that does not exist"
+
+
 def test_the_approve_button_reads_the_field_that_is_filled_on_a_draft():
     """
     The backend half is useless if the screen still reads the empty list.
