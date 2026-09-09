@@ -11,6 +11,7 @@ import datetime
 import logging
 import os
 import json
+import re
 import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
@@ -1395,7 +1396,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "swap_meal_in_plan",
-        "description": "Replace one day's meal in an already-generated weekly plan without regenerating the rest of the week. If the result carries taste_verdict, it is the shared verdict on the new dish for whoever actually eats that night — verdict 'avoid' means someone at that table is on record as disliking it (reason says who); say so in the same breath and offer an alternative, but the swap has already happened either way. 'favourite' means everyone eating it is on record as liking it — worth a word, no action needed.",
+        "description": "Replace one day's meal in an already-generated weekly plan without regenerating the rest of the week. Works for a snack exactly as it does for dinner — pass slot='snack'. A day normally has TWO snacks, so when you are changing one of them pass old_meal with the name of the one being replaced; without it BOTH of that day's snacks are replaced by the single new one. If the result carries taste_verdict, it is the shared verdict on the new dish for whoever actually eats that night — verdict 'avoid' means someone at that table is on record as disliking it (reason says who); say so in the same breath and offer an alternative, but the swap has already happened either way. 'favourite' means everyone eating it is on record as liking it — worth a word, no action needed.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1404,6 +1405,7 @@ TOOL_DEFINITIONS = [
                 "new_meal": {"type": "string"},
                 "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                 "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+                "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
         },
@@ -2239,10 +2241,13 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     instructions = f"""Generate a full menu for this household's planning period — day_count days \
 starting at week_start_date, which is 7 days from a Monday only when that is what was asked for; \
 it can be any start day and any length, so plan the dates you are given and no others — \
-breakfast, lunch, dinner, AND a snack every day, not dinner alone, so the week reads as a real \
-day-by-day menu rather than just a dinner list. That means 4 separate entries per day (same \
-date, different slot), unless constraints_notes says otherwise (e.g. "just dinners this week" \
-means skip breakfast/lunch/snack entirely for the week — honor that exactly).
+breakfast, lunch, dinner, AND snacks every day, not dinner alone, so the week reads as a real \
+day-by-day menu rather than just a dinner list. household_memory.snacks_per_day says how many \
+snacks each day gets (2 unless the household has said otherwise), so an ordinary day is 5 \
+separate entries — breakfast, lunch, dinner and TWO snack entries, same date, slot 'snack' for \
+both. The day's snacks must be DIFFERENT foods from each other, not one idea sent twice. This \
+holds unless constraints_notes says otherwise (e.g. "just dinners this week" means skip \
+breakfast/lunch/snack entirely for the week — honor that exactly).
 
 THE ONE RULE THAT IS NOT NEGOTIABLE: every breakfast, lunch and dinner of every day must come \
 back with an entry — 21 entries minimum, before snacks. A slot you leave out is a bug, not a \
@@ -2291,6 +2296,14 @@ the floor this whole rule exists to enforce.
 verdict — weigh them softly (e.g. avoid the exact same misstep if a note calls one out), but \
 don't treat them like rating='disliked'. Only an actual 'disliked' rating should exclude a \
 recipe from suggestion.
+- ONE DAY NEVER EATS THE SAME THING TWICE. A day's snack must not repeat that day's breakfast, \
+lunch or dinner — not the same dish, and not the same main ingredient wearing a different name: \
+banana pancakes for breakfast and banana with peanut butter as the snack is the SAME banana \
+twice, and reads as the app running out of ideas by 10am. The day's two snacks must differ from \
+each other on the same test. Across DIFFERENT days, a repeated snack is fine and expected (see \
+the guideline above) — this rule is only ever about one day's own plate. Anything caught here \
+after the fact gets traded onto another day automatically, which works but is a repair, not a \
+plan.
 - The no-repeat rule against recent_history is about DINNER, and loosely lunch — not \
 breakfast or snack. Check recent_history's `slot` field and avoid repeating any dinner (or a \
 near-identical variant) that appears there within the last 3 weeks; use the same judgment for \
@@ -2453,7 +2466,12 @@ exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts co
 2026-09-05): that many distinct snack/dessert ideas, rotated across the week the same way a \
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
 tagged `guests` or otherwise called out as special in constraints_notes/intake, rather than on \
-an ordinary weeknight. A count of 0 for any of the four is handled outside this call; if you \
+an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
+snack entries each day gets (2 by default). The two counts work together — snacks_per_day says \
+how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
+draws on — and the pool is never so small that one day has to repeat itself: give every day its \
+snacks_per_day snacks, all different from each other and from that day's other meals, even if \
+that means an idea shows up on more days than one. A count of 0 for any of the four is handled outside this call; if you \
 see it, still plan that meal/slot normally and it will be dealt with afterwards.
 - household_memory's eating_style (freeform, e.g. "keto", "high-protein, low-carb", or a \
 specific list of foods someone says they should be eating) is a hard constraint, treated with \
@@ -3384,6 +3402,13 @@ def _generate_weekly_plan(
         for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week"):
             if household_memory.get(field) is not None:
                 effective_memory[field] = _prorate_meal_count(household_memory[field], day_count)
+    # How many DISTINCT snacks each day gets — two unless the household has
+    # said otherwise (Julia, 2026-09-08). Per DAY, so it is the one count
+    # here that a part-week doesn't prorate. Resolved once, into the
+    # context, rather than left to the model to work out from
+    # snacks_per_week — see preferences.resolve_snacks_per_day for the
+    # order it reads its answer in.
+    effective_memory["snacks_per_day"] = tools.resolve_snacks_per_day(household_memory)
 
     context = {
         "week_start_date": content_start_date,
@@ -3929,6 +3954,13 @@ def _finish_week_slots(
             week_start_date, len(audit["missing"]), audit["expected"],
             ", ".join(f"{g['date']} {g['slot']}" for g in audit["missing"]),
         )
+
+    # The one quality rule that repairs instead of only reporting: a snack
+    # that repeats that day's breakfast (or the day's other snack) is
+    # traded onto a day where it doesn't. BEFORE check_and_log below, so
+    # what gets logged is only what couldn't be fixed. See
+    # plan_quality.repair_snack_clashes — it swallows its own failures.
+    plan_quality.repair_snack_clashes(plan_id)
 
     # Deterministic, log-and-warn-only quality pass over the finished week
     # -- see app/tools/plan_quality.py. Read-only: it does not change
@@ -4963,6 +4995,94 @@ def _build_proactive_check_block() -> dict | None:
     }
 
 
+# ---------- "I changed it" has to mean something changed ----------
+#
+# Julia, first beta tester, 2026-09-08: "the chat said it changed a snack
+# and it didn't change it in the meal plan." The first cause of that was a
+# real one (snacks were missing from the Meals screen — see
+# weekly_plan.get_week_menu), but the shape of the complaint is worth
+# guarding on its own: nothing in this loop has ever checked that a reply
+# claiming a write is a reply that made one. A model that answers from the
+# conversation instead of calling the tool produces a perfectly warm,
+# perfectly false sentence, and the household finds out by opening the
+# screen.
+#
+# So: if the reply claims a change and the turn wrote nothing, the claim
+# is replaced. Deliberately blunt — it can only ever fire on a turn with
+# no successful write in it, where "I've updated that" is untrue no matter
+# how it was meant.
+
+# Same two prefixes main._categorize_tool trusts: everything that reads is
+# named get_* or list_*, everything else can write.
+_READ_ONLY_PREFIXES = ("get_", "list_")
+
+_CHANGE_VERBS = (
+    "changed|swapped|replaced|updated|added|removed|deleted|planned|scheduled"
+    "|approved|cleared|moved|saved|set"
+)
+_CHANGE_CLAIM_PATTERNS = tuple(re.compile(p, re.IGNORECASE) for p in (
+    rf"\bi(?:'ve|’ve| have| just)?\s+(?:now\s+)?(?:gone ahead and\s+)?(?:{_CHANGE_VERBS})\b",
+    rf"\b(?:that'?s|that’s|it'?s|it’s|they'?re|they’re)\s+(?:been\s+)?(?:{_CHANGE_VERBS}|sorted|done)\b",
+    r"\bswapped in\b",
+    r"\ball set\b",
+))
+
+CHANGE_CLAIM_RETRACTION = (
+    "I couldn’t change that — nothing actually saved on my end, so your plan is exactly as it "
+    "was. Want me to try again?"
+)
+
+
+def _claims_a_change(text: str) -> bool:
+    return any(p.search(text or "") for p in _CHANGE_CLAIM_PATTERNS)
+
+
+def _turn_wrote_anything(new_entries: list[dict]) -> bool:
+    """
+    Whether this turn contains at least one write tool that actually
+    succeeded. A tool that raised comes back is_error and doesn't count —
+    a failed write is precisely the case where the model is most likely to
+    apologise smoothly and claim success anyway.
+    """
+    names_by_id: dict[str, str] = {}
+    for entry in new_entries:
+        if entry.get("role") != "assistant":
+            continue
+        for block in entry.get("content") or []:
+            block_type = getattr(block, "type", None) or (block.get("type") if isinstance(block, dict) else None)
+            if block_type != "tool_use":
+                continue
+            block_id = getattr(block, "id", None) or (block.get("id") if isinstance(block, dict) else None)
+            names_by_id[block_id] = getattr(block, "name", None) or (block.get("name") if isinstance(block, dict) else "")
+    for entry in new_entries:
+        if entry.get("role") != "user" or not isinstance(entry.get("content"), list):
+            continue
+        for block in entry["content"]:
+            if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
+                continue
+            name = names_by_id.get(block.get("tool_use_id")) or ""
+            if name and not name.startswith(_READ_ONLY_PREFIXES):
+                return True
+    return False
+
+
+def verify_change_claim(text: str, new_entries: list[dict]) -> str:
+    """
+    `text` as written, unless it claims a change this turn never made — in
+    which case it is replaced with CHANGE_CLAIM_RETRACTION. See the note
+    above this function for why this exists at all.
+    """
+    if not _claims_a_change(text) or _turn_wrote_anything(new_entries):
+        return text
+    logger.warning(
+        "Chat reply claimed a change but the turn wrote nothing — replacing the claim. "
+        "Original reply: %d chars",
+        len(text or ""),
+    )
+    tools.record_error("chat", where="unbacked_change_claim", detail="no write tool succeeded")
+    return CHANGE_CLAIM_RETRACTION
+
+
 def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_check: bool = False) -> tuple[str, list[dict]]:
     """
     Run one user turn through Claude, executing any tool calls it makes,
@@ -4978,6 +5098,9 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
+    # Where this turn's own entries begin, so the reply can be checked
+    # against what the turn actually did — see verify_change_claim.
+    turn_start = len(conversation)
 
     # The model has no live clock, so it can't answer "today"/"tomorrow"/
     # "this week" style requests (or fill in a week_start_date for
@@ -5186,6 +5309,10 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
                     "Sorry, I hit a snag putting that response together — could you try asking "
                     "again, maybe a bit more specifically?"
                 )
+            # A reply that says it changed something, on a turn that
+            # changed nothing, is rewritten rather than sent — see
+            # verify_change_claim.
+            text = verify_change_claim(text, conversation[turn_start:])
             _log_turn_timing()
             return text, conversation
 
