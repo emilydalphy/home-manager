@@ -467,12 +467,17 @@
         // how to talk to me" card. Outside .today-body for the same reason
         // the nudge above it is — see that comment. Empty (and so
         // display:none) on every load but the one it is shown on.
-        '<div id="coach-card-slot" class="today-area-nudge"></div>' +
         // The hero, and the only one on this screen — a direct child of
         // .today-content rather than of .today-body, because it bleeds the
         // full width of the panel while everything else sits inside the
         // 20px gutter, and a grid child cannot escape its parent's padding.
         '<div id="today-next-up" class="dinner-hero nextup-hero" hidden></div>' +
+        // Onboarding coaching, part 2 (2026-09-08): the one-time "This is
+        // how to talk to me" card. BELOW the next-up card, never above it —
+        // the day's one action stays on the first screen even on a short
+        // phone (verifier, 2026-09-09). Empty (and so display:none) on
+        // every load but the one it is shown on.
+        '<div id="coach-card-slot" class="today-area-nudge"></div>' +
         '<div class="today-body">' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +

@@ -5720,8 +5720,10 @@ span.cook-week-name { cursor: default; }
 
 .ask-tips-btn {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  /* 44px is the floor for anything tappable (DESIGN_SYSTEM.md); the ring
+     is drawn smaller with a box-shadow so it still reads as a small "?". */
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-pill);
   border: 1.5px solid var(--hairline-strong);
   background: var(--surface);
