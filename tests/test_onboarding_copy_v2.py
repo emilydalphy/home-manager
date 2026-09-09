@@ -116,7 +116,8 @@ def test_the_counts_step_asks_per_meal_type_not_once_generically():
     One heading ("How many different recipes a week?") was doing the work
     of three questions. Emily's call: ask per meal type.
     """
-    assert "How many different recipes a week?" not in ONBOARDING_VISIBLE
+    # Emily kept her own heading (2026-09-08); the per-type lines sit under it.
+    assert "How many different recipes a week?" in ONBOARDING_VISIBLE
     step = _step_markup("step-dinners")
     for meal in ("breakfasts", "lunches", "dinners"):
         assert f"How many different {meal} do you want?" in step
