@@ -2065,3 +2065,40 @@ verdict lines only for dishes with per-person feedback; `check_plan_conflicts`
 adds a SOFT `member_taste` conflict when a plan slips (never a hard block, so the
 approval gate is unchanged). UI half (whose-verdict tap, solo-night flag) is a
 follow-up on the Taste UI card.
+
+### 2026-09-08 — Snacks finally render on Meals. Branch `meals-renders-snacks`.
+
+The other half of "snack-swap-applies": the backend fix made `get_week_menu`
+return `day.snacks` (a list, same shape as `day.breakfast`/`lunch`/`dinner`)
+plus `day.snack` (the first), but shell.js's own `WEEK_SLOTS` stayed the
+hard-coded three and never drew them — the decision log said so plainly.
+`static/shell.js` now does, in all three Meals steps, and `WEEK_SLOTS` is
+left exactly as it was on purpose: it stays the three real meals so
+`weekCountsLabel`/`countOpenSlots` (which read it) keep never treating a
+snack as a cook or an open slot. Snacks get their own slot KEYS instead —
+`daySlotEntry`'s new lookup, `'snack'` for `day.snacks[0]` (matching both
+`day.snack` and the bare `'snack'` app/main.py's ChatAction already sends)
+and `'snack2'`/`'snack3'`/... for the rest — so `applyPendingDayFocus`'s
+existing ring selector lands on the right card with no change of its own.
+Week: `weekRowHtml`/`weekSnackLineHtml` add one line per snack after the
+three meal lines, grey/none dot unless `isRealCook` (source outside
+leftovers/takeout AND a real prep/cook time) says otherwise — most snacks
+are grab-and-go. Day: `daySnackCardsHtml` reuses `daySlotCardHtml` verbatim
+per snack, eyebrow "Snack" solo or "Snack 1"/"Snack 2" when there's more
+than one (`slotEyebrowLabel`), primary action "Mark eaten" unless
+`isRealCook` (`slotActionsHtml`). Meal: `mealStepHtml` hides "The plate"
+card for a snack with nothing to say about it (`plateCardIsEmpty` — no
+food groups, no sides, no thaw task); a real-recipe snack keeps it exactly
+as any other slot would. Swap: `runSwapInPlace`/`runSwapUndo` and the
+Day/Meal step's meal-validity guard (`renderMealsStep`) all switched from
+`day[slot]` to `daySlotEntry(day, slot)` — without that a swap or a tap
+into the second snack's Meal step would have silently done nothing, since
+`day['snack2']` was never a real property. Left out honestly: a hard
+allergen clash's "One thing to settle" card (`weekSettleTargetSlot`) still
+only searches WEEK_SLOTS, so a clash on a snack won't deep-link there yet;
+and the pending-focus ring can't disambiguate WHICH snack changed (the
+action card carries no index), so it always lands on the first, same as
+`day.snack` already does. `tests/test_meals_week_day_meal.py` covers the
+new render functions by running them under node (8 more tests, 1644 total)
+rather than reading the source for the right words — the original bug was
+exactly a case a source-marker test cannot catch.

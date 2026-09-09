@@ -396,3 +396,267 @@ def test_a_changed_day_still_lands_on_that_day():
 
 def test_the_ask_bar_keeps_its_meals_hint():
     _assert_in("Tweak this week with me", SHELL_JS, "the Meals ask hint", "shell.js")
+
+
+# ---------- snacks render too (2026-09-08, "snack-swap-applies") ----------
+#
+# The backend fix landed first (WEEK_SLOTS stayed the 21-slot guarantee,
+# DAY_SLOTS and get_week_menu's `snacks` list arrived beside it) but that
+# decision-log entry says plainly: "shell.js still hard-codes its own
+# WEEK_SLOTS of three and will not draw them until it reads day.snacks."
+# These tests run the screen's own render functions under node — a meal
+# dict in, HTML out — rather than reading the source for the right words,
+# because the whole bug being fixed was "the write landed and the screen
+# had nowhere to draw it," and a source-marker test cannot catch that
+# class of bug again.
+
+import json
+import re
+import shutil
+import subprocess
+
+_needs_node = pytest.mark.skipif(
+    shutil.which("node") is None, reason="node is needed to execute the screen's own functions"
+)
+
+
+def _extract(name: str, source: str) -> str:
+    """Lift one brace-balanced `function name(...) {...}` out of the file."""
+    start = source.index(f"function {name}(")
+    i = source.index("{", start)
+    depth, j = 0, i
+    while True:
+        if source[j] == "{":
+            depth += 1
+        elif source[j] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return source[start : j + 1]
+
+
+def _run_node(harness: str):
+    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+_ESCAPE_STUB = (
+    "function escapeHtml(s){return String(s == null ? '' : s)"
+    ".replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}\n"
+)
+_DAYNAME_STUB = "function dayName(d, opts){ return 'Thursday'; }\n"
+
+
+def _week_row_html(day: dict) -> str:
+    """weekRowHtml(day, 0), the day row on the Week root — three meal lines
+    then, per the 2026-09-08 design, one line per snack."""
+    harness = (
+        _ESCAPE_STUB + _DAYNAME_STUB
+        + "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
+        + _extract("mealDisplayName", SHELL_JS) + "\n"
+        + _extract("awayLineFor", SHELL_JS) + "\n"
+        + _extract("isRealCook", SHELL_JS) + "\n"
+        + _extract("weekRowLineHtml", SHELL_JS) + "\n"
+        + _extract("weekSnackLineHtml", SHELL_JS) + "\n"
+        + _extract("weekRowHtml", SHELL_JS) + "\n"
+        + f"console.log(JSON.stringify(weekRowHtml({json.dumps(day)}, 0)));\n"
+    )
+    return _run_node(harness)
+
+
+def _plain_day(snacks: list) -> dict:
+    return {
+        "date": "2026-09-10", "isToday": False, "isPast": False,
+        "breakfast": None, "lunch": None, "dinner": None,
+        "snacks": snacks,
+        "snack": snacks[0] if snacks else None,
+    }
+
+
+_GRAB_AND_GO_SNACK = {
+    "state": "planned", "title": "Apple slices", "source": "plan", "meta": None,
+}
+_REAL_COOK_SNACK = {
+    "state": "planned", "title": "Baked Oatmeal Cups", "source": "plan", "meta": "20 min",
+}
+
+
+@_needs_node
+def test_a_day_with_two_snacks_renders_two_snack_lines_in_order():
+    html = _week_row_html(_plain_day([_GRAB_AND_GO_SNACK, _REAL_COOK_SNACK]))
+    names = re.findall(r'wk-line-name">([^<]*)<', html)
+    # Three meal lines (all "Nothing yet" on this bare day) then the two
+    # snacks, in the order the plan holds them.
+    assert names[3:] == ["Apple slices", "Baked Oatmeal Cups"]
+    dots = re.findall(r'wk-dot ([\w-]+)"', html)
+    # A grab-and-go snack gets the grey/none dot; only the real recipe earns
+    # the apricot cook dot — the one thing this design narrows beyond the
+    # existing meal-line legend.
+    assert dots[3:] == ["is-none", "is-cook"]
+
+
+@_needs_node
+def test_a_day_with_zero_snacks_renders_no_snack_lines():
+    html = _week_row_html(_plain_day([]))
+    assert len(re.findall(r'wk-line-name">', html)) == 3
+    assert len(re.findall(r'wk-dot ', html)) == 3
+
+
+@_needs_node
+def test_the_counts_label_ignores_snacks():
+    """WEEK_SLOTS stays the three real meals on purpose (2026-09-08 decision
+    log) precisely so weekCountsLabel, which reads WEEK_SLOTS, never counts
+    a snack as a cook — checked here by running it on a day whose only
+    "cook" is a snack."""
+    harness = (
+        "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
+        + _extract("weekCountsLabel", SHELL_JS) + "\n"
+        + f"console.log(JSON.stringify(weekCountsLabel({json.dumps([_plain_day([_REAL_COOK_SNACK])])})));\n"
+    )
+    assert _run_node(harness) == ""
+
+
+def _day_snack_cards_html(day: dict) -> str:
+    harness = (
+        _ESCAPE_STUB + _DAYNAME_STUB
+        + "var weekState = { data: {} };\n"
+        + "var swapState = null;\n"
+        + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + _extract("isSnackSlot", SHELL_JS) + "\n"
+        + _extract("snackSlotKey", SHELL_JS) + "\n"
+        + _extract("daySlotEntry", SHELL_JS) + "\n"
+        + _extract("slotWord", SHELL_JS) + "\n"
+        + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
+        + _extract("isRealCook", SHELL_JS) + "\n"
+        + _extract("mealDisplayName", SHELL_JS) + "\n"
+        + _extract("awayLineFor", SHELL_JS) + "\n"
+        + _extract("chipsRowHtml", SHELL_JS) + "\n"
+        + _extract("plateChips", SHELL_JS) + "\n"
+        + _extract("cookTimeChip", SHELL_JS) + "\n"
+        + _extract("swapStateFor", SHELL_JS) + "\n"
+        + _extract("swapLineHtml", SHELL_JS) + "\n"
+        + _extract("slotEyebrow", SHELL_JS) + "\n"
+        + _extract("slotActionsHtml", SHELL_JS) + "\n"
+        + _extract("daySlotCardHtml", SHELL_JS) + "\n"
+        + _extract("daySnackCardsHtml", SHELL_JS) + "\n"
+        + f"console.log(JSON.stringify(daySnackCardsHtml({json.dumps(day)})));\n"
+    )
+    return _run_node(harness)
+
+
+@_needs_node
+def test_two_snacks_render_two_day_step_cards_in_order():
+    html = _day_snack_cards_html(_plain_day([_GRAB_AND_GO_SNACK, _REAL_COOK_SNACK]))
+    slots = re.findall(r'data-wk-slot="([^"]+)"', html)
+    assert slots == ["snack", "snack2"]
+    # More than one snack that day, so both eyebrows are numbered — never
+    # the bare "Snack" a solo snack gets.
+    eyebrows = re.findall(r'wk-slot-eyebrow">([^<]*)<', html)
+    assert eyebrows == ["Snack 1", "Snack 2"]
+    names = re.findall(r'wk-slot-name[^>]*>([^<]*)<', html)
+    assert names == ["Apple slices", "Baked Oatmeal Cups"]
+    # Grab-and-go gets "Mark eaten"; a real recipe gets "Cook this".
+    assert "Mark eaten" in html.split("snack2")[0]
+    assert "Cook this" in html.split("snack2", 1)[1]
+
+
+@_needs_node
+def test_zero_snacks_renders_no_day_step_cards():
+    assert _day_snack_cards_html(_plain_day([])) == ""
+
+
+def _meal_step_html(day: dict, slot: str) -> str:
+    harness = (
+        _ESCAPE_STUB + _DAYNAME_STUB
+        + "var weekState = { data: {} };\n"
+        + "var swapState = null;\n"
+        + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        + "var cookState = { data: { meals: [] }, cookAheadPicks: {} };\n"
+        + _extract("isSnackSlot", SHELL_JS) + "\n"
+        + _extract("daySlotEntry", SHELL_JS) + "\n"
+        + _extract("slotWord", SHELL_JS) + "\n"
+        + _extract("isRealCook", SHELL_JS) + "\n"
+        + _extract("mealDisplayName", SHELL_JS) + "\n"
+        + _extract("chipsRowHtml", SHELL_JS) + "\n"
+        + _extract("cookTimeChip", SHELL_JS) + "\n"
+        + _extract("plateCardIsEmpty", SHELL_JS) + "\n"
+        + "function capitalizeFirst(s) { return String(s).charAt(0).toUpperCase() + String(s).slice(1); }\n"
+        + "var PLATE_GROUP_LABELS = { protein: 'protein', carb: 'carb', vegetable: 'veg' };\n"
+        + _extract("plateChips", SHELL_JS) + "\n"
+        + _extract("plateCardHtml", SHELL_JS) + "\n"
+        + _extract("cookMealForEntry", SHELL_JS) + "\n"
+        + _extract("swapStateFor", SHELL_JS) + "\n"
+        + _extract("swapLineHtml", SHELL_JS) + "\n"
+        + _extract("slotActionsHtml", SHELL_JS) + "\n"
+        + _extract("mealStepHtml", SHELL_JS) + "\n"
+        + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
+    )
+    return _run_node(harness)
+
+
+@_needs_node
+def test_a_snack_renders_on_the_meal_step_without_a_plate_card():
+    """A grab-and-go snack has no food groups, no added sides and no thaw
+    task — "Nothing to thaw." on its own is an empty card wearing a
+    caption, so it's hidden rather than shown (Emily's approved design)."""
+    entry = dict(_GRAB_AND_GO_SNACK, entry_id=101, sides=[], food_groups=[], defrost=None, plate_note="")
+    day = _plain_day([entry])
+    html = _meal_step_html(day, "snack")
+    assert "The plate" not in html
+    assert "Apple slices" in html
+    assert "Mark eaten" in html
+
+
+@_needs_node
+def test_a_real_cook_snack_still_shows_its_plate_card():
+    """The hide is specific to an actually-empty plate — a snack that
+    carries real food groups keeps the card exactly as any other slot
+    would."""
+    entry = dict(_REAL_COOK_SNACK, entry_id=102, sides=[], food_groups=["carb"], defrost=None, plate_note="")
+    day = _plain_day([entry])
+    html = _meal_step_html(day, "snack")
+    assert "The plate" in html
+
+
+def _ring_target_slots(pending_slot: str) -> list[str]:
+    """applyPendingDayFocus, run with a fake panel of two snack-card
+    stand-ins so the test can see exactly which one gets 'just-changed'
+    without re-implementing the whole step machine."""
+    harness = (
+        "var weekState = { pendingDayFocus: " + json.dumps({"date": "2026-09-10", "slot": pending_slot}) + ", "
+        "days: [{ date: '2026-09-10' }], selectedIndex: null };\n"
+        "function goMealsStep(step, opts) { weekState.step = step; "
+        "if (opts && opts.dayIndex != null) weekState.selectedIndex = opts.dayIndex; }\n"
+        "function makeEl(slot) {\n"
+        "  var el = { slot: slot, classes: [] };\n"
+        "  el.classList = {\n"
+        "    add: function (c) { el.classes.push(c); },\n"
+        "    remove: function (c) { el.classes = el.classes.filter(function (x) { return x !== c; }); }\n"
+        "  };\n"
+        "  return el;\n"
+        "}\n"
+        "var els = [makeEl('snack'), makeEl('snack2')];\n"
+        "var panel = { querySelector: function (sel) {\n"
+        "  var m = /data-wk-slot=\"([^\"]+)\"/.exec(sel);\n"
+        "  if (!m) return null;\n"
+        "  for (var i = 0; i < els.length; i++) if (els[i].slot === m[1]) return els[i];\n"
+        "  return null;\n"
+        "} };\n"
+        + _extract("applyPendingDayFocus", SHELL_JS) + "\n"
+        + "applyPendingDayFocus(panel);\n"
+        + "console.log(JSON.stringify(els.map(function (e) { return { slot: e.slot, classes: e.classes }; })));\n"
+        + "process.exit(0);\n"
+    )
+    result = _run_node(harness)
+    return [e["slot"] for e in result if "just-changed" in e["classes"]]
+
+
+@_needs_node
+def test_a_pending_snack_focus_rings_the_snack_card():
+    """A chat swap on a snack carries bare slot 'snack' (app/main.py
+    ChatAction) same as any other slot — no date/slot disambiguates WHICH
+    snack, so this lands on the first, exactly as day.snack (the backend's
+    own shorthand) already does, and never the second card by accident."""
+    assert _ring_target_slots("snack") == ["snack"]
