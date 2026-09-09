@@ -325,7 +325,15 @@ def test_a_component_based_bulk_card_still_merges_and_scales_the_same_way():
     assert meals[0]["meal_count"] == 3
     assert meals[0]["default_servings"] == 6
     assert meals[0]["batch_note"] == "Bulk-cook once — makes enough for all 3 meals this week."
-    assert _qty(meals[0]) == {"jello": "3 boxes"}
+    # The batch arithmetic is unchanged — three cards' worth, tripled. What
+    # moved is the UNIT: "box" is a package word, and a cook card never
+    # shows one any more (Julia, 2026-09-08 — see
+    # recipes.cooking_ingredients). One box for four becomes two cups, and
+    # a batch for six is three of them.
+    assert _qty(meals[0]) == {"jello": "3 cups"}
+    # The bought amount rides along untouched — a package is bought once
+    # whatever the batch is, which is the grocery list's whole rule.
+    assert meals[0]["ingredients"][0]["shopping_qty"] == "1 box"
     assert meals[0]["is_leftovers"] is False
 
 

@@ -1117,7 +1117,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the eight call
+-- also why recording lives there instead of at each of the nine call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.

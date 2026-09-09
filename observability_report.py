@@ -401,6 +401,7 @@ _CALL_SITE_LABELS = {
     "generate_component_plan_llm": "weekly plan (swap/adjust a meal)",
     "generate_prep_schedule_llm": "prep schedule",
     "generate_recipe_detail_llm": "recipe fill-in",
+    "generate_recipe_detail_llm.repair": "recipe fill-in (measurement repair)",
     "_scan_image_for_items": "photo scan (receipt/fridge/pantry)",
     "generate_chore_recommendations": "chore recommendations",
 }
