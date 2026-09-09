@@ -890,6 +890,30 @@ html, body {
   flex-shrink: 0;
   cursor: pointer;
 }
+/* The real close control (Julia, 2026-09-08 — the handle alone was too
+   thin to hit reliably). Same shape as the wk-back/gro-back step links
+   elsewhere in the shell: plain text + chevron, min 44x44 tap target,
+   always visible at the top-left of the sheet, never just the handle. */
+.ask-sheet-back {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -4px 0 -8px -10px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  flex-shrink: 0;
+}
+.ask-sheet-back svg { flex-shrink: 0; }
+.ask-sheet-back:hover { color: var(--ink-strong); }
 .ask-messages {
   overflow-y: auto;
   display: flex;
