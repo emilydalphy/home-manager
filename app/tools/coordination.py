@@ -753,6 +753,75 @@ def conflicts_note_after_approval(conflicts: list[dict]) -> str | None:
     return _conflicts_note(conflicts, closing=_APPROVED_CLOSING)
 
 
+def check_meal_conflicts(
+    meal_name: str,
+    ingredients: list[dict] | None = None,
+    sides: list[dict] | None = None,
+    avoidances: list[dict] | None = None,
+) -> list[dict]:
+    """
+    Every avoidance ONE dish trips — the per-dish half of
+    check_plan_conflicts, pulled out so a dish can be checked before it is
+    ever written to a plan.
+
+    swap_in_place is why this exists as its own function: it has a dish the
+    model just picked and no entry yet, and the honest moment to refuse an
+    allergen is before the swap lands, not after. Sharing the matcher rather
+    than writing a second one is the whole point — two keyword checks that
+    disagree about what counts as a clash is exactly the bug this app cannot
+    afford, and a swap that slipped past a looser copy would land on the
+    plan and only be caught by the draft's own banner later.
+
+    Returns one dict per clash, with meal/member/restriction/source/
+    severity/matched — no date and no component_category, which belong to
+    the entry a dish is planned on, not to the dish.
+
+    Pass `avoidances` when checking many dishes in a row (check_plan_conflicts
+    does) so the household's restrictions are read once, not per meal.
+    """
+    name = (meal_name or "").strip()
+    if not name:
+        return []
+    if avoidances is None:
+        avoidances = _avoidances()
+    if not avoidances:
+        return []
+    # The dish's name and each ingredient line SEPARATELY, not one joined
+    # blob. A multi-word avoidance has to be found inside a single one of
+    # them — "red meat" assembled out of "red pepper" in the name and
+    # "minced meat" four lines later is a coincidence, not a clash.
+    # Whitespace collapsed as well as punctuation stripped, so a two-word
+    # term ("soy sauce") still matches an ingredient written with odd
+    # spacing.
+    raw_segments = [name]
+    raw_segments += [(i.get("item") or "") for i in (ingredients or [])]
+    raw_segments += [(i.get("item") or "") for i in _plates.side_ingredients(sides)]
+    segments = [
+        re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", s.lower())).strip()
+        for s in raw_segments
+    ]
+    segments = [s for s in segments if s]
+    gluten_free_segments = {
+        i for i, s in enumerate(segments) if _GLUTEN_FREE_SEGMENT_RE.search(s)
+    }
+    hits = []
+    for avoidance in avoidances:
+        matched = _matches(avoidance["terms"], segments, gluten_free_segments)
+        if not matched:
+            continue
+        hits.append({
+            "meal": name,
+            "member": avoidance["member"],
+            # Kept under the original key so existing callers/readers of
+            # this result don't have to change.
+            "restriction": avoidance["label"],
+            "source": avoidance["source"],
+            "severity": avoidance["severity"],
+            "matched": matched,
+        })
+    return hits
+
+
 def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
     """
     Flag (don't block) any meals on a plan that look like they clash with
@@ -827,45 +896,20 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         if not name or meal.get("slot_state") in ("planned_empty", "open"):
             continue
         recipe = recipes_by_name.get(name.lower())
-        # The dish's name and each ingredient line SEPARATELY, not one
-        # joined blob. A multi-word avoidance has to be found inside a
-        # single one of them — "red meat" assembled out of "red pepper" in
-        # the name and "minced meat" four lines later is a coincidence, not
-        # a clash. Whitespace collapsed as well as punctuation stripped, so
-        # a two-word term ("soy sauce") still matches an ingredient written
-        # with odd spacing.
-        raw_segments = [name]
-        if recipe:
-            raw_segments += [(i.get("item") or "") for i in recipe.get("ingredients", [])]
-        # Any side the app attached to complete this plate (see plates.py)
-        # counts too — its ingredients are what's actually on the table,
-        # same as the dish's own. Without this, a clean dinner with a side
-        # containing the allergen slipped through entirely: the check only
-        # ever looked at the meal name and the recipe's own ingredients.
-        raw_segments += [
-            (i.get("item") or "") for i in _plates.side_ingredients(meal.get("sides"))
-        ]
-        segments = [
-            re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", s.lower())).strip()
-            for s in raw_segments
-        ]
-        segments = [s for s in segments if s]
-        gluten_free_segments = {
-            i for i, s in enumerate(segments) if _GLUTEN_FREE_SEGMENT_RE.search(s)
-        }
-        for avoidance in avoidances:
-            matched = _matches(avoidance["terms"], segments, gluten_free_segments)
-            if not matched:
-                continue
+        for hit in check_meal_conflicts(
+            name,
+            ingredients=(recipe or {}).get("ingredients"),
+            # Any side the app attached to complete this plate (see
+            # plates.py) counts too — its ingredients are what's actually
+            # on the table, same as the dish's own. Without this, a clean
+            # dinner with a side containing the allergen slipped through
+            # entirely: the check only ever looked at the meal name and
+            # the recipe's own ingredients.
+            sides=meal.get("sides"),
+            avoidances=avoidances,
+        ):
             conflicts.append({
-                "meal": name,
-                "member": avoidance["member"],
-                # Kept under the original key so existing callers/readers of
-                # this result don't have to change.
-                "restriction": avoidance["label"],
-                "source": avoidance["source"],
-                "severity": avoidance["severity"],
-                "matched": matched,
+                **hit,
                 "date": meal.get("date"),
                 "component_category": meal.get("component_category"),
             })

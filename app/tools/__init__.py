@@ -80,6 +80,7 @@ from .defrost import (  # noqa: F401
     mark_defrost_asked,
 )
 from .coordination import (  # noqa: F401
+    check_meal_conflicts,
     check_plan_conflicts,
     explain_meal_choice,
     get_feedback_nudge,
@@ -449,4 +450,12 @@ from .weekly_plan import (  # noqa: F401
     swap_component_in_plan,
     swap_meal_in_plan,
     week_receipt,
+)
+# One meal, replaced on the spot for one small model call — the Meals
+# screen's "Swap" (Julia, 2026-09-08). Not an agent tool: chat already has
+# swap_meal_in_plan and a whole conversation to choose with, and this
+# exists precisely to avoid spending that turn.
+from .swap_in_place import (  # noqa: F401
+    swap_meal_in_place,
+    undo_meal_swap,
 )
