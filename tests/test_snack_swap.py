@@ -469,3 +469,31 @@ def test_a_household_that_asked_for_no_snacks_still_gets_none(monkeypatch):
     ).fetchall()
     conn.close()
     assert [r["slot_state"] for r in states] == ["planned_empty"]
+
+
+# ---------- verifier findings, 2026-09-08: the claim detector's edges ----------
+
+import pytest as _pytest
+from app.agent import _claims_a_change as _claims
+
+
+@_pytest.mark.parametrize("text", [
+    "Swapped your snack to hummus and carrots.",
+    "Updated Tuesday's snack to hummus.",
+    "Your snack is now hummus.",
+    "I've swapped Thursday's dinner to burgers.",
+    "Done: I changed Tuesday's lunch to a wrap.",
+])
+def test_a_claim_without_an_i_subject_is_still_a_claim(text):
+    assert _claims(text)
+
+
+@_pytest.mark.parametrize("text", [
+    "I changed my mind, let's keep the pasta.",
+    "I just moved to a new city.",
+    "Want me to change it?",
+    "Nothing changed.",
+    "You could swap Thursday if you like.",
+])
+def test_ordinary_sentences_are_not_claims(text):
+    assert not _claims(text)

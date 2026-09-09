@@ -5020,9 +5020,20 @@ _CHANGE_VERBS = (
     "changed|swapped|replaced|updated|added|removed|deleted|planned|scheduled"
     "|approved|cleared|moved|saved|set"
 )
+_CHANGE_OBJECTS = (
+    r"snacks?|breakfasts?|lunch(?:es)?|dinners?|meals?|plans?|weeks?|lists?|recipes?|items?|"
+    r"slots?|groceries|days?|nights?|mornings?|mondays?|tuesdays?|wednesdays?|thursdays?|"
+    r"fridays?|saturdays?|sundays?|tonight|tomorrow"
+)
+# A claim needs a change verb AND something on the plan in the same clause:
+# "I changed my mind" and "I just moved to a new city" are not claims, while
+# "Swapped your snack to hummus." (no subject at all) and "Your snack is now
+# hummus." are — a model that drops the "I" must not slip past the guard.
 _CHANGE_CLAIM_PATTERNS = tuple(re.compile(p, re.IGNORECASE) for p in (
-    rf"\bi(?:'ve|’ve| have| just)?\s+(?:now\s+)?(?:gone ahead and\s+)?(?:{_CHANGE_VERBS})\b",
+    rf"(?:\bi(?:'ve|’ve| have| just)?\s+(?:now\s+)?(?:gone ahead and\s+)?|(?<![\w'’])(?:^|[.!?]\s+|\n)\s*)"
+    rf"(?:{_CHANGE_VERBS})\b[^.!?\n]{{0,80}}?\b(?:{_CHANGE_OBJECTS})\b",
     rf"\b(?:that'?s|that’s|it'?s|it’s|they'?re|they’re)\s+(?:been\s+)?(?:{_CHANGE_VERBS}|sorted|done)\b",
+    rf"\b(?:your|the|this|that)\s+(?:{_CHANGE_OBJECTS})\s+(?:is|are|has been|have been)\s+(?:now\s+)?(?:\w+ed\b|now\b)",
     r"\bswapped in\b",
     r"\ball set\b",
 ))
