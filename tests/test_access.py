@@ -170,13 +170,106 @@ def test_rate_limiter_allows_then_blocks():
         ratelimit.LIMITS.pop("unit-test", None)
 
 
+def _forwarded(value):
+    class FakeRequest:
+        headers = {"x-forwarded-for": value}
+        client = None
+    return FakeRequest()
+
+
 def test_caller_is_read_from_the_forwarded_header():
     """Railway terminates TLS at a proxy — without this every caller looks identical."""
-    class FakeRequest:
-        headers = {"x-forwarded-for": "203.0.113.9, 10.0.0.1"}
-        client = None
+    assert ratelimit.caller_id(_forwarded("10.0.0.1")) == "10.0.0.1"
 
-    assert ratelimit.caller_id(FakeRequest()) == "203.0.113.9"
+
+def test_the_caller_is_the_address_our_proxy_wrote_not_the_one_they_sent():
+    """
+    X-Forwarded-For is APPENDED to, so the leftmost entry is the caller's
+    own claim and the rightmost is what our proxy observed. This test used
+    to assert the opposite — that the first entry was the caller — which
+    made every limit in this module advisory: vary one header, be a new
+    caller. Changed deliberately on 2026-09-09. Do not "fix" it back.
+    """
+    # The caller claimed 1.2.3.4; the proxy appended what it actually saw.
+    assert ratelimit.caller_id(_forwarded("1.2.3.4, 198.51.100.77")) == "198.51.100.77"
+    # Several hops: still the one our own proxy added, i.e. the last.
+    assert ratelimit.caller_id(_forwarded("1.2.3.4, 5.6.7.8, 198.51.100.77")) == "198.51.100.77"
+
+
+def test_a_junk_forwarded_header_does_not_put_everyone_in_one_bucket():
+    """
+    A trailing comma or a header of nothing but separators must fall back to
+    the socket address rather than returning "", which would be a single
+    shared bucket every caller lands in — a rate limit that throttles the
+    innocent and nobody else.
+    """
+    class NoHeaderButAClient:
+        headers = {"x-forwarded-for": " , ,"}
+        class client:
+            host = "198.51.100.5"
+
+    assert ratelimit.caller_id(NoHeaderButAClient()) == "198.51.100.5"
+    assert ratelimit.caller_id(_forwarded("198.51.100.77,")) == "198.51.100.77"
+
+
+# The address Railway's proxy observes and appends. Constant, because one
+# attacker is one machine — the whole point is that they cannot change it.
+_PROXY_SAW = "198.51.100.77"
+
+
+def test_rotating_the_forwarded_header_cannot_outrun_the_sign_in_limit(client):
+    """
+    The bucket exists "so the shared password can't be brute-forced". Before
+    2026-09-09 a different X-Forwarded-For on each attempt bought unlimited
+    guesses: fifteen wrong passphrases, zero refusals, measured on the real
+    route. Driven through that route here, because the bypass lived in the
+    gap between the limiter and the request rather than inside either.
+
+    The header is spelled the way production actually receives it: the
+    caller's own claim first, then the address the proxy appended. That
+    shape is the test — reading the first entry passes a rotating claim
+    through as fifteen different callers, reading the appended one sees the
+    single machine that it is.
+    """
+    ratelimit.reset()
+    codes = []
+    for i in range(15):
+        res = client.post(
+            "/login",
+            data={"password": "definitely-not-it", "next": "/"},
+            # A fresh claim every time, exactly what an attacker would send —
+            # and the proxy's own observation behind it, which they cannot.
+            headers={"x-forwarded-for": f"203.0.113.{i + 1}, {_PROXY_SAW}"},
+            follow_redirects=False,
+        )
+        codes.append(res.status_code)
+
+    assert 429 in codes, "rotating the header still bought unlimited guesses"
+    # The limit is 8 per 5 minutes, so the refusals start once those are spent.
+    assert codes.count(401) <= 8, f"more than 8 guesses got through: {codes}"
+
+
+def test_two_households_behind_different_addresses_do_not_share_a_limit(client):
+    """
+    The fix must not overcorrect into one global bucket: Julia getting her
+    passphrase wrong twice must not spend Emily's allowance. Different
+    proxy-observed addresses, so different callers.
+    """
+    ratelimit.reset()
+    for i in range(8):
+        client.post("/login", data={"password": "wrong", "next": "/"},
+                    headers={"x-forwarded-for": f"203.0.113.{i}, 198.51.100.10"},
+                    follow_redirects=False)
+
+    spent = client.post("/login", data={"password": "wrong", "next": "/"},
+                        headers={"x-forwarded-for": "203.0.113.99, 198.51.100.10"},
+                        follow_redirects=False)
+    assert spent.status_code == 429, "that address should be out of attempts"
+
+    other = client.post("/login", data={"password": "wrong", "next": "/"},
+                        headers={"x-forwarded-for": "203.0.113.99, 198.51.100.11"},
+                        follow_redirects=False)
+    assert other.status_code == 401, "a different household was locked out by someone else"
 
 
 # ---------- self-service reset ----------

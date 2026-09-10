@@ -173,6 +173,12 @@ function sendAskMessage(t) { SENT.push(t); }
 """
 
 
+def _add_adult(name: str) -> None:
+    """An adult, spelled the way onboarding spells it — "Adult", capitalised."""
+    tools.add_member(name)
+    tools.set_member_age_group(name, "Adult")
+
+
 def _examples_block() -> str:
     return _slice("var COACH_VISITS_TO_SHOW = 3;", "  // ---------- the how-and-why card ----------")
 
@@ -205,7 +211,9 @@ console.log(JSON.stringify(out));
     )
     seen = _node(script)
     expected = {
-        "today": ["What’s next tonight?", "Vineeth is out Thursday"],
+        # No exampleName set in this script, so Today falls back to the
+        # name-free sentence — see the two tests below for both branches.
+        "today": ["What’s next tonight?", "One of us is out Thursday"],
         "week": ["Swap Thursday for something lighter", "Less chicken, more fish this week"],
         "grocery": ["Add oat milk and lemons", "We already have rice"],
         "kitchen": ["What can I make with the chicken thighs?", "I’m short on time tonight"],
@@ -215,6 +223,89 @@ console.log(JSON.stringify(out));
         assert seen[tab][1] == prompts, tab
         assert seen[tab][2] == prompts, tab
         assert seen[tab][3] == [], f"{tab} kept coaching past the third visit"
+
+
+@_needs_node
+def test_todays_away_example_uses_the_households_own_adult():
+    """
+    This chip shipped hardcoded as "Vineeth is out Thursday" — the
+    developer's own partner, read by every household in the beta as an
+    example about their week. The name now comes from /api/coaching.
+    """
+    script = (
+        _DOM_STUB + _examples_block() + """
+coachState.ready = true;
+coachState.householdId = 1;
+coachState.exampleName = 'Marcus';
+coachOnTabShown('today');
+console.log(JSON.stringify(ELS['ask-examples'].labels()));
+"""
+    )
+    assert _node(script) == ["What’s next tonight?", "Marcus is out Thursday"]
+
+
+@_needs_node
+def test_the_away_example_still_teaches_when_no_name_is_known_yet():
+    """
+    /api/coaching has not answered, or the household has nobody on record.
+    The lesson is "you can just tell me someone is out", and it survives
+    without a name — an empty chip, or one reading "undefined is out
+    Thursday", would not.
+    """
+    script = (
+        _DOM_STUB + _examples_block() + """
+coachState.ready = true;
+coachState.householdId = 1;
+coachState.exampleName = null;
+coachOnTabShown('today');
+console.log(JSON.stringify(ELS['ask-examples'].labels()));
+"""
+    )
+    assert _node(script) == ["What’s next tonight?", "One of us is out Thursday"]
+
+
+def test_no_real_persons_name_is_written_into_the_example_chips():
+    """
+    A source check, deliberately: the bug was not that the sentence was
+    wrong, it was that a name from outside the household was baked into the
+    build. Names in these chips belong in the payload, never in the file.
+    """
+    block = _examples_block()
+    # Only the literal table, not the comment above it that explains why the
+    # name was taken out of it.
+    examples = block[block.index("var COACH_EXAMPLES"):block.index("function coachAwayExample")]
+    assert "Vineeth" not in examples, "a real person's name is back in COACH_EXAMPLES"
+
+
+def test_the_example_name_is_an_adult_of_this_household():
+    _add_adult("Emily")
+    _add_adult("Marcus")
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "Child")
+    # Lowest id, so the chip does not reshuffle between visits.
+    assert tools.get_coaching_state()["example_name"] == "Emily"
+
+
+def test_a_lowercase_age_group_still_counts_as_an_adult():
+    """Onboarding writes "Adult"; older rows say "adult"."""
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "adult")
+    assert tools.get_coaching_state()["example_name"] == "Emily"
+
+
+def test_a_household_with_nobody_on_record_gets_no_example_name():
+    """The shell has a name-free sentence for exactly this."""
+    assert tools.get_coaching_state()["example_name"] is None
+
+
+def test_a_household_of_children_only_gets_no_example_name():
+    """
+    Not a real household shape, but the query has to answer something: a
+    child's name in "X is out Thursday" is a worse example than no name.
+    """
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "Child")
+    assert tools.get_coaching_state()["example_name"] is None
 
 
 @_needs_node
@@ -248,7 +339,7 @@ console.log(JSON.stringify({ spentForOne: spentForOne, freshForTwo: ELS['ask-exa
     )
     out = _node(script)
     assert out["spentForOne"] is True
-    assert out["freshForTwo"] == ["What’s next tonight?", "Vineeth is out Thursday"]
+    assert out["freshForTwo"] == ["What’s next tonight?", "One of us is out Thursday"]
 
 
 @_needs_node

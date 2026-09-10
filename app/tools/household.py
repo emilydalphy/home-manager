@@ -52,10 +52,23 @@ def get_coaching_state() -> dict:
     What the shell needs to decide whether to show the one-time "This is how
     to talk to me" card, and which household's chip counters to read.
 
-    Three fields, no judgement call baked in — the shell owns the rule
+    Four fields, no judgement call baked in — the shell owns the rule
     (a plan exists AND coaching has never been seen), because the same
     payload also feeds the per-tab example chips, which don't care about
     either flag.
+
+    `example_name` is one of this household's own adults, for the Today
+    chip that teaches "you can just tell me someone is out". That chip
+    shipped with a name hardcoded into shell.js — the developer's own
+    partner — so every household in the beta was reading a stranger's name
+    in an example about their week. A household's own name is also simply
+    the better lesson: the sentence is one they might actually send.
+
+    An adult rather than any member, because the example is about somebody
+    having plans of their own; lowest id, so the chip doesn't reshuffle
+    between visits. None when nobody is on record yet (the shell falls back
+    to a name-free sentence) — onboarding can reach the shell before any
+    member is saved.
     """
     conn = get_conn()
     row = conn.execute(
@@ -64,11 +77,21 @@ def get_coaching_state() -> dict:
     plans = conn.execute(
         "SELECT COUNT(*) AS c FROM weekly_plans WHERE household_id = ?", (household_id(),)
     ).fetchone()["c"]
+    # LOWER() because onboarding writes "Adult" and older rows say "adult".
+    example = conn.execute(
+        """
+        SELECT name FROM members
+        WHERE household_id = ? AND LOWER(age_group) = 'adult' AND TRIM(name) != ''
+        ORDER BY id LIMIT 1
+        """,
+        (household_id(),),
+    ).fetchone()
     conn.close()
     return {
         "household_id": household_id(),
         "has_plan": plans > 0,
         "coaching_seen_at": (row["coaching_seen_at"] if row else None) or None,
+        "example_name": example["name"] if example else None,
     }
 
 
