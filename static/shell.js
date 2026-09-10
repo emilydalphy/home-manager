@@ -1392,6 +1392,12 @@
   // How many things a store card shows before "+ N more".
   var GRO_CARD_PEEK = 4;
 
+  // The listExpanded key for the no-store section. Not a store name, and it
+  // must never collide with one: a household really could shop somewhere
+  // called "Everything", and the two cards would then share an expanded
+  // state. The angle brackets are illegal in a store name the UI accepts.
+  var GRO_LOOSE_KEY = '<no-store>';
+
   function groAisleColor(section) { return GRO_AISLE_COLORS[section] || 'var(--ink-inactive)'; }
   function groStoreColor(name) {
     // "Any store" is the leftovers bucket, not a stop — it gets the quiet
@@ -1540,6 +1546,15 @@
     var u = data.stores['Unassigned'];
     if (!u) return [];
     return groStoreItems(u).filter(function (it) { return !groceryState.anyStoreIds[String(it.id)]; });
+  }
+  // Everything in the Unassigned bucket, whichever half of the split above
+  // it fell into. LIST needs the union rather than either half: a household
+  // with no stops has to be able to SEE its list, and to that household the
+  // difference between "not sorted yet" and "sorted as Any" is invisible and
+  // uninteresting — both mean "a thing I need to buy, no store attached".
+  function groLooseItems(data) {
+    var u = data.stores['Unassigned'];
+    return u ? groStoreItems(u) : [];
   }
   // Things deliberately marked "Any" this page view — sorted, but with no
   // store of their own. They are not a card on LIST (they have no stop to
@@ -1851,7 +1866,12 @@
     // The badge belongs to LIST — on the deeper steps it would be a second
     // way out of a screen that already has one.
     var unsorted = groUnsorted(data).length;
-    var showBadge = step === 'list' && unsorted > 0 && !groStoresPromptShouldShow();
+    // A household with no store named has nothing to sort INTO — the step
+    // could only ever answer "Any" — and its count would sit above a list
+    // that is already fully on screen. Offer sorting from the moment there
+    // is a store, not before.
+    var showBadge = step === 'list' && unsorted > 0 &&
+      !groStoresPromptShouldShow() && groceryState.usualStores.length > 0;
     badge.hidden = !showBadge;
     if (showBadge) {
       badge.textContent = unsorted + ' TO SORT';
@@ -1938,11 +1958,17 @@
 
     // Nothing to shop, nowhere to shop it: the just-in-time stores card
     // stands in for the store cards, unchanged in behaviour.
-    if (groStoresPromptShouldShow() && (stops.length || unsorted.length)) {
+    // The union, not `unsorted`: an item answered "Any" is still a thing on
+    // the list, and before 2026-09-09 it counted for neither branch below —
+    // so a household that finished sorting saw "Nothing on the list yet"
+    // printed over three real items.
+    var loose = groLooseItems(data);
+
+    if (groStoresPromptShouldShow() && (stops.length || loose.length)) {
       return html + groStoresPromptHtml();
     }
 
-    if (!stops.length && !unsorted.length) {
+    if (!stops.length && !loose.length) {
       if (groceryState.justFinishedTrip) {
         if (groceryState.shopDoneHandoffDismissed) {
           return html +
@@ -1960,13 +1986,21 @@
 
     stops.forEach(function (name) { html += groStoreCardHtml(data, name); });
 
-    // Unsorted things are NOT a section here — they live in SORT, which the
-    // badge above opens. Saying so once beats a card that repeats them.
-    // The badge says a NUMBER, so this line has to say the same number —
-    // `unsorted` itself is the array of rows.
-    if (!stops.length && unsorted.length) {
-      html += '<p class="gro-empty">Everything on the list still needs a store — tap ' +
-        unsorted.length + ' TO SORT above and I’ll take you through them.</p>';
+    // With stops on screen, unsorted things are NOT a section here — they
+    // live in SORT, which the badge above opens, and repeating them would be
+    // two places to read one list.
+    //
+    // With NO stops there is nothing else to read, so they ARE the list.
+    // This used to be a line of copy pointing at the badge, which left a
+    // household reading "3 things" above an empty screen — and for a
+    // household that never named a store, that was the permanent state of
+    // its Grocery tab: sorting had nowhere to sort to, so LIST could never
+    // fill, and answering "Any" only moved the items from one invisible
+    // bucket to another. Emily's call, 2026-09-09: show them as one plain
+    // section with no store heading, so "One list is fine" means what it
+    // says.
+    if (!stops.length && loose.length) {
+      html += groLooseCardHtml(data, loose);
     }
     return html;
   }
@@ -2007,6 +2041,23 @@
           g.map(function (it) { return it.id; }).join(',') + '">Merge</button>' +
       '</p>';
     }).join('');
+  }
+
+  // A store's card minus the head — no avatar, no name, because there is no
+  // store to name. Rows still go through groListRowHtml, so the menu, the
+  // quantity and the tick behave exactly as they do under a stop; the only
+  // thing missing is a heading this household never chose.
+  function groLooseCardHtml(data, items) {
+    var expanded = !!groceryState.listExpanded[GRO_LOOSE_KEY];
+    var shown = expanded ? items : items.slice(0, GRO_CARD_PEEK);
+    var hidden = items.length - shown.length;
+    return '<div class="gro-store">' +
+      shown.map(function (it) { return groListRowHtml(it, data); }).join('') +
+      (hidden > 0
+        ? '<button type="button" class="gro-more-link" data-gro="expand-store" data-store="' +
+            escapeHtml(GRO_LOOSE_KEY) + '">+ ' + hidden + ' more</button>'
+        : '') +
+    '</div>';
   }
 
   function groStoreCardHtml(data, name) {
