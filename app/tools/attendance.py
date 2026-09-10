@@ -418,6 +418,15 @@ def get_week_attendance(week_start: str, day_count: int = 7) -> dict:
     week_end = (start + timedelta(days=day_count)).isoformat()
     conn = get_conn()
     rows = _member_rows(conn)
+    # `slot` is a TEXT column, so this ORDER BY is alphabetical here too —
+    # and here it is deliberately left that way. Nothing reads these rows as
+    # a sequence: the result is a nested {date: {slot: ...}} lookup and every
+    # caller asks it for one slot BY NAME (get_week_menu's decoration pass,
+    # context_for_week — which walks WEEK_SLOTS itself — and the front end's
+    # attendance.byDate[d].dinner). The sort only decides the order of dict
+    # keys nobody iterates, so changing it would be churn. If a caller ever
+    # does start walking a day, use weekly_plan.slot_order_sql, which is
+    # where the eating order lives.
     stored = conn.execute(
         "SELECT * FROM slot_attendance WHERE household_id = ? AND date >= ? AND date < ? ORDER BY date, slot",
         (household_id(), week_start, week_end),
