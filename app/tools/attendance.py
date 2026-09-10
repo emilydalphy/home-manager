@@ -418,6 +418,22 @@ def get_week_attendance(week_start: str, day_count: int = 7) -> dict:
     week_end = (start + timedelta(days=day_count)).isoformat()
     conn = get_conn()
     rows = _member_rows(conn)
+    # `slot` is a TEXT column, so this ORDER BY is alphabetical here too —
+    # and here it is deliberately left that way. Nothing reads these rows as
+    # a sequence: the result is a nested {date: {slot: ...}} lookup and every
+    # caller asks it for one slot BY NAME (get_week_menu's decoration pass,
+    # context_for_week — which walks WEEK_SLOTS itself — and the front end's
+    # attendance.byDate[d].dinner). The sort only decides the order of dict
+    # keys nobody iterates, so changing it would be churn. If a caller ever
+    # does start walking a day, use weekly_plan.slot_order_sql, which is
+    # where the eating order lives.
+    #
+    # The fourth caller is worth naming because it looks like the exception
+    # and isn't: get_week_attendance is a registered agent tool, so this
+    # dict reaches the model as raw JSON — the same reader whose day-printed-
+    # dinner-before-lunch is the bug the rest of this branch fixes. Still
+    # safe, because every slot arrives under its own key rather than in a
+    # list: a day is named here, never sequenced.
     stored = conn.execute(
         "SELECT * FROM slot_attendance WHERE household_id = ? AND date >= ? AND date < ? ORDER BY date, slot",
         (household_id(), week_start, week_end),

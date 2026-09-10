@@ -153,13 +153,13 @@
   }
 
   var TABS = [
-    { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
-    { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
+    { key: 'today', path: '/', label: 'Now', railLabel: 'Now', icon: ICONS.sunrise, real: true },
+    { key: 'week', path: '/week', label: 'Plan', railLabel: 'Plan', icon: ICONS.plate, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
-    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.bag, grocery: true },
+    { key: 'grocery', path: '/grocery', label: 'Shop', railLabel: 'Shop', icon: ICONS.bag, grocery: true },
     // Kitchen is the COOK'S tab (Emily, 2026-09-08). It answers "what's
     // cooking, and what's in the house?": today's cooks, the prep sessions
     // that feed them, the rest of the week, and the two quiet ways into
@@ -172,7 +172,7 @@
     // static/kitchen.html still exists and still works standalone but
     // nothing links to it — the fallback, exactly the treatment
     // static/grocery.html and static/grocery-legacy.html already have.
-    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, kitchen: true }
+    { key: 'kitchen', path: '/kitchen', label: 'Cook', railLabel: 'Cook', icon: ICONS.pot, kitchen: true }
   ];
 
   // The Kitchen hub's entry tiles. The blueprint asks for these to open as
@@ -350,6 +350,17 @@
     // be" — see cookResolveFocusIndex, which never lands on a different
     // meal than the one that was tapped.
     if (tab.kitchen && opts && opts.cookFocus) kitchenEnterCook(opts.cookFocus);
+    // Reaching Kitchen any OTHER way — the tab bar, the desktop rail —
+    // means the recipe deep link that set an origin is over: back belongs
+    // to Kitchen again (cookState.focusOrigin / openRecipeFor). The cook
+    // screen is often still mounted underneath (leaving cook mode by the
+    // tab bar doesn't exit it), and clearing the state without redrawing
+    // left its button still reading "‹ Today" while it now lands on
+    // Kitchen — fixed 2026-09-10, found by review.
+    else if (tab.kitchen && cookState && cookState.focusOrigin) {
+      cookState.focusOrigin = null;
+      if (cookState.screen !== 'overview' && panel.dataset.built) renderCook();
+    }
 
     // Grocery is four STEPS now (list/sort/trip/wrap — see goGroceryStep).
     // `opts.groScreen` is the old segment name the approve-week receipt's
@@ -379,7 +390,19 @@
       scrollEl.scrollTop = 0;
     }
 
-    if (pushHistory && window.location.pathname.replace(/\/+$/, '') !== (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''))) {
+    var pathIsAlreadyOurs = window.location.pathname.replace(/\/+$/, '') ===
+      (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''));
+    // `opts.replaceHistory` moves the CURRENT entry to this tab instead of
+    // adding one. Cook mode's back link is the caller (fixed 2026-09-10,
+    // found by review): it was pushing here and pushing again in
+    // goMealsStep, so one press of "‹ Thursday" grew history by two, and
+    // the following back gesture skipped the Day step and surfaced a state
+    // nobody had visited. Leaving cook mode is stepping back UP a level,
+    // so the entry that said "kitchen" should now say where you actually
+    // are — not sit behind a new one.
+    if (opts && opts.replaceHistory) {
+      if (!pathIsAlreadyOurs) window.history.replaceState({ tab: key }, '', tab.path);
+    } else if (pushHistory && !pathIsAlreadyOurs) {
       window.history.pushState({ tab: key }, '', tab.path);
     }
   }
@@ -456,7 +479,7 @@
             // hidden here.
             prefsGearHtml() +
           '</div>' +
-          '<h1 class="today-greeting">Today</h1>' +
+          '<h1 class="today-greeting">Now</h1>' +
           '<div class="today-progress" id="today-progress"></div>' +
         '</div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
@@ -590,7 +613,7 @@
       // point on Meals is permanent, so nothing is actually lost.
       wrap.innerHTML =
         '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
-          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Meals — I won’t ask again this week.</div>' +
+          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Plan — I won’t ask again this week.</div>' +
           '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
         '</div>';
       wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
@@ -999,6 +1022,37 @@
     '</button>';
   }
 
+  // The cookFocus payload that opens this move's recipe, or null when
+  // there is no recipe behind it. Only a COOK has one: a reheat is a line
+  // and never a way into a recipe (Kitchen's own rows follow the same
+  // rule), and a fridge move, a prep task or a shop run names no dish at
+  // all. moves.py already writes the payload for a cook's action target,
+  // so this reads it rather than building a second one that could drift;
+  // the fallback covers a payload cached before that field existed.
+  function moveRecipeTarget(move) {
+    if (!move || move.kind !== 'cook') return null;
+    var target = (move.action && move.action.target) || {};
+    if (target.cookFocus) return target.cookFocus;
+    if (move.entry_id == null) return null;
+    return {
+      entryId: move.entry_id,
+      date: move.date || null,
+      slot: move.slot || null,
+      title: move.title || ''
+    };
+  }
+
+  // Emily's rule (2026-09-09): a dish name is a link to its recipe. The
+  // name keeps its own class and every pixel of its own type — .dish-link
+  // only takes the browser's button furniture off and puts a 44px tap
+  // target under it.
+  function moveDishHtml(move, cls) {
+    var name = escapeHtml(move.title);
+    if (!moveRecipeTarget(move)) return '<span class="' + cls + '">' + name + '</span>';
+    return '<button type="button" class="' + cls + ' dish-link" data-move-dish="' +
+      escapeHtml(move.id) + '">' + name + '</button>';
+  }
+
   function nextUpCardHtml(move) {
     var chips = move.chips || [];
     return '<div class="hero-top">' +
@@ -1006,7 +1060,7 @@
         '<span class="hero-rule"></span>' +
         (move.time_label ? '<span class="nextup-when">' + escapeHtml(move.time_label) + '</span>' : '') +
       '</div>' +
-      '<div class="hero-dish nextup-dish' + dishSizeClass(move.title) + '">' + escapeHtml(move.title) + '</div>' +
+      moveDishHtml(move, 'hero-dish nextup-dish' + dishSizeClass(move.title)) +
       // The one Newsreader italic line on the screen (theme.css: "two lines
       // and it becomes a serif brand") — the move's own reason, never copy
       // written for the slot.
@@ -1025,14 +1079,24 @@
   }
 
   function moveRowHtml(move) {
-    // A done row has nothing left to open, so its text stops being a
-    // button — the tick is the only control on it, and it undoes.
-    var text =
-      '<span class="rest-row-title">' + escapeHtml(move.title) + '</span>' +
-      (move.detail ? '<span class="rest-row-detail">' + escapeHtml(move.detail) + '</span>' : '');
+    var detail = move.detail
+      ? '<span class="rest-row-detail">' + escapeHtml(move.detail) + '</span>'
+      : '';
+    var text = '<span class="rest-row-title">' + escapeHtml(move.title) + '</span>' + detail;
+    // A done row has nothing left to DO, so the whole row stops being the
+    // move's own button — the tick is the only control on it, and it
+    // undoes. The dish still has a recipe, though, and a cooked dinner is
+    // exactly the name someone taps wanting to see what went into it
+    // (Emily, 2026-09-09), so the NAME goes on being a link even here.
+    var doneText = moveRecipeTarget(move)
+      ? '<span class="rest-row-text">' +
+          '<button type="button" class="rest-row-title dish-link" data-move-dish="' +
+            escapeHtml(move.id) + '">' + escapeHtml(move.title) + '</button>' + detail +
+        '</span>'
+      : '<span class="rest-row-text">' + text + '</span>';
     return '<div class="rest-row' + (move.done ? ' is-done' : '') + '">' +
       (move.done
-        ? '<span class="rest-row-text">' + text + '</span>'
+        ? doneText
         : '<button type="button" class="rest-row-text rest-row-open" data-move-action="' + escapeHtml(move.id) + '">' + text + '</button>') +
       moveTickHtml(move) +
     '</div>';
@@ -1042,7 +1106,7 @@
     return '<div class="shell-card tomorrow-card">' +
       '<div class="tomorrow-eyebrow">TOMORROW</div>' +
       '<div class="tomorrow-lead">That&rsquo;s today handled. Tomorrow starts with</div>' +
-      '<div class="tomorrow-title">' + escapeHtml(move.title) + '</div>' +
+      moveDishHtml(move, 'tomorrow-title') +
       (move.detail ? '<div class="tomorrow-detail">' + escapeHtml(move.detail) + '</div>' : '') +
     '</div>';
   }
@@ -1128,6 +1192,26 @@
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
     });
+    // The dish name itself, wherever Today prints one — the Next up card's
+    // headline, a done row, tomorrow's first move. Straight to the recipe,
+    // never to the row's own action: tapping a name is "show me this", not
+    // "do this to it".
+    panel.querySelectorAll('[data-move-dish]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
+        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
+      });
+    });
+  }
+
+  // Every move Today has on screen, tomorrow's included — the tomorrow
+  // card is drawn from data.tomorrow, which is not in the day's own list.
+  function todayMoveById(panel, id) {
+    var data = panel._moves || {};
+    var hit = (data.moves || []).filter(function (m) { return m.id === id; })[0];
+    if (hit) return hit;
+    return (data.tomorrow && data.tomorrow.id === id) ? data.tomorrow : null;
   }
 
   function renderTodayMovesError(panel) {
@@ -1212,8 +1296,17 @@
     }
     // A cook or a reheat opens cook mode on Kitchen, on the exact meal the
     // move names (moves.py writes that payload).
+    //
+    // Through openRecipeFor, like every other way into cook mode (fixed
+    // 2026-09-10, found by review). Calling activateTab straight left
+    // whatever origin an earlier deep link had set standing, so a cook
+    // opened from Today could come back saying "‹ Thursday" and drop the
+    // household on Meals — and even with no stale state it made the screen
+    // disagree with itself: this row's own dish name already said
+    // "‹ Today" while its action button said "‹ Kitchen", two answers to
+    // one meal 200px apart.
     if (target.tab === 'kitchen' && target.cookFocus) {
-      return activateTab('kitchen', true, { cookFocus: target.cookFocus });
+      return openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' });
     }
     // The same thing, in the shape moves.py wrote it before 2026-09-08,
     // when cook mode was a state of the Meals tab. A payload cached by the
@@ -1222,7 +1315,7 @@
     // translate it rather than dropping the tap on the plan, where it
     // would silently do nothing.
     if (target.tab === 'week' && target['mealsView'] === 'cook') {
-      return activateTab('kitchen', true, { cookFocus: target['mealsFocus'] || true });
+      return openRecipeFor(target['mealsFocus'] || true, { label: 'Today', tab: 'today' });
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -1715,7 +1808,7 @@
         '<button type="button" class="gro-back" id="gro-back" data-gro="step-back" hidden></button>' +
         '<div class="gro-head">' +
           '<div class="gro-head-row">' +
-            '<h1 class="gro-title" id="gro-title">Grocery</h1>' +
+            '<h1 class="gro-title" id="gro-title">Shop</h1>' +
             // The TO SORT badge is a control, not decoration: it is the only
             // way into the SORT step, and it only exists while something has
             // no store.
@@ -1931,7 +2024,7 @@
       back.hidden = true;
       badge.hidden = true;
       sub.hidden = true;
-      title.textContent = 'Grocery';
+      title.textContent = 'Shop';
       body.innerHTML = groceryState.loadError
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
@@ -2046,7 +2139,7 @@
   // readable as a set rather than scattered through four builders.
   function groHeadFor(data, step) {
     if (step === 'sort') {
-      return { back: '‹ Grocery', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'sorthow') {
       // Same question as the queue's, because it is the same question — the
@@ -2092,7 +2185,7 @@
       sub = groPlural(t.needed, 'thing', 'things');
       if (stopCount) sub += ' · ' + groPlural(stopCount, 'stop', 'stops');
     }
-    return { back: '', title: 'Grocery', sub: sub };
+    return { back: '', title: 'Shop', sub: sub };
   }
 
   // ---------- LIST ----------
@@ -2869,13 +2962,27 @@
   // dish, which the shop-done handoff below treats as "say it without the
   // dish".
   function tonightDinnerName() {
+    var entry = tonightDinnerEntry();
+    return entry ? entry.title : null;
+  }
+
+  function tonightDinnerEntry() {
     var data = weekState.data;
     if (!data || !data.days) return null;
     var todayStr = todayLocalStr();
     var day = data.days.filter(function (d) { return d.date === todayStr; })[0];
     var entry = day && day.dinner;
-    if (entry && entry.title && entry.state !== 'open' && entry.state !== 'planned_empty') return entry.title;
+    if (entry && entry.title && entry.state !== 'open' && entry.state !== 'planned_empty') return entry;
     return null;
+  }
+
+  // The exact meal "Show me tonight" (and the dish name beside it) opens.
+  // `true` is the old "tonight, whatever the clock says that is" fallback,
+  // used when Meals has never been opened this session and there is no
+  // entry to name — the same shape every other cookFocus caller passes.
+  function tonightDinnerRecipeTarget() {
+    var entry = tonightDinnerEntry();
+    return (entry && recipeTargetForEntry(entry, todayLocalStr(), 'dinner')) || true;
   }
 
   // The handoff for "that's the shopping done" (Emily, 2026-09-04's ask to
@@ -2884,10 +2991,18 @@
   // groceryState.justFinishedTrip, not a lifetime purchased/in_cart count
   // (see that flag's declaration for why). Spruce fill, not apricot: LIST's
   // own "Start the trip" owns the screen's one apricot (Rule 5).
+  //
+  // The dish name in that line is a link too (2026-09-10). The branch's own
+  // decision-log entry claimed "Grocery names no dishes at all"; it names
+  // exactly one, right here, and Emily's rule has no exception for it. It
+  // is the same door as the button beside it — same data-gro, same handler,
+  // same meal — so this adds a way in, never a second answer.
   function groShopDoneHtml() {
     var dish = tonightDinnerName();
     var line = dish
-      ? 'That’s the shopping done. Tonight it’s ' + escapeHtml(dish) + '.'
+      ? 'That’s the shopping done. Tonight it’s ' +
+        '<button type="button" class="dish-link is-inline" data-gro="shop-done-tonight">' +
+        escapeHtml(dish) + '</button>.'
       : 'That’s the shopping done.';
     return (
       '<div class="shell-card gro-shop-done-card">' +
@@ -3728,9 +3843,13 @@
         renderGrocery();
         return;
 
-      // The shop-done handoff on LIST — see groShopDoneHtml.
+      // The shop-done handoff on LIST — see groShopDoneHtml. Through
+      // openRecipeFor, like every other way into cook mode, so the back
+      // link says the tab this actually came from instead of inheriting
+      // whatever an earlier deep link left on cookState (fixed 2026-09-10,
+      // found by review).
       case 'shop-done-tonight':
-        activateTab('kitchen', true, { cookFocus: true });
+        openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' });
         return;
 
       case 'shop-done-later':
@@ -3987,7 +4106,7 @@
             '<span class="kit-hairline"></span>' +
             prefsGearHtml() +
           '</div>' +
-          '<h1 class="kit-title">Kitchen</h1>' +
+          '<h1 class="kit-title">Cook</h1>' +
           '<p class="kit-sub" id="kit-sub"></p>' +
           '<div class="kit-body" id="kit-body"></div>' +
         '</div>' +
@@ -4319,7 +4438,7 @@
     if (!data.weekly_plan_id) {
       body.innerHTML =
         '<p class="cook-empty">No plan yet this week &mdash; ' +
-          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Meals tab first</button>.</p>' +
+          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>' +
         kitchenTilesHtml();
       return;
     }
@@ -5431,9 +5550,40 @@
             '<div class="wk-card-line">' + escapeHtml(entry.reason) + '</div>' +
           '</div>'
         : '') +
+      // The recipe itself. Emily, 2026-09-09: tapping a dish should bring
+      // you to the screen with the recipe on it — and inside Meals the
+      // dish's screen is this one, so the recipe belongs here rather than
+      // two taps further on. The panel is the cook screen's own
+      // (cookDetailHtml), rendered `plain`: same words, same order, no
+      // working controls. cookAheadHtml above is reused from that screen
+      // in exactly the same way, and for the same reason.
+      mealRecipeCardHtml(cookMeal, slot) +
       // The screen's one apricot primary (Rule 5) — the Day step's own
       // segments are quiet for exactly this reason.
       slotActionsHtml(day, slot, true);
+  }
+
+  // Nothing at all when the Cook view has no card for this entry: either
+  // it hasn't loaded yet (ensureCookDataForMeals re-renders when it does)
+  // or this slot is a reheat night, which is a line and never a way into a
+  // recipe — the rule Kitchen's own rows already follow. A card that IS
+  // here with no saved recipe still renders, because cookDetailHtml says
+  // so plainly ("Freeform meal — no saved recipe detail"), and a name that
+  // says nothing is what this ticket exists to fix.
+  function mealRecipeCardHtml(cookMeal, slot) {
+    if (!cookMeal || cookMeal.is_leftovers) return '';
+    // ...and nothing for a grab-and-go snack with no recipe behind it
+    // either (2026-09-10). "Apple slices" is not a freeform meal somebody
+    // forgot to write up, so a card whose whole content is "no saved
+    // recipe detail" is an empty card — exactly what this screen already
+    // takes the plate card away for on the same slot. A breakfast, lunch
+    // or dinner with no recipe keeps the line: there, the absence is worth
+    // saying, and it names the way to fill it in.
+    if (isSnackSlot(slot || '') && !cookMeal.has_full_recipe) return '';
+    return '<div class="shell-card wk-card wk-recipe-card">' +
+      '<div class="wk-card-title">The recipe</div>' +
+      cookDetailHtml(cookMeal, 'meal', false, true) +
+    '</div>';
   }
 
   // ---------- the step machine ----------
@@ -5443,16 +5593,40 @@
     return (i !== null && weekState.days[i]) ? weekState.days[i] : null;
   }
 
-  function pushMealsStepHistory() {
+  // What a cook screen opened from Meals should SAY it came from, and
+  // where it should land: the weekday, and the exact step — a tap from the
+  // Meal step returns to that meal, a tap from the Day step to that day.
+  function mealsOriginFor(day, slot) {
+    if (!day) return null;
+    return {
+      label: dayName(day.date, { weekday: 'long' }),
+      tab: 'week',
+      mealsStep: weekState.step === 'meal' ? 'meal' : 'day',
+      mealsDay: weekState.selectedIndex,
+      mealsSlot: slot || weekState.mealSlot
+    };
+  }
+
+  function mealsStepHistoryState() {
     // Same path either way — Meals is /week in all three steps, exactly as
     // Grocery is /grocery in all three of its. The state object is what the
     // back gesture reads; the URL never claims a page that doesn't exist.
-    window.history.pushState({
+    return {
       tab: 'week',
       mealsStep: weekState.step,
       mealsDay: weekState.selectedIndex,
       mealsSlot: weekState.mealSlot
-    }, '', '/week');
+    };
+  }
+
+  function pushMealsStepHistory() {
+    window.history.pushState(mealsStepHistoryState(), '', '/week');
+  }
+
+  // Used by cook mode's back link, which is stepping back up rather than
+  // going somewhere new — see activateTab's replaceHistory.
+  function replaceMealsStepHistory() {
+    window.history.replaceState(mealsStepHistoryState(), '', '/week');
   }
 
   function goMealsStep(step, opts) {
@@ -5460,7 +5634,8 @@
     weekState.step = step;
     if (opts.dayIndex !== undefined && opts.dayIndex !== null) weekState.selectedIndex = opts.dayIndex;
     if (opts.slot) weekState.mealSlot = opts.slot;
-    if (opts.push !== false) pushMealsStepHistory();
+    if (opts.replace) replaceMealsStepHistory();
+    else if (opts.push !== false) pushMealsStepHistory();
     var panel = panels['week'];
     if (!panel || !panel.dataset.built) return;
     renderMealsStep(panel);
@@ -5557,14 +5732,16 @@
         // is the fallback match (date+slot) behind entryId — Kitchen's own
         // rows carry the backend's plain 'snack', never our 'snack2' index
         // key, so that's what goes here too.
-        activateTab('kitchen', true, {
-          cookFocus: {
-            entryId: entry ? entry.entry_id : null,
-            date: day ? day.date : null,
-            slot: isSnackSlot(slot) ? 'snack' : slot,
-            title: entry ? entry.title : ''
-          }
-        });
+        //
+        // Through openRecipeFor so cook mode's back link names the step
+        // this came from ("‹ Monday") and lands back on it, rather than
+        // saying Kitchen — somewhere this person has not been.
+        openRecipeFor({
+          entryId: entry ? entry.entry_id : null,
+          date: day ? day.date : null,
+          slot: isSnackSlot(slot) ? 'snack' : slot,
+          title: entry ? entry.title : ''
+        }, mealsOriginFor(day, slot));
       });
     });
     // Swap is the in-place action now: one call, one new dish, answered on
@@ -7092,6 +7269,7 @@
 
   function renderWeekMenu(panel, data) {
     weekState.data = data;
+    setDishIndex(data);
     var todayStr = todayLocalStr();
     var days = (data.days || []).map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
     weekState.days = days;
@@ -7171,6 +7349,17 @@
                          // offer, until the write lands (see cookPrepCutHtml)
     focusIdx: null,      // index into cookState.data.meals, while focused
     focusScrollTo: null, // 'ingredients' | null — landed-on section, once
+    // Where the cook screen was opened FROM, when that wasn't Kitchen:
+    // { label, tab, mealsDay, mealsSlot } — see openRecipeFor. Cook mode is
+    // a step of Kitchen, so its back link has always said "‹ Kitchen"; once
+    // a dish name anywhere in the app opens it (Emily, 2026-09-09: "click
+    // the meal anywhere throughout the app, it should bring you to the
+    // screen with the recipe on it") a link saying Kitchen would be naming
+    // somewhere the person has never been. Same rule as every other deeper
+    // screen here — the link goes up a level BY NAME and lands back there,
+    // and it is never history.back(). Null is the ordinary case: you came
+    // from Kitchen, so Kitchen is what it says.
+    focusOrigin: null,
     // Set by a "Start cooking"/"Cook this" deep link that arrives before the
     // view has ever loaded. Either `true` (the old "focus whatever tonight
     // turns out to be" behaviour, still used by callers that have no
@@ -7219,6 +7408,58 @@
     }
     var idx = cookResolveFocusIndex(cookState.data.meals || [], focusTarget);
     if (idx !== null && cookState.data.meals[idx]) cookEnterFocus(idx);
+  }
+
+  // ---------- A dish name is a link to its recipe ----------
+  // Emily, 2026-09-09, after testing the app: "if you click the meal
+  // anywhere throughout the app, it should bring you to the screen with
+  // the recipe on it."
+  //
+  // There is exactly ONE screen in this app with a recipe on it — cook
+  // mode, the focused single-meal step of Kitchen — so that is where a
+  // dish name goes, rather than a new screen nobody asked for. Every
+  // caller comes through here so the back link, the tab switch and the
+  // "there is nothing to open" case are decided in one place instead of
+  // five.
+  //
+  // `origin` is what the cook screen's back link will SAY and where it
+  // will land: { label, tab } for a plain tab, plus mealsDay/mealsSlot to
+  // come back to the exact Meals step you left. Omit it from inside
+  // Kitchen — that is the ordinary "‹ Kitchen" case.
+  function openRecipeFor(target, origin) {
+    if (!target) return;
+    cookState.focusOrigin = origin || null;
+    activateTab('kitchen', true, { cookFocus: target });
+  }
+
+  // The words on the cook screen's back link. Never a guess: either the
+  // origin said its own name or you came from Kitchen.
+  function cookBackLabel() {
+    // The tab's own name is the fallback, and it changed on 2026-09-09:
+    // Kitchen became Cook. Two branches met here — one renamed the tabs, the
+    // other made this label say where you actually came from — and the
+    // dynamic version is the one that survived, so the rename lives in its
+    // default rather than in three hardcoded buttons.
+    var origin = cookState.focusOrigin;
+    return (origin && origin.label) ? origin.label : 'Cook';
+  }
+
+  // A reheat night is not a way into a recipe — there is no cook here, so
+  // there is nothing for a cook screen to hold (the rule Kitchen's own
+  // rows already follow, Emily 2026-09-04). Everything else that names a
+  // real plan entry is: a dish with no saved recipe still opens, and says
+  // plainly that there isn't one (cookDetailHtml), which beats a name that
+  // looks tappable and does nothing.
+  function recipeTargetForEntry(entry, date, slot) {
+    if (!entry || entry.state === 'planned_empty' || entry.state === 'open') return null;
+    if (entry.source === 'leftovers') return null;
+    if (entry.entry_id == null && !entry.title) return null;
+    return {
+      entryId: entry.entry_id != null ? entry.entry_id : null,
+      date: date || null,
+      slot: isSnackSlot(slot || '') ? 'snack' : (slot || null),
+      title: entry.title || ''
+    };
   }
 
   // Turns a cookFocus target into an index into cookState.data.meals — or
@@ -7620,7 +7861,7 @@
       : (session.note || '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Cook</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -7855,8 +8096,22 @@
     '</div>';
   }
 
-  // One recipe panel, used by the focused cook screen.
-  function cookDetailHtml(m, idx, onSpruce) {
+  // One recipe panel. The focused cook screen renders it whole; Meals'
+  // Meal step renders it `plain` (Emily, 2026-09-09 — "click the meal
+  // anywhere... it should bring you to the screen with the recipe on it",
+  // and inside Meals that screen is the Meal step). Plain is the SAME
+  // renderer with the working controls taken off, not a second recipe
+  // panel: the serving stepper, the hands-free mic, the step checkboxes,
+  // "Fill in this recipe" and the end-of-cook row all write through
+  // onCookClick/renderCook, which only ever redraw the Kitchen panel — and
+  // two renderers for one recipe is how the two screens end up saying
+  // different things about the same dish. Reading is what the Meal step is
+  // for; cooking is one apricot tap away on the same screen.
+  //
+  // Plain also drops the element ids (cook-ings-N and friends): they are
+  // handles for those same controls, and a second copy of one on another
+  // panel would have getElementById reaching the wrong screen.
+  function cookDetailHtml(m, idx, onSpruce, plain) {
     var cls = onSpruce ? ' on-spruce' : '';
     if (!m.has_full_recipe) {
       return '<p class="cook-norecipe' + cls + '">Freeform meal — no saved recipe detail. Ask in the ask bar for the full recipe.</p>';
@@ -7866,6 +8121,7 @@
     }).join('') || '<li class="cook-dim">None listed</li>';
 
     return '<div class="cook-detail' + cls + '">' +
+      (plain ? '' :
       '<div class="cook-detail-tools">' +
         (m.default_servings
           ? '<div class="cook-serves" data-idx="' + idx + '" data-recipe="' + escapeHtml(m.meal || '') + '" data-base="' + m.default_servings + '">' +
@@ -7880,15 +8136,15 @@
               'aria-label="Hands-free for this recipe" ' +
               'title="Hands-free: read steps, ask amounts, log a substitution">' + COOK_ICONS.mic + '</button>'
           : '') +
-      '</div>' +
+      '</div>') +
       (m.advance_prep_notes
         ? '<h4 class="cook-detail-head">Advance prep</h4><p class="cook-detail-p">' + escapeHtml(m.advance_prep_notes) + '</p>'
         : '') +
       '<h4 class="cook-detail-head">Ingredients</h4>' +
-      '<ul class="cook-ings" id="cook-ings-' + idx + '">' + ingredients + '</ul>' +
-      '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
+      '<ul class="cook-ings"' + (plain ? '' : ' id="cook-ings-' + idx + '"') + '>' + ingredients + '</ul>' +
+      (plain ? '' : '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>') +
       '<h4 class="cook-detail-head">Instructions</h4>' +
-      cookInstructionsHtml(m, idx) +
+      cookInstructionsHtml(m, idx, plain) +
       // The end of the last step used to just stop — the only way back to
       // "Mark cooked" was scrolling all the way back up to the hero. A
       // small, quiet row right where the steps run out closes the loop:
@@ -7897,10 +8153,13 @@
       // way back. Only while there's really a recipe with steps to finish,
       // and only until it's actually marked cooked — once it's done, this
       // is just clutter under a screen that already says so.
-      ((m.instructions || []).length && m.cooked_status !== 'done'
+      (!plain && (m.instructions || []).length && m.cooked_status !== 'done'
         ? cookFocusEndHtml(m)
         : '') +
-      (m.reasoning
+      // The Meal step has its own "Why this night" card reading the same
+      // sentence off the plan, so plain leaves this out rather than
+      // printing the reason twice on one screen.
+      (!plain && m.reasoning
         ? '<button type="button" class="cook-why" data-cook="why" data-idx="' + idx + '">Why this?</button>' +
           '<p class="cook-why-text" id="cook-why-' + idx + '" hidden>' + escapeHtml(m.reasoning) + '</p>'
         : '') +
@@ -7912,7 +8171,8 @@
       '<p class="cook-focus-end-note">That’s everything — how did it go?</p>' +
       '<div class="cook-focus-end-actions">' +
         '<button type="button" class="cook-focus-end-done" data-cook="focus-check" data-entry-id="' + m.entry_id + '" data-next="done">Mark it cooked</button>' +
-        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to Kitchen</button>' +
+        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to ' +
+          escapeHtml(cookBackLabel()) + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -7931,7 +8191,17 @@
   // step's position in the FULL instructions array, not the Do
   // ahead/Day of sub-list's own numbering, so a check survives whichever
   // list it's currently rendered into.
-  function cookStepLi(step, idx, stepPos) {
+  //
+  // `plain` is the reading copy (Meals' Meal step): the step keeps its
+  // number and its words and loses the checkbox, because a tick there
+  // would write into cookState and be redrawn by a render that only ever
+  // touches the Kitchen panel.
+  function cookStepLi(step, idx, stepPos, plain) {
+    if (plain) {
+      return '<li class="cook-step-item">' +
+        '<span class="cook-step-row"><span class="cook-step-text">' + escapeHtml(step) + '</span></span>' +
+      '</li>';
+    }
     var key = idx + ':' + stepPos;
     var done = !!cookState.focusStepsChecked[key];
     // The number stays a real <ol> marker — a step someone might reference
@@ -7948,24 +8218,29 @@
     '</li>';
   }
 
-  function cookInstructionsHtml(m, idx) {
+  function cookInstructionsHtml(m, idx, plain) {
     var steps = m.instructions || [];
+    var listCls = plain ? 'cook-steps' : 'cook-steps cook-steps-check';
     if (!steps.length) {
+      // "Fill in this recipe" is a write, and it lands through
+      // onCookClick — so the reading copy says the fact and leaves the
+      // button to the screen that can actually run it.
       return '<p class="cook-dim">No steps saved yet.</p>' +
-        '<button type="button" class="cook-fill" data-cook="fill" data-recipe="' + escapeHtml(m.meal || '') + '">Fill in this recipe</button>';
+        (plain ? ''
+          : '<button type="button" class="cook-fill" data-cook="fill" data-recipe="' + escapeHtml(m.meal || '') + '">Fill in this recipe</button>');
     }
     var prepIdx = m.advance_prep_step_indices || [];
     if (!prepIdx.length) {
-      return '<ol class="cook-steps cook-steps-check">' +
-        steps.map(function (s, i) { return cookStepLi(s, idx, i); }).join('') +
+      return '<ol class="' + listCls + '">' +
+        steps.map(function (s, i) { return cookStepLi(s, idx, i, plain); }).join('') +
       '</ol>';
     }
     var doAhead = [], dayOf = [];
     steps.forEach(function (s, i) { (prepIdx.indexOf(i + 1) !== -1 ? doAhead : dayOf).push({ s: s, i: i }); });
     return '<h5 class="cook-steplabel cook-steplabel-warm">Do ahead</h5>' +
-      '<ol class="cook-steps cook-steps-check">' + doAhead.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>' +
+      '<ol class="' + listCls + '">' + doAhead.map(function (x) { return cookStepLi(x.s, idx, x.i, plain); }).join('') + '</ol>' +
       '<h5 class="cook-steplabel">Day of</h5>' +
-      '<ol class="cook-steps cook-steps-check">' + dayOf.map(function (x) { return cookStepLi(x.s, idx, x.i); }).join('') + '</ol>';
+      '<ol class="' + listCls + '">' + dayOf.map(function (x) { return cookStepLi(x.s, idx, x.i, plain); }).join('') + '</ol>';
   }
 
   // ---------- Cook mode: one meal, the whole screen ----------
@@ -7991,15 +8266,45 @@
     // version of this feature — leaving cook mode stops the session with
     // it, exactly as switching off the old Cook state used to.
     stopCookVoice();
+    var origin = cookState.focusOrigin;
+    cookState.focusOrigin = null;
+    // Kitchen goes back to its own root FIRST, whether or not we then
+    // leave the tab: a tab left sitting on a cook screen would reopen
+    // there the next time it is tapped, which is not where the person
+    // left the app.
     cookState.screen = 'overview';
     cookState.pendingScrollTop = true;
     renderCook();
+    if (!origin || !origin.tab) return;
+    // The ask sheet is part of the shell, not of any one tab, so a dish
+    // tapped in a reply comes back to the tab it was tapped ON with the
+    // conversation open again — the reply that named the dish is the thing
+    // "‹ the chat" promises to return to.
+    // Neither of these adds a history entry — going back UP a level moves
+    // the entry we are standing on, it does not stack a new one on top of
+    // it. (See activateTab's replaceHistory: this used to push twice, so
+    // one press of the back link grew history by two and the next back
+    // gesture skipped a step.)
+    if (origin.tab !== 'kitchen') activateTab(origin.tab, false, { replaceHistory: true });
+    if (origin.reopenAsk) { openAskSheet(); return; }
+    if (origin.tab === 'kitchen') return;
+    // ...and back to the exact step, not just the tab: Meals is Week ->
+    // Day -> Meal, and "‹ Monday" has to mean Monday.
+    if (origin.tab === 'week' && origin.mealsDay !== undefined && origin.mealsDay !== null) {
+      goMealsStep(origin.mealsStep || 'meal', {
+        dayIndex: origin.mealsDay, slot: origin.mealsSlot, replace: true
+      });
+    }
   }
 
   // A prep session, by its date — see cookState.sessionDate for why the
   // date is the handle and not an index.
   function cookEnterSession(dateStr) {
     if (!cookSessionOn(cookState.data, dateStr)) return;
+    // A session is only ever reached from the Kitchen root, so its own
+    // "‹ Kitchen" is right — and any recipe origin left over from an
+    // earlier deep link would send exit-session to the wrong tab.
+    cookState.focusOrigin = null;
     cookState.screen = 'session';
     cookState.sessionDate = dateStr;
     cookState.pendingScrollTop = true;
@@ -8142,7 +8447,8 @@
     var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
     return '<div class="cook-focus">' +
       '<div class="cook-hero cook-hero-quiet">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
+          escapeHtml(cookBackLabel()) + '</button>' +
         cookReheatCardHtml(meal, dayLabel) +
       '</div>' +
       (srcLine
@@ -8190,7 +8496,8 @@
 
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
+          escapeHtml(cookBackLabel()) + '</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(dayLabel) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -8326,6 +8633,9 @@
     if (what === 'focus') {
       var idx = parseInt(el.getAttribute('data-idx'), 10);
       cookState.focusScrollTo = el.getAttribute('data-at') === 'ingredients' ? 'ingredients' : null;
+      // Opened from inside Kitchen, so Kitchen is genuinely where back
+      // goes — drop whatever origin an earlier deep link left behind.
+      cookState.focusOrigin = null;
       cookEnterFocus(idx);
       return;
     }
@@ -9256,7 +9566,237 @@
     fetch('/api/week-menu')
       .then(function (res) { return res.ok ? res.json() : null; })
       .catch(function () { return null; })
-      .then(function (weekMenu) { renderAskChips(computeContextQuickActions(weekMenu)); });
+      .then(function (weekMenu) {
+        // The same payload the dish index is built from, and this fetch
+        // already happens the moment the ask sheet is built — so a reply
+        // that names a dish can link it without a request of its own.
+        if (weekMenu) setDishIndex(weekMenu);
+        renderAskChips(computeContextQuickActions(weekMenu));
+      });
+  }
+
+  // ---------- A dish name in a chat reply is a link too ----------
+  // The hard half of Emily's rule (2026-09-09): in a reply the dish name is
+  // generated prose, not a row with an id on it. Nothing in the ChatAction
+  // contract says which words in a sentence are dishes, and asking the
+  // model to mark them up would be trusting generated text to be accurate
+  // about the plan.
+  //
+  // So this does not try to find dish names in the reply. It looks for the
+  // dishes it ALREADY KNOWS are on the plan — read off /api/week-menu, the
+  // same payload Meals renders — and links those, exactly those. That set
+  // is also precisely the set that HAS a recipe screen to open, since cook
+  // mode is per plan entry: a dish the app can't open is a dish this
+  // leaves as prose, which is the honest half of the same rule.
+  //
+  // Names are matched longest-first so "Chicken Tacos" wins over a plan
+  // that also has a "Chicken" on it.
+  //
+  // THE LINK CARRIES THE DISH'S NAME, NEVER A POSITION IN THIS INDEX
+  // (fixed 2026-09-10, found by review). The first version wrote
+  // data-dish="<array index>" and read dishIndex.entries[i] back at CLICK
+  // time — but this index is rebuilt and re-sorted on every /api/week-menu
+  // read, including the one sendAskMessage fires on the line straight after
+  // it renders the bubble. So the very turns that most want a link — the
+  // ones that changed the week — invalidated the indices inside the reply
+  // describing that change, and a bubble labelled "Chicken Tacos" opened
+  // "Apple slices". On a screen whose apricot primary is "Mark it cooked"
+  // that is one tap from a wrong write. The name is the stable handle: it
+  // is what the reply actually says, and it is re-resolved against the
+  // CURRENT plan when the link is tapped (dishTargetForName), so a link
+  // either opens the dish it names or opens nothing at all.
+  //
+  // `byName` is that lookup, and `entries` is only the set that is safe to
+  // link at all — see the ambiguity rule in setDishIndex.
+  var dishIndex = { entries: [], byName: {}, re: null };
+
+  // A dish on TWO different nights is not linked at all (2026-09-10, found
+  // by review). The index used to keep the first occurrence and drop the
+  // rest, so a reply saying "Chicken Tacos is on Saturday" opened Thursday
+  // — and cook mode's check-off writes against that entry_id, so "Mark it
+  // cooked" would have ticked the wrong night. The reply's own prose is
+  // the only thing that knows which night is meant, and reading a weekday
+  // out of generated text to pick between two entries is exactly the
+  // "trusting generated text to be accurate about the plan" this feature
+  // refuses to do everywhere else. So the honest answer is the smaller
+  // one: a name that names two meals names none of them, and stays prose.
+  // Every other dish still links.
+  function setDishIndex(weekMenu) {
+    var groups = {};
+    var order = [];
+    ((weekMenu && weekMenu.days) || []).forEach(function (day) {
+      var slots = WEEK_SLOTS.slice();
+      (day.snacks || []).forEach(function (_, i) { slots.push(snackSlotKey(i)); });
+      slots.forEach(function (slot) {
+        var entry = daySlotEntry(day, slot);
+        var target = recipeTargetForEntry(entry, day.date, slot);
+        // A name of two characters or fewer is not a dish anybody wrote —
+        // and a one-letter alternation would light up half the reply.
+        if (!target || !target.title || target.title.trim().length < 3) return;
+        var key = target.title.trim().toLowerCase();
+        // What makes two rows the SAME meal rather than two of them: the
+        // plan entry when there is one, otherwise the night it sits on. A
+        // component-based week carries neither, and one name across two of
+        // its days is still two meals.
+        var slotKey = target.entryId != null
+          ? 'e:' + target.entryId
+          : 'd:' + (target.date || '?') + '/' + (target.slot || '?');
+        if (!groups[key]) { groups[key] = { target: target, slots: {}, count: 0 }; order.push(key); }
+        if (!groups[key].slots[slotKey]) {
+          groups[key].slots[slotKey] = true;
+          groups[key].count += 1;
+        }
+      });
+    });
+    var entries = [];
+    var byName = {};
+    order.forEach(function (key) {
+      if (groups[key].count !== 1) return; // two nights, one name: prose.
+      entries.push(groups[key].target);
+      byName[key] = groups[key].target;
+    });
+    entries.sort(function (a, b) { return b.title.length - a.title.length; });
+    dishIndex.entries = entries;
+    dishIndex.byName = byName;
+    dishIndex.re = entries.length
+      ? new RegExp('(^|[^A-Za-z0-9])(' +
+          entries.map(function (e) { return escapeRegExp(e.title.trim()); }).join('|') +
+          ')(?![A-Za-z0-9])', 'g')
+      : null;
+  }
+
+  // What a tapped dish name resolves to RIGHT NOW, or null. Null is a real
+  // answer, not a failure: the plan may have moved on since the reply was
+  // written (the dish was swapped out, or it is now on two nights), and a
+  // link that opens the wrong meal is worse than one that opens none.
+  //
+  // **It hands back the NAME ONLY, deliberately** (2026-09-10, second
+  // review). Returning the whole `{entryId, date, slot, title}` target the
+  // index holds was still not safe, one level below the fix that put the
+  // name in the markup: a real swap DELETES and RECREATES the plan entry
+  // (`weekly_plan.swap_meal_in_plan`), so the recorded entryId is always a
+  // miss, and `cookResolveFocusIndex`'s NEXT fallback is date+slot with no
+  // name check — which lands on whatever dish now occupies that night.
+  // Reproduced end to end: a link labelled Chicken Tacos opened Bean Chili
+  // after a real swap of that slot, on a screen whose only entry-bearing
+  // control is "Mark it cooked".
+  //
+  // A name-only target skips both earlier branches and goes straight to
+  // the resolver's name match, which compares against the cook card's own
+  // `meal` — so a chat link opens the dish it names or lands on the
+  // Kitchen root, and can never open a different one. The resolver itself
+  // is deliberately NOT changed: Today's rows and Meals' "Cook this" read
+  // the target and the label out of the same payload in one breath, and
+  // their id/date fallbacks are right for them.
+  function dishTargetForName(name) {
+    var key = String(name == null ? '' : name).trim().toLowerCase();
+    var hit = key && dishIndex.byName[key];
+    return hit ? { title: hit.title } : null;
+  }
+
+  function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Re-read the plan when something changed it and no screen is going to.
+  // Silent on failure: a reply whose dish names stay prose is a smaller
+  // problem than a toast about a request nobody asked for.
+  function refreshDishIndex() { return readDishIndex(); }
+
+  function readDishIndex() {
+    return fetch('/api/week-menu')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .catch(function () { return null; })
+      .then(function (weekMenu) { if (weekMenu) setDishIndex(weekMenu); return !!weekMenu; });
+  }
+
+  // Opening a dish named in a reply. The index behind that link can be
+  // stale — refreshDishIndex is silent on failure by design, so one
+  // dropped /api/week-menu leaves the reply naming last week's dinners —
+  // and this is a deliberate tap, so it can afford to re-read the plan
+  // first (one local SQLite lookup) rather than act on what it last heard.
+  // A dish that has since left the plan says so instead of opening
+  // something. A failed re-read falls through to the index we have, which
+  // still cannot open a different dish than the one named — it is only the
+  // "this is gone" message that needs the network.
+  function openDishFromChat(name) {
+    var back = currentTabKey();
+    readDishIndex().then(function () {
+      var target = dishTargetForName(name);
+      if (!target) { showToast('That’s not on the plan any more.'); return; }
+      // The sheet closes on the way, exactly as an action card's View
+      // does — at desktop widths closeAskSheet is a no-op and the
+      // conversation stays beside the recipe.
+      closeAskSheet();
+      openRecipeFor(target, { label: 'the chat', tab: back, reopenAsk: true });
+    });
+  }
+
+  // One run of PLAIN TEXT, split into prose and dish names:
+  // [{text}, {dish}, {text}, ...]. Case-insensitive matching is
+  // deliberately NOT used: the reply says the dish the way the plan spells
+  // it, and a loose match is how "Bowl" starts linking sentences.
+  //
+  // This works on text, never on markup — see linkifyDishNamesIn.
+  function dishSegments(text) {
+    var src = String(text == null ? '' : text);
+    if (!dishIndex.re || !src) return [{ text: src }];
+    var out = [];
+    var last = 0;
+    var m;
+    dishIndex.re.lastIndex = 0;
+    while ((m = dishIndex.re.exec(src)) !== null) {
+      var at = m.index + m[1].length; // m[1] is the boundary character the match ate
+      if (at > last) out.push({ text: src.slice(last, at) });
+      out.push({ dish: m[2] });
+      last = at + m[2].length;
+    }
+    if (!out.length) return [{ text: src }];
+    if (last < src.length) out.push({ text: src.slice(last) });
+    return out;
+  }
+
+  // Elements whose text is never prose to be linkified: a dish name inside
+  // a link or a button is already one, and code is quoted verbatim.
+  var DISH_SKIP_TAGS = { BUTTON: 1, A: 1, CODE: 1, PRE: 1 };
+
+  // Walks the TEXT NODES of an already-rendered reply and turns each known
+  // dish name into a button.
+  //
+  // It used to run a regex over renderMarkdownLite's HTML *string* instead
+  // (fixed 2026-09-10, found by review). That is rewriting a rendered
+  // artifact rather than the thing it was rendered from, and it showed:
+  // a household with a dish called "table" or "strong" had the reply's
+  // markdown table flattened into literal escaped tags, because the regex
+  // reached inside `<table class="ask-msg-table">` and `<strong>`. Nothing
+  // could be injected — the escaping was correct on both sides — but the
+  // fix is the same one the dish-link bug above needed: work on the real
+  // thing (text, in the DOM), not on a string that looks like it.
+  function linkifyDishNamesIn(root) {
+    if (!root || !dishIndex.re) return root;
+    var kids = Array.prototype.slice.call(root.childNodes || []);
+    kids.forEach(function (node) {
+      if (node.nodeType === 3) { // text
+        var segs = dishSegments(node.nodeValue);
+        // One segment that is plain text means nothing matched. One segment
+        // that is a DISH means the whole node is the dish name — which is
+        // exactly what a bolded name or a table cell looks like, so this
+        // cannot be a "fewer than two segments, leave it" test.
+        if (segs.length === 1 && segs[0].dish === undefined) return;
+        var frag = document.createDocumentFragment();
+        segs.forEach(function (seg) {
+          if (seg.dish === undefined) { frag.appendChild(document.createTextNode(seg.text)); return; }
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'ask-dish';
+          btn.setAttribute('data-dish', seg.dish);
+          btn.textContent = seg.dish;
+          frag.appendChild(btn);
+        });
+        root.replaceChild(frag, node);
+      } else if (node.nodeType === 1 && !DISH_SKIP_TAGS[node.tagName]) {
+        linkifyDishNamesIn(node);
+      }
+    });
+    return root;
   }
 
   function renderAskChips(actions) {
@@ -9488,7 +10028,20 @@
     wrap.className = 'ask-msg ' + role;
     var bubble = document.createElement('div');
     bubble.className = 'ask-bubble';
+    // Only the assistant's side: the household's own message is their
+    // words, and rewriting what someone just typed is not this app's
+    // business.
     bubble.innerHTML = renderMarkdownLite(text);
+    if (role === 'assistant') linkifyDishNamesIn(bubble);
+    bubble.querySelectorAll('[data-dish]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // Resolved from the NAME, against the plan as it stands right now
+        // — never from a position recorded when the bubble was drawn, and
+        // never carrying that moment's entry id or night either. See
+        // openDishFromChat / dishTargetForName.
+        openDishFromChat(btn.getAttribute('data-dish'));
+      });
+    });
     wrap.appendChild(bubble);
     (actions || []).forEach(function (action) {
       var card = document.createElement('button');
@@ -9547,8 +10100,16 @@
   function refreshStaleTabsFromActions(actions) {
     (actions || []).forEach(function (action) {
       if (action.tab === 'week' && panels.week && panels.week.dataset.built) {
-        // loadWeekMenu refreshes the Cook state too — see its tail.
+        // loadWeekMenu refreshes the Cook state too — see its tail, and
+        // the dish index the chat's own dish links read (setDishIndex).
         loadWeekMenu(panels.week);
+      } else if (action.tab === 'week') {
+        // The same week changed, but Meals has never been opened in this
+        // page load, so there is no panel to reload — and the dish index
+        // would go on naming last week's dinners in every reply. One
+        // request, and only for a household that has actually changed the
+        // plan from chat without ever opening the tab.
+        refreshDishIndex();
       } else if (action.tab === 'kitchen') {
         // Kitchen was the second hole in this. The backend has always
         // tagged these writes with tab: 'kitchen' (app/main.py's
@@ -10632,10 +11193,10 @@
   var TIPS_OPENING = 'Say it however it comes out. There’s no right way to phrase it.';
 
   var TIPS_GROUPS = [
-    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
-    { tab: 'Meals', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
-    { tab: 'Grocery', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
-    { tab: 'Kitchen', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
+    { tab: 'Now', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
+    { tab: 'Plan', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
+    { tab: 'Shop', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
+    { tab: 'Cook', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
   ];
 
   var TIPS_CLOSERS = [

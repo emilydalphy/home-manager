@@ -314,6 +314,41 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — A day printed dinner before lunch, because `slot` is a TEXT
+  column. Branch `overnight/day-slot-order`.** `get_weekly_plan` ended
+  `ORDER BY mpe.date ASC, mpe.slot ASC`, which is ALPHABETICAL — breakfast,
+  dinner, lunch, snack. **Where it was actually visible** (measured against
+  `main`, not assumed): the flat `meals` list — the assistant's own read of
+  the week — and the two Kitchen renderers that walk it unsorted,
+  `kitchenTodayRows` and `cookRestOfWeekHtml`. NOT the `menu` day dict,
+  whose key order comes from `_build_day_based_menu`'s own dict literal and
+  already read correctly; and not `cookTonightIndex` /
+  `cookTomorrowFocusTarget`, which had each grown a private `COOK_SLOT_ORDER`
+  to work around this. The order was already written down in `DAY_SLOTS`;
+  the query never asked for it. New `weekly_plan.slot_order_sql(column)` builds
+  the ORDER BY `CASE` from that tuple, so a slot added there is added
+  everywhere at once, and an unknown slot sorts LAST rather than
+  disappearing. `mpe.id` is the last word in both queries because a day can
+  hold more than one snack: they tie on date AND slot, so without it SQLite
+  may hand them back either way round and "first planned wins" (the `menu`'s
+  single `snack` key) means a different snack run to run. `plan_quality.
+  _load_plan_entries` had the identical sort and is fixed the same way — its
+  rules mostly re-sort what they need, but `snack_clashes` reads the order
+  straight through to name the first thing a snack repeats.
+  `attendance.get_week_attendance` is deliberately NOT changed and carries a
+  comment saying why: it builds a `{date: {slot: ...}}` lookup and every
+  caller asks it for a slot by name, so that sort is read by nobody. One
+  behaviour call rode along: `_build_day_based_menu` folds an unknown slot
+  into `dinner`, and now that such a slot always arrives last it would have
+  overwritten a real dinner (before, whether it won depended on its own
+  spelling — 'brunch' lost, 'elevenses' won), so the real dinner is
+  protected explicitly. Two sorts of the same class are knowingly left
+  alone, out of this card's scope but worth a line: `leftovers.py`'s
+  `targets.sort(key=(date, slot))`, which feeds the `covers_note` sentence,
+  and `cook_ahead.py:202`. `tests/test_day_slot_order.py` is the guard,
+  7 tests built on a day inserted in a deliberately scrambled order; 5 of
+  them fail on the pre-fix code (the other two are no-regression guards and
+  say so in their own docstrings). 1736 -> 1743.
 - **2026-09-09 — The shops question closed itself on the first tap. Branch
   `overnight/onboarding-shops-multiselect`.** Emily, testing onboarding as a
   new household: "once I click one it brings me to a different screen that
@@ -589,6 +624,456 @@ why*, not duplicating the diff.
     down, matching the tab's grammar rather than pinning a second copy at
     the top; and no chat tool was added for any of this — it is all screen
     work on routes the assistant already has.
+- **2026-09-10 — The other half of "setup finishes once": two taps of the
+  SKIP link started two concurrent runs. Same branch
+  `overnight/onboarding-go-back`, second review pass.** The guard in the
+  entry below set its flag *after* four awaited POSTs and leaned on
+  `btn.disabled` for the window in between. That covered Continue — a
+  disabled button dispatches no click — and covered the skip link not at
+  all: it is a `<span>`, and it called `finishSetupAndReveal(null)`, so
+  there was no button to disable and nothing on screen changed. Two genuine
+  taps therefore started two runs at once. Measured in a real Chromium at
+  300ms of save latency: **12 POSTs, interleaved, three generations** where
+  there should be four and one. Both runs reach `generate_weekly_plan` ->
+  `tools.retire_overlapping_plans` and both claim the same days through the
+  same `_first_plan_window`, so the overlap is total and the second retires
+  the first — the same damage the history trap was written to prevent,
+  reached one step earlier and worse, because two generations are in flight
+  at once. **Why it survived:** on localhost the window is ~50ms and the
+  bug is invisible; on a phone talking to Railway it is half a second to two
+  seconds of a link that showed no sign of having been tapped. An impatient
+  second tap is expected behaviour, not exotic.
+  **The fix is three states rather than a boolean, and no reliance on a
+  control.** `setupRun` is `'idle' | 'running' | 'done'`; `'running'` is set
+  SYNCHRONOUSLY, before the first `await` and without reference to any
+  button, and it is what a second tap hits. The `catch` puts it back to
+  `'idle'`, because a save that failed never asked for a week. `'done'` is
+  the original permanent guard. `finishSetupAndReveal` takes no argument at
+  all now — the `btn.disabled` idiom is gone, since it only ever covered the
+  button. **And the reason the second tap happened gets fixed too:**
+  `setKitRepeatsBusy` puts BOTH controls into the same in-progress state,
+  so the skip link says "Saving your answers…" and stops being tappable
+  (`.skip-link.is-busy`) for as long as the run takes. `.skip-link` also
+  moved off `--text-muted` onto the canonical `--ink-secondary` while it
+  was being touched (§1) — same value, measured 4.44:1 light / 8.48:1 dark.
+  Verified in a real Chromium on a throwaway DB across the reviewer's whole
+  matrix (0/120/300/600ms save latency, 50-1500ms between taps), with the
+  latency applied INSIDE the page rather than in the route handler so the
+  page's own timeline is the one being slowed: **4 POSTs and one generation
+  every time**, including a tap dispatched straight at the handler to
+  bypass `pointer-events` — so what holds is the flag, not the CSS. Both
+  things that must not break were re-checked: a failed SAVE frees the
+  controls and `setupRun` goes back to `'idle'`, and a failed GENERATION
+  still lets "Try again" run a second one with the reveal trap re-arming
+  after it. 5 more tests (30 -> 35); 1788 -> 1793. The new ones fail on the
+  previous commit (10 POSTs, two generations, under node with a 120ms
+  save).
+
+- **2026-09-10 — The finished wizard was one back swipe away, and
+  re-finishing destroyed the week it had just built. Same branch
+  `overnight/onboarding-go-back`, review pass.** An independent reviewer
+  reproduced it in a real Chromium: at the reveal, one back gesture and two
+  taps of Continue, and the page posted the household, the rhythm, the
+  answers and `generate-first-plan` a **second** time — eight POSTs where
+  there should be four. The second generation runs
+  `tools.retire_overlapping_plans` (`app/agent.py`) over the first, so it
+  destroys the meals and reverses the grocery lines of the week the
+  household was looking at. **A regression, not a pre-existing hole:** on
+  `main` there are no pushed entries to swipe back into, and the entry below
+  says in its own words that the reveal "replaces its entry" so this cannot
+  happen. `replaceState` rewrites ONE entry, the one you are standing on;
+  the other nine were untouched. **Two guards now, deliberately, because the
+  damage is real data.** *Reachability:* `revealReached` is set the first
+  time `showStep('reveal')` runs and the popstate handler answers every
+  gesture from then on by pushing the reveal entry back and re-showing it —
+  the gesture is spent, the screen doesn't move, and pushing truncates the
+  forward stack so a forward swipe has nowhere to go either. *Safety:*
+  `finishSetupAndReveal` is a no-op after the first successful pass, however
+  it is reached; a save that FAILS lets the household try again, and the
+  reveal's own "Try again" is untouched, since it is only on screen when
+  nothing came back and there is therefore no week for a second attempt to
+  take over. (**The first version of that safety guard was incomplete and
+  leaked on the skip link — corrected the same day, see the entry above
+  this one.**) Three more things
+  went with it. **(a) A reload mid-flow left history lying.** The entries
+  ahead still named later steps while every in-memory answer was gone, so a
+  forward swipe reached, say, `restrictions` with no diet blocks on it, and
+  finishing from there posted. Entries now carry a `PAGE_LOAD` stamp;
+  `startOnboarding` PUSHES rather than replaces when it finds a step in
+  `history.state` (pushState truncates the stale forward entries outright),
+  and a gesture back onto an entry from an older load collapses onto the
+  household step and takes the entry over. **(b) Nothing re-checked that
+  the household had anybody in it.** "Add at least one person" lived only on
+  the household step's own Continue, so a gesture past it let a household of
+  ZERO people post and be handed a generated week. `finishSetupAndReveal`
+  re-validates and sends them back to the step that fixes it, and the alert
+  is now a line ON that step (`#household-empty`, `--urgent`, measured
+  5.54:1) — an alert covers the list of names it is talking about.
+  **(c) A restriction could transfer to a different person when a name was
+  reused.** `restrictionAnswers` is keyed by name and was pruned only inside
+  `buildRestrictionsStep`; remove Sam, rename Alex to Sam, and a history
+  jump that skips that rebuild ships Sam's *peanut allergy* as Alex's — by
+  then there IS a Sam, so nothing downstream can tell. Pruning now happens
+  on the household EDIT (`pruneMemberKeyedAnswers`, wired to the remove
+  button and the name input), which catches the removal while the name is
+  still gone, and again inside `currentRestrictions()` so the payload
+  guarantee stops depending on which screens were drawn. `rhythmLunchLocation`
+  and `rhythmCookingWho` get the same treatment — same shape, same
+  end-of-setup POST. The backend's only member identity is the NAME, so two
+  people called Sam are still indistinguishable to it; that is a bigger
+  ticket, and this closes the half that is reachable from here.
+  **Nit fixed with them:** the back control moved off `--text-muted` (a
+  legacy alias) onto the canonical `--ink-secondary` at the shell step
+  link's own 14px/700 — measured in Chromium at 390px, 4.44:1 light and
+  8.48:1 dark, hit area 91x44. Light is 0.06 under AA for normal text and
+  is under it everywhere in this app (`.wk-back`/`.gro-back` carry the same
+  value); clearing it means changing `--ink-secondary` itself, which is
+  **Emily's Tier 2 call**, not a one-screen hex. **And the test harness is
+  why this survived:** `tests/test_onboarding_go_back.py`'s history stub
+  modelled `back()` as a POP with no `history.state` at all, so a forward
+  entry could not exist in it and a reloaded page could not be described;
+  the one reveal test asserted the stack didn't GROW, which was true and had
+  nothing to do with reachability. It is a real back/forward stack with a
+  cursor now, and the blocker test fails against the pre-fix page (it walks
+  reveal -> typical-week -> dinners -> excited-about). 18 -> 30 tests there;
+  1776 -> 1788. `test_chores_setup_split`'s dot assertion, which had been
+  updated into `assert x == x`, asserts something falsifiable again.
+  **Verified in a real Chromium at 390px** on a throwaway DB with the
+  generation stubbed at the network layer: the reviewer's reproduction goes
+  from 8 POSTs and two generations to 4 and one.
+
+- **2026-09-09 — Onboarding had a way back and nobody could find it, and
+  two steps had already written their answer down by the time you did.
+  Branch `overnight/onboarding-go-back`.** Emily: "add a go back option in
+  case I want to go back to change responses." There WAS one — a bare
+  "← Back" under Continue on every step after the first — which is the more
+  useful bug report: a control placed after the primary action, named after
+  the gesture rather than after where it goes, is one you find only once you
+  have already given up on the screen. It is now a `‹ <the previous step>`
+  button at the TOP of each step (`STEP_TITLES`, `renderBackLink`), and the
+  three things around it that were actually broken are the change:
+  (1) **Arriving at a step redraws it** — `STEP_BUILDERS` keyed by step, run
+  by `showStep` on every arrival, so a step shows the answers as they stand
+  rather than whatever the last render left behind. This is what
+  `buildRestrictionsStep` got wrong: it rebuilt itself from the current
+  household every time it was reached and wiped the chips it was meant to
+  redraw, so coming forward after any change handed back a blank question.
+  Its answers live in `restrictionAnswers` now (name -> chips/allergy/other)
+  and the chips are drawn from them.
+  (2) **The dependency rule is derivation, never a table of what to
+  invalidate.** Back destinations come from `stepFlow()`/`stepBefore()`, not
+  from a `data-back="restrictions"` stamped on each step's markup — that
+  form is a table somebody has to keep in step with the flow, and the first
+  conditional step would turn every one of those attributes into a lie
+  nothing here would catch. Same shape one level down: an answer keyed by a
+  member name is dropped at RENDER time when nobody by that name is in the
+  household (`renderLunchPeople` and `renderCookingWhoChips` already did
+  this; `buildRestrictionsStep` does now), and the solo-adult branch stays
+  `applySoloAdultDefaults`'s derivation — go back, add a second person, and
+  "who cooks" is a real question again with the filled-in answer cleared.
+  (3) **Nothing reaches the household until setup finishes.** Two steps used
+  to POST on the way past — members when the household step was left, the
+  rhythm facts when the second rhythm step was — and both are keyed by NAME.
+  `add_member` is get-or-create by name and **nothing in this app deletes a
+  member**, so "Jamie" typed, corrected to "James", and continued through
+  left a household of three, two of them the same person, with no way to
+  take one back out. All four writes moved into `finishSetupAndReveal`, in
+  order (members, rhythm, answers, plan-the-week), so there is never a first
+  copy for a second one to duplicate.
+  `test_a_corrected_name_would_leave_two_of_the_same_person` characterises
+  the old behaviour against the real route, so the reason stays written down.
+  The back GESTURE: one history entry per step; the named control walks the
+  stack back with `history.back()` rather than pushing, which is what stops
+  the gesture right after a back tap from bouncing forward onto the step you
+  just left, and the popstate handler corrects the landing if it is ever not
+  the step the label promised. This is the one place in the repo where a
+  back link uses `history.back()`, deliberately: onboarding is linear, so
+  the entry behind you IS the step behind you — the rule elsewhere exists
+  because a tab you can wander around in has no such guarantee. The reveal
+  **replaces** its entry rather than pushing, so arriving at it doesn't add
+  one. ~~That is what makes a gesture back into the finished wizard
+  impossible.~~ **WRONG, and it shipped: `replaceState` rewrites the entry
+  you are STANDING on and leaves the nine behind it exactly where they
+  were.** One back swipe landed on typical-week with every answer still in
+  memory, and two taps of Continue ran the whole finish again — a second
+  LLM week, plus `retire_overlapping_plans` destroying the meals and
+  reversing the grocery lines of the week just shown. Fixed the next day;
+  see the 2026-09-10 entry above for what actually makes the reveal
+  terminal. An unrecognised popstate
+  state is left to the browser rather than trapping somebody on question one.
+  **Two copy/behaviour changes, both forced by (3) and both Emily's to
+  veto:** rhythm-2's CTA says "Continue" instead of "Save my rhythm" (it no
+  longer saves), and a rhythm-save failure is now reported at the end of
+  setup rather than at the rhythm step. `tests/test_onboarding_go_back.py`
+  is the guard, 18 tests — the page's own navigation and both rebuild paths
+  RUN under node against a DOM stub, because the original bug is exactly
+  what a source-marker test cannot see; 1758 -> 1776. Two existing files
+  were corrected honestly rather than deleted:
+  `test_chores_setup_split`'s dot-count test compared two hand-written lists
+  and one of them is derived now, and `test_onboarding_age_group`'s
+  docstrings said the household POST fires "right after the household step".
+  **Verified end to end in a real chromium at 390px** (Playwright, throwaway
+  DB, port 8934): forward, back by control, back by gesture, household
+  changed, forward again — one Robin in `members`, no orphan Jamie anywhere,
+  and the only non-GET before the finish was the sign-in. **Not done, on
+  purpose:** the flow is still every step for every household
+  (`stepFlow()` derives it but has nothing to drop yet), and correcting an
+  answer after setup is still Preferences' job — the reveal has no way back
+  (**true as a design intention, and only true of the CODE since the
+  2026-09-10 entry above**).
+- **2026-09-10 — The chat link's target is the dish's NAME AND NOTHING
+  ELSE, because a real swap recreates the entry. Same branch,
+  `tap-a-meal-opens-recipe`, second review.** The fix in the entry below
+  put the dish's name in the markup and re-resolved it at tap time, which
+  was right and was not enough. `dishTargetForName` still handed back the
+  whole `{entryId, date, slot, title}` target the index had recorded, and
+  `cookResolveFocusIndex` tries `entryId` first and then **date + slot with
+  no name check at all**. `weekly_plan.swap_meal_in_plan` DELETES the plan
+  entry and creates a new one, so after any real swap the recorded id is
+  *always* a miss and that unchecked fallback *always* fires — landing on
+  whatever dish now occupies that night. Reproduced end to end in Chromium
+  through the app's own write path (entry 15 -> 29, no hand-edited rows):
+  a reply's link labelled **Chicken Tacos** opened **Bean Chili, Thursday
+  Sep 10**, and the only entry-bearing control on that screen was
+  `Mark it cooked` carrying **id 29** — so the household believes it is
+  ticking the dish it tapped and ticks the one that replaced it.
+  - **The fix is scoped to the chat link, deliberately.**
+    `dishTargetForName` returns `{title}` only, so both of the resolver's
+    earlier branches are unreachable from a chat link and the name match —
+    which compares against the cook card's own `meal` — does the work.
+    `cookResolveFocusIndex` is **not** changed: Today's rows and Meals'
+    "Cook this" read their target and their label out of one payload in
+    one breath, and their id/date fallbacks are correct *for them*. Adding
+    a name check inside the shared date+slot branch would have been a
+    change to every caller's contract to fix one caller's misuse of it.
+  - **A tap now re-reads the plan before it opens anything**
+    (`openDishFromChat` -> `readDishIndex`). `refreshDishIndex` is silent
+    on failure by design, so one dropped `/api/week-menu` leaves a reply
+    naming last week's dinners indefinitely; a deliberate tap can afford
+    one local SQLite lookup. A dish that has left the plan now says so
+    instead of opening a screen for a meal nobody is cooking — which is the
+    lower-severity half of the same report. A failed re-read falls through
+    to the index in hand, which still cannot open a *different* dish; it is
+    only the "this is gone" message that needs the network.
+  - **What is deliberately NOT done:** the cook view is not force-reloaded
+    on the way in. If the index and the cooker view are somehow stale
+    *together*, the screen can still show a dish under its own name that
+    has since left the plan. That fails loudly rather than wrongly —
+    `cooker.check_off_meal` raises `No meal plan entry with id N` for a
+    deleted entry, so nothing else gets ticked — and a reload while a meal
+    is focused would move `cookState.focusIdx`, which is a fresh instance
+    of the exact bug being fixed here. Worth a ticket, not a smuggled
+    change.
+  - **The guard is an integration test, not a source marker**
+    (`test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` and its
+    stale-index twin): it plans a week, builds the index from the real
+    `get_week_menu` payload, runs the real `swap_meal_in_plan`, and
+    resolves the old reply's link against the real `get_cooker_view` with
+    the screen's own two functions under node. It asserts the entry id
+    really did change first, so it can never go toothless if the swap path
+    stops recreating. Both fail on the previous commit with
+    `AssertionError: 'Bean Chili' != 'Bean Chili'`. Suite 1790 -> 1792.
+
+- **2026-09-10 — Six things review found on `tap-a-meal-opens-recipe`, and
+  the blocker among them. Same branch.** An independent reviewer drove the
+  branch in a real browser and reproduced all six. Fixed in one pass, on
+  top of the existing commits.
+  - **THE BLOCKER: a chat reply's dish link kept its label and lost its
+    target.** The markup carried the dish's POSITION in `dishIndex.entries`
+    and read it back at CLICK time — but that array is rebuilt and
+    re-sorted (longest name first) on every `/api/week-menu` read,
+    including the one `sendAskMessage` fires on the line straight after it
+    renders the bubble. So exactly the turns that most want a link — the
+    ones that changed the week — invalidated the indices inside the reply
+    describing that change. Reproduced in Chromium: a bubble reading
+    `data-dish="2"` and labelled **Chicken Tacos** opened **Sheet Pan
+    Salmon**, on a screen whose apricot primary is "Mark it cooked", i.e.
+    one tap from a wrong write. **The link carries the dish's NAME now**,
+    and `dishTargetForName` re-resolves it against the plan as it stands
+    when it is tapped, so a link either opens the dish it names or opens
+    nothing and says so ("That's not on the plan any more."). This is the
+    failure `cookResolveFocusIndex` exists to prevent, reached from the one
+    direction that wasn't going through it. **That fix was necessary and
+    NOT sufficient** — a second review broke the same invariant through the
+    app's own swap path, one level below it; see the entry above this one.
+    Putting the name in the markup was right; handing the resolver the
+    whole recorded target was still wrong.
+  - **A dish on TWO nights is not linked at all.** The index kept the first
+    occurrence and dropped the rest, so a reply saying "Chicken Tacos is on
+    Saturday" opened Thursday — and cook mode's check-off writes against
+    that `entry_id`, so "Mark it cooked" would have ticked the wrong night.
+    Which night a sentence means cannot be read out of generated prose
+    without trusting exactly what this feature refuses to trust everywhere
+    else, so the honest answer is the smaller one: a name that names two
+    meals links to neither and stays prose. Every other dish still links.
+  - **The reply is walked as TEXT NODES now, not regexed as HTML.** With
+    dishes named "table" and "strong", running the regex over
+    `renderMarkdownLite`'s output reached inside `<table
+    class="ask-msg-table">` and `<strong>` and flattened the reply's
+    markdown table into literal escaped tags. Nothing could be injected —
+    the escaping was correct on both sides — but it is the blocker's own
+    root cause one level over: rewriting a rendered artifact instead of the
+    thing it was rendered from. `dishSegments` (pure, over one run of text)
+    plus `linkifyDishNamesIn` (walks `childNodes`, skips BUTTON/A/CODE/PRE)
+    replace `linkifyDishNames`.
+  - **Two entry points now say where they came from.**
+    `runTodayMoveAction` and Grocery's shop-done handoff called
+    `activateTab` directly, so they inherited whatever `focusOrigin` an
+    earlier deep link had left: Meals -> Thursday -> Cook this -> leave by
+    the tab bar -> tap a cook row on Today, and back said "‹ Thursday" and
+    dropped you on Meals. With no stale state at all it still made one
+    screen disagree with itself — Today's Next up DISH NAME said "‹ Today"
+    while the row's own button 200px below said "‹ Kitchen". Both go
+    through `openRecipeFor` now, with `{label: 'Today'}` and
+    `{label: 'Grocery'}`.
+  - **The back link adds no history entries.** `cookExitFocus` pushed in
+    `activateTab` and pushed again in `goMealsStep`, so one press grew
+    `history.length` by two (measured 7 -> 9 by the reviewer, 17 -> 19
+    here) and the following back gesture skipped the Day step onto a state
+    nobody had visited. Going back UP a level MOVES the entry you are
+    standing on: `activateTab` takes `opts.replaceHistory` and
+    `goMealsStep` takes `{replace: true}`, both `replaceState`. Measured
+    17 -> 17 after.
+  - **Coming back to Kitchen by the tab bar redraws the cook screen.**
+    Clearing `focusOrigin` there without re-rendering left a still-mounted
+    cook screen reading "‹ Today" while it now landed on Kitchen. It only
+    redraws when there is a deeper screen mounted to redraw.
+  - **Two judgement calls, said plainly.** (1) The Meal step no longer
+    prints a "no saved recipe detail" card for a grab-and-go SNACK — that
+    card's whole content would be "there isn't one", which is the same
+    empty card the plate card is already hidden for on that slot. A
+    breakfast/lunch/dinner with no recipe keeps the line, because there the
+    absence is worth saying and it names the way to fill it in. (2) A
+    linked dish name is visually identical to an unlinked one
+    (`.dish-link` is `color: inherit`), so in a dense row there is no
+    affordance at all beyond tapping it. **Left that way on purpose**: hard
+    rule 5 gives a screen one accent and it belongs to that screen's
+    primary action, and an underline or an apricot on every dish name in a
+    seven-row week card would turn the card into a page of links. The
+    discoverability is the row itself, which has always been tappable. If
+    Emily wants it visible, the change is one rule in `.dish-link` — not a
+    per-screen decision.
+  - `.dish-link.is-inline` is new: the block/full-width default is right
+    for a row title and wrong inside a sentence — measured at 390px, the
+    Grocery line took the whole width and dropped its full stop onto the
+    next line.
+  - **Verified in a real Chromium this time** (390px and 1280px, against a
+    throwaway seeded DB and a throwaway uvicorn), by running the same
+    script against the PRE-FIX `shell.js` and the fixed one: every one of
+    the six reproduced before and none after. Only the model call was
+    stubbed — `/api/chat/stream` was fulfilled with a canned reply, and the
+    week really changed underneath it first, exactly as a real turn does.
+    Eight new tests in `tests/test_tap_a_meal_opens_recipe.py`, each of
+    which fails on the pre-review commit; suite 1782 -> 1790.
+    **One thing that verification could not have caught**, and should be
+    read as a limit on it: the week was changed by writing to the database
+    directly, so the plan entry kept its id. A real swap DELETES and
+    RECREATES it, which is what let the same invariant break again — see
+    the entry above. **A reproduction that fakes the write is a
+    reproduction of a different bug.**
+
+- **2026-09-09 — A dish name is a link to its recipe, everywhere it
+  appears. Branch `overnight/tap-a-meal-opens-recipe`.** Emily, after
+  testing the app: "if you click the meal anywhere throughout the app, it
+  should bring you to the screen with the recipe on it." **Which screen
+  that is was the whole decision.** There is exactly ONE screen in this
+  app with a recipe on it — cook mode, the focused single-meal step of
+  Kitchen (`cookFocusHtml` -> `cookDetailHtml`) — so that is the recipe
+  screen, and nothing new was built. Meals' Meal step (`mealStepHtml`) was
+  the other candidate and it had no recipe on it at all: it now renders
+  the SAME panel `plain` (`cookDetailHtml(m, idx, false, true)`) —
+  ingredients, advance prep, Do ahead / Day of steps, and the
+  "Freeform meal — no saved recipe detail" sentence for a dish nobody has
+  written one for. Plain is the same renderer with every writing control
+  taken off (serves stepper, mic, step checkboxes, "Fill in this recipe",
+  the end-of-cook row, "Why this?") **and its element ids**: those are all
+  handles for `onCookClick`/`renderCook`, which only ever redraw the
+  Kitchen panel, and a second `#cook-ings-3` on another panel would have
+  `getElementById` reaching the wrong screen. One renderer in two frames,
+  exactly as the Meal step already borrows `cookAheadHtml`; two renderers
+  is how two screens end up saying different things about one dish.
+  **Every tap goes through one door,** `openRecipeFor(target, origin)`,
+  which sets `cookState.focusOrigin` and then does the
+  `activateTab('kitchen', …, { cookFocus })` each call site used to do for
+  itself. The origin is what makes the breadcrumb rule hold: cook mode's
+  back link was the literal "‹ Kitchen", which is a lie the moment a dish
+  name on Today opens it, so it is `cookBackLabel()` now — "‹ Today",
+  "‹ Monday", "‹ the chat", and still "‹ Kitchen" for every entry point
+  that existed before. `cookExitFocus` resets Kitchen's own screen FIRST
+  (a tab left sitting on a cook screen reopens there) and then returns to
+  the origin — for Meals, to the exact step, and for chat, to the tab the
+  reply was on with the conversation reopened. The origin is cleared by
+  Kitchen's own rows, by `cookEnterSession`, and by any plain
+  `activateTab('kitchen')`, so it only ever means "this deep link".
+  (**That list was written as if it were exhaustive and it was not** — two
+  entry points set no origin at all and inherited a stale one. Corrected
+  2026-09-10; see the review-pass entry above this one.)
+  **What now links, and what deliberately does not.** Newly linked: Today's
+  Next up headline, a DONE row's dish name (the row stops being the move's
+  button — the tick is the only control left — but a cooked dinner is
+  exactly the name someone taps wanting to see what went into it), and the
+  Tomorrow card. Already linked and unchanged: Kitchen's "Cooking today",
+  "The rest of the week" and prep-session rows, Meals' Day-step slot card
+  (which opens the Meal step, and the Meal step now has the recipe on it).
+  Deliberately NOT links, each for a reason: **a reheat night** (there is
+  no cook, so nothing for a cook screen to hold — the rule Kitchen's rows
+  already followed, Emily 2026-09-04), an away or open slot, the Week
+  card's own dish lines and the "See the whole week" sheet's cells (a day
+  row is one `<button>` and a dish line inside it is ~18px — you cannot
+  nest a button, and you cannot make a third of a row clear 44px; the row
+  IS the link, one level up), the needs-you band's suggestion rows (those
+  dishes are not on the plan yet and the row's job is Pick), the
+  cook-ahead ask's sentence, and `static/share.html` (a public printed
+  menu with no app behind it). ~~**Grocery names no dishes at all** — a
+  grocery row is an ingredient — so the ticket's "beside grocery items"
+  had nothing to link.~~ **Wrong, corrected 2026-09-10:** Grocery names
+  exactly ONE dish, in the shop-done handoff ("That's the shopping done.
+  Tonight it's <dish>."), and it is a link now like every other. The rest
+  of the sentence stands: a grocery ROW is an ingredient and links nothing.
+  **Chat replies: linked, and the mechanism is the honest part.** Nothing
+  in the `ChatAction` contract says which words of a reply are dishes, and
+  asking the model to mark them up would be trusting generated text about
+  the plan. So `linkifyDishNames` does not look for dish names in the
+  reply — it looks for the dishes it already KNOWS are on the plan
+  (`setDishIndex`, off the `/api/week-menu` payload `renderWeekMenu` and
+  the ask sheet's own quick-action fetch already have, so no request of its
+  own) and links exactly those. That set is also exactly the set that HAS
+  a recipe screen, since cook mode is per plan entry: a dish the app can't
+  open stays prose. Names are matched longest-first ("Chicken Tacos" beats
+  "Chicken"), whole-word only, and the whole reply is rewritten in ONE
+  `String.replace` pass so nothing inserted is ever rescanned. A chat
+  change to a week whose panel was never built refreshes the index on its
+  own (`refreshDishIndex` off `refreshStaleTabsFromActions`) — the "panels
+  build once per page load" gotcha, one level down.
+  **The 44px floor** is met by the invisible-hitbox trick `.wg2-why` and
+  `.gro-icon-btn` already use: `.dish-link::after` is a 44px box centred on
+  the name (`min-height: 100%` so a two-line hero title keeps its whole
+  area), and `.ask-dish::after` is `inset: -12px -4px` around an inline
+  word. The inline one overlaps the lines above and below — that is a real
+  trade and it is written down in the CSS: a mis-tap opens a recipe, and
+  the way back is one named link. `.dish-link` is declared BEFORE
+  `.rest-row-title`, `.tomorrow-title` and `.hero-dish` on purpose, since
+  those set their own family/size/weight/colour and win an
+  equal-specificity tie by being later — the class only removes the
+  browser's button furniture, it never recolours a name.
+  **Two existing tests were updated honestly rather than deleted:**
+  `test_the_back_link_says_kitchen` (renamed
+  `..._says_where_it_came_from`; the rule it is about — up one level BY
+  NAME, never `history.back()` — is unchanged, only the source of the name
+  is) and `test_cook_this_still_passes_the_exact_meal` (the same four-field
+  target, handed to `openRecipeFor` instead of `activateTab` directly).
+  `tests/test_tap_a_meal_opens_recipe.py` is the new guard, 32 tests as of
+  the review pass below, most of them running the screen's own functions
+  under node — the bug was "the name looks tappable and nothing happens",
+  which a source-marker test cannot see. (**Its counts were written
+  pre-merge and were wrong on the tree:** 24 tests and "1736 -> 1760" were
+  this branch measured on its own; the merged tree was 1782 before the
+  review pass and is 1790 after it.)
+  **Not verified in a browser at the time** — no browser tooling in that
+  session, so the LAYOUT at 390px and on desktop went unchecked. **It has
+  been now** (2026-09-10, real Chromium at 390px and 1280px); see the
+  review-pass entry above.
+
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,
