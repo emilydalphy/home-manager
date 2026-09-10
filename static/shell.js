@@ -153,13 +153,13 @@
   }
 
   var TABS = [
-    { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
-    { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
+    { key: 'today', path: '/', label: 'Now', railLabel: 'Now', icon: ICONS.sunrise, real: true },
+    { key: 'week', path: '/week', label: 'Plan', railLabel: 'Plan', icon: ICONS.plate, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
-    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.bag, grocery: true },
+    { key: 'grocery', path: '/grocery', label: 'Shop', railLabel: 'Shop', icon: ICONS.bag, grocery: true },
     // Kitchen is the COOK'S tab (Emily, 2026-09-08). It answers "what's
     // cooking, and what's in the house?": today's cooks, the prep sessions
     // that feed them, the rest of the week, and the two quiet ways into
@@ -172,7 +172,7 @@
     // static/kitchen.html still exists and still works standalone but
     // nothing links to it — the fallback, exactly the treatment
     // static/grocery.html and static/grocery-legacy.html already have.
-    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, kitchen: true }
+    { key: 'kitchen', path: '/kitchen', label: 'Cook', railLabel: 'Cook', icon: ICONS.pot, kitchen: true }
   ];
 
   // The Kitchen hub's entry tiles. The blueprint asks for these to open as
@@ -456,7 +456,7 @@
             // hidden here.
             prefsGearHtml() +
           '</div>' +
-          '<h1 class="today-greeting">Today</h1>' +
+          '<h1 class="today-greeting">Now</h1>' +
           '<div class="today-progress" id="today-progress"></div>' +
         '</div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
@@ -590,7 +590,7 @@
       // point on Meals is permanent, so nothing is actually lost.
       wrap.innerHTML =
         '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
-          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Meals — I won’t ask again this week.</div>' +
+          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Plan — I won’t ask again this week.</div>' +
           '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
         '</div>';
       wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
@@ -1622,7 +1622,7 @@
         '<button type="button" class="gro-back" id="gro-back" data-gro="step-back" hidden></button>' +
         '<div class="gro-head">' +
           '<div class="gro-head-row">' +
-            '<h1 class="gro-title" id="gro-title">Grocery</h1>' +
+            '<h1 class="gro-title" id="gro-title">Shop</h1>' +
             // The TO SORT badge is a control, not decoration: it is the only
             // way into the SORT step, and it only exists while something has
             // no store.
@@ -1835,7 +1835,7 @@
       back.hidden = true;
       badge.hidden = true;
       sub.hidden = true;
-      title.textContent = 'Grocery';
+      title.textContent = 'Shop';
       body.innerHTML = groceryState.loadError
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
@@ -1920,7 +1920,7 @@
   // readable as a set rather than scattered through four builders.
   function groHeadFor(data, step) {
     if (step === 'sort') {
-      return { back: '‹ Grocery', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'trip') {
       var store = groTripStore();
@@ -1940,7 +1940,7 @@
       sub = groPlural(t.needed, 'thing', 'things');
       if (stopCount) sub += ' · ' + groPlural(stopCount, 'stop', 'stops');
     }
-    return { back: '', title: 'Grocery', sub: sub };
+    return { back: '', title: 'Shop', sub: sub };
   }
 
   // ---------- LIST ----------
@@ -3278,7 +3278,7 @@
             '<span class="kit-hairline"></span>' +
             prefsGearHtml() +
           '</div>' +
-          '<h1 class="kit-title">Kitchen</h1>' +
+          '<h1 class="kit-title">Cook</h1>' +
           '<p class="kit-sub" id="kit-sub"></p>' +
           '<div class="kit-body" id="kit-body"></div>' +
         '</div>' +
@@ -3610,7 +3610,7 @@
     if (!data.weekly_plan_id) {
       body.innerHTML =
         '<p class="cook-empty">No plan yet this week &mdash; ' +
-          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Meals tab first</button>.</p>' +
+          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>' +
         kitchenTilesHtml();
       return;
     }
@@ -6911,7 +6911,7 @@
       : (session.note || '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Cook</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -7203,7 +7203,7 @@
       '<p class="cook-focus-end-note">That’s everything — how did it go?</p>' +
       '<div class="cook-focus-end-actions">' +
         '<button type="button" class="cook-focus-end-done" data-cook="focus-check" data-entry-id="' + m.entry_id + '" data-next="done">Mark it cooked</button>' +
-        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to Kitchen</button>' +
+        '<button type="button" class="cook-focus-end-back" data-cook="exit-focus">Back to Cook</button>' +
       '</div>' +
     '</div>';
   }
@@ -7433,7 +7433,7 @@
     var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
     return '<div class="cook-focus">' +
       '<div class="cook-hero cook-hero-quiet">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; Cook</button>' +
         cookReheatCardHtml(meal, dayLabel) +
       '</div>' +
       (srcLine
@@ -7481,7 +7481,7 @@
 
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; Cook</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(dayLabel) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -9923,10 +9923,10 @@
   var TIPS_OPENING = 'Say it however it comes out. There’s no right way to phrase it.';
 
   var TIPS_GROUPS = [
-    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
-    { tab: 'Meals', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
-    { tab: 'Grocery', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
-    { tab: 'Kitchen', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
+    { tab: 'Now', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
+    { tab: 'Plan', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
+    { tab: 'Shop', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
+    { tab: 'Cook', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
   ];
 
   var TIPS_CLOSERS = [

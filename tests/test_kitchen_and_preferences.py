@@ -143,13 +143,23 @@ def test_cook_mode_lives_in_the_kitchen_panel():
     assert "week-cook-view" not in SHELL_CSS
 
 
-def test_the_back_link_says_kitchen():
-    """Back links go UP a level by name and never call history.back()."""
-    _assert_in('data-cook="exit-focus">&lsaquo; Kitchen</button>', SHELL_JS,
+def test_the_back_link_names_the_tab_it_returns_to():
+    """
+    Back links go UP a level by name and never call history.back().
+
+    The four tabs were renamed on 2026-09-09 (Emily): Today/Meals/Grocery/
+    Kitchen became Now/Plan/Shop/Cook. Only the words a household reads
+    changed — keys, routes, classes and these files' own vocabulary did
+    not — so this expectation is updated rather than deleted.
+    The test's own name changed with it: it was
+    test_the_back_link_says_kitchen, and what it is really guarding is that
+    the link NAMES its parent, whatever that parent is called.
+    """
+    _assert_in('data-cook="exit-focus">&lsaquo; Cook</button>', SHELL_JS,
                "the focused screen's back link", "shell.js")
-    _assert_in('data-cook="exit-session">&lsaquo; Kitchen</button>', SHELL_JS,
+    _assert_in('data-cook="exit-session">&lsaquo; Cook</button>', SHELL_JS,
                "the prep session's back link", "shell.js")
-    assert "Back to the week" not in SHELL_JS, "a cook screen still points back at Meals"
+    assert "Back to the week" not in SHELL_JS, "a cook screen still points back at Plan"
 
 
 def test_cook_mode_keeps_its_apricot_and_its_end_state():
