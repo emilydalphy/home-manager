@@ -3701,10 +3701,22 @@ html, body {
    for the same reason .gro-pill-have below uses it: a picked shop is a
    settled fact, not the thing that wants doing. Apricot would have made
    every chosen shop read as another primary (Rule 5), and the one primary
-   on that card is the button that ends the question. Same token pair as
-   .gro-pill-have, so its contrast is the measured one already in use. */
-.gro-pill-on { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }
-.gro-pill-on:hover { border-color: var(--celadon-edge); }
+   on that card is the button that ends the question.
+
+   THE BORDER is what says "picked", not the fill, and that is the fix for
+   what the celadon pair got wrong. Measured against the unpicked chip
+   beside it, celadon-tint on ground is 1.12:1 and celadon-edge on
+   hairline-strong is 1.05:1 — so the picked chip was a WEAKER mark than the
+   unpicked one, an inverted affordance, and well under the 3:1 WCAG 1.4.11
+   asks of anything carrying state. (The comment this replaces cited
+   .gro-pill-have's contrast, which is a text-on-fill number and a different
+   question entirely.) --ink-strong is the strongest ink the palette has and
+   is not an accent, so it can carry the state without becoming a second
+   apricot. Measured in Chromium off computed styles, both schemes:
+   border --ink-strong vs --hairline-strong 9.73:1 light / 8.43:1 dark;
+   label --ink-on-celadon on the picked fill 10.65:1 light / 10.37:1 dark. */
+.gro-pill-on { background: var(--celadon-tint); color: var(--ink-on-celadon); border-color: var(--ink-strong); }
+.gro-pill-on:hover { border-color: var(--ink-strong); }
 /* Secondary action, not a store choice — celadon says "settled, already
    true" (design system §1) so it doesn't read as one more store option. */
 .gro-pill-have { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }

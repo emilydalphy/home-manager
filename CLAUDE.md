@@ -353,10 +353,55 @@ why*, not duplicating the diff.
   red on the previous commit — the front-end half RUNS the Grocery region's
   own functions under node against a small stub rather than reading the
   source for a marker, because the bug was a predicate going false, which is
-  exactly what a source-marker test cannot see. 1758 total. **Not verified in
-  a browser** — no browser tooling in this session, so the chip row's wrap
-  and the card's height at 390px are unchecked; the flow itself was driven
-  end to end against a real server.
+  exactly what a source-marker test cannot see. **Verified in a real
+  Chromium** at 390px in both colour schemes, on the reviewer's pass below:
+  the nine chips wrap onto three rows, every one of them 44px tall, the card
+  is 427px, the page never scrolls sideways and the only apricot on it is
+  the button at the foot.
+  **The reviewer's pass, same branch, three findings.** (1) *A reload
+  part-way through ended the question for good.* `storesPromptOpen` was
+  page-view only, so tapping one shop and reloading left the gate reading
+  "shops named, never dismissed" — permanently false, while the database
+  still said the question was unanswered, and the only remaining route to
+  the other shops was Kitchen → What we know → Stores, which a brand-new
+  household has never been shown. **Gating on `!storesPromptDismissed`
+  alone is the trade-off NOT taken:** nothing backfills
+  `stores_prompt_dismissed_at` (`app/db.py`), so every existing household —
+  shops named long ago, no dismissal row — would have been asked all over
+  again. The flag is persisted on the client instead, the shape the
+  approved-week receipt's dismissal already uses, keyed per household
+  (`pomona.storesPromptOpen.h<id>`). **localStorage, not sessionStorage**,
+  and that is the whole decision: an installed PWA is killed and relaunched
+  constantly and a relaunch ends the session, so a household that taps a
+  shop, takes a phone call and comes back would lose the question exactly as
+  it did before. The receipt can afford sessionStorage because coming back
+  next session is its correct behaviour; an unfinished question coming back
+  is the point of it. Every read and write is wrapped — this storage throws
+  outright in Safari's private mode. (2) *Rapid taps silently lost shops.*
+  Every tap recomputes the whole list from client state and posts it, so at
+  a 400ms round trip with taps 150ms apart the second and third taps each
+  read a list the first tap's answer had not reached, and wrote the earlier
+  shops back out — two of three shops gone, and never on a laptop. Local
+  state moves first now, and the writes are serialised: one in flight, and
+  the one behind it sends whatever the list is when it actually goes out, so
+  taps during a write collapse into a single trailing write and the last tap
+  wins. A failed write re-reads `/api/memory`, because the count line must
+  not keep claiming something the server does not hold. (3) *The picked chip
+  was a weaker mark than the unpicked one* — celadon-tint on ground is
+  1.12:1 and celadon-edge on hairline-strong 1.05:1, an inverted affordance
+  and far under WCAG 1.4.11's 3:1 for a state indicator. The BORDER carries
+  the state now, `--ink-strong`: measured in Chromium off computed styles,
+  **9.73:1 light / 8.43:1 dark** against the unpicked chip beside it, with
+  the label moved to `--ink-on-celadon` (10.65:1 / 10.37:1 on the fill) so
+  the picked chip's text is no fainter than the unpicked one's. Not apricot,
+  which would have been a second primary on a card whose foot button owns
+  the screen's one. Rode along: un-picking a shop now prunes that shop's
+  `store_typical_items` — the toggle writes a shorter whole list through
+  `edit_preference`, which had no pruning, while `delete_preference` has
+  always had it for exactly the reason written down there. Scoped to shops
+  actually coming OFF the list, never to everything absent from it, because
+  `add_store_typical_items` does not require a store to be a usual store
+  first. `tests/test_stores_multiselect.py` is 34 tests now; 1792 total.
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,

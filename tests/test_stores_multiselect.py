@@ -74,6 +74,17 @@ function fetch(url, opts) {
 }
 const panels = {};
 function showToast() {}
+// The two things the persisted "still being answered" flag needs: somewhere
+// to write, and a household to key it to. Both are the browser's job in
+// real life; here they are eight lines so the flag can actually be read
+// back rather than asserted about.
+const STORE = new Map();
+const window = { localStorage: {
+  getItem: function (k) { return STORE.has(k) ? STORE.get(k) : null; },
+  setItem: function (k, v) { STORE.set(k, String(v)); },
+  removeItem: function (k) { STORE.delete(k); }
+} };
+var coachState = { householdId: 1 };
 """
 
 # Five things needing a shop, none of them tagged to one — a household's list
@@ -339,25 +350,33 @@ def _case_body(verb: str) -> str:
 def test_tapping_a_shop_toggles_it_and_holds_the_card_open():
     body = _case_body("stores-prompt-pick")
     assert "groToggleUsualStore(el.dataset.store)" in body
-    assert "groceryState.storesPromptOpen = true;" in body
+    # Through the setter, not the raw field: the flag is mirrored into
+    # localStorage so a reload resumes the question (see readStoresPromptOpen).
+    assert "groSetStoresPromptOpen(true);" in body
 
 
 def test_adding_a_typed_shop_holds_the_card_open_too():
     body = SHELL_JS[SHELL_JS.index("      case 'stores-prompt-add': {"):]
     body = body[: body.index("      case 'stores-prompt-done':")]
-    assert "groceryState.storesPromptOpen = true;" in body
+    assert "groSetStoresPromptOpen(true);" in body
     assert "groAddUsualStore(typedStore)" in body
-    # And it never empties the field itself: a saved name comes back blank
-    # with the re-rendered card, and a FAILED save has to leave the typing
-    # where the household can try it again.
-    assert "storesPromptInput.value = ''" not in body
+    # It DOES empty the field itself now, and that reversed with the write
+    # race fix: the chip appears before the round trip, so the card
+    # re-renders while the box still holds the typed name — and that
+    # re-render carries a half-typed name across on purpose
+    # (groCaptureStoresPromptInput), which would leave a saved shop showing
+    # as a chip and sitting in the box to be added a second time. A FAILED
+    # save still has to leave the typing where the household can try again,
+    # so the catch puts it back.
+    assert "storesPromptInput.value = '';" in body
+    assert 'freshStoresInput.value = typedStore' in body
 
 
 def test_the_button_is_the_one_thing_that_records_the_question_as_answered():
     body = _case_body("stores-prompt-done")
     assert "/api/memory/stores-prompt-dismiss" in body
     assert "groceryState.storesPromptDismissed = true;" in body
-    assert "groceryState.storesPromptOpen = false;" in body
+    assert "groSetStoresPromptOpen(false);" in body
     # And nothing else in the file writes that dismissal.
     assert SHELL_JS.count("'/api/memory/stores-prompt-dismiss'") == 1
 
@@ -369,8 +388,11 @@ def test_a_picked_chip_is_coloured_from_tokens_only():
     rule = re.search(r"^\.gro-pill-on \{([^}]*)\}", SHELL_CSS, re.M)
     assert rule, ".gro-pill-on is what says a shop is picked"
     assert "#" not in rule.group(1)
-    for token in ("--celadon-tint", "--celadon-label", "--celadon-edge"):
+    for token in ("--celadon-tint", "--ink-on-celadon", "--ink-strong"):
         assert token in rule.group(1)
+    # And the state is carried by the BORDER, which is the one channel that
+    # clears 3:1 against the unpicked chip beside it (WCAG 1.4.11).
+    assert "border-color: var(--ink-strong)" in rule.group(1)
 
 
 # --- 6. the write path, over HTTP -----------------------------------------
@@ -409,3 +431,277 @@ def test_the_shops_reach_the_thing_that_sorts_the_list():
     tools.set_grocery_item_store(added["item_id"], "No Frills")
     by_store = {s["store"] for s in tools.get_grocery_list_by_store()["stores"]}
     assert "No Frills" in by_store
+
+
+# --- 7. a reload part-way through does not end the question ---------------
+# Three things an independent reviewer found on this branch, 2026-09-09.
+# The first: storesPromptOpen was page-view only, so tapping one shop and
+# then reloading left the gate reading "shops named, never dismissed" —
+# permanently false, while the database still said the question was
+# unanswered.
+
+
+@_needs_node
+def test_a_reload_part_way_through_resumes_the_question():
+    """The reported bug. The "reload" here is what a reload actually does to
+    this card: the page-view flag goes back to its default and the shops
+    come back from the server."""
+    out = _node("""
+groSetStoresPromptOpen(true);
+groToggleUsualStore('Costco').then(function () {
+  // --- the reload ---
+  groceryState.storesPromptOpen = false;             // a fresh page view
+  groceryState.storesPromptOpen = readStoresPromptOpen();  // what groLoadUsualStores does
+  console.log(JSON.stringify({
+    stillAsking: groStoresPromptShouldShow(),
+    picked: pickedChips(),
+    count: countLine()
+  }));
+});
+""")
+    assert out["stillAsking"] is True
+    # And it resumes with the picks already made showing, rather than blank.
+    assert out["picked"] == ["Costco"]
+    assert out["count"] == "1 shop picked"
+
+
+@_needs_node
+def test_answering_the_question_clears_the_remembered_flag():
+    """Otherwise the card would come back for a household that had finished
+    with it, the moment anything else re-opened the gate."""
+    out = _node("""
+groSetStoresPromptOpen(true);
+const during = STORE.get('pomona.storesPromptOpen.h1');
+groSetStoresPromptOpen(false);
+console.log(JSON.stringify({
+  during: during,
+  after: STORE.has('pomona.storesPromptOpen.h1'),
+  resumed: readStoresPromptOpen()
+}));
+""")
+    assert out["during"] == "1"
+    assert out["after"] is False
+    assert out["resumed"] is False
+
+
+@_needs_node
+def test_one_households_half_answered_question_is_not_another_households():
+    """Two households on one browser. The key carries the household id for
+    the same reason the coaching visit counters do."""
+    out = _node("""
+groSetStoresPromptOpen(true);
+coachState.householdId = 2;
+console.log(JSON.stringify({
+  other: readStoresPromptOpen(),
+  keys: Array.from(STORE.keys())
+}));
+""")
+    assert out["other"] is False
+    assert out["keys"] == ["pomona.storesPromptOpen.h1"]
+
+
+@_needs_node
+def test_a_tap_before_the_household_is_known_is_still_remembered():
+    """/api/coaching is what tells the shell which household this is, and it
+    can still be in flight when the card is first tapped. The flag lands
+    under the household-less key and is adopted, once, when the id arrives."""
+    out = _node("""
+coachState.householdId = null;
+groSetStoresPromptOpen(true);
+const parked = Array.from(STORE.keys());
+coachState.householdId = 1;
+const resumed = readStoresPromptOpen();
+console.log(JSON.stringify({ parked: parked, resumed: resumed, keys: Array.from(STORE.keys()) }));
+""")
+    assert out["parked"] == ["pomona.storesPromptOpen.hx"]
+    assert out["resumed"] is True
+    # Adopted, not copied: it doesn't stay behind for the next household.
+    assert out["keys"] == ["pomona.storesPromptOpen.h1"]
+
+
+@_needs_node
+def test_storage_that_throws_does_not_take_the_card_down_with_it():
+    """Safari in private mode throws on localStorage rather than returning
+    null. The question then behaves exactly as it did before it was
+    remembered — page-view only — and nothing else breaks."""
+    out = _node("""
+window.localStorage = {
+  getItem: function () { throw new Error('SecurityError'); },
+  setItem: function () { throw new Error('SecurityError'); },
+  removeItem: function () { throw new Error('SecurityError'); }
+};
+groSetStoresPromptOpen(true);
+console.log(JSON.stringify({
+  openNow: groceryState.storesPromptOpen,
+  stillAsking: groStoresPromptShouldShow(),
+  remembered: readStoresPromptOpen()
+}));
+""")
+    assert out["openNow"] is True
+    assert out["stillAsking"] is True
+    assert out["remembered"] is False
+
+
+# --- 8. three taps under a thumb keep all three shops ---------------------
+# The second finding. Every tap recomputes the whole list from client state
+# and sends it, so two taps in flight at once is a read-modify-write race.
+
+
+@_needs_node
+def test_three_quick_taps_on_a_slow_connection_keep_all_three_shops():
+    """The reported failure, at the latency it was reported at: a 400ms
+    round trip and taps 150ms apart. Before the fix the second and third
+    taps each read a list the first tap's answer had not reached yet, so the
+    server finished holding one shop while the card said three."""
+    out = _node("""
+let server = [];
+fetch = function (url, opts) {
+  const body = JSON.parse(opts.body);
+  return new Promise(function (resolve) {
+    setTimeout(function () {
+      server = body.value;
+      resolve({ ok: true, json: function () { return Promise.resolve({}); } });
+    }, 400);
+  });
+};
+groSetStoresPromptOpen(true);
+groToggleUsualStore('Costco');
+setTimeout(function () { groToggleUsualStore('Metro'); }, 150);
+setTimeout(function () { groToggleUsualStore('No Frills'); }, 300);
+setTimeout(function () {
+  console.log(JSON.stringify({ server: server, client: groceryState.usualStores, count: countLine() }));
+}, 2500);
+""")
+    assert out["server"] == ["Costco", "Metro", "No Frills"]
+    # And the count line is not allowed to say something the server doesn't hold.
+    assert out["client"] == out["server"]
+    assert out["count"] == "3 shops picked"
+
+
+@_needs_node
+def test_un_picking_wins_too_when_it_is_the_last_tap():
+    """The last tap wins whichever direction it went — a shop tapped on and
+    then straight back off must not be left on at the server."""
+    out = _node("""
+let server = null;
+fetch = function (url, opts) {
+  const body = JSON.parse(opts.body);
+  return new Promise(function (resolve) {
+    setTimeout(function () {
+      server = body.value;
+      resolve({ ok: true, json: function () { return Promise.resolve({}); } });
+    }, 400);
+  });
+};
+groSetStoresPromptOpen(true);
+groToggleUsualStore('Costco');
+setTimeout(function () { groToggleUsualStore('Metro'); }, 100);
+setTimeout(function () { groToggleUsualStore('Metro'); }, 200);
+setTimeout(function () {
+  console.log(JSON.stringify({ server: server, client: groceryState.usualStores }));
+}, 2500);
+""")
+    assert out["server"] == ["Costco"]
+    assert out["client"] == ["Costco"]
+
+
+@_needs_node
+def test_the_chip_answers_the_tap_without_waiting_for_the_round_trip():
+    """Which is also what makes the fix work: the next tap has to read a
+    list that already carries the last one."""
+    out = _node("""
+fetch = function () {
+  return new Promise(function (resolve) {
+    setTimeout(function () { resolve({ ok: true, json: function () { return Promise.resolve({}); } }); }, 400);
+  });
+};
+groSetStoresPromptOpen(true);
+groToggleUsualStore('Costco');
+console.log(JSON.stringify({ picked: pickedChips(), count: countLine() }));
+""")
+    assert out["picked"] == ["Costco"]
+    assert out["count"] == "1 shop picked"
+
+
+@_needs_node
+def test_a_write_that_fails_takes_the_servers_answer_back():
+    """Nothing was saved, so the count line must stop claiming it was. The
+    household has already been told out loud, by the handler's own toast."""
+    out = _node("""
+let asked = 0;
+fetch = function (url) {
+  asked += 1;
+  if (url === '/api/memory/edit') return Promise.reject(new Error('offline'));
+  // The re-read: /api/memory, answering with what the server actually holds.
+  return Promise.resolve({ ok: true, json: function () {
+    return Promise.resolve({ usual_stores: [], stores_prompt_dismissed: false });
+  } });
+};
+groSetStoresPromptOpen(true);
+groToggleUsualStore('Costco').catch(function () {}).then(function () {
+  setTimeout(function () {
+    console.log(JSON.stringify({ picked: groceryState.usualStores, count: countLine(), asked: asked }));
+  }, 50);
+});
+""")
+    assert out["picked"] == []
+    assert out["count"] == "No shops picked yet"
+
+
+@_needs_node
+def test_a_failed_write_does_not_stop_the_next_tap_saving():
+    """One dropped connection must not silently end saving for the rest of
+    the session, which is what a plain promise chain would have done."""
+    out = _node("""
+let server = [];
+let first = true;
+fetch = function (url, opts) {
+  if (url !== '/api/memory/edit') {
+    return Promise.resolve({ ok: true, json: function () {
+      return Promise.resolve({ usual_stores: server, stores_prompt_dismissed: false });
+    } });
+  }
+  if (first) { first = false; return Promise.reject(new Error('offline')); }
+  const body = JSON.parse(opts.body);
+  server = body.value;
+  return Promise.resolve({ ok: true, json: function () { return Promise.resolve({}); } });
+};
+groSetStoresPromptOpen(true);
+groToggleUsualStore('Costco').catch(function () {}).then(function () {
+  setTimeout(function () {
+    groToggleUsualStore('Metro').then(function () {
+      setTimeout(function () { console.log(JSON.stringify({ server: server })); }, 20);
+    });
+  }, 30);
+});
+""")
+    assert out["server"] == ["Metro"]
+
+
+# --- 9. un-picking a shop forgets what it was for -------------------------
+
+
+def test_un_picking_a_shop_drops_its_typical_items_list(signed_in):
+    """delete_preference has always pruned these — the Grocery card's toggle
+    writes a shorter whole list through edit_preference instead, which had
+    no pruning of its own, so "usually get here" suggestions kept surfacing
+    for a shop nobody shops at any more."""
+    signed_in.post("/api/memory/edit",
+                   json={"field": "usual_stores", "value": ["Costco", "Metro"]})
+    tools.add_store_typical_items("Costco", ["paper towels"])
+    tools.add_store_typical_items("Metro", ["rye bread"])
+
+    signed_in.post("/api/memory/edit", json={"field": "usual_stores", "value": ["Costco"]})
+
+    typical = signed_in.get("/api/memory").json()["store_typical_items"]
+    assert "Metro" not in typical
+    assert typical["Costco"] == ["paper towels"]
+
+
+def test_a_shop_that_was_never_picked_keeps_what_chat_taught_it(signed_in):
+    """add_store_typical_items says in its own docstring that it doesn't
+    need the store to be a usual store first. So the prune is scoped to
+    shops actually coming OFF the list, not to everything absent from it."""
+    tools.add_store_typical_items("Bulk Barn", ["oats"])
+    signed_in.post("/api/memory/edit", json={"field": "usual_stores", "value": ["Costco"]})
+    assert signed_in.get("/api/memory").json()["store_typical_items"]["Bulk Barn"] == ["oats"]

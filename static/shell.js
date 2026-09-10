@@ -1442,7 +1442,9 @@
     // enough to keep the card on screen while it is being answered, because
     // saving the first shop makes usualStores non-empty and the card's own
     // condition would go false under the hand still tapping it. Set by the
-    // first tap, cleared only by the button at the foot of the card.
+    // first tap, cleared only by the button at the foot of the card, and
+    // mirrored into localStorage so a reload part-way through resumes the
+    // question instead of ending it — see storesPromptOpenKey.
     storesPromptOpen: false,
     itemStorePrefs: {},     // lowercased item name -> remembered store
     preShopFlags: [],
@@ -1684,6 +1686,9 @@
       var memory = await res.json();
       groceryState.usualStores = memory.usual_stores || [];
       groceryState.storesPromptDismissed = !!memory.stores_prompt_dismissed;
+      // The other half of the same answer: whether this household was
+      // part-way through picking its shops when the page last went away.
+      groceryState.storesPromptOpen = readStoresPromptOpen();
       renderGrocery();
     } catch (err) { /* sorting still works from what's tagged on the list */ }
   }
@@ -1886,10 +1891,16 @@
       badge.setAttribute('aria-label', groPlural(unsorted, 'thing', 'things') + ' to sort');
     }
 
+    // The body holds a live input too while the shops card is up — its
+    // "Somewhere else?" field — and since a tapped chip re-renders the card
+    // straight away, an unrelated re-render is no longer a rare event. Same
+    // rule as the foot's add row below.
+    var storesTyped = groCaptureStoresPromptInput(body);
     if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'trip') body.innerHTML = groTripHtml(data);
     else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
     else body.innerHTML = groListHtml(data);
+    groRestoreStoresPromptInput(body, storesTyped);
 
     // LIST's foot holds a live input. A re-render it didn't ask for — the
     // usual-stores fetch landing, another tab pushing a refresh — must not
@@ -1899,6 +1910,21 @@
     groRestoreAddRow(foot, addRow);
 
     if (scrollEl) scrollEl.scrollTop = keepScroll;
+  }
+
+  function groCaptureStoresPromptInput(body) {
+    var input = body.querySelector('#gro-stores-prompt-input');
+    if (!input) return null;
+    return { value: input.value, focused: document.activeElement === input };
+  }
+  function groRestoreStoresPromptInput(body, saved) {
+    if (!saved || !saved.value) return;
+    var input = body.querySelector('#gro-stores-prompt-input');
+    if (!input) return;
+    input.value = saved.value;
+    if (!saved.focused) return;
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
   function groCaptureAddRow(foot) {
@@ -2549,6 +2575,67 @@
   // the button at the foot ends the question.
   var GRO_STORE_PROMPT_CHIPS = ['Costco', 'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'Walmart', 'Farm Boy', 'T&T', 'Whole Foods'];
 
+  // storesPromptOpen has to survive a reload, and that is not a nicety.
+  // Page-view only, it ended the question for good: tap one shop, reload,
+  // and the gate below reads "shops named, never dismissed" — permanently
+  // false, while the database still records the question as unanswered. The
+  // only remaining route to the other shops was Kitchen → What we know →
+  // Stores, which a brand-new household has never been shown.
+  //
+  // Gating on !storesPromptDismissed alone would have fixed that and broken
+  // something worse: nothing backfills stores_prompt_dismissed_at (app/db.py),
+  // so every EXISTING household — shops named months ago, no dismissal row —
+  // would be asked the question all over again.
+  //
+  // So the flag is persisted on the client, the same shape the approved-week
+  // receipt's dismissal uses (WEEK_RECEIPT_DISMISS_KEY). localStorage rather
+  // than sessionStorage, and that is the whole of the decision: an installed
+  // PWA is killed and relaunched constantly, and a relaunch ends the session
+  // — so a household that taps a shop, takes a phone call and comes back
+  // would lose the question exactly as it does today. The receipt can afford
+  // sessionStorage because coming back next session is its correct
+  // behaviour; an unfinished question coming back is the whole point of it.
+  // Keyed per household so two households signing into one browser can't
+  // inherit each other's half-answered question.
+  var STORES_PROMPT_OPEN_KEY = 'pomona.storesPromptOpen.h';
+
+  function storesPromptOpenKey() {
+    // coachState is the shell's one client-side answer to "which household
+    // is this", and it is declared hundreds of lines below this one — so
+    // this guards against running before that var does, the same way
+    // coachOnTabShown has to.
+    var id = (typeof coachState !== 'undefined' && coachState) ? coachState.householdId : null;
+    return STORES_PROMPT_OPEN_KEY + (id == null ? 'x' : id);
+  }
+
+  // Every read and write is wrapped: Safari in private mode throws on
+  // localStorage rather than returning null, and a remembered question must
+  // never take the Grocery tab down with it.
+  function readStoresPromptOpen() {
+    try {
+      var key = storesPromptOpenKey();
+      if (window.localStorage.getItem(key) === '1') return true;
+      // A tap in the moment before /api/coaching answered lands under the
+      // household-less key. Adopt it once, under this household's own key,
+      // rather than leave it lying there for the next household to find.
+      if (window.localStorage.getItem(STORES_PROMPT_OPEN_KEY + 'x') !== '1') return false;
+      window.localStorage.removeItem(STORES_PROMPT_OPEN_KEY + 'x');
+      window.localStorage.setItem(key, '1');
+      return true;
+    } catch (err) { return false; }
+  }
+
+  function groSetStoresPromptOpen(open) {
+    groceryState.storesPromptOpen = open;
+    try {
+      if (open) window.localStorage.setItem(storesPromptOpenKey(), '1');
+      else {
+        window.localStorage.removeItem(storesPromptOpenKey());
+        window.localStorage.removeItem(STORES_PROMPT_OPEN_KEY + 'x');
+      }
+    } catch (err) { /* see above: the question just stays page-view only */ }
+  }
+
   function groStoresPromptShouldShow() {
     // Answered once is answered for good, whatever the answer was.
     if (groceryState.storesPromptDismissed) return false;
@@ -2599,13 +2686,46 @@
   // Saves through the same field edit_preference/the Stores tab already
   // uses. The WHOLE list goes over the wire, not the one shop that changed,
   // because usual_stores is a set rather than an append log — un-picking has
-  // to be able to take one back out again. Local state moves first so the
-  // chip answers the tap without waiting on the round trip.
+  // to be able to take one back out again.
+  //
+  // Which makes every tap a read-modify-write, and three taps under a thumb
+  // are three of them at once. Measured: with a 400ms round trip and taps
+  // 150ms apart, the second and third taps each read a list the first tap's
+  // answer had not reached yet, so each one wrote the earlier shops back
+  // out — one shop saved, three showing. It never happens on a laptop,
+  // which is exactly why it needed fixing rather than watching.
+  //
+  // Two things fix it together. Local state moves FIRST, so the next tap
+  // reads a list that already has the last one in it (which is also what
+  // the chip's own colour has always claimed). And the writes are
+  // serialised: one is in flight at a time, and the one behind it sends
+  // whatever the list is at the moment it actually goes out. Taps arriving
+  // during a write collapse into that single trailing write, so the last
+  // tap wins and it wins by sending everything.
+  var storesWriteChain = Promise.resolve();
+  var storesWriteTrailing = null;
+
   function groSetUsualStores(next) {
-    return groPost('/api/memory/edit', { field: 'usual_stores', value: next }).then(function () {
-      groceryState.usualStores = next;
-      renderGrocery();
+    groceryState.usualStores = next;
+    renderGrocery();
+    if (storesWriteTrailing) return storesWriteTrailing;
+    var send = function () {
+      storesWriteTrailing = null;
+      return groPost('/api/memory/edit', {
+        field: 'usual_stores', value: groceryState.usualStores.slice()
+      });
+    };
+    // .then(send, send): the write behind a FAILED one still has to go out,
+    // or one dropped connection would silently stop every later tap saving.
+    storesWriteTrailing = storesWriteChain.then(send, send);
+    storesWriteChain = storesWriteTrailing.catch(function () {
+      // The optimistic list is now ahead of what the server holds, and the
+      // count line under the chips would be saying something untrue. Take
+      // the server's answer back; the caller has already said out loud that
+      // the save failed.
+      return groLoadUsualStores();
     });
+    return storesWriteTrailing;
   }
 
   function groToggleUsualStore(name) {
@@ -2920,7 +3040,7 @@
       // below ends the question.
       case 'stores-prompt-pick':
         el.disabled = true;
-        groceryState.storesPromptOpen = true;
+        groSetStoresPromptOpen(true);
         groToggleUsualStore(el.dataset.store).catch(function () {
           showToast("Couldn't save that — try again.");
         }).then(function () { el.disabled = false; });
@@ -2933,13 +3053,18 @@
         var typedStore = storesPromptInput.value.trim();
         if (!typedStore) { storesPromptInput.focus(); return; }
         el.disabled = true;
-        groceryState.storesPromptOpen = true;
-        // The field is deliberately not emptied here. A saved name re-renders
-        // the whole card, and the fresh input carries no value — so it comes
-        // back blank on its own. Clearing first would only matter when the
-        // write FAILS, and then it would throw away the typing along with it.
+        groSetStoresPromptOpen(true);
+        // Cleared BEFORE the write, the same shape groAddItem uses. The card
+        // re-renders the moment the chip appears now, and that re-render
+        // carries a half-typed name across (groCaptureStoresPromptInput), so
+        // a name left in the box would show as a chip AND still be sitting
+        // there to be added twice. On failure the catch puts it straight
+        // back, where the same carry-across keeps it.
+        storesPromptInput.value = '';
         groAddUsualStore(typedStore).catch(function () {
           showToast("Couldn't save that — try again.");
+          var freshStoresInput = groPanel() && groPanel().querySelector('#gro-stores-prompt-input');
+          if (freshStoresInput) freshStoresInput.value = typedStore;
         }).then(function () { el.disabled = false; });
         return;
       }
@@ -2953,7 +3078,7 @@
         // Kitchen sheet shouldn't be asked all over again.
         groPost('/api/memory/stores-prompt-dismiss', {}).then(function () {
           groceryState.storesPromptDismissed = true;
-          groceryState.storesPromptOpen = false;
+          groSetStoresPromptOpen(false);
           renderGrocery();
         }).catch(function () {
           el.disabled = false;
