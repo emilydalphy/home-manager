@@ -4601,10 +4601,16 @@
           group.dishes.push(dish);
         }
         // days arrive in the week's own order, so the LAST of these is the
-        // furthest-out day — which is the one the stepper takes away, and
-        // which for a chain is always a reheat rather than the cook that
-        // feeds it. That falls out of the ordering; it is not a rule this
-        // code has to enforce separately.
+        // furthest-out day, and that is the one the stepper takes away.
+        // Within one meal type that also happens to be a reheat rather
+        // than the cook that feeds it — a chain's source sits earlier than
+        // the night it feeds. It is NOT a general invariant, and an earlier
+        // version of this comment claimed it was: a dinner cooked double
+        // for the next day's LUNCH is a source sitting in the Dinners
+        // group, and can be last in it. Nothing here relies on the
+        // distinction — the server refuses a chain source outright (see
+        // tools.drop_dish_from_day), which is where the check belongs,
+        // since only it can see the chain.
         dish.days.push({ date: day.date, entryId: entry.entry_id });
         if (entry.source !== 'leftovers' && entry.source !== 'takeout') dish.cooks++;
       });
@@ -4644,7 +4650,7 @@
             (canDrop ? '' : ' disabled') +
             ' aria-label="One fewer ' + escapeHtml(one + ' of ' + dish.name) + '">' +
             RV_MINUS_SVG + '</button>' +
-          '<span class="rv-step-count' + (busy ? ' is-busy' : '') + '">' +
+          '<span class="rv-step-count">' +
             escapeHtml(n + ' ' + reviewSlotNoun(dish.slot, n)) + '</span>' +
           // Going UP is not arithmetic: it needs a day to land on, and the
           // only days available are ones already holding another dish or
@@ -4652,10 +4658,12 @@
           // be inventing a placement rule nobody has decided, so this hands
           // the question straight to the one place that can ask it.
           '<button type="button" class="rv-step-btn" data-rv-more="' + idx + '"' +
+            (busy ? ' disabled' : '') +
             ' aria-label="Another ' + escapeHtml(one + ' of ' + dish.name) +
             ' — I’ll ask which day">' + RV_PLUS_SVG + '</button>' +
         '</span>' +
-        '<button type="button" class="rv-change" data-rv-change="' + idx + '">Change</button>' +
+        '<button type="button" class="rv-change" data-rv-change="' + idx + '">' +
+          (n > 1 ? 'Change one' : 'Change') + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -4912,8 +4920,10 @@
     var data = weekState.data;
     if (!dish || dish.days.length < 2 || !data || !data.week_start_date) return;
     if (reviewState.busy !== null) return;
-    // The furthest-out day, which for a made-ahead chain is always a reheat
-    // rather than the cook that feeds it — see reviewEatingGroups.
+    // The furthest-out day the dish covers — see reviewEatingGroups, and
+    // note that this is NOT guaranteed to be a reheat: the server is what
+    // refuses a night other nights are eating off, and it answers
+    // 'refused' with the sentence to show.
     var target = dish.days[dish.days.length - 1];
     reviewState.busy = idx;
     reviewState.trouble = '';
@@ -4927,8 +4937,31 @@
       if (!res.ok) throw new Error('drop failed');
       var out = await res.json();
       reviewState.busy = null;
+      // A 200 that says no: this dish is cooked double for another night,
+      // and taking it away would leave that night holding a recipe nobody
+      // planned to cook. The sentence is the server's — it is the one that
+      // knows which night depends on it — and nothing was written.
+      if (out && out.status === 'refused') {
+        reviewState.trouble = out.message || SWAP_TROUBLE;
+        renderMealsStep(panel);
+        return;
+      }
       if (out && out.day) spliceSwappedDay(out.day);
       renderMealsStep(panel);
+      // Then the rest of the week, for the same reason runSwapInPlace does
+      // it: the splice updates weekState.DAYS, and the badge, the subtitle
+      // and — the one that matters most here — the Approve button's own
+      // count all read weekState.DATA, which a splice never touches. Left
+      // out, the button went on saying "Approve and build my shopping
+      // list" on a week that had just been handed an open slot back: copy
+      // that counts things, drifting from the things it counts, on the
+      // screen whose whole premise is counting.
+      await loadWeekMenu(panel);
+      // The slot came back as a question, so say so — the household tapped
+      // "one fewer" and the work that leaves behind is a night with nothing
+      // on it. Named the way resolveOpenSlot names its own day.
+      showToast(dayName(out.date, { weekday: 'long' }) + '’s ' +
+        slotWord(out.slot) + ' is yours to fill now.');
       // An approved week's shopping list just changed underneath, so
       // anything showing it is stale — the same courtesy resolveOpenSlot
       // already pays.

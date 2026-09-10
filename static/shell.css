@@ -5485,9 +5485,13 @@ span.cook-week-name { cursor: default; }
      .rv-slot-name       --ink on --surface               13.52 light / 12.49 dark
      .rv-day-open        --apricot-label on --surface      5.20 light /  8.53 dark
      .rv-empty/.rv-trouble  --ink on --ground             12.78 light / 14.40 dark
+     .rv-day-note        --celadon-label on --surface       5.76 light /  7.14 dark
    The one exception is .rv-step-btn:disabled (--ink-inactive on --sand,
    2.92:1) — a disabled control, which WCAG 1.4.3 exempts, and the low
-   contrast IS the signal that it is off. */
+   contrast IS the signal that it is off. Nothing else here leans on that
+   exemption: the count used to fade to --ink-secondary while a call was
+   out (4.04:1 on this track), which a transient state does not get to do,
+   so the two buttons going inert is the whole of the busy signal now. */
 .wk-seg {
   display: flex;
   gap: 4px;
@@ -5606,7 +5610,6 @@ span.cook-week-name { cursor: default; }
   font-weight: 700;
   color: var(--ink-strong);
 }
-.rv-step-count.is-busy { color: var(--ink-secondary); }
 .rv-change {
   min-height: 44px;
   padding: 0 16px;

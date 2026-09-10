@@ -65,6 +65,24 @@ def _entry_id(day: str, slot: str) -> int:
     return row["id"]
 
 
+def _snack_ids(day: str) -> list:
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE household_id = ? AND date = ? AND slot = 'snack' "
+        "ORDER BY id ASC", (tools.household_id(), day)).fetchall()
+    conn.close()
+    return [r["id"] for r in rows]
+
+
+def _entry_id_asc(day: str, slot: str) -> int:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE household_id = ? AND date = ? AND slot = ? "
+        "ORDER BY id ASC", (tools.household_id(), day, slot)).fetchone()
+    conn.close()
+    return row["id"]
+
+
 def _slot_state(day: str, slot: str) -> str:
     conn = get_conn()
     row = conn.execute(
@@ -175,6 +193,54 @@ def test_taking_the_reheat_night_off_a_chain_leaves_the_cook_night_alone():
     assert _slot_state(D1, "dinner") == "planned"
 
 
+def test_stepping_one_snack_down_leaves_the_day_s_OTHER_snack_alone():
+    """
+    BLOCKER, found in review and reproduced through the real route. A day
+    holds TWO rows at slot='snack' by default, and the first version of this
+    composed clear_plan_slot, which deletes every row in a slot — so one tap
+    on the Apple row's minus destroyed the Greek yogurt beside it, grocery
+    reversal and all, and left the day on one open slot when the household
+    had asked for two snacks. swap_meal_in_plan's own docstring had already
+    written the rule down; removal is by ID now, the way that function does
+    it.
+    """
+    plan = _plan()
+    tools.plan_meal(D1, "Apple and peanut butter", slot="snack", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Greek yogurt", slot="snack", weekly_plan_id=plan)
+    apple = _snack_ids(D1)[0]
+
+    tools.drop_dish_from_day(plan, apple)
+
+    day = [d for d in tools.get_week_menu(plan)["days"] if d["date"] == D1][0]
+    titles = [(s["title"], s["state"]) for s in day["snacks"]]
+    # The day still has two snack slots: one real snack, one handed back.
+    assert ("Greek yogurt", "planned") in titles, titles
+    assert sum(1 for _, state in titles if state == "open") == 1, titles
+    assert not any(t == "Apple and peanut butter" for t, _ in titles), titles
+
+
+def test_a_dish_that_feeds_another_night_is_refused_rather_than_dropped():
+    """
+    Taking away a night that was cooked double leaves the night it fed
+    holding a real recipe nobody planned to cook, with the doubled batch's
+    groceries just reversed out from under it. _unlink_leftover_target
+    covers the reverse direction only, so this refuses and names the night
+    that depends on it — nothing written.
+    """
+    plan = _plan()
+    tools.plan_meal(D1, "Beef Chili", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D2, "Beef Chili", slot="dinner", weekly_plan_id=plan)
+    source, target = _entry_id_asc(D1, "dinner"), _entry_id_asc(D2, "dinner")
+    tools.set_cook_ahead(source, [target])
+
+    out = tools.drop_dish_from_day(plan, source)
+
+    assert out["status"] == "refused"
+    assert "also feeds" in out["message"]
+    assert _slot_state(D1, "dinner") == "planned", "nothing may be written on a refusal"
+    assert _slot_state(D2, "dinner") == "planned"
+
+
 def test_the_route_takes_one_day_off_a_dish(signed_in):
     plan = _plan()
     tools.plan_meal(D1, "Chicken Traybake", slot="dinner", weekly_plan_id=plan)
@@ -252,6 +318,13 @@ def _extract_var(name: str, source: str) -> str:
             break
         j += 1
     return source[start : j + 1]
+
+
+def _extract_async(name: str, source: str) -> str:
+    """Same lift, for an `async function` — _extract starts at the word
+    `function`, which would drop the `async` and make every `await` inside
+    it a syntax error."""
+    return "async " + _extract(name, source)
 
 
 def _run_node(harness: str):
@@ -726,3 +799,98 @@ def test_no_literal_hex_in_the_review_styles():
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "literal hex in the Review styles"
     for alias in ("--plum", "--gold", "--midnight-violet", "--oat-cream"):
         assert alias not in block
+
+
+# ------------- the stepper's own call, run rather than read -------------
+# runDropDishDay is where the second blocker lived: it spliced the changed
+# day into weekState.DAYS and stopped, while the Approve button's count
+# reads weekState.DATA, which a splice never touches. The defect was a
+# missing call, so these run the real function against stubs and record what
+# it actually did.
+
+def _run_drop(response: dict, status: str = "draft") -> dict:
+    harness = (
+        "var calls = [];\n"
+        "var reviewState = { view: 'eating', busy: null, trouble: '', dishes: [\n"
+        "  { slot: 'dinner', name: 'Beef Chili', cooks: 2,\n"
+        "    days: [{date:'2026-09-07',entryId:1},{date:'2026-09-08',entryId:2}] }] };\n"
+        "var weekState = { data: { week_start_date: '2026-09-07', status: "
+        + json.dumps(status) + " }, days: [] };\n"
+        "var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';\n"
+        "function spliceSwappedDay(d){ calls.push('splice'); }\n"
+        "function renderMealsStep(){ calls.push('render'); }\n"
+        "async function loadWeekMenu(){ calls.push('loadWeekMenu'); }\n"
+        "function showToast(t){ calls.push('toast:' + t); }\n"
+        "function refreshGrocerySurfaces(){ calls.push('grocery'); }\n"
+        "function dayName(d, o){ return 'Thursday'; }\n"
+        "function slotWord(s){ return s; }\n"
+        "var fetchBody = null;\n"
+        "async function fetch(url, opts){ fetchBody = JSON.parse(opts.body);\n"
+        "  calls.push('fetch:' + url);\n"
+        "  return { ok: true, json: async () => (" + json.dumps(response) + ") }; }\n"
+        + _extract_async("runDropDishDay", SHELL_JS) + "\n"
+        "runDropDishDay(null, 0).then(function () {\n"
+        "  console.log(JSON.stringify({ calls: calls, body: fetchBody,\n"
+        "    trouble: reviewState.trouble, busy: reviewState.busy })); });\n"
+    )
+    return _run_node(harness)
+
+
+_DROPPED = {"status": "dropped", "date": "2026-09-08", "slot": "dinner",
+            "dish": "Beef Chili", "open_reason": "You cut Beef Chili back, so this "
+            "one is yours to fill.", "day": {"date": "2026-09-08"}}
+
+
+@_needs_node
+def test_the_stepper_reloads_the_week_so_the_approve_button_stays_true():
+    """
+    BLOCKER, found in review and reproduced in a browser. The splice updates
+    weekState.days; countOpenSlots — which the Approve button's label is
+    built from — reads weekState.data.days, which the splice never touches.
+    Without the reload the button went on saying "Approve and build my
+    shopping list" on a week that had just been handed an open slot back.
+    runSwapInPlace has had this line all along, and says why.
+    """
+    out = _run_drop(_DROPPED)
+    assert "loadWeekMenu" in out["calls"], out["calls"]
+    # ...and after the splice, so the reload is what the screen ends on.
+    assert out["calls"].index("loadWeekMenu") > out["calls"].index("splice")
+
+
+@_needs_node
+def test_the_stepper_says_out_loud_that_the_slot_is_now_a_question():
+    """The tap leaves work behind — a night with nothing on it. Saying so is
+    the cue the household otherwise never gets, since Review renders an open
+    slot as the bare words "Your call"."""
+    toasts = [c for c in _run_drop(_DROPPED)["calls"] if c.startswith("toast:")]
+    assert len(toasts) == 1, toasts
+    assert "yours to fill" in toasts[0]
+
+
+@_needs_node
+def test_it_targets_the_last_day_the_dish_covers():
+    assert _run_drop(_DROPPED)["body"] == {"entry_id": 2}
+
+
+@_needs_node
+def test_a_refusal_writes_nothing_and_shows_the_server_s_own_sentence():
+    refusal = {"status": "refused", "dish": "Beef Chili",
+               "message": "Beef Chili on Monday also feeds Tuesday’s dinner — "
+                          "change that first and I’ll take this one off."}
+    out = _run_drop(refusal)
+    assert "also feeds" in out["trouble"]
+    assert "splice" not in out["calls"], out["calls"]
+    assert "loadWeekMenu" not in out["calls"], out["calls"]
+    assert not [c for c in out["calls"] if c.startswith("toast:")]
+
+
+@_needs_node
+def test_an_approved_week_s_grocery_surfaces_are_refreshed_and_a_draft_s_are_not():
+    assert "grocery" in _run_drop(_DROPPED, status="approved")["calls"]
+    assert "grocery" not in _run_drop(_DROPPED, status="draft")["calls"]
+
+
+@_needs_node
+def test_the_busy_state_is_cleared_however_the_call_ends():
+    assert _run_drop(_DROPPED)["busy"] is None
+    assert _run_drop({"status": "refused", "message": "no"})["busy"] is None

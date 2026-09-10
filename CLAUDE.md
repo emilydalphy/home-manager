@@ -314,6 +314,52 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — Two blockers and two concerns in the Review stepper, found
+  by an independent reviewer and fixed on the same branch
+  (`overnight/review-week-two-views`).** Both blockers were reproduced
+  through the real route and the real UI, and both had a fix pattern
+  already written down in this codebase.
+  - **The stepper on a snack deleted the day's OTHER snack.**
+    `drop_dish_from_day` composed `clear_plan_slot`, which deletes EVERY row
+    at `(plan, date, slot)` — and a day holds TWO rows at `slot='snack'` by
+    default (`preferences.resolve_snacks_per_day`). One tap on the Apple row
+    destroyed the Greek yogurt beside it, grocery reversal and all, and left
+    a day the household had asked two snacks of holding one open slot.
+    `swap_meal_in_plan`'s own docstring had already written the rule down
+    ("a slot holding two snacks would lose both to a swap that was only ever
+    about one of them") and that is exactly why it takes `old_meal` and works
+    by id; this re-opened the hole and the UI exposed it. Removal is BY ID
+    now, with the same two lines of care in the same order
+    (`_unlink_leftover_target`, then `_reverse_meal_grocery_contributions`).
+    **The lesson is the narrow one: `clear_plan_slot` is a SLOT operation,
+    and a slot is not a meal.** Anything acting on one entry must say which.
+  - **The Approve button stopped telling the truth the moment the stepper
+    was used.** `runDropDishDay` spliced the changed day into
+    `weekState.days` and stopped; `countOpenSlots`, which the button's label
+    is built from, reads `weekState.data.days`, which a splice never
+    touches. So a week that had just been handed an open slot back went on
+    saying "Approve and build my shopping list". `runSwapInPlace` has had
+    `await loadWeekMenu(panel)` all along and its comment says why. One
+    line, now with a test that RUNS the function against stubs and asserts
+    the call happened — the defect was a missing call, which is precisely
+    what a rendering test cannot see. A `showToast` naming the day rides
+    with it, because the tap leaves work behind and Review renders an open
+    slot as the bare words "Your call".
+  - **A chain SOURCE is refused rather than dropped.**
+    `_unlink_leftover_target` covers the target side only, so taking away a
+    night that was cooked double left the night it fed holding a real recipe
+    nobody planned to cook, with the doubled batch's groceries just reversed
+    out from under it. The behaviour is pre-existing and shared with every
+    chat swap; what was new was a control that would hit it by arithmetic
+    rather than by a decision. `drop_dish_from_day` now answers `refused`
+    with a sentence naming the night that depends on it, and writes nothing.
+  - Two smaller things: `.rv-step-count.is-busy` faded to `--ink-secondary`
+    on the `--sand` track (**4.04:1**) — a transient state is not a disabled
+    one, so WCAG 1.4.3's exemption does not cover it; the fade is gone and
+    both stepper buttons going inert is the whole busy signal. And `Change`
+    reads **"Change one"** on a dish covering more than one day, because
+    that is what it does.
+
 - **2026-09-10 — Reviewing a week is two views of one week, not more of it
   on one screen. Branch `overnight/review-week-two-views`, stacked on
   `overnight/tap-a-meal-opens-recipe`.** Emily's approved design,
@@ -345,9 +391,12 @@ why*, not duplicating the diff.
   QUESTION and never as an absent slot. `open`, not `planned_empty`:
   planned_empty means nobody is home or the household asked for none of
   that meal and must never be offered as a decision, and cutting one dish
-  back is neither. It takes the LAST day the dish covers, which for a chain
-  is always the reheat rather than the cook that feeds it — that falls out
-  of the week's own ordering rather than being a second rule. **Up was not
+  back is neither. It takes the LAST day the dish covers. (An earlier
+  version of this entry went on to claim that day "is always the reheat
+  rather than the cook that feeds it". **That is false** and is corrected
+  in the entry above — it holds only within one meal type; a dinner cooked
+  double for the next day's LUNCH is a source sitting in the Dinners group
+  and can be last in it.) **Up was not
   built**: it needs a day to land on, and every candidate is either holding
   another dish or deliberately empty, so a placement rule would be one
   nobody has decided. `+` opens the ask sheet ("Another night of X — ")

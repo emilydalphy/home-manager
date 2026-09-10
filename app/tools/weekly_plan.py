@@ -236,24 +236,39 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
     a slot is one of three states, never present-or-missing, and a silently
     missing slot is the bug plan_slot_open/plan_slot_empty exist to prevent.
 
-    So this composes the two writes that already exist rather than becoming
-    a third. clear_plan_slot takes the meal off — reversing its grocery
-    contribution and unlinking any leftover chain that was pointing at it,
-    both of which are its job and neither of which this function should
-    reimplement — and plan_slot_open puts the slot straight back as `open`,
-    carrying the household's own instruction as the constraint that caused
-    it.
+    Removal is BY ID and never by (date, slot). That distinction is the
+    whole of a real bug this function shipped with: clear_plan_slot deletes
+    every row in a slot, and a day holds TWO rows at slot='snack' by
+    default (preferences.resolve_snacks_per_day), so stepping one snack
+    down from two days destroyed the day's OTHER snack along with it —
+    grocery reversal and all, on an approved week. swap_meal_in_plan's own
+    docstring had already written this rule down ("a slot holding two
+    snacks would lose both to a swap that was only ever about one of
+    them"); this composes plan_slot_open with the same by-id removal that
+    function does, rather than with clear_plan_slot.
 
     `open` and not `planned_empty`, deliberately: planned_empty means
     nobody is home, or the household asked for none of that meal, and it
     must NEVER be offered as a decision. Cutting one dish back is neither
     of those — something still has to go on that plate, and only the
     household knows what.
+
+    A chain SOURCE is refused rather than dropped. _unlink_leftover_target
+    covers the target side — a reheat night going away tells the cook night
+    that fed it — but nothing covers the reverse, so removing a night that
+    feeds another one leaves that other night holding a real recipe it was
+    never planned to cook, with the doubled batch's groceries just reversed
+    out from under it. Refusing and naming the night that depends on it is
+    the honest answer; quietly promoting somebody's reheat into a cook is
+    not. (The underlying gap is pre-existing and shared with every chat
+    swap. What is new here is a control that would otherwise hit it by
+    arithmetic rather than by a decision.)
     """
     conn = get_conn()
     row = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
+               mpe.derived_from_json,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -269,16 +284,55 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
         raise ValueError(f"No meal {entry_id} on that week's plan.")
     if row["component_category"]:
         # A component-based plan keys its rows by category rather than by
-        # date and slot, so clear_plan_slot's date+slot delete would take
-        # every component of that category with it.
+        # date and slot, so it has no day slot to hand back at all.
         raise ValueError("That plan is built from components, not day slots.")
     if row["slot_state"] != "planned" or not row["meal"]:
         raise ValueError("There's no meal on that slot to take away.")
 
     dish = row["meal"]
     meal_date, slot = row["date"], row["slot"]
+
+    # The nights this entry was cooked double for. Written as "date:slot"
+    # strings on the SOURCE's own derived_from (see _unlink_leftover_target
+    # for the other direction), and tolerating the pre-fix scalar shape the
+    # same way that function does.
+    fed = json.loads(row["derived_from_json"] or "{}").get("make_double_for") or []
+    if isinstance(fed, str):
+        fed = [fed]
+    fed = [str(t) for t in fed if str(t).strip()]
+    if fed:
+        nights = []
+        for target in fed:
+            part = target.split(":")
+            weekday = date.fromisoformat(part[0]).strftime("%A")
+            nights.append(f"{weekday}’s {part[1]}" if len(part) > 1 else weekday)
+        return {
+            "status": "refused",
+            "date": meal_date,
+            "slot": slot,
+            "dish": dish,
+            "message": (
+                f"{dish} on {date.fromisoformat(meal_date).strftime('%A')} also feeds "
+                f"{_join_with_and(nights)} — change that first and I’ll take this one off."
+            ),
+        }
+
     open_reason = f"You cut {dish} back, so this one is yours to fill."
-    clear_plan_slot(weekly_plan_id, meal_date, slot)
+    # BY ID. See the docstring: a slot legitimately holding two snacks must
+    # lose only the one being stepped down. Both lines are the care
+    # clear_plan_slot and swap_meal_in_plan take, in the same order — tell
+    # any chain that was reheating this night before the row goes, then put
+    # back anything it contributed to the shopping list (leaving anything
+    # already in a cart alone).
+    _unlink_leftover_target(weekly_plan_id, entry_id)
+    _grocery._reverse_meal_grocery_contributions(entry_id)
+    conn = get_conn()
+    conn.execute(
+        "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
     plan_slot_open(
         weekly_plan_id, meal_date, slot, open_reason,
         derived_from={"constraint": "household_cut_back", "dish": dish},
