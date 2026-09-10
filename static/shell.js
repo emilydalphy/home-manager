@@ -1426,10 +1426,18 @@
     loadError: false,
     usualStores: [],        // household's saved stores, offered as sort pills
     // Loop Board 19a: whether the "Where do you usually shop?" first-visit
-    // card has been quietly declined ("One list is fine") — persisted
-    // server-side (meal_preferences.stores_prompt_dismissed_at) so it stays
-    // gone across visits, not just this page view.
+    // card has been answered — persisted server-side
+    // (meal_preferences.stores_prompt_dismissed_at) so it stays gone across
+    // visits, not just this page view. Any answer closes it, including a
+    // list of shops: the card is the question, not the shops.
     storesPromptDismissed: false,
+    // Whether the household is part-way through ANSWERING that card. The
+    // flag above is enough to know the question is settled; it is not
+    // enough to keep the card on screen while it is being answered, because
+    // saving the first shop makes usualStores non-empty and the card's own
+    // condition would go false under the hand still tapping it. Set by the
+    // first tap, cleared only by the button at the foot of the card.
+    storesPromptOpen: false,
     itemStorePrefs: {},     // lowercased item name -> remembered store
     preShopFlags: [],
     preShopOpen: false,
@@ -2351,7 +2359,12 @@
   function groFootHtml(data, step) {
     if (step === 'list') {
       var stops = groStoresWithNeeded(data);
-      var canGo = stops.length > 0;
+      // Nothing to start while the shops question is up: LIST is showing
+      // that card INSTEAD of the stops (groListHtml returns early), so the
+      // button would walk the household through shops that aren't on the
+      // screen — and its apricot would be a second one beside the card's,
+      // which Rule 5 doesn't allow.
+      var canGo = stops.length > 0 && !groStoresPromptShouldShow();
       // Adding one thing must not cost a model turn. This posts straight to
       // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
       // oat milk" uses, and the same one the root's "Add an item" card used
@@ -2472,49 +2485,93 @@
   // ask just-in-time instead, right where it first matters — the first real
   // list, rather than a question asked before there's even a list to sort.
   // Short, editable presets for an Ontario household, plus free text for
-  // anything else. Picking one saves immediately through the same write path
+  // anything else. Every tap saves immediately through the same write path
   // the Kitchen "What we know" Stores tab uses (edit_preference/usual_stores),
-  // so the SORT pills pick it up the moment this card disappears
-  // (usualStores.length becomes > 0).
+  // so the SORT pills offer exactly the shops named here.
+  //
+  // MULTI-SELECT, since 2026-09-09 (Emily, testing as a new household): most
+  // households shop at more than one place, and this card used to close on
+  // the first tap — its own gate was "no shops named yet", which the first
+  // save made false. One shop was the most anybody could name, and the
+  // question vanished into a LIST with nothing tagged to a store yet, which
+  // is the empty screen she landed on. Tapping now toggles and nothing but
+  // the button at the foot ends the question.
   var GRO_STORE_PROMPT_CHIPS = ['Costco', 'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'Walmart', 'Farm Boy', 'T&T', 'Whole Foods'];
 
   function groStoresPromptShouldShow() {
-    return !groceryState.usualStores.length && !groceryState.storesPromptDismissed;
+    // Answered once is answered for good, whatever the answer was.
+    if (groceryState.storesPromptDismissed) return false;
+    // Being answered right now — see storesPromptOpen. Checked before the
+    // "never named a shop" test below, which goes false on the first tap.
+    if (groceryState.storesPromptOpen) return true;
+    return !groceryState.usualStores.length;
   }
 
   function groStoresPromptHtml() {
-    var chips = GRO_STORE_PROMPT_CHIPS.map(function (name) {
-      return '<button type="button" class="gro-pill" data-gro="stores-prompt-pick" data-store="' + escapeHtml(name) + '">' +
-        escapeHtml(name) + '</button>';
+    var picked = groceryState.usualStores;
+    // A shop typed into "Somewhere else?" joins the presets rather than
+    // living apart from them, so it can be un-picked the same way as any
+    // other — a typo shouldn't need the Kitchen sheet to undo.
+    var names = GRO_STORE_PROMPT_CHIPS.slice();
+    picked.forEach(function (name) { if (names.indexOf(name) === -1) names.push(name); });
+    var chips = names.map(function (name) {
+      var on = picked.indexOf(name) !== -1;
+      return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" ' +
+        'data-gro="stores-prompt-pick" data-store="' + escapeHtml(name) + '" ' +
+        'aria-pressed="' + on + '">' + escapeHtml(name) + '</button>';
     }).join('');
+    // The chips carry the answer, but a tap on a phone is often under a
+    // thumb — one line says the count out loud so it can be read without
+    // hunting for which chips changed colour.
+    var count = picked.length;
+    var countLine = count ? groPlural(count, 'shop', 'shops') + ' picked' : 'No shops picked yet';
+    // One button, and it is the only way out of the question. Its wording is
+    // the household's own answer: no shops chosen is a real answer, not a
+    // skip, and it keeps the exact words the quiet dismissal used to carry.
+    var done = count ? 'That&rsquo;s where we shop' : 'One list is fine';
     return (
       '<div class="shell-card gro-stores-prompt">' +
         '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
-        '<p class="gro-stores-prompt-sub">I&rsquo;ll sort the list by store and plan your stops.</p>' +
+        '<p class="gro-stores-prompt-sub">Tap every shop you use. I&rsquo;ll sort the list by store and plan your stops.</p>' +
         '<div class="gro-pills open">' + chips + '</div>' +
         '<div class="gro-stores-prompt-add">' +
           '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
             'placeholder="Somewhere else?" aria-label="Add a store you usually shop at" />' +
           '<button type="button" class="gro-linkbtn" data-gro="stores-prompt-add">Add</button>' +
         '</div>' +
-        '<button type="button" class="gro-stores-prompt-dismiss" data-gro="stores-prompt-dismiss">One list is fine</button>' +
+        '<p class="gro-stores-prompt-count">' + countLine + '</p>' +
+        '<button type="button" class="gro-primary" data-gro="stores-prompt-done">' + done + '</button>' +
       '</div>'
     );
   }
 
   // Saves through the same field edit_preference/the Stores tab already
-  // uses — merges into whatever's already saved rather than replacing it,
-  // so two quick taps ("Costco", then "No Frills") don't clobber each
-  // other. Local state updates immediately so the pills reflect the new
-  // store without waiting on a full grocery reload.
+  // uses. The WHOLE list goes over the wire, not the one shop that changed,
+  // because usual_stores is a set rather than an append log — un-picking has
+  // to be able to take one back out again. Local state moves first so the
+  // chip answers the tap without waiting on the round trip.
+  function groSetUsualStores(next) {
+    return groPost('/api/memory/edit', { field: 'usual_stores', value: next }).then(function () {
+      groceryState.usualStores = next;
+      renderGrocery();
+    });
+  }
+
+  function groToggleUsualStore(name) {
+    name = (name || '').trim();
+    if (!name) return Promise.resolve();
+    return groceryState.usualStores.indexOf(name) === -1
+      ? groSetUsualStores(groceryState.usualStores.concat([name]))
+      : groSetUsualStores(groceryState.usualStores.filter(function (n) { return n !== name; }));
+  }
+
+  // The free-text half: adding is all it can do, so a name already on the
+  // list is a no-op rather than a toggle — typing "Costco" a second time
+  // must not quietly un-pick the chip that is already lit.
   function groAddUsualStore(name) {
     name = (name || '').trim();
     if (!name || groceryState.usualStores.indexOf(name) !== -1) return Promise.resolve();
-    var merged = groceryState.usualStores.concat([name]);
-    return groPost('/api/memory/edit', { field: 'usual_stores', value: merged }).then(function () {
-      groceryState.usualStores = merged;
-      renderGrocery();
-    });
+    return groSetUsualStores(groceryState.usualStores.concat([name]));
   }
 
   // ---------- Actions ----------
@@ -2808,9 +2865,12 @@
         return;
 
       // ----- "where do you usually shop?" first-visit card (Loop Board 19a) -----
+      // Every one of these three keeps the card open. Only stores-prompt-done
+      // below ends the question.
       case 'stores-prompt-pick':
         el.disabled = true;
-        groAddUsualStore(el.dataset.store).catch(function () {
+        groceryState.storesPromptOpen = true;
+        groToggleUsualStore(el.dataset.store).catch(function () {
           showToast("Couldn't save that — try again.");
         }).then(function () { el.disabled = false; });
         return;
@@ -2822,16 +2882,27 @@
         var typedStore = storesPromptInput.value.trim();
         if (!typedStore) { storesPromptInput.focus(); return; }
         el.disabled = true;
+        groceryState.storesPromptOpen = true;
+        // The field is deliberately not emptied here. A saved name re-renders
+        // the whole card, and the fresh input carries no value — so it comes
+        // back blank on its own. Clearing first would only matter when the
+        // write FAILS, and then it would throw away the typing along with it.
         groAddUsualStore(typedStore).catch(function () {
           showToast("Couldn't save that — try again.");
         }).then(function () { el.disabled = false; });
         return;
       }
 
-      case 'stores-prompt-dismiss':
+      case 'stores-prompt-done':
         el.disabled = true;
+        // The answer is already saved, shop by shop — this records that the
+        // question was ANSWERED, which is what stops it being asked again.
+        // It runs whether or not any shop was picked: "one list is fine" is
+        // an answer, and a household that later clears its shops on the
+        // Kitchen sheet shouldn't be asked all over again.
         groPost('/api/memory/stores-prompt-dismiss', {}).then(function () {
           groceryState.storesPromptDismissed = true;
+          groceryState.storesPromptOpen = false;
           renderGrocery();
         }).catch(function () {
           el.disabled = false;

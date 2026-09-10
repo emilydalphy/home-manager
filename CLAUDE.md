@@ -314,6 +314,49 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-09 — The shops question closed itself on the first tap. Branch
+  `overnight/onboarding-shops-multiselect`.** Emily, testing onboarding as a
+  new household: "once I click one it brings me to a different screen that
+  doesn't have anything. I should be able to click all the shops that I want
+  to include in it." **Root cause is one predicate, not a missing screen:**
+  `groStoresPromptShouldShow` (`static/shell.js`) was
+  `!usualStores.length && !storesPromptDismissed`, and saving the first shop
+  makes the first half false — so the card's own gate went false under the
+  answer being typed into it, one shop was the most anyone could ever name,
+  and what "advanced" was nothing at all. There is no second screen: what
+  replaced the card was LIST with no stop cards yet, which for a brand-new
+  household is one grey line. Reproduced against a real uvicorn on a
+  throwaway DB before anything was changed.
+  The card is multi-select now: chips toggle (`groToggleUsualStore`, which
+  writes the WHOLE shorter list because `usual_stores` is a set on the
+  server, not an append log), a `storesPromptOpen` flag keeps it up while it
+  is being answered, a count line says how many are picked, a typed shop
+  joins the chips instead of living apart from them, and **one button at the
+  foot is the only way out** — labelled "One list is fine" with nothing
+  picked and "That's where we shop" otherwise, both writing the same
+  `/api/memory/stores-prompt-dismiss` that has always meant "this question is
+  answered". Picked chips are celadon, not apricot: a picked shop is a
+  settled fact, and nine apricot chips beside the card's one apricot button
+  would be nine more primaries (Rule 5). For the same rule, LIST's foot drops
+  "Start the trip" while the card is up — LIST returns the card INSTEAD of
+  its stops, so that button pointed at stores not on the screen.
+  **Two things left alone, deliberately.** The picker only names shops; it
+  never tags an item, so what LIST shows straight afterwards is the
+  store-less-list question that `f9b77e1` ("Show the grocery list to a
+  household that never named a store", on `origin/main`) already answers —
+  this branch is based one merge earlier and does not touch a single line
+  that commit touches, so the two merge clean and re-implementing it here
+  would only have made a conflict. And each toggle writes its own
+  `preference_events` row, so `growth_count_this_month` now counts an
+  un-pick as well as a pick; pre-existing shape, not worth a second write
+  path. `tests/test_stores_multiselect.py` is the guard, 22 tests, 16 of them
+  red on the previous commit — the front-end half RUNS the Grocery region's
+  own functions under node against a small stub rather than reading the
+  source for a marker, because the bug was a predicate going false, which is
+  exactly what a source-marker test cannot see. 1758 total. **Not verified in
+  a browser** — no browser tooling in this session, so the chip row's wrap
+  and the card's height at 390px are unchecked; the flow itself was driven
+  end to end against a real server.
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,
