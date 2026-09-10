@@ -38,12 +38,19 @@ from app import tools
 
 def test_onboarding_household_post_saves_age_group_per_member(signed_in):
     """
-    The wizard now sends the age-group chip's value for every member to
-    POST /api/onboarding/household right after the household step, before
-    the rhythm step (which needs it) is even built. This is the save path
-    that made age_group land in the DB before this ticket started (chores
-    rotation and set_member_age_group already used it) — the gap being
-    fixed was that onboarding.html was never calling it with real members.
+    The wizard sends the age-group chip's value for every member to POST
+    /api/onboarding/household. This is the save path that made age_group
+    land in the DB before this ticket started (chores rotation and
+    set_member_age_group already used it) — the gap being fixed was that
+    onboarding.html was never calling it with real members.
+
+    CORRECTED 2026-09-09 (the go-back branch): this used to say the call
+    fires "right after the household step, before the rhythm step is even
+    built". It fires at the END of setup now, with every other write, so
+    that going back and correcting a name can't leave the first spelling in
+    the household with nothing able to take it out again. The rhythm step
+    reads members out of the page, not the database, so nothing between
+    here and there needed the early write.
     """
     res = signed_in.post(
         "/api/onboarding/household",
@@ -72,13 +79,12 @@ def test_onboarding_household_post_saves_age_group_per_member(signed_in):
 
 def test_onboarding_answers_and_household_post_together_populate_the_same_members(signed_in):
     """
-    In the real wizard both calls fire during one pass through onboarding —
-    /api/onboarding/household when the household step is left (carrying
-    age_group), then /api/onboarding/answers later (carrying the fuller
-    7-question set, keyed by the same names, but no age_group of its own).
-    They must land on the same member rows rather than each creating its
-    own, since add_member/_get_or_create_member match by name
-    case-insensitively.
+    In the real wizard both calls fire back to back at the end of setup —
+    /api/onboarding/household first (carrying age_group), then
+    /api/onboarding/answers (carrying the fuller 7-question set, keyed by
+    the same names, but no age_group of its own). They must land on the
+    same member rows rather than each creating its own, since add_member/
+    _get_or_create_member match by name case-insensitively.
     """
     signed_in.post(
         "/api/onboarding/household",

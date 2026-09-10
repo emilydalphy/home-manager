@@ -80,6 +80,11 @@ _PUBLIC_PREFIXES = (
     "/static/icons/",
 )
 _PUBLIC_EXACT = frozenset({
+    # Not public in any ordinary sense — it carries its own token and 404s
+    # without one (see main.health_report). It is listed here because it is
+    # deliberately CROSS-household: there is no session to bind it to, which
+    # is exactly why it authenticates itself instead.
+    "/api/health-report",
     "/login",
     "/logout",
     "/healthz",

@@ -153,13 +153,13 @@
   }
 
   var TABS = [
-    { key: 'today', path: '/', label: 'Today', railLabel: 'Today', icon: ICONS.sunrise, real: true },
-    { key: 'week', path: '/week', label: 'Meals', railLabel: 'Meals', icon: ICONS.plate, week: true },
+    { key: 'today', path: '/', label: 'Now', railLabel: 'Now', icon: ICONS.sunrise, real: true },
+    { key: 'week', path: '/week', label: 'Plan', railLabel: 'Plan', icon: ICONS.plate, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
-    { key: 'grocery', path: '/grocery', label: 'Grocery', railLabel: 'Grocery', icon: ICONS.bag, grocery: true },
+    { key: 'grocery', path: '/grocery', label: 'Shop', railLabel: 'Shop', icon: ICONS.bag, grocery: true },
     // Kitchen is the COOK'S tab (Emily, 2026-09-08). It answers "what's
     // cooking, and what's in the house?": today's cooks, the prep sessions
     // that feed them, the rest of the week, and the two quiet ways into
@@ -172,7 +172,7 @@
     // static/kitchen.html still exists and still works standalone but
     // nothing links to it — the fallback, exactly the treatment
     // static/grocery.html and static/grocery-legacy.html already have.
-    { key: 'kitchen', path: '/kitchen', label: 'Kitchen', railLabel: 'Kitchen', icon: ICONS.pot, kitchen: true }
+    { key: 'kitchen', path: '/kitchen', label: 'Cook', railLabel: 'Cook', icon: ICONS.pot, kitchen: true }
   ];
 
   // The Kitchen hub's entry tiles. The blueprint asks for these to open as
@@ -479,7 +479,7 @@
             // hidden here.
             prefsGearHtml() +
           '</div>' +
-          '<h1 class="today-greeting">Today</h1>' +
+          '<h1 class="today-greeting">Now</h1>' +
           '<div class="today-progress" id="today-progress"></div>' +
         '</div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
@@ -613,7 +613,7 @@
       // point on Meals is permanent, so nothing is actually lost.
       wrap.innerHTML =
         '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
-          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Meals — I won’t ask again this week.</div>' +
+          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Plan — I won’t ask again this week.</div>' +
           '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
         '</div>';
       wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
@@ -1525,10 +1525,20 @@
     loadError: false,
     usualStores: [],        // household's saved stores, offered as sort pills
     // Loop Board 19a: whether the "Where do you usually shop?" first-visit
-    // card has been quietly declined ("One list is fine") — persisted
-    // server-side (meal_preferences.stores_prompt_dismissed_at) so it stays
-    // gone across visits, not just this page view.
+    // card has been answered — persisted server-side
+    // (meal_preferences.stores_prompt_dismissed_at) so it stays gone across
+    // visits, not just this page view. Any answer closes it, including a
+    // list of shops: the card is the question, not the shops.
     storesPromptDismissed: false,
+    // Whether the household is part-way through ANSWERING that card. The
+    // flag above is enough to know the question is settled; it is not
+    // enough to keep the card on screen while it is being answered, because
+    // saving the first shop makes usualStores non-empty and the card's own
+    // condition would go false under the hand still tapping it. Set by the
+    // first tap, cleared only by the button at the foot of the card, and
+    // mirrored into localStorage so a reload part-way through resumes the
+    // question instead of ending it — see storesPromptOpenKey.
+    storesPromptOpen: false,
     itemStorePrefs: {},     // lowercased item name -> remembered store
     preShopFlags: [],
     preShopOpen: false,
@@ -1715,7 +1725,7 @@
         '<button type="button" class="gro-back" id="gro-back" data-gro="step-back" hidden></button>' +
         '<div class="gro-head">' +
           '<div class="gro-head-row">' +
-            '<h1 class="gro-title" id="gro-title">Grocery</h1>' +
+            '<h1 class="gro-title" id="gro-title">Shop</h1>' +
             // The TO SORT badge is a control, not decoration: it is the only
             // way into the SORT step, and it only exists while something has
             // no store.
@@ -1769,6 +1779,9 @@
       var memory = await res.json();
       groceryState.usualStores = memory.usual_stores || [];
       groceryState.storesPromptDismissed = !!memory.stores_prompt_dismissed;
+      // The other half of the same answer: whether this household was
+      // part-way through picking its shops when the page last went away.
+      groceryState.storesPromptOpen = readStoresPromptOpen();
       renderGrocery();
     } catch (err) { /* sorting still works from what's tagged on the list */ }
   }
@@ -1928,7 +1941,7 @@
       back.hidden = true;
       badge.hidden = true;
       sub.hidden = true;
-      title.textContent = 'Grocery';
+      title.textContent = 'Shop';
       body.innerHTML = groceryState.loadError
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
@@ -1971,10 +1984,16 @@
       badge.setAttribute('aria-label', groPlural(unsorted, 'thing', 'things') + ' to sort');
     }
 
+    // The body holds a live input too while the shops card is up — its
+    // "Somewhere else?" field — and since a tapped chip re-renders the card
+    // straight away, an unrelated re-render is no longer a rare event. Same
+    // rule as the foot's add row below.
+    var storesTyped = groCaptureStoresPromptInput(body);
     if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'trip') body.innerHTML = groTripHtml(data);
     else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
     else body.innerHTML = groListHtml(data);
+    groRestoreStoresPromptInput(body, storesTyped);
 
     // LIST's foot holds a live input. A re-render it didn't ask for — the
     // usual-stores fetch landing, another tab pushing a refresh — must not
@@ -1984,6 +2003,21 @@
     groRestoreAddRow(foot, addRow);
 
     if (scrollEl) scrollEl.scrollTop = keepScroll;
+  }
+
+  function groCaptureStoresPromptInput(body) {
+    var input = body.querySelector('#gro-stores-prompt-input');
+    if (!input) return null;
+    return { value: input.value, focused: document.activeElement === input };
+  }
+  function groRestoreStoresPromptInput(body, saved) {
+    if (!saved || !saved.value) return;
+    var input = body.querySelector('#gro-stores-prompt-input');
+    if (!input) return;
+    input.value = saved.value;
+    if (!saved.focused) return;
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
   function groCaptureAddRow(foot) {
@@ -2013,7 +2047,7 @@
   // readable as a set rather than scattered through four builders.
   function groHeadFor(data, step) {
     if (step === 'sort') {
-      return { back: '‹ Grocery', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'trip') {
       var store = groTripStore();
@@ -2033,7 +2067,7 @@
       sub = groPlural(t.needed, 'thing', 'things');
       if (stopCount) sub += ' · ' + groPlural(stopCount, 'stop', 'stops');
     }
-    return { back: '', title: 'Grocery', sub: sub };
+    return { back: '', title: 'Shop', sub: sub };
   }
 
   // ---------- LIST ----------
@@ -2495,7 +2529,12 @@
   function groFootHtml(data, step) {
     if (step === 'list') {
       var stops = groStoresWithNeeded(data);
-      var canGo = stops.length > 0;
+      // Nothing to start while the shops question is up: LIST is showing
+      // that card INSTEAD of the stops (groListHtml returns early), so the
+      // button would walk the household through shops that aren't on the
+      // screen — and its apricot would be a second one beside the card's,
+      // which Rule 5 doesn't allow.
+      var canGo = stops.length > 0 && !groStoresPromptShouldShow();
       // Adding one thing must not cost a model turn. This posts straight to
       // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
       // oat milk" uses, and the same one the root's "Add an item" card used
@@ -2638,49 +2677,187 @@
   // ask just-in-time instead, right where it first matters — the first real
   // list, rather than a question asked before there's even a list to sort.
   // Short, editable presets for an Ontario household, plus free text for
-  // anything else. Picking one saves immediately through the same write path
+  // anything else. Every tap saves immediately through the same write path
   // the Kitchen "What we know" Stores tab uses (edit_preference/usual_stores),
-  // so the SORT pills pick it up the moment this card disappears
-  // (usualStores.length becomes > 0).
+  // so the SORT pills offer exactly the shops named here.
+  //
+  // MULTI-SELECT, since 2026-09-09 (Emily, testing as a new household): most
+  // households shop at more than one place, and this card used to close on
+  // the first tap — its own gate was "no shops named yet", which the first
+  // save made false. One shop was the most anybody could name, and the
+  // question vanished into a LIST with nothing tagged to a store yet, which
+  // is the empty screen she landed on. Tapping now toggles and nothing but
+  // the button at the foot ends the question.
   var GRO_STORE_PROMPT_CHIPS = ['Costco', 'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'Walmart', 'Farm Boy', 'T&T', 'Whole Foods'];
 
+  // storesPromptOpen has to survive a reload, and that is not a nicety.
+  // Page-view only, it ended the question for good: tap one shop, reload,
+  // and the gate below reads "shops named, never dismissed" — permanently
+  // false, while the database still records the question as unanswered. The
+  // only remaining route to the other shops was Kitchen → What we know →
+  // Stores, which a brand-new household has never been shown.
+  //
+  // Gating on !storesPromptDismissed alone would have fixed that and broken
+  // something worse: nothing backfills stores_prompt_dismissed_at (app/db.py),
+  // so every EXISTING household — shops named months ago, no dismissal row —
+  // would be asked the question all over again.
+  //
+  // So the flag is persisted on the client, the same shape the approved-week
+  // receipt's dismissal uses (WEEK_RECEIPT_DISMISS_KEY). localStorage rather
+  // than sessionStorage, and that is the whole of the decision: an installed
+  // PWA is killed and relaunched constantly, and a relaunch ends the session
+  // — so a household that taps a shop, takes a phone call and comes back
+  // would lose the question exactly as it does today. The receipt can afford
+  // sessionStorage because coming back next session is its correct
+  // behaviour; an unfinished question coming back is the whole point of it.
+  // Keyed per household so two households signing into one browser can't
+  // inherit each other's half-answered question.
+  var STORES_PROMPT_OPEN_KEY = 'pomona.storesPromptOpen.h';
+
+  function storesPromptOpenKey() {
+    // coachState is the shell's one client-side answer to "which household
+    // is this", and it is declared hundreds of lines below this one — so
+    // this guards against running before that var does, the same way
+    // coachOnTabShown has to.
+    var id = (typeof coachState !== 'undefined' && coachState) ? coachState.householdId : null;
+    return STORES_PROMPT_OPEN_KEY + (id == null ? 'x' : id);
+  }
+
+  // Every read and write is wrapped: Safari in private mode throws on
+  // localStorage rather than returning null, and a remembered question must
+  // never take the Grocery tab down with it.
+  function readStoresPromptOpen() {
+    try {
+      var key = storesPromptOpenKey();
+      if (window.localStorage.getItem(key) === '1') return true;
+      // A tap in the moment before /api/coaching answered lands under the
+      // household-less key. Adopt it once, under this household's own key,
+      // rather than leave it lying there for the next household to find.
+      if (window.localStorage.getItem(STORES_PROMPT_OPEN_KEY + 'x') !== '1') return false;
+      window.localStorage.removeItem(STORES_PROMPT_OPEN_KEY + 'x');
+      window.localStorage.setItem(key, '1');
+      return true;
+    } catch (err) { return false; }
+  }
+
+  function groSetStoresPromptOpen(open) {
+    groceryState.storesPromptOpen = open;
+    try {
+      if (open) window.localStorage.setItem(storesPromptOpenKey(), '1');
+      else {
+        window.localStorage.removeItem(storesPromptOpenKey());
+        window.localStorage.removeItem(STORES_PROMPT_OPEN_KEY + 'x');
+      }
+    } catch (err) { /* see above: the question just stays page-view only */ }
+  }
+
   function groStoresPromptShouldShow() {
-    return !groceryState.usualStores.length && !groceryState.storesPromptDismissed;
+    // Answered once is answered for good, whatever the answer was.
+    if (groceryState.storesPromptDismissed) return false;
+    // Being answered right now — see storesPromptOpen. Checked before the
+    // "never named a shop" test below, which goes false on the first tap.
+    if (groceryState.storesPromptOpen) return true;
+    return !groceryState.usualStores.length;
   }
 
   function groStoresPromptHtml() {
-    var chips = GRO_STORE_PROMPT_CHIPS.map(function (name) {
-      return '<button type="button" class="gro-pill" data-gro="stores-prompt-pick" data-store="' + escapeHtml(name) + '">' +
-        escapeHtml(name) + '</button>';
+    var picked = groceryState.usualStores;
+    // A shop typed into "Somewhere else?" joins the presets rather than
+    // living apart from them, so it can be un-picked the same way as any
+    // other — a typo shouldn't need the Kitchen sheet to undo.
+    var names = GRO_STORE_PROMPT_CHIPS.slice();
+    picked.forEach(function (name) { if (names.indexOf(name) === -1) names.push(name); });
+    var chips = names.map(function (name) {
+      var on = picked.indexOf(name) !== -1;
+      return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" ' +
+        'data-gro="stores-prompt-pick" data-store="' + escapeHtml(name) + '" ' +
+        'aria-pressed="' + on + '">' + escapeHtml(name) + '</button>';
     }).join('');
+    // The chips carry the answer, but a tap on a phone is often under a
+    // thumb — one line says the count out loud so it can be read without
+    // hunting for which chips changed colour.
+    var count = picked.length;
+    var countLine = count ? groPlural(count, 'shop', 'shops') + ' picked' : 'No shops picked yet';
+    // One button, and it is the only way out of the question. Its wording is
+    // the household's own answer: no shops chosen is a real answer, not a
+    // skip, and it keeps the exact words the quiet dismissal used to carry.
+    var done = count ? 'That&rsquo;s where we shop' : 'One list is fine';
     return (
       '<div class="shell-card gro-stores-prompt">' +
         '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
-        '<p class="gro-stores-prompt-sub">I&rsquo;ll sort the list by store and plan your stops.</p>' +
+        '<p class="gro-stores-prompt-sub">Tap every shop you use. I&rsquo;ll sort the list by store and plan your stops.</p>' +
         '<div class="gro-pills open">' + chips + '</div>' +
         '<div class="gro-stores-prompt-add">' +
           '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
             'placeholder="Somewhere else?" aria-label="Add a store you usually shop at" />' +
           '<button type="button" class="gro-linkbtn" data-gro="stores-prompt-add">Add</button>' +
         '</div>' +
-        '<button type="button" class="gro-stores-prompt-dismiss" data-gro="stores-prompt-dismiss">One list is fine</button>' +
+        '<p class="gro-stores-prompt-count">' + countLine + '</p>' +
+        '<button type="button" class="gro-primary" data-gro="stores-prompt-done">' + done + '</button>' +
       '</div>'
     );
   }
 
   // Saves through the same field edit_preference/the Stores tab already
-  // uses — merges into whatever's already saved rather than replacing it,
-  // so two quick taps ("Costco", then "No Frills") don't clobber each
-  // other. Local state updates immediately so the pills reflect the new
-  // store without waiting on a full grocery reload.
+  // uses. The WHOLE list goes over the wire, not the one shop that changed,
+  // because usual_stores is a set rather than an append log — un-picking has
+  // to be able to take one back out again.
+  //
+  // Which makes every tap a read-modify-write, and three taps under a thumb
+  // are three of them at once. Measured: with a 400ms round trip and taps
+  // 150ms apart, the second and third taps each read a list the first tap's
+  // answer had not reached yet, so each one wrote the earlier shops back
+  // out — one shop saved, three showing. It never happens on a laptop,
+  // which is exactly why it needed fixing rather than watching.
+  //
+  // Two things fix it together. Local state moves FIRST, so the next tap
+  // reads a list that already has the last one in it (which is also what
+  // the chip's own colour has always claimed). And the writes are
+  // serialised: one is in flight at a time, and the one behind it sends
+  // whatever the list is at the moment it actually goes out. Taps arriving
+  // during a write collapse into that single trailing write, so the last
+  // tap wins and it wins by sending everything.
+  var storesWriteChain = Promise.resolve();
+  var storesWriteTrailing = null;
+
+  function groSetUsualStores(next) {
+    groceryState.usualStores = next;
+    renderGrocery();
+    if (storesWriteTrailing) return storesWriteTrailing;
+    var send = function () {
+      storesWriteTrailing = null;
+      return groPost('/api/memory/edit', {
+        field: 'usual_stores', value: groceryState.usualStores.slice()
+      });
+    };
+    // .then(send, send): the write behind a FAILED one still has to go out,
+    // or one dropped connection would silently stop every later tap saving.
+    storesWriteTrailing = storesWriteChain.then(send, send);
+    storesWriteChain = storesWriteTrailing.catch(function () {
+      // The optimistic list is now ahead of what the server holds, and the
+      // count line under the chips would be saying something untrue. Take
+      // the server's answer back; the caller has already said out loud that
+      // the save failed.
+      return groLoadUsualStores();
+    });
+    return storesWriteTrailing;
+  }
+
+  function groToggleUsualStore(name) {
+    name = (name || '').trim();
+    if (!name) return Promise.resolve();
+    return groceryState.usualStores.indexOf(name) === -1
+      ? groSetUsualStores(groceryState.usualStores.concat([name]))
+      : groSetUsualStores(groceryState.usualStores.filter(function (n) { return n !== name; }));
+  }
+
+  // The free-text half: adding is all it can do, so a name already on the
+  // list is a no-op rather than a toggle — typing "Costco" a second time
+  // must not quietly un-pick the chip that is already lit.
   function groAddUsualStore(name) {
     name = (name || '').trim();
     if (!name || groceryState.usualStores.indexOf(name) !== -1) return Promise.resolve();
-    var merged = groceryState.usualStores.concat([name]);
-    return groPost('/api/memory/edit', { field: 'usual_stores', value: merged }).then(function () {
-      groceryState.usualStores = merged;
-      renderGrocery();
-    });
+    return groSetUsualStores(groceryState.usualStores.concat([name]));
   }
 
   // ---------- Actions ----------
@@ -2974,9 +3151,12 @@
         return;
 
       // ----- "where do you usually shop?" first-visit card (Loop Board 19a) -----
+      // Every one of these three keeps the card open. Only stores-prompt-done
+      // below ends the question.
       case 'stores-prompt-pick':
         el.disabled = true;
-        groAddUsualStore(el.dataset.store).catch(function () {
+        groSetStoresPromptOpen(true);
+        groToggleUsualStore(el.dataset.store).catch(function () {
           showToast("Couldn't save that — try again.");
         }).then(function () { el.disabled = false; });
         return;
@@ -2988,16 +3168,32 @@
         var typedStore = storesPromptInput.value.trim();
         if (!typedStore) { storesPromptInput.focus(); return; }
         el.disabled = true;
+        groSetStoresPromptOpen(true);
+        // Cleared BEFORE the write, the same shape groAddItem uses. The card
+        // re-renders the moment the chip appears now, and that re-render
+        // carries a half-typed name across (groCaptureStoresPromptInput), so
+        // a name left in the box would show as a chip AND still be sitting
+        // there to be added twice. On failure the catch puts it straight
+        // back, where the same carry-across keeps it.
+        storesPromptInput.value = '';
         groAddUsualStore(typedStore).catch(function () {
           showToast("Couldn't save that — try again.");
+          var freshStoresInput = groPanel() && groPanel().querySelector('#gro-stores-prompt-input');
+          if (freshStoresInput) freshStoresInput.value = typedStore;
         }).then(function () { el.disabled = false; });
         return;
       }
 
-      case 'stores-prompt-dismiss':
+      case 'stores-prompt-done':
         el.disabled = true;
+        // The answer is already saved, shop by shop — this records that the
+        // question was ANSWERED, which is what stops it being asked again.
+        // It runs whether or not any shop was picked: "one list is fine" is
+        // an answer, and a household that later clears its shops on the
+        // Kitchen sheet shouldn't be asked all over again.
         groPost('/api/memory/stores-prompt-dismiss', {}).then(function () {
           groceryState.storesPromptDismissed = true;
+          groSetStoresPromptOpen(false);
           renderGrocery();
         }).catch(function () {
           el.disabled = false;
@@ -3397,7 +3593,7 @@
             '<span class="kit-hairline"></span>' +
             prefsGearHtml() +
           '</div>' +
-          '<h1 class="kit-title">Kitchen</h1>' +
+          '<h1 class="kit-title">Cook</h1>' +
           '<p class="kit-sub" id="kit-sub"></p>' +
           '<div class="kit-body" id="kit-body"></div>' +
         '</div>' +
@@ -3729,7 +3925,7 @@
     if (!data.weekly_plan_id) {
       body.innerHTML =
         '<p class="cook-empty">No plan yet this week &mdash; ' +
-          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Meals tab first</button>.</p>' +
+          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>' +
         kitchenTilesHtml();
       return;
     }
@@ -7261,8 +7457,13 @@
   // The words on the cook screen's back link. Never a guess: either the
   // origin said its own name or you came from Kitchen.
   function cookBackLabel() {
+    // The tab's own name is the fallback, and it changed on 2026-09-09:
+    // Kitchen became Cook. Two branches met here — one renamed the tabs, the
+    // other made this label say where you actually came from — and the
+    // dynamic version is the one that survived, so the rename lives in its
+    // default rather than in three hardcoded buttons.
     var origin = cookState.focusOrigin;
-    return (origin && origin.label) ? origin.label : 'Kitchen';
+    return (origin && origin.label) ? origin.label : 'Cook';
   }
 
   // A reheat night is not a way into a recipe — there is no cook here, so
@@ -7682,7 +7883,7 @@
       : (session.note || '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Kitchen</button>' +
+        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Cook</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -11014,10 +11215,10 @@
   var TIPS_OPENING = 'Say it however it comes out. There’s no right way to phrase it.';
 
   var TIPS_GROUPS = [
-    { tab: 'Today', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
-    { tab: 'Meals', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
-    { tab: 'Grocery', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
-    { tab: 'Kitchen', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
+    { tab: 'Now', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
+    { tab: 'Plan', example: 'Swap Thursday for something lighter', line: 'The week’s plan — swaps, away nights, what you’re in the mood for.' },
+    { tab: 'Shop', example: 'Add oat milk and lemons', line: 'The list — adding, dropping, what you already have at home.' },
+    { tab: 'Cook', example: 'What can I make with the chicken thighs?', line: 'Tonight’s cooking — what’s in the house, and how long you’ve got.' }
   ];
 
   var TIPS_CLOSERS = [

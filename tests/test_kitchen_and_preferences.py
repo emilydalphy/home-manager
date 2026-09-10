@@ -149,19 +149,26 @@ def test_the_back_link_says_where_it_came_from():
     Updated 2026-09-09 (branch `overnight/tap-a-meal-opens-recipe`): the
     focused cook screen's link used to be the literal "&lsaquo; Kitchen",
     and this test asserted that string. It is now cookBackLabel(), which
-    still says Kitchen for every entry point that existed when this test
-    was written and says the origin's own name for a dish name tapped
-    somewhere else. The rule the test is about — up one level, BY NAME,
-    never history.back() — is unchanged; only the source of the name is.
+    says the origin's own name for a dish name tapped somewhere else, and
+    falls back to the tab's name otherwise. The rule the test is about — up
+    one level, BY NAME, never history.back() — is unchanged; only the source
+    of the name is.
+
+    Updated again on merging, 2026-09-10: the tab that name falls back to is
+    called Cook now, not Kitchen (Emily's rename, same week). Two branches
+    met on these three buttons — one renaming them, one making them dynamic
+    — and the dynamic one won, so the rename lives in cookBackLabel's
+    default. The prep session's link stayed literal, so it carries the new
+    name directly.
     """
     _assert_in('data-cook="exit-focus">&lsaquo; \' +\n          escapeHtml(cookBackLabel())',
                SHELL_JS, "the focused screen's back link", "shell.js")
-    _assert_in('data-cook="exit-session">&lsaquo; Kitchen</button>', SHELL_JS,
+    _assert_in('data-cook="exit-session">&lsaquo; Cook</button>', SHELL_JS,
                "the prep session's back link", "shell.js")
     assert "history.back()" not in _function("cookExitFocus")
     fn = _function("cookBackLabel")
-    assert "'Kitchen'" in fn, "Kitchen is still the answer when nothing else set an origin"
-    assert "Back to the week" not in SHELL_JS, "a cook screen still points back at Meals"
+    assert "'Cook'" in fn, "the tab's name is still the answer when nothing set an origin"
+    assert "Back to the week" not in SHELL_JS, "a cook screen still points back at Plan"
 
 
 def test_cook_mode_keeps_its_apricot_and_its_end_state():

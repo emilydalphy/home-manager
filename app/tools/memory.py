@@ -528,6 +528,10 @@ def edit_preference(field: str, value) -> dict:
         return {"dislikes": value}
     if field == "usual_stores":
         conn = get_conn()
+        before = conn.execute(
+            "SELECT usual_stores_json, store_typical_items_json FROM meal_preferences WHERE household_id = ?",
+            (household_id(),),
+        ).fetchone()
         conn.execute(
             """
             INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
@@ -536,6 +540,30 @@ def edit_preference(field: str, value) -> dict:
             """,
             (household_id(), json.dumps(value)),
         )
+        # Un-picking a shop on the Grocery card arrives here, as a shorter
+        # whole list, rather than through delete_preference — so this is the
+        # other half of that function's pruning, for exactly the reason
+        # written down there: an orphaned typical-items entry would keep
+        # surfacing "usually get here" suggestions for a shop the household
+        # has stopped shopping at.
+        #
+        # Deliberately narrower than "keep only stores on the new list":
+        # only a store that WAS on usual_stores and no longer is gets
+        # pruned. add_store_typical_items says in its own docstring that it
+        # doesn't require the store to be a usual store first, so a list
+        # taught in chat for somewhere that was never picked here is not
+        # this write's to throw away.
+        kept = {str(s).strip().lower() for s in (value or [])}
+        was = {str(s).strip().lower() for s in json.loads(before["usual_stores_json"])} if before else set()
+        dropped = was - kept
+        if dropped and before:
+            store_items = json.loads(before["store_typical_items_json"])
+            pruned = {k: v for k, v in store_items.items() if k.strip().lower() not in dropped}
+            if pruned != store_items:
+                conn.execute(
+                    "UPDATE meal_preferences SET store_typical_items_json = ? WHERE household_id = ?",
+                    (json.dumps(pruned), household_id()),
+                )
         conn.commit()
         conn.close()
         return {"usual_stores": value}

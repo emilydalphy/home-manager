@@ -244,7 +244,9 @@ def test_sort_asks_about_one_thing_at_a_time():
     _in("' to sort'", SHELL_JS, "the SORT subtitle", "shell.js")
     _in("var it = unsorted[0];", SHELL_JS, "one thing at a time", "shell.js")
     _in("position + ' of ' + total", SHELL_JS, "the progress line", "shell.js")
-    _in("‹ Grocery", SHELL_JS, "the SORT back link", "shell.js")
+    # Renamed with the tab on 2026-09-09 (Emily): Grocery -> Shop. The back
+    # link names its parent, so it follows the parent's name.
+    _in("‹ Shop", SHELL_JS, "the SORT back link", "shell.js")
     _in(".gro-sortcard", SHELL_CSS, "the sort card style", "shell.css")
 
 
