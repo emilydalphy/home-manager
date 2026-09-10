@@ -243,8 +243,33 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
     harness = (
         _ESCAPE
         + "var COOK_VOICE_ENABLED = false;\n"
-        + "var cookState = { focusStepsChecked: {}, focusOrigin: null };\n"
+        + "var cookState = { focusOrigin: null };\n"
         + "var COOK_ICONS = { check: '<svg/>', mic: '<svg/>' };\n"
+        # 2026-09-10: the ingredient line is one shared helper now
+        # (cookIngredientLabel), rather than the same quantity-then-item
+        # expression written out in the renderer and again in the serving
+        # stepper's rewrite. cookState lost focusStepsChecked in the same
+        # change — step ticks live in the tick store now (cookReadTicks),
+        # which the plain frame deliberately never touches, so the stub
+        # here no longer needs to carry one.
+        # The CHECKABLE copy really does read the tick store now, so the
+        # harness has to answer it. Nothing is ticked here on purpose: this
+        # test is about which controls each frame renders, and the plain
+        # frame's whole point is that it renders none of them.
+        + "function cookTicked(){ return false; }\n"
+        + _extract("cookMealKey") + "\n"
+        + _extract("cookIngredientLabel") + "\n"
+        # 2026-09-10, review round: the "eyeball these" note is rendered off
+        # the meal now rather than poked into a hidden <p> after a rescale,
+        # so both frames call one helper for it. The plain frame carries no
+        # stepper, so it only ever renders the empty string — which is the
+        # point of asserting below that it gains no control.
+        + _extract("cookUnscaledHtml") + "\n"
+        # ...and the serving count is read through one helper now, because
+        # the cook's own count lives beside the meal's while a rescale is in
+        # flight. The plain frame renders no stepper at all, which is the
+        # point of the assertions below.
+        + _extract("cookServesShown") + "\n"
         + _extract("cookBackLabel") + "\n"
         + _extract("cookFocusEndHtml") + "\n"
         + _extract("cookStepLi") + "\n"

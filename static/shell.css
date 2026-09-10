@@ -4584,8 +4584,150 @@ html, body {
 .cook-focus-check.is-done:hover { background: var(--spruce-hover); }
 .cook-focus-recipe { padding: 14px; }
 
+/* ---------- Cook mode's three stages ----------
+   Before you start / one step at a time / the whole method are stages of
+   one step of this tab (cookState.focusStage), not screens of their own:
+   one hero, one body, one dock, and only the middle of the three changes
+   between them. */
+
+/* The slim hero, on the two cooking stages. The dish is settled by the time
+   you are cooking it, so the headline steps down from hero size (30px) to
+   card size and the screen's biggest type goes to the instruction instead.
+   Nothing else about the panel moves — same back link, same chip, same
+   place — so stepping between stages never feels like changing screens. */
+.cook-hero-slim { padding-bottom: 13px; }
+.cook-hero-slim .cook-hero-headline { font-size: 21px; letter-spacing: -0.028em; }
+
+/* "Everything out of the cupboard as a ticklist with quantities." */
+.cook-getout { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cook-getout-item { border-bottom: 1.5px solid var(--hairline); }
+.cook-getout-item:last-child { border-bottom: none; }
+.cook-getout-row {
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.cook-getout-text {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+/* --ink-done is 4.53:1 on ground (theme.css, measured 2026-09-03); the
+   struck-through state is the same one the prep tiles and the step list
+   already use, so a ticked ingredient reads like every other ticked thing
+   on this screen. */
+.cook-getout-item.is-done .cook-getout-text { color: var(--ink-done); text-decoration: line-through; }
+
+/* "Plus the pans you'll want" — and, on a step, what that step needs.
+   One chip vocabulary for both: a thing to fetch, on the ivory ground. */
+.cook-kit { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cook-kit-chip {
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: var(--radius-chip);
+  background: var(--sand);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* One step at a time: the instruction IS the screen. Display face at
+   card-headline weight but hero-ish size, because it is read across a
+   counter rather than held. */
+.cook-step-stage { gap: 22px; padding-top: 20px; min-height: 46vh; }
+.cook-bigstep {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 25px;
+  line-height: 1.24;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.cook-needs { display: flex; flex-direction: column; gap: 9px; }
+
+/* The dock. Sticky rather than in flow: the phone is across the counter
+   and the next thing to do must not be a scroll away. It is in the page's
+   own scroller, not new floating chrome, so it never fights the ask bar —
+   at the very bottom of the content it simply comes to rest.
+   Kitchen's ROOT still has no primary action (DESIGN_SYSTEM Rule 5); this
+   is one step down, exactly where "Mark it cooked" already lived. */
+.cook-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 20px;
+  padding: 8px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--ground);
+  border-top: 1.5px solid var(--hairline);
+}
+.cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* space-between with a single link leaves it at the start, which is
+   where a lone back link belongs — no second rule needed. */
+.cook-dock-link {
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cook-dock-link:hover { color: var(--apricot-label-hover); }
+/* "Mark not cooked" is an undo, not a call to action, so it drops the
+   apricot fill — and in the dock it sits on the ivory ground rather than
+   on spruce, so it takes the ground's own quiet-outline vocabulary
+   (.cook-why/.cook-focus-end-done) rather than the hero's ivory-on-spruce
+   one, which would be invisible here. */
+.cook-dock .cook-focus-check.is-done {
+  border-color: var(--hairline-strong);
+  color: var(--ink-strong);
+}
+.cook-dock .cook-focus-check.is-done:hover { background: var(--sand); }
+
+@media (min-width: 1024px) {
+  /* Read from further away on a laptop propped up in the kitchen. And no
+     reserved height: the 46vh exists so the dock lands at the foot of a
+     phone's short scroller, and on a desktop it only opens a hole. */
+  .cook-bigstep { font-size: 30px; }
+  .cook-step-stage { min-height: 0; }
+}
+
 /* ---------- Sections ---------- */
-.cook-body { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 16px; }
+/* A foot the height of the sticky dock (measured by wireCookDock), so the
+   end of a ticklist clears it with room rather than stopping flush under
+   it. Worth being exact about what this does and doesn't do: a sticky
+   bottom:0 last child already comes to rest at the end of the scroll, so
+   nothing was ever UNREACHABLE without it — measured on both builds,
+   occluded-at-max-scroll was 0 either way. What it buys is comfort: the
+   last rows clear the bar earlier while scrolling, and there is a
+   guaranteed gap instead of a row ending exactly at its edge. 0 when there
+   is no dock — the reheat and prep-session screens share this class. */
+.cook-body {
+  padding: 12px 20px calc(var(--cook-dock-h, 0px) + 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .cook-section { display: flex; flex-direction: column; gap: 9px; }
 .cook-sectionhead { display: flex; align-items: center; gap: 10px; }
 .cook-eyebrow {
@@ -4603,7 +4745,15 @@ html, body {
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 700;
-  color: var(--ink-inactive);
+  /* --ink, measured in-browser 2026-09-10: 12.78:1 light / 14.4:1 dark.
+     This was --ink-inactive (3.21:1) and then briefly --ink-secondary
+     (4.44:1) — the second is the ramp's supporting-copy value and is fine
+     where it is used, but 4.44 is under AA for 11px/700 and shipping a
+     knowingly sub-AA value on a NEW screen is not a note, it is a
+     decision. So this row takes body ink instead. It is not a hierarchy
+     inversion: the eyebrow beside it is a LABEL and stays --ink-muted,
+     while "3 of 5 out" is the live count the cook is actually reading. */
+  color: var(--ink);
   white-space: nowrap;
 }
 
@@ -4808,11 +4958,16 @@ span.cook-week-name { cursor: default; }
 .cook-detail.on-spruce .cook-why-text { color: var(--apricot-light); }
 .cook-why-text[hidden] { display: none; }
 
-/* The small row that closes out the last step — a quiet echo of the hero's
-   own "Mark cooked", not a second accent moment (Rule 5's one-apricot-per-
-   screen already spent on the hero above), so it reuses the plain
-   spruce-outline vocabulary .cook-why/.btn-secondary already use on this
-   same card. */
+/* The row that closes out the last step. It used to be a quiet echo of a
+   hero "Mark cooked" sitting above it, and Rule 5's one apricot was spent
+   up there — so it took the plain spruce-outline vocabulary instead.
+   Neither half of that is true since cooking became three stages
+   (2026-09-10): the whole method's hero is slim and carries no action at
+   all, and its dock deliberately carries no apricot either, because THIS
+   is the screen's finish and a sticky copy of it would be the same button
+   twice. So it is the stage's one apricot primary, full width — the
+   skim-ahead cook's finish should not be the quietest control on their
+   screen. */
 .cook-focus-end {
   margin-top: 16px;
   padding-top: 16px;
@@ -4822,20 +4977,23 @@ span.cook-week-name { cursor: default; }
   gap: 10px;
 }
 .cook-focus-end-note { margin: 0; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-secondary); }
-.cook-focus-end-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cook-focus-end-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .cook-focus-end-done {
-  min-height: 44px;
+  width: 100%;
+  min-height: 54px;
   padding: 0 16px;
-  border: 1.5px solid var(--hairline-strong);
-  border-radius: var(--radius-control);
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 14px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--apricot);
+  font-family: var(--font-display);
+  font-size: 17px;
   font-weight: 700;
-  color: var(--ink-secondary);
+  letter-spacing: -0.02em;
+  color: var(--on-accent-ink);
   cursor: pointer;
+  box-shadow: var(--shadow-action);
 }
-.cook-focus-end-done:hover { background: var(--sand); }
+.cook-focus-end-done:hover { background: var(--apricot-light); }
 .cook-focus-end-back {
   min-height: 44px;
   padding: 0 2px;
@@ -5071,7 +5229,17 @@ span.cook-week-name { cursor: default; }
   .prefs-gear-row { padding: 12px 28px 0; }
   .cook-hero { padding: 18px 28px; }
   .cook-hero-headline { font-size: 38px; }
-  .cook-body { padding: 16px 28px 0; }
+  /* padding-block/-inline, never the shorthand: `padding: 16px 28px 0`
+     zeroed the bottom here, which switched the dock's foot off on desktop
+     entirely — --cook-dock-h was still 123px and the dock was still
+     sticky, so the whole point of it stopped applying at exactly the width
+     nobody had measured. The design system's own gutter rule warns about
+     this shorthand for the same reason. */
+  .cook-body {
+    padding-inline: 28px;
+    padding-top: 16px;
+    padding-bottom: calc(var(--cook-dock-h, 0px) + 8px);
+  }
   .cook-voice, .cook-attention { margin-left: 28px; margin-right: 28px; }
 }
 

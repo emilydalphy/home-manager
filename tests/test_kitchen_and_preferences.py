@@ -779,10 +779,19 @@ def test_a_check_off_refreshes_the_moves_the_kitchen_root_reads():
 
 def test_the_cook_mode_apricot_and_the_end_button_say_the_same_thing():
     """One action, written once, said the same way in both places a cook
-    meets it."""
-    focus = _function("cookFocusHtml")
-    assert "'Mark it cooked'" in focus, "the apricot still says 'Mark cooked'"
-    assert "'Mark cooked'" not in focus
+    meets it.
+
+    UPDATED 2026-09-10 (branch `overnight/cook-journey-step-by-step`): cook
+    mode became three stages — Before you start, one step at a time, the
+    whole method — so its apricot moved out of cookFocusHtml and into the
+    dock those stages share (cookDockCookedHtml). The rule this test is
+    about did not move with it: the button still says "Mark it cooked", the
+    same words as the row that closes the whole method's last step. Only
+    the function the assertion is scoped to changed.
+    """
+    cooked = _function("cookDockCookedHtml")
+    assert "'Mark it cooked'" in cooked, "the apricot still says 'Mark it cooked'"
+    assert "'Mark cooked'" not in cooked
     assert ">Mark it cooked<" in _function("cookFocusEndHtml")
     # The Kitchen root's own checkboxes keep "Mark cooked" as their
     # aria-label — cookCheckMeal reads that exact string to tell a real

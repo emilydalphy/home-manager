@@ -442,6 +442,239 @@ why*, not duplicating the diff.
   the Review step renders its own `#week-approve-btn` into the same
   `.wk-decide` shell so `approveWeek`/`showApproveConfirm` need no second
   implementation, and only one step is ever in the DOM. Suite 1792 -> 1827.
+- **2026-09-10 — Six more on the cook journey, and two of them are
+  corrections to what the last two entries claimed. Branch
+  `overnight/cook-journey-step-by-step`, second review round.**
+  **The tests for the servings blocker did not guard it.** The two headline
+  ones hand-mutated `meal.ingredients` and then rendered — and the OLD
+  renderers read from the meal too, so both passed on the broken commit;
+  the only real guard was `assert "innerHTML" not in fn`, which a rewrite
+  poking `el.textContent` would have sailed through. They are renamed and
+  say what they actually cover now, and
+  `test_a_tap_on_the_stepper_is_carried_by_every_stage` drives
+  `cookStepServings` itself against a stubbed `/scale` and then walks the
+  stages — tap, stored state, re-render, which is the path that broke. It
+  fails on `da80b01` and passes on `1aedac0`, which is exactly the shape a
+  guard on that fix should have.
+  **Three fast taps gave one increment.** `current` was read off
+  `meal.default_servings`, which only moves when a reply lands, so every
+  tap in the same second counted from the same number and fired the same
+  request; a fast +/- left the winner to whichever reply arrived last. The
+  count is advanced on the meal AT TAP TIME (`serves_target`) and each
+  request carries a sequence token, so a superseded reply is dropped rather
+  than racing. Measured in Chromium: 2 -> 5 on three taps in one frame,
+  scale calls 3/4/5, and a +/- pair calls 6 then 5 and lands on 5.
+  **An ordinary tab switch threw the rescale away.** Meals then Kitchen
+  runs `loadKitchen` through `refreshKitchenPanel`, and the screen came back
+  at the household's own number while the cook was holding the pan — one
+  tap, no notice. The last entry called that "a later load", which
+  undersells it; it is now carried for the page's life in
+  `cookState.serves`, keyed by the DISH, and re-applied by
+  `cookApplyServesOverride` on every render, so a load, a write response
+  and a tab switch all leave it standing. Not sent to the server and not
+  outliving the page: this is a cook overriding tonight at the counter, not
+  a change to who is eating.
+  **A rescaled batch contradicted itself on one screen.** `+1` on a
+  cook-ahead source gave `Serves 7` under a chip still reading `for 6` and
+  a note still reading "Cooking for 6 — enough for Thursday, Friday, and
+  Saturday". The chip IS the number being cooked, so it follows the cook
+  (`meal.servings` moves with the override). The note is the server's
+  sentence and it names a count, so it goes — and the NIGHTS are said again
+  from `meal.covers`, the dates themselves rather than a re-worded
+  sentence: "This batch is also meant for Friday and Saturday", plus
+  "— check it still stretches" only when the cook has gone BELOW what the
+  batch was sized for, which is the only direction that can leave a night
+  short.
+  **The dock's foot was switched off on desktop.** `@media (min-width:
+  1100px)` set `.cook-body { padding: 16px 28px 0 }` — the padding
+  shorthand this repo's own gutter rule warns about — so `--cook-dock-h`
+  was still 123px, the dock was still sticky, and the bottom padding was 0
+  at exactly the width nobody had measured. `padding-inline`/`-block` now,
+  and the test asserts the invariant across EVERY `.cook-body` rule in the
+  file rather than reading the base one, since reading the base one is what
+  let this through.
+  **And the dock claim itself was wrong** — see the correction in the entry
+  above. Nothing was unreachable on either build; the foot is comfort and a
+  guaranteed gap, and the desktop shorthand is the bug that was real.
+  Two nits taken: the oven line no longer prints a unit the step did not
+  write ("Preheat oven to 200" is "Oven at 200°", not an inferred °C — this
+  is the section whose whole rule is that it never says a thing nobody
+  wrote), and `cookKitMentions` also reads "do not use a grill" / "no need
+  for a blender" / "instead of" as refusals. `tests/test_cook_journey.py`
+  grew 7 (48 -> 55); suite 1840 -> 1847. All seven fail on `1aedac0` bar
+  the tap-across-stages one, which fails on `da80b01`, where its bug lived.
+  Verified in Chromium on a throwaway DB at 390x844, 390x780 with the
+  coaching row up, and 1024/1280/1440 wide: the foot is 131px at every
+  desktop width, a batch scaled up and down says one number everywhere, and
+  a tab switch leaves the cook's count alone.
+
+- **2026-09-10 — Five things the cook-journey slice got wrong, on the same
+  branch (`overnight/cook-journey-step-by-step`). Found on independent
+  review, all reproduced in a real Chromium, fixed in one pass.**
+  (1) **The serving stepper's rescale was thrown away one tap later.**
+  `cookStepServings` wrote only to the DOM — `#cook-ings-N` and
+  `#cook-getout-N` — and left `cookState.data` alone. Survivable while the
+  stepper lived on one screen nothing re-rendered; fatal the moment cooking
+  became three stages, because every stage change calls `renderCook()`,
+  which rebuilds from that state. A cook who set Serves 4 on Before you
+  start was told "1 Carrots" mid-recipe and handed Serves 2 back on the way
+  home, silently. **The slice moved that stepper and gave the move a
+  reason** ("get the amounts right before the cupboard is open") and then
+  halved the amounts two screens later, which makes this the branch's own
+  bug and not an inherited one. It writes `meal.ingredients`,
+  `meal.default_servings` and `meal.unscaled_items` and re-renders now; the
+  count in the stepper still moves on the tap (the refresh policy's "the
+  common case never waits") and goes back if the scale call fails. Two
+  things fall out for free: the "N of M out" note follows a rescale,
+  because the renderer counts it, and the "eyeball these" line is rendered
+  off the meal (`cookUnscaledHtml`) rather than poked into a hidden `<p>`,
+  so both stages say it. Ticks survive because they are filed under the
+  ingredient's NAME. Deliberate: a later load refetches and the household's
+  own servings win again — the server is the truth about how many people
+  are eating.
+  (2) **The dock's foot. NOT the blocker this bullet first called it —
+  corrected 2026-09-10 in the same round that measured it properly.** What
+  was written here was "two of three ingredients and the whole Pans and kit
+  section were behind it at first paint", and that is ordinary sticky-footer
+  behaviour: a sticky `bottom:0` last child comes to rest at the end of the
+  scroll, so nothing was unreachable, and the re-check measured
+  occluded-at-max-scroll as 0 on the build with the fix and on the build
+  without it. `wireCookDock` + `--cook-dock-h` are a real improvement —
+  ~131px of runway, so the last rows clear the bar earlier on the way down,
+  and a guaranteed gap instead of a row ending flush against it — but they
+  are comfort, not a rescue. **The bug in this area that IS real was found
+  in the next round and is in the entry above: a `padding` shorthand in the
+  1100px block zeroed the bottom, so the foot was switched off on desktop
+  entirely.** Kept rather than deleted because a "blocker we fixed" carried
+  forward is how a slice's history stops being true. **Also correcting this
+  file:** the entry below says "verified in a real Chromium at 390px", and
+  the journey was — every stage, both schemes, a real reload. What was not
+  checked was whether the dock covered anything, at any height. Verifying a
+  flow is not verifying a layout.
+  (3) **The oven line invented temperatures.** It asked for "oven" plus a
+  heating word plus any three-digit number anywhere in the step, and "set
+  aside" satisfies the heating word — so a meat-probe target ("roast until
+  a probe reads 145°F"), a braise time ("braise for 180 minutes") and a
+  resting time all came back as oven temperatures, printed FIRST in the
+  list with no hedge, failing silently. It also could not see a real 90C.
+  The number must now follow "oven to" (or "oven at"/"oven up to")
+  directly: every one of those fails it, because in each the number belongs
+  to something else. "Gas mark 6" produces nothing, and a quiet miss is the
+  right failure for a section whose stated rule is that it never guesses.
+  Same pass: "no skillet needed — use the baking sheet you already have"
+  no longer asks for a skillet (`cookKitMentions` reads clause by clause
+  and discounts a negated mention, the shape `_COMPOUND_EXCEPTIONS`
+  already uses). The dead second regex alternative went with the rewrite.
+  (4) **The empty-recipe fallback promised a control that isn't there.** It
+  sent every recipeless meal to the whole method "to write one" — true for
+  a SAVED recipe with no steps, false for a freeform meal, where
+  `cookDetailHtml` returns early and there is no fill button at all. Two
+  sentences now, one per absence, each naming the way out that screen
+  really has.
+  (5) **A load under a focused cook could hand you a stranger's recipe.**
+  `focusIdx` is an index and every load rebuilds `meals`; `loadKitchen`
+  re-pinned `tonightIdx` and reset neither the index nor the stage, so a
+  chat turn tagged `tab:'kitchen'` arriving mid-cook could render "Step 3
+  of 4" of whatever dish now sat there — and, with fewer steps, the "Mark
+  it cooked" finish of a dish nobody started. `cookState.focusMealKey`
+  records WHICH dish the focus is on and `cookFollowFocusedMeal` follows it
+  by identity, falling back to the root when it is genuinely gone; the step
+  cursor is clamped where the stage is decided, so the dock and the
+  instruction can never answer about different steps.
+  Two review nits taken rather than noted. `.cook-sectionnote` was going to
+  ship at 4.44:1 for 11px/700 with a comment explaining why — but a
+  knowingly sub-AA value on a NEW screen is a decision, not a note, so the
+  count takes body ink (12.78:1 light / 14.4:1 dark); the eyebrow beside it
+  is a label and stays muted. And the whole method's finish had become the
+  quietest control on its screen, so `.cook-focus-end-done` is that stage's
+  one apricot primary, full width — there is still exactly one finish
+  control on it and still nothing in its dock but the way back to your
+  place. `tests/test_cook_journey.py` grew 10 tests (38 -> 48), including
+  the servings one asserting ACROSS a stage change, which is precisely what
+  a single-screen render test cannot see; suite 1830 -> 1840. Re-verified
+  in Chromium at the reviewer's own 390x780 with the coaching row up: every
+  ticklist row and the kit section clear of the dock at first paint and at
+  full scroll, and Serves 4 carried intact through step, method and back.
+
+- **2026-09-10 — Cooking is three stages: before you start, one step at a
+  time, and the whole method one tap away. Branch
+  `overnight/cook-journey-step-by-step`, FIRST SLICE ONLY.** Emily's
+  approved design, 2026-09-09; she chose one-step-at-a-time as the default,
+  with the whole method one tap away. Cook mode was one long screen — hero,
+  prep, the whole recipe, scroll — and is now `cookState.focusStage`, three
+  stages of the SAME step of Kitchen (never routes; the "‹ Kitchen" link
+  still goes up one level by name, and moving between stages never touches
+  history). Every entry point already came through `cookEnterFocus`, so the
+  "Cook this opens Before you start" rule is one line there rather than five
+  at the call sites, and `cookResolveFocusIndex` is untouched.
+  **Deliberately left for the second slice, and NOT built here: the running
+  timer a step can offer, and the Done/arrival moment (the rating writing to
+  the taste record).** Finishing already worked and still does — every stage
+  that has a finish uses the existing `focus-check` write and the existing
+  words, "Mark it cooked".
+  Four things worth knowing before changing it.
+  (1) **The whole method is `cookDetailHtml` whole and unchanged** — the
+  panel this screen always rendered, every step tickable, "why this",
+  fill-in-a-recipe — so the two cooking stages cannot drift about what the
+  recipe says. Same renderer Meals' Meal step reads `plain`, and `plain`
+  now computes no meal key and reads no ticks at all, so the read-only frame
+  stayed read-only (verified in a browser: zero `data-cook` controls in it).
+  (2) **Ticked steps and ingredients are localStorage keyed by
+  `weekly_plan_id`, and that key is the design.** Prep ticks were already
+  the server's (`prep_tasks.status`); these two have no column anywhere, and
+  the acceptance criterion is that they survive leaving the screen — which
+  has to include a reload, since an installed PWA discards its web view the
+  moment the phone goes down mid-cook. Plan ids are globally unique, so two
+  households on one device can never read each other's ticks without this
+  code knowing anything about households, and a new week is a new id, so
+  last week's ticks expire by construction (writing prunes every other
+  plan's key). They are keyed by the MEAL's identity — entry_id, or the
+  dish's name for a component week — never by its index into
+  `cookState.data.meals`, which is the array every load and every write
+  response rebuilds. **Open for Emily:** per-device is the deliberate call
+  (two people cooking two dishes on two phones must not tick each other's
+  steps); a cook that follows you from phone to tablet mid-recipe is a real
+  column and a write per tap, worth asking for rather than assuming.
+  (3) **Two derived things read the recipe's own words and invent nothing.**
+  `cookKitFor` scans the STEPS for cookware (`COOK_KIT_WORDS`, whole-word,
+  so "grilled halloumi" is not a grill) plus the oven preheat, because
+  nothing in this app records equipment — no column, nothing the generator
+  is asked for — and an empty answer is a missing section, never an empty
+  one. `cookStepNeeds` names the ingredients a step mentions. Both are
+  keyword lists on purpose, the call `plates.is_low_carb` already made: they
+  run per render, a wrong answer costs one extra chip, and a list anyone can
+  correct beats a judgment nobody can see.
+  (4) **The dock is sticky, inside the page's own scroller.** Rule 5 is
+  untouched: Kitchen's ROOT still has no primary action, and this is one
+  step down where "Mark it cooked" already lived. The whole method's dock
+  carries NO apricot — it already ends on `cookFocusEndHtml`'s "Mark it
+  cooked" under the last step, and a sticky copy would be the same action
+  twice on one screen.
+  **Three bugs found on the way, all pre-existing, all fixed here.**
+  `cookFocusPrepHtml`'s `.cook-sectionhead` div was never closed, so the
+  prep grid rendered as a flex item inside the header row at a third of the
+  width — invisible while that section was the only thing above the recipe
+  card, obvious with a ticklist under it. `renderCook` restored the scroll
+  AFTER `wireCookFocusScroll`, so landing on a section was undone every
+  time; nothing reached it before (every caller passes `data-at="steps"`),
+  and opening the whole method from step seven does. And `.cook-sectionnote`
+  was `--ink-inactive`, measured 3.21:1 on ground in light at 11px/700 —
+  now `--ink-secondary`, 4.44:1 light / 8.48:1 dark, which is the ramp's own
+  supporting-copy value and still 0.06 short of AA; that is written into the
+  rule rather than fixed by reaching for a token that passes but means
+  "struck off". **Also for Emily:** the serving stepper and the ticklist
+  agree with each other, but a 4-serving recipe shows a 2-serving list for a
+  household of two (`get_cooker_view`'s attendance scaling) — correct and
+  pre-existing, just far more visible now that the amounts are the screen.
+  `tests/test_cook_journey.py` is the guard, 38 tests, all of them RUNNING
+  the screen's own functions under node rather than reading the source for a
+  marker; 1830 total. Two existing tests were updated honestly rather than
+  deleted, each saying what moved. Verified in a real Chromium at 390px and
+  1280px, light and dark, against a seeded throwaway DB: Cook this → Before
+  you start → start → step through → whole method (landing on the step you
+  left) → back (place kept) → full page reload → ticks and resume point
+  intact. Console clean apart from Google Fonts being unreachable in the
+  sandbox.
 
 - **2026-09-10 — A day printed dinner before lunch, because `slot` is a TEXT
   column. Branch `overnight/day-slot-order`.** `get_weekly_plan` ended
