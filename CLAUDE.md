@@ -314,6 +314,86 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — Cooking is three stages: before you start, one step at a
+  time, and the whole method one tap away. Branch
+  `overnight/cook-journey-step-by-step`, FIRST SLICE ONLY.** Emily's
+  approved design, 2026-09-09; she chose one-step-at-a-time as the default,
+  with the whole method one tap away. Cook mode was one long screen — hero,
+  prep, the whole recipe, scroll — and is now `cookState.focusStage`, three
+  stages of the SAME step of Kitchen (never routes; the "‹ Kitchen" link
+  still goes up one level by name, and moving between stages never touches
+  history). Every entry point already came through `cookEnterFocus`, so the
+  "Cook this opens Before you start" rule is one line there rather than five
+  at the call sites, and `cookResolveFocusIndex` is untouched.
+  **Deliberately left for the second slice, and NOT built here: the running
+  timer a step can offer, and the Done/arrival moment (the rating writing to
+  the taste record).** Finishing already worked and still does — every stage
+  that has a finish uses the existing `focus-check` write and the existing
+  words, "Mark it cooked".
+  Four things worth knowing before changing it.
+  (1) **The whole method is `cookDetailHtml` whole and unchanged** — the
+  panel this screen always rendered, every step tickable, "why this",
+  fill-in-a-recipe — so the two cooking stages cannot drift about what the
+  recipe says. Same renderer Meals' Meal step reads `plain`, and `plain`
+  now computes no meal key and reads no ticks at all, so the read-only frame
+  stayed read-only (verified in a browser: zero `data-cook` controls in it).
+  (2) **Ticked steps and ingredients are localStorage keyed by
+  `weekly_plan_id`, and that key is the design.** Prep ticks were already
+  the server's (`prep_tasks.status`); these two have no column anywhere, and
+  the acceptance criterion is that they survive leaving the screen — which
+  has to include a reload, since an installed PWA discards its web view the
+  moment the phone goes down mid-cook. Plan ids are globally unique, so two
+  households on one device can never read each other's ticks without this
+  code knowing anything about households, and a new week is a new id, so
+  last week's ticks expire by construction (writing prunes every other
+  plan's key). They are keyed by the MEAL's identity — entry_id, or the
+  dish's name for a component week — never by its index into
+  `cookState.data.meals`, which is the array every load and every write
+  response rebuilds. **Open for Emily:** per-device is the deliberate call
+  (two people cooking two dishes on two phones must not tick each other's
+  steps); a cook that follows you from phone to tablet mid-recipe is a real
+  column and a write per tap, worth asking for rather than assuming.
+  (3) **Two derived things read the recipe's own words and invent nothing.**
+  `cookKitFor` scans the STEPS for cookware (`COOK_KIT_WORDS`, whole-word,
+  so "grilled halloumi" is not a grill) plus the oven preheat, because
+  nothing in this app records equipment — no column, nothing the generator
+  is asked for — and an empty answer is a missing section, never an empty
+  one. `cookStepNeeds` names the ingredients a step mentions. Both are
+  keyword lists on purpose, the call `plates.is_low_carb` already made: they
+  run per render, a wrong answer costs one extra chip, and a list anyone can
+  correct beats a judgment nobody can see.
+  (4) **The dock is sticky, inside the page's own scroller.** Rule 5 is
+  untouched: Kitchen's ROOT still has no primary action, and this is one
+  step down where "Mark it cooked" already lived. The whole method's dock
+  carries NO apricot — it already ends on `cookFocusEndHtml`'s "Mark it
+  cooked" under the last step, and a sticky copy would be the same action
+  twice on one screen.
+  **Three bugs found on the way, all pre-existing, all fixed here.**
+  `cookFocusPrepHtml`'s `.cook-sectionhead` div was never closed, so the
+  prep grid rendered as a flex item inside the header row at a third of the
+  width — invisible while that section was the only thing above the recipe
+  card, obvious with a ticklist under it. `renderCook` restored the scroll
+  AFTER `wireCookFocusScroll`, so landing on a section was undone every
+  time; nothing reached it before (every caller passes `data-at="steps"`),
+  and opening the whole method from step seven does. And `.cook-sectionnote`
+  was `--ink-inactive`, measured 3.21:1 on ground in light at 11px/700 —
+  now `--ink-secondary`, 4.44:1 light / 8.48:1 dark, which is the ramp's own
+  supporting-copy value and still 0.06 short of AA; that is written into the
+  rule rather than fixed by reaching for a token that passes but means
+  "struck off". **Also for Emily:** the serving stepper and the ticklist
+  agree with each other, but a 4-serving recipe shows a 2-serving list for a
+  household of two (`get_cooker_view`'s attendance scaling) — correct and
+  pre-existing, just far more visible now that the amounts are the screen.
+  `tests/test_cook_journey.py` is the guard, 38 tests, all of them RUNNING
+  the screen's own functions under node rather than reading the source for a
+  marker; 1830 total. Two existing tests were updated honestly rather than
+  deleted, each saying what moved. Verified in a real Chromium at 390px and
+  1280px, light and dark, against a seeded throwaway DB: Cook this → Before
+  you start → start → step through → whole method (landing on the step you
+  left) → back (place kept) → full page reload → ticks and resume point
+  intact. Console clean apart from Google Fonts being unreachable in the
+  sandbox.
+
 - **2026-09-10 — The chat link's target is the dish's NAME AND NOTHING
   ELSE, because a real swap recreates the entry. Same branch,
   `tap-a-meal-opens-recipe`, second review.** The fix in the entry below

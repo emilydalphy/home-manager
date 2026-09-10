@@ -4419,6 +4419,134 @@ html, body {
 .cook-focus-check.is-done:hover { background: var(--spruce-hover); }
 .cook-focus-recipe { padding: 14px; }
 
+/* ---------- Cook mode's three stages ----------
+   Before you start / one step at a time / the whole method are stages of
+   one step of this tab (cookState.focusStage), not screens of their own:
+   one hero, one body, one dock, and only the middle of the three changes
+   between them. */
+
+/* The slim hero, on the two cooking stages. The dish is settled by the time
+   you are cooking it, so the headline steps down from hero size (30px) to
+   card size and the screen's biggest type goes to the instruction instead.
+   Nothing else about the panel moves — same back link, same chip, same
+   place — so stepping between stages never feels like changing screens. */
+.cook-hero-slim { padding-bottom: 13px; }
+.cook-hero-slim .cook-hero-headline { font-size: 21px; letter-spacing: -0.028em; }
+
+/* "Everything out of the cupboard as a ticklist with quantities." */
+.cook-getout { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cook-getout-item { border-bottom: 1.5px solid var(--hairline); }
+.cook-getout-item:last-child { border-bottom: none; }
+.cook-getout-row {
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.cook-getout-text {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+/* --ink-done is 4.53:1 on ground (theme.css, measured 2026-09-03); the
+   struck-through state is the same one the prep tiles and the step list
+   already use, so a ticked ingredient reads like every other ticked thing
+   on this screen. */
+.cook-getout-item.is-done .cook-getout-text { color: var(--ink-done); text-decoration: line-through; }
+
+/* "Plus the pans you'll want" — and, on a step, what that step needs.
+   One chip vocabulary for both: a thing to fetch, on the ivory ground. */
+.cook-kit { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cook-kit-chip {
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: var(--radius-chip);
+  background: var(--sand);
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* One step at a time: the instruction IS the screen. Display face at
+   card-headline weight but hero-ish size, because it is read across a
+   counter rather than held. */
+.cook-step-stage { gap: 22px; padding-top: 20px; min-height: 46vh; }
+.cook-bigstep {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 25px;
+  line-height: 1.24;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.cook-needs { display: flex; flex-direction: column; gap: 9px; }
+
+/* The dock. Sticky rather than in flow: the phone is across the counter
+   and the next thing to do must not be a scroll away. It is in the page's
+   own scroller, not new floating chrome, so it never fights the ask bar —
+   at the very bottom of the content it simply comes to rest.
+   Kitchen's ROOT still has no primary action (DESIGN_SYSTEM Rule 5); this
+   is one step down, exactly where "Mark it cooked" already lived. */
+.cook-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 20px;
+  padding: 8px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--ground);
+  border-top: 1.5px solid var(--hairline);
+}
+.cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* space-between with a single link leaves it at the start, which is
+   where a lone back link belongs — no second rule needed. */
+.cook-dock-link {
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cook-dock-link:hover { color: var(--apricot-label-hover); }
+/* "Mark not cooked" is an undo, not a call to action, so it drops the
+   apricot fill — and in the dock it sits on the ivory ground rather than
+   on spruce, so it takes the ground's own quiet-outline vocabulary
+   (.cook-why/.cook-focus-end-done) rather than the hero's ivory-on-spruce
+   one, which would be invisible here. */
+.cook-dock .cook-focus-check.is-done {
+  border-color: var(--hairline-strong);
+  color: var(--ink-strong);
+}
+.cook-dock .cook-focus-check.is-done:hover { background: var(--sand); }
+
+@media (min-width: 1024px) {
+  /* Read from further away on a laptop propped up in the kitchen. And no
+     reserved height: the 46vh exists so the dock lands at the foot of a
+     phone's short scroller, and on a desktop it only opens a hole. */
+  .cook-bigstep { font-size: 30px; }
+  .cook-step-stage { min-height: 0; }
+}
+
 /* ---------- Sections ---------- */
 .cook-body { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 16px; }
 .cook-section { display: flex; flex-direction: column; gap: 9px; }
@@ -4438,7 +4566,17 @@ html, body {
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 700;
-  color: var(--ink-inactive);
+  /* --ink-secondary, not --ink-inactive. Measured in-browser 2026-09-10:
+     --ink-inactive put this at 3.21:1 on ground in light, and this is
+     11px/700 — small text, so AA wants 4.5. --ink-secondary measures
+     4.44:1 light / 8.48:1 dark here. Still 0.06 short in light, and that
+     is said out loud rather than fixed by reaching for a token that
+     passes but means something else (--ink-done is 4.53:1 and means
+     "struck off"): --ink-secondary IS the ramp's supporting-copy value,
+     used at this ratio all over the app, so raising it is one token
+     decision for Emily, not a local swap. Pre-existing on the prep
+     section; caught because Before you start puts a second one under it. */
+  color: var(--ink-secondary);
   white-space: nowrap;
 }
 

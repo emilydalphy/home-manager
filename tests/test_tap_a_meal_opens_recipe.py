@@ -237,8 +237,22 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
     harness = (
         _ESCAPE
         + "var COOK_VOICE_ENABLED = false;\n"
-        + "var cookState = { focusStepsChecked: {}, focusOrigin: null };\n"
+        + "var cookState = { focusOrigin: null };\n"
         + "var COOK_ICONS = { check: '<svg/>', mic: '<svg/>' };\n"
+        # 2026-09-10: the ingredient line is one shared helper now
+        # (cookIngredientLabel), rather than the same quantity-then-item
+        # expression written out in the renderer and again in the serving
+        # stepper's rewrite. cookState lost focusStepsChecked in the same
+        # change — step ticks live in the tick store now (cookReadTicks),
+        # which the plain frame deliberately never touches, so the stub
+        # here no longer needs to carry one.
+        # The CHECKABLE copy really does read the tick store now, so the
+        # harness has to answer it. Nothing is ticked here on purpose: this
+        # test is about which controls each frame renders, and the plain
+        # frame's whole point is that it renders none of them.
+        + "function cookTicked(){ return false; }\n"
+        + _extract("cookMealKey") + "\n"
+        + _extract("cookIngredientLabel") + "\n"
         + _extract("cookBackLabel") + "\n"
         + _extract("cookFocusEndHtml") + "\n"
         + _extract("cookStepLi") + "\n"
