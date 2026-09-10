@@ -143,22 +143,31 @@ def test_cook_mode_lives_in_the_kitchen_panel():
     assert "week-cook-view" not in SHELL_CSS
 
 
-def test_the_back_link_names_the_tab_it_returns_to():
-    """
-    Back links go UP a level by name and never call history.back().
+def test_the_back_link_says_where_it_came_from():
+    """Back links go UP a level by name and never call history.back().
 
-    The four tabs were renamed on 2026-09-09 (Emily): Today/Meals/Grocery/
-    Kitchen became Now/Plan/Shop/Cook. Only the words a household reads
-    changed — keys, routes, classes and these files' own vocabulary did
-    not — so this expectation is updated rather than deleted.
-    The test's own name changed with it: it was
-    test_the_back_link_says_kitchen, and what it is really guarding is that
-    the link NAMES its parent, whatever that parent is called.
+    Updated 2026-09-09 (branch `overnight/tap-a-meal-opens-recipe`): the
+    focused cook screen's link used to be the literal "&lsaquo; Kitchen",
+    and this test asserted that string. It is now cookBackLabel(), which
+    says the origin's own name for a dish name tapped somewhere else, and
+    falls back to the tab's name otherwise. The rule the test is about — up
+    one level, BY NAME, never history.back() — is unchanged; only the source
+    of the name is.
+
+    Updated again on merging, 2026-09-10: the tab that name falls back to is
+    called Cook now, not Kitchen (Emily's rename, same week). Two branches
+    met on these three buttons — one renaming them, one making them dynamic
+    — and the dynamic one won, so the rename lives in cookBackLabel's
+    default. The prep session's link stayed literal, so it carries the new
+    name directly.
     """
-    _assert_in('data-cook="exit-focus">&lsaquo; Cook</button>', SHELL_JS,
-               "the focused screen's back link", "shell.js")
+    _assert_in('data-cook="exit-focus">&lsaquo; \' +\n          escapeHtml(cookBackLabel())',
+               SHELL_JS, "the focused screen's back link", "shell.js")
     _assert_in('data-cook="exit-session">&lsaquo; Cook</button>', SHELL_JS,
                "the prep session's back link", "shell.js")
+    assert "history.back()" not in _function("cookExitFocus")
+    fn = _function("cookBackLabel")
+    assert "'Cook'" in fn, "the tab's name is still the answer when nothing set an origin"
     assert "Back to the week" not in SHELL_JS, "a cook screen still points back at Plan"
 
 
@@ -186,12 +195,20 @@ def test_no_call_site_still_asks_for_the_meals_cook_state():
 @pytest.mark.parametrize(
     "entry_point",
     [
-        # Today's Next up card and its move lines (runTodayMoveAction).
-        "activateTab('kitchen', true, { cookFocus: target.cookFocus })",
-        # Meals' Day/Meal "Cook this" (wireMealsStep).
-        "activateTab('kitchen', true, {\n          cookFocus: {",
-        # Grocery's shop-done handoff.
-        "activateTab('kitchen', true, { cookFocus: true })",
+        # Today's Next up card and its move lines (runTodayMoveAction). It
+        # goes through openRecipeFor as of 2026-09-10 for the same reason
+        # Meals' "Cook this" does — the back link has to name where the tap
+        # actually came from. Same {entryId, date, slot, title} payload.
+        "openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' })",
+        # Meals' Day/Meal "Cook this" (wireMealsStep). It goes through
+        # openRecipeFor as of 2026-09-09 so cook mode's back link can name
+        # the Meals step it came from; the payload it passes is the same
+        # {entryId, date, slot, title} target it always was.
+        "openRecipeFor({\n          entryId: entry ? entry.entry_id : null,",
+        # Grocery's shop-done handoff — through openRecipeFor as of
+        # 2026-09-10, and on the exact meal rather than "whatever tonight
+        # turns out to be" whenever Meals has the week cached.
+        "openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' })",
     ],
 )
 def test_every_former_cook_entry_point_passes_cookfocus(entry_point):
@@ -777,9 +794,16 @@ def test_the_cook_mode_apricot_and_the_end_button_say_the_same_thing():
 _ACTION_JS = (
     "var calls = [];\n"
     "function activateTab(key, real, opts){ calls.push(['activateTab', key, opts || null]); }\n"
+    # Updated 2026-09-10: a cook opened from Today goes through openRecipeFor,
+    # like every other way into cook mode, so its back link says "‹ Today"
+    # instead of inheriting whatever origin an earlier deep link left on
+    # cookState. Same target, one door further in.
+    "function openRecipeFor(target, origin){ calls.push(['openRecipeFor', target, origin || null]); }\n"
     "function toggleTodayMove(panel, id, next){ calls.push(['tick', id, next]); }\n"
     + _function("runTodayMoveAction") + "\n"
 )
+
+_FROM_TODAY = {"label": "Today", "tab": "today"}
 
 
 def _run_move_action(target: dict):
@@ -800,20 +824,20 @@ def test_a_stale_cached_move_still_lands_in_cook_mode():
     and silently do nothing; it is translated instead."""
     focus = {"entryId": 42, "date": "2026-09-07", "slot": "dinner", "title": "Bulgogi"}
     calls = _run_move_action({"tab": "week", "mealsView": "cook", "mealsFocus": focus})
-    assert calls == [["activateTab", "kitchen", {"cookFocus": focus}]]
+    assert calls == [["openRecipeFor", focus, _FROM_TODAY]]
 
 
 @_needs_node
 def test_a_stale_cached_move_with_no_focus_still_lands_in_cook_mode():
     """The legacy `true` target — "tonight, whatever that turns out to be"."""
     calls = _run_move_action({"tab": "week", "mealsView": "cook"})
-    assert calls == [["activateTab", "kitchen", {"cookFocus": True}]]
+    assert calls == [["openRecipeFor", True, _FROM_TODAY]]
 
 
 @_needs_node
 def test_todays_current_move_shape_is_untouched_by_that_tolerance():
     focus = {"entryId": 42, "date": "2026-09-07", "slot": "dinner", "title": "Bulgogi"}
     assert _run_move_action({"tab": "kitchen", "cookFocus": focus}) == [
-        ["activateTab", "kitchen", {"cookFocus": focus}]
+        ["openRecipeFor", focus, _FROM_TODAY]
     ]
     assert _run_move_action({"kind": "check_meal", "entryId": 42}) == [["tick", "cook:42", True]]

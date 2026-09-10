@@ -634,6 +634,258 @@ why*, not duplicating the diff.
   answer after setup is still Preferences' job — the reveal has no way back
   (**true as a design intention, and only true of the CODE since the
   2026-09-10 entry above**).
+- **2026-09-10 — The chat link's target is the dish's NAME AND NOTHING
+  ELSE, because a real swap recreates the entry. Same branch,
+  `tap-a-meal-opens-recipe`, second review.** The fix in the entry below
+  put the dish's name in the markup and re-resolved it at tap time, which
+  was right and was not enough. `dishTargetForName` still handed back the
+  whole `{entryId, date, slot, title}` target the index had recorded, and
+  `cookResolveFocusIndex` tries `entryId` first and then **date + slot with
+  no name check at all**. `weekly_plan.swap_meal_in_plan` DELETES the plan
+  entry and creates a new one, so after any real swap the recorded id is
+  *always* a miss and that unchecked fallback *always* fires — landing on
+  whatever dish now occupies that night. Reproduced end to end in Chromium
+  through the app's own write path (entry 15 -> 29, no hand-edited rows):
+  a reply's link labelled **Chicken Tacos** opened **Bean Chili, Thursday
+  Sep 10**, and the only entry-bearing control on that screen was
+  `Mark it cooked` carrying **id 29** — so the household believes it is
+  ticking the dish it tapped and ticks the one that replaced it.
+  - **The fix is scoped to the chat link, deliberately.**
+    `dishTargetForName` returns `{title}` only, so both of the resolver's
+    earlier branches are unreachable from a chat link and the name match —
+    which compares against the cook card's own `meal` — does the work.
+    `cookResolveFocusIndex` is **not** changed: Today's rows and Meals'
+    "Cook this" read their target and their label out of one payload in
+    one breath, and their id/date fallbacks are correct *for them*. Adding
+    a name check inside the shared date+slot branch would have been a
+    change to every caller's contract to fix one caller's misuse of it.
+  - **A tap now re-reads the plan before it opens anything**
+    (`openDishFromChat` -> `readDishIndex`). `refreshDishIndex` is silent
+    on failure by design, so one dropped `/api/week-menu` leaves a reply
+    naming last week's dinners indefinitely; a deliberate tap can afford
+    one local SQLite lookup. A dish that has left the plan now says so
+    instead of opening a screen for a meal nobody is cooking — which is the
+    lower-severity half of the same report. A failed re-read falls through
+    to the index in hand, which still cannot open a *different* dish; it is
+    only the "this is gone" message that needs the network.
+  - **What is deliberately NOT done:** the cook view is not force-reloaded
+    on the way in. If the index and the cooker view are somehow stale
+    *together*, the screen can still show a dish under its own name that
+    has since left the plan. That fails loudly rather than wrongly —
+    `cooker.check_off_meal` raises `No meal plan entry with id N` for a
+    deleted entry, so nothing else gets ticked — and a reload while a meal
+    is focused would move `cookState.focusIdx`, which is a fresh instance
+    of the exact bug being fixed here. Worth a ticket, not a smuggled
+    change.
+  - **The guard is an integration test, not a source marker**
+    (`test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` and its
+    stale-index twin): it plans a week, builds the index from the real
+    `get_week_menu` payload, runs the real `swap_meal_in_plan`, and
+    resolves the old reply's link against the real `get_cooker_view` with
+    the screen's own two functions under node. It asserts the entry id
+    really did change first, so it can never go toothless if the swap path
+    stops recreating. Both fail on the previous commit with
+    `AssertionError: 'Bean Chili' != 'Bean Chili'`. Suite 1790 -> 1792.
+
+- **2026-09-10 — Six things review found on `tap-a-meal-opens-recipe`, and
+  the blocker among them. Same branch.** An independent reviewer drove the
+  branch in a real browser and reproduced all six. Fixed in one pass, on
+  top of the existing commits.
+  - **THE BLOCKER: a chat reply's dish link kept its label and lost its
+    target.** The markup carried the dish's POSITION in `dishIndex.entries`
+    and read it back at CLICK time — but that array is rebuilt and
+    re-sorted (longest name first) on every `/api/week-menu` read,
+    including the one `sendAskMessage` fires on the line straight after it
+    renders the bubble. So exactly the turns that most want a link — the
+    ones that changed the week — invalidated the indices inside the reply
+    describing that change. Reproduced in Chromium: a bubble reading
+    `data-dish="2"` and labelled **Chicken Tacos** opened **Sheet Pan
+    Salmon**, on a screen whose apricot primary is "Mark it cooked", i.e.
+    one tap from a wrong write. **The link carries the dish's NAME now**,
+    and `dishTargetForName` re-resolves it against the plan as it stands
+    when it is tapped, so a link either opens the dish it names or opens
+    nothing and says so ("That's not on the plan any more."). This is the
+    failure `cookResolveFocusIndex` exists to prevent, reached from the one
+    direction that wasn't going through it. **That fix was necessary and
+    NOT sufficient** — a second review broke the same invariant through the
+    app's own swap path, one level below it; see the entry above this one.
+    Putting the name in the markup was right; handing the resolver the
+    whole recorded target was still wrong.
+  - **A dish on TWO nights is not linked at all.** The index kept the first
+    occurrence and dropped the rest, so a reply saying "Chicken Tacos is on
+    Saturday" opened Thursday — and cook mode's check-off writes against
+    that `entry_id`, so "Mark it cooked" would have ticked the wrong night.
+    Which night a sentence means cannot be read out of generated prose
+    without trusting exactly what this feature refuses to trust everywhere
+    else, so the honest answer is the smaller one: a name that names two
+    meals links to neither and stays prose. Every other dish still links.
+  - **The reply is walked as TEXT NODES now, not regexed as HTML.** With
+    dishes named "table" and "strong", running the regex over
+    `renderMarkdownLite`'s output reached inside `<table
+    class="ask-msg-table">` and `<strong>` and flattened the reply's
+    markdown table into literal escaped tags. Nothing could be injected —
+    the escaping was correct on both sides — but it is the blocker's own
+    root cause one level over: rewriting a rendered artifact instead of the
+    thing it was rendered from. `dishSegments` (pure, over one run of text)
+    plus `linkifyDishNamesIn` (walks `childNodes`, skips BUTTON/A/CODE/PRE)
+    replace `linkifyDishNames`.
+  - **Two entry points now say where they came from.**
+    `runTodayMoveAction` and Grocery's shop-done handoff called
+    `activateTab` directly, so they inherited whatever `focusOrigin` an
+    earlier deep link had left: Meals -> Thursday -> Cook this -> leave by
+    the tab bar -> tap a cook row on Today, and back said "‹ Thursday" and
+    dropped you on Meals. With no stale state at all it still made one
+    screen disagree with itself — Today's Next up DISH NAME said "‹ Today"
+    while the row's own button 200px below said "‹ Kitchen". Both go
+    through `openRecipeFor` now, with `{label: 'Today'}` and
+    `{label: 'Grocery'}`.
+  - **The back link adds no history entries.** `cookExitFocus` pushed in
+    `activateTab` and pushed again in `goMealsStep`, so one press grew
+    `history.length` by two (measured 7 -> 9 by the reviewer, 17 -> 19
+    here) and the following back gesture skipped the Day step onto a state
+    nobody had visited. Going back UP a level MOVES the entry you are
+    standing on: `activateTab` takes `opts.replaceHistory` and
+    `goMealsStep` takes `{replace: true}`, both `replaceState`. Measured
+    17 -> 17 after.
+  - **Coming back to Kitchen by the tab bar redraws the cook screen.**
+    Clearing `focusOrigin` there without re-rendering left a still-mounted
+    cook screen reading "‹ Today" while it now landed on Kitchen. It only
+    redraws when there is a deeper screen mounted to redraw.
+  - **Two judgement calls, said plainly.** (1) The Meal step no longer
+    prints a "no saved recipe detail" card for a grab-and-go SNACK — that
+    card's whole content would be "there isn't one", which is the same
+    empty card the plate card is already hidden for on that slot. A
+    breakfast/lunch/dinner with no recipe keeps the line, because there the
+    absence is worth saying and it names the way to fill it in. (2) A
+    linked dish name is visually identical to an unlinked one
+    (`.dish-link` is `color: inherit`), so in a dense row there is no
+    affordance at all beyond tapping it. **Left that way on purpose**: hard
+    rule 5 gives a screen one accent and it belongs to that screen's
+    primary action, and an underline or an apricot on every dish name in a
+    seven-row week card would turn the card into a page of links. The
+    discoverability is the row itself, which has always been tappable. If
+    Emily wants it visible, the change is one rule in `.dish-link` — not a
+    per-screen decision.
+  - `.dish-link.is-inline` is new: the block/full-width default is right
+    for a row title and wrong inside a sentence — measured at 390px, the
+    Grocery line took the whole width and dropped its full stop onto the
+    next line.
+  - **Verified in a real Chromium this time** (390px and 1280px, against a
+    throwaway seeded DB and a throwaway uvicorn), by running the same
+    script against the PRE-FIX `shell.js` and the fixed one: every one of
+    the six reproduced before and none after. Only the model call was
+    stubbed — `/api/chat/stream` was fulfilled with a canned reply, and the
+    week really changed underneath it first, exactly as a real turn does.
+    Eight new tests in `tests/test_tap_a_meal_opens_recipe.py`, each of
+    which fails on the pre-review commit; suite 1782 -> 1790.
+    **One thing that verification could not have caught**, and should be
+    read as a limit on it: the week was changed by writing to the database
+    directly, so the plan entry kept its id. A real swap DELETES and
+    RECREATES it, which is what let the same invariant break again — see
+    the entry above. **A reproduction that fakes the write is a
+    reproduction of a different bug.**
+
+- **2026-09-09 — A dish name is a link to its recipe, everywhere it
+  appears. Branch `overnight/tap-a-meal-opens-recipe`.** Emily, after
+  testing the app: "if you click the meal anywhere throughout the app, it
+  should bring you to the screen with the recipe on it." **Which screen
+  that is was the whole decision.** There is exactly ONE screen in this
+  app with a recipe on it — cook mode, the focused single-meal step of
+  Kitchen (`cookFocusHtml` -> `cookDetailHtml`) — so that is the recipe
+  screen, and nothing new was built. Meals' Meal step (`mealStepHtml`) was
+  the other candidate and it had no recipe on it at all: it now renders
+  the SAME panel `plain` (`cookDetailHtml(m, idx, false, true)`) —
+  ingredients, advance prep, Do ahead / Day of steps, and the
+  "Freeform meal — no saved recipe detail" sentence for a dish nobody has
+  written one for. Plain is the same renderer with every writing control
+  taken off (serves stepper, mic, step checkboxes, "Fill in this recipe",
+  the end-of-cook row, "Why this?") **and its element ids**: those are all
+  handles for `onCookClick`/`renderCook`, which only ever redraw the
+  Kitchen panel, and a second `#cook-ings-3` on another panel would have
+  `getElementById` reaching the wrong screen. One renderer in two frames,
+  exactly as the Meal step already borrows `cookAheadHtml`; two renderers
+  is how two screens end up saying different things about one dish.
+  **Every tap goes through one door,** `openRecipeFor(target, origin)`,
+  which sets `cookState.focusOrigin` and then does the
+  `activateTab('kitchen', …, { cookFocus })` each call site used to do for
+  itself. The origin is what makes the breadcrumb rule hold: cook mode's
+  back link was the literal "‹ Kitchen", which is a lie the moment a dish
+  name on Today opens it, so it is `cookBackLabel()` now — "‹ Today",
+  "‹ Monday", "‹ the chat", and still "‹ Kitchen" for every entry point
+  that existed before. `cookExitFocus` resets Kitchen's own screen FIRST
+  (a tab left sitting on a cook screen reopens there) and then returns to
+  the origin — for Meals, to the exact step, and for chat, to the tab the
+  reply was on with the conversation reopened. The origin is cleared by
+  Kitchen's own rows, by `cookEnterSession`, and by any plain
+  `activateTab('kitchen')`, so it only ever means "this deep link".
+  (**That list was written as if it were exhaustive and it was not** — two
+  entry points set no origin at all and inherited a stale one. Corrected
+  2026-09-10; see the review-pass entry above this one.)
+  **What now links, and what deliberately does not.** Newly linked: Today's
+  Next up headline, a DONE row's dish name (the row stops being the move's
+  button — the tick is the only control left — but a cooked dinner is
+  exactly the name someone taps wanting to see what went into it), and the
+  Tomorrow card. Already linked and unchanged: Kitchen's "Cooking today",
+  "The rest of the week" and prep-session rows, Meals' Day-step slot card
+  (which opens the Meal step, and the Meal step now has the recipe on it).
+  Deliberately NOT links, each for a reason: **a reheat night** (there is
+  no cook, so nothing for a cook screen to hold — the rule Kitchen's rows
+  already followed, Emily 2026-09-04), an away or open slot, the Week
+  card's own dish lines and the "See the whole week" sheet's cells (a day
+  row is one `<button>` and a dish line inside it is ~18px — you cannot
+  nest a button, and you cannot make a third of a row clear 44px; the row
+  IS the link, one level up), the needs-you band's suggestion rows (those
+  dishes are not on the plan yet and the row's job is Pick), the
+  cook-ahead ask's sentence, and `static/share.html` (a public printed
+  menu with no app behind it). ~~**Grocery names no dishes at all** — a
+  grocery row is an ingredient — so the ticket's "beside grocery items"
+  had nothing to link.~~ **Wrong, corrected 2026-09-10:** Grocery names
+  exactly ONE dish, in the shop-done handoff ("That's the shopping done.
+  Tonight it's <dish>."), and it is a link now like every other. The rest
+  of the sentence stands: a grocery ROW is an ingredient and links nothing.
+  **Chat replies: linked, and the mechanism is the honest part.** Nothing
+  in the `ChatAction` contract says which words of a reply are dishes, and
+  asking the model to mark them up would be trusting generated text about
+  the plan. So `linkifyDishNames` does not look for dish names in the
+  reply — it looks for the dishes it already KNOWS are on the plan
+  (`setDishIndex`, off the `/api/week-menu` payload `renderWeekMenu` and
+  the ask sheet's own quick-action fetch already have, so no request of its
+  own) and links exactly those. That set is also exactly the set that HAS
+  a recipe screen, since cook mode is per plan entry: a dish the app can't
+  open stays prose. Names are matched longest-first ("Chicken Tacos" beats
+  "Chicken"), whole-word only, and the whole reply is rewritten in ONE
+  `String.replace` pass so nothing inserted is ever rescanned. A chat
+  change to a week whose panel was never built refreshes the index on its
+  own (`refreshDishIndex` off `refreshStaleTabsFromActions`) — the "panels
+  build once per page load" gotcha, one level down.
+  **The 44px floor** is met by the invisible-hitbox trick `.wg2-why` and
+  `.gro-icon-btn` already use: `.dish-link::after` is a 44px box centred on
+  the name (`min-height: 100%` so a two-line hero title keeps its whole
+  area), and `.ask-dish::after` is `inset: -12px -4px` around an inline
+  word. The inline one overlaps the lines above and below — that is a real
+  trade and it is written down in the CSS: a mis-tap opens a recipe, and
+  the way back is one named link. `.dish-link` is declared BEFORE
+  `.rest-row-title`, `.tomorrow-title` and `.hero-dish` on purpose, since
+  those set their own family/size/weight/colour and win an
+  equal-specificity tie by being later — the class only removes the
+  browser's button furniture, it never recolours a name.
+  **Two existing tests were updated honestly rather than deleted:**
+  `test_the_back_link_says_kitchen` (renamed
+  `..._says_where_it_came_from`; the rule it is about — up one level BY
+  NAME, never `history.back()` — is unchanged, only the source of the name
+  is) and `test_cook_this_still_passes_the_exact_meal` (the same four-field
+  target, handed to `openRecipeFor` instead of `activateTab` directly).
+  `tests/test_tap_a_meal_opens_recipe.py` is the new guard, 32 tests as of
+  the review pass below, most of them running the screen's own functions
+  under node — the bug was "the name looks tappable and nothing happens",
+  which a source-marker test cannot see. (**Its counts were written
+  pre-merge and were wrong on the tree:** 24 tests and "1736 -> 1760" were
+  this branch measured on its own; the merged tree was 1782 before the
+  review pass and is 1790 after it.)
+  **Not verified in a browser at the time** — no browser tooling in that
+  session, so the LAYOUT at 390px and on desktop went unchecked. **It has
+  been now** (2026-09-10, real Chromium at 390px and 1280px); see the
+  review-pass entry above.
 
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach

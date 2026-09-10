@@ -345,9 +345,18 @@ def test_cook_this_still_passes_the_exact_meal():
     of the Kitchen tab now rather than a state of Meals. The resolver it
     feeds (cookResolveFocusIndex) and the four fields it carries are
     unchanged — only the tab it aims at moved.
+
+    UPDATED 2026-09-09 (overnight/tap-a-meal-opens-recipe), also
+    deliberately: "Cook this" goes through openRecipeFor now, the one door
+    every dish-name tap in the app uses, so that cook mode's back link can
+    name the Meals step it came from instead of saying Kitchen. The target
+    it hands over is the same four fields, and openRecipeFor's own last
+    line is still activateTab('kitchen', ..., { cookFocus }).
     """
-    _assert_in("cookFocus: {", SHELL_JS, "the cook focus target", "shell.js")
-    _assert_in("activateTab('kitchen', true, {", SHELL_JS, "the cook mode entry", "shell.js")
+    _assert_in("function openRecipeFor(target, origin)", SHELL_JS,
+               "the one door every dish-name tap goes through", "shell.js")
+    _assert_in("activateTab('kitchen', true, { cookFocus: target });",
+               SHELL_JS, "the cook mode entry", "shell.js")
     _assert_in("entryId: entry ? entry.entry_id : null", SHELL_JS, "the focused entry", "shell.js")
     _assert_in("function cookResolveFocusIndex(", SHELL_JS, "the focus resolver", "shell.js")
 
@@ -587,6 +596,14 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("plateChips", SHELL_JS) + "\n"
         + _extract("plateCardHtml", SHELL_JS) + "\n"
         + _extract("cookMealForEntry", SHELL_JS) + "\n"
+        # The recipe panel the Meal step borrows from the cook screen
+        # (2026-09-09, overnight/tap-a-meal-opens-recipe) — rendered plain,
+        # so none of its interactive branches is reached, but it still has
+        # to be defined for the step to render at all.
+        + _extract("cookStepLi", SHELL_JS) + "\n"
+        + _extract("cookInstructionsHtml", SHELL_JS) + "\n"
+        + _extract("cookDetailHtml", SHELL_JS) + "\n"
+        + _extract("mealRecipeCardHtml", SHELL_JS) + "\n"
         + _extract("swapStateFor", SHELL_JS) + "\n"
         + _extract("swapLineHtml", SHELL_JS) + "\n"
         + _extract("slotActionsHtml", SHELL_JS) + "\n"
