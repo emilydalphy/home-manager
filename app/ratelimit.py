@@ -80,13 +80,37 @@ def check(bucket: str, caller: str) -> int | None:
 def caller_id(request) -> str:
     """
     Identify the caller. Railway (like most platforms) terminates TLS at a
-    proxy, so request.client.host is the proxy — the real address is the
-    first entry in X-Forwarded-For. Falls back to the socket address when
-    running without a proxy.
+    proxy, so request.client.host is the proxy — the real address comes from
+    X-Forwarded-For. Falls back to the socket address without a proxy.
+
+    The LAST entry, not the first, and the difference is the whole point.
+    X-Forwarded-For is a list each proxy APPENDS to, so the leftmost value
+    is whatever the original caller sent — a header, chosen by them. Reading
+    it made every limit here advisory: a client that varies one header is a
+    new caller on every request. That was measured on this code, not argued
+    about — fifteen wrong passphrases from a fixed header were cut off after
+    eight, and fifteen from a rotating one were not cut off at all, which
+    left the login bucket's own promise ("so the shared password can't be
+    brute-forced") not kept.
+
+    The rightmost entry is the address OUR proxy observed and wrote down.
+    A caller cannot forge it: anything they send is pushed left by that
+    append.
+
+    This assumes exactly one trusted proxy in front of the app, which is
+    Railway today. Put a second layer in front — a CDN, another load
+    balancer — and the trustworthy entry moves one place left, so this needs
+    revisiting rather than silently trusting a hop that isn't ours. That is
+    the point at which a configurable trusted-hop count earns its keep; one
+    hop does not need it.
     """
     forwarded = request.headers.get("x-forwarded-for", "")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        # A trailing comma, or a header of nothing but separators, must not
+        # collapse every caller into one shared "" bucket.
+        hops = [h.strip() for h in forwarded.split(",") if h.strip()]
+        if hops:
+            return hops[-1]
     return (request.client.host if request.client else "unknown") or "unknown"
 
 
