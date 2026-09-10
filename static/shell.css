@@ -3394,6 +3394,22 @@ html, body {
   font-weight: 800;
   color: var(--on-accent-ink);
 }
+/* The no-shop bucket's avatar. Every other one is filled from the hash
+   palette — a set of light accents that carry --on-accent-ink in both
+   schemes — and this one has no name to hash, so it takes a pair of tokens
+   instead of an inline colour and can differ by scheme like anything else.
+   Sand rather than an accent — it is not a stop — but full --ink on it, the
+   same dark-glyph-on-light-tile reading its siblings get from
+   --on-accent-ink, and it inverts correctly in dark where sand does. No
+   border: it would make this one avatar 3px wider than every other one in
+   the column, and the fill already separates it. Measured in Chromium off
+   computed styles: 11.60:1 light / 11.28:1 dark, against the 3:1 WCAG
+   1.4.11 asks of a graphic. */
+.gro-anywhere-avatar {
+  background: var(--sand);
+  color: var(--ink);
+}
+.gro-anywhere-avatar svg { width: 16px; height: 16px; }
 .gro-store-name {
   flex: 1 1 auto;
   font-family: var(--font-body);
@@ -3836,7 +3852,7 @@ html, body {
 /* Inside the stops card, not a sibling under it. Two reasons and they agree:
    the line is about those rows, and the ink it wants only clears AA on the
    card's surface. Measured in Chromium off computed styles — --ink-secondary
-   on --surface 4.70:1 light / 7.44:1 dark, against 4.44:1 for the same ink
+   on --surface 4.70:1 light / 7.36:1 dark, against 4.44:1 for the same ink
    on --ground. */
 .gro-next-note {
   font-family: var(--font-body);

@@ -426,8 +426,16 @@ def test_the_no_store_section_has_no_heading_and_a_key_that_cannot_be_a_store():
     # It lands in an HTML attribute, so it goes through the same escape every
     # store name does.
     _in("escapeHtml(GRO_LOOSE_KEY)", SHELL_JS, "the key being escaped", "shell.js")
-    # The heading belongs to groStoreCardHtml alone.
-    loose = SHELL_JS[SHELL_JS.index("function groLooseCardHtml("):SHELL_JS.index("function groStoreCardHtml(")]
+    # The heading belongs to the CARDS. This section is the entire list of a
+    # household with no stops at all ("One list is fine"), so there is
+    # nothing a heading could distinguish it from.
+    #
+    # The slice now ends at groAnywhereCardHtml, added 2026-09-09 between the
+    # two. THAT one carries a heading, and correctly: it only ever appears
+    # alongside store cards, where "these have no shop" is exactly what the
+    # reader needs told. Both rules are still true — see
+    # tests/test_grocery_fast_sort.py section 8.
+    loose = SHELL_JS[SHELL_JS.index("function groLooseCardHtml("):SHELL_JS.index("function groAnywhereCardHtml(")]
     assert "gro-card-head" not in loose, (
         "The no-store section drew a store heading. It has no store to name — "
         "that is the entire difference between it and groStoreCardHtml."

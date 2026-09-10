@@ -402,6 +402,91 @@ why*, not duplicating the diff.
   actually coming OFF the list, never to everything absent from it, because
   `add_store_typical_items` does not require a store to be a usual store
   first. `tests/test_stores_multiselect.py` is 34 tests now; 1792 total.
+- **2026-09-09 — Three things the fast-sort slice got wrong, on the same
+  branch (`overnight/grocery-fast-sort`).** Found by an independent
+  reviewer, all three reproduced in a real Chromium, fixed in one pass on
+  top. Worth reading as a set: every one of them is the same shape — a
+  change that was right in itself and whose consequence one step downstream
+  was not checked.
+  - **Persisting "Any" made the row disappear.** The BLOCKER. Once an
+    answered row stopped coming back to the queue, nothing else was showing
+    it: `groListHtml` drew the loose pile only when there were NO stops, and
+    `groStoreCardItems` folded it into a shop's card only for a *sole*-store
+    household. So for everyone else a row with `store='' store_decided=1`
+    was countable in the subtitle, present on the trip, and on no screen —
+    with no ⋯ to change it back. A **regression on the parent**, where the
+    page-view map meant a reload at least put the row back in the queue.
+    New `groAnywhereCardHtml`: one card, "Anywhere · N", the sand avatar
+    carrying a basket (there is no name to take a letter from), ordinary
+    rows with the ordinary ⋯. Two things it must not do, both pinned by
+    tests: print a one-shop household's list twice (its pile is already
+    inside that shop's card) and pull rows that are still in the queue onto
+    LIST. **Sub-case, same fix:** answer "Anywhere" for everything and there
+    were no stops, so "Start the trip" never rendered. `groStoresWithNeeded`
+    now falls back to the most-used shop when nothing is tagged and
+    something has nowhere to go — the same defensible default "Put all 40 at
+    Loblaws" already offers, not a second invention, and for a one-shop
+    household it IS their one shop (that special case is gone, folded into
+    this one). It reads RIDE-ALONGS, never the whole loose pile: a row still
+    waiting in the queue is unasked, not homeless, and inventing a stop for
+    it would answer the household's question for them. A stop holding
+    nothing of its own draws no card — "Loblaws · 0" over "Anywhere · 2" is
+    a card about nothing.
+  - **The bulk write was not atomic, and its docstring said it was.**
+    `set_grocery_items_stores` looped `set_grocery_item_store`, which opens,
+    commits and closes per row; a failure on row 3 of 4 left rows 1 and 2
+    written and returned a 500. That is worse here than in most places
+    because the UNDO is itself a bulk assign, so a half-applied one leaves
+    the list in a state nobody has a name for with the toast's chip already
+    spent. Split into `_stage_grocery_item_store` (rows, on a caller-owned
+    connection) and `_settle_grocery_item_store` (the preference write,
+    after the commit) — the `atomic-period-takeover` shape, and for its
+    reason: a nested `get_conn` inside an open write transaction waits on
+    SQLite's single writer and dies of "database is locked", so the
+    preference write CANNOT be inside the loop. Also bounded at
+    `MAX_BULK_STORE_ASSIGNMENTS = 500`, refused with a 400 before anything
+    is written; unbounded it was 5000 connections and 3.3s in one request.
+  - **The undo spent its own payload on the way out.** `groBulkAssign`
+    nulled `bulkUndo` before posting, so a failed undo took the only record
+    of the previous state with it: forty rows at a shop nobody chose, a
+    toast reading "try again", and no again. The payload is now held until
+    the undo SUCCEEDS, and a failure re-offers the chip
+    ("Couldn't undo that — tap Undo to try again"). Safe precisely because
+    the server side is all-or-nothing now — a failure means nothing moved,
+    so the payload still describes the list exactly. The two fixes are one
+    fix.
+  - **Two writers of `store`, one of them maintaining `store_decided`.**
+    `_apply_store_to_matching_rows` (behind `set_item_store`, reachable from
+    chat and the Kitchen Stores sheet) wrote the store and never the flag,
+    so clearing a preference left the row permanently "answered" with no
+    shop on it — never re-asked, and per the blocker invisible. Exactly the
+    `snacks_per_week_set` drift class this file warns about. It writes both
+    now: a real store answers the question, clearing the preference
+    re-opens it, which is what `delete_preference` does for its own flag.
+  - **Four nits with it.** The trip's trolley and its commit took every
+    Unassigned in-cart row while the screen above them showed only the ones
+    that ride along — one filter now (`groRideAlongInCart`), so a stop
+    cannot commit something that was never on it. WHERE NEXT gained a back
+    link that REOPENS the stop just finished (`tripLastDone`): "Done at
+    Costco" is a full-width apricot under a list of things still to tick,
+    and the mis-tap used to end that shop for the trip. The `.gro-next-note`
+    comment said 7.44:1 dark where every other record said 7.36:1. And
+    `test_the_new_screens_use_tokens_only` ended `... or True`, so it could
+    never fail.
+  - **The test harness was widened rather than argued with.** Both concerns
+    lived in `onGroceryClick`, which the first pass covered with source
+    markers only, so `_grocery_block()` now runs the handlers too — eleven
+    lines of fake event and element, no DOM. `tests/test_grocery_fast_sort.py`
+    is 47 tests (30 -> 47); ten of the seventeen new ones fail on the commit
+    they were written against, the rest are controls for the double-print
+    and snapshot risks this pass introduced. Suite 1822 -> 1839. Re-verified
+    in a real Chromium at 390px, light and dark, on the reviewer's own
+    reproduction: the answered row visible and editable across a reload,
+    moved to a shop and back, everything-Anywhere still able to start a
+    trip, a 500 injected into the undo leaving the rows untouched and the
+    chip re-offered, an oversize batch refused with 400, and a mis-tapped
+    stop reopened and finished again without being re-offered. Console
+    clean.
 - **2026-09-09 — Sorting forty things stopped costing forty screens, and an
   "Any" answer finally survives a reload. Branch
   `overnight/grocery-fast-sort`** (stacked on
@@ -429,10 +514,18 @@ why*, not duplicating the diff.
     both "never asked" and "asked, no particular shop", which is exactly the
     KNOWN LIMIT this file recorded: `anyStoreIds` was a page-view map, so a
     reload put every skipped item back in the queue. `anyStoreIds` is gone;
-    `groItemDecided` reads the column. **A knock-on worth knowing:** LIST's
-    row ⋯ "Any" used to push a row BACK into the to-sort queue and now
-    counts as an answer, deliberately — being asked again about something
-    you just answered is the annoyance the whole slice removes.
+    `groItemDecided` reads the column. **What "Any" now means, and where
+    those rows live:** it is an ANSWER — "no particular shop" — and it
+    sticks. LIST's row ⋯ "Any" used to push a row back into the to-sort
+    queue and now settles it exactly as SORT's pill does, deliberately:
+    being asked again about something you just answered is the annoyance
+    the whole slice exists to remove. Answered rows live in an **"Anywhere"
+    card** on LIST, beside the store cards, every row carrying the same ⋯
+    so a household can change its mind. That card is not decoration — the
+    first cut of this branch shipped without it, and a row answered "Any"
+    was then on NO screen for a multi-shop household: out of the badge
+    (answered), out of every store card (no store), and so out of reach of
+    the only control that could move it. See the correction entry below.
   - **One new route, `POST /api/grocery-list/store-bulk`**
     (`tools.set_grocery_items_stores`), because "one tap" that is forty
     round trips is not one tap, and because an undo has to restore every
@@ -484,7 +577,8 @@ why*, not duplicating the diff.
     being unreachable in the sandbox, which also means the screenshots show
     fallback typefaces. `tests/test_grocery_fast_sort.py` is the guard, 30
     tests (mostly running shell.js's own functions under node, since every
-    bug here is behaviour a source marker cannot see); 1822 total. Four
+    bug here is behaviour a source marker cannot see); 1822 total at the
+    time, 1839 after the correction pass above. Four
     assertions in `tests/test_grocery_steps.py` were updated honestly rather
     than deleted, each saying what moved.
   - **Deliberately not done:** a household with NO shop still cannot start a

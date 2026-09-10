@@ -12,6 +12,12 @@ from . import household as _household
 from . import quantities as _quantities
 
 
+# The most rows one bulk store assignment may carry — see
+# set_grocery_items_stores. Comfortably above any real grocery list, and low
+# enough that a runaway caller gets an error rather than a long write.
+MAX_BULK_STORE_ASSIGNMENTS = 500
+
+
 def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
     """
     Set the store on whichever line the list is actually holding.
@@ -20,6 +26,15 @@ def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
     name: a preference saved for "bell peppers" has to reach the line
     that ended up called "Bell pepper", or the app cheerfully confirms a
     preference that never takes effect.
+
+    This is the SECOND writer of grocery_items.store (set_grocery_item_store
+    below is the other), so it has to keep store_decided in step or the flag
+    drifts — the failure class CLAUDE.md records for snacks_per_week_set,
+    and the reason delete_preference clears that one. A real store answers
+    "where does this go?"; clearing the preference re-opens the question.
+    Leaving the flag set through a clear would strand the row as
+    permanently answered with no shop on it: never asked about again, and
+    sitting in the one bucket the sorting step deliberately skips.
     """
     wanted = _merge_key(item)
     rows = conn.execute(
@@ -28,8 +43,8 @@ def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
     for row in rows:
         if _merge_key(row["item"]) == wanted:
             conn.execute(
-                "UPDATE grocery_items SET store = ? WHERE id = ? AND household_id = ?",
-                (store, row["id"], household_id()),
+                "UPDATE grocery_items SET store = ?, store_decided = ? WHERE id = ? AND household_id = ?",
+                (store, 1 if store else 0, row["id"], household_id()),
             )
 
 
@@ -205,11 +220,32 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True, deci
     previous state rather than blank it.
     """
     conn = get_conn()
+    try:
+        staged = _stage_grocery_item_store(conn, item_id, store, remember, decided)
+        conn.commit()
+    finally:
+        conn.close()
+    return _settle_grocery_item_store(staged)
+
+
+def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, decided: bool) -> dict:
+    """
+    The half of set_grocery_item_store that touches the database, on a
+    connection somebody else owns and commits.
+
+    Split out for the bulk call below, which has to write many rows inside
+    ONE transaction. Nothing here opens a connection of its own: on SQLite
+    there is a single writer, so a nested get_conn inside an open write
+    transaction waits on the lock it is itself holding and fails with
+    "database is locked" — the same reason atomic-period-takeover threads a
+    connection through its helpers instead of trusting each to commit
+    politely. The preference write that may follow is deliberately NOT done
+    here for exactly that reason; see _settle_grocery_item_store.
+    """
     row = conn.execute(
         "SELECT id, item FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if not row:
-        conn.close()
         return {"item_id": item_id, "found": False}
     conn.execute(
         "UPDATE grocery_items SET store = ?, store_decided = ? WHERE id = ?",
@@ -225,21 +261,39 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True, deci
             "SELECT item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
         ).fetchall()
         already_known = any(_merge_key(p["item"]) == wanted_key for p in pref_rows)
-    conn.commit()
-    conn.close()
-    remembered = False
-    needs_confirmation = False
-    if store and remember and already_known:
-        # A correction to an item the household already has an opinion
-        # about — update it immediately, same as before this feature, and
-        # keep the Kitchen sheet in sync with wherever it now points.
-        set_item_store(row["item"], store)
-        remembered = True
-    elif store and remember and not already_known:
-        needs_confirmation = True
     return {
         "item_id": item_id,
         "item": row["item"],
+        "store": store,
+        "found": True,
+        "remember": remember,
+        "already_known": already_known,
+    }
+
+
+def _settle_grocery_item_store(staged: dict) -> dict:
+    """
+    The half that runs AFTER the transaction has committed and closed: the
+    item->store preference write, which opens its own connection and so
+    cannot happen while the row write is still open (see above).
+    """
+    if not staged.get("found"):
+        return {"item_id": staged["item_id"], "found": False}
+    store = staged["store"]
+    remember = staged["remember"]
+    remembered = False
+    needs_confirmation = False
+    if store and remember and staged["already_known"]:
+        # A correction to an item the household already has an opinion
+        # about — update it immediately, same as before this feature, and
+        # keep the Kitchen sheet in sync with wherever it now points.
+        set_item_store(staged["item"], store)
+        remembered = True
+    elif store and remember and not staged["already_known"]:
+        needs_confirmation = True
+    return {
+        "item_id": staged["item_id"],
+        "item": staged["item"],
         "store": store,
         "found": True,
         "remembered": remembered,
@@ -256,29 +310,56 @@ def set_grocery_items_stores(assignments: list[dict], remember: bool = False) ->
     This exists because the Grocery tab's two fast paths ("put all forty at
     Loblaws", and the sort-them-all-on-one-screen list) are ONE tap covering
     forty rows: forty sequential round trips would make a one-tap action
-    take several seconds on a phone, and its undo just as long again. It is
-    also what lets an undo restore every row's exact previous store and
-    store_decided together, rather than a partial restore if the connection
-    drops half way.
+    take several seconds on a phone, and its undo just as long again.
+
+    ONE transaction, committed once. That is not tidiness — it is what
+    makes the undo trustworthy. The undo IS a bulk assign (the rows as they
+    were before), so a half-applied one would leave the list in a state
+    neither the household nor the app has a name for, with the toast's chip
+    already spent. A failure anywhere rolls the whole thing back and the
+    caller still has its payload. It is also why nothing in the loop opens
+    a connection of its own — see _stage_grocery_item_store — and why the
+    preference writes are done afterwards, outside the transaction.
 
     remember defaults to False here, the opposite of the single-row call.
     One tap must not become forty remembered opinions about where each of
     those things is usually bought — that learning belongs to the deliberate
     one-at-a-time choice, which still offers its "Remember for {store}?"
     per item.
+
+    Bounded at MAX_BULK_STORE_ASSIGNMENTS. A grocery list is a few hundred
+    rows at the outside; anything past that is not a household sorting its
+    shop, and a request has to be able to say so rather than sit there
+    writing.
     """
-    updated = 0
-    for a in assignments:
-        item_id = a.get("item_id")
-        if item_id is None:
-            continue
-        result = set_grocery_item_store(
-            int(item_id),
-            a.get("store") or "",
-            remember=remember,
-            decided=bool(a.get("decided", True)),
+    if len(assignments) > MAX_BULK_STORE_ASSIGNMENTS:
+        raise ValueError(
+            f"too many assignments ({len(assignments)}); "
+            f"the limit is {MAX_BULK_STORE_ASSIGNMENTS}"
         )
-        if result.get("found"):
+    conn = get_conn()
+    staged = []
+    try:
+        for a in assignments:
+            item_id = a.get("item_id")
+            if item_id is None:
+                continue
+            staged.append(_stage_grocery_item_store(
+                conn,
+                int(item_id),
+                a.get("store") or "",
+                remember,
+                bool(a.get("decided", True)),
+            ))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    updated = 0
+    for s in staged:
+        if _settle_grocery_item_store(s).get("found"):
             updated += 1
     return {"updated": updated, "requested": len(assignments)}
 

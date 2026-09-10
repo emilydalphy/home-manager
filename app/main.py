@@ -2924,12 +2924,16 @@ def set_grocery_list_stores_bulk(req: GroceryStoreBulkRequest):
     two fast sorting paths ("put all forty at Loblaws", and the
     sort-them-all-on-one-screen list) and the single undo that reverses
     either of them. See tools.set_grocery_items_stores for why this is one
-    call rather than forty.
+    call rather than forty, and why it is one transaction.
     """
     try:
         result = tools.set_grocery_items_stores(
             [a.model_dump() for a in req.assignments], remember=req.remember
         )
+    except ValueError as e:
+        # Over the batch limit: the caller asked for something outside what
+        # this route does, which is a 400, not a server fault.
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Grocery list bulk store assignment failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

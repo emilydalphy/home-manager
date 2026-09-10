@@ -51,13 +51,16 @@ _needs_node = pytest.mark.skipif(
 
 
 def _grocery_block() -> str:
-    """The whole Grocery region bar its click handler: its palette and icons
-    (groStoreColor reads the palette, and the WHERE NEXT rows draw store
-    avatars), the renderers, the state, and the write helpers the fast paths
-    go through. It stops at onGroceryClick, which needs a real event and a
-    real DOM."""
+    """The whole Grocery region INCLUDING onGroceryClick, up to the
+    hands-free voice code (which wants a SpeechRecognition engine).
+
+    The handlers are in here on purpose. They were source-marker-only in the
+    first pass, and both of the reviewer's CONCERNs — a partial bulk write
+    and an undo that spends its own payload — lived in exactly that untested
+    half. A handler needs an event and an element rather than a DOM, and
+    _CLICK below is the eleven lines that supply them."""
     start = SHELL_JS.index("  var GRO_STORE_PALETTE = [")
-    end = SHELL_JS.index("  function onGroceryClick(", start)
+    end = SHELL_JS.index("  // ---------- Hands-free voice ----------", start)
     return SHELL_JS[start:end]
 
 
@@ -65,20 +68,63 @@ _STUB = """
 function escapeHtml(s){return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 const POSTS = [];
+// Fails the Nth POST (1-based) when FAIL_ON is set — how a dropped
+// connection is injected without a server.
+let FAIL_ON = 0;
 function fetch(url, opts) {
   POSTS.push({ url: url, body: JSON.parse((opts && opts.body) || '{}') });
-  return Promise.resolve({ ok: true, json: function () { return Promise.resolve({}); } });
+  const ok = POSTS.length !== FAIL_ON;
+  return Promise.resolve({ ok: ok, json: function () { return Promise.resolve({}); } });
 }
 const panels = {};
 const TOASTS = [];
-function showToast(msg, action, hold) { TOASTS.push({ msg: msg, action: action ? action.label : null, hold: hold }); }
+function showToast(msg, action, hold) { TOASTS.push({ msg: msg, action: action, hold: hold }); }
+function lastToast() {
+  const t = TOASTS[TOASTS.length - 1];
+  return t ? { msg: t.msg, action: t.action ? t.action.label : null, hold: t.hold } : null;
+}
+function tapUndo() {
+  for (let i = TOASTS.length - 1; i >= 0; i--) {
+    if (TOASTS[i].action && TOASTS[i].action.onClick) { TOASTS[i].action.onClick(); return true; }
+  }
+  return false;
+}
 const STORE = new Map();
-const window = { localStorage: {
-  getItem: function (k) { return STORE.has(k) ? STORE.get(k) : null; },
-  setItem: function (k, v) { STORE.set(k, String(v)); },
-  removeItem: function (k) { STORE.delete(k); }
-} };
+const window = {
+  localStorage: {
+    getItem: function (k) { return STORE.has(k) ? STORE.get(k) : null; },
+    setItem: function (k, v) { STORE.set(k, String(v)); },
+    removeItem: function (k) { STORE.delete(k); }
+  },
+  history: { pushState: function () {} },
+  confirm: function () { return true; }
+};
+var scrollEl = null;
+function activateTab() {}
 var coachState = { householdId: 1 };
+"""
+
+# The handler half. onGroceryClick wants an event whose target can find a
+# [data-gro] element and an element it can disable — not a document. This is
+# both, so the seven new verbs run for real rather than being read for.
+_CLICK = """
+function fakeEl(dataset, row) {
+  return {
+    dataset: dataset, disabled: false,
+    closest: function () { return row || null; },
+    classList: { toggle: function () {} },
+    setAttribute: function () {},
+    querySelectorAll: function () { return []; }
+  };
+}
+function click(dataset, row) {
+  const el = fakeEl(dataset, row);
+  onGroceryClick({ target: { closest: function () { return el; } } });
+  return el;
+}
+// Handlers write, then re-read, then render — all through promises. Give
+// them a few turns of the loop before reading the state back.
+function settle(fn) { setTimeout(fn, 30); }
 """
 
 # A household with two shops and a list where nothing has been sorted yet —
@@ -116,7 +162,7 @@ function pickedChip(html, id) {
 
 
 def _node(body: str):
-    script = _STUB + _grocery_block() + _FIXTURE + body
+    script = _STUB + _grocery_block() + _CLICK + _FIXTURE + body
     res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
@@ -234,7 +280,7 @@ setTimeout(function () {
     calls: POSTS.map(function (p) { return p.url; }),
     sent: POSTS[0].body.assignments.length,
     remember: POSTS[0].body.remember,
-    toast: TOASTS[0]
+    toast: lastToast()
   }));
 }, 20);
 """)
@@ -619,7 +665,7 @@ def test_the_new_screens_use_tokens_only():
     for marker in (".gro-howrow", ".gro-sortall-row", ".gro-nextrow", ".gro-secondary"):
         assert marker in SHELL_CSS, f"{marker} should be styled"
     block = SHELL_CSS[SHELL_CSS.index("/* ---------- SORT HOW"):SHELL_CSS.index("/* ---------- Review")]
-    assert "#" not in block.replace("/*", "").split("*/")[-1] or True
+    assert ".gro-secondary {" in block, "the block boundaries still cover the new rules"
     for line in block.splitlines():
         code = line.split("/*")[0]
         assert "#" not in code, f"literal colour in new grocery CSS: {line.strip()}"
@@ -633,3 +679,399 @@ def test_nothing_new_is_under_the_tap_size():
         body = block[start:block.index("}", start)]
         assert "min-height: 60px" in body, f"{rule} needs a real tap target"
     assert "min-height: 52px" in block[block.index(".gro-secondary {"):]
+
+
+# --- 8. "Anywhere" is a place, not a disappearance ------------------------
+# Reviewer, 2026-09-09, reproduced in Chromium: once "Any" persisted, a row
+# answered that way was on NO screen for a multi-shop household. Out of the
+# badge (it is answered), out of every store card (it has no store), and so
+# out of reach of the row ⋯ that is the only way to change it. It survived
+# only in the subtitle's count and as a trip ride-along. That was a real
+# regression on the parent, where a reload put the row back in the queue —
+# visible, and editable.
+
+
+@_needs_node
+def test_a_row_answered_anywhere_is_still_on_the_list():
+    out = _node("""
+setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Eggs', quantity: '1', store: 'Costco' }] }]);
+groceryState.data.stores.Unassigned.sections[0].items = [
+  { id: 2, item: 'Milk', quantity: '1', store: '', store_decided: 1 }
+];
+const html = groListHtml(groceryState.data);
+console.log(JSON.stringify({
+  showsMilk: html.indexOf('Milk') !== -1,
+  showsEggs: html.indexOf('Eggs') !== -1,
+  hasAnywhereCard: html.indexOf('Anywhere &middot; 1') !== -1,
+  inTheQueue: groUnsorted(groceryState.data).length
+}));
+""")
+    assert out["showsEggs"] is True
+    assert out["showsMilk"] is True, "a row answered 'Any' must still be readable"
+    assert out["hasAnywhereCard"] is True
+    assert out["inTheQueue"] == 0, "and it must not be asked about again"
+
+
+@_needs_node
+def test_an_anywhere_row_can_still_be_changed_back_to_a_shop():
+    """The ⋯ is the only control that can move a row, so the card is only
+    worth having if its rows carry one."""
+    out = _node("""
+setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Eggs', quantity: '1', store: 'Costco' }] }]);
+groceryState.data.stores.Unassigned.sections[0].items = [
+  { id: 2, item: 'Milk', quantity: '1', store: '', store_decided: 1 }
+];
+groceryState.openRowId = '2';
+const html = groListHtml(groceryState.data);
+console.log(JSON.stringify({
+  hasRowMenuButton: html.indexOf('data-gro="row-menu" data-id="2"') !== -1,
+  offersAShop: /data-gro="row-store" data-id="2" data-store="Costco"/.test(html)
+}));
+""")
+    assert out["hasRowMenuButton"] is True
+    assert out["offersAShop"] is True
+
+
+@_needs_node
+def test_answering_anywhere_for_everything_still_leaves_a_trip_to_start():
+    """The sub-case: no shop is tagged at all, so there were no stops and
+    'Start the trip' never rendered. The shop the household buys from most
+    is the stop — the same default 'Put all 40 at Loblaws' already offers."""
+    out = _node("""
+setUp(0, [], ['Loblaws', 'Costco']);
+groceryState.data.stores.Unassigned.sections[0].items = [
+  { id: 1, item: 'Milk', quantity: '1', store: '', store_decided: 1 },
+  { id: 2, item: 'Foil', quantity: '1', store: '', store_decided: 1 }
+];
+console.log(JSON.stringify({
+  stops: groStoresWithNeeded(groceryState.data),
+  foot: groFootHtml(groceryState.data, 'list'),
+  onTheStop: (function () {
+    groceryState.tripStops = groStoresWithNeeded(groceryState.data);
+    groceryState.tripIndex = 0;
+    return groTripItems(groceryState.data).map(function (i) { return i.item; });
+  })()
+}));
+""")
+    assert out["stops"] == ["Loblaws"], "the most-used shop stands in"
+    assert 'data-gro="start-trip"' in out["foot"]
+    assert out["onTheStop"] == ["Milk", "Foil"]
+
+
+@_needs_node
+def test_a_one_shop_household_still_sees_its_list_exactly_once():
+    """Its loose pile is inside its shop's card; a second 'Anywhere' card
+    would print the same rows twice."""
+    out = _node("""
+setUp(3, [], ['Loblaws']);
+const html = groListHtml(groceryState.data);
+console.log(JSON.stringify({
+  thing1: (html.match(/Thing 1</g) || []).length,
+  anywhereCards: (html.match(/Anywhere &middot;/g) || []).length,
+  card: /gro-store-name">([^<]*)</.exec(html)[1]
+}));
+""")
+    assert out["thing1"] == 1
+    assert out["anywhereCards"] == 0
+    assert out["card"] == "Loblaws · 3"
+
+
+@_needs_node
+def test_rows_still_waiting_to_be_sorted_are_not_printed_twice():
+    """The control. Unanswered rows live in SORT, which the badge opens —
+    the Anywhere card must not pull them onto LIST as well."""
+    out = _node("""
+setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Eggs', quantity: '1', store: 'Costco' }] }]);
+groceryState.data.stores.Unassigned.sections[0].items = [
+  { id: 2, item: 'Milk', quantity: '1', store: '', store_decided: 0 }
+];
+const html = groListHtml(groceryState.data);
+console.log(JSON.stringify({
+  showsMilk: html.indexOf('Milk') !== -1,
+  inTheQueue: groUnsorted(groceryState.data).length
+}));
+""")
+    assert out["showsMilk"] is False, "an unanswered row belongs to the queue only"
+    assert out["inTheQueue"] == 1
+
+
+@_needs_node
+def test_the_trolley_at_a_stop_holds_the_same_rows_the_stop_showed():
+    """groTripItems filters the shopless rows to the ones that ride along;
+    the cart and the commit have to filter the same way, or a stop commits
+    something that was never on it."""
+    out = _node("""
+setUp(0, [{ store: 'Costco', items: [], inCart: [{ id: 1, item: 'Eggs', store: 'Costco' }] }]);
+groceryState.data.stores.Unassigned.inCart = [
+  { id: 2, item: 'Milk', store: '', store_decided: 1 },
+  { id: 3, item: 'Nutmeg', store: '', store_decided: 0 }
+];
+groceryState.tripStops = ['Costco'];
+groceryState.tripIndex = 0;
+console.log(JSON.stringify(groTripInCart(groceryState.data).map(function (i) { return i.item; })));
+""")
+    assert out == ["Eggs", "Milk"], "the unanswered row is not on this stop"
+
+
+# --- 9. the bulk write is one transaction --------------------------------
+
+
+def test_a_bulk_assign_that_fails_part_way_writes_nothing(signed_in, monkeypatch):
+    """Reviewer, reproduced: a failure on row 3 of 4 left rows 1 and 2
+    written and returned a 500 — a half-applied list, with the toast's Undo
+    chip already spent on it."""
+    from app.tools import stores as stores_mod
+
+    ids = [
+        signed_in.post("/api/grocery-list/add", json={"item": n, "quantity": "1"}).json()["item_id"]
+        for n in ("Anchovies", "Bay leaves", "Cardamom", "Dill")
+    ]
+    real = stores_mod._stage_grocery_item_store
+    calls = {"n": 0}
+
+    def flaky(conn, item_id, store, remember, decided):
+        calls["n"] += 1
+        if calls["n"] == 3:
+            raise RuntimeError("connection dropped")
+        return real(conn, item_id, store, remember, decided)
+
+    monkeypatch.setattr(stores_mod, "_stage_grocery_item_store", flaky)
+
+    res = signed_in.post(
+        "/api/grocery-list/store-bulk",
+        json={"assignments": [{"item_id": i, "store": "Costco"} for i in ids]},
+    )
+    assert res.status_code == 500
+
+    rows = {it["id"]: it for it in tools.list_grocery_list()}
+    for i in ids:
+        assert (rows[i]["store"], rows[i]["store_decided"]) == ("", 0), (
+            "a failed batch must leave every row exactly as it was"
+        )
+
+
+def test_a_batch_bigger_than_a_grocery_list_is_refused(signed_in):
+    """Unbounded, one connection per row, it was 5000 connections and 3.3s
+    in one request. Now it is a 400 before anything is written."""
+    item_id = signed_in.post(
+        "/api/grocery-list/add", json={"item": "Sumac", "quantity": "1"}
+    ).json()["item_id"]
+    res = signed_in.post(
+        "/api/grocery-list/store-bulk",
+        json={"assignments": [{"item_id": item_id, "store": "Costco"}] * 501},
+    )
+    assert res.status_code == 400
+    rows = {it["id"]: it for it in tools.list_grocery_list()}
+    assert rows[item_id]["store"] == "", "and nothing was written on the way to refusing"
+
+
+@_needs_node
+def test_a_failed_undo_keeps_its_payload_so_there_is_an_again():
+    """Reviewer, reproduced: the payload was cleared on the tap, so a failed
+    undo took the only record of the previous state with it — 40 rows at a
+    shop nobody chose, a toast saying "try again", and no again."""
+    out = _node("""
+setUp(4);
+const items = groUnsorted(groceryState.data);
+groBulkAssign(
+  items.map(function (it) { return { item_id: it.id, store: 'Loblaws', decided: true }; }),
+  groPreviousStores(items),
+  '4 things at Loblaws.'
+);
+settle(function () {
+  FAIL_ON = POSTS.length + 1;   // the undo's own POST fails
+  tapUndo();
+  settle(function () {
+    console.log(JSON.stringify({
+      payloadKept: groceryState.bulkUndo !== null,
+      payloadLength: groceryState.bulkUndo ? groceryState.bulkUndo.length : 0,
+      offeredAgain: lastToast().action
+    }));
+  });
+});
+""")
+    assert out["payloadKept"] is True, "a failed undo must stay undoable"
+    assert out["payloadLength"] == 4
+    assert out["offeredAgain"] == "Undo", "and the chip has to come back"
+
+
+@_needs_node
+def test_a_successful_undo_spends_its_payload_exactly_once():
+    out = _node("""
+setUp(4);
+const items = groUnsorted(groceryState.data);
+groBulkAssign(
+  items.map(function (it) { return { item_id: it.id, store: 'Loblaws', decided: true }; }),
+  groPreviousStores(items),
+  '4 things at Loblaws.'
+);
+settle(function () {
+  tapUndo();
+  settle(function () {
+    const postsAfterUndo = POSTS.length;
+    tapUndo();
+    settle(function () {
+      console.log(JSON.stringify({
+        cleared: groceryState.bulkUndo === null,
+        secondTapWroteNothing: POSTS.length === postsAfterUndo
+      }));
+    });
+  });
+});
+""")
+    assert out == {"cleared": True, "secondTapWroteNothing": True}
+
+
+# --- 10. every writer of `store` maintains `store_decided` ---------------
+
+
+def test_clearing_a_store_preference_re_opens_the_question(signed_in):
+    """_apply_store_to_matching_rows is the second writer of the column, and
+    it used to write only half of it: a row cleared in chat kept
+    store_decided = 1 and was then permanently "answered" with no shop on
+    it. Same drift class as snacks_per_week_set, and delete_preference is
+    the precedent for clearing the flag."""
+    item_id = signed_in.post(
+        "/api/grocery-list/add", json={"item": "Halloumi", "quantity": "1"}
+    ).json()["item_id"]
+    signed_in.post(f"/api/grocery-list/{item_id}/store", json={"store": "Costco"})
+    assert [it for it in tools.list_grocery_list() if it["id"] == item_id][0]["store_decided"] == 1
+
+    tools.set_item_store("Halloumi", "")
+
+    row = [it for it in tools.list_grocery_list() if it["id"] == item_id][0]
+    assert row["store"] == ""
+    assert row["store_decided"] == 0, "no opinion about the shop re-opens the question"
+
+
+def test_applying_a_remembered_store_counts_as_answered(signed_in):
+    item_id = signed_in.post(
+        "/api/grocery-list/add", json={"item": "Fennel", "quantity": "1"}
+    ).json()["item_id"]
+    tools.set_item_store("Fennel", "Farm Boy")
+    row = [it for it in tools.list_grocery_list() if it["id"] == item_id][0]
+    assert (row["store"], row["store_decided"]) == ("Farm Boy", 1)
+
+
+# --- 11. the click handlers, run rather than read ------------------------
+
+
+@_needs_node
+def test_the_badge_opens_the_fast_paths_only_when_there_are_enough():
+    out = _node("""
+setUp(40);
+click({ gro: 'goto-sort' });
+const many = groceryState.step;
+setUp(3);
+groceryState.step = 'list';
+click({ gro: 'goto-sort' });
+console.log(JSON.stringify({ many: many, few: groceryState.step }));
+""")
+    assert out == {"many": "sorthow", "few": "sort"}
+
+
+@_needs_node
+def test_a_mis_tapped_done_at_this_stop_can_be_taken_back():
+    """"Done at Costco" is a full-width apricot under a list of things still
+    to tick. Without a way back the mis-tap ended that shop for the trip."""
+    out = _node("""
+setUp(0, [
+  { store: 'Costco', items: [{ id: 1, item: 'Rice', store: 'Costco' }] },
+  { store: 'Metro', items: [{ id: 2, item: 'Eggs', store: 'Metro' }] }
+]);
+groceryState.tripStops = ['Costco', 'Metro'];
+groceryState.tripIndex = 0;
+groceryState.tripDone = {};
+groceryState.step = 'trip';
+click({ gro: 'stop-done' });
+settle(function () {
+  const landed = groceryState.step;
+  const back = groHeadFor(groceryState.data, 'next').back;
+  click({ gro: 'step-back' });
+  settle(function () {
+    console.log(JSON.stringify({
+      landed: landed,
+      backLabel: back,
+      reopenedStep: groceryState.step,
+      atStop: groTripStore(),
+      stillFinished: Object.keys(groceryState.tripDone),
+      snapshot: groceryState.tripStops
+    }));
+  });
+});
+""")
+    assert out["landed"] == "next"
+    assert out["backLabel"] == "‹ Back to Costco"
+    assert out["reopenedStep"] == "trip"
+    assert out["atStop"] == "Costco"
+    assert out["stillFinished"] == [], "the reopened stop is a choice again"
+    assert out["snapshot"] == ["Costco", "Metro"], "and the snapshot never moved"
+
+
+@_needs_node
+def test_picking_a_stop_out_of_order_leaves_the_snapshot_alone():
+    out = _node("""
+setUp(0, [
+  { store: 'Costco', items: [{ id: 1, item: 'Rice', store: 'Costco' }] },
+  { store: 'Loblaws', items: [{ id: 2, item: 'Milk', store: 'Loblaws' }] },
+  { store: 'Metro', items: [{ id: 3, item: 'Eggs', store: 'Metro' }] }
+]);
+groceryState.tripStops = ['Costco', 'Loblaws', 'Metro'];
+groceryState.tripDone = { Costco: true };
+groceryState.step = 'next';
+click({ gro: 'next-stop', store: 'Metro' });
+console.log(JSON.stringify({
+  step: groceryState.step,
+  at: groTripStore(),
+  snapshot: groceryState.tripStops
+}));
+""")
+    assert out["at"] == "Metro"
+    assert out["step"] == "trip"
+    assert out["snapshot"] == ["Costco", "Loblaws", "Metro"]
+
+
+@_needs_node
+def test_a_staged_row_change_writes_nothing_until_the_button():
+    out = _node("""
+setUp(6);
+groceryState.step = 'sortall';
+click({ gro: 'sortall-pick', id: '2', store: 'Costco' });
+click({ gro: 'sortall-pick', id: '4', store: '' });
+const duringStaging = POSTS.length;
+click({ gro: 'sortall-save' });
+settle(function () {
+  console.log(JSON.stringify({
+    duringStaging: duringStaging,
+    picks: groceryState.sortAllPicks,
+    sent: POSTS[0] ? POSTS[0].body.assignments : null
+  }));
+});
+""")
+    assert out["duringStaging"] == 0, "tapping a chip must not cost a request"
+    assert out["sent"][1] == {"item_id": 2, "store": "Costco", "decided": True}
+    assert out["sent"][3] == {"item_id": 4, "store": "", "decided": True}
+    assert out["sent"][0]["store"] == "Loblaws", "the rest keep the default"
+
+
+@_needs_node
+def test_the_stand_in_stop_does_not_draw_a_card_about_nothing():
+    """When every row is answered "Anywhere", the most-used shop becomes the
+    stop so the trip can start — but it holds nothing of its own, and
+    "Loblaws · 0" above "Anywhere · 2" is a card about nothing."""
+    out = _node("""
+setUp(0, [], ['Loblaws', 'Costco']);
+groceryState.data.stores.Unassigned.sections[0].items = [
+  { id: 1, item: 'Milk', quantity: '1', store: '', store_decided: 1 },
+  { id: 2, item: 'Foil', quantity: '1', store: '', store_decided: 1 }
+];
+const html = groListHtml(groceryState.data);
+console.log(JSON.stringify({
+  cards: (html.match(/gro-store-name">([^<]*)</g) || []).map(function (m) {
+    return /gro-store-name">([^<]*)</.exec(m)[1];
+  }),
+  stopsForTheTrip: groStoresWithNeeded(groceryState.data)
+}));
+""")
+    assert out["cards"] == ["Anywhere &middot; 2"], "no empty stop card"
+    assert out["stopsForTheTrip"] == ["Loblaws"], "but the trip still has somewhere to go"
