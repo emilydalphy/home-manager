@@ -5190,13 +5190,19 @@
         days.map(weekRowHtml).join('') +
       '</div>' +
       weekNotesHtml(data) +
-      weekDecideHtml(data) +
       // Everything rare is one tap away and nothing rare is on the page.
+      // ABOVE the decision, not below it, since the decision became a dock
+      // (rule 2): a sticky strip's flow position has to be the end of the
+      // screen, or at the bottom of the scroll it lifts off the ask bar and
+      // leaves this row stranded underneath it. Rule 2 puts rare actions
+      // behind the "···" rather than beside the dock's button anyway, so
+      // they were never candidates to ride along inside it.
       '<div class="wk-foot">' +
         '<button type="button" class="wk-foot-link" id="wk-plan-next">' +
           escapeHtml(planEntryLabel(dayCount, 'next', false)) + ' ›</button>' +
         '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
-      '</div>';
+      '</div>' +
+      weekDecideHtml(data);
   }
 
   // The quiet lines under the card. A SOFT conflict — somebody at the table

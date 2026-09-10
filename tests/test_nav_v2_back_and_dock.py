@@ -215,12 +215,33 @@ def test_shops_action_left_the_scrolling_foot():
 
 
 def test_the_dock_is_the_last_thing_in_its_container():
-    """A sticky footer's flow position has to be the end, or it comes to rest
-    somewhere in the middle of the screen it belongs to."""
+    """A sticky footer's flow position has to be the END of the screen.
+
+    Anywhere else and the bottom of the scroll lifts it off the ask bar with
+    content stranded underneath — which is exactly what the first build did
+    on the Week root: .wk-foot ("Plan next week", "More ···") still came
+    after weekDecideHtml, so scrolling to the bottom left the strip floating
+    82px up with the rare-actions row below it. Measured in a browser, not
+    reasoned about; this test is the version that would have caught it.
+    """
+    # Shop: the dock is the last child of the panel's markup.
     build = SHELL_JS[SHELL_JS.index("function buildGroceryPanel("):]
     build = build[:build.index("panel.addEventListener")]
     assert build.index('id="gro-dock"') > build.index('id="gro-foot"')
     assert build.index('id="gro-foot"') > build.index('id="gro-body"')
+
+    # Plan's two docks: the call that builds them ends its function's return
+    # expression, so what follows is ";" and never " +" (another chunk of
+    # markup concatenated after the strip).
+    for fn, call in (("weekStepHtml", "weekDecideHtml(data)"),
+                     ("reviewStepHtml", "reviewDecideHtml(data)")):
+        body = SHELL_JS[SHELL_JS.index("function %s(" % fn):]
+        at = body.index(call) + len(call)
+        assert body[at] == ";", (
+            "%s renders something after its dock (found %r) — a sticky strip's "
+            "flow position has to be the end of the screen"
+            % (fn, body[at:at + 60])
+        )
 
 
 def test_a_screen_with_no_single_action_has_no_dock():
