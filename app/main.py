@@ -23,6 +23,7 @@ import datetime
 import json
 import logging
 import os
+import secrets
 import queue
 import re
 import threading
@@ -4117,6 +4118,58 @@ def whoami():
 def healthz():
     """Unauthenticated liveness check for the hosting platform. Says nothing about the household."""
     return {"status": "ok"}
+
+
+@app.get("/api/health-report")
+def health_report(request: Request, days: int = 1):
+    """
+    Every household's error and usage summary, for the overnight routine.
+
+    The routine runs in a sandbox with no access to this machine, so until
+    now the morning "did anything break?" check has been looking at an empty
+    clone and reporting "nothing broke" every day — which reads as good news
+    and is actually no news. This is how it gets the real answer.
+
+    WHY A TOKEN RATHER THAN A HOUSEHOLD PASSPHRASE. The obvious alternative
+    was to hand the routine one passphrase per household. That means an
+    automation holding credentials that also open the app itself, for
+    households that are not Emily's — Julia's among them. This token opens
+    exactly one read-only route and nothing else, and revoking it costs one
+    environment variable.
+
+    WHAT IT DELIBERATELY DOES NOT RETURN: anything a person typed.
+    _collect_from_db returns a COUNT of waiting feedback, never its text.
+    That boundary is the same one observability_report.py's own docstring
+    draws, and for the same reason — this output is read into an agent's
+    context under an instruction to act on it, so free text from an
+    untrusted end is an injection channel, not merely a privacy question.
+
+    Unset REPORT_TOKEN disables the route outright. A missing or wrong token
+    answers 404 rather than 401: a 401 confirms the route exists and is
+    worth grinding at, and this route's existence is not something a
+    stranger needs to learn.
+    """
+    token = os.environ.get("REPORT_TOKEN", "")
+    supplied = request.headers.get("x-report-token", "")
+    # compare_digest on both arms so a wrong-length token takes the same
+    # time as a wrong-value one. The empty-token check comes first because
+    # comparing against "" would otherwise let any caller in.
+    if not token or not supplied or not secrets.compare_digest(supplied, token):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    _enforce_rate_limit(request, "health_report")
+
+    # 1..30: a day is the nightly question, a month is the widest window the
+    # usage summary is meaningful over, and an unbounded number is a way to
+    # ask this box to read its whole history on demand.
+    days = max(1, min(int(days), 30))
+    try:
+        from observability_report import _collect_from_db
+
+        return {"days": days, "households": _collect_from_db(days)}
+    except Exception as e:
+        logger.exception("Health report failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
