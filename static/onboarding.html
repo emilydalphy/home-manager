@@ -159,7 +159,7 @@
      placed after the primary is one you only find after you have already
      given up on the screen — and it NAMES where it goes ("‹ Who's here")
      instead of saying "Back", which is DESIGN_SYSTEM §5's "‹ Parent" step
-     link, the same shape .wk-back/.gro-back use in the shell. A button
+     link, the same shape .crumb uses in the shell. A button
      rather than a span so it is reachable by keyboard and announced as a
      control.
      Token, size and weight are the shell's step link exactly: 14px/700 on
@@ -169,8 +169,8 @@
      page's real ground: #7C7161 on #FBF6EE = 4.44:1 light; #BFB6A5 on
      #101F19 = 8.48:1 dark. Hit area measured 91x44 (hard rule 6).
      Dark clears AA. Light is 0.06 under the 4.5:1 for normal
-     text — and it is under it everywhere in this app, since .wk-back and
-     .gro-back carry the identical value. Clearing it means changing
+     text — and it is under it everywhere in this app, since the shell's
+     .crumb carries the identical value. Clearing it means changing
      --ink-secondary itself, which ~40 call sites read: a Tier 2 token
      decision for Emily, not something to fix on one screen by hardcoding a
      darker hex (hard rule 9). No other token in the ink ramp sits between

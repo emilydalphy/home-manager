@@ -11757,7 +11757,7 @@
   // Every caller — scrim tap, the Back button, Escape, a sent message, and
   // the shell's popstate listener on the back gesture — just forgets the
   // pushed entry rather than calling history.back() on it: deliberately
-  // NOT history.back(), same reasoning as goMealsStep's wk-back link above
+  // NOT history.back(), same reasoning as goMealsStep's crumb above
   // (see its comment) — an immediate, unrelated pushState elsewhere in the
   // same tap (e.g. an action card's "View" jumping to another tab right
   // after closing the sheet) would race a queued back-traversal in
