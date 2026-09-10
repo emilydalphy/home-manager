@@ -99,7 +99,10 @@ def test_leaving_the_recipe_lands_back_where_it_was_opened_from():
     # Kitchen's own screen is reset first, whichever tab we end up on —
     # otherwise the tab reopens on a cook screen nobody left it on.
     assert fn.index("cookState.screen = 'overview';") < fn.index("origin.tab")
-    assert "activateTab(origin.tab, true);" in fn
+    # Neither hop adds a history entry (2026-09-10): going back up a level
+    # moves the entry you are standing on. See
+    # test_the_back_link_adds_no_history_entries below.
+    assert "activateTab(origin.tab, false, { replaceHistory: true });" in fn
     # ...and back to the exact Meals step, not just the tab.
     assert "goMealsStep(origin.mealsStep || 'meal'" in fn
     # ...and, for a dish tapped in a reply, back to the conversation.
@@ -241,13 +244,14 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         + _extract("cookStepLi") + "\n"
         + _extract("cookInstructionsHtml") + "\n"
         + _extract("cookDetailHtml") + "\n"
+        + _extract("isSnackSlot") + "\n"
         + _extract("mealRecipeCardHtml") + "\n"
         + "console.log(JSON.stringify({\n"
         + f"  plain: cookDetailHtml({json.dumps(meal)}, 'meal', false, true),\n"
         + f"  cooking: cookDetailHtml({json.dumps(meal)}, 3, false, false),\n"
-        + f"  card: mealRecipeCardHtml({json.dumps(meal)}),\n"
-        + "  reheat: mealRecipeCardHtml({ meal: 'Bulgogi', is_leftovers: true }),\n"
-        + "  none: mealRecipeCardHtml(null)\n"
+        + f"  card: mealRecipeCardHtml({json.dumps(meal)}, 'dinner'),\n"
+        + "  reheat: mealRecipeCardHtml({ meal: 'Bulgogi', is_leftovers: true }, 'dinner'),\n"
+        + "  none: mealRecipeCardHtml(null, 'dinner')\n"
         + "}));\n"
     )
     got = _run_node(harness)
@@ -288,16 +292,29 @@ def test_a_dish_with_no_saved_recipe_says_so_rather_than_pretending():
         + _extract("cookStepLi") + "\n"
         + _extract("cookInstructionsHtml") + "\n"
         + _extract("cookDetailHtml") + "\n"
+        + _extract("isSnackSlot") + "\n"
         + _extract("mealRecipeCardHtml") + "\n"
-        + "console.log(JSON.stringify(mealRecipeCardHtml("
-        + "{ meal: 'Takeaway', has_full_recipe: false })));\n"
+        + "console.log(JSON.stringify({\n"
+        + "  dinner: mealRecipeCardHtml({ meal: 'Takeaway', has_full_recipe: false }, 'dinner'),\n"
+        + "  snack: mealRecipeCardHtml({ meal: 'Apple slices', has_full_recipe: false }, 'snack'),\n"
+        + "  snack2: mealRecipeCardHtml({ meal: 'Apple slices', has_full_recipe: false }, 'snack2'),\n"
+        + "  realsnack: mealRecipeCardHtml("
+        + "{ meal: 'Energy Balls', has_full_recipe: true, ingredients: [], instructions: [] }, 'snack')\n"
+        + "}));\n"
     )
-    html = _run_node(harness)
-    assert "no saved recipe detail" in html
+    got = _run_node(harness)
+    # A meal with nothing written up says so, and names the way to fill it in.
+    assert "no saved recipe detail" in got["dinner"]
+    # A grab-and-go snack does not: "Apple slices" is not a recipe somebody
+    # forgot to write, so a card whose whole content is "there isn't one" is
+    # an empty card — the same reason the plate card is already hidden here.
+    assert got["snack"] == "" and got["snack2"] == ""
+    # ...and a snack that IS a recipe keeps it.
+    assert "The recipe" in got["realsnack"]
 
 
 def test_the_meal_step_renders_the_recipe_card():
-    assert "mealRecipeCardHtml(cookMeal)" in _extract("mealStepHtml")
+    assert "mealRecipeCardHtml(cookMeal, slot)" in _extract("mealStepHtml")
     # And the picker above it is borrowed from the same screen in the same
     # way — this is the established pattern here, not a new one.
     assert "cookAheadHtml(cookMeal)" in _extract("mealStepHtml")
@@ -325,23 +342,82 @@ _WEEK_MENU = {
 }
 
 
-def _linkify(reply_html: str, menu: dict = None):
-    harness = (
+# A stand-in for the handful of DOM calls linkifyDishNamesIn makes, so the
+# walk itself runs for real (node has no DOM). Elements carry their own
+# children, so a test can build the exact tree renderMarkdownLite produces —
+# a table, a <strong> — and see what the walk does to it.
+_DOM_STUB = """
+function TextNode(v) { this.nodeType = 3; this.nodeValue = v; }
+function El(tag, type) { this.nodeType = type || 1; this.tagName = tag; this.childNodes = []; this.attrs = {}; }
+El.prototype.appendChild = function (n) {
+  var kids = n.nodeType === 11 ? n.childNodes.slice() : [n];
+  var self = this;
+  kids.forEach(function (k) { self.childNodes.push(k); });
+  return n;
+};
+El.prototype.setAttribute = function (k, v) { this.attrs[k] = v; };
+El.prototype.replaceChild = function (nw, old) {
+  var i = this.childNodes.indexOf(old);
+  var kids = nw.nodeType === 11 ? nw.childNodes.slice() : [nw];
+  this.childNodes.splice.apply(this.childNodes, [i, 1].concat(kids));
+};
+Object.defineProperty(El.prototype, 'textContent', {
+  set: function (v) { this.childNodes = [new TextNode(v)]; }
+});
+var document = {
+  createTextNode: function (v) { return new TextNode(v); },
+  createElement: function (t) { return new El(t.toUpperCase()); },
+  createDocumentFragment: function () { return new El('#fragment', 11); }
+};
+function el(tag, kids) {
+  var e = new El(tag.toUpperCase());
+  (kids || []).forEach(function (k) { e.appendChild(typeof k === 'string' ? new TextNode(k) : k); });
+  return e;
+}
+function ser(node) {
+  if (node.nodeType === 3) return node.nodeValue;
+  var inner = node.childNodes.map(ser).join('');
+  if (node.nodeType === 11) return inner;
+  var a = '';
+  if (node.type) a += ' type="' + node.type + '"';
+  if (node.className) a += ' class="' + node.className + '"';
+  Object.keys(node.attrs).forEach(function (k) { a += ' ' + k + '="' + node.attrs[k] + '"'; });
+  var t = node.tagName.toLowerCase();
+  return '<' + t + a + '>' + inner + '</' + t + '>';
+}
+"""
+
+
+def _dish_harness(menu: dict = None, extra: str = "") -> str:
+    return (
         _ESCAPE
+        + _DOM_STUB
         + "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
         + _extract("isSnackSlot") + "\n"
         + _extract("snackSlotKey") + "\n"
         + _extract("daySlotEntry") + "\n"
         + _extract("recipeTargetForEntry") + "\n"
         + _extract("escapeRegExp") + "\n"
-        + "var dishIndex = { entries: [], re: null };\n"
+        + "var dishIndex = { entries: [], byName: {}, re: null };\n"
+        + "var DISH_SKIP_TAGS = { BUTTON: 1, A: 1, CODE: 1, PRE: 1 };\n"
         + _extract("setDishIndex") + "\n"
-        + _extract("linkifyDishNames") + "\n"
+        + _extract("dishTargetForName") + "\n"
+        + _extract("dishSegments") + "\n"
+        + _extract("linkifyDishNamesIn") + "\n"
         + f"setDishIndex({json.dumps(menu if menu is not None else _WEEK_MENU)});\n"
-        + f"console.log(JSON.stringify({{ html: linkifyDishNames({json.dumps(reply_html)}), "
+        + extra
+    )
+
+
+def _linkify(reply_text: str, menu: dict = None):
+    """Runs the real walk over a one-paragraph reply and serializes it back."""
+    return _run_node(
+        _dish_harness(menu)
+        + f"var root = el('p', [{json.dumps(reply_text)}]);\n"
+        + "linkifyDishNamesIn(root);\n"
+        + "console.log(JSON.stringify({ html: ser(root), "
         + "titles: dishIndex.entries.map(function (e) { return e.title; }) }));\n"
     )
-    return _run_node(harness)
 
 
 @_needs_node
@@ -359,23 +435,24 @@ def test_the_index_holds_only_the_dishes_that_have_a_recipe_to_open():
 def test_a_reply_links_the_dishes_it_names_and_leaves_the_rest_as_prose():
     got = _linkify(
         "I moved Chicken Tacos to Friday and left Baked Oatmeal Cups where it was. "
-        "Bulgogi is still Thursday, and I didn&#39;t touch the Lentil Soup."
+        "Bulgogi is still Thursday, and I didn't touch the Lentil Soup."
     )
     html = got["html"]
-    dishes = re.findall(r'<button type="button" class="ask-dish" data-dish="(\d+)">([^<]*)</button>', html)
+    dishes = re.findall(r'<button type="button" class="ask-dish" data-dish="([^"]*)">([^<]*)</button>', html)
     assert [d[1] for d in dishes] == ["Chicken Tacos", "Baked Oatmeal Cups"]
+    # The link carries the dish's NAME, never a position in an index that is
+    # rebuilt on every plan read — see the blocker fixed 2026-09-10.
+    assert [d[0] for d in dishes] == ["Chicken Tacos", "Baked Oatmeal Cups"]
     # Bulgogi is a reheat night — it has no recipe screen, so it is not a
     # link. Lentil Soup is not on the plan at all.
     assert "Bulgogi" in html and ">Bulgogi<" not in html
     assert "Lentil Soup" in html and ">Lentil Soup<" not in html
-    # Every index the markup points at resolves to a real entry.
-    assert [int(d[0]) for d in dishes] == [1, 0]
 
 
 @_needs_node
 def test_the_longer_dish_name_wins_and_a_word_inside_a_word_never_matches():
     got = _linkify("Chicken Tacos on Thursday, plain Chicken on Friday. Chickens are birds.")
-    names = re.findall(r'class="ask-dish" data-dish="\d+">([^<]*)</button>', got["html"])
+    names = re.findall(r'class="ask-dish" data-dish="[^"]*">([^<]*)</button>', got["html"])
     assert names == ["Chicken Tacos", "Chicken"]
     # "Chickens" is a different word, and a substring match would have made
     # half of it a link.
@@ -387,14 +464,14 @@ def test_two_dish_names_in_a_row_both_link():
     """The boundary character is consumed by the match, so a naive
     implementation drops the second of an adjacent pair."""
     got = _linkify("Chicken Tacos, Apple slices.")
-    names = re.findall(r'class="ask-dish" data-dish="\d+">([^<]*)</button>', got["html"])
+    names = re.findall(r'class="ask-dish" data-dish="[^"]*">([^<]*)</button>', got["html"])
     assert names == ["Chicken Tacos", "Apple slices"]
 
 
 @_needs_node
 def test_nothing_this_inserts_is_ever_rescanned_as_prose():
-    """One pass over the whole reply, so a dish name cannot end up inside
-    the markup of another one."""
+    """The walk replaces a text node with finished nodes, so a dish name can
+    never end up inside the markup of another one."""
     got = _linkify("Chicken Tacos and Chicken Tacos again.")
     assert got["html"].count("<button") == 2
     assert "data-dish=\"<button" not in got["html"]
@@ -403,16 +480,246 @@ def test_nothing_this_inserts_is_ever_rescanned_as_prose():
 @_needs_node
 def test_an_empty_plan_links_nothing_and_breaks_nothing():
     got = _linkify("Nothing is planned yet.", {"days": []})
-    assert got["html"] == "Nothing is planned yet."
+    assert got["html"] == "<p>Nothing is planned yet.</p>"
     assert got["titles"] == []
 
 
 def test_only_the_assistants_side_is_rewritten():
     fn = _extract("buildAskMessageEl")
-    assert "role === 'assistant'" in fn and "linkifyDishNames(renderMarkdownLite(text))" in fn
+    assert "bubble.innerHTML = renderMarkdownLite(text);" in fn
+    assert "if (role === 'assistant') linkifyDishNamesIn(bubble);" in fn
     # ...and a tap closes the sheet and opens the recipe, the same shape an
     # action card's View already has.
     assert "closeAskSheet();" in fn and "openRecipeFor(target," in fn
+
+
+# ------------------------------------- what review found, and what fixed it
+# Every test below fails on the commit before 2026-09-10's review pass.
+
+@_needs_node
+def test_a_link_opens_the_dish_it_names_even_after_the_index_is_rebuilt():
+    """THE BLOCKER. The index is rebuilt and re-sorted on every
+    /api/week-menu read — including the one sendAskMessage fires on the line
+    straight after it renders the bubble. The first version wrote the dish's
+    POSITION in that array into the markup and read it back at click time, so
+    a bubble labelled "Chicken Tacos" opened "Apple slices": a different meal,
+    on a screen whose apricot primary is "Mark it cooked"."""
+    later_week = {
+        "days": [
+            {
+                "date": "2026-09-17",
+                # Same four names, deliberately in an order that re-sorts:
+                # under the old positional scheme index 2 was "Apple slices"
+                # before and "Baked Oatmeal Cups" after.
+                "breakfast": {"state": "planned", "entry_id": 31, "title": "Apple slices", "source": "plan"},
+                "lunch": {"state": "planned", "entry_id": 32, "title": "Chicken", "source": "plan"},
+                "dinner": {"state": "planned", "entry_id": 33, "title": "Chicken Tacos", "source": "plan"},
+                "snacks": [{"state": "planned", "entry_id": 34, "title": "Baked Oatmeal Cups", "source": "plan"}],
+            }
+        ]
+    }
+    got = _run_node(
+        _dish_harness()
+        + "var root = el('p', ['I swapped Chicken Tacos onto Friday.']);\n"
+        + "linkifyDishNamesIn(root);\n"
+        + "var btn = root.childNodes[1];\n"
+        # The week changes underneath the reply that describes the change.
+        + f"setDishIndex({json.dumps(later_week)});\n"
+        + "console.log(JSON.stringify({\n"
+        + "  label: btn.childNodes[0].nodeValue,\n"
+        + "  opens: dishTargetForName(btn.attrs['data-dish'])\n"
+        + "}));\n"
+    )
+    assert got["label"] == "Chicken Tacos"
+    # The label and the target still name the same dish, and the target is
+    # the CURRENT plan's entry for it — not the one recorded when the bubble
+    # was drawn, and certainly not somebody else's.
+    assert got["opens"]["title"] == "Chicken Tacos"
+    assert got["opens"]["entryId"] == 33
+
+
+@_needs_node
+def test_a_dish_that_has_left_the_plan_opens_nothing_at_all():
+    """A stale link fails closed. Opening the wrong meal is the failure this
+    whole mechanism exists to avoid."""
+    got = _run_node(
+        _dish_harness()
+        + "setDishIndex({ days: [] });\n"
+        + "console.log(JSON.stringify({ gone: dishTargetForName('Chicken Tacos'), "
+        + "blank: dishTargetForName('') }));\n"
+    )
+    assert got["gone"] is None and got["blank"] is None
+    # ...and the click handler says so rather than leaving a dead tap.
+    fn = _extract("buildAskMessageEl")
+    assert "dishTargetForName(btn.getAttribute('data-dish'))" in fn
+    assert "not on the plan any more" in fn
+
+
+@_needs_node
+def test_a_dish_on_two_nights_is_not_linked_at_all():
+    """CONCERN 3. The index used to keep the first occurrence, so a reply
+    saying "Chicken Tacos is on Saturday" opened Thursday — and cook mode's
+    check-off writes against that entry_id, so "Mark it cooked" would have
+    ticked the wrong night. Which night a sentence means is not something
+    this can read out of generated prose, so the honest answer is to leave
+    the name as prose."""
+    twice = {
+        "days": [
+            {
+                "date": "2026-09-10",
+                "breakfast": None, "lunch": None,
+                "dinner": {"state": "planned", "entry_id": 3, "title": "Chicken Tacos", "source": "plan"},
+                "snacks": [{"state": "planned", "entry_id": 4, "title": "Apple slices", "source": "plan"}],
+            },
+            {
+                "date": "2026-09-12",
+                "breakfast": None, "lunch": None,
+                "dinner": {"state": "planned", "entry_id": 8, "title": "Chicken Tacos", "source": "plan"},
+                "snacks": [],
+            },
+        ]
+    }
+    got = _linkify("Chicken Tacos is on Saturday, and Apple slices are in the bowl.", twice)
+    assert got["titles"] == ["Apple slices"], "a two-night dish is still in the link set"
+    assert "Chicken Tacos" in got["html"] and ">Chicken Tacos<" not in got["html"]
+    assert ">Apple slices<" in got["html"]
+
+
+@_needs_node
+def test_the_reply_is_walked_as_text_never_rewritten_as_markup():
+    """CONCERN 6. The first version ran the regex over renderMarkdownLite's
+    HTML string, so a household with a dish called "table" or "strong" got
+    the reply's markdown table flattened into literal escaped tags. Nothing
+    could be injected — the escaping was correct — but the fix is the same
+    one the blocker needed: work on the real thing, not on a string that
+    looks like it."""
+    odd_names = {
+        "days": [
+            {
+                "date": "2026-09-10",
+                "breakfast": {"state": "planned", "entry_id": 1, "title": "table", "source": "plan"},
+                "lunch": {"state": "planned", "entry_id": 2, "title": "strong", "source": "plan"},
+                "dinner": {"state": "planned", "entry_id": 3, "title": "Chicken Tacos", "source": "plan"},
+                "snacks": [],
+            }
+        ]
+    }
+    got = _run_node(
+        _dish_harness(odd_names)
+        # The shape renderMarkdownLite really produces for a reply carrying a
+        # table and a bold word.
+        + "var root = el('div', [\n"
+        + "  el('strong', ['Chicken Tacos']),\n"
+        + "  ' is the strong one. ',\n"
+        + "  el('table', [el('thead', [el('tr', [el('th', ['Day'])])]),\n"
+        + "               el('tbody', [el('tr', [el('td', ['Chicken Tacos'])])])]),\n"
+        + "  el('button', ['Chicken Tacos'])\n"
+        + "]);\n"
+        + "linkifyDishNamesIn(root);\n"
+        + "console.log(JSON.stringify({ html: ser(root) }));\n"
+    )
+    html = got["html"]
+    # The table is still a table, and every tag is still a tag.
+    assert "<table><thead><tr><th>" in html and "&lt;" not in html
+    # The dish inside the bold word and the dish inside the cell both link,
+    # in place, without disturbing the elements around them.
+    assert "<strong><button type=\"button\" class=\"ask-dish\" data-dish=\"Chicken Tacos\">Chicken Tacos</button></strong>" in html
+    assert "<td><button type=\"button\" class=\"ask-dish\" data-dish=\"Chicken Tacos\">Chicken Tacos</button></td>" in html
+    # "strong" is a dish on this household's plan and it links as a word in
+    # prose — but nothing went near the element of the same name.
+    assert "is the <button type=\"button\" class=\"ask-dish\" data-dish=\"strong\">strong</button> one." in html
+    # A dish name already inside a button is not linked a second time.
+    assert html.endswith("<button>Chicken Tacos</button></div>")
+
+
+@_needs_node
+def test_every_way_into_cook_mode_says_where_it_came_from():
+    """CONCERN 2. Two entry points called activateTab straight instead of
+    going through openRecipeFor, so they inherited whatever origin an earlier
+    deep link had left on cookState: Meals -> Thursday -> Cook this -> leave
+    by the tab bar -> tap a cook row on Today, and back said "‹ Thursday" and
+    dropped you on Meals. With no stale state at all it still made one screen
+    disagree with itself — Today's Next up DISH NAME said "‹ Today" while the
+    row's own button, 200px below, said "‹ Kitchen"."""
+    focus = {"entryId": 42, "date": "2026-09-07", "slot": "dinner", "title": "Bulgogi"}
+    calls = _run_node(
+        "var calls = [];\n"
+        "function activateTab(k, r, o){ calls.push(['activateTab', k, o || null]); }\n"
+        "function openRecipeFor(t, origin){ calls.push(['openRecipeFor', t, origin || null]); }\n"
+        "function toggleTodayMove(p, id, next){ calls.push(['tick', id, next]); }\n"
+        + _extract("runTodayMoveAction") + "\n"
+        + "var panel = { _moves: { moves: [ { id: 'cook:42', done: false, action: { target: "
+        + json.dumps({"tab": "kitchen", "cookFocus": focus}) + " } } ] } };\n"
+        + "runTodayMoveAction(panel, 'cook:42');\n"
+        + "console.log(JSON.stringify(calls));\n"
+    )
+    assert calls == [["openRecipeFor", focus, {"label": "Today", "tab": "today"}]]
+    # ...and Today's dish name, the tap right beside it, says the same thing.
+    wiring = SHELL_JS.split("data-move-dish]", 1)[1][:600]
+    assert "{ label: 'Today', tab: 'today' }" in wiring
+    # Grocery's shop-done handoff is the other one, and it names Grocery.
+    assert (
+        "openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' });"
+        in SHELL_JS
+    )
+
+
+@_needs_node
+def test_the_back_link_adds_no_history_entries():
+    """CONCERN 4. cookExitFocus pushed in activateTab and pushed again in
+    goMealsStep, so one press of "‹ Thursday" grew history by two and the
+    next back gesture skipped the Day step onto a state never visited.
+    Stepping back UP a level moves the entry you are standing on."""
+    calls = _run_node(
+        "var calls = [];\n"
+        "var cookState = { screen: 'focus', focusOrigin: "
+        "{ label: 'Thursday', tab: 'week', mealsStep: 'meal', mealsDay: 3, mealsSlot: 'dinner' } };\n"
+        "function stopCookVoice(){}\n"
+        "function renderCook(){}\n"
+        "function openAskSheet(){ calls.push(['openAskSheet']); }\n"
+        "function activateTab(k, push, opts){ calls.push(['activateTab', k, push, opts || null]); }\n"
+        "function goMealsStep(step, opts){ calls.push(['goMealsStep', step, opts]); }\n"
+        + _extract("cookExitFocus") + "\n"
+        + "cookExitFocus();\n"
+        + "console.log(JSON.stringify(calls));\n"
+    )
+    assert calls == [
+        # false, plus replaceHistory: the entry that said "kitchen" now says
+        # where you actually are, rather than sitting behind a new one.
+        ["activateTab", "week", False, {"replaceHistory": True}],
+        ["goMealsStep", "meal", {"dayIndex": 3, "slot": "dinner", "replace": True}],
+    ]
+    # Both halves of that really exist: activateTab honours replaceHistory...
+    fn = _extract("activateTab")
+    assert "if (opts && opts.replaceHistory) {" in fn
+    assert "window.history.replaceState({ tab: key }, '', tab.path);" in fn
+    # ...and so does goMealsStep.
+    assert "if (opts.replace) replaceMealsStepHistory();" in _extract("goMealsStep")
+    assert "window.history.replaceState(mealsStepHistoryState(), '', '/week');" in _extract(
+        "replaceMealsStepHistory"
+    )
+
+
+def test_coming_back_to_kitchen_by_the_tab_bar_redraws_the_cook_screen():
+    """CONCERN 5. Clearing focusOrigin without redrawing left a still-mounted
+    cook screen reading "‹ Today" while it now landed on Kitchen — the state
+    was right and the button lied about it."""
+    branch = SHELL_JS.split("else if (tab.kitchen && cookState && cookState.focusOrigin)", 1)[1]
+    branch = branch[: branch.index("\n    }")]
+    assert "cookState.focusOrigin = null;" in branch
+    assert "renderCook();" in branch, "the mounted cook screen is never redrawn"
+    assert "cookState.screen !== 'overview'" in branch, (
+        "the Kitchen root has no back link to redraw — don't repaint it for nothing"
+    )
+
+
+def test_grocery_names_exactly_one_dish_and_it_is_a_link_like_every_other():
+    """CONCERN 7. The decision log claimed "Grocery names no dishes at all".
+    It names one, in the shop-done handoff, and Emily's rule has no exception
+    for it. Same door as the button beside it — one data-gro, one handler."""
+    fn = _extract("groShopDoneHtml")
+    assert 'class="dish-link is-inline" data-gro="shop-done-tonight"' in fn
+    assert "escapeHtml(dish)" in fn, "the dish name is still escaped"
 
 
 def test_the_index_is_fed_from_data_the_app_already_fetches():

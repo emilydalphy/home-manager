@@ -313,6 +313,15 @@ html, body {
   min-height: 100%;
   transform: translateY(-50%);
 }
+/* A dish name that sits INSIDE a sentence rather than being a row of its
+   own — Grocery's "Tonight it's <dish>." The block/full-width default above
+   is right for a row title and wrong here: measured at 390px it took the
+   whole line to itself and dropped the full stop onto the next one. */
+.dish-link.is-inline {
+  display: inline;
+  width: auto;
+  text-align: inherit;
+}
 .rest-row-text {
   flex: 1 1 auto;
   min-width: 0;
