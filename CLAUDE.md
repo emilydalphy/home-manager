@@ -314,6 +314,89 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — Five things the cook-journey slice got wrong, on the same
+  branch (`overnight/cook-journey-step-by-step`). Found on independent
+  review, all reproduced in a real Chromium, fixed in one pass.**
+  (1) **The serving stepper's rescale was thrown away one tap later.**
+  `cookStepServings` wrote only to the DOM — `#cook-ings-N` and
+  `#cook-getout-N` — and left `cookState.data` alone. Survivable while the
+  stepper lived on one screen nothing re-rendered; fatal the moment cooking
+  became three stages, because every stage change calls `renderCook()`,
+  which rebuilds from that state. A cook who set Serves 4 on Before you
+  start was told "1 Carrots" mid-recipe and handed Serves 2 back on the way
+  home, silently. **The slice moved that stepper and gave the move a
+  reason** ("get the amounts right before the cupboard is open") and then
+  halved the amounts two screens later, which makes this the branch's own
+  bug and not an inherited one. It writes `meal.ingredients`,
+  `meal.default_servings` and `meal.unscaled_items` and re-renders now; the
+  count in the stepper still moves on the tap (the refresh policy's "the
+  common case never waits") and goes back if the scale call fails. Two
+  things fall out for free: the "N of M out" note follows a rescale,
+  because the renderer counts it, and the "eyeball these" line is rendered
+  off the meal (`cookUnscaledHtml`) rather than poked into a hidden `<p>`,
+  so both stages say it. Ticks survive because they are filed under the
+  ingredient's NAME. Deliberate: a later load refetches and the household's
+  own servings win again — the server is the truth about how many people
+  are eating.
+  (2) **The sticky dock sat on top of Before you start.** `.cook-dock` is
+  opaque and `.cook-body` had no foot, so at 390x780 two of three
+  ingredients and the whole Pans and kit section were behind it at first
+  paint — and on a tab's FIRST THREE VISITS, which is what a new tester
+  sees, the coaching row shrinks the scrollport to 459 and thirteen pixels
+  of body were visible. `wireCookDock` measures the dock and sets
+  `--cook-dock-h`, which `.cook-body` takes as bottom padding; measured
+  rather than guessed because the dock's height changes with the stage (one
+  quiet link, two, or none) and with wrapping. It runs BEFORE the scroll is
+  restored, since it changes the height that scroll position is measured
+  against. **Correcting this file:** the entry below says "verified in a
+  real Chromium at 390px", and the journey was — every stage, both schemes,
+  a real reload. What was not checked was whether the sticky dock covered
+  anything, at any height. Verifying a flow is not verifying a layout.
+  (3) **The oven line invented temperatures.** It asked for "oven" plus a
+  heating word plus any three-digit number anywhere in the step, and "set
+  aside" satisfies the heating word — so a meat-probe target ("roast until
+  a probe reads 145°F"), a braise time ("braise for 180 minutes") and a
+  resting time all came back as oven temperatures, printed FIRST in the
+  list with no hedge, failing silently. It also could not see a real 90C.
+  The number must now follow "oven to" (or "oven at"/"oven up to")
+  directly: every one of those fails it, because in each the number belongs
+  to something else. "Gas mark 6" produces nothing, and a quiet miss is the
+  right failure for a section whose stated rule is that it never guesses.
+  Same pass: "no skillet needed — use the baking sheet you already have"
+  no longer asks for a skillet (`cookKitMentions` reads clause by clause
+  and discounts a negated mention, the shape `_COMPOUND_EXCEPTIONS`
+  already uses). The dead second regex alternative went with the rewrite.
+  (4) **The empty-recipe fallback promised a control that isn't there.** It
+  sent every recipeless meal to the whole method "to write one" — true for
+  a SAVED recipe with no steps, false for a freeform meal, where
+  `cookDetailHtml` returns early and there is no fill button at all. Two
+  sentences now, one per absence, each naming the way out that screen
+  really has.
+  (5) **A load under a focused cook could hand you a stranger's recipe.**
+  `focusIdx` is an index and every load rebuilds `meals`; `loadKitchen`
+  re-pinned `tonightIdx` and reset neither the index nor the stage, so a
+  chat turn tagged `tab:'kitchen'` arriving mid-cook could render "Step 3
+  of 4" of whatever dish now sat there — and, with fewer steps, the "Mark
+  it cooked" finish of a dish nobody started. `cookState.focusMealKey`
+  records WHICH dish the focus is on and `cookFollowFocusedMeal` follows it
+  by identity, falling back to the root when it is genuinely gone; the step
+  cursor is clamped where the stage is decided, so the dock and the
+  instruction can never answer about different steps.
+  Two review nits taken rather than noted. `.cook-sectionnote` was going to
+  ship at 4.44:1 for 11px/700 with a comment explaining why — but a
+  knowingly sub-AA value on a NEW screen is a decision, not a note, so the
+  count takes body ink (12.78:1 light / 14.4:1 dark); the eyebrow beside it
+  is a label and stays muted. And the whole method's finish had become the
+  quietest control on its screen, so `.cook-focus-end-done` is that stage's
+  one apricot primary, full width — there is still exactly one finish
+  control on it and still nothing in its dock but the way back to your
+  place. `tests/test_cook_journey.py` grew 10 tests (38 -> 48), including
+  the servings one asserting ACROSS a stage change, which is precisely what
+  a single-screen render test cannot see; suite 1830 -> 1840. Re-verified
+  in Chromium at the reviewer's own 390x780 with the coaching row up: every
+  ticklist row and the kit section clear of the dock at first paint and at
+  full scroll, and Serves 4 carried intact through step, method and back.
+
 - **2026-09-10 — Cooking is three stages: before you start, one step at a
   time, and the whole method one tap away. Branch
   `overnight/cook-journey-step-by-step`, FIRST SLICE ONLY.** Emily's

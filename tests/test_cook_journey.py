@@ -83,6 +83,13 @@ def _var_block(name: str, source: str = SHELL_JS) -> str:
     return source[start : j + 1] + ";"
 
 
+def _regex_const(name: str, source: str = SHELL_JS) -> str:
+    """Lift one `var NAME = /.../;` — the oven pattern, taken from the file
+    so a test can never pass against a rule the app no longer applies."""
+    start = source.index(f"var {name} = /")
+    return source[start : source.index(";", start) + 1]
+
+
 def _string_const(name: str, source: str = SHELL_JS) -> str:
     """Lift one `var NAME = '...';` — the storage key prefix, taken from the
     file rather than retyped, so a test can never pass against a key the app
@@ -130,6 +137,7 @@ _FUNCTIONS = [
     "cookSetTick",
     "cookKitMentions",
     "cookOvenLine",
+    "cookUnscaledHtml",
     "cookKitFor",
     "cookIngredientLabel",
     "cookIngredientNouns",
@@ -142,6 +150,7 @@ _FUNCTIONS = [
     "cookFocusPrepHtml",
     "cookAttendanceChip",
     "cookFocusMeal",
+    "cookFollowFocusedMeal",
     "cookFirstUndoneStep",
     "cookGoStage",
     "cookStartCooking",
@@ -171,6 +180,7 @@ def _run(body: str, state: dict | None = None) -> object:
         "meals": [],
         "focusIdx": 0,
         "focusStage": "prep",
+        "focusMealKey": None,
         "stepIdx": 0,
         "methodFrom": "prep",
         "ticks": None,
@@ -182,7 +192,11 @@ def _run(body: str, state: dict | None = None) -> object:
     harness = (
         _STUBS
         + f"var cookState = {json.dumps(base)};\n"
+        + f"var MEAL = {json.dumps(_MEAL)};\n"
+        + f"var OTHER = {json.dumps(_OTHER_MEAL)};\n"
         + _string_const("COOK_TICKS_PREFIX")
+        + "\n"
+        + _regex_const("COOK_OVEN_RE")
         + "\n"
         + _var_block("COOK_KIT_WORDS")
         + "\n"
@@ -231,6 +245,10 @@ _MEAL = {
         "Roast for 35 minutes, until the chicken thighs read 165°F.",
     ],
 }
+
+_OTHER_MEAL = dict(
+    _MEAL, entry_id=99, meal="Overnight oats", instructions=["Stir."], ingredients=[]
+)
 
 _VIEW = {"weekly_plan_id": 12, "meals": [_MEAL], "prep_tasks": []}
 
@@ -735,15 +753,17 @@ def test_the_dock_is_sticky_and_uses_tokens_only():
     assert "#" not in block, "Rule 9 — every colour goes through a token"
 
 
-def test_the_count_note_is_supporting_copy_not_unselected_navigation():
-    """Measured in-browser 2026-09-10: --ink-inactive put this 11px/700 note
-    at 3.21:1 on ground in light. --ink-secondary is 4.44:1 / 8.48:1 — the
-    ramp's own supporting-copy value, and still 0.06 short of AA at this
-    size, which is written down in the rule rather than papered over with a
-    token that passes but means "struck off"."""
-    block = SHELL_CSS[SHELL_CSS.index(".cook-sectionnote {") :][:1000]
-    assert "color: var(--ink-secondary);" in block
-    assert "var(--ink-inactive)" not in block
+def test_the_count_note_clears_aa_rather_than_shipping_just_under_it():
+    """Measured in-browser: --ink-inactive put this 11px/700 note at 3.21:1
+    on ground in light, and --ink-secondary at 4.44 — still under AA for
+    text this size. A knowingly sub-AA value on a NEW screen is a decision,
+    not a note, so the count takes body ink (12.78:1 / 14.4:1). The eyebrow
+    beside it is a label and stays muted."""
+    block = SHELL_CSS[SHELL_CSS.index(".cook-sectionnote {") :][:1200]
+    body = block[: block.index("}")]
+    assert "color: var(--ink);" in body
+    assert "var(--ink-inactive)" not in body
+    assert "var(--ink-secondary)" not in body
 
 
 def test_the_new_cook_css_carries_no_literal_colours():
@@ -751,3 +771,213 @@ def test_the_new_cook_css_carries_no_literal_colours():
     start = SHELL_CSS.index("/* ---------- Cook mode's three stages ----------")
     end = SHELL_CSS.index("@media (min-width: 1024px) {", start)
     assert "#" not in SHELL_CSS[start:end]
+
+
+# ---------- the review round, 2026-09-10 ----------
+# Five things an independent reviewer reproduced in a real Chromium against
+# the first commit of this branch. The two blockers are the first two.
+
+
+@_needs_node
+def test_a_rescale_is_carried_by_every_stage_not_just_the_one_it_was_made_on():
+    """BLOCKER. cookStepServings wrote only to the DOM, and every stage
+    change calls renderCook(), which rebuilds from cookState.data — so a
+    cook who set Serves 4 on Before you start was shown half the amount one
+    tap later, silently, and got Serves 2 back on the way home.
+
+    This is the assertion a single-screen render test cannot make: it has to
+    go through a stage change.
+    """
+    got = _run(
+        # Exactly what the handler does with the scale response.
+        "var meal = cookState.data.meals[0];\n"
+        "meal.ingredients = [{ qty: '8', item: 'Chicken thighs' },\n"
+        "                    { qty: '4 tbsp', item: 'Olive oil' },\n"
+        "                    { qty: '2 lb', item: 'Baby potatoes, halved' },\n"
+        "                    { qty: '2 tsp', item: 'Smoked paprika' }];\n"
+        "meal.default_servings = 8;\n"
+        "cookStartCooking();\n"
+        "var step = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "cookState.stepIdx = 1;\n"
+        "var step2 = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "cookGoStage('method');\n"
+        "var method = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "cookGoStage('prep');\n"
+        "var back = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "console.log(JSON.stringify({ step2: step2, method: method, back: back }));",
+        {"data": _VIEW},
+    )
+    # What the step needs is the rescaled amount, not the recipe's own.
+    assert "4 tbsp Olive oil" in got["step2"]
+    assert "2 lb Baby potatoes, halved" in got["step2"]
+    assert "2 tbsp Olive oil" not in got["step2"]
+    # The whole method's stepper and list agree with it.
+    assert ">8<" in got["method"], "the serving count follows the rescale"
+    assert "8 Chicken thighs" in got["method"]
+    # ...and stepping back to Before you start does not undo it.
+    assert "8 Chicken thighs" in got["back"]
+    assert "4 Chicken thighs" not in got["back"]
+
+
+@_needs_node
+def test_the_rescale_is_a_state_write_so_the_out_count_follows_it_too():
+    """The old DOM rewrite replaced the rows and left "0 of 5 out" beside
+    them untouched. Counting in the renderer is what makes that impossible."""
+    got = _run(
+        "var meal = cookState.data.meals[0];\n"
+        "cookState.focusMealKey = cookMealKey(meal);\n"
+        "cookToggleTick('ings', cookMealKey(meal) + ':olive oil');\n"
+        "meal.ingredients = [{ qty: '4 tbsp', item: 'Olive oil' }];\n"
+        "meal.default_servings = 8;\n"
+        "console.log(JSON.stringify(cookGetOutHtml(meal, 0)));",
+        {"data": _VIEW},
+    )
+    assert "1 of 1 out" in got or "All out." in got
+    assert "4 tbsp Olive oil" in got
+    # The tick is filed under the name, so rescaling keeps it.
+    assert "is-done" in got
+
+
+def test_the_serving_stepper_no_longer_reaches_into_the_dom():
+    """Source-level on purpose: the whole bug was that this function talked
+    to elements instead of to state."""
+    fn = _extract("cookStepServings")
+    assert "meal.ingredients =" in fn
+    assert "meal.default_servings =" in fn
+    assert "renderCook();" in fn
+    assert "innerHTML" not in fn, "no list is patched in place any more"
+    assert "cook-getout-" not in fn
+    assert "cook-ings-" not in fn
+
+
+def test_the_body_makes_room_for_the_sticky_dock():
+    """BLOCKER. .cook-dock is sticky with an opaque background and .cook-body
+    had no foot, so at 390x780 two of three ingredients and the whole Pans
+    and kit section sat behind it at first paint — and on a tab's first
+    three visits, when the coaching row shrinks the scrollport, so did all
+    of it. The dock is measured rather than guessed because its height
+    changes with the stage and with wrapping."""
+    block = SHELL_CSS[SHELL_CSS.index(".cook-body {") :][:400]
+    assert "var(--cook-dock-h" in block
+    wired = _extract("wireCookDock")
+    assert "--cook-dock-h" in wired
+    assert "dock.offsetHeight" in wired
+    # ...and it has to run before the scroll is restored, since it changes
+    # the height that scroll position is measured against.
+    render = _extract("renderCook")
+    assert render.index("wireCookDock(view)") < render.index("scrollEl.scrollTop =")
+
+
+@_needs_node
+def test_the_oven_line_is_told_a_temperature_rather_than_finding_a_number():
+    """CONCERN. The first rule was "oven" + a heating word + any 3-digit
+    number, and "set aside" is a heating word — so a meat-probe target, a
+    braise time and a resting time all came back as oven temperatures, said
+    first in the list with no hedge. The number now has to follow "oven to"
+    directly, which every one of those fails, because in each of them the
+    number belongs to something else."""
+    got = _run(
+        "console.log(JSON.stringify({\n"
+        "  probe: cookOvenLine(['Return to the oven and roast until a probe reads 145°F.']),\n"
+        "  braise: cookOvenLine(['Heat the oven, cover, and braise for 180 minutes.']),\n"
+        "  resting: cookOvenLine(['Take it out of the oven and set aside for 100 minutes.']),\n"
+        "  slow: cookOvenLine(['Preheat the oven to 90C for a slow roast.']),\n"
+        "  gasmark: cookOvenLine(['Heat the oven to gas mark 6.']),\n"
+        "  plain: cookOvenLine(['Preheat oven to 180.']),\n"
+        "  spelled: cookOvenLine(['Set the oven to about 350 degrees F.'])\n"
+        "}));"
+    )
+    assert got["probe"] == ""
+    assert got["braise"] == ""
+    assert got["resting"] == ""
+    # ...and the real one under 100 that the three-digit rule made impossible.
+    assert got["slow"] == "Oven at 90°C"
+    assert got["plain"] == "Oven at 180°C"
+    assert got["spelled"] == "Oven at 350°F"
+    # A quiet miss is this section's stated failure mode; a wrong number is not.
+    assert got["gasmark"] == ""
+
+
+@_needs_node
+def test_a_step_that_says_not_to_use_a_pan_does_not_ask_for_one():
+    got = _run(
+        "console.log(JSON.stringify({\n"
+        "  refused: cookKitFor({ instructions: ['No skillet needed - use the baking sheet you already have.'] }),\n"
+        "  wanted: cookKitFor({ instructions: ['Sear in a skillet, then finish on a baking sheet.'] })\n"
+        "}));"
+    )
+    assert got["refused"] == ["Baking sheet"]
+    assert got["wanted"] == ["Baking sheet", "Skillet"]
+
+
+@_needs_node
+def test_a_freeform_meal_is_not_pointed_at_a_fill_button_that_does_not_exist():
+    """CONCERN. cookDetailHtml returns early on !has_full_recipe, so the
+    whole method offers a freeform meal no fill control at all — and the
+    fallback was telling the cook to go there and use one."""
+    freeform = dict(_MEAL, has_full_recipe=False, ingredients=[], instructions=[])
+    prep = _focus("prep", meal=freeform)
+    method = _focus("method", meal=freeform)
+    assert "the whole method has a way" not in prep.lower()
+    assert "Ask me for the recipe" in prep
+    assert "cook-fill" not in method, "the method really has no fill control here"
+
+    # A SAVED recipe with nothing in it does have one, and is told so.
+    empty = dict(_MEAL, ingredients=[], instructions=[])
+    prep2 = _focus("prep", meal=empty)
+    assert "The whole method has a way to fill the recipe in." in prep2
+    assert "cook-fill" in _focus("method", meal=empty)
+
+
+@_needs_node
+def test_a_reload_under_a_focused_cook_follows_the_dish_rather_than_the_index():
+    """CONCERN. loadKitchen rebuilds cookState.data and re-pins tonightIdx
+    but reset neither focusIdx nor stepIdx, so a chat turn arriving mid-cook
+    could render "Step 3" of whatever dish now sat at that index — and hand
+    the cook the finish of a dish they never started."""
+    got = _run(
+        "cookState.focusMealKey = 'e41';\n"
+        # The reload: the same plan, a new array, our dish now second.
+        "cookState.data = { weekly_plan_id: 12, meals: [OTHER, MEAL], prep_tasks: [] };\n"
+        "cookFollowFocusedMeal(cookState.data.meals);\n"
+        "console.log(JSON.stringify({ idx: cookState.focusIdx, screen: cookState.screen }));",
+        {"data": _VIEW, "focusIdx": 0, "screen": "focus", "focusStage": "step", "stepIdx": 2},
+    )
+    assert got["idx"] == 1, "the focus followed the dish it was opened on"
+
+    # ...and when the dish is genuinely gone, the screen goes to the root
+    # rather than cooking a stranger.
+    gone = _run(
+        "cookState.focusMealKey = 'e41';\n"
+        "cookState.data = { weekly_plan_id: 12, meals: [OTHER], prep_tasks: [] };\n"
+        "cookFollowFocusedMeal(cookState.data.meals);\n"
+        "console.log(JSON.stringify(cookState.screen));",
+        {"data": _VIEW, "focusIdx": 0, "screen": "focus"},
+    )
+    assert gone == "overview"
+
+
+@_needs_node
+def test_the_step_cursor_is_clamped_where_the_stage_is_decided():
+    """A shorter recipe arriving under a cursor pointing past its end used
+    to leave the dock and the instruction answering about different steps."""
+    short = dict(_MEAL, instructions=["Stir.", "Serve."])
+    html = _focus("step", step=7, meal=short)
+    assert "Step 2 of 2" in html
+    assert "Serve." in html
+    # The last step offers the finish, and the dock agrees with the body.
+    assert 'data-cook="step-next"' not in html
+    assert "Mark it cooked" in html
+
+
+def test_the_whole_methods_finish_is_that_screens_one_apricot():
+    """NIT from review: making the method's dock carry no primary left the
+    skim-ahead cook's finish as the quietest control on the screen. The
+    button at the end of the last step is that stage's one apricot now —
+    there is still exactly one finish control on it, and still no second
+    accent."""
+    block = SHELL_CSS[SHELL_CSS.index(".cook-focus-end-done {") :]
+    body = block[: block.index("}")]
+    assert "background: var(--apricot);" in body
+    assert "color: var(--on-accent-ink);" in body, "Rule 1"
+    assert "width: 100%" in body

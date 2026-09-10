@@ -253,6 +253,12 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         + "function cookTicked(){ return false; }\n"
         + _extract("cookMealKey") + "\n"
         + _extract("cookIngredientLabel") + "\n"
+        # 2026-09-10, review round: the "eyeball these" note is rendered off
+        # the meal now rather than poked into a hidden <p> after a rescale,
+        # so both frames call one helper for it. The plain frame carries no
+        # stepper, so it only ever renders the empty string — which is the
+        # point of asserting below that it gains no control.
+        + _extract("cookUnscaledHtml") + "\n"
         + _extract("cookBackLabel") + "\n"
         + _extract("cookFocusEndHtml") + "\n"
         + _extract("cookStepLi") + "\n"

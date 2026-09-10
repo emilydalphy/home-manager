@@ -6639,6 +6639,9 @@
                          // components are ticked in the "Prep-cut on Sunday?"
                          // offer, until the write lands (see cookPrepCutHtml)
     focusIdx: null,      // index into cookState.data.meals, while focused
+    focusMealKey: null,  // ...and WHICH dish that index is supposed to be, by
+                         // cookMealKey. The index is only as good as the array
+                         // it points into, and every load rebuilds that array.
     focusScrollTo: null, // 'ingredients' | null — landed-on section, once
     // Which of cook mode's three stages is showing. Cook mode used to be
     // one long screen — hero, prep, the whole recipe — and the ticket
@@ -6974,6 +6977,23 @@
     return COOK_VOICE_ENABLED ? '<div class="cook-voice" id="cook-voice" hidden></div>' : '';
   }
 
+  // Keep the focus pointing at the dish it was opened on. Lifted out of
+  // renderCook so it can be run on its own in a test — the failure it
+  // exists to stop only happens across a data swap, which is exactly what
+  // a single-render test cannot reach.
+  function cookFollowFocusedMeal(meals) {
+    if (!cookState.focusMealKey) return;
+    var here = meals[cookState.focusIdx];
+    if (here && cookMealKey(here) === cookState.focusMealKey) return;
+    for (var i = 0; i < meals.length; i++) {
+      if (cookMealKey(meals[i]) === cookState.focusMealKey) {
+        cookState.focusIdx = i;
+        return;
+      }
+    }
+    cookState.screen = 'overview';
+  }
+
   // Which of the tab's two screens is showing. The root (renderKitchen) is
   // the "overview" state this used to render itself; focus and session are
   // the two screens that take the whole tab over for one job.
@@ -7004,10 +7024,18 @@
         !meals[cookState.tonightIdx]) {
       cookState.tonightIdx = cookTonightIndex(meals);
     }
-    // A focused meal that vanished from underneath it (the plan changed,
-    // it was swapped out) has nothing left to show — fall back to the root
-    // rather than rendering a cook screen for a meal that no longer
+    // The focus is an INDEX, and every load and every write response
+    // rebuilds `meals` — so before trusting it, check it still names the
+    // dish that was opened. It used not to: loadKitchen re-pinned
+    // tonightIdx and left focusIdx, focusStage and stepIdx exactly where
+    // they were, so a chat turn tagged tab:'kitchen' arriving mid-cook
+    // could render "Step 3 of 4" of whatever dish now sat at that index —
+    // and, if the new one had fewer steps, hand the cook the "Mark it
+    // cooked" finish of a dish they never started. The dish is followed by
+    // identity if it merely moved; the screen falls back to the root if it
+    // is gone, rather than showing a cook screen for a meal that no longer
     // exists. Same guard for a prep session that stopped existing.
+    if (cookState.screen === 'focus') cookFollowFocusedMeal(meals);
     if (cookState.screen === 'focus' && !meals[cookState.focusIdx]) cookState.screen = 'overview';
     if (cookState.screen === 'session' && !cookSessionOn(data, cookState.sessionDate)) cookState.screen = 'overview';
     if (cookState.loadError || !data) cookState.screen = 'overview';
@@ -7024,6 +7052,9 @@
         cookSessionHtml(data, cookSessionOn(data, cookState.sessionDate), meals);
     } else {
       view.innerHTML = cookVoicePanelHtml() + cookFocusHtml(data, meals, cookState.focusIdx);
+      // BEFORE the scroll is restored: this changes the height of the
+      // content the scroll position is measured against.
+      wireCookDock(view);
       onFocus = true;
     }
 
@@ -7573,24 +7604,61 @@
 
   // Whole words only. "Grilled halloumi" is not a reason to get the grill
   // out, and a bare indexOf would say it was.
+  //
+  // ...and neither is "no skillet needed — use the baking sheet you
+  // already have", which is a step going out of its way to tell you NOT to
+  // get one out. A mention preceded by no/without/don't-need is discounted
+  // rather than the word being dropped from the list: the same shape
+  // coordination.py's _COMPOUND_EXCEPTIONS uses, and for the same reason —
+  // the word really is standing there, it just isn't saying what a plain
+  // match thinks it is.
   function cookKitMentions(hay, phrase) {
-    return new RegExp('\\b' + phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(hay);
+    var esc = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var word = new RegExp('\\b' + esc + '\\b');
+    var negated = new RegExp('\\b(?:no|without|skip|skipping)\\s+(?:the\\s+|a\\s+)?' + esc + '\\b');
+    // Clause by clause, so one sentence — "no skillet needed, use the
+    // baking sheet you already have" — can turn down the skillet without
+    // turning down the baking sheet standing beside it.
+    var clauses = hay.split(/[.;,\n]/);
+    for (var i = 0; i < clauses.length; i++) {
+      if (word.test(clauses[i]) && !negated.test(clauses[i])) return true;
+    }
+    return false;
   }
 
   // "Preheat the oven to 425°F" is the one before-you-start fact that
   // costs twenty minutes when it is missed, so it rides at the head of the
-  // same list — read out of the step that says it, never invented. Both a
-  // heating verb AND a real temperature are required: "take it out of the
-  // oven after 25 minutes" says neither, and without that guard it would
-  // read as an oven at 25 degrees.
+  // same list — read out of the step that says it, never invented.
+  //
+  // REWRITTEN 2026-09-10, because the first version guessed. It asked for
+  // "oven" plus a heating word plus any three-digit number anywhere in the
+  // step, and "set aside" satisfies the heating word, so it read a
+  // meat-probe target ("roast until a probe reads 145°F"), a braise time
+  // ("Heat the oven, cover, and braise for 180 minutes") and a resting
+  // time ("out of the oven and set aside for 100 minutes") as oven
+  // temperatures, said them first in the list with no hedge, and failed
+  // silently. It also missed a real one below 100 ("Preheat the oven to
+  // 90C"), which the three-digit rule made impossible.
+  //
+  // The rule now is that the step has to SAY the temperature to the oven:
+  // the number must follow "oven to" (or "oven at"/"oven up to") directly,
+  // with nothing between but a word like "about". Everything the old
+  // version invented fails that, because in every one of those sentences
+  // the number belongs to something else. A step that preheats without
+  // naming a number, or says "gas mark 6", produces nothing — a quiet miss
+  // is this section's stated failure mode, and it is the right one:
+  // "everything out of the cupboard" must never list a thing nobody wrote.
+  var COOK_OVEN_RE = /\boven\s+(?:up\s+)?(?:to|at)\s+(?:about\s+|around\s+)?(\d{2,3})\s*(?:°|º)?\s*(?:degrees?\s*)?([FfCc])?\b/i;
+
   function cookOvenLine(steps) {
     for (var i = 0; i < (steps || []).length; i++) {
-      var s = String(steps[i] || '');
-      if (!/\boven\b/i.test(s) || !/\b(?:pre-?heat|heat|set)\b/i.test(s)) continue;
-      var m = /(\d{3})\s*°?\s*(?:degrees\s*)?([FfCc])?/.exec(s) || /(\d{2})0\s*°?\s*([FfCc])?/.exec(s);
+      var m = COOK_OVEN_RE.exec(String(steps[i] || ''));
       if (!m) continue;
-      var temp = parseInt(m[1].length === 2 ? m[1] + '0' : m[1], 10);
-      if (temp < 100) continue;
+      var temp = parseInt(m[1], 10);
+      // A number this small after "oven to" is not a temperature in either
+      // scale — it is a rack position or a typo, and either way not
+      // something to print as an instruction.
+      if (temp < 40) continue;
       // No unit written is the ordinary case. 250 is the split nobody
       // cooks either side of by accident: an oven at 180 is Celsius, an
       // oven at 400 is Fahrenheit.
@@ -7706,7 +7774,7 @@
         : '') +
       '<h4 class="cook-detail-head">Ingredients</h4>' +
       '<ul class="cook-ings"' + (plain ? '' : ' id="cook-ings-' + idx + '"') + '>' + ingredients + '</ul>' +
-      (plain ? '' : '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>') +
+      (plain ? '' : cookUnscaledHtml(m, idx)) +
       '<h4 class="cook-detail-head">Instructions</h4>' +
       cookInstructionsHtml(m, idx, plain) +
       // The end of the last step used to just stop — the only way back to
@@ -7834,6 +7902,9 @@
     cookState.focusStage = 'prep';
     cookState.stepIdx = 0;
     cookState.methodFrom = 'prep';
+    // WHICH dish this focus is on, by identity rather than by its place in
+    // the list — see the guard in renderCook.
+    cookState.focusMealKey = cookMealKey(cookState.data.meals[idx]);
     renderCook();
   }
 
@@ -8244,7 +8315,7 @@
       '<ul class="cook-getout" id="cook-getout-' + idx + '">' +
         ings.map(function (ing, i) { return cookGetOutRowHtml(ing, i, mealKey); }).join('') +
       '</ul>' +
-      '<p class="cook-unscaled" id="cook-unscaled-' + idx + '" hidden></p>' +
+      cookUnscaledHtml(meal, idx) +
     '</section>';
   }
 
@@ -8268,7 +8339,16 @@
     var prepTasks = cookFocusPrepTasks(data, meal);
     var body = cookFocusPrepHtml(prepTasks) + cookGetOutHtml(meal, idx) + cookKitHtml(meal);
     if (!body) {
-      body = '<p class="cook-dim">No saved recipe for this one yet — the whole method has a way to write one.</p>';
+      // Two different absences, and they have different ways out. A SAVED
+      // recipe with nothing in it gets "Fill in this recipe" on the whole
+      // method (cookInstructionsHtml). A freeform meal gets no such
+      // button — cookDetailHtml returns early on !has_full_recipe — so
+      // pointing one at the whole method was promising a control that
+      // isn't there. Say the true thing in each case, and name the way out
+      // the screen really has.
+      body = meal.has_full_recipe
+        ? '<p class="cook-dim">Nothing to get out for this one yet. The whole method has a way to fill the recipe in.</p>'
+        : '<p class="cook-dim">Nothing written down for this one. Ask me for the recipe and I’ll put one together.</p>';
     }
     return '<div class="cook-body">' + body + '</div>';
   }
@@ -8279,7 +8359,9 @@
   // phone is across the counter."
   function cookStepStageHtml(meal, idx) {
     var steps = meal.instructions || [];
-    var pos = Math.min(Math.max(cookState.stepIdx, 0), Math.max(steps.length - 1, 0));
+    // Already clamped by cookFocusHtml, the one place that decides which
+    // stage is showing.
+    var pos = cookState.stepIdx;
     var needs = cookStepNeeds(meal, pos);
     // The make-ahead steps carry their own label in the whole method
     // (advance_prep_step_indices, 1-based); a step that is one of them says
@@ -8394,6 +8476,13 @@
     var stage = cookState.focusStage;
     if (stage === 'step' && !steps.length) stage = cookState.focusStage = 'prep';
     if (stage !== 'prep' && stage !== 'step' && stage !== 'method') stage = cookState.focusStage = 'prep';
+    // Clamped HERE rather than inside the step renderer, so the dock's
+    // "is this the last one" test and the instruction on screen can never
+    // be answering about two different steps — which is what happened when
+    // a shorter recipe arrived underneath a cursor pointing past its end.
+    cookState.stepIdx = steps.length
+      ? Math.min(Math.max(cookState.stepIdx, 0), steps.length - 1)
+      : 0;
 
     var body = stage === 'prep'
       ? cookPrepStageHtml(data, meal, idx)
@@ -8404,6 +8493,23 @@
       body +
       cookFocusDockHtml(meal) +
     '</div>';
+  }
+
+  // The dock is sticky, so it floats OVER the foot of the body until the
+  // content runs out — and the body is taller than the scrollport on a
+  // phone, so "it simply comes to rest at the bottom" was only ever true
+  // of a short screen. Measured at 390x780 with the coaching row up, the
+  // scrollport is 459px and THIRTEEN of them were body: two of three
+  // ingredients and the whole Pans and kit section sat behind the dock at
+  // first paint. The body needs a foot the size of the dock, and the dock
+  // is measured rather than guessed because its height changes with the
+  // stage (one quiet link, two, or none) and with wrapping at small
+  // widths.
+  function wireCookDock(view) {
+    var focus = view.querySelector('.cook-focus');
+    var dock = focus && focus.querySelector('.cook-dock');
+    if (!focus || !dock) return;
+    focus.style.setProperty('--cook-dock-h', dock.offsetHeight + 'px');
   }
 
   function wireCookFocusScroll(view) {
@@ -8735,55 +8841,69 @@
   // Live re-scale without a plan reload. Non-numeric quantities ("a pinch",
   // "to taste") cannot scale mathematically, so the backend leaves those
   // alone and names them in unscaled_items rather than guessing.
+  // Rescaling writes into cookState, not into the DOM (fixed 2026-09-10).
+  //
+  // It used to reach for #cook-ings-N and #cook-getout-N and rewrite their
+  // innerHTML, leaving cookState.data untouched. That was survivable while
+  // the stepper lived on one screen that nothing re-rendered. It stopped
+  // being survivable the moment cooking became three stages: every stage
+  // change calls renderCook(), which rebuilds from cookState.data — so a
+  // cook who set Serves 6 on Before you start was handed "1 Carrots" one
+  // tap later, silently, and got Serves 2 back when they stepped back.
+  // Writing the scaled amounts onto the meal is what makes all three
+  // stages agree, and it fixes the "N of M out" count for free, since that
+  // is counted by the renderer rather than patched in beside it.
+  //
+  // Ticks survive it because they are filed under the ingredient's NAME
+  // (cookIngTickId) and a rescale only ever changes the quantity in front
+  // of it.
+  //
+  // Known and deliberate: a later load (loadKitchen, or a chat turn tagged
+  // tab:'kitchen') refetches the view and the household's own servings win
+  // again. The server is the truth about how many people are eating; this
+  // is a cook overriding it for one session at the counter.
   async function cookStepServings(el) {
-    var idx = el.getAttribute('data-idx');
+    var idx = parseInt(el.getAttribute('data-idx'), 10);
+    var meal = (cookState.data && (cookState.data.meals || [])[idx]) || null;
     var wrap = el.closest('.cook-serves');
-    var countEl = document.getElementById('cook-serves-' + idx);
-    if (!wrap || !countEl) return;
+    if (!meal || !wrap) return;
     var delta = parseInt(el.getAttribute('data-delta'), 10);
-    var base = parseInt(wrap.getAttribute('data-base'), 10) || 1;
-    var current = parseInt(countEl.textContent, 10) || base;
+    var current = parseInt(meal.default_servings, 10) ||
+      parseInt(wrap.getAttribute('data-base'), 10) || 1;
     var next = Math.max(1, current + delta);
     if (next === current) return;
-    countEl.textContent = next;
 
-    var list = document.getElementById('cook-ings-' + idx);
-    var getOut = document.getElementById('cook-getout-' + idx);
-    var mealKey = wrap.getAttribute('data-meal-key') || '';
-    var note = document.getElementById('cook-unscaled-' + idx);
+    // The number moves on the tap and the amounts follow when the scale
+    // comes back — the refresh policy's "the common case never waits",
+    // and the reason this isn't simply a render.
+    var countEl = document.getElementById('cook-serves-' + idx);
+    if (countEl) countEl.textContent = next;
     try {
-      var res = await fetch('/api/recipes/scale?name=' + encodeURIComponent(wrap.getAttribute('data-recipe')) + '&servings=' + next);
+      var res = await fetch('/api/recipes/scale?name=' +
+        encodeURIComponent(wrap.getAttribute('data-recipe')) + '&servings=' + next);
       if (!res.ok) throw new Error('scale failed');
       var data = await res.json();
-      var scaled = data.scaled_ingredients || [];
-      if (list) {
-        list.innerHTML = scaled.map(function (i) {
-          return '<li>' + escapeHtml(cookIngredientLabel(i)) + '</li>';
-        }).join('') || '<li class="cook-dim">None listed</li>';
-      }
-      // The same stepper now sits above Before you start's ticklist, which
-      // is the whole reason it moved there — the amounts are worth getting
-      // right before the cupboard is open. Rewritten in place like the
-      // recipe's own list, and the ticks come with it: they are filed under
-      // the ingredient's NAME (cookIngTickId), and rescaling only ever
-      // changes the quantity in front of it.
-      if (getOut) {
-        getOut.innerHTML = scaled.map(function (i, n) {
-          return cookGetOutRowHtml(i, n, mealKey);
-        }).join('');
-      }
-      if (note) {
-        if (data.unscaled_items && data.unscaled_items.length) {
-          note.textContent = 'Eyeball these — they don’t scale automatically: ' + data.unscaled_items.join(', ') + '.';
-          note.hidden = false;
-        } else {
-          note.hidden = true;
-        }
-      }
+      meal.ingredients = data.scaled_ingredients || [];
+      meal.default_servings = next;
+      meal.unscaled_items = data.unscaled_items || [];
+      renderCook();
     } catch (err) {
-      // Leave the list as it was rather than breaking the recipe over a
-      // failed scale; the number in the stepper is the only thing that moved.
+      // Put the number back rather than leaving the screen claiming a
+      // count the amounts underneath it don't match.
+      if (countEl) countEl.textContent = current;
+      showToast('Couldn’t rescale that just now — try again.');
     }
+  }
+
+  // "Eyeball these — they don't scale automatically." Rendered from the
+  // meal rather than poked into a hidden <p> after the fact, so it says
+  // the same thing on Before you start and on the whole method.
+  function cookUnscaledHtml(m, idx) {
+    var items = (m && m.unscaled_items) || [];
+    if (!items.length) return '';
+    return '<p class="cook-unscaled" id="cook-unscaled-' + idx + '">' +
+      escapeHtml('Eyeball these — they don’t scale automatically: ' + items.join(', ') + '.') +
+    '</p>';
   }
 
   async function cookFillRecipe(el) {
