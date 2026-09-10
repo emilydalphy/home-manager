@@ -314,6 +314,41 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — A day printed dinner before lunch, because `slot` is a TEXT
+  column. Branch `overnight/day-slot-order`.** `get_weekly_plan` ended
+  `ORDER BY mpe.date ASC, mpe.slot ASC`, which is ALPHABETICAL — breakfast,
+  dinner, lunch, snack. **Where it was actually visible** (measured against
+  `main`, not assumed): the flat `meals` list — the assistant's own read of
+  the week — and the two Kitchen renderers that walk it unsorted,
+  `kitchenTodayRows` and `cookRestOfWeekHtml`. NOT the `menu` day dict,
+  whose key order comes from `_build_day_based_menu`'s own dict literal and
+  already read correctly; and not `cookTonightIndex` /
+  `cookTomorrowFocusTarget`, which had each grown a private `COOK_SLOT_ORDER`
+  to work around this. The order was already written down in `DAY_SLOTS`;
+  the query never asked for it. New `weekly_plan.slot_order_sql(column)` builds
+  the ORDER BY `CASE` from that tuple, so a slot added there is added
+  everywhere at once, and an unknown slot sorts LAST rather than
+  disappearing. `mpe.id` is the last word in both queries because a day can
+  hold more than one snack: they tie on date AND slot, so without it SQLite
+  may hand them back either way round and "first planned wins" (the `menu`'s
+  single `snack` key) means a different snack run to run. `plan_quality.
+  _load_plan_entries` had the identical sort and is fixed the same way — its
+  rules mostly re-sort what they need, but `snack_clashes` reads the order
+  straight through to name the first thing a snack repeats.
+  `attendance.get_week_attendance` is deliberately NOT changed and carries a
+  comment saying why: it builds a `{date: {slot: ...}}` lookup and every
+  caller asks it for a slot by name, so that sort is read by nobody. One
+  behaviour call rode along: `_build_day_based_menu` folds an unknown slot
+  into `dinner`, and now that such a slot always arrives last it would have
+  overwritten a real dinner (before, whether it won depended on its own
+  spelling — 'brunch' lost, 'elevenses' won), so the real dinner is
+  protected explicitly. Two sorts of the same class are knowingly left
+  alone, out of this card's scope but worth a line: `leftovers.py`'s
+  `targets.sort(key=(date, slot))`, which feeds the `covers_note` sentence,
+  and `cook_ahead.py:202`. `tests/test_day_slot_order.py` is the guard,
+  7 tests built on a day inserted in a deliberately scrambled order; 5 of
+  them fail on the pre-fix code (the other two are no-regression guards and
+  say so in their own docstrings). 1736 -> 1743.
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,
