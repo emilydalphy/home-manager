@@ -51,8 +51,14 @@ _needs_node = pytest.mark.skipif(
 
 
 def _extract(name: str, source: str = SHELL_JS) -> str:
-    """Lift one brace-balanced `function name(...) {...}` out of the file."""
+    """Lift one brace-balanced `function name(...) {...}` out of the file.
+
+    Keeps a leading `async` — dropping it turns an await inside the body
+    into a syntax error, which is how this first met cookStepServings.
+    """
     start = source.index(f"function {name}(")
+    if source[max(0, start - 6) : start] == "async ":
+        start -= 6
     i = source.index("{", start)
     depth, j = 0, i
     while True:
@@ -113,6 +119,41 @@ function cookPrepCutHtml(){ return ''; }
 function cookReheatFocusHtml(m){ return '<div class="cook-reheat"></div>'; }
 function renderCook(){ renderCount += 1; }
 var renderCount = 0;
+function showToast(){ }
+function dayName(d, o){ return { '2026-09-11': 'Friday', '2026-09-12': 'Saturday' }[d] || 'Thursday'; }
+
+// Just enough DOM for the stepper: it reads the tapped button's own
+// attributes, finds the .cook-serves wrapper it sits in, and writes the
+// count into a span. Everything else it does is state.
+function fakeStepper(idx, delta, recipe, base) {
+  var wrap = { getAttribute: function (a) {
+    return a === 'data-recipe' ? recipe : (a === 'data-base' ? String(base) : null); } };
+  return { getAttribute: function (a) {
+             return a === 'data-idx' ? String(idx) : (a === 'data-delta' ? String(delta) : null); },
+           closest: function () { return wrap; } };
+}
+var _counts = {};
+var document = { getElementById: function (id) {
+  if (!_counts[id]) _counts[id] = { textContent: '' };
+  return _counts[id];
+} };
+
+// A /api/recipes/scale that answers with amounts proportional to the count
+// asked for, after `latency[n]` ticks — so a test can make replies land out
+// of order on purpose.
+var fetchCalls = [];
+var latency = {};
+function fetch(url) {
+  var n = parseInt(/servings=(\d+)/.exec(url)[1], 10);
+  fetchCalls.push(n);
+  var body = { scaled_ingredients: [{ qty: String(n * 2), item: 'Chicken thighs' },
+                                    { qty: (n / 2) + ' tbsp', item: 'Olive oil' }],
+               unscaled_items: [] };
+  var wait = latency[n] || 0;
+  return new Promise(function (res) {
+    setTimeout(function () { res({ ok: true, json: function () { return Promise.resolve(body); } }); }, wait);
+  });
+}
 
 // A localStorage that behaves like the browser's, so the persistence tests
 // are about the code's own reads and writes rather than about a mock that
@@ -149,6 +190,10 @@ _FUNCTIONS = [
     "cookFocusPrepTasks",
     "cookFocusPrepHtml",
     "cookAttendanceChip",
+    "cookServesShown",
+    "cookApplyServesOverride",
+    "cookStepServings",
+    "cookBatchNote",
     "cookFocusMeal",
     "cookFollowFocusedMeal",
     "cookFirstUndoneStep",
@@ -180,6 +225,8 @@ def _run(body: str, state: dict | None = None) -> object:
         "meals": [],
         "focusIdx": 0,
         "focusStage": "prep",
+        "serves": {},
+        "servesSeq": 0,
         "focusMealKey": None,
         "stepIdx": 0,
         "methodFrom": "prep",
@@ -319,8 +366,8 @@ def test_the_oven_line_needs_a_heating_verb_and_a_real_temperature():
         "  none: cookOvenLine(['Warm a skillet over medium heat.'])\n"
         "}));"
     )
-    assert got["preheat"] == "Oven at 400°F"
-    assert got["celsius"] == "Oven at 200°C"
+    assert got["preheat"] == "Oven at 400°"
+    assert got["celsius"] == "Oven at 200°C", "a unit the step DID write is kept"
     assert got["removing"] == ""
     assert got["none"] == ""
 
@@ -779,14 +826,13 @@ def test_the_new_cook_css_carries_no_literal_colours():
 
 
 @_needs_node
-def test_a_rescale_is_carried_by_every_stage_not_just_the_one_it_was_made_on():
-    """BLOCKER. cookStepServings wrote only to the DOM, and every stage
-    change calls renderCook(), which rebuilds from cookState.data — so a
-    cook who set Serves 4 on Before you start was shown half the amount one
-    tap later, silently, and got Serves 2 back on the way home.
-
-    This is the assertion a single-screen render test cannot make: it has to
-    go through a stage change.
+def test_every_stage_reads_its_amounts_off_the_meal():
+    """NOT a guard against the servings blocker, and it was written as one —
+    the reviewer caught that it hand-mutates the meal and the OLD renderers
+    read from the meal too, so it passed on the broken commit. Kept for what
+    it does cover, which is that all three stages read one source. The real
+    guard is test_a_tap_on_the_stepper_is_carried_by_every_stage below,
+    which drives cookStepServings itself.
     """
     got = _run(
         # Exactly what the handler does with the scale response.
@@ -820,9 +866,9 @@ def test_a_rescale_is_carried_by_every_stage_not_just_the_one_it_was_made_on():
 
 
 @_needs_node
-def test_the_rescale_is_a_state_write_so_the_out_count_follows_it_too():
-    """The old DOM rewrite replaced the rows and left "0 of 5 out" beside
-    them untouched. Counting in the renderer is what makes that impossible."""
+def test_the_out_count_is_counted_by_the_renderer_not_patched_in_beside_it():
+    """Same caveat as the test above: this hand-mutates rather than tapping,
+    so it is a statement about the renderer, not a guard on the blocker."""
     got = _run(
         "var meal = cookState.data.meals[0];\n"
         "cookState.focusMealKey = cookMealKey(meal);\n"
@@ -838,13 +884,15 @@ def test_the_rescale_is_a_state_write_so_the_out_count_follows_it_too():
     assert "is-done" in got
 
 
-def test_the_serving_stepper_no_longer_reaches_into_the_dom():
-    """Source-level on purpose: the whole bug was that this function talked
-    to elements instead of to state."""
+def test_the_serving_stepper_no_longer_rewrites_the_lists_in_place():
+    """Source-level, and deliberately narrow: the behavioural guards are the
+    two tests above and below this one, which drive the function itself. All
+    this pins is that neither ingredient list is patched in place any more —
+    the one thing that, by itself, put the screen's state and its pixels out
+    of step. The count in the stepper IS still written straight to its span,
+    on purpose: that is the optimistic half, and it is asserted for real in
+    test_three_fast_taps_count_three_times."""
     fn = _extract("cookStepServings")
-    assert "meal.ingredients =" in fn
-    assert "meal.default_servings =" in fn
-    assert "renderCook();" in fn
     assert "innerHTML" not in fn, "no list is patched in place any more"
     assert "cook-getout-" not in fn
     assert "cook-ings-" not in fn
@@ -892,7 +940,7 @@ def test_the_oven_line_is_told_a_temperature_rather_than_finding_a_number():
     assert got["resting"] == ""
     # ...and the real one under 100 that the three-digit rule made impossible.
     assert got["slow"] == "Oven at 90°C"
-    assert got["plain"] == "Oven at 180°C"
+    assert got["plain"] == "Oven at 180°", "no unit is printed that the step didn't write"
     assert got["spelled"] == "Oven at 350°F"
     # A quiet miss is this section's stated failure mode; a wrong number is not.
     assert got["gasmark"] == ""
@@ -981,3 +1029,193 @@ def test_the_whole_methods_finish_is_that_screens_one_apricot():
     assert "background: var(--apricot);" in body
     assert "color: var(--on-accent-ink);" in body, "Rule 1"
     assert "width: 100%" in body
+
+
+# ---------- the second review round, 2026-09-10 ----------
+# The headline servings tests above turned out not to guard the blocker at
+# all: they hand-mutate the meal and then render, and the OLD renderers read
+# from the meal too, so they passed on the broken commit. What follows drives
+# cookStepServings itself — tap, stored state, re-render — which is the path
+# that was broken.
+
+
+@_needs_node
+def test_a_tap_on_the_stepper_is_carried_by_every_stage():
+    """THE guard on the blocker. A tap, then a stage change, then another,
+    then back — all reading whatever the tap actually left behind.
+
+    On the broken commit the tap wrote to #cook-getout-N's innerHTML and
+    nothing else, so the first renderCook() of the first stage change put
+    the original amounts back.
+    """
+    got = _run(
+        "(async function () {\n"
+        "  cookState.focusMealKey = 'e41';\n"
+        "  await cookStepServings(fakeStepper(0, 1, 'Sheet-pan chicken thighs', 2));\n"
+        "  var prep = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "  cookStartCooking();\n"
+        "  cookState.stepIdx = 1;\n"
+        "  var step = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "  cookGoStage('method');\n"
+        "  var method = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "  cookGoStage('prep');\n"
+        "  var back = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "  console.log(JSON.stringify({ asked: fetchCalls, prep: prep, step: step,\n"
+        "                               method: method, back: back }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["asked"] == [5], "one tap, one scale call, for base 4 + 1"
+    # The stub answers with amounts proportional to the count asked for.
+    for where in ("prep", "method", "back"):
+        assert "10 Chicken thighs" in got[where], f"{where} lost the rescale"
+        assert "2.5 tbsp Olive oil" in got[where]
+        assert "4 Chicken thighs" not in got[where]
+    # ...and the step screen's "for this step" chips are the new amounts too.
+    assert "2.5 tbsp Olive oil" in got["step"]
+    # The count in the stepper agrees with the amounts under it.
+    assert ">5<" in got["prep"] and ">5<" in got["method"]
+
+
+@_needs_node
+def test_three_fast_taps_count_three_times():
+    """Three + in one frame gave ONE increment: `current` was read off
+    meal.default_servings, which only moves when a reply lands, so all three
+    taps counted from the same number and fired three identical requests."""
+    got = _run(
+        "(async function () {\n"
+        "  var p = [];\n"
+        "  for (var i = 0; i < 3; i++) p.push(cookStepServings(fakeStepper(0, 1, 'X', 4)));\n"
+        "  await Promise.all(p);\n"
+        "  console.log(JSON.stringify({ asked: fetchCalls,\n"
+        "    serves: cookServesShown(cookState.data.meals[0]),\n"
+        "    ings: cookState.data.meals[0].ingredients }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["asked"] == [5, 6, 7], "each tap counts from the one before it"
+    assert got["serves"] == 7
+    assert got["ings"][0]["qty"] == "14", "the amounts are the last count's, not a stale one"
+
+
+@_needs_node
+def test_a_superseded_scale_reply_loses_however_late_it_arrives():
+    """A fast + then - fired requests for 6 and 4 with no sequencing, so the
+    survivor was whichever reply landed last. The first reply is made to
+    arrive LAST here on purpose."""
+    got = _run(
+        "(async function () {\n"
+        "  latency[6] = 40; latency[4] = 0;\n"   # the superseded one comes back late
+        "  var a = cookStepServings(fakeStepper(0, 1, 'X', 5));\n"
+        "  var b = cookStepServings(fakeStepper(0, -1, 'X', 5));\n"
+        "  await Promise.all([a, b]);\n"
+        "  await new Promise(function (r) { setTimeout(r, 80); });\n"
+        "  console.log(JSON.stringify({ asked: fetchCalls,\n"
+        "    serves: cookServesShown(cookState.data.meals[0]),\n"
+        "    ings: cookState.data.meals[0].ingredients }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["asked"] == [5, 4]
+    assert got["serves"] == 4, "the last tap wins, not the last reply"
+    assert got["ings"][0]["qty"] == "8"
+
+
+@_needs_node
+def test_a_tab_switch_does_not_quietly_undo_the_cooks_own_count():
+    """One tap on Meals and one back on Kitchen ran loadKitchen, which
+    refetches — and the screen came back at the household's 3 while the cook
+    was holding the pan. The choice is kept for the page's life and put back
+    over whatever a load hands in."""
+    got = _run(
+        "(async function () {\n"
+        "  cookState.focusMealKey = 'e41';\n"
+        "  await cookStepServings(fakeStepper(0, 1, 'X', 4));\n"
+        # loadKitchen: a whole new payload, the server's own servings on it.
+        "  cookState.data = { weekly_plan_id: 12, meals: [JSON.parse(JSON.stringify(MEAL))], prep_tasks: [] };\n"
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ serves: cookServesShown(m), ings: m.ingredients,\n"
+        "                               flagged: !!m.serves_overridden }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["serves"] == 5, "a refetch does not put the household's number back"
+    assert got["ings"][0]["qty"] == "10"
+    assert got["flagged"] is True
+
+
+def test_the_override_is_re_applied_before_anything_is_drawn():
+    """It has to run inside renderCook, not at the one call site that
+    happened to need it — a load, a write response and a tab switch all
+    arrive by different doors."""
+    render = _extract("renderCook")
+    assert "cookApplyServesOverride(meals)" in render
+    assert render.index("cookApplyServesOverride(meals)") < render.index("cookFocusHtml(")
+    # ...and the sibling ordering check the reviewer asked for.
+    assert "cookFollowFocusedMeal(meals)" in render
+    assert render.index("cookApplyServesOverride(meals)") < render.index("cookFollowFocusedMeal(meals)")
+
+
+@_needs_node
+def test_a_rescaled_batch_stops_claiming_a_count_it_no_longer_cooks():
+    """+1 on a cook-ahead source gave "Serves 7" over a hero chip still
+    reading "for 6" and a note still reading "Cooking for 6 — enough for
+    Thursday and Friday". The chip is the number being cooked, so it follows
+    the cook; the note names a count the server worked out, so it goes, and
+    the NIGHTS are said again from meal.covers instead."""
+    batch = dict(
+        _MEAL,
+        servings=6,
+        default_servings=6,
+        covers_note="Cooking for 6 — enough for Friday and Saturday.",
+        covers=[{"date": "2026-09-11", "slot": "breakfast"},
+                {"date": "2026-09-12", "slot": "breakfast"}],
+    )
+    view = dict(_VIEW, meals=[batch])
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 1, 'X', 4));\n"
+        "  var up = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "  await cookStepServings(fakeStepper(0, -1, 'X', 4));\n"
+        "  await cookStepServings(fakeStepper(0, -1, 'X', 4));\n"
+        "  await cookStepServings(fakeStepper(0, -1, 'X', 4));\n"
+        "  var down = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
+        "  console.log(JSON.stringify({ up: up, down: down }));\n"
+        "})();",
+        {"data": view},
+    )
+    # Nothing on the screen still says six.
+    assert "for 6" not in got["up"]
+    assert "Cooking for 6" not in got["up"]
+    assert "for 7" in got["up"], "the chip is the number actually being cooked"
+    # The nights survive, rebuilt from the dates rather than the sentence.
+    assert "This batch is also meant for Friday and Saturday." in got["up"]
+    # Below what it was sized for, the caution is added — and only there.
+    assert "check it still stretches" not in got["up"]
+    assert "check it still stretches" in got["down"]
+    assert "for 4" in got["down"]
+
+
+def test_the_dock_foot_survives_the_desktop_breakpoint():
+    """`padding: 16px 28px 0` in the 1100px block zeroed the bottom, so the
+    dock's foot was switched off at exactly the width nobody had measured —
+    --cook-dock-h still 123px, dock still sticky, padding 0."""
+    # Every .cook-body rule in the file, base and breakpoint alike. The
+    # invariant is the one that was broken: none of them may set padding
+    # with the shorthand, because that silently zeroes the bottom, and each
+    # must name the dock's own height.
+    rules, at = [], 0
+    while True:
+        try:
+            at = SHELL_CSS.index(".cook-body {", at)
+        except ValueError:
+            break
+        rules.append(SHELL_CSS[at : SHELL_CSS.index("}", at)])
+        at += 1
+    assert len(rules) >= 2, "the desktop breakpoint has a rule of its own"
+    for rule in rules:
+        assert "var(--cook-dock-h" in rule, f"a .cook-body rule drops the dock's foot:\n{rule}"
+    # The desktop one is the one that was written with the shorthand.
+    assert "padding:" not in rules[-1], "the shorthand is what zeroed it"
+    assert "padding-inline" in rules[-1]

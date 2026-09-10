@@ -6687,6 +6687,8 @@
     pendingFocusTarget: false,
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     ticks: null,                // the ticked ingredients and steps for the plan named by ticksFor — see cookReadTicks
+    serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count, kept for the page's life so a load or a tab switch can't quietly undo it (see cookStepServings)
+    servesSeq: 0,               // sequence token, so a superseded /scale reply loses instead of racing
     ticksFor: null,             // which weekly_plan_id `ticks` was read for
     cookAheadPicks: {},         // source entry_id -> { covered entry_id: true } — the cook-ahead chips as they stand between taps; seeded from the server's own `selected` and dropped again on every load or write (see cookAheadPicks)
     voiceSession: null,
@@ -7035,6 +7037,10 @@
     // identity if it merely moved; the screen falls back to the root if it
     // is gone, rather than showing a cook screen for a meal that no longer
     // exists. Same guard for a prep session that stopped existing.
+    // Before anything is drawn: the cook's own serving count goes back on
+    // over whatever this data came with, whether that was a load, a write
+    // response or a tab switch.
+    cookApplyServesOverride(meals);
     if (cookState.screen === 'focus') cookFollowFocusedMeal(meals);
     if (cookState.screen === 'focus' && !meals[cookState.focusIdx]) cookState.screen = 'overview';
     if (cookState.screen === 'session' && !cookSessionOn(data, cookState.sessionDate)) cookState.screen = 'overview';
@@ -7615,7 +7621,13 @@
   function cookKitMentions(hay, phrase) {
     var esc = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     var word = new RegExp('\\b' + esc + '\\b');
-    var negated = new RegExp('\\b(?:no|without|skip|skipping)\\s+(?:the\\s+|a\\s+)?' + esc + '\\b');
+    // Two shapes of refusal: "no skillet needed" and "don't use a
+    // skillet" / "no need for a skillet" / "instead of a skillet".
+    var negated = new RegExp(
+      '\\b(?:no|without|skip|skipping)\\s+(?:the\\s+|a\\s+|an\\s+)?' + esc + '\\b' +
+      '|\\b(?:don\'?t|do\\s+not|no\\s+need\\s+(?:to|for)|instead\\s+of|rather\\s+than)\\s+' +
+      '(?:use\\s+|using\\s+|reach\\s+for\\s+|get\\s+out\\s+)?(?:the\\s+|a\\s+|an\\s+)?' + esc + '\\b'
+    );
     // Clause by clause, so one sentence — "no skillet needed, use the
     // baking sheet you already have" — can turn down the skillet without
     // turning down the baking sheet standing beside it.
@@ -7659,11 +7671,13 @@
       // scale — it is a rack position or a typo, and either way not
       // something to print as an instruction.
       if (temp < 40) continue;
-      // No unit written is the ordinary case. 250 is the split nobody
-      // cooks either side of by accident: an oven at 180 is Celsius, an
-      // oven at 400 is Fahrenheit.
-      var unit = m[2] ? m[2].toUpperCase() : (temp >= 250 ? 'F' : 'C');
-      return 'Oven at ' + temp + '°' + unit;
+      // The unit is printed only when the step WROTE one. It used to be
+      // inferred from the number (>=250 reads as Fahrenheit), which is a
+      // good guess and still a guess — and this is the section whose whole
+      // rule is that it never says a thing nobody wrote. "Oven at 200°" is
+      // exactly what the recipe said, and a cook who wrote 200 knows which
+      // scale they meant.
+      return 'Oven at ' + temp + '°' + (m[2] ? m[2].toUpperCase() : '');
     }
     return '';
   }
@@ -7759,7 +7773,7 @@
           ? '<div class="cook-serves" data-idx="' + idx + '" data-recipe="' + escapeHtml(m.meal || '') + '" data-base="' + m.default_servings + '">' +
               '<span class="cook-serves-label">Serves</span>' +
               '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="-1" aria-label="Fewer servings">&minus;</button>' +
-              '<span class="cook-serves-count" id="cook-serves-' + idx + '">' + m.default_servings + '</span>' +
+              '<span class="cook-serves-count" id="cook-serves-' + idx + '">' + cookServesShown(m) + '</span>' +
               '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="1" aria-label="More servings">+</button>' +
             '</div>'
           : '') +
@@ -8210,6 +8224,9 @@
       // screen where the ingredients are read off, so it is the one place
       // the number has to be right in front of them.
       if (meal.covers_note && meal.servings) chips.push('for ' + meal.servings);
+      // (meal.servings is kept in step with the stepper by
+      // cookApplyServesOverride — a chip saying "for 6" over a stepper
+      // saying 7 was the same dish contradicting itself on one screen.)
       // The side that fills out this plate, named before its "Alongside"
       // steps are reached at the bottom of the list.
       if (meal.sides_label) chips.push(meal.sides_label);
@@ -8220,7 +8237,7 @@
     // Newsreader italic, at most once per screen (DESIGN_SYSTEM §3) and
     // only on Before you start: it carries a real fact about the cook —
     // the batch first, because it explains the quantities under it.
-    var note = onPrep ? (meal.covers_note || meal.advance_prep_notes || meal.reasoning || '') : '';
+    var note = onPrep ? (cookBatchNote(meal) || meal.advance_prep_notes || meal.reasoning || '') : '';
 
     return '<div class="cook-hero' + (onPrep ? '' : ' cook-hero-slim') + '">' +
       '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
@@ -8308,7 +8325,7 @@
             'data-recipe="' + escapeHtml(meal.meal || '') + '" data-base="' + meal.default_servings + '">' +
             '<span class="cook-serves-label">Serves</span>' +
             '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="-1" aria-label="Fewer servings">&minus;</button>' +
-            '<span class="cook-serves-count" id="cook-serves-' + idx + '">' + meal.default_servings + '</span>' +
+            '<span class="cook-serves-count" id="cook-serves-' + idx + '">' + cookServesShown(meal) + '</span>' +
             '<button type="button" class="cook-serves-btn" data-cook="serves" data-idx="' + idx + '" data-delta="1" aria-label="More servings">+</button>' +
           '</div>'
         : '') +
@@ -8495,16 +8512,18 @@
     '</div>';
   }
 
-  // The dock is sticky, so it floats OVER the foot of the body until the
-  // content runs out — and the body is taller than the scrollport on a
-  // phone, so "it simply comes to rest at the bottom" was only ever true
-  // of a short screen. Measured at 390x780 with the coaching row up, the
-  // scrollport is 459px and THIRTEEN of them were body: two of three
-  // ingredients and the whole Pans and kit section sat behind the dock at
-  // first paint. The body needs a foot the size of the dock, and the dock
-  // is measured rather than guessed because its height changes with the
-  // stage (one quiet link, two, or none) and with wrapping at small
-  // widths.
+  // Gives the body a foot the size of the dock. Measured rather than
+  // guessed, because the dock's height changes with the stage (one quiet
+  // link, two, or none) and with wrapping at small widths.
+  //
+  // Honest about what this is: a sticky bottom:0 last child already comes
+  // to rest at the end of the scroll, so the ticklist was never
+  // unreachable without it — occluded-at-max-scroll measured 0 both with
+  // and without. What it buys is comfort at 390px, where the scrollport is
+  // 459 with the coaching row up: the last rows clear the bar earlier on
+  // the way down, and a row ends with a gap instead of flush against its
+  // edge. The bug that was real is the desktop one — see .cook-body's
+  // padding in the 1100px block, where a shorthand had been zeroing this.
   function wireCookDock(view) {
     var focus = view.querySelector('.cook-focus');
     var dock = focus && focus.querySelector('.cook-dock');
@@ -8841,41 +8860,71 @@
   // Live re-scale without a plan reload. Non-numeric quantities ("a pinch",
   // "to taste") cannot scale mathematically, so the backend leaves those
   // alone and names them in unscaled_items rather than guessing.
-  // Rescaling writes into cookState, not into the DOM (fixed 2026-09-10).
+  // ---------- The cook's own serving count ----------
+  // Three separate things went wrong here and they are one mechanism.
   //
-  // It used to reach for #cook-ings-N and #cook-getout-N and rewrite their
-  // innerHTML, leaving cookState.data untouched. That was survivable while
-  // the stepper lived on one screen that nothing re-rendered. It stopped
-  // being survivable the moment cooking became three stages: every stage
-  // change calls renderCook(), which rebuilds from cookState.data — so a
-  // cook who set Serves 6 on Before you start was handed "1 Carrots" one
-  // tap later, silently, and got Serves 2 back when they stepped back.
-  // Writing the scaled amounts onto the meal is what makes all three
-  // stages agree, and it fixes the "N of M out" count for free, since that
-  // is counted by the renderer rather than patched in beside it.
+  // It used to write only to the DOM (#cook-ings-N, #cook-getout-N) and
+  // leave cookState alone — survivable while the stepper sat on one screen
+  // nothing re-rendered, fatal once every stage change calls renderCook()
+  // and rebuilds from that state.
   //
-  // Ticks survive it because they are filed under the ingredient's NAME
-  // (cookIngTickId) and a rescale only ever changes the quantity in front
-  // of it.
+  // Then it read the current count off `meal.default_servings`, which only
+  // moves when a response lands, so three fast taps all counted from the
+  // same number and produced one increment out of three requests, and a
+  // fast +/- left the winner to whichever reply arrived last. The count is
+  // now advanced on the meal AT TAP TIME (`serves_target`), and each
+  // request carries a sequence token so a reply that has been superseded
+  // is dropped instead of racing.
   //
-  // Known and deliberate: a later load (loadKitchen, or a chat turn tagged
-  // tab:'kitchen') refetches the view and the household's own servings win
-  // again. The server is the truth about how many people are eating; this
-  // is a cook overriding it for one session at the counter.
+  // And an ordinary tab switch threw the whole thing away: loadKitchen
+  // refetches, the household's own servings come back, and a cook holding
+  // the pan is silently returned to 3. The choice is kept for the page's
+  // life in cookState.serves, keyed by the DISH rather than by its place
+  // in the list, and re-applied by cookApplyServesOverride on every render
+  // — so a load, a write response and a tab switch all leave it standing.
+  // It is not sent to the server and does not outlive the page: this is a
+  // cook overriding tonight at the counter, not a change to who is eating.
+  function cookServesShown(m) {
+    if (!m) return null;
+    return m.serves_target != null ? m.serves_target : m.default_servings;
+  }
+
+  // Re-apply the cook's choice over whatever the server just handed back.
+  // Runs on every render, which is what makes it survive a refetch.
+  function cookApplyServesOverride(meals) {
+    (meals || []).forEach(function (m) {
+      var o = cookState.serves[cookMealKey(m)];
+      if (!o) return;
+      m.ingredients = o.ingredients;
+      m.default_servings = o.servings;
+      m.unscaled_items = o.unscaled_items;
+      m.serves_overridden = true;
+      // A batch card's "for 6" chip is the number being cooked, so it
+      // follows the cook. Its covers_note does NOT — see cookBatchNote.
+      if (o.was_batch) m.servings = o.servings;
+    });
+  }
+
   async function cookStepServings(el) {
     var idx = parseInt(el.getAttribute('data-idx'), 10);
     var meal = (cookState.data && (cookState.data.meals || [])[idx]) || null;
     var wrap = el.closest('.cook-serves');
     if (!meal || !wrap) return;
     var delta = parseInt(el.getAttribute('data-delta'), 10);
-    var current = parseInt(meal.default_servings, 10) ||
+    var current = parseInt(cookServesShown(meal), 10) ||
       parseInt(wrap.getAttribute('data-base'), 10) || 1;
     var next = Math.max(1, current + delta);
     if (next === current) return;
 
-    // The number moves on the tap and the amounts follow when the scale
-    // comes back — the refresh policy's "the common case never waits",
-    // and the reason this isn't simply a render.
+    // On the meal immediately, so the next tap in the same second counts
+    // from here and not from the number the last reply happened to leave.
+    meal.serves_target = next;
+    var token = (cookState.servesSeq = (cookState.servesSeq || 0) + 1);
+    meal.serves_token = token;
+    // The count moves on the tap; the amounts follow when the scale comes
+    // back (the refresh policy's "the common case never waits"). Not a
+    // full render, so the list doesn't redraw with amounts that are one
+    // request behind the number above them.
     var countEl = document.getElementById('cook-serves-' + idx);
     if (countEl) countEl.textContent = next;
     try {
@@ -8883,16 +8932,57 @@
         encodeURIComponent(wrap.getAttribute('data-recipe')) + '&servings=' + next);
       if (!res.ok) throw new Error('scale failed');
       var data = await res.json();
-      meal.ingredients = data.scaled_ingredients || [];
-      meal.default_servings = next;
-      meal.unscaled_items = data.unscaled_items || [];
+      // A reply for a count the cook has already tapped past: drop it. Two
+      // requests are in flight after a fast +/- and the wrong survivor is
+      // how the screen ends up on a number nobody chose.
+      if (meal.serves_token !== token) return;
+      cookState.serves[cookMealKey(meal)] = {
+        servings: next,
+        ingredients: data.scaled_ingredients || [],
+        unscaled_items: data.unscaled_items || [],
+        // Remembered so the override knows whether this card's "for N"
+        // chip is a batch size that should follow it.
+        was_batch: !!meal.covers_note,
+        planned_for: cookState.serves[cookMealKey(meal)]
+          ? cookState.serves[cookMealKey(meal)].planned_for
+          : (parseInt(meal.servings, 10) || parseInt(meal.default_servings, 10) || null)
+      };
+      meal.serves_target = null;
+      cookApplyServesOverride([meal]);
       renderCook();
     } catch (err) {
+      if (meal.serves_token !== token) return;
       // Put the number back rather than leaving the screen claiming a
       // count the amounts underneath it don't match.
-      if (countEl) countEl.textContent = current;
+      meal.serves_target = null;
+      if (countEl) countEl.textContent = meal.default_servings;
       showToast('Couldn’t rescale that just now — try again.');
     }
+  }
+
+  // What a batch card says under its headline once the cook has set their
+  // own amount. covers_note is the server's sentence and it NAMES A
+  // SERVINGS COUNT ("Cooking for 6 — enough for Thursday and Friday"), so
+  // the moment the cook rescales it is stating a number that is no longer
+  // true, 100px under a stepper saying otherwise. The NIGHTS are still the
+  // plan, so they are said again from meal.covers — the dates themselves,
+  // not a re-worded sentence — and the caution is added only when the cook
+  // has gone BELOW what the batch was sized for, which is the only
+  // direction that can leave one of those nights short.
+  function cookBatchNote(meal) {
+    if (!meal.serves_overridden) return meal.covers_note || '';
+    var days = ((meal.covers || []).map(function (c) {
+      return c.date ? dayName(c.date, { weekday: 'long' }) : '';
+    })).filter(Boolean);
+    if (!days.length) return '';
+    var list = days.length === 1
+      ? days[0]
+      : days.slice(0, -1).join(', ') + ' and ' + days[days.length - 1];
+    var o = cookState.serves[cookMealKey(meal)] || {};
+    var short = o.planned_for && cookServesShown(meal) < o.planned_for;
+    return short
+      ? 'This batch is also meant for ' + list + ' — check it still stretches.'
+      : 'This batch is also meant for ' + list + '.';
   }
 
   // "Eyeball these — they don't scale automatically." Rendered from the

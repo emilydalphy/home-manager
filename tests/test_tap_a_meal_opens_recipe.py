@@ -259,6 +259,11 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         # stepper, so it only ever renders the empty string — which is the
         # point of asserting below that it gains no control.
         + _extract("cookUnscaledHtml") + "\n"
+        # ...and the serving count is read through one helper now, because
+        # the cook's own count lives beside the meal's while a rescale is in
+        # flight. The plain frame renders no stepper at all, which is the
+        # point of the assertions below.
+        + _extract("cookServesShown") + "\n"
         + _extract("cookBackLabel") + "\n"
         + _extract("cookFocusEndHtml") + "\n"
         + _extract("cookStepLi") + "\n"

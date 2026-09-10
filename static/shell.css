@@ -4548,8 +4548,14 @@ html, body {
 }
 
 /* ---------- Sections ---------- */
-/* The foot is the height of the sticky dock (set by wireCookDock), so the
-   last row of a ticklist can always be scrolled clear of it. 0 when there
+/* A foot the height of the sticky dock (measured by wireCookDock), so the
+   end of a ticklist clears it with room rather than stopping flush under
+   it. Worth being exact about what this does and doesn't do: a sticky
+   bottom:0 last child already comes to rest at the end of the scroll, so
+   nothing was ever UNREACHABLE without it — measured on both builds,
+   occluded-at-max-scroll was 0 either way. What it buys is comfort: the
+   last rows clear the bar earlier while scrolling, and there is a
+   guaranteed gap instead of a row ending exactly at its edge. 0 when there
    is no dock — the reheat and prep-session screens share this class. */
 .cook-body {
   padding: 12px 20px calc(var(--cook-dock-h, 0px) + 8px);
@@ -5058,7 +5064,17 @@ span.cook-week-name { cursor: default; }
   .prefs-gear-row { padding: 12px 28px 0; }
   .cook-hero { padding: 18px 28px; }
   .cook-hero-headline { font-size: 38px; }
-  .cook-body { padding: 16px 28px 0; }
+  /* padding-block/-inline, never the shorthand: `padding: 16px 28px 0`
+     zeroed the bottom here, which switched the dock's foot off on desktop
+     entirely — --cook-dock-h was still 123px and the dock was still
+     sticky, so the whole point of it stopped applying at exactly the width
+     nobody had measured. The design system's own gutter rule warns about
+     this shorthand for the same reason. */
+  .cook-body {
+    padding-inline: 28px;
+    padding-top: 16px;
+    padding-bottom: calc(var(--cook-dock-h, 0px) + 8px);
+  }
   .cook-voice, .cook-attention { margin-left: 28px; margin-right: 28px; }
 }
 

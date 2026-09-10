@@ -314,6 +314,72 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — Six more on the cook journey, and two of them are
+  corrections to what the last two entries claimed. Branch
+  `overnight/cook-journey-step-by-step`, second review round.**
+  **The tests for the servings blocker did not guard it.** The two headline
+  ones hand-mutated `meal.ingredients` and then rendered — and the OLD
+  renderers read from the meal too, so both passed on the broken commit;
+  the only real guard was `assert "innerHTML" not in fn`, which a rewrite
+  poking `el.textContent` would have sailed through. They are renamed and
+  say what they actually cover now, and
+  `test_a_tap_on_the_stepper_is_carried_by_every_stage` drives
+  `cookStepServings` itself against a stubbed `/scale` and then walks the
+  stages — tap, stored state, re-render, which is the path that broke. It
+  fails on `da80b01` and passes on `1aedac0`, which is exactly the shape a
+  guard on that fix should have.
+  **Three fast taps gave one increment.** `current` was read off
+  `meal.default_servings`, which only moves when a reply lands, so every
+  tap in the same second counted from the same number and fired the same
+  request; a fast +/- left the winner to whichever reply arrived last. The
+  count is advanced on the meal AT TAP TIME (`serves_target`) and each
+  request carries a sequence token, so a superseded reply is dropped rather
+  than racing. Measured in Chromium: 2 -> 5 on three taps in one frame,
+  scale calls 3/4/5, and a +/- pair calls 6 then 5 and lands on 5.
+  **An ordinary tab switch threw the rescale away.** Meals then Kitchen
+  runs `loadKitchen` through `refreshKitchenPanel`, and the screen came back
+  at the household's own number while the cook was holding the pan — one
+  tap, no notice. The last entry called that "a later load", which
+  undersells it; it is now carried for the page's life in
+  `cookState.serves`, keyed by the DISH, and re-applied by
+  `cookApplyServesOverride` on every render, so a load, a write response
+  and a tab switch all leave it standing. Not sent to the server and not
+  outliving the page: this is a cook overriding tonight at the counter, not
+  a change to who is eating.
+  **A rescaled batch contradicted itself on one screen.** `+1` on a
+  cook-ahead source gave `Serves 7` under a chip still reading `for 6` and
+  a note still reading "Cooking for 6 — enough for Thursday, Friday, and
+  Saturday". The chip IS the number being cooked, so it follows the cook
+  (`meal.servings` moves with the override). The note is the server's
+  sentence and it names a count, so it goes — and the NIGHTS are said again
+  from `meal.covers`, the dates themselves rather than a re-worded
+  sentence: "This batch is also meant for Friday and Saturday", plus
+  "— check it still stretches" only when the cook has gone BELOW what the
+  batch was sized for, which is the only direction that can leave a night
+  short.
+  **The dock's foot was switched off on desktop.** `@media (min-width:
+  1100px)` set `.cook-body { padding: 16px 28px 0 }` — the padding
+  shorthand this repo's own gutter rule warns about — so `--cook-dock-h`
+  was still 123px, the dock was still sticky, and the bottom padding was 0
+  at exactly the width nobody had measured. `padding-inline`/`-block` now,
+  and the test asserts the invariant across EVERY `.cook-body` rule in the
+  file rather than reading the base one, since reading the base one is what
+  let this through.
+  **And the dock claim itself was wrong** — see the correction in the entry
+  above. Nothing was unreachable on either build; the foot is comfort and a
+  guaranteed gap, and the desktop shorthand is the bug that was real.
+  Two nits taken: the oven line no longer prints a unit the step did not
+  write ("Preheat oven to 200" is "Oven at 200°", not an inferred °C — this
+  is the section whose whole rule is that it never says a thing nobody
+  wrote), and `cookKitMentions` also reads "do not use a grill" / "no need
+  for a blender" / "instead of" as refusals. `tests/test_cook_journey.py`
+  grew 7 (48 -> 55); suite 1840 -> 1847. All seven fail on `1aedac0` bar
+  the tap-across-stages one, which fails on `da80b01`, where its bug lived.
+  Verified in Chromium on a throwaway DB at 390x844, 390x780 with the
+  coaching row up, and 1024/1280/1440 wide: the foot is 131px at every
+  desktop width, a batch scaled up and down says one number everywhere, and
+  a tab switch leaves the cook's count alone.
+
 - **2026-09-10 — Five things the cook-journey slice got wrong, on the same
   branch (`overnight/cook-journey-step-by-step`). Found on independent
   review, all reproduced in a real Chromium, fixed in one pass.**
@@ -338,20 +404,25 @@ why*, not duplicating the diff.
   ingredient's NAME. Deliberate: a later load refetches and the household's
   own servings win again — the server is the truth about how many people
   are eating.
-  (2) **The sticky dock sat on top of Before you start.** `.cook-dock` is
-  opaque and `.cook-body` had no foot, so at 390x780 two of three
-  ingredients and the whole Pans and kit section were behind it at first
-  paint — and on a tab's FIRST THREE VISITS, which is what a new tester
-  sees, the coaching row shrinks the scrollport to 459 and thirteen pixels
-  of body were visible. `wireCookDock` measures the dock and sets
-  `--cook-dock-h`, which `.cook-body` takes as bottom padding; measured
-  rather than guessed because the dock's height changes with the stage (one
-  quiet link, two, or none) and with wrapping. It runs BEFORE the scroll is
-  restored, since it changes the height that scroll position is measured
-  against. **Correcting this file:** the entry below says "verified in a
-  real Chromium at 390px", and the journey was — every stage, both schemes,
-  a real reload. What was not checked was whether the sticky dock covered
-  anything, at any height. Verifying a flow is not verifying a layout.
+  (2) **The dock's foot. NOT the blocker this bullet first called it —
+  corrected 2026-09-10 in the same round that measured it properly.** What
+  was written here was "two of three ingredients and the whole Pans and kit
+  section were behind it at first paint", and that is ordinary sticky-footer
+  behaviour: a sticky `bottom:0` last child comes to rest at the end of the
+  scroll, so nothing was unreachable, and the re-check measured
+  occluded-at-max-scroll as 0 on the build with the fix and on the build
+  without it. `wireCookDock` + `--cook-dock-h` are a real improvement —
+  ~131px of runway, so the last rows clear the bar earlier on the way down,
+  and a guaranteed gap instead of a row ending flush against it — but they
+  are comfort, not a rescue. **The bug in this area that IS real was found
+  in the next round and is in the entry above: a `padding` shorthand in the
+  1100px block zeroed the bottom, so the foot was switched off on desktop
+  entirely.** Kept rather than deleted because a "blocker we fixed" carried
+  forward is how a slice's history stops being true. **Also correcting this
+  file:** the entry below says "verified in a real Chromium at 390px", and
+  the journey was — every stage, both schemes, a real reload. What was not
+  checked was whether the dock covered anything, at any height. Verifying a
+  flow is not verifying a layout.
   (3) **The oven line invented temperatures.** It asked for "oven" plus a
   heating word plus any three-digit number anywhere in the step, and "set
   aside" satisfies the heating word — so a meat-probe target ("roast until
