@@ -118,8 +118,16 @@ def test_both_of_a_day_s_snacks_come_back_in_a_stable_order():
     assert day["snack"] == "Apple slices"
 
 
-def test_the_menu_view_carries_a_day_s_slots_in_eating_order():
-    """The day-by-day view is built from the same rows, and reads the same."""
+def test_the_menu_view_puts_every_slot_of_a_scrambled_day_under_its_own_name():
+    """
+    Named for what it can actually catch. The day dict's KEY order comes
+    from _build_day_based_menu's own dict literal, not from the query, so
+    this one cannot fail on an alphabetical regression however the rows
+    arrive — it is a no-clobber guard, not an ordering guard: each of the
+    four meals lands under its own key and none of them overwrites another.
+    The ordering assertions live in the tests above, which read the flat
+    `meals` list, where the query's order is the only order there is.
+    """
     plan_id = _plan()
     _scrambled_day(plan_id)
 

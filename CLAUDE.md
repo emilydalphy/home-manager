@@ -317,10 +317,15 @@ why*, not duplicating the diff.
 - **2026-09-10 — A day printed dinner before lunch, because `slot` is a TEXT
   column. Branch `overnight/day-slot-order`.** `get_weekly_plan` ended
   `ORDER BY mpe.date ASC, mpe.slot ASC`, which is ALPHABETICAL — breakfast,
-  dinner, lunch, snack — so every day this function feeds (the assistant's
-  own read of the week, and the `menu` view behind it) read as a sorted list
-  rather than a day. The order was already written down in `DAY_SLOTS`; the
-  query never asked for it. New `weekly_plan.slot_order_sql(column)` builds
+  dinner, lunch, snack. **Where it was actually visible** (measured against
+  `main`, not assumed): the flat `meals` list — the assistant's own read of
+  the week — and the two Kitchen renderers that walk it unsorted,
+  `kitchenTodayRows` and `cookRestOfWeekHtml`. NOT the `menu` day dict,
+  whose key order comes from `_build_day_based_menu`'s own dict literal and
+  already read correctly; and not `cookTonightIndex` /
+  `cookTomorrowFocusTarget`, which had each grown a private `COOK_SLOT_ORDER`
+  to work around this. The order was already written down in `DAY_SLOTS`;
+  the query never asked for it. New `weekly_plan.slot_order_sql(column)` builds
   the ORDER BY `CASE` from that tuple, so a slot added there is added
   everywhere at once, and an unknown slot sorts LAST rather than
   disappearing. `mpe.id` is the last word in both queries because a day can
@@ -337,9 +342,13 @@ why*, not duplicating the diff.
   into `dinner`, and now that such a slot always arrives last it would have
   overwritten a real dinner (before, whether it won depended on its own
   spelling — 'brunch' lost, 'elevenses' won), so the real dinner is
-  protected explicitly. `tests/test_day_slot_order.py` is the guard, 7 tests
-  built on a day inserted in a deliberately scrambled order; 5 of them fail
-  on the pre-fix code. 1736 -> 1743.
+  protected explicitly. Two sorts of the same class are knowingly left
+  alone, out of this card's scope but worth a line: `leftovers.py`'s
+  `targets.sort(key=(date, slot))`, which feeds the `covers_note` sentence,
+  and `cook_ahead.py:202`. `tests/test_day_slot_order.py` is the guard,
+  7 tests built on a day inserted in a deliberately scrambled order; 5 of
+  them fail on the pre-fix code (the other two are no-regression guards and
+  say so in their own docstrings). 1736 -> 1743.
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,
