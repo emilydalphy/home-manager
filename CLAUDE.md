@@ -345,6 +345,18 @@ why*, not duplicating the diff.
     what a rendering test cannot see. A `showToast` naming the day rides
     with it, because the tap leaves work behind and Review renders an open
     slot as the bare words "Your call".
+    **It counts breakfast, lunch and dinner, and NOT snacks — so "the button
+    keeps counting" is true of three slots out of four.** `countOpenSlots`
+    and `approveWithOpenLabel` iterate `WEEK_SLOTS`, which is deliberately
+    the three real meals (see the `meals-renders-snacks` entry: a snack must
+    never be counted as a cook or an open slot). That scope predates this
+    branch and is not changed here — but this branch adds the SNACKS
+    stepper, which makes an open snack one tap away, so the gap is newly
+    reachable: drop a day off a snack and "Which days" says `SNACK 2 · Your
+    call` while the button still says "Approve and build my shopping list".
+    The screen knows and the button does not. Widening the count is Emily's
+    call, not a change to smuggle in under a bug fix, because `WEEK_SLOTS`
+    is load-bearing in four other readers.
   - **A chain SOURCE is refused rather than dropped.**
     `_unlink_leftover_target` covers the target side only, so taking away a
     night that was cooked double left the night it fed holding a real recipe
