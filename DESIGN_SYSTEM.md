@@ -126,7 +126,8 @@ Three faces, each with exactly one job (`--font-display`, `--font-body`, `--font
 
 - **Bricolage Grotesque** (display) — every headline, screen title, and button label. Always 700, always tightened (tracking runs from ‑0.038em at hero size down to ‑0.02em at button size).
 - **Figtree** (body/interface) — everything else: body copy, list rows, chips, navigation, all uppercase eyebrows. Full 400–800 weight range in use.
-- **Newsreader italic** (accent) — 17px, 400 weight, *exactly one line per screen, in italic*. It's the brand's exhale; two lines and it becomes a serif brand instead of an accent. This is the "house line" — a fact stated the way a person would say it aloud ("on the table by a quarter past seven"), never a line that could appear in a project-management tool.
+- **Newsreader italic** (accent) — 17px, 400 weight. For a line that carries a real fact, said the way a person would say it aloud ("on the table by a quarter past seven") — never a line that could appear in a project-management tool. **At most one per screen, and most screens should have none.** Two lines and it becomes a serif brand instead of an accent.
+  *Changed 2026-09-09 (Emily, Tier 2).* This used to read *"exactly one line per screen — the brand's exhale"*, and a required flourish is a flourish somebody has to invent: screens ended up carrying italic lines that restated what was already above them ("Nine dishes, and the whole week is fed"). Her instruction, reviewing the Review-step mockups: *"get rid of the useless italics text... as a new rule don't add useless fluff text."* The face is still available; the quota is gone. If a screen has nothing worth saying this way, it says nothing.
 
 Eyebrows are the only uppercase text in the system: 10px / 800 / 0.13–0.18em tracking, `--ink-muted` colored.
 
@@ -136,7 +137,7 @@ Scale reference (size / weight / tracking → where):
 - 30px/700/1.05 line-height/‑0.035em — greeting
 - 21px/700/‑0.028em — card headline (`h2`)
 - 17px/700/‑0.02em — button label, `h3`/card title
-- 17px/400 italic — the one accent line
+- 17px/400 italic — the accent line, on the screens that have earned one
 - 19px/800 — active day number; 16px/700 — day number
 - 15px/600 — list rows, placeholder text
 - 14px/600 — tile body copy; 14px/700 — in-card button label
@@ -211,7 +212,11 @@ Pomona learns from what a household does — this section is how it's allowed to
 - Warm, first-person, concise — and a little playful, especially in titles (Emily, 2026-09-05). State the thing, then soften it — never the reverse, and never at length.
 - Encouraging, never sarcastic or deadpan. A joke at the user's expense, or a flat/robotic aside, isn't playful — it's the opposite of kind.
 - Exclamation marks and emoji are allowed, used sparingly. Rule of thumb: at most one per screen. Never in error or safety copy — that copy stays calm and plain, no exceptions (see the calm-in-trouble rule below, which still governs).
-- Every word earns its place — Pomona doesn't add copy for the sake of tone or personality. If a line can be cut without losing meaning, cut it.
+- **Every word earns its place — and this one is a hard rule, not a preference** (Emily, 2026-09-09: *"as a new rule don't add useless fluff text"*). Pomona doesn't add copy for the sake of tone or personality. If a line can be cut without losing meaning, cut it. Three failures to watch for, all of which shipped before she caught them:
+  - **Restating the screen.** A subtitle that says in a sentence what the content below says in a list. If the reader can already see it, don't narrate it.
+  - **Filling a slot.** Copy written because a template has a place for a subtitle, an accent line or a reassurance. An empty slot is a fine outcome; see the italic accent line in §3, which used to be mandatory and no longer is.
+  - **Explaining what the label already says.** A button reading "Approve and build my shopping list" needs no line under it explaining that approving builds the shopping list.
+  The test: delete the line. If nothing is lost, it was never doing anything. Prefer a shorter true thing to a longer warm one — the warmth is in the accuracy.
 - Never promises a feature the app doesn't do, and never pre-announces what's coming. Describe only what's true right now — enthusiasm doesn't get to write checks the product can't cash.
 - **Calm and reassuring, never cheery** (Emily, 2026-09-04) — this is about trouble, not tone in general: when something's wrong, reassurance comes from showing the thing is handled — a problem is always stated plainly and paired with its way out in the same breath — never from exclamation marks or enthusiasm. Keep stakes low and reversible where true ("nothing lost," "easy to change back").
 - Time as a person would say it ("on the table by a quarter past seven"), not a timestamp ("Est. ready 7:15 PM").

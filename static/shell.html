@@ -241,13 +241,23 @@
 
   <!-- Approving the week: who is here? There is no per-person login in
        this app, so with two adults on record this one tap is the only
-       honest way to put a name on the approved receipt — and it doubles as
-       the confirm step for the action that builds the shopping list. Skipped
-       entirely for a household with fewer than two adults. -->
+       honest way to put a name on the week — and it doubles as the confirm
+       step for the action that builds the shopping list. Skipped entirely
+       for a household with fewer than two adults.
+
+       The note below used to promise "so the other of you knows who settled
+       it". Both surfaces that showed the name — the "✓ APPROVED BY {NAME}"
+       line and "{Other adult} has been told the week is settled." — were
+       removed by the flows-3 rework (2026-09-08), so nothing on screen
+       displays approved_by today. The copy now claims only what is true:
+       the name is recorded. It also no longer says "the other of you",
+       which was wrong for any household with three adults — the picker
+       lists all of them. Put the promise back only alongside a surface
+       that keeps it. -->
   <div id="approve-who-scrim" hidden></div>
   <div id="approve-who-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="approve-who-title">
     <h2 class="reset-title" id="approve-who-title">Who&rsquo;s approving?</h2>
-    <p class="reset-note" id="approve-who-note">I&rsquo;ll put your name on the week so the other of you knows who settled it.</p>
+    <p class="reset-note" id="approve-who-note">I&rsquo;ll put your name on the week, so it&rsquo;s on record who settled it.</p>
     <div class="approve-who-options" id="approve-who-options"></div>
     <button type="button" class="dialog-cancel-link" id="approve-who-cancel">Not just yet</button>
   </div>

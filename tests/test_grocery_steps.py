@@ -190,11 +190,27 @@ def test_two_rows_of_the_same_thing_get_one_quiet_line():
     _in(".gro-dupe", SHELL_CSS, "its style", "shell.css")
 
 
-def test_the_unsorted_line_says_a_number():
-    """`unsorted` is the array of rows; the badge it points at says a count,
-    so this line has to say the same count and not "[object Object],…"."""
-    _in("unsorted.length + ' TO SORT above", SHELL_JS, "the unsorted count in copy", "shell.js")
-    _not_in("unsorted + ' TO SORT above", SHELL_JS, "the array concatenated into copy", "shell.js")
+def test_the_unsorted_line_is_gone_rather_than_repaired():
+    """
+    This test used to guard a line reading "Everything on the list still
+    needs a store — tap N TO SORT above", and specifically that it said
+    `unsorted.length` rather than `unsorted`, which would have printed
+    "[object Object],…" into the copy.
+
+    That line is GONE as of 2026-09-09 (Emily's call), so the assertion is
+    inverted rather than deleted — per this file's own rule. The line was
+    correct about its number and wrong about its existence: for a household
+    with no store named it pointed at a badge that opened a step with
+    nothing to sort into, while the items themselves stayed off screen. The
+    fix shows the items; see the no-store tests at the end of this file.
+
+    The lesson the old test encoded still stands anywhere a count reaches
+    copy: pass the length, never the array.
+    """
+    _not_in("TO SORT above", SHELL_JS, "the sort nag", "shell.js")
+    # And the count that IS still in copy — the badge's own — stays a number.
+    _in("badge.textContent = unsorted + ' TO SORT';", SHELL_JS,
+        "the badge count (unsorted is already a number here)", "shell.js")
 
 
 def test_open_the_list_lands_on_the_list():
@@ -329,3 +345,63 @@ def test_the_finish_toast_is_about_the_trip_not_a_stop():
     _not_in("showToast('Stop saved", SHELL_JS, "the old per-stop toast", "shell.js")
     # Calm, not cheery (DESIGN_SYSTEM.md §8): no exclamation mark.
     assert "Trip finished!" not in SHELL_JS, "The finish line takes no exclamation mark."
+
+
+# --- a household with no store named (Emily's call, 2026-09-09) -----------
+#
+# The bug this closes: LIST drew only store cards, and an item with no store
+# belonged to no card. A household that tapped "One list is fine" therefore
+# had an invisible grocery list — the header counted "3 things" over an empty
+# screen, and answering "Any" in SORT moved the items from one invisible
+# bucket ("not sorted") to another ("sorted, no store"), at which point LIST
+# said "Nothing on the list yet" over three real rows. Naming any store fixed
+# it instantly, which is why every earlier test — all of which name one —
+# missed it entirely.
+
+def test_a_list_with_no_stops_still_renders_its_items():
+    """The union of both Unassigned halves, drawn as one plain section."""
+    _in("function groLooseItems(", SHELL_JS, "the no-store item list", "shell.js")
+    _in("function groLooseCardHtml(", SHELL_JS, "the section that draws them", "shell.js")
+    _in("var loose = groLooseItems(data);", SHELL_JS, "LIST reading the union", "shell.js")
+    _in("html += groLooseCardHtml(data, loose);", SHELL_JS, "LIST rendering it", "shell.js")
+
+
+def test_the_empty_line_is_gated_on_the_union_not_on_unsorted_alone():
+    """"Nothing on the list yet" over a full list was the whole defect: the
+    old branch asked about `unsorted`, which excludes anything answered
+    "Any", so a finished sort emptied the screen."""
+    _in("if (!stops.length && !loose.length) {", SHELL_JS,
+        "the empty state gated on the union", "shell.js")
+    _not_in("if (!stops.length && !unsorted.length) {", SHELL_JS,
+            "the old empty-state gate", "shell.js")
+
+
+def test_the_sort_nag_is_gone_because_the_items_are_on_screen_now():
+    """It pointed at a badge that, for a store-less household, opened a step
+    with nothing to sort into. Replaced by showing the things themselves."""
+    _not_in("Everything on the list still needs a store", SHELL_JS,
+            "the sort nag", "shell.js")
+
+
+def test_sorting_is_only_offered_once_there_is_a_store_to_sort_into():
+    """The badge would otherwise count things that are already fully on
+    screen, and open a step whose only possible answer is "Any"."""
+    _in("groceryState.usualStores.length > 0;", SHELL_JS,
+        "the badge's store gate", "shell.js")
+
+
+def test_the_no_store_section_has_no_heading_and_a_key_that_cannot_be_a_store():
+    """No avatar and no name, because there is no store to name — and its
+    expanded-state key is bracketed so it can never collide with a household
+    that really does shop somewhere called "Everything"."""
+    _in("var GRO_LOOSE_KEY = '<no-store>';", SHELL_JS, "the reserved key", "shell.js")
+    # It lands in an HTML attribute, so it goes through the same escape every
+    # store name does.
+    _in("escapeHtml(GRO_LOOSE_KEY)", SHELL_JS, "the key being escaped", "shell.js")
+    # The heading belongs to groStoreCardHtml alone.
+    loose = SHELL_JS[SHELL_JS.index("function groLooseCardHtml("):SHELL_JS.index("function groStoreCardHtml(")]
+    assert "gro-card-head" not in loose, (
+        "The no-store section drew a store heading. It has no store to name — "
+        "that is the entire difference between it and groStoreCardHtml."
+    )
+    assert "gro-store-avatar" not in loose, "Same: no avatar without a store."
