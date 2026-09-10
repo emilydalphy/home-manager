@@ -490,7 +490,9 @@ def test_only_the_assistants_side_is_rewritten():
     assert "if (role === 'assistant') linkifyDishNamesIn(bubble);" in fn
     # ...and a tap closes the sheet and opens the recipe, the same shape an
     # action card's View already has.
-    assert "closeAskSheet();" in fn and "openRecipeFor(target," in fn
+    assert "openDishFromChat(btn.getAttribute('data-dish'));" in fn
+    door = _extract("openDishFromChat")
+    assert "closeAskSheet();" in door and "openRecipeFor(target," in door
 
 
 # ------------------------------------- what review found, and what fixed it
@@ -534,8 +536,7 @@ def test_a_link_opens_the_dish_it_names_even_after_the_index_is_rebuilt():
     # The label and the target still name the same dish, and the target is
     # the CURRENT plan's entry for it — not the one recorded when the bubble
     # was drawn, and certainly not somebody else's.
-    assert got["opens"]["title"] == "Chicken Tacos"
-    assert got["opens"]["entryId"] == 33
+    assert got["opens"] == {"title": "Chicken Tacos"}
 
 
 @_needs_node
@@ -549,10 +550,10 @@ def test_a_dish_that_has_left_the_plan_opens_nothing_at_all():
         + "blank: dishTargetForName('') }));\n"
     )
     assert got["gone"] is None and got["blank"] is None
-    # ...and the click handler says so rather than leaving a dead tap.
-    fn = _extract("buildAskMessageEl")
-    assert "dishTargetForName(btn.getAttribute('data-dish'))" in fn
-    assert "not on the plan any more" in fn
+    # ...and the door says so rather than leaving a dead tap.
+    door = _extract("openDishFromChat")
+    assert "dishTargetForName(name)" in door
+    assert "not on the plan any more" in door
 
 
 @_needs_node
@@ -736,7 +737,113 @@ def test_a_chat_change_to_a_week_nobody_has_opened_still_updates_the_index():
     the index would go on naming last week's dinners in every reply."""
     fn = _extract("refreshStaleTabsFromActions")
     assert "refreshDishIndex();" in fn
-    assert "/api/week-menu" in _extract("refreshDishIndex")
+    assert "/api/week-menu" in _extract("readDishIndex")
+    assert "readDishIndex()" in _extract("refreshDishIndex")
+
+
+# ------------- the hole under the blocker: a real swap, real payloads
+# `swap_meal_in_plan` DELETES the old plan entry and creates a new one, so
+# the entry id a reply's link was built from is ALWAYS a miss afterwards —
+# and `cookResolveFocusIndex`'s next fallback is date + slot with no name
+# check, which lands on whatever dish now occupies that night. Found by a
+# second review, in a real browser, through the app's own write path. The
+# whole point of this test is that nothing here is hand-edited: it plans a
+# week, builds the index from the REAL /api/week-menu shape, runs the REAL
+# swap, and then resolves the link against the REAL cooker view.
+
+def _seed_week_for_swap():
+    """A one-week plan with a different dinner on Monday and Tuesday."""
+    from app import tools
+
+    monday = "2026-09-07"
+    plan = tools.create_weekly_plan(week_start_date=monday)
+    plan_id = plan["weekly_plan_id"] if isinstance(plan, dict) else plan
+    for name in ("Chicken Tacos", "Bean Chili"):
+        tools.add_recipe(name, ingredients=[{"item": "something", "qty": "1"}],
+                         instructions=["Cook it."])
+    tools.plan_meal(monday, "Chicken Tacos", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal("2026-09-08", "Lentil Soup", slot="dinner", weekly_plan_id=plan_id)
+    return plan_id, monday
+
+
+@_needs_node
+def test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish():
+    from app import tools
+
+    plan_id, monday = _seed_week_for_swap()
+
+    # 1. The reply is written, and its link is built from the plan as it
+    #    stands: Chicken Tacos, Monday, dinner.
+    before = tools.get_week_menu()
+    entry_ids_before = sorted(
+        e["entry_id"] for d in before["days"] for e in [d.get("dinner")] if e and e.get("entry_id")
+    )
+
+    # 2. A real swap of that exact night, through the app's own write path.
+    tools.swap_meal_in_plan(plan_id, monday, "Bean Chili", slot="dinner")
+
+    after = tools.get_week_menu()
+    cooker = tools.get_cooker_view()
+    entry_ids_after = sorted(
+        e["entry_id"] for d in after["days"] for e in [d.get("dinner")] if e and e.get("entry_id")
+    )
+    # The premise: the id really is gone, so an id-based match really does
+    # miss. If this ever stops being true the test above it is toothless.
+    assert entry_ids_before != entry_ids_after, "swap_meal_in_plan no longer recreates the entry"
+    monday_dish = [d for d in after["days"] if d["date"] == monday][0]["dinner"]["title"]
+    assert monday_dish == "Bean Chili"
+
+    # 3. What the household taps: the link in the OLD reply, still saying
+    #    Chicken Tacos, resolved and focused by the real front-end pair.
+    got = _run_node(
+        _dish_harness(before)
+        + "var meals = " + json.dumps(cooker.get("meals") or []) + ";\n"
+        + "var cookState = { tonightIdx: 0 };\n"
+        + _extract("cookResolveFocusIndex") + "\n"
+        + "var target = dishTargetForName('Chicken Tacos');\n"
+        + "var idx = target ? cookResolveFocusIndex(meals, target) : null;\n"
+        + "console.log(JSON.stringify({ target: target, "
+        + "opens: (idx === null || idx === undefined) ? null : (meals[idx] || {}).meal }));\n"
+    )
+    # The target carries the NAME and nothing else — no entry id and no
+    # night, so neither of the resolver's earlier fallbacks can fire.
+    assert got["target"] == {"title": "Chicken Tacos"}
+    # ...and so it opens Chicken Tacos or it opens nothing. It must never
+    # open the dish that took that night: the only entry-bearing control on
+    # the screen it lands on is "Mark it cooked".
+    assert got["opens"] != "Bean Chili", (
+        "a chat link opened the dish that replaced the one it named"
+    )
+    assert got["opens"] in (None, "Chicken Tacos")
+
+
+@_needs_node
+def test_a_stale_index_after_a_real_swap_still_cannot_open_another_dish():
+    """The second reproduction: the index itself went stale because a
+    /api/week-menu read was dropped (refreshDishIndex is silent on failure
+    by design). The link is then built from a plan that no longer exists —
+    and must still never open the dish that took that slot."""
+    from app import tools
+
+    plan_id, monday = _seed_week_for_swap()
+    stale = tools.get_week_menu()          # the index the old reply was linkified with
+    tools.swap_meal_in_plan(plan_id, monday, "Bean Chili", slot="dinner")
+    cooker = tools.get_cooker_view()       # ...but the cook screen is current
+
+    got = _run_node(
+        _dish_harness(stale)
+        + "var meals = " + json.dumps(cooker.get("meals") or []) + ";\n"
+        + "var cookState = { tonightIdx: 0 };\n"
+        + _extract("cookResolveFocusIndex") + "\n"
+        + "var idx = cookResolveFocusIndex(meals, dishTargetForName('Chicken Tacos'));\n"
+        + "console.log(JSON.stringify({ opens: (idx === null || idx === undefined) "
+        + "? null : (meals[idx] || {}).meal }));\n"
+    )
+    assert got["opens"] != "Bean Chili"
+    assert got["opens"] in (None, "Chicken Tacos")
+    # ...and the tap re-reads the plan first, so this case says "that's not
+    # on the plan any more" rather than opening a dish nobody is cooking.
+    assert "readDishIndex().then(" in _extract("openDishFromChat")
 
 
 # ---------------------------------------------------------------- the floor

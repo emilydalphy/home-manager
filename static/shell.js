@@ -8955,9 +8955,29 @@
   // answer, not a failure: the plan may have moved on since the reply was
   // written (the dish was swapped out, or it is now on two nights), and a
   // link that opens the wrong meal is worse than one that opens none.
+  //
+  // **It hands back the NAME ONLY, deliberately** (2026-09-10, second
+  // review). Returning the whole `{entryId, date, slot, title}` target the
+  // index holds was still not safe, one level below the fix that put the
+  // name in the markup: a real swap DELETES and RECREATES the plan entry
+  // (`weekly_plan.swap_meal_in_plan`), so the recorded entryId is always a
+  // miss, and `cookResolveFocusIndex`'s NEXT fallback is date+slot with no
+  // name check — which lands on whatever dish now occupies that night.
+  // Reproduced end to end: a link labelled Chicken Tacos opened Bean Chili
+  // after a real swap of that slot, on a screen whose only entry-bearing
+  // control is "Mark it cooked".
+  //
+  // A name-only target skips both earlier branches and goes straight to
+  // the resolver's name match, which compares against the cook card's own
+  // `meal` — so a chat link opens the dish it names or lands on the
+  // Kitchen root, and can never open a different one. The resolver itself
+  // is deliberately NOT changed: Today's rows and Meals' "Cook this" read
+  // the target and the label out of the same payload in one breath, and
+  // their id/date fallbacks are right for them.
   function dishTargetForName(name) {
     var key = String(name == null ? '' : name).trim().toLowerCase();
-    return (key && dishIndex.byName[key]) || null;
+    var hit = key && dishIndex.byName[key];
+    return hit ? { title: hit.title } : null;
   }
 
   function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -8965,11 +8985,35 @@
   // Re-read the plan when something changed it and no screen is going to.
   // Silent on failure: a reply whose dish names stay prose is a smaller
   // problem than a toast about a request nobody asked for.
-  function refreshDishIndex() {
-    fetch('/api/week-menu')
+  function refreshDishIndex() { return readDishIndex(); }
+
+  function readDishIndex() {
+    return fetch('/api/week-menu')
       .then(function (res) { return res.ok ? res.json() : null; })
       .catch(function () { return null; })
-      .then(function (weekMenu) { if (weekMenu) setDishIndex(weekMenu); });
+      .then(function (weekMenu) { if (weekMenu) setDishIndex(weekMenu); return !!weekMenu; });
+  }
+
+  // Opening a dish named in a reply. The index behind that link can be
+  // stale — refreshDishIndex is silent on failure by design, so one
+  // dropped /api/week-menu leaves the reply naming last week's dinners —
+  // and this is a deliberate tap, so it can afford to re-read the plan
+  // first (one local SQLite lookup) rather than act on what it last heard.
+  // A dish that has since left the plan says so instead of opening
+  // something. A failed re-read falls through to the index we have, which
+  // still cannot open a different dish than the one named — it is only the
+  // "this is gone" message that needs the network.
+  function openDishFromChat(name) {
+    var back = currentTabKey();
+    readDishIndex().then(function () {
+      var target = dishTargetForName(name);
+      if (!target) { showToast('That’s not on the plan any more.'); return; }
+      // The sheet closes on the way, exactly as an action card's View
+      // does — at desktop widths closeAskSheet is a no-op and the
+      // conversation stays beside the recipe.
+      closeAskSheet();
+      openRecipeFor(target, { label: 'the chat', tab: back, reopenAsk: true });
+    });
   }
 
   // One run of PLAIN TEXT, split into prose and dish names:
@@ -9278,18 +9322,10 @@
     bubble.querySelectorAll('[data-dish]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         // Resolved from the NAME, against the plan as it stands right now
-        // — never from a position recorded when the bubble was drawn. A
-        // dish that has since been swapped out, or that is now on two
-        // nights, resolves to nothing and this opens nothing; it says so
-        // rather than leaving a tap that looks broken.
-        var target = dishTargetForName(btn.getAttribute('data-dish'));
-        if (!target) { showToast('That’s not on the plan any more.'); return; }
-        // The sheet closes on the way, exactly as an action card's View
-        // does — at desktop widths closeAskSheet is a no-op and the
-        // conversation stays beside the recipe.
-        var back = currentTabKey();
-        closeAskSheet();
-        openRecipeFor(target, { label: 'the chat', tab: back, reopenAsk: true });
+        // — never from a position recorded when the bubble was drawn, and
+        // never carrying that moment's entry id or night either. See
+        // openDishFromChat / dishTargetForName.
+        openDishFromChat(btn.getAttribute('data-dish'));
       });
     });
     wrap.appendChild(bubble);

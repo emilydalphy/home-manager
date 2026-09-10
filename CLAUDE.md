@@ -314,6 +314,59 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — The chat link's target is the dish's NAME AND NOTHING
+  ELSE, because a real swap recreates the entry. Same branch,
+  `tap-a-meal-opens-recipe`, second review.** The fix in the entry below
+  put the dish's name in the markup and re-resolved it at tap time, which
+  was right and was not enough. `dishTargetForName` still handed back the
+  whole `{entryId, date, slot, title}` target the index had recorded, and
+  `cookResolveFocusIndex` tries `entryId` first and then **date + slot with
+  no name check at all**. `weekly_plan.swap_meal_in_plan` DELETES the plan
+  entry and creates a new one, so after any real swap the recorded id is
+  *always* a miss and that unchecked fallback *always* fires — landing on
+  whatever dish now occupies that night. Reproduced end to end in Chromium
+  through the app's own write path (entry 15 -> 29, no hand-edited rows):
+  a reply's link labelled **Chicken Tacos** opened **Bean Chili, Thursday
+  Sep 10**, and the only entry-bearing control on that screen was
+  `Mark it cooked` carrying **id 29** — so the household believes it is
+  ticking the dish it tapped and ticks the one that replaced it.
+  - **The fix is scoped to the chat link, deliberately.**
+    `dishTargetForName` returns `{title}` only, so both of the resolver's
+    earlier branches are unreachable from a chat link and the name match —
+    which compares against the cook card's own `meal` — does the work.
+    `cookResolveFocusIndex` is **not** changed: Today's rows and Meals'
+    "Cook this" read their target and their label out of one payload in
+    one breath, and their id/date fallbacks are correct *for them*. Adding
+    a name check inside the shared date+slot branch would have been a
+    change to every caller's contract to fix one caller's misuse of it.
+  - **A tap now re-reads the plan before it opens anything**
+    (`openDishFromChat` -> `readDishIndex`). `refreshDishIndex` is silent
+    on failure by design, so one dropped `/api/week-menu` leaves a reply
+    naming last week's dinners indefinitely; a deliberate tap can afford
+    one local SQLite lookup. A dish that has left the plan now says so
+    instead of opening a screen for a meal nobody is cooking — which is the
+    lower-severity half of the same report. A failed re-read falls through
+    to the index in hand, which still cannot open a *different* dish; it is
+    only the "this is gone" message that needs the network.
+  - **What is deliberately NOT done:** the cook view is not force-reloaded
+    on the way in. If the index and the cooker view are somehow stale
+    *together*, the screen can still show a dish under its own name that
+    has since left the plan. That fails loudly rather than wrongly —
+    `cooker.check_off_meal` raises `No meal plan entry with id N` for a
+    deleted entry, so nothing else gets ticked — and a reload while a meal
+    is focused would move `cookState.focusIdx`, which is a fresh instance
+    of the exact bug being fixed here. Worth a ticket, not a smuggled
+    change.
+  - **The guard is an integration test, not a source marker**
+    (`test_a_real_swap_cannot_make_a_chat_link_open_the_new_dish` and its
+    stale-index twin): it plans a week, builds the index from the real
+    `get_week_menu` payload, runs the real `swap_meal_in_plan`, and
+    resolves the old reply's link against the real `get_cooker_view` with
+    the screen's own two functions under node. It asserts the entry id
+    really did change first, so it can never go toothless if the swap path
+    stops recreating. Both fail on the previous commit with
+    `AssertionError: 'Bean Chili' != 'Bean Chili'`. Suite 1790 -> 1792.
+
 - **2026-09-10 — Six things review found on `tap-a-meal-opens-recipe`, and
   the blocker among them. Same branch.** An independent reviewer drove the
   branch in a real browser and reproduced all six. Fixed in one pass, on
@@ -333,7 +386,11 @@ why*, not duplicating the diff.
     when it is tapped, so a link either opens the dish it names or opens
     nothing and says so ("That's not on the plan any more."). This is the
     failure `cookResolveFocusIndex` exists to prevent, reached from the one
-    direction that wasn't going through it.
+    direction that wasn't going through it. **That fix was necessary and
+    NOT sufficient** — a second review broke the same invariant through the
+    app's own swap path, one level below it; see the entry above this one.
+    Putting the name in the markup was right; handing the resolver the
+    whole recorded target was still wrong.
   - **A dish on TWO nights is not linked at all.** The index kept the first
     occurrence and dropped the rest, so a reply saying "Chicken Tacos is on
     Saturday" opened Thursday — and cook mode's check-off writes against
@@ -401,6 +458,12 @@ why*, not duplicating the diff.
     week really changed underneath it first, exactly as a real turn does.
     Eight new tests in `tests/test_tap_a_meal_opens_recipe.py`, each of
     which fails on the pre-review commit; suite 1782 -> 1790.
+    **One thing that verification could not have caught**, and should be
+    read as a limit on it: the week was changed by writing to the database
+    directly, so the plan entry kept its id. A real swap DELETES and
+    RECREATES it, which is what let the same invariant break again — see
+    the entry above. **A reproduction that fakes the write is a
+    reproduction of a different bug.**
 
 - **2026-09-09 — A dish name is a link to its recipe, everywhere it
   appears. Branch `overnight/tap-a-meal-opens-recipe`.** Emily, after
