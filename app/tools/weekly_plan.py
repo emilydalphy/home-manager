@@ -2369,8 +2369,27 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # quiet line under it. See coordination._settle / _soft_note.
         "settle": None,
         "soft_note": None,
+        # The candidates for the approval itself — a different question from
+        # other_adults below, and the reason this is a second field rather
+        # than a widening of that one. other_adults answers "who gets TOLD",
+        # which is only knowable AFTER somebody has approved; this answers
+        # "who is about to approve", which is only ever asked BEFORE.
+        # Reading one list as if it were the other is what made the
+        # who's-approving step unreachable: a draft has no approver, so
+        # other_adults was empty, so the picker was skipped and every week
+        # was approved by nobody. (Same shape as WEEK_SLOTS/DAY_SLOTS — one
+        # name was carrying two meanings.)
+        #
+        # Filled in the draft-only block below, and left empty once the week
+        # is approved: there is nothing left to approve. The screen asks only
+        # when there is more than one name (static/shell.js approveWeek) — a
+        # single-adult household has no question to answer.
+        "approving_adults": [],
     }
     if plan["status"] != "approved":
+        approval["approving_adults"] = [
+            p["name"] for p in _coordination.get_household_people()
+        ]
         approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
         try:
             found = _coordination.check_plan_conflicts(plan["weekly_plan_id"])
@@ -2381,17 +2400,23 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         except Exception:
             # The Meals screen must still render if the check itself breaks.
             logger.exception("Conflict check failed for plan %s", plan["weekly_plan_id"])
-    # Every adult but the one who approved — the receipt's "{Other adult}
-    # has been told the week is settled." Empty for a one-adult household,
-    # which is what keeps that sentence from being written at all rather
-    # than written about nobody.
+    # Every adult but the one who approved. Empty for a one-adult household,
+    # and empty when nobody is recorded as having approved: an approval with
+    # no name raises no notification (see get_active_notifications #4, which
+    # requires one), so nobody WAS told — and every plan approved before this
+    # flow existed has a blank approved_by. Listing all the adults there
+    # would put a claim on screen that is simply untrue, to a reader who may
+    # be among those supposedly told.
     #
-    # Also empty when nobody is recorded as having approved. An approval
-    # with no name raises no notification (see get_active_notifications #4,
-    # which requires one), so nobody WAS told — and every plan approved
-    # before this flow existed has a blank approved_by. Listing all the
-    # adults there would put a claim on screen that is simply untrue, to a
-    # reader who may be among those supposedly told.
+    # NOTE (2026-09-09): nothing on screen reads this today. It was the
+    # receipt's "{Other adult} has been told the week is settled." — a line
+    # the 2026-09-08 flows-3 rework deleted along with receiptBodyText and
+    # approvedAtLabel. Kept because the fact is still true and still the
+    # honest answer to "who was told", and because the notification it
+    # describes does fire; but do not read the comment above as describing
+    # something the household currently sees. Its one live consumer used to
+    # be the who's-approving picker, which was reading it for the wrong
+    # question — see approving_adults above.
     approver = (plan["approved_by"] or "").strip()
     approval["other_adults"] = [
         p["name"] for p in _coordination.get_household_people()

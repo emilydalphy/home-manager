@@ -1457,6 +1457,12 @@
   // How many things a store card shows before "+ N more".
   var GRO_CARD_PEEK = 4;
 
+  // The listExpanded key for the no-store section. Not a store name, and it
+  // must never collide with one: a household really could shop somewhere
+  // called "Everything", and the two cards would then share an expanded
+  // state. The angle brackets are illegal in a store name the UI accepts.
+  var GRO_LOOSE_KEY = '<no-store>';
+
   function groAisleColor(section) { return GRO_AISLE_COLORS[section] || 'var(--ink-inactive)'; }
   function groStoreColor(name) {
     // "Any store" is the leftovers bucket, not a stop — it gets the quiet
@@ -1605,6 +1611,15 @@
     var u = data.stores['Unassigned'];
     if (!u) return [];
     return groStoreItems(u).filter(function (it) { return !groceryState.anyStoreIds[String(it.id)]; });
+  }
+  // Everything in the Unassigned bucket, whichever half of the split above
+  // it fell into. LIST needs the union rather than either half: a household
+  // with no stops has to be able to SEE its list, and to that household the
+  // difference between "not sorted yet" and "sorted as Any" is invisible and
+  // uninteresting — both mean "a thing I need to buy, no store attached".
+  function groLooseItems(data) {
+    var u = data.stores['Unassigned'];
+    return u ? groStoreItems(u) : [];
   }
   // Things deliberately marked "Any" this page view — sorted, but with no
   // store of their own. They are not a card on LIST (they have no stop to
@@ -1916,7 +1931,12 @@
     // The badge belongs to LIST — on the deeper steps it would be a second
     // way out of a screen that already has one.
     var unsorted = groUnsorted(data).length;
-    var showBadge = step === 'list' && unsorted > 0 && !groStoresPromptShouldShow();
+    // A household with no store named has nothing to sort INTO — the step
+    // could only ever answer "Any" — and its count would sit above a list
+    // that is already fully on screen. Offer sorting from the moment there
+    // is a store, not before.
+    var showBadge = step === 'list' && unsorted > 0 &&
+      !groStoresPromptShouldShow() && groceryState.usualStores.length > 0;
     badge.hidden = !showBadge;
     if (showBadge) {
       badge.textContent = unsorted + ' TO SORT';
@@ -2003,11 +2023,17 @@
 
     // Nothing to shop, nowhere to shop it: the just-in-time stores card
     // stands in for the store cards, unchanged in behaviour.
-    if (groStoresPromptShouldShow() && (stops.length || unsorted.length)) {
+    // The union, not `unsorted`: an item answered "Any" is still a thing on
+    // the list, and before 2026-09-09 it counted for neither branch below —
+    // so a household that finished sorting saw "Nothing on the list yet"
+    // printed over three real items.
+    var loose = groLooseItems(data);
+
+    if (groStoresPromptShouldShow() && (stops.length || loose.length)) {
       return html + groStoresPromptHtml();
     }
 
-    if (!stops.length && !unsorted.length) {
+    if (!stops.length && !loose.length) {
       if (groceryState.justFinishedTrip) {
         if (groceryState.shopDoneHandoffDismissed) {
           return html +
@@ -2025,13 +2051,21 @@
 
     stops.forEach(function (name) { html += groStoreCardHtml(data, name); });
 
-    // Unsorted things are NOT a section here — they live in SORT, which the
-    // badge above opens. Saying so once beats a card that repeats them.
-    // The badge says a NUMBER, so this line has to say the same number —
-    // `unsorted` itself is the array of rows.
-    if (!stops.length && unsorted.length) {
-      html += '<p class="gro-empty">Everything on the list still needs a store — tap ' +
-        unsorted.length + ' TO SORT above and I’ll take you through them.</p>';
+    // With stops on screen, unsorted things are NOT a section here — they
+    // live in SORT, which the badge above opens, and repeating them would be
+    // two places to read one list.
+    //
+    // With NO stops there is nothing else to read, so they ARE the list.
+    // This used to be a line of copy pointing at the badge, which left a
+    // household reading "3 things" above an empty screen — and for a
+    // household that never named a store, that was the permanent state of
+    // its Grocery tab: sorting had nowhere to sort to, so LIST could never
+    // fill, and answering "Any" only moved the items from one invisible
+    // bucket to another. Emily's call, 2026-09-09: show them as one plain
+    // section with no store heading, so "One list is fine" means what it
+    // says.
+    if (!stops.length && loose.length) {
+      html += groLooseCardHtml(data, loose);
     }
     return html;
   }
@@ -2072,6 +2106,23 @@
           g.map(function (it) { return it.id; }).join(',') + '">Merge</button>' +
       '</p>';
     }).join('');
+  }
+
+  // A store's card minus the head — no avatar, no name, because there is no
+  // store to name. Rows still go through groListRowHtml, so the menu, the
+  // quantity and the tick behave exactly as they do under a stop; the only
+  // thing missing is a heading this household never chose.
+  function groLooseCardHtml(data, items) {
+    var expanded = !!groceryState.listExpanded[GRO_LOOSE_KEY];
+    var shown = expanded ? items : items.slice(0, GRO_CARD_PEEK);
+    var hidden = items.length - shown.length;
+    return '<div class="gro-store">' +
+      shown.map(function (it) { return groListRowHtml(it, data); }).join('') +
+      (hidden > 0
+        ? '<button type="button" class="gro-more-link" data-gro="expand-store" data-store="' +
+            escapeHtml(GRO_LOOSE_KEY) + '">+ ' + hidden + ' more</button>'
+        : '') +
+    '</div>';
   }
 
   function groStoreCardHtml(data, name) {
@@ -6299,13 +6350,16 @@
     // honest way to name one on the receipt is to ask which one is here —
     // a single tap, and it is also the household's confirm step. One adult
     // (or none) needs no question: approve straight away.
-    var people = (data.other_adults || []);
+    //
+    // `approving_adults`, not `other_adults`: the latter is every adult but
+    // the one who ALREADY approved, so on a draft — the only state this
+    // button exists in — it was always empty and this step never once ran.
+    // See get_week_menu, where both fields are set side by side.
+    var people = (data.approving_adults || []);
     var approvedBy = '';
     if (people.length > 1) {
       approvedBy = await askWhoIsApproving(people);
       if (approvedBy === null) return;
-    } else if (people.length === 1) {
-      approvedBy = people[0];
     }
     await submitWeekApproval(panel, data, approvedBy, false);
   }
@@ -10004,17 +10058,43 @@
   // deliberately echoes ASK_HINTS.grocery: that line is grey placeholder
   // text inside the bar, and this is the tappable proof that it does what it
   // says.
+  //
+  // Today's second example carries a name, and it has to be one of THIS
+  // household's. It shipped hardcoded as "Vineeth is out Thursday" — the
+  // developer's own partner — which every beta household then read as an
+  // example about their own week. `example_name` comes from /api/coaching;
+  // until it answers, and for a household with nobody on record yet, the
+  // name-free sentence teaches exactly the same thing.
   var COACH_EXAMPLES = {
-    today: ['What’s next tonight?', 'Vineeth is out Thursday'],
+    today: ['What’s next tonight?', null],
     week: ['Swap Thursday for something lighter', 'Less chicken, more fish this week'],
     grocery: ['Add oat milk and lemons', 'We already have rice'],
     kitchen: ['What can I make with the chicken thighs?', 'I’m short on time tonight']
   };
 
+  // The one example built from household data rather than written down.
+  function coachAwayExample() {
+    var name = coachState && coachState.exampleName;
+    return name ? name + ' is out Thursday' : 'One of us is out Thursday';
+  }
+
+  // COACH_EXAMPLES holds a null where that sentence goes, so the tab's two
+  // chips stay one list in one place; this fills it at render time, when the
+  // name is known.
+  function coachExamplesFor(key) {
+    var prompts = COACH_EXAMPLES[key];
+    if (!prompts) return null;
+    return prompts.map(function (p) { return p === null ? coachAwayExample() : p; });
+  }
+
   var coachState = {
     ready: false,
     householdId: null,
     hasPlan: false,
+    // One of this household's own adults, for Today's "someone is out"
+    // example. Null until /api/coaching answers, and for a household with
+    // no members yet — coachAwayExample() has a name-free sentence for both.
+    exampleName: null,
     // Starts true so nothing can flash before /api/coaching answers: a card
     // that appears and vanishes is worse than one that appears a beat late.
     seen: true
@@ -10099,7 +10179,7 @@
     // Once the household has said something of their own, examples are a
     // lesson they have already passed.
     if (askConversationStarted) return renderAskExamples(null);
-    var prompts = COACH_EXAMPLES[key];
+    var prompts = coachExamplesFor(key);
     if (!prompts) return renderAskExamples(null);
     renderAskExamples(coachCountVisit(key) <= COACH_VISITS_TO_SHOW ? prompts : null);
   }
@@ -10276,6 +10356,7 @@
           coachState.householdId = state.household_id;
           coachState.hasPlan = !!state.has_plan;
           coachState.seen = !!state.coaching_seen_at;
+          coachState.exampleName = state.example_name || null;
         }
         // Whatever tab the app opened on never got counted, because the
         // household wasn't known yet.
