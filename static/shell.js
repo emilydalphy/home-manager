@@ -1200,7 +1200,7 @@
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
-        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
+        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Now', tab: 'today' });
       });
     });
   }
@@ -1306,7 +1306,7 @@
     // "‹ Today" while its action button said "‹ Kitchen", two answers to
     // one meal 200px apart.
     if (target.tab === 'kitchen' && target.cookFocus) {
-      return openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' });
+      return openRecipeFor(target.cookFocus, { label: 'Now', tab: 'today' });
     }
     // The same thing, in the shape moves.py wrote it before 2026-09-08,
     // when cook mode was a state of the Meals tab. A payload cached by the
@@ -1315,7 +1315,7 @@
     // translate it rather than dropping the tap on the plan, where it
     // would silently do nothing.
     if (target.tab === 'week' && target['mealsView'] === 'cook') {
-      return openRecipeFor(target['mealsFocus'] || true, { label: 'Today', tab: 'today' });
+      return openRecipeFor(target['mealsFocus'] || true, { label: 'Now', tab: 'today' });
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -1805,7 +1805,7 @@
   function buildGroceryPanel(panel) {
     panel.innerHTML =
       '<div class="grocery-content">' +
-        '<button type="button" class="gro-back" id="gro-back" data-gro="step-back" hidden></button>' +
+        '<button type="button" class="crumb" id="gro-back" data-gro="step-back" hidden></button>' +
         '<div class="gro-head">' +
           '<div class="gro-head-row">' +
             '<h1 class="gro-title" id="gro-title">Shop</h1>' +
@@ -2144,10 +2144,10 @@
     if (step === 'sorthow') {
       // Same question as the queue's, because it is the same question — the
       // household is only choosing how many screens it wants to answer it in.
-      return { back: '‹ Grocery', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'sortall') {
-      return { back: '‹ Grocery', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'next') {
       var left = groRemainingStops(data).length;
@@ -2156,7 +2156,7 @@
         // screen can be reached by mistake from: "Done at Costco" is a
         // full-width apricot under a list of things still to tick, and
         // without this the mis-tap ended that shop for the trip.
-        back: groceryState.tripLastDone ? '‹ Back to ' + groceryState.tripLastDone : '',
+        back: groceryState.tripLastDone ? '‹ Back to ' + groceryState.tripLastDone : '‹ Shop',
         title: 'Where next?',
         sub: left ? groPlural(left, 'stop', 'stops') + ' left' : ''
       };
@@ -2177,7 +2177,7 @@
           ' · ' + groTripItems(data).length + ' left'
       };
     }
-    if (step === 'wrap') return { back: '', title: 'How did it go?', sub: '' };
+    if (step === 'wrap') return { back: '‹ Shop', title: 'How did it go?', sub: '' };
     var t = groTotals(data);
     var stopCount = groStoresWithNeeded(data).length;
     var sub = '';
@@ -3849,7 +3849,7 @@
       // whatever an earlier deep link left on cookState (fixed 2026-09-10,
       // found by review).
       case 'shop-done-tonight':
-        openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' });
+        openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Shop', tab: 'grocery' });
         return;
 
       case 'shop-done-later':
@@ -5584,7 +5584,7 @@
     // isn't — this step is for every week, so the badge has to be able to
     // say the other thing.
     var draft = weekPlanState(data) === 'draft';
-    return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
+    return '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
       '<div class="wk-head">' +
         '<div class="wk-head-row">' +
           '<h1 class="wk-title">Check the week</h1>' +
@@ -5906,7 +5906,7 @@
   }
 
   function dayStepHtml(day) {
-    return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
+    return '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
       '<div class="wk-head">' +
         '<div class="wk-head-row"><h1 class="wk-title">' +
           escapeHtml(dayName(day.date, { weekday: 'long' })) + '</h1></div>' +
@@ -5996,7 +5996,7 @@
     ];
     var cookMeal = cookMealForEntry(entry.entry_id);
     var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
-    return '<button type="button" class="wk-back" data-wk-back="day">‹ ' +
+    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
         escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
       '<div class="wk-head">' +
         '<div class="wk-head-row"><h1 class="wk-title">' +
@@ -8572,7 +8572,7 @@
       : (session.note || '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Cook</button>' +
+        '<button type="button" class="crumb on-spruce" data-cook="exit-session">&lsaquo; Cook</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -9364,7 +9364,7 @@
     var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
     return '<div class="cook-focus">' +
       '<div class="cook-hero cook-hero-quiet">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
+        '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
           escapeHtml(cookBackLabel()) + '</button>' +
         cookReheatCardHtml(meal, dayLabel) +
       '</div>' +
@@ -9489,7 +9489,7 @@
     var note = onPrep ? (cookBatchNote(meal) || meal.advance_prep_notes || meal.reasoning || '') : '';
 
     return '<div class="cook-hero' + (onPrep ? '' : ' cook-hero-slim') + '">' +
-      '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
+      '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
         escapeHtml(cookBackLabel()) + '</button>' +
       '<div class="cook-hero-top">' +
         '<span class="cook-hero-chip">' + escapeHtml(chipLabel) + '</span>' +

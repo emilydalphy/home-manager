@@ -199,7 +199,11 @@ def test_no_call_site_still_asks_for_the_meals_cook_state():
         # goes through openRecipeFor as of 2026-09-10 for the same reason
         # Meals' "Cook this" does — the back link has to name where the tap
         # actually came from. Same {entryId, date, slot, title} payload.
-        "openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' })",
+        # Updated 2026-09-10 (nav v2 part 2): the crumb names the tab as the
+        # household reads it, and that tab has been "Now" since the part 1
+        # rename. It said "Today" here because the rename grepped markup and
+        # these labels are JS object values.
+        "openRecipeFor(target.cookFocus, { label: 'Now', tab: 'today' })",
         # Meals' Day/Meal "Cook this" (wireMealsStep). It goes through
         # openRecipeFor as of 2026-09-09 so cook mode's back link can name
         # the Meals step it came from; the payload it passes is the same
@@ -208,7 +212,8 @@ def test_no_call_site_still_asks_for_the_meals_cook_state():
         # Grocery's shop-done handoff — through openRecipeFor as of
         # 2026-09-10, and on the exact meal rather than "whatever tonight
         # turns out to be" whenever Meals has the week cached.
-        "openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' })",
+        # "Grocery" -> "Shop" for the same reason as the Today/Now line above.
+        "openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Shop', tab: 'grocery' })",
     ],
 )
 def test_every_former_cook_entry_point_passes_cookfocus(entry_point):
@@ -804,15 +809,16 @@ _ACTION_JS = (
     "var calls = [];\n"
     "function activateTab(key, real, opts){ calls.push(['activateTab', key, opts || null]); }\n"
     # Updated 2026-09-10: a cook opened from Today goes through openRecipeFor,
-    # like every other way into cook mode, so its back link says "‹ Today"
+    # like every other way into cook mode, so its back link names that tab
     # instead of inheriting whatever origin an earlier deep link left on
-    # cookState. Same target, one door further in.
+    # cookState. Same target, one door further in. The words are "‹ Now"
+    # rather than "‹ Today" as of nav v2 part 2 — same tab, current name.
     "function openRecipeFor(target, origin){ calls.push(['openRecipeFor', target, origin || null]); }\n"
     "function toggleTodayMove(panel, id, next){ calls.push(['tick', id, next]); }\n"
     + _function("runTodayMoveAction") + "\n"
 )
 
-_FROM_TODAY = {"label": "Today", "tab": "today"}
+_FROM_TODAY = {"label": "Now", "tab": "today"}
 
 
 def _run_move_action(target: dict):
