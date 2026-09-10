@@ -5367,13 +5367,18 @@
   // the strip shows what each day is holding and the household says which
   // one they are willing to spend.
   //
-  // Three exclusions, and the middle one is not a nicety. A day the dish
+  // Four exclusions, and the middle two are not niceties. A day the dish
   // ALREADY covers is not offered (the stepper's number is the count of
   // those days — offering one back would be a tap that changes nothing).
   // A `planned_empty` slot is NEVER offered: nobody is home, or the
   // household asked for none of that meal, and three separate bugs in this
-  // app have come from code reading that state as a free plate. And a day
-  // that has already been eaten is not a day to plan into.
+  // app have come from code reading that state as a free plate. A meal
+  // already COOKED is not offered either: the tick is a record, the
+  // inventory was depleted against it, and its ingredients are on a list
+  // that has been shopped — and today's dinner, ticked off at seven, is
+  // not a past day, so isPast does not cover this and never did. And a day
+  // genuinely behind us, or outside the plan's own period, is not a day to
+  // plan into.
   //
   // Snacks are offered one ENTRY at a time rather than one day at a time,
   // because a day holds two of them by default and they are two different
@@ -5391,6 +5396,7 @@
       keys.forEach(function (key) {
         var e = daySlotEntry(day, key);
         if (!e || (e.state !== 'planned' && e.state !== 'open')) return;
+        if (e.cooked) return;
         out.push({
           date: day.date,
           entryId: e.entry_id,
@@ -5787,6 +5793,41 @@
     }
   }
 
+  // What the tap changed, said in the order it matters: the day, the dish,
+  // what it replaced, and — the clause this originally missed — any night
+  // that was eating off what just went.
+  //
+  // The stepper going DOWN refuses to break a chain outright, and says so
+  // ("...also feeds Friday's dinner — change that first"). This path
+  // allows it, because it REPLACES rather than deletes and
+  // swap_meal_in_plan re-buys for every night that was eating off the
+  // displaced dish, so nothing is left stranded. But one screen must not
+  // refuse the mirror of what it silently allows, and silence was the
+  // whole of the difference: Friday stopped being a reheat and became a
+  // cook of its own with nobody told. It is told now.
+  function addDishToastText(out) {
+    var day = dayName(out.date, { weekday: 'long' });
+    var line = day + '’s ' + slotWord(out.slot) + ' is ' + out.dish + ' now' +
+      (out.replaced ? ', in place of ' + out.replaced + '.' : '.');
+    var freed = (out.unchained || []).map(function (t) {
+      return dayName(t.date, { weekday: 'long' });
+    });
+    if (!freed.length) return line;
+    var list = freed.length === 1
+      ? freed[0]
+      : freed.slice(0, -1).join(', ') + ' and ' + freed[freed.length - 1];
+    var one = freed.length === 1;
+    // "on its own now", not "a cook of its own now". A freed night keeps
+    // whatever it was called, and a night the planner had written as
+    // "Leftover bulgogi" still READS as a reheat on the row underneath
+    // this toast — measured in a browser, which is where the first wording
+    // was caught contradicting the screen it was printed over. What is
+    // certainly true is the chain: nothing is feeding that night any more.
+    return line + ' ' + list + ' ' + (one ? 'was' : 'were') +
+      ' eating off it, so ' + (one ? 'that night is on its own' : 'those nights are on their own') +
+      ' now.';
+  }
+
   // One more day of a dish, on the day the household picked. Same shape as
   // runDropDishDay above and for the same reasons — one small POST, no
   // model call and no chat turn, and the backend hands back the changed
@@ -5814,7 +5855,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: from.entryId, target_entry_id: option.entryId })
       });
-      if (!res.ok) throw new Error('add failed');
+      if (!res.ok) {
+        // The server's own refusal, shown as it was written. Two of these
+        // are sentences a household needs to read — a day nobody is home,
+        // a meal somebody has already cooked — and the generic "that
+        // didn't work" would tell them the app broke when it did the right
+        // thing. The stepper going down surfaces its refusals the same
+        // way, through a different mechanism (see runDropDishDay).
+        var refusal = null;
+        try { refusal = (await res.json()).detail; } catch (e) { refusal = null; }
+        reviewState.busy = null;
+        reviewState.trouble = refusal || SWAP_TROUBLE;
+        renderMealsStep(panel);
+        return;
+      }
       var out = await res.json();
       reviewState.busy = null;
       reviewState.picking = null;
@@ -5828,11 +5882,7 @@
       await loadWeekMenu(panel);
       // Name the day and what it cost. An open slot cost nothing — a
       // question was answered — so the sentence doesn't invent a loss.
-      showToast(out.replaced
-        ? dayName(out.date, { weekday: 'long' }) + '’s ' + slotWord(out.slot) +
-          ' is ' + out.dish + ' now, in place of ' + out.replaced + '.'
-        : dayName(out.date, { weekday: 'long' }) + '’s ' + slotWord(out.slot) +
-          ' is ' + out.dish + ' now.');
+      showToast(addDishToastText(out));
       // An approved week's shopping list just changed underneath, so
       // anything showing it is stale — the same courtesy the stepper going
       // down already pays.

@@ -401,12 +401,42 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     groups — never for its recipe row directly, since plan_meal resolves a
     saved recipe by name exactly as a chat swap does.
 
+    **THAT NAME IS RESOLVED THROUGH THE CHAIN, and it has to be.** A row on
+    the Review screen is labelled by mealDisplayName, which for a confirmed
+    reheat night answers with the dish being reheated rather than with the
+    row's own freeform text — so a row reading "Beef Bulgogi · nothing to
+    cook · 1 lunch" is a night whose stored text is "Leftover bulgogi
+    bowls". Deriving the name from the row alone therefore wrote a DIFFERENT
+    dish from the one the household tapped: a night reading as a reheat with
+    no batch behind it, nothing bought for it, and the dish they agreed to
+    lose gone. Reachable for any confirmed chain whose reheat lands in a
+    different meal-type group from its cook — a dinner cooked double for the
+    next day's lunch, which repair_leftover_chains accepts and the
+    generation prompt asks for by name. Same class as the two blockers
+    already fixed on this screen: a control labelled with one dish acting on
+    another. plan_leftover_chains is the one reader of that pairing, and it
+    is what mealDisplayName's own data came from, so it is what this asks.
+
     `target_entry_id` is the slot being taken over, and it must be
     `planned` or `open`. A `planned_empty` target is refused outright.
     Nothing on the screen offers one — but three separate bugs in this app
     have come from code treating that state as a missing meal, and the
     rule holds at the write, not only at the control: a night nobody is
-    home is not a night with a free plate on it.
+    home is not a night with a free plate on it. A target already COOKED is
+    refused for the same reason one level along: ticking it off wrote a
+    record, depleted the inventory and fed somebody, and replacing the row
+    would destroy all three — the cooked_status, and the shopping line for
+    a meal that has already been eaten.
+
+    Breaking a chain on the way in is ALLOWED and reported, which is
+    deliberately not what the stepper going down does. Down DELETES, so a
+    night that was eating off the removed one is left holding a recipe
+    nobody cooks with nothing bought for it, and that is refused. This
+    REPLACES, and swap_meal_in_plan re-buys for every night that was eating
+    off the displaced dish, so the data is right and the only thing missing
+    was telling anyone. `unchained` names those nights, and the screen says
+    so out loud — a screen must not refuse the mirror of what it silently
+    allows.
 
     The write itself is swap_meal_in_plan, unchanged and by id. That is
     the whole point: reversing the displaced dish's groceries, telling any
@@ -421,7 +451,7 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
-               mpe.food_groups_json,
+               mpe.food_groups_json, mpe.cooked_status, mpe.derived_from_json,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -454,18 +484,53 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
         raise ValueError("Nobody's eating that one — it isn't a day to plan into.")
     if target["slot_state"] not in ("planned", "open"):
         raise ValueError("That slot isn't one this can take over.")
+    if (target["cooked_status"] or "") == "done":
+        # Somebody cooked it and ate it. The tick is a record, the inventory
+        # was depleted against it, and the ingredients are on a list that
+        # has already been shopped — taking the row away destroys all three
+        # and buys nothing back.
+        raise ValueError("That one's already been cooked — it isn't a day to plan into.")
 
-    dish = source["meal"]
+    from . import leftovers as _leftovers
+
+    # The name the ROW READS AS, which for a confirmed reheat is the dish it
+    # reheats and not its own text. See the docstring: deriving it from the
+    # row alone is what wrote a dish nobody picked.
+    chains = _leftovers.plan_leftover_chains(weekly_plan_id)
+    chained = chains["leftovers"].get(source["id"])
+    dish = chained["source"]["meal"] if chained else source["meal"]
+    groups_from = source
+    if chained:
+        # ...and the plate belongs to the dish, not to the night that
+        # reheated it — a reheat row records no food groups of its own.
+        conn = get_conn()
+        cook = conn.execute(
+            "SELECT food_groups_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (chained["source"]["entry_id"], household_id()),
+        ).fetchone()
+        conn.close()
+        groups_from = cook or source
+
     replaced = target["meal"] if target["slot_state"] == "planned" else None
     if replaced and replaced.strip().lower() == dish.strip().lower():
         raise ValueError("That day already has it.")
+
+    # Every night that was eating off the dish being displaced. Read BEFORE
+    # the swap, because afterwards there is nothing left to ask. Those
+    # nights are not harmed — swap_meal_in_plan re-buys for them — but
+    # nobody was being told, and the stepper going down refuses the mirror
+    # of this outright.
+    unchained = [
+        {"date": t["date"], "slot": t["slot"]}
+        for t in (chains["sources"].get(target["id"], {}).get("targets") or [])
+    ]
 
     swap_meal_in_plan(
         weekly_plan_id,
         target["date"],
         dish,
         slot=target["slot"],
-        food_groups=json.loads(source["food_groups_json"] or "[]") or None,
+        food_groups=json.loads(groups_from["food_groups_json"] or "[]") or None,
         old_entry_id=target["id"],
         # Blank, the same call swap_meal_in_plan's own docstring makes for a
         # swap asked for in chat: there is no "why this?" beyond the
@@ -482,6 +547,9 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
         # None for an open slot: nothing was displaced, a question was
         # answered.
         "replaced": replaced,
+        # The nights that were eating off what just went, now cooking for
+        # themselves. Empty for the overwhelming majority of taps.
+        "unchained": unchained,
         # get_week_menu's own day dict, exactly as the stepper going down
         # and the in-place swap both answer — one shape, one renderer, and
         # the week the screen is holding updates by splicing one day.
@@ -2770,7 +2838,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
-               mpe.food_groups_json, mpe.sides_json,
+               mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
                r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -2868,6 +2936,12 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # endpoint for what it needs to describe one meal.
             "food_groups": json.loads(row["food_groups_json"] or "[]"),
             "defrost": defrost_by_entry.get(row["id"]),
+            # Somebody has cooked and eaten this one. Additive, and the
+            # Review screen's "+" is the first reader: a day already cooked
+            # is not a day to plan into, because replacing the row would
+            # take the tick, the inventory it depleted and the shopping
+            # line for a meal that has already been eaten with it.
+            "cooked": (row["cooked_status"] or "") == "done",
         }
         # A confirmed chain (see `chains` above) takes priority over the
         # freeform-text heuristic below: a chain entry can carry a REAL

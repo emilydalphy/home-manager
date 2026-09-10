@@ -5982,7 +5982,10 @@ span.cook-week-name { cursor: default; }
 }
 /* Supporting copy on --sand: --ink-secondary measures 4.04:1 there, which
    is under AA, so the ask takes body ink — measured in Chromium off
-   computed styles, 11.05:1 light / 12.43:1 dark. */
+   computed styles, 11.60:1 light / 11.28:1 dark. (Recorded here first as
+   11.05/12.43, which was the token pair's own figure rather than this
+   element's. Both pass AA comfortably; a recorded ratio is worth nothing
+   if it is not the one that reproduces on the thing it is written above.) */
 .rv-pick-ask {
   margin: 0;
   font-family: var(--font-body);

@@ -282,28 +282,190 @@ def test_the_route_refuses_a_deliberately_empty_target(signed_in):
     assert _state(D1, "dinner") == [("planned_empty", None)]
 
 
+# --------------------------- the review pass, 2026-09-10 ---------------------
+
+def _chain(plan: int, cook_day: str, cook: str, reheat_day: str, reheat: str,
+           cook_slot: str = "dinner", reheat_slot: str = "lunch") -> None:
+    """
+    A confirmed leftovers chain, written by repair_leftover_chains rather
+    than by hand — the pairing has to be one the app itself produces, or
+    the test is about a shape that cannot occur.
+    """
+    tools.plan_meal(cook_day, cook, slot=cook_slot, weekly_plan_id=plan)
+    tools.plan_meal(reheat_day, reheat, slot=reheat_slot, weekly_plan_id=plan)
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+        (json.dumps({"links_to": f"{cook_day}:{cook_slot}"}),
+         _ids(reheat_day, reheat_slot)[-1]),
+    )
+    conn.commit()
+    conn.close()
+    tools.repair_leftover_chains(plan)
+
+
+def _slot(plan: int, day: str, slot: str) -> dict:
+    days = {d["date"]: d for d in tools.get_week_menu(plan)["days"]}
+    return days[day][slot]
+
+
+def test_a_reheat_row_adds_the_dish_it_reads_as_not_its_own_text():
+    """
+    BLOCKER, found in review and reproduced through the real route. A row on
+    this screen is labelled by mealDisplayName, which for a confirmed reheat
+    answers with the dish being reheated — so a row reading "Beef Bulgogi ·
+    nothing to cook · 1 lunch" is a night whose stored text is "Leftover
+    bulgogi bowls". Deriving the name from that row wrote a DIFFERENT dish
+    from the one tapped: a night rendering as a reheat with no batch behind
+    it, nothing bought for it, and the dish the household agreed to lose
+    gone.
+
+    Reachable for any chain whose reheat lands in a different meal-type
+    group from its cook — a dinner cooked double for the next day's lunch,
+    which is exactly what this sets up. Same class as the two blockers
+    already fixed on this screen: a control labelled with one dish acting on
+    another.
+    """
+    plan = _plan()
+    tools.add_recipe("Beef Bulgogi", ingredients=[{"item": "Beef", "qty": "2 lb"}])
+    _chain(plan, D0, "Beef Bulgogi", D1, "Leftover bulgogi bowls")
+    tools.plan_meal(D2, "Tuna Sandwich", slot="lunch", weekly_plan_id=plan)
+    reheat = _slot(plan, D1, "lunch")
+    # The row really is the shape this is about: it reads as the cook.
+    assert reheat["leftover_from"]["meal"] == "Beef Bulgogi"
+
+    out = tools.add_dish_day(plan, reheat["entry_id"], _ids(D2, "lunch")[0])
+
+    assert out["dish"] == "Beef Bulgogi", out["dish"]
+    landed = _slot(plan, D2, "lunch")
+    assert landed["title"] == "Beef Bulgogi"
+    assert landed["source"] == "plan", "and it is a real cook, not a phantom reheat"
+
+
+def test_the_dish_a_reheat_row_adds_is_actually_bought_for():
+    """The other half of the same defect, and the one a household would
+    notice: on an approved week the displaced dish came off the list and
+    nothing went on for what replaced it."""
+    plan = _plan()
+    tools.add_recipe("Beef Bulgogi", ingredients=[{"item": "Beef", "qty": "2 lb"}])
+    tools.add_recipe("Tuna Sandwich", ingredients=[{"item": "Tuna", "qty": "2 tin"}])
+    _chain(plan, D0, "Beef Bulgogi", D1, "Leftover bulgogi bowls")
+    tools.plan_meal(D2, "Tuna Sandwich", slot="lunch", weekly_plan_id=plan)
+    tools.approve_weekly_plan(plan, approved_by="Emily")
+
+    def line(item):
+        return next((i for i in tools.list_grocery_list() if i["item"] == item), None)
+
+    assert line("Tuna")
+    before = line("Beef")["quantity"]
+
+    tools.add_dish_day(plan, _slot(plan, D1, "lunch")["entry_id"], _ids(D2, "lunch")[0])
+
+    assert line("Tuna") is None, "the dish that was displaced comes off"
+    assert line("Beef"), "and the dish that replaced it is bought for"
+    assert line("Beef")["quantity"] != before, (
+        "a second cook of it wants more beef than one did", line("Beef")["quantity"])
+
+
+def test_breaking_a_chain_names_the_night_that_was_eating_off_it():
+    """
+    The stepper going DOWN refuses to take away a night other nights are
+    eating off, and says which night. Going UP onto that same night was
+    allowed and said nothing — the chain gone, the fed night quietly an
+    ordinary cook. The DATA was right either way (swap_meal_in_plan re-buys
+    for it), so the fix is to say so rather than to refuse: one screen must
+    not refuse the mirror of what it silently allows.
+    """
+    plan = _plan()
+    tools.add_recipe("Beef Bulgogi", ingredients=[{"item": "Beef", "qty": "2 lb"}])
+    tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    _chain(plan, D1, "Beef Bulgogi", D2, "Leftover bulgogi",
+           cook_slot="dinner", reheat_slot="dinner")
+    # The mirror image, for the record: taking the cook night away is refused.
+    refusal = tools.drop_dish_from_day(plan, _ids(D1, "dinner")[0])
+    assert refusal["status"] == "refused"
+
+    out = tools.add_dish_day(plan, _ids(D0, "dinner")[0], _ids(D1, "dinner")[0])
+
+    assert out["unchained"] == [{"date": D2, "slot": "dinner"}], out["unchained"]
+
+
+def test_an_ordinary_replacement_names_no_freed_nights():
+    """The clause is only ever said when there is one — every other tap
+    must not grow a sentence about nothing."""
+    plan = _plan()
+    tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Bean Chili", slot="dinner", weekly_plan_id=plan)
+    out = tools.add_dish_day(plan, _ids(D0, "dinner")[0], _ids(D1, "dinner")[0])
+    assert out["unchained"] == []
+
+
+def test_a_meal_already_cooked_is_not_a_day_to_plan_into():
+    """
+    Today's dinner, ticked off at seven, is not a past day — so the
+    control's isPast test never covered it and the write had no status
+    check at all. Replacing it destroyed the cooked record, left the
+    inventory depleted for a meal now off the plan, and took the
+    ingredients for a meal somebody had eaten off the shopping list.
+    """
+    plan = _plan()
+    tools.add_recipe("Bean Chili", ingredients=[{"item": "Kidney beans", "qty": "2 tin"}])
+    tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Bean Chili", slot="dinner", weekly_plan_id=plan)
+    tools.approve_weekly_plan(plan, approved_by="Emily")
+    tools.check_off_meal(_ids(D1, "dinner")[0])
+
+    with pytest.raises(ValueError):
+        tools.add_dish_day(plan, _ids(D0, "dinner")[0], _ids(D1, "dinner")[0])
+
+    assert _state(D1, "dinner") == [("planned", "Bean Chili")]
+    conn = get_conn()
+    status = conn.execute(
+        "SELECT cooked_status FROM meal_plan_entries WHERE id = ?", (_ids(D1, "dinner")[0],)
+    ).fetchone()["cooked_status"]
+    conn.close()
+    assert status == "done", "the record of somebody having cooked it survives"
+    assert any(i["item"] == "Kidney beans" for i in tools.list_grocery_list(status="all")), \
+        "and a meal that has been eaten keeps its line"
+
+
+def test_the_week_payload_says_which_meals_have_been_cooked():
+    """The control needs the same fact the write checks, and nothing on
+    this payload carried it — so the picker could only ever have guessed
+    from the date."""
+    plan = _plan()
+    tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Bean Chili", slot="dinner", weekly_plan_id=plan)
+    tools.check_off_meal(_ids(D1, "dinner")[0])
+    assert _slot(plan, D1, "dinner")["cooked"] is True
+    assert _slot(plan, D0, "dinner")["cooked"] is False
+
+
 # ------------------- CHANGE 2: does generation make an open snack at all?
 
-def test_the_automatic_passes_never_hand_back_an_open_snack():
+def test_week_generations_own_finishing_passes_never_hand_back_an_open_snack():
     """
-    THE QUESTION EMILY ASKED, pinned as a test rather than left as a claim
-    in a report. It CHARACTERISES behaviour that is not changed here, so it
-    is green on both sides of this commit — deliberately, because the
-    answer is what Emily needs and a claim nobody can re-run is not one. Widening the Approve button's count to all four meal types
-    would start labelling weeks that previously looked settled IF week
-    generation produced open snacks on its own.
+    HALF OF THE QUESTION EMILY ASKED, pinned as a test rather than left as
+    a claim in a report. Widening the Approve button's count to all four
+    meal types would start labelling weeks that previously looked settled
+    IF week GENERATION produced open snacks on its own.
 
-    It does not. Every automatic pass that writes an open slot is scoped to
-    the three real meals: audit_plan_slots (the generation-gap pass) filters
-    to WEEK_SLOTS, repair_leftover_chains skips any row whose slot is not in
-    WEEK_SLOTS, and slot_needs' away-reopen is only reachable for the three
-    it validates. This drives _finish_week_slots over a week with no snacks
-    on it at all and asserts nothing hands one back as a question.
+    It does not. The two passes that could are both scoped to the three
+    real meals: audit_plan_slots (the generation-gap pass) filters to
+    WEEK_SLOTS, and repair_leftover_chains skips any row whose slot is not
+    in it. This drives _finish_week_slots over a week with no snacks at all
+    and asserts nothing hands one back as a question.
 
-    The one path that CAN produce one is the model itself: submit_weekly_plan
-    accepts slot='snack' with slot_state='open', and agent's persist loop
-    writes it through unchanged. So an open snack is something the assistant
-    can decide to hand back, never something the finishing passes invent.
+    It CHARACTERISES behaviour this branch does not change, so it is green
+    on both sides — deliberately, because the answer is what Emily needs
+    and a claim nobody can re-run is not one.
+
+    Two things this does NOT say, and an earlier version of it wrongly
+    implied both. The model can hand back an open snack itself:
+    submit_weekly_plan's schema takes slot='snack' with slot_state='open'
+    and the persist loop writes it through unchanged. And attendance can
+    produce one with no assistant involved at all — see the test below,
+    which is the leg the first answer to this question got wrong.
     """
     from app.agent import _finish_week_slots
 
@@ -322,6 +484,40 @@ def test_the_automatic_passes_never_hand_back_an_open_snack():
     conn.close()
     open_snacks = [r for r in rows if r["slot"] == "snack" and r["slot_state"] == "open"]
     assert open_snacks == [], open_snacks
+
+
+def test_an_ordinary_attendance_edit_does_hand_back_an_open_snack():
+    """
+    THE OTHER HALF, and the leg the first answer to Emily's question got
+    WRONG. It said slot_needs' away-reopen "only validates the three real
+    meals". It does not: _validate_slot defaults to allow_snack=True and
+    both _ALL_SLOTS tuples include 'snack'. So marking somebody away for a
+    snack and then back — an ordinary edit, no assistant anywhere near it —
+    empties the slot and then hands it back as a question.
+
+    Which makes the widening MORE right rather than less: an open snack
+    from an away-reopen is a real decision handed back to the household,
+    and a button promising nothing is left to decide has to count it.
+    """
+    plan = _plan()
+    tools.add_member("Emily")
+    tools.plan_meal(D0, "Trail mix", slot="snack", weekly_plan_id=plan)
+    assert [s for s, _ in _state(D0, "snack")] == ["planned"]
+
+    tools.set_member_attendance(D0, "snack", "Emily", present=False)
+    assert [s for s, _ in _state(D0, "snack")] == ["planned_empty"]
+
+    tools.set_member_attendance(D0, "snack", "Emily", present=True)
+    assert [s for s, _ in _state(D0, "snack")] == ["open"]
+
+    # ...and it is a real question with a reason on it, which is what makes
+    # it something the Approve button owes the household a count of.
+    conn = get_conn()
+    reason = conn.execute(
+        "SELECT open_reason FROM meal_plan_entries WHERE date = ? AND slot = 'snack' "
+        "ORDER BY id DESC LIMIT 1", (D0,)).fetchone()["open_reason"]
+    conn.close()
+    assert reason and "Emily" in reason
 
 
 # ------------------------------------------- the screen's own functions
@@ -402,6 +598,11 @@ def _open(entry_id=9):
             "source": "open", "entry_id": entry_id}
 
 
+def _cooked(title, entry_id=7):
+    return {"title": title, "state": "planned", "source": "plan",
+            "entry_id": entry_id, "cooked": True}
+
+
 def _empty(entry_id=8):
     return {"title": "Out — nothing to cook", "state": "planned_empty",
             "source": "empty", "entry_id": entry_id}
@@ -471,6 +672,30 @@ def test_an_open_slot_is_offered_and_reads_as_a_question_not_a_dish():
     out = _options(days, _TACOS)
     assert out[0]["open"] is True
     assert out[0]["holding"] == "Your call"
+
+
+@_needs_node
+def test_a_meal_somebody_has_already_cooked_is_not_offered():
+    """Found in review. The control excluded past DAYS only, so today's
+    dinner — ticked off at seven, and not a past day by any reading —
+    was a live candidate, and taking it over destroys a cook record, an
+    inventory depletion and a shopping line for a meal already eaten."""
+    days = [_day("MON", dinner=_planned("Chicken Tacos", entry_id=1)),
+            _day("TUE", dinner=_cooked("Bean Chili", entry_id=2)),
+            _day("WED", dinner=_planned("Sheet Pan Salmon", entry_id=3))]
+    out = _options(days, _TACOS)
+    assert [o["date"] for o in out] == ["WED"], out
+
+
+@_needs_node
+def test_a_cooked_snack_is_skipped_without_taking_the_days_other_one_with_it():
+    dish = {"slot": "snack", "name": "Trail mix", "cooks": 0,
+            "days": [{"date": "MON", "entryId": 1}]}
+    days = [_day("MON", snacks=[_planned("Trail mix", entry_id=1)]),
+            _day("TUE", snacks=[_cooked("Apple", entry_id=2),
+                                _planned("Greek yogurt", entry_id=3)])]
+    out = _options(days, dish)
+    assert [(o["holding"], o["entryId"]) for o in out] == [("Greek yogurt", 3)]
 
 
 @_needs_node
@@ -633,6 +858,7 @@ def _run_add(response: dict, status: str = "draft") -> dict:
           "  return { ok: true, json: async () => (" + json.dumps(response) + ") }; }\n"
         + _extract("mealDisplayName") + "\n"
         + _extract("reviewAddDayOptions") + "\n"
+        + _extract("addDishToastText") + "\n"
         + _extract_async("runAddDishDay") + "\n"
         + "runAddDishDay(null, 0, 1).then(function () {\n"
           "  console.log(JSON.stringify({ calls: calls, body: fetchBody,\n"
@@ -682,6 +908,88 @@ def test_answering_an_open_slot_does_not_claim_something_was_lost():
 
 
 @_needs_node
+def test_the_toast_names_the_night_that_was_eating_off_what_just_went():
+    """Found in review. The stepper going DOWN refuses to break a chain and
+    names the night that depends on it; going UP onto that same night was
+    allowed and said nothing at all. The data was right either way — this
+    is told-vs-not-told, and one screen must not refuse the mirror of what
+    it silently allows."""
+    broke = dict(_ADDED, unchained=[{"date": "THU", "slot": "dinner"}])
+    toasts = [c for c in _run_add(broke)["calls"] if c.startswith("toast:")]
+    assert len(toasts) == 1, toasts
+    assert "in place of Sheet Pan Salmon" in toasts[0]
+    assert "Thursday was eating off it" in toasts[0], toasts[0]
+    # "on its own", not "a cook of its own": a freed night keeps whatever
+    # it was called, and one the planner wrote as "Leftover bulgogi" still
+    # reads as a reheat on the row under this toast. Caught in a browser,
+    # printed over the row it contradicted.
+    assert "that night is on its own now" in toasts[0], toasts[0]
+    assert "cook of its own" not in toasts[0], toasts[0]
+
+
+@_needs_node
+def test_two_freed_nights_are_named_together_and_read_as_a_sentence():
+    broke = dict(_ADDED, unchained=[{"date": "THU", "slot": "dinner"},
+                                    {"date": "MON", "slot": "lunch"}])
+    toast = [c for c in _run_add(broke)["calls"] if c.startswith("toast:")][0]
+    assert "Thursday and Monday were eating off it" in toast, toast
+    assert "those nights are on their own now" in toast, toast
+
+
+@_needs_node
+def test_a_refusal_is_shown_in_the_words_the_server_wrote():
+    """Two of the write's refusals are sentences a household needs to read
+    — a day nobody is home, a meal somebody has already cooked — and the
+    generic "that didn't work" would report a breakage where the app did
+    the right thing."""
+    out = _run_add_refused("That one’s already been cooked — it isn’t a day to plan into.")
+    assert out["trouble"] == "That one’s already been cooked — it isn’t a day to plan into."
+    assert "splice" not in out["calls"], out["calls"]
+    assert "loadWeekMenu" not in out["calls"], out["calls"]
+    assert not [c for c in out["calls"] if c.startswith("toast:")]
+    assert out["busy"] is None
+
+
+def _run_add_refused(detail: str) -> dict:
+    days = [_day("MON", dinner=_planned("Chicken Tacos", entry_id=1)),
+            _day("TUE", dinner=_planned("Bean Chili", entry_id=2)),
+            _day("WED", dinner=_planned("Sheet Pan Salmon", entry_id=3))]
+    harness = (
+        _ESCAPE + _SLOT_FURNITURE
+        + "var calls = [];\n"
+          "console.warn = function(){};\n"
+        + "var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';\n"
+        + "var reviewState = { view: 'eating', busy: null, trouble: '', picking: 0,\n"
+          "  dishes: [{ slot: 'dinner', name: 'Chicken Tacos', cooks: 1,\n"
+          "    days: [{date:'MON',entryId:1}] }] };\n"
+        + "var weekState = { data: { week_start_date: '2026-09-07', status: 'draft' },"
+          " days: " + json.dumps(days) + " };\n"
+        + "function spliceSwappedDay(d){ calls.push('splice'); }\n"
+          "function renderMealsStep(){ calls.push('render'); }\n"
+          "async function loadWeekMenu(){ calls.push('loadWeekMenu'); }\n"
+          "function showToast(t){ calls.push('toast:' + t); }\n"
+          "function refreshGrocerySurfaces(){ calls.push('grocery'); }\n"
+          "function slotWord(s){ return s; }\n"
+          "async function fetch(){ return { ok: false, status: 404,\n"
+          "  json: async () => ({ detail: " + json.dumps(detail) + " }) }; }\n"
+        + _extract("mealDisplayName") + "\n"
+        + _extract("reviewAddDayOptions") + "\n"
+        + _extract("addDishToastText") + "\n"
+        + _extract_async("runAddDishDay") + "\n"
+        + "runAddDishDay(null, 0, 1).then(function () {\n"
+          "  console.log(JSON.stringify({ calls: calls, trouble: reviewState.trouble,\n"
+          "    busy: reviewState.busy })); });\n"
+    )
+    return _run_node(harness)
+
+
+@_needs_node
+def test_a_refusal_with_no_sentence_still_says_something_plain():
+    out = _run_add_refused(None)
+    assert "nothing changed" in out["trouble"]
+
+
+@_needs_node
 def test_the_strip_closes_once_the_choice_has_landed():
     out = _run_add(_ADDED)
     assert out["picking"] is None
@@ -718,6 +1026,7 @@ def _run_add_failing() -> dict:
           "async function fetch(){ return { ok: false }; }\n"
         + _extract("mealDisplayName") + "\n"
         + _extract("reviewAddDayOptions") + "\n"
+        + _extract("addDishToastText") + "\n"
         + _extract_async("runAddDishDay") + "\n"
         + "runAddDishDay(null, 0, 1).then(function () {\n"
           "  console.log(JSON.stringify({ calls: calls, trouble: reviewState.trouble,\n"
