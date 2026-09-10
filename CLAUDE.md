@@ -314,6 +314,135 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — Two blockers and two concerns in the Review stepper, found
+  by an independent reviewer and fixed on the same branch
+  (`overnight/review-week-two-views`).** Both blockers were reproduced
+  through the real route and the real UI, and both had a fix pattern
+  already written down in this codebase.
+  - **The stepper on a snack deleted the day's OTHER snack.**
+    `drop_dish_from_day` composed `clear_plan_slot`, which deletes EVERY row
+    at `(plan, date, slot)` — and a day holds TWO rows at `slot='snack'` by
+    default (`preferences.resolve_snacks_per_day`). One tap on the Apple row
+    destroyed the Greek yogurt beside it, grocery reversal and all, and left
+    a day the household had asked two snacks of holding one open slot.
+    `swap_meal_in_plan`'s own docstring had already written the rule down
+    ("a slot holding two snacks would lose both to a swap that was only ever
+    about one of them") and that is exactly why it takes `old_meal` and works
+    by id; this re-opened the hole and the UI exposed it. Removal is BY ID
+    now, with the same two lines of care in the same order
+    (`_unlink_leftover_target`, then `_reverse_meal_grocery_contributions`).
+    **The lesson is the narrow one: `clear_plan_slot` is a SLOT operation,
+    and a slot is not a meal.** Anything acting on one entry must say which.
+  - **The Approve button stopped telling the truth the moment the stepper
+    was used.** `runDropDishDay` spliced the changed day into
+    `weekState.days` and stopped; `countOpenSlots`, which the button's label
+    is built from, reads `weekState.data.days`, which a splice never
+    touches. So a week that had just been handed an open slot back went on
+    saying "Approve and build my shopping list". `runSwapInPlace` has had
+    `await loadWeekMenu(panel)` all along and its comment says why. One
+    line, now with a test that RUNS the function against stubs and asserts
+    the call happened — the defect was a missing call, which is precisely
+    what a rendering test cannot see. A `showToast` naming the day rides
+    with it, because the tap leaves work behind and Review renders an open
+    slot as the bare words "Your call".
+    **It counts breakfast, lunch and dinner, and NOT snacks — so "the button
+    keeps counting" is true of three slots out of four.** `countOpenSlots`
+    and `approveWithOpenLabel` iterate `WEEK_SLOTS`, which is deliberately
+    the three real meals (see the `meals-renders-snacks` entry: a snack must
+    never be counted as a cook or an open slot). That scope predates this
+    branch and is not changed here — but this branch adds the SNACKS
+    stepper, which makes an open snack one tap away, so the gap is newly
+    reachable: drop a day off a snack and "Which days" says `SNACK 2 · Your
+    call` while the button still says "Approve and build my shopping list".
+    The screen knows and the button does not. Widening the count is Emily's
+    call, not a change to smuggle in under a bug fix, because `WEEK_SLOTS`
+    is load-bearing in four other readers.
+  - **A chain SOURCE is refused rather than dropped.**
+    `_unlink_leftover_target` covers the target side only, so taking away a
+    night that was cooked double left the night it fed holding a real recipe
+    nobody planned to cook, with the doubled batch's groceries just reversed
+    out from under it. The behaviour is pre-existing and shared with every
+    chat swap; what was new was a control that would hit it by arithmetic
+    rather than by a decision. `drop_dish_from_day` now answers `refused`
+    with a sentence naming the night that depends on it, and writes nothing.
+  - Two smaller things: `.rv-step-count.is-busy` faded to `--ink-secondary`
+    on the `--sand` track (**4.04:1**) — a transient state is not a disabled
+    one, so WCAG 1.4.3's exemption does not cover it; the fade is gone and
+    both stepper buttons going inert is the whole busy signal. And `Change`
+    reads **"Change one"** on a dish covering more than one day, because
+    that is what it does.
+
+- **2026-09-10 — Reviewing a week is two views of one week, not more of it
+  on one screen. Branch `overnight/review-week-two-views`, stacked on
+  `overnight/tap-a-meal-opens-recipe`.** Emily's approved design,
+  2026-09-09, Option A. Julia's report was that a week is too much to take
+  in — three meals and two snacks across seven days is 35 things — so
+  "Check the week" is a FOURTH step of the Meals tab (week -> review ->
+  day -> meal, all at `/week`, back link up a level by name) carrying one
+  segmented control: **What we're eating**, grouped by meal type with each
+  dish once and the days it covers, and **Which days**, one card per day
+  showing DINNER and expanding to all five. Badge "NOT APPROVED YET", one
+  apricot, "Approve and build my shopping list". Reachable from a draft on
+  the page (`#week-check-btn`, a quiet secondary above Approve) and from
+  the More sheet once a week is approved — it is the Review step for every
+  week, not a first-run screen.
+  **Two rules do the counting, and neither is a name match.** A dish is
+  identified by the name it READS as (`mealDisplayName`), which for a
+  made-ahead night is the source dish rather than the whole "Made ahead —
+  Sunday's Egg White Bites" sentence, so a leftover chain collapses into
+  one row over two days without `reviewEatingGroups` knowing anything about
+  chains; and a COOK is `weekly_plan._is_cook`'s own test (planned, not
+  leftovers or takeout), so this screen and the approved-week receipt can
+  never put different numbers on the same week. Only `planned` slots are
+  dishes — an `open` slot is a question and a `planned_empty` one is a
+  night nobody is home.
+  **The stepper goes DOWN and not up, deliberately.** Down is arithmetic:
+  `tools.drop_dish_from_day` composes `clear_plan_slot` (which reverses the
+  grocery contribution and unlinks any chain pointing at the row — its job,
+  not this one's) with `plan_slot_open`, so the day comes back as a
+  QUESTION and never as an absent slot. `open`, not `planned_empty`:
+  planned_empty means nobody is home or the household asked for none of
+  that meal and must never be offered as a decision, and cutting one dish
+  back is neither. It takes the LAST day the dish covers. (An earlier
+  version of this entry went on to claim that day "is always the reheat
+  rather than the cook that feeds it". **That is false** and is corrected
+  in the entry above — it holds only within one meal type; a dinner cooked
+  double for the next day's LUNCH is a source sitting in the Dinners group
+  and can be last in it.) **Up was not
+  built**: it needs a day to land on, and every candidate is either holding
+  another dish or deliberately empty, so a placement rule would be one
+  nobody has decided. `+` opens the ask sheet ("Another night of X — ")
+  instead of guessing. **`Change` opens that dish's Meal step**, where
+  Swap-in-place and "Tell me what instead" already live; changing every
+  covered day in one tap is part 2's job and is not half-built here.
+  **Three things the browser found that reading the code did not.** (1) The
+  away rule read EVERY slot including snacks — but both places that mark a
+  day away (`agent._finish_week_slots`'s `out`-night pass and its
+  slot_needs pass) write breakfast/lunch/dinner only, so on a real week it
+  would essentially never have fired; it reads the three meals now, and a
+  closed day that still carries snacks stays expandable rather than hiding
+  real rows behind "nobody's home". (2) A chain's second night showed the
+  same dish name as its first with nothing saying why, which on a review
+  screen reads as a planning mistake — the face now carries "made ahead" /
+  "leftovers", read off the entry's chain. (3) The segmented control's
+  buttons were 40px inside a 48px row; Rule 6 is about the thing you tap.
+  **Contrast, measured in Chromium at 390px both schemes:** nothing muted
+  clears 4.5:1 on `--sand` (`--ink-secondary` 4.04, `--ink-muted` 3.93) or
+  on `--ground` (4.44 / 4.33), so the segmented labels and the group eyebrow
+  take `--ink-strong` and the selection is carried by the raised pill and a
+  weight step rather than a colour step; today is an inset celadon edge
+  rather than a `--celadon-tint` fill, which would have put four labels onto
+  a ground where three of them fail. Every new value is recorded in
+  `shell.css`. `tests/test_review_two_views.py` is the guard, 35 tests, the
+  front-end half running shell.js's own functions under node rather than
+  reading the source for markers — the risk in a screen whose job is
+  counting is the count, which no marker test can see. One existing
+  assertion in `tests/test_flows_3_review_and_receipt.py` moved from a
+  file-wide apricot count to a per-function one, honestly and with a note:
+  the Review step renders its own `#week-approve-btn` into the same
+  `.wk-decide` shell so `approveWeek`/`showApproveConfirm` need no second
+  implementation, and only one step is ever in the DOM. Suite 1792 -> 1827.
+
 - **2026-09-10 — A day printed dinner before lunch, because `slot` is a TEXT
   column. Branch `overnight/day-slot-order`.** `get_weekly_plan` ended
   `ORDER BY mpe.date ASC, mpe.slot ASC`, which is ALPHABETICAL — breakfast,

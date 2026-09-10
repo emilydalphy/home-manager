@@ -5200,6 +5200,10 @@
     if (weekPlanState(data) !== 'draft') return '';
     var openCount = countOpenSlots(data);
     return '<div class="wk-decide">' +
+      // The way into the Review step, above the decision it is for: read
+      // the week properly, then approve it. Secondary, not a second apricot
+      // (Rule 5) — the decision is still the primary here.
+      '<button type="button" class="wk-check-btn" id="week-check-btn">Check the week</button>' +
       // Approving with a slot still open is allowed, but named — never a
       // silent shortfall. That is the only thing allowed to reword this
       // button (Emily's copy is "Approve this week").
@@ -5215,6 +5219,469 @@
       // sheet that closes the moment you tap.
       '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
     '</div>';
+  }
+
+  // ---------- REVIEW: the two views ----------
+  // Emily's approved design, 2026-09-09, Option A. The week card above
+  // answers "is this settled?" at a glance; this step is for actually
+  // checking it before approving, and it does that by reading the SAME week
+  // two ways rather than by putting more of it on one screen at once.
+  // Julia's report was that a week is too much to take in — three meals and
+  // two snacks across seven days is 35 things, and a list of all 35 is the
+  // problem rather than the answer.
+  //
+  //   WHAT WE'RE EATING  grouped by meal type, each dish ONCE with the
+  //                      number of days it covers. This is the view that
+  //                      makes "we're having chilli three times" visible,
+  //                      which no day-by-day list ever does.
+  //   WHICH DAYS         one card per day carrying DINNER — the thing
+  //                      people actually check — with the other four one
+  //                      tap away, and a day nobody is home saying so.
+  //
+  // A fourth step of the Meals tab (week -> review -> day -> meal), not a
+  // page and not a first-run screen: any draft is checkable at any time,
+  // and an approved week still reads back here.
+  var REVIEW_GROUP_LABELS = {
+    breakfast: 'Breakfasts', lunch: 'Lunches', dinner: 'Dinners', snack: 'Snacks'
+  };
+  // How a household counts days of a given meal. "4 mornings", not "4
+  // breakfasts" — Emily's own phrasing, and it is what a person says.
+  var REVIEW_SLOT_NOUNS = {
+    breakfast: ['morning', 'mornings'],
+    lunch: ['lunch', 'lunches'],
+    dinner: ['night', 'nights'],
+    snack: ['day', 'days']
+  };
+  // view: which of the two is showing. openDays: which day cards in the
+  // second view are expanded, keyed by date so a re-render keeps them open.
+  // busy/trouble: the stepper's one in-flight call, exactly one at a time
+  // for the same reason swapState is (see it) — a person is tapping one
+  // stepper, not three.
+  var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '' };
+
+  var RV_MINUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M6 12h12"/></svg>';
+  var RV_PLUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M6 12h12"/><path d="M12 6v12"/></svg>';
+  var RV_CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ' +
+    'aria-hidden="true"><path d="M8 10l4 4 4-4"/></svg>';
+
+  function reviewSlotNoun(slot, n) {
+    var pair = REVIEW_SLOT_NOUNS[slot] || REVIEW_SLOT_NOUNS.snack;
+    return n === 1 ? pair[0] : pair[1];
+  }
+
+  // Every dish of the week, once, grouped by meal type and carrying the
+  // days it covers.
+  //
+  // Two rules do all the work here. A dish is identified by the name it
+  // READS as (mealDisplayName), which for a made-ahead or leftover night is
+  // the source dish rather than the "Made ahead — Sunday's Egg White Bites"
+  // sentence — so a chain collapses into one row covering both days without
+  // this function knowing anything about chains. And a COOK is the same
+  // test weekly_plan._is_cook applies server-side (planned, and not
+  // leftovers or takeout), deliberately, so this screen and the approved
+  // week's receipt can never put different numbers on the same week.
+  //
+  // Only `planned` slots are dishes. An `open` slot is a question and a
+  // `planned_empty` one is a night nobody is home — neither is something
+  // the household is eating, and counting either would be the same mistake
+  // three earlier bugs made.
+  function reviewEatingGroups(days) {
+    var byType = {};
+    var order = ['breakfast', 'lunch', 'dinner', 'snack'];
+    (days || []).forEach(function (day) {
+      var seen = WEEK_SLOTS.map(function (s) { return { type: s, entry: day[s] }; });
+      (day.snacks || []).forEach(function (e) { seen.push({ type: 'snack', entry: e }); });
+      seen.forEach(function (s) {
+        var entry = s.entry;
+        if (!entry || entry.state !== 'planned') return;
+        var name = mealDisplayName(entry);
+        if (!name) return;
+        var group = byType[s.type] ||
+          (byType[s.type] = { slot: s.type, label: REVIEW_GROUP_LABELS[s.type], dishes: [], index: {} });
+        var key = name.trim().toLowerCase();
+        var dish = group.index[key];
+        if (!dish) {
+          dish = group.index[key] = { slot: s.type, name: name, days: [], cooks: 0 };
+          group.dishes.push(dish);
+        }
+        // days arrive in the week's own order, so the LAST of these is the
+        // furthest-out day, and that is the one the stepper takes away.
+        // Within one meal type that also happens to be a reheat rather
+        // than the cook that feeds it — a chain's source sits earlier than
+        // the night it feeds. It is NOT a general invariant, and an earlier
+        // version of this comment claimed it was: a dinner cooked double
+        // for the next day's LUNCH is a source sitting in the Dinners
+        // group, and can be last in it. Nothing here relies on the
+        // distinction — the server refuses a chain source outright (see
+        // tools.drop_dish_from_day), which is where the check belongs,
+        // since only it can see the chain.
+        dish.days.push({ date: day.date, entryId: entry.entry_id });
+        if (entry.source !== 'leftovers' && entry.source !== 'takeout') dish.cooks++;
+      });
+    });
+    return order.map(function (t) { return byType[t]; }).filter(Boolean);
+  }
+
+  // Said only when it is not already on screen. The stepper beside it
+  // already says how many days the dish covers, so repeating that as a
+  // subtitle would be exactly the restatement §8 forbids — this line exists
+  // for the one fact the count can't carry, which is that some of those
+  // days cost no cooking. A dish cooked fresh every time says nothing.
+  function reviewCookLine(dish) {
+    var n = dish.days.length;
+    if (dish.cooks === n) return '';
+    if (!dish.cooks) return 'nothing to cook';
+    return dish.cooks === 1 ? 'cooked once' : 'cooked ' + dish.cooks + ' times';
+  }
+
+  function reviewDishRowHtml(dish, idx) {
+    var n = dish.days.length;
+    var cookLine = reviewCookLine(dish);
+    var busy = reviewState.busy === idx;
+    var one = reviewSlotNoun(dish.slot, 1);
+    // At one day there is nothing left to take away — a dish you don't want
+    // at all is a change, not a smaller number, and Change is the button
+    // right beside it.
+    var canDrop = n > 1 && !busy;
+    return '<div class="rv-dish">' +
+      '<div class="rv-dish-said">' +
+        '<span class="rv-dish-name">' + escapeHtml(dish.name) + '</span>' +
+        (cookLine ? '<span class="rv-dish-cooks">' + escapeHtml(cookLine) + '</span>' : '') +
+      '</div>' +
+      '<div class="rv-dish-acts">' +
+        '<span class="rv-step">' +
+          '<button type="button" class="rv-step-btn" data-rv-less="' + idx + '"' +
+            (canDrop ? '' : ' disabled') +
+            ' aria-label="One fewer ' + escapeHtml(one + ' of ' + dish.name) + '">' +
+            RV_MINUS_SVG + '</button>' +
+          '<span class="rv-step-count">' +
+            escapeHtml(n + ' ' + reviewSlotNoun(dish.slot, n)) + '</span>' +
+          // Going UP is not arithmetic: it needs a day to land on, and the
+          // only days available are ones already holding another dish or
+          // deliberately empty. Picking one on the household's behalf would
+          // be inventing a placement rule nobody has decided, so this hands
+          // the question straight to the one place that can ask it.
+          '<button type="button" class="rv-step-btn" data-rv-more="' + idx + '"' +
+            (busy ? ' disabled' : '') +
+            ' aria-label="Another ' + escapeHtml(one + ' of ' + dish.name) +
+            ' — I’ll ask which day">' + RV_PLUS_SVG + '</button>' +
+        '</span>' +
+        '<button type="button" class="rv-change" data-rv-change="' + idx + '">' +
+          (n > 1 ? 'Change one' : 'Change') + '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // Flattened as it renders, so every stepper carries a plain index into
+  // reviewState.dishes rather than a dish name in an HTML attribute.
+  function reviewEatingHtml(days) {
+    var groups = reviewEatingGroups(days);
+    var flat = [];
+    if (!groups.length) {
+      return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
+    }
+    var html = groups.map(function (group) {
+      return '<div class="rv-group">' +
+        '<div class="rv-group-label">' + escapeHtml(group.label) + '</div>' +
+        '<div class="shell-card rv-group-card">' +
+          group.dishes.map(function (dish) {
+            flat.push(dish);
+            return reviewDishRowHtml(dish, flat.length - 1);
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    reviewState.dishes = flat;
+    return '<div class="rv-body">' + html +
+      (reviewState.trouble
+        ? '<div class="rv-trouble">' + escapeHtml(reviewState.trouble) + '</div>'
+        : '') +
+    '</div>';
+  }
+
+  // A day with nothing to cook on it — every one of its three real meals is
+  // deliberately empty, which is either "nobody is home" or "you asked for
+  // none of these". READ, never inferred from a missing row: a day with no
+  // rows at all is an unplanned day, a different thing, and it gets the
+  // ordinary card.
+  //
+  // The three MEALS and not the snacks, deliberately. Both places that mark
+  // a day away — the `out` night pass and the slot_needs pass in
+  // agent._finish_week_slots — only ever write breakfast, lunch and dinner,
+  // so a rule that also demanded empty snacks would essentially never fire
+  // on a real generated week, which is the whole case this state exists
+  // for. (Measured in a browser against a seeded away day, not reasoned
+  // from the code: the first version of this rule read every slot and the
+  // Friday nobody was home rendered as an ordinary day.)
+  function reviewDayIsClosed(day) {
+    var meals = WEEK_SLOTS.map(function (s) { return day[s]; });
+    if (meals.some(function (e) { return !e; })) return false;
+    return meals.every(function (e) { return e.state === 'planned_empty'; });
+  }
+
+  // Whether anything under the face is worth opening. A closed day usually
+  // has nothing — but since nothing marks a SNACK away, a day nobody is
+  // home can still carry two of them, and hiding real rows behind "nobody's
+  // home" would be this screen deciding they don't count. A deliberately
+  // empty slot is still never offered as a decision: it is a line, and the
+  // line says what it is.
+  function reviewDayHasMore(day) {
+    return reviewDaySlotKeys(day).some(function (slot) {
+      var e = daySlotEntry(day, slot);
+      return !!e && (e.state === 'planned' || e.state === 'open');
+    });
+  }
+
+  // What a closed day says for itself. awayLineFor gives the away sentence
+  // the rest of Meals already uses; anything else falls back to the slot's
+  // own recorded words rather than a line this screen made up. Dinner
+  // first, because that is the slot the away need is declared on.
+  function reviewClosedLine(day) {
+    var first = [day.dinner].concat(WEEK_SLOTS.map(function (s) { return day[s]; }))
+      .filter(Boolean)[0];
+    return awayLineFor(first) || (first && first.title) || 'Nothing planned.';
+  }
+
+  function reviewSlotLineHtml(day, slot) {
+    var entry = daySlotEntry(day, slot);
+    var name, quiet = ' is-quiet';
+    if (entry && entry.state === 'planned') { name = mealDisplayName(entry); quiet = ''; }
+    else if (entry && entry.state === 'open') name = 'Your call';
+    else if (entry && entry.state === 'planned_empty') {
+      name = awayLineFor(entry) || entry.title || 'Nothing planned';
+    } else name = day.isPast ? 'Not planned' : 'Nothing yet';
+    return '<span class="rv-slot' + quiet + '">' +
+      '<span class="rv-slot-label">' + escapeHtml(slotEyebrowLabel(day, slot)) + '</span>' +
+      '<span class="rv-slot-name">' + escapeHtml(name) + '</span>' +
+    '</span>';
+  }
+
+  // Every slot the day actually has, in the order it is eaten.
+  function reviewDaySlotKeys(day) {
+    return WEEK_SLOTS.concat((day.snacks || []).map(function (_, i) { return snackSlotKey(i); }));
+  }
+
+  function reviewDayTitle(day) {
+    return dayName(day.date, { weekday: 'long' }) + ' ' + dayName(day.date, { day: 'numeric' });
+  }
+
+  // The face of a day card: the day, and the one line that answers "what
+  // are we eating". Dinner, because that is the meal people actually check
+  // — unless nobody is home, in which case the day's own away sentence is
+  // the whole answer and dinner is not a thing to name.
+  //
+  // `note` is the one thing the dish name cannot say for itself: that
+  // tonight costs no cooking. Without it, a chain reads as the same dinner
+  // planned twice — which on a screen whose whole job is checking the week
+  // looks like a mistake the household should fix, and is the opposite of
+  // what it is. Read off the entry's own chain, never guessed from two days
+  // sharing a name.
+  function reviewDayFaceLine(day) {
+    if (reviewDayIsClosed(day)) return { line: reviewClosedLine(day), quiet: ' is-quiet', note: '' };
+    var dinner = daySlotEntry(day, 'dinner');
+    if (dinner && dinner.state === 'planned') {
+      var note = '';
+      if (dinner.leftover_from) note = dinner.leftover_from.cook_ahead ? 'made ahead' : 'leftovers';
+      else if (dinner.source === 'leftovers') note = 'leftovers';
+      return { line: mealDisplayName(dinner), quiet: '', note: note };
+    }
+    if (dinner && dinner.state === 'open') return { line: 'Your call', quiet: ' is-quiet', note: '' };
+    if (dinner && dinner.state === 'planned_empty') {
+      return {
+        line: awayLineFor(dinner) || dinner.title || 'Nothing planned',
+        quiet: ' is-quiet', note: '',
+      };
+    }
+    return { line: day.isPast ? 'Not planned' : 'Nothing yet', quiet: ' is-quiet', note: '' };
+  }
+
+  function reviewDayNoteHtml(note) {
+    return note ? '<span class="rv-day-note">' + escapeHtml(note) + '</span>' : '';
+  }
+
+  function reviewDayCardHtml(day, i) {
+    var title = reviewDayTitle(day);
+    var closed = reviewDayIsClosed(day);
+    var face = reviewDayFaceLine(day);
+    // Nothing under it worth opening — a day nobody is home and nothing
+    // else on it. Flat rather than an expander that opens onto three
+    // repetitions of the line already on its face.
+    if (!reviewDayHasMore(day)) {
+      return '<div class="shell-card rv-day' + (closed ? ' is-closed' : '') + '">' +
+        '<div class="rv-day-head is-flat">' +
+          '<span class="rv-day-col">' +
+            '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
+            '<span class="rv-day-dinner' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
+            reviewDayNoteHtml(face.note) +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    }
+    var open = !!reviewState.openDays[day.date];
+    var line = face.line, quiet = face.quiet;
+    return '<div class="shell-card rv-day' + (open ? ' is-open' : '') +
+        (closed ? ' is-closed' : '') + (day.isToday ? ' is-today' : '') + '">' +
+      '<button type="button" class="rv-day-head" data-rv-day="' + escapeHtml(day.date) + '"' +
+          ' aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="rv-day-col">' +
+          '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
+          '<span class="rv-day-dinner' + quiet + '">' + escapeHtml(line) + '</span>' +
+          reviewDayNoteHtml(face.note) +
+        '</span>' +
+        '<span class="rv-day-chev">' + RV_CHEVRON_SVG + '</span>' +
+      '</button>' +
+      (open
+        ? '<div class="rv-day-slots">' +
+            reviewDaySlotKeys(day).map(function (slot) {
+              return reviewSlotLineHtml(day, slot);
+            }).join('') +
+            // Through to the Day step, which is where a slot is actually
+            // acted on. Review reads and counts; it does not grow a second
+            // copy of every per-slot control.
+            '<button type="button" class="rv-day-open" data-rv-open="' + i + '">' +
+              'Open ' + escapeHtml(dayName(day.date, { weekday: 'long' })) + ' ›</button>' +
+          '</div>'
+        : '') +
+    '</div>';
+  }
+
+  function reviewDaysHtml(days) {
+    if (!(days || []).length) {
+      return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
+    }
+    return '<div class="rv-body rv-days">' +
+      days.map(reviewDayCardHtml).join('') +
+    '</div>';
+  }
+
+  // The screen's one apricot (Rule 5), and deliberately the same .wk-decide
+  // shell and #week-approve-btn id the Week root uses — approveWeek and
+  // showApproveConfirm both look for exactly those, so the who's-approving
+  // step and the hard-clash "Approve anyway" arming work here with no
+  // second implementation. Only one of the two steps is ever in the DOM at
+  // a time (renderMealsStep replaces #week-steps outright), so the shared
+  // id is never duplicated.
+  function reviewDecideHtml(data) {
+    if (weekPlanState(data) !== 'draft') return '';
+    var openCount = countOpenSlots(data);
+    return '<div class="wk-decide">' +
+      '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+        (openCount
+          ? escapeHtml(approveWithOpenLabel(data, openCount))
+          : 'Approve and build my shopping list') +
+      '</button>' +
+    '</div>';
+  }
+
+  function reviewStepHtml(data, days) {
+    var eating = reviewState.view !== 'days';
+    // "Not approved yet" while it is a draft, and the plain truth once it
+    // isn't — this step is for every week, so the badge has to be able to
+    // say the other thing.
+    var draft = weekPlanState(data) === 'draft';
+    return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
+      '<div class="wk-head">' +
+        '<div class="wk-head-row">' +
+          '<h1 class="wk-title">Check the week</h1>' +
+          '<span class="wk-state is-' + (draft ? 'draft' : 'set') + '">' +
+            (draft ? 'NOT APPROVED YET' : 'APPROVED') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="wk-seg" role="tablist">' +
+        '<button type="button" class="wk-seg-btn' + (eating ? ' is-on' : '') + '"' +
+          ' role="tab" aria-selected="' + (eating ? 'true' : 'false') + '"' +
+          ' data-rv-view="eating">What we’re eating</button>' +
+        '<button type="button" class="wk-seg-btn' + (eating ? '' : ' is-on') + '"' +
+          ' role="tab" aria-selected="' + (eating ? 'false' : 'true') + '"' +
+          ' data-rv-view="days">Which days</button>' +
+      '</div>' +
+      (eating ? reviewEatingHtml(days) : reviewDaysHtml(days)) +
+      reviewDecideHtml(data);
+  }
+
+  // Which of a day's slot KEYS holds this entry. For the three real meals
+  // the group's own type is already the key; a snack is the exception,
+  // because a day's second snack lives under 'snack2' and the group only
+  // knows it is a snack. Matched on entry id rather than on position, so a
+  // day whose snacks were re-ordered still opens the right one.
+  function reviewMealSlotKey(day, entryId, slotType) {
+    if (slotType !== 'snack') return slotType;
+    var snacks = (day && day.snacks) || [];
+    for (var i = 0; i < snacks.length; i++) {
+      if (snacks[i] && snacks[i].entry_id === entryId) return snackSlotKey(i);
+    }
+    return 'snack';
+  }
+
+  // One fewer day of a dish. No model call and no chat turn — this is
+  // arithmetic on the plan, so it is one small POST, and the backend hands
+  // back the changed day in get_week_menu's own shape for the same reason
+  // the in-place swap does: the week this screen is holding can be updated
+  // by splicing one day into it, so BOTH views are right the moment it
+  // lands, with no refetch and no second renderer.
+  async function runDropDishDay(panel, idx) {
+    var dish = (reviewState.dishes || [])[idx];
+    var data = weekState.data;
+    if (!dish || dish.days.length < 2 || !data || !data.week_start_date) return;
+    if (reviewState.busy !== null) return;
+    // The furthest-out day the dish covers — see reviewEatingGroups, and
+    // note that this is NOT guaranteed to be a reheat: the server is what
+    // refuses a night other nights are eating off, and it answers
+    // 'refused' with the sentence to show.
+    var target = dish.days[dish.days.length - 1];
+    reviewState.busy = idx;
+    reviewState.trouble = '';
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/drop-dish-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: target.entryId })
+      });
+      if (!res.ok) throw new Error('drop failed');
+      var out = await res.json();
+      reviewState.busy = null;
+      // A 200 that says no: this dish is cooked double for another night,
+      // and taking it away would leave that night holding a recipe nobody
+      // planned to cook. The sentence is the server's — it is the one that
+      // knows which night depends on it — and nothing was written.
+      if (out && out.status === 'refused') {
+        reviewState.trouble = out.message || SWAP_TROUBLE;
+        renderMealsStep(panel);
+        return;
+      }
+      if (out && out.day) spliceSwappedDay(out.day);
+      renderMealsStep(panel);
+      // Then the rest of the week, for the same reason runSwapInPlace does
+      // it: the splice updates weekState.DAYS, and the badge, the subtitle
+      // and — the one that matters most here — the Approve button's own
+      // count all read weekState.DATA, which a splice never touches. Left
+      // out, the button went on saying "Approve and build my shopping
+      // list" on a week that had just been handed an open slot back: copy
+      // that counts things, drifting from the things it counts, on the
+      // screen whose whole premise is counting.
+      await loadWeekMenu(panel);
+      // The slot came back as a question, so say so — the household tapped
+      // "one fewer" and the work that leaves behind is a night with nothing
+      // on it. Named the way resolveOpenSlot names its own day.
+      showToast(dayName(out.date, { weekday: 'long' }) + '’s ' +
+        slotWord(out.slot) + ' is yours to fill now.');
+      // An approved week's shopping list just changed underneath, so
+      // anything showing it is stale — the same courtesy resolveOpenSlot
+      // already pays.
+      if (data.status === 'approved') refreshGrocerySurfaces();
+    } catch (err) {
+      console.warn('Dropping a day failed:', err);
+      reviewState.busy = null;
+      // Calm and plain, and it says what is true of the plan (§8).
+      reviewState.trouble = 'That didn’t work just now — nothing changed.';
+      renderMealsStep(panel);
+    }
   }
 
   // ---------- DAY ----------
@@ -5672,6 +6139,9 @@
       weekState.step = day ? 'day' : 'week';
     }
     if (weekState.step === 'day' && !day) weekState.step = 'week';
+    // Nothing to check yet. The Review step is about a week that exists;
+    // with no plan at all the root's own plan-a-week entry is the answer.
+    if (weekState.step === 'review' && weekPlanState(data) === 'none') weekState.step = 'week';
 
     var onRoot = weekState.step === 'week';
     var approve = panel.querySelector('#week-approve-row');
@@ -5692,6 +6162,8 @@
       ensureCookDataForMeals(panel);
     } else if (weekState.step === 'day') {
       steps.innerHTML = dayStepHtml(day);
+    } else if (weekState.step === 'review') {
+      steps.innerHTML = reviewStepHtml(data, weekState.days);
     } else {
       steps.innerHTML = weekStepHtml(data, weekState.days);
       if (weekPlanState(data) === 'none') renderPlanWeekEntry(steps, data);
@@ -5840,6 +6312,58 @@
     });
     var more = steps.querySelector('#wk-more');
     if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
+    // The Review step's own controls. The two views are one control over
+    // one week, so switching is local state and a re-render — there is
+    // nothing to fetch, and a round trip to show the same days a different
+    // way would be the screen forgetting what it already knows.
+    steps.querySelectorAll('[data-rv-view]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        reviewState.view = btn.getAttribute('data-rv-view');
+        renderMealsStep(panel);
+      });
+    });
+    steps.querySelectorAll('[data-rv-day]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var date = btn.getAttribute('data-rv-day');
+        if (reviewState.openDays[date]) delete reviewState.openDays[date];
+        else reviewState.openDays[date] = true;
+        renderMealsStep(panel);
+      });
+    });
+    steps.querySelectorAll('[data-rv-open]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        goMealsStep('day', { dayIndex: Number(btn.getAttribute('data-rv-open')) });
+      });
+    });
+    steps.querySelectorAll('[data-rv-less]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        runDropDishDay(panel, Number(btn.getAttribute('data-rv-less')));
+      });
+    });
+    steps.querySelectorAll('[data-rv-more]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var dish = (reviewState.dishes || [])[Number(btn.getAttribute('data-rv-more'))];
+        if (!dish) return;
+        // The one thing this screen cannot answer on its own is WHICH day
+        // the extra one goes on, so it asks rather than guesses.
+        openAskSheet('Another ' + reviewSlotNoun(dish.slot, 1) + ' of ' + dish.name + ' — ');
+      });
+    });
+    steps.querySelectorAll('[data-rv-change]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var dish = (reviewState.dishes || [])[Number(btn.getAttribute('data-rv-change'))];
+        if (!dish || !dish.days.length) return;
+        // Straight to that meal, which is where every way of changing a
+        // dish already lives (Swap in place, "Tell me what instead"). The
+        // first day it covers, because for a chain that is the night it is
+        // actually cooked. Changing every covered day in one tap is the
+        // next card's job, not something to half-build here.
+        var first = dish.days[0];
+        var idx = weekState.days.findIndex(function (d) { return d.date === first.date; });
+        if (idx === -1) return;
+        goMealsStep('meal', { dayIndex: idx, slot: reviewMealSlotKey(weekState.days[idx], first.entryId, dish.slot) });
+      });
+    });
     // The draft's decision, now that it lives under the card rather than in
     // a band of its own. Same two handlers as before, same approveWeek /
     // openAskSheet — only the surface moved.
@@ -5850,6 +6374,10 @@
     var tweakBtn = steps.querySelector('#week-tweak-btn');
     if (tweakBtn) tweakBtn.addEventListener('click', function () {
       openAskSheet('Let’s tweak this week — ');
+    });
+    var checkBtn = steps.querySelector('#week-check-btn');
+    if (checkBtn) checkBtn.addEventListener('click', function () {
+      goMealsStep('review');
     });
   }
 
@@ -6003,6 +6531,12 @@
       (hasPlan && data.status === 'approved'
         ? mealsMoreRowHtml('wk-more-reopen', 'Reopen the week', 'Edit it again — your list stays as it is')
         : '') +
+      // A draft carries "Check the week" on the page itself; an APPROVED
+      // week has no decision row for it to sit in, and this step is for
+      // every week rather than only for one about to be approved.
+      (hasPlan && data.status === 'approved'
+        ? mealsMoreRowHtml('wk-more-check', 'Check the week', 'What you’re eating, and which days')
+        : '') +
       mealsMoreRowHtml('wk-more-whole-week', 'See the whole week', 'All the meals, and the link to share them') +
       mealsMoreRowHtml('wk-more-setup', 'Adjust your setup') +
       mealsMoreRowHtml('wk-more-reset', 'Start over');
@@ -6019,6 +6553,7 @@
       startPlanningWeek(data.week_start_date, data.day_count || 7);
     });
     on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
+    on('wk-more-check', function () { closeMealsMoreSheet(); goMealsStep('review'); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
     on('wk-more-setup', function () { closeMealsMoreSheet(); openMealSetup(); });
     on('wk-more-reset', function () { closeMealsMoreSheet(); openResetDialog(); });

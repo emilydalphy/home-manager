@@ -1956,6 +1956,30 @@ def week_swap_undo(week_start: str, req: SwapUndoRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class DropDishDayRequest(BaseModel):
+    entry_id: int
+
+
+@app.post("/api/week/{week_start}/drop-dish-day")
+def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
+    """
+    One fewer day of a dish — the Review screen's stepper going down.
+
+    No model call and no chat turn: this is arithmetic on the plan, so it
+    is one small write (see tools.drop_dish_from_day) and it hands back the
+    changed day in get_week_menu's own shape, the same way the in-place
+    swap does.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.drop_dish_from_day(plan_id, req.entry_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Dropping a dish's day failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class WeekSlotRequest(BaseModel):
     date: str
     slot: str = "dinner"
