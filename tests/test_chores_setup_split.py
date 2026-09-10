@@ -223,11 +223,20 @@ def test_progress_dots_still_match_the_question_step_count():
     )
     assert "stepFlow().filter(k => k !== 'reveal')" in ONBOARDING
 
+    # UPDATED 2026-09-10: this used to slice the list at 'reveal' and then
+    # assert the slice equalled the same slice — unfalsifiable by
+    # construction, so it said nothing about the dots at all. What is worth
+    # pinning is that the dotted run covers every step that is a question
+    # and no step that isn't. renderProgress removes exactly one key, so
+    # 'reveal' has to be the LAST step for the dots to stop where they
+    # should; a step added after it (which is where the old chores steps
+    # sat) would silently lose its dot, and that is what fails here now.
     question_steps = all_steps[: all_steps.index("reveal")]
-    # Every dot-tracked step must be a real step, in the same relative
-    # order, and the dots must stop exactly where 'reveal' begins.
-    assert question_steps == all_steps[: len(question_steps)]
-    assert all_steps[len(question_steps)] == "reveal"
+    assert question_steps == [s for s in all_steps if s != "reveal"], (
+        "a step sits after 'reveal' — the dots stop before it"
+    )
+    assert all_steps[-1] == "reveal"
+    assert len(question_steps) == len(all_steps) - 1
 
 
 def test_chores_setup_page_reuses_the_same_save_route():

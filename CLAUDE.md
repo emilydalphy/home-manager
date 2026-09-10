@@ -314,6 +314,77 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — The finished wizard was one back swipe away, and
+  re-finishing destroyed the week it had just built. Same branch
+  `overnight/onboarding-go-back`, review pass.** An independent reviewer
+  reproduced it in a real Chromium: at the reveal, one back gesture and two
+  taps of Continue, and the page posted the household, the rhythm, the
+  answers and `generate-first-plan` a **second** time — eight POSTs where
+  there should be four. The second generation runs
+  `tools.retire_overlapping_plans` (`app/agent.py`) over the first, so it
+  destroys the meals and reverses the grocery lines of the week the
+  household was looking at. **A regression, not a pre-existing hole:** on
+  `main` there are no pushed entries to swipe back into, and the entry below
+  says in its own words that the reveal "replaces its entry" so this cannot
+  happen. `replaceState` rewrites ONE entry, the one you are standing on;
+  the other nine were untouched. **Two guards now, deliberately, because the
+  damage is real data.** *Reachability:* `revealReached` is set the first
+  time `showStep('reveal')` runs and the popstate handler answers every
+  gesture from then on by pushing the reveal entry back and re-showing it —
+  the gesture is spent, the screen doesn't move, and pushing truncates the
+  forward stack so a forward swipe has nowhere to go either. *Safety:*
+  `setupFinished` makes `finishSetupAndReveal` a no-op after the first
+  successful pass, however it is reached; a save that FAILS leaves it unset
+  so trying again still works, and the reveal's own "Try again" is
+  untouched, since it is only on screen when nothing came back and there is
+  therefore no week for a second attempt to take over. Three more things
+  went with it. **(a) A reload mid-flow left history lying.** The entries
+  ahead still named later steps while every in-memory answer was gone, so a
+  forward swipe reached, say, `restrictions` with no diet blocks on it, and
+  finishing from there posted. Entries now carry a `PAGE_LOAD` stamp;
+  `startOnboarding` PUSHES rather than replaces when it finds a step in
+  `history.state` (pushState truncates the stale forward entries outright),
+  and a gesture back onto an entry from an older load collapses onto the
+  household step and takes the entry over. **(b) Nothing re-checked that
+  the household had anybody in it.** "Add at least one person" lived only on
+  the household step's own Continue, so a gesture past it let a household of
+  ZERO people post and be handed a generated week. `finishSetupAndReveal`
+  re-validates and sends them back to the step that fixes it, and the alert
+  is now a line ON that step (`#household-empty`, `--urgent`, measured
+  5.54:1) — an alert covers the list of names it is talking about.
+  **(c) A restriction could transfer to a different person when a name was
+  reused.** `restrictionAnswers` is keyed by name and was pruned only inside
+  `buildRestrictionsStep`; remove Sam, rename Alex to Sam, and a history
+  jump that skips that rebuild ships Sam's *peanut allergy* as Alex's — by
+  then there IS a Sam, so nothing downstream can tell. Pruning now happens
+  on the household EDIT (`pruneMemberKeyedAnswers`, wired to the remove
+  button and the name input), which catches the removal while the name is
+  still gone, and again inside `currentRestrictions()` so the payload
+  guarantee stops depending on which screens were drawn. `rhythmLunchLocation`
+  and `rhythmCookingWho` get the same treatment — same shape, same
+  end-of-setup POST. The backend's only member identity is the NAME, so two
+  people called Sam are still indistinguishable to it; that is a bigger
+  ticket, and this closes the half that is reachable from here.
+  **Nit fixed with them:** the back control moved off `--text-muted` (a
+  legacy alias) onto the canonical `--ink-secondary` at the shell step
+  link's own 14px/700 — measured in Chromium at 390px, 4.44:1 light and
+  8.48:1 dark, hit area 91x44. Light is 0.06 under AA for normal text and
+  is under it everywhere in this app (`.wk-back`/`.gro-back` carry the same
+  value); clearing it means changing `--ink-secondary` itself, which is
+  **Emily's Tier 2 call**, not a one-screen hex. **And the test harness is
+  why this survived:** `tests/test_onboarding_go_back.py`'s history stub
+  modelled `back()` as a POP with no `history.state` at all, so a forward
+  entry could not exist in it and a reloaded page could not be described;
+  the one reveal test asserted the stack didn't GROW, which was true and had
+  nothing to do with reachability. It is a real back/forward stack with a
+  cursor now, and the blocker test fails against the pre-fix page (it walks
+  reveal -> typical-week -> dinners -> excited-about). 18 -> 30 tests there;
+  1776 -> 1788. `test_chores_setup_split`'s dot assertion, which had been
+  updated into `assert x == x`, asserts something falsifiable again.
+  **Verified in a real Chromium at 390px** on a throwaway DB with the
+  generation stubbed at the network layer: the reviewer's reproduction goes
+  from 8 POSTs and two generations to 4 and one.
+
 - **2026-09-09 — Onboarding had a way back and nobody could find it, and
   two steps had already written their answer down by the time you did.
   Branch `overnight/onboarding-go-back`.** Emily: "add a go back option in
@@ -362,10 +433,16 @@ why*, not duplicating the diff.
   back link uses `history.back()`, deliberately: onboarding is linear, so
   the entry behind you IS the step behind you — the rule elsewhere exists
   because a tab you can wander around in has no such guarantee. The reveal
-  **replaces** its entry rather than pushing, because by then the answers
-  are saved and a week has been asked for; a gesture back into a finished
-  wizard would offer to re-answer what is already written down, and coming
-  forward again would build a second first week. An unrecognised popstate
+  **replaces** its entry rather than pushing, so arriving at it doesn't add
+  one. ~~That is what makes a gesture back into the finished wizard
+  impossible.~~ **WRONG, and it shipped: `replaceState` rewrites the entry
+  you are STANDING on and leaves the nine behind it exactly where they
+  were.** One back swipe landed on typical-week with every answer still in
+  memory, and two taps of Continue ran the whole finish again — a second
+  LLM week, plus `retire_overlapping_plans` destroying the meals and
+  reversing the grocery lines of the week just shown. Fixed the next day;
+  see the 2026-09-10 entry above for what actually makes the reveal
+  terminal. An unrecognised popstate
   state is left to the browser rather than trapping somebody on question one.
   **Two copy/behaviour changes, both forced by (3) and both Emily's to
   veto:** rhythm-2's CTA says "Continue" instead of "Save my rhythm" (it no
@@ -384,7 +461,9 @@ why*, not duplicating the diff.
   and the only non-GET before the finish was the sign-in. **Not done, on
   purpose:** the flow is still every step for every household
   (`stepFlow()` derives it but has nothing to drop yet), and correcting an
-  answer after setup is still Preferences' job — the reveal has no way back.
+  answer after setup is still Preferences' job — the reveal has no way back
+  (**true as a design intention, and only true of the CODE since the
+  2026-09-10 entry above**).
 
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach

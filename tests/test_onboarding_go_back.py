@@ -82,6 +82,11 @@ def _fn(name: str) -> str:
     return _balanced(ONBOARDING, ONBOARDING.index(f"function {name}("))
 
 
+def _async_fn(name: str) -> str:
+    """Same, keeping the `async` — the body has awaits in it."""
+    return "async " + _fn(name)
+
+
 def _const(name: str) -> str:
     """Lift one `const NAME = ...` — an object, an array, or a single line."""
     start = ONBOARDING.index(f"const {name} = ")
@@ -191,28 +196,61 @@ const document = {
   querySelectorAll: function (sel) { return ROOT.querySelectorAll(sel); }
 };
 
-// One history stack, behaving the way a browser's does: pushState grows it,
-// replaceState overwrites the top, back() pops and hands the entry it lands
-// on to the popstate listener. That is what lets a test drive the phone's
-// own back gesture rather than assert about it.
+// One history stack with a CURSOR, which is what a browser actually has:
+// pushState throws away everything AHEAD of the cursor and appends,
+// replaceState overwrites the entry the cursor is on, back()/forward() move
+// the cursor and hand the entry it lands on to the popstate listener, and
+// back() from the bottom leaves the page rather than firing anything.
+//
+// This stub used to implement back() as a POP, with no history.state on it
+// at all. Two things follow, and being exact about them matters, because
+// the blocker that shipped (one back gesture off the reveal, two taps of
+// Continue, a second generated week destroying the first) is a bug the old
+// stub COULD have shown — nobody asked it to. What it could not do is
+// (a) hold a forward entry: back() destroyed the entry it left, so "the
+// reveal is still there in front of you and gets put back" — the actual
+// fix — was not a question the harness could be asked; and (b) answer
+// window.history.state, which is what a reloaded page reads to know it is
+// a reload, so the reload half below was inexpressible outright.
+// Meanwhile the one reveal test that did exist asserted the stack didn't
+// GROW, which was true, is still true, and never had anything to do with
+// whether the wizard behind it was reachable. That is how a harness reads
+// as coverage while providing none.
 const HISTORY = [];
+let CURSOR = -1;
+let LEFT_PAGE = false;
 const POP_LISTENERS = [];
+function fire() { POP_LISTENERS.forEach(function (fn) { fn({ state: CURSOR >= 0 ? HISTORY[CURSOR] : null }); }); }
 const window = {
   location: { pathname: '/onboarding' },
   scrollTo: function () {},
   addEventListener: function (evt, fn) { if (evt === 'popstate') POP_LISTENERS.push(fn); },
   history: {
     get length() { return HISTORY.length; },
-    pushState: function (s) { HISTORY.push(s); },
-    replaceState: function (s) { if (HISTORY.length) HISTORY[HISTORY.length - 1] = s; else HISTORY.push(s); },
+    get state() { return CURSOR >= 0 ? HISTORY[CURSOR] : null; },
+    pushState: function (s) { HISTORY.length = CURSOR + 1; HISTORY.push(s); CURSOR = HISTORY.length - 1; },
+    replaceState: function (s) { if (CURSOR < 0) { HISTORY.push(s); CURSOR = 0; } else HISTORY[CURSOR] = s; },
     back: function () {
-      HISTORY.pop();
-      const s = HISTORY.length ? HISTORY[HISTORY.length - 1] : null;
-      POP_LISTENERS.forEach(function (fn) { fn({ state: s }); });
+      if (CURSOR <= 0) { LEFT_PAGE = true; return; }   // a real browser leaves the page here
+      CURSOR -= 1;
+      fire();
+    },
+    forward: function () {
+      if (CURSOR >= HISTORY.length - 1) return;
+      CURSOR += 1;
+      fire();
     }
   }
 };
 function gesture() { window.history.back(); }
+function forwardGesture() { window.history.forward(); }
+// How many entries are behind-or-at the cursor — "how deep into this page's
+// own stack am I", which is what the depth assertions in these tests mean.
+function depth() { return CURSOR + 1; }
+function top() { return CURSOR >= 0 ? HISTORY[CURSOR] : null; }
+// One entry as an earlier LOAD of this page would have left it: same shape,
+// a stamp that is not this page's.
+function staleEntry(step) { return { onboardingStep: step, onboardingLoad: 'a-previous-load' }; }
 """
 
 # Every step div and the progress strip, plus one back button per step
@@ -232,11 +270,14 @@ ELS['progress'] = makeEl('div');
     "', '".join(STEPS_AFTER_THE_FIRST))
 
 
-def _nav_harness(builders: str = "") -> str:
+def _nav_harness(builders: str = "", seed: str = "") -> str:
     """
     The navigation block, running for real. `builders` supplies the nine
     step builders — a test that cares only about where back goes stubs them
     to record that they ran; the rhythm test hands over the page's own.
+    `seed` runs just before the page's own first line, which is how a test
+    puts entries from an EARLIER page load into history before this one
+    starts.
     """
     return "\n".join([
         _DOM_STUB,
@@ -261,14 +302,17 @@ function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
         _const("STEP_BUILDERS"),
         _fn("renderProgress"),
         _fn("renderBackLink"),
+        _const("PAGE_LOAD"),
         _fn("pushStepHistory"),
         # Declared with let/var outside any function on the page, so they
         # are restated here rather than lifted.
         "var currentStep = 'household';",
+        "var revealReached = false;",
         "var backLinkTarget = '';",
         _fn("showStep"),
         _fn("goBackFrom"),
         _popstate_handler(),
+        _fn("startOnboarding"),
         # The page's own wiring, restated: each back button runs goBackFrom
         # with the key of the step it lives on.
         """
@@ -277,8 +321,12 @@ document.querySelectorAll('[data-step-back]').forEach(function (b) {
 });
 function tapBack(step) { document.querySelector('[data-step-back="' + step + '"]').click(); }
 function backLabel(step) { return document.querySelector('[data-step-back="' + step + '"]').textContent; }
-showStep('household', { replace: true });
 """,
+        seed,
+        # The page's own first line, run for real rather than restated — a
+        # reload test needs the version that decides whether to replace or
+        # push, and a restated one would be free to be wrong about it.
+        "startOnboarding();",
     ])
 
 
@@ -390,10 +438,11 @@ def test_the_back_gesture_walks_the_flow_backwards_one_step_at_a_time():
 ['rhythm-1', 'rhythm-2', 'restrictions', 'eating-style'].forEach(showStep);
 const seen = [];
 for (let i = 0; i < 4; i++) { gesture(); seen.push(currentStep); }
-console.log(JSON.stringify({ seen: seen, depth: window.history.length }));
+console.log(JSON.stringify({ seen: seen, depth: depth(), left: LEFT_PAGE }));
 """)
     assert out["seen"] == ["restrictions", "rhythm-2", "rhythm-1", "household"]
     assert out["depth"] == 1, "the gesture didn't unwind the stack it walked in on"
+    assert out["left"] is False, "it walked off the page early"
 
 
 @_needs_node
@@ -405,9 +454,9 @@ def test_the_control_and_the_gesture_agree_rather_than_fighting_each_other():
     """
     out = _run(_nav_harness() + """
 ['rhythm-1', 'rhythm-2', 'restrictions'].forEach(showStep);
-const depthBefore = window.history.length;
+const depthBefore = depth();
 tapBack('restrictions');
-const afterTap = { on: currentStep, depth: window.history.length };
+const afterTap = { on: currentStep, depth: depth() };
 gesture();
 console.log(JSON.stringify({ before: depthBefore, afterTap: afterTap, thenGesture: currentStep }));
 """)
@@ -438,20 +487,264 @@ console.log(JSON.stringify(handled));
 @_needs_node
 def test_the_reveal_takes_over_its_entry_instead_of_adding_one():
     """
-    By the time the reveal renders the answers are saved and a week has been
-    asked for. A gesture back into the finished wizard would offer to
-    re-answer what is already written down, and coming forward again would
-    build a second first week.
+    Arriving at the reveal doesn't grow the stack. That is all replacing
+    does, though — the nine entries behind it are untouched, which is what
+    the trap below exists for.
     """
     out = _run(_nav_harness() + """
 ['rhythm-1', 'rhythm-2'].forEach(showStep);
-const before = window.history.length;
+const before = depth();
 showStep('reveal');
-console.log(JSON.stringify({ before: before, after: window.history.length, top: HISTORY[HISTORY.length - 1] }));
+console.log(JSON.stringify({ before: before, after: depth(), top: top().onboardingStep }));
 """)
     assert out["before"] == 3
     assert out["after"] == 3, "the reveal pushed a history entry of its own"
-    assert out["top"] == {"onboardingStep": "reveal"}
+    assert out["top"] == "reveal"
+
+
+@_needs_node
+def test_the_back_gesture_cannot_get_off_the_reveal_and_back_into_the_wizard():
+    """
+    THE BLOCKER, reproduced. replaceState rewrites ONE entry — the one you
+    are standing on — and an independent reviewer found the other nine still
+    behind it in a real Chromium: one back swipe landed on typical-week with
+    every answer still in memory, and two taps of Continue ran the whole
+    finish a second time. A second generated week runs
+    tools.retire_overlapping_plans over the first, destroying its meals and
+    reversing its grocery lines.
+
+    Checked against the pre-fix page through this same harness: it walks
+    reveal -> typical-week -> dinners -> excited-about, which is the escape,
+    so this test earns its keep rather than passing by construction.
+    """
+    out = _run(_nav_harness() + """
+%s.forEach(showStep);
+showStep('reveal');
+const atReveal = { on: currentStep, depth: depth(), len: HISTORY.length };
+const seen = [];
+for (let i = 0; i < 4; i++) { gesture(); seen.push(currentStep); }
+console.log(JSON.stringify({
+  atReveal: atReveal, seen: seen, len: HISTORY.length,
+  top: top().onboardingStep, left: LEFT_PAGE
+}));
+""" % json.dumps(STEPS_AFTER_THE_FIRST))
+    assert out["atReveal"] == {"on": "reveal", "depth": 10, "len": 10}
+    assert out["seen"] == ["reveal"] * 4, (
+        "a back gesture off the reveal got back into the finished wizard"
+    )
+    assert out["top"] == "reveal", "the entry the reveal stands on is no longer the reveal"
+    assert out["len"] == 10, "trapping the gesture grew the stack without bound"
+    assert out["left"] is False
+
+
+@_needs_node
+def test_a_forward_gesture_from_the_reveal_stays_on_the_reveal_too():
+    """
+    The other direction. A back gesture is answered by pushing the reveal
+    entry back on, which truncates the forward stack, so there is nothing
+    ahead to swipe to either.
+    """
+    out = _run(_nav_harness() + """
+['rhythm-1', 'rhythm-2'].forEach(showStep);
+showStep('reveal');
+gesture();
+forwardGesture();
+console.log(JSON.stringify({ on: currentStep, top: top().onboardingStep }));
+""")
+    assert out == {"on": "reveal", "top": "reveal"}
+
+
+# ---------- a reload empties the answers but not the history ----------
+# Reloading mid-flow leaves entries this page pushed naming steps whose
+# answers are gone. Honouring one hands back a later question with every
+# block blank, and — before the guard in finishSetupAndReveal — let a
+# household of nobody finish setup and be given a generated week.
+
+
+@_needs_node
+def test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it():
+    """
+    A forward swipe after a reload must not reach a later question. Pushing
+    the household entry truncates the forward stack, which is what actually
+    removes them rather than merely declining to honour them.
+    """
+    out = _run(_nav_harness(seed="""
+// Where a previous load of this page had got to: four steps in, with the
+// browser sitting on the third of them.
+[staleEntry('household'), staleEntry('rhythm-1'), staleEntry('rhythm-2'),
+ staleEntry('restrictions')].forEach(function (s) { HISTORY.push(s); });
+CURSOR = 2;
+""") + """
+const afterLoad = { on: currentStep, len: HISTORY.length, at: depth() };
+forwardGesture();
+console.log(JSON.stringify({ afterLoad: afterLoad, forward: currentStep, len: HISTORY.length }));
+""")
+    assert out["afterLoad"]["on"] == "household", "a reload didn't start on the first step"
+    assert out["afterLoad"]["len"] == 4, (
+        "the stale forward entry survived the reload — a forward swipe reaches "
+        "a question whose answers are gone"
+    )
+    assert out["afterLoad"]["at"] == 4
+    assert out["forward"] == "household"
+
+
+@_needs_node
+def test_a_back_gesture_onto_an_entry_from_before_the_reload_collapses_onto_the_first_step():
+    out = _run(_nav_harness(seed="""
+[staleEntry('household'), staleEntry('rhythm-1'), staleEntry('rhythm-2')]
+  .forEach(function (s) { HISTORY.push(s); });
+CURSOR = 2;
+""") + """
+const seen = [];
+const stamps = [];
+for (let i = 0; i < 2; i++) {
+  gesture();
+  seen.push(currentStep);
+  stamps.push(top().onboardingLoad === PAGE_LOAD);
+}
+console.log(JSON.stringify({ seen: seen, retaken: stamps }));
+""")
+    assert out["seen"] == ["household", "household"], (
+        "a gesture landed on a step whose answers the reload had emptied"
+    )
+    assert out["retaken"] == [True, True], (
+        "the stale entry was left stale, so the same gesture goes round in a circle"
+    )
+
+
+@_needs_node
+def test_an_ordinary_arrival_still_replaces_rather_than_pushes():
+    """
+    The reload branch must not cost a normal first visit an extra entry.
+    """
+    out = _run(_nav_harness() + """
+console.log(JSON.stringify({ len: HISTORY.length, on: currentStep, top: top().onboardingStep }));
+""")
+    assert out == {"len": 1, "on": "household", "top": "household"}
+
+
+# ---------- setup finishes once, and never with nobody in the house ----------
+
+
+def _finish_harness(members: str = "[{ name: 'Robin', age_group: 'adult' }]") -> str:
+    """
+    finishSetupAndReveal itself, over the same navigation, with the four
+    writes and the generation call stubbed to record that they happened.
+    Nothing here reaches a network or a database — what is being pinned is
+    how many times the page ASKS.
+    """
+    return "\n".join([
+        _nav_harness(),
+        """
+ELS['household-empty'] = makeEl('p');
+ELS['household-empty'].hidden = true;
+const POSTS = [];
+var MEMBERS = %s;
+function currentMembers() { return MEMBERS; }
+async function saveHouseholdMembers() { POSTS.push('household'); }
+async function saveRhythmAnswers() { POSTS.push('rhythm'); }
+async function saveOnboardingAnswers() { POSTS.push('answers'); return { member_names: [] }; }
+async function savePlanTheWeekAnswers() { POSTS.push('plan-the-week'); }
+async function generateFirstPlanAndReveal() { POSTS.push('generate-first-plan'); }
+var setupFinished = false;
+function alert() {}
+""" % members,
+        _fn("showHouseholdEmptyNote"),
+        _async_fn("finishSetupAndReveal"),
+    ])
+
+
+@_needs_node
+def test_generation_can_never_be_asked_for_twice_from_this_page():
+    """
+    The invariant with teeth. However the finish button is reached — the
+    history trap makes it unreachable, and this is the guard behind that —
+    /api/onboarding/generate-first-plan is asked for at most once per load,
+    because the second week generated takes over the first and destroys it.
+    """
+    out = _run(_finish_harness() + """
+(async function () {
+  %s.forEach(showStep);
+  await finishSetupAndReveal(null);
+  const first = POSTS.slice();
+  gesture();                         // the phone's back gesture off the reveal
+  const afterBack = currentStep;
+  await finishSetupAndReveal(null);  // and the finish it used to be able to reach
+  await finishSetupAndReveal(null);
+  console.log(JSON.stringify({ first: first, afterBack: afterBack, posts: POSTS, on: currentStep }));
+})();
+""" % json.dumps(STEPS_AFTER_THE_FIRST))
+    assert out["first"] == ["household", "rhythm", "answers", "plan-the-week", "generate-first-plan"]
+    assert out["afterBack"] == "reveal"
+    assert out["posts"] == out["first"], (
+        "setup ran a second time — a second generated week takes over the first"
+    )
+    assert out["on"] == "reveal"
+
+
+@_needs_node
+def test_a_failed_save_leaves_setup_finishable():
+    """
+    The guard is about a week that got built, not about one attempt. A save
+    that throws never reaches the generation call, so trying again has to
+    still work.
+    """
+    out = _run(_finish_harness() + """
+(async function () {
+  let firstTry = true;
+  saveRhythmAnswers = async function () {
+    POSTS.push('rhythm');
+    if (firstTry) { firstTry = false; throw new Error('nope'); }
+  };
+  showStep('kit-repeats');
+  await finishSetupAndReveal(null);
+  const afterFailure = POSTS.slice();
+  await finishSetupAndReveal(null);
+  console.log(JSON.stringify({ afterFailure: afterFailure, posts: POSTS, on: currentStep }));
+})();
+""")
+    assert out["afterFailure"] == ["household", "rhythm"]
+    assert out["posts"][-1] == "generate-first-plan"
+    assert out["on"] == "reveal"
+
+
+@_needs_node
+def test_setup_cannot_complete_with_nobody_in_the_household():
+    """
+    The "add at least one person" check lived only on the household step's
+    own Continue, and a history gesture can reach the finish button without
+    it ever having run. A household of zero people posted and was handed a
+    generated week.
+    """
+    out = _run(_finish_harness(members="[]") + """
+(async function () {
+  showStep('kit-repeats');
+  await finishSetupAndReveal(null);
+  console.log(JSON.stringify({
+    posts: POSTS, on: currentStep, noteShown: !ELS['household-empty'].hidden
+  }));
+})();
+""")
+    assert out["posts"] == [], "a household of nobody wrote itself down"
+    assert out["on"] == "household", "it didn't send them back to the step that fixes it"
+    assert out["noteShown"] is True
+
+
+def test_the_empty_household_is_told_in_a_line_on_the_step_not_an_alert():
+    """
+    DESIGN_SYSTEM §8: a problem is stated plainly and paired with its way out
+    in the same breath. An alert also covers the list of names it is talking
+    about.
+    """
+    markup = _step_markup("step-household")
+    assert 'id="household-empty"' in markup
+    assert "add whoever's eating" in markup
+    # Both doors to the check say it the same way, and neither says it in an
+    # alert. (The alert left in finishSetupAndReveal's catch is a different
+    # thing entirely — a save that failed on the network, untouched here.)
+    assert "showHouseholdEmptyNote(true)" in _fn("finishSetupAndReveal")
+    assert "showHouseholdEmptyNote(true)" in ONBOARDING.split("household-next")[2]
+    assert "alert('Add at least one person" not in ONBOARDING
 
 
 # ---------- what depends on what ----------
@@ -565,6 +858,7 @@ function currentMembers() { return MEMBERS; }
         _fn("chipWithCustom"),
         _fn("getActiveChips"),
         "var restrictionAnswers = {};",
+        _fn("pruneRestrictionAnswers"),
         _fn("buildRestrictionsStep"),
         _fn("currentRestrictions"),
         """
@@ -633,6 +927,125 @@ console.log(JSON.stringify({ saved: currentRestrictions(), held: Object.keys(res
     assert out["held"] == ["Robin", "James"], (
         "a restriction stayed on file for a name nobody in the household answers to"
     )
+
+
+def _household_edit_harness() -> str:
+    """
+    The household step's own rows, with the real remove/rename handlers on
+    them, over the restrictions harness — which is what makes the reuse case
+    below expressible: it edits the household the way a finger does, and
+    lets the prune fall where the page puts it.
+    """
+    return "\n".join([
+        _restrictions_harness().replace(
+            "var MEMBERS = [];\nfunction currentMembers() { return MEMBERS; }",
+            """
+// The real thing, reading rows out of a container, rather than a stub list.
+const membersDiv = el('members');
+var rhythmLunchLocation = {};
+var rhythmCookingWho = '';
+function addMemberRow(name) {
+  const block = makeEl('div');
+  block._classes.add('member-block');
+  const input = makeEl('input');
+  input._classes.add('member-name');
+  input.value = name || '';
+  block.appendChild(input);
+  const remove = makeEl('button');
+  remove._classes.add('remove-btn');
+  block.appendChild(remove);
+  remove.onclick = function () {
+    block._parent._children = block._parent._children.filter(function (c) { return c !== block; });
+    pruneMemberKeyedAnswers();
+  };
+  input.addEventListener('input', pruneMemberKeyedAnswers);
+  membersDiv.appendChild(block);
+  return block;
+}
+function rename(block, to) {
+  block.querySelector('.member-name').value = to;
+  (block.querySelector('.member-name')._listeners.input || []).forEach(function (fn) { fn(); });
+}
+function removeRow(block) { block.querySelector('.remove-btn').click(); }
+""",
+        ),
+        # The page's own reader of the rows, and its own prune. addMemberRow
+        # is the one thing stubbed above (its markup is a template string and
+        # its age chips are a different question) — the two handlers it wires
+        # are copied onto the stub rows verbatim.
+        _fn("currentMembers"),
+        _fn("pruneMemberKeyedAnswers"),
+    ])
+
+
+@_needs_node
+def test_an_allergy_cannot_transfer_to_a_different_person_when_a_name_is_reused():
+    """
+    Sam and Alex; Sam says "allergy: peanuts". Go back, remove Sam, rename
+    Alex to Sam. The prune used to live only inside buildRestrictionsStep,
+    so a history jump that skipped that rebuild carried Sam's allergy onto
+    Alex — by then there IS a Sam in the household, so nothing downstream
+    could tell. This app treats a wrong allergy attribution as a safety bug.
+
+    The household edits themselves prune now, which catches the removal
+    while the name is still gone.
+    """
+    out = _run(_household_edit_harness() + """
+const sam = addMemberRow('Sam');
+const alex = addMemberRow('Alex');
+buildRestrictionsStep();
+tapDiet('Sam', 'Allergy');
+typeAllergy('Sam', 'peanuts');
+const answered = currentRestrictions();
+// Back to the household step: Sam goes, Alex takes the name.
+removeRow(sam);
+rename(alex, 'Sam');
+// ...and forward past restrictions without that step being rebuilt.
+console.log(JSON.stringify({
+  answered: answered,
+  after: currentRestrictions(),
+  held: Object.keys(restrictionAnswers),
+  members: currentMembers().map(function (m) { return m.name; })
+}));
+""")
+    assert out["answered"] == {"Sam": ["allergy: peanuts"]}
+    assert out["members"] == ["Sam"]
+    assert out["after"] == {}, (
+        "a peanut allergy Sam declared was shipped as Alex's, because Alex is "
+        "now called Sam"
+    )
+    assert out["held"] == []
+
+
+@_needs_node
+def test_a_lunch_answer_cannot_transfer_the_same_way():
+    """
+    The same shape one door along: saveRhythmAnswers posts
+    rhythmLunchLocation verbatim, keyed by name, on the same end-of-setup
+    request.
+    """
+    out = _run(_household_edit_harness() + """
+const sam = addMemberRow('Sam');
+const alex = addMemberRow('Alex');
+rhythmLunchLocation = { Sam: 'out', Alex: 'home' };
+rhythmCookingWho = 'Sam';
+removeRow(sam);
+rename(alex, 'Sam');
+console.log(JSON.stringify({ lunch: rhythmLunchLocation, who: rhythmCookingWho }));
+""")
+    assert out["lunch"] == {}, "a lunch location moved onto a different person"
+    assert out["who"] == "", "the cook pick stayed pointed at a name that is now somebody else"
+
+
+def test_the_payload_builder_prunes_too_rather_than_trusting_the_route():
+    """
+    NIT-level but the point of the whole fix: currentRestrictions() is the
+    function that writes the payload, so it prunes as well, and the
+    guarantee stops depending on which screens were drawn on the way.
+    """
+    assert "pruneRestrictionAnswers();" in _fn("currentRestrictions")
+    assert "pruneRestrictionAnswers();" in _fn("buildRestrictionsStep")
+    assert "pruneMemberKeyedAnswers" in _fn("addMemberRow")
 
 
 # ---------- nothing is written until setup finishes ----------

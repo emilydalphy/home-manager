@@ -150,15 +150,32 @@
      instead of saying "Back", which is DESIGN_SYSTEM §5's "‹ Parent" step
      link, the same shape .wk-back/.gro-back use in the shell. A button
      rather than a span so it is reachable by keyboard and announced as a
-     control. */
+     control.
+     Token, size and weight are the shell's step link exactly: 14px/700 on
+     --ink-secondary, the CANONICAL name for what this rule used to write as
+     --text-muted, a legacy alias (§1).
+     Contrast measured in Chromium off the computed style at 390px, on this
+     page's real ground: #7C7161 on #FBF6EE = 4.44:1 light; #BFB6A5 on
+     #101F19 = 8.48:1 dark. Hit area measured 91x44 (hard rule 6).
+     Dark clears AA. Light is 0.06 under the 4.5:1 for normal
+     text — and it is under it everywhere in this app, since .wk-back and
+     .gro-back carry the identical value. Clearing it means changing
+     --ink-secondary itself, which ~40 call sites read: a Tier 2 token
+     decision for Emily, not something to fix on one screen by hardcoding a
+     darker hex (hard rule 9). No other token in the ink ramp sits between
+     --ink-secondary and body ink with a role that honestly covers a
+     navigation control, so it is flagged rather than quietly gamed. The
+     14px/700 is what this screen can do on its own: a bigger, bolder target
+     than the 13.6px/600 it replaces, in the same family as every other step
+     link in the app. */
   .back-link {
     background: none;
     border: 0;
     padding: 0 8px 0 0;
-    color: var(--text-muted);
+    color: var(--ink-secondary);
     font-family: var(--font-body);
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
     margin: 0 0 2px -2px;
     min-width: 44px;
@@ -171,6 +188,17 @@
      .reveal-days and .reveal-status already carry. The first step has
      nothing behind it, so its control is hidden rather than absent. */
   .back-link[hidden] { display: none; }
+  /* The one thing a step says back when it can't go on. --urgent is the
+     token for "needs a decision" (hard rule 3) and this is the only place
+     onboarding uses it. No fill and no icon: it sits under the control that
+     fixes it, so it doesn't need to shout to be found. */
+  .step-note {
+    color: var(--urgent);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 10px 0 0;
+  }
   .member-block { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 10px; }
   .member-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
   .two-col { display: flex; gap: 10px; }
@@ -460,6 +488,11 @@
   <p class="subtitle">Just names for now — I'll get to the details in a sec.</p>
   <div id="members"></div>
   <button class="add-btn" id="add-member" type="button">+ Add person</button>
+  <!-- Said here, on the step that can fix it, rather than in an alert. It
+       states the problem and its way out in one line (DESIGN_SYSTEM §8's
+       calm-in-trouble rule) and it is the ONLY thing either the Continue
+       button or the end of setup says when there is nobody on the list. -->
+  <p class="step-note" id="household-empty" hidden>I need at least one name before I can plan anything — add whoever's eating.</p>
   <div><button class="next-btn" id="household-next" type="button">Continue</button></div>
 </div>
 
@@ -900,9 +933,46 @@ function addMemberRow(name, ageGroup) {
     </div>
     <div class="rhythm-chip-row member-age-chips" style="margin-bottom:4px"></div>
   `;
-  block.querySelector('.remove-btn').onclick = () => block.remove();
+  // Every answer this app keys by a member NAME is pruned the moment the
+  // household changes, not only when the step that owns it is next drawn.
+  // The difference is a name being REUSED. Two people, Sam and Alex; Sam
+  // says "allergy: peanuts"; go back, remove Sam, rename Alex to Sam. A
+  // prune that only runs when the restrictions step is next built finds a
+  // "Sam" in the household by then and hands Sam's allergy to Alex — and a
+  // multi-entry history jump can skip that rebuild entirely, so the payload
+  // ships it. Pruning on the EDIT catches the removal while the name is
+  // still gone. This app treats a wrong allergy attribution as a safety
+  // bug (see the 2026-09-04 allergy-enforcement entry in CLAUDE.md), which
+  // is why it is closed here rather than argued about at render time.
+  block.querySelector('.remove-btn').onclick = () => {
+    block.remove();
+    pruneMemberKeyedAnswers();
+  };
+  block.querySelector('.member-name').addEventListener('input', pruneMemberKeyedAnswers);
   membersDiv.appendChild(block);
   renderMemberAgeChips(block);
+}
+// Declared as functions rather than inlined so the two callers that matter
+// can share them: the household edits above, and currentRestrictions()
+// itself — which is what actually guarantees the payload never names
+// somebody who isn't in the household, whatever route got you to it.
+function pruneRestrictionAnswers() {
+  const here = new Set(currentMembers().map(m => m.name));
+  Object.keys(restrictionAnswers).forEach(name => {
+    if (!here.has(name)) delete restrictionAnswers[name];
+  });
+}
+function pruneMemberKeyedAnswers() {
+  const here = new Set(currentMembers().map(m => m.name));
+  pruneRestrictionAnswers();
+  // The lunch locations are the same shape and go out on the same
+  // end-of-setup POST (saveRhythmAnswers sends rhythmLunchLocation
+  // verbatim), so they get the same treatment; renderLunchPeople's own
+  // prune stays, it just isn't the only one any more.
+  Object.keys(rhythmLunchLocation).forEach(name => {
+    if (!here.has(name)) delete rhythmLunchLocation[name];
+  });
+  if (rhythmCookingWho && !here.has(rhythmCookingWho)) rhythmCookingWho = '';
 }
 // The first two rows default to Adult (the common case — most households
 // start with the adults in the house); anyone added after that starts
@@ -1331,10 +1401,7 @@ function buildRestrictionsStep() {
   const dietDiv = document.getElementById('diet-by-member');
   dietDiv.innerHTML = '';
   const members = currentMembers();
-  const here = new Set(members.map(m => m.name));
-  Object.keys(restrictionAnswers).forEach(name => {
-    if (!here.has(name)) delete restrictionAnswers[name];
-  });
+  pruneRestrictionAnswers();
   members.forEach(m => {
     const saved = restrictionAnswers[m.name] || { chips: [], allergy: '', other: '' };
     restrictionAnswers[m.name] = saved;
@@ -1388,6 +1455,11 @@ function buildRestrictionsStep() {
 // still ship a restriction, and a household that never reached this step
 // must not ship an empty one.
 function currentRestrictions() {
+  // Pruned here as well as on every household edit and in the builder: this
+  // is the function that writes the payload, so this is the one place where
+  // "the payload can never name somebody who isn't in the household" is a
+  // property of the code rather than of the route somebody took to get here.
+  pruneRestrictionAnswers();
   const out = {};
   currentMembers().forEach(m => {
     const saved = restrictionAnswers[m.name];
@@ -2229,22 +2301,32 @@ function renderBackLink(key) {
   if (prev) el.textContent = '‹ ' + (STEP_TITLES[prev] || 'Back');
 }
 
+// Stamped into every entry this page pushes. A reload keeps the history
+// entries but throws away every answer in memory they were written against,
+// so an entry carrying somebody else's stamp is one whose answers are gone
+// — see the popstate handler and startOnboarding below.
+const PAGE_LOAD = String(Date.now()) + ':' + String(Math.random());
+
 // One history entry per step, so the phone's own back gesture means the
 // same thing the control does. The URL never changes — onboarding is one
 // page — so the state object is the whole of it.
 function pushStepHistory(key, replace) {
   if (!window.history) return;
-  const state = { onboardingStep: key };
+  const state = { onboardingStep: key, onboardingLoad: PAGE_LOAD };
   const path = window.location.pathname;
   if (replace) window.history.replaceState(state, '', path);
   else window.history.pushState(state, '', path);
 }
 
 let currentStep = 'household';
+// Set the first time the reveal renders, and never cleared. From then on
+// this page is a one-way door: see the popstate handler.
+let revealReached = false;
 function showStep(key, opts) {
   opts = opts || {};
   key = resolveStep(key);
   currentStep = key;
+  if (key === 'reveal') revealReached = true;
   const build = STEP_BUILDERS[key];
   if (build) build();
   ALL_STEPS.forEach(k => {
@@ -2253,12 +2335,12 @@ function showStep(key, opts) {
   renderBackLink(key);
   renderProgress();
   if (opts.push !== false) {
-    // The reveal REPLACES rather than pushes. By the time it renders the
-    // answers are saved and a week has been asked for, so a back gesture
-    // into the finished wizard would be offering to re-answer questions
-    // that are already written down — and coming forward again would build
-    // a second first week. Corrections are Preferences' job from here, and
-    // the receipt on that screen says so.
+    // The reveal REPLACES rather than pushes, so arriving at it doesn't add
+    // an entry of its own. That is ALL replacing does, and an earlier
+    // version of this comment claimed more: replaceState rewrites the entry
+    // you are standing on and leaves the nine behind it exactly where they
+    // were, so the finished wizard stayed one gesture away. What actually
+    // makes the reveal terminal is the trap in the popstate handler below.
     pushStepHistory(key, !!opts.replace || key === 'reveal');
   }
   window.scrollTo(0, 0);
@@ -2291,7 +2373,24 @@ function goBackFrom(key) {
 window.addEventListener('popstate', function (e) {
   const target = backLinkTarget;
   backLinkTarget = '';
-  const key = e && e.state && e.state.onboardingStep;
+  const state = e && e.state;
+  const key = state && state.onboardingStep;
+  // THE REVEAL IS A ONE-WAY DOOR, and this is what makes it one. Once it
+  // has rendered, the household is written down and a week has been asked
+  // for; the nine question steps behind it are still sitting in history
+  // with every answer still in memory, so one back gesture landed on
+  // kit-repeats and one more tap of Continue ran the whole finish again —
+  // a second LLM week, and retire_overlapping_plans (app/agent.py)
+  // destroying the meals and reversing the grocery lines of the week the
+  // household had just been shown. Putting the entry back spends the
+  // gesture without moving the screen and leaves the wizard unreachable.
+  // This is only the reachability half: finishSetupAndReveal refuses to run
+  // twice regardless of how it is reached, because the damage is real data.
+  if (revealReached) {
+    pushStepHistory('reveal', false);
+    showStep('reveal', { push: false });
+    return;
+  }
   if (target) {
     // The control promised a named step. If the entry we landed on is that
     // step, nothing to correct; if it somehow isn't, the promise wins and
@@ -2304,6 +2403,18 @@ window.addEventListener('popstate', function (e) {
   // A state we don't recognise is whatever came before onboarding — let the
   // browser have it rather than trapping somebody on the first question.
   if (!key || ALL_STEPS.indexOf(key) === -1) return;
+  // An entry stamped by an EARLIER load of this page. Reloading empties
+  // every answer in memory but leaves the entries behind you naming the
+  // steps you had reached, so honouring one lands on a later question with
+  // every block blank — and, before the guard in finishSetupAndReveal, let
+  // a household of nobody finish setup and be handed a generated week.
+  // Collapse it onto the first step, which after a reload is the only one
+  // whose answers are still true, and take the entry over so the same
+  // gesture again goes further back rather than round in a circle.
+  if (state.onboardingLoad !== PAGE_LOAD) {
+    showStep('household', { replace: true });
+    return;
+  }
   showStep(key, { push: false });
 });
 
@@ -2333,8 +2444,17 @@ async function saveHouseholdMembers() {
 
 // Every one of these is now just "go to the next step" — showStep builds
 // the step it is going to, and nothing writes anything on the way past.
+// "Add at least one person to get started" used to be an alert here. It is
+// a line on the step now (#household-empty) — an alert covers the thing it
+// is talking about, and this one is a sentence about the list of names two
+// inches below it.
+function showHouseholdEmptyNote(show) {
+  const note = document.getElementById('household-empty');
+  if (note) note.hidden = !show;
+}
 document.getElementById('household-next').onclick = () => {
-  if (!currentMembers().length) { alert('Add at least one person to get started.'); return; }
+  if (!currentMembers().length) { showHouseholdEmptyNote(true); return; }
+  showHouseholdEmptyNote(false);
   showStep('rhythm-1');
 };
 document.getElementById('rhythm-1-next').onclick = () => {
@@ -2389,13 +2509,42 @@ document.getElementById('typical-week-skip').onclick = () => {
 // stand, and going back cannot leave a second copy of anything because
 // there was never a first one. The order matters: members exist before the
 // rhythm and the answer set name them.
+//
+// It also runs AT MOST ONCE per page load, and that guard is not tidiness.
+// Finishing asks for a real LLM week, and generating one runs
+// tools.retire_overlapping_plans (app/agent.py) over anything covering the
+// same days — so a second finish destroys the meals and reverses the
+// grocery lines of the week the household was just shown. The history trap
+// in the popstate handler is what stops the finished wizard being reachable
+// at all; this is the belt to that pair of braces, and it holds however the
+// button is reached. "Try again" on a FAILED generation is deliberately not
+// covered by it: it calls generateFirstPlanAndReveal directly, it is only
+// on screen when nothing came back, and there is therefore no week for a
+// second attempt to take over.
+let setupFinished = false;
 async function finishSetupAndReveal(btn) {
+  if (setupFinished) { showStep('reveal'); return; }
+  // Re-validated here rather than trusted from the household step's own
+  // Continue. That check is the only thing standing between an empty list
+  // of names and a saved household, and a history gesture can reach this
+  // button without it ever having run — a reload mid-flow leaves entries
+  // naming later steps behind a page whose answers are all gone. A
+  // household of nobody used to post and be handed a generated week.
+  if (!currentMembers().length) {
+    showStep('household');
+    showHouseholdEmptyNote(true);
+    return;
+  }
   if (btn) btn.disabled = true;
   try {
     await saveHouseholdMembers();
     await saveRhythmAnswers();
     const answers = await saveOnboardingAnswers();
     await savePlanTheWeekAnswers();
+    // Set before the generation call, not after it: the point is that a
+    // second finish never asks for a second week. A save that FAILS leaves
+    // it unset on purpose, so the household can try again.
+    setupFinished = true;
     showStep('reveal');
     await generateFirstPlanAndReveal(answers);
   } catch (err) {
@@ -2460,10 +2609,24 @@ document.getElementById('reveal-iterate-btn').onclick = () => {
 document.getElementById('reveal-retry-btn').onclick = () => { generateFirstPlanAndReveal(lastFirstPlanAnswers); };
 document.getElementById('reveal-anyway-btn').onclick = () => { window.location.href = '/week'; };
 
-// The first step, and the history entry the back gesture unwinds onto —
-// replaceState rather than push, so nothing is added to the stack for a
-// screen nobody navigated to.
-showStep('household', { replace: true });
+// The first step, and the history entry the back gesture unwinds onto.
+// Normally this REPLACES the entry the browser is already on, so nothing is
+// added to the stack for a screen nobody navigated to.
+//
+// A RELOAD is the exception. Reloading throws away every answer in memory
+// but not the entries this page pushed, so the ones AHEAD still name steps
+// whose answers are gone: a forward gesture onto one lands on a later
+// question with every block blank. Pushing collapses them — pushState
+// truncates the forward stack outright — and the entries BEHIND are caught
+// in the popstate handler by the load stamp they carry, which won't match
+// this page's. Either way a reload starts on the household step, because
+// after one it is the only step whose answers are still true.
+function startOnboarding() {
+  const reloadedMidSetup = !!(window.history && window.history.state
+    && window.history.state.onboardingStep);
+  showStep('household', { replace: !reloadedMidSetup });
+}
+startOnboarding();
 </script>
 </body>
 </html>
