@@ -258,8 +258,13 @@ def test_sort_keeps_the_existing_chips_and_their_semantics():
     _in("data-gro=\"triage-exclude\"", SHELL_JS, "its handler", "shell.js")
     _in("/exclude'", SHELL_JS, "the exclude route", "shell.js")
     _in("gro-pill-have", SHELL_JS, "the Have it chip class", "shell.js")
-    # "Any" saves an empty store and is remembered for this page view only.
-    _in("groceryState.anyStoreIds[id] = true;", SHELL_JS, "the Any memory", "shell.js")
+    # "Any" saves an empty store. Where the memory of that lives CHANGED on
+    # 2026-09-09 (branch overnight/grocery-fast-sort): it used to be
+    # groceryState.anyStoreIds, a page-view map, so a reload put the item
+    # straight back into the queue. It is now a column the server writes
+    # (grocery_items.store_decided), read back through groItemDecided —
+    # tests/test_grocery_fast_sort.py covers that it survives the reload.
+    _in("function groItemDecided(", SHELL_JS, "the Any memory", "shell.js")
 
 
 def test_the_last_sort_choice_returns_to_the_list_with_a_toast():
@@ -273,7 +278,11 @@ def test_trip_shows_one_store_at_a_time():
     _in("function groTripHtml(", SHELL_JS, "the TRIP step", "shell.js")
     _in("function groTripSections(", SHELL_JS, "the stop's aisles", "shell.js")
     _in("‹ Pause the trip", SHELL_JS, "the pause link", "shell.js")
-    _in("'Stop ' + (groceryState.tripIndex + 1) + ' of '", SHELL_JS, "the stop counter", "shell.js")
+    # The counter counts stops BEHIND you, not this stop's place in the
+    # snapshot — changed 2026-09-09 with the WHERE NEXT step, because the
+    # household picks its own order and the snapshot index would have said
+    # "Stop 3 of 3" with two shops still waiting.
+    _in("'Stop ' + (done + 1) + ' of '", SHELL_JS, "the stop counter", "shell.js")
     _in("' left'", SHELL_JS, "the things-left count", "shell.js")
     # The stops are snapshotted, so finishing one can't renumber the rest.
     _in("groceryState.tripStops = stops;", SHELL_JS, "the snapshotted stops", "shell.js")
@@ -288,13 +297,21 @@ def test_trip_ticks_into_the_cart_and_can_put_things_back():
     _in("data-gro=\"uncheck\"", SHELL_JS, "the put-back", "shell.js")
 
 
-def test_trip_advances_to_the_next_stop_and_then_to_wrap_up():
-    _in("'Done at ' + here + ' → ' + next", SHELL_JS, "the advance button", "shell.js")
-    _in("'Done shopping'", SHELL_JS, "the last stop's button", "shell.js")
+def test_finishing_a_stop_ends_that_stop_and_asks_where_next():
+    """Was test_trip_advances_to_the_next_stop_and_then_to_wrap_up, and the
+    rename is the change: finishing a stop used to march straight into the
+    next one in snapshot order, so the button named it ("Done at Costco →
+    Metro"). Emily, 2026-09-09 — the household says where it is actually
+    driving. The last stop still drops into WRAP UP, because there is
+    nothing left to choose between. The two ride-along assertions moved with
+    the rule they described (things with no shop follow the shopper now
+    rather than being pinned to stop one) — both are in
+    tests/test_grocery_fast_sort.py."""
+    _in("'Done at ' + (groTripStore()", SHELL_JS, "the stop's own button", "shell.js")
     _in("data-gro=\"stop-done\"", SHELL_JS, "its handler", "shell.js")
-    _in("goGroceryStep('wrap');", SHELL_JS, "the hop to WRAP UP", "shell.js")
-    # Any-store things ride along with the first stop.
-    _in("if (groceryState.tripIndex === 0)", SHELL_JS, "the Any items on stop one", "shell.js")
+    _in("goGroceryStep(stillToGo.length ? 'next' : 'wrap');", SHELL_JS, "where it goes next", "shell.js")
+    _in("I&rsquo;m done shopping for today", SHELL_JS, "the way to end the trip", "shell.js")
+    _in("data-gro=\"next-stop\"", SHELL_JS, "picking the next stop", "shell.js")
 
 
 # --- WRAP UP -------------------------------------------------------------
@@ -385,9 +402,20 @@ def test_the_sort_nag_is_gone_because_the_items_are_on_screen_now():
 
 def test_sorting_is_only_offered_once_there_is_a_store_to_sort_into():
     """The badge would otherwise count things that are already fully on
-    screen, and open a step whose only possible answer is "Any"."""
-    _in("groceryState.usualStores.length > 0;", SHELL_JS,
+    screen, and open a step whose only possible answer is "Any".
+
+    The gate MOVED on 2026-09-09 (branch overnight/grocery-fast-sort) and
+    got stricter with it: it used to be "the household named at least one
+    shop", checked here at the badge, and it is now "there is more than one
+    shop to choose between", checked inside groUnsorted so the badge, the
+    step and its fast paths all go quiet together. Emily: a household with
+    one shop, or none, must never see a sorting step. The behaviour is
+    covered by tests/test_grocery_fast_sort.py, which runs it rather than
+    reading for it."""
+    _in("function groCanSort(data) { return groPillStores(data).length > 1; }", SHELL_JS,
         "the badge's store gate", "shell.js")
+    _in("if (!groCanSort(data)) return [];", SHELL_JS,
+        "the gate applied to the queue itself", "shell.js")
 
 
 def test_the_no_store_section_has_no_heading_and_a_key_that_cannot_be_a_store():

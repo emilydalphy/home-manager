@@ -178,6 +178,11 @@ _MIGRATIONS = [
     ("inventory_items", "location", "TEXT NOT NULL DEFAULT ''"),
     ("grocery_items", "excluded_from_list", "INTEGER NOT NULL DEFAULT 0"),
     ("grocery_items", "already_have_reviewed", "INTEGER NOT NULL DEFAULT 0"),
+    # "Somebody answered where this goes" — see schema.sql. Every existing
+    # row defaults to 0, which is the honest reading: a row already tagged to
+    # a real store is out of the to-sort queue on its store alone, and an
+    # untagged one has genuinely never been answered.
+    ("grocery_items", "store_decided", "INTEGER NOT NULL DEFAULT 0"),
     ("meal_preferences", "usual_stores_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("meal_preferences", "store_typical_items_json", "TEXT NOT NULL DEFAULT '{}'"),
     ("recipes", "advance_prep_step_indices_json", "TEXT NOT NULL DEFAULT '[]'"),

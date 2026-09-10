@@ -379,6 +379,7 @@ from .stores import (  # noqa: F401
     get_stores,
     is_multi_store_household,
     set_grocery_item_store,
+    set_grocery_items_stores,
     set_item_store,
 )
 from .taste_verdict import (  # noqa: F401

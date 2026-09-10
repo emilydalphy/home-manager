@@ -164,7 +164,7 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
     return {"stores": stores}
 
 
-def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> dict:
+def set_grocery_item_store(item_id: int, store: str, remember: bool = True, decided: bool = True) -> dict:
     """
     Set which store a specific already-listed grocery item should be
     bought at — for assigning a store directly from a grocery list row
@@ -194,6 +194,15 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
     assignment of an item that already has a preference updates it
     immediately and quietly (remembered=True, needs_confirmation=False) —
     asking every time would violate the etiquette.
+
+    decided (default True) records that a PERSON answered the "where does
+    this go?" question for this row — see grocery_items.store_decided. It
+    matters only for the empty store: without it "no particular shop" is
+    written as '' and is then indistinguishable from never having been
+    asked, so the Grocery tab's sorting step asked about the same skipped
+    item again on every reload. Pass decided=False to put a row back the way
+    it was — an undo of a bulk assign, which has to restore the exact
+    previous state rather than blank it.
     """
     conn = get_conn()
     row = conn.execute(
@@ -202,7 +211,10 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
     if not row:
         conn.close()
         return {"item_id": item_id, "found": False}
-    conn.execute("UPDATE grocery_items SET store = ? WHERE id = ?", (store, item_id))
+    conn.execute(
+        "UPDATE grocery_items SET store = ?, store_decided = ? WHERE id = ?",
+        (store, 1 if decided else 0, item_id),
+    )
     already_known = False
     if store and remember:
         # Merge-key match, not exact text — "paper towel" already having a
@@ -233,6 +245,42 @@ def set_grocery_item_store(item_id: int, store: str, remember: bool = True) -> d
         "remembered": remembered,
         "needs_confirmation": needs_confirmation,
     }
+
+
+def set_grocery_items_stores(assignments: list[dict], remember: bool = False) -> dict:
+    """
+    Answer "where does this go?" for many listed items at once — one write
+    per row, one request. Each assignment is {"item_id", "store", "decided"}
+    ("store" defaults to '' meaning no particular shop, "decided" to True).
+
+    This exists because the Grocery tab's two fast paths ("put all forty at
+    Loblaws", and the sort-them-all-on-one-screen list) are ONE tap covering
+    forty rows: forty sequential round trips would make a one-tap action
+    take several seconds on a phone, and its undo just as long again. It is
+    also what lets an undo restore every row's exact previous store and
+    store_decided together, rather than a partial restore if the connection
+    drops half way.
+
+    remember defaults to False here, the opposite of the single-row call.
+    One tap must not become forty remembered opinions about where each of
+    those things is usually bought — that learning belongs to the deliberate
+    one-at-a-time choice, which still offers its "Remember for {store}?"
+    per item.
+    """
+    updated = 0
+    for a in assignments:
+        item_id = a.get("item_id")
+        if item_id is None:
+            continue
+        result = set_grocery_item_store(
+            int(item_id),
+            a.get("store") or "",
+            remember=remember,
+            decided=bool(a.get("decided", True)),
+        )
+        if result.get("found"):
+            updated += 1
+    return {"updated": updated, "requested": len(assignments)}
 
 
 def confirm_grocery_item_store_preference(item_id: int) -> dict:

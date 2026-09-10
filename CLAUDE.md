@@ -402,6 +402,99 @@ why*, not duplicating the diff.
   actually coming OFF the list, never to everything absent from it, because
   `add_store_typical_items` does not require a store to be a usual store
   first. `tests/test_stores_multiselect.py` is 34 tests now; 1792 total.
+- **2026-09-09 — Sorting forty things stopped costing forty screens, and an
+  "Any" answer finally survives a reload. Branch
+  `overnight/grocery-fast-sort`** (stacked on
+  `overnight/onboarding-shops-multiselect`, both in the Grocery region).
+  Emily: *"if there's 40 ingredients ... it can take too long to go through
+  the screens all like this."* The one-at-a-time queue is untouched and is
+  still what a handful gets (`GRO_FAST_SORT_MIN = 6`); above that the badge
+  opens a chooser (step `sorthow`) whose foot apricot is **"Put all 40 at
+  Loblaws"** and whose body is two quiet rows — "Sort them all on one
+  screen" and "Or one at a time · 1 of 40". Three new steps of the same tab
+  (`sorthow`, `sortall`, `next`), same `/grocery`, same step machine.
+  - **The most-used shop is read off the list the tab already has open** —
+    rows tagged to a shop, needed + in the trolley + bought this cycle,
+    biggest wins, ties broken by the order the household named its shops
+    (`groMostUsedStore`). No new counter, no new fetch.
+  - **SORT ALL stages, it does not save per tap.** Forty rows × a request
+    each is the same complaint one level down, and a re-render would move
+    the list under the thumb working down it. A chip tap edits
+    `sortAllPicks` and repaints that one row's chips in the DOM — measured
+    in Chromium: zero `/api` requests, scroll position unchanged, neighbours
+    untouched. The foot button sends all forty at once.
+  - **One backend change, and it is a column, not an endpoint.**
+    `grocery_items.store_decided` (schema.sql + `_MIGRATIONS`, default 0,
+    surfaced by `list_grocery_list`). It exists because `store = ''` means
+    both "never asked" and "asked, no particular shop", which is exactly the
+    KNOWN LIMIT this file recorded: `anyStoreIds` was a page-view map, so a
+    reload put every skipped item back in the queue. `anyStoreIds` is gone;
+    `groItemDecided` reads the column. **A knock-on worth knowing:** LIST's
+    row ⋯ "Any" used to push a row BACK into the to-sort queue and now
+    counts as an answer, deliberately — being asked again about something
+    you just answered is the annoyance the whole slice removes.
+  - **One new route, `POST /api/grocery-list/store-bulk`**
+    (`tools.set_grocery_items_stores`), because "one tap" that is forty
+    round trips is not one tap, and because an undo has to restore every
+    row's store AND its `decided` flag together rather than half of them.
+    Undo sends the rows as they were BEFORE the write (`groPreviousStores`),
+    never "everything to unsorted" — a row already answered "Any", or
+    already tagged to a shop, comes back the way it was. `remember` defaults
+    to **false** on the bulk route and true on the single-row one: one tap
+    must not become forty remembered opinions, and the one-at-a-time queue
+    still offers its "Remember for {store}?" per item.
+  - **A household with one shop, or none, never sees a sorting step.**
+    `groCanSort` (more than one shop to choose between) gates `groUnsorted`,
+    so the badge, the step and its fast paths go quiet in one place rather
+    than six. It also fixed a dead end nobody had reported: a one-shop
+    household's list sat entirely unassigned, so `groStoresWithNeeded`
+    returned no stops and **"Start the trip" never appeared**. That shop is
+    now a stop, and its card covers the loose pile (`groSoleStore`,
+    `groStoreCardItems`). Verified at 390px: one card "Loblaws · 40", no
+    badge, trip opens with all 40 on it.
+  - **Finishing a stop asks where next instead of assuming.** New `next`
+    step: the stops still ahead with what is left on each, plus "I'm done
+    shopping for today". The snapshot rule holds — `tripStops` is never
+    reordered; `tripDone` (by NAME, since the visiting order is now the
+    household's) is what keeps a finished stop off the screen. Two things
+    changed with it: the trip button is "Done at Farm Boy" rather than
+    naming a next stop it no longer picks, and the subtitle counts stops
+    BEHIND you (`Stop ' + (done + 1)`) — the snapshot index would have said
+    "Stop 3 of 3" with two shops still waiting. **Also simplified:**
+    shopless things used to ride with `tripIndex === 0` and were stranded if
+    left unbought there; they now follow the shopper to whatever stop is
+    open, which is both simpler and the only thing that survives the
+    household choosing its own order.
+  - **No second apricot anywhere.** `sorthow`'s is the bulk button (its two
+    body rows are plain), `sortall`'s is the foot, and `next` has **none** —
+    the stops above it are the choice, and an apricot on "I'm done" would
+    put the tab's accent on ending the trip early. New `.gro-secondary` for
+    that one button. Contrast measured in Chromium in both schemes and
+    recorded in `shell.css`: row titles 13.52:1 light / 12.49:1 dark, their
+    sub-lines 4.70:1 / 7.36:1, the secondary's label 11.60:1 / 11.28:1. The
+    "will come with you" note sits INSIDE the stops card rather than under
+    it, because `--ink-secondary` is 4.70:1 on `--surface` and only 4.44:1
+    on `--ground`.
+  - **Verified in a real Chromium at 390px, light and dark:** 40 unsorted
+    items, the chooser, the bulk assign and its undo (badge back at 40 TO
+    SORT), the sort-all screen and a single-row exception, an "Any" answer
+    surviving a reload (39 TO SORT after), a three-stop trip with the stops
+    taken out of order and the finished one never re-offered, and the
+    one-shop and no-shop households. Console clean apart from Google Fonts
+    being unreachable in the sandbox, which also means the screenshots show
+    fallback typefaces. `tests/test_grocery_fast_sort.py` is the guard, 30
+    tests (mostly running shell.js's own functions under node, since every
+    bug here is behaviour a source marker cannot see); 1822 total. Four
+    assertions in `tests/test_grocery_steps.py` were updated honestly rather
+    than deleted, each saying what moved.
+  - **Deliberately not done:** a household with NO shop still cannot start a
+    trip (pre-existing — it has no stops, and the ticket's answer for them
+    was to stop asking, not to invent one); SORT ALL's staged picks are lost
+    if you leave the screen without saving, which is why nothing is claimed
+    until the button; the foot button on a forty-row SORT ALL is forty rows
+    down, matching the tab's grammar rather than pinning a second copy at
+    the top; and no chat tool was added for any of this — it is all screen
+    work on routes the assistant already has.
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,

@@ -629,6 +629,18 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- store for everything else). '' means unassigned/default. Populated
     -- automatically from item_store_preferences when set — see set_item_store.
     store TEXT NOT NULL DEFAULT '',
+    -- Whether a person has actually ANSWERED the "where does this go?"
+    -- question for this row. The column above cannot say so on its own:
+    -- '' is both "nobody has looked at this yet" and "looked at it and said
+    -- no particular shop", and the Grocery tab's sorting step has to tell
+    -- those apart or it re-asks about every skipped item on the next
+    -- reload. Set by set_grocery_item_store whenever the choice came from a
+    -- person (including the "Any" answer, which writes store = ''), and put
+    -- back to 0 by an undo, which has to restore the row exactly as it was
+    -- rather than merely blank it. The automatic item_store_preferences
+    -- path never sets it — a remembered store is the app answering, and it
+    -- writes a real store name anyway.
+    store_decided INTEGER NOT NULL DEFAULT 0,
     -- Which household member made a pre-shop "Drop it" decision
     -- (PRE_SHOP_CHECK.md) — blank until dropped. Not yet used to drive a
     -- live cross-device notification (see get_pre_shop_flags/

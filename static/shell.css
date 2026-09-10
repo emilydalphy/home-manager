@@ -3741,6 +3741,139 @@ html, body {
 .gro-linkbtn:hover { color: var(--apricot-label-hover); }
 .gro-linkbtn:disabled { opacity: .6; cursor: default; }
 
+/* ---------- SORT HOW: two ways to finish, one row each ----------
+   Rows, not tiles: they are two answers to one question and want to read as
+   a short list. The screen's apricot is at the foot ("Put all 40 at
+   Loblaws"), so nothing in here carries an accent fill — a card of three
+   equally loud answers would be three primaries. */
+.gro-howcard { padding: 0 14px; }
+.gro-howrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gro-howrow:first-child { border-top: none; }
+.gro-howrow-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gro-howrow-title {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+/* Measured in Chromium off computed styles, both schemes: the title is
+   --ink on --surface, 13.52:1 light / 12.49:1 dark; this line is
+   --ink-secondary on the same surface, 4.70:1 / 7.36:1. Same pair carries
+   .gro-nextrow-name / .gro-nextrow-count below. */
+.gro-howrow-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+
+/* ---------- SORT ALL: the whole list, one row each ----------
+   A row is a name ABOVE its shop chips rather than beside them: at 390px a
+   name and three chips on one line either truncates the name or wraps the
+   chips into a ragged second column, and the thing being sorted has to stay
+   readable. The chips are .gro-pill, the same control the one-at-a-time
+   screen uses, so a picked shop looks picked in exactly the same way
+   (.gro-pill-on — its contrast is measured on that rule). */
+.gro-sortall { padding: 0 14px; }
+.gro-sortall-row {
+  padding: 10px 0 2px;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-sortall-row:first-child { border-top: none; }
+.gro-sortall-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; }
+.gro-sortall-name {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  min-width: 0;
+}
+.gro-sortall-pills { padding-bottom: 8px; }
+/* Tighter than the one-at-a-time card's chips: forty rows of full-size
+   pills is a very long screen. Still 44px tall — only the padding either
+   side of the label narrows. */
+.gro-sortall-pills .gro-pill { padding: 10px 13px; font-size: 13px; }
+
+/* ---------- WHERE NEXT: the stops that are left ---------- */
+.gro-nextstops { padding: 0 14px; }
+.gro-nextrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 60px;
+  padding: 9px 0;
+  background: none;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gro-nextrow:first-child { border-top: none; }
+.gro-nextrow-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gro-nextrow-name {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gro-nextrow-count { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+/* Inside the stops card, not a sibling under it. Two reasons and they agree:
+   the line is about those rows, and the ink it wants only clears AA on the
+   card's surface. Measured in Chromium off computed styles — --ink-secondary
+   on --surface 4.70:1 light / 7.44:1 dark, against 4.44:1 for the same ink
+   on --ground. */
+.gro-next-note {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+  margin: 0;
+  padding: 10px 0 12px;
+  border-top: 1.5px solid var(--hairline);
+}
+
+/* A full-width action that is NOT the screen's primary — the same size and
+   shape as .gro-primary so it sits in the foot the same way, in the sand
+   fill secondary buttons already use elsewhere. It exists for the one
+   screen whose real choice is the list above it (WHERE NEXT), where an
+   apricot on "I'm done shopping" would put the tab's accent on ending the
+   trip early. Measured in Chromium off computed styles, both schemes: label
+   --ink on --sand 11.60:1 light / 11.28:1 dark. Its border is
+   --hairline-strong on --ground, 1.29:1 / 1.71:1 — decoration rather than
+   the control's only boundary, exactly as on .gro-add-item and the other
+   hairline-strong edges in this tab; the fill is what separates it from the
+   ground, and it is a 52px full-width button either way. */
+.gro-secondary {
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radius-action);
+  background: var(--sand);
+  border: 1.5px solid var(--hairline-strong);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.gro-secondary:hover { border-color: var(--ink-strong); }
+.gro-secondary:disabled { opacity: .6; cursor: default; }
+
 /* ---------- Review ---------- */
 .gro-flag {
   border-radius: var(--radius-card);

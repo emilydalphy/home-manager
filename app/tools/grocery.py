@@ -546,19 +546,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     conn = get_conn()
     if status == "excluded":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
             (household_id(), status),
         ).fetchall()

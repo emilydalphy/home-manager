@@ -677,6 +677,19 @@ class GroceryStoreRequest(BaseModel):
     store: str = ""
 
 
+class GroceryStoreAssignment(BaseModel):
+    item_id: int
+    store: str = ""
+    # False only on an undo, which puts a row back to never-answered — see
+    # grocery_items.store_decided.
+    decided: bool = True
+
+
+class GroceryStoreBulkRequest(BaseModel):
+    assignments: list[GroceryStoreAssignment] = []
+    remember: bool = False
+
+
 class GroceryPreShopRequest(BaseModel):
     decision: str  # "keep" | "drop"
     # Which household adult made the call, from the same client-side
@@ -2900,6 +2913,25 @@ def set_grocery_list_item_store(item_id: int, req: GroceryStoreRequest):
         result = tools.set_grocery_item_store(item_id, req.store)
     except Exception as e:
         logger.exception("Grocery list store assignment failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/store-bulk")
+def set_grocery_list_stores_bulk(req: GroceryStoreBulkRequest):
+    """
+    Assign stores to many listed items in one request — the Grocery tab's
+    two fast sorting paths ("put all forty at Loblaws", and the
+    sort-them-all-on-one-screen list) and the single undo that reverses
+    either of them. See tools.set_grocery_items_stores for why this is one
+    call rather than forty.
+    """
+    try:
+        result = tools.set_grocery_items_stores(
+            [a.model_dump() for a in req.assignments], remember=req.remember
+        )
+    except Exception as e:
+        logger.exception("Grocery list bulk store assignment failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 
