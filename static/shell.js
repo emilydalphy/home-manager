@@ -1828,6 +1828,9 @@
         '<div class="gro-voice" id="gro-voice" hidden></div>' +
         '<div class="gro-body" id="gro-body"><p class="gro-empty">Loading&hellip;</p></div>' +
         '<div class="gro-body gro-foot" id="gro-foot"></div>' +
+        // The step's one action, in the dock (rule 2) — last in the markup
+        // because that is where a sticky footer's flow position has to be.
+        '<div class="dock gro-dock" id="gro-dock"></div>' +
       '</div>';
 
     // One delegated listener for the whole screen. The alternative — re-wiring
@@ -2014,7 +2017,8 @@
     var sub = panel.querySelector('#gro-sub');
     var body = panel.querySelector('#gro-body');
     var foot = panel.querySelector('#gro-foot');
-    if (!back || !title || !badge || !sub || !body || !foot) return;
+    var dock = panel.querySelector('#gro-dock');
+    if (!back || !title || !badge || !sub || !body || !foot || !dock) return;
 
     // Re-rendering replaces the list under the reader's thumb, so hold the
     // scroll position across it. "Nothing else moves, ever."
@@ -2029,6 +2033,7 @@
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       foot.innerHTML = '';
+      dock.innerHTML = '';
       return;
     }
 
@@ -2093,6 +2098,10 @@
     var addRow = groCaptureAddRow(foot);
     foot.innerHTML = groFootHtml(data, step);
     groRestoreAddRow(foot, addRow);
+
+    // The step's one action last, and in its own strip: it has to stay on
+    // screen while the list scrolls under it (rule 2).
+    dock.innerHTML = groDockHtml(data, step);
 
     if (scrollEl) scrollEl.scrollTop = keepScroll;
   }
@@ -2850,31 +2859,47 @@
     '</div>';
   }
 
-  // ---------- The foot: one apricot action per step (Rule 5) ----------
+  // ---------- The foot: what is NOT the screen's one action ----------
+  // Only LIST has anything here now, and only the add row. The step's one
+  // action moved to the dock below (rule 2) — at the foot of a real week's
+  // groceries, "Start the trip" sat a hundred rows under the fold.
   function groFootHtml(data, step) {
+    if (step !== 'list') return '';
+    // Adding one thing must not cost a model turn. This posts straight to
+    // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
+    // oat milk" uses, and the same one the root's "Add an item" card used
+    // — so the cheap, common case stays cheap. The ask bar above the tab
+    // bar is still there for anything wordier ("add oat milk and lemons,
+    // and drop the spinach"), which is what it is good at.
+    //
+    // It stays out of the dock deliberately: adding a thing is a side
+    // errand next to starting the trip, and a dock holding two jobs is not
+    // a dock (rule 2 — "a second apricot" is what Rule 5 already forbids,
+    // and a second STRIP is the same mistake one level up).
+    return '<div class="gro-add">' +
+        '<input type="text" class="gro-add-item" id="gro-add-item" ' +
+          'placeholder="Add something" aria-label="Something to add to the list" />' +
+        '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="How much" />' +
+        '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
+      '</div>';
+  }
+
+  // ---------- The dock: one apricot action per step (Rule 5) ----------
+  // Same labels, same handlers, same one-per-screen discipline these had at
+  // the foot; what changed is that they stay on screen (rule 2).
+  function groDockHtml(data, step) {
     if (step === 'list') {
       var stops = groStoresWithNeeded(data);
       // Nothing to start while the shops question is up: LIST is showing
       // that card INSTEAD of the stops (groListHtml returns early), so the
       // button would walk the household through shops that aren't on the
       // screen — and its apricot would be a second one beside the card's,
-      // which Rule 5 doesn't allow.
+      // which Rule 5 doesn't allow. No action, so no dock — the rule's own
+      // "a screen with no single action has no dock" case.
       var canGo = stops.length > 0 && !groStoresPromptShouldShow();
-      // Adding one thing must not cost a model turn. This posts straight to
-      // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
-      // oat milk" uses, and the same one the root's "Add an item" card used
-      // — so the cheap, common case stays cheap. The ask bar above the tab
-      // bar is still there for anything wordier ("add oat milk and lemons,
-      // and drop the spinach"), which is what it is good at.
-      return (canGo
-          ? '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>'
-          : '') +
-        '<div class="gro-add">' +
-          '<input type="text" class="gro-add-item" id="gro-add-item" ' +
-            'placeholder="Add something" aria-label="Something to add to the list" />' +
-          '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="How much" />' +
-          '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
-        '</div>';
+      return canGo
+        ? '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>'
+        : '';
     }
     // SORT HOW's one apricot is the bulk answer, because it is the one that
     // finishes the job in a single tap. The other two paths are rows in the
@@ -5199,7 +5224,7 @@
   function weekDecideHtml(data) {
     if (weekPlanState(data) !== 'draft') return '';
     var openCount = countOpenSlots(data);
-    return '<div class="wk-decide">' +
+    return '<div class="wk-decide dock">' +
       // The way into the Review step, above the decision it is for: read
       // the week properly, then approve it. Secondary, not a second apricot
       // (Rule 5) — the decision is still the primary here.
@@ -5569,7 +5594,7 @@
   function reviewDecideHtml(data) {
     if (weekPlanState(data) !== 'draft') return '';
     var openCount = countOpenSlots(data);
-    return '<div class="wk-decide">' +
+    return '<div class="wk-decide dock">' +
       '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
         (openCount
           ? escapeHtml(approveWithOpenLabel(data, openCount))
@@ -9668,7 +9693,7 @@
   // scroll away.
   function cookDockHtml(primaryHtml, links) {
     var quiet = (links || []).filter(Boolean);
-    return '<div class="cook-dock">' +
+    return '<div class="dock cook-dock">' +
       (quiet.length ? '<div class="cook-dock-links">' + quiet.join('') + '</div>' : '') +
       primaryHtml +
     '</div>';

@@ -3205,6 +3205,14 @@ html, body {
 /* ---------- The foot: the step's one action ---------- */
 .gro-foot { padding-top: 16px; gap: 4px; }
 .gro-foot:empty { display: none; }
+/* Shop's step action, in the dock (rule 2). It used to sit at the foot of
+   the list inside .gro-foot, which on a real week's groceries meant "Start
+   the trip" was a hundred rows below the fold — the button the screen
+   exists for, reachable only by scrolling past everything it is about.
+   The add row stays behind in .gro-foot: adding one thing is a side errand,
+   not what the screen is for, and two strips would be no strip at all. */
+.gro-dock { padding-bottom: 12px; }
+.gro-dock:empty { display: none; }
 .gro-primary {
   width: 100%;
   min-height: 52px;
@@ -4671,13 +4679,26 @@ html, body {
 }
 .cook-needs { display: flex; flex-direction: column; gap: 9px; }
 
-/* The dock. Sticky rather than in flow: the phone is across the counter
-   and the next thing to do must not be a scroll away. It is in the page's
-   own scroller, not new floating chrome, so it never fights the ask bar —
-   at the very bottom of the content it simply comes to rest.
-   Kitchen's ROOT still has no primary action (DESIGN_SYSTEM Rule 5); this
-   is one step down, exactly where "Mark it cooked" already lived. */
-.cook-dock {
+/* ---------- The dock: where a screen's one action lives ----------
+   Nav v2 rule 2 (Emily, 2026-09-09): the single thing a screen is for sits
+   in a fixed strip above the tab bar, the same place on every screen,
+   labelled for what it does — "Approve and build my shopping list", "Done
+   at Loblaws", "Start cooking" — and it does not scroll away. A screen with
+   no single action has no dock; Cook's root is the standing example.
+
+   Sticky rather than in flow: the phone is across the counter and the next
+   thing to do must not be a scroll away. It is in the page's own scroller,
+   not new floating chrome, so it never fights the ask bar — at the very
+   bottom of the content it simply comes to rest.
+
+   This started as .cook-dock, built for the cook journey (2026-09-10) and
+   verified in a browser there. Rule 2 is that same strip on the other two
+   screens that have a single action, so this is that component with the
+   Cook name taken off it rather than a second dock invented beside it —
+   "the same place on every screen" is not something two implementations
+   can promise. Quiet secondaries ride along as text links (.dock-links);
+   a second FILL would break Rule 5, which is the whole point of one dock. */
+.dock {
   position: sticky;
   bottom: 0;
   z-index: 2;
@@ -4689,10 +4710,10 @@ html, body {
   background: var(--ground);
   border-top: 1.5px solid var(--hairline);
 }
-.cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dock-links, .cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* space-between with a single link leaves it at the start, which is
    where a lone back link belongs — no second rule needed. */
-.cook-dock-link {
+.dock-link, .cook-dock-link {
   min-height: 44px;
   padding: 0 2px;
   border: none;
@@ -4704,7 +4725,7 @@ html, body {
   cursor: pointer;
   white-space: nowrap;
 }
-.cook-dock-link:hover { color: var(--apricot-label-hover); }
+.dock-link:hover, .cook-dock-link:hover { color: var(--apricot-label-hover); }
 /* "Mark not cooked" is an undo, not a call to action, so it drops the
    apricot fill — and in the dock it sits on the ivory ground rather than
    on spruce, so it takes the ground's own quiet-outline vocabulary
@@ -5786,11 +5807,11 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 /* The draft's decision, directly under the week it is about. */
+/* Also a .dock (rule 2) — the box below only overrides the padding, because
+   the Approve button needs a little more room above it than Cook's strip
+   does. Everything that makes it a dock comes from .dock. */
 .wk-decide {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 14px 20px 2px;
+  padding: 14px 20px 10px;
 }
 /* The way into the Review step, above the decision it is for. Secondary by
    construction — the screen's one apricot is the Approve button under it

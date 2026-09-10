@@ -156,3 +156,83 @@ def test_a_crumb_never_uses_the_browsers_back():
         assert "history.back()" not in code, (
             "%s's crumb reaches for the browser's back" % handler
         )
+
+
+# --------------------------------------------------------------------------
+# Rule 2 — one dock, in the same place on every screen
+# --------------------------------------------------------------------------
+
+def test_the_dock_is_one_component_not_one_per_screen():
+    """"The same place on every screen" is not something two implementations
+    can promise.
+
+    Cook shipped a dock of its own with the cook journey (2026-09-10). Rule 2
+    is that same strip on the other two screens that have a single action, so
+    .cook-dock lost the Cook out of its name rather than gaining two siblings
+    that drift apart.
+    """
+    assert re.search(r"^\.dock \{", SHELL_CSS, re.M), ".dock is not defined"
+    # No screen defines a sticky strip of its own any more.
+    assert not re.search(r"^\.cook-dock \{", SHELL_CSS, re.M)
+
+    block = SHELL_CSS[SHELL_CSS.index(".dock {"):][:600]
+    assert "position: sticky" in block
+    assert "bottom: 0" in block
+    assert "#" not in block, "Rule 9 — every colour goes through a token"
+
+
+def test_all_three_docked_screens_use_the_shared_box():
+    """Cook, Plan (both the Week root and the Review step) and Shop."""
+    assert '<div class="dock cook-dock">' in SHELL_JS
+    assert SHELL_JS.count('<div class="wk-decide dock">') == 2, (
+        "the Week root and the Review step both dock their Approve button"
+    )
+    assert '<div class="dock gro-dock" id="gro-dock">' in SHELL_JS
+
+
+def _gro_dock_body():
+    start = SHELL_JS.index("function groDockHtml(")
+    end = SHELL_JS.index('// ---------- "Maybe already home" ----------', start)
+    return SHELL_JS[start:end]
+
+
+def test_shops_action_left_the_scrolling_foot():
+    """It used to sit at the end of .gro-foot, under the whole list.
+
+    On a real week's groceries that put "Start the trip" — the button the
+    screen exists for — a hundred rows below the fold. The foot keeps the add
+    row, which is a side errand rather than what the screen is for.
+    """
+    start = SHELL_JS.index("function groFootHtml(")
+    foot = SHELL_JS[start:SHELL_JS.index("function groDockHtml(")]
+    assert "gro-primary" not in foot, "the foot still renders the screen's action"
+    assert "gro-add-item" in foot, "the add row should stay in the foot"
+
+    dock = _gro_dock_body()
+    assert "gro-add-item" not in dock, "the add row is a second job; it is not the dock's"
+    # Five steps have an action, and each puts exactly one fill in the dock.
+    assert dock.count("gro-primary") == 5
+
+
+def test_the_dock_is_the_last_thing_in_its_container():
+    """A sticky footer's flow position has to be the end, or it comes to rest
+    somewhere in the middle of the screen it belongs to."""
+    build = SHELL_JS[SHELL_JS.index("function buildGroceryPanel("):]
+    build = build[:build.index("panel.addEventListener")]
+    assert build.index('id="gro-dock"') > build.index('id="gro-foot"')
+    assert build.index('id="gro-foot"') > build.index('id="gro-body"')
+
+
+def test_a_screen_with_no_single_action_has_no_dock():
+    """The other half of rule 2, and the half that is easy to lose: Emily's
+    line is "a screen with no single action has NO dock — Cook's root stays
+    that way", not "every screen grows one".
+
+    Shop's LIST returns the empty string while the shops question is up,
+    because the card owns the screen's one apricot then; and an empty dock
+    collapses rather than leaving a bare hairline across the bottom of a
+    screen with nothing to say.
+    """
+    dock = _gro_dock_body()
+    assert "return canGo" in dock, "LIST should be able to render no dock"
+    assert ".gro-dock:empty { display: none; }" in SHELL_CSS
