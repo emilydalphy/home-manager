@@ -390,11 +390,38 @@ def test_the_draft_has_exactly_one_apricot_and_one_quiet_action():
     _assert_in("'Approve this week'", SHELL_JS, "the Approve button's copy", "shell.js")
     _assert_in('week-reset-link week-tweak-link" id="week-tweak-btn">Tweak it with me',
                SHELL_JS, "the quiet tweak link", "shell.js")
-    assert SHELL_JS.count("class=\"btn-gold week-approve-btn\"") == 1, (
-        "More than one apricot Approve button is rendered on Meals "
-        "(DESIGN_SYSTEM Rule 5: one apricot primary per screen)."
-    )
+    # Counted per SCREEN, not per file. It used to be per file, which was the
+    # same sentence right up until Meals grew a second screen that also ends
+    # in a decision: the Review step (2026-09-09) renders its own approve
+    # button, "Approve and build my shopping list", into the same .wk-decide
+    # shell under the same #week-approve-btn id — deliberately, so approveWeek
+    # and showApproveConfirm need no second implementation. Only one of the
+    # two steps is ever in the DOM (renderMealsStep replaces #week-steps
+    # outright), so Rule 5 still holds; a file-wide count simply cannot see
+    # that. The assertion itself is unchanged: exactly one apricot, per
+    # screen that has one.
+    for fn in ("weekDecideHtml", "reviewDecideHtml"):
+        body = _fn_body(fn, SHELL_JS)
+        assert body.count("class=\"btn-gold week-approve-btn\"") == 1, (
+            f"{fn} must render exactly one apricot Approve button "
+            "(DESIGN_SYSTEM Rule 5: one apricot primary per screen)."
+        )
     _assert_in("background: var(--apricot)", SHELL_CSS, "the apricot fill", "shell.css")
+
+
+def _fn_body(name: str, source: str) -> str:
+    """One brace-balanced `function name(...) {...}` out of shell.js."""
+    start = source.index(f"function {name}(")
+    depth, j = 0, source.index("{", start)
+    while True:
+        if source[j] == "{":
+            depth += 1
+        elif source[j] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return source[start : j + 1]
 
 
 def test_the_draft_subtitle_says_whose_turn_it_is():

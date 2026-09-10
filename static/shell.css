@@ -5447,6 +5447,286 @@ span.cook-week-name { cursor: default; }
   gap: 2px;
   padding: 14px 20px 2px;
 }
+/* The way into the Review step, above the decision it is for. Secondary by
+   construction — the screen's one apricot is the Approve button under it
+   (Rule 5), and a second fill here would make neither of them the primary.
+   Sand fill + hairline is the same secondary the slot cards' .wk-act uses,
+   widened to match the button it sits above. */
+.wk-check-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-action);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--sand);
+  color: var(--ink-strong);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.wk-check-btn:hover { background: var(--sand-deep); }
+
+/* ---------- REVIEW: one control, two ways to read one week ----------
+   Emily's approved design, 2026-09-09. The segmented control is the only
+   one on this screen (§5) — the Plan | Cook control that used to be the
+   Meals tab's went with cooking, to Kitchen.
+   Contrast measured in Chromium at 390px, both schemes, and recorded per
+   rule. Everything here clears 4.5:1 in both:
+     .wk-seg-btn         --ink-strong on --sand           11.43 light / 11.28 dark
+     .rv-group-label     --ink-strong on --ground         12.59 light / 14.40 dark
+     .rv-dish-name       --ink on --surface               13.52 light / 12.49 dark
+     .rv-dish-cooks      --ink-secondary on --surface      4.70 light /  7.36 dark
+     .rv-step-count      --ink-strong on --sand           11.43 light / 11.28 dark
+     .rv-day-title       --ink-secondary on --surface      4.70 light /  7.36 dark
+     .rv-day-dinner      --ink on --surface               13.52 light / 12.49 dark
+     .rv-slot-label      --ink-muted on --surface          4.58 light /  7.36 dark
+     .rv-slot-name       --ink on --surface               13.52 light / 12.49 dark
+     .rv-day-open        --apricot-label on --surface      5.20 light /  8.53 dark
+     .rv-empty/.rv-trouble  --ink on --ground             12.78 light / 14.40 dark
+   The one exception is .rv-step-btn:disabled (--ink-inactive on --sand,
+   2.92:1) — a disabled control, which WCAG 1.4.3 exempts, and the low
+   contrast IS the signal that it is off. */
+.wk-seg {
+  display: flex;
+  gap: 4px;
+  margin: 0 20px 14px;
+  padding: 4px;
+  border-radius: var(--radius-control);
+  background: var(--sand);
+}
+.wk-seg-btn {
+  flex: 1 1 0;
+  /* 44px, not the 40 that looks right inside a 4px-padded row: Rule 6 is
+     about the thing you tap, and the thing you tap is the button, not the
+     row around it. Measured at 390px — each half is 169x44. */
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: none;
+  /* Both halves carry strong ink, and the raised pill plus the weight step
+     carry the selection instead of a colour step. Measured on --sand at
+     390px: --ink-secondary is 4.04:1 light and --ink-muted 3.93:1, so a
+     quieter unselected label could not clear AA on this track at all.
+     --ink-strong is 11.43:1 light / 11.28:1 dark. */
+  color: var(--ink-strong);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+.wk-seg-btn.is-on {
+  background: var(--surface);
+  font-weight: 700;
+  box-shadow: var(--shadow-card);
+}
+
+.rv-body { display: flex; flex-direction: column; gap: 18px; padding: 0 20px; }
+/* On --ground, where --ink-secondary is 4.44:1 — just under AA. */
+.rv-empty {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+}
+.rv-group { display: flex; flex-direction: column; gap: 8px; }
+/* --ink-strong, not the --ink-muted an eyebrow usually takes: this one sits
+   on --ground rather than on a card, where --ink-muted measures 4.33:1 light
+   — under AA, and under the 4.58:1 this repo has accepted for an eyebrow
+   before. Nothing muted clears 4.5:1 on ground (--ink-secondary is 4.44:1),
+   so the label goes strong; at 10px/800 with this tracking the size still
+   does the work of saying it is a label. 12.59:1 light / 14.40:1 dark. */
+.rv-group-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+.rv-group-card { padding: 4px 0; overflow: hidden; }
+
+/* One dish, once, with the days it covers. Stacked rather than side by side
+   because at 390px a dish name and a stepper on one line leaves the name
+   two words wide. */
+.rv-dish {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--hairline);
+}
+.rv-dish:first-child { border-top: 0; }
+.rv-dish-said { display: flex; flex-direction: column; gap: 2px; }
+.rv-dish-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.rv-dish-cooks {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.rv-dish-acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rv-step {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--sand);
+  overflow: hidden;
+}
+.rv-step-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+.rv-step-btn:hover:not(:disabled) { background: var(--sand-deep); }
+/* A stepper at its floor, or one with a call out. Kept visible rather than
+   removed: a control that disappears reads as a bug, and its absence would
+   move the count under the finger about to tap it. */
+.rv-step-btn:disabled { color: var(--ink-inactive); cursor: default; }
+.rv-step-count {
+  min-width: 88px;
+  padding: 0 6px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.rv-step-count.is-busy { color: var(--ink-secondary); }
+.rv-change {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--sand);
+  color: var(--ink-strong);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.rv-change:hover { background: var(--sand-deep); }
+/* Same ground, and this one is trouble copy — the line most worth being
+   able to read. --ink is 12.78:1 light / 14.40:1 dark. */
+.rv-trouble {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* ---------- REVIEW: which days ---------- */
+.rv-days { gap: 10px; }
+.rv-day { padding: 0; overflow: hidden; }
+.rv-day-head {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.rv-day-head.is-flat { cursor: default; }
+.rv-day-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; }
+.rv-day-title {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.rv-day-dinner {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.25;
+  color: var(--ink);
+  /* One line, truncated — the same call the week card's rows make: seven
+     days truncated beats four days in full. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-day-dinner.is-quiet { color: var(--ink-secondary); font-weight: 500; }
+/* "made ahead" / "leftovers" under the dish. --celadon-label because that is
+   the token for something already handled, and it clears AA on a card:
+   5.76:1 light / 7.14:1 dark. */
+.rv-day-note {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--celadon-label);
+}
+.rv-day-chev {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--ink-inactive);
+  transition: transform .16s ease;
+}
+.rv-day.is-open .rv-day-chev { transform: rotate(180deg); }
+.rv-day.is-today { box-shadow: inset 3px 0 0 var(--celadon); }
+.rv-day-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 14px 12px;
+}
+.rv-slot { display: flex; align-items: baseline; gap: 10px; }
+.rv-slot-label {
+  flex: 0 0 74px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.rv-slot-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.rv-slot.is-quiet .rv-slot-name { color: var(--ink-secondary); font-weight: 500; }
+.rv-day-open {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+}
+.rv-day-open:hover { color: var(--apricot-label-hover); }
 
 /* ---------- "One thing to settle": a hard allergen clash ---------- */
 /* Urgent TINT, not the urgent fill — a clash needs a decision, and Rule 3

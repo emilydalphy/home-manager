@@ -226,6 +226,84 @@ def plan_slot_open(
     }
 
 
+def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
+    """
+    Take one day away from a dish, and hand that slot back as a question.
+
+    The Review screen's stepper (Emily's approved design, 2026-09-09): a
+    dish covering four mornings should come down to three without spending
+    a chat turn on it. What it must never do is leave the morning ABSENT —
+    a slot is one of three states, never present-or-missing, and a silently
+    missing slot is the bug plan_slot_open/plan_slot_empty exist to prevent.
+
+    So this composes the two writes that already exist rather than becoming
+    a third. clear_plan_slot takes the meal off — reversing its grocery
+    contribution and unlinking any leftover chain that was pointing at it,
+    both of which are its job and neither of which this function should
+    reimplement — and plan_slot_open puts the slot straight back as `open`,
+    carrying the household's own instruction as the constraint that caused
+    it.
+
+    `open` and not `planned_empty`, deliberately: planned_empty means
+    nobody is home, or the household asked for none of that meal, and it
+    must NEVER be offered as a decision. Cutting one dish back is neither
+    of those — something still has to go on that plate, and only the
+    household knows what.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.id = ? AND mpe.household_id = ? AND mpe.weekly_plan_id = ?
+        """,
+        (entry_id, household_id(), weekly_plan_id),
+    ).fetchone()
+    conn.close()
+    # Household- and plan-scoped both, same as the in-place swap: an entry id
+    # from another household (or another week) is a 404, not a quiet edit of
+    # somebody else's dinner.
+    if not row:
+        raise ValueError(f"No meal {entry_id} on that week's plan.")
+    if row["component_category"]:
+        # A component-based plan keys its rows by category rather than by
+        # date and slot, so clear_plan_slot's date+slot delete would take
+        # every component of that category with it.
+        raise ValueError("That plan is built from components, not day slots.")
+    if row["slot_state"] != "planned" or not row["meal"]:
+        raise ValueError("There's no meal on that slot to take away.")
+
+    dish = row["meal"]
+    meal_date, slot = row["date"], row["slot"]
+    open_reason = f"You cut {dish} back, so this one is yours to fill."
+    clear_plan_slot(weekly_plan_id, meal_date, slot)
+    plan_slot_open(
+        weekly_plan_id, meal_date, slot, open_reason,
+        derived_from={"constraint": "household_cut_back", "dish": dish},
+    )
+    return {
+        "status": "dropped",
+        "date": meal_date,
+        "slot": slot,
+        "dish": dish,
+        "open_reason": open_reason,
+        # get_week_menu's own day dict, exactly as the in-place swap hands
+        # one back, so the Review screen can splice the changed day into the
+        # week it is already holding — one shape, one renderer, no second
+        # round trip. Looked up here rather than borrowed from
+        # swap_in_place._refreshed_day: this module owns get_week_menu, and
+        # a two-line lookup is not the kind of thing worth closing an import
+        # cycle for.
+        "day": next(
+            (d for d in (get_week_menu(weekly_plan_id).get("days") or [])
+             if d.get("date") == meal_date),
+            None,
+        ),
+    }
+
+
 def get_meal_planning_preferences() -> dict:
     """
     Everything the revisitable setup screen shows: the per-category meal

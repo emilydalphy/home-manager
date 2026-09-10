@@ -440,6 +440,7 @@ from .weekly_plan import (  # noqa: F401
     attach_intake_to_plan,
     audit_plan_slots,
     clear_plan_slot,
+    drop_dish_from_day,
     _dedupe_duplicate_slots,
     repair_leftover_chains,
     get_meal_planning_preferences,
