@@ -376,7 +376,12 @@ def _days_prelude() -> str:
         + _extract("reviewDayFaceLine", SHELL_JS) + "\n"
         + _extract("reviewDayNoteHtml", SHELL_JS) + "\n"
         + _extract("reviewSlotLineHtml", SHELL_JS) + "\n"
-        + _extract("reviewDaySlotKeys", SHELL_JS) + "\n"
+        # Was reviewDaySlotKeys, and it is the same function: it moved up
+        # beside daySlotEntry and lost the review- prefix when the Approve
+        # button's own open-slot count started asking it what a day is
+        # actually made of (Emily, 2026-09-10 — an open snack is something
+        # left to decide). Nothing about what it returns changed.
+        + _extract("daySlotKeys", SHELL_JS) + "\n"
         + _extract("reviewDayTitle", SHELL_JS) + "\n"
         + _extract("reviewDayCardHtml", SHELL_JS) + "\n"
         + _extract("reviewDaysHtml", SHELL_JS) + "\n"

@@ -437,6 +437,7 @@ from .weekly_plan import (  # noqa: F401
     _suggest_quick_dinners,
     _week_headline,
     _weekly_plan_is_approved,
+    add_dish_day,
     approve_weekly_plan,
     attach_intake_to_plan,
     audit_plan_slots,

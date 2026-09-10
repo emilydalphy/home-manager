@@ -383,6 +383,116 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
     }
 
 
+def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> dict:
+    """
+    Put a dish the week already has onto one more day — the Review screen's
+    stepper going UP.
+
+    Down is arithmetic and up is not, which is why this took a second pass
+    to build at all. Every candidate day already holds something: a dish,
+    or a question the household has been handed. So going up is never
+    "add" — it is always REPLACE, and the only honest way to do it is to
+    show what each day is holding and let the household say which one they
+    are willing to lose. That decision is the screen's; this function's
+    job is to carry it out against the day they picked, by id.
+
+    `entry_id` is any night the dish already covers (the screen sends the
+    first), and it is read for the dish's NAME and its recorded food
+    groups — never for its recipe row directly, since plan_meal resolves a
+    saved recipe by name exactly as a chat swap does.
+
+    `target_entry_id` is the slot being taken over, and it must be
+    `planned` or `open`. A `planned_empty` target is refused outright.
+    Nothing on the screen offers one — but three separate bugs in this app
+    have come from code treating that state as a missing meal, and the
+    rule holds at the write, not only at the control: a night nobody is
+    home is not a night with a free plate on it.
+
+    The write itself is swap_meal_in_plan, unchanged and by id. That is
+    the whole point: reversing the displaced dish's groceries, telling any
+    chain that was reheating it, re-buying for nights that were eating off
+    it, and the taste verdict on the dish going in are all things that
+    function already does correctly, and a second implementation of them
+    here is how two paths end up disagreeing about one week's shopping
+    list. `old_entry_id` (added for this) is what keeps a day's OTHER
+    snack out of it.
+    """
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
+               mpe.food_groups_json,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.id IN (?, ?) AND mpe.household_id = ? AND mpe.weekly_plan_id = ?
+        """,
+        (entry_id, target_entry_id, household_id(), weekly_plan_id),
+    ).fetchall()
+    conn.close()
+    by_id = {r["id"]: r for r in rows}
+    source, target = by_id.get(entry_id), by_id.get(target_entry_id)
+    # Household- and plan-scoped both, same as the in-place swap and the
+    # stepper going down: an id from another household or another week is a
+    # 404, not a quiet edit of somebody else's dinner.
+    if not source:
+        raise ValueError(f"No meal {entry_id} on that week's plan.")
+    if not target:
+        raise ValueError(f"No slot {target_entry_id} on that week's plan.")
+    if source["component_category"] or target["component_category"]:
+        raise ValueError("That plan is built from components, not day slots.")
+    if source["slot_state"] != "planned" or not source["meal"]:
+        raise ValueError("There's no dish on that slot to put anywhere.")
+    if target["slot"] != source["slot"]:
+        # A breakfast dish onto a dinner is a different decision, and one
+        # nobody made on this screen: the stepper is inside a meal-type
+        # group and every day it offers is a day of that same meal.
+        raise ValueError("That day is a different meal from the one being added to.")
+    if target["id"] == source["id"]:
+        raise ValueError("That dish is already on that day.")
+    if target["slot_state"] == "planned_empty":
+        raise ValueError("Nobody's eating that one — it isn't a day to plan into.")
+    if target["slot_state"] not in ("planned", "open"):
+        raise ValueError("That slot isn't one this can take over.")
+
+    dish = source["meal"]
+    replaced = target["meal"] if target["slot_state"] == "planned" else None
+    if replaced and replaced.strip().lower() == dish.strip().lower():
+        raise ValueError("That day already has it.")
+
+    swap_meal_in_plan(
+        weekly_plan_id,
+        target["date"],
+        dish,
+        slot=target["slot"],
+        food_groups=json.loads(source["food_groups_json"] or "[]") or None,
+        old_entry_id=target["id"],
+        # Blank, the same call swap_meal_in_plan's own docstring makes for a
+        # swap asked for in chat: there is no "why this?" beyond the
+        # household having chosen it, and writing one would be the plan
+        # explaining their own decision back to them.
+        reasoning="",
+    )
+    return {
+        "status": "added",
+        "date": target["date"],
+        "slot": target["slot"],
+        "dish": dish,
+        # What the day was holding, so the screen can say what it cost.
+        # None for an open slot: nothing was displaced, a question was
+        # answered.
+        "replaced": replaced,
+        # get_week_menu's own day dict, exactly as the stepper going down
+        # and the in-place swap both answer — one shape, one renderer, and
+        # the week the screen is holding updates by splicing one day.
+        "day": next(
+            (d for d in (get_week_menu(weekly_plan_id).get("days") or [])
+             if d.get("date") == target["date"]),
+            None,
+        ),
+    }
+
+
 def get_meal_planning_preferences() -> dict:
     """
     Everything the revisitable setup screen shows: the per-category meal
@@ -3712,6 +3822,7 @@ def swap_meal_in_plan(
     slot: str = "dinner",
     food_groups: list[str] | None = None,
     old_meal: str | None = None,
+    old_entry_id: int | None = None,
     reasoning: str = "",
 ) -> dict:
     """
@@ -3750,6 +3861,13 @@ def swap_meal_in_plan(
     snacks would lose both to a swap that was only ever about one of them.
     An old_meal that matches nothing in the slot raises, rather than
     quietly adding a third snack to the day.
+
+    `old_entry_id` says the same thing by id, and it exists because a name
+    cannot always say it: an OPEN slot has no meal name at all, so a
+    caller replacing one (see add_dish_day) would have to pass old_meal
+    None and take every row in the slot with it — the two-snacks bug over
+    again, reached from the other side. Given both, the id wins; it is the
+    more precise of the two.
     """
     from . import leftovers as _leftovers
 
@@ -3766,7 +3884,14 @@ def swap_meal_in_plan(
         (weekly_plan_id, meal_date, slot, household_id()),
     ).fetchall()
     conn.close()
-    if old_meal is not None:
+    if old_entry_id is not None:
+        matched = [r for r in old_entries if r["id"] == old_entry_id]
+        if not matched:
+            raise ValueError(
+                f"No meal {old_entry_id} in the {slot} slot on {meal_date}."
+            )
+        old_entries = matched
+    elif old_meal is not None:
         wanted = old_meal.strip().lower()
         matched = [r for r in old_entries if (r["meal"] or "").strip().lower() == wanted]
         if not matched:

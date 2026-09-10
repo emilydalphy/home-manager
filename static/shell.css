@@ -5957,6 +5957,90 @@ span.cook-week-name { cursor: default; }
   letter-spacing: -.02em;
 }
 .rv-change:hover { background: var(--sand-deep); }
+
+/* ---------- REVIEW: one more day, and what it costs ---------- */
+/* The "+" strip. Every day it offers is already holding something, so each
+   row has to SAY what — a picker that only listed weekdays would be asking
+   the household to agree to a swap it never showed them. Rows rather than
+   the compact day chips cook-ahead uses (.cook-ahead-day), which carry a
+   three-letter weekday and nothing else: there is no room in one for a
+   dish name at 390px, and this is a single choice rather than a set of
+   toggles waiting on a confirm.
+
+   No apricot anywhere in here (Rule 5) — the screen's one accent belongs
+   to Approve, at the foot. The strip is marked out by the sand ground it
+   sits on instead. */
+.rv-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+  padding-block: 12px;
+  padding-inline: 12px;
+  border-radius: var(--radius-card);
+  background: var(--sand);
+}
+/* Supporting copy on --sand: --ink-secondary measures 4.04:1 there, which
+   is under AA, so the ask takes body ink — measured in Chromium off
+   computed styles, 11.05:1 light / 12.43:1 dark. */
+.rv-pick-ask {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.rv-pick-days { display: flex; flex-direction: column; gap: 6px; }
+.rv-pick-day {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--ground);
+  cursor: pointer;
+  text-align: left;
+}
+.rv-pick-day:hover { background: var(--sand-deep); }
+.rv-pick-when {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink-strong);
+  flex: 0 0 auto;
+}
+/* What that day is holding — the thing being spent. Right-aligned and
+   allowed to wrap: a long dish name must not push the day off the row. */
+.rv-pick-holding {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+  text-align: right;
+  min-width: 0;
+}
+/* An open slot is not a dish being lost and should not read as one.
+   --ink-secondary on --ground is 4.44:1 light / 8.48:1 dark. */
+.rv-pick-holding.is-quiet { color: var(--ink-secondary); }
+.rv-pick-cancel {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink-strong);
+}
+
 /* Same ground, and this one is trouble copy — the line most worth being
    able to read. --ink is 12.78:1 light / 14.40:1 dark. */
 .rv-trouble {
