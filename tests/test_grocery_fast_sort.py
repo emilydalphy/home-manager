@@ -1075,3 +1075,69 @@ console.log(JSON.stringify({
 """)
     assert out["cards"] == ["Anywhere &middot; 2"], "no empty stop card"
     assert out["stopsForTheTrip"] == ["Loblaws"], "but the trip still has somewhere to go"
+
+
+# --- 12. what the display filters, the commit must not -------------------
+
+
+@_needs_node
+def test_finishing_a_stop_buys_everything_in_the_trolley_even_the_unanswered():
+    """Second reviewer, reproduced: the ride-along filter added for the
+    DISPLAY was applied to the COMMIT too, so an Unassigned row that reached
+    the trolley without an answer — a store added or a preference cleared
+    mid-trip — was committed by nothing and drawn by nothing. It stayed
+    in_cart forever, on no screen, with the receipt under-reporting.
+
+    The stop still SHOWS only what rides along (the test above pins that).
+    This pins the other half: something physically in the cart is bought."""
+    out = _node("""
+setUp(0, [{ store: 'Costco', items: [], inCart: [{ id: 1, item: 'Eggs', store: 'Costco' }] }]);
+groceryState.data.stores.Unassigned.inCart = [
+  { id: 2, item: 'Milk', store: '', store_decided: 1 },
+  { id: 3, item: 'Nutmeg', store: '', store_decided: 0 }
+];
+groceryState.tripStops = ['Costco'];
+groceryState.tripIndex = 0;
+groceryState.tripBought = 0;
+groFinishStore('Costco').then(function (n) {
+  console.log(JSON.stringify({
+    bought: n,
+    purchased: POSTS.filter(function (p) { return p.body.status === 'purchased'; })
+      .map(function (p) { return Number(/grocery-list\\/(\\d+)\\//.exec(p.url)[1]); }).sort(),
+    shownAtTheStop: groTripInCart(groceryState.data).map(function (i) { return i.item; })
+  }));
+});
+""")
+    assert out["purchased"] == [1, 2, 3], "the unanswered row in the cart is bought too"
+    assert out["bought"] == 3, "and the receipt counts it"
+    assert out["shownAtTheStop"] == ["Eggs", "Milk"], "while the stop still shows only its own"
+
+
+@_needs_node
+def test_an_undo_that_works_on_the_second_try_replaces_the_failure_line():
+    """The failure toast holds for its full window, so a retry that worked
+    otherwise leaves "tap Undo to try again" sitting over a list that has
+    already been put back. The chip is inert by then; it is the words that
+    contradict the screen."""
+    out = _node("""
+groceryState.bulkUndo = [{ item_id: 1, store: 'Costco', decided: true }];
+FAIL_ON = 1;
+groRunBulkUndo();
+settle(function () {
+  const afterFailure = lastToast();
+  FAIL_ON = 0;
+  tapUndo();
+  settle(function () {
+    console.log(JSON.stringify({
+      afterFailure: afterFailure,
+      afterRetry: lastToast(),
+      payloadSpent: groceryState.bulkUndo === null
+    }));
+  });
+});
+""")
+    assert "try again" in out["afterFailure"]["msg"]
+    assert out["afterFailure"]["action"] == "Undo", "a failure keeps the chip"
+    assert "try again" not in out["afterRetry"]["msg"], "the retry replaces the failure line"
+    assert out["afterRetry"]["action"] is None, "and offers nothing more to undo"
+    assert out["payloadSpent"], "a successful undo spends its payload"

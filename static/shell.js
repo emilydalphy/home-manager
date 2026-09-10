@@ -3137,10 +3137,17 @@
     var s = data.stores[store];
     var inCart = s ? s.inCart.slice() : [];
     // Every stop carries the shopless things (see groTripItems), so
-    // whatever of them is in the trolley here is committed here — the same
-    // filtered set the screen showed, never every Unassigned row in the
-    // trolley, some of which may not be on this trip at all.
-    inCart = inCart.concat(groRideAlongInCart(data));
+    // whatever of them is in the trolley here is committed here — and here
+    // that means ALL of them, not the decided-only set the screen draws.
+    // The filter is right for the display (a stop should not show a row
+    // that was never on it) and wrong for the commit: a row is in the
+    // trolley only because somebody put it there, and an undecided one can
+    // arrive there when a store is added or a preference cleared mid-trip.
+    // Filter the commit too and that row is committed by nothing and drawn
+    // by nothing — in_cart forever, on no screen, with the receipt quietly
+    // under-reporting. Something physically in the cart has been bought.
+    var anyBucket = data.stores['Unassigned'];
+    inCart = inCart.concat(anyBucket ? anyBucket.inCart.slice() : []);
     for (var i = 0; i < inCart.length; i++) {
       await groPost('/api/grocery-list/' + inCart[i].id + '/status', { status: 'purchased' });
     }
@@ -3226,7 +3233,16 @@
     groDo(function () {
       return groPost('/api/grocery-list/store-bulk', { assignments: undo, remember: false });
     }, "Couldn't undo that — try again.").then(function (ok) {
-      if (ok) { groceryState.bulkUndo = null; return; }
+      if (ok) {
+        groceryState.bulkUndo = null;
+        // A retry that worked has to replace the failure toast, not sit
+        // underneath it: the previous "tap Undo to try again" line stays up
+        // for the rest of its window otherwise, contradicting the list it is
+        // sitting on. The chip is already inert by then, so it is the words
+        // that mislead.
+        showToast('Put back where they were.', null, GRO_UNDO_MS);
+        return;
+      }
       groOfferBulkUndo('Couldn’t undo that — tap Undo to try again.');
     });
   }
