@@ -645,9 +645,22 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
 
 
 def _load_plan_entries(plan_id: int) -> list[dict]:
+    # Eating order (breakfast, lunch, dinner, snack), from
+    # weekly_plan.slot_order_sql — `slot` is TEXT, so the plain
+    # `ORDER BY mpe.slot` this used to end with sorted a day alphabetically
+    # and put dinner before lunch. Most rules in here re-sort what they
+    # need, but snack_clashes reads this order straight through: it names
+    # the FIRST thing a snack repeats ("that day's lunch"), and
+    # repair_snack_clashes then acts on that record. A day's own sequence
+    # is the honest tiebreak there. The id last keeps two snacks on one day
+    # in a stable order, since they tie on date and slot both. Imported
+    # inside the function, the same way repair_snack_clashes reaches
+    # weekly_plan below.
+    from . import weekly_plan as _weekly_plan
+
     conn = get_conn()
     rows = conn.execute(
-        """
+        f"""
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal_name,
                r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked,
@@ -655,7 +668,7 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
-        ORDER BY mpe.date ASC, mpe.slot ASC
+        ORDER BY mpe.date ASC, {_weekly_plan.slot_order_sql('mpe.slot')} ASC, mpe.id ASC
         """,
         (plan_id, household_id()),
     ).fetchall()

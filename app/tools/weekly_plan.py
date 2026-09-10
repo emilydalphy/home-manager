@@ -33,6 +33,31 @@ WEEK_SLOTS = ("breakfast", "lunch", "dinner")
 # this one wherever the question is "which slots can a day have?"
 DAY_SLOTS = WEEK_SLOTS + ("snack",)
 
+
+def slot_order_sql(column: str) -> str:
+    """
+    An ORDER BY fragment that sorts a day's slots into the order they are
+    actually EATEN, read off DAY_SLOTS.
+
+    `slot` is a TEXT column, so a plain `ORDER BY slot` is ALPHABETICAL —
+    breakfast, dinner, lunch, snack — and every day this app has ever shown
+    printed dinner before lunch because of it (Loop Board "A day's meals
+    list in alphabetical order, so dinner prints before lunch"). The right
+    order was written down in DAY_SLOTS the whole time; the query simply
+    never asked for it. So it is read off that tuple rather than the four
+    words being spelled out a second time: a day that ever gains a slot is
+    told once, up there, and every query using this follows.
+
+    A slot DAY_SLOTS doesn't know sorts LAST rather than vanishing — an
+    unexpected row is still somebody's food, and dropping it to tidy a sort
+    would be the worse bug. Interpolated into SQL like _SQL_PERIOD_START
+    below, and safe for the same reason: the values are this module's own
+    constant, never anything a caller can hand in.
+    """
+    whens = " ".join(f"WHEN '{slot}' THEN {i}" for i, slot in enumerate(DAY_SLOTS))
+    return f"CASE {column} {whens} ELSE {len(DAY_SLOTS)} END"
+
+
 # The longest period the app will plan in one go. Not a data-model limit —
 # nothing below cares — but a guard on the generation call, which asks the
 # model for every day at once and is already the slowest thing in the app at
@@ -1793,7 +1818,9 @@ def _build_day_based_menu(meal_dicts: list[dict]) -> list[dict]:
     without a second lookup.
     """
     by_date: dict[str, dict] = {}
-    slots = ["breakfast", "lunch", "dinner", "snack"]
+    # DAY_SLOTS rather than the same four words written out again, so the
+    # keys a day carries and the order they come back in have one source.
+    slots = list(DAY_SLOTS)
     for m in meal_dicts:
         if not m["date"]:
             continue
@@ -1804,7 +1831,21 @@ def _build_day_based_menu(meal_dicts: list[dict]) -> list[dict]:
                 **{f"{s}_reasoning": None for s in slots}, "snacks": [],
             },
         )
-        slot = m["slot"] if m["slot"] in slots else "dinner"
+        slot = m["slot"]
+        if slot not in slots:
+            # A slot this app doesn't know still has to land somewhere, and
+            # dinner has always been where this folds it — but it must not
+            # push a real dinner off the day to get there. Which one won
+            # used to depend on the unknown slot's own spelling: read
+            # alphabetically, 'brunch' arrived before dinner and was
+            # overwritten by it, 'elevenses' arrived after and overwrote it.
+            # Now that a day is read in eating order an unknown slot always
+            # comes last, so the real dinner is protected explicitly —
+            # the same "first planned wins" rule the snack key follows just
+            # below. The flat `meals` list still carries the row either way.
+            if day["dinner"] is not None:
+                continue
+            slot = "dinner"
         # A day has two snacks by default (see
         # preferences.resolve_snacks_per_day), and the single `snack` key
         # can only hold one of them — first planned wins, rather than last
@@ -1943,15 +1984,20 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         conn.close()
         return {"weekly_plan_id": None, "meals": []}
 
+    # Eating order, not alphabetical order — see slot_order_sql. The id is
+    # the last word because a day can hold more than one snack: the two tie
+    # on date AND on slot, so without it SQLite is free to hand them back in
+    # either order, and "first planned wins" (the `snack` key in
+    # _build_day_based_menu) would mean a different snack run to run.
     meals = conn.execute(
-        """
+        f"""
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
                mpe.slot_state, mpe.open_reason, mpe.sides_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
-        ORDER BY mpe.date ASC, mpe.slot ASC
+        ORDER BY mpe.date ASC, {slot_order_sql('mpe.slot')} ASC, mpe.id ASC
         """,
         (plan["id"],),
     ).fetchall()

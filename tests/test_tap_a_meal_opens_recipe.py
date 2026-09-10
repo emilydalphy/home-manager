@@ -80,7 +80,13 @@ def test_the_back_link_never_calls_history_back():
 
 
 @_needs_node
-def test_the_back_link_says_kitchen_until_something_else_says_otherwise():
+def test_the_back_link_says_the_tab_until_something_else_says_otherwise():
+    """
+    Renamed and re-expected on merging, 2026-09-10: the fallback tab is
+    called Cook now, not Kitchen (Emily's rename, landed the same week on
+    another branch). The two origins below are literals this harness sets
+    itself, so they are unaffected — only the no-origin fallback moved.
+    """
     harness = (
         "var cookState = { focusOrigin: null };\n"
         + _extract("cookBackLabel") + "\n"
@@ -91,7 +97,7 @@ def test_the_back_link_says_kitchen_until_something_else_says_otherwise():
         + "out.push(cookBackLabel());\n"
         + "console.log(JSON.stringify(out));\n"
     )
-    assert _run_node(harness) == ["Kitchen", "Today", "Monday"]
+    assert _run_node(harness) == ["Cook", "Today", "Monday"]
 
 
 def test_leaving_the_recipe_lands_back_where_it_was_opened_from():

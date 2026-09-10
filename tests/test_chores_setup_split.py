@@ -205,20 +205,38 @@ def test_progress_dots_still_match_the_question_step_count():
     steps (reveal and the old chores steps were deliberately excluded
     before this change, per the comment in renderProgress), so removing
     the two chores steps from ALL_STEPS doesn't change the dot count —
-    this pins that the two lists (dots vs. the full step list) agree on
-    where the dotted portion ends.
+    this pins that the dotted portion ends exactly where 'reveal' begins.
+
+    UPDATED 2026-09-09 (the go-back branch): this used to compare two
+    hand-written lists — `const ALL_STEPS` against a `const questionSteps`
+    literal inside renderProgress. The second list is gone; the dots are
+    derived from stepFlow() now, for the same reason the back destinations
+    are, so the two can no longer disagree with each other. The property
+    being asserted is unchanged.
     """
     all_steps_m = re.search(r"const ALL_STEPS = \[([^\]]*)\]", ONBOARDING)
-    question_steps_m = re.search(r"const questionSteps = \[([^\]]*)\]", ONBOARDING)
-    assert all_steps_m and question_steps_m
-
+    assert all_steps_m
     all_steps = [s.strip().strip("'") for s in all_steps_m.group(1).split(",")]
-    question_steps = [s.strip().strip("'") for s in question_steps_m.group(1).split(",")]
 
-    # Every dot-tracked step must be a real step, in the same relative
-    # order, and the dots must stop exactly where 'reveal' begins.
-    assert question_steps == all_steps[: len(question_steps)]
-    assert all_steps[len(question_steps)] == "reveal"
+    assert "const questionSteps = [" not in ONBOARDING, (
+        "the dots are back to a hand-maintained list; derive them from stepFlow()"
+    )
+    assert "stepFlow().filter(k => k !== 'reveal')" in ONBOARDING
+
+    # UPDATED 2026-09-10: this used to slice the list at 'reveal' and then
+    # assert the slice equalled the same slice — unfalsifiable by
+    # construction, so it said nothing about the dots at all. What is worth
+    # pinning is that the dotted run covers every step that is a question
+    # and no step that isn't. renderProgress removes exactly one key, so
+    # 'reveal' has to be the LAST step for the dots to stop where they
+    # should; a step added after it (which is where the old chores steps
+    # sat) would silently lose its dot, and that is what fails here now.
+    question_steps = all_steps[: all_steps.index("reveal")]
+    assert question_steps == [s for s in all_steps if s != "reveal"], (
+        "a step sits after 'reveal' — the dots stop before it"
+    )
+    assert all_steps[-1] == "reveal"
+    assert len(question_steps) == len(all_steps) - 1
 
 
 def test_chores_setup_page_reuses_the_same_save_route():

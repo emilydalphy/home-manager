@@ -3300,7 +3300,9 @@ html, body {
    19a, Emily 2026-09-05) — stores asked just-in-time at the first real
    trip instead of during onboarding. Same shell-card/spacing rhythm as
    the shop-done handoff above; chips reuse .gro-pill so a picked store
-   looks exactly like the triage pills it feeds. */
+   looks exactly like the triage pills it feeds. Multi-select since
+   2026-09-09 — the chips toggle, and .gro-primary at the foot of the card
+   is the only way out of the question. */
 .gro-stores-prompt {
   padding: 15px 16px;
   flex-shrink: 0;
@@ -3337,21 +3339,15 @@ html, body {
 }
 .gro-stores-prompt-input::placeholder { color: var(--ink-placeholder); }
 .gro-stores-prompt-add .gro-linkbtn { min-height: 44px; padding: 0 4px; font-size: 13px; }
-.gro-stores-prompt-dismiss {
-  background: none;
-  border: none;
-  align-self: flex-start;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
+/* How many shops are picked, said in words rather than left to be counted
+   off the chips — a thumb covers the chip it just tapped. */
+.gro-stores-prompt-count {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 13px;
   color: var(--ink-secondary);
-  cursor: pointer;
-  padding: 0;
+  margin: 0;
 }
-.gro-stores-prompt-dismiss:hover { color: var(--ink); text-decoration: underline; }
 .gro-eyebrow {
   font-family: var(--font-body);
   font-weight: 800;
@@ -3780,6 +3776,26 @@ html, body {
 }
 .gro-pill:hover { border-color: var(--apricot); }
 .gro-pill:disabled { opacity: .6; cursor: default; }
+/* A chip that is currently ON — the shops picker's multi-select. Celadon
+   for the same reason .gro-pill-have below uses it: a picked shop is a
+   settled fact, not the thing that wants doing. Apricot would have made
+   every chosen shop read as another primary (Rule 5), and the one primary
+   on that card is the button that ends the question.
+
+   THE BORDER is what says "picked", not the fill, and that is the fix for
+   what the celadon pair got wrong. Measured against the unpicked chip
+   beside it, celadon-tint on ground is 1.12:1 and celadon-edge on
+   hairline-strong is 1.05:1 — so the picked chip was a WEAKER mark than the
+   unpicked one, an inverted affordance, and well under the 3:1 WCAG 1.4.11
+   asks of anything carrying state. (The comment this replaces cited
+   .gro-pill-have's contrast, which is a text-on-fill number and a different
+   question entirely.) --ink-strong is the strongest ink the palette has and
+   is not an accent, so it can carry the state without becoming a second
+   apricot. Measured in Chromium off computed styles, both schemes:
+   border --ink-strong vs --hairline-strong 9.73:1 light / 8.43:1 dark;
+   label --ink-on-celadon on the picked fill 10.65:1 light / 10.37:1 dark. */
+.gro-pill-on { background: var(--celadon-tint); color: var(--ink-on-celadon); border-color: var(--ink-strong); }
+.gro-pill-on:hover { border-color: var(--ink-strong); }
 /* Secondary action, not a store choice — celadon says "settled, already
    true" (design system §1) so it doesn't read as one more store option. */
 .gro-pill-have { background: var(--celadon-tint); color: var(--celadon-label); border-color: var(--celadon-edge); }

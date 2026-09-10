@@ -22,6 +22,10 @@ LIMITS = {
     "scan": [(10, 60), (60, 3600)],
     # Sign-in attempts, so the shared password can't be brute-forced.
     "login": [(8, 300), (40, 3600)],
+    # The cross-household health report. One caller, once a night, so this
+    # is generous for it and mean to anyone guessing at its token — which
+    # is the only other reason to call it.
+    "health_report": [(10, 300), (60, 3600)],
     # Browser error reports. A page stuck in an error loop can fire these
     # as fast as it renders, and one broken screen must not be able to
     # fill the error table with the same row. Generous enough that a real
