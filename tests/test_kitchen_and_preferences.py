@@ -143,12 +143,24 @@ def test_cook_mode_lives_in_the_kitchen_panel():
     assert "week-cook-view" not in SHELL_CSS
 
 
-def test_the_back_link_says_kitchen():
-    """Back links go UP a level by name and never call history.back()."""
-    _assert_in('data-cook="exit-focus">&lsaquo; Kitchen</button>', SHELL_JS,
-               "the focused screen's back link", "shell.js")
+def test_the_back_link_says_where_it_came_from():
+    """Back links go UP a level by name and never call history.back().
+
+    Updated 2026-09-09 (branch `overnight/tap-a-meal-opens-recipe`): the
+    focused cook screen's link used to be the literal "&lsaquo; Kitchen",
+    and this test asserted that string. It is now cookBackLabel(), which
+    still says Kitchen for every entry point that existed when this test
+    was written and says the origin's own name for a dish name tapped
+    somewhere else. The rule the test is about — up one level, BY NAME,
+    never history.back() — is unchanged; only the source of the name is.
+    """
+    _assert_in('data-cook="exit-focus">&lsaquo; \' +\n          escapeHtml(cookBackLabel())',
+               SHELL_JS, "the focused screen's back link", "shell.js")
     _assert_in('data-cook="exit-session">&lsaquo; Kitchen</button>', SHELL_JS,
                "the prep session's back link", "shell.js")
+    assert "history.back()" not in _function("cookExitFocus")
+    fn = _function("cookBackLabel")
+    assert "'Kitchen'" in fn, "Kitchen is still the answer when nothing else set an origin"
     assert "Back to the week" not in SHELL_JS, "a cook screen still points back at Meals"
 
 
@@ -178,8 +190,11 @@ def test_no_call_site_still_asks_for_the_meals_cook_state():
     [
         # Today's Next up card and its move lines (runTodayMoveAction).
         "activateTab('kitchen', true, { cookFocus: target.cookFocus })",
-        # Meals' Day/Meal "Cook this" (wireMealsStep).
-        "activateTab('kitchen', true, {\n          cookFocus: {",
+        # Meals' Day/Meal "Cook this" (wireMealsStep). It goes through
+        # openRecipeFor as of 2026-09-09 so cook mode's back link can name
+        # the Meals step it came from; the payload it passes is the same
+        # {entryId, date, slot, title} target it always was.
+        "openRecipeFor({\n          entryId: entry ? entry.entry_id : null,",
         # Grocery's shop-done handoff.
         "activateTab('kitchen', true, { cookFocus: true })",
     ],

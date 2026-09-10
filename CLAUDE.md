@@ -314,6 +314,104 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-09 — A dish name is a link to its recipe, everywhere it
+  appears. Branch `overnight/tap-a-meal-opens-recipe`.** Emily, after
+  testing the app: "if you click the meal anywhere throughout the app, it
+  should bring you to the screen with the recipe on it." **Which screen
+  that is was the whole decision.** There is exactly ONE screen in this
+  app with a recipe on it — cook mode, the focused single-meal step of
+  Kitchen (`cookFocusHtml` -> `cookDetailHtml`) — so that is the recipe
+  screen, and nothing new was built. Meals' Meal step (`mealStepHtml`) was
+  the other candidate and it had no recipe on it at all: it now renders
+  the SAME panel `plain` (`cookDetailHtml(m, idx, false, true)`) —
+  ingredients, advance prep, Do ahead / Day of steps, and the
+  "Freeform meal — no saved recipe detail" sentence for a dish nobody has
+  written one for. Plain is the same renderer with every writing control
+  taken off (serves stepper, mic, step checkboxes, "Fill in this recipe",
+  the end-of-cook row, "Why this?") **and its element ids**: those are all
+  handles for `onCookClick`/`renderCook`, which only ever redraw the
+  Kitchen panel, and a second `#cook-ings-3` on another panel would have
+  `getElementById` reaching the wrong screen. One renderer in two frames,
+  exactly as the Meal step already borrows `cookAheadHtml`; two renderers
+  is how two screens end up saying different things about one dish.
+  **Every tap goes through one door,** `openRecipeFor(target, origin)`,
+  which sets `cookState.focusOrigin` and then does the
+  `activateTab('kitchen', …, { cookFocus })` each call site used to do for
+  itself. The origin is what makes the breadcrumb rule hold: cook mode's
+  back link was the literal "‹ Kitchen", which is a lie the moment a dish
+  name on Today opens it, so it is `cookBackLabel()` now — "‹ Today",
+  "‹ Monday", "‹ the chat", and still "‹ Kitchen" for every entry point
+  that existed before. `cookExitFocus` resets Kitchen's own screen FIRST
+  (a tab left sitting on a cook screen reopens there) and then returns to
+  the origin — for Meals, to the exact step, and for chat, to the tab the
+  reply was on with the conversation reopened. The origin is cleared by
+  Kitchen's own rows, by `cookEnterSession`, and by any plain
+  `activateTab('kitchen')`, so it only ever means "this deep link".
+  **What now links, and what deliberately does not.** Newly linked: Today's
+  Next up headline, a DONE row's dish name (the row stops being the move's
+  button — the tick is the only control left — but a cooked dinner is
+  exactly the name someone taps wanting to see what went into it), and the
+  Tomorrow card. Already linked and unchanged: Kitchen's "Cooking today",
+  "The rest of the week" and prep-session rows, Meals' Day-step slot card
+  (which opens the Meal step, and the Meal step now has the recipe on it).
+  Deliberately NOT links, each for a reason: **a reheat night** (there is
+  no cook, so nothing for a cook screen to hold — the rule Kitchen's rows
+  already followed, Emily 2026-09-04), an away or open slot, the Week
+  card's own dish lines and the "See the whole week" sheet's cells (a day
+  row is one `<button>` and a dish line inside it is ~18px — you cannot
+  nest a button, and you cannot make a third of a row clear 44px; the row
+  IS the link, one level up), the needs-you band's suggestion rows (those
+  dishes are not on the plan yet and the row's job is Pick), the
+  cook-ahead ask's sentence, and `static/share.html` (a public printed
+  menu with no app behind it). **Grocery names no dishes at all** — a
+  grocery row is an ingredient — so the ticket's "beside grocery items"
+  had nothing to link; said here rather than quietly skipped.
+  **Chat replies: linked, and the mechanism is the honest part.** Nothing
+  in the `ChatAction` contract says which words of a reply are dishes, and
+  asking the model to mark them up would be trusting generated text about
+  the plan. So `linkifyDishNames` does not look for dish names in the
+  reply — it looks for the dishes it already KNOWS are on the plan
+  (`setDishIndex`, off the `/api/week-menu` payload `renderWeekMenu` and
+  the ask sheet's own quick-action fetch already have, so no request of its
+  own) and links exactly those. That set is also exactly the set that HAS
+  a recipe screen, since cook mode is per plan entry: a dish the app can't
+  open stays prose. Names are matched longest-first ("Chicken Tacos" beats
+  "Chicken"), whole-word only, and the whole reply is rewritten in ONE
+  `String.replace` pass so nothing inserted is ever rescanned. A chat
+  change to a week whose panel was never built refreshes the index on its
+  own (`refreshDishIndex` off `refreshStaleTabsFromActions`) — the "panels
+  build once per page load" gotcha, one level down.
+  **The 44px floor** is met by the invisible-hitbox trick `.wg2-why` and
+  `.gro-icon-btn` already use: `.dish-link::after` is a 44px box centred on
+  the name (`min-height: 100%` so a two-line hero title keeps its whole
+  area), and `.ask-dish::after` is `inset: -12px -4px` around an inline
+  word. The inline one overlaps the lines above and below — that is a real
+  trade and it is written down in the CSS: a mis-tap opens a recipe, and
+  the way back is one named link. `.dish-link` is declared BEFORE
+  `.rest-row-title`, `.tomorrow-title` and `.hero-dish` on purpose, since
+  those set their own family/size/weight/colour and win an
+  equal-specificity tie by being later — the class only removes the
+  browser's button furniture, it never recolours a name.
+  **Two existing tests were updated honestly rather than deleted:**
+  `test_the_back_link_says_kitchen` (renamed
+  `..._says_where_it_came_from`; the rule it is about — up one level BY
+  NAME, never `history.back()` — is unchanged, only the source of the name
+  is) and `test_cook_this_still_passes_the_exact_meal` (the same four-field
+  target, handed to `openRecipeFor` instead of `activateTab` directly).
+  `tests/test_tap_a_meal_opens_recipe.py` is the new guard, 24 tests, most
+  of them running the screen's own functions under node — the bug was
+  "the name looks tappable and nothing happens", which a source-marker
+  test cannot see. Suite 1736 -> 1760.
+  **Not verified in a browser.** No browser tooling in this environment
+  (no Playwright browsers reachable from the venv, no jsdom), so the
+  LAYOUT at 390px and on desktop is unchecked — in particular how the
+  underlined dish names read inside a chat bubble and whether the recipe
+  card lengthens the Meal step past comfort. What WAS verified: a real
+  uvicorn on a throwaway seeded DB, its real `/api/week-menu`,
+  `/api/cooker-view` and `/api/today/moves` payloads fed to the real
+  `mealStepHtml` / `dayStepHtml` / `nextUpCardHtml` / `moveRowHtml` /
+  `cookFocusHtml` / `setDishIndex` / `linkifyDishNames` under node.
+
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,
