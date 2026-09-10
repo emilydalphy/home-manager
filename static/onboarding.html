@@ -141,17 +141,36 @@
     border: 1px solid var(--ink-strong);
   }
   .next-btn.secondary:hover { background: var(--violet-soft); }
+  /* The way back out of a step (Emily, 2026-09-09: "add a go back option in
+     case I want to go back to change responses"). Two things changed about
+     it, and both are the reason she reported it missing rather than wrong.
+     It sits ABOVE the question now instead of under Continue — a control
+     placed after the primary is one you only find after you have already
+     given up on the screen — and it NAMES where it goes ("‹ Who's here")
+     instead of saying "Back", which is DESIGN_SYSTEM §5's "‹ Parent" step
+     link, the same shape .wk-back/.gro-back use in the shell. A button
+     rather than a span so it is reachable by keyboard and announced as a
+     control. */
   .back-link {
+    background: none;
+    border: 0;
+    padding: 0 8px 0 0;
     color: var(--text-muted);
     font-family: var(--font-body);
     font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
-    margin-top: 0.75rem;
+    margin: 0 0 2px -2px;
+    min-width: 44px;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
   }
   .back-link:hover { color: var(--ink-strong); }
+  /* display:inline-flex beats the UA sheet's [hidden] rule — the same guard
+     .reveal-days and .reveal-status already carry. The first step has
+     nothing behind it, so its control is hidden rather than absent. */
+  .back-link[hidden] { display: none; }
   .member-block { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 10px; }
   .member-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
   .two-col { display: flex; gap: 10px; }
@@ -451,6 +470,7 @@
      every food/preference question, per Emily's stated learning hierarchy:
      rhythm, then habits, then preferences. -->
 <div id="step-rhythm-1" style="display:none">
+  <button class="back-link" type="button" data-step-back="rhythm-1" hidden></button>
   <p class="rhythm-eyebrow">Getting to know your rhythm</p>
   <h1>How does a normal week actually run here?</h1>
   <p class="rhythm-italic">There's no typical household &mdash; this just helps me fit yours.</p>
@@ -483,11 +503,11 @@
   </div>
 
   <div><button class="btn-primary rhythm-cta" id="rhythm-1-next" type="button" disabled>Continue</button></div>
-  <span class="back-link" data-back="household">&larr; Back</span>
 </div>
 
 <!-- Rhythm Q4-6 (mock RhythmOnboarding2.dc.html). -->
 <div id="step-rhythm-2" style="display:none">
+  <button class="back-link" type="button" data-step-back="rhythm-2" hidden></button>
   <p class="rhythm-eyebrow">Getting to know your rhythm</p>
   <h1>A few more, so I get the timing right.</h1>
 
@@ -524,17 +544,22 @@
     </div>
   </div>
 
-  <div><button class="btn-primary rhythm-cta" id="rhythm-2-next" type="button" disabled>Save my rhythm</button></div>
-  <span class="back-link" data-back="rhythm-1">&larr; Back</span>
+  <!-- Was "Save my rhythm" until 2026-09-09. Nothing reaches the household
+       until setup finishes now (see finishSetupAndReveal), so a button
+       promising a save here would be describing something that no longer
+       happens — and the reason it no longer happens is that an answer
+       written down before you can go back and change it is how a household
+       ends up with two of itself on file. -->
+  <div><button class="btn-primary rhythm-cta" id="rhythm-2-next" type="button" disabled>Continue</button></div>
 </div>
 
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
+  <button class="back-link" type="button" data-step-back="restrictions" hidden></button>
   <h1>Dietary preferences or restrictions</h1>
   <p class="subtitle">Anything I should always follow, and who it's for.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
-  <span class="back-link" data-back="rhythm-2">&larr; Back</span>
 </div>
 
 <!-- Q4: eating style. Chips first, typing optional (Julia, 2026-09-08:
@@ -542,18 +567,19 @@
      bare textarea, which is the most typing an optional question can
      possibly ask for. -->
 <div id="step-eating-style" style="display:none">
+  <button class="back-link" type="button" data-step-back="eating-style" hidden></button>
   <h1>Is there a certain way you'd like meals to lean?</h1>
   <p class="subtitle">Tap what fits. Skip it if nothing does.</p>
   <div class="chip-row" id="eating-style-chips"></div>
   <label class="field-label" for="eating-style">Anything else?</label>
   <textarea id="eating-style" rows="2" placeholder="In your own words — optional."></textarea>
   <div><button class="next-btn" id="eating-style-next" type="button">Continue</button></div>
-  <span class="back-link" data-back="restrictions">&larr; Back</span>
 </div>
 
 <!-- Q5: won't eat. Same change as the step above — the presets are the
      answer most households give, and the box is for the one they don't. -->
 <div id="step-wont-eat" style="display:none">
+  <button class="back-link" type="button" data-step-back="wont-eat" hidden></button>
   <h1>Anything I should never recommend?</h1>
   <p class="subtitle">I'll steer clear of it completely.</p>
   <div class="chip-row" id="wont-eat-presets"></div>
@@ -563,11 +589,11 @@
   </div>
   <div class="chip-row" id="wont-eat-chips"></div>
   <div><button class="next-btn" id="wont-eat-next" type="button">Continue</button></div>
-  <span class="back-link" data-back="eating-style">&larr; Back</span>
 </div>
 
 <!-- Q6: excited about -->
 <div id="step-excited-about" style="display:none">
+  <button class="back-link" type="button" data-step-back="excited-about" hidden></button>
   <h1>What are you excited to eat more of lately?</h1>
   <p class="subtitle">Cuisines, styles, anything sounding good right now.</p>
   <div class="chip-row" id="excited-chips"></div>
@@ -576,7 +602,6 @@
     <input type="text" id="excited-custom" placeholder="Type it and press Enter" />
   </div>
   <div><button class="next-btn" id="excited-next" type="button">Continue</button></div>
-  <span class="back-link" data-back="wont-eat">&larr; Back</span>
 </div>
 
 <!-- Q7: meals per week -->
@@ -586,6 +611,7 @@
      wording, and the snacks question is a different question entirely:
      per DAY, on chips, not a per-week stepper. See SNACKS_PER_DAY_OPTIONS. -->
 <div id="step-dinners" style="display:none">
+  <button class="back-link" type="button" data-step-back="dinners" hidden></button>
   <h1>How many different recipes a week?</h1>
   <p class="subtitle">I'll fill the rest of the week from these — leftovers included.</p>
   <p class="stepper-hint" style="margin-top:0">How many different breakfasts do you want?</p>
@@ -609,7 +635,6 @@
   <p class="stepper-hint">How many snacks a day?</p>
   <div class="chip-row" id="snacks-per-day-chips"></div>
   <div><button class="next-btn" id="dinners-next" type="button">Continue</button></div>
-  <span class="back-link" data-back="excited-about">&larr; Back</span>
 </div>
 
 <!-- Step A: a normal week (design_handoff_plan_the_week §8).
@@ -626,6 +651,7 @@
      asked here rather than inferred, because a household who onboards on
      a Thursday genuinely might mean either one. -->
 <div id="step-typical-week" style="display:none">
+  <button class="back-link" type="button" data-step-back="typical-week" hidden></button>
   <h1>What does a normal week look like at yours?</h1>
   <p class="subtitle">The more I know, the more the plan feels like yours.</p>
   <textarea id="typical-week" rows="3" placeholder="Fridays are usually takeout."></textarea>
@@ -635,7 +661,6 @@
   <textarea id="next-week-notes" rows="2" placeholder="My parents are here Thursday to Sunday."></textarea>
   <div><button class="next-btn" id="typical-week-next" type="button">Continue</button></div>
   <span class="skip-link" id="typical-week-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
-  <span class="back-link" data-back="dinners">&larr; Back</span>
 </div>
 
 <!-- Step B: kit. Prevents impossible suggestions outright. The old
@@ -647,6 +672,7 @@
      "step-kit-repeats" id/element names rather than renaming everything
      that touches this step for a naming-only change. -->
 <div id="step-kit-repeats" style="display:none">
+  <button class="back-link" type="button" data-step-back="kit-repeats" hidden></button>
   <h1>Just one more! Almost there.</h1>
   <div class="why-panel">
     <b>Why I&rsquo;m asking:</b> your kit decides which recipes are even possible to suggest.
@@ -656,7 +682,6 @@
   <div class="chip-row" id="kit-chips"></div>
   <div><button class="next-btn" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button></div>
   <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
-  <span class="back-link" data-back="typical-week">&larr; Back</span>
 </div>
 
 <!-- First-plan reveal — the earliest real first impression, so this gets
@@ -1248,10 +1273,17 @@ function buildRhythmStep2() {
   updateRhythm2ContinueState();
 }
 
-// Saved in one call once both rhythm steps are answered ("Save my rhythm").
-// Failures are surfaced (unlike the optional plan-the-week steps below) —
-// these six are the locked, required rhythm questions, not a skippable
-// extra, so a household should know if the save didn't go through.
+// All six (and the skippable seventh) written in one call. Failures are
+// surfaced (unlike the optional plan-the-week steps below) — these are the
+// locked, required rhythm questions, not a skippable extra, so a household
+// should know if the save didn't go through.
+//
+// It used to run the moment the second rhythm step was left, and now runs
+// with every other write at the end of setup (Emily, 2026-09-09). The
+// reason is the same one that moved the household write: lunch location is
+// stored per member NAME, so a rhythm answer written down before you can go
+// back and correct that name leaves an answer on file for somebody who
+// isn't in the household. Nothing in this app takes one back out.
 async function saveRhythmAnswers() {
   const body = {
     lunch_location: { ...rhythmLunchLocation },
@@ -1278,10 +1310,34 @@ async function saveRhythmAnswers() {
 // an allergy specifically needs to be stored so the clash checker
 // (check_plan_conflicts) can treat it as hard, which a plain custom chip
 // can't guarantee.
+// This step's answers live here rather than in the chips and boxes on
+// screen, and that is the whole of what makes going back to it work. The
+// block is rebuilt from the current household every time the step is shown
+// (see showStep) — because the household is the one answer it depends on —
+// so a DOM-only answer would be wiped by its own rebuild, which is exactly
+// the "I went back and lost what I'd typed" failure this is for.
+//
+// Keyed by member NAME, and an entry naming somebody who is no longer in
+// the household is dropped at render time rather than invalidated by a
+// rule. That is the same thing renderLunchPeople and renderCookingWhoChips
+// already do, and it is deliberately not a "changing the household clears
+// restrictions" rule written down somewhere: a rule has to be remembered
+// and kept in step with every future question, whereas "the answers are
+// whatever the people who are actually here have said" stays true on its
+// own.
+let restrictionAnswers = {};   // name -> { chips: [...], allergy: '', other: '' }
+
 function buildRestrictionsStep() {
   const dietDiv = document.getElementById('diet-by-member');
   dietDiv.innerHTML = '';
-  currentMembers().forEach(m => {
+  const members = currentMembers();
+  const here = new Set(members.map(m => m.name));
+  Object.keys(restrictionAnswers).forEach(name => {
+    if (!here.has(name)) delete restrictionAnswers[name];
+  });
+  members.forEach(m => {
+    const saved = restrictionAnswers[m.name] || { chips: [], allergy: '', other: '' };
+    restrictionAnswers[m.name] = saved;
     const block = document.createElement('div');
     block.className = 'member-block';
     block.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;font-size:0.9rem;color: var(--ink-strong);margin:0 0 6px">${escapeHtmlLocal(m.name)}</p>
@@ -1292,45 +1348,63 @@ function buildRestrictionsStep() {
       <div class="row diet-other-row" style="margin-top:8px;display:none">
         <input type="text" class="diet-other-input" placeholder="Anything else I should always follow?" style="flex:1">
       </div>`;
-    chipWithCustom(block.querySelector('.diet-chips'), DIET_OPTIONS, true);
-    const allergyChip = [...block.querySelectorAll('.diet-chips .chip')].find(c => c.dataset.value === 'Allergy');
-    const otherChip = [...block.querySelectorAll('.diet-chips .chip')].find(c => c.dataset.value === 'Other');
+    const chipRow = block.querySelector('.diet-chips');
+    chipWithCustom(chipRow, DIET_OPTIONS, true);
+    // Draw what this person already said, then keep the answer object in
+    // step with every tap. chipWithCustom wired btn.onclick to do the
+    // toggling; these listeners run after it, so they read the resulting
+    // state rather than managing it.
+    [...chipRow.querySelectorAll('.chip')].forEach(c => {
+      if (saved.chips.indexOf(c.dataset.value) !== -1) c.classList.add('active');
+      c.addEventListener('click', () => { saved.chips = getActiveChips(chipRow); });
+    });
+    const allergyChip = [...chipRow.querySelectorAll('.chip')].find(c => c.dataset.value === 'Allergy');
+    const otherChip = [...chipRow.querySelectorAll('.chip')].find(c => c.dataset.value === 'Other');
     const allergyRow = block.querySelector('.diet-allergy-row');
     const otherRow = block.querySelector('.diet-other-row');
-    // chipWithCustom already wired btn.onclick to toggle the "active" class;
-    // this listener runs after that one fires, so it can just read the
-    // resulting state rather than manage it itself.
-    if (allergyChip) allergyChip.addEventListener('click', () => {
+    const allergyInput = block.querySelector('.diet-allergy-input');
+    const otherInput = block.querySelector('.diet-other-input');
+    allergyInput.value = saved.allergy;
+    otherInput.value = saved.other;
+    allergyInput.addEventListener('input', () => { saved.allergy = allergyInput.value; });
+    otherInput.addEventListener('input', () => { saved.other = otherInput.value; });
+    if (allergyChip) {
       allergyRow.style.display = allergyChip.classList.contains('active') ? 'flex' : 'none';
-    });
-    if (otherChip) otherChip.addEventListener('click', () => {
+      allergyChip.addEventListener('click', () => {
+        allergyRow.style.display = allergyChip.classList.contains('active') ? 'flex' : 'none';
+      });
+    }
+    if (otherChip) {
       otherRow.style.display = otherChip.classList.contains('active') ? 'flex' : 'none';
-    });
+      otherChip.addEventListener('click', () => {
+        otherRow.style.display = otherChip.classList.contains('active') ? 'flex' : 'none';
+      });
+    }
     dietDiv.appendChild(block);
   });
 }
+// Read off the answer object and the current household, not off whatever
+// blocks happen to be on screen — a person removed after answering must not
+// still ship a restriction, and a household that never reached this step
+// must not ship an empty one.
 function currentRestrictions() {
   const out = {};
-  document.querySelectorAll('.diet-chips').forEach(el => {
-    const member = el.dataset.member;
-    const activeRaw = getActiveChips(el);
-    const items = activeRaw.filter(v => v !== 'None' && v !== 'Allergy' && v !== 'Other');
-    if (activeRaw.indexOf('Allergy') !== -1) {
-      const block = el.closest('.member-block');
-      const raw = block ? block.querySelector('.diet-allergy-input').value : '';
+  currentMembers().forEach(m => {
+    const saved = restrictionAnswers[m.name];
+    if (!saved) return;
+    const items = saved.chips.filter(v => v !== 'None' && v !== 'Allergy' && v !== 'Other');
+    if (saved.chips.indexOf('Allergy') !== -1) {
       // Comma-separated -> one "allergy: x" entry each, lower-case prefix so
       // the clash checker's stopword filter recognises it as an allergy
       // rather than a food to search for literally.
-      raw.split(',').map(s => s.trim()).filter(Boolean).forEach(thing => {
+      saved.allergy.split(',').map(s => s.trim()).filter(Boolean).forEach(thing => {
         items.push('allergy: ' + thing);
       });
     }
-    if (activeRaw.indexOf('Other') !== -1) {
-      const block = el.closest('.member-block');
-      const other = block ? block.querySelector('.diet-other-input').value.trim() : '';
-      if (other) items.push(other);
+    if (saved.chips.indexOf('Other') !== -1 && saved.other.trim()) {
+      items.push(saved.other.trim());
     }
-    if (items.length) out[member] = items;
+    if (items.length) out[m.name] = items;
   });
   return out;
 }
@@ -1358,9 +1432,15 @@ const wontEatItems = [];
 // currentWontEat() is the one place that joins them.
 let wontEatPresetsBuilt = false;
 function buildWontEatStep() {
-  if (wontEatPresetsBuilt) return;
-  chipWithCustom(document.getElementById('wont-eat-presets'), NEVER_RECOMMEND_OPTIONS, true);
-  wontEatPresetsBuilt = true;
+  // The presets are built once and then left alone — the taps ARE the
+  // answer, so rebuilding them would be the thing that loses it. The
+  // removable chips below are redrawn from wontEatItems every time, which
+  // costs nothing and means the list on screen is never a stale copy.
+  if (!wontEatPresetsBuilt) {
+    chipWithCustom(document.getElementById('wont-eat-presets'), NEVER_RECOMMEND_OPTIONS, true);
+    wontEatPresetsBuilt = true;
+  }
+  renderWontEatChips();
 }
 function currentWontEat() {
   const presets = getActiveChips(document.getElementById('wont-eat-presets'));
@@ -1473,10 +1553,16 @@ document.getElementById('lunches-plus').addEventListener('click', () => {
   lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
   renderLunchesValue();
 });
-renderDinnersValue();
-renderBreakfastsValue();
-renderLunchesValue();
-renderSnacksPerDayChips();
+// All four redraw from the counts as they stand, so arriving at this step
+// — first time or on the way back — shows what was picked rather than the
+// defaults it started on.
+function buildDinnersStep() {
+  renderDinnersValue();
+  renderBreakfastsValue();
+  renderLunchesValue();
+  renderSnacksPerDayChips();
+}
+buildDinnersStep();
 
 // ---------- Step A: a normal week ----------
 // The "worth mentioning" prompt list is gone (Julia, 2026-09-08 — the step
@@ -1493,6 +1579,11 @@ const FIRST_PLAN_START_OPTIONS = [
   { key: 'next_week', label: 'Next week' },
 ];
 let firstPlanStart = 'this_week';
+// The two textareas on this step hold their own text; the chips are the one
+// thing that has to be redrawn from state on the way back.
+function buildTypicalWeekStep() {
+  renderFirstPlanStartChips();
+}
 function renderFirstPlanStartChips() {
   buildSingleSelectChips(
     document.getElementById('first-plan-start-chips'), FIRST_PLAN_START_OPTIONS, firstPlanStart,
@@ -2044,12 +2135,81 @@ async function generateFirstPlanAndReveal(answers) {
 // own page (see the comment above step-reveal's old chores markup).
 const ALL_STEPS = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal'];
 
+// What each step is called when another step points back at it. Named
+// destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
+// remember what you answered two screens ago in order to know whether it is
+// worth tapping.
+const STEP_TITLES = {
+  'household': "Who's here",
+  'rhythm-1': 'Your rhythm',
+  'rhythm-2': 'Your timing',
+  'restrictions': 'Restrictions',
+  'eating-style': 'How you eat',
+  'wont-eat': 'Never recommend',
+  'excited-about': "What you're into",
+  'dinners': 'How many recipes',
+  'typical-week': 'A normal week',
+  'kit-repeats': 'Your kit',
+};
+
+// The steps THIS household is asked, derived from the answers it has given
+// rather than stamped onto the markup. Today it is every step: the one
+// branch onboarding has — a household of exactly one adult, which is not
+// asked who cooks or which meals it eats together — drops two CARDS inside
+// rhythm-1, not a step (see applySoloAdultDefaults). It is derived here
+// anyway, because everything about going back is computed from it: a
+// destination attribute written into each step's markup is a table
+// somebody has to remember to update, and the first genuinely conditional
+// step would turn every one of those attributes into a lie that nothing in
+// this repo would catch. Ask the flow instead, and a skipped step is
+// skipped in both directions for free.
+function stepFlow() {
+  return ALL_STEPS.slice();
+}
+// The step before `key` in that flow, or '' for the first one.
+function stepBefore(key) {
+  const flow = stepFlow();
+  const i = flow.indexOf(key);
+  return i > 0 ? flow[i - 1] : '';
+}
+// The nearest step that still applies, at or before `key`. A step can stop
+// applying while somebody is standing on it (going back and changing the
+// household is the whole point of this ticket), and history can hand us one
+// that no longer exists — landing on the step before it is the honest
+// answer, and it is never a step further forward than they had reached.
+function resolveStep(key) {
+  const flow = stepFlow();
+  if (flow.indexOf(key) !== -1) return key;
+  for (let i = ALL_STEPS.indexOf(key); i >= 0; i--) {
+    if (flow.indexOf(ALL_STEPS[i]) !== -1) return ALL_STEPS[i];
+  }
+  return flow[0];
+}
+
+// Every arrival at a step redraws it from the answers as they stand right
+// now — that is what makes going back show what you said instead of a blank
+// question, and it is a rule about arriving rather than a list of things to
+// restore, so a new step gets it by being added here. The household step
+// isn't in the map because its inputs hold their own text; the reveal isn't
+// because it is not a question.
+const STEP_BUILDERS = {
+  'rhythm-1': buildRhythmStep1,
+  'rhythm-2': buildRhythmStep2,
+  'restrictions': buildRestrictionsStep,
+  'eating-style': buildEatingStyleStep,
+  'wont-eat': buildWontEatStep,
+  'excited-about': buildExcitedStep,
+  'dinners': buildDinnersStep,
+  'typical-week': buildTypicalWeekStep,
+  'kit-repeats': buildKitRepeatsStep,
+};
+
 function renderProgress() {
   const progress = document.getElementById('progress');
   progress.innerHTML = '';
-  // Only show dots for the fixed pre-reveal question steps — chores is a
-  // separate, optional tail the dots don't need to represent.
-  const questionSteps = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats'];
+  // Only dots for the question steps — the reveal is where setup ends, not
+  // another thing to answer.
+  const questionSteps = stepFlow().filter(k => k !== 'reveal');
   const idx = questionSteps.indexOf(currentStep);
   questionSteps.forEach((key, i) => {
     const dot = document.createElement('div');
@@ -2057,24 +2217,108 @@ function renderProgress() {
     progress.appendChild(dot);
   });
 }
+
+// The back control is written by the flow, not by the markup: each step
+// carries an empty button tagged with its OWN key, and this fills in where
+// that button goes and what it is called.
+function renderBackLink(key) {
+  const el = document.querySelector('[data-step-back="' + key + '"]');
+  if (!el) return;
+  const prev = stepBefore(key);
+  el.hidden = !prev;
+  if (prev) el.textContent = '‹ ' + (STEP_TITLES[prev] || 'Back');
+}
+
+// One history entry per step, so the phone's own back gesture means the
+// same thing the control does. The URL never changes — onboarding is one
+// page — so the state object is the whole of it.
+function pushStepHistory(key, replace) {
+  if (!window.history) return;
+  const state = { onboardingStep: key };
+  const path = window.location.pathname;
+  if (replace) window.history.replaceState(state, '', path);
+  else window.history.pushState(state, '', path);
+}
+
 let currentStep = 'household';
-function showStep(key) {
+function showStep(key, opts) {
+  opts = opts || {};
+  key = resolveStep(key);
   currentStep = key;
+  const build = STEP_BUILDERS[key];
+  if (build) build();
   ALL_STEPS.forEach(k => {
     document.getElementById('step-' + k).style.display = (k === key) ? 'block' : 'none';
   });
+  renderBackLink(key);
   renderProgress();
+  if (opts.push !== false) {
+    // The reveal REPLACES rather than pushes. By the time it renders the
+    // answers are saved and a week has been asked for, so a back gesture
+    // into the finished wizard would be offering to re-answer questions
+    // that are already written down — and coming forward again would build
+    // a second first week. Corrections are Preferences' job from here, and
+    // the receipt on that screen says so.
+    pushStepHistory(key, !!opts.replace || key === 'reveal');
+  }
   window.scrollTo(0, 0);
 }
+
+// The named back control. It goes up a level BY NAME and never guesses from
+// history — the destination is stepBefore(), same as the label says. It
+// uses history.back() to get there, which this repo's step screens
+// deliberately don't, and the reason is that onboarding is the one place
+// where the browser's stack and the flow are the same thing: every forward
+// move pushes exactly one entry, so the entry behind you is always the step
+// behind you. Walking back rather than pushing a new entry is what makes
+// the gesture and the control agree; the popstate handler below checks the
+// step we actually landed on and puts it right if it ever isn't.
+let backLinkTarget = '';
+function goBackFrom(key) {
+  const prev = stepBefore(key);
+  if (!prev) return;
+  backLinkTarget = prev;
+  if (window.history && window.history.length > 1) {
+    window.history.back();
+  } else {
+    // Nothing behind us (a step reached without a push — only possible if
+    // history is unavailable). Take them at their word anyway.
+    backLinkTarget = '';
+    showStep(prev, { replace: true });
+  }
+}
+
+window.addEventListener('popstate', function (e) {
+  const target = backLinkTarget;
+  backLinkTarget = '';
+  const key = e && e.state && e.state.onboardingStep;
+  if (target) {
+    // The control promised a named step. If the entry we landed on is that
+    // step, nothing to correct; if it somehow isn't, the promise wins and
+    // the entry is rewritten rather than leaving them somewhere they didn't
+    // ask for.
+    if (key === target) showStep(target, { push: false });
+    else showStep(target, { replace: true });
+    return;
+  }
+  // A state we don't recognise is whatever came before onboarding — let the
+  // browser have it rather than trapping somebody on the first question.
+  if (!key || ALL_STEPS.indexOf(key) === -1) return;
+  showStep(key, { push: false });
+});
 
 // Saved through the same /api/onboarding/household + set_member_age_group
 // path a chores-setup pet/goals save already uses (app/main.py) — that
 // endpoint already knew how to store age_group per member, it just wasn't
-// being called with any members from here. Fired the moment household
-// membership is locked in (before the rhythm step needs it), and safe to
-// call again if the person goes back and adds someone: add_member/
-// set_member_age_group are get-or-create by name, so re-saving the same
-// people is a no-op, not a duplicate.
+// being called with any members from here.
+//
+// It used to fire the moment the household step was left. It doesn't any
+// more (Emily, 2026-09-09): add_member is get-or-create by NAME, so writing
+// the household before somebody can go back and correct it is how "Jamie"
+// typed, corrected to "James", and continued through leaves a household of
+// three people, two of whom are the same person. There is no way to take a
+// member back out — nothing in this app deletes one — so the fix is not to
+// put them in until the answer is final. See finishSetupAndReveal.
 async function saveHouseholdMembers() {
   const body = {
     members: currentMembers().map(m => ({ name: m.name, age_group: m.age_group })),
@@ -2087,52 +2331,28 @@ async function saveHouseholdMembers() {
   if (!res.ok) throw new Error('Could not save household members');
 }
 
-document.getElementById('household-next').onclick = async () => {
+// Every one of these is now just "go to the next step" — showStep builds
+// the step it is going to, and nothing writes anything on the way past.
+document.getElementById('household-next').onclick = () => {
   if (!currentMembers().length) { alert('Add at least one person to get started.'); return; }
-  const btn = document.getElementById('household-next');
-  btn.disabled = true;
-  try {
-    await saveHouseholdMembers();
-    buildRhythmStep1();
-    showStep('rhythm-1');
-  } catch (err) {
-    console.error('Saving household members failed:', err);
-    alert("Couldn't save that — try again in a moment.");
-  } finally {
-    btn.disabled = false;
-  }
+  showStep('rhythm-1');
 };
 document.getElementById('rhythm-1-next').onclick = () => {
   if (!rhythm1Complete()) return;
-  buildRhythmStep2();
   showStep('rhythm-2');
 };
-document.getElementById('rhythm-2-next').onclick = async () => {
+document.getElementById('rhythm-2-next').onclick = () => {
   if (!rhythm2Complete()) return;
-  const btn = document.getElementById('rhythm-2-next');
-  btn.disabled = true;
-  try {
-    await saveRhythmAnswers();
-    buildRestrictionsStep();
-    showStep('restrictions');
-  } catch (err) {
-    console.error('Saving household rhythm failed:', err);
-    alert("Couldn't save that — try again in a moment.");
-  } finally {
-    btn.disabled = !rhythm2Complete();
-  }
+  showStep('restrictions');
 };
 document.getElementById('restrictions-next').onclick = () => {
-  buildEatingStyleStep();
   showStep('eating-style');
 };
 document.getElementById('eating-style-next').onclick = () => {
-  buildWontEatStep();
   showStep('wont-eat');
 };
 document.getElementById('wont-eat-next').onclick = () => {
   commitWontEatInput();
-  buildExcitedStep();
   showStep('excited-about');
 };
 document.getElementById('excited-next').onclick = () => {
@@ -2144,15 +2364,12 @@ document.getElementById('excited-next').onclick = () => {
 // meal counts and the first-week reveal, so the very first plan is built
 // from real answers rather than a guess.
 document.getElementById('dinners-next').onclick = () => {
-  renderFirstPlanStartChips();
   showStep('typical-week');
 };
 document.getElementById('typical-week-next').onclick = () => {
-  buildKitRepeatsStep();
   showStep('kit-repeats');
 };
 document.getElementById('typical-week-skip').onclick = () => {
-  buildKitRepeatsStep();
   showStep('kit-repeats');
 };
 
@@ -2160,9 +2377,23 @@ document.getElementById('typical-week-skip').onclick = () => {
 // is true, and it keeps the flow honest. Skipping goes through the same
 // finish path so the rest of onboarding is saved either way; it just has
 // nothing of its own to write.
+//
+// This is also the ONE place onboarding writes anything to the household
+// (Emily, 2026-09-09). Every step used to be able to go back, in principle,
+// and two of them had already posted their answer by the time you did —
+// household members when the first step was left, the rhythm facts when the
+// second one was. Both are keyed by name, so a corrected name or a person
+// removed on the way back left the first version sitting in the database
+// with nothing able to take it out again. Holding all four writes here
+// means the household is written once, from the answers as they finally
+// stand, and going back cannot leave a second copy of anything because
+// there was never a first one. The order matters: members exist before the
+// rhythm and the answer set name them.
 async function finishSetupAndReveal(btn) {
   if (btn) btn.disabled = true;
   try {
+    await saveHouseholdMembers();
+    await saveRhythmAnswers();
     const answers = await saveOnboardingAnswers();
     await savePlanTheWeekAnswers();
     showStep('reveal');
@@ -2184,8 +2415,8 @@ document.getElementById('kit-repeats-skip').onclick = () => {
   finishSetupAndReveal(null);
 };
 
-document.querySelectorAll('[data-back]').forEach(el => {
-  el.addEventListener('click', () => showStep(el.dataset.back));
+document.querySelectorAll('[data-step-back]').forEach(el => {
+  el.addEventListener('click', () => goBackFrom(el.dataset.stepBack));
 });
 
 // ---------- Post-reveal ----------
@@ -2229,7 +2460,10 @@ document.getElementById('reveal-iterate-btn').onclick = () => {
 document.getElementById('reveal-retry-btn').onclick = () => { generateFirstPlanAndReveal(lastFirstPlanAnswers); };
 document.getElementById('reveal-anyway-btn').onclick = () => { window.location.href = '/week'; };
 
-renderProgress();
+// The first step, and the history entry the back gesture unwinds onto —
+// replaceState rather than push, so nothing is added to the stack for a
+// screen nobody navigated to.
+showStep('household', { replace: true });
 </script>
 </body>
 </html>

@@ -314,6 +314,78 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-09 — Onboarding had a way back and nobody could find it, and
+  two steps had already written their answer down by the time you did.
+  Branch `overnight/onboarding-go-back`.** Emily: "add a go back option in
+  case I want to go back to change responses." There WAS one — a bare
+  "← Back" under Continue on every step after the first — which is the more
+  useful bug report: a control placed after the primary action, named after
+  the gesture rather than after where it goes, is one you find only once you
+  have already given up on the screen. It is now a `‹ <the previous step>`
+  button at the TOP of each step (`STEP_TITLES`, `renderBackLink`), and the
+  three things around it that were actually broken are the change:
+  (1) **Arriving at a step redraws it** — `STEP_BUILDERS` keyed by step, run
+  by `showStep` on every arrival, so a step shows the answers as they stand
+  rather than whatever the last render left behind. This is what
+  `buildRestrictionsStep` got wrong: it rebuilt itself from the current
+  household every time it was reached and wiped the chips it was meant to
+  redraw, so coming forward after any change handed back a blank question.
+  Its answers live in `restrictionAnswers` now (name -> chips/allergy/other)
+  and the chips are drawn from them.
+  (2) **The dependency rule is derivation, never a table of what to
+  invalidate.** Back destinations come from `stepFlow()`/`stepBefore()`, not
+  from a `data-back="restrictions"` stamped on each step's markup — that
+  form is a table somebody has to keep in step with the flow, and the first
+  conditional step would turn every one of those attributes into a lie
+  nothing here would catch. Same shape one level down: an answer keyed by a
+  member name is dropped at RENDER time when nobody by that name is in the
+  household (`renderLunchPeople` and `renderCookingWhoChips` already did
+  this; `buildRestrictionsStep` does now), and the solo-adult branch stays
+  `applySoloAdultDefaults`'s derivation — go back, add a second person, and
+  "who cooks" is a real question again with the filled-in answer cleared.
+  (3) **Nothing reaches the household until setup finishes.** Two steps used
+  to POST on the way past — members when the household step was left, the
+  rhythm facts when the second rhythm step was — and both are keyed by NAME.
+  `add_member` is get-or-create by name and **nothing in this app deletes a
+  member**, so "Jamie" typed, corrected to "James", and continued through
+  left a household of three, two of them the same person, with no way to
+  take one back out. All four writes moved into `finishSetupAndReveal`, in
+  order (members, rhythm, answers, plan-the-week), so there is never a first
+  copy for a second one to duplicate.
+  `test_a_corrected_name_would_leave_two_of_the_same_person` characterises
+  the old behaviour against the real route, so the reason stays written down.
+  The back GESTURE: one history entry per step; the named control walks the
+  stack back with `history.back()` rather than pushing, which is what stops
+  the gesture right after a back tap from bouncing forward onto the step you
+  just left, and the popstate handler corrects the landing if it is ever not
+  the step the label promised. This is the one place in the repo where a
+  back link uses `history.back()`, deliberately: onboarding is linear, so
+  the entry behind you IS the step behind you — the rule elsewhere exists
+  because a tab you can wander around in has no such guarantee. The reveal
+  **replaces** its entry rather than pushing, because by then the answers
+  are saved and a week has been asked for; a gesture back into a finished
+  wizard would offer to re-answer what is already written down, and coming
+  forward again would build a second first week. An unrecognised popstate
+  state is left to the browser rather than trapping somebody on question one.
+  **Two copy/behaviour changes, both forced by (3) and both Emily's to
+  veto:** rhythm-2's CTA says "Continue" instead of "Save my rhythm" (it no
+  longer saves), and a rhythm-save failure is now reported at the end of
+  setup rather than at the rhythm step. `tests/test_onboarding_go_back.py`
+  is the guard, 18 tests — the page's own navigation and both rebuild paths
+  RUN under node against a DOM stub, because the original bug is exactly
+  what a source-marker test cannot see; 1758 -> 1776. Two existing files
+  were corrected honestly rather than deleted:
+  `test_chores_setup_split`'s dot-count test compared two hand-written lists
+  and one of them is derived now, and `test_onboarding_age_group`'s
+  docstrings said the household POST fires "right after the household step".
+  **Verified end to end in a real chromium at 390px** (Playwright, throwaway
+  DB, port 8934): forward, back by control, back by gesture, household
+  changed, forward again — one Robin in `members`, no orphan Jamie anywhere,
+  and the only non-GET before the finish was the sign-in. **Not done, on
+  purpose:** the flow is still every step for every household
+  (`stepFlow()` derives it but has nothing to drop yet), and correcting an
+  answer after setup is still Preferences' job — the reveal has no way back.
+
 - **2026-09-09 — Nobody had told the household how to talk to the app.
   Branch `coaching-how-to-talk-to-me`.** Julia is the first tester to reach
   Pomona never having talked to one: she finished setup, landed on Today,
