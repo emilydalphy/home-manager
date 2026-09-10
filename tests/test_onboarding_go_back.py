@@ -626,31 +626,58 @@ console.log(JSON.stringify({ len: HISTORY.length, on: currentStep, top: top().on
 # ---------- setup finishes once, and never with nobody in the house ----------
 
 
-def _finish_harness(members: str = "[{ name: 'Robin', age_group: 'adult' }]") -> str:
+def _finish_harness(members: str = "[{ name: 'Robin', age_group: 'adult' }]",
+                    save_ms: int = 0) -> str:
     """
     finishSetupAndReveal itself, over the same navigation, with the four
     writes and the generation call stubbed to record that they happened.
     Nothing here reaches a network or a database — what is being pinned is
     how many times the page ASKS.
+
+    `save_ms` is the round trip each of the four saves takes. It defaults to
+    0, which is localhost and is exactly why the concurrency hole below was
+    invisible; the tests that care set it to a phone's.
     """
     return "\n".join([
         _nav_harness(),
         """
 ELS['household-empty'] = makeEl('p');
 ELS['household-empty'].hidden = true;
+ELS['kit-repeats-next'] = makeEl('button');
+ELS['kit-repeats-next'].disabled = false;
+ELS['kit-repeats-skip'] = makeEl('span');
+ELS['kit-repeats-skip'].textContent = "Skip — I'll tell you as we go";
 const POSTS = [];
+const SAVE_MS = %d;
+const wait = () => new Promise(r => setTimeout(r, SAVE_MS));
 var MEMBERS = %s;
+var kitchenKit = [];
 function currentMembers() { return MEMBERS; }
-async function saveHouseholdMembers() { POSTS.push('household'); }
-async function saveRhythmAnswers() { POSTS.push('rhythm'); }
-async function saveOnboardingAnswers() { POSTS.push('answers'); return { member_names: [] }; }
-async function savePlanTheWeekAnswers() { POSTS.push('plan-the-week'); }
+async function saveHouseholdMembers() { POSTS.push('household'); await wait(); }
+async function saveRhythmAnswers() { POSTS.push('rhythm'); await wait(); }
+async function saveOnboardingAnswers() { POSTS.push('answers'); await wait(); return { member_names: [] }; }
+async function savePlanTheWeekAnswers() { POSTS.push('plan-the-week'); await wait(); }
 async function generateFirstPlanAndReveal() { POSTS.push('generate-first-plan'); }
-var setupFinished = false;
+var setupRun = 'idle';
 function alert() {}
-""" % members,
+""" % (save_ms, members),
         _fn("showHouseholdEmptyNote"),
         _async_fn("finishSetupAndReveal"),
+        _fn("setKitRepeatsBusy"),
+        _const("KIT_SKIP_LABEL"),
+        # The two controls' own handlers, restated: what the page wires them
+        # to, which is the whole of what a tap does.
+        """
+// The page's handlers discard the promise; these hand it back so a test can
+// wait for the run to end. That is the only difference, and it changes
+// nothing about when the guard is read.
+function tapContinue() { return finishSetupAndReveal(); }
+function tapSkip() { kitchenKit = []; return finishSetupAndReveal(); }
+function skipIsTappable() {
+  return !ELS['kit-repeats-skip']._classes.has('is-busy');
+}
+function skipSays() { return ELS['kit-repeats-skip'].textContent; }
+""",
     ])
 
 
@@ -665,12 +692,12 @@ def test_generation_can_never_be_asked_for_twice_from_this_page():
     out = _run(_finish_harness() + """
 (async function () {
   %s.forEach(showStep);
-  await finishSetupAndReveal(null);
+  await tapContinue();
   const first = POSTS.slice();
-  gesture();                         // the phone's back gesture off the reveal
+  gesture();                  // the phone's back gesture off the reveal
   const afterBack = currentStep;
-  await finishSetupAndReveal(null);  // and the finish it used to be able to reach
-  await finishSetupAndReveal(null);
+  await tapContinue();        // and the finish it used to be able to reach
+  await tapSkip();
   console.log(JSON.stringify({ first: first, afterBack: afterBack, posts: POSTS, on: currentStep }));
 })();
 """ % json.dumps(STEPS_AFTER_THE_FIRST))
@@ -697,15 +724,23 @@ def test_a_failed_save_leaves_setup_finishable():
     if (firstTry) { firstTry = false; throw new Error('nope'); }
   };
   showStep('kit-repeats');
-  await finishSetupAndReveal(null);
+  await tapSkip();
   const afterFailure = POSTS.slice();
-  await finishSetupAndReveal(null);
-  console.log(JSON.stringify({ afterFailure: afterFailure, posts: POSTS, on: currentStep }));
+  const controlsFreed = { tappable: skipIsTappable(), says: skipSays() };
+  await tapSkip();
+  console.log(JSON.stringify({
+    afterFailure: afterFailure, controlsFreed: controlsFreed,
+    posts: POSTS, on: currentStep
+  }));
 })();
 """)
     assert out["afterFailure"] == ["household", "rhythm"]
     assert out["posts"][-1] == "generate-first-plan"
     assert out["on"] == "reveal"
+    assert out["controlsFreed"] == {"tappable": True, "says": "Skip — I'll tell you as we go"}, (
+        "the controls stayed in their in-progress state after a failure, so the "
+        "household cannot try again"
+    )
 
 
 @_needs_node
@@ -719,7 +754,7 @@ def test_setup_cannot_complete_with_nobody_in_the_household():
     out = _run(_finish_harness(members="[]") + """
 (async function () {
   showStep('kit-repeats');
-  await finishSetupAndReveal(null);
+  await tapSkip();
   console.log(JSON.stringify({
     posts: POSTS, on: currentStep, noteShown: !ELS['household-empty'].hidden
   }));
@@ -745,6 +780,129 @@ def test_the_empty_household_is_told_in_a_line_on_the_step_not_an_alert():
     assert "showHouseholdEmptyNote(true)" in _fn("finishSetupAndReveal")
     assert "showHouseholdEmptyNote(true)" in ONBOARDING.split("household-next")[2]
     assert "alert('Add at least one person" not in ONBOARDING
+
+
+# ---------- two taps of the same control ----------
+# The guard's first version set its flag AFTER the four awaited saves and
+# leaned on `btn.disabled` for the window in between. That covered Continue
+# — a disabled button dispatches no click — and covered the SKIP LINK not at
+# all, because it is a <span> and was passed no button to disable. Two
+# genuine taps started two CONCURRENT runs: eight POSTs interleaved, two
+# generations in flight, each retiring the other's week.
+#
+# save_ms is why it survived local verification. At 0ms (localhost) the
+# window is a couple of ticks wide; at a phone's 120-600ms it is most of a
+# second in which the link looks untouched.
+
+
+@_needs_node
+def test_two_taps_of_the_skip_link_start_one_run_not_two():
+    out = _run(_finish_harness(save_ms=120) + """
+(async function () {
+  showStep('kit-repeats');
+  const first = tapSkip();          // not awaited: the second tap lands mid-flight
+  await new Promise(r => setTimeout(r, 60));
+  const second = tapSkip();
+  await Promise.all([first, second]);
+  console.log(JSON.stringify({ posts: POSTS, on: currentStep }));
+})();
+""")
+    assert out["posts"].count("generate-first-plan") == 1, (
+        "two taps of Skip asked for two first weeks — the second generation "
+        "retires the first"
+    )
+    assert out["posts"] == ["household", "rhythm", "answers", "plan-the-week",
+                            "generate-first-plan"], (
+        "the four saves were posted more than once (interleaved = two runs at once)"
+    )
+    assert out["on"] == "reveal"
+
+
+@_needs_node
+def test_the_same_holds_at_a_poor_signal_and_for_a_slow_second_tap():
+    """
+    The reviewer's worst measured row: a 600ms round trip and a second tap a
+    second and a half later, still inside the first run.
+    """
+    out = _run(_finish_harness(save_ms=600) + """
+(async function () {
+  showStep('kit-repeats');
+  const first = tapSkip();
+  await new Promise(r => setTimeout(r, 1500));
+  const second = tapSkip();
+  await Promise.all([first, second]);
+  console.log(JSON.stringify({ posts: POSTS }));
+})();
+""")
+    assert out["posts"].count("generate-first-plan") == 1
+    assert out["posts"].count("household") == 1
+
+
+@_needs_node
+def test_continue_and_skip_are_the_same_guard_not_two():
+    """
+    Tapping one and then the other is the same hole, and neither control is
+    trusted to be the thing that stops it.
+    """
+    out = _run(_finish_harness(save_ms=120) + """
+(async function () {
+  showStep('kit-repeats');
+  const first = tapContinue();
+  await new Promise(r => setTimeout(r, 60));
+  const second = tapSkip();
+  await Promise.all([first, second]);
+  console.log(JSON.stringify({ posts: POSTS }));
+})();
+""")
+    assert out["posts"].count("generate-first-plan") == 1
+    assert out["posts"].count("household") == 1
+
+
+@_needs_node
+def test_the_skip_link_says_it_is_working_and_stops_being_tappable():
+    """
+    A control that does nothing visible for two seconds is what invites the
+    second tap. Continue greys out on its own; the span had to be told.
+    """
+    out = _run(_finish_harness(save_ms=120) + """
+(async function () {
+  showStep('kit-repeats');
+  const before = { tappable: skipIsTappable(), says: skipSays(),
+                   btn: ELS['kit-repeats-next'].disabled };
+  const run = tapSkip();
+  const during = { tappable: skipIsTappable(), says: skipSays(),
+                   btn: ELS['kit-repeats-next'].disabled };
+  await run;
+  console.log(JSON.stringify({ before: before, during: during }));
+})();
+""")
+    assert out["before"] == {"tappable": True, "says": "Skip — I'll tell you as we go",
+                            "btn": False}
+    assert out["during"]["tappable"] is False, "the skip link stayed tappable mid-save"
+    assert out["during"]["btn"] is True, "Continue stayed enabled mid-save"
+    assert out["during"]["says"] == "Saving your answers…", (
+        "the skip link gave no sign it had been tapped"
+    )
+
+
+def test_the_guard_does_not_depend_on_a_button_being_passed_in():
+    """
+    Source-level, and worth pinning because it is the shape of the bug: the
+    function takes no control to disable, and the flag it reads is set
+    before the first await rather than after the four saves.
+    """
+    finish = _fn("finishSetupAndReveal")
+    assert "function finishSetupAndReveal()" in finish, (
+        "finishSetupAndReveal takes a control again — the btn.disabled idiom "
+        "only ever covered the button, never the skip link"
+    )
+    assert "btn.disabled" not in finish
+    assert finish.index("setupRun = 'running'") < finish.index("await save"), (
+        "the re-entry flag is set after an await, so two taps get through"
+    )
+    assert "setupRun = 'idle'" in finish, "a failed save can never be retried"
+    # Every caller goes through the one guard.
+    assert ONBOARDING.count("finishSetupAndReveal(") == 3  # definition + two taps
 
 
 # ---------- what depends on what ----------

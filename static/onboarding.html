@@ -90,9 +90,20 @@
     display: inline-flex; align-items: center; min-height: 44px;
     margin-left: 4px;
     font-family: var(--font-body); font-size: 0.85rem;
-    color: var(--text-muted); cursor: pointer;
+    color: var(--ink-secondary); cursor: pointer;
   }
   .skip-link:hover { color: var(--ink-strong); }
+  /* --text-muted was a legacy alias for --ink-secondary (DESIGN_SYSTEM §1);
+     moved while this component was being touched. Same value, so nothing
+     about it looks different — measured in Chromium at 390px, 4.44:1 light
+     and 8.48:1 dark on this page's ground, at 13.6px/400.
+     The busy state is the point of the change. On the last question this
+     link starts the whole of setup, and on a phone that is half a second to
+     two seconds of nothing visibly happening — a span doesn't grey out the
+     way the button beside it does. It says what it is doing and stops being
+     tappable while it does it, because a second tap used to start a second
+     concurrent run (see finishSetupAndReveal). */
+  .skip-link.is-busy { pointer-events: none; opacity: 0.6; cursor: default; }
   /* The "worth mentioning" prompt list under the normal-week textarea was
      dropped 2026-09-08 (Julia, first beta tester): the step had far too
      many words, and a five-bullet list of things to type is the opposite
@@ -2517,13 +2528,32 @@ document.getElementById('typical-week-skip').onclick = () => {
 // grocery lines of the week the household was just shown. The history trap
 // in the popstate handler is what stops the finished wizard being reachable
 // at all; this is the belt to that pair of braces, and it holds however the
-// button is reached. "Try again" on a FAILED generation is deliberately not
+// finish is reached. "Try again" on a FAILED generation is deliberately not
 // covered by it: it calls generateFirstPlanAndReveal directly, it is only
 // on screen when nothing came back, and there is therefore no week for a
 // second attempt to take over.
-let setupFinished = false;
-async function finishSetupAndReveal(btn) {
-  if (setupFinished) { showStep('reveal'); return; }
+//
+// THREE STATES, NOT A BOOLEAN, and the middle one is a bug fix. The first
+// version of this guard set its flag after the four awaited POSTs, and
+// leaned on `btn.disabled` for the window in between — which covered
+// Continue (a disabled button dispatches no click) and covered the SKIP
+// LINK not at all, because that is a <span> and it was passed no button to
+// disable. So two genuine taps of Skip started two CONCURRENT runs: eight
+// POSTs interleaved, two generations in flight, each retiring the other's
+// week. Invisible on localhost, where the window is ~50ms; on a phone
+// talking to Railway it is half a second to two seconds of a link that
+// showed no sign of having been tapped, which is an invitation to tap it
+// again. So: 'running' is set SYNCHRONOUSLY, before the first await and
+// without reference to any button, and it is what a second tap hits. The
+// catch puts it back to 'idle', because a save that failed never asked for
+// a week and the household must be able to try again. 'done' is the
+// original guard and is permanent.
+let setupRun = 'idle';   // 'idle' | 'running' | 'done'
+async function finishSetupAndReveal() {
+  if (setupRun === 'done') { showStep('reveal'); return; }
+  // A second tap while the first is still in flight is not an error and is
+  // told nothing new: the controls already say what is happening.
+  if (setupRun === 'running') return;
   // Re-validated here rather than trusted from the household step's own
   // Continue. That check is the only thing standing between an empty list
   // of names and a saved household, and a history gesture can reach this
@@ -2535,33 +2565,46 @@ async function finishSetupAndReveal(btn) {
     showHouseholdEmptyNote(true);
     return;
   }
-  if (btn) btn.disabled = true;
+  setupRun = 'running';
+  setKitRepeatsBusy(true);
   try {
     await saveHouseholdMembers();
     await saveRhythmAnswers();
     const answers = await saveOnboardingAnswers();
     await savePlanTheWeekAnswers();
-    // Set before the generation call, not after it: the point is that a
-    // second finish never asks for a second week. A save that FAILS leaves
-    // it unset on purpose, so the household can try again.
-    setupFinished = true;
+    setupRun = 'done';
     showStep('reveal');
     await generateFirstPlanAndReveal(answers);
   } catch (err) {
     console.error('Onboarding save failed:', err);
+    // Nothing was asked for, so let them try again.
+    setupRun = 'idle';
     alert("Couldn't save that — try again in a moment.");
   } finally {
-    if (btn) btn.disabled = false;
+    setKitRepeatsBusy(false);
   }
 }
 
-document.getElementById('kit-repeats-next').onclick = () =>
-  finishSetupAndReveal(document.getElementById('kit-repeats-next'));
+// Both controls on the last question start the same finish, so both wear
+// the same in-progress state — and neither of them is trusted to be the
+// guard. See the three states above.
+const KIT_SKIP_LABEL = document.getElementById('kit-repeats-skip').textContent;
+function setKitRepeatsBusy(busy) {
+  const btn = document.getElementById('kit-repeats-next');
+  const skip = document.getElementById('kit-repeats-skip');
+  if (btn) btn.disabled = busy;
+  if (skip) {
+    skip.classList.toggle('is-busy', busy);
+    skip.textContent = busy ? 'Saving your answers…' : KIT_SKIP_LABEL;
+  }
+}
+
+document.getElementById('kit-repeats-next').onclick = () => finishSetupAndReveal();
 document.getElementById('kit-repeats-skip').onclick = () => {
   // A skip means "don't record this" — clear anything half-tapped so a
   // partial answer isn't saved as though it were considered.
   kitchenKit = [];
-  finishSetupAndReveal(null);
+  finishSetupAndReveal();
 };
 
 document.querySelectorAll('[data-step-back]').forEach(el => {

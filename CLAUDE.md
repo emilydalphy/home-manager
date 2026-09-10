@@ -314,6 +314,51 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-10 — The other half of "setup finishes once": two taps of the
+  SKIP link started two concurrent runs. Same branch
+  `overnight/onboarding-go-back`, second review pass.** The guard in the
+  entry below set its flag *after* four awaited POSTs and leaned on
+  `btn.disabled` for the window in between. That covered Continue — a
+  disabled button dispatches no click — and covered the skip link not at
+  all: it is a `<span>`, and it called `finishSetupAndReveal(null)`, so
+  there was no button to disable and nothing on screen changed. Two genuine
+  taps therefore started two runs at once. Measured in a real Chromium at
+  300ms of save latency: **12 POSTs, interleaved, three generations** where
+  there should be four and one. Both runs reach `generate_weekly_plan` ->
+  `tools.retire_overlapping_plans` and both claim the same days through the
+  same `_first_plan_window`, so the overlap is total and the second retires
+  the first — the same damage the history trap was written to prevent,
+  reached one step earlier and worse, because two generations are in flight
+  at once. **Why it survived:** on localhost the window is ~50ms and the
+  bug is invisible; on a phone talking to Railway it is half a second to two
+  seconds of a link that showed no sign of having been tapped. An impatient
+  second tap is expected behaviour, not exotic.
+  **The fix is three states rather than a boolean, and no reliance on a
+  control.** `setupRun` is `'idle' | 'running' | 'done'`; `'running'` is set
+  SYNCHRONOUSLY, before the first `await` and without reference to any
+  button, and it is what a second tap hits. The `catch` puts it back to
+  `'idle'`, because a save that failed never asked for a week. `'done'` is
+  the original permanent guard. `finishSetupAndReveal` takes no argument at
+  all now — the `btn.disabled` idiom is gone, since it only ever covered the
+  button. **And the reason the second tap happened gets fixed too:**
+  `setKitRepeatsBusy` puts BOTH controls into the same in-progress state,
+  so the skip link says "Saving your answers…" and stops being tappable
+  (`.skip-link.is-busy`) for as long as the run takes. `.skip-link` also
+  moved off `--text-muted` onto the canonical `--ink-secondary` while it
+  was being touched (§1) — same value, measured 4.44:1 light / 8.48:1 dark.
+  Verified in a real Chromium on a throwaway DB across the reviewer's whole
+  matrix (0/120/300/600ms save latency, 50-1500ms between taps), with the
+  latency applied INSIDE the page rather than in the route handler so the
+  page's own timeline is the one being slowed: **4 POSTs and one generation
+  every time**, including a tap dispatched straight at the handler to
+  bypass `pointer-events` — so what holds is the flag, not the CSS. Both
+  things that must not break were re-checked: a failed SAVE frees the
+  controls and `setupRun` goes back to `'idle'`, and a failed GENERATION
+  still lets "Try again" run a second one with the reveal trap re-arming
+  after it. 5 more tests (30 -> 35); 1788 -> 1793. The new ones fail on the
+  previous commit (10 POSTs, two generations, under node with a 120ms
+  save).
+
 - **2026-09-10 — The finished wizard was one back swipe away, and
   re-finishing destroyed the week it had just built. Same branch
   `overnight/onboarding-go-back`, review pass.** An independent reviewer
@@ -333,11 +378,13 @@ why*, not duplicating the diff.
   gesture from then on by pushing the reveal entry back and re-showing it —
   the gesture is spent, the screen doesn't move, and pushing truncates the
   forward stack so a forward swipe has nowhere to go either. *Safety:*
-  `setupFinished` makes `finishSetupAndReveal` a no-op after the first
-  successful pass, however it is reached; a save that FAILS leaves it unset
-  so trying again still works, and the reveal's own "Try again" is
-  untouched, since it is only on screen when nothing came back and there is
-  therefore no week for a second attempt to take over. Three more things
+  `finishSetupAndReveal` is a no-op after the first successful pass, however
+  it is reached; a save that FAILS lets the household try again, and the
+  reveal's own "Try again" is untouched, since it is only on screen when
+  nothing came back and there is therefore no week for a second attempt to
+  take over. (**The first version of that safety guard was incomplete and
+  leaked on the skip link — corrected the same day, see the entry above
+  this one.**) Three more things
   went with it. **(a) A reload mid-flow left history lying.** The entries
   ahead still named later steps while every in-memory answer was gone, so a
   forward swipe reached, say, `restrictions` with no diet blocks on it, and
