@@ -585,6 +585,79 @@ def test_the_transaction_is_open_while_the_new_row_is_written(monkeypatch):
     assert seen == {"got_conn": True, "gone_inside": True, "still_there_outside": True}
 
 
+# ------------------------------------------------- a second writer
+
+def test_the_write_lock_is_held_from_the_first_read_not_the_first_write(monkeypatch):
+    """
+    db.get_conn leaves sqlite3's isolation_level="", which opens a
+    transaction implicitly only at the first INSERT/UPDATE/DELETE. So
+    without an explicit BEGIN IMMEDIATE, every read above the DELETE — the
+    plan's approved state, the chain map, the unlink's reads — ran in
+    autocommit, on a world another writer could still change. Pinned from
+    inside the first such read: the connection it is handed is already in
+    a transaction.
+    """
+    plan_id, entry_id = _plain_plan()
+    seen = {}
+    real = leftovers.plan_leftover_chains
+
+    def watching(*args, **kwargs):
+        # The FIRST call only: the ingest asks again later, after the
+        # DELETE, by which point an implicit transaction would be open
+        # anyway and the check would prove nothing.
+        if "in_transaction" not in seen:
+            conn = kwargs.get("conn")
+            seen["in_transaction"] = conn is not None and conn.in_transaction
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(leftovers, "plan_leftover_chains", watching)
+    tools.swap_meal_in_plan(plan_id, MON, "Soup", slot="dinner")
+
+    assert seen == {"in_transaction": True}
+
+
+def test_a_slot_swapped_by_someone_else_in_the_gap_rolls_back_with_one_row_on_the_day(monkeypatch):
+    """
+    The one read that cannot sit inside the lock is the caller's own:
+    swap_meal_in_plan resolves the old row's id on a connection of its own
+    before the transaction opens. An independent review drove a second
+    writer into exactly that gap — swapped the same slot and flipped the
+    plan back to draft — and the first swap then planned a second dinner on
+    top of the replacement and bought groceries for a draft. Now the DELETE
+    is checked against the ids it was given: a row that is no longer there
+    is a concurrent change, and the swap rolls back and says so. The day
+    holds exactly ONE row — the other writer's — and nothing else moved.
+    """
+    plan_id, entry_id = _plain_plan()
+    real = weekly_plan._replace_slot_entries
+    raced = {}
+
+    def someone_else_gets_in_first(*args, **kwargs):
+        # Between swap_meal_in_plan's read of the old id and the lock:
+        # another session swaps the same dinner and un-approves the week.
+        other = get_conn()
+        other.execute("DELETE FROM meal_plan_entries WHERE id = ?", (entry_id,))
+        other.execute(
+            "INSERT INTO meal_plan_entries (household_id, date, slot, freeform_meal, weekly_plan_id, slot_state) "
+            "VALUES (?, ?, 'dinner', 'Takeout', ?, 'planned')",
+            (tools.household_id(), MON, plan_id),
+        )
+        other.execute("UPDATE weekly_plans SET status = 'draft' WHERE id = ?", (plan_id,))
+        other.commit()
+        other.close()
+        raced["after_other"] = _snapshot()
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(weekly_plan, "_replace_slot_entries", someone_else_gets_in_first)
+    with pytest.raises(RuntimeError, match="changed under this swap"):
+        tools.swap_meal_in_plan(plan_id, MON, "Soup", slot="dinner")
+
+    assert _snapshot() == raced["after_other"], "the losing swap changed nothing of its own"
+    rows = _rows_on(MON, "dinner")
+    assert [r["freeform_meal"] for r in rows] == ["Takeout"], "one row on the day — the other writer's"
+    assert "stock" not in _grocery_by_item(), "no Soup bought for a week that is a draft now"
+
+
 # ------------------------------------------------------------ happy paths
 
 def test_the_happy_path_lands_where_it_always_did():

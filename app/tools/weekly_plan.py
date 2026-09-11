@@ -1335,12 +1335,14 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
     and writes on it and neither commits nor closes, so the unlink can be
     part of the caller's one transaction rather than a commit of its own.
     Given one it also SKIPS the rescale and RETURNS the source entry id
-    instead, for the caller to run once its transaction has committed —
-    that step re-ingests through add_grocery_item and the whole recipe
-    ingest tree, every one of which opens its own connection, and SQLite
-    gives one writer at a time: called from inside an open write
-    transaction it would sit behind that transaction's own lock and fail
-    with "database is locked". Returns None when there was nothing to
+    instead, leaving WHEN to run it to the caller. That split dates from
+    when the rescale could not join a transaction at all — it re-ingests
+    through add_grocery_item and the recipe ingest tree, which used to
+    open connections of their own. The tree takes a `conn` now (the
+    swap-atomic work), so a caller can run _rescale_leftover_source_grocery
+    inside its own transaction on the same connection — which is what
+    _replace_slot_entries does — or after its commit, which is what
+    drop_dish_from_day still does. Returns None when there was nothing to
     unlink, and None on the ordinary self-owned path (where the rescale
     has already been done here, exactly as before).
     """
@@ -4292,15 +4294,29 @@ def _replace_slot_entries(
     writer at a time and a nested get_conn inside this transaction would
     die of "database is locked".
 
-    The plan's approved state — what decides whether the grocery list is
-    live at all — is read ONCE, on this same connection, before anything is
-    written; _weekly_plan_is_approved would open a connection of its own,
-    which is exactly the nested read this rules out.
+    The write lock is taken FIRST, with an explicit `BEGIN IMMEDIATE`, and
+    that is not decoration. db.get_conn leaves sqlite3's legacy
+    isolation_level="", which only opens a transaction implicitly at the
+    first INSERT/UPDATE/DELETE — so without it every read above the DELETE
+    (the plan's approved state, the chain map, the unlink's own reads) ran
+    in autocommit, and an independent review showed a second writer could
+    swap the same slot and flip the plan to draft in that gap, leaving TWO
+    rows on the day and groceries bought for a draft. From the BEGIN on,
+    nothing else can write until this commits or rolls back, and every
+    read here sees one consistent world.
+
+    The one read that cannot be inside is the caller's: swap_meal_in_plan
+    and resolve_open_slot resolve `old_entry_ids` on a connection of their
+    own before this opens. So the DELETE's rowcount is checked against the
+    ids it was given — a row that went away between the caller's read and
+    this lock is a concurrent change, and the answer is to roll back and
+    say so, not to plan a second meal on top of whatever replaced it.
     """
     from . import leftovers as _leftovers
 
     conn = get_conn()
     try:
+        conn.execute("BEGIN IMMEDIATE")
         plan_row = conn.execute(
             "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
             (weekly_plan_id, household_id()),
@@ -4325,10 +4341,18 @@ def _replace_slot_entries(
         # snacks must lose only the one being replaced. With no old_meal
         # this is every row in the slot, which is exactly what the by-slot
         # DELETE this replaced did.
-        conn.executemany(
-            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-            [(old_id, household_id()) for old_id in old_entry_ids],
+        deleted = sum(
+            conn.execute(
+                "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (old_id, household_id()),
+            ).rowcount
+            for old_id in old_entry_ids
         )
+        if deleted != len(old_entry_ids):
+            raise RuntimeError(
+                f"The {slot} on {meal_date} changed under this swap "
+                f"({deleted} of {len(old_entry_ids)} rows still there) — nothing was changed; try again."
+            )
         result = _meal_plans.plan_meal(
             meal_date, new_meal, slot=slot, food_groups=food_groups,
             weekly_plan_id=weekly_plan_id, reasoning=reasoning, derived_from=derived_from,

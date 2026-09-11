@@ -353,13 +353,27 @@ why*, not duplicating the diff.
     `drop_dish_from_day` still runs its rescale after its commit, untouched
     — its own card's tests pin that arrangement, and un-deferring it is a
     two-line change for whoever next opens that function.
-  - **The plan's approved state is read on the transaction's own
-    connection**, not through `_weekly_plan_is_approved` (which opens one
-    of its own). `tests/test_swap_atomic.py` counts `get_conn` across
-    weekly_plan, grocery, meal_plans, recipes, leftovers and attendance
-    for the whole of `_replace_slot_entries` and requires **exactly one** —
-    for a plain approved swap, for swapping a reheat night (unlink and
-    rescale inside), and for swapping the cook night (re-buy inside).
+  - **What is guaranteed, precisely.** `_replace_slot_entries` opens with
+    an explicit `BEGIN IMMEDIATE`, so the write lock is held from its
+    FIRST read (the plan's approved state, the chain map, the unlink's
+    reads) to the commit — not, as sqlite3's legacy `isolation_level=""`
+    would otherwise give, only from the first DELETE. The independent
+    review found the gap: a second writer swapping the same slot and
+    flipping the plan to draft between those reads and the DELETE left
+    two rows on one day and bought groceries for a draft. The one read
+    that cannot be inside the lock is the caller's own — `swap_meal_in_plan`
+    and `resolve_open_slot` resolve the old row ids on a connection of
+    their own first — so the DELETE's rowcount is checked against the ids
+    it was given and a mismatch raises and rolls back ("changed under this
+    swap … try again") rather than planning a second meal on top of
+    whatever replaced it. Both pinned: `conn.in_transaction` is asserted
+    from inside the first read, and a test drives a second connection into
+    the gap and gets one row on the day (the other writer's) and nothing
+    else moved. `tests/test_swap_atomic.py` also counts `get_conn` across
+    weekly_plan, grocery, meal_plans, recipes, leftovers and attendance for
+    the whole of `_replace_slot_entries` and requires **exactly one** — for
+    a plain approved swap, for swapping a reheat night (unlink and rescale
+    inside), and for swapping the cook night (re-buy inside).
   - **Reads that used to be stale are correct now, as a side effect.** In
     rollback-journal mode a read on a second connection does not deadlock,
     it silently sees the pre-transaction world; the chain check inside the
@@ -373,18 +387,24 @@ why*, not duplicating the diff.
     a separate card. `plan_meal` on its own connection still commits the
     row before the ingest, exactly as before — changing that would change
     chat and generation behaviour this ticket is not about.
-  - `tests/test_swap_atomic.py`: 24 tests, **18 red on `4469563`** — a
+  - `tests/test_swap_atomic.py`: 26 tests, **20 red on `4469563`** — a
     forced failure after the delete, inside the INSERT itself (a
     connection subclass that refuses that one statement), inside the
     ingest, after the reversal, after the unlink, inside the rescale,
     inside the re-buy; one per caller (`add_dish_day` and its route, a
     chat two-snack swap, `swap_meal_in_place` with the picker stubbed,
     `resolve_open_slot` and its route, the snack repair inside a stubbed
-    generation); the connection count; and the transaction-is-open check.
-    The other six are happy paths measured against the parent commit. The
+    generation); the connection count; the transaction-is-open check; the
+    lock-held-from-the-first-read pin; and the second-writer race. The
+    other six are happy paths measured against the parent commit. The
     characterisation test in `tests/test_drop_dish_atomic.py` is inverted
     in place (`..._is_now_atomic_too`, red on `4469563`), so the history
-    reads. 2507 -> 2531.
+    reads. 2507 -> 2533.
+  - **Still open, on the card as notes.** `swap_in_place` runs
+    `_write_entry_note` and `get_week_menu` AFTER the committed swap; a
+    failure there answers 500 over a swap that landed — a valid row, never
+    a missing day, so a different and smaller wrong. `swap_component_in_plan`
+    has the same seam (above).
 - **2026-09-11 — The plan can see the household's calendar. Branch
   `worktree-calendar-read`.** Loop Board "Meals: plan the week around
   what's actually on the household's calendar" (Phase 1.5, the top finding
