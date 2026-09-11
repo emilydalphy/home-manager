@@ -314,6 +314,135 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — The ask sheet offers four named jobs instead of two
+  guesses. Branch `overnight/ask-sheet-named-intents`.** Emily's decision,
+  2026-09-10, from the Clementine research: a blank box makes a household
+  guess the magic words, so the sheet leads with four real jobs said the
+  way a person says them — *Plan the rest of my week*, *What should I cook
+  tonight?*, *Swap tonight for something quicker*, *What do I need to
+  defrost?*. **The machinery was MOSTLY right**: `renderAskChips` already
+  drew the row twice (inside the ask sheet on a phone, and in the desktop
+  Ask column) and already ran a chip on tap — but it had a second branch,
+  `prefill`, that focused the composer instead, and one of the two old chips
+  took it. Nothing produces a `prefill` now, so that branch is gone rather
+  than left standing under a comment describing a chip that no longer
+  exists. (An earlier draft of this entry said the machinery "has always RUN
+  a chip on tap rather than pre-filling it" and then, three bullets later,
+  that the grocery chip "PRE-FILLED the composer instead of running". Both
+  could not be true; review caught it.) **Not "the dock"** — that is
+  `#ask-bar-dock`, which carries the coaching examples; the intents live in
+  `#ask-chips` and are on screen only once the sheet is open.
+  - **FIXED, not context-aware, and that is a measurement decision rather
+    than a taste one** (Emily). Context-aware chips are the better product
+    and are where this goes next; a fixed set ships now and answers the
+    question nobody can currently answer — which intents people actually
+    tap. This **supersedes the card's own acceptance criterion** that an
+    intent which would do nothing useful is not shown; her decision is the
+    later word, and the criterion is noted as superseded on the card rather
+    than quietly dropped.
+  - **TWO COSTS OF THAT, and the first draft of this entry only counted the
+    harmless one.** On a household with NO plan, three of the four ask about
+    a week that does not exist; the assistant answers honestly, so the price
+    is a wasted tap. **The opposite direction has teeth**, was found by
+    review, and is the reason this branch went back to Emily before merge:
+    the pair this replaces offered a planning chip ONLY under `!hasPlan`, so
+    a household already mid-week was never shown one. "Plan the rest of my
+    week" is now one tap for them, `agent.py` routes an explicit planning
+    request straight to `generate_weekly_plan` with no confirmation step,
+    and `retire_overlapping_plans` has **no exemption for an APPROVED
+    plan** — so the days it takes over lose their meal rows and have their
+    grocery lines reversed. Two things cut the other way and are why this is
+    a question rather than a defect: the chip's wording points at the
+    remaining days, which is what taking those days over *means*, and that
+    behaviour is Emily's own documented rule ("that is the household's rule,
+    not a glitch"). What is genuinely new is that it is one tap from a
+    household that was previously never offered it. **Unverified end to
+    end**: no API key in this sandbox, so the code path is certain and the
+    model's tool choice is inferred from the instruction that tells it to
+    make exactly that choice. Raised on the card; the underlying "replan
+    over a running week without asking first" hazard is its own card.
+  - **EACH CHIP SENDS ITS OWN LABEL, WORD FOR WORD.** A chip carrying a
+    hidden sentence is one nobody can learn from, and teaching what you are
+    allowed to say is the whole job here — so what it sends has to be what
+    it says. It also leaves no second wording to drift out of step, which
+    is what the old pair had (its "Approve this week" message lived in two
+    functions).
+  - **The old pair's grocery chip is gone, deliberately.** "Add … to the
+    grocery list" PRE-FILLED the composer instead of running, which this
+    card's own rule forbids, and it is not one of Emily's four. Grocery's
+    placeholder (`ASK_HINTS.grocery`, "Add oat milk and lemons…") still
+    teaches that sentence in the place it belongs. One line to put back.
+  - **`loadQuickActionChips` still fetches `/api/week-menu`, and that is
+    load-bearing for something else entirely.** The chips no longer need
+    the plan, but `setDishIndex` does — it is what lets a reply naming a
+    dish link to its recipe. Deleting the fetch along with the chip logic
+    would have broken dish links in chat silently. Two things fall out: the
+    chips now go up instantly instead of after a round trip, and a dropped
+    request costs those links rather than degrading to a wrong suggestion
+    the way the old code did.
+  - **FOUR CHIPS COST 200px, AND THE COACHING EXAMPLES YIELD TO THEM ON
+    DESKTOP — which is a fix, not a tidy-up.** The desktop Ask column is
+    **347px** of usable width and the chips are 205/232/286/219 wide, so no
+    two ever pair: four chips is always four rows. Stacked under the
+    coaching examples' own 148px row that is **348px of chips in one
+    column**, and it pushed the composer off the screen — measured on a
+    seeded household at 1280x900, composer bottom **857 on main, 961 on
+    this branch**, i.e. a regression this branch introduced and one that
+    would have hit every NEW household, since the examples show for a
+    tab's first three visits. So `renderAskExamples` stands down while the
+    intents are up: they were a three-visit stand-in for exactly what the
+    intents now say permanently, and `COACH_EXAMPLES` even carries "I'm
+    short on time tonight", which is "Swap tonight for something quicker"
+    in other words. Column back to 468 and composer back to 857, matching
+    main exactly.
+    **THE SCOPING IS THE WHOLE CORRECTNESS OF THAT RULE, and the first
+    version got it wrong.** The phone's chips container is filled when the
+    sheet is BUILT, not when it is opened — so a guard that read it at any
+    width hid the DOCK's examples permanently, which is the coaching
+    feature deleted rather than deferred. Caught in the browser, not in
+    review: examples hidden with the sheet still closed. It is
+    `today-ask-examples` only now, because the desktop column is the one
+    place the two rows ever share a screen. Both directions are pinned by
+    tests.
+  - **Still true after that fix, and left alone:** at 1280x800 and 1280x720
+    the composer needs a scroll. The column starts 406px down the Today
+    grid, so its bottom is 874 whatever the window height is; main fit at
+    720 by about two pixels. The alternatives, so nobody re-derives them:
+    `max-height: calc(100vh - 160px)` on the column does not help (it
+    cannot know about that 406px top offset), pairing the chips needs a
+    font or padding below the 44px/§6 floor, and anything else is a re-cut
+    of the Today desktop grid — a bigger claim than a chip row gets to
+    make. The page scrolls and the input is reachable. Emily's lever if she
+    minds is three intents instead of four.
+  - **Also measured, also left:** at **360px** wide the 200px chip row
+    squeezes `#ask-messages` to 79px against a 100px greeting, so the
+    assistant's first sentence is clipped at first paint (it scrolls; 375px
+    and 390px are both fine).
+  - `tests/test_ask_sheet_named_intents.py` is the guard, 17 tests, most of
+    them running shell.js's own functions under node — the two promises
+    that matter ("tapping runs it", "the chips don't wait on the network")
+    are behaviour, which a source-marker test cannot see. **On the evidence
+    those tests are worth, be precise, because the first draft of this entry
+    was not:** 13 of the 17 do go red against main's shell.js, but most
+    die in the test file's own `_slice()` helper (main has no
+    `var ASK_INTENTS = [` to slice from), so not one of them reaches an
+    assertion about the OLD behaviour. The evidence that they bite is
+    mutation instead, and an independent reviewer ran it: putting
+    `renderAskChips(ASK_INTENTS)` back inside the fetch's `.then` reddens 6,
+    and swapping `msg: label` for `prefill: label` reddens 3 including the
+    "never merely pre-fills" one. Two tests were repaired after that review
+    — one asserted a Python literal against itself and could never fail, and
+    one was a byte-identical copy of another, and three were added for the
+    examples-yield rule and its scoping. 2169 -> 2186. **Verified in a
+    real Chromium** on a throwaway DB at 390x844, 390x667 and 1280x900, and
+    independently re-driven at 360x640, 375x667, 1280x720/800 and 1440x900:
+    all four render in order on all four tabs, every chip measures 44px, the
+    page never scrolls sideways, no chip is apricot (Rule 5 — the only
+    apricot in the sheet is the pre-existing send button), and the tap puts
+    exactly `Swap tonight for something quicker` on the wire with the input
+    empty before and after. Console clean apart from Google Fonts in
+    the sandbox.
+
 - **2026-09-11 — The trouble line was keyed by POSITION, and two readable
   sentences had been swallowed. Branch `overnight/review-plus-and-counts`,
   third and final review round; everything else came back safe to merge.**
