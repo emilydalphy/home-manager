@@ -35,6 +35,7 @@ import logging
 import re
 import socket
 import ssl
+import time
 from html.parser import HTMLParser
 from typing import Callable
 from urllib.parse import urljoin, urlsplit
@@ -57,7 +58,15 @@ class RecipeImportError(Exception):
 
 MAX_BYTES = 3 * 1024 * 1024          # a long recipe page with its comments is well under this
 MAX_REDIRECTS = 3
-TIMEOUT_SECONDS = 8.0                # per hop; a page that takes longer is not worth waiting for
+# Two clocks. TIMEOUT_SECONDS is the socket timeout — how long ONE connect,
+# send or receive may sit with nothing arriving. TOTAL_SECONDS is the
+# wall-clock budget for the whole fetch, redirects included, checked
+# between reads: a server that trickles a byte at a time never trips a
+# socket timeout, and without the second clock it would hold a worker
+# thread for as long as it liked. It can still overrun by at most one
+# socket timeout (a read that is mid-wait when the budget runs out).
+TIMEOUT_SECONDS = 8.0
+TOTAL_SECONDS = 15.0
 MAX_MODEL_TEXT_CHARS = 40_000        # what the fallback model is shown — plenty for one recipe
 USER_AGENT = "Pomona/1.0 (household recipe import; +https://pomona.app)"
 ALLOWED_PORTS = {None, 80, 443}
@@ -67,6 +76,7 @@ _HTML_TYPES = ("text/html", "application/xhtml+xml")
 # Sentences the household sees. Calm, plain, and each paired with its way
 # out (DESIGN_SYSTEM §8) — the way out itself is drawn by the sheet.
 MSG_BAD_URL = "That doesn't look like a web link — it should start with http:// or https://."
+MSG_CREDENTIALS = "That link has a username or password in it — paste the plain page address instead."
 MSG_BLOCKED = "I can only read public web pages, not addresses inside a home or office network."
 MSG_UNREACHABLE = "I couldn't reach that page. Check the link, or try again in a moment."
 MSG_TOO_BIG = "That page is too large for me to read."
@@ -82,18 +92,25 @@ def _check_url(url: str) -> tuple[str, str, int | None, str]:
     port, with no credentials in it."""
     if not isinstance(url, str) or not url.strip():
         raise RecipeImportError(MSG_BAD_URL, "bad_url")
-    parts = urlsplit(url.strip())
-    if parts.scheme not in ("http", "https"):
-        raise RecipeImportError(MSG_BAD_URL, "bad_url")
-    if not parts.hostname or parts.username or parts.password:
-        raise RecipeImportError(MSG_BAD_URL, "bad_url")
     try:
+        # urlsplit itself raises on a broken IPv6 bracket ("http://[::1/")
+        # or userinfo that isn't an address ("http://[::1]@host/").
+        parts = urlsplit(url.strip())
+        hostname = parts.hostname
         port = parts.port
     except ValueError:
         raise RecipeImportError(MSG_BAD_URL, "bad_url")
+    if parts.scheme not in ("http", "https"):
+        raise RecipeImportError(MSG_BAD_URL, "bad_url")
+    if parts.username is not None or parts.password is not None:
+        # Said plainly rather than as "should start with http://", which
+        # would be untrue of this input (§8: state the actual thing).
+        raise RecipeImportError(MSG_CREDENTIALS, "bad_url")
+    if not hostname:
+        raise RecipeImportError(MSG_BAD_URL, "bad_url")
     if port not in ALLOWED_PORTS:
         raise RecipeImportError(MSG_BLOCKED, "blocked")
-    host = parts.hostname.rstrip(".").lower()
+    host = hostname.rstrip(".").lower()
     if host in ("localhost",) or host.endswith((".localhost", ".local", ".internal", ".home.arpa")):
         raise RecipeImportError(MSG_BLOCKED, "blocked")
     path = parts.path or "/"
@@ -130,7 +147,9 @@ def resolve_public_address(host: str, port: int) -> str:
         return str(literal)
     try:
         infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
-    except socket.gaierror:
+    except (OSError, UnicodeError):
+        # gaierror for a name that doesn't exist; UnicodeError when the
+        # name can't even be encoded for DNS (a 64-character label, say).
         raise RecipeImportError(MSG_UNREACHABLE, "unreachable")
     addresses = []
     for info in infos:
@@ -167,16 +186,23 @@ def _open_connection(scheme: str, host: str, ip: str, port: int, timeout: float)
     return http.client.HTTPConnection(ip, port, timeout=timeout)
 
 
-def _read_capped(response, cap: int) -> bytes:
+def _read_capped(response, cap: int, deadline: float | None = None) -> bytes:
+    """Read the body up to `cap` bytes, giving up at `deadline` (a
+    time.monotonic() value). read1 where the response offers it, so a
+    trickling server hands back whatever has arrived rather than blocking
+    until a full chunk has — that is what lets the deadline be checked."""
+    read = getattr(response, "read1", None) or response.read
     chunks, total = [], 0
     while True:
-        chunk = response.read(64 * 1024)
+        chunk = read(64 * 1024)
         if not chunk:
             break
         total += len(chunk)
         if total > cap:
             raise RecipeImportError(MSG_TOO_BIG, "too_big")
         chunks.append(chunk)
+        if deadline is not None and time.monotonic() > deadline:
+            raise RecipeImportError(MSG_UNREACHABLE, "timeout")
     return b"".join(chunks)
 
 
@@ -194,14 +220,19 @@ def fetch_page(url: str) -> tuple[str, str]:
     """
     GET a user-supplied URL under the rules at the top of this file and
     return (final_url, html_text). Every refusal is a RecipeImportError
-    with the sentence to show.
+    with the sentence to show. The whole thing — every hop, every read —
+    fits inside TOTAL_SECONDS of wall clock (see the note by the limits).
     """
     current = url.strip() if isinstance(url, str) else url
+    deadline = time.monotonic() + TOTAL_SECONDS
     for _hop in range(MAX_REDIRECTS + 1):
         scheme, host, port, path = _check_url(current)
         real_port = port or (443 if scheme == "https" else 80)
         ip = resolve_public_address(host, real_port)
-        conn = _open_connection(scheme, host, ip, real_port, TIMEOUT_SECONDS)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RecipeImportError(MSG_UNREACHABLE, "timeout")
+        conn = _open_connection(scheme, host, ip, real_port, min(TIMEOUT_SECONDS, remaining))
         try:
             conn.request("GET", path, headers={
                 "Host": host if port is None else f"{host}:{port}",
@@ -225,7 +256,7 @@ def fetch_page(url: str) -> tuple[str, str]:
             declared = response.getheader("Content-Length")
             if declared and declared.isdigit() and int(declared) > MAX_BYTES:
                 raise RecipeImportError(MSG_TOO_BIG, "too_big")
-            body = _read_capped(response, MAX_BYTES)
+            body = _read_capped(response, MAX_BYTES, deadline)
             return current, _decode(body, content_type)
         except RecipeImportError:
             raise
@@ -349,15 +380,22 @@ def find_recipe_json_ld(blocks: list[str]) -> dict | None:
             continue
         try:
             data = json.loads(text)
+        except RecursionError:
+            # Nested a thousand levels deep is not a recipe, it's a page
+            # trying to knock the parser over. Move on.
+            continue
         except ValueError:
             # Some sites wrap the JSON in an HTML comment or leave a
             # trailing comma; one salvage attempt, then move on.
             cleaned = re.sub(r"^\s*<!--|-->\s*$", "", text)
             try:
                 data = json.loads(cleaned)
-            except ValueError:
+            except (ValueError, RecursionError):
                 continue
-        nodes = _find_recipe_nodes(data)
+        try:
+            nodes = _find_recipe_nodes(data)
+        except RecursionError:
+            continue
         if nodes:
             return nodes[0]
     return None
@@ -757,7 +795,10 @@ def extract_recipe_draft(
     page = read_page(html)
     node = find_recipe_json_ld(page.json_ld)
     if node is not None:
-        draft = draft_from_json_ld(node, source_url)
+        try:
+            draft = draft_from_json_ld(node, source_url)
+        except RecursionError:
+            draft = None  # steps nested past any sane depth: not a recipe
         if _usable(draft):
             return draft
     if model_reader is not None:

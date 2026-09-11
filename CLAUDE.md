@@ -3903,8 +3903,14 @@ credentials, ports 80/443 only, `localhost`/`.local`/`.internal` names refused,
 every resolved address must be public (private/loopback/link-local/metadata/
 multicast/reserved refused, IPv4-mapped IPv6 unwrapped), the socket goes to the
 address that passed rather than back through DNS (`_PinnedHTTPSConnection` keeps
-cert+SNI on the hostname), ≤3 redirects each re-checked, 3 MB cap, 8 s per hop,
-plain User-Agent, and the page is only ever read as text. Extraction order:
+cert+SNI on the hostname), ≤3 redirects each re-checked, 3 MB cap, an 8 s socket
+timeout AND a 15 s wall-clock budget for the whole fetch checked between reads (a
+server trickling one byte at a time never trips a socket timeout; a second
+verifier caught that), plain User-Agent, and the page is only ever read as text.
+A URL that makes the standard library itself raise (`http://[::1/`, a 64-char
+DNS label) is a plain refusal, not a 500; a thousand-deep JSON-LD block is "no
+recipe"; the page's text and title go to the fallback model inside a fence it is
+told holds a web page, not instructions. Extraction order:
 schema.org `Recipe` JSON-LD (plain, `@graph`, arrays, HowToSection steps, ISO
 durations) first because it is exact; otherwise `agent.read_recipe_from_page_llm`
 reads the visible text and the draft is marked `read_by: "model"`, which the sheet
