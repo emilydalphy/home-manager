@@ -6045,13 +6045,22 @@ span.cook-week-name { cursor: default; }
 }
 
 /* Same ground, and this one is trouble copy — the line most worth being
-   able to read. --ink is 12.78:1 light / 14.40:1 dark. */
+   able to read. --ink is 12.78:1 light / 14.40:1 dark.
+
+   It sits INSIDE the dish row whose stepper was tapped. It used to render
+   once at the foot of the whole body, which on a real seven-day week put
+   it 2114px down an 844px screen: a refused tap that moved nothing, said
+   nothing where the finger was, and explained itself a page and a half
+   away. No urgent tint and no icon — it is a plain answer, not an alarm,
+   and the row it is sitting in is the context. */
 .rv-trouble {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.45;
   color: var(--ink);
 }
+/* The one inside a row needs the separation the foot got for free. */
+.rv-dish > .rv-trouble { margin-top: 2px; }
 
 /* ---------- REVIEW: which days ---------- */
 .rv-days { gap: 10px; }

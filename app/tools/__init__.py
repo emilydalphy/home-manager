@@ -433,6 +433,7 @@ from .weekly_plan import (  # noqa: F401
     retire_overlapping_plans,
     suggest_planning_period,
     MAX_PERIOD_DAYS,
+    SlotRefused,
     _plan_grocery_candidate_entries,
     _suggest_quick_dinners,
     _week_headline,

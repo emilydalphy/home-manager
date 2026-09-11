@@ -2002,10 +2002,20 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
     the dish is one they already have, so this is the same small write the
     stepper going down is, and it hands back the changed day in
     get_week_menu's own shape for the same reason.
+
+    A 200 can still say no. `status` 'refused' carries a sentence written
+    for the household — a day nobody is home, a meal already cooked — and
+    it is the shape drop_dish_from_day already answers a refusal in, so the
+    screen needs one branch for both halves of the stepper rather than two.
+    Everything else stays a 404 and gets the screen's generic line: a row
+    id, or a Python exception, printed into somebody's week reports an app
+    that did exactly the right thing as broken.
     """
     plan_id = _plan_id_for_week(week_start)
     try:
         return tools.add_dish_day(plan_id, req.entry_id, req.target_entry_id)
+    except tools.SlotRefused as e:
+        return {"status": "refused", "message": str(e)}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

@@ -265,9 +265,13 @@ def test_the_route_answers_with_the_changed_day(signed_in):
 
 
 def test_the_route_refuses_a_deliberately_empty_target(signed_in):
-    """The 404 has to be the RULE refusing, not FastAPI answering about a
-    route that isn't there — a status code alone would have passed on the
-    commit before this one, when the route did not exist."""
+    """
+    A 200 that says no, the shape drop_dish_from_day already answers a
+    refusal in — so the screen has one branch for both halves of the
+    stepper. The sentence has to be the RULE refusing and not FastAPI
+    answering about something else, which is why this reads the words and
+    not only the status.
+    """
     plan = _plan()
     tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
     tools.plan_slot_empty(plan, D1, "dinner", "You’re out — I’ve planned nothing.")
@@ -277,8 +281,9 @@ def test_the_route_refuses_a_deliberately_empty_target(signed_in):
         json={"entry_id": _ids(D0, "dinner")[0],
               "target_entry_id": _ids(D1, "dinner")[0]},
     )
-    assert res.status_code == 404
-    assert "a day to plan into" in res.json()["detail"], res.text
+    assert res.status_code == 200, res.text
+    assert res.json()["status"] == "refused"
+    assert "a day to plan into" in res.json()["message"], res.text
     assert _state(D1, "dinner") == [("planned_empty", None)]
 
 
@@ -439,6 +444,78 @@ def test_the_week_payload_says_which_meals_have_been_cooked():
     tools.check_off_meal(_ids(D1, "dinner")[0])
     assert _slot(plan, D1, "dinner")["cooked"] is True
     assert _slot(plan, D0, "dinner")["cooked"] is False
+
+
+def test_the_stepper_going_down_will_not_delete_a_cooked_record_either():
+    """
+    Found on the SECOND review pass. The "+" grew a cooked check and the
+    sibling half of the same stepper — built by this branch's predecessor,
+    so not pre-existing the way "Change one" is — had none at all. "−"
+    always takes the LAST day a dish covers, so any dish on two nights
+    whose later one has been ticked had a live control that deleted the
+    cooked record, left the inventory depleted for a meal now off the plan,
+    and took an eaten meal's ingredients off the shopping list.
+    """
+    plan = _plan()
+    tools.add_recipe("Bean Chili", ingredients=[{"item": "Kidney beans", "qty": "2 tin"}])
+    tools.plan_meal(D0, "Bean Chili", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Bean Chili", slot="dinner", weekly_plan_id=plan)
+    tools.approve_weekly_plan(plan, approved_by="Emily")
+    tools.check_off_meal(_ids(D1, "dinner")[0])
+
+    out = tools.drop_dish_from_day(plan, _ids(D1, "dinner")[0])
+
+    assert out["status"] == "refused", out
+    assert "already" in out["message"], out["message"]
+    assert _state(D1, "dinner") == [("planned", "Bean Chili")]
+    conn = get_conn()
+    status = conn.execute(
+        "SELECT cooked_status FROM meal_plan_entries WHERE id = ?", (_ids(D1, "dinner")[0],)
+    ).fetchone()["cooked_status"]
+    conn.close()
+    assert status == "done"
+    assert any(i["item"] == "Kidney beans" for i in tools.list_grocery_list(status="all"))
+
+
+def test_the_refusal_to_drop_a_cooked_night_names_it_by_the_dish_it_reads_as():
+    """Same resolution `dish` in add_dish_day got, in the sibling: a
+    confirmed reheat is labelled on screen with the dish it reheats, so a
+    sentence built from its stored text names something nobody was shown."""
+    plan = _plan()
+    tools.add_recipe("Beef Bulgogi", ingredients=[{"item": "Beef", "qty": "2 lb"}])
+    _chain(plan, D0, "Beef Bulgogi", D1, "Leftover bulgogi bowls",
+           cook_slot="dinner", reheat_slot="lunch")
+    tools.plan_meal(D2, "Leftover bulgogi bowls", slot="lunch", weekly_plan_id=plan)
+    tools.check_off_meal(_ids(D1, "lunch")[0])
+
+    out = tools.drop_dish_from_day(plan, _ids(D1, "lunch")[0])
+
+    assert out["status"] == "refused"
+    assert "Beef Bulgogi" in out["message"], out["message"]
+    assert "Leftover bulgogi bowls" not in out["message"], out["message"]
+
+
+def test_the_night_that_was_displaced_is_named_by_what_the_picker_showed():
+    """
+    Found on the second review pass, and the same defect as the blocker
+    left half-fixed. `dish` was resolved through the chain and `replaced`
+    was not, so the picker offered "Saturday · Bean Chili" and the toast
+    reported "in place of Leftover chili" — the right night displaced, the
+    wrong name reported, which is exactly the class this whole pass exists
+    to close.
+    """
+    plan = _plan()
+    tools.add_recipe("Bean Chili", ingredients=[{"item": "Kidney beans", "qty": "2 tin"}])
+    tools.add_recipe("Chicken Tacos", ingredients=[{"item": "Tortillas", "qty": "8"}])
+    tools.plan_meal(D0, "Chicken Tacos", slot="lunch", weekly_plan_id=plan)
+    _chain(plan, D1, "Bean Chili", D2, "Leftover chili",
+           cook_slot="dinner", reheat_slot="lunch")
+    # The picker shows that lunch as the dish it reheats.
+    assert _slot(plan, D2, "lunch")["leftover_from"]["meal"] == "Bean Chili"
+
+    out = tools.add_dish_day(plan, _ids(D0, "lunch")[0], _ids(D2, "lunch")[0])
+
+    assert out["replaced"] == "Bean Chili", out["replaced"]
 
 
 # ------------------- CHANGE 2: does generation make an open snack at all?
@@ -841,6 +918,7 @@ def _run_add(response: dict, status: str = "draft") -> dict:
     harness = (
         _ESCAPE + _SLOT_FURNITURE
         + "var calls = [];\n"
+        + "var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';\n"
         + "var reviewState = { view: 'eating', busy: null, trouble: '', picking: 0,\n"
           "  dishes: [{ slot: 'dinner', name: 'Chicken Tacos', cooks: 1,\n"
           "    days: [{date:'MON',entryId:1}] }] };\n"
@@ -970,8 +1048,9 @@ def _run_add_refused(detail: str) -> dict:
           "function showToast(t){ calls.push('toast:' + t); }\n"
           "function refreshGrocerySurfaces(){ calls.push('grocery'); }\n"
           "function slotWord(s){ return s; }\n"
-          "async function fetch(){ return { ok: false, status: 404,\n"
-          "  json: async () => ({ detail: " + json.dumps(detail) + " }) }; }\n"
+          "async function fetch(){ return { ok: true, status: 200,\n"
+          "  json: async () => ({ status: 'refused', message: "
+          + json.dumps(detail) + " }) }; }\n"
         + _extract("mealDisplayName") + "\n"
         + _extract("reviewAddDayOptions") + "\n"
         + _extract("addDishToastText") + "\n"
@@ -985,6 +1064,15 @@ def _run_add_refused(detail: str) -> dict:
 
 @_needs_node
 def test_a_refusal_with_no_sentence_still_says_something_plain():
+    """
+    A GUARD, NOT A CATCH, and worth saying so: the plain fallback sentence
+    is the same one this path has shown in every version of it, so its
+    redness against an earlier commit is a harness artefact rather than
+    coverage — the first review pass counted it as a failing test and it
+    was not really one. It earns its place because the refusal branch it
+    now sits behind is new, and must not render an empty line when the
+    server sends no words.
+    """
     out = _run_add_refused(None)
     assert "nothing changed" in out["trouble"]
 
@@ -1012,6 +1100,7 @@ def _run_add_failing() -> dict:
         _ESCAPE + _SLOT_FURNITURE
         + "var calls = [];\n"
           "var console_warn = console.warn; console.warn = function(){};\n"
+        + "var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';\n"
         + "var reviewState = { view: 'eating', busy: null, trouble: '', picking: 0,\n"
           "  dishes: [{ slot: 'dinner', name: 'Chicken Tacos', cooks: 1,\n"
           "    days: [{date:'MON',entryId:1}] }] };\n"
@@ -1118,3 +1207,119 @@ def test_week_slots_is_still_exactly_the_three_real_meals():
     """
     assert "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];" in SHELL_JS
     assert "'snack'" not in _extract_var("WEEK_SLOTS")
+
+
+# ------- the second review pass: where a refusal lands, and the minus -------
+
+@_needs_node
+def test_a_refusal_arrives_under_the_row_that_was_tapped():
+    """
+    Found on the second review pass, measured at 390px: the trouble line
+    rendered once at the foot of the whole body, 2114px down an 844px
+    screen. A refused tap moved nothing, said nothing where the finger
+    was, and left its explanation a page and a half away — which reads as
+    a control that does nothing at all.
+    """
+    harness = (
+        _ESCAPE + _SLOT_FURNITURE
+        + _extract_var("REVIEW_GROUP_LABELS") + "\n"
+        + _extract_var("REVIEW_SLOT_NOUNS") + "\n"
+        + _extract_var("RV_MINUS_SVG") + "\n"
+        + _extract_var("RV_PLUS_SVG") + "\n"
+        + "var reviewState = { view: 'eating', openDays: {}, busy: null,"
+          " trouble: 'That one’s already been cooked.', troubleFor: 1, picking: null };\n"
+        + _extract("mealDisplayName") + "\n"
+        + _extract("reviewSlotNoun") + "\n"
+        + _extract("reviewEatingGroups") + "\n"
+        + _extract("reviewCookLine") + "\n"
+        + _extract("reviewAddDayOptions") + "\n"
+        + _extract("reviewAddPickerHtml") + "\n"
+        + _extract("reviewDishRowHtml") + "\n"
+        + _extract("reviewEatingHtml") + "\n"
+        + "var days = " + json.dumps([
+            _day("MON", breakfast=_planned("Oats", entry_id=9),
+                 dinner=_planned("Chicken Tacos", entry_id=1)),
+            _day("TUE", breakfast=_planned("Oats", entry_id=10),
+                 dinner=_planned("Bean Chili", entry_id=2)),
+        ]) + ";\n"
+        + "var html = reviewEatingHtml(days);\n"
+        # One part per dish row: the marker is the row wrapper's own class,
+        # which nothing nested inside it shares.
+        + "var rows = html.split('class=\\\"rv-dish\\\">').slice(1);\n"
+        + "console.log(JSON.stringify({ inRows: rows.map(function (r) {"
+          " return r.indexOf('rv-trouble') !== -1; }),"
+          " atFoot: html.indexOf('rv-trouble-foot') !== -1,"
+          " total: (html.match(/rv-trouble/g) || []).length }));\n"
+    )
+    out = _run_node(harness)
+    # The flat list is [Oats, Chicken Tacos, Bean Chili] — breakfasts before
+    # dinners — so troubleFor 1 is the second row rendered. Exactly one
+    # sentence, in that row, and nothing at the foot.
+    assert out["total"] == 1, out
+    assert out["atFoot"] is False, out
+    assert out["inRows"] == [False, True, False], out
+
+
+@_needs_node
+def test_a_trouble_whose_row_is_gone_still_shows_rather_than_vanishing():
+    """The foot is the fallback, not dead code: a sentence with no row left
+    to sit under would otherwise be traded for no sentence at all."""
+    harness = (
+        _ESCAPE + _SLOT_FURNITURE
+        + _extract_var("REVIEW_GROUP_LABELS") + "\n"
+        + _extract_var("REVIEW_SLOT_NOUNS") + "\n"
+        + _extract_var("RV_MINUS_SVG") + "\n"
+        + _extract_var("RV_PLUS_SVG") + "\n"
+        + "var reviewState = { view: 'eating', openDays: {}, busy: null,"
+          " trouble: 'That didn’t work just now — nothing changed.',"
+          " troubleFor: 42, picking: null };\n"
+        + _extract("mealDisplayName") + "\n"
+        + _extract("reviewSlotNoun") + "\n"
+        + _extract("reviewEatingGroups") + "\n"
+        + _extract("reviewCookLine") + "\n"
+        + _extract("reviewAddDayOptions") + "\n"
+        + _extract("reviewAddPickerHtml") + "\n"
+        + _extract("reviewDishRowHtml") + "\n"
+        + _extract("reviewEatingHtml") + "\n"
+        + "var html = reviewEatingHtml(" + json.dumps([
+            _day("MON", dinner=_planned("Chicken Tacos", entry_id=1))]) + ");\n"
+        + "console.log(JSON.stringify({ foot: html.indexOf('rv-trouble-foot') !== -1 }));\n"
+    )
+    assert _run_node(harness)["foot"] is True
+
+
+@_needs_node
+def test_the_minus_is_inert_when_the_day_it_would_take_is_already_cooked():
+    """The control half of the same fix. "−" takes the LAST day the dish
+    covers, so that is the day whose cooked state decides it — and it is
+    deliberately not "take the last uncooked day instead", which would
+    quietly take a different day from the one the count implies."""
+    def row(days):
+        harness = (
+            _ESCAPE + _SLOT_FURNITURE
+            + _extract_var("REVIEW_GROUP_LABELS") + "\n"
+            + _extract_var("REVIEW_SLOT_NOUNS") + "\n"
+            + _extract_var("RV_MINUS_SVG") + "\n"
+            + _extract_var("RV_PLUS_SVG") + "\n"
+            + "var reviewState = { view: 'eating', openDays: {}, busy: null,"
+              " trouble: '', troubleFor: null, picking: null };\n"
+            + _extract("mealDisplayName") + "\n"
+            + _extract("reviewSlotNoun") + "\n"
+            + _extract("reviewEatingGroups") + "\n"
+            + _extract("reviewCookLine") + "\n"
+            + _extract("reviewAddDayOptions") + "\n"
+            + _extract("reviewAddPickerHtml") + "\n"
+            + _extract("reviewDishRowHtml") + "\n"
+            + _extract("reviewEatingHtml") + "\n"
+            + "var html = reviewEatingHtml(" + json.dumps(days) + ");\n"
+            + "var m = /data-rv-less=\"0\"([^>]*)>/.exec(html);\n"
+            + "console.log(JSON.stringify({ disabled: m[1].indexOf('disabled') !== -1 }));\n"
+        )
+        return _run_node(harness)["disabled"]
+
+    cooked_last = [_day("MON", dinner=_planned("Bean Chili", entry_id=1)),
+                   _day("TUE", dinner=_cooked("Bean Chili", entry_id=2))]
+    cooked_first = [_day("MON", dinner=_cooked("Bean Chili", entry_id=1)),
+                    _day("TUE", dinner=_planned("Bean Chili", entry_id=2))]
+    assert row(cooked_last) is True, "the day it would take has been cooked"
+    assert row(cooked_first) is False, "an earlier cooked day is not the one it takes"

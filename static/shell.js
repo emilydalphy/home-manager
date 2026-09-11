@@ -5274,7 +5274,15 @@
   // for the same reason swapState is (see it) — a person is tapping one
   // stepper, not three. picking: which dish row (by its index into
   // reviewState.dishes) has its day picker open, or null.
-  var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '', picking: null };
+  // troubleFor: WHICH dish row the trouble line belongs under. It used to
+  // render once at the foot of the whole body, which on a real week puts
+  // it below every group — measured at 390px, 2114px down an 844px screen.
+  // So a refused tap moved nothing, said nothing where the finger was, and
+  // left its explanation 1270px away, which reads as a control that does
+  // nothing at all. A sentence has to arrive where the tap was.
+  var reviewState = {
+    view: 'eating', openDays: {}, busy: null, trouble: '', troubleFor: null, picking: null,
+  };
 
   var RV_MINUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
     'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">' +
@@ -5337,7 +5345,10 @@
         // distinction — the server refuses a chain source outright (see
         // tools.drop_dish_from_day), which is where the check belongs,
         // since only it can see the chain.
-        dish.days.push({ date: day.date, entryId: entry.entry_id });
+        // `cooked` rides along because the stepper going DOWN always takes
+        // the LAST of these, and a day somebody has already cooked is not
+        // one to take away — see reviewDishRowHtml.
+        dish.days.push({ date: day.date, entryId: entry.entry_id, cooked: !!entry.cooked });
         if (entry.source !== 'leftovers' && entry.source !== 'takeout') dish.cooks++;
       });
     });
@@ -5456,7 +5467,19 @@
     // At one day there is nothing left to take away — a dish you don't want
     // at all is a change, not a smaller number, and Change is the button
     // right beside it.
-    var canDrop = n > 1 && !busy;
+    //
+    // ...and not when the day it would take is one somebody has already
+    // COOKED. "−" always takes the LAST day the dish covers (see
+    // runDropDishDay), so a dish on two nights whose later one has been
+    // ticked had a live control that deleted a cooked record, left the
+    // inventory depleted for a meal off the plan, and took an eaten meal's
+    // ingredients off the list. The same harm the "+" was fixed for, in
+    // the sibling half of the same stepper. Deliberately NOT "drop the
+    // last UNCOOKED day instead": that would quietly take a different day
+    // from the one the count implies, which is this screen's own recurring
+    // bug wearing a different hat. The write refuses it in words too.
+    var lastDay = dish.days[n - 1];
+    var canDrop = n > 1 && !busy && !(lastDay && lastDay.cooked);
     return '<div class="rv-dish' + (picking ? ' is-picking' : '') + '">' +
       '<div class="rv-dish-said">' +
         '<span class="rv-dish-name">' + escapeHtml(dish.name) + '</span>' +
@@ -5483,6 +5506,10 @@
         '<button type="button" class="rv-change" data-rv-change="' + idx + '">' +
           (n > 1 ? 'Change one' : 'Change') + '</button>' +
       '</div>' +
+      // Under the stepper that was tapped, not at the foot of the page.
+      (reviewState.troubleFor === idx && reviewState.trouble
+        ? '<div class="rv-trouble">' + escapeHtml(reviewState.trouble) + '</div>'
+        : '') +
       (picking ? reviewAddPickerHtml(dish, idx, days) : '') +
     '</div>';
   }
@@ -5507,9 +5534,16 @@
       '</div>';
     }).join('');
     reviewState.dishes = flat;
+    // The foot is the FALLBACK only — for a trouble that names no row, or
+    // one whose row is no longer on screen after a reload. A sentence with
+    // a row to sit under sits under it (see reviewDishRowHtml); dropping
+    // it entirely would be trading one invisible message for none at all.
+    var orphaned = reviewState.trouble &&
+      (reviewState.troubleFor === null || !flat[reviewState.troubleFor]);
     return '<div class="rv-body">' + html +
-      (reviewState.trouble
-        ? '<div class="rv-trouble">' + escapeHtml(reviewState.trouble) + '</div>'
+      (orphaned
+        ? '<div class="rv-trouble rv-trouble-foot">' +
+            escapeHtml(reviewState.trouble) + '</div>'
         : '') +
     '</div>';
   }
@@ -5745,6 +5779,7 @@
     // that has moved. Closed here rather than left to be re-derived.
     reviewState.picking = null;
     reviewState.trouble = '';
+    reviewState.troubleFor = null;
     renderMealsStep(panel);
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/drop-dish-day', {
@@ -5761,6 +5796,7 @@
       // knows which night depends on it — and nothing was written.
       if (out && out.status === 'refused') {
         reviewState.trouble = out.message || SWAP_TROUBLE;
+        reviewState.troubleFor = idx;
         renderMealsStep(panel);
         return;
       }
@@ -5788,7 +5824,8 @@
       console.warn('Dropping a day failed:', err);
       reviewState.busy = null;
       // Calm and plain, and it says what is true of the plan (§8).
-      reviewState.trouble = 'That didn’t work just now — nothing changed.';
+      reviewState.trouble = SWAP_TROUBLE;
+      reviewState.troubleFor = idx;
       renderMealsStep(panel);
     }
   }
@@ -5848,6 +5885,7 @@
     if (!option || !from) return;
     reviewState.busy = idx;
     reviewState.trouble = '';
+    reviewState.troubleFor = null;
     renderMealsStep(panel);
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/add-dish-day', {
@@ -5855,22 +5893,22 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: from.entryId, target_entry_id: option.entryId })
       });
-      if (!res.ok) {
-        // The server's own refusal, shown as it was written. Two of these
-        // are sentences a household needs to read — a day nobody is home,
-        // a meal somebody has already cooked — and the generic "that
-        // didn't work" would tell them the app broke when it did the right
-        // thing. The stepper going down surfaces its refusals the same
-        // way, through a different mechanism (see runDropDishDay).
-        var refusal = null;
-        try { refusal = (await res.json()).detail; } catch (e) { refusal = null; }
-        reviewState.busy = null;
-        reviewState.trouble = refusal || SWAP_TROUBLE;
+      if (!res.ok) throw new Error('add failed');
+      var out = await res.json();
+      reviewState.busy = null;
+      // A 200 that says no, in the same shape the stepper going down
+      // already answers one: a day nobody is home, a meal somebody has
+      // already cooked. The sentence is the server's, because it is the
+      // one that knows which, and nothing was written. ONLY sentences
+      // written for a person arrive this way — an id or a raw exception is
+      // a 404 and takes the plain line below, since an app that did
+      // exactly the right thing must not report itself broken.
+      if (out && out.status === 'refused') {
+        reviewState.trouble = out.message || SWAP_TROUBLE;
+        reviewState.troubleFor = idx;
         renderMealsStep(panel);
         return;
       }
-      var out = await res.json();
-      reviewState.busy = null;
       reviewState.picking = null;
       if (out && out.day) spliceSwappedDay(out.day);
       renderMealsStep(panel);
@@ -5890,7 +5928,8 @@
     } catch (err) {
       console.warn('Adding a day failed:', err);
       reviewState.busy = null;
-      reviewState.trouble = 'That didn’t work just now — nothing changed.';
+      reviewState.trouble = SWAP_TROUBLE;
+      reviewState.troubleFor = idx;
       renderMealsStep(panel);
     }
   }
