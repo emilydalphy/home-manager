@@ -343,13 +343,27 @@ why*, not duplicating the diff.
   existing scans" and "on the Shop tab" couldn't both be followed literally;
   built next to the nearest existing "put something on the list" control
   instead (the manual add row) as the stated default, flagged for her to
-  override. `tests/test_grocery_photo_scan.py`, 14 tests, all red on `main`
-  (the routes don't exist there) and green on the branch; full suite 2249
-  passed (2235 before this ticket). Verified live against a throwaway DB:
+  override. `tests/test_grocery_photo_scan.py`, 15 tests, all red on `main`
+  (the routes don't exist there) and green on the branch; full suite 2250
+  passed (2235 before this ticket — the difference is this card's 15 plus
+  what landed on `main` in between). Verified live against a throwaway DB:
   the button renders 44x44, the review sheet opens, edits/unticks work, and
   a confirmed item round-trips onto the real Shop list through the normal
   add path — the model call itself is stub-tested only (no real Anthropic
   key in this environment).
+  - **Independent-verifier catch, fixed same day: the sheet's save button
+    was a SECOND apricot** (DESIGN_SYSTEM §2 rule 5). Shop's LIST step
+    already spends its one apricot on `.gro-primary` ("Start the trip"), so
+    `.gro-scan-save`'s own `var(--apricot)` fill was a real violation, not a
+    nitpick. Every other body-level confirm sheet in the app
+    (`week-sheet-back`, `reset-confirm`, `dinner-confirm-add`) already uses
+    `.btn-gold` for exactly this reason — switched to the same convention
+    rather than inventing a new class, and resized `.gro-scan-cancel` to
+    match it (44px/12px) so the pair reads as one row. Added
+    `test_the_scan_review_sheets_save_button_is_not_a_second_apricot`
+    (`tests/test_grocery_photo_scan.py`) as the source-marker guard, the
+    same pattern `tests/test_grocery_steps.py`'s sibling apricot/spruce
+    checks already use for LIST's other controls.
 - **2026-09-11 — Stepping a dish down is ONE transaction now. Branch
   `overnight/drop-dish-atomic`.** The debt the review-stepper work filed
   rather than smuggled in (see its entry below, and `99db198` where it has
