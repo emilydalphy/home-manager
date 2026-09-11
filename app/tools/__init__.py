@@ -25,6 +25,15 @@ from ._shared import (  # noqa: F401
     set_current_household_id,
     reset_current_household_id,
     use_household,
+    # Which adult is acting (slice 1 of per-adult login) — see _shared.py.
+    member_id,
+    current_member,
+    household_adults,
+    acting_name,
+    acting_member_id_for,
+    set_current_member_id,
+    reset_current_member_id,
+    use_member,
 )
 from .attention import (  # noqa: F401
     add_attention_item,

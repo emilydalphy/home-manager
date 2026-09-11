@@ -8,7 +8,7 @@ import logging
 import re
 from datetime import date, datetime, timedelta
 from ..db import get_conn
-from ._shared import household_id, require_household_row
+from ._shared import acting_member_id_for, acting_name, household_id, require_household_row
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
@@ -1053,7 +1053,8 @@ def reopen_weekly_plan(weekly_plan_id: int) -> dict:
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     conn.execute(
-        "UPDATE weekly_plans SET status = 'draft', approved_by = '', approved_at = NULL, "
+        "UPDATE weekly_plans SET status = 'draft', approved_by = '', approved_by_member_id = NULL, "
+        "approved_at = NULL, "
         "approved_grocery_added = 0, approved_grocery_skipped = 0, updated_at = datetime('now') "
         "WHERE id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),
@@ -4011,12 +4012,16 @@ def approve_weekly_plan(
     ingredients on the grocery list.
 
     `approved_by` is an adult's name (see schema.sql on
-    weekly_plans.approved_by for why a name and not a member id). It's
-    recorded with the approval time so the Meals screen can render the
-    receipt the design calls for — "APPROVED BY EMILY · 9:41AM" — and so
-    the other adult can be told who settled the week. Optional: an approval
-    with no name still approves, and the receipt just drops the name rather
-    than inventing one.
+    weekly_plans.approved_by). Leave it blank and it is the adult picked on
+    this device (slice 1 of per-adult login — see _shared.acting_name);
+    name someone and that name is kept. It's recorded with the approval
+    time so the Meals screen can render the receipt the design calls for —
+    "APPROVED BY EMILY · 9:41AM" — and so the OTHER adult can be told who
+    settled the week (get_active_notifications #4 hides that item from the
+    approver). When the name is the session's own adult, their member id is
+    stored beside it (approved_by_member_id), so "not the approver" is a
+    fact and not a name comparison. An approval with no name anywhere still
+    approves, and the receipt just drops the name rather than inventing one.
 
     Approving used to only flip a status flag; the grocery list had
     already been filled in during generation, whether or not the household
@@ -4125,10 +4130,12 @@ def approve_weekly_plan(
         "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),
     )
+    approved_by = acting_name(approved_by)
     if not was_already_approved:
         conn.execute(
-            "UPDATE weekly_plans SET approved_by = ?, approved_at = datetime('now') WHERE id = ? AND household_id = ?",
-            (approved_by.strip(), weekly_plan_id, household_id()),
+            "UPDATE weekly_plans SET approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (approved_by.strip(), acting_member_id_for(approved_by), weekly_plan_id, household_id()),
         )
     conn.commit()
     if was_already_approved:

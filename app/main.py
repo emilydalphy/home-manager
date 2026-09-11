@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     RedirectResponse,
     Response,
@@ -4558,23 +4559,84 @@ def observability(days: int = 1):
 
 
 @app.get("/api/whoami")
-def whoami():
+def whoami(request: Request):
     """
-    Which household is this session in? Authenticated like any other API
-    route, and returns only the household's own id and name — nothing about
-    any other household, and no way to ask about one.
+    Which household is this session in, and which adult is acting?
+
+    Authenticated like any other API route, and returns only the
+    household's own id, name and adults — nothing about any other
+    household, and no way to ask about one.
 
     Small but load-bearing: it is the one place the household binding is
     observable from outside, which is what lets the isolation tests assert
     on the real request path rather than on internal state. It also gives
     the beta tester a way to confirm she is in her own household rather
     than inferring it from the data looking unfamiliar.
+
+    `member` is the adult the session resolves to (see
+    tools.current_member — a stale or foreign id reads as null, never as a
+    500), `adults` is the pick list, and `needs_pick` is the one bit the
+    shell acts on: true only when nobody is picked AND there is more than
+    one adult to choose from. A one-adult household never sees the
+    question.
     """
     current = tools.household_id()
     conn = get_conn()
     row = conn.execute("SELECT name FROM households WHERE id = ?", (current,)).fetchone()
     conn.close()
-    return {"household_id": current, "household_name": row["name"] if row else ""}
+    member = tools.current_member()
+    adults = tools.household_adults()
+    return {
+        "household_id": current,
+        "household_name": row["name"] if row else "",
+        "member": member,
+        "adults": adults,
+        "needs_pick": member is None and len(adults) > 1,
+    }
+
+
+class WhoamiPickRequest(BaseModel):
+    member_id: int
+
+
+@app.post("/api/whoami/pick")
+def whoami_pick(req: WhoamiPickRequest, request: Request):
+    """
+    "Who's this?" — record which adult is holding this device.
+
+    The pick goes into the signed session cookie (security.with_member),
+    keeping the same session id and sign-in time, so it survives reloads
+    and redeploys and is forgotten only by signing out. The member must be
+    an ADULT in THIS household; anything else is a 404 with one fixed
+    message, so the route cannot be used to learn whether some other
+    household's member id is real (the same rule require_household_row
+    follows).
+
+    Local development with no passphrase set has no session cookie at all.
+    The pick is still recorded — in a freshly minted household-1 cookie
+    that auth_middleware reads for the member alone — so the shell behaves
+    the same on a laptop as it does deployed.
+    """
+    adult_ids = {a["id"] for a in tools.household_adults()}
+    if req.member_id not in adult_ids:
+        raise HTTPException(status_code=404, detail="That's not one of the adults here.")
+    cookie = request.cookies.get(security.COOKIE_NAME)
+    value = security.with_member(cookie, req.member_id)
+    if value is None:
+        value = security.issue_session(tools.household_id(), req.member_id)
+    with tools.use_member(req.member_id):
+        member = tools.current_member()
+    response = JSONResponse({"member": member})
+    response.set_cookie(
+        security.COOKIE_NAME,
+        value,
+        max_age=security.COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=_is_https(request),
+        path="/",
+    )
+    return response
 
 
 @app.get("/healthz")

@@ -9,8 +9,17 @@ anyone who has (or guesses) the hostname.
 
 This is still deliberately NOT the multi-tenant auth system described in
 the README's "Path to a sellable product" — there are no user accounts, no
-usernames, and no per-person logins. It is one shared passphrase per
+usernames, and no per-person secrets. It is one shared passphrase per
 *household*, which can be deleted wholesale when real accounts arrive.
+
+Since 2026-09-11 (slice 1 of "each adult has their own login") the signed
+cookie also carries WHICH ADULT is holding the device: after the passphrase,
+a household with more than one adult is asked "Who's this?" once, and the
+answer rides in the same HMAC-signed payload as the household id (see
+`issue_session`, `with_member`, and `POST /api/whoami/pick` in main.py).
+That pick is trusted per device — a second adult's own secret is a later
+slice — and it is re-verified against the household's members on every use
+(`tools.current_member()`), never taken on the cookie's word alone.
 
 What changed for the beta: signing in now establishes **which household**
 the session belongs to, not merely that the caller is allowed in. The
@@ -52,7 +61,9 @@ from starlette.responses import JSONResponse, RedirectResponse
 from .tools._shared import (
     DEFAULT_HOUSEHOLD_ID,
     reset_current_household_id,
+    reset_current_member_id,
     set_current_household_id,
+    set_current_member_id,
 )
 from .tools import usage as _usage
 from . import households
@@ -127,9 +138,16 @@ def _unb64(text: str) -> bytes:
     return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
 
 
-def issue_session(household_id: int = DEFAULT_HOUSEHOLD_ID) -> str:
+def issue_session(
+    household_id: int = DEFAULT_HOUSEHOLD_ID,
+    member_id: int | None = None,
+    *,
+    session_id: str | None = None,
+    issued_at: int | None = None,
+) -> str:
     """
-    Mint a signed cookie value: <session-id>.<household-id>.<issued-at>.<hmac>.
+    Mint a signed cookie value:
+    <session-id>.<household-id>.<issued-at>.<member-id>.<hmac>.
 
     The session id is what /api/chat keys its conversation history on, so it
     has to be unguessable and server-generated — the bug this replaces was
@@ -142,51 +160,92 @@ def issue_session(household_id: int = DEFAULT_HOUSEHOLD_ID) -> str:
     whole payload, so editing the household id invalidates the signature
     and the cookie stops being accepted at all — it does not fall back to
     some other household.
+
+    The member id (slice 1 of per-adult login, 2026-09-11) rides there too,
+    under the same signature, and is 0 until an adult has been picked. It
+    is a claim the server made, not a fact: `tools.current_member()`
+    re-checks it against the household's members on every use, so a stale
+    id reads as "nobody picked" rather than as anyone at all.
+
+    `session_id` and `issued_at` exist for re-minting: picking an adult
+    keeps the chat history (keyed on the session id) and the original
+    sign-in time (so a pick does not quietly extend a 30-day session).
     """
-    sid = secrets.token_urlsafe(18)
-    issued = str(int(time.time()))
-    payload = f"{sid}.{int(household_id)}.{issued}"
+    sid = session_id or secrets.token_urlsafe(18)
+    issued = str(int(issued_at if issued_at is not None else time.time()))
+    member = int(member_id) if member_id else 0
+    payload = f"{sid}.{int(household_id)}.{issued}.{member}"
     sig = hmac.new(_secret(), payload.encode("utf-8"), hashlib.sha256).digest()
     return f"{payload}.{_b64(sig)}"
 
 
-def read_session_parts(cookie: str | None) -> tuple[str, int] | None:
+def _decode_session(cookie: str | None) -> tuple[str, int, int, int | None] | None:
     """
-    Return `(session_id, household_id)` for a validly signed, unexpired
-    cookie, else None.
+    `(session_id, household_id, issued_at, member_id)` for a validly signed,
+    unexpired cookie, else None. member_id is None when no adult is picked.
 
-    Accepts the older three-part `<sid>.<issued>.<hmac>` cookie and reads it
-    as household 1. Those cookies were all minted when the app had exactly
-    one household, so household 1 is what they actually mean — and honouring
-    them means Emily (and anyone else already signed in) is not silently
-    logged out by this change. They are still signature-checked, so this is
-    a format fallback, not an authentication one.
+    Three cookie shapes are accepted, all signature-checked:
+      3 parts  <sid>.<issued>.<hmac>                 household 1, no member
+      4 parts  <sid>.<household>.<issued>.<hmac>     no member
+      5 parts  <sid>.<household>.<issued>.<member>.<hmac>
+    The older shapes are honoured so nobody already signed in is logged out
+    by a deploy — a format fallback, never an authentication one.
     """
     if not cookie:
         return None
     parts = cookie.split(".")
+    raw_member = "0"
     if len(parts) == 3:
         sid, issued, sig = parts
-        household_id = DEFAULT_HOUSEHOLD_ID
+        raw_household = str(DEFAULT_HOUSEHOLD_ID)
         payload = f"{sid}.{issued}"
     elif len(parts) == 4:
         sid, raw_household, issued, sig = parts
         payload = f"{sid}.{raw_household}.{issued}"
-        try:
-            household_id = int(raw_household)
-        except ValueError:
-            return None
+    elif len(parts) == 5:
+        sid, raw_household, issued, raw_member, sig = parts
+        payload = f"{sid}.{raw_household}.{issued}.{raw_member}"
     else:
+        return None
+    try:
+        household_id = int(raw_household)
+        member_id = int(raw_member)
+    except ValueError:
         return None
     expected = hmac.new(_secret(), payload.encode("utf-8"), hashlib.sha256).digest()
     try:
         if not hmac.compare_digest(expected, _unb64(sig)):
             return None
-        if time.time() - int(issued) > COOKIE_MAX_AGE:
+        issued_int = int(issued)
+        if time.time() - issued_int > COOKIE_MAX_AGE:
             return None
     except (ValueError, TypeError):
         return None
-    return sid, household_id
+    return sid, household_id, issued_int, (member_id if member_id > 0 else None)
+
+
+def read_session_parts(cookie: str | None) -> tuple[str, int] | None:
+    """Return `(session_id, household_id)` for a valid cookie, else None."""
+    decoded = _decode_session(cookie)
+    return (decoded[0], decoded[1]) if decoded else None
+
+
+def read_session_member(cookie: str | None) -> int | None:
+    """The member id a valid cookie claims, or None (no pick / no cookie)."""
+    decoded = _decode_session(cookie)
+    return decoded[3] if decoded else None
+
+
+def with_member(cookie: str | None, member_id: int | None) -> str | None:
+    """
+    Re-mint a valid cookie with an adult picked (or cleared), keeping its
+    session id and sign-in time. None if the cookie is not valid.
+    """
+    decoded = _decode_session(cookie)
+    if not decoded:
+        return None
+    sid, household_id, issued, _ = decoded
+    return issue_session(household_id, member_id, session_id=sid, issued_at=issued)
 
 
 def read_session(cookie: str | None) -> str | None:
@@ -273,7 +332,13 @@ async def auth_middleware(request, call_next):
     # is one household on a laptop, so the default is the right one.
     if not _password():
         if _is_local(request.client.host if request.client else None):
-            return await _call_as_household(DEFAULT_HOUSEHOLD_ID, call_next, request)
+            # No sign-in on a laptop, but the "Who's this?" pick still
+            # lives in a cookie — read it, for household 1 only, so local
+            # development sees the same one-tap-then-remembered behaviour
+            # as the deployed app. Any other household in it is ignored.
+            local = _decode_session(request.cookies.get(COOKIE_NAME))
+            member = local[3] if local and local[1] == DEFAULT_HOUSEHOLD_ID else None
+            return await _call_as_household(DEFAULT_HOUSEHOLD_ID, call_next, request, member)
         logger.error(
             "Refusing a remote request because HOME_MANAGER_PASSWORD is not set. "
             "Set it in the hosting platform's environment variables."
@@ -283,7 +348,7 @@ async def auth_middleware(request, call_next):
             status_code=503,
         )
 
-    session = read_session_parts(request.cookies.get(COOKIE_NAME))
+    session = _decode_session(request.cookies.get(COOKIE_NAME))
 
     # A validly signed cookie can still name a household that isn't there
     # any more (deleted, or — today — never real to begin with, since
@@ -310,7 +375,7 @@ async def auth_middleware(request, call_next):
         stale_cookie = True
 
     if session:
-        return await _call_as_household(session[1], call_next, request)
+        return await _call_as_household(session[1], call_next, request, session[3])
 
     wants_html = "text/html" in request.headers.get("accept", "")
     if wants_html and request.method == "GET":
@@ -340,17 +405,24 @@ async def auth_middleware(request, call_next):
 _NON_ACTIVITY_PATHS = frozenset({"/api/observability", "/api/whoami"})
 
 
-async def _call_as_household(household_id: int, call_next, request):
+async def _call_as_household(household_id: int, call_next, request, member_id: int | None = None):
     """
-    Run the rest of the request with the household bound, unbinding after.
+    Run the rest of the request with the household (and, when the cookie
+    carries one, the acting adult) bound, unbinding after.
 
     The reset in `finally` is not decoration: the middleware and the
     endpoint share one context, and a server that leaked the value past the
     end of a request could hand the next caller the previous caller's
     household. `tests/test_multi_household.py` interleaves requests from
-    two households against exactly this.
+    two households against exactly this. The member binding is reset the
+    same way, for the same reason.
+
+    The member id is bound as claimed, not checked here: `tools.current_member()`
+    verifies it against the household's members at the point of use, so a
+    pick that has gone stale costs nothing on requests that never ask.
     """
     token = set_current_household_id(household_id)
+    member_token = set_current_member_id(member_id)
     try:
         if request.url.path in _NON_ACTIVITY_PATHS:
             return await call_next(request)
@@ -367,6 +439,7 @@ async def _call_as_household(household_id: int, call_next, request):
         await run_in_threadpool(_usage.touch_household_active, household_id)
         return await call_next(request)
     finally:
+        reset_current_member_id(member_token)
         reset_current_household_id(token)
 
 

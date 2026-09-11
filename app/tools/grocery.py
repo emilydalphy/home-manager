@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import date
 from ..db import get_conn
-from ._shared import household_id, require_household_row
+from ._shared import acting_name, household_id, require_household_row
 from . import inventory as _inventory
 from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
@@ -508,9 +508,12 @@ def add_grocery_item(
             conn.close()
         return {"item_id": item_id, "item": item_name, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
 
+    # Who added it: the adult picked on this device, when the caller did
+    # not say (the shell sends nothing; the offline queue replays the same
+    # body). "ai" and an explicit name are kept — see _shared.acting_name.
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (household_id(), item, quantity, category, added_by, source_weekly_plan_id, preferred_store),
+        (household_id(), item, quantity, category, acting_name(added_by), source_weekly_plan_id, preferred_store),
     )
     item_id = cur.lastrowid
     if own_conn:

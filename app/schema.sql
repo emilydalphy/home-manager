@@ -403,12 +403,15 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- Approval is what builds the grocery list (see approve_weekly_plan),
     -- so these two are the receipt the Meals screen renders — "APPROVED BY
     -- EMILY · 9:41AM" — and the record of which adult carried it. Stored as
-    -- a NAME, not a members.id FK, to match how the rest of this app
-    -- attributes adult actions (grocery_items.added_by, removed_by): there
-    -- is no per-person login, just the lightweight adult picker from
-    -- get_household_people, so a name is the only identity that actually
-    -- exists at this layer. Blank/null until approved.
+    -- a NAME, to match how the rest of this app attributes adult actions
+    -- (grocery_items.added_by, removed_by). Blank/null until approved.
+    -- Since 2026-09-11 the name comes from the adult picked on the device
+    -- (the signed session's member — see tools/_shared.py current_member)
+    -- when the caller did not name one, and approved_by_member_id holds
+    -- that adult's members.id beside it. NULL when the approval predates
+    -- this, or named someone other than the session's own adult.
     approved_by TEXT NOT NULL DEFAULT '',
+    approved_by_member_id INTEGER,
     approved_at TEXT,
     -- What that approval actually did to the shopping list, captured at the
     -- moment it happened. The receipt ("I've put 22 items on your shopping
@@ -618,7 +621,7 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     item TEXT NOT NULL,
     quantity TEXT,
     category TEXT DEFAULT 'other', -- produce | dairy | meat | pantry | household | other
-    added_by TEXT DEFAULT 'ai', -- 'ai' if auto-added from meal plan, else member name
+    added_by TEXT DEFAULT 'ai', -- 'ai' if auto-added from meal plan, else the adult's name (the session's picked adult since 2026-09-11 — see tools/_shared.py acting_name)
     status TEXT NOT NULL DEFAULT 'needed', -- needed | in_cart | purchased | removed (soft, see removed_by)
     -- Which generated weekly_plan this item's ingredients came from, if any.
     -- NULL means it's a standing item (added directly by a person, or from
@@ -645,11 +648,10 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- writes a real store name anyway.
     store_decided INTEGER NOT NULL DEFAULT 0,
     -- Which household member made a pre-shop "Drop it" decision
-    -- (PRE_SHOP_CHECK.md) — blank until dropped. Not yet used to drive a
-    -- live cross-device notification (see get_pre_shop_flags/
-    -- drop_grocery_item_pre_shop): NOTIFICATIONS.md #4 documents that this
-    -- codebase has no concept of "the other adult" distinct from "you" at
-    -- the data layer, and that gap applies here too.
+    -- (PRE_SHOP_CHECK.md) — blank until dropped; the session's picked
+    -- adult since 2026-09-11 (tools/_shared.py acting_name). Not yet used
+    -- to drive a live cross-device notification (see get_pre_shop_flags/
+    -- drop_grocery_item_pre_shop).
     removed_by TEXT NOT NULL DEFAULT '',
     -- When the row above last flipped to status='removed' (drop or
     -- already-have alike). Lets get_already_have_decisions scope the

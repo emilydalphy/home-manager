@@ -216,6 +216,11 @@ _MIGRATIONS = [
     # weekly_plans.approved_by for why this is a name, not a member id.
     ("weekly_plans", "approved_by", "TEXT NOT NULL DEFAULT ''"),
     ("weekly_plans", "approved_at", "TEXT"),
+    # Slice 1 of per-adult login (2026-09-11): the approver's members.id,
+    # beside the name, when the approval came from a picked adult. NULL for
+    # every plan approved before this existed, and for an approval that
+    # named someone other than the session's adult — see approve_weekly_plan.
+    ("weekly_plans", "approved_by_member_id", "INTEGER"),
     # What the approval did to the shopping list, so the receipt survives a
     # reload — see schema.sql's comment on approved_grocery_added.
     ("weekly_plans", "approved_grocery_added", "INTEGER NOT NULL DEFAULT 0"),

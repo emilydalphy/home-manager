@@ -179,8 +179,10 @@ def test_a_tampered_household_id_invalidates_the_cookie(client, beta_household):
     signature. It must fail closed — not fall back to household 1.
     """
     cookie = _sign_in(client, BETA_PASSPHRASE)
-    sid, household, issued, sig = cookie.split(".")
-    forged = f"{sid}.{DEFAULT_HOUSEHOLD_ID}.{issued}.{sig}"
+    # Five parts since 2026-09-11: the picked adult's member id rides
+    # between issued-at and the signature (see security.issue_session).
+    sid, household, issued, member, sig = cookie.split(".")
+    forged = f"{sid}.{DEFAULT_HOUSEHOLD_ID}.{issued}.{member}.{sig}"
     assert security.read_session_parts(forged) is None
     assert security.read_session(forged) is None
 
