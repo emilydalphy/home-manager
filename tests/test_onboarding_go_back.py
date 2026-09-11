@@ -928,50 +928,6 @@ def test_the_guard_does_not_depend_on_a_button_being_passed_in():
 # ---------- what depends on what ----------
 
 
-def _rhythm_harness() -> str:
-    """
-    The rhythm step's own code, over the same DOM. currentMembers is the one
-    thing stubbed — these tests are about what happens when the household
-    changes, so the household is the input.
-    """
-    return "\n".join([
-        _DOM_STUB,
-        """
-['rhythm-lunch-people', 'rhythm-meals-together-chips', 'rhythm-cooking-role-chips',
- 'rhythm-cooking-who-chips', 'rhythm-cooking-who-wrap', 'rhythm-cooking-hint',
- 'rhythm-meals-together-card', 'rhythm-cooking-card', 'rhythm-1-next'].forEach(function (id) { el(id); });
-// The lunch card is what renderLunchPeople reaches for with closest().
-ELS['rhythm-lunch-people']._classes.add('rhythm-lunch-people');
-const LUNCH_CARD = makeEl('div');
-LUNCH_CARD._classes.add('rhythm-card');
-LUNCH_CARD.appendChild(ELS['rhythm-lunch-people']);
-var MEMBERS = [];
-function currentMembers() { return MEMBERS; }
-""",
-        _const("LUNCH_LOCATION_OPTIONS"),
-        _const("MEALS_TOGETHER_OPTIONS"),
-        _const("COOKING_ROLE_OPTIONS"),
-        "var rhythmLunchLocation = {};",
-        "var rhythmMealsTogether = '';",
-        "var rhythmCookingRole = '';",
-        "var rhythmCookingWho = '';",
-        "var rhythmSoloDefaultsApplied = false;",
-        _fn("buildSingleSelectChips"),
-        _fn("isCookEligible"),
-        _fn("eligibleCooks"),
-        _fn("renderLunchRow"),
-        _fn("renderLunchPeople"),
-        _fn("renderMealsTogetherChips"),
-        _fn("renderCookingWhoChips"),
-        _fn("renderCookingRoleChips"),
-        _fn("isSoloAdultHousehold"),
-        _fn("applySoloAdultDefaults"),
-        _fn("rhythm1Complete"),
-        _fn("updateRhythm1ContinueState"),
-        _fn("buildRhythmStep1"),
-    ])
-
-
 def _restrictions_harness() -> str:
     return "\n".join([
         _DOM_STUB,
@@ -1069,8 +1025,6 @@ def _household_edit_harness() -> str:
             """
 // The real thing, reading rows out of a container, rather than a stub list.
 const membersDiv = el('members');
-var rhythmLunchLocation = {};
-var rhythmCookingWho = '';
 function addMemberRow(name) {
   const block = makeEl('div');
   block._classes.add('member-block');
@@ -1142,26 +1096,6 @@ console.log(JSON.stringify({
         "now called Sam"
     )
     assert out["held"] == []
-
-
-@_needs_node
-def test_a_lunch_answer_cannot_transfer_the_same_way():
-    """
-    The same shape one door along: saveRhythmAnswers posts
-    rhythmLunchLocation verbatim, keyed by name, on the same end-of-setup
-    request.
-    """
-    out = _run(_household_edit_harness() + """
-const sam = addMemberRow('Sam');
-const alex = addMemberRow('Alex');
-rhythmLunchLocation = { Sam: 'out', Alex: 'home' };
-rhythmCookingWho = 'Sam';
-removeRow(sam);
-rename(alex, 'Sam');
-console.log(JSON.stringify({ lunch: rhythmLunchLocation, who: rhythmCookingWho }));
-""")
-    assert out["lunch"] == {}, "a lunch location moved onto a different person"
-    assert out["who"] == "", "the cook pick stayed pointed at a name that is now somebody else"
 
 
 def test_the_payload_builder_prunes_too_rather_than_trusting_the_route():

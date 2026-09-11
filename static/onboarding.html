@@ -1220,16 +1220,10 @@ function pruneRestrictionAnswers() {
   });
 }
 function pruneMemberKeyedAnswers() {
-  const here = new Set(currentMembers().map(m => m.name));
+  // Restrictions are the only member-keyed answers left since the
+  // per-person lunch rows went (Build 6, 2026-09-11); the name stays so
+  // the next member-keyed answer has one place to prune from.
   pruneRestrictionAnswers();
-  // The lunch locations are the same shape and go out on the same
-  // end-of-setup POST (saveRhythmAnswers sends rhythmLunchLocation
-  // verbatim), so they get the same treatment; renderLunchPeople's own
-  // prune stays, it just isn't the only one any more.
-  Object.keys(rhythmLunchLocation).forEach(name => {
-    if (!here.has(name)) delete rhythmLunchLocation[name];
-  });
-  if (rhythmCookingWho && !here.has(rhythmCookingWho)) rhythmCookingWho = '';
 }
 // The first two rows default to Adult (the common case — most households
 // start with the adults in the house); anyone added after that starts
@@ -1247,49 +1241,16 @@ function currentMembers() {
   }).filter(m => m.name);
 }
 
-// ---------- Household rhythm: the six locked questions ----------
-// Loop Board "Onboarding: household rhythm without traditional
-// assumptions" — Emily's "LOCKED: the six rhythm questions" note,
-// 2026-09-03. Placed right after household members (names known, so the
-// per-person lunch rows use them) and before every food/preference
-// question, per her stated learning hierarchy: rhythm, then habits, then
-// preferences. All six save through /api/onboarding/rhythm, the same
-// storage chat corrections write to (app/tools/rhythm.py) — an onboarding
-// answer and a later "actually I do all the cooking" are the same write.
-const LUNCH_LOCATION_OPTIONS = [
-  { key: 'home', label: 'Home' },
-  { key: 'out', label: 'Out' },
-  { key: 'varies', label: 'Varies' },
-];
-const MEALS_TOGETHER_OPTIONS = [
-  { key: 'dinner_only', label: 'Dinner only' },
-  { key: 'dinner_and_breakfast', label: 'Dinner + breakfast' },
-  { key: 'most_meals', label: 'Most meals' },
-  { key: 'varies', label: 'Varies' },
-];
-const COOKING_ROLE_OPTIONS = [
-  { key: 'one_person', label: 'Mostly one person' },
-  { key: 'turns', label: 'We take turns' },
-  { key: 'whoever_free', label: 'Whoever’s free' },
-];
+// ---------- Household rhythm ----------
+// Only the three questions planning reads survive (Build 6, 2026-09-11):
+// dinner window, leftovers stance, prep days. They save through
+// /api/onboarding/rhythm, the same storage chat corrections write to
+// (app/tools/rhythm.py).
 const DINNER_WINDOW_OPTIONS = [
   { key: '5_6ish', label: '5–6ish' },
   { key: '6_8', label: '6–8' },
   { key: 'later', label: 'Later' },
   { key: 'all_over', label: 'All over the place' },
-];
-// Emily's decision, 2026-09-05: a weekday picker (the day the plan and
-// list are final by — her example, Friday) plus "As we go" as the one
-// escape from naming a day at all.
-const PLANNING_ANCHOR_OPTIONS = [
-  { key: 'monday', label: 'Mon' },
-  { key: 'tuesday', label: 'Tue' },
-  { key: 'wednesday', label: 'Wed' },
-  { key: 'thursday', label: 'Thu' },
-  { key: 'friday', label: 'Fri' },
-  { key: 'saturday', label: 'Sat' },
-  { key: 'sunday', label: 'Sun' },
-  { key: 'as_we_go', label: 'As we go' },
 ];
 // Merged with the old final-step "how do you feel about repeats?" question
 // (Loop Board "Onboarding asks about leftovers twice", Emily 2026-09-05) —
@@ -1327,12 +1288,7 @@ const PREP_MINUTES_OPTIONS = [
 ];
 const MAX_PREP_DAYS = 2;
 
-let rhythmLunchLocation = {}; // member name -> 'home' | 'out' | 'varies'
-let rhythmMealsTogether = '';
-let rhythmCookingRole = '';
-let rhythmCookingWho = '';
 let rhythmDinnerWindow = '';
-let rhythmPlanningAnchor = '';
 let rhythmLeftoversStance = '';
 let rhythmPrepDays = [];      // ['sunday', 'wednesday'] — which chips are on
 let rhythmPrepMinutes = 0;    // 30 | 60 | 120, or 0 for "they didn't say"
@@ -1352,173 +1308,10 @@ function buildSingleSelectChips(container, options, currentValue, onSelect) {
   });
 }
 
-// A child's lunch location isn't something onboarding needs to ask about,
-// and a child shouldn't be offered as the cook — that's the whole bug this
-// ticket exists to fix. Teens count as cook-eligible (Emily's default:
-// optional but included, not excluded like child/toddler). An unset age
-// group (a row someone never tapped a chip on) is treated the same as
-// not-eligible — safer to under-offer than to hand a kid the stove by
-// default.
-function isCookEligible(m) {
-  return m.age_group === 'adult' || m.age_group === 'teen';
-}
-function eligibleCooks() {
-  return currentMembers().filter(isCookEligible);
-}
-
-function renderLunchRow(row, memberName) {
-  buildSingleSelectChips(row, LUNCH_LOCATION_OPTIONS, rhythmLunchLocation[memberName] || '', (key) => {
-    rhythmLunchLocation[memberName] = key;
-    renderLunchRow(row, memberName);
-    updateRhythm1ContinueState();
-  });
-}
-function renderLunchPeople() {
-  const wrap = document.getElementById('rhythm-lunch-people');
-  const card = wrap.closest('.rhythm-card');
-  wrap.innerHTML = '';
-  const lunchMembers = currentMembers().filter(isCookEligible);
-  // A lunch answer given while someone counted as an adult must not ship
-  // once they've been reclassified as a child (or removed) — same rule as
-  // the cook pick below.
-  const eligibleNames = new Set(lunchMembers.map(m => m.name));
-  Object.keys(rhythmLunchLocation).forEach(name => { if (!eligibleNames.has(name)) delete rhythmLunchLocation[name]; });
-  // A household of only a child/toddler has nothing to show here — hide
-  // the whole card rather than leaving an empty box under a question with
-  // no rows to answer it.
-  if (card) card.style.display = lunchMembers.length ? '' : 'none';
-  lunchMembers.forEach((m, i) => {
-    if (i > 0) {
-      const divider = document.createElement('div');
-      divider.className = 'rhythm-person-divider';
-      wrap.appendChild(divider);
-    }
-    const block = document.createElement('div');
-    block.className = 'rhythm-person-block';
-    const nameEl = document.createElement('span');
-    nameEl.className = 'rhythm-person-name';
-    nameEl.textContent = m.name;
-    const row = document.createElement('div');
-    row.className = 'rhythm-chip-row';
-    block.appendChild(nameEl);
-    block.appendChild(row);
-    wrap.appendChild(block);
-    renderLunchRow(row, m.name);
-  });
-}
-
-function renderMealsTogetherChips() {
-  buildSingleSelectChips(document.getElementById('rhythm-meals-together-chips'), MEALS_TOGETHER_OPTIONS, rhythmMealsTogether, (key) => {
-    rhythmMealsTogether = key;
-    renderMealsTogetherChips();
-    updateRhythm1ContinueState();
-  });
-}
-
-function renderCookingWhoChips() {
-  const wrap = document.getElementById('rhythm-cooking-who-wrap');
-  const hint = document.getElementById('rhythm-cooking-hint');
-  const cooks = eligibleCooks();
-  // A previously-picked cook who's since been reclassified (or removed)
-  // shouldn't linger as the selected value with no chip showing it active.
-  if (rhythmCookingWho && !cooks.some(m => m.name === rhythmCookingWho)) {
-    rhythmCookingWho = '';
-  }
-  if (rhythmCookingRole !== 'one_person' || !cooks.length) {
-    wrap.style.display = 'none';
-    hint.style.display = 'block';
-    return;
-  }
-  hint.style.display = 'none';
-  wrap.style.display = 'block';
-  buildSingleSelectChips(
-    document.getElementById('rhythm-cooking-who-chips'),
-    cooks.map(m => ({ key: m.name, label: m.name })),
-    rhythmCookingWho,
-    (key) => {
-      rhythmCookingWho = key;
-      renderCookingWhoChips();
-      updateRhythm1ContinueState();
-    }
-  );
-}
-function renderCookingRoleChips() {
-  buildSingleSelectChips(document.getElementById('rhythm-cooking-role-chips'), COOKING_ROLE_OPTIONS, rhythmCookingRole, (key) => {
-    rhythmCookingRole = key;
-    if (key !== 'one_person') rhythmCookingWho = '';
-    renderCookingRoleChips();
-    renderCookingWhoChips();
-    updateRhythm1ContinueState();
-  });
-}
-
-// A household of exactly one adult and nobody else (Julia, 2026-09-08).
-// "Which meals do you usually eat together?" and "Who does the cooking?"
-// each have exactly one possible answer for a person living alone, and
-// asking a question whose answer you already know is the tax this whole
-// pass exists to cut. A second person of ANY age group — including a
-// toddler, who eats with them — makes both questions real again.
-function isSoloAdultHousehold() {
-  const members = currentMembers();
-  return members.length === 1 && members[0].age_group === 'adult';
-}
-// Set when the two answers below were filled in FOR the household rather
-// than BY them, so going back and adding someone clears them again instead
-// of shipping a default nobody ever saw.
-let rhythmSoloDefaultsApplied = false;
-// 'most_meals' is the closest thing MEALS_TOGETHER_OPTIONS has to "all of
-// them", and a household of one takes every meal with itself. The cook is
-// that same person, by the same arithmetic. Both are written through the
-// ordinary save path, so What we know reads them back as given answers —
-// which is what they are, not a guess the app is hiding.
-function applySoloAdultDefaults() {
-  const solo = isSoloAdultHousehold();
-  const togetherCard = document.getElementById('rhythm-meals-together-card');
-  const cookingCard = document.getElementById('rhythm-cooking-card');
-  if (solo) {
-    rhythmMealsTogether = 'most_meals';
-    rhythmCookingRole = 'one_person';
-    rhythmCookingWho = currentMembers()[0].name;
-    rhythmSoloDefaultsApplied = true;
-  } else if (rhythmSoloDefaultsApplied) {
-    rhythmMealsTogether = '';
-    rhythmCookingRole = '';
-    rhythmCookingWho = '';
-    rhythmSoloDefaultsApplied = false;
-  }
-  if (togetherCard) togetherCard.style.display = solo ? 'none' : '';
-  if (cookingCard) cookingCard.style.display = solo ? 'none' : '';
-}
-
-function rhythm1Complete() {
-  const members = currentMembers();
-  if (!members.length) return false;
-  // Only adults/teens get a lunch-location row (see renderLunchPeople) —
-  // a household of only a child/toddler has nothing here to require.
-  const lunchMembers = members.filter(isCookEligible);
-  if (!lunchMembers.every(m => rhythmLunchLocation[m.name])) return false;
-  if (!rhythmMealsTogether) return false;
-  if (!rhythmCookingRole) return false;
-  // "Who?" is only required when there's actually someone eligible to
-  // pick — with zero adults/teens in the house there's no control to fill
-  // in, so it can't be the thing blocking Continue.
-  if (rhythmCookingRole === 'one_person' && eligibleCooks().length && !rhythmCookingWho) return false;
-  return true;
-}
-function updateRhythm1ContinueState() {
-  // rhythm-1 left the flow (Build 6, 2026-09-11); nothing to update.
-}
 function renderDinnerWindowChips() {
   buildSingleSelectChips(document.getElementById('rhythm-dinner-window-chips'), DINNER_WINDOW_OPTIONS, rhythmDinnerWindow, (key) => {
     rhythmDinnerWindow = key;
     renderDinnerWindowChips();
-    updateRhythm2ContinueState();
-  });
-}
-function renderPlanningAnchorChips() {
-  buildSingleSelectChips(document.getElementById('rhythm-planning-anchor-chips'), PLANNING_ANCHOR_OPTIONS, rhythmPlanningAnchor, (key) => {
-    rhythmPlanningAnchor = key;
-    renderPlanningAnchorChips();
     updateRhythm2ContinueState();
   });
 }
@@ -1635,8 +1428,7 @@ async function saveRhythmAnswers() {
 //
 // Keyed by member NAME, and an entry naming somebody who is no longer in
 // the household is dropped at render time rather than invalidated by a
-// rule. That is the same thing renderLunchPeople and renderCookingWhoChips
-// already do, and it is deliberately not a "changing the household clears
+// rule. That is deliberately not a "changing the household clears
 // restrictions" rule written down somewhere: a rule has to be remembered
 // and kept in step with every future question, whereas "the answers are
 // whatever the people who are actually here have said" stays true on its
@@ -1828,19 +1620,7 @@ let lunchesPerWeek = 7;
 // stored fact (meal_preferences.snacks_per_day) and the planner reads it;
 // snacks_per_week is still written alongside it so nothing downstream
 // changes shape — see saveOnboardingAnswers.
-const SNACKS_PER_DAY_OPTIONS = [
-  { key: 0, label: 'None' },
-  { key: 1, label: '1' },
-  { key: 2, label: '2' },
-  { key: 3, label: '3' },
-];
 let snacksPerDay = 2;
-function renderSnacksPerDayChips() {
-  buildSingleSelectChips(
-    document.getElementById('snacks-per-day-chips'), SNACKS_PER_DAY_OPTIONS, snacksPerDay,
-    (key) => { snacksPerDay = key; renderSnacksPerDayChips(); }
-  );
-}
 // The per-meal steppers (renderDinnersValue and friends, and the six +/-
 // listeners) left with the "how many different recipes" step on 2026-09-11
 // (Build 6). The three counts keep their defaults (7 / 7 / 5) and are sent
@@ -2478,10 +2258,8 @@ const STEP_TITLES = {
 };
 
 // The steps THIS household is asked, derived from the answers it has given
-// rather than stamped onto the markup. Today it is every step: the one
-// branch onboarding has — a household of exactly one adult, which is not
-// asked who cooks or which meals it eats together — drops two CARDS inside
-// rhythm-1, not a step (see applySoloAdultDefaults). It is derived here
+// rather than stamped onto the markup. Today it is every step (the one
+// conditional branch left with rhythm-1 in Build 6). It is derived here
 // anyway, because everything about going back is computed from it: a
 // destination attribute written into each step's markup is a table
 // somebody has to remember to update, and the first genuinely conditional
