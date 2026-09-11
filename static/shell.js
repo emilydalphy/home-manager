@@ -8187,6 +8187,14 @@
   // the week itself below the fold, which is the whole problem this
   // redesign exists to fix.
   function renderWeekApproval(panel, data) {
+    // On the All set screen the two asks live in its own row, and the
+    // fetches that fill them (ensureDefrostAskItems, ensureCookAheadAskItems)
+    // come back through here — so re-render that row, not the root's hidden
+    // receipt row.
+    if (weekState.step === 'allset' && panel.querySelector('#wk-allset-asks')) {
+      renderAllSetAsks(panel, data);
+      return;
+    }
     var row = panel.querySelector('#week-approve-row');
     if (!row) return;
     if (!data.weekly_plan_id) { row.innerHTML = ''; return; }
@@ -8450,12 +8458,20 @@
     var row = panel.querySelector('#wk-allset-asks');
     if (!row) return;
     renderWeekReceipt(row, panel, data, true);
+    // The dock is wired once per render of the screen (this runs again when
+    // an ask's fetch resolves, and a second listener would double-fire).
     var go = panel.querySelector('#wk-allset-go');
-    if (go) go.addEventListener('click', function () {
-      activateTab('grocery', true, { groScreen: 'plan' });
-    });
+    if (go && !go.dataset.wired) {
+      go.dataset.wired = '1';
+      go.addEventListener('click', function () {
+        activateTab('grocery', true, { groScreen: 'plan' });
+      });
+    }
     var see = panel.querySelector('#wk-allset-see');
-    if (see) see.addEventListener('click', function () { goMealsStep('week'); });
+    if (see && !see.dataset.wired) {
+      see.dataset.wired = '1';
+      see.addEventListener('click', function () { goMealsStep('week'); });
+    }
   }
 
   // "Chicken thighs · Salmon · Ground beef" — the chips, collapsed. Three
