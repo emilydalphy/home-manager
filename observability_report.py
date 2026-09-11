@@ -251,6 +251,8 @@ def _collect_over_http(days: int) -> list[dict]:
                 # .get for the same reason: a deployment older than the food
                 # checks answers without this key.
                 "plan_quality": data.get("plan_quality") or {},
+                # .get again: a deployment older than the morning text.
+                "morning_texts": data.get("morning_texts") or {},
             }
         )
     return out
@@ -295,6 +297,7 @@ def _collect_from_db(days: int) -> list[dict]:
                     "usage": tools.get_usage_summary(days=max(days, 7)),
                     "feedback_waiting": tools.count_feedback_reports(days=max(days, 7)),
                     "plan_quality": tools.get_recent_plan_quality(days=max(days, 7)),
+                    "morning_texts": tools.get_morning_text_report(days=days),
                 }
             )
     return out
@@ -620,6 +623,30 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 f"{'note' if waiting == 1 else 'notes'} waiting — read with "
                 f"`python observability_report.py --feedback`"
             )
+
+        # The morning text ("Reach me before the moment", 2026-09-11). One
+        # line, only when there is something to say: someone has signed up
+        # or a send was attempted. Counts and a status, never a number or a
+        # body. `.get` for the same reason as everything above.
+        texts = h.get("morning_texts") or {}
+        if texts.get("opted_in") or texts.get("total"):
+            by_status = texts.get("by_status") or {}
+            parts = ", ".join(f"{n} {status}" for status, n in sorted(by_status.items()))
+            if not texts.get("configured"):
+                print(
+                    f"  Morning text — {texts.get('opted_in', 0)} signed up, but texting is OFF "
+                    f"(TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER not all set)"
+                )
+            elif by_status.get("failed"):
+                print(
+                    f"  Morning text — FAILED for {by_status['failed']} in the last {texts.get('days', days)}d "
+                    f"({parts}); last reason: {texts.get('last_failure') or 'unknown'}"
+                )
+            else:
+                print(
+                    f"  Morning text — {texts.get('opted_in', 0)} signed up; "
+                    f"{parts or 'nothing attempted yet'} in the last {texts.get('days', days)}d"
+                )
 
         print(f"  Last active: {usage['last_active_at'] or 'never'}")
 

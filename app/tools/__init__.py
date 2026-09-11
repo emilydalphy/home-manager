@@ -103,6 +103,25 @@ from .feedback import (  # noqa: F401
     get_feedback_reports,
     record_feedback_report,
 )
+# "Reach me before the moment" (2026-09-11): the morning text. Only
+# set_morning_text is an agent tool; the rest is the loop in app/main.py,
+# the Preferences sheet's routes, and the morning report.
+from .digest import (  # noqa: F401
+    LATE_WINDOW_HOURS as MORNING_TEXT_LATE_WINDOW_HOURS,
+    MAX_TEXT_CHARS as MORNING_TEXT_MAX_CHARS,
+    POLL_SECONDS as MORNING_TEXT_POLL_SECONDS,
+    build_morning_text,
+    get_morning_text_report,
+    get_morning_text_settings,
+    normalise_phone,
+    normalise_time,
+    run_morning_texts_once,
+    send_digest,
+    send_sms,
+    set_morning_text,
+    set_morning_text_for_member,
+    twilio_configured,
+)
 from .grocery import (  # noqa: F401
     _reverse_meal_grocery_contributions,
     _subtract_quantity,

@@ -314,6 +314,39 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — The morning text: anticipation OUT of the app. Branch
+  `worktree-reach-me`, NOT merged at the time of writing.** Loop Board
+  "Reach me before the moment" (Emily: "prioritize the push
+  notifications"; text first, not email; push once it's in the App
+  Store). Step 0, its own commit: the bell refetches on
+  `visibilitychange`/`focus` and every 5 minutes while visible
+  (`refreshNotificationsIfDue`, shell.js) — it was fetched once per page
+  load, so an installed PWA showed a stale bell for days; still a no-op
+  while `SHOW_NOTIF_BELL` is false. Channel 1: `app/tools/digest.py` —
+  `build_morning_text()` off `today_moves()` and the live feed (tonight,
+  the freezer, the shop, the prep, one attention item; ≤300 chars, link
+  last, nothing → no text); `send_digest(channel, …)` seam with text via
+  Twilio's REST API over `urllib` (no new dependency; email is a name in
+  `CHANNELS`, not code); `run_morning_texts_once()` called by an
+  in-process loop in main.py mirroring `start_backup_loop` (poll every 5
+  min, `DISABLE_MORNING_TEXT=1` opts out, missing `TWILIO_*` keys = logs
+  once and never starts). Once a day per person per LOCAL day via
+  `morning_text_sends` (UNIQUE household/member/sent_on; statuses ok /
+  failed / skipped-empty / skipped-no-keys / skipped-late) — a restart
+  never double-sends; a missed morning sends once if under 8h late.
+  **The first per-household time zone**: `households.timezone` (IANA,
+  default `America/Toronto` — an assumption for every existing row) and
+  `households.morning_text_time` (default 07:00); nothing else reads
+  the zone yet, on purpose. Numbers are `members.phone` (E.164, 10
+  digits assumed +1) + `members.morning_text_on`, adults only, keyed by
+  member row so the per-adult login composes. UI: "Morning text" row in
+  the Preferences sheet opening its own sheet (time, per-adult number,
+  On/Off, spruce Save — inputs are the honest control here); chat tool
+  `set_morning_text(phone, time, on, name, timezone)`. Report:
+  `morning_texts` in `/api/observability` and one line in
+  `observability_report.py`. Emily's part: a Twilio account, a Canadian
+  number, `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_FROM_NUMBER`
+  on Railway (trial accounts text verified numbers only).
 - **2026-09-11 — Swapping a meal is ONE transaction now. Branch
   `worktree-swap-atomic`.** Loop Board "Swapping a meal isn't atomic either
   — the same seam, one level down, shared by every swap in the app": the

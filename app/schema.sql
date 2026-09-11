@@ -1048,6 +1048,29 @@ CREATE TABLE IF NOT EXISTS notification_dismissals (
     UNIQUE(household_id, key)
 );
 
+-- "Reach me before the moment" (Loop Board, 2026-09-11): the morning text.
+-- One row per person per local day the loop looked at them — sent or not.
+-- `sent_on` is the HOUSEHOLD'S local date (households.timezone), which is
+-- what makes "once a day" mean once a morning where they live rather than
+-- once per UTC day. The loop checks for a row before sending, so a
+-- container restart never texts twice and a missed window (the app was
+-- down at seven) sends once when it comes back, the same day only.
+-- `status` is one of ok | failed | skipped-empty | skipped-no-keys |
+-- skipped-late. `detail` is a short reason for the report — a status code,
+-- never the auth token and never the text itself. `member_id` keys the
+-- number by the member row (members.phone) so it composes with the
+-- per-adult login when that lands; the loop reads adults only.
+CREATE TABLE IF NOT EXISTS morning_text_sends (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    sent_on TEXT NOT NULL,
+    status TEXT NOT NULL,
+    detail TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(household_id, member_id, sent_on)
+);
+
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
 -- list — this is "what we currently have", captured primarily via chat
 -- mention ("picked up a rotisserie chicken", "used the last of the

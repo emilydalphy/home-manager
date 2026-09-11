@@ -395,6 +395,20 @@ _MIGRATIONS = [
     # '' on an existing row, read as "only ever seen at created_at" — which
     # is exactly what a row with occurrences = 1 means.
     ("error_events", "last_seen_at", "TEXT NOT NULL DEFAULT ''"),
+    # "Reach me before the moment" (Loop Board, 2026-09-11) — the morning
+    # text. The household's clock and the hour it wants the text; see
+    # schema.sql's comment on morning_text_sends for the whole model. The
+    # timezone is an ASSUMPTION for every existing household: the repo had
+    # no per-household zone before this (meal_plans.py:189 notes the same
+    # gap) and Emily's is Toronto. It is the only place a household's zone
+    # is stored; nothing else reads it yet.
+    ("households", "timezone", "TEXT NOT NULL DEFAULT 'America/Toronto'"),
+    ("households", "morning_text_time", "TEXT NOT NULL DEFAULT '07:00'"),
+    # Where the text goes (E.164, '' = none on record) and whether this
+    # person said yes to it. Off by default — an explicit yes, never an
+    # inferred one.
+    ("members", "phone", "TEXT NOT NULL DEFAULT ''"),
+    ("members", "morning_text_on", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

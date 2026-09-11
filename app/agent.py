@@ -1051,6 +1051,21 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "set_morning_text",
+        "description": "Set up or change the once-a-day morning text — a short text each morning saying what today needs (tonight's cook, the freezer, the shop). 'Text me at 7 each morning on 416-555-0100' = phone + time + on=true. Every field is optional; only what's given changes. Pass `name` for whose number it is when the household has more than one adult and they didn't say (the tool asks if it can't tell). Turning it off is always accepted; turning it on needs a number on record. The result's `configured` says whether the app can actually send texts yet (Twilio keys set) — if false, say plainly that the number is saved and texts will start once texting is switched on, don't promise a text tomorrow.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "phone": {"type": "string", "description": "Mobile number, any format; 10 digits are read as North American (+1). Empty string clears it."},
+                "time": {"type": "string", "description": "When the text should arrive, household local time — '7am', '07:30', '6:45 am'."},
+                "on": {"type": "boolean", "description": "true = send it, false = stop."},
+                "name": {"type": "string", "description": "Which adult this is for, when it isn't obvious."},
+                "timezone": {"type": "string", "description": "IANA zone like America/Toronto or America/Vancouver. Only when they say they're somewhere else — the default is Toronto."},
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "add_pet",
         "description": "Add a household pet. Pets can influence chores (litter, walks) and grocery/household shopping lists (food, litter, etc.).",
         "input_schema": {
@@ -5211,6 +5226,7 @@ TOOL_FUNCTIONS = {
     "set_member_dietary_restrictions": tools.set_member_dietary_restrictions,
     "set_member_age_group": tools.set_member_age_group,
     "set_household_goals": tools.set_household_goals,
+    "set_morning_text": tools.set_morning_text,
     "add_pet": tools.add_pet,
     "list_pets": tools.list_pets,
     "get_meal_planning_setup_status": tools.get_meal_planning_setup_status,
