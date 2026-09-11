@@ -234,6 +234,7 @@ def plan_slot_open(
     open_reason: str,
     options: list[dict] | None = None,
     derived_from: dict | None = None,
+    conn=None,
 ) -> dict:
     """
     Record a slot as `open` — a decision the app is genuinely handing back.
@@ -247,10 +248,20 @@ def plan_slot_open(
     An open slot is still a slot. What it must never be is absent — a
     silently missing slot is the bug this whole state exists to make
     impossible.
+
+    `conn` is for one caller and is not part of the assistant-facing API,
+    the same arrangement _reverse_meal_grocery_contributions already has:
+    drop_dish_from_day takes a meal away and puts this row in its place,
+    and those two have to be one transaction or the gap between them is a
+    genuinely absent slot. Given a connection, this writes on it and
+    neither commits nor closes — the caller owns both. Left unset, every
+    other call site behaves exactly as before.
     """
     if not (open_reason or "").strip():
         raise ValueError("An open slot needs a reason naming the constraint that caused it.")
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     cur = conn.execute(
         "INSERT INTO meal_plan_entries (household_id, date, slot, weekly_plan_id, slot_state, open_reason, derived_from_json) "
         "VALUES (?, ?, ?, ?, 'open', ?, ?)",
@@ -259,9 +270,10 @@ def plan_slot_open(
             json.dumps({**(derived_from or {}), "options": options or []}),
         ),
     )
-    conn.commit()
     entry_id = cur.lastrowid
-    conn.close()
+    if own_conn:
+        conn.commit()
+        conn.close()
     return {
         "entry_id": entry_id, "date": meal_date, "slot": slot,
         "slot_state": "open", "open_reason": open_reason, "options": options or [],
@@ -391,25 +403,73 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int) -> dict:
         }
 
     open_reason = f"You cut {dish} back, so this one is yours to fill."
+    # ONE connection, ONE commit, for all four steps — the same shape and
+    # for the same reason as retire_overlapping_plans (2026-09-06). These
+    # used to be four separate commits, and the gap between the delete and
+    # the open row is the one state this app's rule says can never exist:
+    # a reviewer forced a RuntimeError inside plan_slot_open and got a
+    # genuinely ABSENT slot, its grocery line already reversed, under a
+    # screen reading "nothing changed". Either the meal is gone and a
+    # question stands in its place, or nothing moved.
+    #
+    # sqlite3 connects with the legacy isolation_level of "", so the first
+    # write below opens a transaction implicitly and there is no BEGIN to
+    # issue. Nothing called from inside here may open a second connection —
+    # it would block on this one's write lock and time out — which is why
+    # _unlink_leftover_target, _reverse_meal_grocery_contributions and
+    # plan_slot_open all take the connection rather than making their own.
+    #
     # BY ID. See the docstring: a slot legitimately holding two snacks must
-    # lose only the one being stepped down. Both lines are the care
-    # clear_plan_slot and swap_meal_in_plan take, in the same order — tell
-    # any chain that was reheating this night before the row goes, then put
-    # back anything it contributed to the shopping list (leaving anything
-    # already in a cart alone).
-    _unlink_leftover_target(weekly_plan_id, entry_id)
-    _grocery._reverse_meal_grocery_contributions(entry_id)
+    # lose only the one being stepped down. The order inside is the care
+    # clear_plan_slot and swap_meal_in_plan take — tell any chain that was
+    # reheating this night before the row goes, then put back anything it
+    # contributed to the shopping list (leaving anything already in a cart
+    # alone).
     conn = get_conn()
-    conn.execute(
-        "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-        (entry_id, household_id()),
-    )
-    conn.commit()
-    conn.close()
-    plan_slot_open(
-        weekly_plan_id, meal_date, slot, open_reason,
-        derived_from={"constraint": "household_cut_back", "dish": dish},
-    )
+    rescale_source_id = None
+    try:
+        rescale_source_id = _unlink_leftover_target(weekly_plan_id, entry_id, conn=conn)
+        _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+        conn.execute(
+            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        )
+        plan_slot_open(
+            weekly_plan_id, meal_date, slot, open_reason,
+            derived_from={"constraint": "household_cut_back", "dish": dish},
+            conn=conn,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    if rescale_source_id is not None and _weekly_plan_is_approved(weekly_plan_id):
+        # The one step that cannot join the transaction above: it re-ingests
+        # through add_grocery_item and the whole recipe ingest tree, each of
+        # which opens its own connection (see _unlink_leftover_target's
+        # `conn` note). So it runs AFTER the commit, and a failure here is
+        # logged rather than raised — the day has already been handed back,
+        # and the cost of not shrinking an approved source's line is one
+        # night's share of over-buying, where raising would report "nothing
+        # changed" over a change that did happen. Same call
+        # _taste_verdict_for_slot makes, for the same reason: the household's
+        # answer must not fail over a trim. Running after the dropped entry
+        # has already been reversed and deleted, rather than before, is safe
+        # for the reason that function excludes `unlinked_entry_id` at all:
+        # what must not happen is its share being folded into this rounding
+        # and subtracted back out afterwards, and a row that no longer
+        # exists cannot be.
+        try:
+            _rescale_leftover_source_grocery(rescale_source_id, entry_id)
+        except Exception:
+            logger.exception(
+                "Rescaling leftover source %s after dropping entry %s failed; the day was "
+                "handed back and its line may be over-bought by one night's share",
+                rescale_source_id, entry_id,
+            )
     return {
         "status": "dropped",
         "date": meal_date,
@@ -1257,7 +1317,7 @@ def _make_double_note_text(targets: list[str]) -> str:
     )
 
 
-def _unlink_leftover_target(weekly_plan_id: int, entry_id: int) -> None:
+def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> int | None:
     """
     Tell a source entry that one of the nights it fed is about to be
     removed or replaced — the other half of the fix repair_leftover_chains'
@@ -1281,57 +1341,76 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int) -> None:
     grocery contribution to the smaller batch is a separate, pricier step
     a caller opts into explicitly — see _rescale_leftover_source_grocery —
     because it only matters at all once the plan is approved.
+
+    `conn` is for one caller (drop_dish_from_day), same arrangement
+    _reverse_meal_grocery_contributions has: given a connection this reads
+    and writes on it and neither commits nor closes, so the unlink can be
+    part of the caller's one transaction rather than a commit of its own.
+    Given one it also SKIPS the rescale and RETURNS the source entry id
+    instead, for the caller to run once its transaction has committed —
+    that step re-ingests through add_grocery_item and the whole recipe
+    ingest tree, every one of which opens its own connection, and SQLite
+    gives one writer at a time: called from inside an open write
+    transaction it would sit behind that transaction's own lock and fail
+    with "database is locked". Returns None when there was nothing to
+    unlink, and None on the ordinary self-owned path (where the rescale
+    has already been done here, exactly as before).
     """
-    conn = get_conn()
-    entry = conn.execute(
-        "SELECT date, slot, derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-        (entry_id, household_id()),
-    ).fetchone()
-    if not entry:
-        conn.close()
-        return
-    links_to = (json.loads(entry["derived_from_json"] or "{}").get("links_to") or "").strip()
-    if not links_to:
-        conn.close()
-        return
-    rows = conn.execute(
-        "SELECT id, date, slot, slot_state, recipe_id, freeform_meal, derived_from_json "
-        "FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL",
-        (weekly_plan_id, household_id()),
-    ).fetchall()
-    conn.close()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
+    try:
+        entry = conn.execute(
+            "SELECT date, slot, derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+        if not entry:
+            return None
+        links_to = (json.loads(entry["derived_from_json"] or "{}").get("links_to") or "").strip()
+        if not links_to:
+            return None
+        rows = conn.execute(
+            "SELECT id, date, slot, slot_state, recipe_id, freeform_meal, derived_from_json "
+            "FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL",
+            (weekly_plan_id, household_id()),
+        ).fetchall()
 
-    source = _resolve_leftover_source(links_to, {(r["date"], r["slot"]): r for r in rows}, {r["id"]: r for r in rows})
-    if source is None or source["id"] == entry_id:
-        return
-    source_derived = json.loads(source["derived_from_json"] or "{}")
-    targets = source_derived.get("make_double_for") or []
-    if isinstance(targets, str):  # tolerate the pre-fix scalar shape
-        targets = [targets]
-    target = f"{entry['date']}:{entry['slot']}"
-    if target not in targets:
-        return  # the source never actually confirmed this pairing — nothing to undo
-    targets = [t for t in targets if t != target]
-    if targets:
-        source_derived["make_double_for"] = targets
-        source_derived["make_double_note"] = _make_double_note_text(targets)
-    else:
-        # No target left at all — plan_leftover_chains stops treating this
-        # entry as a source the moment make_double_for is gone, which is
-        # exactly right: it's an ordinary cook again.
-        source_derived.pop("make_double_for", None)
-        source_derived.pop("make_double_note", None)
+        source = _resolve_leftover_source(links_to, {(r["date"], r["slot"]): r for r in rows}, {r["id"]: r for r in rows})
+        if source is None or source["id"] == entry_id:
+            return None
+        source_derived = json.loads(source["derived_from_json"] or "{}")
+        targets = source_derived.get("make_double_for") or []
+        if isinstance(targets, str):  # tolerate the pre-fix scalar shape
+            targets = [targets]
+        target = f"{entry['date']}:{entry['slot']}"
+        if target not in targets:
+            return None  # the source never actually confirmed this pairing — nothing to undo
+        targets = [t for t in targets if t != target]
+        if targets:
+            source_derived["make_double_for"] = targets
+            source_derived["make_double_note"] = _make_double_note_text(targets)
+        else:
+            # No target left at all — plan_leftover_chains stops treating this
+            # entry as a source the moment make_double_for is gone, which is
+            # exactly right: it's an ordinary cook again.
+            source_derived.pop("make_double_for", None)
+            source_derived.pop("make_double_note", None)
 
-    conn = get_conn()
-    conn.execute(
-        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-        (json.dumps(source_derived), source["id"]),
-    )
-    conn.commit()
-    conn.close()
+        conn.execute(
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+            (json.dumps(source_derived), source["id"]),
+        )
+        if own_conn:
+            conn.commit()
+    finally:
+        if own_conn:
+            conn.close()
 
+    if not own_conn:
+        return source["id"]
     if _weekly_plan_is_approved(weekly_plan_id):
         _rescale_leftover_source_grocery(source["id"], entry_id)
+    return None
 
 
 def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: int) -> None:
