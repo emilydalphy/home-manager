@@ -102,7 +102,8 @@
      tab, so it reads as one more thing the household has told the app. */
   .wwk-cal-help { font-family: var(--font-body); font-size: 0.9rem; line-height: 1.45; color: var(--ink-secondary); margin: 6px 0 0; }
   .wwk-cal-where { margin: 8px 0 0; font-family: var(--font-body); font-size: 0.86rem; color: var(--ink-secondary); }
-  .wwk-cal-where summary { font-weight: 700; color: var(--ink-strong); cursor: pointer; padding: 12px 0; }
+  /* A tappable disclosure, so it gets the 44px floor every other control has (DESIGN_SYSTEM §2). */
+  .wwk-cal-where summary { font-weight: 700; color: var(--ink-strong); cursor: pointer; padding: 12px 0; min-height: 44px; display: flex; align-items: center; box-sizing: border-box; }
   .wwk-cal-where p { margin: 4px 0 6px; line-height: 1.4; }
   .wwk-cal-where b { color: var(--ink); }
   .wwk-cal-input-row { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; }
