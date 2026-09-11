@@ -56,7 +56,7 @@ def test_which_days_carries_the_cook_time_on_every_line():
 
 
 def test_approval_lands_on_an_all_set_screen_in_spruce():
-    approve = _fn("approveWeek")
+    approve = _fn("submitWeekApproval")
     assert "weekState.step = 'allset';" in approve
     allset = _fn("allSetStepHtml")
     assert "All set." in allset and "is planned, and the list is built." in allset
