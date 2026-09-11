@@ -72,6 +72,8 @@ logger = logging.getLogger("home_manager")
 
 COOKIE_NAME = "hm_session"
 COOKIE_MAX_AGE = 30 * 24 * 60 * 60  # 30 days
+# The largest integer SQLite can bind — see _decode_session.
+_SQLITE_MAX_INT = 2**63 - 1
 
 # Paths that must stay reachable without logging in.
 #
@@ -212,6 +214,15 @@ def _decode_session(cookie: str | None) -> tuple[str, int, int, int | None] | No
         member_id = int(raw_member)
     except ValueError:
         return None
+    # Python parses any size of integer; SQLite binds only 64-bit ones, and
+    # handing it a bigger number raises OverflowError from inside the
+    # query — a 500 on every route that asks who is acting. A household id
+    # outside that range names no household, so the cookie is simply not
+    # one; a member id outside it is no pick.
+    if not (0 <= household_id <= _SQLITE_MAX_INT):
+        return None
+    if not (0 <= member_id <= _SQLITE_MAX_INT):
+        member_id = 0
     expected = hmac.new(_secret(), payload.encode("utf-8"), hashlib.sha256).digest()
     try:
         if not hmac.compare_digest(expected, _unb64(sig)):

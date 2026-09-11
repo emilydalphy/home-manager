@@ -167,6 +167,26 @@ def test_a_forged_member_id_is_a_signature_failure_not_a_person(client, two_adul
     assert client.get("/api/whoami").status_code == 401, "an edited cookie is no cookie at all"
 
 
+def test_an_out_of_range_member_id_in_a_signed_cookie_is_no_pick_not_a_500(client, two_adults):
+    """
+    Python parses 10**30 happily; SQLite cannot bind it, and the query
+    raised OverflowError from inside current_member() — a 500 on /api/whoami
+    and on every write. Found by the build's independent verifier. A
+    number that cannot be a member is no pick, and the question is asked
+    again; a household id that cannot be a household is no cookie at all.
+    """
+    client.cookies.set(security.COOKIE_NAME, security.issue_session(1, 10**30))
+    res = client.get("/api/whoami")
+    assert res.status_code == 200
+    assert res.json()["member"] is None
+    assert res.json()["needs_pick"] is True
+    add = client.post("/api/grocery-list/add", json={"item": "lemons", "quantity": "3", "category": "produce"})
+    assert add.status_code == 200
+
+    client.cookies.set(security.COOKIE_NAME, security.issue_session(10**30, None))
+    assert client.get("/api/whoami").status_code == 401
+
+
 def test_a_signed_cookie_naming_a_foreign_member_reads_as_nobody(client, two_adults):
     """
     A validly signed cookie whose member belongs to another household — the
