@@ -1122,12 +1122,31 @@ CREATE TABLE IF NOT EXISTS plan_quality_events (
 CREATE INDEX IF NOT EXISTS idx_plan_quality_events_household_created
     ON plan_quality_events (household_id, created_at);
 
+-- The three shape columns below exist because "kind=client, where=/,
+-- detail=browser error" was the ENTIRE record of a real tester's crash --
+-- true, and impossible to act on. They hold the shape and never the
+-- wording: a type from a fixed list, a script file and line, a few stack
+-- frames as func@file:line. The message is still thrown away at capture,
+-- because these strings are printed into a Claude agent's context by
+-- observability_report.py under an instruction to act on what it reads. A
+-- shape is not free text; a message is.
 CREATE TABLE IF NOT EXISTS error_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
     kind TEXT NOT NULL,          -- server | tool | client | rate_limit
     where_ TEXT NOT NULL DEFAULT '',
     detail TEXT NOT NULL DEFAULT '',
+    error_type TEXT NOT NULL DEFAULT '',   -- TypeError | ReferenceError | ... | (other)
+    source TEXT NOT NULL DEFAULT '',       -- shell.js:6207:15
+    stack_shape TEXT NOT NULL DEFAULT '',  -- renderWeek@shell.js:6207 < loadWeek@shell.js:5902
+    -- Repeats are counted, not stored one row each: a render loop fires
+    -- these as fast as it paints, and one broken screen filling the table
+    -- evicts every other error in it. Deduped against an identical shape
+    -- within 24h of created_at, so a count always belongs to a day rather
+    -- than to all of history -- which is what lets the day-scoped read
+    -- keep reporting an honest number.
+    occurrences INTEGER NOT NULL DEFAULT 1,
+    last_seen_at TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_error_events_household_created

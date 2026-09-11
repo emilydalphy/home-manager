@@ -464,6 +464,21 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
 # sensitive thing in the database.
 _MAX_DETAIL = 200
 _MAX_WHERE = 120
+# The shape columns. Same discipline one level finer: a type name, a script
+# file and line, a handful of stack frames. Sanitised at capture by the
+# caller that has an untrusted end (main._safe_client_shape); capped again
+# here, because every other caller in this app is trusted and this function
+# is the one place that has to hold for all of them.
+_MAX_ERROR_TYPE = 40
+_MAX_SOURCE = 80
+_MAX_STACK = 240
+
+# How long an identical shape keeps counting into one row rather than
+# starting a new one. 24 hours, because the report reads a day at a time: a
+# window any longer and "12 in the last 1d" would be counting last week's
+# occurrences too, a window any shorter and a slow leak is still one row per
+# hour. See schema.sql's comment on error_events.occurrences.
+_DEDUPE_WINDOW = "-1 day"
 
 # Nothing else deletes these rows, and a table that only grows is a slow
 # disk-fill on a Railway volume holding the household's real data. Kept
@@ -498,7 +513,14 @@ def _prune(conn, hid: int) -> None:
     )
 
 
-def record_error(kind: str, where: str = "", detail: str = "") -> None:
+def record_error(
+    kind: str,
+    where: str = "",
+    detail: str = "",
+    error_type: str = "",
+    source: str = "",
+    stack_shape: str = "",
+) -> None:
     """
     Record that something broke. Never raises.
 
@@ -506,6 +528,17 @@ def record_error(kind: str, where: str = "", detail: str = "") -> None:
     exception here would replace a handled 500 with an unhandled one, and
     turn "something went wrong" into "something went wrong twice, and the
     second one is ours". Everything is best-effort and swallowed.
+
+    The last three are the SHAPE of a browser error -- a type, a script file
+    and line, a few stack frames -- and they are optional because the other
+    three callers (a status code, a tool name, a bucket) have no shape to
+    give. They must already be sanitised: the caller with an untrusted end
+    is the one that knows what a valid shape looks like.
+
+    An identical shape seen again inside _DEDUPE_WINDOW bumps that row's
+    occurrences instead of writing a second one. A render loop fires these
+    as fast as it paints, and the prune evicts oldest-first -- so without
+    this, one broken screen quietly deletes every other error in the table.
     """
     conn = None
     try:
@@ -519,11 +552,36 @@ def record_error(kind: str, where: str = "", detail: str = "") -> None:
         # cheaper loss.
         conn.execute("PRAGMA busy_timeout = 500")
         hid = household_id()
-        conn.execute(
-            "INSERT INTO error_events (household_id, kind, where_, detail) VALUES (?, ?, ?, ?)",
-            (hid, str(kind)[:40], str(where)[:_MAX_WHERE], str(detail)[:_MAX_DETAIL]),
+        row = (
+            hid,
+            str(kind)[:40],
+            str(where)[:_MAX_WHERE],
+            str(detail)[:_MAX_DETAIL],
+            str(error_type)[:_MAX_ERROR_TYPE],
+            str(source)[:_MAX_SOURCE],
+            str(stack_shape)[:_MAX_STACK],
         )
-        _prune(conn, hid)
+        existing = conn.execute(
+            "SELECT id FROM error_events WHERE household_id = ? AND kind = ? AND where_ = ? "
+            "AND detail = ? AND error_type = ? AND source = ? AND stack_shape = ? "
+            f"AND created_at >= datetime('now', '{_DEDUPE_WINDOW}') "
+            "ORDER BY id DESC LIMIT 1",
+            row,
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE error_events SET occurrences = occurrences + 1, "
+                "last_seen_at = datetime('now') WHERE id = ?",
+                (existing["id"],),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO error_events "
+                "(household_id, kind, where_, detail, error_type, source, stack_shape, "
+                " last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                row,
+            )
+            _prune(conn, hid)
         conn.commit()
     except Exception:
         import logging
@@ -618,6 +676,11 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
 
     Returns counts by kind plus the most recent rows, newest first, so a
     report can say "11 tool failures" without printing eleven lines.
+
+    The counts are SUM(occurrences), not COUNT(*) -- eleven of one failure
+    is eleven failures however many rows record_error folded them into, and
+    a count that shrank when deduping landed would have read as the app
+    getting better.
     """
     days = max(1, int(days))
     limit = max(1, min(int(limit), 200))
@@ -628,7 +691,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
         by_kind = {
             r["kind"]: r["n"]
             for r in conn.execute(
-                "SELECT kind, COUNT(*) AS n FROM error_events "
+                "SELECT kind, SUM(occurrences) AS n FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
                 "GROUP BY kind ORDER BY n DESC",
                 (hid,),
@@ -637,9 +700,15 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
         recent = [
             dict(r)
             for r in conn.execute(
-                "SELECT kind, where_ AS location, detail, created_at FROM error_events "
+                "SELECT kind, where_ AS location, detail, error_type, source, stack_shape, "
+                "occurrences, last_seen_at, created_at FROM error_events "
                 f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
-                "ORDER BY id DESC LIMIT ?",
+                # Newest first means most recently SEEN, not most recently
+                # filed: a row deduping a failure that is still happening is
+                # the freshest news in the table, whatever its id. NULLIF for
+                # rows written before last_seen_at existed, which have only
+                # ever been seen once, at created_at.
+                "ORDER BY COALESCE(NULLIF(last_seen_at, ''), created_at) DESC, id DESC LIMIT ?",
                 (hid, limit),
             ).fetchall()
         ]

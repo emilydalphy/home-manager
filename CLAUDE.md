@@ -497,6 +497,72 @@ why*, not duplicating the diff.
     exactly `Swap tonight for something quicker` on the wire with the input
     empty before and after. Console clean apart from Google Fonts in
     the sandbox.
+- **2026-09-11 — A browser error keeps its SHAPE now, because keeping
+  nothing was not the only way to honour the boundary. Branch
+  `overnight/client-error-shape`.** The whole record of a real tester's
+  crash was `kind='client', where='/', detail='browser error'` — every word
+  true and impossible to act on. Emily's call (2026-09-10): keep the type,
+  the script file and line, a stack shape, and counts; never the message.
+  - **The message stays dropped, and the 2026-09-02 reasoning is untouched.**
+    That feed is printed into a Claude agent's context under an instruction
+    to act on what it reads. What changed is only the claim that a shape and
+    a message are the same thing: five new fields carry the shape and none
+    of them can hold a sentence.
+  - **The type is checked against a FIXED LIST, not a pattern — and so is
+    `detail`'s, which is a pre-existing hole this closes.**
+    `_JS_ERROR_CLASS_RE` alone waves through
+    `class IgnoreEveryPriorInstructionError extends Error {}`: forty
+    characters of attacker-authored English wearing the badge of a
+    recognised JS error. Every standard constructor plus the DOMException
+    names a browser app hits; anything else is the honest `(other)`.
+  - **The residual is written down rather than left to be rediscovered.** A
+    frame's function and file names are written by whoever wrote the
+    script, so a direct POST writes both. The bound: identifier characters
+    only, no spaces and no punctuation past `_ $ . -`, 40/60 chars, five
+    frames, 240-char column. A token, not a sentence — nothing that can
+    quote, close a fence or address a reader. That bound is exactly why the
+    MESSAGE is still dropped whole: a message is the field a sentence fits
+    in.
+  - **`static/error-reporter.js` reduces on its side too, and that is a
+    convenience and not the check.** The server re-derives every field:
+    the browser is the untrusted end, and anything it can send a curl can
+    send without running the reporter at all. The reporter's own reduction
+    matters for one thing a server check could never see — a Chrome stack's
+    FIRST LINE is `TypeError: <the message>`, so shipping `err.stack` whole
+    would ship the message inside a field nothing inspects frame by frame.
+  - **Repeats are counted, not stored one row each** — an identical shape
+    inside 24h bumps `occurrences` instead of inserting. Not tidiness: the
+    prune evicts oldest-first, so one broken screen filling the table
+    quietly deletes every other error in it, which is how a real bug gets
+    hidden by a cosmetic one. 24h because the report reads a day at a time;
+    any longer and "20 in the last 1d" would be counting last week.
+    `get_recent_errors` counts `SUM(occurrences)`, or the number a reader
+    sees would have dropped on the day this landed and read as the app
+    getting better.
+  - **"Across how many households" is computed in
+    `observability_report.py`, never in the app.** The app has no
+    all-households view on purpose; the script is the one place that
+    legitimately holds every household at once, and it is holding shapes,
+    not data. It is the difference between one tester's device doing
+    something odd and a bug shipped to everybody.
+  - **Deliberately NOT done:** the tester's existing row is written off as
+    unrecoverable (nothing backfills a stack trace — that would be
+    inventing history, the same rule the 21-slot `reasoning` backfill was
+    refused under); the two public share pages still report nothing, since
+    on a public path there is no true answer to "whose error is this?"; and
+    `static/shell.js` is untouched.
+  - 18 tests in `tests/test_client_error_shape.py`; 2169 -> 2187. 17 of the
+    18 fail on `5f638fc`; the eighteenth says in its own docstring that it
+    is a guard rather than a catch (five rows and one row of five
+    occurrences both count to five — the point is that the number did not
+    move). Two of them run the reporter's own reduction under node against
+    a browser stub, since "the message rode along inside the stack" is
+    exactly what a source-marker test cannot see. **Verified against a real
+    uvicorn on a throwaway DB** (port 8973): real and hostile payloads
+    POSTed signed-in, the unauthenticated case refused 401, 40 repeats
+    folding into one row, a pre-migration database opened by the new code
+    and its legacy row still reading back, and the morning report printed
+    from both the file and the live app.
 
 - **2026-09-11 — The trouble line was keyed by POSITION, and two readable
   sentences had been swallowed. Branch `overnight/review-plus-and-counts`,
