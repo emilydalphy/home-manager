@@ -36,6 +36,72 @@ LAST_TURN_USAGE: contextvars.ContextVar[dict] = contextvars.ContextVar("last_tur
 
 MODEL = "claude-sonnet-5"
 
+# The quality guidance both planners carry, defined once because two copies of
+# a 900-token block drift and nobody notices which one a household got.
+#
+# Route 1 of "Make the recipes themselves better" (Emily, 2026-09-09; routes
+# chosen 2026-09-10). The research finding: the weekly prompt's ~490 lines
+# said exactly ONE thing about the food being good, and it only fired when a
+# dish named a specific regional style — so "Chicken Tikka Masala" got
+# marinate/sear/bloom/layer and "Baked Lemon Herb Salmon" got put-it-on-a-
+# sheet-pan. Same model, same week, same household. The gap was that nobody
+# ever asked.
+#
+# It lives in the CACHED instructions block of both prompts (never the
+# per-household JSON), which is what makes ~940 tokens cost about $0.0002 a
+# week instead of full price on every generation for every household.
+#
+# The cap is baked in HERE, at import, from tools.RUSH_MAX_MINUTES — which is
+# still the one place that number is written. It cannot be left as a
+# {rush_max} placeholder: each prompt interpolates this constant's TEXT into
+# its own f-string, and an f-string does not re-evaluate what it inserts, so
+# the model would have read the literal characters "{rush_max} minutes".
+COOK_DONT_ASSEMBLE = f"""- COOK, DON'T ASSEMBLE — this applies to EVERY real cook, not just the ones that name a \
+cuisine. Assembly is: combine the ingredients, apply heat, serve. Cooking is: build flavor in \
+stages. A dinner — and any other slot genuinely cooked rather than put together — has to read \
+as the second one. This is the most common way a week that satisfies every rule above still \
+disappoints the household: nothing is wrong with it and nobody wants to eat it again.
+  The moves that matter most cost NO EXTRA TIME, so this is NOT a licence to write longer \
+recipes. Every time cap above stays exactly as hard as it was — a `rush` night is still \
+{tools.RUSH_MAX_MINUTES} minutes, weeknight_max_minutes is still a real ceiling. Cook better in the minutes \
+the slot already has:
+  * BROWN SOMETHING. Searing meat, putting fish in skin-side down, or roasting vegetables \
+before they meet a sauce takes the same minutes as baking them together and is where most of \
+the flavor comes from. Everything-on-one-sheet-pan is the single most reliable way to make a \
+dish taste of nothing.
+  * SEASON IN STAGES. Salt goes onto the protein before it cooks and into each component as it \
+goes — not "salt and pepper to taste" in the last line, which is where seasoning goes to die.
+  * BLOOM DRY SPICES in hot fat for under a minute before any liquid joins them. Spices stirred \
+into a finished sauce taste raw and dusty.
+  * FINISH OFF THE HEAT with something bright: a squeeze of lemon, a splash of vinegar, fresh \
+herbs, a knob of butter or a good oil. Acid added at the start cooks away; acid added at the \
+end is most of what makes a dish taste finished rather than merely cooked.
+  * GIVE IT TEXTURE. Something crisp against something soft. A plate where everything is the \
+same texture reads as bland even when it is seasoned correctly.
+  Be CONFIDENT, NOT AGGRESSIVE: season properly and finish brightly, but don't assume an \
+appetite for real heat or unfamiliar flavors unless this household's own preferences, facts or \
+intake say so. The goal is food they'd cook again, not food that shows off.
+  Every seasoning a step reaches for must ALSO appear in the ingredients list. A method that \
+calls for salt, pepper or lemon that nobody bought is a recipe the household cannot actually \
+cook, and it is a real complaint already on record from a tester.
+  WORKED EXAMPLE — both of these are real output from this app, same model, same week, same \
+household:
+  DULL: "Baked Lemon Herb Salmon with Roasted Asparagus" — preheat the oven; put the salmon and \
+trimmed asparagus on a sheet pan; drizzle with oil, garlic, lemon, salt and pepper; top with \
+dill; bake 12-15 minutes until it flakes. Nothing is browned. The salmon and the asparagus want \
+different heats and different times but get one of each. The lemon goes in before baking, so \
+its brightness cooks off. Everything on the plate ends up the same soft texture. The salt and \
+pepper in the method were never on the shopping list.
+  GOOD: "Chicken Tikka Masala" — marinate the thighs in yogurt and half the spices; sear them \
+hard and set them aside; sweat onion, garlic and ginger in the same pan; add the remaining \
+spices and cook one minute until fragrant; add the tomatoes and simmer; stir in cream, return \
+the chicken; finish with cilantro. Flavor is built in stages, the fond from the sear ends up in \
+the sauce, the spices are bloomed, and the dish finishes with something fresh.
+  The gap between those two is not ingredients, ambition or time — it is that the second one \
+browns, blooms, layers and finishes, and the first one does none of them. Every one of those \
+moves would have fitted inside the salmon's own 25 minutes."""
+
+
 # The model interactive chat falls back to, once, after the primary model's
 # retries exhaust on an overload-shaped error (see _OVERLOADED_STATUS_CODES
 # and _create_with_retry's fallback_model parameter). Pinned to an exact
@@ -2510,6 +2576,7 @@ approach with an ethnic ingredient bolted on. If you genuinely don't know a styl
 to do this properly, pick a broader, less specific cuisine label instead of naming a precise \
 regional style and getting it thin — a plausible-but-shallow "Chettinad" dish is worse than \
 an honestly-labeled "Indian-spiced" one.
+{COOK_DONT_ASSEMBLE}
 - For each day, also fill in reasoning: one short, specific sentence a household member \
 would actually find useful if they tapped "why this?" — name the real thing that drove the \
 choice (a stated protein/cuisine preference, filling a variety gap from recent_history, \
@@ -2782,6 +2849,7 @@ spice/aromatic blend and technique that style is known for, not a generic dish w
 ingredient bolted on. See the day-based prompt's guidance on this; same rule applies here. If \
 you don't know a named regional style well enough to do it justice, use a broader cuisine \
 label instead rather than naming something specific and getting it thin.
+{COOK_DONT_ASSEMBLE}
 - For each item, also fill in reasoning: one short, specific sentence on why it made the \
 pool — same guidance as the day-based prompt (name the real driver: preference, variety, \
 near-expiring inventory, novelty_preference), never generic filler.

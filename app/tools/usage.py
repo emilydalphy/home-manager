@@ -534,6 +534,83 @@ def record_error(kind: str, where: str = "", detail: str = "") -> None:
             conn.close()
 
 
+def record_plan_quality(plan_id, violations) -> None:
+    """Persist what a generated week got wrong about the food.
+
+    Same never-raise discipline as record_error above, and for the same
+    reason: a plan that would otherwise generate fine must not fail because
+    an optional observation could not be written.
+    """
+    if not violations:
+        return
+    conn = None
+    try:
+        conn = get_conn()
+        conn.execute("PRAGMA busy_timeout = 500")
+        hid = household_id()
+        conn.executemany(
+            "INSERT INTO plan_quality_events "
+            "(household_id, weekly_plan_id, rule, severity, date, slot, message) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [
+                (hid, plan_id, str(v.rule)[:60], str(v.severity)[:10],
+                 str(v.date or "")[:20], str(v.slot or "")[:20],
+                 str(v.message or "")[:_MAX_DETAIL])
+                for v in violations
+            ],
+        )
+        conn.commit()
+    except Exception:
+        import logging
+
+        logging.getLogger("home_manager").exception("Recording plan quality events failed")
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def get_recent_plan_quality(days: int = 7, limit: int = 50) -> dict:
+    """What the last few weeks of plans got wrong about the food.
+
+    Seven days by default rather than one: a week is generated about once a
+    week, so a one-day window would report nothing on six mornings out of
+    seven and look like good news.
+    """
+    days = max(1, int(days))
+    limit = max(1, min(int(limit), 200))
+    since = f"-{days} days"
+    conn = get_conn()
+    try:
+        hid = household_id()
+        by_rule = {
+            r["rule"]: r["n"]
+            for r in conn.execute(
+                "SELECT rule, COUNT(*) AS n FROM plan_quality_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "GROUP BY rule ORDER BY n DESC",
+                (hid,),
+            ).fetchall()
+        }
+        recent = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT rule, severity, date, slot, message, created_at "
+                "FROM plan_quality_events "
+                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                "ORDER BY id DESC LIMIT ?",
+                (hid, limit),
+            ).fetchall()
+        ]
+        return {
+            "days": days,
+            "total": sum(by_rule.values()),
+            "by_rule": by_rule,
+            "recent": recent,
+        }
+    finally:
+        conn.close()
+
+
 def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
     """
     What broke for this household recently — the part of the morning

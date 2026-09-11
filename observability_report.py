@@ -187,6 +187,9 @@ def _collect_over_http(days: int) -> list[dict]:
                 # answers without this key, and the report should print
                 # one line less rather than crash.
                 "feedback_waiting": data.get("feedback_waiting") or 0,
+                # .get for the same reason: a deployment older than the food
+                # checks answers without this key.
+                "plan_quality": data.get("plan_quality") or {},
             }
         )
     return out
@@ -230,6 +233,7 @@ def _collect_from_db(days: int) -> list[dict]:
                     "errors": tools.get_recent_errors(days=days),
                     "usage": tools.get_usage_summary(days=max(days, 7)),
                     "feedback_waiting": tools.count_feedback_reports(days=max(days, 7)),
+                    "plan_quality": tools.get_recent_plan_quality(days=max(days, 7)),
                 }
             )
     return out
@@ -479,6 +483,19 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 f"{_money(plan_gen['total_cost']['total'])} total, "
                 f"latency p50={plan_gen['p50_seconds']}s max={plan_gen['max_seconds']}s"
             )
+
+        # What the week got wrong about the FOOD. Its own section, below
+        # errors and usage and never folded into BROKEN: a dull dinner is a
+        # real problem and it is not an outage, and the whole value of the
+        # BROKEN line is that it means exactly one thing. `.get` for the same
+        # reason as the block above — a deployment older than this work
+        # answers without the key.
+        quality = h.get("plan_quality") or {}
+        if quality.get("total"):
+            rules = ", ".join(f"{n} {r}" for r, n in quality["by_rule"].items())
+            print(f"  FOOD — {quality['total']} in the last {quality['days']}d: {rules}")
+            for row in quality["recent"][:6]:
+                print(f"      {row['severity']:5} {row['message']}")
 
         # A count, never a word of what was written — see this file's
         # --feedback note. The pointer is the point: without it the read
