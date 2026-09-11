@@ -704,6 +704,13 @@ plan a wider window than you were asked for. If someone asks for Thursday to Sun
 four days, not seven; the extra three would silently retire days of a plan they never \
 mentioned. The result's `took_over` says what actually happened; if it retired days, say so \
 plainly and once, without apologising.
+- If those days belong to an APPROVED plan — a week already on the shopping list — \
+generate_weekly_plan will refuse and return needs_confirmation until confirm_takeover is true. \
+Ask the household directly, naming what would go (the result's `note` already says it: "I'd \
+replace Thursday to Sunday's dinners — Bean Chili, Salmon — and 11 things on your shopping \
+list would change. Go ahead?"), and only pass that flag once they've said yes in this conversation, \
+after being told what would be replaced; never set it on your own initiative, and never on \
+the first call. A draft is not asked about — replacing a draft is what re-planning means.
 - The result's is_first_plan and new_recipe_count/repeat_recipe_count exist specifically to \
 make the planning happen visibly, not just functionally — mention them in your reply rather \
 than only in the data. If is_first_plan is true, this is the household's very first generated \
@@ -1430,13 +1437,17 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "generate_weekly_plan",
-        "description": "Generate and save a full week's meal plan in one pass, tailored to this household's preferences, dislikes, restrictions, and recent meal history (avoids repeats, surfaces new recipes). Preferred over multiple plan_meal calls whenever the user wants a whole week planned at once (e.g. 'plan my week', 'what should we eat this week'). The result includes is_first_plan and new_recipe_count/repeat_recipe_count — see the Weekly planning section of these instructions for how to use them in your reply.",
+        "description": "Generate and save a full week's meal plan in one pass, tailored to this household's preferences, dislikes, restrictions, and recent meal history (avoids repeats, surfaces new recipes). Preferred over multiple plan_meal calls whenever the user wants a whole week planned at once (e.g. 'plan my week', 'what should we eat this week'). The result includes is_first_plan and new_recipe_count/repeat_recipe_count — see the Weekly planning section of these instructions for how to use them in your reply. If the period would take days off an APPROVED plan (one already on the shopping list) and confirm_takeover isn't true, this does NOT plan — it writes nothing — and instead returns status 'needs_confirmation' with `days` (each lost day, its weekday and its meals), `orphaned_dates`, `meal_count`, `grocery_line_count` (read from the list, not estimated) and a `note` sentence you can say as-is; a result with a weekly_plan_id is the only outcome that actually planned anything.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "week_start_date": {"type": "string", "description": "YYYY-MM-DD, the FIRST day of the period to plan. Any day of the week — a period does not have to start on a Monday."},
                 "constraints_notes": {"type": "string", "description": "Freeform per-week asks, e.g. 'out Thu/Fri, keep it under 30 min on weeknights, one vegetarian night'."},
                 "day_count": {"type": "integer", "description": f"How many days the period runs, 1-{tools.MAX_PERIOD_DAYS}. Defaults to 7. 'Thursday to next Thursday' is 8. Send exactly what was asked for — a period takes over any days it overlaps with an existing plan, so planning wider than asked silently retires days nobody mentioned."},
+                "confirm_takeover": {
+                    "type": "boolean",
+                    "description": "Defaults to false. The household's explicit yes to replacing days of an APPROVED plan — never set this true on your own initiative, and never on the first call. If a call comes back needs_confirmation, ASK the household in plain words (the result's note names the days and meals), and only call again with this set to true if they say yes in this conversation.",
+                },
             },
             "required": ["week_start_date"],
         },
@@ -3055,12 +3066,34 @@ def generate_weekly_plan(
     intake_id: int | None = None,
     skip_days: int = 0,
     period_start: str | None = None,
+    confirm_takeover: bool = False,
 ) -> dict:
     """
     Generate and save a full week's meal plan in one pass. See
     _generate_weekly_plan for what that involves; this wrapper exists so
     that only one generation for a given household and week runs at a
-    time.
+    time — and, since 2026-09-11, so that a period which would take days
+    off an APPROVED plan asks first.
+
+    confirm_takeover is the household's yes to that. Unless it is true, a
+    period overlapping days of an approved plan does NOT generate: this
+    returns `{"status": "needs_confirmation", "reason":
+    "approved_plan_overlap", "days", "orphaned_dates", "note", ...}` (see
+    tools.preview_approved_takeover) naming the days and meals that would
+    go, and writes nothing. Emily's decision, 2026-09-11: taking the days
+    over is still the household's rule; the fix for "replanning a running
+    week takes it over with no confirmation" is asking before it happens,
+    not removing the take-over. Drafts are still taken over without a
+    question — nothing of theirs has reached the shopping list.
+
+    Who passes true: the chat tool only after the household said yes in
+    the conversation (the tool description and system prompt carry that
+    rule, the same way approve_weekly_plan's confirm_hard_conflicts does);
+    the plan-week screen's routes always, because that screen tells the
+    household what re-planning an approved week means before the questions
+    start and must not ask twice; onboarding's first-plan routes always,
+    because the reveal has no way to ask and a first plan is by definition
+    one asked for by a household with nothing approved yet.
 
     A caller that had to wait is handed the other one's plan ONLY when
     that generation actually succeeded and was asked for the same thing.
@@ -3094,6 +3127,27 @@ def generate_weekly_plan(
     an offset INTO the filing week — but the two must not be combined; see
     _generate_weekly_plan.
     """
+    # Ask before the lock and before any work: it is a read, and a caller
+    # that is about to be told "not without a yes" should not queue behind
+    # somebody else's generation to hear it. The window is computed the
+    # same way _generate_weekly_plan computes content_start_date; the
+    # validation of day_count and of period_start-vs-skip_days still
+    # belongs to _generate_weekly_plan, which is why an out-of-range
+    # day_count skips the preview rather than raising here.
+    if not confirm_takeover and 1 <= day_count <= tools.MAX_PERIOD_DAYS and not (period_start and skip_days):
+        content_start = period_start or (
+            tools._week_dates(week_start_date)[skip_days] if skip_days else week_start_date
+        )
+        at_risk = tools.preview_approved_takeover(content_start, day_count)
+        if at_risk:
+            return {
+                "status": "needs_confirmation",
+                "reason": "approved_plan_overlap",
+                "period_start_date": content_start,
+                "day_count": day_count,
+                **at_risk,
+            }
+
     key = (tools.household_id(), _week_lock_key(week_start_date))
     signature = (constraints_notes, day_count, intake_id, skip_days, period_start)
     lock = _week_generation_lock(key)

@@ -314,6 +314,61 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Planning over an APPROVED week asks first now. Branch
+  `worktree-replan-confirm`.** Found reviewing the ask-sheet branch (entry
+  below), pre-existing on main: a chat planning request that overlapped a
+  running week took its days over on the spot — meals gone, grocery lines
+  reversed — and nothing confirmed first. Root cause is not in
+  `retire_overlapping_plans`, which is doing its job (one plan per day is
+  Emily's rule, 2026-09-04, and it stays): it is that the chat tool
+  `generate_weekly_plan` had no way to carry a "yes", and the system prompt
+  told the model to route "plan my week" straight to it. **Emily's
+  decision (2026-09-11, live): keep the take-over, put a question in front
+  of it.** Same shape as `approve_weekly_plan`'s `confirm_hard_conflicts`,
+  deliberately: the tool gains `confirm_takeover` (default false); when the
+  period would take days off an APPROVED plan and the flag is not set, it
+  writes nothing and returns `needs_confirmation` with the exact days,
+  each day's meals, any days that would be left unplanned, a meal count, a
+  shopping-list count READ off the grocery ledger (bought and in-cart
+  lines excluded, same rule as the takeover; the card's own criterion is
+  that the number matches what then happens, and a test holds it to that)
+  and a `note` the assistant can say as-is ("I'd replace Thursday to
+  Sunday's dinners — Bean Chili, Salmon — and 11 things on your shopping
+  list would change. Go ahead?"). "Change", not "come off": a line a
+  surviving meal still needs is trimmed, not removed. The prompt rule matches the hard-conflict one word for word
+  where it matters: never on its own initiative, never on the first call,
+  only after a yes in this conversation. `tools.preview_approved_takeover`
+  is the read-only half and runs the REAL decision (`_plan_takeover`, with
+  no new plan yet), so the days it names are the days that would go —
+  including the orphaned side of a period strictly inside a week.
+  - **Drafts are still taken over silently.** Nothing of a draft's has
+    reached the shopping list; replacing one is what re-planning means.
+  - **The plan-week screen is not asked twice.** Its routes
+    (`/api/week/{week}/generate` and the stream) pass the flag themselves,
+    because plan-week.html already says what re-planning an approved week
+    means before the five minutes of questions. Onboarding's first-plan
+    routes pass it too: the reveal has no way to ask, and a first plan is
+    by definition one from a household with nothing approved.
+  - **Left alone, and worth Emily's eyes:** plan-week's own warning line
+    says "I'll add anything new — I won't take anything off", and that is
+    not what a takeover does to a still-`needed` line (bought and in-cart
+    lines are the ones left alone). Pre-existing copy, not this card. Also
+    left: that screen only warns about the SAME week's plan, so a long
+    period from it running into a different approved week is not warned
+    about there either. And the flag is honour-system from the model's
+    side, exactly as `confirm_hard_conflicts` is — the tool cannot see the
+    conversation to check a yes was actually given.
+  - `tests/test_replan_confirm.py`: 15 tests, 12 red on main (the
+    reproduction, the days/meals naming, the orphan case, the two count
+    tests, confirmed proceeds, approved-beside-draft, the schema/prompt
+    markers and the signature default); the 3 green on main are the
+    promises that nothing else changed (drafts, no-overlap, the plan-week
+    route). Six tests in `test_planning_periods.py` that generate over an
+    approved plan to test the takeover mechanics now pass
+    `confirm_takeover=True` — they test what happens after the yes.
+    2235 -> 2250, all green. Not verified
+    against a live model: the tool's refusal and the prompt rule are
+    certain, the model's choice to ask is inferred from the instruction.
 - **2026-09-11 — Stepping a dish down is ONE transaction now. Branch
   `overnight/drop-dish-atomic`.** The debt the review-stepper work filed
   rather than smuggled in (see its entry below, and `99db198` where it has

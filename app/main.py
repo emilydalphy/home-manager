@@ -989,7 +989,12 @@ def onboarding_generate_first_plan(req: FirstPlanRequest | None = None):
     req = req or FirstPlanRequest()
     try:
         week_start, day_count, period_start = _first_plan_window(req.start == "next_week")
-        plan = generate_weekly_plan(week_start, day_count=day_count, period_start=period_start)
+        # confirm_takeover=True: a first plan is asked for by a household
+        # with nothing approved yet, and the reveal has no way to ask. See
+        # generate_weekly_plan for who else passes it and why.
+        plan = generate_weekly_plan(
+            week_start, day_count=day_count, period_start=period_start, confirm_takeover=True,
+        )
     except AssistantUnavailableError as e:
         logger.warning("First-plan generation hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
@@ -1775,12 +1780,19 @@ def generate_week(week_start: str, req: WeekGenerateRequest):
     """
     period_start, day_count = _validated_period(week_start, req)
     try:
+        # confirm_takeover=True: the plan-week screen already tells the
+        # household what re-planning an approved week means before the
+        # questions start (plan-week.html's `plan_exists` line), so the
+        # yes has been given by the time this is called — asking again
+        # here would be asking twice. Chat is the path that asks (see
+        # generate_weekly_plan).
         plan = generate_weekly_plan(
             week_start,
             constraints_notes=req.constraints_notes,
             intake_id=req.intake_id,
             day_count=day_count,
             period_start=period_start,
+            confirm_takeover=True,
         )
     except AssistantUnavailableError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -1848,9 +1860,13 @@ def _stream_week_generation(
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
         try:
+            # confirm_takeover=True for the same reason as /generate: the
+            # screens that stream (plan-week, onboarding's reveal) have
+            # already said what re-planning costs, or have nothing to say it
+            # about.
             plan = generate_weekly_plan(
                 week_start, constraints_notes=constraints_notes, intake_id=intake_id,
-                day_count=day_count, period_start=period_start,
+                day_count=day_count, period_start=period_start, confirm_takeover=True,
             )
             events.put(("done", plan))
         except AssistantUnavailableError as e:
