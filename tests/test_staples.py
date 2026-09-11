@@ -514,6 +514,12 @@ def test_grocery_screen_source_markers():
         assert needle in SHELL_JS, needle
     for cls in (".gro-staple-line", ".gro-staple-btn", ".gro-staples", ".gro-staple-row", ".gro-rowmenu-staple"):
         assert cls in SHELL_CSS, cls
-    # Rule 9: no literal colours in the new CSS.
-    tail = SHELL_CSS[SHELL_CSS.index("---------- Staples (app/tools/staples.py)"):]
-    assert "#" not in tail.replace("§", ""), "a literal colour crept into the staples CSS"
+    # Rule 9: no literal colours in the new CSS. Only the staples block —
+    # other features append their own CSS after it — and only hex colours,
+    # not id selectors.
+    import re
+
+    start = SHELL_CSS.index("---------- Staples (app/tools/staples.py)")
+    end = SHELL_CSS.find("/* ---------- ", start + 1)
+    block = SHELL_CSS[start:end if end != -1 else None]
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "a literal colour crept into the staples CSS"
