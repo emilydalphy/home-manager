@@ -420,6 +420,7 @@ def add_grocery_item(
     added_by: str = "user",
     source_weekly_plan_id: int | None = None,
     quantity_mode: str = "sum",
+    conn=None,
 ) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
@@ -443,9 +444,20 @@ def add_grocery_item(
     quantities rather than adding them, which is how a sealed package a
     whole week draws on lands once instead of once per meal — see
     _greater_of_quantity and recipes._add_recipe_ingredients_for_entries.
+
+    `conn` is for the grocery ingest and is not part of the assistant-facing
+    API, the same arrangement _reverse_meal_grocery_contributions has:
+    swap_meal_in_plan buys the new meal's ingredients inside ONE write
+    transaction, and every line that ingest lands has to be written on that
+    connection — a second connection writing while the first holds the
+    write lock is the "database is locked" trap. Given a connection this
+    reads and writes on it and neither commits nor closes; left unset,
+    every other call site behaves exactly as before.
     """
     quantity = _quantities._normalize_grocery_quantity(quantity or "")
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     # Compared in Python rather than SQL because the comparison is a
     # normalised key, not a column value. The 'needed' list is a shopping
     # list -- tens of rows -- so reading it to find one match is cheaper
@@ -486,22 +498,24 @@ def add_grocery_item(
             (merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
              preferred_store, existing["id"]),
         )
-        conn.commit()
         item_id = existing["id"]
         # The name already on the list, not the one just asked for: the
         # row keeps its own wording, so saying "item" back means the line
         # the shopper will actually see.
         item_name = existing["item"]
-        conn.close()
+        if own_conn:
+            conn.commit()
+            conn.close()
         return {"item_id": item_id, "item": item_name, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
 
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (household_id(), item, quantity, category, added_by, source_weekly_plan_id, preferred_store),
     )
-    conn.commit()
     item_id = cur.lastrowid
-    conn.close()
+    if own_conn:
+        conn.commit()
+        conn.close()
     return {"item_id": item_id, "item": item, "quantity": quantity, "merged": False, "units_reconciled": True}
 
 

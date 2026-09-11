@@ -165,17 +165,31 @@ def _attendance_dict(rows, row, date_str: str, slot: str) -> dict:
     }
 
 
-def get_slot_attendance(date_str: str, slot: str) -> dict:
-    """Who is at one meal — the stored row, or the implicit everyone's-home default."""
+def get_slot_attendance(date_str: str, slot: str, conn=None) -> dict:
+    """
+    Who is at one meal — the stored row, or the implicit everyone's-home
+    default.
+
+    `conn` is for the grocery ingest and is not part of the assistant-facing
+    API: swap_meal_in_plan buys the new meal's ingredients inside ONE write
+    transaction, and the headcount that scales them has to be read on that
+    same connection rather than on one of its own — a nested get_conn inside
+    an open write transaction is the "database is locked" trap
+    atomic-period-takeover wrote down. Given a connection this only reads on
+    it and never closes it; left unset it behaves exactly as before.
+    """
     date.fromisoformat(date_str)
     _validate_slot(slot)
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     rows = _member_rows(conn)
     row = conn.execute(
         "SELECT * FROM slot_attendance WHERE household_id = ? AND date = ? AND slot = ?",
         (household_id(), date_str, slot),
     ).fetchone()
-    conn.close()
+    if own_conn:
+        conn.close()
     return _attendance_dict(rows, row, date_str, slot)
 
 
@@ -453,7 +467,7 @@ def headcount_for_slot(date_str: str, slot: str) -> int:
     return get_slot_attendance(date_str, slot)["headcount"]
 
 
-def grocery_scale_factor(date_str: str, slot: str) -> float:
+def grocery_scale_factor(date_str: str, slot: str, conn=None) -> float:
     """
     What to multiply this meal's ingredient quantities by, so the shopping
     matches the table.
@@ -477,13 +491,13 @@ def grocery_scale_factor(date_str: str, slot: str) -> float:
     contributes nothing to the list at all, so its factor is never used —
     and 0.0 would be a trap for any future caller that did use it).
     """
-    att = get_slot_attendance(date_str, slot)
+    att = get_slot_attendance(date_str, slot, conn=conn)
     if not att["explicit"] or att["household_size"] == 0 or att["nobody_home"]:
         return 1.0
     return att["headcount"] / att["household_size"]
 
 
-def servings_scale_factor(date_str: str, slot: str, default_servings: int | None) -> float:
+def servings_scale_factor(date_str: str, slot: str, default_servings: int | None, conn=None) -> float:
     """
     What to multiply a recipe's per-portion quantities by so the shop feeds
     the people who will actually eat THIS meal — the factor the grocery
@@ -513,11 +527,14 @@ def servings_scale_factor(date_str: str, slot: str, default_servings: int | None
     household that has told the app nothing ends up with a quarter of a
     dinner. A nobody-home slot keeps grocery_scale_factor's own convention
     (1.0, never used, never 0.0).
+
+    `conn` rides through to get_slot_attendance for the same one caller and
+    the same reason — see its docstring.
     """
-    base = grocery_scale_factor(date_str, slot)
+    base = grocery_scale_factor(date_str, slot, conn=conn)
     if not default_servings or default_servings <= 0:
         return base
-    att = get_slot_attendance(date_str, slot)
+    att = get_slot_attendance(date_str, slot, conn=conn)
     if att["household_size"] == 0 or att["nobody_home"]:
         return base
     return base * att["household_size"] / default_servings

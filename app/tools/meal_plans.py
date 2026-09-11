@@ -24,6 +24,7 @@ def plan_meal(
     component_category: str | None = None,
     reasoning: str = "",
     derived_from: dict | None = None,
+    conn=None,
 ) -> dict:
     """
     Schedule a meal for a date. `meal` can be a saved recipe name or a
@@ -65,8 +66,20 @@ def plan_meal(
     later instead of needing to be worked out again on demand; omit it for
     genuinely one-off chat requests where there's no real "why" beyond the
     user asking for it.
+
+    `conn` is for one caller and is not part of the assistant-facing API,
+    the same arrangement plan_slot_open and
+    _reverse_meal_grocery_contributions have: swap_meal_in_plan deletes
+    the meal it is replacing and writes this one in its place, and those
+    have to be ONE transaction or the gap between them is a day with no
+    row at all — the one state schema.sql says can never exist. Given a
+    connection, the row, the recipe counters and the grocery ingest are
+    all written on it and nothing here commits or closes; the caller owns
+    both. Left unset, every other call site behaves exactly as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     # weekly_plan_id arrives from the caller — including, potentially, from
     # the chat model, whose tool input is passed through as **kwargs. The
     # row itself is stamped with the current household below, but several
@@ -82,7 +95,8 @@ def plan_meal(
             (weekly_plan_id, household_id()),
         ).fetchone()
         if not owner:
-            conn.close()
+            if own_conn:
+                conn.close()
             raise ValueError(f"No weekly plan {weekly_plan_id} in this household.")
         # A meal can only be attached to a plan on a day that plan actually
         # covers. Two separate things go wrong without this, and the
@@ -106,7 +120,8 @@ def plan_meal(
         if component_category is None:
             period_start, period_days = _weekly_plan.plan_period(owner)
             if not (period_start <= meal_date <= _weekly_plan.period_end_date(period_start, period_days)):
-                conn.close()
+                if own_conn:
+                    conn.close()
                 raise ValueError(
                     f"{meal_date} isn't in weekly plan {weekly_plan_id}'s period "
                     f"({period_start} for {period_days} days). Plan the meal without a "
@@ -126,7 +141,8 @@ def plan_meal(
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'planned', ?)",
         (household_id(), meal_date, slot, recipe_id, freeform, json.dumps(entry_food_groups), weekly_plan_id, component_category, reasoning, json.dumps(derived_from or {})),
     )
-    conn.commit()
+    if own_conn:
+        conn.commit()
     entry_id = cur.lastrowid
 
     if recipe:
@@ -134,10 +150,12 @@ def plan_meal(
             "UPDATE recipes SET times_cooked = times_cooked + 1, last_cooked_date = ? WHERE id = ?",
             (meal_date, recipe["id"]),
         )
-        conn.commit()
+        if own_conn:
+            conn.commit()
 
     recipe_ingredients = json.loads(recipe["ingredients_json"]) if recipe else []
-    conn.close()
+    if own_conn:
+        conn.close()
 
     added_items = []
     already_have = []
@@ -145,6 +163,9 @@ def plan_meal(
         added_items, already_have = _recipes._add_recipe_ingredients_to_grocery_list(
             entry_id, recipe_ingredients, weekly_plan_id,
             default_servings=recipe["default_servings"],
+            # On the caller's transaction when there is one; on the
+            # ingest's own connections, exactly as before, when there isn't.
+            conn=None if own_conn else conn,
         )
 
     missing = [g for g in ["protein", "carb", "vegetable"] if g not in entry_food_groups]

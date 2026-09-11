@@ -1014,28 +1014,16 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
         )
 
     was_open = row["slot_state"] == "open"
-    # If the outgoing entry was reheating an earlier night's batch, tell
-    # that source before the row is gone — see _unlink_leftover_target. An
-    # open slot never links to anything, but this also serves the "change
-    # my mind about an already planned slot" path below.
-    _unlink_leftover_target(weekly_plan_id, row["id"])
-    # Reverse anything the outgoing entry contributed before deleting it —
-    # the same care swap_meal_in_plan takes. An open slot has contributed
-    # nothing, but this also serves the "change my mind about an already
-    # planned slot" path.
-    _grocery._reverse_meal_grocery_contributions(row["id"])
-    conn = get_conn()
-    conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (row["id"],))
-    conn.commit()
-    conn.close()
-
-    result = _meal_plans.plan_meal(
-        meal_date, choice.strip(), slot=slot, weekly_plan_id=weekly_plan_id,
-        # Mirrors the plan's approved state, exactly as a swap does: settling
-        # a slot in a draft leaves the shopping list alone, settling one in
-        # an already-approved week keeps the list in step. Otherwise the
-        # list would quietly lack the one meal the household chose by hand.
-        add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
+    # The same one-transaction write a swap uses (_replace_slot_entries):
+    # tell any source this row was reheating from, reverse whatever it
+    # contributed to the list, delete it, and plan the choice in its place
+    # — all or nothing. An open slot links to nothing and has bought
+    # nothing, but the "change my mind about an already planned slot" path
+    # comes through here too. The grocery list mirrors the plan's approved
+    # state exactly as a swap does: settling a slot in a draft leaves the
+    # list alone, settling one in an approved week keeps it in step.
+    result = _replace_slot_entries(
+        weekly_plan_id, [row["id"]], meal_date, slot, choice.strip(),
         reasoning="you chose this one",
         derived_from={"constraint": "settled_by_household", "answered": row["open_reason"] or ""},
     )
@@ -1413,7 +1401,7 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
     return None
 
 
-def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: int) -> None:
+def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: int, conn=None) -> None:
     """
     Redo an already-approved leftover SOURCE's grocery contribution — and
     every OTHER already-approved entry in the plan that cooks the SAME
@@ -1451,14 +1439,25 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     A no-op for a freeform source: nothing structured to rescale, and a
     freeform meal never reaches the grocery list to begin with (see
     plan_meal).
+
+    `conn` is for one caller (swap_meal_in_plan, through
+    _replace_slot_entries) and is not part of the assistant-facing API.
+    Given a connection every read, reversal and re-ingest here runs on it
+    and nothing commits or closes — the whole grocery ingest tree takes a
+    connection now, which is what lets this join the swap's one
+    transaction where drop_dish_from_day (written before it did) still
+    runs it after its commit. Left unset it behaves exactly as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     source = conn.execute(
         "SELECT recipe_id, weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (source_entry_id, household_id()),
     ).fetchone()
     if not source or not source["recipe_id"]:
-        conn.close()
+        if own_conn:
+            conn.close()
         return
     entries = conn.execute(
         "SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings, mpe.sides_json "
@@ -1481,13 +1480,15 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
             source_entry_id,
         ),
     ).fetchall()
-    conn.close()
+    if own_conn:
+        conn.close()
     if not entries:
         return
 
+    shared = None if own_conn else conn
     for entry in entries:
-        _grocery._reverse_meal_grocery_contributions(entry["id"])
-    buffer = _recipes.WeekGroceryBuffer(source["weekly_plan_id"])
+        _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared)
+    buffer = _recipes.WeekGroceryBuffer(source["weekly_plan_id"], conn=shared)
     _ingest_recipe_group_and_sides(entries, source["weekly_plan_id"], buffer)
     buffer.flush()
 
@@ -3827,6 +3828,11 @@ def _ingest_recipe_group_and_sides(
     replayed after a leftover source's confirmed batch changes size), so
     the recipe-grouping-plus-sides shape approve_weekly_plan defines for a
     first approval lives in one place rather than drifting across copies.
+
+    The buffer carries the connection, when there is one: a buffer built
+    with `conn=` (inside swap_meal_in_plan's transaction) puts every read
+    and write of this ingest on it — see
+    recipes._add_recipe_ingredients_for_entries.
     """
     by_recipe: dict[int, dict] = {}
     for entry in entries:
@@ -3860,7 +3866,7 @@ def _ingest_recipe_group_and_sides(
     return {"groceries_added": added_items, "already_have_skipped": already_have}
 
 
-def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
+def _reingest_unlinked_entries(weekly_plan_id: int, conn=None) -> dict:
     """
     Buy, for the first time, whatever this approved plan's entries have
     never actually contributed to the grocery list — swap_meal_in_plan's
@@ -3875,14 +3881,21 @@ def _reingest_unlinked_entries(weekly_plan_id: int) -> dict:
     whole pass, so amounts that land on the same line still consolidate
     and round together rather than each being bought — and rounded — on
     its own.
+
+    `conn` is for swap_meal_in_plan (through _replace_slot_entries), which
+    runs this inside its one transaction; given a connection nothing here
+    commits or closes. Left unset it behaves exactly as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
-    conn.close()
+    if own_conn:
+        conn.close()
     if not entries:
         return {"groceries_added": [], "already_have_skipped": []}
 
-    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
+    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=None if own_conn else conn)
     result = _ingest_recipe_group_and_sides(entries, weekly_plan_id, buffer)
     buffer.flush()
     return result
@@ -4239,6 +4252,113 @@ def approve_weekly_plan(
     }
 
 
+def _replace_slot_entries(
+    weekly_plan_id: int,
+    old_entry_ids: list[int],
+    meal_date: str,
+    slot: str,
+    new_meal: str,
+    *,
+    food_groups: list[str] | None = None,
+    reasoning: str = "",
+    derived_from: dict | None = None,
+) -> dict:
+    """
+    Take `old_entry_ids` off a day and put `new_meal` in their place, as
+    ONE transaction — the write behind swap_meal_in_plan and
+    resolve_open_slot, and through the first of those behind add_dish_day
+    (the Check-the-week "+"), every chat swap, swap_in_place, and the
+    generation's snack repair.
+
+    It used to be four commits in a row: unlink any leftover chain, reverse
+    the old meal's groceries, DELETE the row, then plan_meal to INSERT the
+    replacement and buy for it. A failure anywhere after the delete left a
+    day with no row at all — the one state schema.sql says can never exist,
+    and the exact shape drop_dish_from_day was fixed for the same morning
+    (see its entry in CLAUDE.md, 2026-09-11). Now everything from the
+    unlink to the last grocery line runs on one connection and commits
+    once; any exception rolls the lot back, so the day is either exactly
+    as it was or exactly as asked.
+
+    Every step joins. The one drop_dish_from_day had to lift out — the
+    leftover source's grocery rescale — re-enters through the recipe
+    ingest tree, and that tree takes a connection now
+    (recipes._add_recipe_ingredients_for_entries and everything under it),
+    so here it runs inside, before the old row is reversed and deleted, in
+    the same order the self-owned path always ran it. So does the re-buy
+    for nights that were eating off a swapped-out source
+    (_reingest_unlinked_entries). Nothing here opens a second connection —
+    tests/test_swap_atomic.py counts them — because SQLite gives one
+    writer at a time and a nested get_conn inside this transaction would
+    die of "database is locked".
+
+    The plan's approved state — what decides whether the grocery list is
+    live at all — is read ONCE, on this same connection, before anything is
+    written; _weekly_plan_is_approved would open a connection of its own,
+    which is exactly the nested read this rules out.
+    """
+    from . import leftovers as _leftovers
+
+    conn = get_conn()
+    try:
+        plan_row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        approved = bool(plan_row) and plan_row["status"] == "approved"
+        # Asked before anything is torn down, on the transaction's own
+        # connection: once the old entry is deleted there is nothing left
+        # to ask whether it used to feed other nights' leftovers.
+        sources = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)["sources"]
+        was_a_leftovers_source = any(old_id in sources for old_id in old_entry_ids)
+        for old_id in old_entry_ids:
+            # If the OUTGOING entry was itself a reheat night, its source's
+            # make_double_for/make_double_note still names it after this
+            # deletes it — see _unlink_leftover_target. Handed a connection
+            # it defers the source's grocery rescale to us, and on an
+            # approved week that happens right here, inside the transaction.
+            rescale_source_id = _unlink_leftover_target(weekly_plan_id, old_id, conn=conn)
+            if rescale_source_id is not None and approved:
+                _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
+            _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
+        # By id, not by (date, slot): a slot legitimately holding two
+        # snacks must lose only the one being replaced. With no old_meal
+        # this is every row in the slot, which is exactly what the by-slot
+        # DELETE this replaced did.
+        conn.executemany(
+            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            [(old_id, household_id()) for old_id in old_entry_ids],
+        )
+        result = _meal_plans.plan_meal(
+            meal_date, new_meal, slot=slot, food_groups=food_groups,
+            weekly_plan_id=weekly_plan_id, reasoning=reasoning, derived_from=derived_from,
+            # Only put the new meal's ingredients on the list if this week
+            # has already been approved — approval is what put the old
+            # meal's ingredients there in the first place, and the reversal
+            # above just took them back off. Swapping inside a
+            # still-unapproved draft leaves the grocery list alone, exactly
+            # as generating it did.
+            add_ingredients_to_grocery_list=approved,
+            conn=conn,
+        )
+        # See swap_meal_in_plan's docstring: breaking a confirmed chain
+        # strands the former leftover night(s) with no grocery contribution
+        # of their own. Only worth the extra query when the swapped entry
+        # actually was a confirmed source and the plan is one whose list is
+        # live at all — the overwhelming majority of swaps are neither.
+        if was_a_leftovers_source and approved:
+            reingested = _reingest_unlinked_entries(weekly_plan_id, conn=conn)
+            result["reingested_groceries_added"] = reingested["groceries_added"]
+            result["reingested_already_have_skipped"] = reingested["already_have_skipped"]
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return result
+
+
 def swap_meal_in_plan(
     weekly_plan_id: int,
     meal_date: str,
@@ -4293,8 +4413,6 @@ def swap_meal_in_plan(
     again, reached from the other side. Given both, the id wins; it is the
     more precise of the two.
     """
-    from . import leftovers as _leftovers
-
     if slot not in DAY_SLOTS:
         raise ValueError(
             f"'{slot}' is not a slot a day has — expected one of {', '.join(DAY_SLOTS)}."
@@ -4324,54 +4442,16 @@ def swap_meal_in_plan(
                 f"No '{old_meal}' in the {slot} slot on {meal_date} — that slot holds {have}."
             )
         old_entries = matched
-    # Checked before anything is torn down: once the old entry is deleted,
-    # there is nothing left in the DB to ask whether it used to feed other
-    # nights' leftovers.
-    was_a_leftovers_source = any(
-        row["id"] in _leftovers.plan_leftover_chains(weekly_plan_id)["sources"] for row in old_entries
-    )
-    for row in old_entries:
-        # The reverse direction from was_a_leftovers_source above: if the
-        # OUTGOING entry was itself a reheat night, its source's
-        # make_double_for/make_double_note still names it after this swap
-        # deletes it — see _unlink_leftover_target.
-        _unlink_leftover_target(weekly_plan_id, row["id"])
-        _grocery._reverse_meal_grocery_contributions(row["id"])
 
-    conn = get_conn()
-    # By id, not by (date, slot): a slot legitimately holding two snacks
-    # must lose only the one being replaced. With no old_meal this is
-    # every row in the slot, which is exactly what the by-slot DELETE this
-    # replaced did.
-    conn.executemany(
-        "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-        [(row["id"], household_id()) for row in old_entries],
-    )
-    conn.commit()
-    conn.close()
-    result = _meal_plans.plan_meal(
-        meal_date, new_meal, slot=slot, food_groups=food_groups, weekly_plan_id=weekly_plan_id,
+    result = _replace_slot_entries(
+        weekly_plan_id, [row["id"] for row in old_entries], meal_date, slot, new_meal,
+        food_groups=food_groups,
         # Blank for a swap the household asked for in chat — there is no
         # "why this?" beyond their asking, and inventing one would be the
         # plan explaining itself back to the person who chose it. Set by
         # an automatic repair, which does owe the card a reason.
         reasoning=reasoning,
-        # Only put the new meal's ingredients on the list if this week has
-        # already been approved — approval is what put the old meal's
-        # ingredients there in the first place, and the reversal above just
-        # took them back off. Swapping inside a still-unapproved draft
-        # leaves the grocery list alone, exactly as generating it did.
-        add_ingredients_to_grocery_list=_weekly_plan_is_approved(weekly_plan_id),
     )
-    # See the docstring above: breaking a confirmed chain strands the
-    # former leftover night(s) with no grocery contribution of their own.
-    # Only worth the extra query when the swapped entry actually was a
-    # confirmed source and the plan is one whose list is live at all —
-    # the overwhelming majority of swaps are neither.
-    if was_a_leftovers_source and _weekly_plan_is_approved(weekly_plan_id):
-        reingested = _reingest_unlinked_entries(weekly_plan_id)
-        result["reingested_groceries_added"] = reingested["groceries_added"]
-        result["reingested_already_have_skipped"] = reingested["already_have_skipped"]
     # The same shared verdict generation is held to (see
     # taste_verdict.dish_verdict), for the dish CHAT just picked and the
     # people actually eating that night. Reported, never enforced: a swap

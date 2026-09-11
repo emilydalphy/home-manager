@@ -74,7 +74,7 @@ def _resolve(links_to: str, by_date_slot: dict, by_id: dict):
     return None
 
 
-def plan_leftover_chains(weekly_plan_id: int) -> dict:
+def plan_leftover_chains(weekly_plan_id: int, conn=None) -> dict:
     """
     Every confirmed cook-once-eat-twice chain on this plan.
 
@@ -89,8 +89,20 @@ def plan_leftover_chains(weekly_plan_id: int) -> dict:
     Targets are sorted by (date, slot) so a source that feeds two nights
     always reads in the order the nights actually fall. Both maps are
     empty for a plan with no chains, which is most plans.
+
+    `conn` is for the grocery ingest and is not part of the assistant-facing
+    API: recipes._add_recipe_ingredients_for_entries asks this whether the
+    meal it is buying for is a reheat, and when that runs inside
+    swap_meal_in_plan's one write transaction the plan has to be read on
+    that same connection — both so the read sees the rows the transaction
+    has just written and deleted, and because a nested get_conn inside an
+    open write transaction is the "database is locked" trap. Given a
+    connection this only reads on it and never closes it; left unset it
+    behaves exactly as before.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.recipe_id, mpe.freeform_meal,
@@ -101,7 +113,8 @@ def plan_leftover_chains(weekly_plan_id: int) -> dict:
         """,
         (weekly_plan_id, household_id()),
     ).fetchall()
-    conn.close()
+    if own_conn:
+        conn.close()
 
     by_date_slot = {(r["date"], r["slot"]): r for r in rows}
     by_id = {r["id"]: r for r in rows}
@@ -162,7 +175,7 @@ def plan_leftover_chains(weekly_plan_id: int) -> dict:
     return {"sources": sources, "leftovers": leftovers}
 
 
-def eaters_at(date_str: str, slot: str) -> int:
+def eaters_at(date_str: str, slot: str, conn=None) -> int:
     """
     How many people this one meal actually feeds — attendance's headcount
     (members present plus guests). get_slot_attendance already falls back
@@ -172,12 +185,12 @@ def eaters_at(date_str: str, slot: str) -> int:
     for; callers treat 0 as "don't scale" rather than "cook nothing".
     """
     try:
-        return int(_attendance.get_slot_attendance(date_str, slot)["headcount"] or 0)
+        return int(_attendance.get_slot_attendance(date_str, slot, conn=conn)["headcount"] or 0)
     except Exception:
         return 0
 
 
-def batch_for_source(source: dict) -> dict:
+def batch_for_source(source: dict, conn=None) -> dict:
     """
     What one source night actually has to cook: its own table plus every
     night eating its leftovers.
@@ -186,10 +199,13 @@ def batch_for_source(source: dict) -> dict:
     `servings` is 0 when nothing could be counted (no members on record) —
     the signal to leave the recipe's own quantities alone rather than
     scale to nothing.
+
+    `conn` rides through to the attendance reads for the grocery ingest —
+    see plan_leftover_chains.
     """
-    cook_eaters = eaters_at(source["date"], source["slot"])
+    cook_eaters = eaters_at(source["date"], source["slot"], conn=conn)
     targets = [
-        {**t, "eaters": eaters_at(t["date"], t["slot"])}
+        {**t, "eaters": eaters_at(t["date"], t["slot"], conn=conn)}
         for t in source["targets"]
     ]
     total = cook_eaters + sum(t["eaters"] for t in targets)

@@ -1159,22 +1159,29 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     return {"name": recipe_name, "temporarily_excluded": excluded}
 
 
-def _record_grocery_link(entry_id: int, item: str, grocery_item_id: int, qty: str) -> None:
+def _record_grocery_link(entry_id: int, item: str, grocery_item_id: int, qty: str, conn=None) -> None:
     """
     Record exactly what THIS meal contributed to that grocery line, before
     it got merged with anything else already there — see
     grocery._reverse_meal_grocery_contributions, which is what lets
     swap_meal_in_plan/swap_component_in_plan/clear_weekly_plan take this
     back out precisely if the meal is later swapped or dropped.
+
+    Given a `conn` this writes on it and neither commits nor closes (the
+    ingest running inside swap_meal_in_plan's one transaction — see
+    _add_recipe_ingredients_for_entries); left unset it commits on a
+    connection of its own, exactly as before.
     """
-    link_conn = get_conn()
+    own_conn = conn is None
+    link_conn = get_conn() if own_conn else conn
     link_conn.execute(
         "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
         "VALUES (?, ?, ?, ?, ?)",
         (household_id(), entry_id, grocery_item_id, item, _quantities._strip_prep_descriptor(qty or "")),
     )
-    link_conn.commit()
-    link_conn.close()
+    if own_conn:
+        link_conn.commit()
+        link_conn.close()
 
 
 _MEASURABLE_UNITS = {u for group in _quantities._UNIT_CONVERSION_GROUPS for u in group}
@@ -1290,8 +1297,13 @@ class WeekGroceryBuffer:
     decision the grouped path already makes.
     """
 
-    def __init__(self, weekly_plan_id: int | None):
+    def __init__(self, weekly_plan_id: int | None, conn=None):
         self.weekly_plan_id = weekly_plan_id
+        # The connection every flushed line is written on, when the caller
+        # is holding one open transaction (swap_meal_in_plan). None means
+        # each add_grocery_item / _record_grocery_link commits on its own,
+        # exactly as before.
+        self.conn = conn
         # (merge key, unit, note) -> the one grocery line that will become.
         # Two recipes writing the same item in units that don't reconcile
         # ("2 cups beans" and "1 lb beans") stay two entries here and meet
@@ -1316,34 +1328,37 @@ class WeekGroceryBuffer:
             qty = _quantities._with_note(_quantities._format_quantity(rounded, unit), line["note"])
             add_result = _grocery.add_grocery_item(
                 line["item"], quantity=qty, category=line["category"], added_by="ai",
-                source_weekly_plan_id=self.weekly_plan_id,
+                source_weekly_plan_id=self.weekly_plan_id, conn=self.conn,
             )
             for entry_id, share in zip(entry_ids, _apportion(rounded, shares, quantum)):
                 _record_grocery_link(
                     entry_id, line["item"], add_result["item_id"],
-                    _quantities._format_quantity(share, unit),
+                    _quantities._format_quantity(share, unit), conn=self.conn,
                 )
         self._lines.clear()
 
 
 def _add_recipe_ingredients_to_grocery_list(
     entry_id: int, recipe_ingredients: list[dict], weekly_plan_id: int | None,
-    default_servings: int | None = None,
+    default_servings: int | None = None, conn=None,
 ) -> tuple[list[str], list[str]]:
     """
     One planned meal's ingredients onto the grocery list — the single-meal
     door onto _add_recipe_ingredients_for_entries below, which is where
     the behaviour lives. Used by plan_meal and the swap paths, where there
-    genuinely is only one meal to account for.
+    genuinely is only one meal to account for. `conn` rides straight
+    through — see below.
     """
     return _add_recipe_ingredients_for_entries(
-        [entry_id], recipe_ingredients, weekly_plan_id, default_servings=default_servings
+        [entry_id], recipe_ingredients, weekly_plan_id, default_servings=default_servings,
+        conn=conn,
     )
 
 
 def _add_recipe_ingredients_for_entries(
     entry_ids: list[int], recipe_ingredients: list[dict], weekly_plan_id: int | None,
     default_servings: int | None = None, buffer: "WeekGroceryBuffer | None" = None,
+    conn=None,
 ) -> tuple[list[str], list[str]]:
     """
     Put ONE RECIPE's ingredients onto the grocery list for every meal in
@@ -1459,9 +1474,30 @@ def _add_recipe_ingredients_for_entries(
     reversing and re-adding a partial contribution, which is the
     swap-a-meal machinery, not this function's. Worth doing; deliberately
     not smuggled into this change.
+
+    `conn` is for one caller and is not part of the assistant-facing API:
+    swap_meal_in_plan takes the old meal off the plan and the list and puts
+    the new one on both inside ONE write transaction, so this whole ingest
+    — the entry reads, the chain check, the attendance reads, the inventory
+    read, every add_grocery_item and every ledger row — runs on that
+    connection and commits nothing of its own. SQLite gives one writer at
+    a time, so any of these opening its own connection inside that
+    transaction would sit behind its lock and die of "database is locked";
+    and the entry being bought for is one that transaction has only just
+    inserted, so any read on another connection would not even find it.
+    A `buffer` handed down already carries its connection (see
+    WeekGroceryBuffer), and the two must agree. Left unset, every other
+    call site — plan_meal in chat, approve_weekly_plan — behaves exactly as
+    before.
     """
     from . import attendance as _attendance
     from . import leftovers as _leftovers
+
+    if conn is None and buffer is not None:
+        conn = buffer.conn
+    elif buffer is not None and buffer.conn is not None and buffer.conn is not conn:
+        raise ValueError("The grocery buffer and the ingest are on different connections.")
+    own_conn = conn is None
 
     # Each meal's own headcount factor, so attendance can say how many it
     # feeds. A missing entry (an ad hoc add, a row since deleted) simply
@@ -1474,7 +1510,7 @@ def _add_recipe_ingredients_for_entries(
     # brings every meal that cooks this recipe through in one call, so the
     # per-entry query the single-meal path used to do would now repeat
     # itself for no reason.
-    entry_conn = get_conn()
+    entry_conn = get_conn() if own_conn else conn
     scale_for_entry: dict[int, float] = {}
     contributing_ids: list[int] = []
     chains_by_plan: dict[int, dict] = {}
@@ -1484,13 +1520,15 @@ def _add_recipe_ingredients_for_entries(
             (entry_id, household_id()),
         ).fetchone()
         scale = (
-            _attendance.servings_scale_factor(entry_row["date"], entry_row["slot"], default_servings)
+            _attendance.servings_scale_factor(
+                entry_row["date"], entry_row["slot"], default_servings, conn=entry_conn,
+            )
             if entry_row else 1.0
         )
         if entry_row and entry_row["weekly_plan_id"]:
             plan_id = entry_row["weekly_plan_id"]
             if plan_id not in chains_by_plan:
-                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id)
+                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id, conn=entry_conn)
             chains = chains_by_plan[plan_id]
             # A reheat night buys nothing and links to nothing — it drops
             # out of the group entirely rather than returning early, since
@@ -1499,12 +1537,13 @@ def _add_recipe_ingredients_for_entries(
                 continue
             source = chains["sources"].get(entry_id)
             if source:
-                batch = _leftovers.batch_for_source(source)
+                batch = _leftovers.batch_for_source(source, conn=entry_conn)
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
                     scale *= batch["servings"] / batch["cook_eaters"]
         contributing_ids.append(entry_id)
         scale_for_entry[entry_id] = scale
-    entry_conn.close()
+    if own_conn:
+        entry_conn.close()
     # Every meal in this group was a reheat, so the group buys nothing —
     # the same answer the single-meal path gives for a lone leftovers entry.
     if not contributing_ids:
@@ -1515,7 +1554,7 @@ def _add_recipe_ingredients_for_entries(
     # ("add flour to the list"), the agent checks get_inventory itself and
     # asks first instead (see system prompt) since there's a person there
     # to actually ask.
-    inv_conn = get_conn()
+    inv_conn = get_conn() if own_conn else conn
     have_names = {
         row["item"].strip().lower()
         for row in inv_conn.execute(
@@ -1523,7 +1562,8 @@ def _add_recipe_ingredients_for_entries(
             (household_id(),),
         ).fetchall()
     }
-    inv_conn.close()
+    if own_conn:
+        inv_conn.close()
 
     added_items: list[str] = []
     already_have: list[str] = []
@@ -1539,7 +1579,7 @@ def _add_recipe_ingredients_for_entries(
     # only one code path.
     own_buffer = buffer is None
     if own_buffer:
-        buffer = WeekGroceryBuffer(weekly_plan_id)
+        buffer = WeekGroceryBuffer(weekly_plan_id, conn=conn)
 
     for ing in recipe_ingredients:
         if ing["item"].strip().lower() in have_names:
@@ -1554,10 +1594,10 @@ def _add_recipe_ingredients_for_entries(
         if _quantities.package_unit(raw_qty):
             add_result = _grocery.add_grocery_item(
                 ing["item"], quantity=raw_qty, category=category, added_by="ai",
-                source_weekly_plan_id=weekly_plan_id, quantity_mode="max",
+                source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
             )
             for entry_id in contributing_ids:
-                _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
+                _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
         else:
             # Split exactly the way _normalize_grocery_quantity does, so
             # the amount and the note that rides with it ("1 bag (2 lb),
@@ -1581,9 +1621,9 @@ def _add_recipe_ingredients_for_entries(
                 for entry_id in contributing_ids:
                     add_result = _grocery.add_grocery_item(
                         ing["item"], quantity=raw_qty, category=category,
-                        added_by="ai", source_weekly_plan_id=weekly_plan_id,
+                        added_by="ai", source_weekly_plan_id=weekly_plan_id, conn=conn,
                     )
-                    _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty)
+                    _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
         # Once per ingredient, not once per meal: this is the list of
         # NAMES that landed on the shopping list, and approve_weekly_plan
         # counts it distinctly anyway.

@@ -17,6 +17,11 @@ everything the drop can touch, and a count of how many connections the
 drop opens, because a nested get_conn inside an open write transaction
 fails as an intermittent "database is locked" rather than as anything a
 deterministic test would catch.
+
+The last test in this file was a characterisation of the "+" on the same
+screen having the same seam one level down, in swap_meal_in_plan, and NOT
+being fixed here. It was inverted when that seam was closed (see
+tests/test_swap_atomic.py); it stays in this file so the history reads.
 """
 from __future__ import annotations
 
@@ -447,22 +452,18 @@ def test_the_ordinary_unlink_still_rescales_for_every_other_caller():
 
 # ------------------------------------------------------- the "+", recorded
 
-def test_the_stepper_going_UP_has_the_same_seam_and_is_NOT_fixed_here():
+def test_the_stepper_going_UP_had_the_same_seam_and_is_now_atomic_too():
     """
-    CHARACTERISATION, not an endorsement. add_dish_day was checked for the
-    same shape and has it — but one level down, and not in add_dish_day:
-    the write is swap_meal_in_plan, which deletes the displaced row, commits,
-    and then calls plan_meal to write the replacement. Force plan_meal to
-    fail and the target day is genuinely ABSENT, exactly as a drop used to
-    leave one.
-
-    It is deliberately left alone. That seam is shared by every swap in the
-    app — chat, swap-in-place, resolve_open_slot, the generation repairs —
-    and closing it means threading a connection through plan_meal and the
-    whole grocery ingest tree behind it, which is a change to the app's
-    central write rather than to this screen. Its own card. Recorded here
-    so the next session finds it written down rather than rediscovering it
-    as new; INVERT this test when swap_meal_in_plan is made atomic.
+    Was the characterisation test `..._has_the_same_seam_and_is_NOT_fixed_here`,
+    INVERTED the same morning by the swap-atomic ticket
+    (tests/test_swap_atomic.py, which is where the full set lives).
+    add_dish_day was checked for the same shape and had it — one level down,
+    in swap_meal_in_plan, which deleted the displaced row, committed, and
+    then called plan_meal to write the replacement. Force plan_meal to fail
+    and the target day was genuinely ABSENT, exactly as a drop used to leave
+    one. Kept here, in the same file and the same shape, so the history
+    reads: the drop-dish fix wrote the "+" down as not fixed; this is the
+    record of it being fixed.
     """
     _household()
     _wraps()
@@ -470,6 +471,7 @@ def test_the_stepper_going_UP_has_the_same_seam_and_is_NOT_fixed_here():
     plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
     source = tools.plan_meal(MON, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     target = tools.plan_meal(TUE, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    before = _snapshot()
 
     real = meal_plans.plan_meal
     weekly_plan._meal_plans.plan_meal = lambda *a, **kw: (_ for _ in ()).throw(
@@ -481,5 +483,6 @@ def test_the_stepper_going_UP_has_the_same_seam_and_is_NOT_fixed_here():
     finally:
         weekly_plan._meal_plans.plan_meal = real
 
-    assert _rows_on(TUE, "dinner") == 0, "if this fails, the '+' has been fixed — invert the test"
-    assert {"date": TUE, "slot": "dinner"} in tools.audit_plan_slots(plan_id)["missing"]
+    assert _rows_on(TUE, "dinner") == 1
+    assert _snapshot() == before
+    assert {"date": TUE, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]

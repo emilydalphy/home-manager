@@ -314,6 +314,77 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Swapping a meal is ONE transaction now. Branch
+  `worktree-swap-atomic`.** Loop Board "Swapping a meal isn't atomic either
+  — the same seam, one level down, shared by every swap in the app": the
+  debt drop-dish-atomic recorded the same morning rather than smuggled in.
+  `swap_meal_in_plan` unlinked the chain, reversed the groceries, DELETEd
+  the displaced row, committed, then called `plan_meal` to INSERT the
+  replacement and buy for it — four commits, and a failure after the
+  delete left a day with **no row at all**, its old groceries gone, under a
+  route answering 500. Reproduced first with the characterisation test the
+  drop-dish work left behind (`..._is_NOT_fixed_here` passed on `4469563`),
+  and it is that function that matters: it is the write behind
+  `add_dish_day` (the Check-the-week "+"), every chat swap, `swap_in_place`
+  and its undo, and `plan_quality.repair_snack_clashes` at generation —
+  and `resolve_open_slot` carried a second copy of the same four commits.
+  - **The shape is the two prior fixes', not a third.** A new
+    `_replace_slot_entries` owns one connection, one commit, `rollback()`
+    on the way out; `swap_meal_in_plan` and `resolve_open_slot` both call
+    it. `plan_meal`, `add_grocery_item`, `_record_grocery_link`,
+    `WeekGroceryBuffer`, `_add_recipe_ingredients_for_entries`,
+    `_reingest_unlinked_entries`, `_rescale_leftover_source_grocery`, and
+    the read helpers under the ingest (`plan_leftover_chains`,
+    `batch_for_source`, `eaters_at`, `get_slot_attendance`,
+    `grocery_scale_factor`, `servings_scale_factor`) all take an optional
+    `conn=None`: given one they read and write on it and neither commit
+    nor close; left unset every other caller — chat `plan_meal`,
+    `approve_weekly_plan`, `clear_plan_slot`, `drop_dish_from_day` — is
+    byte-for-byte as before.
+  - **Nothing runs after the commit this time, and that is the difference
+    from drop-dish.** The step drop-dish had to lift out — the leftover
+    source's grocery rescale — could not join because it re-enters the
+    recipe ingest tree, and every function in that tree opened its own
+    connection. This ticket gave that whole tree a `conn` (it had to: the
+    new meal's OWN ingest is the deepest seam, and it reads the row the
+    transaction has only just inserted, which no second connection could
+    even see). Once the tree joins, the rescale and the re-buy for stranded
+    reheat nights join for free, so the swap has no logged-not-raised tail.
+    `drop_dish_from_day` still runs its rescale after its commit, untouched
+    — its own card's tests pin that arrangement, and un-deferring it is a
+    two-line change for whoever next opens that function.
+  - **The plan's approved state is read on the transaction's own
+    connection**, not through `_weekly_plan_is_approved` (which opens one
+    of its own). `tests/test_swap_atomic.py` counts `get_conn` across
+    weekly_plan, grocery, meal_plans, recipes, leftovers and attendance
+    for the whole of `_replace_slot_entries` and requires **exactly one** —
+    for a plain approved swap, for swapping a reheat night (unlink and
+    rescale inside), and for swapping the cook night (re-buy inside).
+  - **Reads that used to be stale are correct now, as a side effect.** In
+    rollback-journal mode a read on a second connection does not deadlock,
+    it silently sees the pre-transaction world; the chain check inside the
+    ingest was one of those. Not a bug anyone hit (ids AUTOINCREMENT, so a
+    deleted row's id is never reused), but the rule "one connection inside
+    the transaction" is stricter than "no second writer" for that reason.
+  - **Left out, deliberately.** `swap_component_in_plan` (component-based
+    plans) has the same delete-then-`plan_meal` shape and is the one
+    remaining caller not routed through `_replace_slot_entries`; component
+    plans have no slot-per-day rule to break, so it is a smaller wrong and
+    a separate card. `plan_meal` on its own connection still commits the
+    row before the ingest, exactly as before — changing that would change
+    chat and generation behaviour this ticket is not about.
+  - `tests/test_swap_atomic.py`: 24 tests, **18 red on `4469563`** — a
+    forced failure after the delete, inside the INSERT itself (a
+    connection subclass that refuses that one statement), inside the
+    ingest, after the reversal, after the unlink, inside the rescale,
+    inside the re-buy; one per caller (`add_dish_day` and its route, a
+    chat two-snack swap, `swap_meal_in_place` with the picker stubbed,
+    `resolve_open_slot` and its route, the snack repair inside a stubbed
+    generation); the connection count; and the transaction-is-open check.
+    The other six are happy paths measured against the parent commit. The
+    characterisation test in `tests/test_drop_dish_atomic.py` is inverted
+    in place (`..._is_now_atomic_too`, red on `4469563`), so the history
+    reads. 2507 -> 2531.
 - **2026-09-11 — The plan can see the household's calendar. Branch
   `worktree-calendar-read`.** Loop Board "Meals: plan the week around
   what's actually on the household's calendar" (Phase 1.5, the top finding
