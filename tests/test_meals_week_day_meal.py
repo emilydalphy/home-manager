@@ -611,6 +611,12 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("swapStateFor", SHELL_JS) + "\n"
         + _extract("swapLineHtml", SHELL_JS) + "\n"
         + _extract("slotActionsHtml", SHELL_JS) + "\n"
+        # The hero head (2026-09-11) names the slot and sizes the dish name.
+        + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
+        + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
+        + _extract("slotEyebrow", SHELL_JS) + "\n"
+        + _extract("dishSizeClass", SHELL_JS) + "\n"
+        + _extract("mealDockHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )

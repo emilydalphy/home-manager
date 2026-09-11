@@ -1448,6 +1448,11 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Fills the panel so a step's dock (margin-top: auto on .wk-decide) sits
+     at the foot of a short screen — the Meal step's, the review's — rather
+     than under its last card. Same move Now's .today-content makes. */
+  flex: 1 0 auto;
+  width: 100%;
   box-sizing: border-box;
   width: 100%;
 }
@@ -6042,7 +6047,8 @@ span.cook-week-name { cursor: default; }
    sand, and only the Meal step's "Cook this" is apricot.
    =========================================================================== */
 
-#week-steps { display: flex; flex-direction: column; }
+#week-steps { display: flex; flex-direction: column; flex: 1 0 auto; }
+#week-steps .wk-decide.dock { margin-top: auto; }
 /* The NOTHING YET state puts the existing Plan-a-week card in the week
    card's place (see weekStepHtml), so it needs the same gutter the card has
    rather than the one #week-plan-row used to get as a sibling of the root. */
@@ -6838,6 +6844,15 @@ span.cook-week-name { cursor: default; }
 
 /* ---------- the two-segment control ---------- */
 .wk-acts { display: flex; gap: 8px; }
+/* The Meal step (2026-09-11): a spruce hero for the dish, then cards in
+   the gutter, then the actions in the dock. */
+.wk-meal-hero { margin-top: 6px; }
+.wk-meal-hero .nextup-when { color: var(--ivory-ink-muted); }
+.wk-meal-body { padding: 14px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+.wk-meal-body .wk-card, .wk-meal-body .shell-card { margin: 0; }
+.wk-meal-dock .wk-acts { align-items: center; }
+.wk-meal-dock .wk-act-swap { background: none; border: none; color: var(--apricot-label); padding: 0 8px; }
+.wk-meal-dock .wk-act-swap:hover { background: none; color: var(--apricot-label-hover); }
 .wk-act {
   min-height: 44px;
   padding: 0 16px;

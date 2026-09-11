@@ -7095,38 +7095,54 @@
     ];
     var cookMeal = cookMealForEntry(entry.entry_id);
     var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
+    // Emily, 2026-09-11: the meal screen "looks weak for content". One
+    // spruce hero carries the name, the reason it is on this night (the
+    // plan's own recorded reasoning, as the one italic line) and the three
+    // facts; the plate, the recipe and cook-ahead follow as cards; the one
+    // action is in the dock. The "Why this night" card folded into the hero.
     return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
         escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
-      '<div class="wk-head">' +
-        '<div class="wk-head-row"><h1 class="wk-title">' +
-          escapeHtml(mealDisplayName(entry)) + '</h1></div>' +
-        chipsRowHtml(chips, 'wk-chips wk-chips-head') +
+      '<div class="dinner-hero wk-meal-hero">' +
+        '<div class="hero-top">' +
+          '<span class="hero-eyebrow">' + escapeHtml(slotEyebrow(day, slot)) + '</span>' +
+          '<span class="hero-rule"></span>' +
+          '<span class="nextup-when">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>' +
+        '</div>' +
+        '<div class="hero-dish' + dishSizeClass(mealDisplayName(entry)) + '">' + escapeHtml(mealDisplayName(entry)) + '</div>' +
+        (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '') +
+        (chips.filter(Boolean).length
+          ? '<div class="hero-chips">' + chips.filter(Boolean).map(function (c) {
+              return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
+            }).join('') + '</div>'
+          : '') +
       '</div>' +
+      '<div class="wk-meal-body">' +
       // A real meal always carries at least a food-group read, so this only
       // ever actually hides the card for a grab-and-go snack — the plate
       // card stays exactly as it was for breakfast/lunch/dinner.
       ((isSnackSlot(slot) && plateCardIsEmpty(entry)) ? '' : plateCardHtml(entry)) +
-      (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
-      // Why this night, when the plan actually recorded a reason. Written
-      // at generation (meal_plan_entries.reasoning), so it can't contradict
-      // the real one.
-      (entry.reason
-        ? '<div class="shell-card wk-card">' +
-            '<div class="wk-card-title">Why this night</div>' +
-            '<div class="wk-card-line">' + escapeHtml(entry.reason) + '</div>' +
-          '</div>'
-        : '') +
       // The recipe itself. Emily, 2026-09-09: tapping a dish should bring
       // you to the screen with the recipe on it — and inside Meals the
       // dish's screen is this one, so the recipe belongs here rather than
       // two taps further on. The panel is the cook screen's own
       // (cookDetailHtml), rendered `plain`: same words, same order, no
-      // working controls. cookAheadHtml above is reused from that screen
-      // in exactly the same way, and for the same reason.
+      // working controls. cookAheadHtml is reused from that screen in
+      // exactly the same way, and for the same reason.
       mealRecipeCardHtml(cookMeal, slot) +
-      // The screen's one apricot primary (Rule 5) — the Day step's own
-      // segments are quiet for exactly this reason.
-      slotActionsHtml(day, slot, true);
+      (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
+      '</div>' +
+      // The screen's one apricot primary (Rule 5), in the dock like every
+      // other screen's (nav v2 rule 2) — the Day step's own segments are
+      // quiet for exactly this reason.
+      mealDockHtml(day, slot);
+  }
+
+  // The Meal step's actions, docked. Empty (no dock) when the slot has
+  // nothing to do — a past day, an away night.
+  function mealDockHtml(day, slot) {
+    var acts = slotActionsHtml(day, slot, true);
+    if (!acts) return '';
+    return '<div class="wk-decide dock wk-meal-dock">' + acts + '</div>';
   }
 
   // Nothing at all when the Cook view has no card for this entry: either
