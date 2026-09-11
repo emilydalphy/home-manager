@@ -26,6 +26,42 @@ to change what are all there.
 
 ## Current state (as of 2026-09-08)
 
+**Landed 2026-09-11 (pushed as `4976b36`) — three features built against
+the mental load model, plus the model itself.** Read the loop skill's new
+section "The problem we're solving — the mental load model" before picking
+work; Emily anchored the roadmap on it that day. On `main` now:
+
+- **Staples** (`app/tools/staples.py`, tables `staples` + `staple_events`,
+  `grocery_items.staple_id`): things a household buys on a rhythm, put on
+  the grocery list as an ordinary line when probably due, with "We have
+  plenty" / "Not this trip" and a Staples card on Shop. Cadence is learned
+  from real purchases (median interval, two needed). **Never touches
+  `inventory_items`** — inventory is an in-development beta feature by
+  Emily's call, staples come first. Chat: `add_staple`, `list_staples`,
+  `mark_staple_plenty`, `remove_staple`.
+- **Per-adult login, slice 1** ("Who's this?" after the passphrase for a
+  household with more than one adult; the pick lives in the signed session
+  cookie; `member_id()` / `current_member()` in `app/tools/_shared.py`).
+  Approving the week, grocery adds, pre-shop drops and the week's questions
+  are credited to the session's adult; notification #4 goes to the OTHER
+  adult. Slice 2 (a per-adult secret) is not built. Cook/prep ticks and
+  chore completion still record no person — those tables have no column.
+- **Morning text** (`app/tools/digest.py`, `morning_text_sends`,
+  `households.timezone` default `America/Toronto`,
+  `households.morning_text_time` default 07:00, `members.phone` /
+  `morning_text_on`): one daily text of today's moves via Twilio's REST
+  API, from an in-process loop like the backup loop; sends nothing until
+  `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` are set
+  (logs "Morning texts are off" at startup otherwise). The bell also
+  refetches on focus/visibility and every five minutes (still behind
+  `SHOW_NOTIF_BELL = false`). Preferences → "Morning text"; chat:
+  `set_morning_text`.
+
+Suite: 2677 tests on the merged `main`. Everything above is `In progress`
+→ `Done` on the Loop Board except "Reach me before the moment", which
+stays open for web/native push.
+
+
 Landed on `main` on or after 2026-09-06 — the **complete** first-parent list
 for that window, verified in `git log origin/main --first-parent`, newest
 first. (Mostly merges; `ca97720` is a direct commit.)
