@@ -351,7 +351,21 @@ why*, not duplicating the diff.
     every other tab, and anything Claude-driven. Conflict rule is
     last-write-wins; a partner's removal wins over this phone's tick (404
     → dropped, toast).
-  - `tests/test_grocery_offline.py` (31): the module and the shell's own
+  - **Household isolation is the session's, not the phone's (verifier,
+    same day).** The copy/queue/shops keys are read only for a household
+    the server has named THIS session or that a still-signed-in session
+    remembered; sign-out and any 401 call `groOffline.forget()` (every
+    `pomona.grocery.*` key and the pointer go); a different `household_id`
+    from `/api/coaching` purges the previous household's keys before
+    anything is written, and drops an offline copy already on screen. An
+    unknown household + no signal shows a calm wait ("No signal — I'll
+    show your list as soon as you're back."), never a guessed list. Whatever
+    the page fetched before coaching answered is held in memory and moved
+    under the right key when it does. Queue entries are validated on read
+    (a `null` used to jam replay forever). Ask and the inventory scan say
+    "I need a signal for this one" with no signal instead of "Error:
+    Failed to fetch". Dropped-ticks toast is count-aware and plain.
+  - `tests/test_grocery_offline.py` (40): the module and the shell's own
     `loadGrocery`/`groTick`/`groReplayQueue` run under node with a switchable
     fetch, the worker run under node with stub `caches`, and the route's
     idempotency. The harness caught two real bugs the browser session had

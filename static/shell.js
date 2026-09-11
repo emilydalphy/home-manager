@@ -1660,9 +1660,14 @@
   var GRO_OFFLINE_LINE = "No signal — I’ll save your ticks when you’re back.";
   var GRO_CATCHING_UP_LINE = "Saving your ticks…";
   var GRO_CAUGHT_UP_TOAST = "Back online — your ticks are saved.";
-  // A tick the server refused on replay: the row is gone (a partner removed
+  // Ticks the server refused on replay: the row is gone (a partner removed
   // it, or bought it and finished the stop) and the fresh list is the truth.
-  var GRO_TICK_DROPPED_TOAST = "One tick didn’t stick — the list is up to date now.";
+  function groTicksDroppedToast(n) {
+    return (n === 1 ? "One tick" : n + " ticks") + " couldn’t be saved — the list is up to date now.";
+  }
+  // No signal and no copy to show (this device hasn't heard which household
+  // is signed in, or was just signed out): a calm empty state, not an error.
+  var GRO_NO_COPY_LINE = "No signal — I’ll show your list as soon as you’re back.";
   // Something other than a tick, asked for with no signal. The old line
   // ("try again") is wrong advice in a dead zone.
   var GRO_NO_SIGNAL_TOAST = "No signal — try that once you’re back.";
@@ -1686,7 +1691,16 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
-    }).then(function (res) { return { ok: res.ok, status: res.status }; });
+    }).then(function (res) {
+      if (res.status === 401) groForgetOffline();
+      return { ok: res.ok, status: res.status };
+    });
+  }
+  // Sign-out, or the server saying the session is over (401): nothing of
+  // the grocery copy or queue outlives it on this device.
+  function groForgetOffline() {
+    if (groOffline) groOffline.forget();
+    groceryState.offline = false;
   }
   function groPostStatus(id, status) {
     return groPostJson('/api/grocery-list/' + id + '/status', { status: status });
@@ -1749,7 +1763,7 @@
       }
       groSetOffline(false);
       if (groReplayTimer) { clearInterval(groReplayTimer); groReplayTimer = null; }
-      if (result.dropped > 0) showToast(GRO_TICK_DROPPED_TOAST);
+      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped));
       else if (result.sent > 0) showToast(GRO_CAUGHT_UP_TOAST);
       renderGroceryOfflineLine();
       if (result.sent > 0 || result.dropped > 0) return loadGrocery().then(function () { return result; });
@@ -1780,8 +1794,9 @@
     window.addEventListener('online', function () {
       if (!groIsBuilt()) return;
       groReplayQueue().then(function () {
-        // Nothing was queued, but the list on screen may still be the copy.
-        if (groceryState.offline) loadGrocery();
+        // Nothing was queued, but the list on screen may still be the copy
+        // — or the no-signal wait, with no copy at all.
+        if (groceryState.offline || groceryState.loadError === 'no-signal') loadGrocery();
       });
     });
     window.addEventListener('offline', function () {
@@ -1803,6 +1818,7 @@
       fetch('/api/grocery-list?status=purchased'),
       fetch('/api/grocery-list?status=in_cart')
     ]);
+    if (results.some(function (r) { return r.status === 401; })) groForgetOffline();
     if (results.some(function (r) { return !r.ok; })) throw new Error('grocery load failed');
     var byStore = await results[0].json();
     var purchasedView = await results[1].json();
@@ -2131,6 +2147,12 @@
         groceryState.data = groOffline.applyPending(copy.data);
         groceryState.loadError = false;
         groSetOffline(true);
+      } else if (groOffline && groIsNetworkError(err)) {
+        // No signal and nothing this device may show: it doesn't know which
+        // household is signed in (nothing since sign-out, or the server
+        // hasn't answered yet this session). Not an error — a wait.
+        groceryState.data = null;
+        groceryState.loadError = 'no-signal';
       } else {
         console.warn('Grocery list lookup failed:', err);
         groceryState.loadError = true;
@@ -2227,7 +2249,9 @@
       badge.hidden = true;
       sub.hidden = true;
       title.textContent = 'Shop';
-      body.innerHTML = groceryState.loadError
+      body.innerHTML = groceryState.loadError === 'no-signal'
+        ? '<p class="gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
+        : groceryState.loadError
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       foot.innerHTML = '';
@@ -12194,6 +12218,10 @@
     return result;
   }
 
+  // One calm line for a turn that never reached the server (DESIGN_SYSTEM
+  // §8: the thing, and its way out, in the same breath). Emily may reword.
+  var ASK_NO_SIGNAL_LINE = "I need a signal for this one — try again when you’re back.";
+
   async function sendAskMessage(message) {
     if (!message || askSending) return;
     ensureAskSheetBuilt();
@@ -12239,7 +12267,10 @@
       offerNextStepChips(data.actions);
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
-      addAskMessage('assistant', 'Error: ' + err.message);
+      // Asking needs Claude, and Claude needs a connection. With no signal
+      // that is the whole answer — not "Error: Failed to fetch".
+      var askNoSignal = navigator.onLine === false || (err && err.name === 'TypeError');
+      addAskMessage('assistant', askNoSignal ? ASK_NO_SIGNAL_LINE : 'Error: ' + err.message);
     } finally {
       askSending = false;
       setAskInputsDisabled(false);
@@ -12940,6 +12971,7 @@
       // reversible-sounding because it is: the way back is the passphrase
       // they already have.
       if (window.confirm('Sign out of Pomona on this device?')) {
+        groForgetOffline();   // the grocery copy is this household's, not the phone's
         window.location.href = '/logout';
       }
     }
@@ -13290,7 +13322,10 @@
 
   function loadCoachingState() {
     fetch('/api/coaching')
-      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (res) {
+        if (res.status === 401) groForgetOffline();
+        return res.ok ? res.json() : null;
+      })
       .catch(function () { return null; })
       .then(function (state) {
         coachState.ready = true;
@@ -13298,11 +13333,14 @@
           coachState.householdId = state.household_id;
           // The grocery copy and tick queue are keyed by household too, and
           // this is the one place the shell learns which one it is.
-          if (groOffline) {
-            groOffline.setHousehold(state.household_id);
-            // A list fetched before this answer was saved under the last
-            // known household; re-save it under the right one.
-            if (groceryState.data && !groceryState.offline && !groHasPending()) groOffline.saveList(groceryState.data);
+          if (groOffline && groOffline.setHousehold(state.household_id) && groceryState.offline) {
+            // The list on screen was a copy under a different (or no)
+            // household than the one just confirmed. It is not this
+            // household's to see: drop it and ask the server.
+            groceryState.data = null;
+            groceryState.offline = false;
+            renderGrocery();
+            loadGrocery();
           }
           coachState.hasPlan = !!state.has_plan;
           coachState.seen = !!state.coaching_seen_at;

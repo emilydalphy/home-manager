@@ -292,9 +292,99 @@ def test_the_household_is_remembered_for_next_time_and_offline():
       const b = M.create({ storage: s });
       out({ before, after: b.household(), sees: !!b.readList() });
     """)
-    assert got["before"] == "x"
+    assert got["before"] is None
     assert got["after"] == "7"
     assert got["sees"] is True
+
+
+# --- Household isolation (verifier, 2026-09-11): the copy is the SESSION's ---
+
+@_needs_node
+def test_sign_out_clears_every_grocery_key_and_the_pointer():
+    got = _run("""
+      const s = storage();
+      const a = M.create({ storage: s, householdId: 1 });
+      a.saveList(list()); a.queueStatus(1, 'in_cart'); a.saveShops({ usualStores: ['Loblaws'], dismissed: true });
+      s.mem['pomona.grocery.copy.h9'] = 'left over from an older build';
+      s.length = Object.keys(s.mem).length; s.key = (i) => Object.keys(s.mem)[i];
+      a.forget();
+      const b = M.create({ storage: s });
+      out({ keys: Object.keys(s.mem), known: b.known(), copy: b.readList(), pending: b.pending().length });
+    """)
+    assert got == {"keys": [], "known": False, "copy": None, "pending": 0}
+
+
+@_needs_node
+def test_an_unknown_household_offline_shows_nothing_whatever_storage_holds():
+    """No pointer (signed out, or this device has never heard from the
+    server this session): a copy sitting in storage is not shown, and a
+    tick made now is not written to storage under anyone's name."""
+    got = _run("""
+      const s = storage();
+      M.create({ storage: s, householdId: 1 }).saveList(list());   // no pointer written: nobody signed in
+      const q = M.create({ storage: s });
+      q.queueStatus(1, 'in_cart');
+      out({ known: q.known(), copy: q.readList(), shops: q.readShops(), pendingInMemory: q.pending().length,
+            keys: Object.keys(s.mem).sort() });
+    """)
+    assert got["known"] is False
+    assert got["copy"] is None and got["shops"] is None
+    assert got["pendingInMemory"] == 1
+    assert got["keys"] == ["pomona.grocery.copy.h1"]
+
+
+@_needs_node
+def test_a_different_household_answering_purges_the_previous_one():
+    """Household B signs in on A's phone. The moment the server names B,
+    A's copy, queue and shops are gone and nothing of A's is readable."""
+    got = _run("""
+      const s = storage();
+      const a = M.create({ storage: s, householdId: 'A' });
+      a.saveList(list()); a.queueStatus(1, 'in_cart'); a.saveShops({ usualStores: ['Loblaws'], dismissed: true });
+      const changed = a.setHousehold('B');
+      out({ changed, household: a.household(), copy: a.readList(), pending: a.pending().length, shops: a.readShops(),
+            keys: Object.keys(s.mem).sort() });
+    """)
+    assert got["changed"] is True
+    assert got["household"] == "B"
+    assert got["copy"] is None and got["pending"] == 0 and got["shops"] is None
+    assert got["keys"] == ["pomona.grocery.household"]
+
+
+@_needs_node
+def test_what_was_fetched_before_the_household_was_known_moves_under_its_key():
+    """A page loads the list before /api/coaching answers. Held in memory,
+    then written under the right household — and a tick made in between
+    joins that household's queue."""
+    got = _run("""
+      const s = storage();
+      const q = M.create({ storage: s });
+      q.saveList(list()); q.queueStatus(2, 'in_cart');
+      const beforeKeys = Object.keys(s.mem).sort();
+      const changed = q.setHousehold(1);
+      out({ beforeKeys, changed, keys: Object.keys(s.mem).sort(), copy: !!q.readList(), pending: q.pending().map((op) => op.id) });
+    """)
+    assert got["beforeKeys"] == []
+    assert got["changed"] is True
+    assert got["keys"] == ["pomona.grocery.copy.h1", "pomona.grocery.household", "pomona.grocery.queue.h1"]
+    assert got["copy"] is True and got["pending"] == ["2"]
+
+
+@_needs_node
+def test_a_malformed_queue_entry_is_dropped_not_replayed_forever():
+    got = _run("""
+      const s = storage();
+      s.mem['pomona.grocery.queue.h1'] = JSON.stringify([null, { id: '1', status: 'in_cart' }, { foo: 1 }, { id: '2', status: 'flying' }, 'x']);
+      const q = M.create({ storage: s, householdId: 1 });
+      const seen = q.pending().map((op) => op.id);
+      const calls = [];
+      q.replay((url) => { calls.push(url); return Promise.resolve({ ok: true, status: 200 }); })
+        .then((r) => out({ seen, r, calls, left: q.pending().length }));
+    """)
+    assert got["seen"] == ["1"]
+    assert got["r"] == {"sent": 1, "dropped": 0, "kept": 0}
+    assert got["calls"] == ["/api/grocery-list/1/status"]
+    assert got["left"] == 0
 
 
 @_needs_node
@@ -459,6 +549,8 @@ def test_the_status_line_copy_is_exactly_what_emily_saw():
     assert 'var GRO_CATCHING_UP_LINE = "Saving your ticks…";' in SHELL_JS
     assert 'var GRO_CAUGHT_UP_TOAST = "Back online — your ticks are saved.";' in SHELL_JS
     assert 'var GRO_NO_SIGNAL_TOAST = "No signal — try that once you’re back.";' in SHELL_JS
+    assert 'var GRO_NO_COPY_LINE = "No signal — I’ll show your list as soon as you’re back.";' in SHELL_JS
+    assert 'var ASK_NO_SIGNAL_LINE = "I need a signal for this one — try again when you’re back.";' in SHELL_JS
     assert '<p class="gro-offline" id="gro-offline" hidden></p>' in SHELL_JS
     assert ".gro-offline {" in SHELL_CSS
     # Secondary ink: no signal in a supermarket is ordinary, not urgent.
@@ -466,6 +558,38 @@ def test_the_status_line_copy_is_exactly_what_emily_saw():
     block = block[:block.index("}")]
     assert "var(--ink-secondary)" in block
     assert "urgent" not in block
+
+
+@_needs_node
+def test_the_dropped_ticks_toast_counts_and_stays_plain():
+    block = SHELL_JS[SHELL_JS.index("function groTicksDroppedToast(n)"):]
+    block = block[:block.index("\n  }\n") + 4]
+    got = _node(block + "console.log(JSON.stringify([groTicksDroppedToast(1), groTicksDroppedToast(3)]));")
+    assert got == [
+        "One tick couldn’t be saved — the list is up to date now.",
+        "3 ticks couldn’t be saved — the list is up to date now.",
+    ]
+    assert "stick" not in block
+
+
+def test_sign_out_and_a_401_forget_the_copy():
+    signout = SHELL_JS[SHELL_JS.index("if (what === 'signout') {"):]
+    signout = signout[:signout.index("window.location.href = '/logout';")]
+    assert "groForgetOffline();" in signout
+    assert "if (res.status === 401) groForgetOffline();" in SHELL_JS  # groPostJson and /api/coaching
+    assert "if (results.some(function (r) { return r.status === 401; })) groForgetOffline();" in SHELL_JS
+    coaching = SHELL_JS[SHELL_JS.index("function loadCoachingState()"):]
+    coaching = coaching[:coaching.index("renderCoachCard();")]
+    assert "groOffline.setHousehold(state.household_id) && groceryState.offline" in coaching
+
+
+def test_claude_features_say_they_need_a_signal_rather_than_looking_broken():
+    ask = SHELL_JS[SHELL_JS.index("async function sendAskMessage(message)"):]
+    ask = ask[:ask.index("function isDesktopAsk()")]
+    assert "addAskMessage('assistant', askNoSignal ? ASK_NO_SIGNAL_LINE : 'Error: ' + err.message);" in ask
+    inv = (REPO / "static" / "inventory.html").read_text(encoding="utf-8")
+    assert 'noSignal ? "I need a signal for this one" : "Couldn\'t read that photo"' in inv
+    assert 'noSignal ? "Try again when you’re back."' in inv
 
 
 def test_online_and_offline_events_are_wired_when_the_screen_is_built():
@@ -612,6 +736,23 @@ def test_a_reload_with_no_signal_still_shows_the_list_with_its_ticks():
     assert got["line"] == "No signal — I’ll save your ticks when you’re back."
     assert got["needed"] == [["Bananas"]]
     assert got["inCart"] == ["Milk"]
+
+
+@_needs_node
+def test_a_reload_with_no_signal_and_no_known_household_shows_the_wait_not_a_list():
+    """Signed out (or never identified this session) and offline: no copy
+    is shown, whatever storage holds, and it is a wait rather than an error."""
+    got = _run_shell("""
+      (async () => {
+        await loadGrocery();               // signed in as household 1, copy written
+        groForgetOffline();                // sign-out
+        ALIVE = false;
+        groceryState.data = null;
+        await loadGrocery();
+        out({ data: groceryState.data, loadError: groceryState.loadError, offline: groceryState.offline, keys: [...STORE.keys()] });
+      })();
+    """)
+    assert got == {"data": None, "loadError": "no-signal", "offline": False, "keys": []}
 
 
 @_needs_node

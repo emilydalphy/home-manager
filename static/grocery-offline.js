@@ -133,53 +133,133 @@
       try { return JSON.parse(raw); } catch (err) { return null; }
     }
 
-    // Which household this device last heard from. Learned from the server
-    // when there is one (shell.js passes /api/coaching's household_id along)
-    // and remembered, because offline there is no server to ask — and
-    // offline is exactly when the key matters.
-    var householdId = opts.householdId != null ? String(opts.householdId) : (read(HOUSEHOLD_KEY) || 'x');
-    function copyKey() { return COPY_PREFIX + householdId; }
-    function queueKey() { return QUEUE_PREFIX + householdId; }
-    function shopsKey() { return SHOPS_PREFIX + householdId; }
+    // Which household is signed in on this device. Learned from the server
+    // (shell.js passes /api/coaching's household_id along) and remembered
+    // for the reload that can't ask — but it is the SESSION's household,
+    // not the last one seen: sign-out and any 401 call forget(), which
+    // clears the pointer and every key, and a different answer from the
+    // server purges the previous household's keys before anything is
+    // written under the new one. While the household is unknown nothing is
+    // read from or written to storage — the list a page fetched before
+    // /api/coaching answered is held in memory and moved under the right
+    // key the moment it does (setHousehold). Unknown + offline shows no
+    // list at all: a guessed list is the wrong list on a shared phone.
+    var householdId = opts.householdId != null ? String(opts.householdId) : (read(HOUSEHOLD_KEY) || null);
+    function known() { return householdId != null; }
+    function keyFor(prefix) { return prefix + (known() ? householdId : 'unknown'); }
+    function copyKey() { return keyFor(COPY_PREFIX); }
+    function queueKey() { return keyFor(QUEUE_PREFIX); }
+    function shopsKey() { return keyFor(SHOPS_PREFIX); }
 
+    // Storage only ever sees a known household's keys; unknown stays in
+    // memory (the page-view fallback above).
+    function readScoped(key) { return known() ? read(key) : (Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null); }
+    function writeScoped(key, value) { if (known()) write(key, value); else memory[key] = value; }
+    function removeScoped(key) { if (known()) remove(key); else delete memory[key]; }
+    function readJsonScoped(key) {
+      var raw = readScoped(key);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch (err) { return null; }
+    }
+    function purge(id) {
+      remove(COPY_PREFIX + id); remove(QUEUE_PREFIX + id); remove(SHOPS_PREFIX + id);
+    }
+
+    // A queue entry is an object with an id and one of the three statuses;
+    // anything else (a null from a bad write, a shape from an older build)
+    // is dropped on read rather than left to jam replay forever.
+    function validOp(op) {
+      return !!op && typeof op === 'object' &&
+        (typeof op.id === 'string' || typeof op.id === 'number') &&
+        STATUSES.indexOf(op.status) !== -1;
+    }
     function pending() {
-      var q = readJson(queueKey());
-      return Array.isArray(q) ? q : [];
+      var q = readJsonScoped(queueKey());
+      return Array.isArray(q) ? q.filter(validOp) : [];
     }
     function writePending(q) {
-      if (q.length) write(queueKey(), JSON.stringify(q));
-      else remove(queueKey());
+      if (q.length) writeScoped(queueKey(), JSON.stringify(q));
+      else removeScoped(queueKey());
     }
 
     var replaying = null;
 
     var api = {
       household: function () { return householdId; },
+      known: known,
+
+      // The server has said which household this session is. Returns true
+      // when that changed something: a different household than the one
+      // remembered (whose keys are purged first), or the first answer of
+      // the page view (whatever was fetched meanwhile moves under its key).
       setHousehold: function (id) {
-        if (id == null) return;
-        householdId = String(id);
-        write(HOUSEHOLD_KEY, householdId);
+        if (id == null) return false;
+        var next = String(id);
+        if (householdId === next) return false;
+        var carried = null;
+        if (known()) {
+          purge(householdId);
+        } else {
+          carried = { copy: memory[copyKey()], queue: memory[queueKey()], shops: memory[shopsKey()] };
+          delete memory[copyKey()]; delete memory[queueKey()]; delete memory[shopsKey()];
+        }
+        householdId = next;
+        write(HOUSEHOLD_KEY, next);
+        if (carried) {
+          if (carried.copy) write(copyKey(), carried.copy);
+          if (carried.shops) write(shopsKey(), carried.shops);
+          if (carried.queue) {
+            var ops = [];
+            try { ops = JSON.parse(carried.queue); } catch (err) { ops = []; }
+            (Array.isArray(ops) ? ops : []).filter(validOp).forEach(function (op) { api.queueStatus(op.id, op.status); });
+          }
+        }
+        return true;
+      },
+
+      // Sign-out, or a 401: nothing of this device's grocery memory
+      // outlives the session — every key, and the pointer that says whose
+      // they were. Scans storage so a key from an older build goes too.
+      forget: function () {
+        if (known()) purge(householdId);
+        remove(HOUSEHOLD_KEY);
+        try {
+          if (storage && typeof storage.length === 'number' && typeof storage.key === 'function') {
+            var stale = [];
+            for (var i = 0; i < storage.length; i++) {
+              var k = storage.key(i);
+              if (k && k.indexOf('pomona.grocery.') === 0) stale.push(k);
+            }
+            stale.forEach(function (k) { storage.removeItem(k); });
+          }
+        } catch (err) { /* private mode: nothing was ever written */ }
+        memory = {};
+        householdId = null;
       },
 
       saveList: function (data) {
         if (!data || !data.stores) return;
-        write(copyKey(), JSON.stringify({ savedAt: now(), data: data }));
+        writeScoped(copyKey(), JSON.stringify({ savedAt: now(), data: data }));
       },
+      // Only a known household's copy: unknown (nobody signed in that this
+      // device has heard of) answers nothing, whatever storage holds.
       readList: function () {
-        var saved = readJson(copyKey());
+        if (!known()) return null;
+        var saved = readJsonScoped(copyKey());
         if (!saved || !saved.data || !saved.data.stores) return null;
         return saved;
       },
-      clearList: function () { remove(copyKey()); },
+      clearList: function () { removeScoped(copyKey()); },
 
       // { usualStores: [...], dismissed: bool } — what /api/memory answers
       // about shops, for the reload that can't ask it.
       saveShops: function (shops) {
         if (!shops || !Array.isArray(shops.usualStores)) return;
-        write(shopsKey(), JSON.stringify({ usualStores: shops.usualStores, dismissed: !!shops.dismissed }));
+        writeScoped(shopsKey(), JSON.stringify({ usualStores: shops.usualStores, dismissed: !!shops.dismissed }));
       },
       readShops: function () {
-        var saved = readJson(shopsKey());
+        if (!known()) return null;
+        var saved = readJsonScoped(shopsKey());
         return saved && Array.isArray(saved.usualStores) ? saved : null;
       },
 
