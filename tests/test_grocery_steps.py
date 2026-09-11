@@ -292,7 +292,10 @@ def test_trip_shows_one_store_at_a_time():
 
 def test_trip_ticks_into_the_cart_and_can_put_things_back():
     _in("data-gro=\"trip-toggle\"", SHELL_JS, "the tick", "shell.js")
-    _in("{ status: 'in_cart' }", SHELL_JS, "what a tick writes", "shell.js")
+    # A tick writes in_cart through groTick since 2026-09-11 (grocery
+    # offline): on screen at once, queued when there is no signal, and sent
+    # to the same /status route as before — see tests/test_grocery_offline.py.
+    _in("groTick(id, 'in_cart');", SHELL_JS, "what a tick writes", "shell.js")
     _in("In your cart · ' + inCart.length", SHELL_JS, "the cart group", "shell.js")
     _in("data-gro=\"toggle-incart\"", SHELL_JS, "its toggle", "shell.js")
     _in("function groDoneRowHtml(", SHELL_JS, "the put-back row", "shell.js")

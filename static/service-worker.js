@@ -35,7 +35,24 @@
 // old plum icon and the old "Home Manager" manifest from cache forever, since
 // nothing about the request would tell it to re-fetch. The name changed too,
 // not just the digit, so there is no chance of colliding with a stale entry.
-const CACHE_NAME = "pomona-shell-v5";
+//
+// v5 -> v6 (grocery offline, 2026-09-11): navigations fall back to ANY cached
+// shell route, not only the exact URL. "/", "/grocery", "/week" and
+// "/kitchen" all serve the same shell.html (app/main.py), but the cache is
+// keyed by URL — so a phone that opened "/" and reached Shop by tapping the
+// tab (a pushState to /grocery, never a navigation) had nothing cached
+// under /grocery, and a reload in the store got the browser's own offline
+// page. A redirected navigation (signed out: "/" -> /login) is no longer
+// cached either, so the offline fallback can't be a login screen. The bump
+// clears any such entry already sitting in v5. API responses are still
+// never cached here: the grocery list's offline copy is page-level
+// (static/grocery-offline.js), where it can be keyed per household and
+// carry the ticks made without signal.
+const CACHE_NAME = "pomona-shell-v6";
+// Where an offline navigation lands when its own URL was never cached.
+// Every entry serves shell.html; the order only decides which copy is tried
+// first.
+const SHELL_ROUTES = ["/", "/grocery", "/week", "/kitchen"];
 const SHELL_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",
@@ -58,6 +75,19 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// The cached copy of this exact request, or — for a navigation only — the
+// cached copy of any shell route, since they are all the same page.
+async function offlineFallback(request, isNavigation) {
+  const exact = await caches.match(request);
+  if (exact || !isNavigation) return exact;
+  const cache = await caches.open(CACHE_NAME);
+  for (const route of SHELL_ROUTES) {
+    const hit = await cache.match(route);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
@@ -75,14 +105,20 @@ self.addEventListener("fetch", (event) => {
     // Network-first: always try to get the latest page/script/stylesheet;
     // only fall back to whatever's cached if the network request actually
     // fails (offline).
+    const isNavigation = event.request.mode === "navigate";
     event.respondWith(
       fetch(event.request)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          // A navigation that ended somewhere else (signed out -> /login)
+          // is not the shell, and caching it under the shell's URL would
+          // make the offline fallback a sign-in screen.
+          if (!isNavigation || (res.ok && !res.redirected)) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
           return res;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => offlineFallback(event.request, isNavigation))
     );
     return;
   }

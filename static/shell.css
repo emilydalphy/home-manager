@@ -3137,6 +3137,21 @@ html, body {
   color: var(--ink-secondary);
 }
 .gro-sub[hidden] { display: none; }
+/* The no-signal line (shell.js renderGroceryOfflineLine): the same quiet
+   register as .gro-sub, directly under the head, and gone entirely when
+   there is nothing to say. Secondary ink, not --urgent — losing signal in
+   a supermarket is ordinary, and the line's job is to say the ticks are
+   safe, not to alarm. */
+.gro-offline {
+  margin: 0;
+  padding: 0 20px 8px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.gro-offline[hidden] { display: none; }
 /* "3 TO SORT" — the only way into the SORT step, so it is a real 44px
    target: 22px drawn, the rest claimed by the pseudo-element, exactly the
    trick .gro-icon-btn above uses. Apricot fill carrying --on-accent-ink
