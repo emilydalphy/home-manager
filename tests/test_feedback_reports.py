@@ -365,7 +365,12 @@ def test_the_kitchen_tile_exists():
     # above the second group, which pushed the tile further down the same
     # renderer. The assertion is unchanged — the tile is still rendered by
     # renderPrefsRows and nowhere else.
-    assert "snwTile() +" in source.split("function renderPrefsRows")[1][:2200], (
+    # 2026-09-11: the sheet gained a "You're <name>" row (per-adult login)
+    # and a "Morning text" row on the same day, so the tile sits further
+    # down again. The window is the whole renderer now, bounded by the next
+    # function, rather than a character count that every new row breaks.
+    prefs_body = source.split("function renderPrefsRows")[1].split("\n  function ")[0]
+    assert "snwTile() +" in prefs_body, (
         "the Preferences sheet no longer offers the way to report a problem"
     )
     assert 'data-snw="open"' in source
