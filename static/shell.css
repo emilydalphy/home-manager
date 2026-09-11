@@ -5708,7 +5708,8 @@ span.cook-week-name { cursor: default; }
 .prefs-gear-row[hidden] { display: none; }
 
 #prefs-scrim,
-#tips-scrim {
+#tips-scrim,
+#morning-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
@@ -5716,7 +5717,8 @@ span.cook-week-name { cursor: default; }
   z-index: 40;
 }
 #prefs-sheet,
-#tips-sheet {
+#tips-sheet,
+#morning-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -5733,7 +5735,8 @@ span.cook-week-name { cursor: default; }
   animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
 }
 #prefs-scrim[hidden], #prefs-sheet[hidden],
-#tips-scrim[hidden], #tips-sheet[hidden] { display: none; }
+#tips-scrim[hidden], #tips-sheet[hidden],
+#morning-scrim[hidden], #morning-sheet[hidden] { display: none; }
 .prefs-sub {
   font-family: var(--font-body);
   font-size: 13px;
@@ -5948,6 +5951,43 @@ span.cook-week-name { cursor: default; }
   line-height: 1.45;
   color: var(--ink);
   margin: 10px 0 0;
+}
+
+/* ---------- "Morning text" sheet ("Reach me before the moment", 2026-09-11) ----------
+   The sheet frame is shared with #prefs-sheet/#tips-sheet above. Inputs
+   reuse .snw-input and the spruce .snw-send, for the same reason the
+   "Something not working?" sheet gives: this is a save, not the screen's
+   one apricot action. The on/off is a real button at 44px (Rule 6), not a
+   checkbox sized to its glyph. */
+.morning-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 18px 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.morning-time { max-width: 160px; }
+.morning-adult { display: flex; flex-direction: column; gap: 6px; }
+.morning-adult-row { display: flex; align-items: center; gap: 10px; }
+.morning-adult-row .snw-input { flex: 1 1 auto; min-width: 0; }
+.morning-toggle {
+  flex: 0 0 auto;
+  min-width: 64px;
+  min-height: 44px; /* Rule 6 */
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--sand);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.morning-toggle[aria-pressed="true"] {
+  background: var(--celadon);
+  border-color: var(--celadon-edge);
+  color: var(--on-accent-ink); /* Rule 1 */
 }
 
 /* ===========================================================================

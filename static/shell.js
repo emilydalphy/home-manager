@@ -13258,7 +13258,7 @@
     return '<div class="prefs-gear-row" id="' + id + '">' + prefsGearHtml() + '</div>';
   }
 
-  var prefsState = { memory: null, calendar: null, open: false };
+  var prefsState = { memory: null, calendar: null, morningText: null, open: false };
 
   function prefsInvalidate() {
     prefsState.memory = null;
@@ -13367,6 +13367,26 @@
     return cal.last_error ? (cal.label || 'Connected') + ' · couldn’t reach it' : (cal.label || 'Connected');
   }
 
+  // "Reach me before the moment" (2026-09-11): the morning text row's one
+  // line — who gets it and when, or Off. Its own read (/api/morning-text)
+  // for the same reason the calendar has one: it isn't household memory.
+  function morningClock(hhmm) {
+    var parts = String(hhmm || '07:00').split(':');
+    var h = parseInt(parts[0], 10), m = parts[1] || '00';
+    if (isNaN(h)) return hhmm;
+    var suffix = h >= 12 ? ' pm' : ' am';
+    var hour = h % 12 || 12;
+    return hour + ':' + m + suffix;
+  }
+  function prefsMorningLine() {
+    var mt = typeof prefsState !== 'undefined' ? prefsState.morningText : null;
+    if (!mt) return 'Reading it back…';
+    var names = (mt.adults || []).filter(function (a) { return a.on; }).map(function (a) { return a.name; });
+    if (!names.length) return 'Off';
+    var who = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+    return morningClock(mt.time) + ' to ' + who;
+  }
+
   // Every row: what it says, and which tab of What we know owns the answer
   // behind it. 'rhythm/prep-days' is a tab plus a spot inside it — see
   // static/memory.html's openingTab/showKitchenTab.
@@ -13444,6 +13464,17 @@
         '</span>' +
         ICONS.arrow +
       '</button>' +
+      // "Reach me before the moment" (2026-09-11): the morning text. Opens
+      // its own sheet, like Helpful tips — one of the few places an input
+      // is the honest control, since a phone number can't be tapped into
+      // existence.
+      '<button type="button" class="prefs-row" data-morning="open">' +
+        '<span class="prefs-row-text">' +
+          '<span class="prefs-row-title">Morning text</span>' +
+          '<span class="prefs-row-sub">' + escapeHtml(prefsMorningLine()) + '</span>' +
+        '</span>' +
+        ICONS.arrow +
+      '</button>' +
       // The second group: a way out of a bad moment, and the way out of the
       // app. Same quiet tile the Kitchen tab used to carry — one component,
       // one place it is defined.
@@ -13470,6 +13501,7 @@
     // and connecting or disconnecting happens inside the What-we-know
     // sheet, which this cache would otherwise never hear about).
     loadPrefsCalendar();
+    loadPrefsMorningText();
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
       var res = await fetch('/api/memory');
@@ -13480,6 +13512,17 @@
       prefsState.memory = null;
     }
     if (prefsState.open) renderPrefsRows();
+  }
+
+  async function loadPrefsMorningText() {
+    try {
+      var res = await fetch('/api/morning-text');
+      prefsState.morningText = res.ok ? await res.json() : null;
+    } catch (err) {
+      prefsState.morningText = null;
+    }
+    if (prefsState.open) renderPrefsRows();
+    if (morningSheetEl && !morningSheetEl.hidden) renderMorningSheet();
   }
 
   async function loadPrefsCalendar() {
@@ -13780,6 +13823,151 @@
     if (!target) return;
     coachDismissCard();
     if (target.getAttribute('data-coach') === 'tips') openTipsSheet();
+  });
+
+  // ---------- "Morning text" ----------
+  //
+  // "Reach me before the moment" (Loop Board, 2026-09-11). One text each
+  // morning with what today needs, to each adult who said yes. The sheet is
+  // the whole of the UI: the household's hour, and per adult a number and
+  // an on/off. Numbers are saved by member row — see app/tools/digest.py.
+  // Turning it on with no number is refused by the server with a plain
+  // sentence, shown in place; nothing here guesses.
+
+  var morningSheetEl = null;
+  var morningScrimEl = null;
+
+  function buildMorningSheet() {
+    if (morningSheetEl) return;
+    morningScrimEl = document.createElement('div');
+    morningScrimEl.id = 'morning-scrim';
+    morningScrimEl.hidden = true;
+    morningSheetEl = document.createElement('div');
+    morningSheetEl.id = 'morning-sheet';
+    morningSheetEl.hidden = true;
+    morningSheetEl.setAttribute('role', 'dialog');
+    morningSheetEl.setAttribute('aria-modal', 'true');
+    morningSheetEl.setAttribute('aria-labelledby', 'morning-title');
+    morningSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="morning-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="morning-title">Morning text</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="morning-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<p class="prefs-sub">One text each morning with what today needs.</p>' +
+      '<div class="morning-body" id="morning-body"></div>';
+    document.body.appendChild(morningScrimEl);
+    document.body.appendChild(morningSheetEl);
+    morningScrimEl.addEventListener('click', closeMorningSheet);
+    morningSheetEl.querySelector('#morning-handle').addEventListener('click', closeMorningSheet);
+    morningSheetEl.querySelector('#morning-close').addEventListener('click', closeMorningSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && morningSheetEl && !morningSheetEl.hidden) closeMorningSheet();
+    });
+    morningSheetEl.addEventListener('click', function (e) {
+      var toggle = e.target && e.target.closest && e.target.closest('[data-morning-toggle]');
+      if (toggle) {
+        var on = toggle.getAttribute('aria-pressed') !== 'true';
+        toggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+        toggle.textContent = on ? 'On' : 'Off';
+        return;
+      }
+      if (e.target && e.target.id === 'morning-save') saveMorningSheet();
+    });
+  }
+
+  function renderMorningSheet() {
+    if (!morningSheetEl) return;
+    var body = morningSheetEl.querySelector('#morning-body');
+    var mt = prefsState.morningText;
+    if (!mt) { body.innerHTML = '<p class="snw-done">Reading it back…</p>'; return; }
+    var adults = mt.adults || [];
+    body.innerHTML =
+      '<label class="snw-label" for="morning-time">When</label>' +
+      '<input type="time" id="morning-time" class="snw-input morning-time" value="' + escapeHtml(mt.time || '07:00') + '">' +
+      (adults.length ? adults.map(function (a) {
+        return '<div class="morning-adult" data-member-id="' + a.member_id + '">' +
+          '<label class="snw-label" for="morning-phone-' + a.member_id + '">' + escapeHtml(a.name) + '</label>' +
+          '<div class="morning-adult-row">' +
+            '<input type="tel" id="morning-phone-' + a.member_id + '" class="snw-input" autocomplete="tel" ' +
+              'placeholder="416-555-0100" value="' + escapeHtml(a.phone || '') + '">' +
+            '<button type="button" class="morning-toggle" data-morning-toggle aria-pressed="' + (a.on ? 'true' : 'false') + '">' +
+              (a.on ? 'On' : 'Off') +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') : '<p class="snw-done">Add who’s in the house first — the text goes to the adults.</p>') +
+      (adults.length ? '<button type="button" class="snw-send" id="morning-save">Save</button>' : '') +
+      '<p class="snw-done" id="morning-note" hidden></p>';
+  }
+
+  async function saveMorningSheet() {
+    if (!morningSheetEl) return;
+    var body = morningSheetEl.querySelector('#morning-body');
+    var note = body.querySelector('#morning-note');
+    var save = body.querySelector('#morning-save');
+    var time = (body.querySelector('#morning-time') || {}).value || '07:00';
+    var rows = Array.prototype.slice.call(body.querySelectorAll('.morning-adult'));
+    if (save) save.disabled = true;
+    var problem = null;
+    var last = null;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var payload = {
+        member_id: parseInt(row.getAttribute('data-member-id'), 10),
+        phone: row.querySelector('input[type="tel"]').value,
+        on: row.querySelector('[data-morning-toggle]').getAttribute('aria-pressed') === 'true',
+        time: time
+      };
+      try {
+        var res = await fetch('/api/morning-text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        var data = await res.json();
+        if (!res.ok) { problem = (data && data.detail) || 'That didn’t save. Try again in a moment.'; break; }
+        last = data;
+      } catch (err) {
+        problem = 'That didn’t save. Try again in a moment.'; break;
+      }
+    }
+    if (save) save.disabled = false;
+    if (last && last.settings) prefsState.morningText = last.settings;
+    if (prefsState.open) renderPrefsRows();
+    if (note) {
+      note.hidden = false;
+      if (problem) {
+        // Calm, and the way out in the same breath (DESIGN_SYSTEM §8).
+        note.textContent = problem;
+      } else {
+        var anyOn = (prefsState.morningText && prefsState.morningText.adults || []).some(function (a) { return a.on; });
+        if (!anyOn) note.textContent = 'Saved. No texts until it’s switched on.';
+        else if (last && last.configured === false) note.textContent = 'Saved. Texting isn’t switched on for the app yet, so nothing will come until it is.';
+        else note.textContent = 'Saved. Next one’s at ' + morningClock(prefsState.morningText.time) + '.';
+      }
+    }
+  }
+
+  function openMorningSheet() {
+    buildMorningSheet();
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    closePrefsSheet();
+    closeSnwSheet();
+    renderMorningSheet();
+    morningScrimEl.hidden = false;
+    morningSheetEl.hidden = false;
+    loadPrefsMorningText();
+  }
+
+  function closeMorningSheet() {
+    if (!morningSheetEl) return;
+    morningScrimEl.hidden = true;
+    morningSheetEl.hidden = true;
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-morning="open"]');
+    if (target) openMorningSheet();
   });
 
   // ---------- "Helpful tips" ----------

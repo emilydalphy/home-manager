@@ -17,6 +17,9 @@ os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-not-used")
 # The daily backup loop is real behaviour, not test behaviour — tests that
 # want it exercise app.backup directly (see test_backup.py).
 os.environ["DISABLE_BACKUPS"] = "1"
+# Same for the morning-text loop (app/tools/digest.py) — tests that want it
+# call run_morning_texts_once directly with a stubbed sender.
+os.environ["DISABLE_MORNING_TEXT"] = "1"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -42,7 +45,7 @@ _TABLES = [
     "preference_events", "notification_dismissals", "item_store_preferences",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
-    "calendar_feeds",
+    "calendar_feeds", "morning_text_sends",
 ]
 
 
@@ -70,6 +73,12 @@ def clean_state():
     try:
         conn.execute("DELETE FROM household_credentials WHERE household_id != 1")
         conn.execute("DELETE FROM households WHERE id != 1")
+        # The morning-text settings live on the household row, which survives
+        # the wipe above — put them back to their defaults so one test's
+        # Vancouver clock doesn't become the next test's.
+        conn.execute(
+            "UPDATE households SET timezone = 'America/Toronto', morning_text_time = '07:00' WHERE id = 1"
+        )
     except Exception:
         pass
     conn.execute("PRAGMA foreign_keys = ON")

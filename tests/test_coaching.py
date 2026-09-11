@@ -503,5 +503,7 @@ def test_a_flex_chips_row_can_actually_be_hidden():
 
 
 def test_the_tips_sheet_reuses_the_preferences_sheets_own_rules():
-    assert "#prefs-scrim,\n#tips-scrim {" in SHELL_CSS
-    assert "#prefs-sheet,\n#tips-sheet {" in SHELL_CSS
+    # The selector group grew a third member on 2026-09-11 — the "Morning
+    # text" sheet ("Reach me before the moment") shares the same frame.
+    assert "#prefs-scrim,\n#tips-scrim,\n#morning-scrim {" in SHELL_CSS
+    assert "#prefs-sheet,\n#tips-sheet,\n#morning-sheet {" in SHELL_CSS

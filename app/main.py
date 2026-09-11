@@ -615,6 +615,19 @@ class CalendarLinkRequest(BaseModel):
     label: str = ""
 
 
+class MorningTextRequest(BaseModel):
+    """
+    The Preferences sheet's "Morning text" save. One adult at a time,
+    keyed by member row (see app/tools/digest.py for why), plus the
+    household's hour. Every field but member_id is optional: only what's
+    sent changes.
+    """
+    member_id: int
+    phone: str | None = None
+    on: bool | None = None
+    time: str | None = None
+
+
 class RecipeIngredientIn(BaseModel):
     item: str
     qty: str = ""
@@ -790,6 +803,53 @@ async def start_backup_loop():
                 # with nothing to show for it.
                 logger.exception("Backup maintenance failed; will try again tomorrow")
             await asyncio.sleep(24 * 60 * 60)
+
+    asyncio.create_task(_loop())
+
+
+@app.on_event("startup")
+async def start_morning_text_loop():
+    """
+    The morning text — "Reach me before the moment" (Loop Board,
+    2026-09-11). Same shape as the backup loop above, for the same reason:
+    there is no cron, no scheduler and no sidecar, so "once a morning" has
+    to live in here or not exist.
+
+    The loop polls rather than sleeping until seven, because every
+    household has its own hour and its own clock, and because a container
+    that restarts at 06:59 must not lose the morning. Each pass is cheap
+    when nothing is due (one row per household), and every send or skip
+    is recorded per local day, so a restart never texts twice — see
+    tools.run_morning_texts_once.
+
+    Missing Twilio keys mean the loop never starts, and the log says so
+    once. Nothing else changes: numbers can still be saved, the report
+    still says texts are off.
+    """
+    if os.environ.get("DISABLE_MORNING_TEXT") == "1":
+        logger.info("Morning texts are disabled for this process (DISABLE_MORNING_TEXT=1)")
+        return
+    if not tools.twilio_configured():
+        logger.info(
+            "Morning texts are off: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and "
+            "TWILIO_FROM_NUMBER to turn them on"
+        )
+        return
+
+    async def _loop():
+        while True:
+            try:
+                results = await run_in_threadpool(tools.run_morning_texts_once)
+                if results:
+                    logger.info(
+                        "Morning texts: %s",
+                        ", ".join(f"household {r['household_id']} member {r['member_id']} {r['status']}" for r in results),
+                    )
+            except Exception:
+                # The loop must outlive any single bad pass — a Twilio
+                # outage at seven is not a reason to miss tomorrow.
+                logger.exception("Morning text pass failed; will try again in a few minutes")
+            await asyncio.sleep(tools.MORNING_TEXT_POLL_SECONDS)
 
     asyncio.create_task(_loop())
 
@@ -1355,6 +1415,34 @@ def import_recipe_url(request: Request, req: ImportRecipeUrlRequest):
 @app.get("/api/calendar")
 def calendar_status():
     return calendar_feed.status()
+
+
+@app.get("/api/morning-text")
+def morning_text_settings():
+    """The Preferences sheet's "Morning text" row and sheet read this."""
+    return tools.get_morning_text_settings()
+
+
+@app.post("/api/morning-text")
+def morning_text_save(req: MorningTextRequest):
+    """
+    Save one adult's number and on/off, and the household's hour. The
+    member is looked up by name inside the household (the tool's own
+    resolution), so a member id from another household is a 404 here
+    rather than a silent write.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT name FROM members WHERE id = ? AND household_id = ?", (req.member_id, tools.household_id())
+    ).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="No such person here.")
+    try:
+        result = tools.set_morning_text(phone=req.phone, time=req.time, on=req.on, name=row["name"])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {**result, "settings": tools.get_morning_text_settings()}
 
 
 @app.post("/api/calendar/check")
@@ -3603,6 +3691,7 @@ _MEMORY_HREF_TOOLS = {
     "set_household_meal_preferences", "add_food_dislikes", "add_usual_stores", "add_store_typical_items",
     "remove_store_typical_item", "set_chores_profile", "edit_preference", "delete_preference",
     "get_or_create_member_share_link", "revoke_member_share_link", "regenerate_member_share_link",
+    "set_morning_text",
 }
 _CATEGORY_KICKERS = {
     "today": "Chores updated",
@@ -4551,6 +4640,9 @@ def observability(days: int = 1):
             # it prints in its own section rather than under BROKEN. Seven
             # days minimum because a week is generated about once a week.
             "plan_quality": tools.get_recent_plan_quality(days=max(days, 7)),
+            # The morning text: counts of sent/failed/skipped and whether the
+            # keys are even set — never a number, never a body.
+            "morning_texts": tools.get_morning_text_report(days=days),
         }
     except Exception as e:
         logger.exception("Observability summary failed")
