@@ -66,8 +66,15 @@ TIKKA = _dinner("2026-09-09", "Chicken Tikka Masala", [
 ])
 
 
-def _food_rules_fired(week):
-    return {v.rule for v in q.check_week(week, {}) if v.rule in FOOD_RULES}
+# What the household that produced these rows actually avoids — the fact
+# "Emily is allergic to pineapple", flagged hard, is the one that makes
+# "Pineapple-Free Fruit Cup" a violation rather than just an odd name.
+AVOIDS = {"avoided": ["Emily is allergic to pineapple", "shellfish"]}
+
+
+def _food_rules_fired(week, context=None):
+    ctx = AVOIDS if context is None else context
+    return {v.rule for v in q.check_week(week, ctx) if v.rule in FOOD_RULES}
 
 
 # --------------------------------------------------------------------------
@@ -106,18 +113,70 @@ def test_the_good_dinner_stays_clean():
 
 
 @pytest.mark.parametrize("name", [
-    "Meatless Monday Chili",
+    # Every one of these fired under the first version of this check, which
+    # matched the SHAPE of an absence and nothing else. "Timeless Tiramisu"
+    # is the one that settled the argument.
+    "No-Knead Bread",
+    "No-Bake Cheesecake",
+    "Flourless Chocolate Cake",
+    "Crustless Quiche Lorraine",
+    "Timeless Tiramisu",
+    "Effortless Weeknight Chili",
     "Boneless Pork Chops with Apples",
-    "Skinless Chicken Thighs, Charred",
+    "Meatless Monday Chili",
 ])
-def test_names_that_describe_the_dish_are_not_flagged(name):
-    """"-less" words that describe what the dish IS, rather than apologising
-    for an allergen it avoids. The rule exists because a meal named after an
-    allergen is alarming to read on a menu — "boneless" alarms nobody."""
+def test_a_name_that_only_looks_like_an_absence_is_not_flagged(name):
+    """The rule is about allergens, not about hyphens.
+
+    Its stated reason is that "a meal named after an allergen is alarming to
+    read on the week's menu even when the recipe is safe" — so the absent
+    thing has to be something this household actually avoids. Nobody is
+    alarmed by "boneless", and nothing in "Timeless" is food at all.
+    """
     week = [_dinner("2026-09-07", name, [
         "Sweat the onion.", "Add the rest.", "Simmer 20 minutes with cumin.",
     ])]
     assert "dish_named_for_an_absence" not in _food_rules_fired(week)
+
+
+def test_the_same_shape_IS_flagged_when_it_names_their_allergen():
+    """The other side of the same rule, and the real case: this household has
+    "Emily is allergic to pineapple" on record, flagged hard."""
+    week = [_dinner("2026-09-07", "Shellfish-Free Paella", [
+        "Sweat the onion.", "Add the rest.", "Simmer 20 minutes with saffron.",
+    ])]
+    assert "dish_named_for_an_absence" in _food_rules_fired(week)
+
+
+def test_with_nothing_on_record_the_naming_check_stays_silent():
+    """A check that cannot tell is a check that should not speak."""
+    assert "dish_named_for_an_absence" not in _food_rules_fired(
+        [PINEAPPLE_FREE], context={}
+    )
+
+
+@pytest.mark.parametrize("label,steps", [
+    ("a dressed salad", [
+        "Whisk the lemon juice, mustard and olive oil into a dressing.",
+        "Toss the leaves and shaved fennel through it.",
+        "Top with toasted hazelnuts and shaved parmesan, and season well.",
+    ]),
+    ("a cold soba bowl", [
+        "Boil the soba until just tender, then rinse under cold water.",
+        "Whisk soy, sesame oil, rice vinegar and grated ginger together.",
+        "Toss the noodles through with cucumber and scallion.",
+    ]),
+])
+def test_a_dish_that_never_meets_dry_heat_is_not_asked_why_it_did_not_brown(label, steps):
+    """These fired under the first version, and the message it gave them —
+    "combines and heats" — was false for a dish that applies no heat at all.
+
+    A cold salad is not failing to brown; browning was never on the table. The
+    check now needs an oven or a pan in the method before it has anything to
+    ask about.
+    """
+    week = [_dinner("2026-09-07", label.title(), steps)]
+    assert "method_is_assembly" not in _food_rules_fired(week)
 
 
 @pytest.mark.parametrize("entry", [
@@ -139,7 +198,7 @@ def test_all_three_are_registered_in_check_week():
     """A check that exists but is never called is the failure mode this
     module's own docstring already records once."""
     week = [PINEAPPLE_FREE, SALMON, TIKKA]
-    fired = {v.rule for v in q.check_week(week, {})}
+    fired = {v.rule for v in q.check_week(week, AVOIDS)}
     assert FOOD_RULES <= fired | {"method_is_assembly"}
     assert "dish_named_for_an_absence" in fired and "method_is_assembly" in fired
 
@@ -151,7 +210,7 @@ def test_all_three_are_registered_in_check_week():
 def test_violations_are_persisted_not_just_logged():
     """"Tell you in the morning report" needs a row somewhere. Until
     2026-09-10 check_and_log only wrote to a logger."""
-    vs = q.check_week([PINEAPPLE_FREE, SALMON], {})
+    vs = q.check_week([PINEAPPLE_FREE, SALMON], AVOIDS)
     food = [v for v in vs if v.rule in FOOD_RULES]
     assert food, "fixture should produce something to store"
 
@@ -169,7 +228,7 @@ def test_food_problems_never_land_under_broken():
     So the food findings print in their own section, and the exit code stays
     0 — exit 1 is the overnight routine's signal to lead with breakage.
     """
-    tools.record_plan_quality(99, q.check_week([PINEAPPLE_FREE], {}))
+    tools.record_plan_quality(99, q.check_week([PINEAPPLE_FREE], AVOIDS))
 
     import app.db as db
     proc = subprocess.run(

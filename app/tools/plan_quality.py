@@ -638,53 +638,75 @@ def _snack_variety(entries: list[dict], context: dict) -> list[Violation]:
 # "Pineapple-Free Fruit Cup". Both planner prompts forbid naming a dish for
 # what it leaves out, in those words, with that exact example. It shipped
 # anyway, and nothing downstream looked.
+#
+# The captured group is the thing said to be ABSENT — "pineapple" in
+# "Pineapple-Free", "knead" in "No-Knead". Matching the shape is only half the
+# test; see _dish_named_for_an_absence for the half that decides.
 _ABSENCE_IN_NAME = re.compile(
     r"\b(?:"
-    r"[a-z]+[- ]free"          # pineapple-free, dairy free
-    r"|no[- ][a-z]+(?:ed)?"    # no-nut, no added
-    r"|without[- ][a-z]+"      # without dairy
-    r"|[a-z]{3,}less"          # meatless is fine; this is the cost of the rule
+    r"([a-z]+)[- ]free"        # pineapple-free, dairy free
+    r"|no[- ]([a-z]+)"         # no-knead, no-bake
+    r"|without[- ]([a-z]+)"    # without dairy
+    r"|([a-z]{3,})less"        # flourless, crustless
     r")\b",
     re.I,
 )
 
-# Names that are honestly about an absence rather than apologising for one.
-# "Meatless Monday" and a "sugarless" biscuit are describing the dish, not
-# naming it after the allergen somebody in the house has.
-_ABSENCE_ALLOWED = {"meatless", "boneless", "skinless", "seedless", "endless"}
+
+def _avoided_words(context: dict) -> set:
+    """Every food this household actually avoids, as lowercase words.
+
+    Built in check_and_log from their member dietary restrictions, their
+    dislikes, and any fact flagged hard — the same three sources the
+    generation prompt treats as must-avoids.
+    """
+    out = set()
+    for phrase in context.get("avoided") or []:
+        out |= set(re.findall(r"[a-z]+", str(phrase).lower()))
+    return out - {"a", "an", "the", "is", "are", "to", "no", "not", "free", "and", "or"}
 
 
 def _dish_named_for_an_absence(entries: list[dict], context: dict) -> list[Violation]:
-    """A dish must not be named after an ingredient it leaves out.
+    """A dish must not be named after an ingredient THIS HOUSEHOLD avoids.
 
     The prompt's own words: 'Never name a dish after an ingredient it leaves
     out. No "Pineapple-Free Fried Rice", no "Nut-Free Brownies" — the name
-    should describe what the dish IS.' The reason given there is the right
-    one: a meal named after an allergen is alarming to read on the week's
-    menu even when the recipe is safe.
+    should describe what the dish IS.' And the reason it gives is the whole
+    test: 'a meal named after an allergen is alarming to read on the week's
+    menu even when the recipe is safe.'
 
-    Found live in the household database that motivated this ticket:
-    "Cottage Cheese with Pineapple-Free Fruit Cup". A stated rule that
-    nothing verified.
+    So the absent thing has to be one of THEIR allergens or must-avoids. The
+    first version of this check matched the SHAPE alone and fired on
+    "No-Knead Bread", "Flourless Chocolate Cake", "Crustless Quiche" and —
+    memorably — "Timeless Tiramisu", none of which name an allergen and none
+    of which alarm anyone. That is precisely the noise this module's own
+    docstring warns is worse than no check at all.
+
+    With no avoid-list in the context it fires on nothing. Silence is the
+    right failure here: a check that cannot tell is a check that should not
+    speak.
     """
+    avoided = _avoided_words(context)
+    if not avoided:
+        return []
     violations = []
     for entry in entries:
         if not _is_planned(entry):
             continue
         name = entry.get("meal_name") or ""
-        match = _ABSENCE_IN_NAME.search(name)
-        if not match:
-            continue
-        if match.group(0).strip("- ").lower() in _ABSENCE_ALLOWED:
-            continue
-        violations.append(Violation(
-            rule="dish_named_for_an_absence", severity="warn",
-            date=entry.get("date"), slot=entry.get("slot"),
-            message=(
-                f"'{name}' is named after something it leaves out "
-                f"(\"{match.group(0)}\"). The name should say what the dish is."
-            ),
-        ))
+        for match in _ABSENCE_IN_NAME.finditer(name):
+            missing = next((g for g in match.groups() if g), "").lower()
+            if not missing or missing not in avoided:
+                continue
+            violations.append(Violation(
+                rule="dish_named_for_an_absence", severity="warn",
+                date=entry.get("date"), slot=entry.get("slot"),
+                message=(
+                    f"'{name}' is named after {missing}, which this household avoids. "
+                    "The name should say what the dish is."
+                ),
+            ))
+            break
     return violations
 
 
@@ -701,8 +723,7 @@ _SEASONING_WORDS = {
 }
 
 # Evidence that heat was actually used to build flavour rather than just
-# applied. "Bake" is deliberately absent: baking everything on one sheet pan
-# is the exact failure this is looking for.
+# applied.
 _TECHNIQUE_WORDS = {
     "sear", "seared", "brown", "browned", "browning", "saute", "sauté",
     "sautee", "sauteed", "sautéed", "fry", "fried", "sizzle", "caramelize",
@@ -711,6 +732,19 @@ _TECHNIQUE_WORDS = {
     "deglaze", "bloom", "blooms", "blooming", "marinate", "marinated",
     "sweat", "render", "rendered", "crisp", "crisped", "broil", "broiled",
     "roast", "roasted",
+}
+
+# Dry or fat heat — an oven or a pan, where browning is actually available.
+# This is what makes the check narrow enough to be worth having: a dressed
+# salad or a cold noodle bowl never browns anything and is not supposed to,
+# so without this gate the rule fired on good cold dishes and told them they
+# "combine and heat" when they apply no heat at all.
+#
+# Note "bake"/"oven" appear HERE and deliberately not in _TECHNIQUE_WORDS:
+# putting everything on one sheet pan is the exact failure being caught.
+_DRY_HEAT_WORDS = {
+    "bake", "baked", "baking", "oven", "pan", "skillet", "sheet", "tray",
+    "griddle", "air-fry", "airfryer",
 }
 
 
@@ -774,14 +808,20 @@ def _method_is_assembly(entries: list[dict], context: dict) -> list[Violation]:
     for entry in entries:
         if not _cooked_dinner(entry):
             continue
-        if _method_words(entry) & _TECHNIQUE_WORDS:
+        words = _method_words(entry)
+        if words & _TECHNIQUE_WORDS:
+            continue
+        # Nothing was ever put in an oven or a pan, so there was no browning
+        # to skip. A dressed salad and a cold noodle bowl belong here, and
+        # telling either of them it "combines and heats" would be false.
+        if not (words & _DRY_HEAT_WORDS):
             continue
         violations.append(Violation(
             rule="method_is_assembly", severity="info",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): the method combines and "
-                "heats but never browns, blooms or layers anything."
+                f"{entry['date']} dinner ('{entry['meal_name']}'): the method uses an oven "
+                "or a pan but never browns, blooms or layers anything."
             ),
         ))
     return violations
@@ -1066,6 +1106,21 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
                 memory.get("notes") or "",
                 generation_context.get("constraints_notes") or "",
             )).lower(),
+            # What this household actually avoids, from the same three
+            # sources the generation prompt treats as must-avoids: each
+            # member's dietary restrictions, their standing dislikes, and any
+            # fact flagged hard. _dish_named_for_an_absence needs it to tell
+            # "Pineapple-Free Fruit Cup" (a household allergic to pineapple)
+            # from "No-Knead Bread" (a household allergic to nothing in that
+            # name). Without it that check stays silent, which is the right
+            # way for it to fail.
+            "avoided": [
+                *(r for m in (memory.get("members") or [])
+                  for r in (m.get("dietary_restrictions") or [])),
+                *(memory.get("dislikes") or []),
+                *(f.get("text") or "" for f in (generation_context.get("household_facts") or [])
+                  if f.get("hard")),
+            ],
         }
         violations = check_week(entries, quality_context)
         for v in violations:
