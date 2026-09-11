@@ -3393,27 +3393,23 @@ html, body {
   color: var(--apricot-label);
 }
 .gro-scan-actions { display: flex; gap: 10px; padding-top: 4px; }
-.gro-scan-save {
-  flex: 1 1 auto;
-  min-height: 48px;
-  border: none;
-  border-radius: var(--radius-action);
-  background: var(--apricot);
-  color: var(--on-accent-ink);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-}
-.gro-scan-save:hover { background: var(--apricot-light); }
+/* .gro-scan-save carries layout only — its fill/color/type come from
+   .btn-gold (theme.css), the app's existing convention for a body-level
+   confirm sheet's one action when the tab behind it already has its own
+   apricot (DESIGN_SYSTEM §2 rule 5: one apricot primary per screen; Shop's
+   LIST step spends its on .gro-primary, "Start the trip"). Same pairing
+   week-sheet-back/reset-confirm/dinner-confirm-add use. */
+.gro-scan-save { flex: 1 1 auto; }
 .gro-scan-save:disabled { opacity: .6; cursor: default; }
+/* Sized to match .btn-gold's row-mate (44px min-height, 12px radius) now
+   that the save button is .btn-gold rather than a bespoke apricot pill —
+   the two need to read as one pair. */
 .gro-scan-cancel {
   flex: 0 0 auto;
-  min-height: 48px;
+  min-height: 44px;
   padding: 0 18px;
   border: 1.5px solid var(--hairline-strong);
-  border-radius: var(--radius-action);
+  border-radius: 12px;
   background: none;
   color: var(--ink-secondary);
   font-family: var(--font-body);

@@ -23,12 +23,17 @@ Two layers, same split as test_api_call_recording.py's photo-scan test:
 from __future__ import annotations
 
 import types
+from pathlib import Path
 
 import pytest
 
 from app import agent, tools
 from app import main
 from app.main import _MAX_SCAN_IMAGE_BYTES
+
+REPO = Path(__file__).resolve().parent.parent
+SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
+SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
 
 # ---------- stubbing the Anthropic client (same shape as
@@ -263,3 +268,26 @@ def test_confirm_scan_with_nothing_kept_adds_nothing(signed_in):
     assert res.status_code == 200
     assert res.json() == {"added": [], "merged_with_existing": []}
     assert tools.list_grocery_list() == []
+
+
+# ---------- DESIGN_SYSTEM.md §2 rule 5: one apricot primary per screen ----------
+
+def test_the_scan_review_sheets_save_button_is_not_a_second_apricot():
+    """
+    Shop's LIST step already spends its one apricot on .gro-primary ("Start
+    the trip") -- this sheet's own confirm action must not add a second one
+    just because it is a separate on-screen control. Every other body-level
+    confirm sheet in the app (week-sheet-back, reset-confirm,
+    dinner-confirm-add) uses .btn-gold for exactly this reason, and this
+    button follows the same convention rather than a bespoke apricot fill.
+    """
+    assert 'class="gro-scan-save btn-gold"' in SHELL_JS, (
+        "The scan review sheet's save button should carry .btn-gold, the "
+        "app's existing convention for a confirm sheet's one action."
+    )
+    save_block = SHELL_CSS.split(".gro-scan-save {", 1)[1][:400]
+    assert "var(--apricot)" not in save_block, (
+        "The scan review sheet's save button must not carry its own apricot "
+        "fill -- Shop's LIST step's one apricot is \"Start the trip\" "
+        "(DESIGN_SYSTEM.md §2 rule 5)."
+    )

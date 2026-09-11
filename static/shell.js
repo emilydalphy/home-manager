@@ -3363,7 +3363,12 @@
       '</div>' +
       '<div class="gro-scan-actions">' +
         '<button type="button" class="gro-scan-cancel" data-gro="scan-close">Cancel</button>' +
-        '<button type="button" class="gro-scan-save" data-gro="scan-save">Add to the list</button>' +
+        // .btn-gold, not apricot: Shop's LIST step already spends its one
+        // apricot on .gro-primary ("Start the trip") — DESIGN_SYSTEM §2
+        // rule 5. Every other body-level confirm sheet in the app
+        // (week-sheet-back, reset-confirm, dinner-confirm-add) uses this
+        // same class for exactly this reason.
+        '<button type="button" class="gro-scan-save btn-gold" data-gro="scan-save">Add to the list</button>' +
       '</div>';
   }
 
