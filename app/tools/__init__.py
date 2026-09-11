@@ -370,6 +370,18 @@ from .slot_needs import (  # noqa: F401
     set_slot_need,
     set_slot_recommendation,
 )
+from .staples import (  # noqa: F401
+    add_staple,
+    decide_staple_line,
+    list_staples,
+    mark_staple_plenty,
+    pause_staple,
+    record_staple_purchase,
+    remove_staple,
+    remove_staple_by_id,
+    sync_due_staples,
+    undo_staple_decision,
+)
 from .stores import (  # noqa: F401
     _DEFAULT_AISLE_ORDER,
     close_shopping_trip,

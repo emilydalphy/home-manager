@@ -858,6 +858,11 @@ set_item_store to remember it per item, and get_grocery_list_by_store instead of
 get_grocery_list_by_section once more than one store is in play.
 - Ad hoc grocery items ("also grab batteries") just use add_grocery_item/add_grocery_items like \
 anything else — no special handling needed, a grocery item doesn't need to trace back to a recipe.
+- Staples are the things a household buys on a rhythm, food or not ("we always get coffee", \
+"we go through dish soap about every month", "keep cat litter stocked"): add_staple, and Pomona puts \
+it on the list just before it's probably due — no counting, no inventory. "We've got plenty" is \
+mark_staple_plenty; "we don't buy that any more" is remove_staple. A one-off "grab batteries" is \
+still add_grocery_item, not a staple.
 - If the user asks what's been learned or whether suggestions have improved, use \
 get_learning_summary for the aggregate picture (recipes tracked, liked/disliked counts, \
 deviations logged) rather than get_household_memory, which is raw preference values.
@@ -1773,6 +1778,36 @@ TOOL_DEFINITIONS = [
             },
             "required": ["item"],
         },
+    },
+    {
+        "name": "add_staple",
+        "description": "Remember something the household buys on a rhythm — food or not: 'we always get coffee', 'we go through dish soap about every month', 'add toilet paper to our staples', 'we need to keep cat litter stocked'. Pomona puts it on the grocery list just before it's probably due and learns the real rhythm from when it gets bought. Only pass every_days for a rhythm the person actually said (a month = 30, every two weeks = 14); otherwise leave it unset. Set running_low true when they say they're out or nearly out right now — it goes on the list today. This is NOT inventory: no counts, no locations, never ask what's in the cupboard. If they just want something on the list once, use add_grocery_item instead.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item": {"type": "string"},
+                "every_days": {"type": "integer", "description": "Only when the person said how often. Days."},
+                "quantity": {"type": "string", "description": "The usual amount, if they said ('2 packs'). Otherwise leave empty."},
+                "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "household", "other"], "description": "household for non-food (cleaning, paper goods, pet supplies)."},
+                "running_low": {"type": "boolean"},
+            },
+            "required": ["item"],
+        },
+    },
+    {
+        "name": "list_staples",
+        "description": "The household's staples — what they buy on a rhythm, each with its cadence in words, when it was last bought, when it's probably due, and whether it's paused. Use for 'what are our staples?', 'when are we due for coffee?', and before add_staple to avoid a duplicate.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "mark_staple_plenty",
+        "description": "'We've got plenty of coffee' / 'we're fine for dish soap' — Pomona suggested a staple too early. Pushes its next due date a whole cadence out and takes any suggestion line for it off the grocery list. Doesn't change the learned rhythm.",
+        "input_schema": {"type": "object", "properties": {"item": {"type": "string"}}, "required": ["item"]},
+    },
+    {
+        "name": "remove_staple",
+        "description": "'We don't buy that any more' / 'stop reminding us about oat milk' — stop treating something as a staple. A line already on the grocery list for it is left alone.",
+        "input_schema": {"type": "object", "properties": {"item": {"type": "string"}}, "required": ["item"]},
     },
     {
         "name": "add_grocery_items",
@@ -5240,6 +5275,10 @@ TOOL_FUNCTIONS = {
     "edit_preference": tools.edit_preference,
     "delete_preference": tools.delete_preference,
     "add_grocery_item": tools.add_grocery_item,
+    "add_staple": tools.add_staple,
+    "list_staples": tools.list_staples,
+    "mark_staple_plenty": tools.mark_staple_plenty,
+    "remove_staple": tools.remove_staple,
     "add_grocery_items": tools.add_grocery_items,
     "list_grocery_list": tools.list_grocery_list,
     "get_grocery_list_by_section": tools.get_grocery_list_by_section,

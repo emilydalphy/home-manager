@@ -560,19 +560,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     conn = get_conn()
     if status == "excluded":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
             (household_id(), status),
         ).fetchall()
@@ -626,6 +626,12 @@ def get_grocery_list_by_section(status: str = "needed") -> dict:
     Items hidden via exclude_grocery_item are left out automatically (see
     list_grocery_list) unless status='excluded' or 'all' is passed.
     """
+    if status == "needed":
+        # A staple that is probably due goes on the list the moment the
+        # list is read — the one place the household is already looking.
+        # Idempotent, and a no-op for a household with no staples.
+        from . import staples as _staples
+        _staples.sync_due_staples()
     items = list_grocery_list(status=status)
     sections: dict[str, list[dict]] = {s: [] for s in _quantities._GROCERY_SECTION_ORDER}
     for it in items:
@@ -848,7 +854,7 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT item, quantity, category, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT item, quantity, category, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if row is None:
         conn.close()
@@ -871,6 +877,12 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     conn.close()
     if status == "purchased" and row:
         _inventory._add_to_inventory(row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"])
+        # A bought staple teaches its rhythm, whoever put the line there —
+        # a hand-added "coffee" counts the same as the suggestion Pomona
+        # made. No-op for anything that isn't a staple. Imported here, not
+        # at the top: staples.py imports this module for the merge key.
+        from . import staples as _staples
+        _staples.record_staple_purchase(row["item"], source="grocery", staple_id=row["staple_id"])
     return {"item_id": item_id, "status": status}
 
 

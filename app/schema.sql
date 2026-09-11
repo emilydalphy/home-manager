@@ -684,6 +684,12 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- in To-buy again despite the inventory match. Never affects removal —
     -- confirming "doesn't need to be on the list" just deletes the row.
     already_have_reviewed INTEGER NOT NULL DEFAULT 0,
+    -- Set on a line Pomona put here itself because a staple is probably
+    -- due (app/tools/staples.py, sync_due_staples). The Grocery screen
+    -- shows such a line as a suggestion ("probably running low") with two
+    -- one-tap answers; buying it is what teaches the staple's rhythm. NULL
+    -- for every line a person or a plan added. Cleared by remove_staple.
+    staple_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -765,6 +771,45 @@ CREATE TABLE IF NOT EXISTS shopping_trips (
     item_count INTEGER NOT NULL DEFAULT 0,
     started_at TEXT NOT NULL DEFAULT (datetime('now')),
     finished_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Staples (Loop Board "Staples: tell me before we run out", 2026-09-11):
+-- the things a household buys on a rhythm, food or not, so Pomona can put
+-- them on the list just before they run out. The first feature built
+-- straight from the mental load model — "keeping track of when we need
+-- more" is the research's own example of the anticipation load that lands
+-- on one person. Deliberately NOT inventory: no counts, no locations,
+-- nothing here reads inventory_items. A cadence and a last-bought date are
+-- the whole model; see app/tools/staples.py.
+CREATE TABLE IF NOT EXISTS staples (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    item TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other', -- grocery section, same vocabulary as grocery_items.category
+    quantity TEXT NOT NULL DEFAULT '', -- the usual amount, if the household said ("2 packs"); '' otherwise
+    cadence_days INTEGER NOT NULL DEFAULT 21,
+    cadence_source TEXT NOT NULL DEFAULT 'default', -- default | told | learned
+    last_bought_at TEXT, -- ISO date; NULL until the first purchase Pomona has seen
+    next_due_at TEXT NOT NULL, -- ISO date; on or before today means "probably running low"
+    skip_streak INTEGER NOT NULL DEFAULT 0, -- consecutive "not this trip" answers; three pauses it
+    paused INTEGER NOT NULL DEFAULT 0, -- 1 = not suggested; shown in the Staples card with a one-tap resume
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- One dated fact per row about a staple. 'bought' rows are what the
+-- cadence is learned from (median interval, once there are two); the rest
+-- are the household's answers, kept so an Undo can reverse exactly one.
+-- source: grocery (a tick on the list) | seed (a purchased line that
+-- predates the staple) | chat | tap (a Grocery-screen button) | auto.
+CREATE TABLE IF NOT EXISTS staple_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    staple_id INTEGER NOT NULL REFERENCES staples(id),
+    kind TEXT NOT NULL, -- added | bought | plenty | skipped | paused | resumed
+    source TEXT NOT NULL DEFAULT '',
+    on_date TEXT NOT NULL, -- ISO date the fact is about
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- design_handoff_home_manager Phase 4: freeform household facts for the
