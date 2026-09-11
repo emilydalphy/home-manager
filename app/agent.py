@@ -4829,16 +4829,17 @@ def fill_in_recipe(recipe_name: str) -> dict:
     )
 
 
-# ---------- Photo-based inventory capture (Phase 4, §4.3) ----------
-# Three entry points (receipt, fridge shelf, pantry shelf) sharing one
-# output shape and one forced-tool-call pattern, using Claude's native
-# multimodal support directly rather than a separate OCR/vision service.
-# None of these are registered as chat tools — like generate_recipe_detail_llm,
-# they're direct calls from a dedicated endpoint/button, not something the
-# chat agent invokes itself. Per the PRD, results are never saved directly —
-# all three return a draft list for the Inventory view to show as an
-# editable review step before anything is written to inventory_items, since
-# especially fridge/pantry recognition is expected to be error-prone.
+# ---------- Photo-based capture (Phase 4, §4.3; grocery list added Phase 1.5) ----------
+# Four entry points (receipt, fridge shelf, pantry shelf, grocery list)
+# sharing one output shape and one forced-tool-call pattern, using Claude's
+# native multimodal support directly rather than a separate OCR/vision
+# service. None of these are registered as chat tools — like
+# generate_recipe_detail_llm, they're direct calls from a dedicated
+# endpoint/button, not something the chat agent invokes itself. Per the
+# PRD, results are never saved directly — all four return a draft list for
+# a review step before anything is written (inventory_items for the first
+# three, grocery_items for the fourth), since misreads are expected and
+# nothing should be trusted silently.
 
 _SCAN_ITEMS_TOOL = {
     "name": "submit_scanned_items",
@@ -4973,6 +4974,32 @@ def scan_pantry_photo(image_b64: str, media_type: str) -> list[dict]:
     instructions = _FRIDGE_PANTRY_SCAN_INSTRUCTIONS_TEMPLATE.format(place="pantry or cupboard shelf")
     items = _scan_image_for_items(image_b64, media_type, instructions)
     return _tag_scan_location(items, "pantry")
+
+
+def scan_grocery_list_image(image_b64: str, media_type: str) -> list[dict]:
+    """
+    Fourth scan target (Loop Board, 2026-09-11): read a photographed or
+    screenshotted grocery list -- a handwritten note, a whiteboard, or a
+    screenshot of digital text (a notes app, a text thread, a recipe's
+    ingredient list) -- and extract its line items. Same
+    review-before-save flow as the other three: this returns a draft list,
+    /api/grocery-list/confirm-scan is what actually adds anything.
+    """
+    instructions = """This is a photo of a grocery list -- either handwritten (on paper, a \
+notepad, a whiteboard) or a screenshot of digital text (a notes app, a text message thread, a \
+recipe's ingredient list). Extract every line item as the shopper would say it at the store: a \
+plain item name as bought (expand any abbreviation into a normal name), and a quantity only if \
+one is actually written next to it ("2", "a dozen", "1 gal") -- leave quantity blank rather than \
+inventing one that isn't there. Skip anything that clearly isn't a grocery item (a header like \
+"Grocery List", a date, an unrelated to-do, a struck-through/crossed-out line already bought). If \
+a word is illegible or you genuinely can't tell what it says, leave that line out rather than \
+guessing wildly -- better to under-extract than invent items. Pick the correct grocery category \
+for each item (produce, dairy, meat/seafood, pantry, frozen, other). Mark confidence 'low' for \
+anything you're genuinely unsure you read correctly (unclear handwriting, an ambiguous \
+abbreviation).
+
+Call submit_scanned_items with the result."""
+    return _scan_image_for_items(image_b64, media_type, instructions)
 
 
 TOOL_FUNCTIONS = {

@@ -1479,7 +1479,8 @@
     chevRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>',
     tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
     basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>',
-    dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>'
+    dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
   };
 
   // How many things a store card shows before "+ N more".
@@ -2876,11 +2877,22 @@
     // errand next to starting the trip, and a dock holding two jobs is not
     // a dock (rule 2 — "a second apricot" is what Rule 5 already forbids,
     // and a second STRIP is the same mistake one level up).
+    // The photo button (Loop Board, 2026-09-11 — "snap a photo of a
+    // written or on-screen list and have Pomona add it") rides along in
+    // the same row as the manual add, the nearest existing "put something
+    // on the list" affordance — the inventory scans this borrows the
+    // pattern from live on a different tab (Kitchen's Inventory sheet),
+    // and where exactly this control sits was left an open design
+    // question on the ticket. See groScanOpenPicker/groScanUploadPhoto.
     return '<div class="gro-add">' +
         '<input type="text" class="gro-add-item" id="gro-add-item" ' +
           'placeholder="Add something" aria-label="Something to add to the list" />' +
         '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="How much" />' +
         '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
+        '<button type="button" class="gro-scan-btn" id="gro-scan-btn" data-gro="scan-open" ' +
+          'title="Add from a photo of your list" aria-label="Add from a photo of your list">' +
+          GRO_ICONS.camera +
+        '</button>' +
       '</div>';
   }
 
@@ -3267,6 +3279,158 @@
     if (freshItem) freshItem.focus();
   }
 
+  // ---------- Photo scan review (Loop Board, 2026-09-11) ----------
+  // "Grocery: snap a photo of a written or on-screen list and have Pomona
+  // add it." A fourth scan target sibling to inventory's receipt/fridge/
+  // pantry scans (app/agent.py's _scan_image_for_items,
+  // /api/inventory/scan-*) — same forced-tool-call model, same
+  // review-before-save shape (POST /api/grocery-list/scan for the draft,
+  // POST /api/grocery-list/confirm-scan to actually add anything). The
+  // sheet lives at body level (shell.html), same as ask-sheet/week-sheet,
+  // since position:fixed has to sit outside this tab panel's own
+  // stacking/scroll context — so it is wired once below, not rebuilt
+  // inside buildGroceryPanel.
+  var groScanState = { items: [] };
+
+  function groScanOpenPicker() {
+    var input = document.getElementById('gro-scan-input');
+    if (input) input.click();
+  }
+
+  function groScanOpenSheet() {
+    var scrim = document.getElementById('gro-scan-scrim');
+    var sheet = document.getElementById('gro-scan-sheet');
+    if (!scrim || !sheet) return;
+    scrim.hidden = false;
+    sheet.hidden = false;
+  }
+  function groScanCloseSheet() {
+    var scrim = document.getElementById('gro-scan-scrim');
+    var sheet = document.getElementById('gro-scan-sheet');
+    if (scrim) scrim.hidden = true;
+    if (sheet) sheet.hidden = true;
+    groScanState.items = [];
+  }
+
+  function groScanRenderLoading() {
+    var body = document.getElementById('gro-scan-body');
+    if (!body) return;
+    body.innerHTML =
+      '<p class="gro-scan-sub">Reading your photo&hellip;</p>' +
+      '<div class="gro-scan-loading">This can take a few seconds.</div>';
+  }
+
+  // Calm and plain per DESIGN_SYSTEM §8 — error copy never gets an
+  // exclamation mark or forced cheer, and it's always paired with a way
+  // out (here, just Close — the file input is untouched so trying again
+  // is one more tap on the camera button).
+  function groScanRenderError(message) {
+    var body = document.getElementById('gro-scan-body');
+    if (!body) return;
+    body.innerHTML =
+      '<div class="gro-scan-error">' + escapeHtml(message) + '</div>' +
+      '<div class="gro-scan-actions">' +
+        '<button type="button" class="gro-scan-cancel" data-gro="scan-close">Close</button>' +
+      '</div>';
+  }
+
+  // Voice per DESIGN_SYSTEM §8: state what happened, then the one thing to
+  // check — "untick anything I got wrong" is the review step in one line,
+  // not a restated header.
+  function groScanRenderReview() {
+    var body = document.getElementById('gro-scan-body');
+    if (!body) return;
+    if (!groScanState.items.length) {
+      body.innerHTML =
+        '<p class="gro-scan-empty">Nothing to add from that photo.</p>' +
+        '<div class="gro-scan-actions"><button type="button" class="gro-scan-cancel" data-gro="scan-close">Close</button></div>';
+      return;
+    }
+    body.innerHTML =
+      '<p class="gro-scan-sub">Here&rsquo;s what I read &mdash; untick anything I got wrong.</p>' +
+      '<div class="gro-scan-list">' +
+        groScanState.items.map(function (it, i) {
+          return '<div class="gro-scan-row' + (it.keep === false ? ' unchecked' : '') + '" data-idx="' + i + '">' +
+            '<label class="gro-scan-check-wrap">' +
+              '<input type="checkbox" class="gro-scan-check" data-idx="' + i + '" ' + (it.keep === false ? '' : 'checked') +
+                ' aria-label="Keep ' + escapeHtml(it.item) + '" />' +
+            '</label>' +
+            '<input type="text" class="gro-scan-name" data-idx="' + i + '" value="' + escapeHtml(it.item) + '" aria-label="Item name" />' +
+            '<input type="text" class="gro-scan-qty" data-idx="' + i + '" value="' + escapeHtml(it.quantity || '') + '" placeholder="Qty" aria-label="Quantity" />' +
+            (it.confidence === 'low' ? '<span class="gro-scan-low">Check</span>' : '') +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<div class="gro-scan-actions">' +
+        '<button type="button" class="gro-scan-cancel" data-gro="scan-close">Cancel</button>' +
+        '<button type="button" class="gro-scan-save" data-gro="scan-save">Add to the list</button>' +
+      '</div>';
+  }
+
+  async function groScanUploadPhoto(file) {
+    groScanOpenSheet();
+    groScanRenderLoading();
+    try {
+      var form = new FormData();
+      form.append('photo', file);
+      var res = await fetch('/api/grocery-list/scan', { method: 'POST', body: form });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        groScanRenderError(data.detail || "I couldn't read that photo — try again.");
+        return;
+      }
+      groScanState.items = (data.items || []).map(function (it) {
+        return { item: it.item, quantity: it.quantity || '', category: it.category || 'other', confidence: it.confidence, keep: true };
+      });
+      groScanRenderReview();
+    } catch (err) {
+      console.warn('Grocery list scan failed:', err);
+      groScanRenderError("I couldn't reach Pomona's servers — try again in a moment.");
+    }
+  }
+
+  // Confirms through /api/grocery-list/confirm-scan, which goes straight
+  // through tools.add_grocery_items — the same add path (and duplicate
+  // quantity consolidation) a typed item uses, so a confirmed scanned item
+  // behaves exactly like one added any other way.
+  async function groScanSave() {
+    var toSave = groScanState.items.filter(function (it) { return it.keep !== false && it.item.trim(); });
+    if (!toSave.length) { groScanCloseSheet(); return; }
+    var saveBtn = document.querySelector('.gro-scan-save');
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+      var res = await fetch('/api/grocery-list/confirm-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: toSave.map(function (it) { return { item: it.item.trim(), quantity: it.quantity, category: it.category }; })
+        })
+      });
+      if (!res.ok) throw new Error('save failed');
+      var result = await res.json().catch(function () { return {}; });
+      groScanCloseSheet();
+      var addedCount = (result.added || []).length;
+      var mergedCount = (result.merged_with_existing || []).length;
+      var parts = [];
+      if (addedCount) parts.push(groPlural(addedCount, 'item', 'items') + ' added');
+      if (mergedCount) parts.push(groPlural(mergedCount, 'item', 'items') + ' combined with what was already on the list');
+      showToast(parts.length ? parts.join(', ') + '.' : 'Added to the list.');
+      await loadGrocery();
+    } catch (err) {
+      console.warn('Grocery list confirm-scan failed:', err);
+      showToast("Couldn't save those — try again.");
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  // DOM wiring for the sheet above (scrim/handle/close/file-input
+  // listeners) lives with the other body-level sheets' wiring, near
+  // weekSheetScrim — see groScanSheetEl there. Kept out of this function
+  // cluster on purpose: tests/test_grocery_fast_sort.py runs this whole
+  // region under Node against a stub with no `document`, and every other
+  // handler here is a plain function it can call directly rather than
+  // code that touches the DOM at load time.
+
   // Finishing a stop: everything in the trolley becomes purchased (which is
   // what actually writes it into the kitchen's inventory — see
   // tools.mark_grocery_item), then the trip is recorded. The trip row is
@@ -3509,6 +3673,13 @@
         // Straight to /api/grocery-list/add — see groAddItem. The ask bar
         // is still there, above the tab bar, for anything wordier.
         groAddItem();
+        return;
+
+      case 'scan-open':
+        // Opens the hidden file input; the review sheet itself lives at
+        // body level (see groScanUploadPhoto) since position:fixed has to
+        // sit outside this panel's stacking/scroll context.
+        groScanOpenPicker();
         return;
 
       case 'expand-store':
@@ -11062,6 +11233,55 @@
     document.getElementById('week-sheet-handle').addEventListener('click', closeWeekSheet);
     document.getElementById('week-sheet-back').addEventListener('click', closeWeekSheet);
     document.getElementById('week-sheet-share').addEventListener('click', shareWeekPlan);
+  }
+
+  // ---------- Grocery photo-scan sheet wiring ----------
+  // Same body-level scrim/sheet pattern as the week sheet above. The
+  // render/upload/save logic (groScanOpenSheet, groScanRenderReview,
+  // groScanUploadPhoto, groScanSave, ...) lives with the rest of Grocery,
+  // near groAddItem — only the DOM listeners live here, because
+  // tests/test_grocery_fast_sort.py evaluates that whole Grocery region
+  // under Node against a stub with no `document`.
+  var groScanSheetEl = document.getElementById('gro-scan-sheet');
+  var groScanScrimEl = document.getElementById('gro-scan-scrim');
+  var groScanInputEl = document.getElementById('gro-scan-input');
+  if (groScanSheetEl) {
+    groScanSheetEl.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-gro]');
+      if (!el) return;
+      if (el.dataset.gro === 'scan-close') { groScanCloseSheet(); return; }
+      if (el.dataset.gro === 'scan-save') { groScanSave(); return; }
+    });
+    // Delegated so it works for every row without re-wiring on each render
+    // (the same reason onGroceryClick is one listener for the whole tab).
+    groScanSheetEl.addEventListener('change', function (e) {
+      if (!e.target.classList.contains('gro-scan-check')) return;
+      var idx = Number(e.target.dataset.idx);
+      if (!groScanState.items[idx]) return;
+      groScanState.items[idx].keep = e.target.checked;
+      var row = e.target.closest('.gro-scan-row');
+      if (row) row.classList.toggle('unchecked', !e.target.checked);
+    });
+    groScanSheetEl.addEventListener('input', function (e) {
+      var idx = Number(e.target.dataset.idx);
+      if (!groScanState.items[idx]) return;
+      if (e.target.classList.contains('gro-scan-name')) groScanState.items[idx].item = e.target.value;
+      if (e.target.classList.contains('gro-scan-qty')) groScanState.items[idx].quantity = e.target.value;
+    });
+  }
+  if (groScanScrimEl) groScanScrimEl.addEventListener('click', groScanCloseSheet);
+  var groScanHandleEl = document.getElementById('gro-scan-handle');
+  if (groScanHandleEl) groScanHandleEl.addEventListener('click', groScanCloseSheet);
+  var groScanCloseBtnEl = document.getElementById('gro-scan-close');
+  if (groScanCloseBtnEl) groScanCloseBtnEl.addEventListener('click', groScanCloseSheet);
+  if (groScanInputEl) {
+    groScanInputEl.addEventListener('change', function () {
+      var file = groScanInputEl.files && groScanInputEl.files[0];
+      // Cleared immediately so picking the exact same file twice in a row
+      // still fires a change event the second time.
+      groScanInputEl.value = '';
+      if (file) groScanUploadPhoto(file);
+    });
   }
 
   // ---------- Start over (self-service reset) ----------

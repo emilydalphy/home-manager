@@ -194,6 +194,29 @@
     <iframe id="kit-sheet-frame" class="kit-sheet-frame" title=""></iframe>
   </div>
 
+  <!-- Grocery list photo-scan review sheet (Loop Board, 2026-09-11 —
+       "Grocery: snap a photo of a written or on-screen list and have
+       Pomona add it"). Fourth scan target, sibling to the inventory scans
+       above (which live inside the Kitchen sheet's inventory.html). Same
+       body-level scrim/sheet pattern as every other sheet here
+       (position:fixed has to sit outside the tab panel's own
+       stacking/scroll context). The file input is hidden and clicked
+       programmatically by the Shop screen's photo button
+       (static/shell.js, groScanOpenPicker); capture="environment" opens
+       the back camera directly on a phone while still accepting a normal
+       photo-library pick, same as the inventory scan inputs. -->
+  <input type="file" accept="image/*" capture="environment" id="gro-scan-input" hidden />
+  <div id="gro-scan-scrim" hidden></div>
+  <div id="gro-scan-sheet" hidden role="dialog" aria-label="Add from a photo">
+    <div class="ask-sheet-handle" id="gro-scan-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title">Add from a photo</span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="gro-scan-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="gro-scan-body"></div>
+  </div>
+
   <!-- "Start over" confirm (Meals tab) — the self-service reset for a week
        that needs a do-over, backed by GET /api/reset/preview and
        POST /api/reset. Deliberately a two-checkbox dialog rather than a
