@@ -111,6 +111,15 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
+    # A staple's line dropped here means "we already have it" — say so to the
+    # staple, or the next list read puts the line straight back.
+    _staple_row = conn.execute(
+        "SELECT id, staple_id FROM grocery_items WHERE id = ? AND household_id = ? AND status != 'removed'",
+        (item_id, household_id()),
+    ).fetchone()
+    if _staple_row is not None and _staple_row["staple_id"]:
+        from . import staples as _staples
+        _staples.note_line_removed(conn, _staple_row, how="plenty")
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
@@ -141,9 +150,15 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     row = conn.execute(
-        "SELECT already_have_inventory_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT already_have_inventory_id, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
+    if row is not None and row["staple_id"]:
+        # "Actually, I need it" on a staple's line: the staple was wrong to
+        # say plenty, so its last answer goes too — otherwise the line is
+        # back but the staple still believes the cupboard is full.
+        from . import staples as _staples
+        _staples.reverse_last_answer(conn, row["staple_id"])
     conn.execute(
         "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, "
         "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
@@ -195,7 +210,10 @@ def get_already_have_decisions() -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, item, quantity, category, store, removed_by, removed_at FROM grocery_items "
-        "WHERE household_id = ? AND status = 'removed' AND removed_by != '' "
+        # removed_by 'staple' is a "not this trip" / "we have plenty" answer
+        # on a staple's own line, not an already-have decision a person
+        # made here — it would read as their words otherwise.
+        "WHERE household_id = ? AND status = 'removed' AND removed_by != '' AND removed_by != 'staple' "
         "AND removed_at IS NOT NULL AND removed_at >= ? ORDER BY removed_at DESC",
         (household_id(), cutoff),
     ).fetchall()

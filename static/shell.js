@@ -1565,6 +1565,13 @@
     preShopFlags: [],
     preShopOpen: false,
     preShopExpanded: false,
+    // Staples (app/tools/staples.py): what the household buys on a rhythm.
+    // Loaded with the list, shown as one quiet card at the foot of LIST when
+    // there are any, closed by default. A due one is not in here twice — it
+    // is an ordinary line in its section carrying staple_id, rendered as a
+    // suggestion by groListRowHtml.
+    staples: [],
+    staplesOpen: false,
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // WRAP UP's confirmation
     listExpanded: {},       // store name -> bool: "+ N more" tapped on LIST
     // The one LIST row whose ⋯ menu is open, as a string id, or null. One at
@@ -2110,6 +2117,14 @@
     } catch (err) { groceryState.preShopFlags = []; }
   }
 
+  async function groLoadStaples() {
+    try {
+      var res = await fetch('/api/staples');
+      if (!res.ok) { groceryState.staples = []; return; }
+      groceryState.staples = (await res.json()).staples || [];
+    } catch (err) { groceryState.staples = []; }
+  }
+
   // WRAP UP's confirmation section — this week's "already have" decisions
   // plus current "Elsewhere" exclusions. Loaded alongside everything else
   // rather than only when WRAP UP is the active step, same as preShopFlags,
@@ -2126,7 +2141,7 @@
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary()]);
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples()]);
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -2456,7 +2471,7 @@
         }
         return html + groShopDoneHtml();
       }
-      return html + '<p class="gro-empty">Nothing on the list yet — it’ll arrive here when you plan a week.</p>';
+      return html + '<p class="gro-empty">Nothing on the list yet — it’ll arrive here when you plan a week.</p>' + groStaplesHtml();
     }
 
     html += groDuplicatesHtml(data);
@@ -2501,7 +2516,7 @@
       var anywhere = groSoleStore(data) ? [] : groRideAlongItems(data);
       if (anywhere.length) html += groAnywhereCardHtml(data, anywhere);
     }
-    return html;
+    return html + groStaplesHtml();
   }
 
   // ---------- Two rows of the same thing ----------
@@ -2524,6 +2539,19 @@
   var GRO_NUMBER_WORDS = ['no', 'one', 'Two', 'Three', 'Four', 'Five', 'Six',
     'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
   function groCountWord(n) { return GRO_NUMBER_WORDS[n] || String(n); }
+
+  // "about 3 weeks" for a toast's "I'll ask again in ..." — the same
+  // rounding the server uses for cadence_words, without the "every".
+  function groCadenceSpan(days) {
+    days = Number(days) || 0;
+    if (days < 6) return 'about ' + days + ' days';
+    if (days < 10) return 'about a week';
+    var weeks = Math.round(days / 7);
+    if (weeks <= 1) return 'about a week';
+    if (weeks <= 3) return 'about ' + weeks + ' weeks';
+    var months = Math.max(1, Math.round(days / 30));
+    return months <= 1 ? 'about a month' : 'about ' + months + ' months';
+  }
 
   // One quiet line at the top of the list per duplicated thing, with the
   // Merge the Review card had. A line, not a card: it is a small thing to
@@ -2612,14 +2640,32 @@
   function groListRowHtml(it, data) {
     var id = String(it.id);
     var open = groceryState.openRowId === id;
-    return '<div class="gro-listrow' + (open ? ' open' : '') + '">' +
+    var staple = !!it.staple_id;
+    return '<div class="gro-listrow' + (open ? ' open' : '') + (staple ? ' gro-listrow-staple' : '') + '">' +
       '<span class="gro-listrow-name">' + escapeHtml(it.item) + '</span>' +
       (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
       '<button type="button" class="gro-rowmore" data-gro="row-menu" data-id="' + id + '" ' +
         'aria-expanded="' + open + '" aria-label="More for ' + escapeHtml(it.item) + '">' +
         GRO_ICONS.dots + '</button>' +
     '</div>' +
+    (staple ? groStapleLineHtml(it) : '') +
     (open ? groRowMenuHtml(it, data) : '');
+  }
+
+  // The line under a staple Pomona put on the list itself (staple_id set):
+  // the visible flag that makes this silent learning rather than guessing
+  // (DESIGN_SYSTEM.md §7), and the two answers that change anything. There
+  // is no "keep" button: leaving it on the list is keeping it, and buying
+  // it is what teaches the rhythm. Quiet throughout — no apricot.
+  function groStapleLineHtml(it) {
+    var id = String(it.id);
+    return '<div class="gro-staple-line">' +
+      '<span class="gro-staple-text">Probably running low</span>' +
+      '<button type="button" class="gro-staple-btn" data-gro="staple-decide" data-decision="plenty" ' +
+        'data-id="' + id + '" data-name="' + escapeHtml(it.item) + '">We have plenty</button>' +
+      '<button type="button" class="gro-staple-btn" data-gro="staple-decide" data-decision="skip" ' +
+        'data-id="' + id + '" data-name="' + escapeHtml(it.item) + '">Not this trip</button>' +
+    '</div>';
   }
 
   // The row's ⋯, restored from the root's per-row menu and carrying the same
@@ -2657,11 +2703,70 @@
         '<button type="button" class="gro-pill gro-pill-else" data-gro="row-exclude" data-id="' + id + '" ' +
           'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
       '</div>' +
-      '<button type="button" class="gro-rowmenu-remove" data-gro="row-remove" data-id="' + id + '" ' +
-        'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
-        'data-cat="' + escapeHtml(it.category || 'other') + '" data-store="' + escapeHtml(it.store || '') + '">' +
-        'Remove</button>' +
+      '<div class="gro-rowmenu-foot">' +
+        // A tap on a thing you buy is how a staple gets made without a
+        // form (the other way is telling the assistant). Hidden once it
+        // is one — the Staples card below the list is where it lives then.
+        (groIsStapleName(it.item)
+          ? '<span class="gro-rowmenu-note">One of your staples</span>'
+          : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
+              'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
+              'data-cat="' + escapeHtml(it.category || 'other') + '">Make it a staple</button>') +
+        '<button type="button" class="gro-rowmenu-remove" data-gro="row-remove" data-id="' + id + '" ' +
+          'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
+          'data-cat="' + escapeHtml(it.category || 'other') + '" data-store="' + escapeHtml(it.store || '') + '">' +
+          'Remove</button>' +
+      '</div>' +
     '</div>';
+  }
+
+  // Same idea as the server's merge key, at the strength this needs: case,
+  // spacing and a trailing "s" don't make two names two things.
+  function groStapleKey(name) {
+    var key = (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    return key.length > 3 && key.slice(-1) === 's' ? key.slice(0, -1) : key;
+  }
+  function groIsStapleName(name) {
+    var key = groStapleKey(name);
+    return groceryState.staples.some(function (st) { return groStapleKey(st.item) === key; });
+  }
+
+  // ---------- Staples ----------
+  // One quiet card at the foot of LIST, closed by default: what the
+  // household buys on a rhythm, each with when Pomona thinks it is next due.
+  // Nothing here is a question — a due staple is already on the list above
+  // as a line. Pause and Remove are the only verbs; Resume undoes a pause.
+  function groStaplesHtml() {
+    var staples = groceryState.staples;
+    if (!staples.length) return '';
+    var open = groceryState.staplesOpen;
+    var html = '<div class="gro-staples">' +
+      '<button type="button" class="gro-ps-head" data-gro="staples-toggle" aria-expanded="' + open + '">' +
+        GRO_ICONS.basket +
+        '<span class="gro-ps-text">' +
+          '<span class="gro-ps-title">Staples</span>' +
+          '<span class="gro-ps-sub">' + groPlural(staples.length, 'thing', 'things') + ' you buy on a rhythm</span>' +
+        '</span>' +
+        '<span class="gro-ps-check">' + (open ? 'Hide' : 'See') + '</span>' +
+      '</button>';
+    if (open) {
+      html += '<div class="gro-staples-body">' +
+        staples.map(function (st) {
+          var meta = st.paused
+            ? 'Paused'
+            : st.cadence_words + (st.due_words ? ' · ' + st.due_words : '');
+          return '<div class="gro-staple-row' + (st.paused ? ' paused' : '') + '">' +
+            '<span class="gro-staple-name">' + escapeHtml(st.item) + '</span>' +
+            '<span class="gro-staple-meta">' + escapeHtml(meta) + '</span>' +
+            '<button type="button" class="gro-staple-act" data-gro="' + (st.paused ? 'staple-resume' : 'staple-pause') + '" ' +
+              'data-id="' + st.id + '" data-name="' + escapeHtml(st.item) + '">' + (st.paused ? 'Resume' : 'Pause') + '</button>' +
+            '<button type="button" class="gro-staple-act" data-gro="staple-remove" data-id="' + st.id + '" ' +
+              'data-name="' + escapeHtml(st.item) + '">Remove</button>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
+    return html + '</div>';
   }
 
   // Every store already on the list, plus the household's usual stores — so
@@ -3977,13 +4082,24 @@
         var goneStore = el.dataset.store || '';
         el.disabled = true;
         groceryState.openRowId = null;
+        var goneStapleId = null;
         groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/remove');
+          return groPostEmpty('/api/grocery-list/' + id + '/remove')
+            .then(function (r) { goneStapleId = r && r.staple_id ? r.staple_id : null; });
         }, "Couldn't remove that — try again.").then(function (ok) {
           if (!ok) return;
           showToast(goneName + ' off the list', {
             label: 'Undo',
             onClick: function () {
+              // A staple's line was soft-removed and counted as "not this
+              // trip", so its undo is the staple's own: the same row comes
+              // back and the skip is taken back with it.
+              if (goneStapleId) {
+                groDo(function () {
+                  return groPostEmpty('/api/staples/' + goneStapleId + '/undo');
+                }, "Couldn't put that back — try again.");
+                return;
+              }
               // /remove is a hard delete (remove_grocery_item), so the undo
               // puts the LINE back rather than the row: same name, same
               // quantity, same section, then its store again if it had one.
@@ -4024,6 +4140,81 @@
         if (!groceryState.preShopOpen) groceryState.preShopExpanded = false;
         renderGrocery();
         return;
+
+      // ----- staples -----
+      case 'staple-decide': {
+        var stDecision = el.dataset.decision;
+        var stName = el.dataset.name || 'That';
+        var stLineId = id;
+        el.closest('.gro-staple-line').querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        var stResult = null;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + stLineId + '/staple', { decision: stDecision })
+            .then(function (r) { stResult = r; });
+        }, "Couldn't update that — try again.").then(function (ok) {
+          if (!ok || !stResult) return;
+          var line;
+          if (stDecision === 'plenty') {
+            line = stName + ' off the list — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days);
+          } else if (stResult.just_paused) {
+            line = stName + ' paused — three trips skipped. It\u2019s under Staples if you want it back.';
+          } else {
+            line = stName + ' off the list — I\u2019ll ask again next week';
+          }
+          showToast(line, {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPostEmpty('/api/staples/' + stResult.id + '/undo');
+              }, "Couldn't undo that — try again.");
+            }
+          });
+        });
+        return;
+      }
+
+      case 'row-staple': {
+        var mkName = el.dataset.name || '';
+        var mkQty = el.dataset.qty || '';
+        var mkCat = el.dataset.cat || 'other';
+        el.disabled = true;
+        groceryState.openRowId = null;
+        groDo(function () {
+          return groPost('/api/staples/add', { item: mkName, quantity: mkQty, category: mkCat });
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (ok) showToast(mkName + ' is a staple now — I\u2019ll put it on the list before you run out');
+        });
+        return;
+      }
+
+      case 'staples-toggle':
+        groceryState.staplesOpen = !groceryState.staplesOpen;
+        renderGrocery();
+        return;
+
+      case 'staple-pause':
+      case 'staple-resume': {
+        var pausing = action === 'staple-pause';
+        var pName = el.dataset.name || 'That';
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/staples/' + id + '/' + (pausing ? 'pause' : 'resume'));
+        }, "Couldn't update that — try again.").then(function (ok) {
+          if (ok) showToast(pausing ? pName + ' paused' : pName + ' back on the rhythm');
+        });
+        return;
+      }
+
+      case 'staple-remove': {
+        var rmName = el.dataset.name || 'That';
+        el.disabled = true;
+        groDo(function () {
+          return groPostEmpty('/api/staples/' + id + '/remove');
+        }, "Couldn't remove that — try again.").then(function (ok) {
+          if (ok) showToast(rmName + ' isn\u2019t a staple any more');
+        });
+        return;
+      }
 
       case 'ps-more':
         groceryState.preShopExpanded = true;

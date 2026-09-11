@@ -160,6 +160,11 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
     rather than one mixed pile. Items with no assigned store are grouped
     under "Unassigned".
     """
+    if status == "needed":
+        # Same as get_grocery_list_by_section: a due staple joins the list
+        # on read. See app/tools/staples.py.
+        from . import staples as _staples
+        _staples.sync_due_staples()
     items = _grocery.list_grocery_list(status=status)
     by_store: dict[str, list[dict]] = {}
     for it in items:

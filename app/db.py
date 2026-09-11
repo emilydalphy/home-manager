@@ -271,6 +271,8 @@ _MIGRATIONS = [
     # schema.sql's comment on grocery_items.already_have_inventory_id) so
     # undo can safely delete that exact row without risking real stock.
     ("grocery_items", "already_have_inventory_id", "INTEGER"),
+    # Staples (2026-09-11): the line Pomona added because a staple is due.
+    ("grocery_items", "staple_id", "INTEGER"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's
     # comment on prep_tasks for what each of these four columns is for.
     ("prep_tasks", "task_type", "TEXT NOT NULL DEFAULT 'general'"),

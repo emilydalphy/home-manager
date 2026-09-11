@@ -560,19 +560,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     conn = get_conn()
     if status == "excluded":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
             (household_id(), status),
         ).fetchall()
@@ -626,6 +626,12 @@ def get_grocery_list_by_section(status: str = "needed") -> dict:
     Items hidden via exclude_grocery_item are left out automatically (see
     list_grocery_list) unless status='excluded' or 'all' is passed.
     """
+    if status == "needed":
+        # A staple that is probably due goes on the list the moment the
+        # list is read — the one place the household is already looking.
+        # Idempotent, and a no-op for a household with no staples.
+        from . import staples as _staples
+        _staples.sync_due_staples()
     items = list_grocery_list(status=status)
     sections: dict[str, list[dict]] = {s: [] for s in _quantities._GROCERY_SECTION_ORDER}
     for it in items:
@@ -848,7 +854,7 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT item, quantity, category, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT item, quantity, category, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if row is None:
         conn.close()
@@ -871,6 +877,12 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     conn.close()
     if status == "purchased" and row:
         _inventory._add_to_inventory(row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"])
+        # A bought staple teaches its rhythm, whoever put the line there —
+        # a hand-added "coffee" counts the same as the suggestion Pomona
+        # made. No-op for anything that isn't a staple. Imported here, not
+        # at the top: staples.py imports this module for the merge key.
+        from . import staples as _staples
+        _staples.record_staple_purchase(row["item"], source="grocery", staple_id=row["staple_id"])
     return {"item_id": item_id, "status": status}
 
 
@@ -903,9 +915,31 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
 
 
 def remove_grocery_item(item_id: int) -> dict:
-    """Delete an item from the grocery list."""
+    """
+    Take an item off the grocery list. A hard delete — except for a
+    still-needed line a staple put there, which is soft-removed and counts
+    as "not this trip" (see below); a bought staple line is deleted like
+    anything else.
+    """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
+    row = conn.execute(
+        "SELECT id, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+    ).fetchone()
+    if row is not None and row["staple_id"] and row["status"] == "needed":
+        # Removing a staple's suggestion is "not this trip" — otherwise the
+        # next list read would put it straight back. Soft-removed rather
+        # than deleted, so the staple's own Undo can restore it.
+        from . import staples as _staples
+        _staples.note_line_removed(conn, row, how="skip")
+        conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ? AND status != 'removed'",
+            (_staples.ADDED_BY_STAPLE, item_id, household_id()),
+        )
+        conn.commit()
+        conn.close()
+        return {"item_id": item_id, "deleted": True, "staple_id": row["staple_id"]}
     conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()

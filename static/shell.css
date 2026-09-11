@@ -6961,3 +6961,125 @@ span.cook-week-name { cursor: default; }
   line-height: 1.45;
   color: var(--ink-on-celadon);
 }
+
+/* ---------- Staples (app/tools/staples.py) ----------
+   A line Pomona put on the list because a staple is probably due carries
+   one quiet sub-line: the flag that makes this silent learning rather than
+   guessing (DESIGN_SYSTEM.md §7), and the two answers that change anything.
+   Keeping it is doing nothing. No apricot anywhere here (Rule 5). */
+.gro-staple-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  padding: 0 0 6px;
+  margin-top: -2px;
+}
+.gro-staple-text {
+  flex: 1 1 100%;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--good-ink);
+  line-height: 1.3;
+}
+@media (min-width: 420px) {
+  .gro-staple-text { flex: 1 1 auto; }
+}
+.gro-staple-btn {
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.gro-staple-btn:hover { color: var(--ink-strong); }
+.gro-staple-btn:disabled { opacity: .6; cursor: default; }
+
+/* The row menu's foot: "Make it a staple" beside Remove, both quiet. */
+.gro-rowmenu-foot { display: flex; align-items: center; gap: 18px; }
+.gro-rowmenu-foot .gro-rowmenu-remove { width: auto; }
+.gro-rowmenu-staple {
+  min-height: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.gro-rowmenu-staple:hover { color: var(--ink-strong); }
+.gro-rowmenu-staple:disabled { opacity: .6; cursor: default; }
+.gro-rowmenu-note {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--good-ink);
+}
+
+/* The Staples card at the foot of LIST: the pre-shop card's shape, on a
+   plain surface rather than celadon — it is a place to look things up,
+   not a question waiting for an answer. */
+.gro-staples {
+  margin-top: 14px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  padding: 0 14px;
+}
+.gro-staples .gro-ps-head svg { stroke: var(--ink-secondary); }
+.gro-staples .gro-ps-sub { color: var(--ink-secondary); }
+.gro-staples-body { border-top: 1.5px solid var(--hairline); padding: 2px 0 8px; }
+.gro-staple-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "name pause remove" "meta pause remove";
+  align-items: center;
+  column-gap: 14px;
+  min-height: 52px;
+  border-top: 1.5px solid var(--hairline);
+}
+.gro-staple-row:first-of-type { border-top: none; }
+.gro-staple-name {
+  grid-area: name;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gro-staple-row.paused .gro-staple-name { color: var(--ink-secondary); }
+.gro-staple-meta {
+  grid-area: meta;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+.gro-staple-act {
+  min-height: 44px;
+  min-width: 44px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.gro-staple-act:hover { color: var(--ink-strong); }
+.gro-staple-act:disabled { opacity: .6; cursor: default; }
+.gro-staple-row .gro-staple-act:nth-of-type(1) { grid-area: pause; }
+.gro-staple-row .gro-staple-act:nth-of-type(2) { grid-area: remove; }

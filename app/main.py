@@ -684,6 +684,18 @@ class ConfirmScanRequest(BaseModel):
     items: list[ScannedItem]
 
 
+class StapleDecisionRequest(BaseModel):
+    decision: str  # plenty | skip
+
+
+class StapleAddRequest(BaseModel):
+    item: str
+    quantity: str = ""
+    category: str = "other"
+    every_days: int | None = None
+    running_low: bool = False
+
+
 class GroceryAddRequest(BaseModel):
     item: str
     quantity: str = ""
@@ -3122,6 +3134,87 @@ def get_grocery_item_store_preferences():
         logger.exception("Grocery store-preferences lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"preferences": prefs}
+
+
+@app.post("/api/grocery-list/{item_id}/staple")
+def decide_staple_line_view(item_id: int, req: StapleDecisionRequest):
+    """
+    The two one-tap answers on a "probably running low" line (Loop Board
+    "Staples: tell me before we run out"): 'plenty' pushes the staple's next
+    due date a whole cadence out; 'skip' asks again in a week (three skips
+    running pause it). Both take the line off the list; the response
+    carries staple id and the removed line so the toast's Undo can reverse
+    exactly this via /api/staples/{id}/undo. Keeping it needs no call.
+    """
+    if req.decision not in ("plenty", "skip"):
+        raise HTTPException(status_code=400, detail="decision must be 'plenty' or 'skip'")
+    try:
+        return tools.decide_staple_line(item_id, req.decision)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Staple decision failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/staples")
+def list_staples_view():
+    """The household's staples with cadence, last bought, next due, paused."""
+    try:
+        return {"staples": tools.list_staples()}
+    except Exception as e:
+        logger.exception("Staples lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/staples/add")
+def add_staple_view(req: StapleAddRequest):
+    """Make something a staple — from a tap on a bought line, or a typed name."""
+    try:
+        return tools.add_staple(
+            req.item, every_days=req.every_days, quantity=req.quantity, category=req.category, running_low=req.running_low
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Add staple failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/staples/{staple_id}/pause")
+def pause_staple_view(staple_id: int):
+    try:
+        return tools.pause_staple(staple_id, paused=True)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/staples/{staple_id}/resume")
+def resume_staple_view(staple_id: int):
+    try:
+        return tools.pause_staple(staple_id, paused=False)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/staples/{staple_id}/remove")
+def remove_staple_view(staple_id: int):
+    try:
+        return tools.remove_staple_by_id(staple_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/staples/{staple_id}/undo")
+def undo_staple_decision_view(staple_id: int):
+    """Reverse the last plenty/skip on a staple and put its line back."""
+    try:
+        return tools.undo_staple_decision(staple_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Staple undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.post("/api/grocery-list/{item_id}/pre-shop")
