@@ -427,6 +427,64 @@ why*, not duplicating the diff.
     (`tests/test_grocery_photo_scan.py`) as the source-marker guard, the
     same pattern `tests/test_grocery_steps.py`'s sibling apricot/spruce
     checks already use for LIST's other controls.
+- **2026-09-11 — The grocery list survives no signal. Branch
+  `worktree-grocery-offline`.** Reproduced first: kill the server mid-trip,
+  tick one row → `groDo` failed, its follow-up `loadGrocery()` failed too and
+  the whole trip screen was replaced by *"Couldn't load the grocery list"*;
+  reload → same, list gone. The shell itself already loaded offline (the
+  worker is network-first with cache fallback), so the gap was the data,
+  not the page. Built: `static/grocery-offline.js`, a DOM-free module that
+  keeps three things in localStorage per household — the list as the server
+  last sent it (`pomona.grocery.copy.h<id>`), a queue of ticks made since
+  (`…queue.h<id>`), and the `/api/memory` shops answer (`…shops.h<id>`,
+  without which an offline reload put the "where do you shop?" card up over
+  the list). `loadGrocery` saves the copy on success and renders copy+queue
+  when fetch throws; `trip-toggle`/`uncheck` go through `groTick` (applied
+  locally at once, POSTed straight away when online, queued when not);
+  `groReplayQueue` sends oldest-first on load, on the `online` event, on
+  every tick/refresh, and every 30s while anything waits. One entry per
+  row (last-write-wins). An op is spent the moment the server ANSWERS
+  (404/500 dropped, with a toast); only fetch-threw stays queued.
+  - **Server side**: `mark_grocery_item` is a no-op when the status is
+    unchanged — a replayed or double-tapped "purchased" used to add to
+    inventory twice.
+  - **Worker `v5 → v6`**: offline navigations fall back to any cached shell
+    route ("/", "/grocery", "/week", "/kitchen" all serve `shell.html`, but
+    the cache is keyed by URL, so a phone that reached Shop by tab-tap had
+    nothing under `/grocery`); redirected navigations (signed out → /login)
+    are never cached. **To bump again**: change `CACHE_NAME` in
+    `static/service-worker.js` — the activate handler deletes every other
+    cache — and add a dated note above it saying why. Only needed when the
+    worker's own logic or a cache-first asset (icons/manifest) changes;
+    JS/CSS/HTML are network-first and pick themselves up.
+  - **Out of scope, on purpose**: add/remove/store offline (an offline add
+    would need a temporary id and a mapping on replay), "Done at <store>"
+    offline (it writes `purchased` + closes the trip; its toast now says
+    *"No signal — try that once you're back"* rather than "try again"),
+    every other tab, and anything Claude-driven. Conflict rule is
+    last-write-wins; a partner's removal wins over this phone's tick (404
+    → dropped, toast).
+  - **Household isolation is the session's, not the phone's (verifier,
+    same day).** The copy/queue/shops keys are read only for a household
+    the server has named THIS session or that a still-signed-in session
+    remembered; sign-out and any 401 call `groOffline.forget()` (every
+    `pomona.grocery.*` key and the pointer go); a different `household_id`
+    from `/api/coaching` purges the previous household's keys before
+    anything is written, and drops an offline copy already on screen. An
+    unknown household + no signal shows a calm wait ("No signal — I'll
+    show your list as soon as you're back."), never a guessed list. Whatever
+    the page fetched before coaching answered is held in memory and moved
+    under the right key when it does. Queue entries are validated on read
+    (a `null` used to jam replay forever). Ask and the inventory scan say
+    "I need a signal for this one" with no signal instead of "Error:
+    Failed to fetch". Dropped-ticks toast is count-aware and plain.
+  - `tests/test_grocery_offline.py` (40): the module and the shell's own
+    `loadGrocery`/`groTick`/`groReplayQueue` run under node with a switchable
+    fetch, the worker run under node with stub `caches`, and the route's
+    idempotency. The harness caught two real bugs the browser session had
+    not reached — `replay()` being handed a `(id, status)` poster instead
+    of `(url, body)`, and a replay called while the previous one was still
+    settling inheriting its stale "no signal" answer.
 - **2026-09-11 — Stepping a dish down is ONE transaction now. Branch
   `overnight/drop-dish-atomic`.** The debt the review-stepper work filed
   rather than smuggled in (see its entry below, and `99db198` where it has

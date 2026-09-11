@@ -728,8 +728,11 @@ async function runScan(kind, file) {
     }));
     renderScanReview();
   } catch (err) {
-    document.getElementById('inv-scan-title').textContent = "Couldn't read that photo";
-    document.getElementById('inv-scan-sub').textContent = err.message || 'Try again with a clearer photo.';
+    // A scan needs Claude, and Claude needs a connection: with no signal
+    // say that, plainly, rather than "Failed to fetch".
+    const noSignal = navigator.onLine === false || (err && err.name === 'TypeError');
+    document.getElementById('inv-scan-title').textContent = noSignal ? "I need a signal for this one" : "Couldn't read that photo";
+    document.getElementById('inv-scan-sub').textContent = noSignal ? "Try again when you’re back." : (err.message || 'Try again with a clearer photo.');
     document.getElementById('inv-scan-content').innerHTML = '<div class="inv-scan-actions"><button type="button" class="inv-scan-cancel" id="inv-scan-cancel-btn2" style="flex:1">Close</button></div>';
     const closeBtn = document.getElementById('inv-scan-cancel-btn2');
     if (closeBtn) closeBtn.addEventListener('click', closeScanSheet);

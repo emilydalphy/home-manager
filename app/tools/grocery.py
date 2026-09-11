@@ -834,11 +834,21 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT item, quantity, category, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if row is None:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    # Idempotent on purpose (grocery offline, 2026-09-11): a phone in a store
+    # with one bar can send the same status twice — the request got through
+    # but the reply didn't, so the queue in static/grocery-offline.js sends
+    # it again, and "Done at <store>" tapped twice after a "try again" does
+    # the same. Setting an unchanged status is a no-op rather than a second
+    # add to inventory, which used to double the pantry's quantity for every
+    # repeated "purchased".
+    if row["status"] == status:
+        conn.close()
+        return {"item_id": item_id, "status": status, "unchanged": True}
     conn.execute(
         "UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ?",
         (status, item_id, household_id()),
