@@ -2751,8 +2751,12 @@ html, body {
    in .wk-decide, directly under the seven rows it is about. */
 .week-approve-btn {
   width: 100%;
-  height: 54px;
+  /* auto, not fixed: "Approve anyway — I've seen the clash" wraps to two
+     lines at 390px, and a fixed height spilled it over the link beneath. */
+  height: auto;
   min-height: 54px;
+  padding: 10px 14px;
+  line-height: 1.2;
   border: none;
   border-radius: var(--radius-action);
   background: var(--apricot);
@@ -6105,9 +6109,13 @@ span.cook-week-name { cursor: default; }
 .wk-day-row:hover { background: var(--sand); }
 /* Today, tinted — the one row that says "you are here". Its own hairline
    goes with it so the tint reads as one block rather than a striped row. */
-.wk-day-row.is-today { background: var(--celadon-tint); }
-.wk-day-row.is-today + .wk-day-row { border-top-color: var(--celadon-edge); }
-.wk-day-row.is-today:hover { background: var(--celadon-tint); }
+/* Sand, not celadon, since 2026-09-11 — celadon says "settled", and today
+   is not settled, it is today; and the row's day column says TODAY so the
+   tint never has to be guessed at (§2b S6). */
+.wk-day-row.is-today { background: var(--sand); }
+.wk-day-row.is-today + .wk-day-row { border-top-color: var(--hairline-strong); }
+.wk-day-row.is-today:hover { background: var(--sand); }
+.wk-day-row.is-today .wk-day-dow { color: var(--apricot-label); }
 .wk-day-row.is-past { opacity: .62; }
 .wk-day-col {
   flex: 0 0 38px;
@@ -6185,7 +6193,9 @@ span.cook-week-name { cursor: default; }
    the Approve button needs a little more room above it than Cook's strip
    does. Everything that makes it a dock comes from .dock. */
 .wk-decide {
-  padding: 14px 20px 10px;
+  /* Right padding clears the chat icon (see .dock); the desktop block at the
+     end of the file takes it back with the rest of the docks. */
+  padding: 14px 84px 10px 20px;
 }
 /* The way into the Review step, above the decision it is for. Secondary by
    construction — the screen's one apricot is the Approve button under it
@@ -6207,6 +6217,137 @@ span.cook-week-name { cursor: default; }
   letter-spacing: -.02em;
 }
 .wk-check-btn:hover { background: var(--sand-deep); }
+
+/* The invitation above the review a draft opens on. */
+.rv-invite {
+  padding: 0 20px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+/* The clash, on its dish: urgent tint inside the row, the same two quiet
+   segments the old card had. */
+.rv-dish.has-settle { flex-wrap: wrap; }
+.rv-settle {
+  flex: 1 0 100%;
+  background: var(--urgent-tint);
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rv-settle-note {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--urgent-label);
+}
+/* The cook time beside a slot's name, and the clash as one red word on
+   a day's face. */
+.rv-slot-meta {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+.rv-day-clash {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--urgent-label);
+}
+/* The dish name in the review is a button into the recipe now; it keeps
+   its own type (see .dish-link), left-aligned, no full width so the acts
+   beside it keep their room. */
+.rv-dish-said .rv-dish-name { width: auto; text-align: left; }
+
+/* ---------- SET: the All set screen ----------
+   Spruce, the one finish in the loop that gets its own screen (§2b S5). */
+.wk-allset {
+  flex: 1 0 auto;
+  min-height: 100%;
+  margin: 0;
+  padding: 40px 20px 0;
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+.wk-allset-tick {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  margin-top: 8px;
+}
+.wk-allset-tick svg { width: 38px; height: 38px; }
+.wk-allset-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-align: center;
+  margin: 0;
+  color: var(--ivory-ink);
+}
+.wk-allset-line {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.4;
+  text-align: center;
+  margin: 0;
+  color: var(--ivory-ink);
+}
+.wk-allset-line.is-quiet { font-size: 14px; color: var(--ivory-ink-muted); }
+.wk-allset-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+.wk-allset-num {
+  background: var(--spruce-raised);
+  border-radius: var(--radius-card);
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.wk-allset-n {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 34px;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--ivory-ink);
+}
+.wk-allset-lbl {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--apricot-light);
+}
+.wk-allset .wk-quick-card.on-spruce { background: var(--spruce-raised); border-color: var(--spruce-raised); color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-title,
+.wk-allset .wk-quick-card.on-spruce .wk-quick-q { color: var(--ivory-ink); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-sub { color: var(--ivory-ink-muted); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-line + .wk-quick-line { border-top-color: var(--spruce-hover); }
+.wk-allset .wk-quick-card.on-spruce .wk-quick-ask { color: var(--apricot-light); }
+.wk-allset-dock { margin: auto -20px 0; background: var(--spruce); border-top-color: var(--spruce-hover); }
+.tab-panel.is-allset { background: var(--spruce); }
+.tab-panel.is-allset #week-steps { flex: 1 0 auto; display: flex; flex-direction: column; }
+.wk-allset-dock .dock-link { color: var(--apricot-light); }
 
 /* ---------- REVIEW: one control, two ways to read one week ----------
    Emily's approved design, 2026-09-09. The segmented control is the only
@@ -7050,5 +7191,5 @@ span.cook-week-name { cursor: default; }
    #ask-bar-dock is hidden above), so the dock takes its clearance back.
    Kept at the end of the file so it follows the base .dock rule. */
 @media (min-width: 1024px) {
-  .dock { padding-right: 20px; }
+  .dock, .wk-decide.dock { padding-right: 20px; }
 }

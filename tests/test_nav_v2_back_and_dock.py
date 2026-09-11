@@ -184,9 +184,12 @@ def test_the_dock_is_one_component_not_one_per_screen():
 def test_all_three_docked_screens_use_the_shared_box():
     """Cook, Plan (both the Week root and the Review step) and Shop."""
     assert '<div class="dock cook-dock">' in SHELL_JS
-    assert SHELL_JS.count('<div class="wk-decide dock">') == 2, (
-        "the Week root and the Review step both dock their Approve button"
+    # One since 2026-09-11: a draft's root is the review, so only
+    # reviewDecideHtml docks an Approve button (the week root has none).
+    assert SHELL_JS.count('<div class="wk-decide dock">') == 1, (
+        "the Review docks the Approve button, and nothing else does"
     )
+    assert '<div class="dock wk-allset-dock">' in SHELL_JS  # the All set screen's own
     assert '<div class="dock gro-dock" id="gro-dock">' in SHELL_JS
 
 

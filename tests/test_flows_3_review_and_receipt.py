@@ -386,10 +386,10 @@ def test_the_draft_has_exactly_one_apricot_and_one_quiet_action():
     """DESIGN_SYSTEM Rule 5. The apricot is .week-approve-btn; "Tweak it with
     me" shares .week-reset-link's quiet italic idiom rather than being a
     second button competing with it."""
+    # UPDATED 2026-09-11 (Build 3 of the screen-by-screen redesign, Emily's decisions C and E): a draft's root IS the review, so the week card's own decision strip (Check the week / Approve this week / the italic Tweak it with me) is gone; the one apricot is reviewDecideHtml's, in the dock.
     _assert_in("function weekDecideHtml(", SHELL_JS, "the decision row", "shell.js")
-    _assert_in("'Approve this week'", SHELL_JS, "the Approve button's copy", "shell.js")
-    _assert_in('week-reset-link week-tweak-link" id="week-tweak-btn">Tweak it with me',
-               SHELL_JS, "the quiet tweak link", "shell.js")
+    assert "Tweak it with me" not in SHELL_JS, "the italic tweak link was removed on 2026-09-11 (decision E)"
+    assert 'id="week-check-btn"' not in SHELL_JS, "Check the week went with the draft root becoming the review"
     # Counted per SCREEN, not per file. It used to be per file, which was the
     # same sentence right up until Meals grew a second screen that also ends
     # in a decision: the Review step (2026-09-09) renders its own approve
@@ -400,7 +400,7 @@ def test_the_draft_has_exactly_one_apricot_and_one_quiet_action():
     # outright), so Rule 5 still holds; a file-wide count simply cannot see
     # that. The assertion itself is unchanged: exactly one apricot, per
     # screen that has one.
-    for fn in ("weekDecideHtml", "reviewDecideHtml"):
+    for fn in ("reviewDecideHtml",):
         body = _fn_body(fn, SHELL_JS)
         assert body.count("class=\"btn-gold week-approve-btn\"") == 1, (
             f"{fn} must render exactly one apricot Approve button "
@@ -446,8 +446,8 @@ def test_the_receipt_is_one_card_with_two_segments():
 def test_the_two_asks_are_lines_that_expand_in_place():
     """The defrost and cook-ahead asks keep their own UI and their own
     routes — only the presentation folds into a line with an "Ask"."""
-    _assert_in("Two quick ones before you go", SHELL_JS, "the asks card title", "shell.js")
-    _assert_in("One quick one before you go", SHELL_JS, "the single-ask title", "shell.js")
+    _assert_in("Two quick ones, if you like", SHELL_JS, "the asks card title", "shell.js")  # reworded 2026-09-11 with the All set screen
+    _assert_in("One quick one, if you like", SHELL_JS, "the single-ask title", "shell.js")
     _assert_in("'Anything in the freezer?'", SHELL_JS, "the freezer line", "shell.js")
     _assert_in("'. Cook ahead?'", SHELL_JS, "the cook-ahead line", "shell.js")
     _assert_in("function defrostAskSummary(", SHELL_JS, "the collapsed meat chips", "shell.js")

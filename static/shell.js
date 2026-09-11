@@ -5906,7 +5906,9 @@
         (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
         '" data-wk-day="' + i + '">' +
       '<span class="wk-day-col">' +
-        '<span class="wk-day-dow">' + dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase() + '</span>' +
+        // A highlight says why (DESIGN_SYSTEM §2b S6; Emily: "why is one
+        // part highlighting?"): the tinted row carries the word for it.
+        '<span class="wk-day-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
         '<span class="wk-day-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
       '</span>' +
       '<span class="wk-day-meals">' +
@@ -5972,29 +5974,12 @@
   // replaced #week-review-band: the review is the card above, so the band's
   // eyebrow, its status line and its grocery promise all went, and what is
   // left is the decision itself.
+  // Gone on 2026-09-11: a draft's root is the review now (see
+  // renderMealsStep), so the week card never carries a decision strip. The
+  // one thing this used to hold that is still needed on the page is the
+  // "Try again" waiting line, which reviewDecideHtml carries instead.
   function weekDecideHtml(data) {
-    if (weekPlanState(data) !== 'draft') return '';
-    var openCount = countOpenSlots(data);
-    return '<div class="wk-decide dock">' +
-      // The way into the Review step, above the decision it is for: read
-      // the week properly, then approve it. Secondary, not a second apricot
-      // (Rule 5) — the decision is still the primary here.
-      '<button type="button" class="wk-check-btn" id="week-check-btn">Check the week</button>' +
-      // Approving with a slot still open is allowed, but named — never a
-      // silent shortfall. That is the only thing allowed to reword this
-      // button (Emily's copy is "Approve this week").
-      '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
-        (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve this week') +
-      '</button>' +
-      '<button type="button" class="week-reset-link week-tweak-link" id="week-tweak-btn">Tweak it with me</button>' +
-      // Empty and hidden until "Try again" is tapped in the More sheet —
-      // the rebuild is a ~30-second call, so this is where the rotating
-      // waiting line goes (static/waiting-lines.js). It followed the redo
-      // actions out of the band and into the sheet's handler, but the line
-      // itself has to be on the page you are looking at, not inside a
-      // sheet that closes the moment you tap.
-      '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
-    '</div>';
+    return '';
   }
 
   // ---------- REVIEW: the two views ----------
@@ -6250,11 +6235,31 @@
     // bug wearing a different hat. The write refuses it in words too.
     var lastDay = dish.days[n - 1];
     var canDrop = n > 1 && !busy && !(lastDay && lastDay.cooked);
-    return '<div class="rv-dish' + (picking ? ' is-picking' : '') + '">' +
+    // (typeof guards: the tests run these renderers in isolation under node.)
+    var settle = typeof reviewSettleFor === 'function' ? reviewSettleFor(dish) : null;
+    return '<div class="rv-dish' + (picking ? ' is-picking' : '') + (settle ? ' has-settle' : '') + '">' +
       '<div class="rv-dish-said">' +
-        '<span class="rv-dish-name">' + escapeHtml(dish.name) + '</span>' +
+        // The name is the way into the recipe (Emily, 2026-09-11: "click
+        // into each recipe… and loop back") — the cook screen, with a crumb
+        // that names this view and brings you straight back here.
+        '<button type="button" class="rv-dish-name dish-link" data-rv-recipe="' + idx + '">' +
+          escapeHtml(dish.name) + '</button>' +
         (cookLine ? '<span class="rv-dish-cooks">' + escapeHtml(cookLine) + '</span>' : '') +
       '</div>' +
+      // A HARD clash — an allergy, a must-avoid — sits on the dish it is
+      // about, not in a card above the title (Emily, 2026-09-11). Same two
+      // ways through as the card had: swap it, or keep it and take the
+      // second, explicit Approve that a real allergy clash is owed.
+      (settle
+        ? '<div class="rv-settle">' +
+            '<div class="rv-settle-note">' + escapeHtml(settle.note) + '</div>' +
+            '<div class="wk-settle-acts">' +
+              '<button type="button" class="wk-settle-swap" data-rv-settle-swap="1">' +
+                escapeHtml('Swap the ' + dishShortName(settle.meal)) + '</button>' +
+              '<button type="button" class="wk-settle-keep" data-rv-settle-keep="1">Keep it anyway</button>' +
+            '</div>' +
+          '</div>'
+        : '') +
       '<div class="rv-dish-acts">' +
         '<span class="rv-step">' +
           '<button type="button" class="rv-step-btn" data-rv-less="' + idx + '"' +
@@ -6282,6 +6287,20 @@
         : '') +
       (picking ? reviewAddPickerHtml(dish, idx, days) : '') +
     '</div>';
+  }
+
+  // The week's hard clash (data.settle, server-worded), if it is about THIS
+  // dish — matched on the name the server used, the way the old card's
+  // "Swap the …" button found its slot (weekSettleTargetSlot).
+  function reviewSettleFor(dish) {
+    var settle = typeof weekState !== 'undefined' && weekState.data ? weekState.data.settle : null;
+    if (!settle || !settle.note || !settle.meal) return null;
+    var a = String(settle.meal).trim().toLowerCase();
+    var b = String(dish.name || '').trim().toLowerCase();
+    if (a !== b) return null;
+    // Only on the review the draft opens on — an approved week has settled it.
+    if (weekPlanState(weekState.data) !== 'draft') return null;
+    return settle;
   }
 
   // Whether the trouble line belongs to THIS dish — by the meal type and
@@ -6387,9 +6406,30 @@
     else if (entry && entry.state === 'planned_empty') {
       name = awayLineFor(entry) || entry.title || 'Nothing planned';
     } else name = day.isPast ? 'Not planned' : 'Nothing yet';
+    // The cook time (or "reheat") beside the name — Emily, 2026-09-11:
+    // "add the cook times for the which days view". The entry's own meta
+    // string (get_week_menu), never computed here.
+    var meta = entry && entry.state === 'planned' && entry.meta ? entry.meta : '';
+    var target = entry && entry.state === 'planned' && typeof recipeTargetForEntry === 'function'
+      ? recipeTargetForEntry(entry, day.date, slot) : null;
+    // The clash as one red word on the line it is about (any slot, not only
+    // dinner — an allergen can be in a snack).
+    var settle = typeof weekState !== 'undefined' && weekState.data ? weekState.data.settle : null;
+    var clash = settle && settle.note && settle.date === day.date && entry && entry.state === 'planned' &&
+      String(settle.meal || '').trim().toLowerCase() === String(name || '').trim().toLowerCase();
+    // "not for Emily": the word that says why the line is red (§2b S6),
+    // short enough to sit beside a two-line dish name.
+    var clashHtml = clash
+      ? '<span class="rv-day-clash">' + escapeHtml(settle.member ? 'not for ' + settle.member : 'clash') + '</span>'
+      : '';
     return '<span class="rv-slot' + quiet + '">' +
       '<span class="rv-slot-label">' + escapeHtml(slotEyebrowLabel(day, slot)) + '</span>' +
-      '<span class="rv-slot-name">' + escapeHtml(name) + '</span>' +
+      (target
+        ? '<button type="button" class="rv-slot-name dish-link is-inline" data-rv-recipe-date="' +
+            escapeHtml(day.date) + '" data-rv-recipe-slot="' + escapeHtml(slot) + '">' + escapeHtml(name) + '</button>'
+        : '<span class="rv-slot-name">' + escapeHtml(name) + '</span>') +
+      (meta ? '<span class="rv-slot-meta">' + escapeHtml(meta) + '</span>' : '') +
+      clashHtml +
     '</span>';
   }
 
@@ -6415,7 +6455,14 @@
       var note = '';
       if (dinner.leftover_from) note = dinner.leftover_from.cook_ahead ? 'made ahead' : 'leftovers';
       else if (dinner.source === 'leftovers') note = 'leftovers';
-      return { line: mealDisplayName(dinner), quiet: '', note: note };
+      // The cook time rides on the face too, so the day reads "Lamb Chops ·
+      // 55 min" without opening it (Emily, 2026-09-11).
+      else if (dinner.meta) note = dinner.meta;
+      var settle = typeof weekState !== 'undefined' && weekState.data ? weekState.data.settle : null;
+      var clash = settle && settle.note && settle.date === day.date &&
+        String(settle.meal || '').trim().toLowerCase() === String(mealDisplayName(dinner) || '').trim().toLowerCase();
+      var clashWord = clash ? (settle.member ? 'not for ' + settle.member : 'clash') : '';
+      return { line: mealDisplayName(dinner), quiet: '', note: note, clash: clashWord };
     }
     if (dinner && dinner.state === 'open') return { line: 'Your call', quiet: ' is-quiet', note: '' };
     if (dinner && dinner.state === 'planned_empty') {
@@ -6427,8 +6474,10 @@
     return { line: day.isPast ? 'Not planned' : 'Nothing yet', quiet: ' is-quiet', note: '' };
   }
 
-  function reviewDayNoteHtml(note) {
-    return note ? '<span class="rv-day-note">' + escapeHtml(note) + '</span>' : '';
+  function reviewDayNoteHtml(note, clash) {
+    return (note ? '<span class="rv-day-note">' + escapeHtml(note) + '</span>' : '') +
+      // The clash, as one red word on its day, so the two views agree.
+      (clash ? '<span class="rv-day-clash">' + escapeHtml(clash) + '</span>' : '');
   }
 
   function reviewDayCardHtml(day, i) {
@@ -6444,7 +6493,7 @@
           '<span class="rv-day-col">' +
             '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
             '<span class="rv-day-dinner' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
-            reviewDayNoteHtml(face.note) +
+            reviewDayNoteHtml(face.note, face.clash) +
           '</span>' +
         '</div>' +
       '</div>';
@@ -6458,7 +6507,7 @@
         '<span class="rv-day-col">' +
           '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
           '<span class="rv-day-dinner' + quiet + '">' + escapeHtml(line) + '</span>' +
-          reviewDayNoteHtml(face.note) +
+          reviewDayNoteHtml(face.note, face.clash) +
         '</span>' +
         '<span class="rv-day-chev">' + RV_CHEVRON_SVG + '</span>' +
       '</button>' +
@@ -6502,23 +6551,35 @@
           ? escapeHtml(approveWithOpenLabel(data, openCount))
           : 'Approve and build my shopping list') +
       '</button>' +
+      // Empty and hidden until "Try again" is tapped in the More sheet —
+      // the rebuild is a ~30-second call, and the rotating waiting line
+      // (static/waiting-lines.js) has to be on the page you are looking at.
+      '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
     '</div>';
   }
 
-  function reviewStepHtml(data, days) {
+  // `root`: since 2026-09-11 a DRAFT opens here, as the Plan tab's root —
+  // so there is no crumb (nothing above it) and the head is the week's own
+  // (title, dates, the DRAFT badge). An APPROVED week reaches this screen
+  // as a step from More, with a crumb and the "Check the week" title.
+  function reviewStepHtml(data, days, root) {
     var eating = reviewState.view !== 'days';
-    // "Not approved yet" while it is a draft, and the plain truth once it
-    // isn't — this step is for every week, so the badge has to be able to
-    // say the other thing.
     var draft = weekPlanState(data) === 'draft';
-    return '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
-      '<div class="wk-head">' +
-        '<div class="wk-head-row">' +
-          '<h1 class="wk-title">Check the week</h1>' +
-          '<span class="wk-state is-' + (draft ? 'draft' : 'set') + '">' +
-            (draft ? 'NOT APPROVED YET' : 'APPROVED') + '</span>' +
-        '</div>' +
-      '</div>' +
+    var head = root
+      ? weekStepHeadHtml(data, days) +
+        // The invitation, once, above the dishes: changing things is
+        // expected and cheap (Emily's 2026-09-08 decision on the
+        // sample-menu card).
+        '<div class="rv-invite">Swap anything. Nothing&rsquo;s bought until you approve.</div>'
+      : '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
+        '<div class="wk-head">' +
+          '<div class="wk-head-row">' +
+            '<h1 class="wk-title">Check the week</h1>' +
+            '<span class="wk-state is-' + (draft ? 'draft' : 'set') + '">' +
+              (draft ? 'NOT APPROVED YET' : 'APPROVED') + '</span>' +
+          '</div>' +
+        '</div>';
+    return head +
       '<div class="wk-seg" role="tablist">' +
         '<button type="button" class="wk-seg-btn' + (eating ? ' is-on' : '') + '"' +
           ' role="tab" aria-selected="' + (eating ? 'true' : 'false') + '"' +
@@ -7180,16 +7241,29 @@
     // Nothing to check yet. The Review step is about a week that exists;
     // with no plan at all the root's own plan-a-week entry is the answer.
     if (weekState.step === 'review' && weekPlanState(data) === 'none') weekState.step = 'week';
+    // A DRAFT's root is the review (Emily, 2026-09-11, closing the two gaps
+    // on the sample-menu card): approving is the job, so the draft lands on
+    // "What we're eating" with Approve in the dock, not on the everyday week
+    // with a band on top and a "Check the week" button. 'review' on a draft
+    // is therefore the same screen as 'week', and folds into it so history
+    // and the crumbs stay one level deep.
+    var draft = weekPlanState(data) === 'draft';
+    if (weekState.step === 'review' && draft) weekState.step = 'week';
+    // The All set screen only exists for an approved week, in the page view
+    // that approved it.
+    if (weekState.step === 'allset' && weekPlanState(data) !== 'set') weekState.step = 'week';
+
+    // The All set screen paints the whole panel spruce, not just its own
+    // box, so the ground never shows under the dock.
+    panel.classList.toggle('is-allset', weekState.step === 'allset');
 
     var onRoot = weekState.step === 'week';
     var approve = panel.querySelector('#week-approve-row');
-    // The clash to settle and the approved receipt belong to the week, not
-    // to one day of it — they sit above the card on the root and nowhere
-    // else, the same way Cook's focus screen hides the Plan/Cook control.
-    // (The draft's Approve button is inside the root's own markup now, so
-    // it needs no hiding of its own — weekStepHtml simply doesn't build it
-    // on the Day or Meal step.)
-    if (approve) approve.hidden = !onRoot;
+    // The approved receipt belongs to the week, not to one day of it — it
+    // sits above the card on the root and nowhere else. A draft's clash no
+    // longer renders here: it sits on the dish it is about, inside the
+    // review the draft opens on (reviewDishRowHtml).
+    if (approve) approve.hidden = !onRoot || draft;
     // The gear is the root's, not a step's — same rule the Plan/Cook
     // control it replaced followed.
     var gearRow = panel.querySelector('#meals-gear-row');
@@ -7201,7 +7275,12 @@
     } else if (weekState.step === 'day') {
       steps.innerHTML = dayStepHtml(day);
     } else if (weekState.step === 'review') {
-      steps.innerHTML = reviewStepHtml(data, weekState.days);
+      steps.innerHTML = reviewStepHtml(data, weekState.days, false);
+    } else if (weekState.step === 'allset') {
+      steps.innerHTML = allSetStepHtml(data, weekState.days);
+      renderAllSetAsks(panel, data);
+    } else if (draft) {
+      steps.innerHTML = reviewStepHtml(data, weekState.days, true);
     } else {
       steps.innerHTML = weekStepHtml(data, weekState.days);
       if (weekPlanState(data) === 'none') renderPlanWeekEntry(steps, data);
@@ -7405,6 +7484,39 @@
         reviewState.picking = null;
         renderMealsStep(panel);
       });
+    });
+    // Into the recipe from either view, and straight back: the cook screen's
+    // crumb names this view and returns to this tab, which is still on
+    // this step (cookExitFocus → activateTab('week')).
+    function reviewOrigin() {
+      return { label: reviewState.view === 'days' ? 'Which days' : 'What we’re eating', tab: 'week' };
+    }
+    steps.querySelectorAll('[data-rv-recipe]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var dish = (reviewState.dishes || [])[Number(btn.getAttribute('data-rv-recipe'))];
+        if (!dish || !dish.days.length) return;
+        var first = dish.days[0];
+        var day = weekState.days.filter(function (d) { return d.date === first.date; })[0];
+        if (!day) return;
+        var slot = reviewMealSlotKey(day, first.entryId, dish.slot);
+        openRecipeFor(recipeTargetForEntry(daySlotEntry(day, slot), day.date, slot), reviewOrigin());
+      });
+    });
+    steps.querySelectorAll('[data-rv-recipe-date]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var date = btn.getAttribute('data-rv-recipe-date');
+        var slot = btn.getAttribute('data-rv-recipe-slot');
+        var day = weekState.days.filter(function (d) { return d.date === date; })[0];
+        if (!day) return;
+        openRecipeFor(recipeTargetForEntry(daySlotEntry(day, slot), date, slot), reviewOrigin());
+      });
+    });
+    steps.querySelectorAll('[data-rv-settle-swap]').forEach(function (btn) {
+      btn.addEventListener('click', function () { weekSettleSwap(weekState.data && weekState.data.settle); });
+    });
+    steps.querySelectorAll('[data-rv-settle-keep]').forEach(function (btn) {
+      btn.addEventListener('click', function () { approveWeek(panel, weekState.data || {}); });
     });
     steps.querySelectorAll('[data-rv-change]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -8108,6 +8220,25 @@
     return last.toLowerCase();
   }
 
+  // Straight to the meal the clash is about, where Swap already lives —
+  // the Day step if the exact slot can't be identified (a component plan
+  // has no dates), never a dead end. Shared by the review's inline clash
+  // (reviewDishRowHtml) and the card an approved week can still show.
+  function weekSettleSwap(settle) {
+    if (!settle) return;
+    var index = -1;
+    weekState.days.forEach(function (d, i) { if (d.date === settle.date) index = i; });
+    if (index < 0) {
+      // No day to land on: hand it to the ask sheet with the swap already
+      // worded, never a dead tap.
+      openAskSheet('Swap ' + settle.meal + ' for something else');
+      return;
+    }
+    var slot = weekSettleTargetSlot(weekState.days[index], settle.meal);
+    if (slot) goMealsStep('meal', { dayIndex: index, slot: slot });
+    else goMealsStep('day', { dayIndex: index });
+  }
+
   function renderWeekSettle(row, panel, data) {
     var settle = data.settle;
     if (!settle || !settle.note) { row.innerHTML = ''; return; }
@@ -8123,22 +8254,7 @@
           '<button type="button" class="wk-settle-keep" id="wk-settle-keep">Keep it anyway</button>' +
         '</div>' +
       '</div>';
-    row.querySelector('#wk-settle-swap').addEventListener('click', function () {
-      // Straight to the meal the clash is about, where Swap already lives —
-      // the Day step if the exact slot can't be identified (a component
-      // plan has no dates), never a dead end.
-      var index = -1;
-      weekState.days.forEach(function (d, i) { if (d.date === settle.date) index = i; });
-      if (index < 0) {
-        // No day to land on (a component plan has no dates): hand it to
-        // the ask sheet with the swap already worded, never a dead tap.
-        openAskSheet('Swap ' + settle.meal + ' for something else');
-        return;
-      }
-      var slot = weekSettleTargetSlot(weekState.days[index], settle.meal);
-      if (slot) goMealsStep('meal', { dayIndex: index, slot: slot });
-      else goMealsStep('day', { dayIndex: index });
-    });
+    row.querySelector('#wk-settle-swap').addEventListener('click', function () { weekSettleSwap(settle); });
     row.querySelector('#wk-settle-keep').addEventListener('click', function () {
       // Deliberately the ordinary approve path, not a shortcut past it:
       // approve_weekly_plan answers a hard clash with needs_confirmation and
@@ -8200,8 +8316,8 @@
     '</div>';
   }
 
-  function renderWeekReceipt(row, panel, data) {
-    if (weekReceiptDismissed(data.weekly_plan_id)) { row.innerHTML = ''; return; }
+  function renderWeekReceipt(row, panel, data, asksOnly) {
+    if (!asksOnly && weekReceiptDismissed(data.weekly_plan_id)) { row.innerHTML = ''; return; }
 
     // The freezer check (Loop Board "Defrost check: ask at approval") and
     // the cook-ahead offer, both gated exactly as they were: once per plan
@@ -8249,6 +8365,7 @@
 
     var receipt = data.receipt || {};
     row.innerHTML =
+      (asksOnly ? '' :
       '<div class="shell-card week-receipt-card">' +
         '<div class="week-receipt-eyebrow">YOUR WEEK IS SET</div>' +
         '<div class="week-receipt-title">' + escapeHtml(receipt.title || 'Your week is set.') + '</div>' +
@@ -8260,11 +8377,11 @@
           '<button type="button" class="btn-gold week-receipt-go" id="week-receipt-go">Open the list</button>' +
           '<button type="button" class="week-receipt-see" id="week-receipt-see">See the week</button>' +
         '</div>' +
-      '</div>' +
+      '</div>') +
       (lines.length
-        ? '<div class="shell-card wk-quick-card">' +
+        ? '<div class="shell-card wk-quick-card' + (asksOnly ? ' on-spruce' : '') + '">' +
             '<div class="wk-quick-title">' +
-              (lines.length === 1 ? 'One quick one before you go' : 'Two quick ones before you go') +
+              (lines.length === 1 ? 'One quick one, if you like' : 'Two quick ones, if you like') +
             '</div>' +
             lines.map(weekQuickLineHtml).join('') +
           '</div>'
@@ -8276,9 +8393,11 @@
       head.addEventListener('click', function () {
         var key = head.getAttribute('data-quick');
         weekQuickOpen[key] = !weekQuickOpen[key];
-        renderWeekApproval(panel, data);
+        if (asksOnly) renderWeekReceipt(row, panel, data, true);
+        else renderWeekApproval(panel, data);
       });
     });
+    if (asksOnly) return;
     row.querySelector('#week-receipt-go').addEventListener('click', function () {
       // Plan stops is the screen that's actually about the trip the receipt
       // just promised, not just the list itself.
@@ -8289,6 +8408,54 @@
       renderWeekApproval(panel, data);
       if (scrollEl) scrollEl.scrollTop = 0;
     });
+  }
+
+  // ---------- SET: the All set screen ----------
+  // Spruce, one tick, the receipt's own numbers, the two quick asks as
+  // lines, and one next step. Shown once, in the page view that approved
+  // the week (approveWeek sets weekState.step). Everything on it is the
+  // receipt card's data and the asks' own UI; only the screen is new.
+  function allSetStepHtml(data, days) {
+    var receipt = data.receipt || {};
+    var nums = [];
+    if (receipt.meals != null) nums.push({ n: receipt.meals, label: 'meals' });
+    if (receipt.cooks != null) nums.push({ n: receipt.cooks, label: 'cooks' });
+    if (receipt.list_count != null) nums.push({ n: receipt.list_count, label: 'to buy' });
+    var dayCount = data.day_count || days.length || 7;
+    var range = data.week_label ||
+      (data.week_start_date ? periodRangeLabel(data.week_start_date, dayCount) : 'The week');
+    return '<div class="wk-allset">' +
+      '<div class="wk-allset-tick">' + READY_CHECK + '</div>' +
+      '<h1 class="wk-allset-title">All set.</h1>' +
+      '<p class="wk-allset-line">' + escapeHtml(range) + ' is planned, and the list is built.</p>' +
+      (nums.length
+        ? '<div class="wk-allset-nums">' + nums.map(function (x) {
+            return '<div class="wk-allset-num"><span class="wk-allset-n">' + escapeHtml(String(x.n)) + '</span>' +
+              '<span class="wk-allset-lbl">' + escapeHtml(x.label) + '</span></div>';
+          }).join('') + '</div>'
+        : (receipt.title ? '<p class="wk-allset-line">' + escapeHtml(receipt.title) + '</p>' : '')) +
+      (receipt.thaw_line ? '<p class="wk-allset-line is-quiet">' + escapeHtml(receipt.thaw_line) + '</p>' : '') +
+      '<div id="wk-allset-asks"></div>' +
+      '<div class="dock wk-allset-dock">' +
+        '<div class="dock-links"><button type="button" class="dock-link" id="wk-allset-see">See the week</button></div>' +
+        '<button type="button" class="dock-primary" id="wk-allset-go">Open the list</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // The defrost and cook-ahead asks, as the same two lines the receipt
+  // card folds them to — rendered by renderWeekReceipt into the All set
+  // screen's own row, with the receipt card itself suppressed.
+  function renderAllSetAsks(panel, data) {
+    var row = panel.querySelector('#wk-allset-asks');
+    if (!row) return;
+    renderWeekReceipt(row, panel, data, true);
+    var go = panel.querySelector('#wk-allset-go');
+    if (go) go.addEventListener('click', function () {
+      activateTab('grocery', true, { groScreen: 'plan' });
+    });
+    var see = panel.querySelector('#wk-allset-see');
+    if (see) see.addEventListener('click', function () { goMealsStep('week'); });
   }
 
   // "Chicken thighs · Salmon · Ground beef" — the chips, collapsed. Three
@@ -8807,7 +8974,14 @@
       // refreshStaleTabsFromActions handles for chat-driven changes, just
       // reached by a button instead of a sentence.
       refreshGrocerySurfaces();
+      // Land on the All set screen (Emily, 2026-09-11: "make this the dark
+      // background and more of a fun screen") — the one finish in the loop
+      // that gets its own screen (DESIGN_SYSTEM §2b S5). The root's
+      // receipt card is dismissed by it, so "See the week" lands clean.
+      weekState.step = 'allset';
+      if (data.weekly_plan_id) setWeekReceiptDismissed(data.weekly_plan_id, true);
       await loadWeekMenu(panel);
+      if (scrollEl) scrollEl.scrollTop = 0;
     } catch (err) {
       console.warn('Week approval failed:', err);
       if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
@@ -8831,16 +9005,10 @@
     var btn = card && card.querySelector('#week-approve-btn');
     if (!card || !btn) return;
 
-    var meals = [];
-    (approval.conflicts || []).forEach(function (c) {
-      if (c.meal && meals.indexOf(c.meal) === -1) meals.push(c.meal);
-    });
-    // Named when it's cheap (one dish sitting right there); a generic
-    // "the clash" once there's more than one, same call the server's own
-    // conflicts_note sentence makes.
-    var label = (meals.length === 1)
-      ? 'Approve anyway — I’ve seen the ' + meals[0] + ' clash'
-      : 'Approve anyway — I’ve seen the clash';
+    // One label, whatever the dish: since 2026-09-11 the clash sits on the
+    // dish's own row in the review above, so the button needn't repeat a
+    // name that can run to six words.
+    var label = 'Approve anyway — I’ve seen the clash';
     btn.textContent = label;
     btn.disabled = false;
     // Swap the handler rather than stack a second listener on top of the
@@ -8867,7 +9035,8 @@
       fixLink = document.createElement('button');
       fixLink.type = 'button';
       fixLink.id = 'week-fix-first-link';
-      fixLink.className = 'week-reset-link week-tweak-link';
+      // A quiet dock link, not the italic idiom (decision E, 2026-09-11).
+      fixLink.className = 'dock-link';
       fixLink.textContent = 'Let me fix it first';
       if (tweakLink && tweakLink.parentNode) {
         tweakLink.parentNode.insertBefore(fixLink, tweakLink);

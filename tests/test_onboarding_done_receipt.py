@@ -288,10 +288,14 @@ def test_review_my_week_lands_on_the_draft_review_not_the_plain_week():
 def test_the_draft_review_is_what_that_week_renders():
     """The destination is a review because the plan is a draft — shell.js
     puts Approve under the week card for exactly that state (flows 3)."""
+    # Since 2026-09-11 (Build 3) the draft OPENS on the review, and that
+    # is where Approve lives (reviewDecideHtml); weekDecideHtml is empty.
     shell = (STATIC / "shell.js").read_text()
-    decide = shell[shell.index("function weekDecideHtml("):]
+    decide = shell[shell.index("function reviewDecideHtml("):]
     assert "weekPlanState(data) !== 'draft'" in decide[:400]
-    assert "Approve this week" in decide[:1200]
+    assert "Approve and build my shopping list" in decide[:1200]
+    step = shell[shell.index("function renderMealsStep("):]
+    assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step[:6000]
 
 
 # ---------- the failure receipt ----------
