@@ -120,6 +120,58 @@ Each one is checkable — a reviewer (human or agent) should be able to grep or 
 
 ---
 
+## 2b. Screen rules — from Emily's review of the screen-by-screen mockups (2026-09-11)
+
+*Added by Emily's decision on 2026-09-11 (Tier 2). Each rule came out of a "why" she
+gave while reviewing the [Pomona, Screen by Screen](https://claude.ai/code/artifact/d3121bd8-e1f9-4430-82b8-8aaf4031e657)
+canvas — several notes pointing at the same reason, written up as one rule. S1, S4 and S9
+sharpen things §8 already says; the rest are new. Like §2, each carries a test a reviewer can
+run rather than a vibe. They apply to every screen, mockup or built.*
+
+- **S1 · Say the purpose, not the explanation.** A screen states what it is for in its
+  title and one line; it never explains itself in a paragraph. *Why (Emily): "what you
+  want to say on the screen should be more clear and direct for the purpose of it so that's
+  not lost."* **Test:** read only the title and the first line — is the purpose obvious?
+- **S2 · Helpers appear when you reach for them.** Prompts, tips and the chat itself show
+  up when you tap for them, never as permanent furniture on a working screen. *Why: "the
+  prompts at the bottom are taking up too much room"; "the chat being an open bar the whole
+  time is taking up too much room and is confusing."* **Test:** on a root screen, is anything
+  visible that only helps once you have already decided to act?
+- **S3 · Emphasis is a nudge, not a takeover.** The important thing on a screen is the same
+  size as its neighbours and is called out by a tint and a label, not by being a poster.
+  *Why: "the next-up card pulls too much attention… making the screen more even, but a bit
+  called out."* **Test:** does any one block take more than a third of the screen?
+- **S4 · Every question changes the plan.** Setup and weekly intake ask only what the
+  planner acts on. If nothing in the code reads an answer, the question goes. *Why: "make
+  sure whatever information we're gathering upfront actually contributes to the quality of
+  the responses."* **Test:** for each question, name the code path (or the prompt rule)
+  that uses the answer. (On 2026-09-11 this test found that lunch location, meals-together,
+  cooking role and planning anchor are stored and shown but never acted on; only
+  `dinner_window`, `leftovers_stance`, `prep_days` and the intake's packed-lunch days are.)
+- **S5 · Finishes get their own screen.** The moments where something is done — week
+  approved, shopping done, dinner on the table — break the template: spruce, big type, one
+  number, one next step. *Why: "it's boring to look at the same screen types all the
+  time."* **Test:** can you tell you finished without reading?
+- **S6 · A highlight says why.** Any tint, badge or colour on a row carries the word for it
+  ("Today", "Draft", "Hosting · 5"). *Why: "why is one part highlighting in blue?"*
+  **Test:** cover the colour — does the word still tell you?
+- **S7 · Real life has a home.** If a household can live it — hosting five for lunch, one
+  person out, a night already decided — there is a tap for it where the plan is made, not
+  only in the chat. *Why: "I am hosting 5 people for lunch, but there wasn't an option to
+  communicate that anywhere."* **Test:** for each intake tag, which real situation is it
+  for — and for each situation a tester has named, which tag?
+- **S8 · Details are one tap in and one tap back.** Anything you might want to check before
+  deciding (a recipe, a day) opens from where you are and returns you there. *Why: "click
+  into each recipe… but it needs to also be able to loop back to the main review screen."*
+  **Test:** from any detail screen, is the crumb the screen you came from? (This is §6's
+  "one way back" rule, applied to details rather than steps.)
+- **S9 · Warm and plain, never trying.** No winks, no self-aware asides, no "a quick word".
+  If a line sounds like it wants you to like it, cut it. *Why: "this cringy trying-too-hard
+  way of writing"; "it's just fluff."* **Test:** would you say it across the kitchen table
+  without wincing?
+
+---
+
 ## 3. Type
 
 Three faces, each with exactly one job (`--font-display`, `--font-body`, `--font-accent` in `theme.css`):
@@ -181,6 +233,7 @@ Reference implementations to copy patterns from, not to import as-is (there's no
 
 - **Four native screens, period: Now, Plan, Shop, Cook.** (They were Today, Meals, Grocery and Kitchen until nav v2 part 1, 2026-09-09; the code still spells the tab keys `today`/`week`/`grocery`/`kitchen`, which is deliberate — internal identifiers were left alone, as at the rebrand.) Everything else is a *state* (a segmented control inside a tab), a *sheet* (slides over, dismisses down), or a *step* — never a new page with its own header or its own back button. If you're about to add a page with a back arrow to a sibling tab, stop — it should be a sheet or a segmented state instead.
 - **The chat/ask input is part of the shell, not any one screen.** It sits above the tab bar on all four screens, same place, same size, always — the escape hatch from every hierarchy on the page. Its answer arrives as a sheet over whatever tab you're on; it never navigates you somewhere you didn't ask to go.
+  *Decided 2026-09-11, not yet built:* Emily chose, reviewing the screen-by-screen mockups, that the chat becomes **one round icon** (bottom-right of every screen; in the dock row when a screen has a dock) that opens the chat sheet, and the always-open bar goes — per S2 above. The example-prompt chips and the "?" tips button move inside that sheet. This paragraph describes the live app until that lands; when it does, rewrite it and delete this note in the same commit.
 - **Cooking is a *step* of Cook** (Emily, 2026-09-08), not a state of Plan and not its own tab. Cook's root answers "what's cooking, and what's in the house?"; the focused single-meal screen is one level down it, and `shell.js`'s own `TABS` comment says the same thing. It stays a step rather than becoming a sibling tab for the reason this rule has always given: it is the same week's data with the recipes opened up, and two tabs over one dataset is exactly the kind of drift this rule exists to prevent. (Until 2026-09-08 this was a `Plan | Cook` segmented state at `/week`; that control is gone.)
 - **Cook's root has no primary action.** Nothing on it is urgent by design (see Rule 5) — it's what today asks of the cook, read rather than acted on. One step down is different: cook mode's "Mark it cooked" is the tab's one apricot, and rule 2 below leans on the root having none.
 - **One way back, and it names its parent** (Emily, 2026-09-09 — nav v2 rule 1). Every screen deeper than a tab root carries **exactly one** breadcrumb, and it says where it goes: `‹ This week`, `‹ Monday`, `‹ Shop`. Never a bare arrow, never `history.back()` (which after any wandering points at the previous *view* rather than the parent — a link reading "This week" must not land on a meal), and never a second exit competing with the tab bar. The tab bar never leaves, so the way out of the whole branch is always on screen too; the crumb is the way up *one level*. The phone's back gesture goes up one level as well and matches the crumb. A tab root has no crumb.
@@ -203,7 +256,7 @@ Pomona learns from what a household does — this section is how it's allowed to
 - **Silent learning needs a visible flag and an undo, right at the point of use.** The app may act on a guess without asking first, but only where the result shows up on-screen as something the person can see and reverse in the moment — the grocery list's "usually here" / "not this time" is the reference pattern. Acting on a guess anywhere that isn't visible and reversible right there isn't silent learning, it's just guessing.
 - **Repetition earns an offer, not a promotion.** Once something has been observed enough times to look like a rule ("that's two Thursdays — should I just assume it?"), the app asks, once, whether to make it standing. It doesn't quietly upgrade a guess into a fact on its own.
 
-*This section and the voice-character addition just below it were folded in 2026-09-03 (both fully Emily-decided beforehand); per Governance below, the Brand Book canvas guide still needs the same two additions — and §8's "Sounding human" rules of 2026-09-10 — at its next design round.*
+*This section and the voice-character addition just below it were folded in 2026-09-03 (both fully Emily-decided beforehand); per Governance below, the Brand Book canvas guide still needs the same two additions — and §8's "Sounding human" rules of 2026-09-10 — at its next design round. Same for §2b's screen rules of 2026-09-11.*
 
 ---
 
