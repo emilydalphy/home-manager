@@ -35,7 +35,7 @@ from fastapi.exception_handlers import http_exception_handler
 
 from . import agent, backup, households, ratelimit, security
 from .db import get_conn, init_db
-from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, AssistantUnavailableError
+from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 
 
@@ -663,6 +663,16 @@ class GroceryAddRequest(BaseModel):
     # optional and defaults to the old unattributed "user" so every existing
     # caller of this endpoint keeps working unchanged.
     added_by: str = "user"
+
+
+class GroceryScanItem(BaseModel):
+    item: str
+    quantity: str = ""
+    category: str = "other"
+
+
+class ConfirmGroceryScanRequest(BaseModel):
+    items: list[GroceryScanItem]
 
 
 class GroceryUpdateRequest(BaseModel):
@@ -3281,6 +3291,49 @@ def confirm_scan(req: ConfirmScanRequest):
         result = tools.get_inventory_by_section()
     except Exception as e:
         logger.exception("Confirm-scan save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/scan")
+async def scan_grocery_list(request: Request, photo: UploadFile = File(...)):
+    """
+    Fourth scan target alongside the inventory trio above (Loop Board,
+    2026-09-11): photograph a handwritten grocery list or screenshot a
+    digital one (notes app, text thread, recipe ingredients) and get back a
+    draft list of items — nothing is added to the grocery list here, the
+    Shop screen shows this as an editable review step before
+    /api/grocery-list/confirm-scan actually adds anything. Same
+    size/type validation and rate limit as the inventory scans.
+    """
+    _enforce_rate_limit(request, "scan")
+    image_b64, media_type = await _read_scan_image(photo)
+    try:
+        items = scan_grocery_list_image(image_b64, media_type)
+    except AssistantUnavailableError as e:
+        logger.warning("Grocery list scan hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery list scan failed")
+        raise HTTPException(status_code=500, detail=f"Couldn't read that list: {e}")
+    if not items:
+        raise HTTPException(status_code=422, detail="I couldn't make out any items in that photo — try a clearer shot.")
+    return {"items": items}
+
+
+@app.post("/api/grocery-list/confirm-scan")
+def confirm_grocery_list_scan(req: ConfirmGroceryScanRequest):
+    """
+    Save a reviewed/edited grocery-list photo scan. Goes through
+    add_grocery_items — the same add path (and quantity consolidation
+    against anything already on the list) a typed item uses — so a
+    confirmed scanned item behaves exactly like one added any other way.
+    """
+    try:
+        entries = [{"item": i.item, "quantity": i.quantity, "category": i.category} for i in req.items]
+        result = tools.add_grocery_items(entries)
+    except Exception as e:
+        logger.exception("Grocery list confirm-scan save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 

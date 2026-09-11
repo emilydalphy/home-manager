@@ -377,6 +377,56 @@ why*, not duplicating the diff.
     what happens after the yes. 2235 -> 2253, all green. Not verified
     against a live model: the tool's refusal and the prompt rule are
     certain, the model's choice to ask is inferred from the instruction.
+- **2026-09-11 — Grocery list photo scan: a fourth sibling to the
+  receipt/fridge/pantry scans, not new infrastructure. Branch
+  `worktree-grocery-photo-list`.** Loop Board card, from Emily's Clementine
+  research: photograph a handwritten list or screenshot a digital one and
+  have Pomona add it. Reused everything the card's own notes pointed at —
+  `_read_scan_image`/`_MAX_SCAN_IMAGE_BYTES` (`app/main.py`), the
+  forced-tool-call `_scan_image_for_items` pattern and its shared
+  `submit_scanned_items` schema (`app/agent.py`), and
+  `tools.add_grocery_items` for the actual save, so a confirmed scanned
+  item gets the same duplicate-quantity consolidation a typed item does.
+  New: `agent.scan_grocery_list_image` (a grocery-specific prompt — item
+  name as bought, quantity only if actually written, handwritten AND
+  screenshot explicitly in scope), `POST /api/grocery-list/scan` (draft) and
+  `POST /api/grocery-list/confirm-scan` (save). Frontend: a camera-icon
+  button next to the LIST step's manual "Add" row in Shop (`static/shell.js`
+  `groFootHtml`/`groScanUploadPhoto`), opening a body-level review sheet
+  (`#gro-scan-sheet` in `static/shell.html`, wired near `weekSheetScrim`
+  rather than inside the Grocery function cluster — `onGroceryClick`'s own
+  region runs under Node with no `document` in
+  `tests/test_grocery_fast_sort.py`, and touching `document` at load time
+  inside that region broke all 38 of its tests until moved). Voice per
+  DESIGN_SYSTEM §8: "Here's what I read — untick anything I got wrong."
+  **Where the button lives was an explicit open question on the card**
+  (Emily's call to make, not this session's) — the inventory scans it
+  borrows the pattern from actually live on a different tab entirely
+  (Kitchen's Inventory sheet, `static/inventory.html`), so "next to the
+  existing scans" and "on the Shop tab" couldn't both be followed literally;
+  built next to the nearest existing "put something on the list" control
+  instead (the manual add row) as the stated default, flagged for her to
+  override. `tests/test_grocery_photo_scan.py`, 15 tests, all red on `main`
+  (the routes don't exist there) and green on the branch; full suite 2250
+  passed (2235 before this ticket — the difference is this card's 15 plus
+  what landed on `main` in between). Verified live against a throwaway DB:
+  the button renders 44x44, the review sheet opens, edits/unticks work, and
+  a confirmed item round-trips onto the real Shop list through the normal
+  add path — the model call itself is stub-tested only (no real Anthropic
+  key in this environment).
+  - **Independent-verifier catch, fixed same day: the sheet's save button
+    was a SECOND apricot** (DESIGN_SYSTEM §2 rule 5). Shop's LIST step
+    already spends its one apricot on `.gro-primary` ("Start the trip"), so
+    `.gro-scan-save`'s own `var(--apricot)` fill was a real violation, not a
+    nitpick. Every other body-level confirm sheet in the app
+    (`week-sheet-back`, `reset-confirm`, `dinner-confirm-add`) already uses
+    `.btn-gold` for exactly this reason — switched to the same convention
+    rather than inventing a new class, and resized `.gro-scan-cancel` to
+    match it (44px/12px) so the pair reads as one row. Added
+    `test_the_scan_review_sheets_save_button_is_not_a_second_apricot`
+    (`tests/test_grocery_photo_scan.py`) as the source-marker guard, the
+    same pattern `tests/test_grocery_steps.py`'s sibling apricot/spruce
+    checks already use for LIST's other controls.
 - **2026-09-11 — Stepping a dish down is ONE transaction now. Branch
   `overnight/drop-dish-atomic`.** The debt the review-stepper work filed
   rather than smuggled in (see its entry below, and `99db198` where it has

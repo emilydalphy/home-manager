@@ -3265,6 +3265,159 @@ html, body {
 }
 .gro-add-btn:hover { background: var(--spruce-hover); }
 .gro-add-btn:disabled { opacity: .6; cursor: default; }
+/* The photo entry point (Loop Board, 2026-09-11: "snap a photo of a
+   written or on-screen list and have Pomona add it") rides along in the
+   same row, next to the manual add — the nearest existing "put something
+   on the list" control, since the inventory scans this borrows the
+   review-before-save pattern from live on a different tab entirely. 44px
+   on both axes already, no pseudo-element trick needed. */
+.gro-scan-btn {
+  flex: 0 0 auto;
+  width: 44px;
+  min-height: 44px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--ground);
+  color: var(--ink-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.gro-scan-btn:hover { background: var(--sand); }
+.gro-scan-btn svg { width: 18px; height: 18px; }
+.gro-scan-btn:disabled { opacity: .6; cursor: default; }
+
+/* ---------- Photo-scan review sheet ----------
+   Same body-level scrim/sheet mechanics as #ask-sheet/#week-sheet
+   (position:fixed has to sit outside the tab panel's own stacking/scroll
+   context) — new code, so canonical tokens only, no legacy aliases. */
+#gro-scan-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#gro-scan-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 82%;
+  background: var(--surface-raised);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 10px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#gro-scan-scrim[hidden], #gro-scan-sheet[hidden] { display: none; }
+.gro-scan-sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-secondary);
+  margin: 0;
+}
+.gro-scan-loading {
+  text-align: center;
+  padding: 40px 10px;
+  font-family: var(--font-body);
+  color: var(--ink-muted);
+}
+.gro-scan-error {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--urgent-label);
+  background: var(--urgent-tint);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+.gro-scan-empty {
+  font-family: var(--font-body);
+  color: var(--ink-muted);
+  text-align: center;
+  padding: 30px 10px;
+  margin: 0;
+}
+.gro-scan-list { display: flex; flex-direction: column; gap: 8px; }
+.gro-scan-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--ground);
+  border-radius: var(--radius-control);
+  padding: 8px 12px;
+}
+.gro-scan-row.unchecked { opacity: .55; }
+/* The checkbox draws small (visually matching the inline name/qty
+   fields) but its tap target is the full 44px, same trick .gro-icon-btn
+   uses elsewhere on this screen — this gets tapped mid-shop, one-handed. */
+.gro-scan-check-wrap {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  margin: 0 -11px 0 -12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.gro-scan-check { width: 20px; height: 20px; accent-color: var(--apricot); cursor: pointer; }
+.gro-scan-name, .gro-scan-qty {
+  min-height: 40px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  padding: 0 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  min-width: 0;
+}
+.gro-scan-name { flex: 1 1 auto; }
+.gro-scan-qty { flex: 0 0 64px; width: 64px; padding: 0 8px; }
+.gro-scan-low {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--apricot-label);
+}
+.gro-scan-actions { display: flex; gap: 10px; padding-top: 4px; }
+/* .gro-scan-save carries layout only — its fill/color/type come from
+   .btn-gold (theme.css), the app's existing convention for a body-level
+   confirm sheet's one action when the tab behind it already has its own
+   apricot (DESIGN_SYSTEM §2 rule 5: one apricot primary per screen; Shop's
+   LIST step spends its on .gro-primary, "Start the trip"). Same pairing
+   week-sheet-back/reset-confirm/dinner-confirm-add use. */
+.gro-scan-save { flex: 1 1 auto; }
+.gro-scan-save:disabled { opacity: .6; cursor: default; }
+/* Sized to match .btn-gold's row-mate (44px min-height, 12px radius) now
+   that the save button is .btn-gold rather than a bespoke apricot pill —
+   the two need to read as one pair. */
+.gro-scan-cancel {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: 12px;
+  background: none;
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.gro-scan-cancel:hover { background: var(--sand); }
 
 /* ---------- Body ---------- */
 .gro-body {
