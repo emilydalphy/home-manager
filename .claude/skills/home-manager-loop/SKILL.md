@@ -251,6 +251,55 @@ grocery list → prep → cook — all core), and **inventory is deferred as pol
 lightweight background, gets no new investment, and no user should ever have to do
 inventory work to complete the core loop.
 
+**Phase 1.5 — Paid-ready** (added 2026-09-10) sits between Beta and Chores and holds what
+makes Pomona worth charging for. The test for Phase 1: *would a beta tester hit this?* The
+test for Phase 1.5: *would a stranger paying for this expect it?*
+
+## The problem we're solving — the mental load model (Emily, 2026-09-11)
+
+Pomona exists to take the **mental load** of running a home off the person carrying it.
+Emily asked on 2026-09-11 that this model be the thing roadmap decisions are anchored to,
+so that every card can answer "which part of the load does this remove?" Full write-up
+with sources: https://claude.ai/code/artifact/e6ae7e9e-1685-4063-ad12-ffe76438c7da
+(the "Pomona Mental Load Audit"). The short version, so it works without the link:
+
+**Mental load has four phases** (Daminger, 2019 — the standard reference):
+1. **Anticipate** — noticing a need before it's urgent ("we're nearly out of dish soap",
+   "Tuesday has a 6pm thing", "the chicken needs to come out tonight").
+2. **Identify** — working out the options.
+3. **Decide** — picking one.
+4. **Monitor** — checking it happened, and adjusting.
+
+Partners genuinely share phases 2 and 3. **Phases 1 and 4 fall almost entirely on one
+person** — that is the load. So Pomona earns its keep by *owning anticipate and monitor*
+and by making identify + decide a single tap on something already shaped. And because
+load lives *between* people, the app has to know there are two of them: one login per
+household can lighten the load but can't move it.
+
+**Where the load sits, by domain** (Weeks & Ruppanner 2025; Bath/Melbourne 2025). *Core*
+daily load — food, scheduling, cleaning, supplies, social/occasions, childcare — is the
+heavy kind and falls hardest on one person; *episodic* load — maintenance, finances/admin
+— is lighter day to day and already leans the other way. The widest gaps are in food
+planning, scheduling and social/occasions.
+
+**Guardrails from the same research** (and from Milo's January 2026 shutdown): never add
+load in the name of removing it. No data entry to complete a loop; review before save;
+queue-don't-guess when unsure; no game to administer (no points/rewards — Emily,
+2026-09-10); reliable beats clever; the app should get quieter over time.
+
+**Domain sequencing (Emily, 2026-09-11):** every domain is in scope eventually. Now: food
+(deep), scheduling (calendar read, meals-only so far), cleaning (Phase 2 — Chores), and
+supplies (the *staples* build, which comes before any inventory work — inventory stays a
+"still in development" beta feature, not something shared). Next to scope: social &
+occasions, and scheduling beyond meals. Later modules, in this order and not for a while:
+**maintenance first, childcare logistics second, finances & admin third.**
+
+**Three priorities named 2026-09-11, in her words:** push notifications (anticipation
+delivered *out* of the app), multiple logins per household (so load can be addressed to
+and moved between people), and staples running low (the research's own example of
+anticipation load). When picking work, weigh a card by which phase it removes and for
+whom — not by feature depth.
+
 ## Running the loop
 
 When Emily says something like "run the loop," "work through the tickets," or "pick up the
