@@ -965,6 +965,26 @@ def test_an_unknown_tag_is_refused():
         tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["busy"]})
 
 
+def test_an_unrushed_night_is_a_real_tag_and_can_join_guests():
+    """
+    "Got time tonight" lifts effort; "Hosting guests" scales quantity.
+    Different jobs, so unlike `normal` it is not exclusive (Emily,
+    2026-09-10).
+    """
+    intake = tools.save_week_intake(
+        "2026-09-07", night_tags={"2026-09-09": ["unrushed"], "2026-09-12": ["guests", "unrushed"]}
+    )
+    assert intake["night_tags"]["2026-09-09"] == ["unrushed"]
+    assert sorted(intake["night_tags"]["2026-09-12"]) == ["guests", "unrushed"]
+
+
+def test_a_night_cannot_be_both_rushed_and_unrushed():
+    """One caps the night at 20 minutes, the other lifts the cap. The
+    household was shown both promises; the generator can't keep both."""
+    with pytest.raises(ValueError):
+        tools.save_week_intake("2026-09-07", night_tags={"2026-09-09": ["rush", "unrushed"]})
+
+
 def test_malformed_tags_read_as_client_errors_not_crashes():
     """
     A bare string used to iterate its characters ("Unknown night tag(s): r,

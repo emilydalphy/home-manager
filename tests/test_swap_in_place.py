@@ -207,6 +207,22 @@ class TestThePrompt:
         assert picker.contexts[0]["night_tags"] == ["rush"]
         assert picker.contexts[0]["max_minutes"] == tools.RUSH_MAX_MINUTES
 
+    def test_an_unrushed_night_has_no_cap_even_with_a_weeknight_limit(self, week):
+        tools.edit_preference("weeknight_max_minutes", 30)
+        tools.save_week_intake(WEEK_START, night_tags={MONDAY: ["unrushed"]})
+        picker = _recorder(_pick())
+        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        assert picker.contexts[0]["night_tags"] == ["unrushed"]
+        assert picker.contexts[0]["max_minutes"] is None
+
+    def test_a_weeknight_limit_still_applies_to_an_untagged_night(self, week):
+        """The control for the test above: the cap is lifted BY the tag,
+        not by the household merely having set one."""
+        tools.edit_preference("weeknight_max_minutes", 30)
+        picker = _recorder(_pick())
+        tools.swap_meal_in_place(week, _entry_id(week, MONDAY), picker=picker)
+        assert picker.contexts[0]["max_minutes"] == 30
+
     def test_the_instructions_are_a_separate_cacheable_block(self):
         """
         The household's JSON changes on every call and the instructions
