@@ -45,6 +45,15 @@ def test_the_days_are_tiles_that_open_a_day_sheet_with_every_meal():
     assert "function attendanceFor(date, slot)" in PAGE
 
 
+def test_nothing_still_reaches_for_the_old_day_list():
+    """The verifier's find (2026-09-11): saveAwayRange repainted #days, which
+    the tiles replaced, so a saved range showed a false error. And the
+    'Just this week?' button has to be wired in the sheet, not only in the
+    list it used to live in."""
+    assert "$('days')" not in PAGE
+    assert "btn.addEventListener('click', function () { offerToRemember(dayEl); });" in PAGE
+
+
 def test_mood_pills_map_to_guidance_the_planner_reads():
     for m in ("Protein-heavy", "Veggie-heavy", "Fibre-focused", "Try a new cuisine"):
         assert m in PAGE, m

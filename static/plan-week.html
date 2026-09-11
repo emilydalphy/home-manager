@@ -630,7 +630,6 @@
     'Protein-heavy', 'Veggie-heavy', 'Fibre-focused', 'Something new', 'Try a new cuisine'];
   var STEP_COUNT = 4;
   var SKIP_LABELS = { 1: 'Nothing different', 2: 'Nothing on the go', 3: 'Surprise me', 4: 'Nothing else' };
-  var openDay = null;  // the date the day sheet is showing, or null
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -808,7 +807,6 @@
   function openDaySheet(date) {
     var day = dayFor(date);
     if (!day) return;
-    openDay = date;
     $('day-sheet-title').textContent = day.weekday + ' ' + day.day_of_month;
     $('day-sheet-body').innerHTML =
       '<div class="day" data-date="' + day.date + '">' +
@@ -836,6 +834,9 @@
     dayEl.querySelectorAll('.avatar').forEach(function (btn) {
       btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
     });
+    dayEl.querySelectorAll('.remember').forEach(function (btn) {
+      btn.addEventListener('click', function () { offerToRemember(dayEl); });
+    });
     dayEl.querySelectorAll('.guests-slot .stepper button').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var block = btn.closest('.meal-block');
@@ -848,7 +849,6 @@
 
   function closeDaySheet() {
     $('day-sheet').hidden = true;
-    openDay = null;
     paintTiles();
     paintCta();
   }
@@ -1330,7 +1330,10 @@
       // touches slots this screen didn't ask about (the two derived edges),
       // and a guess about those would be a guess shown as fact.
       await loadAttendance();
-      $('days').querySelectorAll('.day').forEach(paintPresence);
+      // The tiles carry the new absences; a day sheet left open repaints too.
+      paintTiles();
+      var openEl = $('day-sheet-body').querySelector('.day');
+      if (openEl) paintDay(openEl);
       renderAwaySet();
       $('away-another').hidden = false;
       closeAwaySheet();
