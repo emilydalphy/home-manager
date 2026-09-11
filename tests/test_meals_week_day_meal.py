@@ -403,8 +403,11 @@ def test_a_changed_day_still_lands_on_that_day():
     _assert_in("just-changed", SHELL_JS, "the ring itself", "shell.js")
 
 
-def test_the_ask_bar_keeps_its_meals_hint():
-    _assert_in("Tweak this week with me", SHELL_JS, "the Meals ask hint", "shell.js")
+def test_the_chat_no_longer_carries_a_meals_hint():
+    """The per-tab hint went with the always-open bar on 2026-09-11 (the
+    chat is an icon; Build 1 of the screen-by-screen redesign) — one line
+    on every tab, because the topic isn't always this week."""
+    assert "Tweak this week with me" not in SHELL_JS
 
 
 # ---------- snacks render too (2026-09-08, "snack-swap-applies") ----------

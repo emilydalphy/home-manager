@@ -321,9 +321,13 @@ def test_the_subtitles_read_the_household_back_plainly():
     _assert_in("'Not set yet'", SHELL_JS, "the unanswered-question wording", "shell.js")
 
 
-def test_the_ask_bar_hint_on_kitchen():
-    _assert_in("kitchen: 'What\\u2019s in the fridge that needs using?'", SHELL_JS,
-               "Kitchen's ask-bar hint", "shell.js")
+def test_the_chat_carries_one_line_on_every_tab():
+    """Since 2026-09-11 the chat is an icon and its composer says the same
+    thing on every tab — the topic isn't always today (Emily). The per-tab
+    hints, Kitchen's included, went with the always-open bar."""
+    _assert_in("_default: 'What\\u2019s on your mind?'", SHELL_JS,
+               "the one chat hint", "shell.js")
+    assert "kitchen: 'What" not in SHELL_JS
 
 
 # --- 4. the backend half --------------------------------------------------

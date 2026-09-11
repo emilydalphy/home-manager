@@ -128,28 +128,21 @@
   // permission prompt fires. Flip to true to bring it back.
   var COOK_VOICE_ENABLED = false;
 
-  // The ask bar is shell chrome — one composer above the tab bar on all four
-  // screens (NavBlueprint §7) — so its hint is the one thing about it that
-  // can be per-screen. Today's names what Today is for now that the screen
-  // is a timeline of moves; the others keep the line the bar has always
-  // carried.
+  // The chat is one icon on every screen (Emily, 2026-09-11; DESIGN_SYSTEM
+  // §2b S2), and its composer carries one line everywhere: the topic isn't
+  // always today, so the hint doesn't pretend to know it. ASK_HINTS used to
+  // hold a line per tab for the always-open bar; the object stays so the
+  // one line has a name, and the per-tab keys are gone with the bar.
   var ASK_HINTS = {
-    today: 'Ask me anything about today\u2026',
-    week: 'Tweak this week with me\u2026',
-    // Kitchen is the cook's tab now (Emily, 2026-09-08), so its hint asks
-    // the question a cook standing in one actually has.
-    kitchen: 'What\u2019s in the fridge that needs using?',
-    // Grocery's own line. One thing goes in the list's own inline add row;
-    // the bar is for the wordier ask, so the hint shows it taking more than
-    // one item at a time.
-    grocery: 'Add oat milk and lemons\u2026',
-    _default: 'The more you tell me, the less you\u2019ll swap\u2026'
+    _default: 'What\u2019s on your mind?'
   };
 
   function setAskHintForTab(key) {
     var hint = ASK_HINTS[key] || ASK_HINTS._default;
-    var docked = document.querySelector('#ask-bar .ask-placeholder');
-    if (docked) docked.textContent = hint;
+    var input = document.getElementById('ask-input');
+    if (input) input.placeholder = hint;
+    var col = document.getElementById('today-ask-input');
+    if (col) col.placeholder = hint;
   }
 
   var TABS = [
@@ -536,7 +529,7 @@
               '<button type="button" class="ask-tips-btn" data-tips="open" aria-label="Helpful tips" title="Helpful tips">?</button>' +
             '</div>' +
             '<form id="today-ask-composer" class="ask-composer-bar">' +
-              '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="Ask me anything about today&hellip;" autocomplete="off"></textarea>' +
+              '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>' +
               '<button type="button" id="today-ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">' +
                 '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>' +
               '</button>' +
@@ -11940,7 +11933,7 @@
   }
 
   // ---------- Docked ask bar ----------
-  var askBar = document.getElementById('ask-bar');
+  var askBar = document.getElementById('chat-fab');
   if (askBar) {
     askBar.addEventListener('click', function () { openAskSheet(); });
   }
@@ -12294,6 +12287,16 @@
   function renderAskChips(actions) {
     askChipTargets().forEach(function (chipsEl) {
       chipsEl.hidden = false;
+      // The intents arrive from /api/week-menu AFTER the tab's example
+      // prompts were drawn (coachOnTabShown runs on activation; this runs
+      // when the fetch answers), so the yielding renderAskExamples does
+      // when it finds intents already showing has to run in this direction
+      // too — otherwise both rows sit in the sheet until the next tab
+      // switch. Seen on the phone the day the examples moved into the
+      // sheet (2026-09-11).
+      var examples = typeof document !== 'undefined' && document.getElementById(
+        chipsEl.id === 'today-ask-chips' ? 'today-ask-examples' : 'ask-examples');
+      if (examples && actions.length) { examples.innerHTML = ''; examples.hidden = true; }
       chipsEl.innerHTML = actions.map(function (q, i) {
         return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
       }).join('');
@@ -13118,11 +13121,34 @@
       if (notifBell.parentNode) notifBell.parentNode.removeChild(notifBell);
       return;
     }
-    var slot = document.getElementById(bellIsDesktop.matches ? 'bell-home-rail' : 'bell-home-dock');
+    var slot;
+    if (bellIsDesktop.matches) {
+      slot = document.getElementById('bell-home-rail');
+    } else {
+      // The active root's header slot (prefsGearHtml). A panel that
+      // re-renders its header throws the bell out of the document with the
+      // old markup; the element itself survives in this closure, so the
+      // next call simply puts it back — which is why this runs after every
+      // tab activation and on any change under #shell-scroll (below).
+      var active = document.querySelector('#shell-scroll .tab-panel.active [data-bell-slot]');
+      slot = active || null;
+    }
     if (slot && notifBell.parentNode !== slot) slot.appendChild(notifBell);
   }
 
   placeNotifBell();
+  // Re-home after any re-render under the panels (a rebuilt header drops
+  // the slot the bell was in). Coalesced to one placement per frame.
+  (function () {
+    var scroll = document.getElementById('shell-scroll');
+    if (!scroll || typeof MutationObserver === 'undefined') return;
+    var queued = false;
+    new MutationObserver(function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; placeNotifBell(); });
+    }).observe(scroll, { childList: true, subtree: true });
+  })();
   // Crossing the breakpoint by resizing (or rotating a phone) re-homes it.
   if (bellIsDesktop.addEventListener) bellIsDesktop.addEventListener('change', placeNotifBell);
   else if (bellIsDesktop.addListener) bellIsDesktop.addListener(placeNotifBell);  // older WebKit
@@ -13209,7 +13235,14 @@
   // (renderGrocery), and Kitchen's lives inside the root view, which cook
   // mode replaces outright.
   function prefsGearHtml() {
-    return '<button type="button" class="prefs-gear" data-prefs="open" ' +
+    // The notifications bell's phone-width home is the slot beside the
+    // gear (placeNotifBell moves the one bell element into whichever root
+    // is showing). It used to sit in the ask-bar dock; the dock went with
+    // the bar on 2026-09-11. Emily's 2026-09-02 rule — the bell is a
+    // permanent entry point, visible even when the feed is empty — is kept
+    // by giving every root a slot, not just Now.
+    return '<span class="bell-slot" data-bell-slot></span>' +
+      '<button type="button" class="prefs-gear" data-prefs="open" ' +
       'aria-label="Preferences" title="Preferences">' + PREFS_GEAR_ICON + '</button>';
   }
 
@@ -13633,9 +13666,11 @@
       // hid the dock's examples permanently — which is this same row's
       // feature, deleted. Measured on a phone before the scoping went in:
       // examples hidden with the sheet still closed.
-      var intents = el.id === 'today-ask-examples'
-        ? document.getElementById('today-ask-chips')
-        : null;
+      // Since 2026-09-11 the phone's examples live INSIDE the sheet as
+      // well (the dock is gone), so the same yielding applies at both
+      // widths: whichever chips container sits beside this one.
+      var intents = document.getElementById(
+        el.id === 'today-ask-examples' ? 'today-ask-chips' : 'ask-chips');
       if (intents && !intents.hidden && intents.innerHTML) {
         el.innerHTML = '';
         el.hidden = true;
@@ -13647,7 +13682,11 @@
         return;
       }
       el.hidden = false;
-      el.innerHTML = prompts.map(function (text, i) {
+      // A label in the sheet, where the chips now sit between the greeting
+      // and the composer; the desktop column's row has its own place and
+      // needs none.
+      el.innerHTML = (el.id === 'ask-examples' ? '<span class="ask-examples-label">Or start with one of these</span>' : '') +
+        prompts.map(function (text, i) {
         return '<button type="button" class="ask-chip ask-chip-example" data-i="' + i + '">' +
           escapeHtml(text) + '</button>';
       }).join('');

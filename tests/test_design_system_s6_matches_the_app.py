@@ -86,7 +86,9 @@ def test_cook_mode_really_does_carry_the_tabs_one_apricot():
 
 
 @pytest.mark.parametrize("rule", [
-    "**The chat/ask input is part of the shell, not any one screen.**",
+    # Reworded 2026-09-11 when the chat became an icon (Build 1); the rule
+    # that the sheet belongs to the shell is the part that survived.
+    "and the sheet it opens is part of the shell, not any one screen.**",
     "**One way back, and it names its parent**",
     "**One dock**",
     "**Refresh policy**",

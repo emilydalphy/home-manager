@@ -839,66 +839,45 @@ html, body {
   padding: 14px 0;
 }
 
-/* ---------- Docked ask bar (every screen) ---------- */
-/* InnToday/InnMeals draw this identically on both screens, which is the
-   point — NavBlueprint §01: "it never scrolls away, it never changes per
-   screen". Ivory, one hairline, a spruce send tile. The placeholder string
-   itself is left alone: the mockups shorten it to "Ask or add anything",
-   and the blueprint calls that "a copy decision, not a layout one". */
+/* ---------- The chat icon (every screen) ---------- */
+/* Emily, 2026-09-11, reviewing the screen-by-screen canvas: "the chat being
+   an open bar the whole time is taking up too much room and is confusing.
+   fold it into an icon that is the chat that the user can click on any
+   screen, but it's not always in the way." DESIGN_SYSTEM §2b S2. The dock
+   element is kept as the non-scrolling strip between the panel and the tab
+   bar, collapsed to no height, and the button floats out of it bottom-right
+   — so it sits in the same place on every screen without a magic offset,
+   and never scrolls away. The .dock (the screen's one action) clears it with
+   right padding below, so the two read as one row when both are present. */
 #ask-bar-dock {
   flex-shrink: 0;
-  padding: 12px 20px 10px;
-  /* A row now, because the notifications bell sits beside the ask bar here.
-     This dock is a flex sibling of #shell-scroll, so it never scrolls —
-     which is the whole reason the bell was moved into it. */
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  position: relative;
+  height: 0;
+  padding: 0;
+  overflow: visible;
+  z-index: 3;
 }
-#bell-home-dock { display: contents; }
-#ask-bar {
-  /* flex, not width:100% — the dock is a row now (the notifications bell is
-     its second child), and a 100%-wide ask bar pushed the bell off-screen. */
-  flex: 1 1 auto;
-  min-width: 0;
+.chat-fab {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  width: 54px;
   height: 54px;
-  box-sizing: border-box;
-  background: var(--surface);
-  border: 1.5px solid var(--hairline-strong);
   border-radius: var(--radius-ask);
-  padding: 0 8px 0 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-#ask-bar:hover { border-color: var(--ink-placeholder); }
-#ask-bar .ask-placeholder {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink-placeholder);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#ask-bar .ask-send {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-send);
+  border: none;
   background: var(--spruce);
-  color: var(--apricot-light);
+  color: var(--ivory-ink);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 17px;
+  cursor: pointer;
+  box-shadow: var(--shadow-hero);
+  padding: 0;
 }
+.chat-fab svg { width: 24px; height: 24px; }
+.chat-fab:hover { background: var(--spruce-hover); }
+/* Rule 6 tap target is the full 54px; the ring below is the focus state. */
+.chat-fab:focus-visible { outline: 2px solid var(--apricot); outline-offset: 3px; }
 
 /* ---------- Ask sheet (Step 3) ---------- */
 @keyframes sheetUp { from { transform: translateY(102%); } to { transform: translateY(0); } }
@@ -2313,13 +2292,20 @@ html, body {
 /* The chat sheet says what it's for. An unlabelled sheet said nothing, and
    "Tell me what to change" is the invitation the design asks for — it names
    the thing worth typing rather than leaving a bare field. */
+.ask-sheet-titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 20px 10px;
+  flex-shrink: 0;
+}
 .ask-sheet-title {
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 17px;
-  color: var(--plum-ink);
-  padding: 2px 20px 10px;
-  flex-shrink: 0;
+  color: var(--ink);
+  min-width: 0;
 }
 
 /* ---------- The offer to plan a week (Today) ----------
@@ -5005,7 +4991,11 @@ html, body {
   bottom: 0;
   z-index: 2;
   margin-top: 20px;
-  padding: 8px 20px 14px;
+  /* 84px on the right: the chat icon (.chat-fab, 54px + its 16px inset)
+     floats over this strip's right end, so the button and its link stop
+     short of it and the two read as one row. Desktop hides the icon and
+     resets this below. */
+  padding: 8px 84px 14px 20px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -5704,7 +5694,25 @@ span.cook-week-name { cursor: default; }
 /* Meals' root header belongs to the week card, so its gear gets a row of
    its own — right-aligned, and hidden as a unit on the Day and Meal steps
    (renderMealsStep), exactly as the Plan | Cook control it replaced was. */
-.prefs-gear-row { display: flex; justify-content: flex-end; padding: 10px 20px 0; }
+.prefs-gear-row { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 10px 20px 0; }
+/* The bell's phone-width home, beside the gear in every root's header
+   (prefsGearHtml). Empty on desktop, where the bell lives in the rail. */
+.bell-slot { display: contents; }
+/* In a header the bell takes the gear's own dress — 34px outline tile, full
+   44px target via ::after (Rule 6) — rather than the 54px spruce tile it
+   wore in the dock, so the two sit as a pair. */
+.bell-slot .notif-bell {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-tile);
+  background: transparent;
+  border: 1.5px solid var(--hairline-strong);
+  color: var(--ink-secondary);
+}
+.bell-slot .notif-bell::after { content: ''; position: absolute; inset: -5px; }
+.bell-slot .notif-bell:hover { background: var(--sand); }
+.bell-slot .notif-bell-icon svg { width: 17px; height: 17px; }
+.bell-slot .notif-badge { top: 3px; right: 3px; }
 .prefs-gear-row[hidden] { display: none; }
 
 #prefs-scrim,
@@ -6834,8 +6842,10 @@ span.cook-week-name { cursor: default; }
 /* The dock is a row (bar + bell). The examples wrap onto their own line
    ABOVE it — below would collide with the tab bar — via order, rather than
    by wrapping the bar in a new element and re-cutting the dock's layout. */
-#ask-bar-dock { flex-wrap: wrap; }
-#ask-examples { flex: 1 0 100%; order: -1; margin-bottom: 2px; }
+/* In the sheet the examples sit between the greeting and the intents, and
+   their label is drawn by renderAskExamples. */
+#ask-examples { padding: 0 20px 6px; }
+.ask-examples-label { flex: 1 0 100%; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); margin: 2px 0 4px; }
 
 .ask-tips-btn {
   flex-shrink: 0;
@@ -6960,4 +6970,11 @@ span.cook-week-name { cursor: default; }
   font-size: 14px;
   line-height: 1.45;
   color: var(--ink-on-celadon);
+}
+
+/* Desktop has no chat icon (the Ask column replaces the sheet, and
+   #ask-bar-dock is hidden above), so the dock takes its clearance back.
+   Kept at the end of the file so it follows the base .dock rule. */
+@media (min-width: 1024px) {
+  .dock { padding-right: 20px; }
 }

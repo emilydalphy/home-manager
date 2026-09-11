@@ -472,8 +472,9 @@ def test_the_preferences_sheet_carries_the_way_back_to_the_tips():
 
 
 def test_the_ask_bar_carries_a_small_way_into_the_tips_at_both_widths():
-    # The docked bar on mobile is in the markup; the desktop Ask column's is
-    # written by buildTodayPanel.
+    # The sheet's (phone) is in the markup, in its title row since the chat
+    # became an icon (2026-09-11); the desktop Ask column's is written by
+    # buildTodayPanel.
     assert 'id="ask-tips-btn"' in SHELL_HTML
     assert 'aria-label="Helpful tips"' in SHELL_HTML
     assert SHELL_JS.count('class="ask-tips-btn" data-tips="open"') == 1

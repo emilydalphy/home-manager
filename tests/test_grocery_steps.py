@@ -110,7 +110,8 @@ def test_list_carries_the_screens_one_apricot_and_an_inline_add():
     test_adding_one_thing_never_costs_a_model_turn below."""
     _in("data-gro=\"start-trip\"", SHELL_JS, "Start the trip", "shell.js")
     _in(">Start the trip<", SHELL_JS, "its copy", "shell.js")
-    _in("grocery: 'Add oat milk and lemons", SHELL_JS, "the Grocery ask hint", "shell.js")
+    # The per-tab ask hint ("Add oat milk and lemons…") went with the
+    # always-open bar on 2026-09-11 (chat icon, Build 1): one line everywhere.
     _in(".gro-primary", SHELL_CSS, "the primary action style", "shell.css")
     _not_in("data-gro=\"add-something\"", SHELL_JS, "the ask-sheet Add something button", "shell.js")
 
