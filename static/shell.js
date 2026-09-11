@@ -487,13 +487,17 @@
         // .today-content rather than of .today-body, because it bleeds the
         // full width of the panel while everything else sits inside the
         // 20px gutter, and a grid child cannot escape its parent's padding.
-        '<div id="today-next-up" class="dinner-hero nextup-hero" hidden></div>' +
-        // Onboarding coaching, part 2 (2026-09-08): the one-time "This is
-        // how to talk to me" card. BELOW the next-up card, never above it —
-        // the day's one action stays on the first screen even on a short
-        // phone (verifier, 2026-09-09). Empty (and so display:none) on
-        // every load but the one it is shown on.
-        '<div id="coach-card-slot" class="today-area-nudge"></div>' +
+        // The next-up card. Until 2026-09-11 this was the spruce hero
+        // (.dinner-hero .nextup-hero) bleeding the panel's full width;
+        // Emily, reviewing the screen-by-screen canvas: "the next-up card
+        // pulls too much attention… making the screen more even, but a bit
+        // called out". DESIGN_SYSTEM §2b S3. It is a card in the gutter now
+        // — sand fill, apricot eyebrow, same width as its neighbours — and
+        // its action lives in the dock at the foot of the screen, not
+        // inside it. (The one-time "how to talk to me" sheet that used to
+        // be a card under here is body-level now — see #coach-card-slot in
+        // shell.html.)
+        '<div id="today-next-up" class="today-area-nextup shell-card nextup-card" hidden></div>' +
         '<div class="today-body">' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +
@@ -537,6 +541,13 @@
             '</form>' +
           '</div>' +
         '</div>' +
+        // The screen's one action — the featured move's ("Cook this",
+        // "Done", "Open the list") or, with no week planned, the offer to
+        // plan one. Same .dock every other tab uses (nav v2 rule 2); it
+        // used to be that Now had none because its action sat inside the
+        // hero. Filled by renderTodayDock, hidden when there is nothing
+        // single to do.
+        '<div class="dock today-dock" id="today-dock" hidden></div>' +
       '</div>';
 
     panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
@@ -552,9 +563,9 @@
       (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve())
     ]);
 
-    // The how-and-why card's slot only exists once this panel has been
-    // built, and /api/coaching may well have answered before that — so the
-    // card is rendered from both ends, and renderCoachCard is idempotent.
+    // The how-and-why sheet: /api/coaching may answer before or after this
+    // panel is built, so it is rendered from both ends, and renderCoachCard
+    // is idempotent.
     renderCoachCard();
   }
 
@@ -580,48 +591,49 @@
   }
 
   function renderPlanWeekNudge(wrap, nudge) {
-    if (!nudge || !nudge.show) { wrap.innerHTML = ''; return; }
+    var panel = wrap.closest('.tab-panel');
+    if (panel) { panel._nudge = nudge; panel._nudgeDismissed = false; }
+    if (!nudge || !nudge.show) { wrap.innerHTML = ''; if (panel) renderTodayDock(panel); return; }
+    // The question, and nothing under it. The paragraph that used to
+    // explain the two rounds of questions and the approval step failed the
+    // delete test (Emily, 2026-09-11: "it's just fluff"); the button and
+    // "Not now" moved to the dock (renderTodayDock), where every screen's
+    // one action lives.
     wrap.innerHTML =
       '<div class="shell-card plan-nudge-card">' +
         '<div class="plan-nudge-top">' +
-          '<span class="plan-nudge-eyebrow">' +
-            (nudge.is_current_week ? 'THIS WEEK' : 'NEXT WEEK') + ' &middot; WHENEVER SUITS YOU</span>' +
-          '<button type="button" class="plan-nudge-dismiss" id="plan-nudge-dismiss">Not now</button>' +
+          '<span class="plan-nudge-eyebrow">' + (nudge.is_current_week ? 'THIS WEEK' : 'NEXT WEEK') + '</span>' +
         '</div>' +
-        '<div class="plan-nudge-title">Shall I put ' + escapeHtml(nudge.week_label) + ' together for you?</div>' +
-        '<div class="plan-nudge-body">Two rounds of questions from me — about five minutes — then I’ll ' +
-          'draft the week and you tell me what to change. Nothing gets bought until you approve it.</div>' +
-        '<button type="button" class="btn-gold plan-nudge-cta" id="plan-nudge-go">Let’s plan the week</button>' +
+        '<div class="plan-nudge-title">Shall I put ' + escapeHtml(nudge.week_label) + ' together?</div>' +
       '</div>';
+    if (panel) renderTodayDock(panel);
+  }
 
-    wrap.querySelector('#plan-nudge-go').addEventListener('click', function () {
-      // nudge.day_count, not seven. The nudge's own headline already names
-      // the real span ("Shall I put Sep 5–7 together for you?"), so
-      // dropping it here asked the next screen about four days nobody had
-      // been offered. Same defect as the Meals entry's, same payload.
+  async function dismissPlanWeekNudge(panel) {
+    var nudge = panel._nudge;
+    var wrap = panel.querySelector('#plan-week-nudge');
+    if (!nudge || !wrap) return;
+    panel._nudgeDismissed = true;
+    renderTodayDock(panel);
+    // Say what dismissing means, and where the offer went — the entry
+    // point on Plan is permanent, so nothing is actually lost.
+    wrap.innerHTML =
+      '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
+        '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Plan — I won’t ask again this week.</div>' +
+        '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
+      '</div>';
+    wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
       startPlanningWeek(nudge.week_start, nudge.day_count || 7);
     });
-    wrap.querySelector('#plan-nudge-dismiss').addEventListener('click', async function () {
-      // Say what dismissing means, and where the offer went — the entry
-      // point on Meals is permanent, so nothing is actually lost.
-      wrap.innerHTML =
-        '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
-          '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Plan — I won’t ask again this week.</div>' +
-          '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
-        '</div>';
-      wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
-        startPlanningWeek(nudge.week_start, nudge.day_count || 7);
+    try {
+      await fetch('/api/notifications/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: nudge.dismiss_key })
       });
-      try {
-        await fetch('/api/notifications/dismiss', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: nudge.dismiss_key })
-        });
-      } catch (err) {
-        console.warn('Dismissing the plan-week nudge failed:', err);
-      }
-    });
+    } catch (err) {
+      console.warn('Dismissing the plan-week nudge failed:', err);
+    }
   }
 
   function startPlanningWeek(weekStart, dayCount) {
@@ -701,9 +713,18 @@
   function needsYouCardHtml(item) {
     if (item.type === 'dinner_decision') {
       return (
-        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="dinner_decision">' +
-          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
-          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+        // Folded (Emily, 2026-09-11): the two suggestions used to sit open
+        // under the title, a second tall card on a screen that already had
+        // the plan offer and the coaching card. One row, one "Pick" that
+        // unfolds them in place.
+        '<div class="shell-card needs-you-card is-folded urgency-' + item.urgency + '" data-card-type="dinner_decision">' +
+          '<div class="ny-fold">' +
+            '<div class="ny-fold-text">' +
+              '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+              '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+            '</div>' +
+            '<button type="button" class="ny-option-pick ny-unfold" data-ny-unfold>Pick</button>' +
+          '</div>' +
           '<div class="ny-options">' +
             item.options.map(function (opt, i) {
               return (
@@ -779,6 +800,12 @@
     });
     if (panel._moves) renderTodayMoves(panel, panel._moves);
 
+    band.querySelectorAll('[data-ny-unfold]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var card = btn.closest('.needs-you-card');
+        if (card) card.classList.remove('is-folded');
+      });
+    });
     band.querySelectorAll('[data-card-type="dinner_decision"] .ny-option').forEach(function (row) {
       row.addEventListener('click', function () {
         resolveDinnerDecision(panel, row.dataset.date, row.dataset.meal, row.closest('.needs-you-card'));
@@ -1058,15 +1085,15 @@
       // and it becomes a serif brand") — the move's own reason, never copy
       // written for the slot.
       (move.reason ? '<div class="hero-accent">' + escapeHtml(move.reason) + '</div>' : '') +
-      (chips.length
-        ? '<div class="hero-chips">' + chips.map(function (c) {
-            return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
-          }).join('') + '</div>'
-        : '') +
+      // Chips and the tick share the last row. The action button that used
+      // to sit here is the dock's now (renderTodayDock) — one place for the
+      // one thing to press, on every screen.
       '<div class="nextup-foot">' +
-        '<button type="button" class="hero-action" data-move-action="' + escapeHtml(move.id) + '">' +
-          '<span>' + escapeHtml((move.action && move.action.label) || 'Do it') + '</span>' + ICONS.arrow +
-        '</button>' +
+        (chips.length
+          ? '<div class="hero-chips">' + chips.map(function (c) {
+              return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
+            }).join('') + '</div>'
+          : '<span class="hero-chips-spacer"></span>') +
         moveTickHtml(move) +
       '</div>';
   }
@@ -1140,6 +1167,8 @@
       nextUp.hidden = !featured;
       nextUp.innerHTML = featured ? nextUpCardHtml(featured) : '';
     }
+    panel._featured = featured;
+    renderTodayDock(panel);
 
     var rest = moves.filter(function (m) { return !featured || m.id !== featured.id; });
     var pending = rest.filter(function (m) { return !m.done; });
@@ -1207,9 +1236,49 @@
     return (data.tomorrow && data.tomorrow.id === id) ? data.tomorrow : null;
   }
 
+  // The one action at the foot of Now. The featured move's action wins;
+  // with nothing featured and the week unplanned, the offer to plan it
+  // (renderPlanWeekNudge) is the one thing to do. Nothing else is a dock:
+  // ticking a line is the action on a day with no next move, and the
+  // dismissed offer is a link in its own card.
+  function renderTodayDock(panel) {
+    var dock = panel.querySelector('#today-dock');
+    if (!dock) return;
+    var featured = panel._featured || null;
+    var nudge = panel._nudge || null;
+    var html = '';
+    if (featured) {
+      html = '<button type="button" class="dock-primary" data-move-action="' + escapeHtml(featured.id) + '">' +
+        escapeHtml((featured.action && featured.action.label) || 'Do it') + '</button>';
+    } else if (nudge && nudge.show && !panel._nudgeDismissed) {
+      html = '<div class="dock-links"><button type="button" class="dock-link" id="plan-nudge-dismiss">Not now</button></div>' +
+        '<button type="button" class="dock-primary" id="plan-nudge-go">Let’s plan the week</button>';
+    }
+    dock.innerHTML = html;
+    dock.hidden = !html;
+    if (!html) return;
+    var go = dock.querySelector('[data-move-action]');
+    if (go) {
+      go.addEventListener('click', function () {
+        runTodayMoveAction(panel, go.getAttribute('data-move-action'));
+      });
+    }
+    var planGo = dock.querySelector('#plan-nudge-go');
+    if (planGo) {
+      planGo.addEventListener('click', function () {
+        // nudge.day_count, not seven — see renderPlanWeekNudge.
+        startPlanningWeek(nudge.week_start, nudge.day_count || 7);
+      });
+    }
+    var dismiss = dock.querySelector('#plan-nudge-dismiss');
+    if (dismiss) dismiss.addEventListener('click', function () { dismissPlanWeekNudge(panel); });
+  }
+
   function renderTodayMovesError(panel) {
     var nextUp = panel.querySelector('#today-next-up');
     if (nextUp) { nextUp.hidden = true; nextUp.innerHTML = ''; }
+    panel._featured = null;
+    renderTodayDock(panel);
     var progress = panel.querySelector('#today-progress');
     // "Nothing to do" is a real answer from a real count; a failed lookup
     // is not that, and saying it anyway would tell someone the day is clear
@@ -13724,29 +13793,37 @@
   // ---------- the how-and-why card ----------
 
   var COACH_CARD_LINES = [
-    'Ask for anything in plain words — a swap, a change of plan, a question about tonight.',
-    'The more you tell me about your week, the better the plan fits. Away nights, guests, a craving.',
-    'Buttons do the common things. Words do the rest.'
+    ['The buttons do the everyday things.', 'Approve the week, tick off the shopping, start a recipe.'],
+    ['For anything else, tap the chat and type it.', '“Jamie’s out Thursday.” “Less chicken.”'],
+    ['If I get something wrong, tell me there.', 'I’ll fix it and remember.']
   ];
+  var COACH_CARD_TITLE = 'Tap for the usual. Type for the rest.';
 
-  // A .plan-nudge-card instance, not a new card type — same eyebrow / title
-  // / body shape as Today's other quiet card (DESIGN_SYSTEM §9 Tier 1).
-  // No apricot anywhere in it: Today's own hero owns that colour, and this
-  // is a word, not an action.
+  // A sheet shown once — the first time the app opens after setup — and
+  // then gone; the same three ideas live under Helpful tips for good. It
+  // used to be a card on Now under the next-up card ("A QUICK WORD / This
+  // is how to talk to me"), which Emily cut on 2026-09-11: a working screen
+  // never carries a lesson (DESIGN_SYSTEM §2b S2), and "a quick word, once"
+  // meant nothing to her. Body level like every other sheet here; the slot
+  // is in shell.html and is empty (display:none) on every load but this one.
   function coachCardHtml() {
-    return '<div class="shell-card plan-nudge-card coach-card">' +
-      '<div class="plan-nudge-eyebrow">A QUICK WORD</div>' +
-      '<div class="plan-nudge-title">This is how to talk to me</div>' +
-      '<ul class="coach-lines">' +
-        COACH_CARD_LINES.map(function (line) {
-          return '<li>' + escapeHtml(line) + '</li>';
-        }).join('') +
-      '</ul>' +
-      '<div class="coach-actions">' +
-        '<button type="button" class="plan-nudge-link coach-got-it" data-coach="got-it">Got it</button>' +
-        '<button type="button" class="plan-nudge-link coach-tips" data-coach="tips">Show me tips</button>' +
-      '</div>' +
-    '</div>';
+    return '<div id="coach-scrim" data-coach="got-it"></div>' +
+      '<div id="coach-sheet" class="coach-sheet" role="dialog" aria-modal="true" aria-labelledby="coach-title">' +
+        '<div class="ask-sheet-handle"></div>' +
+        '<div class="plan-nudge-title coach-title" id="coach-title">' + escapeHtml(COACH_CARD_TITLE) + '</div>' +
+        '<div class="coach-lines">' +
+          COACH_CARD_LINES.map(function (line) {
+            return '<div class="coach-line">' +
+              '<span class="coach-line-lead">' + escapeHtml(line[0]) + '</span>' +
+              '<span class="coach-line-more">' + escapeHtml(line[1]) + '</span>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        '<div class="coach-actions">' +
+          '<button type="button" class="dock-primary coach-got-it" data-coach="got-it">Got it</button>' +
+          '<button type="button" class="plan-nudge-link coach-tips" data-coach="tips">More tips</button>' +
+        '</div>' +
+      '</div>';
   }
 
   function renderCoachCard() {

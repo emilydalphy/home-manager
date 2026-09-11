@@ -132,8 +132,12 @@ html, body {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  /* Fills the panel so the dock (margin-top: auto below) sits at the foot
+     of a short day rather than under its last card. */
+  flex: 1 0 auto;
   padding: 0 0 8px;
 }
+.today-content .today-dock { margin-top: auto; }
 
 .today-heading { padding: 24px 20px 18px; }
 .today-datestrip { display: flex; align-items: center; gap: 10px; }
@@ -200,6 +204,35 @@ html, body {
    day's worth rather than the answer to the whole screen. Same spruce, same
    one apricot action, smaller type and tighter padding. */
 .nextup-hero { padding: 18px 20px 16px; gap: 11px; }
+/* 2026-09-11 (Emily; §2b S3): the next-up is a CARD now, not the spruce
+   hero — same width and family as its neighbours, sand fill and an apricot
+   eyebrow to call it out, and no action inside it (the dock has that).
+   The hero's inner classes are reused with their ink swapped for ivory. */
+.today-area-nextup { margin: 0 20px 14px; }
+.nextup-card {
+  background: var(--sand);
+  border-color: transparent;
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.nextup-card[hidden] { display: none; }
+.nextup-card .hero-eyebrow { color: var(--apricot-label); }
+.nextup-card .hero-rule { background: var(--hairline-strong); }
+.nextup-card .nextup-when { color: var(--ink-secondary); }
+.nextup-card .hero-dish, .nextup-card .nextup-dish { color: var(--ink); font-size: 22px; letter-spacing: -0.028em; line-height: 1.12; }
+.nextup-card .hero-dish-sm, .nextup-card .hero-dish-xs { font-size: 20px; }
+.nextup-card .hero-accent { color: var(--ink-secondary); font-size: 15px; margin-top: -4px; }
+.nextup-card .hero-chip { background: var(--surface); color: var(--ink); border: 1.5px solid var(--hairline-strong); height: 30px; }
+.nextup-card .nextup-foot { justify-content: space-between; }
+/* A move with no chips and nothing to tick (a shop, say) has an empty foot;
+   don't leave a blank row where the action used to be. */
+.nextup-card .nextup-foot:not(:has(.hero-chip)):has(.tick-empty) { display: none; }
+.nextup-card .tick-box { border-color: var(--hairline-strong); }
+.nextup-card .tick:hover .tick-box { border-color: var(--celadon); }
+/* The dish name is a link to the recipe here too; .dish-link inherits the
+   card's ink from .hero-dish above. */
 .nextup-dish { font-size: 26px; letter-spacing: -0.032em; line-height: 1.08; }
 .nextup-when {
   flex: 0 0 auto;
@@ -492,6 +525,13 @@ html, body {
   font-size: 15px;
   color: var(--plum-ink);
 }
+/* Folded (2026-09-11): one row — kicker, title, Pick — until Pick unfolds
+   the options in place. */
+.ny-fold { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ny-fold-text { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.needs-you-card.is-folded .ny-options { display: none; }
+.needs-you-card:not(.is-folded) .ny-unfold { display: none; }
+.ny-unfold { min-height: 44px; background: none; border: none; cursor: pointer; padding: 0 4px; font: inherit; font-weight: 700; font-size: 14px; color: var(--ink-strong); }
 .ny-option-pick {
   font-family: var(--font-body);
   font-weight: 700;
@@ -1338,6 +1378,7 @@ html, body {
   .today-heading { padding: 32px 32px 20px; }
   .today-area-nudge { padding: 0 32px; }
   .dinner-hero { border-radius: var(--radius-hero); margin: 0 32px; padding: 26px 28px 24px; }
+  .today-area-nextup { margin: 0 32px 14px; }
   .nextup-hero { padding: 20px 28px 18px; }
   /* Wide enough that the one action stops being a full-width slab — but it
      shares its row with the tick, so it shrinks rather than left-aligning
@@ -5003,6 +5044,26 @@ html, body {
   border-top: 1.5px solid var(--hairline);
 }
 .dock-links, .cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* The dock's one apricot, shared by every screen that has one (Now since
+   2026-09-11; .gro-primary and .cook-hero-action are the same button under
+   older names). */
+.dock-primary {
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radius-action);
+  background: var(--apricot);
+  border: none;
+  color: var(--on-accent-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: var(--shadow-action);
+}
+.dock-primary:hover { background: var(--apricot-light); }
+.dock-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
+.today-dock[hidden] { display: none; }
 /* space-between with a single link leaves it at the start, which is
    where a lone back link belongs — no second rule needed. */
 .dock-link, .cook-dock-link {
@@ -5715,6 +5776,8 @@ span.cook-week-name { cursor: default; }
 .bell-slot .notif-badge { top: 3px; right: 3px; }
 .prefs-gear-row[hidden] { display: none; }
 
+#coach-card-slot:empty { display: none; }
+#coach-scrim,
 #prefs-scrim,
 #tips-scrim {
   position: fixed;
@@ -5723,6 +5786,7 @@ span.cook-week-name { cursor: default; }
   animation: fadeIn .18s ease;
   z-index: 40;
 }
+#coach-sheet,
 #prefs-sheet,
 #tips-sheet {
   position: fixed;
@@ -6871,6 +6935,16 @@ span.cook-week-name { cursor: default; }
 .ask-examples-row .ask-chips { flex: 1 1 auto; }
 
 /* ---------- the how-and-why card ---------- */
+/* The one-time sheet (coachCardHtml). Its title reuses .plan-nudge-title. */
+#coach-sheet { padding: 12px 20px 24px; gap: 12px; }
+#coach-sheet .coach-title { padding-top: 2px; }
+.coach-lines { display: flex; flex-direction: column; }
+.coach-line { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-top: 1.5px solid var(--hairline); }
+.coach-line:first-child { border-top: 0; padding-top: 4px; }
+.coach-line-lead { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink); line-height: 1.3; }
+.coach-line-more { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); line-height: 1.4; }
+#coach-sheet .coach-actions { display: flex; align-items: center; gap: 16px; margin-top: 4px; }
+#coach-sheet .coach-actions .dock-primary { flex: 1 1 auto; width: auto; }
 .coach-card .coach-lines {
   list-style: none;
   margin: 2px 0 0;

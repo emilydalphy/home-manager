@@ -396,7 +396,7 @@ function run(state) {
   Object.assign(coachState, state);
   ELS['coach-card-slot'] = makeEl();
   renderCoachCard();
-  return ELS['coach-card-slot'].innerHTML.indexOf('This is how to talk to me') !== -1;
+  return ELS['coach-card-slot'].innerHTML.indexOf('Tap for the usual. Type for the rest.') !== -1;
 }
 console.log(JSON.stringify({
   notReady: run({ ready: false, hasPlan: true, seen: false }),
@@ -410,27 +410,33 @@ console.log(JSON.stringify({
 
 
 @_needs_node
-def test_the_card_says_its_three_lines_and_offers_two_quiet_ways_out():
+def test_the_sheet_says_its_three_lines_and_offers_two_ways_out():
+    """Since 2026-09-11 (Build 2 of the screen-by-screen redesign) this is a
+    SHEET shown once, not a card on Now: Emily cut the card ("'a quick word,
+    once' — what does that even mean? Remove it") and the copy with it.
+    Title and lines are the proposed draft from the copy document; they
+    change there, not here, when she hands it back."""
     script = (
         _DOM_STUB + _card_block() + """
 console.log(JSON.stringify(coachCardHtml()));
 """
     )
     html = _node(script)
-    assert "A QUICK WORD" in html
-    assert "This is how to talk to me" in html
+    assert "A QUICK WORD" not in html
+    assert 'id="coach-sheet"' in html and 'id="coach-scrim"' in html
+    assert "Tap for the usual. Type for the rest." in html
     for line in [
-        "Ask for anything in plain words — a swap, a change of plan, a question about tonight.",
-        "The more you tell me about your week, the better the plan fits. Away nights, guests, a craving.",
-        "Buttons do the common things. Words do the rest.",
+        "The buttons do the everyday things.",
+        "For anything else, tap the chat and type it.",
+        "If I get something wrong, tell me there.",
     ]:
         assert line in html, line
     assert 'data-coach="got-it"' in html and ">Got it<" in html
-    assert 'data-coach="tips"' in html and ">Show me tips<" in html
-    # No apricot: Today's hero owns that colour, and this is a word, not an
-    # action. Both buttons are .plan-nudge-link (a text button), never
-    # .btn-gold.
-    assert "btn-gold" not in html
+    assert 'data-coach="tips"' in html and ">More tips<" in html
+    # The sheet's Got it is its one apricot (a sheet has no other), and the
+    # scrim dismisses too.
+    assert 'class="dock-primary coach-got-it"' in html
+    assert '<div id="coach-scrim" data-coach="got-it"></div>' in html
 
 
 @_needs_node
