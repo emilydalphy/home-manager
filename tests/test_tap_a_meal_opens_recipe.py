@@ -685,13 +685,20 @@ def test_every_way_into_cook_mode_says_where_it_came_from():
         + "runTodayMoveAction(panel, 'cook:42');\n"
         + "console.log(JSON.stringify(calls));\n"
     )
-    assert calls == [["openRecipeFor", focus, {"label": "Today", "tab": "today"}]]
-    # ...and Today's dish name, the tap right beside it, says the same thing.
+    # The labels below read "Now" and "Shop" as of nav v2 part 2
+    # (2026-09-10). A crumb names its parent as the household reads it, and
+    # the part 1 rename made those tabs Now and Shop — it missed these four
+    # call sites because they are JS object values rather than markup, so a
+    # crumb could still say "‹ Today" above a tab bar reading Now. The
+    # assertions move with the words; what is being tested (every door into
+    # cook mode says which door it was) has not changed.
+    assert calls == [["openRecipeFor", focus, {"label": "Now", "tab": "today"}]]
+    # ...and Now's dish name, the tap right beside it, says the same thing.
     wiring = SHELL_JS.split("data-move-dish]", 1)[1][:600]
-    assert "{ label: 'Today', tab: 'today' }" in wiring
-    # Grocery's shop-done handoff is the other one, and it names Grocery.
+    assert "{ label: 'Now', tab: 'today' }" in wiring
+    # Shop's shop-done handoff is the other one, and it names Shop.
     assert (
-        "openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' });"
+        "openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Shop', tab: 'grocery' });"
         in SHELL_JS
     )
 

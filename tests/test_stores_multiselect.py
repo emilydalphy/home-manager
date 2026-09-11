@@ -301,14 +301,16 @@ console.log(JSON.stringify({
 @_needs_node
 def test_the_card_owns_the_screens_one_apricot_while_it_is_up():
     """Rule 5. LIST returns the card INSTEAD of its stops, so "Start the
-    trip" in the foot would be a second apricot pointing at stores that
-    aren't on the screen."""
+    trip" would be a second apricot pointing at stores that aren't on the
+    screen. It reads groDockHtml as of nav v2 part 2 (2026-09-10): the
+    step's action moved out of the scrolling foot and into the dock, which
+    is also rule 2's "a screen with no single action has no dock" case."""
     out = _node("""
 data.stores['Costco'] = { sections: [{ section: 'other', items: [
   { id: 9, item: 'Eggs', quantity: '1', store: 'Costco' } ] }], purchased: [], inCart: [] };
-const whileAsking = groFootHtml(data, 'list');
+const whileAsking = groDockHtml(data, 'list');
 groceryState.storesPromptDismissed = true;
-const afterAnswering = groFootHtml(data, 'list');
+const afterAnswering = groDockHtml(data, 'list');
 console.log(JSON.stringify({
   whileAsking: whileAsking.indexOf('start-trip') !== -1,
   afterAnswering: afterAnswering.indexOf('start-trip') !== -1

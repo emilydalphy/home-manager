@@ -1088,7 +1088,7 @@ why*, not duplicating the diff.
   legacy alias) onto the canonical `--ink-secondary` at the shell step
   link's own 14px/700 — measured in Chromium at 390px, 4.44:1 light and
   8.48:1 dark, hit area 91x44. Light is 0.06 under AA for normal text and
-  is under it everywhere in this app (`.wk-back`/`.gro-back` carry the same
+  is under it everywhere in this app (the shell's `.crumb` carries the same
   value); clearing it means changing `--ink-secondary` itself, which is
   **Emily's Tier 2 call**, not a one-screen hex. **And the test harness is
   why this survived:** `tests/test_onboarding_go_back.py`'s history stub

@@ -794,7 +794,11 @@ def test_the_get_out_row_clears_the_44px_floor():
 
 
 def test_the_dock_is_sticky_and_uses_tokens_only():
-    block = SHELL_CSS[SHELL_CSS.index(".cook-dock {") :][:600]
+    # The box is `.dock` as of nav v2 part 2 (2026-09-10) — Emily's rule 2
+    # puts the same strip on Plan and Shop, and one component cannot be two
+    # implementations. Cook still renders `class="dock cook-dock"`; the
+    # cook-scoped selectors below it are unchanged.
+    block = SHELL_CSS[SHELL_CSS.index(".dock {") :][:600]
     assert "position: sticky" in block
     assert "bottom: 0" in block
     assert "#" not in block, "Rule 9 — every colour goes through a token"

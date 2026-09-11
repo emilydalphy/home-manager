@@ -939,7 +939,7 @@ html, body {
   cursor: pointer;
 }
 /* The real close control (Julia, 2026-09-08 — the handle alone was too
-   thin to hit reliably). Same shape as the wk-back/gro-back step links
+   thin to hit reliably). Same shape as the .crumb step links
    elsewhere in the shell: plain text + chevron, min 44x44 tap target,
    always visible at the top-left of the sheet, never just the handle. */
 .ask-sheet-back {
@@ -3159,9 +3159,21 @@ html, body {
 }
 .gro-sortbadge::after { content: ''; position: absolute; inset: -11px; }
 .gro-sortbadge[hidden] { display: none; }
-/* Back links go UP a level by name, never history.back() — see the
-   'step-back' handler. Same shape and reasoning as Meals' .wk-back. */
-.gro-back {
+/* ---------- The crumb: every deeper screen's one way back ----------
+   Nav v2 rule 1 (Emily, 2026-09-09): a screen deeper than a tab root
+   carries exactly ONE of these and it NAMES its parent — "‹ This week",
+   "‹ Shop" — never a bare arrow. It goes UP a level by name, never
+   history.back(), which after any wandering points at the previous view
+   rather than the parent (see the 'step-back' handler and goMealsStep).
+   The tab bar is the way out of the whole branch; this is the way up one.
+
+   One class where there were three. Meals' .wk-back and Grocery's
+   .gro-back were byte-identical rule blocks kept in sync by hand, and
+   Cook's .cook-focus-back was a third at 13px — so the three screens a
+   household actually moves between disagreed about how the same control
+   looks. .on-spruce is the only real difference: inside a spruce hero the
+   ink has to invert. */
+.crumb {
   align-self: flex-start;
   min-height: 44px;
   margin: 8px 12px 0;
@@ -3174,12 +3186,33 @@ html, body {
   font-weight: 700;
   color: var(--ink-secondary);
 }
-.gro-back:hover { color: var(--ink-strong); }
-.gro-back[hidden] { display: none; }
+.crumb:hover { color: var(--ink-strong); }
+.crumb[hidden] { display: none; }
+
+/* Inside a spruce hero (Cook's focus screens): same crumb, inverted ink,
+   and no gutter of its own because the hero already provides one. It keeps
+   the shared 44px target and 14px type — at 13px it was the single place
+   in the app where the back link was a different size. */
+.crumb.on-spruce {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: var(--apricot-light);
+}
+.crumb.on-spruce:hover { color: var(--ivory-ink); }
 
 /* ---------- The foot: the step's one action ---------- */
 .gro-foot { padding-top: 16px; gap: 4px; }
 .gro-foot:empty { display: none; }
+/* Shop's step action, in the dock (rule 2). It used to sit at the foot of
+   the list inside .gro-foot, which on a real week's groceries meant "Start
+   the trip" was a hundred rows below the fold — the button the screen
+   exists for, reachable only by scrolling past everything it is about.
+   The add row stays behind in .gro-foot: adding one thing is a side errand,
+   not what the screen is for, and two strips would be no strip at all. */
+.gro-dock { padding-bottom: 12px; }
+.gro-dock:empty { display: none; }
 .gro-primary {
   width: 100%;
   min-height: 52px;
@@ -4136,7 +4169,8 @@ html, body {
 @media (min-width: 1100px) {
   .grocery-content { max-width: 720px; }
   .gro-head { padding: 18px 28px 0; }
-  .gro-back { margin: 12px 24px 0; }
+  .crumb { margin: 12px 24px 0; }
+  .crumb.on-spruce { margin: 0; }
   .gro-title { font-size: 36px; }
   .gro-body { padding: 12px 28px 0; }
   .gro-voice { margin: 12px 28px 0; }
@@ -4557,21 +4591,7 @@ html, body {
    shopping mode — see .gro-hero-back, the precedent this back link copies.
    .cook-focus-hero reuses .cook-hero wholesale; only the back link and the
    completed-state check button are new. */
-.cook-focus-back {
-  background: none;
-  border: none;
-  padding: 0;
-  align-self: flex-start;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--apricot-light);
-  cursor: pointer;
-}
-.cook-focus-back:hover { color: var(--ivory-ink); }
+/* Cook's back link is .crumb.on-spruce now — see .crumb. */
 /* Marking a cooked meal not-cooked is an undo, not a call to action, so it
    drops the apricot fill for a quiet outline on spruce — matching the
    .cook-serves-btn.on-spruce/.cook-mic.on-spruce outline treatment. */
@@ -4659,13 +4679,26 @@ html, body {
 }
 .cook-needs { display: flex; flex-direction: column; gap: 9px; }
 
-/* The dock. Sticky rather than in flow: the phone is across the counter
-   and the next thing to do must not be a scroll away. It is in the page's
-   own scroller, not new floating chrome, so it never fights the ask bar —
-   at the very bottom of the content it simply comes to rest.
-   Kitchen's ROOT still has no primary action (DESIGN_SYSTEM Rule 5); this
-   is one step down, exactly where "Mark it cooked" already lived. */
-.cook-dock {
+/* ---------- The dock: where a screen's one action lives ----------
+   Nav v2 rule 2 (Emily, 2026-09-09): the single thing a screen is for sits
+   in a fixed strip above the tab bar, the same place on every screen,
+   labelled for what it does — "Approve and build my shopping list", "Done
+   at Loblaws", "Start cooking" — and it does not scroll away. A screen with
+   no single action has no dock; Cook's root is the standing example.
+
+   Sticky rather than in flow: the phone is across the counter and the next
+   thing to do must not be a scroll away. It is in the page's own scroller,
+   not new floating chrome, so it never fights the ask bar — at the very
+   bottom of the content it simply comes to rest.
+
+   This started as .cook-dock, built for the cook journey (2026-09-10) and
+   verified in a browser there. Rule 2 is that same strip on the other two
+   screens that have a single action, so this is that component with the
+   Cook name taken off it rather than a second dock invented beside it —
+   "the same place on every screen" is not something two implementations
+   can promise. Quiet secondaries ride along as text links (.dock-links);
+   a second FILL would break Rule 5, which is the whole point of one dock. */
+.dock {
   position: sticky;
   bottom: 0;
   z-index: 2;
@@ -4677,10 +4710,10 @@ html, body {
   background: var(--ground);
   border-top: 1.5px solid var(--hairline);
 }
-.cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dock-links, .cook-dock-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* space-between with a single link leaves it at the start, which is
    where a lone back link belongs — no second rule needed. */
-.cook-dock-link {
+.dock-link, .cook-dock-link {
   min-height: 44px;
   padding: 0 2px;
   border: none;
@@ -4692,7 +4725,7 @@ html, body {
   cursor: pointer;
   white-space: nowrap;
 }
-.cook-dock-link:hover { color: var(--apricot-label-hover); }
+.dock-link:hover, .cook-dock-link:hover { color: var(--apricot-label-hover); }
 /* "Mark not cooked" is an undo, not a call to action, so it drops the
    apricot fill — and in the dock it sits on the ivory ground rather than
    on spruce, so it takes the ground's own quiet-outline vocabulary
@@ -5774,11 +5807,11 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 /* The draft's decision, directly under the week it is about. */
+/* Also a .dock (rule 2) — the box below only overrides the padding, because
+   the Approve button needs a little more room above it than Cook's strip
+   does. Everything that makes it a dock comes from .dock. */
 .wk-decide {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 14px 20px 2px;
+  padding: 14px 20px 10px;
 }
 /* The way into the Review step, above the decision it is for. Secondary by
    construction — the screen's one apricot is the Approve button under it
@@ -6136,20 +6169,7 @@ span.cook-week-name { cursor: default; }
 .wk-foot-link:hover, .wk-foot-more:hover { color: var(--apricot-label-hover); }
 
 /* ---------- DAY / MEAL: the back link ---------- */
-.wk-back {
-  align-self: flex-start;
-  min-height: 44px;
-  margin: 8px 12px 0;
-  padding: 0 8px;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-}
-.wk-back:hover { color: var(--ink-strong); }
+/* It is .crumb now — one definition, up beside .gro-foot. */
 
 /* ---------- DAY: three equal cards ---------- */
 .wk-slots { display: flex; flex-direction: column; gap: 12px; padding: 0 20px; }
@@ -6397,7 +6417,6 @@ span.cook-week-name { cursor: default; }
   .wk-slots { padding: 0 32px; }
   .wk-card { margin: 0 32px 12px; }
   #week-steps > .wk-acts { padding: 4px 32px 0; }
-  .wk-back { margin: 12px 24px 0; }
 }
 
 .wk-foot-solo { justify-content: flex-end; }

@@ -201,12 +201,12 @@ const verbs = [], re = /data-gro="([^"]+)"/g;
 let m; while ((m = re.exec(html)) !== null) verbs.push(m[1]);
 console.log(JSON.stringify({
   verbs: verbs,
-  bulk: groFootHtml(groceryState.data, 'sorthow'),
+  bulk: groDockHtml(groceryState.data, 'sorthow'),
   queueLine: /gro-howrow-sub">([^<]*)</g.exec(html.split('goto-sort-one')[1] || '')
 }));
 """)
     assert out["verbs"] == ["goto-sortall", "goto-sort-one"], "both other paths on screen"
-    assert "Put all 40 at" in out["bulk"], "the bulk answer is the screen's foot action"
+    assert "Put all 40 at" in out["bulk"], "the bulk answer is the screen's dock action"
 
 
 @_needs_node
@@ -223,17 +223,17 @@ console.log(JSON.stringify(/Or one at a time<\\/span>\\s*<span class="gro-howrow
 
 @_needs_node
 def test_the_fast_path_screen_carries_exactly_one_apricot():
-    """Rule 5. The two rows in the body are plain; the foot is the primary."""
+    """Rule 5. The two rows in the body are plain; the dock is the primary."""
     out = _node("""
 setUp(40);
 const body = groSortHowHtml(groceryState.data);
-const foot = groFootHtml(groceryState.data, 'sorthow');
+const dock = groDockHtml(groceryState.data, 'sorthow');
 console.log(JSON.stringify({
   bodyPrimaries: (body.match(/gro-primary/g) || []).length,
-  footPrimaries: (foot.match(/gro-primary/g) || []).length
+  dockPrimaries: (dock.match(/gro-primary/g) || []).length
 }));
 """)
-    assert out == {"bodyPrimaries": 0, "footPrimaries": 1}
+    assert out == {"bodyPrimaries": 0, "dockPrimaries": 1}
 
 
 # --- 2. "put all at X" -----------------------------------------------------
@@ -485,7 +485,7 @@ def test_the_trip_can_be_ended_from_the_where_next_screen():
 setUp(0, [{ store: 'Metro', items: [{ id: 3, item: 'Eggs', store: 'Metro' }] }]);
 groceryState.tripStops = ['Costco', 'Metro'];
 groceryState.tripDone = { Costco: true };
-console.log(JSON.stringify(groFootHtml(groceryState.data, 'next')));
+console.log(JSON.stringify(groDockHtml(groceryState.data, 'next')));
 """)
     assert "trip-end" in out
     assert "done shopping for today" in out
@@ -745,7 +745,7 @@ groceryState.data.stores.Unassigned.sections[0].items = [
 ];
 console.log(JSON.stringify({
   stops: groStoresWithNeeded(groceryState.data),
-  foot: groFootHtml(groceryState.data, 'list'),
+  foot: groDockHtml(groceryState.data, 'list'),
   onTheStop: (function () {
     groceryState.tripStops = groStoresWithNeeded(groceryState.data);
     groceryState.tripIndex = 0;

@@ -1200,7 +1200,7 @@
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
-        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
+        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Now', tab: 'today' });
       });
     });
   }
@@ -1306,7 +1306,7 @@
     // "‹ Today" while its action button said "‹ Kitchen", two answers to
     // one meal 200px apart.
     if (target.tab === 'kitchen' && target.cookFocus) {
-      return openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' });
+      return openRecipeFor(target.cookFocus, { label: 'Now', tab: 'today' });
     }
     // The same thing, in the shape moves.py wrote it before 2026-09-08,
     // when cook mode was a state of the Meals tab. A payload cached by the
@@ -1315,7 +1315,7 @@
     // translate it rather than dropping the tap on the plan, where it
     // would silently do nothing.
     if (target.tab === 'week' && target['mealsView'] === 'cook') {
-      return openRecipeFor(target['mealsFocus'] || true, { label: 'Today', tab: 'today' });
+      return openRecipeFor(target['mealsFocus'] || true, { label: 'Now', tab: 'today' });
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -1805,7 +1805,7 @@
   function buildGroceryPanel(panel) {
     panel.innerHTML =
       '<div class="grocery-content">' +
-        '<button type="button" class="gro-back" id="gro-back" data-gro="step-back" hidden></button>' +
+        '<button type="button" class="crumb" id="gro-back" data-gro="step-back" hidden></button>' +
         '<div class="gro-head">' +
           '<div class="gro-head-row">' +
             '<h1 class="gro-title" id="gro-title">Shop</h1>' +
@@ -1828,6 +1828,9 @@
         '<div class="gro-voice" id="gro-voice" hidden></div>' +
         '<div class="gro-body" id="gro-body"><p class="gro-empty">Loading&hellip;</p></div>' +
         '<div class="gro-body gro-foot" id="gro-foot"></div>' +
+        // The step's one action, in the dock (rule 2) — last in the markup
+        // because that is where a sticky footer's flow position has to be.
+        '<div class="dock gro-dock" id="gro-dock"></div>' +
       '</div>';
 
     // One delegated listener for the whole screen. The alternative — re-wiring
@@ -2014,7 +2017,8 @@
     var sub = panel.querySelector('#gro-sub');
     var body = panel.querySelector('#gro-body');
     var foot = panel.querySelector('#gro-foot');
-    if (!back || !title || !badge || !sub || !body || !foot) return;
+    var dock = panel.querySelector('#gro-dock');
+    if (!back || !title || !badge || !sub || !body || !foot || !dock) return;
 
     // Re-rendering replaces the list under the reader's thumb, so hold the
     // scroll position across it. "Nothing else moves, ever."
@@ -2029,6 +2033,7 @@
         ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       foot.innerHTML = '';
+      dock.innerHTML = '';
       return;
     }
 
@@ -2094,6 +2099,10 @@
     foot.innerHTML = groFootHtml(data, step);
     groRestoreAddRow(foot, addRow);
 
+    // The step's one action last, and in its own strip: it has to stay on
+    // screen while the list scrolls under it (rule 2).
+    dock.innerHTML = groDockHtml(data, step);
+
     if (scrollEl) scrollEl.scrollTop = keepScroll;
   }
 
@@ -2144,10 +2153,10 @@
     if (step === 'sorthow') {
       // Same question as the queue's, because it is the same question — the
       // household is only choosing how many screens it wants to answer it in.
-      return { back: '‹ Grocery', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'sortall') {
-      return { back: '‹ Grocery', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
+      return { back: '‹ Shop', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
     }
     if (step === 'next') {
       var left = groRemainingStops(data).length;
@@ -2156,7 +2165,7 @@
         // screen can be reached by mistake from: "Done at Costco" is a
         // full-width apricot under a list of things still to tick, and
         // without this the mis-tap ended that shop for the trip.
-        back: groceryState.tripLastDone ? '‹ Back to ' + groceryState.tripLastDone : '',
+        back: groceryState.tripLastDone ? '‹ Back to ' + groceryState.tripLastDone : '‹ Shop',
         title: 'Where next?',
         sub: left ? groPlural(left, 'stop', 'stops') + ' left' : ''
       };
@@ -2177,7 +2186,7 @@
           ' · ' + groTripItems(data).length + ' left'
       };
     }
-    if (step === 'wrap') return { back: '', title: 'How did it go?', sub: '' };
+    if (step === 'wrap') return { back: '‹ Shop', title: 'How did it go?', sub: '' };
     var t = groTotals(data);
     var stopCount = groStoresWithNeeded(data).length;
     var sub = '';
@@ -2850,31 +2859,47 @@
     '</div>';
   }
 
-  // ---------- The foot: one apricot action per step (Rule 5) ----------
+  // ---------- The foot: what is NOT the screen's one action ----------
+  // Only LIST has anything here now, and only the add row. The step's one
+  // action moved to the dock below (rule 2) — at the foot of a real week's
+  // groceries, "Start the trip" sat a hundred rows under the fold.
   function groFootHtml(data, step) {
+    if (step !== 'list') return '';
+    // Adding one thing must not cost a model turn. This posts straight to
+    // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
+    // oat milk" uses, and the same one the root's "Add an item" card used
+    // — so the cheap, common case stays cheap. The ask bar above the tab
+    // bar is still there for anything wordier ("add oat milk and lemons,
+    // and drop the spinach"), which is what it is good at.
+    //
+    // It stays out of the dock deliberately: adding a thing is a side
+    // errand next to starting the trip, and a dock holding two jobs is not
+    // a dock (rule 2 — "a second apricot" is what Rule 5 already forbids,
+    // and a second STRIP is the same mistake one level up).
+    return '<div class="gro-add">' +
+        '<input type="text" class="gro-add-item" id="gro-add-item" ' +
+          'placeholder="Add something" aria-label="Something to add to the list" />' +
+        '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="How much" />' +
+        '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
+      '</div>';
+  }
+
+  // ---------- The dock: one apricot action per step (Rule 5) ----------
+  // Same labels, same handlers, same one-per-screen discipline these had at
+  // the foot; what changed is that they stay on screen (rule 2).
+  function groDockHtml(data, step) {
     if (step === 'list') {
       var stops = groStoresWithNeeded(data);
       // Nothing to start while the shops question is up: LIST is showing
       // that card INSTEAD of the stops (groListHtml returns early), so the
       // button would walk the household through shops that aren't on the
       // screen — and its apricot would be a second one beside the card's,
-      // which Rule 5 doesn't allow.
+      // which Rule 5 doesn't allow. No action, so no dock — the rule's own
+      // "a screen with no single action has no dock" case.
       var canGo = stops.length > 0 && !groStoresPromptShouldShow();
-      // Adding one thing must not cost a model turn. This posts straight to
-      // /api/grocery-list/add — the same route groHandleVoiceCommand's "add
-      // oat milk" uses, and the same one the root's "Add an item" card used
-      // — so the cheap, common case stays cheap. The ask bar above the tab
-      // bar is still there for anything wordier ("add oat milk and lemons,
-      // and drop the spinach"), which is what it is good at.
-      return (canGo
-          ? '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>'
-          : '') +
-        '<div class="gro-add">' +
-          '<input type="text" class="gro-add-item" id="gro-add-item" ' +
-            'placeholder="Add something" aria-label="Something to add to the list" />' +
-          '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="How much" />' +
-          '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
-        '</div>';
+      return canGo
+        ? '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>'
+        : '';
     }
     // SORT HOW's one apricot is the bulk answer, because it is the one that
     // finishes the job in a single tap. The other two paths are rows in the
@@ -3849,7 +3874,7 @@
       // whatever an earlier deep link left on cookState (fixed 2026-09-10,
       // found by review).
       case 'shop-done-tonight':
-        openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Grocery', tab: 'grocery' });
+        openRecipeFor(tonightDinnerRecipeTarget(), { label: 'Shop', tab: 'grocery' });
         return;
 
       case 'shop-done-later':
@@ -5165,13 +5190,19 @@
         days.map(weekRowHtml).join('') +
       '</div>' +
       weekNotesHtml(data) +
-      weekDecideHtml(data) +
       // Everything rare is one tap away and nothing rare is on the page.
+      // ABOVE the decision, not below it, since the decision became a dock
+      // (rule 2): a sticky strip's flow position has to be the end of the
+      // screen, or at the bottom of the scroll it lifts off the ask bar and
+      // leaves this row stranded underneath it. Rule 2 puts rare actions
+      // behind the "···" rather than beside the dock's button anyway, so
+      // they were never candidates to ride along inside it.
       '<div class="wk-foot">' +
         '<button type="button" class="wk-foot-link" id="wk-plan-next">' +
           escapeHtml(planEntryLabel(dayCount, 'next', false)) + ' ›</button>' +
         '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
-      '</div>';
+      '</div>' +
+      weekDecideHtml(data);
   }
 
   // The quiet lines under the card. A SOFT conflict — somebody at the table
@@ -5199,7 +5230,7 @@
   function weekDecideHtml(data) {
     if (weekPlanState(data) !== 'draft') return '';
     var openCount = countOpenSlots(data);
-    return '<div class="wk-decide">' +
+    return '<div class="wk-decide dock">' +
       // The way into the Review step, above the decision it is for: read
       // the week properly, then approve it. Secondary, not a second apricot
       // (Rule 5) — the decision is still the primary here.
@@ -5569,7 +5600,7 @@
   function reviewDecideHtml(data) {
     if (weekPlanState(data) !== 'draft') return '';
     var openCount = countOpenSlots(data);
-    return '<div class="wk-decide">' +
+    return '<div class="wk-decide dock">' +
       '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
         (openCount
           ? escapeHtml(approveWithOpenLabel(data, openCount))
@@ -5584,7 +5615,7 @@
     // isn't — this step is for every week, so the badge has to be able to
     // say the other thing.
     var draft = weekPlanState(data) === 'draft';
-    return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
+    return '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
       '<div class="wk-head">' +
         '<div class="wk-head-row">' +
           '<h1 class="wk-title">Check the week</h1>' +
@@ -5906,7 +5937,7 @@
   }
 
   function dayStepHtml(day) {
-    return '<button type="button" class="wk-back" data-wk-back="week">‹ This week</button>' +
+    return '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
       '<div class="wk-head">' +
         '<div class="wk-head-row"><h1 class="wk-title">' +
           escapeHtml(dayName(day.date, { weekday: 'long' })) + '</h1></div>' +
@@ -5996,7 +6027,7 @@
     ];
     var cookMeal = cookMealForEntry(entry.entry_id);
     var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
-    return '<button type="button" class="wk-back" data-wk-back="day">‹ ' +
+    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
         escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
       '<div class="wk-head">' +
         '<div class="wk-head-row"><h1 class="wk-title">' +
@@ -8572,7 +8603,7 @@
       : (session.note || '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-session">&lsaquo; Cook</button>' +
+        '<button type="button" class="crumb on-spruce" data-cook="exit-session">&lsaquo; Cook</button>' +
         '<div class="cook-hero-top">' +
           '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
           '<span class="cook-hero-rule"></span>' +
@@ -9364,7 +9395,7 @@
     var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
     return '<div class="cook-focus">' +
       '<div class="cook-hero cook-hero-quiet">' +
-        '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
+        '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
           escapeHtml(cookBackLabel()) + '</button>' +
         cookReheatCardHtml(meal, dayLabel) +
       '</div>' +
@@ -9489,7 +9520,7 @@
     var note = onPrep ? (cookBatchNote(meal) || meal.advance_prep_notes || meal.reasoning || '') : '';
 
     return '<div class="cook-hero' + (onPrep ? '' : ' cook-hero-slim') + '">' +
-      '<button type="button" class="cook-focus-back" data-cook="exit-focus">&lsaquo; ' +
+      '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
         escapeHtml(cookBackLabel()) + '</button>' +
       '<div class="cook-hero-top">' +
         '<span class="cook-hero-chip">' + escapeHtml(chipLabel) + '</span>' +
@@ -9668,7 +9699,7 @@
   // scroll away.
   function cookDockHtml(primaryHtml, links) {
     var quiet = (links || []).filter(Boolean);
-    return '<div class="cook-dock">' +
+    return '<div class="dock cook-dock">' +
       (quiet.length ? '<div class="cook-dock-links">' + quiet.join('') + '</div>' : '') +
       primaryHtml +
     '</div>';
@@ -11726,7 +11757,7 @@
   // Every caller — scrim tap, the Back button, Escape, a sent message, and
   // the shell's popstate listener on the back gesture — just forgets the
   // pushed entry rather than calling history.back() on it: deliberately
-  // NOT history.back(), same reasoning as goMealsStep's wk-back link above
+  // NOT history.back(), same reasoning as goMealsStep's crumb above
   // (see its comment) — an immediate, unrelated pushState elsewhere in the
   // same tap (e.g. an action card's "View" jumping to another tab right
   // after closing the sheet) would race a queued back-traversal in
