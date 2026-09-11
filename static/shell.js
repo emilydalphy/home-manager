@@ -11290,68 +11290,64 @@
     renderAskExamples(null);
   }
 
-  // Context-aware quick actions (Loop Board: "Pomona: rethink the chat's
-  // pre-given quick actions", decided by Emily 2026-09-03) — replaces the
-  // old static seven-item list above with 2 suggestions grounded in the
-  // core weekly loop (plan → approve → prep/cook → grocery), chosen from
-  // the household's actual state rather than shown every time regardless
-  // of context. Deliberately dumb and local: no LLM call to pick these,
-  // just a state → suggestion table, computed once per page load the same
-  // moment the ask experience is first built (askBuilt below).
+  // Named one-tap intents (Loop Board: "Ask sheet: offer named one-tap
+  // intents instead of only a blank box", decided by Emily 2026-09-10).
+  // A blank box makes a household guess the magic words; four real jobs,
+  // said the way a person says them, teach the app's range in one glance.
+  // Replaces the two context-aware quick actions this surface used to
+  // carry ("Pomona: rethink the chat's pre-given quick actions", Emily
+  // 2026-09-03) — the same machinery, four better lines through it.
   //
-  // State → suggestion table (also documented on the ticket):
-  //   no plan yet (weekly_plan_id is null)         -> "Plan my week"
-  //   plan exists, status !== 'approved' (drafted) -> "Approve this week"
-  //   plan approved, local hour < 17 (daytime)      -> "What should I prep today?"
-  //   plan approved, local hour >= 17 (evening)     -> "What's for dinner tonight?"
-  //   always alongside the above                    -> "Add … to the grocery list"
-  //     (this one doesn't send — it focuses the composer with "Add "
-  //     pre-filled, per the brief's "open-ended one" behavior, since what
-  //     to add is the household's to finish typing, not ours to guess.)
-  var GROCERY_QUICK_ACTION = { label: 'Add … to the grocery list', prefill: 'Add ' };
+  // FIXED — the same four on every visit, and that is Emily's call rather
+  // than a shortcut. Context-aware chips are where this goes next and are
+  // the better product; a fixed set ships now and tells us which intents
+  // people actually tap, which is the thing nobody can currently answer.
+  // TWO COSTS OF A FIXED SET, both found by review and neither one a
+  // reason to gate a chip here — the gate would be the context-awareness
+  // Emily deferred, and deferring it was the decision:
+  //   * On a household with no plan, three of the four ask about a week
+  //     that doesn't exist. The assistant answers honestly, so the price
+  //     is a wasted tap.
+  //   * THE OTHER DIRECTION HAS TEETH AND IS THE ONE TO KNOW ABOUT. The
+  //     pair this replaces offered a planning chip ONLY under `!hasPlan`.
+  //     "Plan the rest of my week" is now offered to a household already
+  //     mid-week, and generating a period TAKES OVER the days it overlaps
+  //     (agent.py's own instruction; `retire_overlapping_plans` has no
+  //     exemption for an APPROVED plan). The chip's wording points at the
+  //     remaining days, which is what was asked for — but nothing confirms
+  //     first, and the underlying "replan over a running week without
+  //     asking" hazard is its own Loop Board card. Raised with Emily
+  //     rather than answered here: the four are hers.
+  //
+  // EACH CHIP SENDS ITS OWN LABEL, WORD FOR WORD. A chip carrying a hidden
+  // sentence is one nobody can learn from — and teaching what you're
+  // allowed to say is the whole job here, so what it sends has to be what
+  // it says. It also leaves no second wording to drift out of step.
+  //
+  // GONE WITH THE OLD PAIR: "Add … to the grocery list", which pre-filled
+  // the composer instead of running. It isn't one of the four, and this
+  // card's own rule is that tapping an intent does the thing. Grocery's
+  // own placeholder ("Add oat milk and lemons…", ASK_HINTS.grocery) still
+  // teaches the same sentence in the place it belongs.
+  var ASK_INTENTS = [
+    'Plan the rest of my week',
+    'What should I cook tonight?',
+    'Swap tonight for something quicker',
+    'What do I need to defrost?'
+  ].map(function (label) { return { label: label, msg: label }; });
 
-  // Local hour, not UTC — same reasoning as todayLocalStr()/dayName() above:
-  // "daytime" vs "evening" has to match the person's own clock. 17:00 is the
-  // cutoff: before it, the useful question is what to prep ahead of dinner;
-  // from then on, dinner itself is the near-term thing.
-  function isEveningLocal() {
-    return new Date().getHours() >= 17;
-  }
-
-  function computeContextQuickActions(weekMenu) {
-    var hasPlan = !!(weekMenu && weekMenu.weekly_plan_id);
-    var primary;
-    if (!hasPlan) {
-      primary = { label: 'Plan my week', msg: 'Let’s plan my week.' };
-    } else if (weekMenu.status !== 'approved') {
-      primary = { label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' };
-    } else if (isEveningLocal()) {
-      primary = { label: 'What’s for dinner tonight?', msg: 'What’s for dinner tonight?' };
-    } else {
-      primary = { label: 'What should I prep today?', msg: 'What should I prep today?' };
-    }
-    return [primary, GROCERY_QUICK_ACTION];
-  }
-
-  // Fetches the household's current plan fresh rather than trusting
-  // weekState.data — that cache can be empty (Week tab never opened this
-  // load) or pinned to a past week (weekState.showWeekStart), neither of
-  // which is "the current state" this chip logic needs. GET /api/week-menu
-  // with no weekly_plan_id is cheap (a local SQLite lookup) and always
-  // means "the household's current plan" (tools.get_week_menu's own
-  // documented convention). A failed fetch degrades to the no-plan
-  // suggestion rather than throwing — a wrong guess here is a missed
-  // suggestion, not a broken chat.
+  // The chips no longer depend on the plan, so they go up the moment the
+  // ask experience is built rather than after a round trip. The fetch is
+  // still made and is no longer optional-feeling: /api/week-menu is what
+  // setDishIndex reads, so a reply that names a dish can link it without a
+  // request of its own. A failed fetch costs those links and nothing else.
   function loadQuickActionChips() {
+    renderAskChips(ASK_INTENTS);
     fetch('/api/week-menu')
       .then(function (res) { return res.ok ? res.json() : null; })
       .catch(function () { return null; })
       .then(function (weekMenu) {
-        // The same payload the dish index is built from, and this fetch
-        // already happens the moment the ask sheet is built — so a reply
-        // that names a dish can link it without a request of its own.
         if (weekMenu) setDishIndex(weekMenu);
-        renderAskChips(computeContextQuickActions(weekMenu));
       });
   }
 
@@ -11593,12 +11589,16 @@
           // "Plan my stops" and "See your week" are places to go, not
           // things to ask about.
           if (action.onClick) return action.onClick();
-          // The grocery chip pre-fills and focuses instead of sending —
-          // what to add is the household's call, not something to guess at
-          // and send as a message. openAskSheet(prefill) already knows how
-          // to do this on both the mobile sheet and the desktop column.
-          if (action.prefill) openAskSheet(action.prefill);
-          else sendAskMessage(action.msg);
+          // Everything else SENDS. There used to be a third branch here —
+          // `if (action.prefill) openAskSheet(action.prefill)`, for the old
+          // "Add … to the grocery list" chip, which focused the composer
+          // instead of doing anything. Nothing produces a `prefill` now
+          // (ASK_INTENTS run, offerNextStepChips navigate or send), so the
+          // branch is gone rather than left standing with a comment
+          // describing a chip that no longer exists. `openAskSheet(text)`
+          // still takes a prefill and is still used by the entry points
+          // that genuinely want one — they just don't come through here.
+          sendAskMessage(action.msg);
         });
       });
     });
@@ -11666,8 +11666,10 @@
     } else if (groceryAction) {
       chips.push({ label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } });
     } else if (weekAction) {
-      // Same label + message computeContextQuickActions already uses for
-      // "there's a draft, go approve it" — one wording for one meaning.
+      // The one wording for "there's a draft, go approve it". It used to
+      // be shared with the pre-conversation quick actions; those are the
+      // fixed four now (ASK_INTENTS) and no longer say it, so this is the
+      // only place it lives.
       chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
     }
     return chips;
@@ -12861,6 +12863,31 @@
   // and resizing across 1024px must not leave the other one stale.
   function renderAskExamples(prompts) {
     coachExampleTargets().forEach(function (el) {
+      // Not beside the named intents. On a phone these two never share a
+      // screen — the examples are in the dock, the intents are inside the
+      // sheet that covers it — but in the desktop Ask column they stack,
+      // and two teaching rows in one 347px column is 348px of chips that
+      // pushed the composer off a 1280x900 screen (measured: composer
+      // bottom 857 before the intents landed, 961 after). They also say
+      // some of the same things: COACH_EXAMPLES' "I'm short on time
+      // tonight" is "Swap tonight for something quicker" in other words.
+      // The intents are the permanent version of what the examples were a
+      // three-visit stand-in for, so the examples yield to them — §8's
+      // "every word earns its place", applied to a whole row.
+      // DESKTOP COLUMN ONLY, and that scoping is the whole correctness of
+      // it. The phone's chips container is filled the moment the sheet is
+      // BUILT, not when it is opened, so a guard that read it at any width
+      // hid the dock's examples permanently — which is this same row's
+      // feature, deleted. Measured on a phone before the scoping went in:
+      // examples hidden with the sheet still closed.
+      var intents = el.id === 'today-ask-examples'
+        ? document.getElementById('today-ask-chips')
+        : null;
+      if (intents && !intents.hidden && intents.innerHTML) {
+        el.innerHTML = '';
+        el.hidden = true;
+        return;
+      }
       if (!prompts || !prompts.length) {
         el.innerHTML = '';
         el.hidden = true;
