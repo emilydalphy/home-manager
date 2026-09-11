@@ -1562,6 +1562,8 @@
   // finish them could be read. Six is where the menu starts earning its own
   // screen.
   var GRO_FAST_SORT_MIN = 6;
+  // The list head's mic and refresh buttons (see the head markup).
+  var SHOW_GRO_HEADER_TOOLS = false;
 
   // The three screens that only exist while something is unsorted. Named as
   // a set because they share one fallback: the moment the queue empties —
@@ -1605,6 +1607,13 @@
     // list | sort | trip | wrap — see goGroceryStep. Starts at the root, so
     // a refresh lands on LIST.
     step: 'list',
+    // Sort comes FIRST when something has no store (Emily, 2026-09-11,
+    // decision J): the first time the list loads with anything unsorted in
+    // this page view, the tab lands on SORT rather than the list. "Sort them
+    // later" and the crumb both set sortDeferred, so the list is the answer
+    // from then on until the next approval refills the list.
+    sortDeferred: false,
+    sortFirst: false,
     data: null,
     loadError: false,
     usualStores: [],        // household's saved stores, offered as sort pills
@@ -2051,10 +2060,17 @@
             // no store.
             '<button type="button" class="gro-sortbadge" id="gro-sortbadge" data-gro="goto-sort" hidden></button>' +
             '<span class="gro-hairline"></span>' +
+            // The mic and the refresh button left the head on 2026-09-11
+            // (Emily, screen-by-screen review): hands-free returns with
+            // cook-mode voice after launch, and pull-to-refresh is the
+            // refresh. Both stay in the markup, hidden by the flag, because
+            // the voice session and the refresh handler are still wired.
             '<button type="button" class="gro-icon-btn" id="gro-mic-btn" data-gro="voice" ' +
+              (SHOW_GRO_HEADER_TOOLS ? '' : 'hidden ') +
               'title="Hands-free: check off, add, or ask about items by voice" ' +
               'aria-label="Hands-free voice mode">' + GRO_ICONS.mic + '</button>' +
             '<button type="button" class="gro-icon-btn" id="gro-refresh-btn" data-gro="refresh" ' +
+              (SHOW_GRO_HEADER_TOOLS ? '' : 'hidden ') +
               'title="Reload the latest list" aria-label="Reload the latest list">' + GRO_ICONS.refresh + '</button>' +
             // The Preferences gear, in the header like every other root
             // screen's. Hidden on the deeper steps (renderGrocery).
@@ -2113,6 +2129,10 @@
       // an empty answer here would put the "where do you shop?" card up
       // over the list and take "Start the trip" away — see grocery-offline.js.
       if (groOffline) groOffline.saveShops({ usualStores: groceryState.usualStores, dismissed: groceryState.storesPromptDismissed });
+      // The shops and the list load side by side; whichever lands second
+      // decides whether sorting comes first (groMaybeSortFirst is a no-op
+      // once the tab has left the list).
+      groMaybeSortFirst();
       renderGrocery();
     } catch (err) {
       // No signal: the last answer stands. Anything else, sorting still
@@ -2221,15 +2241,35 @@
         groceryState.loadError = true;
       }
     }
+    groMaybeSortFirst();
     renderGrocery();
     if (!groceryState.loadError) groReplayQueue();
   }
 
   // Called from the three refresh paths (chat action, week approval, reset).
-  // A screen that was built early has to stay correct, not stay frozen.
+  // A screen that was built early has to stay correct, not stay frozen. A
+  // refill (an approval builds the list) is a new list, so sorting comes
+  // first again.
   function refreshGroceryPanel() {
+    groceryState.sortDeferred = false;
     if (groIsBuilt()) loadGrocery();
   }
+
+  // Before the list: anything with no store gets sorted first, one item at
+  // a time, and the list follows. Only from the list (never yanking a
+  // shopper out of a trip), only when the stores prompt isn't the thing to
+  // answer first, and only until the household says "later".
+  function groMaybeSortFirst() {
+    var data = groceryState.data;
+    if (!data || groceryState.loadError) return;
+    if (groceryState.step !== 'list' || groceryState.sortDeferred) return;
+    if (groStoresPromptShouldShow()) return;
+    var toSort = groUnsorted(data).length;
+    if (!toSort) { groceryState.sortFirst = false; return; }
+    groceryState.sortFirst = true;
+    goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false });
+  }
+
 
   // ---------- The step machine ----------
   // Copied from Meals' goMealsStep/pushMealsStepHistory pair, deliberately:
@@ -2315,7 +2355,7 @@
       body.innerHTML = groceryState.loadError === 'no-signal'
         ? '<p class="gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
         : groceryState.loadError
-        ? '<p class="gro-error">Couldn\'t load the grocery list right now — try the refresh button above.' + snwLink() + '</p>'
+        ? '<p class="gro-error">Couldn\'t load the grocery list right now — pull down to refresh.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       foot.innerHTML = '';
       dock.innerHTML = '';
@@ -2433,12 +2473,24 @@
   // readable as a set rather than scattered through four builders.
   function groHeadFor(data, step) {
     if (step === 'sort') {
-      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return {
+        back: '‹ Shop',
+        title: groceryState.sortFirst ? 'Before the list' : 'Where does this go?',
+        sub: groceryState.sortFirst
+          ? groPlural(groUnsorted(data).length, 'thing doesn’t', 'things don’t') + ' have a store yet'
+          : groUnsorted(data).length + ' to sort'
+      };
     }
     if (step === 'sorthow') {
       // Same question as the queue's, because it is the same question — the
       // household is only choosing how many screens it wants to answer it in.
-      return { back: '‹ Shop', title: 'Where does this go?', sub: groUnsorted(data).length + ' to sort' };
+      return {
+        back: '‹ Shop',
+        title: groceryState.sortFirst ? 'Before the list' : 'Where does this go?',
+        sub: groceryState.sortFirst
+          ? groPlural(groUnsorted(data).length, 'thing doesn’t', 'things don’t') + ' have a store yet'
+          : groUnsorted(data).length + ' to sort'
+      };
     }
     if (step === 'sortall') {
       return { back: '‹ Shop', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
@@ -2789,7 +2841,8 @@
           '</span>' +
           '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
         '</button>' +
-      '</div>';
+      '</div>' +
+      '<button type="button" class="gro-sort-later" data-gro="sort-later">Sort them later</button>';
   }
 
   // ---------- SORT ALL: the whole list, one row each ----------
@@ -2878,7 +2931,10 @@
             'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
         '</div>' +
       '</div>' +
-      '<p class="gro-sort-progress">' + position + ' of ' + total + '</p>';
+      '<p class="gro-sort-progress">' + position + ' of ' + total + '</p>' +
+      // The quiet way out: the list, with these under the TO SORT badge as
+      // the way back in.
+      '<button type="button" class="gro-sort-later" data-gro="sort-later">Sort them later</button>';
   }
 
   // ---------- TRIP ----------
@@ -3883,6 +3939,15 @@
           goGroceryStep('trip', reopenAt === -1 ? undefined : { tripIndex: reopenAt });
           return;
         }
+        // Leaving a sort screen for the list is "later" — the list must not
+        // bounce straight back into the queue.
+        if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1) groceryState.sortDeferred = true;
+        goGroceryStep('list');
+        return;
+
+      case 'sort-later':
+        groceryState.sortDeferred = true;
+        groceryState.sortFirst = false;
         goGroceryStep('list');
         return;
 

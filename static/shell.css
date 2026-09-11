@@ -3263,6 +3263,20 @@ html, body {
    The add row stays behind in .gro-foot: adding one thing is a side errand,
    not what the screen is for, and two strips would be no strip at all. */
 .gro-dock { padding-bottom: 12px; }
+.gro-sort-later {
+  align-self: center;
+  min-height: 44px;
+  margin-top: 4px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.gro-sort-later:hover { color: var(--ink-strong); }
+.gro-icon-btn[hidden] { display: none; }
 .gro-dock:empty { display: none; }
 .gro-primary {
   width: 100%;

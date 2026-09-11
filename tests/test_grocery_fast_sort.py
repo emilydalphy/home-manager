@@ -205,7 +205,9 @@ console.log(JSON.stringify({
   queueLine: /gro-howrow-sub">([^<]*)</g.exec(html.split('goto-sort-one')[1] || '')
 }));
 """)
-    assert out["verbs"] == ["goto-sortall", "goto-sort-one"], "both other paths on screen"
+    # "Sort them later" joined the screen on 2026-09-11, when sorting started
+    # coming BEFORE the list (Build 7): the quiet way to the list instead.
+    assert out["verbs"] == ["goto-sortall", "goto-sort-one", "sort-later"], "both other paths on screen, and the way out"
     assert "Put all 40 at" in out["bulk"], "the bulk answer is the screen's dock action"
 
 
