@@ -4847,7 +4847,7 @@
       (allDinner ? ' tonight' : ' today');
   }
 
-  function kitchenCookingTodayHtml(rows) {
+  function kitchenCookingTodayHtml(rows, meals, todayIso) {
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow cook-eyebrow-warm">Cooking today</span>' +
@@ -4855,8 +4855,19 @@
       '</div>' +
       (rows.length
         ? '<div class="cook-week">' + rows.map(kitchenTodayRowHtml).join('') + '</div>'
-        : '<p class="cook-empty">Nothing on the stove today.</p>') +
+        // Empty means empty (§2b S4): one line, and the next cook by name.
+        : '<p class="cook-empty">Nothing on the stove today.' + kitchenNextCookLine(meals, todayIso) + '</p>') +
     '</section>';
+  }
+
+  // " Next: Saturday, pancakes." — the first real cook after today, so a
+  // quiet day still says what is coming.
+  function kitchenNextCookLine(meals, todayIso) {
+    var next = (meals || []).filter(function (m) {
+      return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && m.meal;
+    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
+    if (!next) return '';
+    return ' Next: ' + escapeHtml(dayName(next.date, { weekday: 'long' })) + ', ' + escapeHtml(next.meal) + '.';
   }
 
   function kitchenTodayRowHtml(row) {
@@ -4944,28 +4955,32 @@
   // cupboards. Both are quiet by policy — inventory is background work the
   // core loop never asks anyone to keep up, and there is no apricot on
   // this root.
+  // Three quiet rows in one card, above the fold (2026-09-11; they were
+  // tiles below it), each with one fact. Same entry points as before.
   function kitchenTilesHtml() {
-    return '<div class="kit-tiles">' +
-      '<button type="button" class="kit-tile kit-tile-quiet" data-kit="sheet" data-sheet="inventory">' +
-        '<span class="kit-tile-icon">' + KITCHEN_ICONS.fridge + '</span>' +
-        '<span class="kit-tile-title">Inventory</span>' +
-        '<span class="kit-tile-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span>' +
+    return '<div class="kit-rows">' +
+      '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Inventory</span>' +
+        '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
-      // There is no recipe browser in this app, and this tile does not
-      // pretend there is one: it opens the ask bar on the question, which
+      // There is no recipe browser in this app, and this row does not
+      // pretend there is one: it opens the chat on the question, which
       // the assistant answers off list_recipes (app/tools/recipes.py).
-      '<button type="button" class="kit-tile kit-tile-quiet" data-kit="recipes">' +
-        '<span class="kit-tile-icon">' + KITCHEN_ICONS.book + '</span>' +
-        '<span class="kit-tile-title">Recipes</span>' +
-        '<span class="kit-tile-sub">Ask me what we’ve saved</span>' +
+      '<button type="button" class="kit-row" data-kit="recipes">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Recipes</span>' +
+        '<span class="kit-row-sub">Ask me what we’ve saved</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
       // Bring in a recipe the household already makes, from a web page —
-      // the review-before-save sheet below (recipe import, 2026-09-11).
-      // Quiet like its neighbours: an entry point, not a task.
-      '<button type="button" class="kit-tile kit-tile-quiet" data-kit="recipe-link">' +
-        '<span class="kit-tile-icon">' + KITCHEN_ICONS.link + '</span>' +
-        '<span class="kit-tile-title">Add from a link</span>' +
-        '<span class="kit-tile-sub">Paste a recipe page and I’ll read it</span>' +
+      // the review-before-save sheet (recipe import, 2026-09-11).
+      '<button type="button" class="kit-row" data-kit="recipe-link">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span>' +
+        '<span class="kit-row-sub">Paste a recipe page and I’ll read it</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
     '</div>';
   }
@@ -5004,12 +5019,15 @@
 
     body.innerHTML =
       cookAttentionHtml() +
-      kitchenCookingTodayHtml(rows) +
+      kitchenCookingTodayHtml(rows, meals, todayIso) +
       cookPrepSessionsHtml(data) +
       kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +
       cookRestOfWeekHtml(meals, data, todayIso, kitchenState.restExpanded) +
-      cookDefrostLinkHtml() +
-      cookAheadAskLinkHtml() +
+      // The italic "Something in the freezer?" / "Cooking ahead?" re-ask
+      // links left this screen on 2026-09-11 (Emily, decision E: empty
+      // headings with nothing under them). The questions are asked on the
+      // All set screen after approval, and the chat answers either any
+      // time ("What do I need to defrost?" is one of its own chips).
       kitchenTilesHtml();
   }
 
@@ -9911,8 +9929,13 @@
       // is the app not listening. Only a household that has never said
       // gets the offer, and it is one quiet line, not a card.
       if (data.prep_days_set) return '';
-      return '<p class="cook-empty">Prep ahead? ' +
-        '<button type="button" class="cook-empty-link" data-cook="prep-days">Tell Pomona which days you prep</button>.</p>';
+      // A row with a chevron, not a heading over a red link (Emily,
+      // 2026-09-11).
+      return '<div class="kit-rows"><button type="button" class="kit-row" data-cook="prep-days">' +
+        '<span class="kit-row-text"><span class="kit-row-title">Prep days</span>' +
+        '<span class="kit-row-sub">Tell me which days you prep and I’ll batch the week around them</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+      '</button></div>';
     }
     return '<section class="cook-section" id="kit-prep-sessions">' +
       '<div class="cook-sectionhead">' +
@@ -10135,23 +10158,69 @@
         ? '<p class="cook-empty">Nothing to cook this week — you’re away.</p>'
         : '<p class="cook-empty">No meals on this plan yet.</p>';
     }
-    var shown = expanded ? rest : rest.slice(0, KITCHEN_REST_VISIBLE);
-    var hidden = rest.length - shown.length;
-    var hiddenCooks = rest.slice(shown.length).filter(function (x) { return !x.m.is_leftovers; }).length;
+    // One line per DAY, not per meal (Emily, 2026-09-04: "the scrolling for
+    // the cook view is too long"; Build 8, 2026-09-11): three meals across
+    // seven days is 21 rows, and a list of 21 is the problem. Grouped in
+    // the plan's own order; a component plan (no dates) keeps its category
+    // as the "day".
+    var groups = [];
+    var byKey = {};
+    rest.forEach(function (x) {
+      var key = x.m.component_category || x.m.date || '';
+      if (!byKey[key]) { byKey[key] = { key: key, items: [] }; groups.push(byKey[key]); }
+      byKey[key].items.push(x);
+    });
+    var shown = expanded ? groups : groups.slice(0, KITCHEN_REST_VISIBLE);
+    var hidden = groups.slice(shown.length);
+    var moreLabel = '';
+    if (hidden.length) {
+      var first = hidden[0].items[0].m, last = hidden[hidden.length - 1].items[0].m;
+      moreLabel = first.date && last.date && !first.component_category
+        ? 'Show ' + dayNameShort(first.date) + (hidden.length > 1 ? '–' + dayNameShort(last.date) : '')
+        : 'Show ' + hidden.length + ' more';
+    }
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow">The rest of the week</span>' +
         '<span class="cook-rule"></span>' +
       '</div>' +
       '<div class="cook-week">' +
-        shown.map(function (x) { return cookRestRowHtml(x.m, x.i); }).join('') +
+        shown.map(cookRestDayRowHtml).join('') +
       '</div>' +
-      (hidden
-        ? '<button type="button" class="cook-empty-link cook-more-link" data-cook="rest-more">+ ' + hidden +
-            ' more ' + (hiddenCooks === hidden ? (hidden === 1 ? 'cook' : 'cooks') : 'to come') +
-          '</button>'
+      (hidden.length
+        ? '<button type="button" class="cook-empty-link cook-more-link" data-cook="rest-more">' + escapeHtml(moreLabel) + '</button>'
         : '') +
     '</section>';
+  }
+
+  // A day's line: the day, then its cooks by name (each a way into its
+  // recipe) with the time beside each, or "nothing to cook" when the day
+  // is all reheats. Ticking happens on the meal's own screen, not here —
+  // a row for a day has no one box to tick.
+  function cookRestDayRowHtml(group) {
+    var first = group.items[0].m;
+    var dayLabel = first.component_category
+      ? first.component_category
+      : (first.date ? dayName(first.date, { weekday: 'short' }).slice(0, 3).toUpperCase() : '');
+    var cooks = group.items.filter(function (x) { return !x.m.is_leftovers; });
+    var allDone = cooks.length && cooks.every(function (x) { return x.m.cooked_status === 'done'; });
+    var parts = cooks.map(function (x) {
+      var m = x.m;
+      var minutes = (m.prep_time_minutes || 0) + (m.cook_time_minutes || 0);
+      return '<button type="button" class="cook-week-name cook-day-dish" data-cook="focus" data-idx="' + x.i + '" data-at="steps">' +
+        escapeHtml(m.meal || '') + (minutes ? '<span class="cook-day-min"> · ' + minutes + ' min</span>' : '') +
+      '</button>';
+    });
+    var reheats = group.items.length - cooks.length;
+    return '<div class="cook-week-item cook-day-item' + (allDone ? ' is-done' : '') + '">' +
+      '<div class="cook-week-row cook-day-row">' +
+        '<span class="cook-week-day">' + escapeHtml(dayLabel) + '</span>' +
+        '<span class="cook-day-dishes">' +
+          (parts.length ? parts.join('') : '<span class="cook-week-name is-quiet">Nothing to cook</span>') +
+          (reheats ? '<span class="cook-day-min">' + reheats + (reheats === 1 ? ' reheat' : ' reheats') + '</span>' : '') +
+        '</span>' +
+      '</div>' +
+    '</div>';
   }
 
   function cookRestRowHtml(m, idx) {

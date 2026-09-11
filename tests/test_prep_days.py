@@ -529,15 +529,17 @@ def test_the_cook_view_renders_the_sessions_card_from_the_payload():
     assert "function cookPrepSessionsHtml(data)" in SHELL_JS
     assert "data.prep_sessions || []" in SHELL_JS
     assert (
-        "kitchenCookingTodayHtml(rows) +\n      cookPrepSessionsHtml(data) +\n"
+        "kitchenCookingTodayHtml(rows, meals, todayIso) +\n      cookPrepSessionsHtml(data) +\n"
         "      kitchenPrepTodoHtml(kitchenLoosePrepTasks(data)) +\n"
         "      cookRestOfWeekHtml(" in SHELL_JS
     )
 
 
 def test_the_quiet_offer_when_no_prep_days_are_set():
-    assert "Prep ahead? " in SHELL_JS
-    assert "Tell Pomona which days you prep" in SHELL_JS
+    # A row with a chevron since 2026-09-11 (Build 8), not a heading over a
+    # red link.
+    assert '<span class="kit-row-title">Prep days</span>' in SHELL_JS
+    assert "Tell me which days you prep" in SHELL_JS
     # It only shows for a household that never answered — see
     # prep_days_set on the cooker payload.
     assert "if (data.prep_days_set) return '';" in SHELL_JS
