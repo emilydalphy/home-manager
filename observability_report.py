@@ -33,16 +33,31 @@ which would have reported breakage every night forever.
 
 Where the numbers come from
 ---------------------------
-Two sources, tried in that order:
+Three sources, tried in this order:
 
-1. **Over the web**, when HOME_MANAGER_URL and a passphrase are set. This
-   is the one that works for the overnight routine, and the reason this
-   file was rewritten. The routine runs as a cloud agent with a fresh
-   clone of this repo — no Railway volume, no database file, nothing but
-   the code. It signs in exactly as a browser does and reads
-   /api/observability, one household per passphrase.
+1. **Over the web with the report token**, when HOME_MANAGER_URL and
+   REPORT_TOKEN are set. This is the one built for the overnight routine
+   (2026-09-10, "let's fix the morning report"), and it is the one to use.
+   One GET to /api/health-report returns every household at once, read
+   straight off the production database by the server — so Julia's
+   household shows up without this script ever holding her passphrase.
+   The token opens exactly that one read-only route and nothing else;
+   revoking it is one environment variable.
 
-2. **Straight off a database file**, when DB_PATH points at one that
+   The route was built on 2026-09-10 and, for most of that day, nothing
+   called it: this script still only knew the passphrase path below, and
+   the routine's environment had nothing set at all. A server half with no
+   client half is the same as no fix, and the morning report stayed blind
+   after it was "fixed". This block is the client half.
+
+2. **Over the web with passphrases**, when HOME_MANAGER_URL and
+   HOME_MANAGER_PASSPHRASES are set but no token is. The older path: it
+   signs in exactly as a browser does and reads /api/observability, one
+   household per passphrase. Kept for a deployment that predates the
+   token route; prefer (1) everywhere else, because it means an unattended
+   job holding a credential that also opens the app itself.
+
+3. **Straight off a database file**, when DB_PATH points at one that
    exists. That is the local case: a dev copy, or a snapshot pulled down
    by hand. It reports every household in the file.
 
@@ -55,7 +70,13 @@ worse failure than no report at all, because it reads like good news.
 
 Setting it up for the overnight run
 -----------------------------------
-Two environment variables in the environment the routine runs in:
+Two environment variables in the environment the routine runs in — the
+same REPORT_TOKEN value that is set on the Railway service:
+
+    HOME_MANAGER_URL=https://home-manager-production-4949.up.railway.app
+    REPORT_TOKEN=<the value set on Railway>
+
+Or, for a deployment without the token route, the older pair:
 
     HOME_MANAGER_URL=https://home-manager-production-4949.up.railway.app
     HOME_MANAGER_PASSPHRASES=<household 1's passphrase>[,<household 2's>,...]
@@ -140,6 +161,46 @@ def _sign_in(base: str, passphrase: str):
 def _get_json(opener, url: str) -> dict:
     with opener.open(urllib.request.Request(url), timeout=60) as resp:
         return json.loads(resp.read().decode("utf-8"))
+
+
+def _report_token() -> str:
+    return os.environ.get("REPORT_TOKEN", "").strip()
+
+
+def _collect_over_token(days: int) -> list[dict]:
+    """One request, every household — the route built for the routine.
+
+    /api/health-report answers 404 for a missing OR wrong token, on purpose
+    (a 401 would confirm the route exists and is worth grinding at). So a
+    404 here is reported as "the token was refused or the route isn't
+    deployed", not as "not found": both are the operator's to fix and
+    neither is a reason to fall silently back to a stale local file.
+    """
+    base, token = _base_url(), _report_token()
+    req = urllib.request.Request(
+        f"{base}/api/health-report?days={int(days)}",
+        headers={"x-report-token": token},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise NoData(
+                f"{base} answered 404 to /api/health-report. Either REPORT_TOKEN here "
+                "does not match the one set on the service, or the deployment there "
+                "predates the route. Nothing was read."
+            )
+        raise NoData(f"{base} answered {e.code} to /api/health-report. Nothing was read.")
+    except (urllib.error.URLError, OSError) as e:
+        raise NoData(f"could not reach {base}: {e}")
+
+    households = data.get("households")
+    if not isinstance(households, list):
+        raise NoData(f"{base} answered /api/health-report without a households list.")
+    # Same shape _collect_from_db produces, because the server builds it
+    # with exactly that function — so the printer below needs nothing new.
+    return households
 
 
 def _collect_over_http(days: int) -> list[dict]:
@@ -255,6 +316,8 @@ def collect(days: int) -> tuple[list[dict], str]:
     the live app is the answer or there is no answer.
     """
     if _base_url():
+        if _report_token():
+            return _collect_over_token(days), "the live app, via the report token"
         return _collect_over_http(days), "the live app"
 
     try:
@@ -531,7 +594,7 @@ def main() -> int:
     except NoData as e:
         print(e, file=sys.stderr)
         print(
-            "\nSet HOME_MANAGER_URL and HOME_MANAGER_PASSPHRASES to read the live "
+            "\nSet HOME_MANAGER_URL and REPORT_TOKEN (or HOME_MANAGER_PASSPHRASES) to read the live "
             "app, or DB_PATH to read a database file.",
             file=sys.stderr,
         )
