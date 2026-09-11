@@ -33,7 +33,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, households, ratelimit, recipe_import, security
+from . import agent, backup, calendar_feed, households, ratelimit, recipe_import, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -608,6 +608,11 @@ class FillRecipeRequest(BaseModel):
 
 class ImportRecipeUrlRequest(BaseModel):
     url: str
+
+
+class CalendarLinkRequest(BaseModel):
+    url: str
+    label: str = ""
 
 
 class RecipeIngredientIn(BaseModel):
@@ -1336,6 +1341,68 @@ def import_recipe_url(request: Request, req: ImportRecipeUrlRequest):
         logger.exception("Recipe import failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"draft": draft}
+
+
+# ---------- the household's calendar (read-only, by subscribe link) ----------
+#
+# Loop Board "Meals: plan the week around what's actually on the household's
+# calendar" (2026-09-11). Four small routes and one rule that runs through
+# all of them: the link is a secret, so no response body here ever carries
+# it in full (calendar_feed.status redacts), no log line names it, and a
+# failure is a plain sentence rather than an exception message that might
+# quote it. See app/calendar_feed.py for the rest.
+
+@app.get("/api/calendar")
+def calendar_status():
+    return calendar_feed.status()
+
+
+@app.post("/api/calendar/check")
+def calendar_check(request: Request, req: CalendarLinkRequest):
+    """"Check it": read the link once, save nothing, say how many things are
+    on it for the coming week. Same rate-limit bucket as the other
+    paste-a-link route; it is the same kind of request."""
+    _enforce_rate_limit(request, "scan")
+    try:
+        return calendar_feed.check(req.url)
+    except calendar_feed.CalendarFeedError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Calendar check failed")
+        raise HTTPException(status_code=500, detail="Couldn't read that calendar just now. Try again in a moment.")
+
+
+@app.post("/api/calendar/connect")
+def calendar_connect(request: Request, req: CalendarLinkRequest):
+    _enforce_rate_limit(request, "scan")
+    try:
+        return calendar_feed.connect(req.url, req.label)
+    except calendar_feed.CalendarFeedError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Calendar connect failed")
+        raise HTTPException(status_code=500, detail="Couldn't save that calendar just now. Try again in a moment.")
+
+
+@app.post("/api/calendar/refresh")
+def calendar_refresh(request: Request):
+    _enforce_rate_limit(request, "scan")
+    try:
+        return calendar_feed.refresh()
+    except calendar_feed.CalendarFeedError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Calendar refresh failed")
+        raise HTTPException(status_code=500, detail="Couldn't read the calendar just now. Try again in a moment.")
+
+
+@app.post("/api/calendar/disconnect")
+def calendar_disconnect():
+    try:
+        return calendar_feed.disconnect()
+    except Exception:
+        logger.exception("Calendar disconnect failed")
+        raise HTTPException(status_code=500, detail="Couldn't disconnect just now. Try again in a moment.")
 
 
 @app.post("/api/recipes/add")

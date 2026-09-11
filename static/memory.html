@@ -94,6 +94,31 @@
   .wwk-signout-link { font-family: var(--font-body); font-weight: 700; font-size: 0.86rem; color: var(--ink-secondary); text-decoration: none; padding: 12px; }
   .wwk-signout-link:hover { text-decoration: underline; }
 
+  /* Your calendar (Rhythm tab) — Loop Board "Meals: plan the week around
+     what's actually on the household's calendar", 2026-09-11. One card,
+     two states: not connected (paste → Check it → Save) and connected
+     (label, redacted link, Check again, Disconnect). Nothing apricot: none
+     of this is urgent. Same fact-row/label/button idiom as the rest of the
+     tab, so it reads as one more thing the household has told the app. */
+  .wwk-cal-help { font-family: var(--font-body); font-size: 0.9rem; line-height: 1.45; color: var(--ink-secondary); margin: 6px 0 0; }
+  .wwk-cal-where { margin: 8px 0 0; font-family: var(--font-body); font-size: 0.86rem; color: var(--ink-secondary); }
+  .wwk-cal-where summary { font-weight: 700; color: var(--ink-strong); cursor: pointer; padding: 12px 0; }
+  .wwk-cal-where p { margin: 4px 0 6px; line-height: 1.4; }
+  .wwk-cal-where b { color: var(--ink); }
+  .wwk-cal-input-row { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; }
+  .wwk-cal-input { flex: 1; min-width: 0; border: 2px solid var(--ink-strong); border-radius: 12px; background: var(--surface); font-family: var(--font-body); font-size: 0.94rem; padding: 11px 13px; }
+  .wwk-cal-btn { background: var(--spruce); color: var(--ivory-ink); border: none; border-radius: 11px; padding: 12px 16px; font-weight: 700; font-family: var(--font-body); cursor: pointer; min-height: 44px; white-space: nowrap; }
+  .wwk-cal-btn[disabled] { opacity: .6; cursor: default; }
+  .wwk-cal-btn-quiet { background: transparent; color: var(--ink-strong); border: 1.5px solid var(--hairline-strong); }
+  .wwk-cal-btn-text { background: none; border: none; font-family: var(--font-body); font-weight: 700; color: var(--ink-muted); cursor: pointer; min-height: 44px; padding: 0 6px; }
+  .wwk-cal-status { font-family: var(--font-body); font-size: 0.9rem; line-height: 1.45; color: var(--ink); margin: 10px 0 0; }
+  .wwk-cal-trouble { color: var(--urgent-label); }
+  .wwk-cal-sample { list-style: none; margin: 6px 0 0; padding: 0; font-family: var(--font-body); font-size: 0.88rem; color: var(--ink-secondary); }
+  .wwk-cal-sample li { padding: 3px 0; }
+  .wwk-cal-sample b { color: var(--ink); font-weight: 600; }
+  .wwk-cal-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .wwk-cal-sub { font-family: var(--font-body); font-size: 0.84rem; color: var(--ink-muted); margin: 2px 0 0; word-break: break-all; }
+
   /* Stores tab extra */
   .wwk-store-block { border-top: 1px solid var(--hairline); padding: 13px 0; }
   .wwk-store-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
@@ -240,12 +265,20 @@ function openingTab() {
   pendingAnchor = anchor ? 'wwk-' + anchor : null;
   return TAB_KEYS.includes(wanted) ? wanted : 'people';
 }
+// The anchor is kept until its element is actually on the page: the tab's
+// content arrives from a fetch, so the first attempt (on load, or right
+// after showTab) usually runs before the block exists. renderFactsTab
+// calls this again once it has drawn — that is the attempt that lands.
+// A tap on the tab strip clears it (below), so a stale anchor never
+// scrolls a later visit.
 function scrollToPendingAnchor() {
   if (!pendingAnchor) return;
-  const id = pendingAnchor; pendingAnchor = null;
+  const id = pendingAnchor;
   requestAnimationFrame(() => {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (!el) return;
+    pendingAnchor = null;
+    el.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
 }
 
@@ -295,6 +328,7 @@ window.showKitchenTab = showTab;
 document.getElementById('wwk-tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.wwk-tab');
   if (!btn) return;
+  pendingAnchor = null;
   showTab(btn.getAttribute('data-tab'));
 });
 
@@ -306,7 +340,13 @@ async function render() {
 async function renderFactsTab(category) {
   const content = document.getElementById('wwk-content');
   try {
-    const res = await fetch('/api/facts?category=' + category);
+    // The calendar's state rides along with the Rhythm facts read, so the
+    // tab still renders in one pass; a failed status read just draws the
+    // card as "not connected" with the paste box (see renderCalendarCard).
+    const [res, calendarStatus] = await Promise.all([
+      fetch('/api/facts?category=' + category),
+      category === 'rhythm' ? fetchCalendarStatus() : Promise.resolve(null),
+    ]);
     const data = res.ok ? await res.json() : {};
     const facts = data.facts || [];
     const onboarding = data.onboarding;
@@ -320,6 +360,7 @@ async function renderFactsTab(category) {
     if (preferences) {
       html += category === 'rhythm' ? renderRhythmPreferenceCard(preferences) : renderPreferenceCard(preferences);
     }
+    if (category === 'rhythm') html += renderCalendarCard(calendarStatus);
     html += `<div class="wwk-card"><p class="wwk-intro">${meta.intro}</p>`;
     facts.forEach(f => {
       if (openEditorId === f.id) {
@@ -368,6 +409,8 @@ async function renderFactsTab(category) {
       if (category === 'rhythm') wireRhythmPreferenceActions(preferences);
       else wirePreferenceActions(preferences);
     }
+    if (category === 'rhythm') wireCalendarActions();
+    scrollToPendingAnchor();
   } catch (err) {
     content.innerHTML = '<p style="text-align:center;color:var(--ink-muted);font-family:var(--font-body)">Couldn\'t load — try refreshing.</p>';
   }
@@ -816,6 +859,194 @@ function renderRhythmPreferenceCard(prefs) {
   }
   html += `</div>`;
   return html;
+}
+
+// ---------- Your calendar (Loop Board, 2026-09-11) ----------
+//
+// Read-only, by subscribe link: the household pastes the private iCal/ICS
+// address their calendar app hands out, "Check it" reads it once and says
+// what it found in the coming week, and only then does Save store it. The
+// link is a secret (it grants read access to their calendar), so after
+// saving the app only ever shows the label plus a redacted tail — the
+// server never hands the full link back (app/calendar_feed.py's status).
+//
+// What survives a re-render: the pasted link and the last check result,
+// because render() rebuilds the whole tab after every save on this page
+// and losing a pasted link on the way to Save would be maddening.
+const calendarState = { url: '', label: '', checked: null, error: '', busy: false };
+
+async function fetchCalendarStatus() {
+  try {
+    const res = await fetch('/api/calendar');
+    return res.ok ? await res.json() : null;
+  } catch (err) { return null; }
+}
+
+// "6pm", "7:30pm" — a time said the way a person says it (DESIGN_SYSTEM §8).
+function calendarClock(hhmm) {
+  if (!hhmm) return '';
+  const [h, m] = hhmm.split(':').map(Number);
+  const suffix = h >= 12 ? 'pm' : 'am';
+  const hour = ((h + 11) % 12) + 1;
+  return m ? `${hour}:${String(m).padStart(2, '0')}${suffix}` : `${hour}${suffix}`;
+}
+
+function calendarDayName(iso) {
+  const [y, mo, d] = iso.split('-').map(Number);
+  return new Date(y, mo - 1, d).toLocaleDateString(undefined, { weekday: 'short' });
+}
+
+function calendarSampleHtml(sample) {
+  if (!sample || !sample.length) return '';
+  return `<ul class="wwk-cal-sample">` + sample.map(e => {
+    const when = e.all_day ? '' : ` · ${calendarClock(e.start)}${e.end && e.end !== e.start ? '–' + calendarClock(e.end) : ''}`;
+    return `<li><b>${escapeHtml(calendarDayName(e.date))}</b> · ${escapeHtml(e.title || '(untitled)')}${escapeHtml(when)}</li>`;
+  }).join('') + `</ul>`;
+}
+
+function calendarThingsLine(n) {
+  if (n === 0) return 'nothing on it for the coming week';
+  return n === 1 ? '1 thing in the coming week' : `${n} things in the coming week`;
+}
+
+function renderCalendarCard(status) {
+  let html = `<div class="wwk-card" id="wwk-calendar">`;
+  if (status && status.connected) {
+    const trouble = status.last_error;
+    html += `<div class="wwk-fact-row wwk-pref-chips-row"><span class="wwk-fact-text">
+      <span class="wwk-pref-label">Your calendar</span> ${escapeHtml(status.label || 'Connected')}
+      <p class="wwk-cal-sub">${escapeHtml(status.link_hint || '')}</p>
+    </span></div>`;
+    if (trouble) {
+      // Calm, stated plainly, paired with its way out (the Check again button below).
+      html += `<p class="wwk-cal-status wwk-cal-trouble">${escapeHtml(trouble)} I'll plan without it until it's back.</p>`;
+    } else {
+      html += `<p class="wwk-cal-status">I read it and found ${escapeHtml(calendarThingsLine(status.coming_week_count || 0))}. I only read it — nothing on your calendar gets added or changed.</p>`;
+    }
+    html += `<div class="wwk-cal-actions">
+      <button type="button" class="wwk-cal-btn wwk-cal-btn-quiet" data-cal-refresh ${calendarState.busy ? 'disabled' : ''}>Check again</button>
+      <button type="button" class="wwk-cal-btn-text" data-cal-disconnect>Disconnect</button>
+    </div>`;
+    if (calendarState.error) html += `<p class="wwk-cal-status wwk-cal-trouble">${escapeHtml(calendarState.error)}</p>`;
+    return html + `</div>`;
+  }
+
+  html += `<div class="wwk-fact-row wwk-pref-chips-row"><span class="wwk-fact-text"><span class="wwk-pref-label">Your calendar</span> <span class="wwk-pref-empty">Not connected</span></span></div>`;
+  html += `<p class="wwk-cal-help">Paste your calendar's private link and I'll plan around what's on it — a quicker dinner on practice nights, that kind of thing. I only read it.</p>`;
+  html += `<details class="wwk-cal-where"><summary>Where's the link?</summary>
+    <p><b>Google:</b> Settings › your calendar › "Secret address in iCal format".</p>
+    <p><b>Apple (iCloud):</b> Calendar › the share icon beside the calendar › Public Calendar › copy the link.</p>
+    <p><b>Outlook:</b> Settings › Calendar › Shared calendars › Publish a calendar › the ICS link.</p>
+  </details>`;
+  html += `<div class="wwk-cal-input-row">
+    <input class="wwk-cal-input" id="wwk-cal-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste the link here" value="${escapeHtml(calendarState.url)}" aria-label="Calendar link">
+    <button type="button" class="wwk-cal-btn" data-cal-check ${calendarState.busy ? 'disabled' : ''}>${calendarState.busy ? 'Reading…' : 'Check it'}</button>
+  </div>`;
+  if (calendarState.error) html += `<p class="wwk-cal-status wwk-cal-trouble">${escapeHtml(calendarState.error)}</p>`;
+  const checked = calendarState.checked;
+  if (checked) {
+    const n = checked.coming_week_count || 0;
+    html += `<p class="wwk-cal-status">${n ? 'Found ' + escapeHtml(calendarThingsLine(n)) + '.' : "That link works, but there's nothing on it for the coming week."}</p>`;
+    html += calendarSampleHtml(checked.sample);
+    if (checked.timezone && checked.timezone_source !== 'feed' && checked.timezone_source !== 'events') {
+      html += `<p class="wwk-cal-sub">Reading times as ${escapeHtml(checked.timezone)}.</p>`;
+    }
+    if (checked.skipped) {
+      html += `<p class="wwk-cal-sub">Skipped ${checked.skipped} repeating ${checked.skipped === 1 ? 'event' : 'events'} I couldn't read.</p>`;
+    }
+    html += `<div class="wwk-cal-input-row">
+      <input class="wwk-cal-input" id="wwk-cal-label" type="text" maxlength="40" placeholder="Call it" value="${escapeHtml(calendarState.label || checked.label || '')}" aria-label="A name for this calendar">
+      <button type="button" class="wwk-cal-btn" data-cal-save ${calendarState.busy ? 'disabled' : ''}>Save</button>
+    </div>
+    <div class="wwk-cal-actions"><button type="button" class="wwk-cal-btn-text" data-cal-clear>Not that one</button></div>`;
+  }
+  return html + `</div>`;
+}
+
+const CALENDAR_OFFLINE_LINE = "I couldn't reach Pomona just now. Check your connection and try again.";
+
+async function calendarPost(path, body) {
+  let res;
+  try {
+    res = await fetch(path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+  } catch (err) {
+    // A network-level failure is the browser's "Failed to fetch" — not a
+    // sentence for the household. One calm line, with its way out.
+    throw new Error(CALENDAR_OFFLINE_LINE);
+  }
+  let data = null;
+  try { data = await res.json(); } catch (err) { data = null; }
+  if (!res.ok) {
+    const detail = data && data.detail;
+    throw new Error(typeof detail === 'string' && detail ? detail : "Couldn't do that just now — try again in a moment.");
+  }
+  return data;
+}
+
+function wireCalendarActions() {
+  const content = document.getElementById('wwk-content');
+  const urlInput = content.querySelector('#wwk-cal-url');
+  if (urlInput) urlInput.addEventListener('input', () => { calendarState.url = urlInput.value; });
+  const labelInput = content.querySelector('#wwk-cal-label');
+  if (labelInput) labelInput.addEventListener('input', () => { calendarState.label = labelInput.value; });
+
+  const check = content.querySelector('[data-cal-check]');
+  if (check) check.addEventListener('click', async () => {
+    const url = (urlInput && urlInput.value || '').trim();
+    calendarState.url = url;
+    calendarState.error = '';
+    calendarState.checked = null;
+    if (!url) { calendarState.error = 'Paste the link first.'; render(); return; }
+    calendarState.busy = true; render();
+    try {
+      calendarState.checked = await calendarPost('/api/calendar/check', { url });
+      calendarState.label = calendarState.checked.label || '';
+    } catch (err) { calendarState.error = err.message; }
+    calendarState.busy = false; render();
+  });
+  if (urlInput && check) urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); check.click(); } });
+
+  const save = content.querySelector('[data-cal-save]');
+  if (save) save.addEventListener('click', async () => {
+    calendarState.error = '';
+    calendarState.busy = true; render();
+    try {
+      await calendarPost('/api/calendar/connect', { url: calendarState.url, label: (labelInput && labelInput.value || '').trim() });
+      calendarState.url = ''; calendarState.label = ''; calendarState.checked = null;
+      showToast("Connected — I'll plan around it from here.");
+    } catch (err) { calendarState.error = err.message; }
+    calendarState.busy = false; render();
+  });
+
+  const clear = content.querySelector('[data-cal-clear]');
+  if (clear) clear.addEventListener('click', () => {
+    calendarState.url = ''; calendarState.label = ''; calendarState.checked = null; calendarState.error = '';
+    render();
+  });
+
+  const refresh = content.querySelector('[data-cal-refresh]');
+  if (refresh) refresh.addEventListener('click', async () => {
+    calendarState.error = '';
+    calendarState.busy = true; render();
+    try {
+      const status = await calendarPost('/api/calendar/refresh', {});
+      if (!status.last_error) showToast(`Read it again — ${calendarThingsLine(status.coming_week_count || 0)}.`);
+    } catch (err) { calendarState.error = err.message; }
+    calendarState.busy = false; render();
+  });
+
+  const disconnect = content.querySelector('[data-cal-disconnect]');
+  if (disconnect) disconnect.addEventListener('click', async () => {
+    calendarState.error = '';
+    try {
+      await calendarPost('/api/calendar/disconnect', {});
+      showToast('Disconnected. Paste the link again any time.');
+    } catch (err) { calendarState.error = err.message; }
+    render();
+  });
 }
 
 // One shared writer for all six rhythm facts — /api/onboarding/rhythm

@@ -223,6 +223,33 @@ def fetch_page(url: str) -> tuple[str, str]:
     with the sentence to show. The whole thing — every hop, every read —
     fits inside TOTAL_SECONDS of wall clock (see the note by the limits).
     """
+    return fetch_text(
+        url,
+        accept="text/html,application/xhtml+xml;q=0.9,*/*;q=0.5",
+        content_types=_HTML_TYPES,
+        wrong_type_message=MSG_NOT_HTML,
+        label="Recipe import",
+    )
+
+
+def fetch_text(
+    url: str,
+    *,
+    accept: str = "*/*",
+    content_types: tuple[str, ...] | None = None,
+    wrong_type_message: str = MSG_NOT_HTML,
+    max_bytes: int = MAX_BYTES,
+    label: str = "Fetch",
+) -> tuple[str, str]:
+    """
+    The guarded GET behind fetch_page, shared with the calendar feed
+    (app/calendar_feed.py) so there is ONE place the SSRF rules live rather
+    than a second fetcher drifting from this one. Returns (final_url,
+    text). `content_types` is the set of Content-Type prefixes accepted
+    (None accepts any — the caller then has to check the body is what it
+    expects); `label` is only for the log line, which names the host and
+    never the path, because a calendar link's path IS the secret.
+    """
     current = url.strip() if isinstance(url, str) else url
     deadline = time.monotonic() + TOTAL_SECONDS
     for _hop in range(MAX_REDIRECTS + 1):
@@ -237,7 +264,7 @@ def fetch_page(url: str) -> tuple[str, str]:
             conn.request("GET", path, headers={
                 "Host": host if port is None else f"{host}:{port}",
                 "User-Agent": USER_AGENT,
-                "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5",
+                "Accept": accept,
                 "Accept-Language": "en",
             })
             response = conn.getresponse()
@@ -251,19 +278,23 @@ def fetch_page(url: str) -> tuple[str, str]:
             if status != 200:
                 raise RecipeImportError(MSG_UNREACHABLE, "unreachable")
             content_type = response.getheader("Content-Type") or ""
-            if not content_type.lower().startswith(_HTML_TYPES):
-                raise RecipeImportError(MSG_NOT_HTML, "not_html")
+            if content_types is not None and not content_type.lower().startswith(content_types):
+                raise RecipeImportError(wrong_type_message, "not_html")
             declared = response.getheader("Content-Length")
-            if declared and declared.isdigit() and int(declared) > MAX_BYTES:
+            if declared and declared.isdigit() and int(declared) > max_bytes:
                 raise RecipeImportError(MSG_TOO_BIG, "too_big")
-            body = _read_capped(response, MAX_BYTES, deadline)
+            body = _read_capped(response, max_bytes, deadline)
             return current, _decode(body, content_type)
         except RecipeImportError:
             raise
         except (OSError, http.client.HTTPException, ssl.SSLError) as e:
             # Timeouts, refused connections, TLS failures, malformed
-            # responses: all "couldn't reach it" to the household.
-            logger.info("Recipe import fetch failed for %s: %s", host, e)
+            # responses: all "couldn't reach it" to the household. The log
+            # line carries the host and the exception CLASS, never its
+            # text: http.client's InvalidURL quotes the whole request path
+            # ("URL can't contain control characters. '/calendar/…'"), and
+            # for a calendar subscribe link the path is the secret.
+            logger.info("%s fetch failed for %s: %s", label, host, type(e).__name__)
             raise RecipeImportError(MSG_UNREACHABLE, "unreachable")
         finally:
             conn.close()

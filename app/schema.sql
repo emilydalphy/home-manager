@@ -1236,6 +1236,30 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
 CREATE INDEX IF NOT EXISTS idx_feedback_reports_household_created
     ON feedback_reports (household_id, created_at);
 
+-- The household's calendar, read from its private subscribe link (Loop
+-- Board "Meals: plan the week around what's actually on the household's
+-- calendar", 2026-09-11). One feed per household in this first version.
+-- `url` is a SECRET: it grants read access to their calendar. It is never
+-- returned to the client in full (see calendar_feed.status — label plus a
+-- redacted tail), never logged, and never put in a prompt. The cache is a
+-- compact list of already-parsed events (date, title, times) for a rolling
+-- window, kept so a feed outage degrades to "what we last read" instead of
+-- blocking a plan; it holds no descriptions, attendees or locations.
+CREATE TABLE IF NOT EXISTS calendar_feeds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL UNIQUE REFERENCES households(id),
+    url TEXT NOT NULL,
+    label TEXT NOT NULL DEFAULT '',
+    timezone TEXT NOT NULL DEFAULT '',        -- the zone event times are read in, once known
+    last_fetched_at TEXT,                     -- last SUCCESSFUL read
+    last_error TEXT NOT NULL DEFAULT '',      -- the sentence shown for the last failed read, '' if the last read worked
+    last_event_count INTEGER NOT NULL DEFAULT 0,  -- events found in the coming week at the last successful read
+    cache_json TEXT NOT NULL DEFAULT '[]',
+    cache_from TEXT NOT NULL DEFAULT '',      -- first date the cache covers (inclusive)
+    cache_to TEXT NOT NULL DEFAULT '',        -- last date the cache covers (inclusive)
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

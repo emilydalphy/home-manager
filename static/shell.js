@@ -13220,7 +13220,7 @@
     return '<div class="prefs-gear-row" id="' + id + '">' + prefsGearHtml() + '</div>';
   }
 
-  var prefsState = { memory: null, open: false };
+  var prefsState = { memory: null, calendar: null, open: false };
 
   function prefsInvalidate() {
     prefsState.memory = null;
@@ -13315,6 +13315,20 @@
     return stores.length ? stores.join(', ') : 'Not set yet';
   }
 
+  // Loop Board "Meals: plan the week around what's actually on the
+  // household's calendar" (2026-09-11). Its own small read (/api/calendar)
+  // rather than a field on /api/memory, because household memory also
+  // feeds the generation prompt and the calendar's link must never go
+  // near one — status() only ever returns the label and a redacted tail.
+  // "Not connected" is the row's whole empty state: no nudge, no badge.
+  // (The typeof guard is for tests/test_kitchen_and_preferences.py, which
+  // runs the row functions under node from a slice that has no prefsState.)
+  function prefsCalendarLine() {
+    var cal = typeof prefsState !== 'undefined' ? prefsState.calendar : null;
+    if (!cal || !cal.connected) return 'Not connected';
+    return cal.last_error ? (cal.label || 'Connected') + ' · couldn’t reach it' : (cal.label || 'Connected');
+  }
+
   // Every row: what it says, and which tab of What we know owns the answer
   // behind it. 'rhythm/prep-days' is a tab plus a spot inside it — see
   // static/memory.html's openingTab/showKitchenTab.
@@ -13323,6 +13337,7 @@
     { title: 'Your rhythm', tab: 'rhythm', line: prefsRhythmLine },
     { title: 'Prep days', tab: 'rhythm/prep-days', line: prefsPrepLine },
     { title: 'How you eat', tab: 'taste', line: prefsEatingLine },
+    { title: 'Your calendar', tab: 'rhythm/calendar', line: prefsCalendarLine },
     { title: 'Stores', tab: 'stores', line: prefsStoresLine }
   ];
 
@@ -13413,6 +13428,10 @@
   // (or with a placeholder line) rather than waiting on the network — a
   // sheet that opens empty and fills in beats a sheet that opens late.
   async function loadPrefs() {
+    // The calendar row is re-read on every open (it is one tiny request,
+    // and connecting or disconnecting happens inside the What-we-know
+    // sheet, which this cache would otherwise never hear about).
+    loadPrefsCalendar();
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
       var res = await fetch('/api/memory');
@@ -13421,6 +13440,16 @@
     } catch (err) {
       console.warn('Preferences lookup failed:', err);
       prefsState.memory = null;
+    }
+    if (prefsState.open) renderPrefsRows();
+  }
+
+  async function loadPrefsCalendar() {
+    try {
+      var res = await fetch('/api/calendar');
+      prefsState.calendar = res.ok ? await res.json() : null;
+    } catch (err) {
+      prefsState.calendar = null;
     }
     if (prefsState.open) renderPrefsRows();
   }

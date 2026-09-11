@@ -451,6 +451,9 @@ def test_a_brand_new_household_is_told_nothing_it_never_said(signed_in):
         "Your rhythm": "Not set yet",
         "Prep days": "Not set yet",
         "How you eat": "Not set yet",
+        # The calendar row (2026-09-11) reads /api/calendar, not memory; with
+        # nothing connected its honest answer is this, and nothing more.
+        "Your calendar": "Not connected",
         "Stores": "Not set yet",
     }
 
