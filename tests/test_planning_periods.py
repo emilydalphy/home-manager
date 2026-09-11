@@ -837,9 +837,12 @@ class TestTakeoverDeconflictsGlobally:
         assert _live_day_owners(), "the fixture really is a pre-existing overlap"
 
         stub_model(_full_period(tools.period_dates(week, 7)[1], 3))
+        # confirm_takeover: the rows above are APPROVED, and a generation
+        # over approved days asks first (test_replan_confirm.py). This is
+        # the takeover itself, i.e. after the yes.
         agent.generate_weekly_plan(
             tools.period_dates(week, 7)[1], day_count=3,
-            period_start=tools.period_dates(week, 7)[1],
+            period_start=tools.period_dates(week, 7)[1], confirm_takeover=True,
         )
         assert _live_day_owners() == {}, "a generation must leave the household deconflicted"
 
@@ -909,7 +912,13 @@ class TestPeriodEndpointsAreConsistentlyGuarded:
 class TestGroceryReconciliationOnTakeover:
     def _plan_and_approve(self, stub_model, start, days, meal):
         stub_model(_full_period(start, days, meal=meal))
-        plan = agent.generate_weekly_plan(start, day_count=days, period_start=start)
+        # confirm_takeover: the second plan in each test lands on an
+        # APPROVED one, and that asks first now (test_replan_confirm.py).
+        # These tests are about what the takeover does once the household
+        # has said yes.
+        plan = agent.generate_weekly_plan(
+            start, day_count=days, period_start=start, confirm_takeover=True,
+        )
         tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
         return plan
 
@@ -1233,7 +1242,12 @@ class TestTakeoverIsAtomic:
         tools.approve_weekly_plan(old["weekly_plan_id"], approved_by="Emily")
 
         stub_model(_full_period(days[3], 4, meal="Katsu"))
-        new = agent.generate_weekly_plan(days[3], day_count=4, period_start=days[3])
+        # confirm_takeover: `old` is approved, so this asks first now
+        # (test_replan_confirm.py); the shape being pinned is the one after
+        # the yes.
+        new = agent.generate_weekly_plan(
+            days[3], day_count=4, period_start=days[3], confirm_takeover=True,
+        )
         took = new["took_over"]
 
         assert took["shortened_plan_ids"] == [old["weekly_plan_id"]]

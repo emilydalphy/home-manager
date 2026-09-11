@@ -1743,7 +1743,7 @@ def _longest_run(days: list[str]) -> list[str]:
     return best
 
 
-def _plan_takeover(new_plan_id: int, period_start: str, day_count: int) -> list[dict]:
+def _plan_takeover(new_plan_id: int | None, period_start: str, day_count: int) -> list[dict]:
     """
     Decide what every other live plan keeps and gives up — and decide ALL of
     it before anything is written.
@@ -1769,6 +1769,10 @@ def _plan_takeover(new_plan_id: int, period_start: str, day_count: int) -> list[
 
     Returns one dict per affected plan, newest first, or [] when nothing
     overlaps — the ordinary case.
+
+    new_plan_id may be None: preview_approved_takeover asks the same
+    question BEFORE a plan exists, and the answer is the same one, because
+    the new plan would be the newest row and is the one this skips anyway.
     """
     conn = get_conn()
     rows = conn.execute(
@@ -1945,6 +1949,191 @@ def retire_overlapping_plans(new_plan_id: int, period_start: str, day_count: int
             new_plan_id, len(result["orphaned_dates"]), ", ".join(result["orphaned_dates"]),
         )
     return result
+
+
+def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
+    """
+    What generating this period would take away from an APPROVED plan —
+    said before anything is generated, so the household can be asked.
+    Read-only. Returns None when no approved plan would lose a day, which
+    is the ordinary case.
+
+    This exists because the take-over is Emily's rule and stays one
+    (2026-09-04: no day has two plans), but asking first is also her rule
+    (2026-09-11): a running week the household has approved is being
+    cooked from and shopped for, and "plan the rest of my week" from chat
+    used to dismantle it in one tap with nothing said first. A DRAFT is
+    not covered here on purpose — nothing of a draft's has reached the
+    shopping list, and replacing one is what re-planning means.
+
+    The decision is the real one, not an approximation of it: this runs
+    _plan_takeover exactly as retire_overlapping_plans will, with no new
+    plan to skip, so the days named here are the days that would actually
+    go — including the ORPHANED ones (a period strictly inside an approved
+    week costs it the shorter side too, and that is the case most worth
+    saying out loud).
+
+    Returns {"approved_plan_ids", "days", "orphaned_dates", "note"}:
+    `days` is one entry per lost day, in order, each with its `weekday`
+    and the `meals` it holds (slot + name, eaten order, deliberately-empty
+    slots left out); `note` is a sentence in the app's own voice that
+    states the thing and its way out, ready to be said as-is.
+    """
+    if day_count < 1:
+        return None
+    decisions = [
+        d for d in _plan_takeover(None, period_start, day_count)
+        if d["status"] == "approved"
+    ]
+    if not decisions:
+        return None
+
+    lost_dates = sorted({day for d in decisions for day in d["surrendered"]})
+    orphaned = sorted({day for d in decisions for day in d["orphaned"]})
+    plan_ids = [d["weekly_plan_id"] for d in decisions]
+
+    conn = get_conn()
+    placeholders = ",".join("?" * len(plan_ids))
+    date_placeholders = ",".join("?" * len(lost_dates))
+    rows = conn.execute(
+        f"SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        f"FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        f"WHERE mpe.household_id = ? AND mpe.weekly_plan_id IN ({placeholders}) "
+        f"AND mpe.component_category IS NULL AND mpe.slot_state = 'planned' "
+        f"AND mpe.date IN ({date_placeholders}) "
+        f"ORDER BY mpe.date, {slot_order_sql('mpe.slot')}",
+        (household_id(), *plan_ids, *lost_dates),
+    ).fetchall()
+    # How many shopping-list lines the takeover would touch (removed, or
+    # trimmed because a surviving meal still needs some): READ off the same
+    # ledger _release_plan_days reverses, with the same rule — a line
+    # already in the cart or bought is left alone, so it is not counted.
+    # The card's own criterion: the number in the question matches what
+    # actually happens, never an estimate.
+    # Two numbers, not one, because zero has two meanings and the sentence
+    # has to tell them apart (found by review): "nothing changes because
+    # it's all bought" and "nothing changes because nothing was ever on
+    # the list for these days" are different facts.
+    entry_ids = [r["id"] for r in rows]
+    grocery_line_count = 0
+    bought_line_count = 0
+    if entry_ids:
+        entry_placeholders = ",".join("?" * len(entry_ids))
+        counts = conn.execute(
+            f"SELECT "
+            f"COUNT(DISTINCT CASE WHEN g.status = 'needed' THEN g.id END) AS needed, "
+            f"COUNT(DISTINCT CASE WHEN g.status != 'needed' THEN g.id END) AS bought "
+            f"FROM meal_plan_grocery_links l "
+            f"JOIN grocery_items g ON g.id = l.grocery_item_id "
+            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders})",
+            (household_id(), *entry_ids),
+        ).fetchone()
+        grocery_line_count = counts["needed"]
+        bought_line_count = counts["bought"]
+    conn.close()
+
+    meals_by_date: dict[str, list[dict]] = {}
+    for row in rows:
+        if row["meal"]:
+            meals_by_date.setdefault(row["date"], []).append(
+                {"slot": row["slot"], "meal_name": row["meal"]}
+            )
+    days = [
+        {
+            "date": day,
+            "weekday": date.fromisoformat(day).strftime("%A"),
+            "meals": meals_by_date.get(day, []),
+        }
+        for day in lost_dates
+    ]
+    meal_count = sum(len(d["meals"]) for d in days)
+    return {
+        "approved_plan_ids": plan_ids,
+        "days": days,
+        "orphaned_dates": orphaned,
+        "meal_count": meal_count,
+        "grocery_line_count": grocery_line_count,
+        "grocery_bought_line_count": bought_line_count,
+        "note": _takeover_question(days, orphaned, grocery_line_count, bought_line_count),
+    }
+
+
+def _takeover_question(
+    days: list[dict], orphaned: list[str], grocery_line_count: int, bought_line_count: int,
+) -> str:
+    """
+    The confirmation as a person would say it (DESIGN_SYSTEM §8, including
+    the "sounding human" rules of 2026-09-10): the span, the dinners by
+    name, what it costs the shopping, then the question. Calm and plain —
+    this is about losing something — so no exclamation marks and no
+    softening before the fact.
+
+      "I'd replace Thursday to Sunday's dinners — Bean Chili, Salmon — and
+       11 things on your shopping list would change. Go ahead?"
+
+    Dinners are what a household remembers a day by, so those are named
+    (each once, in the order they come); the rest of the day's meals go too
+    and the `days` payload lists every one of them. The shopping number is
+    the real one (see preview_approved_takeover) and is said as "change"
+    rather than "come off", because a line a surviving meal still needs is
+    trimmed, not removed.
+
+    Four shapes of the shopping clause, and the first version of this
+    conflated the last three (review caught it, with an approved week whose
+    overlapping days were all "out" being told "it's all bought already"):
+      * lines still needed        -> "and N things on your shopping list would change."
+      * none needed, some bought  -> "Nothing comes off the shopping list — it's all bought already."
+      * meals, but no lines at all -> "Nothing on the shopping list changes."
+      * no meals on those days    -> "Nothing's planned for <span>, so nothing would be lost."
+    """
+    span = _weekday_span([d["weekday"] for d in days])
+    meals = [m for d in days for m in d["meals"]]
+    dinners: list[str] = []
+    for m in meals:
+        if m["slot"] == "dinner" and m["meal_name"] not in dinners:
+            dinners.append(m["meal_name"])
+
+    if not meals:
+        # Deliberately empty days (away, "none tonight") or a plan that
+        # never held these days' meals: the household loses nothing but
+        # the plan's claim on the dates, and the sentence must not invent
+        # a loss — or a purchase.
+        sentence = f"Nothing's planned for {span}, so nothing would be lost."
+    else:
+        # "meals" when there is no dinner to name — a component_based
+        # plan's items carry no date, so its days have nothing called a
+        # dinner.
+        noun = ("dinners" if len(days) > 1 else "dinner") if dinners else "meals"
+        head = f"I'd replace {span}'s {noun}"
+        if grocery_line_count:
+            things = "one thing" if grocery_line_count == 1 else f"{grocery_line_count} things"
+            # The dashes only exist to carry the dinner names INTO the
+            # clause that follows; with nothing following there is no
+            # closing dash (review found "— Bean Chili —." in the zero case).
+            named = f" — {', '.join(dinners)} —" if dinners else ""
+            sentence = f"{head}{named} and {things} on your shopping list would change."
+        else:
+            named = f" — {', '.join(dinners)}" if dinners else ""
+            if bought_line_count:
+                cost = "Nothing comes off the shopping list — it's all bought already."
+            else:
+                cost = "Nothing on the shopping list changes."
+            sentence = f"{head}{named}. {cost}"
+    if orphaned:
+        lost = _weekday_span([date.fromisoformat(d).strftime("%A") for d in orphaned])
+        sentence += (
+            f" {lost} would be left unplanned too — a plan can't keep a gap in the middle."
+        )
+    return sentence + " Go ahead?"
+
+
+def _weekday_span(weekdays: list[str]) -> str:
+    """"Thursday", "Monday and Tuesday", "Thursday to Sunday"."""
+    if len(weekdays) == 1:
+        return weekdays[0]
+    if len(weekdays) == 2:
+        return f"{weekdays[0]} and {weekdays[1]}"
+    return f"{weekdays[0]} to {weekdays[-1]}"
 
 
 def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,

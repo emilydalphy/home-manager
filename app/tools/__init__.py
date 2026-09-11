@@ -433,6 +433,7 @@ from .weekly_plan import (  # noqa: F401
     get_plan_id_for_date,
     find_overlapping_plans,
     retire_overlapping_plans,
+    preview_approved_takeover,
     suggest_planning_period,
     MAX_PERIOD_DAYS,
     SlotRefused,
