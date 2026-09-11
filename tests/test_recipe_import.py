@@ -742,7 +742,7 @@ def test_the_cook_root_offers_add_from_a_link_next_to_recipes():
     start = js.index("function kitchenTilesHtml()")
     tiles = js[start:js.index("\n  }\n", start)]
     assert 'data-kit="recipe-link"' in tiles and ">Add from a link<" in tiles
-    assert "kit-tile-quiet" in tiles and "btn-primary" not in tiles
+    assert 'class="kit-row"' in tiles and "btn-primary" not in tiles  # rows since 2026-09-11
     assert "function openRecipeLinkSheet" in js
     assert "/api/recipes/import-url" in js and "/api/recipes/add" in js
     # Every failure state pairs the problem with its way out.

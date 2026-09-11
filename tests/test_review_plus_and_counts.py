@@ -722,7 +722,7 @@ console.log(JSON.stringify({
   total: (html.match(/rv-trouble/g) || []).length,
   inRows: rows.map(function (r) { return r.indexOf('rv-trouble') !== -1; }),
   names: rows.map(function (r) {
-    return /class="rv-dish-name">([^<]*)</.exec(r)[1];
+    return /class="rv-dish-name dish-link" data-rv-recipe="\d+">([^<]*)</.exec(r)[1];
   })
 }));
 """

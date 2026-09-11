@@ -53,25 +53,22 @@
     <div id="shell-main">
       <div id="shell-scroll"></div>
 
+      <!-- The chat is an icon, not a bar (Emily, 2026-09-11, reviewing the
+           screen-by-screen canvas; DESIGN_SYSTEM §2b S2 "helpers appear when
+           you reach for them"). This strip is the non-scrolling chrome between
+           the panel and the tab bar, kept as a zero-height positioning box so
+           the one button floats bottom-right over the panel's last rows — in
+           the dock row when a screen has a dock (see .dock's right padding in
+           shell.css), above the tab bar when it does not. The always-open ask
+           bar, the example-prompt chips and the "?" tips button that used to
+           live here moved into the ask sheet below: they help the moment
+           you're about to type, not all day. The bell moved into each root's
+           header beside the gear (placeNotifBell, shell.js). -->
       <div id="ask-bar-dock">
-        <!-- Onboarding coaching, part 1 (2026-09-08): two tappable example
-             prompts for whichever tab you're on, for the first three visits
-             to it and then never again. Same .ask-chip component the ask
-             sheet's quick actions already use — no new visual language.
-             Filled and emptied by renderAskExamples() in shell.js; it wraps
-             onto its own line above the bar (see #ask-examples in
-             shell.css). -->
-        <div class="ask-chips ask-examples" id="ask-examples" hidden></div>
-        <button type="button" id="ask-bar">
-          <span class="ask-placeholder">The more you tell me, the less you&rsquo;ll swap&hellip;</span>
-          <span class="ask-send">&uarr;</span>
+        <button type="button" id="chat-fab" class="chat-fab" aria-label="Chat with Pomona" title="Chat with Pomona">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg>
         </button>
-        <!-- The always-there way into "Helpful tips" — a sibling of the bar,
-             not a child of it, because the bar is itself a button. -->
-        <button type="button" class="ask-tips-btn" id="ask-tips-btn" data-tips="open" aria-label="Helpful tips" title="Helpful tips">?</button>
-        <span id="bell-home-dock"></span>
       </div>
-
       <div id="tab-bar"></div>
     </div>
 
@@ -102,6 +99,9 @@
     <div id="notif-panel-list"></div>
   </div>
 
+  <!-- The one-time "tap for the usual, type for the rest" sheet (renderCoachCard,
+       shell.js). Empty on every load but the first after setup. -->
+  <div id="coach-card-slot"></div>
   <div id="ask-scrim" hidden></div>
   <div id="ask-sheet" hidden role="dialog" aria-label="Ask Pomona">
     <div class="ask-sheet-handle" id="ask-sheet-handle"></div>
@@ -115,11 +115,23 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="18" height="18"><path d="M15 5l-7 7 7 7"/></svg>
       Back
     </button>
-    <div class="ask-sheet-title">Tell me what to change</div>
+    <!-- One title for every tab — the topic isn't always today (Emily,
+         2026-09-11) — and the small way into Helpful tips beside it. -->
+    <div class="ask-sheet-titlerow">
+      <div class="ask-sheet-title">What&rsquo;s on your mind?</div>
+      <button type="button" class="ask-tips-btn" id="ask-tips-btn" data-tips="open" aria-label="Helpful tips" title="Helpful tips">?</button>
+    </div>
     <div class="ask-messages" id="ask-messages"></div>
+    <!-- Onboarding coaching, part 1: the per-tab example prompts, for a
+         tab's first three visits and then never again. They live in the
+         sheet now, not on the screen. Filled and emptied by
+         renderAskExamples() in shell.js; the named intents (#ask-chips)
+         below are the permanent version, and when they are showing the
+         examples yield to them. -->
+    <div class="ask-chips ask-examples" id="ask-examples" hidden></div>
     <div class="ask-chips" id="ask-chips"></div>
     <form id="ask-composer" class="ask-composer-bar">
-      <textarea id="ask-input" class="ask-composer-input" rows="1" placeholder="The more you tell me, the less you&rsquo;ll swap&hellip;" autocomplete="off"></textarea>
+      <textarea id="ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>
       <button type="button" id="ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
       </button>

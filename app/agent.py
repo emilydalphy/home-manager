@@ -2582,6 +2582,8 @@ unknown — use your normal judgement.
 dinners in prep+cook minutes. A `rush` tag overrides it downwards; an `unrushed` tag lifts it \
 for that one night. Nothing else moves it.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
+`intake.mood_guidance` spells out what each of those moods asks for; follow those lines, they \
+are what the household meant by the two-word label. \
 `intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
 `intake.freeform` is their own words, and a stated request in it is the week's ANCHOR, not an \
 isolated instruction to satisfy in a vacuum: put it exactly where they said — never plan over \
@@ -3037,6 +3039,11 @@ def _intake_generation_context(intake: dict) -> dict:
         "guest_totals": guest_totals,
         "packed_lunch_days": intake.get("packed_lunch_days") or [],
         "moods": intake.get("moods") or [],
+        # What each tapped mood means (week_intake.MOOD_GUIDANCE) — the pill
+        # is what a person taps, this is what the planner follows.
+        "mood_guidance": [
+            tools.MOOD_GUIDANCE[m] for m in (intake.get("moods") or []) if m in tools.MOOD_GUIDANCE
+        ],
         "cuisines": intake.get("cuisines") or [],
         "freeform": intake.get("freeform") or "",
         "household": household,

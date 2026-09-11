@@ -403,7 +403,9 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         + _extract("kitchenTodayRows", src) + "\n"
         + _extract("kitchenTodayRowHtml", src) + "\n"
         + _extract("kitchenCookingTodayHtml", src) + "\n"
-        + _extract("cookRestRowHtml", src) + "\n"
+        # One line per day since 2026-09-11 (Build 8); the day row is what
+        # the rest-of-week section renders now (cookRestRowHtml is gone).
+        + _extract("cookRestDayRowHtml", src) + "\n"
         + _extract("cookRestOfWeekHtml", src) + "\n"
         # The Kitchen root builds its rows and renders them in one breath
         # (renderKitchen); this is that pair, so a test can hand in the
@@ -478,8 +480,10 @@ def test_the_batch_note_is_carried_on_the_line():
 
 @_needs_node
 def test_a_reheat_row_in_the_week_list_is_not_a_way_into_a_recipe():
+    """Since 2026-09-11 (Build 8) the rest of the week is one line per DAY:
+    the day's cooks by name, each a way into its recipe, and its reheats as
+    a count — never a button, because a reheat has no recipe to open."""
     html = _render("cookRestOfWeekHtml", [_REHEAT_MEAL, _COOK_MEAL], ', {}, "1999-01-01", true')
-    assert '<span class="cook-week-name">Leftovers — Tuesday’s Bulgogi Wraps</span>' in html
-    assert ">Reheat<" in html
-    assert 'data-cook="focus" data-idx="0"' not in html, "the reheat row is text, not a button"
-    assert 'data-cook="focus" data-idx="1"' in html, "the cook row still opens its recipe"
+    assert "1 reheat" in html
+    assert 'data-cook="focus" data-idx="0"' not in html, "the reheat is a count, not a button"
+    assert 'data-cook="focus" data-idx="1"' in html, "the cook still opens its recipe"

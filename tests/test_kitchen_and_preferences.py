@@ -71,7 +71,7 @@ def _function(name: str, source: str = SHELL_JS) -> str:
 def test_the_kitchen_root_is_the_cooks_tab():
     """Three sections, in this order, and the day above them."""
     root = _function("renderKitchen")
-    for call in ("kitchenCookingTodayHtml(rows)", "cookPrepSessionsHtml(data)",
+    for call in ("kitchenCookingTodayHtml(rows, meals, todayIso)", "cookPrepSessionsHtml(data)",
                  "cookRestOfWeekHtml(", "kitchenTilesHtml()"):
         assert call in root, f"the Kitchen root no longer renders {call}"
     _assert_in("Cooking today", SHELL_JS, "the Cooking today eyebrow", "shell.js")
@@ -100,14 +100,19 @@ def test_a_cooking_today_line_carries_the_start_by_and_the_badge():
 def test_the_rest_of_the_week_collapses_after_three():
     fn = _function("cookRestOfWeekHtml")
     _assert_in("var KITCHEN_REST_VISIBLE = 3;", SHELL_JS, "the collapse point", "shell.js")
-    assert "' more '" in fn and "'cooks'" in fn, "the '+ 3 more cooks' link is gone"
+    # One line per day since 2026-09-11 (Build 8): the expand names the
+    # days it hides ("Show Fri–Sun"), and three DAYS show before it.
+    assert "'Show ' + dayNameShort(first.date)" in fn, "the 'Show Fri–Sun' link is gone"
+    assert "groups.slice(0, KITCHEN_REST_VISIBLE)" in fn
     _assert_in('data-cook="rest-more"', SHELL_JS, "the expand control", "shell.js")
 
 
 def test_the_two_quiet_tiles_are_inventory_and_recipes():
+    """Rows in one card since 2026-09-11 (Build 8), above the fold, one fact
+    each — still quiet, still no apricot."""
     tiles = _function("kitchenTilesHtml")
     assert ">Inventory<" in tiles and ">Recipes<" in tiles
-    assert "kit-tile-quiet" in tiles, "Kitchen's tiles must stay quiet (no badge, muted stroke)"
+    assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (
         "Kitchen's root has no primary action and no apricot (DESIGN_SYSTEM Rule 5)"
     )
@@ -124,11 +129,12 @@ def test_what_we_know_and_the_snw_tile_left_the_kitchen_tab():
     )
 
 
-def test_the_kitchen_root_keeps_the_cook_views_two_quiet_links():
+def test_the_kitchen_root_lost_its_two_italic_re_ask_links():
+    """Emily, 2026-09-11 (decision E, DESIGN_SYSTEM §2b S4): two italic
+    headings with nothing under them left the root. The questions are asked
+    on the All set screen and answered by the chat any time."""
     root = _function("renderKitchen")
-    assert "cookDefrostLinkHtml()" in root and "cookAheadAskLinkHtml()" in root
-    _assert_in("Something in the freezer?", SHELL_JS, "the freezer re-ask", "shell.js")
-    _assert_in("Cooking ahead?", SHELL_JS, "the cook-ahead re-ask", "shell.js")
+    assert "cookDefrostLinkHtml()" not in root and "cookAheadAskLinkHtml()" not in root
 
 
 # --- 2. cook mode is a step of Kitchen ------------------------------------
@@ -321,9 +327,13 @@ def test_the_subtitles_read_the_household_back_plainly():
     _assert_in("'Not set yet'", SHELL_JS, "the unanswered-question wording", "shell.js")
 
 
-def test_the_ask_bar_hint_on_kitchen():
-    _assert_in("kitchen: 'What\\u2019s in the fridge that needs using?'", SHELL_JS,
-               "Kitchen's ask-bar hint", "shell.js")
+def test_the_chat_carries_one_line_on_every_tab():
+    """Since 2026-09-11 the chat is an icon and its composer says the same
+    thing on every tab — the topic isn't always today (Emily). The per-tab
+    hints, Kitchen's included, went with the always-open bar."""
+    _assert_in("_default: 'What\\u2019s on your mind?'", SHELL_JS,
+               "the one chat hint", "shell.js")
+    assert "kitchen: 'What" not in SHELL_JS
 
 
 # --- 4. the backend half --------------------------------------------------

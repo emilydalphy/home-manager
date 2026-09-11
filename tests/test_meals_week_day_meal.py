@@ -309,10 +309,11 @@ def test_the_draft_review_band_is_gone_and_the_decision_moved_under_the_card():
     assert '<div id="week-review-band">' not in SHELL_JS, (
         "#week-review-band is back above the week card."
     )
-    _assert_in("function weekDecideHtml(", SHELL_JS, "the draft's decision row", "shell.js")
-    _assert_in("Approve this week", SHELL_JS, "the Approve button", "shell.js")
-    _assert_in("if (approve) approve.hidden = !onRoot;", SHELL_JS,
-               "the band above the card belonging to the root only", "shell.js")
+    # UPDATED 2026-09-11 (Build 3 of the screen-by-screen redesign, Emily's decisions C and E): a draft's root IS the review, so the week card's own decision strip (Check the week / Approve this week / the italic Tweak it with me) is gone; the one apricot is reviewDecideHtml's, in the dock.
+    _assert_in("function reviewDecideHtml(", SHELL_JS, "the draft's decision (in the review it opens on)", "shell.js")
+    _assert_in("Approve and build my shopping list", SHELL_JS, "the Approve button", "shell.js")
+    _assert_in("if (approve) approve.hidden = !onRoot || draft;", SHELL_JS,
+               "the receipt row above the card belonging to the root only (a draft's clash sits on its dish instead)", "shell.js")
 
 
 def test_the_day_step_is_three_equal_cards():
@@ -403,8 +404,11 @@ def test_a_changed_day_still_lands_on_that_day():
     _assert_in("just-changed", SHELL_JS, "the ring itself", "shell.js")
 
 
-def test_the_ask_bar_keeps_its_meals_hint():
-    _assert_in("Tweak this week with me", SHELL_JS, "the Meals ask hint", "shell.js")
+def test_the_chat_no_longer_carries_a_meals_hint():
+    """The per-tab hint went with the always-open bar on 2026-09-11 (the
+    chat is an icon; Build 1 of the screen-by-screen redesign) — one line
+    on every tab, because the topic isn't always this week."""
+    assert "Tweak this week with me" not in SHELL_JS
 
 
 # ---------- snacks render too (2026-09-08, "snack-swap-applies") ----------
@@ -607,6 +611,12 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + _extract("swapStateFor", SHELL_JS) + "\n"
         + _extract("swapLineHtml", SHELL_JS) + "\n"
         + _extract("slotActionsHtml", SHELL_JS) + "\n"
+        # The hero head (2026-09-11) names the slot and sizes the dish name.
+        + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
+        + _extract("slotEyebrowLabel", SHELL_JS) + "\n"
+        + _extract("slotEyebrow", SHELL_JS) + "\n"
+        + _extract("dishSizeClass", SHELL_JS) + "\n"
+        + _extract("mealDockHtml", SHELL_JS) + "\n"
         + _extract("mealStepHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )

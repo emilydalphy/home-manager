@@ -61,9 +61,11 @@ _needs_node = pytest.mark.skipif(
 # test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it.
 FIRST_STEP = "intro-hello"
 INTRO_STEPS_AFTER_THE_FIRST = ["intro-purpose", "intro-help", "intro-talk", "intro-know"]
+# The two rhythm-1 tests that used to sit at the end of this file (who cooks re-asked when a second adult is added; a lunch answer for somebody no longer here is dropped) went with the rhythm-1 screen itself on 2026-09-11 — see the note below.
+# UPDATED 2026-09-11 (Build 6 of the screen-by-screen redesign, Emily's decision G): setup asks only what changes the plan. rhythm-1, rhythm-2, dinners and typical-week left the flow; 'meals' took the rhythm screens' place, and leftovers / prep / dinner-time became one screen each.
 QUESTION_STEPS = [
-    "household", "rhythm-1", "rhythm-2", "restrictions", "eating-style", "wont-eat",
-    "excited-about", "dinners", "typical-week", "kit-repeats",
+    "household", "meals", "restrictions", "eating-style", "wont-eat",
+    "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats",
 ]
 STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS
 ALL_STEPS = [FIRST_STEP] + STEPS_AFTER_THE_FIRST + ["reveal"]
@@ -290,14 +292,14 @@ def _nav_harness(builders: str = "", seed: str = "") -> str:
         _STEP_ELEMENTS,
         builders or """
 const BUILT = [];
-function buildRhythmStep1() { BUILT.push('rhythm-1'); }
-function buildRhythmStep2() { BUILT.push('rhythm-2'); }
+function buildMealsStep() { BUILT.push('meals'); }
 function buildRestrictionsStep() { BUILT.push('restrictions'); }
 function buildEatingStyleStep() { BUILT.push('eating-style'); }
 function buildWontEatStep() { BUILT.push('wont-eat'); }
 function buildExcitedStep() { BUILT.push('excited-about'); }
-function buildDinnersStep() { BUILT.push('dinners'); }
-function buildTypicalWeekStep() { BUILT.push('typical-week'); }
+function buildLeftoversStep() { BUILT.push('leftovers'); }
+function buildPrepStep() { BUILT.push('prep'); }
+function buildDinnerTimeStep() { BUILT.push('dinner-time'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
 """,
         _const("INTRO_STEPS"),
@@ -396,15 +398,15 @@ console.log(JSON.stringify(labels));
         "intro-talk": "‹ What I help with",
         "intro-know": "‹ How we talk",
         "household": "‹ Getting to know you",
-        "rhythm-1": "‹ Who's here",
-        "rhythm-2": "‹ Your rhythm",
-        "restrictions": "‹ Your timing",
-        "eating-style": "‹ Restrictions",
+        "meals": "‹ Who's here",
+        "restrictions": "‹ Which meals",
+        "eating-style": "‹ Never on the plate",
         "wont-eat": "‹ How you eat",
         "excited-about": "‹ Never recommend",
-        "dinners": "‹ What you're into",
-        "typical-week": "‹ How many recipes",
-        "kit-repeats": "‹ A normal week",
+        "leftovers": "‹ What you're into",
+        "prep": "‹ Leftovers",
+        "dinner-time": "‹ Meal prep",
+        "kit-repeats": "‹ Dinner time",
     }
 
 
@@ -437,8 +439,8 @@ const back = BUILT.slice();
 console.log(JSON.stringify({ forward: forward, back: back, on: currentStep }));
 """)
     assert out["forward"] == ["restrictions"]
-    assert out["back"] == ["rhythm-2"], "going back left the step it landed on undrawn"
-    assert out["on"] == "rhythm-2"
+    assert out["back"] == ["meals"], "going back left the step it landed on undrawn"
+    assert out["on"] == "meals"
 
 
 # ---------- the phone's own back gesture ----------
@@ -447,14 +449,14 @@ console.log(JSON.stringify({ forward: forward, back: back, on: currentStep }));
 @_needs_node
 def test_the_back_gesture_walks_the_flow_backwards_one_step_at_a_time():
     out = _run(_nav_harness() + """
-['rhythm-1', 'rhythm-2', 'restrictions', 'eating-style'].forEach(showStep);
+['meals', 'restrictions', 'eating-style', 'wont-eat'].forEach(showStep);
 const seen = [];
 for (let i = 0; i < 4; i++) { gesture(); seen.push(currentStep); }
 console.log(JSON.stringify({ seen: seen, depth: depth(), left: LEFT_PAGE }));
 """)
     # The page started on the first intro screen, and that is the entry the
     # stack unwinds onto.
-    assert out["seen"] == ["restrictions", "rhythm-2", "rhythm-1", "intro-hello"]
+    assert out["seen"] == ["eating-style", "restrictions", "meals", "intro-hello"]
     assert out["depth"] == 1, "the gesture didn't unwind the stack it walked in on"
     assert out["left"] is False, "it walked off the page early"
 
@@ -467,16 +469,16 @@ def test_the_control_and_the_gesture_agree_rather_than_fighting_each_other():
     bouncing forward onto the step you just left.
     """
     out = _run(_nav_harness() + """
-['rhythm-1', 'rhythm-2', 'restrictions'].forEach(showStep);
+['meals', 'restrictions', 'eating-style'].forEach(showStep);
 const depthBefore = depth();
-tapBack('restrictions');
+tapBack('eating-style');
 const afterTap = { on: currentStep, depth: depth() };
 gesture();
 console.log(JSON.stringify({ before: depthBefore, afterTap: afterTap, thenGesture: currentStep }));
 """)
     assert out["before"] == 4
-    assert out["afterTap"] == {"on": "rhythm-2", "depth": 3}
-    assert out["thenGesture"] == "rhythm-1", (
+    assert out["afterTap"] == {"on": "restrictions", "depth": 3}
+    assert out["thenGesture"] == "meals", (
         "the gesture after a back tap went forward again — the control pushed "
         "an entry instead of walking one back"
     )
@@ -506,7 +508,7 @@ def test_the_reveal_takes_over_its_entry_instead_of_adding_one():
     the trap below exists for.
     """
     out = _run(_nav_harness() + """
-['rhythm-1', 'rhythm-2'].forEach(showStep);
+['meals', 'restrictions'].forEach(showStep);
 const before = depth();
 showStep('reveal');
 console.log(JSON.stringify({ before: before, after: depth(), top: top().onboardingStep }));
@@ -560,7 +562,7 @@ def test_a_forward_gesture_from_the_reveal_stays_on_the_reveal_too():
     ahead to swipe to either.
     """
     out = _run(_nav_harness() + """
-['rhythm-1', 'rhythm-2'].forEach(showStep);
+['meals', 'restrictions'].forEach(showStep);
 showStep('reveal');
 gesture();
 forwardGesture();
@@ -586,7 +588,7 @@ def test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it():
     out = _run(_nav_harness(seed="""
 // Where a previous load of this page had got to: four steps in, with the
 // browser sitting on the third of them.
-[staleEntry('household'), staleEntry('rhythm-1'), staleEntry('rhythm-2'),
+[staleEntry('household'), staleEntry('meals'), staleEntry('restrictions'),
  staleEntry('restrictions')].forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -609,7 +611,7 @@ console.log(JSON.stringify({ afterLoad: afterLoad, forward: currentStep, len: HI
 @_needs_node
 def test_a_back_gesture_onto_an_entry_from_before_the_reload_collapses_onto_the_first_step():
     out = _run(_nav_harness(seed="""
-[staleEntry('household'), staleEntry('rhythm-1'), staleEntry('rhythm-2')]
+[staleEntry('household'), staleEntry('meals'), staleEntry('restrictions')]
   .forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -926,101 +928,6 @@ def test_the_guard_does_not_depend_on_a_button_being_passed_in():
 # ---------- what depends on what ----------
 
 
-def _rhythm_harness() -> str:
-    """
-    The rhythm step's own code, over the same DOM. currentMembers is the one
-    thing stubbed — these tests are about what happens when the household
-    changes, so the household is the input.
-    """
-    return "\n".join([
-        _DOM_STUB,
-        """
-['rhythm-lunch-people', 'rhythm-meals-together-chips', 'rhythm-cooking-role-chips',
- 'rhythm-cooking-who-chips', 'rhythm-cooking-who-wrap', 'rhythm-cooking-hint',
- 'rhythm-meals-together-card', 'rhythm-cooking-card', 'rhythm-1-next'].forEach(function (id) { el(id); });
-// The lunch card is what renderLunchPeople reaches for with closest().
-ELS['rhythm-lunch-people']._classes.add('rhythm-lunch-people');
-const LUNCH_CARD = makeEl('div');
-LUNCH_CARD._classes.add('rhythm-card');
-LUNCH_CARD.appendChild(ELS['rhythm-lunch-people']);
-var MEMBERS = [];
-function currentMembers() { return MEMBERS; }
-""",
-        _const("LUNCH_LOCATION_OPTIONS"),
-        _const("MEALS_TOGETHER_OPTIONS"),
-        _const("COOKING_ROLE_OPTIONS"),
-        "var rhythmLunchLocation = {};",
-        "var rhythmMealsTogether = '';",
-        "var rhythmCookingRole = '';",
-        "var rhythmCookingWho = '';",
-        "var rhythmSoloDefaultsApplied = false;",
-        _fn("buildSingleSelectChips"),
-        _fn("isCookEligible"),
-        _fn("eligibleCooks"),
-        _fn("renderLunchRow"),
-        _fn("renderLunchPeople"),
-        _fn("renderMealsTogetherChips"),
-        _fn("renderCookingWhoChips"),
-        _fn("renderCookingRoleChips"),
-        _fn("isSoloAdultHousehold"),
-        _fn("applySoloAdultDefaults"),
-        _fn("rhythm1Complete"),
-        _fn("updateRhythm1ContinueState"),
-        _fn("buildRhythmStep1"),
-    ])
-
-
-@_needs_node
-def test_adding_a_second_person_re_asks_who_cooks_and_clears_the_filled_in_answer():
-    """
-    A household of exactly one adult isn't asked which meals it eats
-    together or who cooks — both have one possible answer, and the page
-    fills them in. Going back and adding somebody makes both questions real
-    again, and the answer nobody gave has to go rather than being shipped as
-    though they had.
-    """
-    out = _run(_rhythm_harness() + """
-MEMBERS = [{ name: 'Robin', age_group: 'adult' }];
-buildRhythmStep1();
-const solo = {
-  together: rhythmMealsTogether, role: rhythmCookingRole, who: rhythmCookingWho,
-  togetherCardHidden: ELS['rhythm-meals-together-card'].style.display === 'none',
-  complete: rhythm1Complete()
-};
-MEMBERS = [{ name: 'Robin', age_group: 'adult' }, { name: 'Sam', age_group: 'adult' }];
-buildRhythmStep1();
-const pair = {
-  together: rhythmMealsTogether, role: rhythmCookingRole, who: rhythmCookingWho,
-  togetherCardHidden: ELS['rhythm-meals-together-card'].style.display === 'none',
-  complete: rhythm1Complete()
-};
-console.log(JSON.stringify({ solo: solo, pair: pair }));
-""")
-    assert out["solo"] == {
-        "together": "most_meals", "role": "one_person", "who": "Robin",
-        "togetherCardHidden": True, "complete": False,
-    }
-    assert out["pair"] == {
-        "together": "", "role": "", "who": "",
-        "togetherCardHidden": False, "complete": False,
-    }
-
-
-@_needs_node
-def test_a_lunch_answer_for_somebody_no_longer_here_is_dropped():
-    out = _run(_rhythm_harness() + """
-MEMBERS = [{ name: 'Robin', age_group: 'adult' }, { name: 'Jamie', age_group: 'adult' }];
-buildRhythmStep1();
-rhythmLunchLocation = { Robin: 'home', Jamie: 'out' };
-MEMBERS = [{ name: 'Robin', age_group: 'adult' }, { name: 'James', age_group: 'adult' }];
-buildRhythmStep1();
-console.log(JSON.stringify({ lunch: rhythmLunchLocation }));
-""")
-    assert out["lunch"] == {"Robin": "home"}, (
-        "a lunch answer survived the person it was about being renamed away"
-    )
-
-
 def _restrictions_harness() -> str:
     return "\n".join([
         _DOM_STUB,
@@ -1118,8 +1025,6 @@ def _household_edit_harness() -> str:
             """
 // The real thing, reading rows out of a container, rather than a stub list.
 const membersDiv = el('members');
-var rhythmLunchLocation = {};
-var rhythmCookingWho = '';
 function addMemberRow(name) {
   const block = makeEl('div');
   block._classes.add('member-block');
@@ -1191,26 +1096,6 @@ console.log(JSON.stringify({
         "now called Sam"
     )
     assert out["held"] == []
-
-
-@_needs_node
-def test_a_lunch_answer_cannot_transfer_the_same_way():
-    """
-    The same shape one door along: saveRhythmAnswers posts
-    rhythmLunchLocation verbatim, keyed by name, on the same end-of-setup
-    request.
-    """
-    out = _run(_household_edit_harness() + """
-const sam = addMemberRow('Sam');
-const alex = addMemberRow('Alex');
-rhythmLunchLocation = { Sam: 'out', Alex: 'home' };
-rhythmCookingWho = 'Sam';
-removeRow(sam);
-rename(alex, 'Sam');
-console.log(JSON.stringify({ lunch: rhythmLunchLocation, who: rhythmCookingWho }));
-""")
-    assert out["lunch"] == {}, "a lunch location moved onto a different person"
-    assert out["who"] == "", "the cook pick stayed pointed at a name that is now somebody else"
 
 
 def test_the_payload_builder_prunes_too_rather_than_trusting_the_route():

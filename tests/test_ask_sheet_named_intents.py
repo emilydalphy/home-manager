@@ -319,10 +319,10 @@ def test_four_is_the_whole_set_not_a_wall():
 
 
 def test_the_blank_input_is_untouched():
-    """The intents are an addition, never a replacement — the composer and
-    its per-tab hints are exactly as they were."""
+    """The intents are an addition, never a replacement — the composer is
+    exactly as it was. (Its hint became one line for every tab on
+    2026-09-11, when the chat became an icon; see test_chat_icon.)"""
     assert "var ASK_HINTS = {" in SHELL_JS
-    assert "Add oat milk and lemons" in SHELL_JS  # grocery's hint still teaches it
     assert "id=\"ask-input\"" in (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 
 
@@ -365,19 +365,20 @@ def test_the_desktop_column_drops_its_coaching_examples_when_the_intents_are_up(
 
 
 @_needs_node
-def test_the_phones_examples_do_not_yield_because_they_never_share_a_screen():
-    """The regression this rule made on its first pass, pinned so it cannot
-    come back. On a phone the examples are in the dock and the intents are
-    inside the sheet that covers it — and the sheet's chips are filled when
-    it is BUILT, not when it is opened. A guard that read them at any width
-    therefore hid the dock's examples permanently, which is the coaching
-    feature deleted rather than deferred."""
+def test_the_phones_examples_yield_too_now_that_both_live_in_the_sheet():
+    """Until 2026-09-11 this test pinned the opposite: the phone's examples
+    sat in the ask-bar dock while the intents sat in the sheet, so a guard
+    that read the sheet's chips hid the dock's examples permanently. The
+    chat became an icon that day (Build 1 of the screen-by-screen
+    redesign) and the examples moved INTO the sheet, beside the intents —
+    so the same yielding now holds at both widths, for the same reason it
+    held on desktop: two teaching rows in one place, saying the same things."""
     out = _run_examples(
         "fillIntents('ask-chips');\n"
         "renderAskExamples(['a', 'b']);\n"
         "console.log(JSON.stringify(state()));"
     )
-    assert out["dock"] is True
+    assert out["dock"] is False
 
 
 @_needs_node
