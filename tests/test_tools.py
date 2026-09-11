@@ -392,6 +392,47 @@ def test_picking_tonights_dinner_only_adds_groceries_when_asked_to():
     assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
 
 
+def test_resolving_tonights_dinner_does_not_error_when_the_only_plan_on_file_is_an_old_week():
+    """
+    Bug, 2026-09-11 (Loop Board "needs you dinner card 500s when the only
+    plan on file is an old week"): _current_weekly_plan_row falls back to
+    the household's most-recently-created plan when none contains today,
+    so a household whose last plan was a previous week still gets one
+    back from get_weekly_plan(). resolve_needs_you_dinner used to attach
+    that plan's id to tonight's pick unconditionally, and plan_meal's own
+    period check ("... isn't in weekly plan N's period") then rejected the
+    insert — the exact tap the Today card's dinner_decision card offers.
+    """
+    old_week_start = _today(-14)
+    tools.create_weekly_plan(old_week_start)
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
+
+    result = tools.resolve_needs_you_dinner(_today(), "Chili")
+
+    assert result["groceries_added"] == []
+    todays_dinner = [
+        e for e in tools.get_meal_plan(days_ahead=1)
+        if e["date"] == _today() and e["meal"] == "Chili"
+    ]
+    assert len(todays_dinner) == 1
+
+
+def test_the_needs_you_dinner_route_does_not_500_with_only_an_old_plan_on_file(signed_in):
+    """Same bug as above, exercised through the actual HTTP route the Today
+    screen's card posts to — this is the shape the bug report described."""
+    old_week_start = _today(-14)
+    tools.create_weekly_plan(old_week_start)
+    tools.add_recipe("Tacos", ingredients=[{"item": "tortillas", "qty": "1 pack"}])
+
+    res = signed_in.post(
+        "/api/needs-you/dinner",
+        json={"date": _today(), "meal": "Tacos", "add_ingredients": False},
+    )
+
+    assert res.status_code == 200
+    assert "Tacos" in [e["meal"] for e in tools.get_meal_plan(days_ahead=1)]
+
+
 class TestNeedsYouSurfacesAnOpenDinner:
     """
     "core loop handoffs, slice 2" item D (Emily, 2026-09-05): an 'open'

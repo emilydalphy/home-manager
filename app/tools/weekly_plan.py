@@ -3707,9 +3707,23 @@ def resolve_needs_you_dinner(
     what makes this an explicit yes and not a silent write — the same
     standard chat is held to (see plan_meal). It defaults to False so a
     caller that forgets to ask adds nothing.
+
+    "Current" plan means _current_weekly_plan_row's fallback too: a
+    household whose only plan on file is an old week still gets one back
+    (newest-wins), and that plan's period can end before meal_date. Bug,
+    2026-09-11: attaching meal_date to a plan whose period doesn't cover
+    it made plan_meal's own period check reject the insert, 500ing a tap
+    on the card get_needs_you_items had just offered. Attach the plan only
+    when its period actually covers meal_date; otherwise plan_meal still
+    saves the meal for tonight, just with no plan link — the same shape a
+    one-off chat request already gets.
     """
     plan = get_weekly_plan()
     weekly_plan_id = plan.get("weekly_plan_id")
+    if weekly_plan_id is not None and not (
+        plan["period_start_date"] <= meal_date <= plan["period_end_date"]
+    ):
+        weekly_plan_id = None
     result = _meal_plans.plan_meal(
         meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
         add_ingredients_to_grocery_list=add_ingredients_to_grocery_list,
