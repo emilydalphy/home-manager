@@ -13160,6 +13160,41 @@
     }
   }
 
+  // ---------- Keeping the bell honest ----------
+  // Step 0 of "Reach me before the moment" (Loop Board, 2026-09-11; the
+  // 2026-09-08 overnight finding). The feed used to be fetched once per
+  // page load and again only after a dismissal, so an installed PWA — which
+  // people leave open for days — showed a stale bell until someone
+  // reloaded. Three triggers now, all funnelled through one function:
+  //   - the tab or PWA comes back into view (visibilitychange -> visible),
+  //   - the window regains focus (the desktop rail case),
+  //   - a quiet interval while the page is open and visible.
+  // The interval is a courtesy, not the mechanism: DESIGN_SYSTEM §6's
+  // refresh policy says a return after being away refetches once, quietly,
+  // and that's what the two event triggers do. Never more often than
+  // NOTIF_REFRESH_MIN_GAP_MS, because focus and visibilitychange both fire
+  // on the same return and one fetch is enough. Everything here stays a
+  // no-op while SHOW_NOTIF_BELL is false — loadNotifications already
+  // returns before fetching, and the listeners cost nothing.
+  var NOTIF_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+  var NOTIF_REFRESH_MIN_GAP_MS = 15 * 1000;
+  var notifLastRefreshAt = 0;
+
+  function refreshNotificationsIfDue(force) {
+    if (!SHOW_NOTIF_BELL) return;
+    if (document.visibilityState === 'hidden') return;
+    var now = Date.now();
+    if (!force && now - notifLastRefreshAt < NOTIF_REFRESH_MIN_GAP_MS) return;
+    notifLastRefreshAt = now;
+    loadNotifications();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') refreshNotificationsIfDue(false);
+  });
+  window.addEventListener('focus', function () { refreshNotificationsIfDue(false); });
+  setInterval(function () { refreshNotificationsIfDue(false); }, NOTIF_REFRESH_INTERVAL_MS);
+
   // ---------- First-run onboarding check ----------
   // Runs at the top level (not inside a per-tab panel) so a first-time
   // visitor with zero household members is redirected to /onboarding
@@ -13176,7 +13211,10 @@
       console.warn('Onboarding status check failed:', err);
     }
     activateTab(currentTabKey(), false);
-    loadNotifications();
+    // The first read goes through the same gate as every later one, so a
+    // page opened in a background tab reads the feed when it is first
+    // looked at rather than on load and again on arrival.
+    refreshNotificationsIfDue(true);
   })();
 
   // ---------- Preferences: what Pomona knows about your household ----------
