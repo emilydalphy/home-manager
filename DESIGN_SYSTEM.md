@@ -203,7 +203,7 @@ Pomona learns from what a household does — this section is how it's allowed to
 - **Silent learning needs a visible flag and an undo, right at the point of use.** The app may act on a guess without asking first, but only where the result shows up on-screen as something the person can see and reverse in the moment — the grocery list's "usually here" / "not this time" is the reference pattern. Acting on a guess anywhere that isn't visible and reversible right there isn't silent learning, it's just guessing.
 - **Repetition earns an offer, not a promotion.** Once something has been observed enough times to look like a rule ("that's two Thursdays — should I just assume it?"), the app asks, once, whether to make it standing. It doesn't quietly upgrade a guess into a fact on its own.
 
-*This section and the voice-character addition just below it were folded in 2026-09-03 (both fully Emily-decided beforehand); per Governance below, the Brand Book canvas guide still needs the same two additions at its next design round.*
+*This section and the voice-character addition just below it were folded in 2026-09-03 (both fully Emily-decided beforehand); per Governance below, the Brand Book canvas guide still needs the same two additions — and §8's "Sounding human" rules of 2026-09-10 — at its next design round.*
 
 ---
 
@@ -228,6 +228,17 @@ Pomona learns from what a household does — this section is how it's allowed to
 - Never a dashboard/task-manager register: no "Action required," no "Task assigned," no clinical precision standing in for a person.
 - **"Passphrase," never "password."** (See `static/login.html`, `app/households.py` — already consistent; keep it that way in anything new.)
 - The app is **Pomona** — user-facing copy, marketing, onboarding. (Internal identifiers — env vars, DB names, file paths, code symbols — were deliberately left alone during the rebrand; don't rename those without a separate reason.)
+
+**Sounding human** (Emily, 2026-09-10, Tier 2 — confirmed after the welcome-flow copy was written to these and approved line by line; the welcome screens in `static/onboarding.html` are the reference for what they produce). Six rules that sit alongside everything above — they don't replace the four-word test, the every-word-earns-its-place rule, or calm-in-trouble:
+
+1. **Say it like you'd say it across the kitchen table.** "My whole job is to take the mental load off you" — not "Pomona plans meals, manages groceries and tracks inventory."
+2. **Talk about their life, not the app's features.** "The shopping," not "grocery list management." "The what-are-we-eating-tonight," not "meal decisions."
+3. **Contractions, always.** I'm, you'll, nothing's, let's, isn't. A line without one usually reads as a manual.
+4. **Short sentences. One breath each.** If you'd pause for air reading it aloud, split it.
+5. **Warm words over clever ones.** "Nice to meet you" beats a pun. Playful is in the rhythm, not in jokes.
+6. **Never a label that could sit on a dashboard.** No "Get started," no "Set up your profile," no "Features," no "Action required."
+
+Her own edits while these were being written are the calibration: she chose "Nice to meet you" over "Lovely to meet you too"; asked the purpose line to end on "so it isn't all on you" rather than "Hand it over"; asked a set of explanatory rows to be "a bit more natural in explaining." Warm and plain wins over warm and clever, every time.
 
 **Do / don't:**
 
