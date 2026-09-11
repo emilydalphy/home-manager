@@ -349,11 +349,18 @@ def _eating_prelude() -> str:
         + _extract_var("REVIEW_SLOT_NOUNS", SHELL_JS) + "\n"
         + _extract_var("RV_MINUS_SVG", SHELL_JS) + "\n"
         + _extract_var("RV_PLUS_SVG", SHELL_JS) + "\n"
-        + "var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '' };\n"
+        + "var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '',"
+        " troubleFor: null, picking: null };\n"
         + _extract("mealDisplayName", SHELL_JS) + "\n"
         + _extract("reviewSlotNoun", SHELL_JS) + "\n"
         + _extract("reviewEatingGroups", SHELL_JS) + "\n"
         + _extract("reviewCookLine", SHELL_JS) + "\n"
+        # New with the trouble line moving into the row it belongs to
+        # (2026-09-11): reviewDishRowHtml asks it whether this dish is the
+        # one a refusal was about.
+        + _extract("reviewTroubleIsFor", SHELL_JS) + "\n"
+        + _extract("reviewAddDayOptions", SHELL_JS) + "\n"
+        + _extract("reviewAddPickerHtml", SHELL_JS) + "\n"
         + _extract("reviewDishRowHtml", SHELL_JS) + "\n"
         + _extract("reviewEatingHtml", SHELL_JS) + "\n"
     )
@@ -363,7 +370,8 @@ def _days_prelude() -> str:
     return (
         _ESCAPE + _WEEK_SLOTS + _SLOT_LABELS + _DAYNAME_STUB
         + _extract_var("RV_CHEVRON_SVG", SHELL_JS) + "\n"
-        + "var reviewState = { view: 'days', openDays: {}, busy: null, trouble: '' };\n"
+        + "var reviewState = { view: 'days', openDays: {}, busy: null, trouble: '',"
+        " troubleFor: null, picking: null };\n"
         + _extract("mealDisplayName", SHELL_JS) + "\n"
         + _extract("awayLineFor", SHELL_JS) + "\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
@@ -376,7 +384,12 @@ def _days_prelude() -> str:
         + _extract("reviewDayFaceLine", SHELL_JS) + "\n"
         + _extract("reviewDayNoteHtml", SHELL_JS) + "\n"
         + _extract("reviewSlotLineHtml", SHELL_JS) + "\n"
-        + _extract("reviewDaySlotKeys", SHELL_JS) + "\n"
+        # Was reviewDaySlotKeys, and it is the same function: it moved up
+        # beside daySlotEntry and lost the review- prefix when the Approve
+        # button's own open-slot count started asking it what a day is
+        # actually made of (Emily, 2026-09-10 — an open snack is something
+        # left to decide). Nothing about what it returns changed.
+        + _extract("daySlotKeys", SHELL_JS) + "\n"
         + _extract("reviewDayTitle", SHELL_JS) + "\n"
         + _extract("reviewDayCardHtml", SHELL_JS) + "\n"
         + _extract("reviewDaysHtml", SHELL_JS) + "\n"

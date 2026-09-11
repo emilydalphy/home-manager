@@ -4643,9 +4643,14 @@
   // ---------- Snacks render too (2026-09-08, "snack-swap-applies") ----------
   // day.snacks is a LIST (a day normally has two), not a fourth WEEK_SLOTS
   // entry — WEEK_SLOTS stays exactly the three real meals on purpose, so
-  // weekCountsLabel and every open-slot count below (which read WEEK_SLOTS)
-  // keep never counting a snack as a cook or an open slot to fill. Snack
-  // entries get their own slot KEYS instead: 'snack' for day.snacks[0] —
+  // weekCountsLabel keeps never counting a snack as a cook, and the 21-slot
+  // guarantee stays a guarantee about the three meals it was written for.
+  // (It used to say "and every open-slot count below" too. That is no
+  // longer true and the change was deliberate: the Approve button counts
+  // all four now — see countOpenSlots — because an open snack is something
+  // left to decide and the button is a promise that nothing is. What did
+  // NOT change is WEEK_SLOTS itself, which four other readers depend on.)
+  // Snack entries get their own slot KEYS instead: 'snack' for day.snacks[0] —
   // matching day.snack, the shorthand the backend already hands back, and
   // the bare 'snack' the chat's action card sends (app/main.py ChatAction,
   // swap_meal_in_plan) — then 'snack2', 'snack3', ... for the rest. That
@@ -4666,6 +4671,17 @@
     var m = /^snack(\d+)$/.exec(slot);
     if (m) return (day.snacks && day.snacks[Number(m[1]) - 1]) || null;
     return day[slot];
+  }
+  // Every slot KEY a day actually holds, in the order it is eaten: the
+  // three real meals, then one key per snack the day has. WEEK_SLOTS
+  // answers "which slots does the app guarantee"; this answers "which
+  // slots is this day made of", and the two are different questions —
+  // asking the first one where the second was meant is how an open snack
+  // stayed invisible to the Approve button.
+  function daySlotKeys(day) {
+    return WEEK_SLOTS.concat(((day && day.snacks) || []).map(function (_, i) {
+      return snackSlotKey(i);
+    }));
   }
   // The word a sentence should use for this slot — every real slot by its
   // own name, any snack key collapsed to the plain word "snack" (nobody
@@ -5287,8 +5303,27 @@
   // second view are expanded, keyed by date so a re-render keeps them open.
   // busy/trouble: the stepper's one in-flight call, exactly one at a time
   // for the same reason swapState is (see it) — a person is tapping one
-  // stepper, not three.
-  var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '' };
+  // stepper, not three. picking: which dish row (by its index into
+  // reviewState.dishes) has its day picker open, or null.
+  // troubleFor: WHICH dish row the trouble line belongs under, as
+  // { slot, name } — see reviewTroubleIsFor for why it is not an index.
+  // It used to render once at the foot of the whole body, which on a real
+  // week puts it below every group — measured at 390px, 2114px down an
+  // 844px screen. So a refused tap moved nothing, said nothing where the
+  // finger was, and left its explanation 1270px away, which reads as a
+  // control that does nothing at all. A sentence has to arrive where the
+  // tap was.
+  //
+  // KNOWN AND DELIBERATELY LEFT, both of them identical before any of this
+  // and neither risking data: the sentence outlives its own tap — it
+  // survives a switch to "Which days", renders nowhere there, and comes
+  // back on the way in — and a refusal does not re-read the week, so a
+  // count that has gone stale underneath stays stale until the next write.
+  // Both are questions about how long an answer should live on this
+  // screen, which is a decision rather than a bug fix.
+  var reviewState = {
+    view: 'eating', openDays: {}, busy: null, trouble: '', troubleFor: null, picking: null,
+  };
 
   var RV_MINUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
     'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">' +
@@ -5351,7 +5386,10 @@
         // distinction — the server refuses a chain source outright (see
         // tools.drop_dish_from_day), which is where the check belongs,
         // since only it can see the chain.
-        dish.days.push({ date: day.date, entryId: entry.entry_id });
+        // `cooked` rides along because the stepper going DOWN always takes
+        // the LAST of these, and a day somebody has already cooked is not
+        // one to take away — see reviewDishRowHtml.
+        dish.days.push({ date: day.date, entryId: entry.entry_id, cooked: !!entry.cooked });
         if (entry.source !== 'leftovers' && entry.source !== 'takeout') dish.cooks++;
       });
     });
@@ -5370,16 +5408,120 @@
     return dish.cooks === 1 ? 'cooked once' : 'cooked ' + dish.cooks + ' times';
   }
 
-  function reviewDishRowHtml(dish, idx) {
+  // Which days one more of this dish could go on, and what each of them is
+  // currently holding.
+  //
+  // Going up used to open the ask sheet, because nothing had decided which
+  // day an extra one should land on. Emily's answer (2026-09-10) is that
+  // nothing should: every candidate day already holds something, so "+"
+  // always means REPLACING something, and a rule that picks the victim
+  // silently is exactly the failure this app keeps getting caught by. So
+  // the strip shows what each day is holding and the household says which
+  // one they are willing to spend.
+  //
+  // Four exclusions, and the middle two are not niceties. A day the dish
+  // ALREADY covers is not offered (the stepper's number is the count of
+  // those days — offering one back would be a tap that changes nothing).
+  // A `planned_empty` slot is NEVER offered: nobody is home, or the
+  // household asked for none of that meal, and three separate bugs in this
+  // app have come from code reading that state as a free plate. A meal
+  // already COOKED is not offered either: the tick is a record, the
+  // inventory was depleted against it, and its ingredients are on a list
+  // that has been shopped — and today's dinner, ticked off at seven, is
+  // not a past day, so isPast does not cover this and never did. And a day
+  // genuinely behind us, or outside the plan's own period, is not a day to
+  // plan into.
+  //
+  // Snacks are offered one ENTRY at a time rather than one day at a time,
+  // because a day holds two of them by default and they are two different
+  // decisions — displacing the apple is not displacing the yogurt beside
+  // it. That is also why the write is by entry id all the way down.
+  function reviewAddDayOptions(days, dish) {
+    var covered = {};
+    (dish.days || []).forEach(function (d) { covered[d.date] = true; });
+    var out = [];
+    (days || []).forEach(function (day) {
+      if (!day || day.before_plan_start || day.isPast || covered[day.date]) return;
+      var keys = dish.slot === 'snack'
+        ? (day.snacks || []).map(function (_, i) { return snackSlotKey(i); })
+        : [dish.slot];
+      keys.forEach(function (key) {
+        var e = daySlotEntry(day, key);
+        if (!e || (e.state !== 'planned' && e.state !== 'open')) return;
+        if (e.cooked) return;
+        out.push({
+          date: day.date,
+          entryId: e.entry_id,
+          open: e.state === 'open',
+          // What is on it, in the words the rest of this screen uses for
+          // it — a made-ahead night reads as the dish, not as the whole
+          // "Made ahead — Sunday's Egg White Bites" sentence.
+          holding: e.state === 'open' ? 'Your call' : mealDisplayName(e),
+          // Only when the day has more than one of them to tell apart.
+          eyebrow: (dish.slot === 'snack' && (day.snacks || []).length > 1)
+            ? slotEyebrowLabel(day, key) : ''
+        });
+      });
+    });
+    return out;
+  }
+
+  function reviewAddPickerHtml(dish, idx, days) {
+    var options = reviewAddDayOptions(days, dish);
+    if (!options.length) {
+      // Every other day of this meal is already this dish, out, or gone.
+      // Said plainly rather than opened as an empty strip.
+      return '<div class="rv-pick"><p class="rv-pick-ask">' +
+        escapeHtml('There’s no other ' + reviewSlotNoun(dish.slot, 1) +
+          ' this week to put it on.') + '</p>' +
+        '<button type="button" class="rv-pick-cancel" data-rv-pick-cancel="1">' +
+          'Never mind</button></div>';
+    }
+    return '<div class="rv-pick">' +
+      '<p class="rv-pick-ask">' +
+        escapeHtml('Which ' + reviewSlotNoun(dish.slot, 1) + '? Each one already has ' +
+          'something, and ' + dish.name + ' takes its place.') + '</p>' +
+      '<div class="rv-pick-days">' +
+        options.map(function (o, i) {
+          return '<button type="button" class="rv-pick-day" data-rv-pick="' + idx + '" ' +
+              'data-rv-pick-at="' + i + '">' +
+            '<span class="rv-pick-when">' +
+              escapeHtml(dayName(o.date, { weekday: 'long' })) +
+              (o.eyebrow ? ' · ' + escapeHtml(o.eyebrow) : '') +
+            '</span>' +
+            '<span class="rv-pick-holding' + (o.open ? ' is-quiet' : '') + '">' +
+              escapeHtml(o.holding) + '</span>' +
+          '</button>';
+        }).join('') +
+      '</div>' +
+      '<button type="button" class="rv-pick-cancel" data-rv-pick-cancel="1">' +
+        'Never mind</button>' +
+    '</div>';
+  }
+
+  function reviewDishRowHtml(dish, idx, days) {
     var n = dish.days.length;
     var cookLine = reviewCookLine(dish);
     var busy = reviewState.busy === idx;
+    var picking = reviewState.picking === idx;
     var one = reviewSlotNoun(dish.slot, 1);
     // At one day there is nothing left to take away — a dish you don't want
     // at all is a change, not a smaller number, and Change is the button
     // right beside it.
-    var canDrop = n > 1 && !busy;
-    return '<div class="rv-dish">' +
+    //
+    // ...and not when the day it would take is one somebody has already
+    // COOKED. "−" always takes the LAST day the dish covers (see
+    // runDropDishDay), so a dish on two nights whose later one has been
+    // ticked had a live control that deleted a cooked record, left the
+    // inventory depleted for a meal off the plan, and took an eaten meal's
+    // ingredients off the list. The same harm the "+" was fixed for, in
+    // the sibling half of the same stepper. Deliberately NOT "drop the
+    // last UNCOOKED day instead": that would quietly take a different day
+    // from the one the count implies, which is this screen's own recurring
+    // bug wearing a different hat. The write refuses it in words too.
+    var lastDay = dish.days[n - 1];
+    var canDrop = n > 1 && !busy && !(lastDay && lastDay.cooked);
+    return '<div class="rv-dish' + (picking ? ' is-picking' : '') + '">' +
       '<div class="rv-dish-said">' +
         '<span class="rv-dish-name">' + escapeHtml(dish.name) + '</span>' +
         (cookLine ? '<span class="rv-dish-cooks">' + escapeHtml(cookLine) + '</span>' : '') +
@@ -5392,20 +5534,44 @@
             RV_MINUS_SVG + '</button>' +
           '<span class="rv-step-count">' +
             escapeHtml(n + ' ' + reviewSlotNoun(dish.slot, n)) + '</span>' +
-          // Going UP is not arithmetic: it needs a day to land on, and the
-          // only days available are ones already holding another dish or
-          // deliberately empty. Picking one on the household's behalf would
-          // be inventing a placement rule nobody has decided, so this hands
-          // the question straight to the one place that can ask it.
+          // Going UP is not arithmetic: it needs a day to land on, and
+          // every candidate is already holding something. Nothing here
+          // picks one — it opens the strip below, which shows what each
+          // day is holding, and the household says which one to spend.
           '<button type="button" class="rv-step-btn" data-rv-more="' + idx + '"' +
             (busy ? ' disabled' : '') +
+            ' aria-expanded="' + (picking ? 'true' : 'false') + '"' +
             ' aria-label="Another ' + escapeHtml(one + ' of ' + dish.name) +
             ' — I’ll ask which day">' + RV_PLUS_SVG + '</button>' +
         '</span>' +
         '<button type="button" class="rv-change" data-rv-change="' + idx + '">' +
           (n > 1 ? 'Change one' : 'Change') + '</button>' +
       '</div>' +
+      // Under the stepper that was tapped, not at the foot of the page.
+      (reviewTroubleIsFor(dish)
+        ? '<div class="rv-trouble">' + escapeHtml(reviewState.trouble) + '</div>'
+        : '') +
+      (picking ? reviewAddPickerHtml(dish, idx, days) : '') +
     '</div>';
+  }
+
+  // Whether the trouble line belongs to THIS dish — by the meal type and
+  // the name it reads as, never by its position in the list.
+  //
+  // It was an index, and an index into an array every render rebuilds. A
+  // chat turn tagged tab:'week' reloads the week under the screen, and the
+  // sentence is only ever cleared by another tap — so a week that changed
+  // underneath moved the sentence onto whatever dish now sat at that
+  // position. The drop refusals NAME their dish out loud ("Bean Chili on
+  // Friday also feeds Saturday's lunch"), which makes that one more
+  // instance of the class this branch has now closed three times: a thing
+  // labelled with one dish reporting about another. A name is unique
+  // within its group (reviewEatingGroups keys them that way), so meal type
+  // plus name is a real key and cannot collide.
+  function reviewTroubleIsFor(dish) {
+    var at = reviewState.troubleFor;
+    return !!(reviewState.trouble && at && dish &&
+      at.slot === dish.slot && at.name === dish.name);
   }
 
   // Flattened as it renders, so every stepper carries a plain index into
@@ -5416,23 +5582,29 @@
     if (!groups.length) {
       return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
     }
+    // A sentence whose dish is no longer on the week is DROPPED, not moved
+    // to the foot: it is about something that has left the screen, and the
+    // only honest places for it are its own row or nowhere. Cleared before
+    // the rows are drawn so nothing renders it on the way past.
+    if (reviewState.trouble && !groups.some(function (g) {
+      return g.dishes.some(reviewTroubleIsFor);
+    })) {
+      reviewState.trouble = '';
+      reviewState.troubleFor = null;
+    }
     var html = groups.map(function (group) {
       return '<div class="rv-group">' +
         '<div class="rv-group-label">' + escapeHtml(group.label) + '</div>' +
         '<div class="shell-card rv-group-card">' +
           group.dishes.map(function (dish) {
             flat.push(dish);
-            return reviewDishRowHtml(dish, flat.length - 1);
+            return reviewDishRowHtml(dish, flat.length - 1, days);
           }).join('') +
         '</div>' +
       '</div>';
     }).join('');
     reviewState.dishes = flat;
-    return '<div class="rv-body">' + html +
-      (reviewState.trouble
-        ? '<div class="rv-trouble">' + escapeHtml(reviewState.trouble) + '</div>'
-        : '') +
-    '</div>';
+    return '<div class="rv-body">' + html + '</div>';
   }
 
   // A day with nothing to cook on it — every one of its three real meals is
@@ -5462,7 +5634,7 @@
   // empty slot is still never offered as a decision: it is a line, and the
   // line says what it is.
   function reviewDayHasMore(day) {
-    return reviewDaySlotKeys(day).some(function (slot) {
+    return daySlotKeys(day).some(function (slot) {
       var e = daySlotEntry(day, slot);
       return !!e && (e.state === 'planned' || e.state === 'open');
     });
@@ -5490,11 +5662,6 @@
       '<span class="rv-slot-label">' + escapeHtml(slotEyebrowLabel(day, slot)) + '</span>' +
       '<span class="rv-slot-name">' + escapeHtml(name) + '</span>' +
     '</span>';
-  }
-
-  // Every slot the day actually has, in the order it is eaten.
-  function reviewDaySlotKeys(day) {
-    return WEEK_SLOTS.concat((day.snacks || []).map(function (_, i) { return snackSlotKey(i); }));
   }
 
   function reviewDayTitle(day) {
@@ -5568,7 +5735,7 @@
       '</button>' +
       (open
         ? '<div class="rv-day-slots">' +
-            reviewDaySlotKeys(day).map(function (slot) {
+            daySlotKeys(day).map(function (slot) {
               return reviewSlotLineHtml(day, slot);
             }).join('') +
             // Through to the Day step, which is where a slot is actually
@@ -5666,7 +5833,12 @@
     // 'refused' with the sentence to show.
     var target = dish.days[dish.days.length - 1];
     reviewState.busy = idx;
+    // Every row's day picker is about the week as it stands, and this
+    // changes it — so a strip left open would be offering days off a count
+    // that has moved. Closed here rather than left to be re-derived.
+    reviewState.picking = null;
     reviewState.trouble = '';
+    reviewState.troubleFor = null;
     renderMealsStep(panel);
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/drop-dish-day', {
@@ -5683,6 +5855,7 @@
       // knows which night depends on it — and nothing was written.
       if (out && out.status === 'refused') {
         reviewState.trouble = out.message || SWAP_TROUBLE;
+        reviewState.troubleFor = { slot: dish.slot, name: dish.name };
         renderMealsStep(panel);
         return;
       }
@@ -5710,7 +5883,112 @@
       console.warn('Dropping a day failed:', err);
       reviewState.busy = null;
       // Calm and plain, and it says what is true of the plan (§8).
-      reviewState.trouble = 'That didn’t work just now — nothing changed.';
+      reviewState.trouble = SWAP_TROUBLE;
+      reviewState.troubleFor = { slot: dish.slot, name: dish.name };
+      renderMealsStep(panel);
+    }
+  }
+
+  // What the tap changed, said in the order it matters: the day, the dish,
+  // what it replaced, and — the clause this originally missed — any night
+  // that was eating off what just went.
+  //
+  // The stepper going DOWN refuses to break a chain outright, and says so
+  // ("...also feeds Friday's dinner — change that first"). This path
+  // allows it, because it REPLACES rather than deletes and
+  // swap_meal_in_plan re-buys for every night that was eating off the
+  // displaced dish, so nothing is left stranded. But one screen must not
+  // refuse the mirror of what it silently allows, and silence was the
+  // whole of the difference: Friday stopped being a reheat and became a
+  // cook of its own with nobody told. It is told now.
+  function addDishToastText(out) {
+    var day = dayName(out.date, { weekday: 'long' });
+    var line = day + '’s ' + slotWord(out.slot) + ' is ' + out.dish + ' now' +
+      (out.replaced ? ', in place of ' + out.replaced + '.' : '.');
+    var freed = (out.unchained || []).map(function (t) {
+      return dayName(t.date, { weekday: 'long' });
+    });
+    if (!freed.length) return line;
+    var list = freed.length === 1
+      ? freed[0]
+      : freed.slice(0, -1).join(', ') + ' and ' + freed[freed.length - 1];
+    var one = freed.length === 1;
+    // "on its own now", not "a cook of its own now". A freed night keeps
+    // whatever it was called, and a night the planner had written as
+    // "Leftover bulgogi" still READS as a reheat on the row underneath
+    // this toast — measured in a browser, which is where the first wording
+    // was caught contradicting the screen it was printed over. What is
+    // certainly true is the chain: nothing is feeding that night any more.
+    return line + ' ' + list + ' ' + (one ? 'was' : 'were') +
+      ' eating off it, so ' + (one ? 'that night is on its own' : 'those nights are on their own') +
+      ' now.';
+  }
+
+  // One more day of a dish, on the day the household picked. Same shape as
+  // runDropDishDay above and for the same reasons — one small POST, no
+  // model call and no chat turn, and the backend hands back the changed
+  // day in get_week_menu's own shape so the week this screen is holding
+  // updates by splicing one day into it.
+  //
+  // `at` is a position in the options this render drew, not a day and not
+  // an entry id in the markup: the options are recomputed from the same
+  // days the row was drawn from, so a stale index can only ever miss (and
+  // returns), never land on a different day than the one that was tapped.
+  async function runAddDishDay(panel, idx, at) {
+    var dish = (reviewState.dishes || [])[idx];
+    var data = weekState.data;
+    if (!dish || !data || !data.week_start_date) return;
+    if (reviewState.busy !== null) return;
+    var option = reviewAddDayOptions(weekState.days, dish)[at];
+    var from = dish.days[0];
+    if (!option || !from) return;
+    reviewState.busy = idx;
+    reviewState.trouble = '';
+    reviewState.troubleFor = null;
+    renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/add-dish-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: from.entryId, target_entry_id: option.entryId })
+      });
+      if (!res.ok) throw new Error('add failed');
+      var out = await res.json();
+      reviewState.busy = null;
+      // A 200 that says no, in the same shape the stepper going down
+      // already answers one: a day nobody is home, a meal somebody has
+      // already cooked. The sentence is the server's, because it is the
+      // one that knows which, and nothing was written. ONLY sentences
+      // written for a person arrive this way — an id or a raw exception is
+      // a 404 and takes the plain line below, since an app that did
+      // exactly the right thing must not report itself broken.
+      if (out && out.status === 'refused') {
+        reviewState.trouble = out.message || SWAP_TROUBLE;
+        reviewState.troubleFor = { slot: dish.slot, name: dish.name };
+        renderMealsStep(panel);
+        return;
+      }
+      reviewState.picking = null;
+      if (out && out.day) spliceSwappedDay(out.day);
+      renderMealsStep(panel);
+      // The splice updates weekState.DAYS; the badge, the subtitle and the
+      // Approve button's own count all read weekState.DATA, which a splice
+      // never touches — and this tap can settle an open slot, which is
+      // exactly the count that button is a promise about. Same one line
+      // runSwapInPlace and the stepper going down both carry.
+      await loadWeekMenu(panel);
+      // Name the day and what it cost. An open slot cost nothing — a
+      // question was answered — so the sentence doesn't invent a loss.
+      showToast(addDishToastText(out));
+      // An approved week's shopping list just changed underneath, so
+      // anything showing it is stale — the same courtesy the stepper going
+      // down already pays.
+      if (data.status === 'approved') refreshGrocerySurfaces();
+    } catch (err) {
+      console.warn('Adding a day failed:', err);
+      reviewState.busy = null;
+      reviewState.trouble = SWAP_TROUBLE;
+      reviewState.troubleFor = { slot: dish.slot, name: dish.name };
       renderMealsStep(panel);
     }
   }
@@ -6350,6 +6628,9 @@
     steps.querySelectorAll('[data-rv-view]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         reviewState.view = btn.getAttribute('data-rv-view');
+        // A half-made decision doesn't travel between views: the strip is
+        // about rows that aren't on the other one.
+        reviewState.picking = null;
         renderMealsStep(panel);
       });
     });
@@ -6373,11 +6654,27 @@
     });
     steps.querySelectorAll('[data-rv-more]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var dish = (reviewState.dishes || [])[Number(btn.getAttribute('data-rv-more'))];
-        if (!dish) return;
+        var idx = Number(btn.getAttribute('data-rv-more'));
+        if (!(reviewState.dishes || [])[idx]) return;
         // The one thing this screen cannot answer on its own is WHICH day
-        // the extra one goes on, so it asks rather than guesses.
-        openAskSheet('Another ' + reviewSlotNoun(dish.slot, 1) + ' of ' + dish.name + ' — ');
+        // the extra one goes on, so it asks rather than guesses — and the
+        // asking is now the strip under the row, which shows what each day
+        // is holding. One open at a time: two pickers open at once is two
+        // half-made decisions on one screen.
+        reviewState.picking = reviewState.picking === idx ? null : idx;
+        renderMealsStep(panel);
+      });
+    });
+    steps.querySelectorAll('[data-rv-pick]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        runAddDishDay(panel, Number(btn.getAttribute('data-rv-pick')),
+          Number(btn.getAttribute('data-rv-pick-at')));
+      });
+    });
+    steps.querySelectorAll('[data-rv-pick-cancel]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        reviewState.picking = null;
+        renderMealsStep(panel);
       });
     });
     steps.querySelectorAll('[data-rv-change]').forEach(function (btn) {
@@ -7292,10 +7589,26 @@
     }).join(' · ');
   }
 
+  // All FOUR meal types, not the three of WEEK_SLOTS (Emily, 2026-09-10).
+  // This button is a promise that nothing is left to decide, and an open
+  // snack is something left to decide — so counting three slots out of four
+  // made it a promise the screen beside it already contradicted: "Which
+  // days" said `SNACK 2 · Your call` while the button read "Approve and
+  // build my shopping list". One tap away since the Review stepper started
+  // working on snacks.
+  //
+  // WEEK_SLOTS itself is untouched, deliberately: it stays the three real
+  // meals so a snack is never counted as a cook or against the 21-slot
+  // guarantee, and four other readers depend on that. The widening belongs
+  // to this count, so it asks daySlotKeys what the day is actually made of
+  // instead of asking WEEK_SLOTS a question WEEK_SLOTS does not answer.
   function countOpenSlots(data) {
     var n = 0;
     (data.days || []).forEach(function (day) {
-      WEEK_SLOTS.forEach(function (s) { if (day[s] && day[s].state === 'open') n++; });
+      daySlotKeys(day).forEach(function (s) {
+        var e = daySlotEntry(day, s);
+        if (e && e.state === 'open') n++;
+      });
     });
     return n;
   }
@@ -7304,7 +7617,10 @@
     if (openCount > 1) return 'Approve — leave ' + openCount + ' slots open';
     var openDay = null;
     (data.days || []).forEach(function (day) {
-      WEEK_SLOTS.forEach(function (s) { if (day[s] && day[s].state === 'open' && !openDay) openDay = day.date; });
+      daySlotKeys(day).forEach(function (s) {
+        var e = daySlotEntry(day, s);
+        if (e && e.state === 'open' && !openDay) openDay = day.date;
+      });
     });
     return 'Approve — leave ' + dayName(openDay, { weekday: 'long' }) + ' open';
   }
@@ -7962,7 +8278,7 @@
     pendingFocusTarget: false,
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     ticks: null,                // the ticked ingredients and steps for the plan named by ticksFor — see cookReadTicks
-    serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count, kept for the page's life so a load or a tab switch can't quietly undo it (see cookStepServings)
+    serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count. Stored beside the ticks and read back with them (see cookReadTicks), so a load, a tab switch and a reload all leave it standing
     servesSeq: 0,               // sequence token, so a superseded /scale reply loses instead of racing
     ticksFor: null,             // which weekly_plan_id `ticks` was read for
     cookAheadPicks: {},         // source entry_id -> { covered entry_id: true } — the cook-ahead chips as they stand between taps; seeded from the server's own `selected` and dropped again on every load or write (see cookAheadPicks)
@@ -8010,6 +8326,20 @@
   // other's steps. **Open for Emily:** if a cook should follow you from
   // the phone to the tablet mid-recipe, that is a real column and a write
   // per tap — worth asking for, not worth assuming.
+  //
+  // THE SERVING COUNT LIVES HERE TOO (Emily, 2026-09-10). It used to be
+  // held for the page's life only, which meant a reload left a half-ticked
+  // ingredient list at amounts nobody chose: you ticked "4 chicken thighs",
+  // came back, and the row said 2 and was still ticked. That is not an
+  // inconsistency, it is a screen that is wrong — and the reason it is
+  // wrong is that the ticks and the count describe the same cooking
+  // session, so they have to end at the same moment. One record, one key,
+  // one expiry: a new week is a new plan id and both go together.
+  //
+  // Still per device and still not sent to the server. The serving count is
+  // one cook overriding tonight at the counter, not a change to who lives
+  // in the house, and nothing about surviving a reload makes it the
+  // household's answer instead of this cook's.
   var COOK_TICKS_PREFIX = 'pomona.cookTicks.p';
 
   // A meal's identity in the tick store. Never the index into
@@ -8050,15 +8380,47 @@
       steps: (parsed.steps && typeof parsed.steps === 'object') ? parsed.steps : {},
       ings: (parsed.ings && typeof parsed.ings === 'object') ? parsed.ings : {}
     };
+    // The serving overrides ride in the same record and are hydrated with
+    // it — exactly once per plan, since this function returns early once
+    // ticksFor matches. Hydrating on every call would put the stored
+    // number back over a tap that had not been written yet.
+    cookState.serves = cookReadServes(parsed.serves);
     cookState.ticksFor = planId;
     return cookState.ticks;
+  }
+
+  // Only entries that still describe a rescale get through. A stored blob
+  // is a week old at most, but it is read back into the amounts a person
+  // cooks from, so a half-written or hand-edited one is dropped rather
+  // than rendered: a servings count with no ingredient list behind it
+  // would show a number over amounts that never moved.
+  function cookReadServes(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (key) {
+      var o = raw[key];
+      if (!o || typeof o !== 'object') return;
+      if (!(parseInt(o.servings, 10) > 0) || !Array.isArray(o.ingredients)) return;
+      out[key] = {
+        servings: parseInt(o.servings, 10),
+        ingredients: o.ingredients,
+        unscaled_items: Array.isArray(o.unscaled_items) ? o.unscaled_items : [],
+        was_batch: !!o.was_batch,
+        planned_for: parseInt(o.planned_for, 10) || null
+      };
+    });
+    return out;
   }
 
   function cookWriteTicks() {
     var planId = cookTickPlanId();
     if (planId === null || !cookState.ticks) return;
     try {
-      window.localStorage.setItem(COOK_TICKS_PREFIX + planId, JSON.stringify(cookState.ticks));
+      window.localStorage.setItem(COOK_TICKS_PREFIX + planId, JSON.stringify({
+        steps: cookState.ticks.steps,
+        ings: cookState.ticks.ings,
+        serves: cookState.serves
+      }));
       // Every other plan's ticks belong to a week that is over. Nobody is
       // coming back for them, and a store that only ever grows is a store
       // that eventually throws on a quota nobody was watching.
@@ -10170,8 +10532,21 @@
   }
 
   // Re-apply the cook's choice over whatever the server just handed back.
-  // Runs on every render, which is what makes it survive a refetch.
+  // Runs on every render, which is what makes it survive a refetch — and,
+  // since the choice is stored beside the ticks, a reload too. cookReadTicks
+  // is what hydrates it, so it is called here rather than assumed: this
+  // runs before anything is drawn, which on a fresh page is before any tick
+  // has been read.
+  //
+  // The stored amounts are ABSOLUTE — the scaled list /api/recipes/scale
+  // handed back for the count the cook chose — so re-applying them replaces
+  // whatever the server sent rather than multiplying it. That is what keeps
+  // it from composing twice with the batch and attendance scaling
+  // get_cooker_view does: those shaped the list this one replaces, and the
+  // one thing that does follow the cook is the batch card's "for N" chip
+  // (was_batch), which IS the number being cooked.
   function cookApplyServesOverride(meals) {
+    cookReadTicks();
     (meals || []).forEach(function (m) {
       var o = cookState.serves[cookMealKey(m)];
       if (!o) return;
@@ -10216,6 +10591,11 @@
       // requests are in flight after a fast +/- and the wrong survivor is
       // how the screen ends up on a number nobody chose.
       if (meal.serves_token !== token) return;
+      // Hydrate BEFORE writing, never after: cookReadTicks reads the whole
+      // record back when it is asked for a plan it hasn't seen, so a read
+      // on the far side of this assignment would put the stored number
+      // back over the tap that just happened.
+      cookReadTicks();
       cookState.serves[cookMealKey(meal)] = {
         servings: next,
         ingredients: data.scaled_ingredients || [],
@@ -10228,6 +10608,10 @@
           : (parseInt(meal.servings, 10) || parseInt(meal.default_servings, 10) || null)
       };
       meal.serves_target = null;
+      // Stored with the ticks, in the same record and with the same
+      // lifetime: the two describe one cooking session, and a reload that
+      // brought back half-ticked amounts nobody chose is what this fixes.
+      cookWriteTicks();
       cookApplyServesOverride([meal]);
       renderCook();
     } catch (err) {

@@ -314,6 +314,328 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — The trouble line was keyed by POSITION, and two readable
+  sentences had been swallowed. Branch `overnight/review-plus-and-counts`,
+  third and final review round; everything else came back safe to merge.**
+  - **`reviewState.troubleFor` was an index into a list every render
+    rebuilds.** A chat turn tagged `tab: 'week'` reloads the week under
+    this screen, and the sentence is only ever cleared by another tap — so
+    a week that changed underneath moved the sentence onto whatever dish
+    now sat at that position. The drop refusals NAME their dish out loud
+    ("Bean Chili on Friday also feeds Saturday's lunch"), which makes this
+    one more instance of the class this branch has now closed FOUR times:
+    a thing labelled with one dish reporting about another. Keyed on
+    **meal type plus the name the row reads as** now
+    (`reviewTroubleIsFor`), which is unique within a group by construction
+    since `reviewEatingGroups` keys dishes that way; and a sentence whose
+    dish has left the week is DROPPED rather than moved to the foot of the
+    body — it is about something no longer on screen, so its own row or
+    nowhere are the only honest places for it. The `.rv-trouble-foot`
+    fallback added one round earlier went with it.
+  - **`SlotRefused` had been drawn one notch too tight.** "That day
+    already has it." and "That dish is already on that day." are sentences
+    written for a reader and were taking the 404 path, which the screen
+    prints as the generic "that didn't work". Stale-screen-only, so the
+    impact is small — but by that type's own stated rule they belong in
+    it, and a rule that holds only for the cases somebody remembered is
+    not a rule.
+  - **Two things found and deliberately NOT fixed, written down so the
+    next session doesn't rediscover them as new.** The sentence outlives
+    its own tap: it survives a switch to "Which days", renders nowhere
+    there, and comes back on the way in. And a refusal does not re-read
+    the week, so a count that went stale underneath stays stale until the
+    next write. Both are identical to the behaviour before any of this,
+    neither risks data, and both are really one question — how long an
+    answer should live on this screen — which is a decision rather than a
+    bug fix.
+  - **`drop_dish_from_day` IS NOT ATOMIC. Pre-existing on `main`
+    (`99db198`), deliberately left, filed as its own card.** Force a
+    `RuntimeError` in `plan_slot_open` after the DELETE and the dinner row
+    is gone with **no `open` row replacing it** and the grocery line
+    already reversed, while the route answers 500 so the screen says
+    "nothing changed" — false, and a genuinely ABSENT slot, the exact
+    state that function's own docstring says must never exist. It wants
+    the connection-threading treatment `atomic-period-takeover` used (see
+    its entry below), which is more than a review pass should smuggle in.
+    Recorded here because this is where the code is.
+  - 5 more tests (57 -> 60 there, and two rewritten); 2091 -> 2094. Every
+    one of them red on `90bb207`. One existing file updated honestly with
+    a note saying what moved (`test_review_two_views`'s preludes, for the
+    helper `reviewDishRowHtml` now calls). **Verified in a real Chromium on
+    port 8986**, driving a real chat-turn refresh with a refusal on screen.
+
+- **2026-09-11 — Three more on the same stepper, and one of them destroyed
+  data. Branch `overnight/review-plus-and-counts`, second review round.**
+  The round before it confirmed the "+" blocker genuinely fixed — the chain
+  built six ways through `repair_leftover_chains` on approved weeks, the
+  planted dish matching the row's label every time — and then found these.
+  - **THE "−" IN THE SAME ROW STILL DELETED A COOKED RECORD.** The "+" grew
+    a `cooked_status` check and its sibling had none, which is the sharper
+    version of the lesson this branch keeps re-learning: a rule fixed on
+    one half of a control is not fixed. Reachable whenever a dish covers
+    two nights and the LATER one has been ticked, because "−" always takes
+    the last day the dish covers — the tick gone, the inventory left
+    depleted for a meal now off the plan, an eaten meal's ingredients back
+    off the shopping list. `drop_dish_from_day` refuses it now in the same
+    `refused` shape it already used for a chain source, and the control
+    goes inert. **Deliberately NOT "take the last UNCOOKED day instead"**:
+    that quietly takes a different day from the one the count implies,
+    which is this screen's own recurring bug wearing a different hat.
+    **And CLAUDE.md named "Change one" as the remaining hole of this kind
+    and did not name this one** — corrected below; "Change one" really is
+    pre-existing, and this was built by this branch's predecessor.
+  - **The toast named the displaced night by its stored text.** `dish` was
+    resolved through the chain by the round before and `replaced` was not,
+    so the picker offered "Saturday · Bean Chili" and the toast reported
+    "in place of Leftover chili". Nothing was written wrongly and the right
+    night was displaced — but it is the same "labelled with one dish,
+    reported as another" defect, left half-closed by the fix for it. One
+    lookup, the one `dish` already makes. `drop_dish_from_day`'s
+    `open_reason` had it too ("You cut Leftover chili back") and is fixed
+    with it, since that sentence is what the Day step shows in place of a
+    meal.
+  - **The newly-surfaced refusal landed below the fold.** `.rv-trouble`
+    rendered once at the foot of the whole body — measured at 390px on a
+    seven-day week, **2114px down an 844px viewport**, with no toast, no
+    scroll and the strip still open. So a refused tap moved nothing, said
+    nothing where the finger was, and explained itself a page and a half
+    away, which reads as a control that does nothing at all. It renders
+    inside the dish row that was tapped now (`troubleFor`), with the foot
+    kept as the fallback for a sentence whose row is gone — dropping it
+    there would trade one invisible message for none.
+  - **Only sentences written for a PERSON are shown.** Surfacing `detail`
+    was right and was too broad: it printed `"No slot 999 on that week's
+    plan."`, and a 500's `"Server error: <python exception>"`, straight
+    into the household's week. New `weekly_plan.SlotRefused(ValueError)`
+    marks the two that are written for a reader; the route answers those
+    as `{status: 'refused', message}` at 200 — **the shape
+    `drop_dish_from_day` already used**, so the screen now has ONE branch
+    for both halves of the stepper — and everything else stays a 404 and
+    takes the plain line. An app that did exactly the right thing must not
+    report itself broken.
+  - **The docstring's re-buying claim was unconditional and the behaviour
+    is not.** `_reingest_unlinked_entries` is a no-op for a freeform entry
+    by design and buys nothing on a draft, so a freed night with no
+    `recipe_id` gets nothing — the exact state the "−" refuses in the same
+    breath. Written down properly at the function, since that is what a
+    future session will act on; the toast already said only the narrower
+    thing it could stand behind.
+  - Two smaller ones taken: the new refusals use curly apostrophes like
+    every other sentence beside them, and
+    `test_a_refusal_with_no_sentence_still_says_something_plain` says in
+    its own docstring that it is a guard rather than a catch — its redness
+    against an earlier commit was a harness artefact, and the round before
+    counted it as coverage it is not.
+  - 6 more tests (51 -> 57 there); 2085 -> 2091. All six fail on
+    `33f4b5d`. **Re-verified in a real Chromium on port 8984** at 390px in
+    both schemes, on a throwaway DB, with the served build confirmed
+    in-page first.
+
+- **2026-09-10 — A blocker and three concerns in the "+", found on review
+  of the entry below and fixed on the same branch
+  (`overnight/review-plus-and-counts`).** All reproduced through the app's
+  own route in a real Chromium. Changes 2 and 3 held under everything the
+  reviewer threw at them and are untouched here.
+  - **THE BLOCKER: the "+" wrote a DIFFERENT dish from the one the row
+    names, and bought nothing for it.** A Review row is labelled by
+    `mealDisplayName`, which for a confirmed reheat answers with
+    `leftover_from.meal` — the dish being reheated — while
+    `add_dish_day` re-derived the name from the row itself as
+    `COALESCE(recipes.name, freeform_meal)`. Those two disagree for any
+    chain whose reheat lands in a different meal-type GROUP from its cook,
+    which is an ordinary dinner-cooked-double-for-tomorrow's-lunch:
+    `repair_leftover_chains` accepts it and the generation prompt asks for
+    that night to be written as freeform text naming what it eats. So a row
+    reading **Beef Bulgogi · nothing to cook · 1 lunch** planted *Leftover
+    bulgogi bowls* — a night rendering as a reheat with no batch behind it,
+    nothing bought for it, and the dish the household agreed to lose gone.
+    On an approved week the displaced dish came off the list and nothing
+    went on. **The same class as the two blockers already fixed on this
+    screen this week: a control labelled with one dish acting on another.**
+    The name is resolved through `plan_leftover_chains` now — the one
+    reader of that pairing, and the source of the very field
+    `mealDisplayName` reads — so the write plans the dish the row names,
+    with the COOK night's food groups rather than the reheat's (a reheat
+    row records none). Refusing a reheat as the source was the other option
+    and was not taken: a group whose only entry is the reheat would then
+    have a permanently dead "+".
+  - **The "−" refused to break a chain and the "+" broke one in silence.**
+    `drop_dish_from_day` answers "Beef Bulgogi on Thursday also feeds
+    Friday's dinner — change that first"; adding onto that identical day
+    went straight through, Friday quietly became an ordinary cook, and the
+    toast said nothing. **The data was right** — down DELETES and strands
+    the fed night, up REPLACES and `swap_meal_in_plan` re-buys for it — so
+    the fix is to SAY it, not to refuse it: one screen must not refuse the
+    mirror of what it silently allows. `add_dish_day` returns `unchained`
+    (read before the swap, since afterwards there is nothing left to ask)
+    and the toast adds a clause: "Saturday was eating off it, so that night
+    is on its own now." **Not "a cook of its own"** — that was the first
+    wording, and the browser caught it contradicting the row printed right
+    underneath: a freed night keeps whatever it was called, and one the
+    planner had written as "Leftover bulgogi" still reads "nothing to
+    cook". The chain being broken is what is certainly true, so that is
+    what it says.
+  - **An already-cooked meal was offered, and taking it over destroyed the
+    record.** The control excluded `isPast` only and the write had no
+    status check, so today's dinner ticked off at seven was a live
+    candidate — the `cooked_status` gone, the inventory depleted for a meal
+    now off the plan, and the ingredients for a meal somebody ate taken off
+    the shopping list. `get_week_menu` carries `cooked` per slot now
+    (additive), the picker skips it, and the write refuses it. **"Change
+    one" has the same hole and is pre-existing — deliberately NOT widened
+    into here; this only declines to add a second door to it.** ~~And that
+    is the only one left.~~ **It was not: the "−" in the same stepper had
+    the identical hole, and unlike "Change one" it is NOT pre-existing —
+    this branch's own predecessor built it. Closed in the entry above.**
+  - **The write's refusals are shown in the server's own words.** Every
+    `ValueError` here becomes a 404 and the screen was printing the generic
+    "That didn't work just now" over it — reporting a breakage where the
+    app had done the right thing. Two of these are sentences a household
+    needs to read (a day nobody is home, a meal already cooked), so
+    `runAddDishDay` surfaces `detail` and falls back to the plain sentence
+    only when there is none. **Too broad, and corrected in the entry above:
+    that printed EVERY `ValueError` verbatim, row ids and "Server error:
+    <python exception>" included. Only sentences written for a person are
+    surfaced now.**
+  - **And the answer to Emily's generation question was wrong in one of its
+    three legs**, which matters because she has already been given it. Two
+    legs check out. The third — "`slot_needs`' away-reopen only validates
+    the three real meals" — is FALSE: `_validate_slot` defaults to
+    `allow_snack=True` and both `_ALL_SLOTS` tuples include `snack`, so
+    marking somebody away for a snack and then back hands the slot back as
+    an open question with no assistant involved at all. The HEADLINE
+    survives (generation's own finishing passes never make one) and **the
+    widening is more right rather than less** — an away-reopen's open snack
+    is a real decision handed back. Both legs are separate tests now, each
+    saying which half it covers. **A fourth path, added in the entry above
+    for completeness: `drop_dish_from_day` — the "−" on this very screen —
+    opens whatever slot it empties, snacks included.**
+  - 13 more tests (38 -> 51 there; 2072 -> 2085 total). **12 of the 13 are
+    red on `b7f5f09`**, four of them because the harness needs
+    `addDishToastText`, which is itself the change; the thirteenth is the
+    attendance characterisation above and is green on both sides by design.
+    **Re-verified in a real Chromium on port 8982** at 390px light and
+    dark: the reheat row now adds the dish it names, a cooked day is not
+    offered, the freed-night clause reads as one sentence, and the refusal
+    shows the server's words.
+
+- **2026-09-10 — "+" asks which day, the Approve button counts all four
+  meal types, and a cook's serving count is saved with the ticks. Branch
+  `overnight/review-plus-and-counts`.** Three of Emily's decisions in one
+  pass, each closing something the two branches before it left open in
+  their own words. **Four things it got wrong are corrected in the entry
+  above — read that first.**
+  - **THE STEPPER'S "+" SHOWS WHAT IT WOULD DISPLACE.** The entry below
+    says up "was not built" because it needs a day to land on and every
+    candidate is either holding another dish or deliberately empty, so a
+    placement rule would be one nobody has decided. Emily's answer is that
+    nobody should decide it: **every candidate day already holds
+    something, so "+" always means REPLACING, and a rule that picks the
+    victim silently is exactly the failure this app keeps getting caught
+    by.** So the tap opens a strip under the row — one row per candidate,
+    each saying the day and the dish currently on it, an open slot reading
+    "Your call" — and the household taps the one they are willing to
+    spend. A toast names the day and what it cost; answering an open slot
+    says only what it now is, because nothing was lost.
+    **`cookAheadHtml` was the thing to reuse and genuinely could not be**,
+    which is written into `.rv-pick`'s own CSS rather than left as a
+    judgement in a commit message: its chips are a three-letter weekday
+    and nothing else (there is no room in one for a dish name at 390px), it
+    is a multi-select waiting on a confirm rather than a single choice, and
+    the days it offers are days already holding the SAME dish. Same family,
+    opposite question. What IS reused is the write: `tools.add_dish_day`
+    composes `swap_meal_in_plan`, so the grocery reversal, the chain
+    unlink, the re-buy for nights that were eating off the displaced dish
+    and the taste verdict are all that function's, not a second copy that
+    can disagree with it about one household's shopping list.
+    **The one backend addition is `old_entry_id` on `swap_meal_in_plan`**,
+    beside the `old_meal` it already had and for the case a name cannot
+    express: an OPEN slot has no meal name, so a by-name replacement would
+    pass None and take every row in the slot with it — the two-snacks bug
+    the entry below had to fix, reached from the other side.
+    `planned_empty` is refused at the write and not only left off the
+    strip, because a control is not where that rule belongs. Past days and
+    days outside the plan's period are not offered either. ~~And days
+    already eaten.~~ **Only PAST days, which is not the same thing —
+    today's dinner ticked off at seven is neither past nor free. Corrected
+    in the review-pass entry above.**
+  - **THE APPROVE BUTTON COUNTS ALL FOUR MEAL TYPES.** The entry below
+    flagged this and left it as Emily's call; the call is to widen.
+    `countOpenSlots`/`approveWithOpenLabel` now ask `daySlotKeys` what a
+    day is actually made of instead of asking `WEEK_SLOTS`, which is a
+    different question — reproduced in Chromium before the change: "Which
+    days" said `Snack 2 · Your call` on Saturday while the button read
+    "Approve and build my shopping list", and the Week root said "Approve
+    this week". Both now say "Approve — leave Saturday open".
+    **`WEEK_SLOTS` is untouched and there is a test saying so**: it stays
+    the three real meals, so a snack is never a cook and never counts
+    against the 21-slot guarantee. `reviewDaySlotKeys` moved up beside
+    `daySlotEntry` and lost its prefix; same function, one caller more.
+    **The question Emily asked, answered: week GENERATION's own finishing
+    passes never hand back an open snack.** The two that could are scoped
+    to the three meals — `audit_plan_slots` (the generation-gap pass)
+    filters to `WEEK_SLOTS`, and `repair_leftover_chains` skips any row
+    outside it. ~~And `slot_needs`' away-reopen only validates those
+    three.~~ **THAT THIRD LEG IS FALSE and Emily was given the wrong
+    version of this answer: `slot_needs._validate_slot` defaults to
+    `allow_snack=True`, so an open snack falls out of an ordinary
+    attendance edit (away, then back) with no assistant anywhere near it.
+    Corrected and pinned in the review-pass entry above; the headline holds
+    and the widening is more right rather than less, since an away-reopen's
+    open snack is a real question handed back.** The other path is the
+    model itself: `submit_weekly_plan`'s schema takes `slot: 'snack'` with
+    `slot_state: 'open'` and `_generate_weekly_plan` writes it through
+    unchanged. Pinned as tests rather than left as a claim; no API key in
+    this sandbox, so it is the code paths driven for real, not a generated
+    week.
+  - **THE COOK'S SERVING COUNT LIVES IN THE TICK RECORD.** It was held for
+    the page's life only, so a reload left **a half-ticked ingredient list
+    at amounts nobody chose** — reproduced in Chromium on the pre-change
+    build: Serves 4, "8 Tortillas" ticked, reload, and the row reads
+    "4 Tortillas" and is still ticked. Not an inconsistency; a screen that
+    is wrong. The two describe one cooking session, so they end at the same
+    moment: same key (`pomona.cookTicks.p<plan>`), same record, same expiry
+    — a new week is a new plan id and both go together. Still per device
+    and still not sent to the server: a cook overriding tonight at the
+    counter is not a change to who lives in the house, and surviving a
+    reload does not make it one. Two things that fall out and are written
+    down where they matter: the stored amounts are ABSOLUTE (the list
+    `/api/recipes/scale` handed back), so re-applying REPLACES the server's
+    numbers rather than multiplying them and cannot compose twice with the
+    batch/attendance scaling `get_cooker_view` already did; and
+    `cookReadTicks` hydrates once per plan and is called BEFORE the write
+    in `cookStepServings`, because a read on the far side of that
+    assignment would put the stored number back over the tap. A record
+    whose entry has no ingredient list behind it is dropped rather than
+    rendered.
+  - `tests/test_review_plus_and_counts.py` is the new guard (38) and
+    `tests/test_cook_journey.py` grew 8 (55 -> 63); 2026 -> 2072. **34 of
+    the 38 and 5 of the 8 fail on `fc4bc76`** (34, not the 33 first written
+    here — the file cannot be collected against that commit's shell.js at
+    all, so the count was taken from a run with the pure helper move
+    applied and one test was missed); the rest are no-regression
+    guards or the generation characterisation above, and each says so in
+    its own docstring. Two existing files were updated honestly rather than
+    deleted, each with a note saying what moved (`test_review_two_views`'s
+    prelude for the renamed helper, `test_cook_journey`'s function list for
+    `cookReadServes`). **Verified in a real Chromium** at 390px light and
+    dark and at 1280px, on a throwaway DB: the strip is 44px rows that wrap
+    rather than overflow on a long dish name, the page never scrolls
+    sideways, the screen's only apricot is still Approve, and the pick,
+    the toast, the count and the reload all do what is written above.
+    Contrast measured off computed styles — the ask 11.60:1 light /
+    11.28:1 dark, the day 12.59 / 14.40, the dish 12.78 / 14.40, "Your
+    call" `--ink-secondary` at 4.44 / 8.48 (the app-wide value, 0.06 under
+    AA in light and unchanged here). Console clean apart from Google Fonts
+    being unreachable in the sandbox.
+  - **Two of the same snack on one day is allowed — Emily, asked and
+    answered, 2026-09-10: leave it.** The strip offers a day that already
+    holds this dish in ANOTHER of its snack slots, so asking twice
+    deliberately gives you two. Days the dish already covers are excluded,
+    which is the ordinary case; this is only reachable on purpose, it is
+    one tap to undo, and an app refusing a deliberate choice is the harder
+    thing to explain.
+
 - **2026-09-10 — Two blockers and two concerns in the Review stepper, found
   by an independent reviewer and fixed on the same branch
   (`overnight/review-week-two-views`).** Both blockers were reproduced
@@ -356,7 +678,10 @@ why*, not duplicating the diff.
     call` while the button still says "Approve and build my shopping list".
     The screen knows and the button does not. Widening the count is Emily's
     call, not a change to smuggle in under a bug fix, because `WEEK_SLOTS`
-    is load-bearing in four other readers.
+    is load-bearing in four other readers. **She made it the next day —
+    widen — and the count is all four now; see the entry above. This
+    paragraph describes the branch, not `main`.** `WEEK_SLOTS` itself was
+    left exactly as this entry insists it should be.
   - **A chain SOURCE is refused rather than dropped.**
     `_unlink_leftover_target` covers the target side only, so taking away a
     night that was cooked double left the night it fed holding a real recipe
@@ -412,7 +737,11 @@ why*, not duplicating the diff.
   built**: it needs a day to land on, and every candidate is either holding
   another dish or deliberately empty, so a placement rule would be one
   nobody has decided. `+` opens the ask sheet ("Another night of X — ")
-  instead of guessing. **`Change` opens that dish's Meal step**, where
+  instead of guessing. **Built the next day, and this reasoning decided its
+  shape rather than being overturned by it: there is still no placement
+  rule — the strip shows what each day is holding and the household picks
+  which one to spend. `+` no longer opens the ask sheet; see the
+  2026-09-10 entry at the top.** **`Change` opens that dish's Meal step**, where
   Swap-in-place and "Tell me what instead" already live; changing every
   covered day in one tap is part 2's job and is not half-built here.
   **Three things the browser found that reading the code did not.** (1) The

@@ -1980,6 +1980,49 @@ def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class AddDishDayRequest(BaseModel):
+    """
+    `entry_id` is a night the dish already covers; `target_entry_id` is the
+    day the household picked for one more of it. Two ids and no dish name:
+    the day was chosen by tapping a row that showed what is on it, so the
+    thing being replaced is a specific entry, not whatever happens to be
+    sitting at a (date, slot) by the time this lands.
+    """
+    entry_id: int
+    target_entry_id: int
+
+
+@app.post("/api/week/{week_start}/add-dish-day")
+def week_add_dish_day(week_start: str, req: AddDishDayRequest):
+    """
+    One more day of a dish — the Review screen's stepper going up.
+
+    Every candidate day already holds something, so this is always a
+    replacement and the household picks which day to spend. No model call:
+    the dish is one they already have, so this is the same small write the
+    stepper going down is, and it hands back the changed day in
+    get_week_menu's own shape for the same reason.
+
+    A 200 can still say no. `status` 'refused' carries a sentence written
+    for the household — a day nobody is home, a meal already cooked — and
+    it is the shape drop_dish_from_day already answers a refusal in, so the
+    screen needs one branch for both halves of the stepper rather than two.
+    Everything else stays a 404 and gets the screen's generic line: a row
+    id, or a Python exception, printed into somebody's week reports an app
+    that did exactly the right thing as broken.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return tools.add_dish_day(plan_id, req.entry_id, req.target_entry_id)
+    except tools.SlotRefused as e:
+        return {"status": "refused", "message": str(e)}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Adding a dish's day failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class WeekSlotRequest(BaseModel):
     date: str
     slot: str = "dinner"

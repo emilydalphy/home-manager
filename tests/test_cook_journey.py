@@ -172,6 +172,9 @@ _FUNCTIONS = [
     "cookMealKey",
     "cookTickPlanId",
     "cookReadTicks",
+    # New with the serving count moving into the tick record (Emily,
+    # 2026-09-10): cookReadTicks hydrates the overrides through it.
+    "cookReadServes",
     "cookWriteTicks",
     "cookTicked",
     "cookToggleTick",
@@ -1223,3 +1226,186 @@ def test_the_dock_foot_survives_the_desktop_breakpoint():
     # The desktop one is the one that was written with the shorthand.
     assert "padding:" not in rules[-1], "the shorthand is what zeroed it"
     assert "padding-inline" in rules[-1]
+
+
+# ---------- The serving count is part of the cooking session ----------
+# Emily, 2026-09-10: save it in the same place as the ticks, with the same
+# lifetime. The reason is not tidiness — the two describe one cooking
+# session, so a reload that kept the ticks and dropped the count left a
+# HALF-TICKED ingredient list at amounts nobody chose: you ticked "4 chicken
+# thighs", came back, and the row said 2 and was still ticked. That is not
+# an inconsistency, it is a screen that is wrong.
+#
+# These run the real functions against the real-ish localStorage the harness
+# already has, and every one of them drives a rescale and then throws the
+# page away — which is the only way to see the bug at all.
+
+_RELOAD = (
+    # Everything the page holds in memory is gone; the store is not.
+    "  cookState.ticks = null; cookState.ticksFor = null; cookState.serves = {};\n"
+    "  cookState.data = { weekly_plan_id: 12, meals: [JSON.parse(JSON.stringify(MEAL))],"
+    " prep_tasks: [] };\n"
+)
+
+
+def test_the_serving_count_survives_a_reload_like_the_ticks_do():
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'X', 4));\n"
+        + _RELOAD +
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ serves: cookServesShown(m), qty: m.ingredients[0].qty }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["serves"] == 6
+    assert got["qty"] == "12"
+
+
+def test_the_amounts_that_come_back_are_the_ones_the_ticks_were_put_against():
+    """The bug, said as one assertion. Tick an ingredient at the count you
+    chose, reload, and the row must still say what it said when you ticked
+    it — a tick and an amount that disagree is the screen being wrong, not
+    merely untidy."""
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'X', 4));\n"
+        "  cookSetTick('ings', cookMealKey(cookState.data.meals[0]) + ':chicken thighs', true);\n"
+        + _RELOAD +
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ qty: m.ingredients[0].qty,\n"
+        "    ticked: cookTicked('ings', cookMealKey(m) + ':chicken thighs') }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["ticked"] is True, "the tick still has to survive"
+    assert got["qty"] == "12", "and the amount it was put against has to survive with it"
+
+
+def test_it_lives_in_the_tick_record_rather_than_a_second_store_beside_it():
+    """One record, one key, one expiry. A second key would be a second
+    thing to prune and a second thing to get out of step with the ticks."""
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 1, 'X', 4));\n"
+        "  console.log(JSON.stringify({ keys: Object.keys(_ls), prefix: COOK_TICKS_PREFIX,\n"
+        "    record: JSON.parse(_ls[COOK_TICKS_PREFIX + 12]) }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["keys"] == [got["prefix"] + "12"], got["keys"]
+    assert sorted(got["record"].keys()) == ["ings", "serves", "steps"]
+    assert got["record"]["serves"]["e41"]["servings"] == 5
+
+
+def test_last_weeks_serving_count_expires_with_last_weeks_ticks():
+    """NO-REGRESSION GUARD — green before this change too, since nothing
+    was stored at all then. What it pins is that storing it did not buy a
+    leak across weeks. Same lifetime means the same expiry: a new week is a new plan id, so
+    the count goes when the ticks go, by construction rather than by a
+    sweep somebody has to remember."""
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'X', 4));\n"
+        # Next week: a different plan, the same dish, a fresh page.
+        "  cookState.ticks = null; cookState.ticksFor = null; cookState.serves = {};\n"
+        "  cookState.data = { weekly_plan_id: 77, meals: [JSON.parse(JSON.stringify(MEAL))],"
+        " prep_tasks: [] };\n"
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ serves: cookServesShown(m), qty: m.ingredients[0].qty,\n"
+        "    flagged: !!m.serves_overridden }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["serves"] == 4, "the household's own number is what a new week starts on"
+    assert got["qty"] == "4"
+    assert got["flagged"] is False
+
+
+def test_a_stored_count_with_no_amounts_behind_it_is_dropped():
+    """Green on both sides for the same reason as the one above — before
+    the change nothing read the record at all. It guards the validator.
+    It is read back into the amounts a person cooks from, so a
+    half-written or hand-edited record is dropped rather than rendered —
+    a servings number over amounts that never moved is the same wrong
+    screen from the other direction."""
+    got = _run(
+        "(function () {\n"
+        "  _ls[COOK_TICKS_PREFIX + 12] = JSON.stringify({ steps: {}, ings: { 'e41:x': 1 },\n"
+        "    serves: { e41: { servings: 9 } } });\n"
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ serves: cookServesShown(m), qty: m.ingredients[0].qty,\n"
+        "    tick: cookTicked('ings', 'e41:x') }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["serves"] == 4
+    assert got["qty"] == "4"
+    assert got["tick"] is True, "and the ticks in the same record are still read"
+
+
+def test_restoring_it_leaves_the_steps_and_the_cursor_alone():
+    """Also green on both sides — the acceptance criterion said restoring
+    must not renumber steps or clear ticks, so it is pinned rather than
+    assumed. The override touches amounts and nothing else. Steps are the
+    recipe's own and ticks are filed under an ingredient's NAME, which a
+    rescale never changes."""
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'X', 4));\n"
+        "  cookSetTick('steps', 'e41:1', true);\n"
+        + _RELOAD +
+        "  cookState.focusStage = 'step'; cookState.stepIdx = 1;\n"
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ steps: m.instructions.length,\n"
+        "    cursor: cookState.stepIdx, ticked: cookTicked('steps', 'e41:1') }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["steps"] == 3
+    assert got["cursor"] == 1
+    assert got["ticked"] is True
+
+
+def test_the_amounts_are_stored_absolute_so_they_cannot_scale_twice():
+    """
+    What keeps this from composing twice with the batch and attendance
+    scaling get_cooker_view already does: the stored list is the ABSOLUTE
+    one /api/recipes/scale handed back, so re-applying it REPLACES the
+    server's amounts rather than multiplying them. Rendering four times
+    over is still four, not sixteen.
+    """
+    got = _run(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'X', 4));\n"
+        + _RELOAD +
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  cookApplyServesOverride(cookState.data.meals);\n"
+        "  var m = cookState.data.meals[0];\n"
+        "  console.log(JSON.stringify({ qty: m.ingredients[0].qty,\n"
+        "    serves: cookServesShown(m), calls: fetchCalls }));\n"
+        "})();",
+        {"data": _VIEW},
+    )
+    assert got["qty"] == "12"
+    assert got["serves"] == 6
+    assert got["calls"] == [6], "and putting it back asks the server for nothing"
+
+
+def test_nothing_about_the_count_is_sent_to_the_household():
+    """Still per device. A cook overriding tonight at the counter is not a
+    change to who lives in the house, and surviving a reload does not make
+    it one — the only request in the whole path is the one that scales the
+    recipe."""
+    fn = _extract("cookStepServings")
+    assert fn.count("fetch(") == 1
+    assert "/api/recipes/scale" in fn
+    # cookWriteTicks is the only writer, and it writes to localStorage.
+    assert "cookWriteTicks()" in fn
+    assert "window.localStorage.setItem" in _extract("cookWriteTicks")
