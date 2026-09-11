@@ -9,7 +9,7 @@ import re
 import sqlite3  # for IntegrityError -- see save_week_intake's retry loop
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import acting_name, household_id
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 
@@ -304,7 +304,10 @@ def save_week_intake(
                 """,
                 (
                     household_id(), week_start, revision,
-                    (created_by or (current["created_by"] if current else "")).strip(),
+                    # The adult on this device, when the caller did not name
+                    # one; else the name given; else whoever started the
+                    # revision before (see _shared.acting_name).
+                    (acting_name(created_by) or (current["created_by"] if current else "")).strip(),
                     json.dumps(pick(night_tags, "night_tags")),
                     json.dumps(pick(guest_counts, "guest_counts")),
                     json.dumps(pick(packed_lunch_days, "packed_lunch_days")),

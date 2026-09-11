@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from ..db import get_conn
-from ._shared import household_id, require_household_row
+from ._shared import acting_name, household_id, require_household_row
 from . import cooker as _cooker
 from . import grocery as _grocery
 from . import inventory as _inventory
@@ -104,10 +104,10 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     exclude_grocery_item/move_grocery_item_to_inventory's soft-delete
     philosophy — see DATA_AND_API.md's "Sync between the two adults").
     Idempotent: dropping an already-removed item is a no-op. `author` is
-    recorded but doesn't yet drive a live cross-device "adult changed
-    something" notification — NOTIFICATIONS.md #4 and README's Phase 5
-    notes document that this codebase has no concept of "the other adult"
-    distinct from "you" at the data layer, and that gap applies here too.
+    who dropped it: the adult picked on this device when the caller did not
+    name one (the shell sends the generic "user"; see _shared.acting_name),
+    otherwise the name given. Recorded, and not yet driving a live
+    cross-device "the other adult changed something" notification.
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
@@ -123,7 +123,7 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
-        (author or "", item_id, household_id()),
+        (acting_name(author) or "", item_id, household_id()),
     )
     conn.commit()
     conn.close()

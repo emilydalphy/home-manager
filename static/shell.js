@@ -8877,9 +8877,16 @@
     // the one who ALREADY approved, so on a draft — the only state this
     // button exists in — it was always empty and this step never once ran.
     // See get_week_menu, where both fields are set side by side.
+    //
+    // Since 2026-09-11 the session usually already knows: the adult picked
+    // at "Who's this?" (shellWho.member). Then there is no question to ask
+    // — the name goes on the week straight away, and the server would fill
+    // it in from the session even if this sent nothing. The picker below
+    // is the fallback for a device with no pick (an older cookie, or the
+    // lookup failed at boot).
     var people = (data.approving_adults || []);
-    var approvedBy = '';
-    if (people.length > 1) {
+    var approvedBy = shellWho.member ? shellWho.member.name : '';
+    if (!approvedBy && people.length > 1) {
       approvedBy = await askWhoIsApproving(people);
       if (approvedBy === null) return;
     }
@@ -13366,9 +13373,171 @@
     } catch (err) {
       console.warn('Onboarding status check failed:', err);
     }
+    // "Who's this?" — before any tab renders, so nothing is fetched, read
+    // or credited as nobody. Only when the household has more than one
+    // adult and this device has no pick yet (needs_pick, decided
+    // server-side); a one-adult household never sees it. If the lookup
+    // fails (offline, an older server) the shell opens anyway — the
+    // question is asked next time, and every write still records what it
+    // recorded before this existed.
+    await ensureWhoPicked();
     activateTab(currentTabKey(), false);
     loadNotifications();
   })();
+
+  // ---------- "Who's this?" (slice 1 of per-adult login, 2026-09-11) ----------
+  //
+  // The household passphrase opens the door; this says which adult is
+  // holding the phone. One screen, once per device, remembered in the
+  // signed session cookie (POST /api/whoami/pick — see app/main.py) so it
+  // survives reloads and redeploys and is forgotten only by signing out.
+  // Reachable again from Preferences' "You're {name}" row to switch.
+  //
+  // What it changes today: the week's approver, who added a grocery item,
+  // who dropped one at the pre-shop check and who started the week's
+  // questions all record this adult's name without asking (the server
+  // fills them in from the session — tools/_shared.py acting_name), and
+  // the "{name} approved the week" notification is no longer shown to the
+  // adult who approved. Each adult having their own secret is a later
+  // slice; this trusts the device.
+  var shellWho = { member: null, adults: [], loaded: false };
+  var whoScreenEl = null;
+  var whoResolve = null;
+
+  async function loadWhoami() {
+    try {
+      var res = await fetch('/api/whoami');
+      if (!res.ok) throw new Error('whoami failed');
+      var data = await res.json();
+      shellWho.member = data.member || null;
+      shellWho.adults = data.adults || [];
+      shellWho.loaded = true;
+      return data;
+    } catch (err) {
+      console.warn('Who am I lookup failed:', err);
+      return null;
+    }
+  }
+
+  async function ensureWhoPicked() {
+    var data = await loadWhoami();
+    if (!data || !data.needs_pick) return;
+    await openWhoScreen(false);
+  }
+
+  function buildWhoScreen() {
+    if (whoScreenEl) return;
+    whoScreenEl = document.createElement('div');
+    whoScreenEl.id = 'who-screen';
+    whoScreenEl.hidden = true;
+    whoScreenEl.setAttribute('role', 'dialog');
+    whoScreenEl.setAttribute('aria-modal', 'true');
+    whoScreenEl.setAttribute('aria-labelledby', 'who-title');
+    whoScreenEl.innerHTML =
+      '<div class="who-inner">' +
+        '<h1 class="who-title" id="who-title">Who’s this?</h1>' +
+        '<p class="who-sub">I’ll remember on this device.</p>' +
+        '<div class="who-rows" id="who-rows"></div>' +
+        '<p class="who-error" id="who-error" hidden></p>' +
+        '<button type="button" class="who-cancel" id="who-cancel" hidden>Never mind</button>' +
+      '</div>';
+    document.body.appendChild(whoScreenEl);
+    whoScreenEl.querySelector('#who-cancel').addEventListener('click', function () { closeWhoScreen(null); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && whoScreenEl && !whoScreenEl.hidden) {
+        var cancel = whoScreenEl.querySelector('#who-cancel');
+        if (cancel && !cancel.hidden) closeWhoScreen(null);
+      }
+    });
+  }
+
+  function renderWhoRows() {
+    var rows = whoScreenEl.querySelector('#who-rows');
+    rows.innerHTML = shellWho.adults.map(function (a) {
+      return '<button type="button" class="who-row" data-who-pick="' + a.id + '">' +
+        '<span class="who-row-initial" aria-hidden="true">' + escapeHtml(a.initial || (a.name || '?').charAt(0).toUpperCase()) + '</span>' +
+        '<span class="who-row-name">' + escapeHtml(a.name) + '</span>' +
+        ICONS.arrow +
+      '</button>';
+    }).join('');
+    rows.querySelectorAll('[data-who-pick]').forEach(function (btn) {
+      btn.addEventListener('click', function () { pickWho(parseInt(btn.getAttribute('data-who-pick'), 10)); });
+    });
+  }
+
+  // Resolves to the picked member, or null if they backed out (only
+  // possible when `switching` — the first ask has no way past it but a
+  // name, because there is nothing to show until there is a someone).
+  function openWhoScreen(switching) {
+    buildWhoScreen();
+    closeAskSheet();
+    closeWeekSheet();
+    renderWhoRows();
+    whoScreenEl.querySelector('#who-cancel').hidden = !switching;
+    whoScreenEl.querySelector('#who-error').hidden = true;
+    whoScreenEl.hidden = false;
+    var first = whoScreenEl.querySelector('.who-row');
+    if (first) first.focus();
+    return new Promise(function (resolve) { whoResolve = resolve; });
+  }
+
+  function closeWhoScreen(answer) {
+    if (!whoScreenEl) return;
+    whoScreenEl.hidden = true;
+    var resolve = whoResolve;
+    whoResolve = null;
+    if (resolve) resolve(answer);
+  }
+
+  async function pickWho(memberId) {
+    var buttons = whoScreenEl.querySelectorAll('.who-row');
+    buttons.forEach(function (b) { b.disabled = true; });
+    var errorEl = whoScreenEl.querySelector('#who-error');
+    errorEl.hidden = true;
+    try {
+      var res = await fetch('/api/whoami/pick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: memberId })
+      });
+      if (!res.ok) throw new Error('pick failed');
+      var data = await res.json();
+      shellWho.member = data.member || null;
+      closeWhoScreen(shellWho.member);
+      // The feed is addressed now (the approver is not told they
+      // approved), so it is re-read for whoever this is. The Preferences
+      // row names them, if the sheet is open.
+      loadNotifications();
+      if (prefsState.open) renderPrefsRows();
+    } catch (err) {
+      console.warn('Picking who this is failed:', err);
+      errorEl.textContent = 'That didn’t save. Try tapping your name again.';
+      errorEl.hidden = false;
+      buttons.forEach(function (b) { b.disabled = false; });
+    }
+  }
+
+  // The Preferences row: who this device is opened as, and the way to
+  // change it. Only when there is a choice to make — a one-adult household
+  // gets no row, because "You're Emily / Not you?" would be a question
+  // with one answer.
+  function whoPrefsRowHtml() {
+    if (!shellWho.member || shellWho.adults.length < 2) return '';
+    return '<button type="button" class="prefs-row" data-who="switch">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">You’re ' + escapeHtml(shellWho.member.name) + '</span>' +
+        '<span class="prefs-row-sub">Not you? Switch</span>' +
+      '</span>' +
+      ICONS.arrow +
+    '</button>';
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-who="switch"]');
+    if (!target) return;
+    closePrefsSheet();
+    openWhoScreen(true);
+  });
 
   // ---------- Preferences: what Pomona knows about your household ----------
   //
@@ -13575,6 +13744,9 @@
     if (!rows) return;
     var mem = prefsState.memory;
     rows.innerHTML =
+      // Who this device is opened as, first — see whoPrefsRowHtml (empty
+      // for a one-adult household).
+      whoPrefsRowHtml() +
       PREFS_ROWS.map(function (row) {
         var line = mem ? row.line(mem) : 'Reading it back…';
         return '<button type="button" class="prefs-row" data-prefs="tab" data-tab="' + row.tab + '">' +

@@ -7083,3 +7083,110 @@ span.cook-week-name { cursor: default; }
 .gro-staple-act:disabled { opacity: .6; cursor: default; }
 .gro-staple-row .gro-staple-act:nth-of-type(1) { grid-area: pause; }
 .gro-staple-row .gro-staple-act:nth-of-type(2) { grid-area: remove; }
+/* ---------- "Who's this?" (slice 1 of per-adult login, 2026-09-11) ----------
+   The one screen between the passphrase and the shell, for a household
+   with more than one adult and nobody picked on this device yet. A full
+   screen rather than a dialog: it is a question the rest of the app waits
+   on, not a confirm over something already showing. Built by shell.js
+   (buildWhoScreen); the same screen opens again from Preferences' "You're
+   {name}" row to switch, with a "Never mind" link only in that case.
+   Rows are the pick list — big, plain, one name each, well over Rule 6's
+   44px. Nothing here is apricot: choosing a name is not urgent. */
+#who-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--ground);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: max(56px, env(safe-area-inset-top, 0px) + 40px) 20px 32px;
+  box-sizing: border-box;
+  animation: fadeIn .18s ease;
+}
+#who-screen[hidden] { display: none; }
+.who-inner { max-width: 420px; margin: 0 auto; }
+.who-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+.who-sub {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+  margin: 6px 0 0;
+}
+.who-rows { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.who-row {
+  width: 100%;
+  min-height: 64px; /* Rule 6, with room to spare — this is the whole screen's job */
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.who-row:hover { border-color: var(--hairline-strong); }
+.who-row:disabled { opacity: .6; cursor: default; }
+.who-row-initial {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+}
+.who-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.who-row svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--ink-inactive); }
+.who-cancel {
+  display: block;
+  width: 100%;
+  min-height: 44px; /* Rule 6: a text link still gets a full row */
+  margin: 8px 0 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.who-cancel[hidden] { display: none; }
+/* Calm-in-trouble: a failed pick says so plainly, under the rows, and the
+   rows stay tappable so the way out is the same tap again. */
+.who-error {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--urgent-label);
+  margin: 14px 0 0;
+}
+.who-error[hidden] { display: none; }

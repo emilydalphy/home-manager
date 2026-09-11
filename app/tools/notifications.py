@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import current_member, household_id
 from . import inventory as _inventory
 from . import recipes as _recipes
 from . import weekly_plan as _weekly_plan
@@ -110,22 +110,27 @@ def get_active_notifications() -> list[dict]:
                     "tab": "week", "action_label": "Looks good",
                 })
 
-    # 4. The other adult settled the week (NOTIFICATIONS.md #4 — the type
-    # that was previously left uncomputed for want of any per-adult
-    # identity). Approval now records WHO said yes (weekly_plans.approved_by
-    # — see design_handoff_plan_the_week), which is enough to make this
-    # real. It is still household-wide rather than addressed to one person:
-    # there is no per-adult session to deliver it to, so the honest version
-    # is a shared "Emily approved it" the other adult sees when they next
-    # open the app. That is exactly what the approved receipt's "{Other
-    # adult} has been told the week is settled" is promising — so the
-    # sentence describes something that actually happens.
+    # 4. The other adult settled the week (NOTIFICATIONS.md #4). Approval
+    # records WHO said yes (weekly_plans.approved_by, and since 2026-09-11
+    # approved_by_member_id — see approve_weekly_plan), and the session now
+    # knows which adult is reading (tools.current_member). So this is
+    # addressed, not broadcast: the adult who approved does not get told
+    # that they approved. Everyone else in the household sees it, which
+    # for a two-adult house is exactly "the other adult". The member id is
+    # the comparison when there is one; the name is the fallback for a
+    # plan approved before ids were stored. A device with nobody picked
+    # still sees it — better a settled week told twice than not at all.
+    #
+    # Dismissals stay household-wide (notification_dismissals has no
+    # member column): once anyone taps it away it is gone for the house.
     approved_row = conn.execute(
-        "SELECT id, week_start_date, approved_by, approved_at FROM weekly_plans "
+        "SELECT id, week_start_date, approved_by, approved_by_member_id, approved_at FROM weekly_plans "
         "WHERE household_id = ? AND status = 'approved' AND TRIM(approved_by) != '' AND approved_at IS NOT NULL "
         "ORDER BY approved_at DESC LIMIT 1",
         (household_id(),),
     ).fetchone()
+    if approved_row and _is_the_approver(approved_row, current_member()):
+        approved_row = None
     if approved_row:
         # Keyed by plan id AND approval time, so reopening and re-approving
         # a week raises a fresh notification rather than being silenced by
@@ -152,6 +157,16 @@ def get_active_notifications() -> list[dict]:
             })
     conn.close()
     return out
+
+
+def _is_the_approver(approved_row, member: dict | None) -> bool:
+    """Is the adult reading this feed the one who approved the week?"""
+    if not member:
+        return False
+    stored_id = approved_row["approved_by_member_id"]
+    if stored_id is not None:
+        return int(stored_id) == int(member["id"])
+    return (approved_row["approved_by"] or "").strip().lower() == member["name"].strip().lower()
 
 
 def dismiss_notification(key: str) -> dict:
