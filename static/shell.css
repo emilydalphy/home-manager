@@ -7488,8 +7488,8 @@ span.cook-week-name { cursor: default; }
 }
 .who-error[hidden] { display: none; }
 
-/* Desktop has no chat icon (the Ask column replaces the sheet, and
-   #ask-bar-dock is hidden above), so the dock takes its clearance back.
+/* Desktop has no chat icon (the Ask column replaces the sheet, and the
+   ask-bar dock is hidden above), so the dock takes its clearance back.
    Kept at the end of the file so it follows the base .dock rule. */
 @media (min-width: 1024px) {
   .dock, .wk-decide.dock { padding-right: 20px; }

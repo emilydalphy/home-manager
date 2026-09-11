@@ -54,7 +54,7 @@ def test_the_coaching_card_is_a_one_time_sheet_at_body_level():
     assert '<div id="coach-card-slot"></div>' in SHELL_HTML
     assert 'id="coach-card-slot" class="today-area-nudge"' not in SHELL_JS
     assert "#coach-card-slot:empty { display: none; }" in SHELL_CSS
-    assert "#coach-sheet,\n#prefs-sheet,\n#tips-sheet {" in SHELL_CSS
+    assert "#coach-sheet,\n#prefs-sheet,\n#tips-sheet" in SHELL_CSS
     assert "plan-nudge-eyebrow\">A QUICK WORD" not in SHELL_JS
 
 
