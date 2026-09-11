@@ -7540,14 +7540,8 @@
     if (approveBtn) approveBtn.addEventListener('click', function () {
       approveWeek(panel, weekState.data || {});
     });
-    var tweakBtn = steps.querySelector('#week-tweak-btn');
-    if (tweakBtn) tweakBtn.addEventListener('click', function () {
-      openAskSheet('Let’s tweak this week — ');
-    });
-    var checkBtn = steps.querySelector('#week-check-btn');
-    if (checkBtn) checkBtn.addEventListener('click', function () {
-      goMealsStep('review');
-    });
+    // (The italic tweak link and the check-the-week button handlers that sat here
+    // went with the draft root becoming the review, 2026-09-11.)
   }
 
   // ---------- Swap, in place: the two calls ----------

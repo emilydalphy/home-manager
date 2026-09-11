@@ -69,6 +69,16 @@ def test_approval_lands_on_an_all_set_screen_in_spruce():
     assert "if (data.weekly_plan_id) setWeekReceiptDismissed(data.weekly_plan_id, true);" in approve
 
 
+def test_the_asks_fetches_land_on_the_all_set_row_and_the_dock_wires_once():
+    """The defrost / cook-ahead fetches come back through renderWeekApproval;
+    on the All set screen that has to re-render the screen's own row, not
+    the root's hidden receipt row (found by the 2026-09-11 verifier)."""
+    approval = _fn("renderWeekApproval")
+    assert "if (weekState.step === 'allset' && panel.querySelector('#wk-allset-asks'))" in approval
+    asks = _fn("renderAllSetAsks")
+    assert "go.dataset.wired" in asks and "see.dataset.wired" in asks
+
+
 def test_the_today_row_says_so():
     assert "(day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase())" in _fn("weekRowHtml")
     assert ".wk-day-row.is-today { background: var(--sand); }" in SHELL_CSS
