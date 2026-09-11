@@ -314,6 +314,62 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Stepping a dish down is ONE transaction now. Branch
+  `overnight/drop-dish-atomic`.** The debt the review-stepper work filed
+  rather than smuggled in (see its entry below, and `99db198` where it has
+  been sitting on `main`): `drop_dish_from_day` unlinked the chain,
+  reversed the groceries and deleted the row, then called `plan_slot_open`
+  to write the `open` row — four separate commits. Reproduced against the
+  real code before touching it, and again afterwards: force a `RuntimeError`
+  inside `plan_slot_open` and on `main` the day ends up with **no rows at
+  all**, its grocery line already reversed, `audit_plan_slots` reporting the
+  slot MISSING, and the route answering 500 so the screen says *"nothing
+  changed"* — false, and the one state `schema.sql` says can never exist.
+  On the branch the same forced failure leaves the row `planned`, the
+  grocery line intact and the audit clean.
+  - **The fix is the `atomic-period-takeover` shape, not a second
+    implementation.** `plan_slot_open` and `_unlink_leftover_target` join
+    `_reverse_meal_grocery_contributions` in taking an optional `conn`:
+    given one they read and write on it and neither commit nor close, and
+    left unset every other call site behaves exactly as before. One
+    connection, one commit, `rollback()` on the way out.
+  - **The step that CANNOT join the transaction, and why that is the whole
+    difficulty.** `_rescale_leftover_source_grocery` re-ingests through
+    `add_grocery_item` and the recipe ingest tree, every one of which opens
+    its own connection — and SQLite gives one writer at a time, so called
+    from inside the open write transaction it would sit behind that
+    transaction's own lock and die of "database is locked". So
+    `_unlink_leftover_target` SKIPS it when handed a connection and returns
+    the source entry id instead, and the caller runs it AFTER the commit.
+    A failure there is logged, not raised: the day has already been handed
+    back, and raising would report "nothing changed" over a change that did
+    happen. The cost of the log is one night's share of over-buying.
+  - **No nested `get_conn` is pinned by counting them**, the way
+    `tests/test_planning_periods.py` does, because the failure mode is an
+    intermittent "database is locked" rather than a deterministic wrong
+    answer.
+  - **`add_dish_day` — the "+" on the same screen — HAS the same seam and is
+    deliberately NOT fixed here.** It is one level down and not in
+    `add_dish_day` at all: the write is `swap_meal_in_plan`, which deletes
+    the displaced row, commits, then calls `plan_meal` to write the
+    replacement. Force `plan_meal` to fail and the target day is genuinely
+    absent, exactly as a drop used to leave one. That seam is shared by
+    EVERY swap in the app — chat, swap-in-place, `resolve_open_slot`, the
+    generation repairs — so closing it means threading a connection through
+    the app's central write and the grocery ingest behind it. Its own card.
+    `test_the_stepper_going_UP_has_the_same_seam_and_is_NOT_fixed_here`
+    characterises it so the next session finds it written down instead of
+    rediscovering it; **invert that test when `swap_meal_in_plan` is made
+    atomic.**
+  - `tests/test_drop_dish_atomic.py` is the guard, 13 tests, **9 of them red
+    on `5f638fc`**; the other four are the happy path, the no-regression
+    check that every other `_unlink_leftover_target` caller still rescales,
+    and the characterisation above, each saying so in its own docstring.
+    2169 -> 2182. Driven over the real route on a throwaway DB as well:
+    dropping an approved week's only dinner leaves exactly one row for that
+    slot, `open`, carrying "You cut Bean Chili back, so this one is yours to
+    fill.", with the grocery line gone.
+
 - **2026-09-11 — The trouble line was keyed by POSITION, and two readable
   sentences had been swallowed. Branch `overnight/review-plus-and-counts`,
   third and final review round; everything else came back safe to merge.**
