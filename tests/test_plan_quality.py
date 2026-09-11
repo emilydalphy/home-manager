@@ -94,6 +94,24 @@ def test_weeknight_cap_is_off_when_the_household_never_set_one():
     assert _rule_ids(check_week(entries, context)) == set()
 
 
+def test_weeknight_cap_stays_quiet_on_an_unrushed_night():
+    """The household lifted the cap for this night on purpose; flagging the
+    long dinner they asked for would be the checker arguing with them."""
+    entries = [_entry(TUE, prep_time_minutes=45, cook_time_minutes=45)]  # 90 min
+    context = {"weeknight_max_minutes": 30, "rush_dates": set(), "unrushed_dates": {TUE}}
+    assert "weeknight_cap_respected" not in _rule_ids(check_week(entries, context))
+
+
+def test_an_unrushed_night_does_not_lift_the_cap_on_other_nights():
+    entries = [
+        _entry(TUE, prep_time_minutes=45, cook_time_minutes=45),
+        _entry(WED, prep_time_minutes=45, cook_time_minutes=45),
+    ]
+    context = {"weeknight_max_minutes": 30, "rush_dates": set(), "unrushed_dates": {TUE}}
+    flagged = {v.date for v in check_week(entries, context) if v.rule == "weeknight_cap_respected"}
+    assert flagged == {WED}
+
+
 def test_weeknight_cap_defers_to_the_rush_check_on_a_rush_night():
     """A rush night is already checked at the stricter rush cap — the
     weeknight rule staying quiet about the same night isn't a miss, it's

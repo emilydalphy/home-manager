@@ -587,9 +587,13 @@
     { key: 'normal', label: 'Nothing special', ack: 'plan a normal dinner you cook that evening.' },
     { key: 'out',    label: 'Nobody home',   ack: 'plan nothing and buy nothing for this night.' },
     { key: 'rush',   label: 'Short on time', ack: 'keep it under 20 minutes, or make the night before stretch to cover it.' },
+    { key: 'unrushed', label: 'Got time tonight', ack: 'let this dinner take longer than a weeknight usually gets.' },
     { key: 'guests', label: 'Hosting guests', ack: 'scale the recipe and the shopping to the bigger table.' },
     { key: 'left',   label: 'Leftovers',     ack: 'cook enough the night before instead of planning something new.' }
   ];
+  // The one pair that contradicts each other: tapping one clears the other,
+  // the same way the server refuses to save both (week_intake.py).
+  var OPPOSITES = { rush: 'unrushed', unrushed: 'rush' };
   var MOODS = ['Something warm', 'Lighter than usual', 'On the grill', 'Comfort food', 'Something new', 'Keep it cheap'];
 
   function esc(s) {
@@ -902,7 +906,7 @@
       // than skip it: an affirmed night is data, a skipped one is a guess.
       current = ['normal'];
     } else {
-      current = current.filter(function (t) { return t !== 'normal'; }).concat([tag]);
+      current = current.filter(function (t) { return t !== 'normal' && t !== OPPOSITES[tag]; }).concat([tag]);
     }
     if (current.length) answers.night_tags[d] = current;
     else delete answers.night_tags[d];

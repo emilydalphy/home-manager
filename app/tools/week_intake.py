@@ -36,6 +36,13 @@ NIGHT_TAGS = {
     "guests": "scale the recipe and the shopping to the bigger table.",
     # No new dinner; the previous night's batch is increased instead.
     "left": "cook enough the night before instead of planning something new.",
+    # The opposite of `rush`, and the only tag that RAISES a limit rather
+    # than lowering one: the household's standing weeknight cap does not
+    # apply to this dinner. Permits a longer recipe; never demands one
+    # (Emily, 2026-09-10: "permit, don't push"). Combinable with `guests`
+    # — that one scales quantity, this one lifts effort — but never with
+    # `rush`, which it contradicts.
+    "unrushed": "let this dinner take longer than a weeknight usually gets.",
 }
 
 
@@ -252,6 +259,11 @@ def save_week_intake(
         # leave the generator with no way to tell which the household meant.
         if "normal" in tags and len(tags) > 1:
             raise ValueError("'normal' is exclusive — a regular night can't also carry another tag.")
+        # `rush` caps the night at RUSH_MAX_MINUTES; `unrushed` lifts the
+        # cap. Holding both would make the generator pick which promise to
+        # break, and the household was shown both.
+        if "rush" in tags and "unrushed" in tags:
+            raise ValueError("A night can't be both short on time and unrushed — pick one.")
 
     # Read-modify-write, retried. Two adults saving at the same moment both
     # read the same current revision and both try to write revision+1; the

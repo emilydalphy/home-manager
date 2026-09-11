@@ -2409,6 +2409,10 @@ you must actually deliver it, because the household was told what each one would
 alternative the household was offered is equally good and often better: scale the PREVIOUS \
 night's dinner up and make this one eat its leftovers. Either satisfies the tag; a 45-minute \
 braise does not.
+  * `unrushed` on a date — the household has time that evening. The weeknight cap \
+(`weeknight_max_minutes`) does not apply to that dinner. This PERMITS a longer recipe; it never \
+requires one — choose what is best for the table, and if that is a 25-minute dinner, fine. It \
+is never set alongside `rush`.
   * `guests` on a date — scale that dinner's recipe and its ingredient quantities to the whole \
 table (`intake.guest_totals` gives the real number of adults and children for that date, \
 household plus extras), and if children are at the table, shift the choice toward something \
@@ -2494,7 +2498,8 @@ dinners: the same dish can still repeat across the week (that's what dinners_per
 governs), it's specifically that a dinner is never a reheat of an earlier one. Blank means \
 unknown — use your normal judgement.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
-dinners in prep+cook minutes. A `rush` tag overrides it downwards, never upwards.
+dinners in prep+cook minutes. A `rush` tag overrides it downwards; an `unrushed` tag lifts it \
+for that one night. Nothing else moves it.
 - `intake.moods` lean the week without making every night the same — a lean, not a theme. \
 `intake.cuisines` are what the household asked for THIS week and outrank their usual rotation. \
 `intake.freeform` is their own words, and a stated request in it is the week's ANCHOR, not an \
@@ -2532,7 +2537,7 @@ one idea, eaten all week, not one morning fed and six ignored. snacks_per_week f
 exact same rule (Loop Board "Onboarding / meal setup: add a Snacks & desserts count", \
 2026-09-05): that many distinct snack/dessert ideas, rotated across the week the same way a \
 breakfast or lunch idea would be — with a light lean toward something dessert-like on a night \
-tagged `guests` or otherwise called out as special in constraints_notes/intake, rather than on \
+tagged `unrushed` or otherwise called out as special in constraints_notes/intake, rather than on \
 an ordinary weeknight. household_memory.snacks_per_day is the separate, per-DAY number: how many \
 snack entries each day gets (2 by default). The two counts work together — snacks_per_day says \
 how many snacks land on Tuesday, snacks_per_week how many distinct ideas the whole rotation \
@@ -4195,13 +4200,17 @@ def _plate_minutes_cap(meal_date: str, intake: dict | None, household_memory: di
     The real cap on how long this night's cooking may take, or None.
 
     A `rush` tag wins (it's this week's explicit answer and it's the
-    tightest), then a weeknight cap if the household set one and the date
-    is Monday-Friday. Weekend nights with no rush tag have no cap, which is
-    the truth rather than a number invented to look precise.
+    tightest), an `unrushed` tag lifts the cap outright (the one tag that
+    raises a limit — the two are mutually exclusive at save time), then a
+    weeknight cap if the household set one and the date is Monday-Friday.
+    Weekend nights with no rush tag have no cap, which is the truth rather
+    than a number invented to look precise.
     """
     tags = ((intake or {}).get("night_tags") or {}).get(meal_date) or []
     if "rush" in tags:
         return tools.RUSH_MAX_MINUTES
+    if "unrushed" in tags:
+        return None
     weeknight_cap = household_memory.get("weeknight_max_minutes") or 0
     if weeknight_cap and datetime.date.fromisoformat(meal_date).weekday() < 5:
         return weeknight_cap

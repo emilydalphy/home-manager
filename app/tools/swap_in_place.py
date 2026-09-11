@@ -257,12 +257,15 @@ def _other_dishes(weekly_plan_id: int, entry_id: int) -> list[str]:
 def _minutes_cap(meal_date: str, tags: list[str], memory: dict) -> int | None:
     """
     The real cap on this night's cooking, or None. Same order agent.py's
-    plate pass uses: a `rush` tag wins, then the household's weeknight cap
-    on a Monday-Friday. A weekend with no rush tag has no cap, which is the
-    truth rather than a number invented to look precise.
+    plate pass uses: a `rush` tag wins, an `unrushed` tag lifts the cap,
+    then the household's weeknight cap on a Monday-Friday. A weekend with
+    no rush tag has no cap, which is the truth rather than a number
+    invented to look precise.
     """
     if "rush" in tags:
         return _week_intake.RUSH_MAX_MINUTES
+    if "unrushed" in tags:
+        return None
     cap = memory.get("weeknight_max_minutes") or 0
     try:
         weekday = datetime.date.fromisoformat(meal_date).weekday()
@@ -386,8 +389,9 @@ Breakfast and snack cover at least two of those groups.
 write every quantity for it — a dinner for one is what a person makes for themselves, not a \
 family tray divided.
 - `max_minutes`, when given, is a hard cap on prep plus cook for this meal.
-- `night_tags`: `rush` means fast and unfussy, `guests` means scale it and pick something the \
-table will all eat, `normal` means an ordinary night — don't get clever with it.
+- `night_tags`: `rush` means fast and unfussy, `unrushed` means there is no time cap tonight (a \
+longer dish is allowed, not required), `guests` means scale it and pick something the table will \
+all eat, `normal` means an ordinary night — don't get clever with it.
 - `eating_style` is a hard constraint, not a style nudge — every ingredient has to fit it. \
 `dislikes` are to be avoided. `kitchen_kit` is what they own to cook with; an empty list means \
 unknown, so don't constrain on it.

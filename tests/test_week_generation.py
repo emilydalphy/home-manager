@@ -461,6 +461,38 @@ def test_a_rush_night_reaches_the_generator_as_a_real_cap(recipe, stub_model):
     assert tools.RUSH_MAX_MINUTES == 20
 
 
+def test_an_unrushed_night_reaches_the_generator_and_the_quality_check(recipe, stub_model):
+    """
+    The tag has to survive the reshaping into generation context (so the
+    prompt sees it) AND reach the quality checker as an exemption (so the
+    long dinner the household asked for isn't logged as a violation).
+    """
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    intake = tools.save_week_intake(week, night_tags={wednesday: ["unrushed"]})
+    seen = stub_model(_full_week(week))
+
+    agent.generate_weekly_plan(week, intake_id=intake["intake_id"])
+
+    assert seen["context"]["intake"]["night_tags"][wednesday] == ["unrushed"]
+    assert wednesday not in seen["context"]["intake"]["skip_dinner_dates"]
+
+
+def test_the_plate_pass_cap_is_lifted_by_an_unrushed_tag():
+    """
+    _plate_minutes_cap is the number the side-dish pass hands its model.
+    Until now nothing tested it directly; the ordering (rush, then
+    unrushed, then the weeknight cap, then nothing) is the whole rule.
+    """
+    memory = {"weeknight_max_minutes": 30}
+    tuesday, saturday = "2026-09-08", "2026-09-12"
+    assert agent._plate_minutes_cap(tuesday, {"night_tags": {}}, memory) == 30
+    assert agent._plate_minutes_cap(tuesday, {"night_tags": {tuesday: ["unrushed"]}}, memory) is None
+    assert agent._plate_minutes_cap(tuesday, {"night_tags": {tuesday: ["rush"]}}, memory) == tools.RUSH_MAX_MINUTES
+    assert agent._plate_minutes_cap(saturday, {"night_tags": {}}, memory) is None
+    assert agent._plate_minutes_cap(tuesday, None, {}) is None
+
+
 def test_packed_lunch_days_reach_the_generator_without_unplanning_lunch(recipe, stub_model):
     """
     Packed-lunch days don't decide WHETHER a lunch is planned — every lunch

@@ -77,6 +77,7 @@ becomes the other):
     {
         "rush_max_minutes": 20,
         "rush_dates": {"2026-09-10"},      # dates tagged `rush` this week
+        "unrushed_dates": {"2026-09-12"},  # dates tagged `unrushed`: no weeknight cap
         "weeknight_max_minutes": 30 | None | 0,
         "recent_history": [
             {"date": ..., "slot": ..., "meal": ..., "cuisine": ...,
@@ -264,12 +265,15 @@ def _weeknight_cap_respected(entries: list[dict], context: dict) -> list[Violati
     if not cap:
         return []
     rush_dates = context.get("rush_dates") or set()
+    unrushed_dates = context.get("unrushed_dates") or set()
     violations = []
     for entry in entries:
         if entry.get("slot") != "dinner" or not _is_planned(entry):
             continue
         if entry["date"] in rush_dates:
             continue  # already checked, at a stricter cap, by _rush_cap_respected
+        if entry["date"] in unrushed_dates:
+            continue  # the household lifted the cap for this night; a long dinner is the point
         if _weekday_name(entry["date"]) not in _WEEKDAYS:
             continue
         total = _minutes(entry)
@@ -1093,6 +1097,7 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
         quality_context = {
             "rush_max_minutes": RUSH_MAX_MINUTES,
             "rush_dates": {d for d, tags in night_tags.items() if "rush" in tags},
+            "unrushed_dates": {d for d, tags in night_tags.items() if "unrushed" in tags},
             "weeknight_max_minutes": memory.get("weeknight_max_minutes"),
             "recent_history": generation_context.get("recent_history") or [],
             # What the household said they wanted, in their own words, so
