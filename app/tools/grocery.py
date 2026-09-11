@@ -918,6 +918,23 @@ def remove_grocery_item(item_id: int) -> dict:
     """Delete an item from the grocery list."""
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
+    row = conn.execute(
+        "SELECT id, staple_id FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+    ).fetchone()
+    if row is not None and row["staple_id"]:
+        # Removing a staple's suggestion is "not this trip" — otherwise the
+        # next list read would put it straight back. Soft-removed rather
+        # than deleted, so the staple's own Undo can restore it.
+        from . import staples as _staples
+        _staples.note_line_removed(conn, row, how="skip")
+        conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ? AND status != 'removed'",
+            (_staples.ADDED_BY_STAPLE, item_id, household_id()),
+        )
+        conn.commit()
+        conn.close()
+        return {"item_id": item_id, "deleted": True, "staple_id": row["staple_id"]}
     conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()

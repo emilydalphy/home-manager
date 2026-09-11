@@ -2544,6 +2544,7 @@
   // rounding the server uses for cadence_words, without the "every".
   function groCadenceSpan(days) {
     days = Number(days) || 0;
+    if (days < 6) return 'about ' + days + ' days';
     if (days < 10) return 'about a week';
     var weeks = Math.round(days / 7);
     if (weeks <= 1) return 'about a week';
@@ -2719,9 +2720,15 @@
     '</div>';
   }
 
+  // Same idea as the server's merge key, at the strength this needs: case,
+  // spacing and a trailing "s" don't make two names two things.
+  function groStapleKey(name) {
+    var key = (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    return key.length > 3 && key.slice(-1) === 's' ? key.slice(0, -1) : key;
+  }
   function groIsStapleName(name) {
-    var key = (name || '').trim().toLowerCase();
-    return groceryState.staples.some(function (st) { return (st.item || '').trim().toLowerCase() === key; });
+    var key = groStapleKey(name);
+    return groceryState.staples.some(function (st) { return groStapleKey(st.item) === key; });
   }
 
   // ---------- Staples ----------

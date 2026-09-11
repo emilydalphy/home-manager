@@ -341,6 +341,70 @@ def test_buying_a_non_staple_changes_nothing_here():
     assert tools.list_staples() == []
 
 
+# ------------------------------------ the other ways a line leaves ----
+# Found by the 2026-09-11 build verifier: a staple's line taken off by the
+# row's ordinary Remove, or by a pre-shop "Drop it", came straight back on
+# the next list read, because the staple was still due. Each of these
+# fails on the first cut of the feature.
+
+
+def test_removing_the_line_by_the_row_menu_counts_as_not_this_trip():
+    s, line = _due_line(every_days=21)
+    tools.remove_grocery_item(line["id"])
+    tools.get_grocery_list_by_section(status="needed")
+    assert needed_names() == []  # no boomerang
+    shown = tools.list_staples()[0]
+    assert shown["skip_streak"] == 1 and shown["next_due_at"] == "2026-09-23"
+    # ...and the staple's own Undo puts the same row back.
+    tools.undo_staple_decision(s["id"])
+    assert needed_names() == ["Oat milk"]
+
+
+def test_pre_shop_drop_counts_as_we_have_plenty():
+    s, line = _due_line(every_days=21)
+    tools.drop_grocery_item_pre_shop(line["id"], author="Emily")
+    tools.get_grocery_list_by_section(status="needed")
+    assert needed_names() == []
+    shown = tools.list_staples()[0]
+    assert shown["next_due_at"] == "2026-10-07" and shown["skip_streak"] == 0
+    # The pre-shop screen's own undo still works on that row.
+    tools.undo_pre_shop_drop(line["id"])
+    assert needed_names() == ["Oat milk"]
+    tools.get_grocery_list_by_section(status="needed")
+    assert len(tools.list_grocery_list(status="needed")) == 1  # not two lines
+
+
+def test_undo_puts_back_the_same_row_with_its_store():
+    s, line = _due_line(every_days=21)
+    tools.set_grocery_item_store(line["id"], "Costco")
+    tools.decide_staple_line(line["id"], "skip")
+    tools.undo_staple_decision(s["id"])
+    (row,) = tools.list_grocery_list(status="needed")
+    assert row["id"] == line["id"] and row["store"] == "Costco"
+
+
+def test_undo_with_nothing_to_undo_changes_nothing():
+    s = tools.add_staple("Coffee", category="pantry")  # not due for 21 days
+    out = tools.undo_staple_decision(s["id"])
+    assert out["undone"] is False and out["due"] is False
+    tools.get_grocery_list_by_section(status="needed")
+    assert needed_names() == []
+
+
+def test_yesterdays_answer_does_not_block_a_staple_that_is_due_again():
+    s, line = _due_line(every_days=21)
+    tools.decide_staple_line(line["id"], "skip")  # due again in 7 days
+    travel(8)
+    tools.get_grocery_list_by_section(status="needed")
+    assert needed_names() == ["Oat milk"]
+    assert len(staple_lines()) == 1  # the old removed row was tidied away
+
+
+def test_unknown_category_becomes_other():
+    s = tools.add_staple("Batteries", category="kitchen sink")
+    assert s["category"] == "other"
+
+
 # --------------------------------------------------------- removing ----
 
 

@@ -110,6 +110,17 @@ def _parse(s: str | None) -> date | None:
         return None
 
 
+_KNOWN_CATEGORIES = set(_quantities._GROCERY_SECTION_ORDER) | {"household"}
+
+
+def _clean_category(category: str | None) -> str:
+    """A grocery section name, or "other" — the API takes a free string and
+    the screen only knows these."""
+    cat = (category or "other").strip().lower()
+    cat = _quantities._GROCERY_CATEGORY_ALIASES.get(cat, cat)
+    return cat if cat in _KNOWN_CATEGORIES else "other"
+
+
 def _default_cadence(category: str) -> int:
     return DEFAULT_CADENCE_DAYS.get((category or "other").strip().lower(), FALLBACK_CADENCE_DAYS)
 
@@ -282,8 +293,7 @@ def add_staple(
     name = " ".join((item or "").strip().split())
     if not name:
         raise ValueError("A staple needs a name.")
-    cat = (category or "other").strip().lower()
-    cat = _quantities._GROCERY_CATEGORY_ALIASES.get(cat, cat)
+    cat = _clean_category(category)
     conn = get_conn()
     existing = _find_by_name(conn, name)
     today = _iso(_today())
@@ -387,7 +397,7 @@ def mark_staple_plenty(item: str) -> dict:
     return out
 
 
-def _plenty(conn, staple_id: int, source: str) -> dict:
+def _plenty(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     r = _row(conn, staple_id)
     next_due = _iso(_today() + timedelta(days=r["cadence_days"]))
     conn.execute(
@@ -395,13 +405,13 @@ def _plenty(conn, staple_id: int, source: str) -> dict:
         (next_due, staple_id),
     )
     _event(conn, staple_id, "plenty", source)
-    removed = _drop_suggestion_lines(conn, staple_id)
+    removed = _drop_suggestion_lines(conn, staple_id) if drop_lines else None
     out = _shape(_row(conn, staple_id))
     out["removed_line"] = removed
     return out
 
 
-def _skip(conn, staple_id: int, source: str) -> dict:
+def _skip(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     r = _row(conn, staple_id)
     streak = (r["skip_streak"] or 0) + 1
     paused = 1 if streak >= SKIPS_BEFORE_PAUSE else 0
@@ -413,7 +423,7 @@ def _skip(conn, staple_id: int, source: str) -> dict:
     _event(conn, staple_id, "skipped", source)
     if paused:
         _event(conn, staple_id, "paused", "auto")
-    removed = _drop_suggestion_lines(conn, staple_id)
+    removed = _drop_suggestion_lines(conn, staple_id) if drop_lines else None
     out = _shape(_row(conn, staple_id))
     out["removed_line"] = removed
     out["just_paused"] = bool(paused)
@@ -421,9 +431,14 @@ def _skip(conn, staple_id: int, source: str) -> dict:
 
 
 def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
-    """Delete the still-needed line(s) Pomona itself put on the list for this
-    staple, returning the first so an undo can put it back. A line a person
-    added (no staple_id) is never touched here."""
+    """
+    Take the still-needed line(s) Pomona itself put on the list for this
+    staple off the list — softly, the way a pre-shop "Drop it" does (status
+    'removed', removed_at stamped), so an Undo puts back the very same row
+    with its store and quantity intact, and so sync_due_staples can see
+    that this trip already has an answer. A line a person added (no
+    staple_id) is never touched here.
+    """
     rows = conn.execute(
         "SELECT id, item, quantity, category, store FROM grocery_items "
         "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
@@ -432,11 +447,35 @@ def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
     if not rows:
         return None
     conn.execute(
-        "DELETE FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (household_id(), staple_id),
+        "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
+        (ADDED_BY_STAPLE, household_id(), staple_id),
     )
     first = rows[0]
     return {"item": first["item"], "quantity": first["quantity"] or "", "category": first["category"], "store": first["store"] or ""}
+
+
+def note_line_removed(conn, line_row, how: str) -> None:
+    """
+    A person took a staple's line off the list by some OTHER route — the
+    row's ⋯ → Remove, or the pre-shop "Drop it" — rather than the two
+    staple buttons. Without this the next list read would put the line
+    straight back, because the staple is still due (the boomerang the
+    2026-09-11 verifier found). Remove means "not this trip"; a pre-shop
+    drop means "we already have it". Called with the row (must carry
+    staple_id) inside the caller's connection, before the caller's own
+    write; commits nothing itself.
+    """
+    if line_row is None or not line_row["staple_id"]:
+        return
+    if _row(conn, line_row["staple_id"]) is None:
+        return
+    # drop_lines=False: the caller owns the row and writes it itself; this
+    # only moves the staple's dates and streak.
+    if how == "plenty":
+        _plenty(conn, line_row["staple_id"], source="tap", drop_lines=False)
+    else:
+        _skip(conn, line_row["staple_id"], source="tap", drop_lines=False)
 
 
 def decide_staple_line(item_id: int, decision: str) -> dict:
@@ -484,26 +523,46 @@ def undo_staple_decision(staple_id: int) -> dict:
         "ORDER BY id DESC LIMIT 1",
         (household_id(), staple_id),
     ).fetchone()
-    if last:
-        conn.execute("DELETE FROM staple_events WHERE id = ?", (last["id"],))
-        if last["kind"] == "skipped":
-            # The auto-pause that may have come with that skip goes too.
-            conn.execute(
-                "DELETE FROM staple_events WHERE id = (SELECT id FROM staple_events WHERE household_id = ? AND staple_id = ? "
-                "AND kind = 'paused' AND source = 'auto' ORDER BY id DESC LIMIT 1)",
-                (household_id(), staple_id),
-            )
-    streak = max(0, (r["skip_streak"] or 0) - (1 if last and last["kind"] == "skipped" else 0))
+    if last is None:
+        # Nothing to undo: say so, change nothing. (A raw call used to
+        # force the staple due — the 2026-09-11 verifier's case g.)
+        out = _shape(r)
+        conn.close()
+        out["undone"] = False
+        return out
+    conn.execute("DELETE FROM staple_events WHERE id = ?", (last["id"],))
+    if last["kind"] == "skipped":
+        # The auto-pause that may have come with that skip goes too.
+        conn.execute(
+            "DELETE FROM staple_events WHERE id = (SELECT id FROM staple_events WHERE household_id = ? AND staple_id = ? "
+            "AND kind = 'paused' AND source = 'auto' ORDER BY id DESC LIMIT 1)",
+            (household_id(), staple_id),
+        )
+    streak = max(0, (r["skip_streak"] or 0) - (1 if last["kind"] == "skipped" else 0))
     conn.execute(
         "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = 0, updated_at = datetime('now') WHERE id = ?",
         (_iso(_today()), streak, staple_id),
     )
+    # Put back the very row that was taken off — store, quantity and all —
+    # rather than letting the next list read make a new, blank one.
+    restored = conn.execute(
+        "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed' "
+        "ORDER BY removed_at DESC, id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
+    if restored:
+        conn.execute(
+            "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL WHERE id = ?",
+            (restored["id"],),
+        )
     conn.commit()
     conn.close()
-    sync_due_staples()
+    if not restored:
+        sync_due_staples()
     conn = get_conn()
     out = _shape(_row(conn, staple_id))
     conn.close()
+    out["undone"] = True
     return out
 
 
@@ -598,9 +657,28 @@ def sync_due_staples() -> dict:
     ).fetchall()
     live_keys = {_grocery._merge_key(row["item"]) for row in live}
     live_staple_ids = {row["staple_id"] for row in live if row["staple_id"]}
+    # A line taken off today — by the staple buttons, ⋯ → Remove, or a
+    # pre-shop drop — is this trip's answer; don't ask again until
+    # tomorrow at the earliest. Older removed lines are just leftovers of
+    # earlier answers, and go.
+    # One clock: the module's _today(), not SQLite's UTC date('now').
+    # removed_at is stamped in UTC, so near midnight a line can count as
+    # "today" for a few extra hours — which errs toward staying quiet.
+    conn.execute(
+        "DELETE FROM grocery_items WHERE household_id = ? AND staple_id IS NOT NULL AND status = 'removed' "
+        "AND date(removed_at) < ?",
+        (household_id(), today),
+    )
+    answered_today = {
+        row["staple_id"]
+        for row in conn.execute(
+            "SELECT staple_id FROM grocery_items WHERE household_id = ? AND staple_id IS NOT NULL AND status = 'removed'",
+            (household_id(),),
+        ).fetchall()
+    }
     added = []
     for s in due:
-        if s["id"] in live_staple_ids or _grocery._merge_key(s["item"]) in live_keys:
+        if s["id"] in live_staple_ids or s["id"] in answered_today or _grocery._merge_key(s["item"]) in live_keys:
             continue
         res = _grocery.add_grocery_item(
             s["item"], quantity=s["quantity"] or "", category=s["category"], added_by=ADDED_BY_STAPLE, conn=conn

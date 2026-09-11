@@ -111,6 +111,15 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
+    # A staple's line dropped here means "we already have it" — say so to the
+    # staple, or the next list read puts the line straight back.
+    _staple_row = conn.execute(
+        "SELECT id, staple_id FROM grocery_items WHERE id = ? AND household_id = ? AND status != 'removed'",
+        (item_id, household_id()),
+    ).fetchone()
+    if _staple_row is not None and _staple_row["staple_id"]:
+        from . import staples as _staples
+        _staples.note_line_removed(conn, _staple_row, how="plenty")
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
         "WHERE id = ? AND household_id = ? AND status != 'removed'",
