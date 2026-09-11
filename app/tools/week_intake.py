@@ -46,6 +46,25 @@ NIGHT_TAGS = {
 }
 
 
+# What each mood pill means to the planner (Emily, 2026-09-04: "the label
+# the user taps should map to a detailed prompt behind the scenes — not the
+# literal two words"). The label is what a person taps; this is what the
+# generator reads (agent.py's intake context carries `mood_guidance`). A
+# mood with no entry here is passed through as its own two words.
+MOOD_GUIDANCE = {
+    "Something warm": "lean towards warming, comforting dishes — soups, stews, braises, bakes — without making every night heavy.",
+    "Lighter than usual": "lean lighter: more vegetables and salads, lighter proteins like fish and chicken, fewer rich sauces and fried things, smaller starch portions.",
+    "Comfort food": "lean towards the household's comfort dishes — familiar, generous, satisfying — a couple of nights, not every night.",
+    "On the grill": "put two or three dinners on the grill or under the broiler where the weather and the recipes allow.",
+    "Protein-heavy": "make protein the centre of most meals — 30g+ per adult serving at lunch and dinner from meat, fish, eggs, dairy or legumes — and keep starches modest.",
+    "Veggie-heavy": "make vegetables the bulk of the plate at most meals — at least two vegetables per dinner, vegetable-forward lunches — with protein and starch in supporting roles; not necessarily vegetarian.",
+    "Fibre-focused": "favour high-fibre ingredients across the week — whole grains, beans and lentils, vegetables with skins, fruit — and say so in a slot's reasoning where it drove the choice.",
+    "Something new": "include two or three dishes the household has not had before, alongside familiar ones, never a whole week of unknowns.",
+    "Try a new cuisine": "pick one cuisine the household has not cooked recently (check what they usually eat) and build two dinners from it, with the rest of the week familiar.",
+    "Keep it cheap": "favour inexpensive proteins and pantry staples, batch cooking, and ingredients that stretch across several meals.",
+}
+
+
 # The hard cap a `rush` night imposes, in minutes. Named rather than inlined
 # because the acknowledgement copy, the generator prompt and the draft
 # screen's per-slot reasons all have to agree on the same number.

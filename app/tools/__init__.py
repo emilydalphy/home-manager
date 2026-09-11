@@ -401,6 +401,7 @@ from .usage import (  # noqa: F401
     touch_household_active,
 )
 from .week_intake import (  # noqa: F401
+    MOOD_GUIDANCE,
     NIGHT_TAGS,
     ONBOARDING_CUISINES,
     RUSH_MAX_MINUTES,

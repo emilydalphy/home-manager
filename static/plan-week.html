@@ -53,6 +53,28 @@
     margin-bottom: 6px;
   }
   .progress { display: flex; gap: 6px; margin-bottom: 18px; }
+  .step-sub { font-size: 0.95rem; line-height: 1.45; color: var(--text-muted); margin: -4px 0 16px; }
+  /* The days as tiles (2026-09-11): the weekday, the date, and a line for
+     whatever has been said about it. Tapping opens the day sheet. */
+  .day-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+  .day-tile {
+    min-height: 74px; padding: 10px 6px 8px; border-radius: 14px;
+    border: 1.5px solid var(--card-border); background: var(--surface-raised);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-family: var(--font-body); cursor: pointer; text-align: center;
+  }
+  .day-tile:hover { border-color: var(--ink-strong); }
+  .day-tile.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+  .day-tile-dow { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+  .day-tile.on .day-tile-dow { color: var(--ivory-ink-muted, rgba(246,238,225,.85)); }
+  .day-tile-num { font-family: var(--font-heading); font-weight: 700; font-size: 18px; line-height: 1.05; }
+  .day-tile-note { font-size: 11px; font-weight: 700; line-height: 1.2; min-height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .meal-block { padding: 12px 0; border-top: 1.5px solid var(--card-border); }
+  .meal-block:first-child { border-top: 0; padding-top: 0; }
+  .meal-block .day-section-label { margin-bottom: 8px; }
+  .meal-block .day { margin: 0; padding: 0; border: 0; background: transparent; }
+  .footer-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .back.skip { color: var(--apricot-label, var(--text-muted)); font-weight: 700; margin-left: auto; }
   .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
   .dot.done { background: var(--midnight-violet); }
 
@@ -395,20 +417,19 @@
 
 <main id="flow" hidden>
   <div class="eyebrow" id="eyebrow"></div>
-  <div class="progress"><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div></div>
+  <div class="progress"><div class="dot" id="dot-1"></div><div class="dot" id="dot-2"></div><div class="dot" id="dot-3"></div><div class="dot" id="dot-4"></div></div>
 
   <div class="joined" id="joined" hidden></div>
 
-  <!-- ---------- Question 1 of 2 ---------- -->
+  <!-- ---------- 1 of 4 · Days ----------
+       Four short screens, one question each (Emily, 2026-09-11, decision D;
+       DESIGN_SYSTEM §2b S1/S7). The days are tiles; tapping one opens the
+       day sheet, where every meal that day can be tagged — the "hosting
+       five for lunch" case that had nowhere to go before. -->
   <section id="q1">
-    <h1>Which nights should I work around?</h1>
-    <!-- The "Why I'm asking" panel that used to sit here was removed on
-         2026-09-10 at Emily's request ("it's not adding enough value") —
-         the no-fluff rule in DESIGN_SYSTEM §8 applied to a question whose
-         title already says what it needs. Question 2 keeps its panel for
-         now; whether that one goes too is her call. -->
-
-    <div id="days"></div>
+    <h1>Any days that are different this week?</h1>
+    <p class="step-sub">Tap a day. Out, home late, guests &mdash; for any meal.</p>
+    <div class="day-tiles" id="day-tiles"></div>
 
     <!-- Trips are OPT-IN CONTEXT, not part of the default flow (Emily's
          decision, 2026-09-03): a light gateway that opens the range picker
@@ -426,51 +447,35 @@
       </span>
     </button>
     <div class="away-set" id="away-set"></div>
-
-    <section class="block" style="margin-top:26px">
-      <div class="card">
-        <div class="block-label">Which lunches leave the house?</div>
-        <p class="block-body">
-          I&rsquo;ll plan every lunch either way. Tap the days someone takes it with them and I&rsquo;ll
-          keep those to things that travel cold and hold up till noon.
-        </p>
-        <div class="chip-row" id="lunch-days"></div>
-        <div class="ack" id="lunch-ack"></div>
-      </div>
-    </section>
   </section>
 
-  <!-- ---------- Question 2 of 2 ---------- -->
+  <!-- ---------- 2 of 4 · Lunches on the go ---------- -->
   <section id="q2" hidden>
-    <h1>What would you like this week?</h1>
-    <div class="why">
-      <b>Why I&rsquo;m asking:</b> your setup tells me what you&rsquo;ll eat. This tells me what you
-      actually want right now &mdash; it&rsquo;s the difference between a correct week and a week you
-      look forward to.
-    </div>
+    <h1>Any lunches on the go this week?</h1>
+    <p class="step-sub">Tap the days someone takes lunch with them. I&rsquo;ll keep those to food that packs cold.</p>
+    <div class="chip-row" id="lunch-days"></div>
+    <div class="ack" id="lunch-ack"></div>
+  </section>
 
-    <section class="block">
-      <div class="block-label">In the mood for</div>
-      <p class="block-body">Pick as many as you like &mdash; I&rsquo;ll lean the week this way without making every night the same.</p>
-      <div class="chip-row" id="moods"></div>
-      <div class="ack" id="mood-ack"></div>
-    </section>
-
-    <section class="block">
+  <!-- ---------- 3 of 4 · In the mood ---------- -->
+  <section id="q3" hidden>
+    <h1>What are you in the mood for?</h1>
+    <p class="step-sub">As many as you like. I won&rsquo;t make every night the same.</p>
+    <div class="chip-row" id="moods"></div>
+    <div class="ack" id="mood-ack"></div>
+    <section class="block" style="margin-top:22px">
       <div class="block-label">Cuisines you fancy</div>
       <p class="block-body" id="cuisine-body"></p>
       <div class="chip-row" id="cuisines"></div>
       <div class="ack" id="cuisine-ack"></div>
     </section>
+  </section>
 
-    <section class="block">
-      <div class="block-label">Anything else you want to share for this week?</div>
-      <p class="block-body">
-        Anything at all &mdash; and if there&rsquo;s a meal you&rsquo;ve already decided on, tell me here.
-        I won&rsquo;t plan over it, and I&rsquo;ll still shop for it so you&rsquo;re not short on the night.
-      </p>
-      <textarea id="freeform" placeholder="Friday is pizza night. Sam has a friend over Saturday. I want to use the lamb in the freezer."></textarea>
-    </section>
+  <!-- ---------- 4 of 4 · Anything else ---------- -->
+  <section id="q4" hidden>
+    <h1>Anything else I should plan around?</h1>
+    <p class="step-sub">A night that&rsquo;s already decided, something in the freezer to use up, a craving. I&rsquo;ll keep it and shop for it.</p>
+    <textarea id="freeform" placeholder="Friday is pizza night. I want to use the lamb in the freezer."></textarea>
   </section>
 
   <!-- ---------- Drafting (shown once "draft my week" is tapped) ---------- -->
@@ -488,8 +493,31 @@
 
 <div class="footer" id="footer" hidden>
   <div class="footer-inner">
+    <div class="footer-links">
+      <button type="button" class="back" id="back" hidden>&lsaquo; Back</button>
+      <button type="button" class="back skip" id="skip"></button>
+    </div>
     <button type="button" class="cta" id="cta"></button>
-    <button type="button" class="back" id="back" hidden>Back to the nights</button>
+  </div>
+</div>
+
+<!-- The day sheet: one day, every meal on it. The dinner block is the
+     card the Days question used to be a list of (tags, who's eating, the
+     guest steppers); breakfast and lunch get who's-eating and a guests
+     count of their own, written straight to attendance, which is what
+     portions and the list read. -->
+<div class="sheet-scrim" id="day-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="day-sheet-title">
+  <div class="sheet">
+    <div class="sheet-head">
+      <span class="sheet-title" id="day-sheet-title"></span>
+      <button type="button" class="sheet-close" id="day-close" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
+      </button>
+    </div>
+    <div id="day-sheet-body"></div>
+    <div class="sheet-actions">
+      <button type="button" class="cta" id="day-done">Done</button>
+    </div>
   </div>
 </div>
 
@@ -594,7 +622,15 @@
   // The one pair that contradicts each other: tapping one clears the other,
   // the same way the server refuses to save both (week_intake.py).
   var OPPOSITES = { rush: 'unrushed', unrushed: 'rush' };
-  var MOODS = ['Something warm', 'Lighter than usual', 'On the grill', 'Comfort food', 'Something new', 'Keep it cheap'];
+  // Each label maps to a fuller line of guidance on the server
+  // (week_intake.MOOD_GUIDANCE) — the pill is what you tap, not what the
+  // planner reads. Protein-heavy / Veggie-heavy / Fibre-focused and "Try a
+  // new cuisine" were Emily's asks (2026-09-04, 2026-09-11).
+  var MOODS = ['Something warm', 'Lighter than usual', 'Comfort food', 'On the grill',
+    'Protein-heavy', 'Veggie-heavy', 'Fibre-focused', 'Something new', 'Try a new cuisine'];
+  var STEP_COUNT = 4;
+  var SKIP_LABELS = { 1: 'Nothing different', 2: 'Nothing on the go', 3: 'Surprise me', 4: 'Nothing else' };
+  var openDay = null;  // the date the day sheet is showing, or null
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -683,8 +719,10 @@
       attendance.members = body.members || [];
       attendance.byDate = body.attendance || {};
       Object.keys(attendance.byDate).forEach(function (d) {
-        var dinner = attendance.byDate[d].dinner;
-        if (dinner && !dinner.summary) dinner.summary = localSummary(dinner);
+        Object.keys(attendance.byDate[d]).forEach(function (slot) {
+          var att = attendance.byDate[d][slot];
+          if (att && !att.summary) att.summary = localSummary(att, slot);
+        });
       });
     } catch (err) {
       console.warn('Attendance load failed:', err);
@@ -706,41 +744,159 @@
   }
 
   // ---------- Q1: the nights ----------
+  // ---------- the days, as tiles ----------
+  function dayNoteFor(day) {
+    var d = day.date;
+    var bits = [];
+    var tags = answers.night_tags[d] || [];
+    TAGS.forEach(function (t) { if (tags.indexOf(t.key) !== -1 && t.key !== 'normal') bits.push(t.label); });
+    var gc = answers.guest_counts[d];
+    if (gc && (gc.adults || gc.children)) bits.push('+' + ((gc.adults || 0) + (gc.children || 0)));
+    ['breakfast', 'lunch'].forEach(function (slot) {
+      var att = attendanceFor(d, slot);
+      if (att && att.guest_count) bits.push(slot + ' +' + att.guest_count);
+      if (att && att.absent_names && att.absent_names.length) bits.push(joinNames(att.absent_names) + ' out (' + slot + ')');
+    });
+    var dinnerAtt = attendanceFor(d, 'dinner');
+    if (dinnerAtt && dinnerAtt.absent_names && dinnerAtt.absent_names.length && tags.indexOf('out') === -1) {
+      bits.push(joinNames(dinnerAtt.absent_names) + ' out');
+    }
+    return bits.join(' · ');
+  }
+
   function renderDays() {
-    $('days').innerHTML = data.days.map(function (day) {
-      return (
-        '<div class="day" data-date="' + day.date + '">' +
-          '<div class="day-head">' +
-            '<span class="day-name">' + esc(day.weekday) + '</span>' +
-            '<span class="day-date">' + day.day_of_month + '</span>' +
-          '</div>' +
-          '<div class="day-hint">' + esc(day.hint || 'Nothing on the calendar') + '</div>' +
-          '<div class="day-section-label">What kind of evening?</div>' +
+    $('day-tiles').innerHTML = data.days.map(function (day) {
+      return '<button type="button" class="day-tile" data-date="' + day.date + '">' +
+        '<span class="day-tile-dow">' + esc(day.short || day.weekday) + '</span>' +
+        '<span class="day-tile-num">' + day.day_of_month + '</span>' +
+        '<span class="day-tile-note"></span>' +
+      '</button>';
+    }).join('');
+    $('day-tiles').querySelectorAll('.day-tile').forEach(function (tile) {
+      tile.addEventListener('click', function () { openDaySheet(tile.dataset.date); });
+    });
+    paintTiles();
+  }
+
+  function paintTiles() {
+    if (!data) return;
+    data.days.forEach(function (day) {
+      var tile = $('day-tiles').querySelector('[data-date="' + day.date + '"]');
+      if (!tile) return;
+      var note = dayNoteFor(day);
+      tile.classList.toggle('on', !!note);
+      tile.querySelector('.day-tile-note').textContent = note;
+      tile.title = note || (day.hint || '');
+    });
+  }
+
+  // ---------- the day sheet ----------
+  function dayFor(date) {
+    return data.days.filter(function (d) { return d.date === date; })[0] || null;
+  }
+
+  function mealBlockHtml(slot, label) {
+    if (!attendance.members.length) return '';
+    return '<div class="meal-block" data-slot="' + slot + '">' +
+      '<div class="day-section-label">' + esc(label) + '</div>' +
+      presenceHtml(slot) +
+      '<div class="presence-summary"></div>' +
+      '<div class="guests-slot">' + stepperHtml('guests-' + slot, 'Guests') + '</div>' +
+    '</div>';
+  }
+
+  function openDaySheet(date) {
+    var day = dayFor(date);
+    if (!day) return;
+    openDay = date;
+    $('day-sheet-title').textContent = day.weekday + ' ' + day.day_of_month;
+    $('day-sheet-body').innerHTML =
+      '<div class="day" data-date="' + day.date + '">' +
+        (day.hint ? '<div class="day-hint">' + esc(day.hint) + '</div>' : '') +
+        '<div class="meal-block" data-slot="dinner">' +
+          '<div class="day-section-label">Dinner</div>' +
           '<div class="tag-row">' +
             TAGS.map(function (t) {
               return '<button type="button" class="tag" data-tag="' + t.key + '">' + esc(t.label) + '</button>';
             }).join('') +
           '</div>' +
           (attendance.members.length ? '<div class="day-section-label presence-section-label">Who&rsquo;s eating?</div>' : '') +
-          presenceHtml() +
+          presenceHtml('dinner') +
           '<div class="presence-summary"></div>' +
           '<div class="ack"></div>' +
           '<div class="guests" hidden></div>' +
-        '</div>'
-      );
-    }).join('');
-
-    $('days').querySelectorAll('.day').forEach(function (dayEl) {
-      dayEl.querySelectorAll('.tag').forEach(function (btn) {
-        btn.addEventListener('click', function () { toggleTag(dayEl, btn.dataset.tag); });
-      });
-      dayEl.querySelectorAll('.avatar').forEach(function (btn) {
-        btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
-      });
-      var remember = dayEl.querySelector('.remember');
-      if (remember) remember.addEventListener('click', function () { offerToRemember(dayEl); });
-      paintDay(dayEl);
+        '</div>' +
+        mealBlockHtml('lunch', 'Lunch') +
+        mealBlockHtml('breakfast', 'Breakfast') +
+      '</div>';
+    var dayEl = $('day-sheet-body').querySelector('.day');
+    dayEl.querySelectorAll('.tag').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggleTag(dayEl, btn.dataset.tag); });
     });
+    dayEl.querySelectorAll('.avatar').forEach(function (btn) {
+      btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
+    });
+    dayEl.querySelectorAll('.guests-slot .stepper button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var block = btn.closest('.meal-block');
+        stepSlotGuests(dayEl, block.dataset.slot, Number(btn.dataset.delta));
+      });
+    });
+    paintDay(dayEl);
+    $('day-sheet').hidden = false;
+  }
+
+  function closeDaySheet() {
+    $('day-sheet').hidden = true;
+    openDay = null;
+    paintTiles();
+    paintCta();
+  }
+
+  // Guests at breakfast or lunch: one count, straight to attendance for
+  // that slot (the same store the dinner steppers are synced into on save),
+  // so portions and the list see it the same way. Hosting five for lunch
+  // was the case with nowhere to go (Emily, 2026-09-11).
+  async function stepSlotGuests(dayEl, slot, delta) {
+    var d = dayEl.dataset.date;
+    var att = attendanceFor(d, slot) || ensureLocalAttendance(d, slot);
+    var next = Math.min(10, Math.max(0, (att.guest_count || 0) + delta));
+    if (next === (att.guest_count || 0)) return;
+    var previous = JSON.parse(JSON.stringify(attendance.byDate[d] || {}));
+    att.guest_count = next;
+    att.headcount = (att.present_names || []).length + next;
+    att.summary = localSummary(att, slot);
+    paintSlotBlock(dayEl, slot);
+    try {
+      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: d, slot: slot, guest_count: next })
+      });
+      if (!res.ok) throw new Error('attendance save failed');
+      var saved = await res.json();
+      attendance.byDate[d] = attendance.byDate[d] || {};
+      attendance.byDate[d][slot] = saved;
+      paintSlotBlock(dayEl, slot);
+    } catch (err) {
+      console.warn('Guest count save failed:', err);
+      attendance.byDate[d] = previous;
+      paintSlotBlock(dayEl, slot);
+      var summary = dayEl.querySelector('.meal-block[data-slot="' + slot + '"] .presence-summary');
+      if (summary) summary.textContent = 'I couldn’t save that just now — try again in a moment.';
+    }
+  }
+
+  function paintSlotBlock(dayEl, slot) {
+    var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]');
+    if (!block) return;
+    var att = attendanceFor(dayEl.dataset.date, slot);
+    var n = att ? (att.guest_count || 0) : 0;
+    block.querySelectorAll('.guests-slot output').forEach(function (out) { out.textContent = n; });
+    block.querySelectorAll('.guests-slot .stepper button').forEach(function (btn) {
+      btn.disabled = Number(btn.dataset.delta) < 0 ? n <= 0 : n >= 10;
+    });
+    paintPresence(dayEl, slot);
   }
 
   // ---------- presence avatars: the one-off gesture ----------
@@ -749,14 +905,14 @@
   // Dinner only — the day card is a dinner-shaped question in this app,
   // same as the night tags beside it. Breakfast and lunch absences are
   // reachable through the range picker and through chat.
-  function presenceHtml() {
+  function presenceHtml(slot) {
     if (!attendance.members.length) return '';
     return (
-      '<div class="presence">' +
-        '<span class="presence-label">Dinner</span>' +
+      '<div class="presence" data-slot="' + slot + '">' +
+        '<span class="presence-label">Who</span>' +
         '<div class="presence-chips">' +
           attendance.members.map(function (m) {
-            return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" ' +
+            return '<button type="button" class="avatar" data-member="' + esc(m.name) + '" data-slot="' + slot + '" ' +
               'aria-pressed="true" title="' + esc(m.name) + '">' + esc(initialFor(m)) + '</button>';
           }).join('') +
         '</div>' +
@@ -782,24 +938,34 @@
     return (clash ? name.slice(0, 2) : name.charAt(0)).toUpperCase();
   }
 
-  function attendanceFor(date) {
+  function attendanceFor(date, slot) {
     var day = attendance.byDate[date] || {};
-    return day.dinner || null;
+    return day[slot || 'dinner'] || null;
   }
 
-  function paintPresence(dayEl) {
+  function ensureLocalAttendance(date, slot) {
+    var day = attendance.byDate[date] || (attendance.byDate[date] = {});
+    return day[slot] || (day[slot] = {
+      absent_names: [], present_names: attendance.members.map(function (m) { return m.name; }),
+      headcount: attendance.members.length, guest_count: 0, summary: ''
+    });
+  }
+
+  function paintPresence(dayEl, slot) {
+    slot = slot || 'dinner';
     var d = dayEl.dataset.date;
-    var att = attendanceFor(d);
+    var att = attendanceFor(d, slot);
     var awayNames = att ? att.absent_names || [] : [];
-    dayEl.querySelectorAll('.avatar').forEach(function (btn) {
+    var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]') || dayEl;
+    block.querySelectorAll('.avatar').forEach(function (btn) {
       var out = awayNames.indexOf(btn.dataset.member) !== -1;
       btn.classList.toggle('out', out);
       btn.setAttribute('aria-pressed', out ? 'false' : 'true');
-      btn.title = btn.dataset.member + (out ? ' — out for dinner' : ' — home for dinner');
+      btn.title = btn.dataset.member + (out ? ' — out for ' + slot : ' — home for ' + slot);
     });
-    var summary = dayEl.querySelector('.presence-summary');
+    var summary = block.querySelector('.presence-summary');
     if (summary) summary.textContent = att && att.summary ? att.summary : '';
-    var remember = dayEl.querySelector('.remember');
+    var remember = block.querySelector('.remember');
     // The offer appears only once a toggle has actually created something
     // worth remembering — progressive disclosure, same rule as the per-meal
     // tags (Emily's decision, 2026-09-03).
@@ -808,41 +974,39 @@
 
   async function toggleAvatar(dayEl, btn) {
     var d = dayEl.dataset.date;
+    var slot = btn.dataset.slot || 'dinner';
     var name = btn.dataset.member;
     var wasOut = btn.classList.contains('out');
     var previous = attendance.byDate[d] ? JSON.parse(JSON.stringify(attendance.byDate[d])) : null;
 
     // Update on tap, before the server confirms (DESIGN_SYSTEM §6 refresh
     // policy). A failed save puts the row back and says so.
-    applyLocalToggle(d, name, wasOut);
-    paintPresence(dayEl);
+    applyLocalToggle(d, slot, name, wasOut);
+    paintPresence(dayEl, slot);
 
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: d, slot: 'dinner', member: name, present: wasOut })
+        body: JSON.stringify({ date: d, slot: slot, member: name, present: wasOut })
       });
       if (!res.ok) throw new Error('attendance save failed');
       var saved = await res.json();
       attendance.byDate[d] = attendance.byDate[d] || {};
-      attendance.byDate[d].dinner = saved;
-      paintPresence(dayEl);
+      attendance.byDate[d][slot] = saved;
+      paintPresence(dayEl, slot);
     } catch (err) {
       console.warn('Attendance save failed:', err);
       if (previous) attendance.byDate[d] = previous; else delete attendance.byDate[d];
-      paintPresence(dayEl);
-      var summary = dayEl.querySelector('.presence-summary');
+      paintPresence(dayEl, slot);
+      var block = dayEl.querySelector('.meal-block[data-slot="' + slot + '"]') || dayEl;
+      var summary = block.querySelector('.presence-summary');
       if (summary) summary.textContent = 'I couldn’t save that just now — try again in a moment.';
     }
   }
 
-  function applyLocalToggle(date, name, becomingPresent) {
-    var day = attendance.byDate[date] || (attendance.byDate[date] = {});
-    var att = day.dinner || (day.dinner = {
-      absent_names: [], present_names: attendance.members.map(function (m) { return m.name; }),
-      headcount: attendance.members.length, guest_count: 0, summary: ''
-    });
+  function applyLocalToggle(date, slot, name, becomingPresent) {
+    var att = ensureLocalAttendance(date, slot);
     var absent = att.absent_names || [];
     if (becomingPresent) absent = absent.filter(function (n) { return n !== name; });
     else if (absent.indexOf(name) === -1) absent = absent.concat([name]);
@@ -851,19 +1015,20 @@
       .map(function (m) { return m.name; })
       .filter(function (n) { return absent.indexOf(n) === -1; });
     att.headcount = att.present_names.length + (att.guest_count || 0);
-    att.summary = localSummary(att);
+    att.summary = localSummary(att, slot);
   }
 
   // A local echo of the server's own sentence, used only for the instant
   // between the tap and the response — the server's version replaces it.
-  function localSummary(att) {
+  function localSummary(att, slot) {
+    var meal = capitalize(slot || 'dinner');
     var away = att.absent_names || [];
     if (!away.length && !att.guest_count) return '';
-    if (!att.headcount) return 'Dinner skipped — nobody’s home. Nothing planned, nothing bought.';
+    if (!att.headcount) return meal + ' skipped — nobody’s home. Nothing planned, nothing bought.';
     var bits = [];
     if (away.length) bits.push(joinNames(away) + (away.length === 1 ? '’s out' : ' are out'));
     if (att.guest_count) bits.push(att.guest_count + ' guest' + (att.guest_count === 1 ? '' : 's'));
-    return 'Dinner for ' + att.headcount + ' — ' + bits.join(' and ') + '.';
+    return meal + ' for ' + att.headcount + ' — ' + bits.join(' and ') + '.';
   }
 
   function joinNames(names) {
@@ -883,7 +1048,7 @@
   // that promotion rule is decided.
   function offerToRemember(dayEl) {
     var d = dayEl.dataset.date;
-    var att = attendanceFor(d);
+    var att = attendanceFor(d, 'dinner');
     if (!att) return;
     att.remembered = true;
     var summary = dayEl.querySelector('.presence-summary');
@@ -929,7 +1094,10 @@
       ? 'I’ll ' + acks.join(' And I’ll ')
       : '';
     renderGuests(dayEl, tags.indexOf('guests') !== -1);
-    paintPresence(dayEl);
+    paintPresence(dayEl, 'dinner');
+    paintSlotBlock(dayEl, 'lunch');
+    paintSlotBlock(dayEl, 'breakfast');
+    paintTiles();
   }
 
   // ---------- the guest follow-up ----------
@@ -961,6 +1129,7 @@
       btn.addEventListener('click', function () {
         var d = dayEl.dataset.date;
         var counts = answers.guest_counts[d] || { adults: 0, children: 0 };
+        // (the breakfast/lunch guest steppers are wired in openDaySheet)
         var next = counts[btn.dataset.field] + Number(btn.dataset.delta);
         counts[btn.dataset.field] = Math.min(10, Math.max(0, next));
         answers.guest_counts[d] = counts;
@@ -1311,29 +1480,42 @@
   // ---------- steps ----------
   function showStep(n) {
     step = n;
-    $('q1').hidden = n !== 1;
-    $('q2').hidden = n !== 2;
-    $('back').hidden = n !== 2;
-    $('eyebrow').textContent = 'Question ' + n + ' of 2 · ' + (data.week_label || '');
-    $('dot-1').classList.toggle('done', n >= 1);
-    $('dot-2').classList.toggle('done', n >= 2);
+    for (var i = 1; i <= STEP_COUNT; i++) {
+      $('q' + i).hidden = n !== i;
+      $('dot-' + i).classList.toggle('done', n >= i);
+    }
+    $('back').hidden = n === 1;
+    $('eyebrow').textContent = n + ' of ' + STEP_COUNT + ' · ' + (data.week_label || '');
     window.scrollTo(0, 0);
     paintCta();
   }
 
+  // The quiet skip is the honest fast path for a screen with nothing to
+  // say; it advances without changing an answer. It leaves the last screen
+  // rather than drafting, because drafting is the one apricot.
   function paintCta() {
-    if (step === 1) {
-      // The CTA reflects what's been noted so far. "Every night is a
-      // regular one" is a real, valid answer — not an empty state.
-      var n = Object.keys(answers.night_tags).filter(function (d) {
-        return (answers.night_tags[d] || []).indexOf('normal') === -1;
-      }).length;
-      $('cta').textContent = n
-        ? 'Next — ' + n + (n === 1 ? ' night noted' : ' nights noted')
-        : 'Next — every night is a regular one';
+    var skip = $('skip');
+    if (step < STEP_COUNT) {
+      var noted = step === 1 ? data.days.filter(function (day) { return !!dayNoteFor(day); }).length : 0;
+      $('cta').textContent = step === 1 && noted
+        ? 'Next — ' + noted + (noted === 1 ? ' day noted' : ' days noted')
+        : 'Next';
+      skip.textContent = SKIP_LABELS[step];
+      skip.hidden = step === 1 && noted > 0;
     } else {
-      $('cta').textContent = 'That’s everything — draft my week';
+      $('cta').textContent = 'Draft my week';
+      skip.textContent = SKIP_LABELS[step];
+      skip.hidden = !!$('freeform').value.trim();
     }
+  }
+
+  // Each screen saves its own answers as its own revision, so a second
+  // adult joining mid-way carries on from where the first got to.
+  async function saveStep(n) {
+    if (n === 1) return saveIntake({ night_tags: answers.night_tags, guest_counts: answers.guest_counts });
+    if (n === 2) return saveIntake({ packed_lunch_days: answers.packed_lunch_days });
+    if (n === 3) return saveIntake({ moods: answers.moods, cuisines: answers.cuisines });
+    return null;
   }
 
   async function saveIntake(payload) {
@@ -1363,8 +1545,8 @@
   }
 
   function showDraftProgress() {
-    $('q1').hidden = true;
-    $('q2').hidden = true;
+    for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
+    
     $('back').hidden = true;
     var section = $('draft-progress');
     section.hidden = false;
@@ -1461,20 +1643,14 @@
     return plan;
   }
 
-  $('cta').addEventListener('click', async function () {
+  async function advance() {
     var btn = $('cta');
     btn.disabled = true;
     try {
-      if (step === 1) {
-        // Q1 saves its own half as its own revision, so the answers exist
-        // for the other adult to join before Q2 is even opened.
-        await saveIntake({
-          night_tags: answers.night_tags,
-          guest_counts: answers.guest_counts,
-          packed_lunch_days: answers.packed_lunch_days
-        });
+      if (step < STEP_COUNT) {
+        await saveStep(step);
         btn.disabled = false;
-        showStep(2);
+        showStep(step + 1);
         return;
       }
 
@@ -1509,16 +1685,22 @@
       stopDraftWaiter();
       if (!$('draft-progress').hidden) {
         $('draft-progress').hidden = true;
-        $('q2').hidden = false;
+        $('q' + STEP_COUNT).hidden = false;
         $('back').hidden = false;
       }
       btn.disabled = false;
       paintCta();
       alert('I couldn’t save that just now — try again in a moment.');
     }
-  });
+  }
 
-  $('back').addEventListener('click', function () { showStep(1); });
+  $('cta').addEventListener('click', advance);
+  $('skip').addEventListener('click', advance);
+  $('back').addEventListener('click', function () { if (step > 1) showStep(step - 1); });
+  $('freeform').addEventListener('input', paintCta);
+  $('day-close').addEventListener('click', closeDaySheet);
+  $('day-done').addEventListener('click', closeDaySheet);
+  $('day-sheet').addEventListener('click', function (e) { if (e.target === $('day-sheet')) closeDaySheet(); });
 
   // The trips gateway and its sheet.
   $('away-gate').addEventListener('click', openAwaySheet);
