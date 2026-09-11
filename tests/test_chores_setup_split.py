@@ -221,22 +221,31 @@ def test_progress_dots_still_match_the_question_step_count():
     assert "const questionSteps = [" not in ONBOARDING, (
         "the dots are back to a hand-maintained list; derive them from stepFlow()"
     )
-    assert "stepFlow().filter(k => k !== 'reveal')" in ONBOARDING
+    # UPDATED 2026-09-10 (the welcome-flow branch): the five intro screens
+    # ahead of the first question carry their own pager and are filtered
+    # out of the dots alongside 'reveal' — see renderProgress and
+    # tests/test_onboarding_welcome_flow.py for the count.
+    assert "stepFlow().filter(k => k !== 'reveal' && INTRO_STEPS.indexOf(k) === -1)" in ONBOARDING
+    intro_m = re.search(r"const INTRO_STEPS = \[([^\]]*)\]", ONBOARDING)
+    assert intro_m
+    intro_steps = [s.strip().strip("'") for s in intro_m.group(1).split(",")]
 
     # UPDATED 2026-09-10: this used to slice the list at 'reveal' and then
     # assert the slice equalled the same slice — unfalsifiable by
     # construction, so it said nothing about the dots at all. What is worth
     # pinning is that the dotted run covers every step that is a question
-    # and no step that isn't. renderProgress removes exactly one key, so
-    # 'reveal' has to be the LAST step for the dots to stop where they
-    # should; a step added after it (which is where the old chores steps
-    # sat) would silently lose its dot, and that is what fails here now.
-    question_steps = all_steps[: all_steps.index("reveal")]
-    assert question_steps == [s for s in all_steps if s != "reveal"], (
+    # and no step that isn't. renderProgress removes the intro and exactly
+    # one more key, so 'reveal' has to be the LAST step for the dots to stop
+    # where they should; a step added after it (which is where the old
+    # chores steps sat) would silently lose its dot, and that is what fails
+    # here now.
+    assert all_steps[: len(intro_steps)] == intro_steps, "the intro isn't at the front"
+    question_steps = all_steps[len(intro_steps): all_steps.index("reveal")]
+    assert question_steps == [s for s in all_steps if s != "reveal" and s not in intro_steps], (
         "a step sits after 'reveal' — the dots stop before it"
     )
     assert all_steps[-1] == "reveal"
-    assert len(question_steps) == len(all_steps) - 1
+    assert len(question_steps) == len(all_steps) - 1 - len(intro_steps)
 
 
 def test_chores_setup_page_reuses_the_same_save_route():
