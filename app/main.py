@@ -4004,6 +4004,100 @@ _PATH_SHAPE_RE = re.compile(r"^[A-Za-z0-9/._:<>\-]{0,120}$")
 _MAX_CLIENT_DETAIL = 200
 _MAX_CLIENT_WHERE = 120
 
+# ---------- the shape of a browser error ----------
+#
+# What the app kept for a real tester's crash, in full: kind=client,
+# where='/', detail='browser error'. Every word of it true, and no way to
+# find the thing in the code. Emily's call (2026-09-10): keep the SHAPE —
+# the type, the script file and line, a few stack frames — and still never
+# the words, because the reasoning above holds exactly as written.
+#
+# All three are validated HERE, at capture. static/error-reporter.js reduces
+# the shape on its side too, and that is a convenience rather than the
+# check: the browser is the untrusted end, and anything it can send, a curl
+# can send without running the reporter at all.
+
+# A fixed list, not a pattern, and that is the whole of the decision. A
+# pattern — CamelCase ending in "Error" — admits
+# `class IgnoreEveryPriorInstructionError extends Error {}`: forty
+# characters of attacker-authored English landing in an agent's context,
+# which is the exact channel dropping the message exists to close. So: every
+# standard JS constructor, plus the DOMException names a browser app
+# actually hits. Anything else is recorded as the honest "(other)", which
+# still says a browser error happened here and still carries nothing anybody
+# wrote. Extend the list when a real miss shows up.
+_JS_ERROR_TYPES = frozenset({
+    "AggregateError", "DOMException", "Error", "EvalError", "InternalError",
+    "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError",
+    # DOMException .name values. AbortError and NetworkError are the two
+    # that matter most here: they are how a dropped fetch shows up, and most
+    # of this app's screens load their data that way.
+    "AbortError", "ConstraintError", "DataCloneError", "DataError",
+    "EncodingError", "HierarchyRequestError", "InvalidAccessError",
+    "InvalidCharacterError", "InvalidModificationError", "InvalidStateError",
+    "NamespaceError", "NetworkError", "NoModificationAllowedError",
+    "NotAllowedError", "NotFoundError", "NotReadableError", "NotSupportedError",
+    "OperationError", "QuotaExceededError", "SecurityError", "TimeoutError",
+    "TransactionInactiveError", "UnknownError", "VersionError",
+    "WrongDocumentError",
+})
+_UNKNOWN_ERROR_TYPE = "(other)"
+# A script file and a line, optionally a column: "shell.js:6207:15". A bare
+# filename only — the path is stripped first, for the same reason where_
+# stores a route pattern.
+_SOURCE_SHAPE_RE = re.compile(r"^[A-Za-z0-9_.\-]{1,60}:\d{1,7}(?::\d{1,7})?$")
+# One stack frame: a function name, then where it is. The function name is
+# JS identifier characters only — no spaces, no punctuation beyond _ $ . —
+# so a frame reads as a token rather than as a sentence. A frame whose
+# function name fails that keeps its file and line and loses the name; a
+# frame whose file and line fail is dropped entirely.
+#
+# The residual, said plainly rather than left to be rediscovered: a function
+# or file name is written by whoever wrote the script, and somebody POSTing
+# straight at the route writes both. What that buys them is at most forty
+# identifier characters with no spaces and no punctuation, five times over,
+# inside a 240-character column — a token, not a sentence, and nothing that
+# can quote, close a fence or address a reader. That is the same bound the
+# type list draws, and it is the reason the message is still dropped whole:
+# a message is the field where a sentence fits.
+_STACK_FUNC_RE = re.compile(r"^[A-Za-z0-9_$.]{1,40}$")
+_MAX_STACK_FRAMES = 5
+
+
+def _safe_client_error_type(error_type: str) -> str:
+    name = " ".join(str(error_type or "").split())[:_MAX_CLIENT_WHERE]
+    if not name:
+        return ""
+    return name if name in _JS_ERROR_TYPES else _UNKNOWN_ERROR_TYPE
+
+
+def _basename(text: str) -> str:
+    """The file, without the path or the query string it arrived wearing."""
+    return text.split("?")[0].split("#")[0].rsplit("/", 1)[-1]
+
+
+def _safe_client_source(source: str) -> str:
+    text = _basename(" ".join(str(source or "").split()))
+    return text if _SOURCE_SHAPE_RE.match(text) else ""
+
+
+def _safe_client_stack(frames: list[str]) -> str:
+    """
+    A few frames of "func@file:line", innermost first, joined by " < ".
+
+    Deliberately not a stack TRACE: no arguments, no messages, no absolute
+    paths. It is the two things that answer "where in the code is this" —
+    which function, which line — and nothing that could be prose.
+    """
+    out = []
+    for frame in list(frames or [])[:_MAX_STACK_FRAMES]:
+        func, _, where = " ".join(str(frame or "").split()).rpartition("@")
+        where = _basename(where)
+        if not _SOURCE_SHAPE_RE.match(where):
+            continue
+        out.append(f"{func}@{where}" if _STACK_FUNC_RE.match(func) else where)
+    return " < ".join(out)[:240]
+
 
 def _safe_client_detail(detail: str) -> str:
     text = " ".join(str(detail or "").split())[:_MAX_CLIENT_DETAIL]
@@ -4015,7 +4109,11 @@ def _safe_client_detail(detail: str) -> str:
     if m:
         return f"failed to load {_safe_client_where(m.group(1))}"
     m = _JS_ERROR_CLASS_RE.match(text)
-    if m:
+    # Checked against the list rather than the pattern, same reason as
+    # _safe_client_error_type: the pattern alone would have let a class
+    # named to read as an instruction through, wearing the "recognised JS
+    # error" badge.
+    if m and m.group(1) in _JS_ERROR_TYPES:
         return m.group(1)
     # Something else entirely. That a browser error happened here is still
     # worth a row; its wording is not worth the risk of carrying.
@@ -4030,6 +4128,13 @@ def _safe_client_where(where: str) -> str:
 class ClientErrorRequest(BaseModel):
     where: str = ""
     detail: str = ""
+    # The shape, from a reporter that already reduced it. Every one of these
+    # is re-derived server-side before it is stored — see the comment block
+    # above _safe_client_error_type for why the browser's own reduction is
+    # not the check.
+    type: str = ""
+    source: str = ""
+    stack: list[str] = []
 
 
 @app.post("/api/client-error")
@@ -4044,6 +4149,11 @@ def report_client_error(request: Request, req: ClientErrorRequest):
     dropped, or there was genuinely nothing to show — three very different
     problems with one appearance.
 
+    What lands is the SHAPE and never the wording: a type off a fixed list,
+    a script file and line, a few stack frames. Every field is re-derived
+    here rather than trusted, and repeats fold into one row's occurrences
+    — see _safe_client_error_type above and tools.record_error.
+
     Rate-limited with the ordinary buckets, because a page stuck in an
     error loop would otherwise write a row per frame. Deliberately returns
     204 and never an error of its own: a failure to report a failure must
@@ -4055,7 +4165,12 @@ def report_client_error(request: Request, req: ClientErrorRequest):
     except HTTPException:
         return Response(status_code=204)
     tools.record_error(
-        "client", where=_safe_client_where(req.where), detail=_safe_client_detail(req.detail)
+        "client",
+        where=_safe_client_where(req.where),
+        detail=_safe_client_detail(req.detail),
+        error_type=_safe_client_error_type(req.type),
+        source=_safe_client_source(req.source),
+        stack_shape=_safe_client_stack(req.stack),
     )
     return Response(status_code=204)
 

@@ -491,6 +491,61 @@ def _money(dollars: float) -> str:
     return f"${dollars:,.2f}" if dollars >= 1 else f"${dollars:.4f}"
 
 
+def _error_shapes(errors: dict) -> dict[tuple, int]:
+    """
+    One entry per distinct error, and how many times it happened.
+
+    The key is everything that locates the thing in the code -- kind, page,
+    detail, type, script and line, stack -- so eleven copies of one failure
+    read as one problem with a count on it, and two genuinely different
+    failures on one page stay two lines. Detail is in the key because
+    without it "failed to load shell.js" and "failed to load theme.css"
+    fold into one line that names neither.
+
+    .get on every shape field, not [], because this can be reading a
+    deployment older than the shape columns: a morning report that omits a
+    line tells you more than one that crashes.
+    """
+    shapes: dict[tuple, int] = {}
+    for row in errors.get("recent") or []:
+        key = (
+            row.get("kind", ""),
+            row.get("location", ""),
+            row.get("detail", ""),
+            row.get("error_type", ""),
+            row.get("source", ""),
+            row.get("stack_shape", ""),
+        )
+        # occurrences is 1 for every row written before repeats were
+        # counted, and for every row from an older deployment.
+        shapes[key] = shapes.get(key, 0) + int(row.get("occurrences") or 1)
+    return shapes
+
+
+def _print_shape(key: tuple, n: int) -> None:
+    """
+    One error, printed as what it is and where it is.
+
+    Everything on these lines is a validated shape -- a status code, a tool
+    name, a type off a fixed list, a file and line, identifier-only frame
+    names. No message reaches here, which is the whole reason this output is
+    safe to read into an agent's context.
+    """
+    kind, where, detail, error_type, source, stack = key
+    # error_type is the better name for the thing when there is one; detail
+    # is what the other three kinds have and what a row written before the
+    # shape columns existed has.
+    named = error_type or detail
+    head = f"      {kind:10} {named or where}"
+    if named and where:
+        head += f" on {where}"
+    if source:
+        head += f"  {source}"
+    print(head + (f"  (x{n})" if n > 1 else ""))
+    if stack:
+        print(f"                 {stack}")
+
+
 def _print_human(report: list[dict], days: int, source: str) -> None:
     print(f"(read from {source})")
     for h in report:
@@ -504,13 +559,8 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         if errors["total"]:
             kinds = ", ".join(f"{n} {k}" for k, n in errors["by_kind"].items())
             print(f"  BROKEN — {errors['total']} in the last {days}d: {kinds}")
-            # Grouped, so eleven copies of one failure read as one problem.
-            seen: dict[tuple[str, str], int] = {}
-            for row in errors["recent"]:
-                key = (row["kind"], row["location"])
-                seen[key] = seen.get(key, 0) + 1
-            for (kind, where), n in sorted(seen.items(), key=lambda kv: -kv[1])[:8]:
-                print(f"      {kind:10} {where}" + (f"  (x{n})" if n > 1 else ""))
+            for key, n in sorted(_error_shapes(errors).items(), key=lambda kv: -kv[1])[:8]:
+                _print_shape(key, n)
         else:
             print("  Nothing broke.")
 
@@ -572,6 +622,27 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
             )
 
         print(f"  Last active: {usage['last_active_at'] or 'never'}")
+
+    # The one thing no per-household section can say: the same break, in
+    # more than one house. That is the difference between a tester's own
+    # device doing something odd and a bug shipped to everybody, and it is
+    # the first thing worth knowing when deciding what to fix tonight.
+    # Counted here rather than in the app because the app has no
+    # all-households view, deliberately — this script is the only place
+    # that legitimately holds every household at once, and it is holding
+    # shapes, not data.
+    across: dict[tuple, list[int]] = {}
+    for h in report:
+        if h.get("unreachable"):
+            continue
+        for key, n in _error_shapes(h["errors"]).items():
+            across.setdefault(key, []).append(n)
+    shared = {k: v for k, v in across.items() if len(v) > 1}
+    if shared:
+        print("\n=== BROKEN IN MORE THAN ONE HOUSEHOLD ===")
+        for key, counts in sorted(shared.items(), key=lambda kv: -sum(kv[1]))[:8]:
+            _print_shape(key, sum(counts))
+            print(f"                 across {len(counts)} households")
 
 
 def main() -> int:

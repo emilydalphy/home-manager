@@ -367,6 +367,25 @@ _MIGRATIONS = [
     # nothing for THIS plan and every other plan is untouched. Set through
     # set_prep_days(this_week_only=True).
     ("weekly_plans", "skip_prep_this_week", "INTEGER NOT NULL DEFAULT 0"),
+    # Loop Board "A browser error tells us nothing" (Emily, 2026-09-10). The
+    # whole record of a real tester's crash was kind=client, where=/,
+    # detail='browser error' — true, and impossible to find in the code. So
+    # an error keeps its SHAPE: a type, a script file and line, a few stack
+    # frames. Not its wording, which is still dropped at capture for the
+    # reason it always was. See schema.sql's comment on error_events.
+    # Existing rows keep '' on all three, which is the honest reading — the
+    # shape was never captured for them and inventing one would be inventing
+    # a stack trace. The tester's own error is written off as unrecoverable.
+    ("error_events", "error_type", "TEXT NOT NULL DEFAULT ''"),
+    ("error_events", "source", "TEXT NOT NULL DEFAULT ''"),
+    ("error_events", "stack_shape", "TEXT NOT NULL DEFAULT ''"),
+    # Repeats are counted rather than stored one row each. Every existing
+    # row IS one occurrence, so the default 1 makes the old rows and the new
+    # ones add up the same way and nothing needs rewriting.
+    ("error_events", "occurrences", "INTEGER NOT NULL DEFAULT 1"),
+    # '' on an existing row, read as "only ever seen at created_at" — which
+    # is exactly what a row with occurrences = 1 means.
+    ("error_events", "last_seen_at", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
