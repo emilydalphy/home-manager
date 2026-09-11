@@ -314,6 +314,56 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — The trouble line was keyed by POSITION, and two readable
+  sentences had been swallowed. Branch `overnight/review-plus-and-counts`,
+  third and final review round; everything else came back safe to merge.**
+  - **`reviewState.troubleFor` was an index into a list every render
+    rebuilds.** A chat turn tagged `tab: 'week'` reloads the week under
+    this screen, and the sentence is only ever cleared by another tap — so
+    a week that changed underneath moved the sentence onto whatever dish
+    now sat at that position. The drop refusals NAME their dish out loud
+    ("Bean Chili on Friday also feeds Saturday's lunch"), which makes this
+    one more instance of the class this branch has now closed FOUR times:
+    a thing labelled with one dish reporting about another. Keyed on
+    **meal type plus the name the row reads as** now
+    (`reviewTroubleIsFor`), which is unique within a group by construction
+    since `reviewEatingGroups` keys dishes that way; and a sentence whose
+    dish has left the week is DROPPED rather than moved to the foot of the
+    body — it is about something no longer on screen, so its own row or
+    nowhere are the only honest places for it. The `.rv-trouble-foot`
+    fallback added one round earlier went with it.
+  - **`SlotRefused` had been drawn one notch too tight.** "That day
+    already has it." and "That dish is already on that day." are sentences
+    written for a reader and were taking the 404 path, which the screen
+    prints as the generic "that didn't work". Stale-screen-only, so the
+    impact is small — but by that type's own stated rule they belong in
+    it, and a rule that holds only for the cases somebody remembered is
+    not a rule.
+  - **Two things found and deliberately NOT fixed, written down so the
+    next session doesn't rediscover them as new.** The sentence outlives
+    its own tap: it survives a switch to "Which days", renders nowhere
+    there, and comes back on the way in. And a refusal does not re-read
+    the week, so a count that went stale underneath stays stale until the
+    next write. Both are identical to the behaviour before any of this,
+    neither risks data, and both are really one question — how long an
+    answer should live on this screen — which is a decision rather than a
+    bug fix.
+  - **`drop_dish_from_day` IS NOT ATOMIC. Pre-existing on `main`
+    (`99db198`), deliberately left, filed as its own card.** Force a
+    `RuntimeError` in `plan_slot_open` after the DELETE and the dinner row
+    is gone with **no `open` row replacing it** and the grocery line
+    already reversed, while the route answers 500 so the screen says
+    "nothing changed" — false, and a genuinely ABSENT slot, the exact
+    state that function's own docstring says must never exist. It wants
+    the connection-threading treatment `atomic-period-takeover` used (see
+    its entry below), which is more than a review pass should smuggle in.
+    Recorded here because this is where the code is.
+  - 5 more tests (57 -> 60 there, and two rewritten); 2091 -> 2094. Every
+    one of them red on `90bb207`. One existing file updated honestly with
+    a note saying what moved (`test_review_two_views`'s preludes, for the
+    helper `reviewDishRowHtml` now calls). **Verified in a real Chromium on
+    port 8986**, driving a real chat-turn refresh with a refusal on screen.
+
 - **2026-09-11 — Three more on the same stepper, and one of them destroyed
   data. Branch `overnight/review-plus-and-counts`, second review round.**
   The round before it confirmed the "+" blocker genuinely fixed — the chain

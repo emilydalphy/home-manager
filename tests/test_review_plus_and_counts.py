@@ -518,6 +518,53 @@ def test_the_night_that_was_displaced_is_named_by_what_the_picker_showed():
     assert out["replaced"] == "Bean Chili", out["replaced"]
 
 
+def test_the_two_stale_screen_sentences_are_shown_rather_than_swallowed():
+    """
+    The narrowing that introduced SlotRefused went one step too far: these
+    two are written for a reader and were taking the 404 path, which the
+    screen prints as the generic "that didn't work". By SlotRefused's own
+    stated rule — it marks the sentences written for a person — they
+    belong in it. Stale-screen-only, so the impact is small; the rule is
+    the point.
+    """
+    plan = _plan()
+    tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    same = _ids(D0, "dinner")[0]
+
+    with pytest.raises(tools.SlotRefused) as picked_its_own_day:
+        tools.add_dish_day(plan, same, same)
+    assert "already on that day" in str(picked_its_own_day.value)
+
+    with pytest.raises(tools.SlotRefused) as day_already_has_it:
+        tools.add_dish_day(plan, same, _ids(D1, "dinner")[0])
+    assert "already has it" in str(day_already_has_it.value)
+
+
+def test_a_sentence_for_a_person_comes_back_as_an_answer_and_an_id_does_not(signed_in):
+    """The split, at the route: a refusal written for a reader is a 200
+    carrying its words; anything else is a 404 and the screen shows its own
+    plain line rather than a row id or a Python exception."""
+    plan = _plan()
+    tools.plan_meal(D0, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(D1, "Chicken Tacos", slot="dinner", weekly_plan_id=plan)
+    same = _ids(D0, "dinner")[0]
+
+    readable = signed_in.post(
+        f"/api/week/{WEEK_START}/add-dish-day",
+        json={"entry_id": same, "target_entry_id": _ids(D1, "dinner")[0]},
+    )
+    assert readable.status_code == 200, readable.text
+    assert readable.json() == {"status": "refused", "message": "That day already has it."}
+
+    nonsense = signed_in.post(
+        f"/api/week/{WEEK_START}/add-dish-day",
+        json={"entry_id": same, "target_entry_id": 999999},
+    )
+    assert nonsense.status_code == 404, nonsense.text
+    assert "999999" in nonsense.json()["detail"], "the id is in the log, not on screen"
+
+
 # ------------------- CHANGE 2: does generation make an open snack at all?
 
 def test_week_generations_own_finishing_passes_never_hand_back_an_open_snack():
@@ -665,6 +712,20 @@ _SLOT_FURNITURE = (
     + _extract("slotEyebrowLabel") + "\n"
 )
 
+
+# One report per rendered dish row: its name, and whether the trouble line
+# is inside it. The split marker is the row wrapper's own class, which
+# nothing nested inside a row shares.
+_ROW_REPORT = r"""
+var rows = html.split('class="rv-dish">').slice(1);
+console.log(JSON.stringify({
+  total: (html.match(/rv-trouble/g) || []).length,
+  inRows: rows.map(function (r) { return r.indexOf('rv-trouble') !== -1; }),
+  names: rows.map(function (r) {
+    return /class="rv-dish-name">([^<]*)</.exec(r)[1];
+  })
+}));
+"""
 
 def _planned(title, source="plan", entry_id=1):
     return {"title": title, "state": "planned", "source": source, "entry_id": entry_id}
@@ -891,6 +952,7 @@ def test_the_strip_only_opens_on_the_row_being_asked_about():
         + _extract("reviewCookLine") + "\n"
         + _extract("reviewAddDayOptions") + "\n"
         + _extract("reviewAddPickerHtml") + "\n"
+        + _extract("reviewTroubleIsFor") + "\n"
         + _extract("reviewDishRowHtml") + "\n"
         + _extract("reviewEatingHtml") + "\n"
         + "var days = " + json.dumps([
@@ -1227,13 +1289,15 @@ def test_a_refusal_arrives_under_the_row_that_was_tapped():
         + _extract_var("RV_MINUS_SVG") + "\n"
         + _extract_var("RV_PLUS_SVG") + "\n"
         + "var reviewState = { view: 'eating', openDays: {}, busy: null,"
-          " trouble: 'That one’s already been cooked.', troubleFor: 1, picking: null };\n"
+          " trouble: 'That one’s already been cooked.',"
+          " troubleFor: { slot: 'dinner', name: 'Chicken Tacos' }, picking: null };\n"
         + _extract("mealDisplayName") + "\n"
         + _extract("reviewSlotNoun") + "\n"
         + _extract("reviewEatingGroups") + "\n"
         + _extract("reviewCookLine") + "\n"
         + _extract("reviewAddDayOptions") + "\n"
         + _extract("reviewAddPickerHtml") + "\n"
+        + _extract("reviewTroubleIsFor") + "\n"
         + _extract("reviewDishRowHtml") + "\n"
         + _extract("reviewEatingHtml") + "\n"
         + "var days = " + json.dumps([
@@ -1253,17 +1317,29 @@ def test_a_refusal_arrives_under_the_row_that_was_tapped():
     )
     out = _run_node(harness)
     # The flat list is [Oats, Chicken Tacos, Bean Chili] — breakfasts before
-    # dinners — so troubleFor 1 is the second row rendered. Exactly one
-    # sentence, in that row, and nothing at the foot.
+    # dinners — so the dinner named Chicken Tacos is the second row
+    # rendered. Exactly one sentence, in that row, and nothing at the foot.
     assert out["total"] == 1, out
     assert out["atFoot"] is False, out
     assert out["inRows"] == [False, True, False], out
 
 
 @_needs_node
-def test_a_trouble_whose_row_is_gone_still_shows_rather_than_vanishing():
-    """The foot is the fallback, not dead code: a sentence with no row left
-    to sit under would otherwise be traded for no sentence at all."""
+def test_a_sentence_whose_dish_has_left_the_week_is_dropped_not_moved():
+    """
+    THE INDEX BUG, from the far side. troubleFor was a position into a list
+    every render rebuilds, and a chat turn tagged tab:'week' reloads the
+    week under this screen while the sentence is only ever cleared by
+    another tap — so a week that changed underneath moved the sentence onto
+    whatever dish now sat at that position. The drop refusals NAME their
+    dish out loud, which makes that one more "labelled with one dish,
+    reporting about another".
+
+    Keyed on meal type plus name it can no longer land wrong; and when the
+    dish it names has gone, the sentence goes with it. The foot of the body
+    is not an option — it is about something no longer on the screen, so
+    its own row or nowhere are the only honest places for it.
+    """
     harness = (
         _ESCAPE + _SLOT_FURNITURE
         + _extract_var("REVIEW_GROUP_LABELS") + "\n"
@@ -1271,21 +1347,72 @@ def test_a_trouble_whose_row_is_gone_still_shows_rather_than_vanishing():
         + _extract_var("RV_MINUS_SVG") + "\n"
         + _extract_var("RV_PLUS_SVG") + "\n"
         + "var reviewState = { view: 'eating', openDays: {}, busy: null,"
-          " trouble: 'That didn’t work just now — nothing changed.',"
-          " troubleFor: 42, picking: null };\n"
+          " trouble: 'Bean Chili on Friday also feeds Saturday’s lunch.',"
+          " troubleFor: { slot: 'dinner', name: 'Bean Chili' }, picking: null };\n"
         + _extract("mealDisplayName") + "\n"
         + _extract("reviewSlotNoun") + "\n"
         + _extract("reviewEatingGroups") + "\n"
         + _extract("reviewCookLine") + "\n"
         + _extract("reviewAddDayOptions") + "\n"
         + _extract("reviewAddPickerHtml") + "\n"
+        + _extract("reviewTroubleIsFor") + "\n"
         + _extract("reviewDishRowHtml") + "\n"
         + _extract("reviewEatingHtml") + "\n"
+        # The week the chat turn left behind: Bean Chili is gone and
+        # something else is standing where it was.
         + "var html = reviewEatingHtml(" + json.dumps([
-            _day("MON", dinner=_planned("Chicken Tacos", entry_id=1))]) + ");\n"
-        + "console.log(JSON.stringify({ foot: html.indexOf('rv-trouble-foot') !== -1 }));\n"
+            _day("MON", dinner=_planned("Sheet Pan Salmon", entry_id=1)),
+            _day("TUE", dinner=_planned("Chicken Tacos", entry_id=2)),
+        ]) + ");\n"
+        + "console.log(JSON.stringify({ anywhere: html.indexOf('rv-trouble') !== -1,"
+          " cleared: reviewState.trouble === '' && reviewState.troubleFor === null,"
+          " chili: html.indexOf('Bean Chili') !== -1 }));\n"
     )
-    assert _run_node(harness)["foot"] is True
+    out = _run_node(harness)
+    assert out["anywhere"] is False, "not on another dish, and not at the foot"
+    assert out["chili"] is False
+    assert out["cleared"] is True, "and the state goes with it, not just the markup"
+
+
+@_needs_node
+def test_a_sentence_stays_with_its_own_dish_when_the_week_is_reordered():
+    """The other half: a reload that moves the dish must not lose the
+    sentence, because the dish it is about is still on the week."""
+    harness = (
+        _ESCAPE + _SLOT_FURNITURE
+        + _extract_var("REVIEW_GROUP_LABELS") + "\n"
+        + _extract_var("REVIEW_SLOT_NOUNS") + "\n"
+        + _extract_var("RV_MINUS_SVG") + "\n"
+        + _extract_var("RV_PLUS_SVG") + "\n"
+        + "var reviewState = { view: 'eating', openDays: {}, busy: null,"
+          " trouble: 'Bean Chili on Friday also feeds Saturday’s lunch.',"
+          " troubleFor: { slot: 'dinner', name: 'Bean Chili' }, picking: null };\n"
+        + _extract("mealDisplayName") + "\n"
+        + _extract("reviewSlotNoun") + "\n"
+        + _extract("reviewEatingGroups") + "\n"
+        + _extract("reviewCookLine") + "\n"
+        + _extract("reviewAddDayOptions") + "\n"
+        + _extract("reviewAddPickerHtml") + "\n"
+        + _extract("reviewTroubleIsFor") + "\n"
+        + _extract("reviewDishRowHtml") + "\n"
+        + _extract("reviewEatingHtml") + "\n"
+        # Bean Chili has moved from first dinner to second, and a lunch of
+        # the same NAME now exists — which an index would have landed on
+        # and a meal-type key does not.
+        + "var html = reviewEatingHtml(" + json.dumps([
+            _day("MON", lunch=_planned("Bean Chili", entry_id=7),
+                 dinner=_planned("Sheet Pan Salmon", entry_id=1)),
+            _day("TUE", dinner=_planned("Bean Chili", entry_id=2)),
+        ]) + ");\n"
+        + _ROW_REPORT
+    )
+    out = _run_node(harness)
+    assert out["total"] == 1, out
+    # Lunches render before dinners, so the lunch called Bean Chili is row
+    # 0 and the DINNER called Bean Chili is row 2. The sentence is on the
+    # dinner, which is the one it was about.
+    assert out["names"] == ["Bean Chili", "Sheet Pan Salmon", "Bean Chili"], out
+    assert out["inRows"] == [False, False, True], out
 
 
 @_needs_node
@@ -1309,6 +1436,7 @@ def test_the_minus_is_inert_when_the_day_it_would_take_is_already_cooked():
             + _extract("reviewCookLine") + "\n"
             + _extract("reviewAddDayOptions") + "\n"
             + _extract("reviewAddPickerHtml") + "\n"
+            + _extract("reviewTroubleIsFor") + "\n"
             + _extract("reviewDishRowHtml") + "\n"
             + _extract("reviewEatingHtml") + "\n"
             + "var html = reviewEatingHtml(" + json.dumps(days) + ");\n"

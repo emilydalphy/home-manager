@@ -349,11 +349,18 @@ def _eating_prelude() -> str:
         + _extract_var("REVIEW_SLOT_NOUNS", SHELL_JS) + "\n"
         + _extract_var("RV_MINUS_SVG", SHELL_JS) + "\n"
         + _extract_var("RV_PLUS_SVG", SHELL_JS) + "\n"
-        + "var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '' };\n"
+        + "var reviewState = { view: 'eating', openDays: {}, busy: null, trouble: '',"
+        " troubleFor: null, picking: null };\n"
         + _extract("mealDisplayName", SHELL_JS) + "\n"
         + _extract("reviewSlotNoun", SHELL_JS) + "\n"
         + _extract("reviewEatingGroups", SHELL_JS) + "\n"
         + _extract("reviewCookLine", SHELL_JS) + "\n"
+        # New with the trouble line moving into the row it belongs to
+        # (2026-09-11): reviewDishRowHtml asks it whether this dish is the
+        # one a refusal was about.
+        + _extract("reviewTroubleIsFor", SHELL_JS) + "\n"
+        + _extract("reviewAddDayOptions", SHELL_JS) + "\n"
+        + _extract("reviewAddPickerHtml", SHELL_JS) + "\n"
         + _extract("reviewDishRowHtml", SHELL_JS) + "\n"
         + _extract("reviewEatingHtml", SHELL_JS) + "\n"
     )
@@ -363,7 +370,8 @@ def _days_prelude() -> str:
     return (
         _ESCAPE + _WEEK_SLOTS + _SLOT_LABELS + _DAYNAME_STUB
         + _extract_var("RV_CHEVRON_SVG", SHELL_JS) + "\n"
-        + "var reviewState = { view: 'days', openDays: {}, busy: null, trouble: '' };\n"
+        + "var reviewState = { view: 'days', openDays: {}, busy: null, trouble: '',"
+        " troubleFor: null, picking: null };\n"
         + _extract("mealDisplayName", SHELL_JS) + "\n"
         + _extract("awayLineFor", SHELL_JS) + "\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"

@@ -538,7 +538,14 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
         # group and every day it offers is a day of that same meal.
         raise ValueError("That day is a different meal from the one being added to.")
     if target["id"] == source["id"]:
-        raise ValueError("That dish is already on that day.")
+        # Readable, and so a SlotRefused: the strip never offers a day the
+        # dish already covers, but a screen drawn before the week moved
+        # under it can still send one, and "that dish is already on that
+        # day" is the whole of the answer. Same for the name match further
+        # down. (The narrowing that introduced SlotRefused swallowed both
+        # of these into the generic line for a day; by its own rule —
+        # sentences written for a person — they belong here.)
+        raise SlotRefused("That dish is already on that day.")
     if target["slot_state"] not in ("planned", "open", "planned_empty"):
         raise ValueError("That slot isn't one this can take over.")
 
@@ -588,7 +595,7 @@ def add_dish_day(weekly_plan_id: int, entry_id: int, target_entry_id: int) -> di
     if target["slot_state"] == "planned":
         replaced = target_chained["source"]["meal"] if target_chained else target["meal"]
     if replaced and replaced.strip().lower() == dish.strip().lower():
-        raise ValueError("That day already has it.")
+        raise SlotRefused("That day already has it.")
 
     # Every night that was eating off the dish being displaced. Read BEFORE
     # the swap, because afterwards there is nothing left to ask. Those

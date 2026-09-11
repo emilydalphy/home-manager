@@ -5274,12 +5274,22 @@
   // for the same reason swapState is (see it) — a person is tapping one
   // stepper, not three. picking: which dish row (by its index into
   // reviewState.dishes) has its day picker open, or null.
-  // troubleFor: WHICH dish row the trouble line belongs under. It used to
-  // render once at the foot of the whole body, which on a real week puts
-  // it below every group — measured at 390px, 2114px down an 844px screen.
-  // So a refused tap moved nothing, said nothing where the finger was, and
-  // left its explanation 1270px away, which reads as a control that does
-  // nothing at all. A sentence has to arrive where the tap was.
+  // troubleFor: WHICH dish row the trouble line belongs under, as
+  // { slot, name } — see reviewTroubleIsFor for why it is not an index.
+  // It used to render once at the foot of the whole body, which on a real
+  // week puts it below every group — measured at 390px, 2114px down an
+  // 844px screen. So a refused tap moved nothing, said nothing where the
+  // finger was, and left its explanation 1270px away, which reads as a
+  // control that does nothing at all. A sentence has to arrive where the
+  // tap was.
+  //
+  // KNOWN AND DELIBERATELY LEFT, both of them identical before any of this
+  // and neither risking data: the sentence outlives its own tap — it
+  // survives a switch to "Which days", renders nowhere there, and comes
+  // back on the way in — and a refusal does not re-read the week, so a
+  // count that has gone stale underneath stays stale until the next write.
+  // Both are questions about how long an answer should live on this
+  // screen, which is a decision rather than a bug fix.
   var reviewState = {
     view: 'eating', openDays: {}, busy: null, trouble: '', troubleFor: null, picking: null,
   };
@@ -5507,11 +5517,30 @@
           (n > 1 ? 'Change one' : 'Change') + '</button>' +
       '</div>' +
       // Under the stepper that was tapped, not at the foot of the page.
-      (reviewState.troubleFor === idx && reviewState.trouble
+      (reviewTroubleIsFor(dish)
         ? '<div class="rv-trouble">' + escapeHtml(reviewState.trouble) + '</div>'
         : '') +
       (picking ? reviewAddPickerHtml(dish, idx, days) : '') +
     '</div>';
+  }
+
+  // Whether the trouble line belongs to THIS dish — by the meal type and
+  // the name it reads as, never by its position in the list.
+  //
+  // It was an index, and an index into an array every render rebuilds. A
+  // chat turn tagged tab:'week' reloads the week under the screen, and the
+  // sentence is only ever cleared by another tap — so a week that changed
+  // underneath moved the sentence onto whatever dish now sat at that
+  // position. The drop refusals NAME their dish out loud ("Bean Chili on
+  // Friday also feeds Saturday's lunch"), which makes that one more
+  // instance of the class this branch has now closed three times: a thing
+  // labelled with one dish reporting about another. A name is unique
+  // within its group (reviewEatingGroups keys them that way), so meal type
+  // plus name is a real key and cannot collide.
+  function reviewTroubleIsFor(dish) {
+    var at = reviewState.troubleFor;
+    return !!(reviewState.trouble && at && dish &&
+      at.slot === dish.slot && at.name === dish.name);
   }
 
   // Flattened as it renders, so every stepper carries a plain index into
@@ -5521,6 +5550,16 @@
     var flat = [];
     if (!groups.length) {
       return '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>';
+    }
+    // A sentence whose dish is no longer on the week is DROPPED, not moved
+    // to the foot: it is about something that has left the screen, and the
+    // only honest places for it are its own row or nowhere. Cleared before
+    // the rows are drawn so nothing renders it on the way past.
+    if (reviewState.trouble && !groups.some(function (g) {
+      return g.dishes.some(reviewTroubleIsFor);
+    })) {
+      reviewState.trouble = '';
+      reviewState.troubleFor = null;
     }
     var html = groups.map(function (group) {
       return '<div class="rv-group">' +
@@ -5534,18 +5573,7 @@
       '</div>';
     }).join('');
     reviewState.dishes = flat;
-    // The foot is the FALLBACK only — for a trouble that names no row, or
-    // one whose row is no longer on screen after a reload. A sentence with
-    // a row to sit under sits under it (see reviewDishRowHtml); dropping
-    // it entirely would be trading one invisible message for none at all.
-    var orphaned = reviewState.trouble &&
-      (reviewState.troubleFor === null || !flat[reviewState.troubleFor]);
-    return '<div class="rv-body">' + html +
-      (orphaned
-        ? '<div class="rv-trouble rv-trouble-foot">' +
-            escapeHtml(reviewState.trouble) + '</div>'
-        : '') +
-    '</div>';
+    return '<div class="rv-body">' + html + '</div>';
   }
 
   // A day with nothing to cook on it — every one of its three real meals is
@@ -5796,7 +5824,7 @@
       // knows which night depends on it — and nothing was written.
       if (out && out.status === 'refused') {
         reviewState.trouble = out.message || SWAP_TROUBLE;
-        reviewState.troubleFor = idx;
+        reviewState.troubleFor = { slot: dish.slot, name: dish.name };
         renderMealsStep(panel);
         return;
       }
@@ -5825,7 +5853,7 @@
       reviewState.busy = null;
       // Calm and plain, and it says what is true of the plan (§8).
       reviewState.trouble = SWAP_TROUBLE;
-      reviewState.troubleFor = idx;
+      reviewState.troubleFor = { slot: dish.slot, name: dish.name };
       renderMealsStep(panel);
     }
   }
@@ -5905,7 +5933,7 @@
       // exactly the right thing must not report itself broken.
       if (out && out.status === 'refused') {
         reviewState.trouble = out.message || SWAP_TROUBLE;
-        reviewState.troubleFor = idx;
+        reviewState.troubleFor = { slot: dish.slot, name: dish.name };
         renderMealsStep(panel);
         return;
       }
@@ -5929,7 +5957,7 @@
       console.warn('Adding a day failed:', err);
       reviewState.busy = null;
       reviewState.trouble = SWAP_TROUBLE;
-      reviewState.troubleFor = idx;
+      reviewState.troubleFor = { slot: dish.slot, name: dish.name };
       renderMealsStep(panel);
     }
   }
