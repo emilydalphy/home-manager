@@ -33,7 +33,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, households, ratelimit, security
+from . import agent, backup, households, ratelimit, recipe_import, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -604,6 +604,31 @@ class MoveDoneRequest(BaseModel):
 
 class FillRecipeRequest(BaseModel):
     recipe_name: str
+
+
+class ImportRecipeUrlRequest(BaseModel):
+    url: str
+
+
+class RecipeIngredientIn(BaseModel):
+    item: str
+    qty: str = ""
+    category: str | None = None
+
+
+class AddRecipeRequest(BaseModel):
+    """A reviewed recipe draft, from the import sheet. The same shape
+    tools.add_recipe takes, so an imported recipe is saved exactly the way
+    a chat-added one is."""
+    name: str
+    ingredients: list[RecipeIngredientIn] = []
+    instructions: list[str] = []
+    default_servings: int | None = None
+    prep_time_minutes: int | None = None
+    cook_time_minutes: int | None = None
+    cuisine: str = ""
+    main_protein: str = ""
+    source_url: str = ""
 
 
 class CookingDeviationRequest(BaseModel):
@@ -1281,6 +1306,85 @@ def scale_recipe_endpoint(name: str, servings: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Recipe scaling failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/recipes/import-url")
+def import_recipe_url(request: Request, req: ImportRecipeUrlRequest):
+    """
+    Bring a recipe in from a link (Loop Board, 2026-09-11). Fetches the
+    page server-side under app/recipe_import.py's rules (public http(s)
+    hosts only, size and time caps, no rendering), reads the schema.org
+    Recipe markup if the page has it and otherwise has the model read the
+    page text, and returns a DRAFT. Nothing is saved here — the sheet shows
+    the draft for review and /api/recipes/add is the save.
+
+    Shares the photo scans' rate-limit bucket: it is the same kind of
+    request (one household action that may cost a model call).
+    """
+    _enforce_rate_limit(request, "scan")
+    try:
+        draft = recipe_import.import_recipe_from_url(req.url, model_reader=agent.read_recipe_from_page_llm)
+    except recipe_import.RecipeImportError as e:
+        # A refusal is a sentence for the household, not a server error.
+        raise HTTPException(status_code=400, detail=str(e))
+    except AssistantUnavailableError as e:
+        logger.warning("Recipe import hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Recipe import failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"draft": draft}
+
+
+@app.post("/api/recipes/add")
+def add_recipe_endpoint(req: AddRecipeRequest):
+    """
+    Save a reviewed recipe (the import sheet's confirm step) through
+    tools.add_recipe — the one save path every recipe takes, so the
+    ingredients land as the same {item, qty, category} lines the grocery
+    list and the cook view already know how to read.
+    """
+    name = req.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Give the recipe a name first.")
+    ingredients = []
+    for ing in req.ingredients:
+        item = ing.item.strip()
+        if not item:
+            continue
+        category = ing.category if ing.category in tools._GROCERY_SECTION_ORDER else recipe_import.guess_category(item, ing.qty)
+        ingredients.append({"item": item, "qty": ing.qty.strip(), "category": category})
+    instructions = [step.strip() for step in req.instructions if step and step.strip()]
+    if not ingredients and not instructions:
+        raise HTTPException(status_code=400, detail="A recipe needs at least its ingredients or its steps.")
+    servings = req.default_servings if req.default_servings and req.default_servings > 0 else 4
+    source_url = req.source_url.strip()
+    if source_url and not source_url.lower().startswith(("http://", "https://")):
+        source_url = ""
+    try:
+        existing = [r for r in tools.list_recipes() if r["name"].lower() == name.lower()]
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"You already have a recipe called “{existing[0]['name']}” — change the name to keep both.",
+            )
+        result = tools.add_recipe(
+            name,
+            ingredients,
+            instructions=instructions,
+            default_servings=servings,
+            prep_time_minutes=req.prep_time_minutes if req.prep_time_minutes and req.prep_time_minutes > 0 else None,
+            cook_time_minutes=req.cook_time_minutes if req.cook_time_minutes and req.cook_time_minutes > 0 else None,
+            cuisine=req.cuisine.strip(),
+            main_protein=req.main_protein.strip(),
+            source_url=source_url,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Recipe save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 

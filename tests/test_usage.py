@@ -460,6 +460,10 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # only the offending lines, and only when the validator rejects
         # something. See agent._repair_cooking_quantities_llm.
         "generate_recipe_detail_llm.repair",
+        # A page pasted into "Add from a link" that has no schema.org Recipe
+        # markup gets its visible text read by the model. See
+        # agent.read_recipe_from_page_llm and app/recipe_import.py.
+        "read_recipe_from_page_llm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added
