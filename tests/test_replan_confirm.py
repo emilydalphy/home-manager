@@ -246,8 +246,87 @@ class TestChatAsksBeforeReplanningAnApprovedWeek:
         result = _chat_plan(week_start_date=days[3], day_count=4)
         assert result["status"] == "needs_confirmation"
         assert result["grocery_line_count"] == 0
-        assert "all bought already" in result["note"]
-        assert result["note"].rstrip().endswith("Go ahead?")
+        assert result["grocery_bought_line_count"] >= 1
+        note = result["note"]
+        assert "all bought already" in note
+        assert "Bean Chili" in note                      # the meals still go, and are still named
+        assert "nothing would be lost" not in note       # something IS lost: the meals
+        assert note.rstrip().endswith("Go ahead?")
+
+    def test_days_nobody_is_home_are_not_described_as_bought(self, recipes, stub_model):
+        # Review found this: an approved week whose overlapping days are all
+        # "out" (planned_empty) also has zero needed lines, and the first
+        # version read that zero as "it's all bought already". Nothing was
+        # ever planned or bought for those days, and the sentence says so.
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        _approved_week(stub_model)
+        conn = get_conn()
+        placeholders = ",".join("?" * 4)
+        conn.execute(
+            f"DELETE FROM meal_plan_grocery_links WHERE meal_plan_entry_id IN "
+            f"(SELECT id FROM meal_plan_entries WHERE date IN ({placeholders}))",
+            tuple(days[3:]),
+        )
+        conn.execute(
+            f"UPDATE meal_plan_entries SET slot_state = 'planned_empty', recipe_id = NULL, "
+            f"reasoning = 'nobody home' WHERE date IN ({placeholders})",
+            tuple(days[3:]),
+        )
+        conn.commit()
+        conn.close()
+
+        result = _chat_plan(week_start_date=days[3], day_count=4)
+        assert result["status"] == "needs_confirmation"
+        assert result["meal_count"] == 0
+        assert result["grocery_line_count"] == 0
+        assert result["grocery_bought_line_count"] == 0
+        note = result["note"]
+        assert "bought" not in note
+        assert "Nothing's planned for" in note and _weekday(days[3]) in note
+        assert "nothing would be lost" in note
+        assert "Bean Chili" not in note
+        assert note.rstrip().endswith("Go ahead?")
+
+    def test_meals_with_nothing_on_the_list_are_neither_bought_nor_lost(self, recipes, stub_model):
+        # The third zero: real meals whose ingredients never reached the
+        # list (already in the pantry, say). The meals go; the list is
+        # untouched; neither "bought" nor "nothing lost" would be true.
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        _approved_week(stub_model)
+        conn = get_conn()
+        conn.execute("DELETE FROM meal_plan_grocery_links")
+        conn.commit()
+        conn.close()
+        result = _chat_plan(week_start_date=days[3], day_count=4)
+        note = result["note"]
+        assert result["grocery_line_count"] == 0 and result["grocery_bought_line_count"] == 0
+        assert "Nothing on the shopping list changes" in note
+        assert "bought" not in note and "nothing would be lost" not in note
+        assert "Bean Chili" in note
+
+    def test_no_dangling_dash_in_any_shape_of_the_sentence(self, recipes, stub_model):
+        # The dinner names are set off by dashes that lead INTO the
+        # shopping clause; when that clause is a separate sentence there is
+        # no closing dash to strand ("— Bean Chili —." was the bug).
+        week = _monday()
+        days = tools.period_dates(week, 7)
+        _approved_week(stub_model)
+        notes = [_chat_plan(week_start_date=days[3], day_count=4)["note"]]
+        for item in tools.list_grocery_list(status="needed"):
+            tools.mark_grocery_item(item["id"], "purchased")
+        notes.append(_chat_plan(week_start_date=days[3], day_count=4)["note"])
+        conn = get_conn()
+        conn.execute("DELETE FROM meal_plan_grocery_links")
+        conn.commit()
+        conn.close()
+        notes.append(_chat_plan(week_start_date=days[3], day_count=4)["note"])
+        for note in notes:
+            assert "—." not in note, note
+            assert "— ." not in note, note
+            assert "  " not in note, note
+            assert "Bean Chili" in note
 
 
 # ---------- 2. a confirmed request proceeds as before ----------

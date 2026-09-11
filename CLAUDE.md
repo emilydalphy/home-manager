@@ -335,7 +335,15 @@ why*, not duplicating the diff.
   and a `note` the assistant can say as-is ("I'd replace Thursday to
   Sunday's dinners — Bean Chili, Salmon — and 11 things on your shopping
   list would change. Go ahead?"). "Change", not "come off": a line a
-  surviving meal still needs is trimmed, not removed. The prompt rule matches the hard-conflict one word for word
+  surviving meal still needs is trimmed, not removed. **Zero has three
+  meanings and the first version conflated them** (review caught it with
+  an approved week whose overlapping days were all "out" being told "it's
+  all bought already"): none needed but some bought -> "it's all bought
+  already"; meals but no lines at all -> "Nothing on the shopping list
+  changes"; no meals on those days -> "Nothing's planned for Thursday to
+  Sunday, so nothing would be lost." Each shape has its own test, and the
+  dinner-name dashes only close when a clause follows them ("— Bean Chili
+  —." was the other review finding). The prompt rule matches the hard-conflict one word for word
   where it matters: never on its own initiative, never on the first call,
   only after a yes in this conversation. `tools.preview_approved_takeover`
   is the read-only half and runs the REAL decision (`_plan_takeover`, with
@@ -358,15 +366,15 @@ why*, not duplicating the diff.
     about there either. And the flag is honour-system from the model's
     side, exactly as `confirm_hard_conflicts` is — the tool cannot see the
     conversation to check a yes was actually given.
-  - `tests/test_replan_confirm.py`: 15 tests, 12 red on main (the
-    reproduction, the days/meals naming, the orphan case, the two count
-    tests, confirmed proceeds, approved-beside-draft, the schema/prompt
-    markers and the signature default); the 3 green on main are the
-    promises that nothing else changed (drafts, no-overlap, the plan-week
-    route). Six tests in `test_planning_periods.py` that generate over an
-    approved plan to test the takeover mechanics now pass
-    `confirm_takeover=True` — they test what happens after the yes.
-    2235 -> 2250, all green. Not verified
+  - `tests/test_replan_confirm.py`: 18 tests, 15 red on main (the
+    reproduction, the days/meals naming, the orphan case, the count tests
+    and the three zero shapes, the dash artifact, confirmed proceeds,
+    approved-beside-draft, the schema/prompt markers and the signature
+    default); the 3 green on main are the promises that nothing else
+    changed (drafts, no-overlap, the plan-week route). Six tests in
+    `test_planning_periods.py` that generate over an approved plan to test
+    the takeover mechanics now pass `confirm_takeover=True` — they test
+    what happens after the yes. 2235 -> 2253, all green. Not verified
     against a live model: the tool's refusal and the prompt rule are
     certain, the model's choice to ask is inferred from the instruction.
 - **2026-09-11 — Stepping a dish down is ONE transaction now. Branch

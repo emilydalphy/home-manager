@@ -2010,17 +2010,26 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     # already in the cart or bought is left alone, so it is not counted.
     # The card's own criterion: the number in the question matches what
     # actually happens, never an estimate.
+    # Two numbers, not one, because zero has two meanings and the sentence
+    # has to tell them apart (found by review): "nothing changes because
+    # it's all bought" and "nothing changes because nothing was ever on
+    # the list for these days" are different facts.
     entry_ids = [r["id"] for r in rows]
     grocery_line_count = 0
+    bought_line_count = 0
     if entry_ids:
         entry_placeholders = ",".join("?" * len(entry_ids))
-        grocery_line_count = conn.execute(
-            f"SELECT COUNT(DISTINCT g.id) AS n FROM meal_plan_grocery_links l "
+        counts = conn.execute(
+            f"SELECT "
+            f"COUNT(DISTINCT CASE WHEN g.status = 'needed' THEN g.id END) AS needed, "
+            f"COUNT(DISTINCT CASE WHEN g.status != 'needed' THEN g.id END) AS bought "
+            f"FROM meal_plan_grocery_links l "
             f"JOIN grocery_items g ON g.id = l.grocery_item_id "
-            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
-            f"AND g.status = 'needed'",
+            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders})",
             (household_id(), *entry_ids),
-        ).fetchone()["n"]
+        ).fetchone()
+        grocery_line_count = counts["needed"]
+        bought_line_count = counts["bought"]
     conn.close()
 
     meals_by_date: dict[str, list[dict]] = {}
@@ -2044,11 +2053,14 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
         "orphaned_dates": orphaned,
         "meal_count": meal_count,
         "grocery_line_count": grocery_line_count,
-        "note": _takeover_question(days, orphaned, grocery_line_count),
+        "grocery_bought_line_count": bought_line_count,
+        "note": _takeover_question(days, orphaned, grocery_line_count, bought_line_count),
     }
 
 
-def _takeover_question(days: list[dict], orphaned: list[str], grocery_line_count: int) -> str:
+def _takeover_question(
+    days: list[dict], orphaned: list[str], grocery_line_count: int, bought_line_count: int,
+) -> str:
     """
     The confirmation as a person would say it (DESIGN_SYSTEM §8, including
     the "sounding human" rules of 2026-09-10): the span, the dinners by
@@ -2064,25 +2076,49 @@ def _takeover_question(days: list[dict], orphaned: list[str], grocery_line_count
     and the `days` payload lists every one of them. The shopping number is
     the real one (see preview_approved_takeover) and is said as "change"
     rather than "come off", because a line a surviving meal still needs is
-    trimmed, not removed. When it is zero — everything already bought —
-    the sentence says that instead.
+    trimmed, not removed.
+
+    Four shapes of the shopping clause, and the first version of this
+    conflated the last three (review caught it, with an approved week whose
+    overlapping days were all "out" being told "it's all bought already"):
+      * lines still needed        -> "and N things on your shopping list would change."
+      * none needed, some bought  -> "Nothing comes off the shopping list — it's all bought already."
+      * meals, but no lines at all -> "Nothing on the shopping list changes."
+      * no meals on those days    -> "Nothing's planned for <span>, so nothing would be lost."
     """
     span = _weekday_span([d["weekday"] for d in days])
+    meals = [m for d in days for m in d["meals"]]
     dinners: list[str] = []
-    for d in days:
-        for m in d["meals"]:
-            if m["slot"] == "dinner" and m["meal_name"] not in dinners:
-                dinners.append(m["meal_name"])
-    # "meals" when there is no dinner to name — a component_based plan's
-    # items carry no date, so its days have nothing called a dinner.
-    noun = ("dinners" if len(days) > 1 else "dinner") if dinners else "meals"
-    named = f" — {', '.join(dinners)} —" if dinners else ""
-    if grocery_line_count == 0:
-        cost = "Nothing comes off the shopping list — it's all bought already."
-        sentence = f"I'd replace {span}'s {noun}{named}. {cost}"
+    for m in meals:
+        if m["slot"] == "dinner" and m["meal_name"] not in dinners:
+            dinners.append(m["meal_name"])
+
+    if not meals:
+        # Deliberately empty days (away, "none tonight") or a plan that
+        # never held these days' meals: the household loses nothing but
+        # the plan's claim on the dates, and the sentence must not invent
+        # a loss — or a purchase.
+        sentence = f"Nothing's planned for {span}, so nothing would be lost."
     else:
-        things = "one thing" if grocery_line_count == 1 else f"{grocery_line_count} things"
-        sentence = f"I'd replace {span}'s {noun}{named} and {things} on your shopping list would change."
+        # "meals" when there is no dinner to name — a component_based
+        # plan's items carry no date, so its days have nothing called a
+        # dinner.
+        noun = ("dinners" if len(days) > 1 else "dinner") if dinners else "meals"
+        head = f"I'd replace {span}'s {noun}"
+        if grocery_line_count:
+            things = "one thing" if grocery_line_count == 1 else f"{grocery_line_count} things"
+            # The dashes only exist to carry the dinner names INTO the
+            # clause that follows; with nothing following there is no
+            # closing dash (review found "— Bean Chili —." in the zero case).
+            named = f" — {', '.join(dinners)} —" if dinners else ""
+            sentence = f"{head}{named} and {things} on your shopping list would change."
+        else:
+            named = f" — {', '.join(dinners)}" if dinners else ""
+            if bought_line_count:
+                cost = "Nothing comes off the shopping list — it's all bought already."
+            else:
+                cost = "Nothing on the shopping list changes."
+            sentence = f"{head}{named}. {cost}"
     if orphaned:
         lost = _weekday_span([date.fromisoformat(d).strftime("%A") for d in orphaned])
         sentence += (
