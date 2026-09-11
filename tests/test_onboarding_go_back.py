@@ -54,10 +54,19 @@ _needs_node = pytest.mark.skipif(
     reason="node is needed to run the page's own navigation for real",
 )
 
-STEPS_AFTER_THE_FIRST = [
-    "rhythm-1", "rhythm-2", "restrictions", "eating-style", "wont-eat",
+# The welcome flow (Emily, 2026-09-10) put five intro screens ahead of the
+# first question, so "the first step" is now "Hi, I'm Pomona" and the
+# household step is one of the steps AFTER it — it carries a way back like
+# every other. A reload still lands on household, not the intro: see
+# test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it.
+FIRST_STEP = "intro-hello"
+INTRO_STEPS_AFTER_THE_FIRST = ["intro-purpose", "intro-help", "intro-talk", "intro-know"]
+QUESTION_STEPS = [
+    "household", "rhythm-1", "rhythm-2", "restrictions", "eating-style", "wont-eat",
     "excited-about", "dinners", "typical-week", "kit-repeats",
 ]
+STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS
+ALL_STEPS = [FIRST_STEP] + STEPS_AFTER_THE_FIRST + ["reveal"]
 
 
 # ---------- lifting the page's own code ----------
@@ -264,10 +273,7 @@ ELS['progress'] = makeEl('div');
   b.hidden = true;
   ROOT.appendChild(b);
 });
-""" % ("', '".join(
-    ["household", "rhythm-1", "rhythm-2", "restrictions", "eating-style", "wont-eat",
-     "excited-about", "dinners", "typical-week", "kit-repeats", "reveal"]),
-    "', '".join(STEPS_AFTER_THE_FIRST))
+""" % ("', '".join(ALL_STEPS), "', '".join(STEPS_AFTER_THE_FIRST))
 
 
 def _nav_harness(builders: str = "", seed: str = "") -> str:
@@ -294,6 +300,7 @@ function buildDinnersStep() { BUILT.push('dinners'); }
 function buildTypicalWeekStep() { BUILT.push('typical-week'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
 """,
+        _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
         _const("STEP_TITLES"),
         _fn("stepFlow"),
@@ -306,7 +313,7 @@ function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
         _fn("pushStepHistory"),
         # Declared with let/var outside any function on the page, so they
         # are restated here rather than lifted.
-        "var currentStep = 'household';",
+        "var currentStep = 'intro-hello';",
         "var revealReached = false;",
         "var backLinkTarget = '';",
         _fn("showStep"),
@@ -344,7 +351,7 @@ def test_every_step_after_the_first_carries_a_back_control_and_the_first_does_no
         markup = _step_markup(f"step-{step}")
         assert f'data-step-back="{step}"' in markup, f"{step} has no way back"
         assert "back-link" in markup, f"{step}'s back control isn't the back-link component"
-    assert "data-step-back" not in _step_markup("step-household"), (
+    assert "data-step-back" not in _step_markup("step-intro-hello"), (
         "the first step has nothing behind it and must not offer a way back"
     )
     assert "data-step-back" not in _step_markup("step-reveal"), (
@@ -384,6 +391,11 @@ const labels = {};
 console.log(JSON.stringify(labels));
 """ % json.dumps(STEPS_AFTER_THE_FIRST))
     assert out == {
+        "intro-purpose": "‹ Hello",
+        "intro-help": "‹ Nice to meet you",
+        "intro-talk": "‹ What I help with",
+        "intro-know": "‹ How we talk",
+        "household": "‹ Getting to know you",
         "rhythm-1": "‹ Who's here",
         "rhythm-2": "‹ Your rhythm",
         "restrictions": "‹ Your timing",
@@ -403,7 +415,7 @@ const landed = {};
 %s.forEach(function (step) { showStep(step); tapBack(step); landed[step] = currentStep; });
 console.log(JSON.stringify(landed));
 """ % json.dumps(STEPS_AFTER_THE_FIRST))
-    flow = ["household"] + STEPS_AFTER_THE_FIRST
+    flow = [FIRST_STEP] + STEPS_AFTER_THE_FIRST
     assert out == {s: flow[flow.index(s) - 1] for s in STEPS_AFTER_THE_FIRST}
 
 
@@ -440,7 +452,9 @@ const seen = [];
 for (let i = 0; i < 4; i++) { gesture(); seen.push(currentStep); }
 console.log(JSON.stringify({ seen: seen, depth: depth(), left: LEFT_PAGE }));
 """)
-    assert out["seen"] == ["restrictions", "rhythm-2", "rhythm-1", "household"]
+    # The page started on the first intro screen, and that is the entry the
+    # stack unwinds onto.
+    assert out["seen"] == ["restrictions", "rhythm-2", "rhythm-1", "intro-hello"]
     assert out["depth"] == 1, "the gesture didn't unwind the stack it walked in on"
     assert out["left"] is False, "it walked off the page early"
 
@@ -481,7 +495,7 @@ POP_LISTENERS.forEach(function (fn) { fn({ state: null }); handled.push(currentS
 POP_LISTENERS.forEach(function (fn) { fn({ state: { some: 'other page' } }); handled.push(currentStep); });
 console.log(JSON.stringify(handled));
 """)
-    assert out == ["household", "household"]
+    assert out == ["intro-hello", "intro-hello"]
 
 
 @_needs_node
@@ -528,12 +542,13 @@ console.log(JSON.stringify({
   top: top().onboardingStep, left: LEFT_PAGE
 }));
 """ % json.dumps(STEPS_AFTER_THE_FIRST))
-    assert out["atReveal"] == {"on": "reveal", "depth": 10, "len": 10}
+    entries = 1 + len(STEPS_AFTER_THE_FIRST)  # the first step, then one per step walked
+    assert out["atReveal"] == {"on": "reveal", "depth": entries, "len": entries}
     assert out["seen"] == ["reveal"] * 4, (
         "a back gesture off the reveal got back into the finished wizard"
     )
     assert out["top"] == "reveal", "the entry the reveal stands on is no longer the reveal"
-    assert out["len"] == 10, "trapping the gesture grew the stack without bound"
+    assert out["len"] == entries, "trapping the gesture grew the stack without bound"
     assert out["left"] is False
 
 
@@ -579,7 +594,10 @@ const afterLoad = { on: currentStep, len: HISTORY.length, at: depth() };
 forwardGesture();
 console.log(JSON.stringify({ afterLoad: afterLoad, forward: currentStep, len: HISTORY.length }));
 """)
-    assert out["afterLoad"]["on"] == "household", "a reload didn't start on the first step"
+    # A reload skips the intro: they have been introduced, and their answers
+    # are gone — the household step is the first one whose answers are still
+    # true, so it is where a reload starts.
+    assert out["afterLoad"]["on"] == "household", "a reload didn't start on the household step"
     assert out["afterLoad"]["len"] == 4, (
         "the stale forward entry survived the reload — a forward swipe reaches "
         "a question whose answers are gone"
@@ -620,7 +638,7 @@ def test_an_ordinary_arrival_still_replaces_rather_than_pushes():
     out = _run(_nav_harness() + """
 console.log(JSON.stringify({ len: HISTORY.length, on: currentStep, top: top().onboardingStep }));
 """)
-    assert out == {"len": 1, "on": "household", "top": "household"}
+    assert out == {"len": 1, "on": "intro-hello", "top": "intro-hello"}
 
 
 # ---------- setup finishes once, and never with nobody in the house ----------

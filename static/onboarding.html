@@ -485,6 +485,214 @@
     gap: 9px;
     margin-top: 6px;
   }
+  /* ---------- The welcome flow (Loop Board "Onboarding: the welcome flow",
+     Emily 2026-09-10; mockups + copy approved the same day:
+     https://claude.ai/code/artifact/9137ee30-533a-44ba-87ef-155ec4dcde7b).
+     Five screens between sign-in and the first question, all on spruce
+     like the sign-in page so sign-in → intro reads as one continuous
+     moment before the ivory app appears. The body swaps to spruce while an
+     intro step is showing (body.intro-active, set in showStep) and back
+     again for the questions, which are untouched. Every colour is a
+     canonical token, so dark mode comes for free (--spruce lifts to its
+     lighter dark-mode value there, exactly as the sign-in page does). ---------- */
+  body.intro-active {
+    background-color: var(--spruce);
+    /* The same apricot glow static/login.html paints at the top. */
+    background-image: radial-gradient(132% 60% at 50% 3%,
+      rgba(224, 145, 92, 0.17) 0%, rgba(224, 145, 92, 0) 60%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  body.intro-active .progress { display: none; }
+  /* Each intro step fills the viewport: the words at the top, the one
+     apricot button pinned at the bottom (the body's own 24px padding is
+     the gutter). min-height rather than height so a short phone scrolls
+     instead of clipping the button. */
+  .intro-screen {
+    min-height: calc(100dvh - 48px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 28px;
+    padding-top: 16px;
+  }
+  /* Every screen after the first carries the 44px crumb (plus its 2px
+     margin) above it; without this the button sat 46px below the fold on
+     a phone-height viewport — measured, not guessed. */
+  .back-link + .intro-screen { min-height: calc(100dvh - 94px); }
+  .intro-body { display: flex; flex-direction: column; gap: 36px; }
+  .intro-body.is-centred {
+    align-items: center;
+    text-align: center;
+    padding-top: 150px;
+  }
+  .intro-body.has-lead { gap: 22px; padding-top: 120px; }
+  .intro-glyph {
+    color: var(--apricot);
+    filter: drop-shadow(0 18px 30px rgba(224, 145, 92, 0.35));
+    display: flex;
+  }
+  /* Type is DESIGN_SYSTEM §3's hero scale on spruce: Bricolage 700,
+     tightened; body Figtree 500 in the muted ivory. */
+  .intro-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 38px;
+    letter-spacing: -0.038em;
+    line-height: 1.05;
+    color: var(--ivory-ink);
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .intro-title.is-hello { font-size: 44px; }
+  .intro-title.is-lead { font-size: 40px; }
+  .intro-lead {
+    font-family: var(--font-body);
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--ivory-ink-muted);
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .intro-sub { font-size: 18px; }
+  .intro-rows { display: flex; flex-direction: column; gap: 26px; }
+  .intro-row { display: flex; gap: 16px; align-items: flex-start; }
+  .intro-row-icon {
+    flex: 0 0 44px; width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--spruce-raised);
+    color: var(--apricot-light);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intro-row-icon svg { width: 22px; height: 22px; }
+  .intro-row-text { display: flex; flex-direction: column; gap: 4px; flex: 1; padding-top: 2px; }
+  .intro-row-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--ivory-ink);
+    margin: 0;
+  }
+  .intro-row-body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--ivory-ink-muted);
+    margin: 0;
+    text-wrap: pretty;
+  }
+  .intro-remember {
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--ivory-ink);
+    margin: 0;
+  }
+  /* Screen 4's ask bar is a picture of the real one (shell.css
+     .ask-composer-bar / .ask-chip, same tokens and radii) so what they see
+     here is what they'll find under every tab. Not interactive. */
+  .intro-ask { display: flex; flex-direction: column; gap: 10px; }
+  .intro-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .intro-chip {
+    background: var(--spruce-raised);
+    color: var(--ivory-ink);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 15px;
+    padding: 11px 15px;
+    border-radius: 22px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .intro-askbar {
+    background: var(--ground);
+    border: 2px solid var(--spruce);
+    border-radius: 16px;
+    padding: 6px 8px 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .intro-askbar-text {
+    flex: 1;
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--ink-placeholder);
+    padding: 10px 0;
+  }
+  .intro-askbar-send {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    background: var(--spruce);
+    color: var(--apricot);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intro-askbar-send svg { width: 18px; height: 18px; }
+  .intro-stops { display: flex; flex-direction: column; gap: 22px; }
+  .intro-stop { display: flex; gap: 16px; align-items: center; }
+  .intro-stop-num {
+    flex: 0 0 34px; width: 34px; height: 34px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--ivory-ink-muted);
+    color: var(--ivory-ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .intro-stop-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--ivory-ink);
+    margin: 0;
+  }
+  /* The foot: the intro's own five-dot pager (the question steps' progress
+     strip starts as it does today, once the intro is over) and the screen's
+     one apricot. */
+  .intro-foot { display: flex; flex-direction: column; gap: 22px; }
+  .intro-pager { display: flex; gap: 6px; justify-content: center; align-items: center; }
+  .intro-pager span {
+    height: 6px; width: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--ivory-ink-muted);
+    opacity: 0.4;
+  }
+  .intro-pager span.is-on { width: 18px; background: var(--ivory-ink); opacity: 1; }
+  .intro-next {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    background: var(--apricot);
+    color: var(--on-accent-ink);
+    border: none;
+    border-radius: var(--radius-action);
+    padding: 15px 22px;
+    min-height: 54px;
+    width: 100%;
+    box-shadow: var(--shadow-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .intro-next:hover { background: var(--apricot-deep); }
+  .intro-next svg { width: 18px; height: 18px; }
+  /* The crumb on spruce: same control, ivory ink (DESIGN_SYSTEM §5 .crumb
+     .on-spruce). */
+  .back-link.on-spruce { color: var(--ivory-ink-muted); }
+  .back-link.on-spruce:hover { color: var(--ivory-ink); }
 </style>
 <script src="/static/error-reporter.js"></script>
 <script src="/static/waiting-lines.js"></script>
@@ -493,8 +701,110 @@
 
 <div class="progress" id="progress"></div>
 
+<!-- ---------- The welcome flow (Emily, 2026-09-10) ----------
+     Five screens before the first question, in her words: "Hi I'm Pomona,
+     I'm your home manager… this is my purpose… this is what I can do…
+     this is how you can interact with me… this is what we're going to
+     walk through so I can get to know you." Every line below is her
+     approved copy — change it on the Loop Board card first, not here. No
+     skip, on purpose ("it's a low time commitment and they should go
+     through it"). The order puts "let's get to know each other" LAST so
+     its button leads straight into the first question. -->
+<div id="step-intro-hello" style="display:none">
+  <div class="intro-screen">
+    <div class="intro-body is-centred">
+      <div class="intro-glyph"><svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg></div>
+      <h1 class="intro-title is-hello">Hi, I&rsquo;m Pomona.</h1>
+    </div>
+    <div class="intro-foot">
+      <div class="intro-pager" aria-hidden="true"><span class="is-on"></span><span></span><span></span><span></span><span></span></div>
+      <button class="intro-next" id="intro-hello-next" type="button">Nice to meet you<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="step-intro-purpose" style="display:none">
+  <button class="back-link on-spruce" type="button" data-step-back="intro-purpose" hidden></button>
+  <div class="intro-screen">
+    <div class="intro-body has-lead">
+      <h1 class="intro-title is-lead">Nice to meet you.</h1>
+      <p class="intro-lead">I&rsquo;m your home manager. My whole job is to take the mental load off you &mdash; the planning, the remembering, the what-are-we-eating-tonight &mdash; so it isn&rsquo;t all on you.</p>
+    </div>
+    <div class="intro-foot">
+      <div class="intro-pager" aria-hidden="true"><span></span><span class="is-on"></span><span></span><span></span><span></span></div>
+      <button class="intro-next" id="intro-purpose-next" type="button">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="step-intro-help" style="display:none">
+  <button class="back-link on-spruce" type="button" data-step-back="intro-help" hidden></button>
+  <div class="intro-screen">
+    <div class="intro-body">
+      <h1 class="intro-title">Here&rsquo;s what I help you with.</h1>
+      <div class="intro-rows">
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17"></path><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M8 14h3"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">The plan</p><p class="intro-row-body">A week of meals around your people and your schedule.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h2l2.2 10.5h9.6L20 8H7"></path><circle cx="9.5" cy="19" r="1.4"></circle><circle cx="16.5" cy="19" r="1.4"></circle></svg></div><div class="intro-row-text"><p class="intro-row-title">The shopping</p><p class="intro-row-body">One grocery list, sorted by where you shop.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16"></path><path d="M5.5 11a6.5 6.5 0 0 1 13 0"></path><path d="M6 11v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5"></path><path d="M12 4.5v-1"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">The cooking</p><p class="intro-row-body">Prep ahead, then dinner one step at a time.</p></div></div>
+      </div>
+      <p class="intro-remember">And I remember. Every answer and every correction makes the next week fit better.</p>
+    </div>
+    <div class="intro-foot">
+      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span class="is-on"></span><span></span><span></span></div>
+      <button class="intro-next" id="intro-help-next" type="button">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="step-intro-talk" style="display:none">
+  <button class="back-link on-spruce" type="button" data-step-back="intro-talk" hidden></button>
+  <div class="intro-screen">
+    <div class="intro-body">
+      <h1 class="intro-title">You can just talk to me.</h1>
+      <div class="intro-rows">
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11.5V5.5a1.5 1.5 0 0 1 3 0v5"></path><path d="M12 10.5a1.5 1.5 0 0 1 3 0v1.5"></path><path d="M15 12a1.5 1.5 0 0 1 3 0v3.5a5 5 0 0 1-5 5h-1.6a5 5 0 0 1-4.1-2.1L4.7 14.6a1.4 1.4 0 0 1 2.2-1.7L9 15"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">The everyday stuff is a tap</p><p class="intro-row-body">Approving the week, ticking off groceries, starting a recipe &mdash; one button each.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V16A2.5 2.5 0 0 1 4 13.5z"></path><path d="M8 9h8"></path><path d="M8 12h5"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">Everything else, just tell me</p><p class="intro-row-body">Say it the way you&rsquo;d say it out loud. &ldquo;Jamie&rsquo;s out Thursday.&rdquo; &ldquo;We already have rice.&rdquo; I&rsquo;ll take it from there.</p></div></div>
+      <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8H4V4"></path><path d="M4.5 8.5A8 8 0 1 1 4 13"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">If I get it wrong, say so</p><p class="intro-row-body">Correct me right where it happens, and I&rsquo;ll remember for next time.</p></div></div>
+      </div>
+      <!-- A picture of the ask bar and its chips, not the real thing:
+           there is nobody to talk to yet. -->
+      <div class="intro-ask" aria-hidden="true">
+        <div class="intro-chips"><span class="intro-chip">Jamie&rsquo;s out Thursday</span><span class="intro-chip">Less chicken this week</span></div>
+        <div class="intro-askbar"><span class="intro-askbar-text">Ask me anything about today&hellip;</span><span class="intro-askbar-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></span></div>
+      </div>
+    </div>
+    <div class="intro-foot">
+      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span></span><span class="is-on"></span><span></span></div>
+      <button class="intro-next" id="intro-talk-next" type="button">Continue<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="step-intro-know" style="display:none">
+  <button class="back-link on-spruce" type="button" data-step-back="intro-know" hidden></button>
+  <div class="intro-screen">
+    <div class="intro-body">
+      <div class="intro-body" style="gap:18px">
+        <h1 class="intro-title">Let&rsquo;s get to know each other.</h1>
+        <p class="intro-lead intro-sub">A few questions, about five minutes, mostly tapping. Nothing&rsquo;s locked in &mdash; you can change any answer later.</p>
+      </div>
+      <div class="intro-stops">
+      <div class="intro-stop"><div class="intro-stop-num">1</div><p class="intro-stop-title">Who&rsquo;s eating</p></div>
+      <div class="intro-stop"><div class="intro-stop-num">2</div><p class="intro-stop-title">How your week runs</p></div>
+      <div class="intro-stop"><div class="intro-stop-num">3</div><p class="intro-stop-title">What you eat</p></div>
+      <div class="intro-stop"><div class="intro-stop-num">4</div><p class="intro-stop-title">Your first week</p></div>
+      </div>
+    </div>
+    <div class="intro-foot">
+      <div class="intro-pager" aria-hidden="true"><span></span><span></span><span></span><span></span><span class="is-on"></span></div>
+      <button class="intro-next" id="intro-know-next" type="button">Let&rsquo;s go<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
+    </div>
+  </div>
+</div>
+
 <!-- Q1 + Q2: household size and names -->
 <div id="step-household">
+  <button class="back-link" type="button" data-step-back="household" hidden></button>
   <h1>Who am I cooking for, exactly?</h1>
   <p class="subtitle">Just names for now — I'll get to the details in a sec.</p>
   <div id="members"></div>
@@ -2216,13 +2526,22 @@ async function generateFirstPlanAndReveal(answers) {
 // 'reveal' is the last step (Emily, 2026-09-05, 20a) — chores questions
 // used to follow it as 'chores-q'/'chores-review' but now live on their
 // own page (see the comment above step-reveal's old chores markup).
-const ALL_STEPS = ['household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal'];
+// The five intro screens come first (Emily, 2026-09-10 — see the markup
+// above step-intro-hello); INTRO_STEPS is the same list, named so the
+// progress strip and the body background can tell them from the questions.
+const INTRO_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know'];
+const ALL_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know', 'household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
 // remember what you answered two screens ago in order to know whether it is
 // worth tapping.
 const STEP_TITLES = {
+  'intro-hello': 'Hello',
+  'intro-purpose': 'Nice to meet you',
+  'intro-help': 'What I help with',
+  'intro-talk': 'How we talk',
+  'intro-know': 'Getting to know you',
   'household': "Who's here",
   'rhythm-1': 'Your rhythm',
   'rhythm-2': 'Your timing',
@@ -2292,7 +2611,11 @@ function renderProgress() {
   progress.innerHTML = '';
   // Only dots for the question steps — the reveal is where setup ends, not
   // another thing to answer.
-  const questionSteps = stepFlow().filter(k => k !== 'reveal');
+  // Nor for the intro, which carries its own five-dot pager; the strip is
+  // hidden outright while an intro step is showing so the questions'
+  // progress starts where it always did.
+  progress.hidden = INTRO_STEPS.indexOf(currentStep) !== -1;
+  const questionSteps = stepFlow().filter(k => k !== 'reveal' && INTRO_STEPS.indexOf(k) === -1);
   const idx = questionSteps.indexOf(currentStep);
   questionSteps.forEach((key, i) => {
     const dot = document.createElement('div');
@@ -2329,7 +2652,7 @@ function pushStepHistory(key, replace) {
   else window.history.pushState(state, '', path);
 }
 
-let currentStep = 'household';
+let currentStep = 'intro-hello';
 // Set the first time the reveal renders, and never cleared. From then on
 // this page is a one-way door: see the popstate handler.
 let revealReached = false;
@@ -2343,6 +2666,12 @@ function showStep(key, opts) {
   ALL_STEPS.forEach(k => {
     document.getElementById('step-' + k).style.display = (k === key) ? 'block' : 'none';
   });
+  // The intro is on spruce, the questions on ivory: body.intro-active is
+  // the whole of that swap (see the CSS above). Guarded because the
+  // navigation tests run this under a DOM stub with no body.
+  if (document.body && document.body.classList) {
+    document.body.classList.toggle('intro-active', INTRO_STEPS.indexOf(key) !== -1);
+  }
   renderBackLink(key);
   renderProgress();
   if (opts.push !== false) {
@@ -2611,6 +2940,18 @@ document.querySelectorAll('[data-step-back]').forEach(el => {
   el.addEventListener('click', () => goBackFrom(el.dataset.stepBack));
 });
 
+// The intro's five buttons each go one step forward — nothing to save,
+// nothing to validate, so the flow decides the destination the same way
+// the back control does.
+INTRO_STEPS.forEach(key => {
+  const btn = document.getElementById(key + '-next');
+  if (!btn) return;
+  btn.onclick = () => {
+    const flow = stepFlow();
+    showStep(flow[flow.indexOf(key) + 1]);
+  };
+});
+
 // ---------- Post-reveal ----------
 // The reveal is the last onboarding step (Emily, 2026-09-05, 20a) — its two
 // actions below are how onboarding ends. Chores questions used to be a
@@ -2664,10 +3005,13 @@ document.getElementById('reveal-anyway-btn').onclick = () => { window.location.h
 // in the popstate handler by the load stamp they carry, which won't match
 // this page's. Either way a reload starts on the household step, because
 // after one it is the only step whose answers are still true.
+// A reload also SKIPS the intro: whoever reloaded has already been
+// introduced, and landing them back on "Hi, I'm Pomona" with their answers
+// gone would be adding insult to the loss.
 function startOnboarding() {
   const reloadedMidSetup = !!(window.history && window.history.state
     && window.history.state.onboardingStep);
-  showStep('household', { replace: !reloadedMidSetup });
+  showStep(reloadedMidSetup ? 'household' : 'intro-hello', { replace: !reloadedMidSetup });
 }
 startOnboarding();
 </script>
