@@ -1099,6 +1099,29 @@ CREATE TABLE IF NOT EXISTS chat_turns (
 -- name or a short reason, `where` is a route or tool name. Enough to tell
 -- you something broke and where to go looking; not a second copy of the
 -- household's private data sitting in a table.
+-- What a generated week got WRONG about the food, as opposed to what broke.
+-- Deliberately its own table rather than a `kind` on error_events: the
+-- morning report leads with BROKEN, and "Thursday's dinner has no seasoning"
+-- must never outrank a server error or a crashed tool. Same household
+-- scoping, same pruning discipline, separate section in the report.
+--
+-- Written by plan_quality.check_and_log, which until 2026-09-10 only wrote to
+-- a log nobody reads. Emily's call when asked what a failed check should do:
+-- "tell you in the morning report."
+CREATE TABLE IF NOT EXISTS plan_quality_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    weekly_plan_id INTEGER,
+    rule TEXT NOT NULL,          -- the check's name, e.g. seasoning_never_mentioned
+    severity TEXT NOT NULL DEFAULT 'info',   -- info | warn
+    date TEXT NOT NULL DEFAULT '',
+    slot TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_plan_quality_events_household_created
+    ON plan_quality_events (household_id, created_at);
+
 CREATE TABLE IF NOT EXISTS error_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),

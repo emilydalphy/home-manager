@@ -102,6 +102,7 @@ from dataclasses import dataclass
 
 from ..db import get_conn
 from . import recipes as _recipes
+from . import usage as _usage
 from ._shared import household_id
 from .week_intake import RUSH_MAX_MINUTES
 
@@ -620,6 +621,172 @@ def _snack_variety(entries: list[dict], context: dict) -> list[Violation]:
     return violations
 
 
+# ---------------------------------------------------------------------------
+# The food-quality floor (route 4, Emily 2026-09-10).
+#
+# Route 1 told the planner what good food is. These three are the floor under
+# it: not "is this dish good", which no amount of string matching can answer,
+# but "did something obviously fall out". Each one exists because a real row
+# in a real household database failed it.
+#
+# All three are deliberately narrow. A check that fires on a decent dinner is
+# worse than no check, because the morning report is the one place breakage is
+# supposed to be legible — so each looks for an absence it can be sure about
+# and passes over everything it cannot.
+# ---------------------------------------------------------------------------
+
+# "Pineapple-Free Fruit Cup". Both planner prompts forbid naming a dish for
+# what it leaves out, in those words, with that exact example. It shipped
+# anyway, and nothing downstream looked.
+_ABSENCE_IN_NAME = re.compile(
+    r"\b(?:"
+    r"[a-z]+[- ]free"          # pineapple-free, dairy free
+    r"|no[- ][a-z]+(?:ed)?"    # no-nut, no added
+    r"|without[- ][a-z]+"      # without dairy
+    r"|[a-z]{3,}less"          # meatless is fine; this is the cost of the rule
+    r")\b",
+    re.I,
+)
+
+# Names that are honestly about an absence rather than apologising for one.
+# "Meatless Monday" and a "sugarless" biscuit are describing the dish, not
+# naming it after the allergen somebody in the house has.
+_ABSENCE_ALLOWED = {"meatless", "boneless", "skinless", "seedless", "endless"}
+
+
+def _dish_named_for_an_absence(entries: list[dict], context: dict) -> list[Violation]:
+    """A dish must not be named after an ingredient it leaves out.
+
+    The prompt's own words: 'Never name a dish after an ingredient it leaves
+    out. No "Pineapple-Free Fried Rice", no "Nut-Free Brownies" — the name
+    should describe what the dish IS.' The reason given there is the right
+    one: a meal named after an allergen is alarming to read on the week's
+    menu even when the recipe is safe.
+
+    Found live in the household database that motivated this ticket:
+    "Cottage Cheese with Pineapple-Free Fruit Cup". A stated rule that
+    nothing verified.
+    """
+    violations = []
+    for entry in entries:
+        if not _is_planned(entry):
+            continue
+        name = entry.get("meal_name") or ""
+        match = _ABSENCE_IN_NAME.search(name)
+        if not match:
+            continue
+        if match.group(0).strip("- ").lower() in _ABSENCE_ALLOWED:
+            continue
+        violations.append(Violation(
+            rule="dish_named_for_an_absence", severity="warn",
+            date=entry.get("date"), slot=entry.get("slot"),
+            message=(
+                f"'{name}' is named after something it leaves out "
+                f"(\"{match.group(0)}\"). The name should say what the dish is."
+            ),
+        ))
+    return violations
+
+
+# Any of these in a method is evidence the dish was seasoned. Deliberately
+# generous: one hit anywhere is enough to pass, because the question is
+# "was it seasoned at all", not "was it seasoned well".
+_SEASONING_WORDS = {
+    "salt", "salted", "salting", "pepper", "peppered", "season", "seasoned",
+    "seasoning", "spice", "spices", "spiced", "herb", "herbs", "garlic",
+    "onion", "ginger", "chili", "chilli", "chile", "paprika", "cumin",
+    "coriander", "turmeric", "oregano", "thyme", "rosemary", "basil",
+    "cilantro", "parsley", "dill", "soy", "miso", "vinegar", "lemon", "lime",
+    "mustard", "curry", "masala", "cinnamon", "nutmeg", "sesame", "zest",
+}
+
+# Evidence that heat was actually used to build flavour rather than just
+# applied. "Bake" is deliberately absent: baking everything on one sheet pan
+# is the exact failure this is looking for.
+_TECHNIQUE_WORDS = {
+    "sear", "seared", "brown", "browned", "browning", "saute", "sauté",
+    "sautee", "sauteed", "sautéed", "fry", "fried", "sizzle", "caramelize",
+    "caramelise", "caramelized", "caramelised", "toast", "toasted", "char",
+    "charred", "grill", "grilled", "simmer", "simmered", "reduce", "reduced",
+    "deglaze", "bloom", "blooms", "blooming", "marinate", "marinated",
+    "sweat", "render", "rendered", "crisp", "crisped", "broil", "broiled",
+    "roast", "roasted",
+}
+
+
+def _method_words(entry: dict) -> set:
+    return set(re.findall(r"[a-zé]+", " ".join(entry.get("instructions") or []).lower()))
+
+
+def _cooked_dinner(entry: dict) -> bool:
+    """A dinner somebody actually cooks, with a method long enough to judge.
+
+    Leftovers nights and reheats have nothing to season. A two-step method is
+    not evidence of anything either way — plenty of genuinely good dinners are
+    short, and this floor is not a length rule.
+    """
+    if entry.get("slot") != "dinner" or not _is_planned(entry):
+        return False
+    if (entry.get("source") or "") == "leftovers":
+        return False
+    return len(entry.get("instructions") or []) >= 3
+
+
+def _seasoning_never_mentioned(entries: list[dict], context: dict) -> list[Violation]:
+    """A cooked dinner whose method never mentions seasoning of any kind.
+
+    Before route 1 the generation prompt said nothing about seasoning at all —
+    both of its matches for "season" were the calendar. This is the floor
+    under that fix: not "is it seasoned well", which is a judgement, but "does
+    the method mention salt, a spice, an aromatic or an acid anywhere", which
+    is a fact. A dinner that mentions none of them is not a dinner anyone
+    wants to eat twice.
+    """
+    violations = []
+    for entry in entries:
+        if not _cooked_dinner(entry):
+            continue
+        if _method_words(entry) & _SEASONING_WORDS:
+            continue
+        violations.append(Violation(
+            rule="seasoning_never_mentioned", severity="warn",
+            date=entry["date"], slot="dinner",
+            message=(
+                f"{entry['date']} dinner ('{entry['meal_name']}'): the method never mentions "
+                "salt, a spice, an aromatic or an acid."
+            ),
+        ))
+    return violations
+
+
+def _method_is_assembly(entries: list[dict], context: dict) -> list[Violation]:
+    """A cooked dinner whose method shows no cooking technique at all.
+
+    "Combine the ingredients, apply heat, serve" is the failure route 1's
+    guidance is named after. The reference case is real output: "Baked Lemon
+    Herb Salmon with Roasted Asparagus" — preheat, put it on a sheet pan,
+    drizzle, top, bake. Nothing browned, nothing bloomed, nothing layered.
+
+    'Bake' is deliberately not evidence of technique here, because baking
+    everything together on one pan is precisely the thing being caught.
+    """
+    violations = []
+    for entry in entries:
+        if not _cooked_dinner(entry):
+            continue
+        if _method_words(entry) & _TECHNIQUE_WORDS:
+            continue
+        violations.append(Violation(
+            rule="method_is_assembly", severity="info",
+            date=entry["date"], slot="dinner",
+            message=(
+                f"{entry['date']} dinner ('{entry['meal_name']}'): the method combines and "
+                "heats but never browns, blooms or layers anything."
+            ),
+        ))
+    return violations
+
+
 def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     """
     Pure rule engine over an already-assembled week. Takes plain dicts
@@ -641,6 +808,11 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     violations += _ingredient_repeat(plan_entries, context)
     violations += _steps_match_ingredients(plan_entries, context)
     violations += _snack_variety(plan_entries, context)
+    # The food-quality floor (route 4). Same contract as everything above:
+    # independent, additive, and one firing never suppresses another.
+    violations += _dish_named_for_an_absence(plan_entries, context)
+    violations += _seasoning_never_mentioned(plan_entries, context)
+    violations += _method_is_assembly(plan_entries, context)
     return violations
 
 
@@ -905,10 +1077,17 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
             )
         if violations:
             logger.warning(
-                "Plan %s came back with %d quality violation(s) logged above. Log-only: "
-                "nothing about the plan was changed.",
+                "Plan %s came back with %d quality violation(s) logged above. Nothing "
+                "about the plan itself was changed.",
                 plan_id, len(violations),
             )
+        # ...and persisted, so the morning report can say so. Emily's call
+        # (2026-09-10) when asked what a failed check should do: "tell you in
+        # the morning report" — a log line on a server nobody reads was the
+        # option she was offered and did not take. Its own table, and its own
+        # section in the report: a dull dinner must never outrank a server
+        # error under BROKEN.
+        _usage.record_plan_quality(plan_id, violations)
         return violations
     except Exception:
         logger.exception(

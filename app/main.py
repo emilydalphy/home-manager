@@ -4148,6 +4148,11 @@ def observability(days: int = 1):
             "errors": tools.get_recent_errors(days=days),
             "usage": tools.get_usage_summary(days=max(days, 7)),
             "feedback_waiting": tools.count_feedback_reports(days=max(days, 7)),
+            # What the last few weeks of plans got wrong about the FOOD, which
+            # is not the same question as what broke — see the report, where
+            # it prints in its own section rather than under BROKEN. Seven
+            # days minimum because a week is generated about once a week.
+            "plan_quality": tools.get_recent_plan_quality(days=max(days, 7)),
         }
     except Exception as e:
         logger.exception("Observability summary failed")

@@ -392,10 +392,12 @@ from .taste_verdict import (  # noqa: F401
 from .usage import (  # noqa: F401
     get_month_to_date_cost,
     get_recent_errors,
+    get_recent_plan_quality,
     get_usage_summary,
     record_api_call,
     record_chat_turn,
     record_error,
+    record_plan_quality,
     touch_household_active,
 )
 from .week_intake import (  # noqa: F401
