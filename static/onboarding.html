@@ -1841,39 +1841,10 @@ function renderSnacksPerDayChips() {
     (key) => { snacksPerDay = key; renderSnacksPerDayChips(); }
   );
 }
-function renderDinnersValue() { document.getElementById('dinners-value').textContent = dinnersPerWeek; }
-function renderBreakfastsValue() { document.getElementById('breakfasts-value').textContent = breakfastsPerWeek; }
-function renderLunchesValue() { document.getElementById('lunches-value').textContent = lunchesPerWeek; }
-// Floor of 0, not 1, on all four: "none, thanks" is a real answer, and
-// above zero these are counts of DISTINCT meals spread across the week
-// rather than a number of days to plan (see the setup screen's copy).
-document.getElementById('dinners-minus').addEventListener('click', () => {
-  dinnersPerWeek = Math.max(0, dinnersPerWeek - 1);
-  renderDinnersValue();
-});
-document.getElementById('dinners-plus').addEventListener('click', () => {
-  dinnersPerWeek = Math.min(7, dinnersPerWeek + 1);
-  renderDinnersValue();
-});
-document.getElementById('breakfasts-minus').addEventListener('click', () => {
-  breakfastsPerWeek = Math.max(0, breakfastsPerWeek - 1);
-  renderBreakfastsValue();
-});
-document.getElementById('breakfasts-plus').addEventListener('click', () => {
-  breakfastsPerWeek = Math.min(7, breakfastsPerWeek + 1);
-  renderBreakfastsValue();
-});
-document.getElementById('lunches-minus').addEventListener('click', () => {
-  lunchesPerWeek = Math.max(0, lunchesPerWeek - 1);
-  renderLunchesValue();
-});
-document.getElementById('lunches-plus').addEventListener('click', () => {
-  lunchesPerWeek = Math.min(7, lunchesPerWeek + 1);
-  renderLunchesValue();
-});
-// All four redraw from the counts as they stand, so arriving at this step
-// — first time or on the way back — shows what was picked rather than the
-// defaults it started on.
+// The per-meal steppers (renderDinnersValue and friends, and the six +/-
+// listeners) left with the "how many different recipes" step on 2026-09-11
+// (Build 6). The three counts keep their defaults (7 / 7 / 5) and are sent
+// by plannedMealCounts; a household changes them in What we know.
 // ---------- Which meals should I plan? ----------
 // One tap per meal. An unticked meal saves as a count of 0 (the planner
 // writes that slot empty); a ticked one keeps the default number of

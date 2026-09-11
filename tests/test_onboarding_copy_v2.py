@@ -75,19 +75,21 @@ def _function_body(name: str) -> str:
 
 # ---------- 2. the rewordings, each one pinned to its own step ----------
 
+# UPDATED 2026-09-11 (Build 6 of the screen-by-screen redesign, Emily's decision
+# G: setup asks only what changes the plan). The rhythm-2, dinners and
+# typical-week steps left the flow; their rewordings that still exist moved to
+# the one-question screens that replaced them, and the ones about removed
+# questions are gone with the questions.
 REWORDINGS = [
     # (what Emily wrote, which step it belongs to, what it replaced)
-    ("When do you want the meal plan for the week ready",
-     "step-rhythm-2", "When should your weekly plan be ready?"),
     ("Do you like meal prepping?",
-     "step-rhythm-2", "Do you like to prep ahead?"),
-    ("Dietary preferences or restrictions",
-     "step-restrictions", "Anyone I cook carefully around?"),
+     "step-prep", "Do you like to prep ahead?"),
+    ("Anything I should never put on the plate?",
+     "step-restrictions", "Dietary preferences or restrictions"),
     ("Anything I should never recommend?",
      "step-wont-eat", "Anything the house just won't eat, no matter what?"),
-    ("How many different breakfasts do you want?", "step-dinners", "Breakfasts"),
-    ("How many different lunches do you want?", "step-dinners", "Lunches"),
-    ("How many different dinners do you want?", "step-dinners", "Dinners"),
+    ("Which meals should I plan?", "step-meals", "How many different recipes a week?"),
+    ("What time do you usually have dinner?", "step-dinner-time", "When does dinner usually land?"),
 ]
 
 
@@ -109,36 +111,6 @@ def test_the_old_wordings_are_gone_from_the_whole_page():
         assert replaced not in ONBOARDING_VISIBLE, (
             f"the old wording {replaced!r} is still on the page"
         )
-
-
-def test_the_counts_step_asks_per_meal_type_not_once_generically():
-    """
-    One heading ("How many different recipes a week?") was doing the work
-    of three questions. Emily's call: ask per meal type.
-    """
-    # Emily kept her own heading (2026-09-08); the per-type lines sit under it.
-    assert "How many different recipes a week?" in ONBOARDING_VISIBLE
-    step = _step_markup("step-dinners")
-    for meal in ("breakfasts", "lunches", "dinners"):
-        assert f"How many different {meal} do you want?" in step
-
-
-def test_the_typical_week_step_is_one_short_line_now():
-    """
-    "Far too many words" (Emily, relaying Julia). The why-panel, the
-    five-bullet "worth mentioning" list and the second explanatory
-    paragraph are gone; the example in the box is one short sentence.
-    """
-    step = _step_markup("step-typical-week")
-    assert "why-panel" not in step, "the why-panel is back on the typical-week step"
-    assert "typical-week-hints" not in step and "Worth mentioning" not in step, (
-        "the 'worth mentioning' prompt list is back — it was five more things to type"
-    )
-    placeholder = re.search(r'id="typical-week"[^>]*placeholder="([^"]*)"', step)
-    assert placeholder, "the typical-week textarea lost its example placeholder"
-    example = placeholder.group(1)
-    assert example.count(".") == 1, f"the example should be ONE sentence; got {example!r}"
-    assert len(example) <= 60, f"the example is still long: {example!r}"
 
 
 # ---------- 1. chips first, typing optional ----------
@@ -186,39 +158,6 @@ def test_the_preset_answers_actually_reach_the_saved_payload():
 
 # ---------- 3. a household of one adult ----------
 
-def test_a_one_person_household_is_not_asked_the_two_pointless_questions():
-    """
-    Both cards are hidden and both answers are filled in — hiding them
-    without answering them would just move the same block from the screen
-    into rhythm1Complete().
-    """
-    body = _function_body("applySoloAdultDefaults")
-    assert "rhythm-meals-together-card" in body and "rhythm-cooking-card" in body, (
-        "applySoloAdultDefaults no longer hides the two cards"
-    )
-    assert "most_meals" in body and "one_person" in body, (
-        "the two questions are hidden but not answered, so Continue stays disabled "
-        "on a question nobody can see"
-    )
-    solo = _function_body("isSoloAdultHousehold")
-    assert "length === 1" in solo and "'adult'" in solo, (
-        "isSoloAdultHousehold no longer means 'exactly one adult and nobody else' — "
-        "a household with a toddler in it eats together and must still be asked"
-    )
-    assert "applySoloAdultDefaults()" in _function_body("buildRhythmStep1")
-
-
-def test_adding_a_second_person_takes_the_filled_in_answers_back():
-    """
-    Going back and adding someone must not ship an answer they never saw.
-    """
-    body = _function_body("applySoloAdultDefaults")
-    assert "rhythmSoloDefaultsApplied" in body, (
-        "nothing tracks that the two answers were filled in FOR the household, so "
-        "adding a second person leaves a solo default saved as their answer"
-    )
-
-
 def test_the_defaults_a_solo_household_gets_are_saved_like_any_other_answer(signed_in):
     """
     The endpoint half: 'most_meals' + 'one_person' + the person's name are
@@ -245,16 +184,18 @@ def test_the_defaults_a_solo_household_gets_are_saved_like_any_other_answer(sign
 
 # ---------- 4. snacks are a per-day question ----------
 
-def test_the_wizard_asks_snacks_per_day_on_chips():
-    step = _step_markup("step-dinners")
-    assert "How many snacks a day?" in step
-    assert 'id="snacks-per-day-chips"' in step
-    assert 'id="snacks-value"' not in step, "the per-week snacks stepper is back"
-    m = re.search(r"const SNACKS_PER_DAY_OPTIONS = \[(.*?)\];", ONBOARDING, re.S)
-    assert m, "SNACKS_PER_DAY_OPTIONS is gone"
-    assert [int(k) for k in re.findall(r"key:\s*(\d+)", m.group(1))] == [0, 1, 2, 3]
+def test_the_wizard_asks_which_meals_and_sends_counts():
+    """Since 2026-09-11 (Build 6) setup asks WHICH meals to plan, not how
+    many distinct recipes: an unticked meal is sent as a count of 0 (the
+    planner writes that slot empty), a ticked one keeps the old default
+    (7 / 7 / 5, snacks per day 2)."""
+    step = _step_markup("step-meals")
+    assert 'id="meals-chips"' in step
     assert re.search(r"let snacksPerDay = 2;", ONBOARDING), "the default is no longer 2"
-    assert "snacks_per_day: snacksPerDay" in _function_body("saveOnboardingAnswers")
+    body = _function_body("plannedMealCounts")
+    assert "plannedMeals.breakfast ? breakfastsPerWeek : 0" in body
+    assert "plannedMeals.snacks ? snacksPerDay : 0" in body
+    assert "...plannedMealCounts()" in _function_body("saveOnboardingAnswers")
 
 
 def test_onboarding_saves_snacks_per_day_and_derives_the_per_week_count(signed_in):
@@ -437,7 +378,7 @@ def test_the_start_choice_is_asked_and_sent(signed_in):
     current calendar week, and nothing carried an answer across because
     nothing asked.
     """
-    step = _step_markup("step-typical-week")
+    step = _step_markup("step-kit-repeats")  # moved here with the normal-week step's departure (2026-09-11)
     assert 'id="first-plan-start-chips"' in step
     m = re.search(r"const FIRST_PLAN_START_OPTIONS = \[(.*?)\];", ONBOARDING, re.S)
     assert m, "FIRST_PLAN_START_OPTIONS is gone"

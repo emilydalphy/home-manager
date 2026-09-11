@@ -79,9 +79,10 @@ def test_the_five_intro_screens_come_before_the_household_step():
     assert m, "ALL_STEPS has moved"
     steps = json.loads(m.group(1).replace("'", '"'))
     assert steps[:6] == INTRO + ["household"], steps[:6]
-    # The questions after them are exactly what they were.
-    assert steps[6:] == ["rhythm-1", "rhythm-2", "restrictions", "eating-style", "wont-eat",
-                         "excited-about", "dinners", "typical-week", "kit-repeats", "reveal"]
+    # The questions after them, since 2026-09-11 (Build 6, Emily's decision
+    # G — setup asks only what changes the plan).
+    assert steps[6:] == ["meals", "restrictions", "eating-style", "wont-eat",
+                         "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats", "reveal"]
 
 
 def test_each_intro_screen_is_in_the_markup_in_that_order():
@@ -125,8 +126,8 @@ APPROVED = {
         "“We already have rice.” I’ll take it from there.",
         "If I get it wrong, say so",
         "Correct me right where it happens, and I’ll remember for next time.",
-        "Jamie’s out Thursday", "Less chicken this week",
-        "Ask me anything about today…",
+        # The demo chips and ask bar left this screen on 2026-09-11: they
+        # pushed Continue off a 375×812 phone, and the chat is an icon now.
         "Continue",
     ],
     "intro-know": [
