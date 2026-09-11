@@ -518,31 +518,13 @@ def undo_staple_decision(staple_id: int) -> dict:
     if r is None:
         conn.close()
         raise ValueError(f"No staple with id {staple_id}.")
-    last = conn.execute(
-        "SELECT id, kind FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind IN ('plenty', 'skipped') "
-        "ORDER BY id DESC LIMIT 1",
-        (household_id(), staple_id),
-    ).fetchone()
-    if last is None:
+    if not reverse_last_answer(conn, staple_id):
         # Nothing to undo: say so, change nothing. (A raw call used to
         # force the staple due — the 2026-09-11 verifier's case g.)
         out = _shape(r)
         conn.close()
         out["undone"] = False
         return out
-    conn.execute("DELETE FROM staple_events WHERE id = ?", (last["id"],))
-    if last["kind"] == "skipped":
-        # The auto-pause that may have come with that skip goes too.
-        conn.execute(
-            "DELETE FROM staple_events WHERE id = (SELECT id FROM staple_events WHERE household_id = ? AND staple_id = ? "
-            "AND kind = 'paused' AND source = 'auto' ORDER BY id DESC LIMIT 1)",
-            (household_id(), staple_id),
-        )
-    streak = max(0, (r["skip_streak"] or 0) - (1 if last["kind"] == "skipped" else 0))
-    conn.execute(
-        "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = 0, updated_at = datetime('now') WHERE id = ?",
-        (_iso(_today()), streak, staple_id),
-    )
     # Put back the very row that was taken off — store, quantity and all —
     # rather than letting the next list read make a new, blank one.
     restored = conn.execute(
@@ -564,6 +546,41 @@ def undo_staple_decision(staple_id: int) -> dict:
     conn.close()
     out["undone"] = True
     return out
+
+
+def reverse_last_answer(conn, staple_id: int) -> bool:
+    """
+    Take back the staple's most recent plenty/skip: delete the event (and
+    the auto-pause a third skip brought), step the streak back, lift the
+    pause, and make it due today. Touches no grocery line — the caller
+    decides what happens to the row. Returns False, changing nothing, when
+    there is no answer to take back. Shared by undo_staple_decision and
+    the pre-shop screen's own undo (a person saying "Actually, I need it"
+    on a staple's line means the staple was wrong to say plenty).
+    """
+    r = _row(conn, staple_id)
+    if r is None:
+        return False
+    last = conn.execute(
+        "SELECT id, kind FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind IN ('plenty', 'skipped') "
+        "ORDER BY id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
+    if last is None:
+        return False
+    conn.execute("DELETE FROM staple_events WHERE id = ?", (last["id"],))
+    if last["kind"] == "skipped":
+        conn.execute(
+            "DELETE FROM staple_events WHERE id = (SELECT id FROM staple_events WHERE household_id = ? AND staple_id = ? "
+            "AND kind = 'paused' AND source = 'auto' ORDER BY id DESC LIMIT 1)",
+            (household_id(), staple_id),
+        )
+    streak = max(0, (r["skip_streak"] or 0) - (1 if last["kind"] == "skipped" else 0))
+    conn.execute(
+        "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = 0, updated_at = datetime('now') WHERE id = ?",
+        (_iso(_today()), streak, staple_id),
+    )
+    return True
 
 
 def pause_staple(staple_id: int, paused: bool = True) -> dict:

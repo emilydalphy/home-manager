@@ -374,6 +374,35 @@ def test_pre_shop_drop_counts_as_we_have_plenty():
     assert len(tools.list_grocery_list(status="needed")) == 1  # not two lines
 
 
+def test_a_staple_answer_never_reads_as_an_already_have_decision():
+    s, line = _due_line(every_days=21)
+    tools.decide_staple_line(line["id"], "skip")
+    assert tools.get_already_have_decisions() == []
+    tools.undo_staple_decision(s["id"])
+    tools.remove_grocery_item(line["id"])
+    assert tools.get_already_have_decisions() == []
+
+
+def test_pre_shop_undo_on_a_staple_line_takes_the_plenty_back():
+    s, line = _due_line(every_days=21)
+    tools.drop_grocery_item_pre_shop(line["id"], author="Emily")
+    assert tools.list_staples()[0]["next_due_at"] == "2026-10-07"
+    tools.undo_pre_shop_drop(line["id"])
+    shown = tools.list_staples()[0]
+    assert shown["due"] is True and shown["next_due_at"] == "2026-09-16"
+    assert needed_names() == ["Oat milk"]
+
+
+def test_removing_a_bought_staple_line_is_just_a_delete():
+    s, line = _due_line(every_days=21)
+    tools.mark_grocery_item(line["id"], "purchased")
+    before = tools.list_staples()[0]
+    tools.remove_grocery_item(line["id"])
+    after = tools.list_staples()[0]
+    assert after["skip_streak"] == 0 and after["next_due_at"] == before["next_due_at"]
+    assert tools.list_grocery_list(status="all") == []
+
+
 def test_undo_puts_back_the_same_row_with_its_store():
     s, line = _due_line(every_days=21)
     tools.set_grocery_item_store(line["id"], "Costco")
@@ -479,6 +508,7 @@ def test_grocery_screen_source_markers():
         "function groStaplesHtml",
         "/api/grocery-list/' + stLineId + '/staple",
         "/api/staples/' + stResult.id + '/undo",
+        "/api/staples/' + goneStapleId + '/undo",
         "groLoadStaples()",
     ):
         assert needle in SHELL_JS, needle

@@ -915,13 +915,18 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
 
 
 def remove_grocery_item(item_id: int) -> dict:
-    """Delete an item from the grocery list."""
+    """
+    Take an item off the grocery list. A hard delete — except for a
+    still-needed line a staple put there, which is soft-removed and counts
+    as "not this trip" (see below); a bought staple line is deleted like
+    anything else.
+    """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     row = conn.execute(
-        "SELECT id, staple_id FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT id, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
-    if row is not None and row["staple_id"]:
+    if row is not None and row["staple_id"] and row["status"] == "needed":
         # Removing a staple's suggestion is "not this trip" — otherwise the
         # next list read would put it straight back. Soft-removed rather
         # than deleted, so the staple's own Undo can restore it.

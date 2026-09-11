@@ -4082,13 +4082,24 @@
         var goneStore = el.dataset.store || '';
         el.disabled = true;
         groceryState.openRowId = null;
+        var goneStapleId = null;
         groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/remove');
+          return groPostEmpty('/api/grocery-list/' + id + '/remove')
+            .then(function (r) { goneStapleId = r && r.staple_id ? r.staple_id : null; });
         }, "Couldn't remove that — try again.").then(function (ok) {
           if (!ok) return;
           showToast(goneName + ' off the list', {
             label: 'Undo',
             onClick: function () {
+              // A staple's line was soft-removed and counted as "not this
+              // trip", so its undo is the staple's own: the same row comes
+              // back and the skip is taken back with it.
+              if (goneStapleId) {
+                groDo(function () {
+                  return groPostEmpty('/api/staples/' + goneStapleId + '/undo');
+                }, "Couldn't put that back — try again.");
+                return;
+              }
               // /remove is a hard delete (remove_grocery_item), so the undo
               // puts the LINE back rather than the row: same name, same
               // quantity, same section, then its store again if it had one.
