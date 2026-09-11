@@ -4113,7 +4113,9 @@
     storefront:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/></svg>',
     camera:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
+    link:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></svg>'
   };
 
   function kitchenPanel() { return panels['kitchen']; }
@@ -4433,6 +4435,14 @@
         '<span class="kit-tile-title">Recipes</span>' +
         '<span class="kit-tile-sub">Ask me what we’ve saved</span>' +
       '</button>' +
+      // Bring in a recipe the household already makes, from a web page —
+      // the review-before-save sheet below (recipe import, 2026-09-11).
+      // Quiet like its neighbours: an entry point, not a task.
+      '<button type="button" class="kit-tile kit-tile-quiet" data-kit="recipe-link">' +
+        '<span class="kit-tile-icon">' + KITCHEN_ICONS.link + '</span>' +
+        '<span class="kit-tile-title">Add from a link</span>' +
+        '<span class="kit-tile-sub">Paste a recipe page and I’ll read it</span>' +
+      '</button>' +
     '</div>';
   }
 
@@ -4489,6 +4499,10 @@
     }
     if (what === 'recipes') {
       openAskSheet('What recipes do we have saved?');
+      return;
+    }
+    if (what === 'recipe-link') {
+      openRecipeLinkSheet();
     }
   }
   // ---------- Kitchen entry sheets ----------
@@ -4563,6 +4577,262 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !kitSheetEl.hidden) closeKitchenSheet();
     });
+  }
+
+  // ---------- "Add from a link" (recipe import, 2026-09-11) ----------
+  // Paste a link -> Pomona reads the page -> the draft is shown to review
+  // and edit -> Save. Nothing is stored until the household says so: the
+  // same review-before-save shape as the receipt and fridge scans, with a
+  // URL in front instead of a photo. A native sheet built on demand, the
+  // way the Something-not-working sheet is, so it is not another iframe.
+  //
+  // Copy rules (DESIGN_SYSTEM §8): trouble is stated plainly and paired
+  // with its way out in the same breath. Every failure below offers the
+  // ask bar, because telling Pomona the recipe in chat already works
+  // (tools.add_recipe) — the way out is a real one.
+  var rliSheetEl = null;
+  var rliScrimEl = null;
+  var rliDraft = null;
+
+  function buildRecipeLinkSheet() {
+    if (rliSheetEl) return;
+    rliScrimEl = document.createElement('div');
+    rliScrimEl.id = 'rli-scrim';
+    rliScrimEl.hidden = true;
+    rliSheetEl = document.createElement('div');
+    rliSheetEl.id = 'rli-sheet';
+    rliSheetEl.hidden = true;
+    rliSheetEl.setAttribute('role', 'dialog');
+    rliSheetEl.setAttribute('aria-modal', 'true');
+    rliSheetEl.setAttribute('aria-labelledby', 'rli-title');
+    rliSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="rli-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="rli-title">Add from a link</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="rli-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="rli-body" id="rli-body"></div>';
+    document.body.appendChild(rliScrimEl);
+    document.body.appendChild(rliSheetEl);
+    rliScrimEl.addEventListener('click', closeRecipeLinkSheet);
+    rliSheetEl.querySelector('#rli-handle').addEventListener('click', closeRecipeLinkSheet);
+    rliSheetEl.querySelector('#rli-close').addEventListener('click', closeRecipeLinkSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && rliSheetEl && !rliSheetEl.hidden) closeRecipeLinkSheet();
+    });
+    rliSheetEl.addEventListener('click', onRecipeLinkClick);
+  }
+
+  function openRecipeLinkSheet() {
+    buildRecipeLinkSheet();
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    rliDraft = null;
+    renderRecipeLinkAsk('');
+    rliScrimEl.hidden = false;
+    rliSheetEl.hidden = false;
+    var input = rliSheetEl.querySelector('#rli-url');
+    if (input) input.focus();
+  }
+
+  function closeRecipeLinkSheet() {
+    if (!rliSheetEl) return;
+    rliScrimEl.hidden = true;
+    rliSheetEl.hidden = true;
+  }
+
+  // The way out of every failure: say it in the ask bar instead. Prefilled
+  // so the household is one paste away rather than starting from nothing.
+  function rliAskInsteadHtml() {
+    return '<button type="button" class="rli-link" data-rli="ask-instead">' +
+      'Tell me the recipe instead</button>';
+  }
+
+  function renderRecipeLinkAsk(url, problem) {
+    var body = rliSheetEl.querySelector('#rli-body');
+    body.innerHTML =
+      '<label class="rli-label" for="rli-url">Paste the link</label>' +
+      '<input id="rli-url" class="rli-input" type="url" inputmode="url" autocomplete="off" ' +
+        'autocapitalize="off" spellcheck="false" placeholder="https://" value="' + escapeHtml(url || '') + '">' +
+      (problem
+        ? '<p class="rli-problem" role="alert">' + escapeHtml(problem) + '</p>' + rliAskInsteadHtml()
+        : '') +
+      '<button type="button" class="rli-read" id="rli-read" data-rli="read"' + (url ? '' : ' disabled') + '>Read the recipe</button>';
+    var input = body.querySelector('#rli-url');
+    var read = body.querySelector('#rli-read');
+    input.addEventListener('input', function () { read.disabled = !input.value.trim(); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && input.value.trim()) readRecipeLink();
+    });
+  }
+
+  function readRecipeLink() {
+    var body = rliSheetEl.querySelector('#rli-body');
+    var input = body.querySelector('#rli-url');
+    var read = body.querySelector('#rli-read');
+    var url = (input.value || '').trim();
+    if (!url) return;
+    read.disabled = true;
+    read.textContent = 'Reading\u2026';
+    fetch('/api/recipes/import-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) {
+          var detail = data && typeof data.detail === 'string' ? data.detail : '';
+          if (res.status === 429) detail = 'That\u2019s a few links in a row \u2014 give it a minute and try again.';
+          if (!detail) detail = 'I couldn\u2019t read a recipe on that page.';
+          throw new Error(detail);
+        }
+        return data.draft;
+      });
+    }).then(function (draft) {
+      rliDraft = draft;
+      renderRecipeLinkReview(draft);
+    }).catch(function (err) {
+      renderRecipeLinkAsk(url, (err && err.message) || 'I couldn\u2019t read a recipe on that page.');
+    });
+  }
+
+  function rliIngredientRowHtml(ing) {
+    // The draft's store section rides along on the row so the save keeps
+    // it; a row the household adds by hand has none and the server
+    // guesses one.
+    return '<div class="rli-ing" data-category="' + escapeHtml(ing.category || '') + '">' +
+      '<input class="rli-input rli-ing-qty" type="text" placeholder="how much" value="' + escapeHtml(ing.qty || '') + '" aria-label="Amount">' +
+      '<input class="rli-input rli-ing-item" type="text" placeholder="ingredient" value="' + escapeHtml(ing.item || '') + '" aria-label="Ingredient">' +
+      '<button type="button" class="rli-ing-remove" data-rli="remove-ing" aria-label="Remove">&times;</button>' +
+    '</div>';
+  }
+
+  function rliHost(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
+  }
+
+  function renderRecipeLinkReview(draft) {
+    var body = rliSheetEl.querySelector('#rli-body');
+    var host = rliHost(draft.source_url);
+    var ings = (draft.ingredients || []).map(rliIngredientRowHtml).join('');
+    body.innerHTML =
+      // Where it came from and how it was read. A model-read draft says so,
+      // because it is a reading of the page rather than a copy of it.
+      '<p class="rli-source">' +
+        (host ? 'From ' + escapeHtml(host) + '. ' : '') +
+        (draft.read_by === 'model'
+          ? 'I read this off the page myself, so give it a look before saving.'
+          : 'Check it over, then save.') +
+      '</p>' +
+      '<label class="rli-label" for="rli-name">Name</label>' +
+      '<input id="rli-name" class="rli-input" type="text" value="' + escapeHtml(draft.name || '') + '">' +
+      '<div class="rli-numbers">' +
+        '<label class="rli-label rli-num"><span>Serves</span>' +
+          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + escapeHtml(draft.default_servings || 4) + '"></label>' +
+        '<label class="rli-label rli-num"><span>Prep mins</span>' +
+          '<input id="rli-prep" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.prep_time_minutes || '') + '"></label>' +
+        '<label class="rli-label rli-num"><span>Cook mins</span>' +
+          '<input id="rli-cook" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.cook_time_minutes || '') + '"></label>' +
+      '</div>' +
+      '<div class="rli-label">Ingredients</div>' +
+      '<div class="rli-ings" id="rli-ings">' + ings + '</div>' +
+      '<button type="button" class="rli-link" data-rli="add-ing">Add an ingredient</button>' +
+      '<label class="rli-label" for="rli-steps">Steps <span class="rli-hint">one per line</span></label>' +
+      '<textarea id="rli-steps" class="rli-input rli-steps" rows="8">' + escapeHtml((draft.instructions || []).join('\n')) + '</textarea>' +
+      '<p class="rli-problem" id="rli-save-problem" role="alert" hidden></p>' +
+      '<button type="button" class="btn-primary rli-save" id="rli-save" data-rli="save">Save to my recipes</button>';
+  }
+
+  function collectRecipeLinkDraft() {
+    var body = rliSheetEl.querySelector('#rli-body');
+    var ingredients = [];
+    body.querySelectorAll('.rli-ing').forEach(function (row) {
+      var item = (row.querySelector('.rli-ing-item').value || '').trim();
+      if (!item) return;
+      ingredients.push({
+        item: item,
+        qty: (row.querySelector('.rli-ing-qty').value || '').trim(),
+        category: row.getAttribute('data-category') || null
+      });
+    });
+    var steps = (body.querySelector('#rli-steps').value || '').split('\n')
+      .map(function (s) { return s.replace(/^\s*\d+[.)]\s*/, '').trim(); })
+      .filter(Boolean);
+    function num(id) {
+      var v = parseInt((body.querySelector(id) || {}).value, 10);
+      return isNaN(v) || v <= 0 ? null : v;
+    }
+    return {
+      name: (body.querySelector('#rli-name').value || '').trim(),
+      ingredients: ingredients,
+      instructions: steps,
+      default_servings: num('#rli-servings') || 4,
+      prep_time_minutes: num('#rli-prep'),
+      cook_time_minutes: num('#rli-cook'),
+      cuisine: (rliDraft && rliDraft.cuisine) || '',
+      main_protein: (rliDraft && rliDraft.main_protein) || '',
+      source_url: (rliDraft && rliDraft.source_url) || ''
+    };
+  }
+
+  function saveRecipeLink() {
+    var body = rliSheetEl.querySelector('#rli-body');
+    var save = body.querySelector('#rli-save');
+    var problem = body.querySelector('#rli-save-problem');
+    var payload = collectRecipeLinkDraft();
+    problem.hidden = true;
+    if (!payload.name) {
+      problem.textContent = 'Give it a name first.';
+      problem.hidden = false;
+      body.querySelector('#rli-name').focus();
+      return;
+    }
+    save.disabled = true;
+    save.textContent = 'Saving\u2026';
+    fetch('/api/recipes/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error((data && typeof data.detail === 'string' && data.detail) || 'That didn\u2019t save \u2014 try again.');
+        return data;
+      });
+    }).then(function (saved) {
+      body.innerHTML =
+        '<p class="rli-done">Saved. \u201c' + escapeHtml(saved.name || payload.name) + '\u201d is one of your recipes now \u2014 ' +
+          'ask me to put it on the week whenever you like.</p>' +
+        '<button type="button" class="rli-read" data-rli="another">Add another</button>' +
+        '<button type="button" class="rli-link" data-rli="close">Done</button>';
+    }).catch(function (err) {
+      problem.textContent = (err && err.message) || 'That didn\u2019t save \u2014 try again.';
+      problem.hidden = false;
+      save.disabled = false;
+      save.textContent = 'Save to my recipes';
+    });
+  }
+
+  function onRecipeLinkClick(e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-rli]');
+    if (!target) return;
+    var what = target.getAttribute('data-rli');
+    if (what === 'read') readRecipeLink();
+    else if (what === 'save') saveRecipeLink();
+    else if (what === 'add-ing') {
+      var list = rliSheetEl.querySelector('#rli-ings');
+      list.insertAdjacentHTML('beforeend', rliIngredientRowHtml({ item: '', qty: '' }));
+      var rows = list.querySelectorAll('.rli-ing-item');
+      rows[rows.length - 1].focus();
+    }
+    else if (what === 'remove-ing') target.closest('.rli-ing').remove();
+    else if (what === 'another') openRecipeLinkSheet();
+    else if (what === 'close') closeRecipeLinkSheet();
+    else if (what === 'ask-instead') {
+      closeRecipeLinkSheet();
+      openAskSheet('Save this recipe for me: ');
+    }
   }
 
   // Where an action card or a notification says "View" and names an href

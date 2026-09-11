@@ -27,6 +27,7 @@ def add_recipe(
     cook_time_minutes: int | None = None,
     advance_prep_notes: str = "",
     advance_prep_step_indices: list[int] | None = None,
+    source_url: str = "",
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -54,17 +55,20 @@ def add_recipe(
     when a specific instruction step actually corresponds to it; leave
     empty otherwise. This lets the Cooker view clearly separate "do ahead"
     steps from "day of" steps instead of just listing them flat.
+    source_url is the web page a recipe was brought in from (the recipe
+    import sheet sets it); leave it blank for anything generated or typed.
     """
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
-        "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
+        "source_url) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
             json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
-            advance_prep_notes, json.dumps(advance_prep_step_indices or []),
+            advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
         ),
     )
     conn.commit()
@@ -74,6 +78,7 @@ def add_recipe(
         "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
         "cuisine": cuisine, "main_protein": main_protein, "instructions": instructions or [],
         "default_servings": default_servings, "advance_prep_step_indices": advance_prep_step_indices or [],
+        "source_url": source_url or "",
     }
 
 
@@ -158,7 +163,7 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
                times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
                temporarily_excluded, instructions_json, default_servings, prep_time_minutes,
-               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json
+               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, source_url
         FROM recipes WHERE household_id = ?
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
@@ -210,6 +215,8 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             # else happens day-of. Empty when nothing needs advance prep,
             # or for recipes saved before this was tracked.
             "advance_prep_step_indices": json.loads(r["advance_prep_step_indices_json"]),
+            # The web page it was brought in from, or '' (recipe import).
+            "source_url": r["source_url"] or "",
         }
         for r in rows
     ]

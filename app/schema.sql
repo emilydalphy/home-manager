@@ -217,6 +217,9 @@ CREATE TABLE IF NOT EXISTS recipes (
     prep_time_minutes INTEGER, -- active prep time, if known
     cook_time_minutes INTEGER, -- active cook time, if known
     advance_prep_notes TEXT NOT NULL DEFAULT '', -- e.g. "marinate at least 4 hours ahead, can be done the night before" — feeds generate_prep_schedule
+    -- Where a recipe came from when it was brought in from a link (recipe
+    -- import, 2026-09-11); '' for anything generated or typed in.
+    source_url TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -1171,7 +1174,7 @@ CREATE INDEX IF NOT EXISTS idx_error_events_household_created
 --
 -- call_site is the `label` passed to agent._create_with_retry -- the one
 -- function every Anthropic call in the app actually goes through. That is
--- also why recording lives there instead of at each of the nine call
+-- also why recording lives there instead of at each of the ten call
 -- sites separately: one instrumentation point covers all of them, and a
 -- call site added later is covered automatically instead of needing this
 -- table kept in sync by hand.

@@ -3884,6 +3884,39 @@ visual/screen-reader verification of the whole app is still an open gap.
    anything blocking. Note #15 (bare "Loading…" states) is now more visible
    next to copy written to `VOICE.md`.
 
+### 2026-09-11 — Recipes: bring one in from a link. Branch `worktree-recipe-import-link`.
+
+Loop Board (Phase 1.5, from the 2026-09-10 feature-gap research): Pomona could
+generate recipes but not absorb the twenty a household already makes. There was
+no recipe browser and no hand-add form — "Recipes" on the Cook root opens the ask
+bar, and `tools.add_recipe` was chat-only. Now a quiet third tile on Cook's root,
+"Add from a link", opens a native sheet (built on demand like the SNW sheet, not
+an iframe): paste a link → `POST /api/recipes/import-url` returns a DRAFT →
+review/edit every field → `POST /api/recipes/add` saves through `tools.add_recipe`,
+so the ingredients are the same `{item, qty, category}` lines grocery and the
+cook view already read. Nothing is stored until the household says so — the
+receipt/fridge scan shape with a URL in front.
+
+`app/recipe_import.py` is the whole thing and is written as hostile-input
+handling first: the server is fetching a URL a user typed. http/https only, no
+credentials, ports 80/443 only, `localhost`/`.local`/`.internal` names refused,
+every resolved address must be public (private/loopback/link-local/metadata/
+multicast/reserved refused, IPv4-mapped IPv6 unwrapped), the socket goes to the
+address that passed rather than back through DNS (`_PinnedHTTPSConnection` keeps
+cert+SNI on the hostname), ≤3 redirects each re-checked, 3 MB cap, 8 s per hop,
+plain User-Agent, and the page is only ever read as text. Extraction order:
+schema.org `Recipe` JSON-LD (plain, `@graph`, arrays, HowToSection steps, ISO
+durations) first because it is exact; otherwise `agent.read_recipe_from_page_llm`
+reads the visible text and the draft is marked `read_by: "model"`, which the sheet
+says out loud. Ingredient strings split deterministically
+(`split_ingredient_line`: "1 (14 oz) can diced tomatoes" → qty `1 can (14 oz)`,
+which `_parse_quantity` reads back) and a rough `guess_category` picks a store
+section. New `recipes.source_url` column (migration in `db.py`). Same "scan"
+rate-limit bucket. Out of scope on purpose: images, bulk import, a browser
+extension, paywalled pages, and "paste the text"/"photograph a card" (the card's
+open question). 130 tests in `tests/test_recipe_import.py`, none touching the
+network.
+
 ### 2026-09-08 — Taste: one hater vetoes a shared night; a solo night can overrule
 
 Emily's rule: a dish is a shared verdict by default — if anyone eating that night
