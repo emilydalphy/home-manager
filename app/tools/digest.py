@@ -98,10 +98,13 @@ def normalise_phone(raw: str | None) -> str:
     digits = re.sub(r"\D", "", text)
     if text.startswith("+") and 8 <= len(digits) <= 15:
         return "+" + digits
-    if len(digits) == 10:
-        return "+1" + digits
     if len(digits) == 11 and digits.startswith("1"):
-        return "+" + digits
+        digits = digits[1:]
+    # A North American number's area code and exchange both start 2-9;
+    # anything else would be stored, fail at Twilio every morning, and
+    # never say why at the one moment the person could fix it.
+    if len(digits) == 10 and digits[0] in "23456789" and digits[3] in "23456789":
+        return "+1" + digits
     raise ValueError("That doesn't look like a mobile number — something like 416-555-0100 works.")
 
 
@@ -215,6 +218,28 @@ def set_morning_text(
     conn = get_conn()
     new_phone = normalise_phone(phone) if phone is not None else None
     member_id = _resolve_member(conn, name, new_phone or "")
+    conn.close()
+    return set_morning_text_for_member(member_id, phone=phone, time=time, on=on, timezone=timezone)
+
+
+def set_morning_text_for_member(
+    member_id: int,
+    phone: str | None = None,
+    time: str | None = None,
+    on: bool | None = None,
+    timezone: str | None = None,
+) -> dict:
+    """
+    The same change, addressed by member row — what the Preferences sheet
+    posts. Not an agent tool (the model names people, it doesn't hold ids).
+    The id must be an adult in THIS household; anything else is refused,
+    so a foreign or child id can't be written to by accident.
+    """
+    conn = get_conn()
+    if not any(r["id"] == member_id for r in _adult_rows(conn)):
+        conn.close()
+        raise ValueError("I don't have that person down as an adult here.")
+    new_phone = normalise_phone(phone) if phone is not None else None
     if new_phone is not None:
         conn.execute("UPDATE members SET phone = ? WHERE id = ?", (new_phone, member_id))
         if new_phone == "":
@@ -244,7 +269,7 @@ def set_morning_text(
     me = next((a for a in settings["adults"] if a["member_id"] == member_id), None)
     return {
         "member_id": member_id,
-        "name": me["name"] if me else name,
+        "name": me["name"] if me else "",
         "phone": me["phone"] if me else "",
         "on": bool(me and me["on"]),
         "time": settings["time"],
@@ -406,9 +431,9 @@ def send_sms(to: str, body: str) -> dict:
             reason = f" {err.get('code', '')} {err.get('message', '')}".rstrip()
         except Exception:
             pass
-        return {"status": "failed", "detail": f"HTTP {e.code}{reason}"[:160]}
+        return {"status": "failed", "detail": _redact(f"HTTP {e.code}{reason}")[:160]}
     except (urllib.error.URLError, OSError, ValueError) as e:
-        return {"status": "failed", "detail": f"{type(e).__name__}: {e}"[:160]}
+        return {"status": "failed", "detail": _redact(f"{type(e).__name__}: {e}")[:160]}
 
 
 # The seam. One digest, more than one way to deliver it: text is built,
@@ -433,7 +458,21 @@ def send_digest(channel: str, to: str, body: str) -> dict:
 
 # ---------- the daily pass ----------
 
+# A phone number as Twilio writes one (+14165550100), a bare run of ten
+# or more digits, or a formatted one (416-555-0100, (416) 555 0100). Not
+# an HTTP status or a five-digit Twilio error code, which the report needs.
+_NUMBER_RE = re.compile(r"\+\d{7,}|\b\d{10,}\b|\(?\d{3}\)?[\s.-]?\d{3}[\s.-]\d{4}\b")
+
+
+def _redact(detail: str) -> str:
+    """Twilio's own error text names the number it refused ("The 'To'
+    number +1416... is not a valid phone number"). The row and the log
+    keep the reason, not the number."""
+    return _NUMBER_RE.sub("[number]", detail or "")
+
+
 def _record(conn, member_id: int, sent_on: str, status: str, detail: str = "") -> None:
+    detail = _redact(detail)
     conn.execute(
         "INSERT OR IGNORE INTO morning_text_sends (household_id, member_id, sent_on, status, detail) "
         "VALUES (?, ?, ?, ?, ?)",
@@ -494,7 +533,7 @@ def _run_household(now_utc: datetime, send: Callable[[str, str], dict]) -> list[
             # Member id, never the number: the log is not the place for it.
             logger.warning(
                 "Morning text for household %s member %s: %s (%s)",
-                household_id(), r["id"], status, result.get("detail") or "",
+                household_id(), r["id"], status, _redact(result.get("detail") or ""),
             )
     conn.close()
     return done

@@ -482,6 +482,31 @@ def test_send_sms_records_a_twilio_refusal_without_raising(twilio_env, monkeypat
     assert "secret-token" not in result["detail"]
 
 
+def test_twilios_own_reason_never_carries_the_number_into_the_row_or_the_log(twilio_env, monkeypatch, caplog):
+    """Verifier finding, 2026-09-11: Twilio names the number it refused in
+    its error text, and that text used to be stored and logged verbatim."""
+    def fake_urlopen(req, timeout=0):
+        raise urllib.error.HTTPError(
+            req.full_url, 400, "Bad Request", {},
+            io.BytesIO(json.dumps({"code": 21211, "message": "The 'To' number +14165550100 is not a valid phone number."}).encode("utf-8")),
+        )
+
+    monkeypatch.setattr(digest.urllib.request, "urlopen", fake_urlopen)
+    result = tools.send_sms("+14165550100", "Tonight: tacos.")
+    assert result["status"] == "failed" and "21211" in result["detail"]
+    assert "4165550100" not in result["detail"] and "[number]" in result["detail"]
+
+    _adults("Emily")
+    _seed_day()
+    tools.set_morning_text(phone="4165550100", on=True)
+    with caplog.at_level("WARNING", logger="home_manager"):
+        tools.run_morning_texts_once(now_utc=_local(7, 0), send=lambda to, body: {
+            "status": "failed", "detail": f"HTTP 400 21211 The 'To' number {to} is not a valid phone number.",
+        })
+    assert "4165550100" not in _rows()[0]["detail"]
+    assert not any("4165550100" in r.getMessage() for r in caplog.records)
+
+
 def test_send_sms_records_a_network_failure_without_raising(twilio_env, monkeypatch):
     def fake_urlopen(req, timeout=0):
         raise urllib.error.URLError("no route to host")
@@ -522,8 +547,10 @@ def test_numbers_are_normalised_to_e164(raw, e164):
     assert tools.normalise_phone(raw) == e164
 
 
-@pytest.mark.parametrize("raw", ["555-0100", "12345", "call me", "+1"])
+@pytest.mark.parametrize("raw", ["555-0100", "12345", "call me", "+1", "0416555010", "4161550100", "1-041-655-5010"])
 def test_a_number_that_is_not_one_is_refused_plainly(raw):
+    """Verifier finding, 2026-09-11: a ten-digit string with a leading 0
+    used to normalise to +10416555010 — a number no morning could reach."""
     with pytest.raises(ValueError) as e:
         tools.normalise_phone(raw)
     assert "416-555-0100" in str(e.value)
@@ -685,6 +712,35 @@ def test_the_preferences_routes_read_and_save(signed_in):
     assert off.status_code == 400 and "number" in off.json()["detail"]
 
 
+def test_the_save_route_acts_on_the_member_id_it_was_given(signed_in):
+    """Verifier finding, 2026-09-11: the route used to bounce id -> name
+    -> id and, with two adults of one name, wrote to the wrong row."""
+    _adults("Alex")
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO members (household_id, name, age_group) VALUES (?, 'Alex', 'adult')", (tools.household_id(),)
+    )
+    conn.commit()
+    conn.close()
+    adults = tools.get_morning_text_settings()["adults"]
+    assert [a["name"] for a in adults] == ["Alex", "Alex"]
+    second = adults[1]["member_id"]
+
+    res = signed_in.post("/api/morning-text", json={"member_id": second, "phone": "4165550101", "on": True})
+    assert res.status_code == 200, res.text
+    after = {a["member_id"]: a for a in tools.get_morning_text_settings()["adults"]}
+    assert after[second]["phone"] == "+14165550101" and after[second]["on"] is True
+    assert after[adults[0]["member_id"]]["phone"] == ""
+
+
+def test_the_save_route_refuses_a_child(signed_in):
+    _adults("Emily")
+    tools.add_member("Mia")
+    tools.set_member_age_group("Mia", "child")
+    res = signed_in.post("/api/morning-text", json={"member_id": _member_id("Mia"), "phone": "4165550100", "on": True})
+    assert res.status_code == 400
+
+
 def test_the_save_route_refuses_another_households_member(signed_in):
     _adults("Emily")
     other = households.create_household("The Beta Testers", "a-safe-distinct-passphrase")
@@ -747,6 +803,8 @@ def test_the_morning_sheet_saves_by_member_and_never_guesses():
     assert "method: 'POST'" in SHELL_JS
     body = SHELL_JS[SHELL_JS.index("async function saveMorningSheet()"):SHELL_JS.index("function openMorningSheet()")]
     assert "fetch('/api/morning-text', { method: 'POST'" in body
+    # Every adult's row is tried even when an earlier one is refused.
+    assert "break;" not in body
     assert "member_id: parseInt(row.getAttribute('data-member-id'), 10)" in body
     # A refusal from the server is shown in place, calmly, no exclamation.
     assert "note.textContent = problem;" in body

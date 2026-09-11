@@ -110,6 +110,7 @@ from .digest import (  # noqa: F401
     send_digest,
     send_sms,
     set_morning_text,
+    set_morning_text_for_member,
     twilio_configured,
 )
 from .grocery import (  # noqa: F401

@@ -1426,20 +1426,19 @@ def morning_text_settings():
 @app.post("/api/morning-text")
 def morning_text_save(req: MorningTextRequest):
     """
-    Save one adult's number and on/off, and the household's hour. The
-    member is looked up by name inside the household (the tool's own
-    resolution), so a member id from another household is a 404 here
-    rather than a silent write.
+    Save one adult's number and on/off, and the household's hour, by
+    member row. A member id from another household is a 404 here rather
+    than a silent write; a child's id is a 400 from the tool itself.
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT name FROM members WHERE id = ? AND household_id = ?", (req.member_id, tools.household_id())
+        "SELECT id FROM members WHERE id = ? AND household_id = ?", (req.member_id, tools.household_id())
     ).fetchone()
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="No such person here.")
     try:
-        result = tools.set_morning_text(phone=req.phone, time=req.time, on=req.on, name=row["name"])
+        result = tools.set_morning_text_for_member(req.member_id, phone=req.phone, time=req.time, on=req.on)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {**result, "settings": tools.get_morning_text_settings()}

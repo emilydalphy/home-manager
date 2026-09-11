@@ -13923,10 +13923,12 @@
       try {
         var res = await fetch('/api/morning-text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         var data = await res.json();
-        if (!res.ok) { problem = (data && data.detail) || 'That didn’t save. Try again in a moment.'; break; }
+        // Every row is tried — one refused number must not leave the next
+        // person's unsaved — and the first problem is what's reported.
+        if (!res.ok) { problem = problem || (data && data.detail) || 'That didn’t save. Try again in a moment.'; continue; }
         last = data;
       } catch (err) {
-        problem = 'That didn’t save. Try again in a moment.'; break;
+        problem = problem || 'That didn’t save. Try again in a moment.';
       }
     }
     if (save) save.disabled = false;
