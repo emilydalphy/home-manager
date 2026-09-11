@@ -2266,8 +2266,8 @@
     if (groStoresPromptShouldShow()) return;
     var toSort = groUnsorted(data).length;
     if (!toSort) { groceryState.sortFirst = false; return; }
+    goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false, first: true });
     groceryState.sortFirst = true;
-    goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false });
   }
 
 
@@ -2298,6 +2298,10 @@
     if (step === 'sort' && prev !== 'sort' && groceryState.data) {
       groceryState.sortTotal = groUnsorted(groceryState.data).length;
     }
+    // "Before the list" is only the first, automatic landing (opts.first,
+    // groMaybeSortFirst). A sort reached by the badge, or the list reached
+    // by finishing the queue, is the ordinary screen again.
+    if (!opts.first) groceryState.sortFirst = false;
     if (opts.tripIndex !== undefined && opts.tripIndex !== null) groceryState.tripIndex = opts.tripIndex;
     if (opts.push !== false) pushGroceryStepHistory();
     renderGrocery();
@@ -2327,6 +2331,10 @@
   // SORT, and it is right there in the head when there is anything to sort.
   function groSetScreen(screen) {
     goGroceryStep('list');
+    // …unless something has no store yet, in which case the list comes
+    // after sorting it (Emily, 2026-09-11, decision J) — an approval has
+    // just refilled the list, and this is the "Open the list" that follows.
+    groMaybeSortFirst();
   }
 
   // ---------- Render ----------
@@ -10223,40 +10231,7 @@
     '</div>';
   }
 
-  function cookRestRowHtml(m, idx) {
-    var isDone = m.cooked_status === 'done';
-    var dayLabel = m.component_category
-      ? m.component_category
-      : (m.date ? dayName(m.date, { weekday: 'short' }).slice(0, 3).toUpperCase() : '');
-    // A reheat night is a row, not a way into a recipe: its name is plain
-    // text rather than a button into the focused cook screen, and its box
-    // says eaten rather than cooked. It keeps the "Leftovers — Tuesday's
-    // Bulgogi" wording the reheat card uses, so the same night reads the
-    // same way wherever you meet it.
-    var isReheat = !!m.is_leftovers;
-    var rowLabel = isReheat ? (m.leftovers_headline || 'Leftovers') : (m.meal || '');
-    var checkLabel = isReheat
-      ? (isDone ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
-      : (isDone ? 'Mark not cooked' : 'Mark cooked');
-    var minutes = (m.prep_time_minutes || 0) + (m.cook_time_minutes || 0);
-    return '<div class="cook-week-item' + (isDone ? ' is-done' : '') + '">' +
-      '<div class="cook-week-row">' +
-        '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
-          'data-cook="check-meal" data-entry-id="' + m.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
-          'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
-        '<span class="cook-week-day">' + escapeHtml(dayLabel) + '</span>' +
-        (isReheat
-          ? '<span class="cook-week-name">' + escapeHtml(rowLabel) + '</span>'
-          : '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + idx + '" data-at="steps">' +
-              escapeHtml(rowLabel) +
-            '</button>') +
-        (isReheat ? '<span class="cook-badge">Reheat</span>' : '') +
-        (!isReheat && minutes ? '<span class="cook-badge">' + minutes + ' min</span>' : '') +
-        (!isReheat && m.advance_prep_notes ? '<span class="cook-badge cook-badge-warm">Prep ahead</span>' : '') +
-        (!isReheat && m.batch_note ? '<span class="cook-badge">Bulk ×' + m.meal_count + '</span>' : '') +
-      '</div>' +
-    '</div>';
-  }
+
 
   // ---------- What the recipe's own words say you'll need ----------
   // Nothing in this app records a recipe's EQUIPMENT: no column, no field

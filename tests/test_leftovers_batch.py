@@ -403,9 +403,8 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         + _extract("kitchenTodayRows", src) + "\n"
         + _extract("kitchenTodayRowHtml", src) + "\n"
         + _extract("kitchenCookingTodayHtml", src) + "\n"
-        + _extract("cookRestRowHtml", src) + "\n"
         # One line per day since 2026-09-11 (Build 8); the day row is what
-        # the rest-of-week section renders now.
+        # the rest-of-week section renders now (cookRestRowHtml is gone).
         + _extract("cookRestDayRowHtml", src) + "\n"
         + _extract("cookRestOfWeekHtml", src) + "\n"
         # The Kitchen root builds its rows and renders them in one breath

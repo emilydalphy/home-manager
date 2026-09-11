@@ -23,8 +23,14 @@
     background: var(--oat-cream);
     color: var(--text-body);
   }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink-strong); margin: 0 0 4px; }
-  p.subtitle { color: var(--text-muted); margin: 0 0 1.5rem; font-size: 0.95rem; }
+  /* The question screens at the welcome flow's scale (Build 6, 2026-09-11):
+     31px titles, 16px lines, Continue in a dock under the thumb. */
+  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 31px; letter-spacing: -0.038em; line-height: 1.05; color: var(--ink-strong); margin: 0 0 8px; }
+  p.subtitle { color: var(--text-muted); margin: 0 0 1.25rem; font-size: 16px; line-height: 1.45; }
+  .q-eyebrow { font-family: var(--font-body); font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--apricot-label, var(--text-muted)); margin: 0 0 8px; }
+  .q-accent { font-family: var(--font-accent); font-style: italic; font-size: 17px; line-height: 1.35; color: var(--ink-secondary); margin: 0 0 1.25rem; }
+  .reveal-note { font-family: var(--font-accent); font-style: italic; font-size: 15px; color: var(--apricot-light); margin: 6px 0 0; }
+  body:not(.intro-active) { padding-bottom: 120px; }
   .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
   .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
   .dot.done { background: var(--midnight-violet); }
@@ -130,19 +136,35 @@
     background: none; border: none; color: inherit; font-size: 1rem; cursor: pointer; line-height: 1; padding: 4px;
   }
   .next-btn {
-    font-family: var(--font-body);
+    font-family: var(--font-heading);
     font-weight: 700;
-    background: var(--turmeric-gold);
-    color: var(--ink-strong);
+    letter-spacing: -0.02em;
+    background: var(--apricot, var(--turmeric-gold));
+    color: var(--on-accent-ink, var(--ink-strong));
     border: none;
     padding: 13px 22px;
-    min-height: 44px;
-    border-radius: var(--radius-control);
-    font-size: 0.95rem;
+    min-height: 52px;
+    border-radius: var(--radius-action, var(--radius-control));
+    font-size: 17px;
     cursor: pointer;
     margin-top: 1.5rem;
     margin-right: 10px;
     transition: background 0.15s ease;
+  }
+  /* Each question's Continue is the screen's one action: docked at the
+     foot like every other screen in the app (nav v2 rule 2), full width,
+     with the skip link riding just above it. Only one step is on screen
+     at a time, so fixing each step's own button is safe. */
+  #step-household .next-btn, #step-meals .next-btn, #step-restrictions .next-btn,
+  #step-eating-style .next-btn, #step-wont-eat .next-btn, #step-excited-about .next-btn,
+  #step-leftovers .rhythm-cta, #step-prep .next-btn, #step-dinner-time .next-btn, #step-kit-repeats .next-btn {
+    position: fixed; left: 20px; right: 20px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    max-width: 600px; margin: 0 auto; width: auto; z-index: 5;
+    box-shadow: var(--shadow-action, none);
+  }
+  #step-prep .skip-link, #step-dinner-time .skip-link, #step-kit-repeats .skip-link {
+    position: fixed; left: 20px; right: 20px; bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    justify-content: center; z-index: 5; margin: 0;
   }
   .next-btn:hover:not(:disabled) { background: var(--gold-hover); }
   .next-btn:disabled { opacity: 0.6; cursor: default; }
@@ -766,12 +788,10 @@
       <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V16A2.5 2.5 0 0 1 4 13.5z"></path><path d="M8 9h8"></path><path d="M8 12h5"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">Everything else, just tell me</p><p class="intro-row-body">Say it the way you&rsquo;d say it out loud. &ldquo;Jamie&rsquo;s out Thursday.&rdquo; &ldquo;We already have rice.&rdquo; I&rsquo;ll take it from there.</p></div></div>
       <div class="intro-row"><div class="intro-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8H4V4"></path><path d="M4.5 8.5A8 8 0 1 1 4 13"></path></svg></div><div class="intro-row-text"><p class="intro-row-title">If I get it wrong, say so</p><p class="intro-row-body">Correct me right where it happens, and I&rsquo;ll remember for next time.</p></div></div>
       </div>
-      <!-- A picture of the ask bar and its chips, not the real thing:
-           there is nobody to talk to yet. -->
-      <div class="intro-ask" aria-hidden="true">
-        <div class="intro-chips"><span class="intro-chip">Jamie&rsquo;s out Thursday</span><span class="intro-chip">Less chicken this week</span></div>
-        <div class="intro-askbar"><span class="intro-askbar-text">Ask me anything about today&hellip;</span><span class="intro-askbar-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></span></div>
-      </div>
+      <!-- The picture of the ask bar and its two chips that sat here left on
+           2026-09-11: it pushed Continue off the bottom of a 375×812 phone
+           (found while measuring for the screen-by-screen canvas), and the
+           three lines say it. -->
     </div>
     <div class="intro-foot">
       <div class="intro-pager" aria-hidden="true"><span></span><span></span><span></span><span class="is-on"></span><span></span></div>
@@ -805,8 +825,9 @@
 <!-- Q1 + Q2: household size and names -->
 <div id="step-household">
   <button class="back-link" type="button" data-step-back="household" hidden></button>
-  <h1>Who am I cooking for, exactly?</h1>
-  <p class="subtitle">Just names for now — I'll get to the details in a sec.</p>
+  <p class="q-eyebrow">1 of 4 &middot; Who&rsquo;s eating</p>
+  <h1>Who are we planning for?</h1>
+  <p class="q-accent">The names of everyone at home. I&rsquo;ll ask what they eat next.</p>
   <div id="members"></div>
   <button class="add-btn" id="add-member" type="button">+ Add person</button>
   <!-- Said here, on the step that can fix it, rather than in an alert. It
@@ -817,101 +838,31 @@
   <div><button class="next-btn" id="household-next" type="button">Continue</button></div>
 </div>
 
-<!-- Rhythm Q1-3 (Loop Board "Onboarding: household rhythm without
-     traditional assumptions" — locked 2026-09-03, mock
-     RhythmOnboarding.dc.html). Rhythm sits right after household members
-     (names are known, so per-person lunch rows use real names) and before
-     every food/preference question, per Emily's stated learning hierarchy:
-     rhythm, then habits, then preferences. -->
-<div id="step-rhythm-1" style="display:none">
-  <button class="back-link" type="button" data-step-back="rhythm-1" hidden></button>
-  <p class="rhythm-eyebrow">Getting to know your rhythm</p>
-  <h1>How does a normal week actually run here?</h1>
-  <p class="rhythm-italic">There's no typical household &mdash; this just helps me fit yours.</p>
-
-  <div class="rhythm-card" style="margin-top:14px">
-    <h2>On a typical weekday, where's everyone at lunchtime?</h2>
-    <div id="rhythm-lunch-people"></div>
-  </div>
-
-  <!-- Both of these cards are HIDDEN for a household of exactly one adult
-       (Julia, 2026-09-08): asking a person living alone which meals they
-       eat together, and then who does the cooking, is asking them to
-       answer a question that has only one answer. buildRhythmStep1 fills
-       in that answer instead — all meals together, that person cooks —
-       and What we know reads it back like any other given answer, because
-       it IS the answer, not a guess we're hiding. -->
-  <div class="rhythm-card" id="rhythm-meals-together-card">
-    <h2>Which meals do you usually eat together?</h2>
-    <div class="rhythm-chip-row" id="rhythm-meals-together-chips"></div>
-  </div>
-
-  <div class="rhythm-card" id="rhythm-cooking-card">
-    <h2>Who does the cooking?</h2>
-    <div class="rhythm-chip-row" id="rhythm-cooking-role-chips"></div>
-    <div id="rhythm-cooking-who-wrap" style="display:none">
-      <p class="rhythm-helper" style="margin-bottom:8px">Who?</p>
-      <div class="rhythm-chip-row" id="rhythm-cooking-who-chips"></div>
-    </div>
-    <p class="rhythm-helper" id="rhythm-cooking-hint">Choose "Mostly one person" and I'll ask who, right after.</p>
-  </div>
-
-  <div><button class="btn-primary rhythm-cta" id="rhythm-1-next" type="button" disabled>Continue</button></div>
-</div>
-
-<!-- Rhythm Q4-6 (mock RhythmOnboarding2.dc.html). -->
-<div id="step-rhythm-2" style="display:none">
-  <button class="back-link" type="button" data-step-back="rhythm-2" hidden></button>
-  <p class="rhythm-eyebrow">Getting to know your rhythm</p>
-  <h1>A few more, so I get the timing right.</h1>
-
-  <div class="rhythm-card" style="margin-top:14px">
-    <h2>When does dinner usually land?</h2>
-    <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
-  </div>
-
-  <!-- Reworded 2026-09-08 (Julia; Emily's exact wording). "Your weekly
-       plan" made people ask which plan — this names the thing. -->
-  <div class="rhythm-card">
-    <h2>When do you want the meal plan for the week ready?</h2>
-    <div class="rhythm-chip-row" id="rhythm-planning-anchor-chips"></div>
-    <p class="rhythm-helper">Plan and list ready that day; your week starts the next morning. As we go means a few days at a time.</p>
-  </div>
-
-  <div class="rhythm-card">
-    <h2>How do you feel about leftovers?</h2>
-    <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
-  </div>
-
-  <!-- Prep days (Loop Board "Prep days"; Emily 2026-09-04, again 09-08):
-       "I like to do some prep on Sunday to make the week easier... and then
-       do another prep Wednesday/Thursday depending on the week." Skippable,
-       unlike the six locked questions above it — a household that doesn't
-       prep ahead has answered nothing wrong, so this never blocks the CTA. -->
-  <div class="rhythm-card">
-    <h2>Do you like meal prepping?</h2>
-    <p class="rhythm-helper" style="margin-bottom:8px">Which days, and roughly how long? Up to two &mdash; skip it if that isn&rsquo;t how your week runs.</p>
-    <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
-    <div id="rhythm-prep-minutes-wrap" style="display:none">
-      <p class="rhythm-helper" style="margin:10px 0 8px">Roughly how long?</p>
-      <div class="rhythm-chip-row" id="rhythm-prep-minutes-chips"></div>
-    </div>
-  </div>
-
-  <!-- Was "Save my rhythm" until 2026-09-09. Nothing reaches the household
-       until setup finishes now (see finishSetupAndReveal), so a button
-       promising a save here would be describing something that no longer
-       happens — and the reason it no longer happens is that an answer
-       written down before you can go back and change it is how a household
-       ends up with two of itself on file. -->
-  <div><button class="btn-primary rhythm-cta" id="rhythm-2-next" type="button" disabled>Continue</button></div>
+<!-- Which meals should I plan? (Build 6, 2026-09-11 — Emily's decision G).
+     This one screen replaces the two rhythm screens that used to sit here:
+     "where is everyone at lunch", "which meals together" and "who cooks"
+     were stored and shown but nothing in the planner acted on them
+     (checked in the code the same day), while WHICH meals to plan is what
+     it actually needs. An unticked meal is saved as a count of 0, which the
+     planner already honours by writing that slot empty (agent.py
+     zero_counts). The rhythm tools and the What-we-know rows stay, for
+     households that answered before. -->
+<div id="step-meals" style="display:none">
+  <button class="back-link" type="button" data-step-back="meals" hidden></button>
+  <p class="q-eyebrow">2 of 4 &middot; Which meals</p>
+  <h1>Which meals should I plan?</h1>
+  <p class="subtitle">Tap the ones you want on the plan. Everything else I&rsquo;ll leave to you.</p>
+  <div class="chip-row" id="meals-chips"></div>
+  <p class="step-note" id="meals-empty" hidden>I need at least one meal to plan &mdash; tap one.</p>
+  <div><button class="next-btn" id="meals-next" type="button">Continue</button></div>
 </div>
 
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
   <button class="back-link" type="button" data-step-back="restrictions" hidden></button>
-  <h1>Dietary preferences or restrictions</h1>
-  <p class="subtitle">Anything I should always follow, and who it's for.</p>
+  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
+  <h1>Anything I should never put on the plate?</h1>
+  <p class="subtitle">Allergies, must-avoids, the way someone eats &mdash; per person, so I get each plate right.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
 </div>
@@ -922,6 +873,7 @@
      possibly ask for. -->
 <div id="step-eating-style" style="display:none">
   <button class="back-link" type="button" data-step-back="eating-style" hidden></button>
+  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>Is there a certain way you'd like meals to lean?</h1>
   <p class="subtitle">Tap what fits. Skip it if nothing does.</p>
   <div class="chip-row" id="eating-style-chips"></div>
@@ -934,6 +886,7 @@
      answer most households give, and the box is for the one they don't. -->
 <div id="step-wont-eat" style="display:none">
   <button class="back-link" type="button" data-step-back="wont-eat" hidden></button>
+  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>Anything I should never recommend?</h1>
   <p class="subtitle">I'll steer clear of it completely.</p>
   <div class="chip-row" id="wont-eat-presets"></div>
@@ -948,6 +901,7 @@
 <!-- Q6: excited about -->
 <div id="step-excited-about" style="display:none">
   <button class="back-link" type="button" data-step-back="excited-about" hidden></button>
+  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>What are you excited to eat more of lately?</h1>
   <p class="subtitle">Cuisines, styles, anything sounding good right now.</p>
   <div class="chip-row" id="excited-chips"></div>
@@ -958,63 +912,44 @@
   <div><button class="next-btn" id="excited-next" type="button">Continue</button></div>
 </div>
 
-<!-- Q7: meals per week -->
-<!-- One generic heading ("How many different recipes a week?") was doing
-     the work of three questions and none of them clearly — Julia,
-     2026-09-08. Each meal type asks for itself now, in Emily's exact
-     wording, and the snacks question is a different question entirely:
-     per DAY, on chips, not a per-week stepper. See SNACKS_PER_DAY_OPTIONS. -->
-<div id="step-dinners" style="display:none">
-  <button class="back-link" type="button" data-step-back="dinners" hidden></button>
-  <h1>How many different recipes a week?</h1>
-  <p class="subtitle">I'll fill the rest of the week from these — leftovers included.</p>
-  <p class="stepper-hint" style="margin-top:0">How many different breakfasts do you want?</p>
-  <div class="stepper">
-    <button class="stepper-btn" type="button" id="breakfasts-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value-group"><span class="stepper-value" id="breakfasts-value">7</span><span class="stepper-unit">recipes</span></span>
-    <button class="stepper-btn" type="button" id="breakfasts-plus" aria-label="More">+</button>
-  </div>
-  <p class="stepper-hint">How many different lunches do you want?</p>
-  <div class="stepper">
-    <button class="stepper-btn" type="button" id="lunches-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value-group"><span class="stepper-value" id="lunches-value">7</span><span class="stepper-unit">recipes</span></span>
-    <button class="stepper-btn" type="button" id="lunches-plus" aria-label="More">+</button>
-  </div>
-  <p class="stepper-hint">How many different dinners do you want?</p>
-  <div class="stepper">
-    <button class="stepper-btn" type="button" id="dinners-minus" aria-label="Fewer">&minus;</button>
-    <span class="stepper-value-group"><span class="stepper-value" id="dinners-value">5</span><span class="stepper-unit">recipes</span></span>
-    <button class="stepper-btn" type="button" id="dinners-plus" aria-label="More">+</button>
-  </div>
-  <p class="stepper-hint">How many snacks a day?</p>
-  <div class="chip-row" id="snacks-per-day-chips"></div>
-  <div><button class="next-btn" id="dinners-next" type="button">Continue</button></div>
+<!-- Leftovers, prep days and dinner time — the three rhythm answers the
+     planner acts on (leftovers_stance shapes the week; prep_days feed the
+     prep sessions; dinner_window sets "start by"). One question per
+     screen, at the welcome flow's scale (Build 6, 2026-09-11). The
+     "how many different recipes" steppers and the "normal week" box that
+     used to sit here left setup: the counts are defaults now (see
+     plannedMeals), and the week's own words are asked every week on the
+     intake's "Anything else". -->
+<div id="step-leftovers" style="display:none">
+  <button class="back-link" type="button" data-step-back="leftovers" hidden></button>
+  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
+  <h1>How do you feel about leftovers?</h1>
+  <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
+  <div><button class="btn-primary rhythm-cta" id="leftovers-next" type="button" disabled>Continue</button></div>
 </div>
 
-<!-- Step A: a normal week (design_handoff_plan_the_week §8).
-     Cut to one line 2026-09-08 (Julia): the why-panel, the five-bullet
-     "worth mentioning" list and the second explanatory paragraph were
-     three blocks of prose asking for two paragraphs of typing on a
-     skippable step. One line, one short example, one tap for when to
-     start. Everything the bullets prompted for is still welcome in the
-     box; it just isn't a checklist any more.
+<div id="step-prep" style="display:none">
+  <button class="back-link" type="button" data-step-back="prep" hidden></button>
+  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
+  <h1>Do you like meal prepping?</h1>
+  <p class="subtitle">Which days, and roughly how long? Up to two.</p>
+  <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
+  <div id="rhythm-prep-minutes-wrap" style="display:none">
+    <p class="rhythm-helper" style="margin:10px 0 8px">Roughly how long?</p>
+    <div class="rhythm-chip-row" id="rhythm-prep-minutes-chips"></div>
+  </div>
+  <div><button class="next-btn" id="prep-next" type="button">Continue</button></div>
+  <span class="skip-link" id="prep-skip">I don&rsquo;t prep ahead</span>
+</div>
 
-     The start chips are the fix for "asked for next week, it planned this
-     week" — the box below them says "next week" and always did, while
-     both first-plan endpoints hardcoded the current calendar week. It is
-     asked here rather than inferred, because a household who onboards on
-     a Thursday genuinely might mean either one. -->
-<div id="step-typical-week" style="display:none">
-  <button class="back-link" type="button" data-step-back="typical-week" hidden></button>
-  <h1>What does a normal week look like at yours?</h1>
-  <p class="subtitle">The more I know, the more the plan feels like yours.</p>
-  <textarea id="typical-week" rows="3" placeholder="Fridays are usually takeout."></textarea>
-  <label class="field-label">When should your first plan start?</label>
-  <div class="rhythm-chip-row" id="first-plan-start-chips"></div>
-  <label class="field-label" for="next-week-notes">Anything already on the calendar?</label>
-  <textarea id="next-week-notes" rows="2" placeholder="My parents are here Thursday to Sunday."></textarea>
-  <div><button class="next-btn" id="typical-week-next" type="button">Continue</button></div>
-  <span class="skip-link" id="typical-week-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
+<div id="step-dinner-time" style="display:none">
+  <button class="back-link" type="button" data-step-back="dinner-time" hidden></button>
+  <p class="q-eyebrow">Last one</p>
+  <h1>What time do you usually have dinner?</h1>
+  <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
+  <p class="subtitle" style="margin-top:14px">So I can tell you when to start cooking.</p>
+  <div><button class="next-btn" id="dinner-time-next" type="button">Continue</button></div>
+  <span class="skip-link" id="dinner-time-skip">Skip</span>
 </div>
 
 <!-- Step B: kit. Prevents impossible suggestions outright. The old
@@ -1027,13 +962,13 @@
      that touches this step for a naming-only change. -->
 <div id="step-kit-repeats" style="display:none">
   <button class="back-link" type="button" data-step-back="kit-repeats" hidden></button>
-  <h1>Just one more! Almost there.</h1>
-  <div class="why-panel">
-    <b>Why I&rsquo;m asking:</b> your kit decides which recipes are even possible to suggest.
-  </div>
+  <p class="q-eyebrow">4 of 4 &middot; Your first week</p>
+  <h1>Just two more! Almost there.</h1>
   <label class="field-label">What you&rsquo;ve got to cook with</label>
   <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
   <div class="chip-row" id="kit-chips"></div>
+  <label class="field-label" style="margin-top:18px">When should your first plan start?</label>
+  <div class="rhythm-chip-row" id="first-plan-start-chips"></div>
   <div><button class="next-btn" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button></div>
   <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
 </div>
@@ -1053,6 +988,7 @@
     <p class="reveal-eyebrow">First sample week</p>
     <h1 class="reveal-title" id="reveal-title">Cooking up your first week&hellip;</h1>
     <p class="reveal-accent" id="reveal-accent">Putting together a real week from what you just told me&hellip;</p>
+    <p class="reveal-note">You can change any of your responses later on under the gear.</p>
   </div>
   <div class="reveal-status" id="reveal-status">
     <span class="reveal-spinner" aria-hidden="true"></span>
@@ -1570,18 +1506,8 @@ function rhythm1Complete() {
   return true;
 }
 function updateRhythm1ContinueState() {
-  document.getElementById('rhythm-1-next').disabled = !rhythm1Complete();
+  // rhythm-1 left the flow (Build 6, 2026-09-11); nothing to update.
 }
-function buildRhythmStep1() {
-  // Before the chip renders below, so they draw the filled-in answers.
-  applySoloAdultDefaults();
-  renderLunchPeople();
-  renderMealsTogetherChips();
-  renderCookingRoleChips();
-  renderCookingWhoChips();
-  updateRhythm1ContinueState();
-}
-
 function renderDinnerWindowChips() {
   buildSingleSelectChips(document.getElementById('rhythm-dinner-window-chips'), DINNER_WINDOW_OPTIONS, rhythmDinnerWindow, (key) => {
     rhythmDinnerWindow = key;
@@ -1647,21 +1573,22 @@ function currentPrepDays() {
     .map(o => ({ weekday: o.key, minutes: rhythmPrepMinutes || null }));
 }
 
-function rhythm2Complete() {
-  // Prep days are deliberately absent from this: they're skippable, and a
-  // household that doesn't prep ahead must still be able to save.
-  return !!(rhythmDinnerWindow && rhythmPlanningAnchor && rhythmLeftoversStance);
-}
+// Leftovers is the one of the three that gates its Continue: the planner
+// shapes the whole week around it. Prep days and dinner time are skippable.
 function updateRhythm2ContinueState() {
-  document.getElementById('rhythm-2-next').disabled = !rhythm2Complete();
+  const next = document.getElementById('leftovers-next');
+  if (next) next.disabled = !rhythmLeftoversStance;
 }
-function buildRhythmStep2() {
-  renderDinnerWindowChips();
-  renderPlanningAnchorChips();
+function buildLeftoversStep() {
   renderLeftoversChips();
+  updateRhythm2ContinueState();
+}
+function buildPrepStep() {
   renderPrepDayChips();
   renderPrepMinutesChips();
-  updateRhythm2ContinueState();
+}
+function buildDinnerTimeStep() {
+  renderDinnerWindowChips();
 }
 
 // All six (and the skippable seventh) written in one call. Failures are
@@ -1676,13 +1603,11 @@ function buildRhythmStep2() {
 // back and correct that name leaves an answer on file for somebody who
 // isn't in the household. Nothing in this app takes one back out.
 async function saveRhythmAnswers() {
+  // Only the three the planner acts on (Build 6, 2026-09-11). The route
+  // leaves a rhythm fact alone when its key is absent, so the questions
+  // setup no longer asks are simply not sent.
   const body = {
-    lunch_location: { ...rhythmLunchLocation },
-    meals_together: rhythmMealsTogether,
-    cooking_role: rhythmCookingRole,
-    cooking_role_who: rhythmCookingWho,
     dinner_window: rhythmDinnerWindow,
-    planning_anchor: rhythmPlanningAnchor,
     leftovers_stance: rhythmLeftoversStance,
     // Always sent, even empty: [] is the real answer "we don't prep
     // ahead", and the route only leaves the fact alone when the key is
@@ -1949,13 +1874,41 @@ document.getElementById('lunches-plus').addEventListener('click', () => {
 // All four redraw from the counts as they stand, so arriving at this step
 // — first time or on the way back — shows what was picked rather than the
 // defaults it started on.
-function buildDinnersStep() {
-  renderDinnersValue();
-  renderBreakfastsValue();
-  renderLunchesValue();
-  renderSnacksPerDayChips();
+// ---------- Which meals should I plan? ----------
+// One tap per meal. An unticked meal saves as a count of 0 (the planner
+// writes that slot empty); a ticked one keeps the default number of
+// distinct dishes the steppers used to ask for (7 / 7 / 5, snacks per
+// day as before), which the household can change later in What we know.
+const MEAL_OPTIONS = [
+  { key: 'breakfast', label: 'Breakfast' }, { key: 'lunch', label: 'Lunch' },
+  { key: 'dinner', label: 'Dinner' }, { key: 'snacks', label: 'Snacks' },
+];
+let plannedMeals = { breakfast: true, lunch: true, dinner: true, snacks: true };
+function buildMealsStep() {
+  const row = document.getElementById('meals-chips');
+  row.innerHTML = '';
+  MEAL_OPTIONS.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chip' + (plannedMeals[opt.key] ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.setAttribute('aria-pressed', plannedMeals[opt.key] ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      plannedMeals[opt.key] = !plannedMeals[opt.key];
+      buildMealsStep();
+    });
+    row.appendChild(btn);
+  });
+  document.getElementById('meals-empty').hidden = MEAL_OPTIONS.some(o => plannedMeals[o.key]);
 }
-buildDinnersStep();
+function plannedMealCounts() {
+  return {
+    breakfasts_per_week: plannedMeals.breakfast ? breakfastsPerWeek : 0,
+    lunches_per_week: plannedMeals.lunch ? lunchesPerWeek : 0,
+    dinners_per_week: plannedMeals.dinner ? dinnersPerWeek : 0,
+    snacks_per_day: plannedMeals.snacks ? snacksPerDay : 0,
+  };
+}
 
 // ---------- Step A: a normal week ----------
 // The "worth mentioning" prompt list is gone (Julia, 2026-09-08 — the step
@@ -1974,9 +1927,7 @@ const FIRST_PLAN_START_OPTIONS = [
 let firstPlanStart = 'this_week';
 // The two textareas on this step hold their own text; the chips are the one
 // thing that has to be redrawn from state on the way back.
-function buildTypicalWeekStep() {
-  renderFirstPlanStartChips();
-}
+// The start choice draws on the kit step now (Build 6).
 function renderFirstPlanStartChips() {
   buildSingleSelectChips(
     document.getElementById('first-plan-start-chips'), FIRST_PLAN_START_OPTIONS, firstPlanStart,
@@ -1993,6 +1944,7 @@ const KIT_OPTIONS = [
 ];
 let kitchenKit = [];
 function buildKitRepeatsStep() {
+  renderFirstPlanStartChips();
   const kitWrap = document.getElementById('kit-chips');
   kitWrap.innerHTML = '';
   KIT_OPTIONS.forEach(k => {
@@ -2016,10 +1968,8 @@ function buildKitRepeatsStep() {
 // from reaching their first week.
 async function savePlanTheWeekAnswers() {
   const writes = [];
-  const typical = document.getElementById('typical-week').value.trim();
-  const nextWeek = document.getElementById('next-week-notes').value.trim();
-  if (typical) writes.push(['typical_week', typical]);
-  if (nextWeek) writes.push(['next_week_notes', nextWeek]);
+  // The "normal week" box left setup (Build 6): a household says what a
+  // week is like every week, on the intake's Anything else.
   if (kitchenKit.length) writes.push(['kitchen_kit', kitchenKit]);
   for (const [field, value] of writes) {
     try {
@@ -2042,14 +1992,12 @@ async function saveOnboardingAnswers() {
     eating_style: currentEatingStyle(),
     wont_eat: currentWontEat(),
     excited_about: getActiveChips(document.getElementById('excited-chips')),
-    dinners_per_week: dinnersPerWeek,
-    breakfasts_per_week: breakfastsPerWeek,
-    lunches_per_week: lunchesPerWeek,
-    // The new fact. The route derives snacks_per_week from it (capped at
-    // the column's documented 0-7 "distinct meals" range) and marks the
-    // snacks question answered, so every existing reader keeps working
-    // while the planner reads snacks_per_day.
-    snacks_per_day: snacksPerDay,
+    // Which meals to plan (Build 6): an unticked meal is a count of 0.
+    // The route derives snacks_per_week from snacks_per_day (capped at
+    // the column's documented 0-7 range) and marks the snacks question
+    // answered, so every existing reader keeps working while the planner
+    // reads snacks_per_day.
+    ...plannedMealCounts(),
   };
   const res = await fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -2530,7 +2478,11 @@ async function generateFirstPlanAndReveal(answers) {
 // above step-intro-hello); INTRO_STEPS is the same list, named so the
 // progress strip and the body background can tell them from the questions.
 const INTRO_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know'];
-const ALL_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know', 'household', 'rhythm-1', 'rhythm-2', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'dinners', 'typical-week', 'kit-repeats', 'reveal'];
+// Build 6 (Emily, 2026-09-11, decision G): setup asks only what changes the
+// plan. rhythm-1, rhythm-2, dinners and typical-week left the flow —
+// 'meals' (which meals to plan) took their place, and the three rhythm
+// answers the planner acts on became one screen each.
+const ALL_STEPS = ['intro-hello', 'intro-purpose', 'intro-help', 'intro-talk', 'intro-know', 'household', 'meals', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'leftovers', 'prep', 'dinner-time', 'kit-repeats', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -2543,14 +2495,14 @@ const STEP_TITLES = {
   'intro-talk': 'How we talk',
   'intro-know': 'Getting to know you',
   'household': "Who's here",
-  'rhythm-1': 'Your rhythm',
-  'rhythm-2': 'Your timing',
-  'restrictions': 'Restrictions',
+  'meals': 'Which meals',
+  'restrictions': 'Never on the plate',
   'eating-style': 'How you eat',
   'wont-eat': 'Never recommend',
   'excited-about': "What you're into",
-  'dinners': 'How many recipes',
-  'typical-week': 'A normal week',
+  'leftovers': 'Leftovers',
+  'prep': 'Meal prep',
+  'dinner-time': 'Dinner time',
   'kit-repeats': 'Your kit',
 };
 
@@ -2595,14 +2547,14 @@ function resolveStep(key) {
 // isn't in the map because its inputs hold their own text; the reveal isn't
 // because it is not a question.
 const STEP_BUILDERS = {
-  'rhythm-1': buildRhythmStep1,
-  'rhythm-2': buildRhythmStep2,
+  'meals': buildMealsStep,
   'restrictions': buildRestrictionsStep,
   'eating-style': buildEatingStyleStep,
   'wont-eat': buildWontEatStep,
   'excited-about': buildExcitedStep,
-  'dinners': buildDinnersStep,
-  'typical-week': buildTypicalWeekStep,
+  'leftovers': buildLeftoversStep,
+  'prep': buildPrepStep,
+  'dinner-time': buildDinnerTimeStep,
   'kit-repeats': buildKitRepeatsStep,
 };
 
@@ -2795,14 +2747,10 @@ function showHouseholdEmptyNote(show) {
 document.getElementById('household-next').onclick = () => {
   if (!currentMembers().length) { showHouseholdEmptyNote(true); return; }
   showHouseholdEmptyNote(false);
-  showStep('rhythm-1');
+  showStep('meals');
 };
-document.getElementById('rhythm-1-next').onclick = () => {
-  if (!rhythm1Complete()) return;
-  showStep('rhythm-2');
-};
-document.getElementById('rhythm-2-next').onclick = () => {
-  if (!rhythm2Complete()) return;
+document.getElementById('meals-next').onclick = () => {
+  if (!MEAL_OPTIONS.some(o => plannedMeals[o.key])) { buildMealsStep(); return; }
   showStep('restrictions');
 };
 document.getElementById('restrictions-next').onclick = () => {
@@ -2817,19 +2765,21 @@ document.getElementById('wont-eat-next').onclick = () => {
 };
 document.getElementById('excited-next').onclick = () => {
   commitExcitedCustom();
-  showStep('dinners');
+  showStep('leftovers');
 };
-
-// The two added steps (design_handoff_plan_the_week §8) sit between the
-// meal counts and the first-week reveal, so the very first plan is built
-// from real answers rather than a guess.
-document.getElementById('dinners-next').onclick = () => {
-  showStep('typical-week');
+// The three rhythm answers the planner acts on, one screen each (Build 6).
+document.getElementById('leftovers-next').onclick = () => {
+  if (!rhythmLeftoversStance) return;
+  showStep('prep');
 };
-document.getElementById('typical-week-next').onclick = () => {
-  showStep('kit-repeats');
+document.getElementById('prep-next').onclick = () => { showStep('dinner-time'); };
+document.getElementById('prep-skip').onclick = () => {
+  rhythmPrepDays = []; rhythmPrepMinutes = 0;
+  showStep('dinner-time');
 };
-document.getElementById('typical-week-skip').onclick = () => {
+document.getElementById('dinner-time-next').onclick = () => { showStep('kit-repeats'); };
+document.getElementById('dinner-time-skip').onclick = () => {
+  rhythmDinnerWindow = '';
   showStep('kit-repeats');
 };
 

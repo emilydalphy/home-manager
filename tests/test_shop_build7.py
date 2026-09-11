@@ -15,7 +15,13 @@ def test_the_list_lands_on_sort_first_only_from_the_list_and_only_until_later():
     first = _fn("groMaybeSortFirst")
     assert "if (groceryState.step !== 'list' || groceryState.sortDeferred) return;" in first
     assert "if (groStoresPromptShouldShow()) return;" in first
-    assert "goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false });" in first
+    assert "goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false, first: true });" in first
+    # "Before the list" is only the automatic landing: any other way into a
+    # sort screen, and finishing the queue, is the ordinary screen again
+    # (verifier, 2026-09-11).
+    assert "if (!opts.first) groceryState.sortFirst = false;" in SHELL_JS
+    # "Open the list" after an approval sorts first too.
+    assert "goGroceryStep('list');\n    // …unless something has no store yet" in SHELL_JS
     # Runs after the list loads AND after the usual stores arrive (they race).
     assert SHELL_JS.count("groMaybeSortFirst();") >= 2
     # A refill (approval) is a new list: sorting comes first again.

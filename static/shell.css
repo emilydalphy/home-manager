@@ -1452,7 +1452,6 @@ html, body {
      at the foot of a short screen — the Meal step's, the review's — rather
      than under its last card. Same move Now's .today-content makes. */
   flex: 1 0 auto;
-  width: 100%;
   box-sizing: border-box;
   width: 100%;
 }
@@ -4473,7 +4472,6 @@ html, body {
 #kit-root-view[hidden], #kit-cook-view[hidden] { display: none; }
 
 .kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
-.kit-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 /* The quiet rows that replaced the tiles (2026-09-11). One card, one
    hairline between rows, one fact each. */
 .kit-rows {
@@ -4512,42 +4510,9 @@ html, body {
 .cook-day-dish { text-align: left; }
 .cook-day-min { font-weight: 600; color: var(--ink-secondary); font-size: 13px; }
 .cook-week-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
-.kit-tile {
-  min-height: 113px;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  padding: 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  text-align: left;
-  cursor: pointer;
-  color: var(--ink);
-}
-.kit-tile:hover { border-color: var(--hairline-strong); }
-.kit-tile-icon { display: block; width: 22px; height: 22px; color: var(--apricot-deep); }
-.kit-tile-icon svg { display: block; width: 22px; height: 22px; }
-.kit-tile-icon-warm { color: var(--apricot-deep); }
-.kit-tile-title {
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  color: var(--ink);
-}
-.kit-tile-sub {
-  font-family: var(--font-body);
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.35;
-  color: var(--ink-inactive);
-}
-/* Inventory. Deliberately the quietest thing on the quietest screen: a
-   neutral stroke instead of the warm one, and no badge of any kind.
-   Inventory is background by policy — it must never look like a queue of
-   work waiting for the household. */
-.kit-tile-quiet .kit-tile-icon { color: var(--ink-placeholder); }
+/* Inventory is background by policy — the quietest row on the quietest
+   screen, a neutral stroke and no badge of any kind. */
+.kit-row[data-sheet="inventory"] .kit-row-icon { color: var(--ink-placeholder); }
 
 /* The "Worth doing sometime" card (.kit-worth*) went with the old hub on
    2026-09-08 — it was an entry point to something that was never built,
@@ -5693,7 +5658,7 @@ span.cook-week-name { cursor: default; }
 /* The prep pair and the entry tiles both collapse to one column on a narrow
    phone rather than squeezing two unreadable cards side by side. */
 @media (max-width: 359px) {
-  .kit-tiles, .cook-prep-grid { grid-template-columns: minmax(0, 1fr); }
+  .cook-prep-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ==========================================================================
