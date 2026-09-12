@@ -20,161 +20,240 @@
     max-width: 640px;
     margin: 0 auto;
     padding: 24px;
-    background: var(--oat-cream);
-    color: var(--text-body);
+    background-color: var(--ground);
+    color: var(--ink);
+    /* The spruce → ivory moment between the last welcome screen and the
+       first question is a crossfade, not a cut (Emily, 2026-09-12; the
+       ground eases over --motion-base while the step itself fades in, see
+       .step-enter below). Zeroed under prefers-reduced-motion by
+       theme.css's blanket rule and its 0ms motion tokens. */
+    transition: background-color var(--motion-base) var(--motion-ease);
   }
-  /* The question screens at the welcome flow's scale (Build 6, 2026-09-11):
-     31px titles, 16px lines, Continue in a dock under the thumb. */
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 31px; letter-spacing: -0.038em; line-height: 1.05; color: var(--ink-strong); margin: 0 0 8px; }
-  p.subtitle { color: var(--text-muted); margin: 0 0 1.25rem; font-size: 16px; line-height: 1.45; }
-  .q-eyebrow { font-family: var(--font-body); font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--apricot-label, var(--text-muted)); margin: 0 0 8px; }
-  /* The question screens' sub-line is plain Figtree (copy cleanse,
-     2026-09-11): the italic face is the sign-in screen's alone now. */
-  .q-accent { font-family: var(--font-body); font-size: 15px; line-height: 1.45; color: var(--ink-secondary); margin: 0 0 1.25rem; }
-  body:not(.intro-active) { padding-bottom: 120px; }
-  .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
-  .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
-  .dot.done { background: var(--midnight-violet); }
-  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  input[type=text], input[type=number], textarea, select {
-    padding: 11px 12px;
+  /* The question screens' padding clears the fixed foot below (pager,
+     the optional skip line and the one button — ~170px at its tallest).
+     The intro and the reveal size their own feet. */
+  body:not(.intro-active):not(.reveal-active) { padding-bottom: 190px; }
+
+  /* ---------- The question screens (Loop Board "Setup question screens in
+     the welcome flow's look: one idea per screen, big type, lots of air",
+     Emily 2026-09-10, built 2026-09-12). Each screen is the welcome
+     screens' rhythm on ivory: the crumb at the top (.back-link, unchanged
+     — §6 "one way back"), 64px of air, the question in the display face,
+     at most one plain supporting line, 32px more air, then the answer
+     controls, and at the foot the one apricot button with the section
+     pager just above it (.q-foot). The ten-segment strip at the very top
+     and the "1 of 4 · Who's eating" eyebrow left on the same day: three
+     progress cues on one screen was two too many. Copy is untouched —
+     the words were cleansed on 2026-09-11; this is the look. Every colour
+     is a canonical token (§1), nothing tappable is under 44px (hard rule
+     6), and there is no italic anywhere on these screens (§3). ---------- */
+  .q-body { padding-top: 64px; display: flex; flex-direction: column; }
+  .q-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 33px;
+    letter-spacing: -0.038em;
+    line-height: 1.05;
+    color: var(--ink);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .q-line {
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--ink-secondary);
+    margin: 12px 0 0;
+    text-wrap: pretty;
+  }
+  .q-controls { margin-top: 32px; display: flex; flex-direction: column; gap: 12px; }
+  /* A screen with two things to answer (the kit step, the prep step's
+     "roughly how long?", a person's name over their restrictions) names
+     each in the card-title size, never in a form label. */
+  .q-sub {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: var(--ink);
+    margin: 0;
+  }
+  .q-group { display: flex; flex-direction: column; gap: 12px; }
+  .q-controls > * + .q-group { margin-top: 12px; }
+  .q-group + .q-group { margin-top: 20px; }
+  .q-group .q-line { margin: -4px 0 0; }
+  /* A label that only a screen reader needs (the typed-answer boxes carry
+     their question as the placeholder, rule §8.6). */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+
+  /* Text boxes: 16px so a phone doesn't zoom the page on focus, 50px tall
+     so a row of one reads as the same weight as the chips beside it. */
+  input[type=text], textarea {
+    padding: 12px 16px;
     border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    font-size: 0.95rem;
+    border: 1.5px solid var(--hairline-strong);
+    font-size: 16px;
     font-family: var(--font-body);
     width: 100%;
-    background: var(--surface-raised);
-    color: var(--text-body);
-    min-height: 44px;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 50px;
   }
-  input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
-    border-color: var(--ink-strong);
-  }
-  input::placeholder, textarea::placeholder { color: var(--text-muted); }
-  textarea { resize: vertical; min-height: 60px; }
+  input[type=text]:focus, textarea:focus { border-color: var(--ink-strong); outline: none; }
+  input::placeholder, textarea::placeholder { color: var(--ink-placeholder); }
+  textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
+  .row { display: flex; gap: 10px; align-items: center; }
+
+  /* Name rows. The remove control is a 44px tile that only exists once
+     the row has a name in it — an × beside an empty box is a control for
+     undoing something nobody has done yet (.row.is-empty, kept in step by
+     addMemberRow). */
+  .member-block { display: flex; flex-direction: column; gap: 10px; }
+  .member-block + .member-block { margin-top: 10px; padding-top: 20px; border-top: 1.5px solid var(--hairline); }
   .remove-btn {
     flex: 0 0 44px;
+    width: 44px;
     height: 44px;
     padding: 0;
     border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
-    background: var(--surface-raised);
+    border: 1.5px solid var(--hairline-strong);
+    background: var(--surface);
+    color: var(--ink-secondary);
     cursor: pointer;
-    font-size: 1.1rem;
-    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .remove-btn:hover { border-color: var(--electric-coral); color: var(--electric-coral); }
+  .remove-btn svg { width: 16px; height: 16px; }
+  .remove-btn:hover { border-color: var(--ink-strong); color: var(--ink-strong); }
+  .row.is-empty .remove-btn { display: none; }
+  /* "+ Add person": a quiet spruce-outline row, full width — a secondary,
+     never a second fill (hard rule 5). --ink-strong is spruce playing ink,
+     so it swings to ivory in dark on its own. */
   .add-btn {
+    width: 100%;
+    min-height: 50px;
+    margin-top: 8px;
     background: transparent;
-    border: 1px solid var(--ink-strong);
+    border: 1.5px solid var(--ink-strong);
     color: var(--ink-strong);
     font-family: var(--font-body);
     font-weight: 700;
-    padding: 10px 16px;
-    min-height: 44px;
+    font-size: 15px;
     border-radius: var(--radius-control);
-    font-size: 0.85rem;
     cursor: pointer;
-    margin-bottom: 1.25rem;
   }
-  .add-btn:hover { background: var(--violet-soft); }
-  label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--ink-strong); display: block; margin: 1rem 0 6px; }
-  /* design_handoff_plan_the_week: every question carries one of these,
-     naming the specific failure the answer prevents. Not decoration — if
-     you can't name that failure, the question shouldn't be asked. */
-  .why-panel {
-    background: var(--celadon-tint);
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: var(--ink-strong);
-    margin: 0 0 18px;
-  }
-  /* Skipping is a real, honest answer on both added steps — the app says so
-     rather than making it look like a failure to complete something. */
+  .add-btn:hover { background: var(--sand); }
+
+  /* Skipping is a real, honest answer on the steps that offer it. In the
+     foot it is the quiet line above the one button: 44px tall, centred. */
   .skip-link {
-    display: inline-flex; align-items: center; min-height: 44px;
-    margin-left: 4px;
-    font-family: var(--font-body); font-size: 0.85rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; margin: 0;
+    font-family: var(--font-body); font-size: 15px; font-weight: 600;
     color: var(--ink-secondary); cursor: pointer;
   }
   .skip-link:hover { color: var(--ink-strong); }
-  /* --text-muted was a legacy alias for --ink-secondary (DESIGN_SYSTEM §1);
-     moved while this component was being touched. Same value, so nothing
-     about it looks different — measured in Chromium at 390px, 4.44:1 light
-     and 8.48:1 dark on this page's ground, at 13.6px/400.
-     The busy state is the point of the change. On the last question this
-     link starts the whole of setup, and on a phone that is half a second to
-     two seconds of nothing visibly happening — a span doesn't grey out the
-     way the button beside it does. It says what it is doing and stops being
-     tappable while it does it, because a second tap used to start a second
-     concurrent run (see finishSetupAndReveal). */
+  /* On the last question this line starts the whole of setup, and on a
+     phone that is half a second to two seconds of nothing visibly
+     happening — a span doesn't grey out the way the button beside it
+     does. It says what it is doing and stops being tappable while it does
+     it, because a second tap used to start a second concurrent run (see
+     finishSetupAndReveal). */
   .skip-link.is-busy { pointer-events: none; opacity: 0.6; cursor: default; }
-  /* The "worth mentioning" prompt list under the normal-week textarea was
-     dropped 2026-09-08 (Julia, first beta tester): the step had far too
-     many words, and a five-bullet list of things to type is the opposite
-     of "less typing, more tapping". One short line and one short example
-     placeholder is the whole step now. */
-  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    padding: 10px 16px;
-    min-height: 44px;
+
+  /* Chips — one look for both chip families the page grew over time
+     (.chip from the taste steps, .rhythm-chip from the rhythm steps; the
+     JS reads them by those names and there was no reason to rename what
+     it reads). 46px tall, wrapping rows, 10px gaps; a chosen one is
+     spruce with ivory ink. */
+  .chip-row, .rhythm-chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip, .rhythm-chip {
+    min-height: 46px;
+    padding: 0 18px;
     display: inline-flex;
     align-items: center;
     font-family: var(--font-body);
-    font-size: 0.85rem;
+    font-size: 15px;
+    font-weight: 600;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--card-border);
-    background: var(--surface-raised);
-    color: var(--text-body);
+    border: 1.5px solid var(--hairline-strong);
+    background: var(--surface);
+    color: var(--ink);
     cursor: pointer;
   }
-  .chip.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
-  .chip.small { padding: 6px 12px; min-height: 32px; font-size: 0.75rem; }
-  .chip.removable { padding-right: 8px; gap: 6px; cursor: default; background: var(--violet-soft); border-color: var(--card-border); color: var(--ink-strong); }
-  .chip.removable button {
-    background: none; border: none; color: inherit; font-size: 1rem; cursor: pointer; line-height: 1; padding: 4px;
-  }
-  .next-btn {
-    font-family: var(--font-heading);
+  .chip.active, .rhythm-chip.active {
+    background: var(--spruce);
+    border-color: var(--spruce);
+    color: var(--ivory-ink);
     font-weight: 700;
-    letter-spacing: -0.02em;
-    background: var(--apricot, var(--turmeric-gold));
-    color: var(--on-accent-ink, var(--ink-strong));
-    border: none;
-    padding: 13px 22px;
-    min-height: 52px;
-    border-radius: var(--radius-action, var(--radius-control));
-    font-size: 17px;
-    cursor: pointer;
-    margin-top: 1.5rem;
-    margin-right: 10px;
-    transition: background 0.15s ease;
   }
-  /* Each question's Continue is the screen's one action: docked at the
-     foot like every other screen in the app (nav v2 rule 2), full width,
-     with the skip link riding just above it. Only one step is on screen
-     at a time, so fixing each step's own button is safe. */
-  #step-household .next-btn, #step-meals .next-btn, #step-restrictions .next-btn,
-  #step-eating-style .next-btn, #step-wont-eat .next-btn, #step-excited-about .next-btn,
-  #step-leftovers .rhythm-cta, #step-prep .next-btn, #step-dinner-time .next-btn, #step-kit-repeats .next-btn {
-    position: fixed; left: 20px; right: 20px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    max-width: 600px; margin: 0 auto; width: auto; z-index: 5;
-    box-shadow: var(--shadow-action, none);
+  /* A typed answer on the never-recommend step: celadon says "noted", and
+     its × is a full 44px target inside the chip. */
+  .chip.removable {
+    padding-right: 0; gap: 2px; cursor: default;
+    background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon);
   }
-  #step-prep .skip-link, #step-dinner-time .skip-link, #step-kit-repeats .skip-link {
-    position: fixed; left: 20px; right: 20px; bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-    justify-content: center; z-index: 5; margin: 0;
+  .chip.removable button {
+    background: none; border: none; color: inherit; font-size: 18px; cursor: pointer; line-height: 1;
+    width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
   }
-  .next-btn:hover:not(:disabled) { background: var(--gold-hover); }
-  .next-btn:disabled { opacity: 0.6; cursor: default; }
-  .next-btn.secondary {
-    background: transparent;
-    color: var(--ink-strong);
-    border: 1px solid var(--ink-strong);
+
+  /* The foot: fixed under the thumb like every dock in the app (§6, one
+     dock), with the ground fading in above it so the answers scroll under
+     rather than into it. Inside, top to bottom: the section pager, the
+     optional skip line, the one apricot button. It is the same
+     .btn-primary the welcome screens' button is — --apricot with
+     --on-accent-ink — where the questions used to carry a darker
+     --apricot-deep of their own. */
+  .q-foot {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 5;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 14px 24px calc(16px + env(safe-area-inset-bottom, 0px));
+    background: var(--ground);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
   }
-  .next-btn.secondary:hover { background: var(--violet-soft); }
+  .q-foot::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 100%;
+    height: 28px;
+    background: linear-gradient(to bottom, transparent, var(--ground));
+    pointer-events: none;
+  }
+  /* The one progress cue on a question (besides the crumb): the welcome
+     screens' own dot row, four dots for the four stops the last welcome
+     screen listed, the current one long. --ink-strong so it is spruce on
+     ivory and ivory on the dark ground. renderProgress draws it. */
+  .q-pager { display: flex; gap: 6px; justify-content: center; align-items: center; min-height: 6px; }
+  .q-pager span {
+    height: 6px; width: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--hairline-strong);
+  }
+  .q-pager span.is-on { width: 18px; background: var(--ink-strong); }
+  .q-next {
+    width: 100%;
+    min-height: 54px;
+    box-shadow: var(--shadow-action);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+  }
+  .q-next:disabled { opacity: 0.5; cursor: default; }
+
   /* The way back out of a step (Emily, 2026-09-09: "add a go back option in
      case I want to go back to change responses"). Two things changed about
      it, and both are the reason she reported it missing rather than wrong.
@@ -229,94 +308,87 @@
   .step-note {
     color: var(--urgent);
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 15px;
     font-weight: 600;
-    margin: 10px 0 0;
+    line-height: 1.4;
+    margin: 0;
   }
-  .member-block { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 10px; }
-  .member-block:first-child { border-top: none; margin-top: 0; padding-top: 0; }
-  .two-col { display: flex; gap: 10px; }
-  .two-col > div { flex: 1; }
-  .chore-row {
-    background: var(--surface-raised);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-card);
-    padding: 0.8rem;
-    margin-bottom: 8px;
-  }
-  .chore-row.excluded { opacity: 0.45; }
-  .chore-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .chore-top input[type=text] { flex: 1; }
-  .chore-top input[type=checkbox] {
-    width: 24px;
-    height: 24px;
-    accent-color: var(--midnight-violet);
-    cursor: pointer;
-    flex: 0 0 24px;
-  }
-  .chore-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-  .chore-controls select { width: auto; min-height: 38px; font-size: 0.82rem; padding: 6px 8px; }
-  .loading-note { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
 
-  /* Number stepper — Q7 (dinners per week) and elsewhere. */
-  .stepper { display: flex; align-items: center; gap: 16px; }
-  .stepper-btn {
-    width: 44px; height: 44px; border-radius: 50%;
-    border: 1px solid var(--ink-strong); background: var(--surface-raised);
-    color: var(--ink-strong); font-size: 1.3rem; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  /* ---------- Step transitions (Emily, 2026-09-12). Every step arrives the
+     way a tab panel does in the shell (DESIGN_SYSTEM §4, motion 2): a fade
+     with an 8px rise over --motion-base, ease-out. The fixed foot only
+     fades — a transform on it would pin it to the step instead of the
+     viewport for the length of the animation. Under
+     prefers-reduced-motion theme.css zeroes every duration, and the block
+     below says the same thing on purpose. ---------- */
+  @keyframes step-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
   }
-  .stepper-btn:hover { background: var(--violet-soft); }
-  .stepper-value { font-family: var(--font-heading); font-weight: 700; font-size: 1.6rem; color: var(--ink-strong); text-align: center; display: block; }
-  .stepper-value-group { min-width: 90px; }
-  .stepper-unit { font-family: var(--font-body); font-weight: 600; font-size: 0.72rem; color: var(--ink-muted); text-align: center; display: block; margin-top: 2px; }
-  .stepper-hint { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; }
+  @keyframes step-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .step-enter > :not(.q-foot) { animation: step-in var(--motion-base) var(--motion-ease) both; }
+  .step-enter > .q-foot { animation: step-fade var(--motion-base) var(--motion-ease) both; }
+  @media (prefers-reduced-motion: reduce) {
+    .step-enter > * { animation: none; }
+    body { transition: none; }
+  }
 
-  /* First-plan reveal (redesigned 2026-09-03, Loop Board "Redesign the
-     post-onboarding first sample week screen") — the earliest real first
-     impression, so it gets the actual Inn hero rather than the plain
-     oat-cream wizard-step styling above. New markup, canonical
-     DESIGN_SYSTEM.md tokens throughout (never the legacy aliases the
-     rules above this comment still use) — full-bleed spruce hero
-     (Rule 4: one hero per screen), one apricot primary (Rule 5), day
-     cards below with dinner starred via the same dot+bold-label idiom
-     shell.css's desktop week grid already uses. The italic "built around
-     what you told me" line under the title was cut on 2026-09-11 (copy
-     cleanse): the receipt below already reads the answers back. */
-  .reveal-hero {
-    background: var(--spruce);
-    margin: -24px -24px 20px;
-    padding: 28px 24px 24px;
-    border-radius: 0 0 var(--radius-hero) var(--radius-hero);
+  /* ---------- The reveal (rule S5: finishes get their own screen —
+     redesigned 2026-09-12 as the mirror of "Hi, I'm Pomona."). The whole
+     ground is spruce again (body.reveal-active shares the intro's rules
+     below), the mark sits over one big line, the one number that matters
+     stands on its own, and the end-of-setup receipt, the week to look
+     over and the invite sit under it as tiles on spruce. The one apricot
+     is in a fixed foot like every question's. Canonical tokens throughout;
+     the only divider on spruce is --apricot-rule (§1). ---------- */
+  .reveal-screen { display: flex; flex-direction: column; gap: 24px; padding-top: 16px; }
+  .reveal-head {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 18px; padding-top: 40px;
   }
   .reveal-eyebrow {
     font-family: var(--font-body); font-weight: 800; font-size: 10px;
     letter-spacing: 0.16em; text-transform: uppercase; color: var(--apricot-light);
-    margin: 0 0 8px;
+    margin: 0;
   }
   .reveal-title {
-    font-family: var(--font-display); font-weight: 700; font-size: 28px;
-    letter-spacing: -0.035em; line-height: 1.08; color: var(--ivory-ink);
-    margin: 0 0 10px;
+    font-family: var(--font-display); font-weight: 700; font-size: 38px;
+    letter-spacing: -0.038em; line-height: 1.05; color: var(--ivory-ink);
+    margin: 0; text-wrap: balance;
   }
   .reveal-status {
-    display: flex; align-items: center; gap: 10px;
-    color: var(--ink-secondary); font-size: 0.85rem; margin: 14px 0 4px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    color: var(--ivory-ink-muted); font-size: 16px; font-weight: 500; margin: 0;
   }
   .reveal-status[hidden] { display: none; }
   .reveal-spinner {
     width: 14px; height: 14px; flex: 0 0 auto; border-radius: 50%;
-    border: 2px solid var(--hairline-strong); border-top-color: var(--apricot);
+    border: 2px solid var(--spruce-hover); border-top-color: var(--apricot-light);
     animation: reveal-spin 0.8s linear infinite;
   }
   @keyframes reveal-spin { to { transform: rotate(360deg); } }
-  .reveal-days { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  /* The one number: how many meals the first week holds, counted off the
+     plan that came back (revealPlanCounts — the same count the receipt's
+     second line says in a sentence). */
+  .reveal-number { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .reveal-number[hidden] { display: none; }
+  .reveal-number-value {
+    font-family: var(--font-display); font-weight: 700; font-size: 96px;
+    letter-spacing: -0.05em; line-height: 1; color: var(--ivory-ink); margin: 0;
+  }
+  .reveal-number-word {
+    font-family: var(--font-body); font-weight: 600; font-size: 17px;
+    color: var(--apricot-light); margin: 2px 0 0;
+  }
+  .reveal-days { display: flex; flex-direction: column; gap: 10px; }
   /* Same guard pair .reveal-status carries: a flex container needs its own
      [hidden] rule or display:flex wins and the empty box keeps its margin. */
   .reveal-days[hidden] { display: none; }
   .reveal-day {
-    background: var(--surface);
-    border: 1.5px solid var(--hairline);
+    background: var(--spruce-raised);
     border-radius: var(--radius-card);
     padding: 14px 16px;
     animation: reveal-day-in .25s ease-out;
@@ -324,17 +396,17 @@
   @keyframes reveal-day-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   .reveal-day-name {
     font-family: var(--font-display); font-weight: 700; font-size: 15px;
-    letter-spacing: -0.01em; color: var(--ink); margin: 0 0 8px;
+    letter-spacing: -0.01em; color: var(--ivory-ink); margin: 0 0 8px;
   }
   .reveal-slot {
     display: flex; align-items: baseline; gap: 8px;
     padding: 5px 0; font-size: 14px; line-height: 1.4;
   }
-  .reveal-slot + .reveal-slot { border-top: 1px solid var(--hairline); }
+  .reveal-slot + .reveal-slot { border-top: 1px solid var(--apricot-rule); }
   .reveal-slot-label {
     flex: 0 0 auto; font-family: var(--font-body); font-weight: 700;
     font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--ink-secondary); display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ivory-ink-muted); display: inline-flex; align-items: center; gap: 6px;
     min-width: 64px;
   }
   /* Dinner starred — the same accent-dot + bold-uppercase idiom the
@@ -342,11 +414,11 @@
      (shell.css .wg2-label-dinner/.wg2-dot), reused rather than inventing
      a new star icon (DESIGN_SYSTEM Rule 7: no emoji, and a new glyph
      would be a Tier 2 change). */
-  .reveal-slot-dinner .reveal-slot-label { color: var(--ink); font-weight: 800; }
-  .reveal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot); flex: 0 0 auto; }
-  .reveal-slot-dish { color: var(--ink); font-weight: 600; }
-  .reveal-slot-dish-open { color: var(--apricot-label); font-weight: 600; }
-  .reveal-slot-dish-empty { color: var(--ink-done); font-style: italic; font-weight: 400; }
+  .reveal-slot-dinner .reveal-slot-label { color: var(--ivory-ink); font-weight: 800; }
+  .reveal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot-light); flex: 0 0 auto; }
+  .reveal-slot-dish { color: var(--ivory-ink); font-weight: 600; }
+  .reveal-slot-dish-open { color: var(--apricot-light); font-weight: 600; }
+  .reveal-slot-dish-empty { color: var(--ivory-ink-muted); font-style: italic; font-weight: 400; }
   /* The end-of-setup receipt (Emily + Julia, 2026-09-08: "tell me plainly
      that setup is done, what you did, and the one thing to do next"). It is
      the same pattern as the approval receipt on Meals — celadon tint,
@@ -363,7 +435,6 @@
     border: 1.5px solid var(--celadon-edge);
     border-radius: var(--radius-card);
     padding: 16px 18px;
-    margin-top: 14px;
   }
   /* A flex container needs its own [hidden] rule or display:flex wins —
      the same guard pair .reveal-status and .reveal-days already carry. */
@@ -379,118 +450,53 @@
   }
   .reveal-receipt-line {
     font-family: var(--font-body); font-size: 14px; line-height: 1.45;
-    color: var(--ink-secondary); margin: 0;
+    color: var(--ink-on-celadon); margin: 0;
   }
   /* The failure twin: the same block with the celadon taken off it. Celadon
      means "already true and good" (DESIGN_SYSTEM §1), and a settled tint
      over "the first week didn't come together" would be saying the opposite
-     of what happened — see §8's calm-in-trouble rule. */
-  .reveal-receipt-failed { background: var(--surface); border-color: var(--hairline-strong); }
-  .reveal-receipt-failed .reveal-receipt-eyebrow { color: var(--ink-secondary); }
-  .reveal-receipt-failed .reveal-receipt-title { color: var(--ink); }
+     of what happened — see §8's calm-in-trouble rule. On spruce it is a
+     raised spruce tile with ivory ink. */
+  .reveal-receipt-failed { background: var(--spruce-raised); border-color: var(--spruce-raised); }
+  .reveal-receipt-failed .reveal-receipt-eyebrow { color: var(--ivory-ink-muted); }
+  .reveal-receipt-failed .reveal-receipt-title { color: var(--ivory-ink); }
+  .reveal-receipt-failed .reveal-receipt-line { color: var(--ivory-ink-muted); }
   .invite-card {
-    background: var(--celadon-tint);
-    border: 1px solid var(--celadon-edge);
+    background: var(--spruce-raised);
     border-radius: var(--radius-card);
     padding: 16px;
-    margin-top: 14px;
   }
-  .invite-card h2 { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--ink); margin: 0 0 4px; }
-  .invite-card p.hint { color: var(--ink-on-celadon); font-size: 0.85rem; margin: 0 0 12px; }
-  .invite-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--celadon-edge); }
+  .invite-card h2 { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; color: var(--ivory-ink); margin: 0 0 4px; }
+  .invite-card p.hint { color: var(--ivory-ink-muted); font-size: 14px; line-height: 1.45; margin: 0 0 8px; }
+  .invite-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--apricot-rule); }
   .invite-row:first-of-type { border-top: none; }
-  .invite-row .name { font-weight: 700; color: var(--ink); font-size: 0.9rem; }
+  .invite-row .name { font-weight: 700; color: var(--ivory-ink); font-size: 15px; }
   .invite-btn {
-    background: var(--surface-raised); border: 1px solid var(--hairline-strong); color: var(--ink);
-    font-family: var(--font-body); font-weight: 700; font-size: 0.8rem;
-    padding: 8px 14px; min-height: 38px; border-radius: var(--radius-control); cursor: pointer;
+    background: var(--spruce-hover); border: none; color: var(--ivory-ink);
+    font-family: var(--font-body); font-weight: 700; font-size: 14px;
+    padding: 0 16px; min-height: 44px; border-radius: var(--radius-control); cursor: pointer;
   }
-  .invite-btn:hover { background: var(--sand); }
-  .invite-btn.copied { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
-  .reveal-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 1.5rem; }
+  .invite-btn.copied { background: var(--celadon); color: var(--on-accent-ink); }
+  /* The reveal's foot: the question foot on spruce. Its two states
+     (#reveal-actions, #reveal-error-actions) are each a foot of their own
+     and only one is ever shown, so no empty strip sits at the bottom
+     while the week is still coming in. */
+  .reveal-actions { display: none; }
+  .q-foot.on-spruce { background: var(--spruce); gap: 4px; }
+  .q-foot.on-spruce::before { background: linear-gradient(to bottom, transparent, var(--spruce)); }
   .reveal-primary-btn { width: 100%; }
   /* The quiet iteration path — same idiom as shell.css's "or start over"
-     under Approve: one plain text link, not a second button competing
+     under Approve: one plain text line, not a second button competing
      with the one apricot primary above it. */
   .reveal-quiet-link {
-    background: none; border: none; border-bottom: 1.5px solid var(--hairline-strong);
-    padding: 0 0 2px; margin: 8px 0 0; min-height: 44px;
+    background: none; border: none;
+    padding: 0; margin: 0; min-height: 44px;
     font-family: var(--font-body); font-weight: 600; font-size: 15px;
-    color: var(--ink-secondary); cursor: pointer;
+    color: var(--ivory-ink-muted); cursor: pointer;
   }
-  .reveal-quiet-link:hover { color: var(--ink); border-bottom-color: var(--ink-secondary); }
-  .action-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.5rem; }
+  .reveal-quiet-link:hover { color: var(--ivory-ink); }
+  body.reveal-active { padding-bottom: 150px; }
 
-  /* Household rhythm steps (Loop Board "Onboarding: household rhythm
-     without traditional assumptions" — the six locked questions, Emily-
-     approved mocks RhythmOnboarding.dc.html / RhythmOnboarding2.dc.html,
-     2026-09-03). New markup, so canonical DESIGN_SYSTEM.md tokens
-     throughout rather than this file's older legacy aliases (--midnight-
-     violet, --turmeric-gold, etc.) used above — per DESIGN_SYSTEM.md §1,
-     "never write a new call site against an alias." */
-  .rhythm-eyebrow {
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-    margin: 0 0 10px;
-  }
-  .rhythm-card {
-    background: var(--surface);
-    border: 1.5px solid var(--hairline);
-    border-radius: var(--radius-card);
-    padding: 15px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 0 0 12px;
-  }
-  .rhythm-card h2 {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.3;
-    color: var(--ink);
-    margin: 0;
-  }
-  .rhythm-person-block { display: flex; flex-direction: column; gap: 8px; }
-  .rhythm-person-name { font-family: var(--font-body); font-size: 14px; font-weight: 700; color: var(--ink); }
-  .rhythm-person-divider { height: 1.5px; background: var(--hairline); border: none; margin: 0; }
-  .rhythm-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .rhythm-chip {
-    min-height: 44px;
-    padding: 0 15px;
-    display: inline-flex;
-    align-items: center;
-    border-radius: var(--radius-pill);
-    border: 1.5px solid var(--hairline);
-    background: var(--surface);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink);
-    cursor: pointer;
-  }
-  .rhythm-chip.active {
-    background: var(--spruce);
-    border-color: var(--spruce);
-    color: var(--ivory-ink);
-    font-weight: 700;
-  }
-  .rhythm-helper { font-family: var(--font-body); font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--ink-inactive); margin: 0; }
-  .rhythm-cta {
-    width: 100%;
-    min-height: 52px;
-    box-shadow: var(--shadow-action);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    margin-top: 6px;
-  }
   /* ---------- The welcome flow (Loop Board "Onboarding: the welcome flow",
      Emily 2026-09-10; mockups + copy approved the same day:
      https://claude.ai/code/artifact/9137ee30-533a-44ba-87ef-155ec4dcde7b).
@@ -498,18 +504,28 @@
      like the sign-in page so sign-in → intro reads as one continuous
      moment before the ivory app appears. The body swaps to spruce while an
      intro step is showing (body.intro-active, set in showStep) and back
-     again for the questions, which are untouched. Every colour is a
-     canonical token, so dark mode comes for free (--spruce lifts to its
-     lighter dark-mode value there, exactly as the sign-in page does). ---------- */
-  body.intro-active {
-    background-color: var(--spruce);
-    /* The same apricot glow static/login.html paints at the top. */
+     again for the questions. Since 2026-09-12 the reveal shares the spruce
+     (body.reveal-active) — the finish is the mirror of the hello. Every
+     colour is a canonical token, so dark mode comes for free (--spruce
+     lifts to its lighter dark-mode value there, exactly as the sign-in
+     page does). ---------- */
+  body.intro-active, body.reveal-active { background-color: var(--spruce); }
+  /* The same apricot glow static/login.html paints at the top — on its own
+     fixed layer so it can fade with the ground instead of cutting out
+     (a background-image can't transition; an opacity can). */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image: radial-gradient(132% 60% at 50% 3%,
       rgba(224, 145, 92, 0.17) 0%, rgba(224, 145, 92, 0) 60%);
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    opacity: 0;
+    transition: opacity var(--motion-base) var(--motion-ease);
   }
-  body.intro-active .progress { display: none; }
+  body.intro-active::before, body.reveal-active::before { opacity: 1; }
   /* Each intro step fills the viewport: the words at the top, the one
      apricot button pinned at the bottom (the body's own 24px padding is
      the gutter). min-height rather than height so a short phone scrolls
@@ -705,8 +721,6 @@
 </head>
 <body>
 
-<div class="progress" id="progress"></div>
-
 <!-- ---------- The welcome flow (Emily, 2026-09-10) ----------
      Five screens before the first question, in her words: "Hi I'm Pomona,
      I'm your home manager… this is my purpose… this is what I can do…
@@ -806,20 +820,37 @@
   </div>
 </div>
 
+<!-- ---------- The questions (Emily, 2026-09-10 / built 2026-09-12) ----------
+     Every question screen is the same shape as a welcome screen, on ivory:
+     the crumb, then .q-body (the question, at most one plain line, the
+     controls), then .q-foot (the four-dot section pager, the quiet line a
+     step that can be passed over carries, the ONE apricot button —
+     .btn-primary, the welcome screens' button). The pager is drawn by renderProgress from QUESTION_SECTIONS;
+     the crumb by renderBackLink. The copy is the 2026-09-11 cleanse,
+     untouched; where a form label was the only thing over a text box, the
+     box carries it as its placeholder and a screen reader still gets it
+     (.sr-only), per DESIGN_SYSTEM §8.6. -->
+
 <!-- Q1 + Q2: household size and names -->
 <div id="step-household">
   <button class="back-link" type="button" data-step-back="household" hidden></button>
-  <p class="q-eyebrow">1 of 4 &middot; Who&rsquo;s eating</p>
-  <h1>Who are we planning for?</h1>
-  <p class="q-accent">Everyone who eats at home.</p>
-  <div id="members"></div>
-  <button class="add-btn" id="add-member" type="button">+ Add person</button>
-  <!-- Said here, on the step that can fix it, rather than in an alert. It
-       states the problem and its way out in one line (DESIGN_SYSTEM §8's
-       calm-in-trouble rule) and it is the ONLY thing either the Continue
-       button or the end of setup says when there is nobody on the list. -->
-  <p class="step-note" id="household-empty" hidden>I need at least one name before I can plan anything — add whoever's eating.</p>
-  <div><button class="next-btn" id="household-next" type="button">Continue</button></div>
+  <div class="q-body">
+    <h1 class="q-title">Who are we planning for?</h1>
+    <p class="q-line">Everyone who eats at home.</p>
+    <div class="q-controls">
+      <div id="members"></div>
+      <button class="add-btn" id="add-member" type="button">+ Add person</button>
+      <!-- Said here, on the step that can fix it, rather than in an alert. It
+           states the problem and its way out in one line (DESIGN_SYSTEM §8's
+           calm-in-trouble rule) and it is the ONLY thing either the Continue
+           button or the end of setup says when there is nobody on the list. -->
+      <p class="step-note" id="household-empty" hidden>I need at least one name before I can plan anything — add whoever's eating.</p>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="household-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Which meals should I plan? (Build 6, 2026-09-11 — Emily's decision G).
@@ -833,22 +864,34 @@
      households that answered before. -->
 <div id="step-meals" style="display:none">
   <button class="back-link" type="button" data-step-back="meals" hidden></button>
-  <p class="q-eyebrow">2 of 4 &middot; Which meals</p>
-  <h1>Which meals should I plan?</h1>
-  <p class="subtitle">Whatever you don&rsquo;t tap, I leave to you.</p>
-  <div class="chip-row" id="meals-chips"></div>
-  <p class="step-note" id="meals-empty" hidden>I need at least one meal to plan &mdash; tap one.</p>
-  <div><button class="next-btn" id="meals-next" type="button">Continue</button></div>
+  <div class="q-body">
+    <h1 class="q-title">Which meals should I plan?</h1>
+    <p class="q-line">Whatever you don&rsquo;t tap, I leave to you.</p>
+    <div class="q-controls">
+      <div class="chip-row" id="meals-chips"></div>
+      <p class="step-note" id="meals-empty" hidden>I need at least one meal to plan &mdash; tap one.</p>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="meals-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Q3: hard restrictions, per person -->
 <div id="step-restrictions" style="display:none">
   <button class="back-link" type="button" data-step-back="restrictions" hidden></button>
-  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
-  <h1>Anything I should never put on the plate?</h1>
-  <p class="subtitle">Allergies, must-avoids, the way someone eats.</p>
-  <div id="diet-by-member"></div>
-  <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
+  <div class="q-body">
+    <h1 class="q-title">Anything I should never put on the plate?</h1>
+    <p class="q-line">Allergies, must-avoids, the way someone eats.</p>
+    <div class="q-controls">
+      <div id="diet-by-member"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="restrictions-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Q4: eating style. Chips first, typing optional (Julia, 2026-09-08:
@@ -857,40 +900,58 @@
      possibly ask for. -->
 <div id="step-eating-style" style="display:none">
   <button class="back-link" type="button" data-step-back="eating-style" hidden></button>
-  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
-  <h1>Is there a certain way you'd like meals to lean?</h1>
-  <div class="chip-row" id="eating-style-chips"></div>
-  <label class="field-label" for="eating-style">Anything else?</label>
-  <textarea id="eating-style" rows="2" placeholder="In your own words — optional."></textarea>
-  <div><button class="next-btn" id="eating-style-next" type="button">Continue</button></div>
+  <div class="q-body">
+    <h1 class="q-title">Is there a certain way you'd like meals to lean?</h1>
+    <div class="q-controls">
+      <div class="chip-row" id="eating-style-chips"></div>
+      <label class="sr-only" for="eating-style">Anything else?</label>
+      <textarea id="eating-style" rows="2" placeholder="Anything else?"></textarea>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="eating-style-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Q5: won't eat. Same change as the step above — the presets are the
      answer most households give, and the box is for the one they don't. -->
 <div id="step-wont-eat" style="display:none">
   <button class="back-link" type="button" data-step-back="wont-eat" hidden></button>
-  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
-  <h1>Anything I should never recommend?</h1>
-  <div class="chip-row" id="wont-eat-presets"></div>
-  <label class="field-label" for="wont-eat-input">Anything else?</label>
-  <div class="row">
-    <input type="text" id="wont-eat-input" placeholder="Type it and press Enter" />
+  <div class="q-body">
+    <h1 class="q-title">Anything I should never recommend?</h1>
+    <div class="q-controls">
+      <div class="chip-row" id="wont-eat-presets"></div>
+      <label class="sr-only" for="wont-eat-input">Anything else?</label>
+      <div class="row">
+        <input type="text" id="wont-eat-input" placeholder="Anything else?" />
+      </div>
+      <div class="chip-row" id="wont-eat-chips"></div>
+    </div>
   </div>
-  <div class="chip-row" id="wont-eat-chips"></div>
-  <div><button class="next-btn" id="wont-eat-next" type="button">Continue</button></div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="wont-eat-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Q6: excited about -->
 <div id="step-excited-about" style="display:none">
   <button class="back-link" type="button" data-step-back="excited-about" hidden></button>
-  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
-  <h1>What are you excited to eat more of lately?</h1>
-  <div class="chip-row" id="excited-chips"></div>
-  <label class="field-label" for="excited-custom">Anything else?</label>
-  <div class="row">
-    <input type="text" id="excited-custom" placeholder="Type it and press Enter" />
+  <div class="q-body">
+    <h1 class="q-title">What are you excited to eat more of lately?</h1>
+    <div class="q-controls">
+      <div class="chip-row" id="excited-chips"></div>
+      <label class="sr-only" for="excited-custom">Anything else?</label>
+      <div class="row">
+        <input type="text" id="excited-custom" placeholder="Anything else?" />
+      </div>
+    </div>
   </div>
-  <div><button class="next-btn" id="excited-next" type="button">Continue</button></div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="excited-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Leftovers, prep days and dinner time — the three rhythm answers the
@@ -903,34 +964,52 @@
      intake's "Anything else". -->
 <div id="step-leftovers" style="display:none">
   <button class="back-link" type="button" data-step-back="leftovers" hidden></button>
-  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
-  <h1>How do you feel about leftovers?</h1>
-  <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
-  <div><button class="btn-primary rhythm-cta" id="leftovers-next" type="button" disabled>Continue</button></div>
+  <div class="q-body">
+    <h1 class="q-title">How do you feel about leftovers?</h1>
+    <div class="q-controls">
+      <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <button class="btn-primary q-next" id="leftovers-next" type="button" disabled>Continue</button>
+  </div>
 </div>
 
 <div id="step-prep" style="display:none">
   <button class="back-link" type="button" data-step-back="prep" hidden></button>
-  <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
-  <h1>Do you like meal prepping?</h1>
-  <p class="subtitle">Up to two days.</p>
-  <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
-  <div id="rhythm-prep-minutes-wrap" style="display:none">
-    <p class="rhythm-helper" style="margin:10px 0 8px">Roughly how long?</p>
-    <div class="rhythm-chip-row" id="rhythm-prep-minutes-chips"></div>
+  <div class="q-body">
+    <h1 class="q-title">Do you like meal prepping?</h1>
+    <p class="q-line">Up to two days.</p>
+    <div class="q-controls">
+      <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
+      <div class="q-group" id="rhythm-prep-minutes-wrap" style="display:none">
+        <p class="q-sub">Roughly how long?</p>
+        <div class="rhythm-chip-row" id="rhythm-prep-minutes-chips"></div>
+      </div>
+    </div>
   </div>
-  <div><button class="next-btn" id="prep-next" type="button">Continue</button></div>
-  <span class="skip-link" id="prep-skip">I don&rsquo;t prep ahead</span>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <span class="skip-link" id="prep-skip">I don&rsquo;t prep ahead</span>
+    <button class="btn-primary q-next" id="prep-next" type="button">Continue</button>
+  </div>
 </div>
 
 <div id="step-dinner-time" style="display:none">
   <button class="back-link" type="button" data-step-back="dinner-time" hidden></button>
-  <p class="q-eyebrow">Last one</p>
-  <h1>What time do you usually have dinner?</h1>
-  <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
-  <p class="subtitle" style="margin-top:14px">So I can tell you when to start cooking.</p>
-  <div><button class="next-btn" id="dinner-time-next" type="button">Continue</button></div>
-  <span class="skip-link" id="dinner-time-skip">Skip</span>
+  <div class="q-body">
+    <h1 class="q-title">What time do you usually have dinner?</h1>
+    <p class="q-line">So I can tell you when to start cooking.</p>
+    <div class="q-controls">
+      <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <span class="skip-link" id="dinner-time-skip">Skip</span>
+    <button class="btn-primary q-next" id="dinner-time-next" type="button">Continue</button>
+  </div>
 </div>
 
 <!-- Step B: kit. Prevents impossible suggestions outright. The old
@@ -943,70 +1022,88 @@
      that touches this step for a naming-only change. -->
 <div id="step-kit-repeats" style="display:none">
   <button class="back-link" type="button" data-step-back="kit-repeats" hidden></button>
-  <p class="q-eyebrow">4 of 4 &middot; Your first week</p>
-  <h1>Just two more! Almost there.</h1>
-  <label class="field-label">What you&rsquo;ve got to cook with</label>
-  <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can make.</p>
-  <div class="chip-row" id="kit-chips"></div>
-  <label class="field-label" style="margin-top:18px">When should your first plan start?</label>
-  <div class="rhythm-chip-row" id="first-plan-start-chips"></div>
-  <div><button class="next-btn" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button></div>
-  <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
+  <div class="q-body">
+    <h1 class="q-title">Just two more! Almost there.</h1>
+    <div class="q-controls">
+      <div class="q-group">
+        <p class="q-sub">What you&rsquo;ve got to cook with</p>
+        <p class="q-line">I&rsquo;ll only suggest recipes your kitchen can make.</p>
+        <div class="chip-row" id="kit-chips"></div>
+      </div>
+      <div class="q-group">
+        <p class="q-sub">When should your first plan start?</p>
+        <div class="rhythm-chip-row" id="first-plan-start-chips"></div>
+      </div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pager" aria-hidden="true"></div>
+    <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
+    <button class="btn-primary q-next" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button>
+  </div>
 </div>
 
-<!-- First-plan reveal — the earliest real first impression, so this gets
-     the actual Inn hero treatment (spruce panel, one apricot primary)
-     rather than the wizard steps' plain oat-cream form styling above. New markup, canonical DESIGN_SYSTEM.md tokens
-     throughout — see the .reveal-* rules below. -->
+<!-- First-plan reveal — the finish (rule S5), and the mirror of "Hi, I'm
+     Pomona.": the whole ground is spruce again (body.reveal-active), the
+     mark over one big line, the one number that matters, and the one
+     apricot in the foot. The receipt, the week to look over and the invite
+     sit under it as tiles on spruce. Redesigned 2026-09-12; the markup
+     each renderer fills is unchanged — see the .reveal-* rules above. -->
 <div id="step-reveal" style="display:none">
-  <div class="reveal-hero">
-    <!-- The title claims a sample week only once one exists. Until the
-         first real day lands, the screen says what is actually happening
-         (Julia, 2026-09-08: "never show a blank sample menu while it's
-         loading"). REVEAL_TITLE_WAITING / REVEAL_TITLE_READY below are the
-         two strings, and generateFirstPlanAndReveal owns the swap. -->
-    <p class="reveal-eyebrow">First sample week</p>
-    <h1 class="reveal-title" id="reveal-title">Cooking up your first week&hellip;</h1>
+  <div class="reveal-screen">
+    <div class="reveal-head">
+      <div class="intro-glyph"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg></div>
+      <!-- The title claims a sample week only once one exists. Until the
+           first real day lands, the screen says what is actually happening
+           (Julia, 2026-09-08: "never show a blank sample menu while it's
+           loading"). REVEAL_TITLE_WAITING / REVEAL_TITLE_READY below are the
+           two strings, and generateFirstPlanAndReveal owns the swap. -->
+      <p class="reveal-eyebrow">First sample week</p>
+      <h1 class="reveal-title" id="reveal-title">Cooking up your first week&hellip;</h1>
+      <div class="reveal-status" id="reveal-status">
+        <span class="reveal-spinner" aria-hidden="true"></span>
+        <!-- The rotating waiting line (static/waiting-lines.js) takes this
+             span over the moment generation starts. Its markup text is only
+             what shows in the split second before that, and if the helper
+             somehow didn't load. -->
+        <span class="waiting-line" id="reveal-status-text">Drafting your week&hellip;</span>
+      </div>
+      <!-- The one number: the meals in the first week, counted off the plan
+           that came back. Empty and hidden until there is one
+           (renderRevealNumber). -->
+      <div class="reveal-number" id="reveal-number" hidden></div>
+    </div>
+    <!-- How setup ends (Emily + Julia, 2026-09-08). Empty and hidden until
+         the week has finished building — or failed — because it is the
+         answer to "am I done?", and there is no answer yet while the plan is
+         still coming in. Above the day list on purpose: what was saved, what
+         Pomona did and the one thing to do next, and then the week itself to
+         look over. renderRevealReceipt / renderRevealFailedReceipt fill it,
+         and nothing else in the app repeats it — the answers themselves live
+         on Preferences from here on. -->
+    <div id="reveal-receipt" class="reveal-receipt" hidden></div>
+    <!-- Empty AND hidden until the first real day arrives: an empty
+         .reveal-days still contributes its 14px gap and its own shape to the
+         screen, which is the blank menu Julia saw. revealShowDays() is the
+         one place that unhides it. -->
+    <div id="reveal-days" class="reveal-days" hidden></div>
+    <div id="invite-section"></div>
   </div>
-  <div class="reveal-status" id="reveal-status">
-    <span class="reveal-spinner" aria-hidden="true"></span>
-    <!-- The rotating waiting line (static/waiting-lines.js) takes this
-         span over the moment generation starts. Its markup text is only
-         what shows in the split second before that, and if the helper
-         somehow didn't load. -->
-    <span class="waiting-line" id="reveal-status-text">Drafting your week&hellip;</span>
-  </div>
-  <!-- How setup ends (Emily + Julia, 2026-09-08). Empty and hidden until
-       the week has finished building — or failed — because it is the
-       answer to "am I done?", and there is no answer yet while the plan is
-       still coming in. Above the day list on purpose: what was saved, what
-       Pomona did and the one thing to do next, and then the week itself to
-       look over. renderRevealReceipt / renderRevealFailedReceipt fill it,
-       and nothing else in the app repeats it — the answers themselves live
-       on Preferences from here on. -->
-  <div id="reveal-receipt" class="reveal-receipt" hidden></div>
-  <!-- Empty AND hidden until the first real day arrives: an empty
-       .reveal-days still contributes its 14px gap and its own shape to the
-       screen, which is the blank menu Julia saw. revealShowDays() is the
-       one place that unhides it. -->
-  <div id="reveal-days" class="reveal-days" hidden></div>
-  <div id="invite-section"></div>
-  <div class="reveal-actions" id="reveal-actions" style="display:none">
+  <div class="reveal-actions q-foot on-spruce" id="reveal-actions" style="display:none">
     <!-- The receipt above says the one thing to do next; this is that thing.
          It replaces "Looks good — take me in", which named no next step and
          landed on whatever week today happens to sit in. -->
-    <button class="btn-primary reveal-primary-btn" id="reveal-done-btn" type="button">Review my week</button>
+    <button class="btn-primary q-next reveal-primary-btn" id="reveal-done-btn" type="button">Review my week</button>
     <button class="reveal-quiet-link" id="reveal-iterate-btn" type="button">or tweak it with me</button>
   </div>
   <!-- A failed generation shows this instead of reveal-actions above, never
        both — "Looks good — take me in" sitting over zero days would be
        saying the opposite of what actually happened. -->
-  <div class="reveal-actions" id="reveal-error-actions" style="display:none">
-    <button class="btn-primary reveal-primary-btn" id="reveal-retry-btn" type="button">Try again</button>
+  <div class="reveal-actions q-foot on-spruce" id="reveal-error-actions" style="display:none">
+    <button class="btn-primary q-next reveal-primary-btn" id="reveal-retry-btn" type="button">Try again</button>
     <button class="reveal-quiet-link" id="reveal-anyway-btn" type="button">Take me in anyway</button>
   </div>
 </div>
-
 <!-- Chores questions (pets, home type, upkeep standard, rotation, etc.) used
      to live here as two more onboarding steps after the reveal. Emily
      decided 2026-09-05 (20a) they come OUT of first-run onboarding, so the
@@ -1163,11 +1260,18 @@ function addMemberRow(name, ageGroup) {
   block.dataset.ageGroup = ageGroup || '';
   block.innerHTML = `
     <div class="row">
-      <input type="text" class="member-name" placeholder="Name" value="${name || ''}" style="flex:2">
-      <button class="remove-btn" type="button" aria-label="Remove">&times;</button>
+      <input type="text" class="member-name" placeholder="Name" aria-label="Name" value="${escapeHtmlLocal(name || '')}">
+      <button class="remove-btn" type="button" aria-label="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button>
     </div>
-    <div class="rhythm-chip-row member-age-chips" style="margin-bottom:4px"></div>
+    <div class="rhythm-chip-row member-age-chips"></div>
   `;
+  // The × only exists once there is a name to take back (2026-09-12): an
+  // empty row's remove control is a control for undoing nothing.
+  const row = block.querySelector('.row');
+  const nameInput = block.querySelector('.member-name');
+  function syncEmpty() { row.classList.toggle('is-empty', !nameInput.value.trim()); }
+  syncEmpty();
+  nameInput.addEventListener('input', syncEmpty);
   // Every answer this app keys by a member NAME is pruned the moment the
   // household changes, not only when the step that owns it is next drawn.
   // The difference is a name being REUSED. Two people, Sam and Alex; Sam
@@ -1328,7 +1432,7 @@ function renderPrepDayChips() {
 // The length question only exists once there's a day to ask it about.
 function renderPrepMinutesChips() {
   const wrap = document.getElementById('rhythm-prep-minutes-wrap');
-  wrap.style.display = rhythmPrepDays.length ? 'block' : 'none';
+  wrap.style.display = rhythmPrepDays.length ? 'flex' : 'none';
   if (!rhythmPrepDays.length) { rhythmPrepMinutes = 0; return; }
   buildSingleSelectChips(document.getElementById('rhythm-prep-minutes-chips'), PREP_MINUTES_OPTIONS, rhythmPrepMinutes, (key) => {
     rhythmPrepMinutes = rhythmPrepMinutes === key ? 0 : key;
@@ -1423,13 +1527,13 @@ function buildRestrictionsStep() {
     restrictionAnswers[m.name] = saved;
     const block = document.createElement('div');
     block.className = 'member-block';
-    block.innerHTML = `<p style="font-family:var(--font-heading);font-weight:600;font-size:0.9rem;color: var(--ink-strong);margin:0 0 6px">${escapeHtmlLocal(m.name)}</p>
+    block.innerHTML = `<p class="q-sub">${escapeHtmlLocal(m.name)}</p>
       <div class="chip-row diet-chips" data-member="${escapeHtmlLocal(m.name)}"></div>
-      <div class="row diet-allergy-row" style="margin-top:8px;display:none">
-        <input type="text" class="diet-allergy-input" placeholder="What are they allergic to?" style="flex:1">
+      <div class="row diet-allergy-row" style="display:none">
+        <input type="text" class="diet-allergy-input" placeholder="What are they allergic to?" aria-label="What are they allergic to?">
       </div>
-      <div class="row diet-other-row" style="margin-top:8px;display:none">
-        <input type="text" class="diet-other-input" placeholder="Anything else I should always follow?" style="flex:1">
+      <div class="row diet-other-row" style="display:none">
+        <input type="text" class="diet-other-input" placeholder="Anything else I should always follow?" aria-label="Anything else I should always follow?">
       </div>`;
     const chipRow = block.querySelector('.diet-chips');
     chipWithCustom(chipRow, DIET_OPTIONS, true);
@@ -1949,6 +2053,23 @@ function revealReceiptLinesHtml(lines) {
     .join('');
 }
 
+// The one number that matters (rule S5: a finish is spruce, big type, one
+// number, one next step): how many meals the first week holds, counted by
+// the same revealPlanCounts the receipt's second line reads, so the big
+// figure and the sentence under it can never disagree. The word beside it
+// is that line's own word. Hidden until there is a week, and hidden again
+// on a failure — a big number over no week would be the receipt's lie.
+function renderRevealNumber(counts) {
+  const box = document.getElementById('reveal-number');
+  if (!box) return;
+  const meals = (counts && counts.meals) || 0;
+  if (!meals) { box.innerHTML = ''; box.hidden = true; return; }
+  box.innerHTML =
+    `<p class="reveal-number-value">${meals}</p>` +
+    `<p class="reveal-number-word">${meals === 1 ? 'meal' : 'meals'}</p>`;
+  box.hidden = false;
+}
+
 function renderRevealReceipt(answers, meals) {
   const box = document.getElementById('reveal-receipt');
   box.classList.remove('reveal-receipt-failed');
@@ -2111,6 +2232,7 @@ async function generateFirstPlanAndReveal(answers) {
   const receiptBox = document.getElementById('reveal-receipt');
   receiptBox.innerHTML = '';
   receiptBox.hidden = true;
+  renderRevealNumber(null);
   firstPlanWeekStart = '';
   let failed = false;
   // Starts in 'reading' rather than waiting for the first frame: the
@@ -2128,6 +2250,7 @@ async function generateFirstPlanAndReveal(answers) {
     if (!meals.length) throw new Error('The first plan came back with no meals');
     firstPlanWeekStart = data.week_start_date || '';
     renderRevealDays(meals);
+    renderRevealNumber(revealPlanCounts(meals));
     renderRevealReceipt(answers, meals);
   } catch (err) {
     console.warn('First-plan generation failed:', err);
@@ -2244,22 +2367,42 @@ const STEP_BUILDERS = {
   'kit-repeats': buildKitRepeatsStep,
 };
 
+// The one progress cue on a question screen besides the crumb (Emily,
+// 2026-09-12: three at once — a ten-segment strip, a "1 of 4" eyebrow and
+// the crumb — was two too many). Four dots, one per stop of the tour the
+// last welcome screen lists, the current one long: the welcome screens'
+// own pager, on ivory. Which stop a question belongs to is written here
+// once; the pager itself is the empty .q-pager in each question's foot, so
+// a question screen without one shows nothing rather than a strip from
+// somewhere else. The reveal and the intro have no entry — the intro
+// carries its own five-dot pager, and the reveal is where setup ends, not
+// another thing to answer.
+//
+// The grouping follows the ORDER the questions are asked in, so the long
+// dot only ever moves forward: the people and the meals, then what you
+// eat, then how your week runs, then your first week. (The last welcome
+// screen lists "How your week runs" before "What you eat"; the flow asks
+// them the other way round, and reordering questions is a bigger call
+// than a look — flagged in CLAUDE.md's 2026-09-12 entry.)
+const QUESTION_SECTIONS = {
+  'household': 1, 'meals': 1,
+  'restrictions': 2, 'eating-style': 2, 'wont-eat': 2, 'excited-about': 2,
+  'leftovers': 3, 'prep': 3, 'dinner-time': 3,
+  'kit-repeats': 4,
+};
+const SECTION_COUNT = 4;
 function renderProgress() {
-  const progress = document.getElementById('progress');
-  progress.innerHTML = '';
-  // Only dots for the question steps — the reveal is where setup ends, not
-  // another thing to answer.
-  // Nor for the intro, which carries its own five-dot pager; the strip is
-  // hidden outright while an intro step is showing so the questions'
-  // progress starts where it always did.
-  progress.hidden = INTRO_STEPS.indexOf(currentStep) !== -1;
-  const questionSteps = stepFlow().filter(k => k !== 'reveal' && INTRO_STEPS.indexOf(k) === -1);
-  const idx = questionSteps.indexOf(currentStep);
-  questionSteps.forEach((key, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'dot' + (idx >= 0 && i <= idx ? ' done' : (idx < 0 ? ' done' : ''));
-    progress.appendChild(dot);
-  });
+  const section = QUESTION_SECTIONS[currentStep];
+  if (!section) return;
+  const stepEl = document.getElementById('step-' + currentStep);
+  const pager = stepEl && stepEl.querySelector('.q-pager');
+  if (!pager) return;
+  pager.innerHTML = '';
+  for (let i = 1; i <= SECTION_COUNT; i++) {
+    const dot = document.createElement('span');
+    if (i === section) dot.className = 'is-on';
+    pager.appendChild(dot);
+  }
 }
 
 // The back control is written by the flow, not by the markup: each step
@@ -2301,14 +2444,29 @@ function showStep(key, opts) {
   if (key === 'reveal') revealReached = true;
   const build = STEP_BUILDERS[key];
   if (build) build();
+  const shown = document.getElementById('step-' + key);
+  const wasShowing = shown.style.display === 'block';
   ALL_STEPS.forEach(k => {
     document.getElementById('step-' + k).style.display = (k === key) ? 'block' : 'none';
   });
-  // The intro is on spruce, the questions on ivory: body.intro-active is
-  // the whole of that swap (see the CSS above). Guarded because the
-  // navigation tests run this under a DOM stub with no body.
+  // Every arrival is a crossfade, not a cut (Emily, 2026-09-12): the step
+  // fades in with an 8px rise (.step-enter, the CSS above). Taking the
+  // class off and forcing a layout first is what restarts the animation
+  // when the same step is shown twice in a row; a step that was already
+  // on screen (the reveal's history trap re-showing it) is left alone.
+  if (!wasShowing && shown.classList) {
+    shown.classList.remove('step-enter');
+    void shown.offsetWidth;
+    shown.classList.add('step-enter');
+  }
+  // The intro is on spruce, the questions on ivory, and the reveal is on
+  // spruce again (the finish is the mirror of the hello): body.intro-active
+  // and body.reveal-active are the whole of that swap (see the CSS above).
+  // Guarded because the navigation tests run this under a DOM stub with no
+  // body.
   if (document.body && document.body.classList) {
     document.body.classList.toggle('intro-active', INTRO_STEPS.indexOf(key) !== -1);
+    document.body.classList.toggle('reveal-active', key === 'reveal');
   }
   renderBackLink(key);
   renderProgress();
