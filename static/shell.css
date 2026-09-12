@@ -4444,7 +4444,11 @@ html, body {
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-  padding: 0 0 28px;
+  /* Cook's root has no dock (nav rule 2), so nothing reserves room for the
+     chat button the way .dock's right padding does elsewhere — the foot
+     clears the FAB's 54px + its 16px lift itself, or the last row's
+     corner sits under it on a short screen. */
+  padding: 0 0 84px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
