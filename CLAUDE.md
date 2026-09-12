@@ -354,6 +354,98 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-12 — Design hygiene: hand-written colours, two emoji, three
+  legacy pages. Branch `worktree-design-hygiene`, NOT merged at the time of
+  writing.** Emily: "go ahead and run the design hygiene." A rename-only
+  pass (no pixel was meant to move) plus one real deletion.
+  **Deleted**: `static/{grocery,cooker,kitchen,memory,index}.html` — every
+  tab went native before this pass (What we know absorbed memory.html's
+  content 2026-09-12; Grocery/Kitchen/Cook earlier), so nothing live
+  reached any of them (confirmed by grepping `static/`, `app/`, `tests/`,
+  `*.md` for each filename and route). `inventory.html` stays — deferred
+  beta feature, still the one page `#kit-sheet-frame` embeds. Routes
+  `/memory` (served memory.html directly) and `/cooker` (redirected into
+  the shell purely as an old-bookmark shim) are gone — both now 404.
+  `/`, `/week`, `/grocery`, `/kitchen` are NOT touched despite the name
+  collision with the deleted files: those four are live SPA deep-link
+  routes the shell itself pushState()s to (`TABS` in shell.js,
+  `SHELL_ROUTES` in service-worker.js) and always served shell.html, never
+  the legacy pages — deleting them would have broken reloading the
+  Shop/Cook/Plan tabs. Deleted `tests/test_cooker_today.py` outright (it
+  tested only `todaysMealIndex`, a function that lived solely in the
+  deleted cooker.html and was never called by the live Cook tab); trimmed
+  `tests/test_embedded_pages.py` (EMBEDDABLE is `["inventory"]` now, not
+  five pages), `test_cook_voice_hidden.py`, `test_calendar_feed.py` and
+  `test_contrast.py` (each had one assertion or list entry tied to a
+  deleted page, the rest of each file covers live behaviour and stayed).
+  **Tokenised**: every literal hex color rule 9 governs, across
+  `shell.css`/`shell.js`/`shell.html`/`login.html`/`onboarding.html`/
+  `plan-week.html`/`meal-setup.html`/`share.html`/`member-share.html`/
+  `chores-setup.html`/`inventory.html`, mapped to the existing token with
+  the identical value — a rename, not a recolor. `shell.js`'s
+  `GRO_STORE_PALETTE` (six hardcoded store-avatar hexes, deliberately the
+  same in light and dark) moved into `theme.css` as new `--store-1..6` and
+  `--store-none` tokens (fixed values, not redefined in the dark block) and
+  the array now holds `var(--store-N)` strings resolved inline via the
+  markup string, not a runtime lookup. A handful of literals had no
+  exact-value token twin (theme.css's own tokens either differ by a few hex
+  digits or flip in dark mode when the literal must not) and were left
+  literal with a comment at the call site and flagged for Emily rather than
+  silently mapped to a close-but-different token: `shell.css`'s two
+  `color: #fff` (ask-bubble user text on spruce; the ask-composer-mic's
+  active-state icon, base/light rule only — dark already correctly
+  overrides to `var(--urgent-ink)`), `shell.css`'s `.gro-box`'s
+  `#D9C9AF` border, `login.html`'s `.signin-field` border `#2E5240` (equals
+  `--celadon-edge`'s *dark* value used in a rule with no dark override —
+  pointing it at the token would change light mode), and the repeated
+  "spruce fill + white text" chip/button pattern's `color: #fff` in
+  `plan-week.html` (×2), `meal-setup.html` (×2), `member-share.html`,
+  `chores-setup.html` and `share.html`. `<meta name="theme-color">`'s two
+  values in every page (exact `--spruce` light/dark) are commented as an
+  accepted exception — a meta tag's content attribute cannot reference a
+  CSS `var()`. **Aliases**: every remaining `var(--alias)` call site (28
+  names, ~218 occurrences across `shell.css` and six HTML pages) moved to
+  its canonical token, then the entire COMPATIBILITY ALIASES block was
+  deleted from `theme.css` (zero call sites left) and DESIGN_SYSTEM.md §1
+  updated to match, in this same set of commits. **`shell.css` TOC**: a
+  table of contents added at the top of the file, five previously
+  `----------`-only major sections (Today, the hero panel, the ask sheet,
+  the weekly-menu block, What we know) promoted to the heavier `====`
+  banner to match Grocery/Kitchen/Cook/Preferences/Meals' existing
+  treatment. The TOC's section titles are deliberately paraphrased rather
+  than quoted verbatim from each banner — several existing tests locate a
+  section by searching `shell.css` for its exact banner text via
+  `.index()`/`.find()`/`.rindex()`, and an identical copy of that text
+  higher up the file would make the search land on the table of contents
+  instead of the real section, silently emptying whatever slice the test
+  meant to check (two tests broke exactly this way on the first draft,
+  vacuously passing on an empty string, and a third — `.rindex()`
+  searching backward for a `/* ====` banner — matched the TOC's own
+  example text; all three were only caught by rerunning the full suite,
+  not by the two tests this pass added). **New tests**:
+  `tests/test_design_hygiene.py` guards all three: no unexplained literal
+  hex in the files above (with an explicit, comment-carrying allowlist for
+  the exceptions just listed), no emoji/pictographic code point anywhere in
+  `static/` (a `✓` and a `★` already in the app are allowlisted by exact
+  character — they're plain typographic marks reviewed as part of this
+  pass, not emoji in rule 7's sense; arrows and an ellipsis elsewhere in
+  the app are outside the scanned Unicode ranges entirely), and the five
+  deleted pages/two routes never reappear. Confirmed via the named
+  entities (`&#127823;`/`&#9998;`) that the two emoji the Loop Board card
+  named were already gone before this pass (the desktop rail that carried
+  them was removed 2026-09-12, per the card). Full suite: 3174 pass
+  (was 3135 on `main`; net change is fewer tests tied to deleted pages plus
+  25 new hygiene tests). Sandbox-verified signed in against the
+  pre-onboarding-reset backup DB, light and dark: all four tab roots, the
+  Cook › Inventory sheet, Preferences, the native What we know sheet, and
+  sign-in — plus every touched CSS custom property's `getComputedStyle`
+  value checked against its pre-change literal in both colour schemes.
+  Pixel screenshots could not be captured this session (the Browser pane
+  never displayed for this background agent — `computer` screenshot timed
+  out every retry, `preview_start` was denied by the auto-mode classifier);
+  the computed-style and route-status checks above are the substitute
+  record. Not pushed; branch only.
+
 - **2026-09-12 — Chores v1: add or change anything by saying so. Branch
   `chores-chat-tools`, NOT merged at the time of writing.** Re-verified the
   chat tools against the Chores screen for the whole user story (add,
