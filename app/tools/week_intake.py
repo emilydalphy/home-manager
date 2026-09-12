@@ -12,6 +12,7 @@ from ..db import get_conn
 from ._shared import acting_name, household_id
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
+from . import holidays as _holidays
 
 
 # The answers to the two question screens, as a first-class object rather
@@ -607,4 +608,9 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # week" regardless of what the household actually picked.
         "period_start_date": week_start,
         "day_count": day_count,
+        # The holidays in this period, each with the household's answer so
+        # far (Loop Board "Holidays: Pomona knows 12 October is coming...").
+        # The Days screen asks about the ones that ask, once, and shows the
+        # rest as a quiet label on their day. See holidays.py.
+        "holidays": _holidays.holidays_for_period(week_start, day_count),
     }

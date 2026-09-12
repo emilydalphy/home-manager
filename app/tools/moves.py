@@ -45,6 +45,7 @@ move at all and the screen shows tomorrow's first move instead — an honest
 """
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, time, timedelta
 
 # Every read below goes through another tool module, so this never touches
@@ -55,6 +56,8 @@ from . import cooker as _cooker
 from . import defrost as _defrost
 from . import grocery as _grocery
 from . import rhythm as _rhythm
+
+logger = logging.getLogger(__name__)
 
 
 # How much a kind of move matters when two of them are open at once. Three
@@ -490,7 +493,24 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         "total": len(moves),
         "week_state": _week_state(view),
         "tomorrow": tomorrow,
+        # The quiet label beside the date when today is a holiday — name
+        # and answer, or None on an ordinary day (see holidays.py).
+        "holiday": _today_holiday(target),
     }
+
+
+def _today_holiday(target: date) -> dict | None:
+    from . import holidays as _holidays
+
+    try:
+        h = _holidays.holiday_on(target.isoformat())
+    except Exception:
+        logger.exception("Today's holiday label could not be built")
+        return None
+    if not h:
+        return None
+    return {"name": h["name"], "answer": h["answer"]["answer"] if h["answer"] else None,
+            "label": _holidays.holiday_day_label(h)}
 
 
 def set_move_done(move_id: str, done: bool = True) -> dict:

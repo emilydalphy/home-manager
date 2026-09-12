@@ -144,6 +144,38 @@
   .tag:hover { border-color: var(--ink-strong); }
   .tag.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
 
+  /* ---- The holiday (Loop Board "Holidays: Pomona knows 12 October is
+     coming and asks how you're spending it", 2026-09-11). One quiet card
+     per holiday in the period, under the tiles and again at the top of
+     that day's sheet: the day named, one question, four answers. Same
+     pills as the night tags, so an answer here reads like one there. ---- */
+  .holiday {
+    margin: 0 0 12px; padding: 13px 14px;
+    background: var(--surface); border: 1.5px solid var(--hairline-strong);
+    border-radius: var(--radius-card);
+  }
+  .holiday-eyebrow {
+    font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 3px;
+  }
+  .holiday-q { font-family: var(--font-heading); font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); margin: 0 0 9px; }
+  .holiday .ack { margin-top: 8px; }
+  .holiday-dish { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .holiday-dish input {
+    flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px;
+    border-radius: var(--radius-control); border: 1px solid var(--card-border);
+    font-family: var(--font-body); font-size: 0.9rem;
+    background: var(--surface-raised); color: var(--text-body);
+  }
+  .holiday-dish input:focus { border-color: var(--ink-strong); outline: none; }
+  .holiday-dish button {
+    min-height: 44px; padding: 0 14px; flex: 0 0 auto;
+    border-radius: var(--radius-control); border: 1px solid var(--ink-strong);
+    background: var(--surface-raised); color: var(--ink-strong);
+    font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  }
+  .holiday-dish button:disabled { opacity: .45; cursor: default; }
+
   /* ---- Guest follow-up ---- */
   .guests {
     margin-top: 12px; padding: 13px 14px;
@@ -430,6 +462,8 @@
     <h1>Any days that are different this week?</h1>
     <p class="step-sub">Tap a day. Out, home late, guests &mdash; for any meal.</p>
     <div class="day-tiles" id="day-tiles"></div>
+    <!-- The holidays in this period, asked once each (holidayBlockHtml). -->
+    <div id="holiday-blocks"></div>
 
     <!-- Trips are OPT-IN CONTEXT, not part of the default flow (Emily's
          decision, 2026-09-03): a light gateway that opens the range picker
@@ -618,6 +652,16 @@
     { key: 'guests', label: 'Hosting guests', ack: 'scale the recipe and the shopping to the bigger table.' },
     { key: 'left',   label: 'Leftovers',     ack: 'cook enough the night before instead of planning something new.' }
   ];
+  // The holiday's four answers, in the household's words, and what each
+  // one means the moment it's tapped (holidays.ANSWER_LABELS /
+  // ANSWER_ACKS on the server — same words). Never assumed: "not sure
+  // yet" is a real answer, and Now asks again three days out.
+  var HOLIDAY_ANSWERS = [
+    { key: 'hosting', label: 'Hosting', ack: 'plan a dinner you host that day — tell me how many and I’ll shop for the bigger table.' },
+    { key: 'out',     label: 'Going to someone’s', ack: 'plan nothing for that dinner. If you’re bringing a dish, name it and I’ll add it to the week.' },
+    { key: 'just_us', label: 'Just us', ack: 'plan that day like any other.' },
+    { key: 'unsure',  label: 'Not sure yet', ack: 'leave it for now and ask again closer to the day.' }
+  ];
   // The one pair that contradicts each other: tapping one clears the other,
   // the same way the server refuses to save both (week_intake.py).
   var OPPOSITES = { rush: 'unrushed', unrushed: 'rush' };
@@ -698,6 +742,7 @@
     $('flow').hidden = false;
     $('footer').hidden = false;
     renderDays();
+    renderHolidayBlocks();
     renderAwaySet();
     renderLunchDays();
     renderMoods();
@@ -743,9 +788,14 @@
 
   // ---------- Q1: the nights ----------
   // ---------- the days, as tiles ----------
-  function dayNoteFor(day) {
+  // `answeredOnly` leaves out a holiday nobody has answered yet: the tile
+  // still names the day, but "3 days noted" counts what the household
+  // said, not what the calendar did.
+  function dayNoteFor(day, answeredOnly) {
     var d = day.date;
     var bits = [];
+    var holiday = holidayFor(d);
+    if (holiday && !(answeredOnly && !(holiday.answer && holiday.answer.answer !== 'unsure'))) bits.push(holidayLabel(holiday));
     var tags = answers.night_tags[d] || [];
     TAGS.forEach(function (t) { if (tags.indexOf(t.key) !== -1 && t.key !== 'normal') bits.push(t.label); });
     var gc = answers.guest_counts[d];
@@ -782,7 +832,9 @@
       var tile = $('day-tiles').querySelector('[data-date="' + day.date + '"]');
       if (!tile) return;
       var note = dayNoteFor(day);
-      tile.classList.toggle('on', !!note);
+      // Filled only once the household has said something about the day
+      // — a holiday's name alone is the calendar talking, not them.
+      tile.classList.toggle('on', !!dayNoteFor(day, true));
       tile.querySelector('.day-tile-note').textContent = note;
       tile.title = note || (day.hint || '');
     });
@@ -810,6 +862,7 @@
     $('day-sheet-body').innerHTML =
       '<div class="day" data-date="' + day.date + '">' +
         (day.hint ? '<div class="day-hint">' + esc(day.hint) + '</div>' : '') +
+        (holidayFor(day.date) ? holidayBlockHtml(holidayFor(day.date)) : '') +
         '<div class="meal-block" data-slot="dinner">' +
           '<div class="day-section-label">Dinner</div>' +
           '<div class="tag-row">' +
@@ -827,9 +880,10 @@
         mealBlockHtml('breakfast', 'Breakfast') +
       '</div>';
     var dayEl = $('day-sheet-body').querySelector('.day');
-    dayEl.querySelectorAll('.tag').forEach(function (btn) {
+    dayEl.querySelectorAll('.tag:not(.holiday-answer)').forEach(function (btn) {
       btn.addEventListener('click', function () { toggleTag(dayEl, btn.dataset.tag); });
     });
+    wireHolidayBlock(dayEl);
     dayEl.querySelectorAll('.avatar').forEach(function (btn) {
       btn.addEventListener('click', function () { toggleAvatar(dayEl, btn); });
     });
@@ -1082,14 +1136,17 @@
   function paintDay(dayEl) {
     var d = dayEl.dataset.date;
     var tags = answers.night_tags[d] || [];
-    dayEl.querySelectorAll('.tag').forEach(function (btn) {
+    // The dinner block's own pills and ack — the holiday block above it
+    // has a .tag row and an .ack of its own, painted by paintHolidayBlock.
+    var dinner = dayEl.querySelector('.meal-block[data-slot="dinner"]') || dayEl;
+    dinner.querySelectorAll('.tag').forEach(function (btn) {
       btn.classList.toggle('on', tags.indexOf(btn.dataset.tag) !== -1);
     });
     // Multiple tags join with "And I'll " — one sentence per consequence,
     // so two answers read as two things happening rather than one blurred
     // promise.
     var acks = TAGS.filter(function (t) { return tags.indexOf(t.key) !== -1; }).map(function (t) { return t.ack; });
-    dayEl.querySelector('.ack').textContent = acks.length
+    dinner.querySelector('.ack').textContent = acks.length
       ? 'I’ll ' + acks.join(' And I’ll ')
       : '';
     renderGuests(dayEl, tags.indexOf('guests') !== -1);
@@ -1097,6 +1154,145 @@
     paintSlotBlock(dayEl, 'lunch');
     paintSlotBlock(dayEl, 'breakfast');
     paintTiles();
+  }
+
+  // ---------- the holiday ----------
+  // Loop Board "Holidays: Pomona knows 12 October is coming and asks how
+  // you're spending it" (Emily, 2026-09-11). The prefill names the
+  // holidays in this period (data.holidays); a label-only day (Halloween,
+  // a long-weekend Monday) shows on its tile and asks nothing. Each answer
+  // is saved the moment it's tapped — it's a fact about the day, not a
+  // revision of the week's answers — and the same block sits under the
+  // tiles and at the top of the day's sheet, so it's asked once and
+  // changeable from either.
+  function holidayFor(date) {
+    return ((data && data.holidays) || []).filter(function (h) { return h.date === date; })[0] || null;
+  }
+
+  // "Thanksgiving · going to someone’s" — the tile's note.
+  function holidayLabel(h) {
+    var a = h.answer;
+    if (!a || a.answer === 'unsure') return h.name;
+    if (a.answer === 'hosting') return h.name + ' · hosting';
+    var found = HOLIDAY_ANSWERS.filter(function (x) { return x.key === a.answer; })[0];
+    return h.name + ' · ' + (found ? found.label.toLowerCase() : a.answer);
+  }
+
+  function holidayBlockHtml(h) {
+    if (!h.asks) return '';
+    var day = dayFor(h.date);
+    var when = day ? day.weekday + ' ' + day.day_of_month : h.date;
+    var current = h.answer ? h.answer.answer : '';
+    return '<div class="holiday" data-holiday="' + esc(h.date) + '">' +
+      '<div class="holiday-eyebrow">' + esc(h.name) + ' &middot; ' + esc(when) + '</div>' +
+      '<div class="holiday-q">' + esc(h.question || ('How are you spending ' + h.name + '?')) + '</div>' +
+      '<div class="tag-row">' +
+        HOLIDAY_ANSWERS.map(function (a) {
+          return '<button type="button" class="tag holiday-answer' + (a.key === current ? ' on' : '') +
+            '" data-answer="' + a.key + '">' + esc(a.label) + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div class="ack"></div>' +
+      '<div class="holiday-dish" hidden>' +
+        '<input type="text" maxlength="80" placeholder="Bringing something? Name it" aria-label="The dish you’re bringing">' +
+        '<button type="button">Add it</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderHolidayBlocks() {
+    var host = $('holiday-blocks');
+    if (!host) return;
+    host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');
+    wireHolidayBlock(host);
+  }
+
+  function wireHolidayBlock(root) {
+    root.querySelectorAll('.holiday').forEach(function (block) {
+      block.querySelectorAll('.holiday-answer').forEach(function (btn) {
+        btn.addEventListener('click', function () { answerHoliday(block.dataset.holiday, btn.dataset.answer, null); });
+      });
+      var dish = block.querySelector('.holiday-dish');
+      var input = dish.querySelector('input');
+      var add = dish.querySelector('button');
+      add.addEventListener('click', function () { answerHoliday(block.dataset.holiday, 'out', input.value); });
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add.click(); } });
+      paintHolidayBlock(block);
+    });
+  }
+
+  function paintHolidayBlock(block) {
+    var h = holidayFor(block.dataset.holiday);
+    if (!h) return;
+    var current = h.answer ? h.answer.answer : '';
+    block.querySelectorAll('.holiday-answer').forEach(function (btn) {
+      btn.classList.toggle('on', btn.dataset.answer === current);
+    });
+    var found = HOLIDAY_ANSWERS.filter(function (x) { return x.key === current; })[0];
+    var ack = block.querySelector('.ack');
+    if (block.dataset.trouble) ack.textContent = block.dataset.trouble;
+    else if (current === 'out' && h.answer.bring_dish) ack.textContent = 'I’ll plan nothing else for that dinner and add the ' + h.answer.bring_dish + ' to the week.';
+    else ack.textContent = found ? 'I’ll ' + found.ack : '';
+    var dish = block.querySelector('.holiday-dish');
+    dish.hidden = current !== 'out';
+    var input = dish.querySelector('input');
+    if (current === 'out' && document.activeElement !== input) input.value = h.answer.bring_dish || '';
+  }
+
+  // Everything that shows this holiday — the block under the tiles, the
+  // block in an open sheet, the tile's note — repainted from one place.
+  function paintHoliday(date) {
+    document.querySelectorAll('.holiday[data-holiday="' + date + '"]').forEach(paintHolidayBlock);
+    paintTiles();
+  }
+
+  async function answerHoliday(date, answer, dish) {
+    var h = holidayFor(date);
+    if (!h) return;
+    var previous = h.answer ? JSON.parse(JSON.stringify(h.answer)) : null;
+    // Paint on tap, before the server confirms; a failed save puts the
+    // old answer back and says so.
+    h.answer = { answer: answer, headcount: previous && previous.answer === answer ? previous.headcount : 0,
+                 bring_dish: dish != null ? dish.trim() : (previous && previous.answer === answer ? previous.bring_dish : '') };
+    // "Hosting" is the intake's own Hosting-guests tag with the count —
+    // turn it on here so the day's guest steppers are one tap away, the
+    // way the tag itself would open them.
+    var tags = (answers.night_tags[date] || []).filter(function (t) { return t !== 'guests' && t !== 'normal'; });
+    if (answer === 'hosting') tags.push('guests');
+    if (tags.length) answers.night_tags[date] = tags; else delete answers.night_tags[date];
+    if (answer !== 'hosting') delete answers.guest_counts[date];
+    paintHoliday(date);
+    var open = $('day-sheet-body').querySelector('.day[data-date="' + date + '"]');
+    if (open) paintDay(open);
+    paintCta();
+    var body = { date: date, answer: answer };
+    if (dish != null) body.bring_dish = dish.trim();
+    try {
+      var res = await fetch('/api/holidays/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('holiday answer failed');
+      var saved = await res.json();
+      h.answer = { answer: saved.answer, headcount: saved.headcount, bring_dish: saved.bring_dish };
+      // "Out" is nobody-home for that dinner on the server; read
+      // attendance back so the sheet's avatars say the same thing.
+      await loadAttendance();
+      paintHoliday(date);
+      if (open) paintDay(open);
+    } catch (err) {
+      console.warn('Holiday answer failed:', err);
+      h.answer = previous;
+      document.querySelectorAll('.holiday[data-holiday="' + date + '"]').forEach(function (b) {
+        b.dataset.trouble = 'I couldn’t save that just now — try again in a moment.';
+      });
+      paintHoliday(date);
+      setTimeout(function () {
+        document.querySelectorAll('.holiday[data-holiday="' + date + '"]').forEach(function (b) { delete b.dataset.trouble; });
+        paintHoliday(date);
+      }, 2500);
+    }
   }
 
   // ---------- the guest follow-up ----------
@@ -1496,7 +1692,7 @@
   function paintCta() {
     var skip = $('skip');
     if (step < STEP_COUNT) {
-      var noted = step === 1 ? data.days.filter(function (day) { return !!dayNoteFor(day); }).length : 0;
+      var noted = step === 1 ? data.days.filter(function (day) { return !!dayNoteFor(day, true); }).length : 0;
       $('cta').textContent = step === 1 && noted
         ? 'Next — ' + noted + (noted === 1 ? ' day noted' : ' days noted')
         : 'Next';

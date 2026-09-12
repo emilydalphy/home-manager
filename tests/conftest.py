@@ -46,6 +46,7 @@ _TABLES = [
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",
+    "holiday_answers",
 ]
 
 
@@ -77,7 +78,8 @@ def clean_state():
         # the wipe above — put them back to their defaults so one test's
         # Vancouver clock doesn't become the next test's.
         conn.execute(
-            "UPDATE households SET timezone = 'America/Toronto', morning_text_time = '07:00' WHERE id = 1"
+            "UPDATE households SET timezone = 'America/Toronto', morning_text_time = '07:00', "
+            "country = 'CA', province = 'ON' WHERE id = 1"
         )
     except Exception:
         pass

@@ -3563,6 +3563,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
 
     intake = _week_intake.get_week_intake(plan["week_start_date"])
     trip = _decorate_with_needs(days, plan["week_start_date"])
+    _decorate_with_holidays(days)
     return {
         "weekly_plan_id": plan["weekly_plan_id"],
         "week_start_date": plan["week_start_date"],
@@ -3609,6 +3610,32 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         ),
         **approval,
     }
+
+
+def _decorate_with_holidays(days: list[dict]) -> None:
+    """
+    The quiet label on a holiday's row — "Thanksgiving · going to someone’s"
+    (Loop Board "Holidays: Pomona knows 12 October is coming...", 2026-09-11).
+    Only a day that IS a holiday gets the key, so an ordinary week's payload
+    is byte-for-byte what it was. Never fails the screen: a calendar feed
+    that can't be read is a missing label, not a missing week.
+    """
+    from . import holidays as _holidays
+
+    try:
+        found = {h["date"]: h for h in _holidays.holidays_for_dates([d["date"] for d in days])}
+    except Exception:
+        logger.exception("Holiday labels could not be built for the week menu")
+        return
+    for day in days:
+        h = found.get(day["date"])
+        if h:
+            day["holiday"] = {
+                "name": h["name"],
+                "answer": h["answer"]["answer"] if h["answer"] else None,
+                "asks": h["asks"],
+                "label": _holidays.holiday_day_label(h),
+            }
 
 
 def _decorate_with_needs(days: list[dict], week_start: str) -> str:
@@ -3766,6 +3793,21 @@ def get_needs_you_items() -> list[dict]:
     horizon_end = today + timedelta(days=2)  # today, tomorrow, day-after exclusive edge -> "within 48h" covers today+tomorrow
 
     items: list[dict] = []
+
+    # ---- Rule 0: a holiday close enough to ask about ----
+    # Loop Board "Holidays: Pomona knows 12 October is coming and asks how
+    # you're spending it": within three days of a holiday that still has
+    # no real answer (none, or "not sure yet"), Now asks — at most once a
+    # day. See holidays.holiday_needs_you_item. First, not because it
+    # outranks tonight's dinner but because the answer changes what that
+    # dinner even is.
+    try:
+        from . import holidays as _holidays
+        holiday_ask = _holidays.holiday_needs_you_item(today)
+        if holiday_ask:
+            items.append(holiday_ask)
+    except Exception:
+        logger.exception("Holiday ask could not be built for the needs-you band")
 
     # ---- Rule 1: dinner decision ----
     dinner_rows = conn.execute(
