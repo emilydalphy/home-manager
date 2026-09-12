@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -74,7 +74,7 @@ _HARNESS = (
 
 def _run(expr: str):
     script = _HARNESS + f"console.log(JSON.stringify({expr}));\n"
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
@@ -133,7 +133,7 @@ def test_cook_ingredient_label_renders_human_quantities():
     formatter under its own name, matching production wiring."""
     harness = _HARNESS + _extract("cookIngredientLabel") + "\n"
     script = harness + "console.log(JSON.stringify(cookIngredientLabel({ qty: '0.5 lb', item: 'Flank steak' })));\n"
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     assert json.loads(res.stdout.strip()) == "½ lb Flank steak"
 

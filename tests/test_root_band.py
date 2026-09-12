@@ -18,7 +18,7 @@ where one exists.
 import json
 import re
 import shutil
-import subprocess
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -45,7 +45,7 @@ _needs_node = pytest.mark.skipif(
 
 
 def _node(script: str):
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip().splitlines()[-1])
 
