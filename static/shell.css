@@ -895,6 +895,15 @@ html, body {
   font-size: 13px;
   color: var(--ink-secondary);
 }
+/* A chore somebody outside the house does (Loop Board "Chores v1: tag a
+   chore as outsourced"). No checkbox, so the name starts where the other
+   rows' names do and the row still reads as part of the same list; the
+   cursor goes back to default because there is nothing here to tap. The
+   tag is .pill-neutral (celadon-tint, the same quiet label Inventory's
+   "In development" uses) and never apricot — this is a fact about the
+   row, not the screen's one action. */
+.chore-row.is-outsourced { cursor: default; padding-left: 38px; }
+.chore-tag { flex-shrink: 0; }
 /* --ink-done, not --faded: this IS a struck-out completed list item, and
    --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
    Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */

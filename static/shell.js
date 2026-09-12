@@ -1483,9 +1483,15 @@
     if (setupLink && choresSetUp !== undefined) {
       setupLink.style.display = choresSetUp ? 'none' : 'block';
     }
-    var done = chores.filter(function (c) { return c.status === 'done'; }).length;
-    countEl.textContent = chores.length ? (done + ' of ' + chores.length) : '';
-    countEl.className = 'chores-count' + (chores.length && done === chores.length ? ' all-done' : '');
+    // An outsourced chore is nobody here's (Loop Board "Chores v1: tag a
+    // chore as outsourced"), so it is out of BOTH halves of the count —
+    // "1 of 3" that includes cleaner day tells a household it is behind on
+    // something it never had to do. The row still renders; it just isn't
+    // ours to be counted against.
+    var ours = chores.filter(function (c) { return !c.outsourced; });
+    var done = ours.filter(function (c) { return c.status === 'done'; }).length;
+    countEl.textContent = ours.length ? (done + ' of ' + ours.length) : '';
+    countEl.className = 'chores-count' + (ours.length && done === ours.length ? ' all-done' : '');
 
     if (!chores.length) {
       listEl.innerHTML = '<div class="empty-row">Nothing due today.</div>';
@@ -1494,6 +1500,20 @@
 
     listEl.innerHTML = chores.map(function (c) {
       var isDone = c.status === 'done';
+      // Somebody outside the house does this one. It keeps its place on
+      // the day — we know Thursday is cleaner day — and loses the tick,
+      // because a tick here means a person in this house did a thing.
+      // `completable` is the server's word for that, so the row doesn't
+      // have to know what the modes mean.
+      if (c.outsourced || c.completable === false) {
+        return (
+          '<div class="chore-row is-outsourced" data-id="' + c.id + '">' +
+            '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
+            '<span class="pill pill-neutral chore-tag">Not us</span>' +
+            (c.who_label ? '<span class="chore-who">' + escapeHtml(c.who_label) + '</span>' : '') +
+          '</div>'
+        );
+      }
       return (
         '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' +
           '<span class="chore-checkbox" role="checkbox" aria-checked="' + isDone + '" tabindex="0">' +
@@ -1514,7 +1534,7 @@
       );
     }).join('');
 
-    listEl.querySelectorAll('.chore-row').forEach(function (row) {
+    listEl.querySelectorAll('.chore-row:not(.is-outsourced)').forEach(function (row) {
       var toggle = function () { toggleChore(panel, row, chores); };
       row.querySelector('.chore-checkbox').addEventListener('click', toggle);
       row.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
