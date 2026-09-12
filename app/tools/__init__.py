@@ -43,7 +43,9 @@ from .attention import (  # noqa: F401
 )
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
+    CHORES_OFF_MESSAGE,
     add_chore,
+    chores_enabled,
     complete_chore,
     generate_chore_schedule,
     get_chores_due_today,
@@ -53,6 +55,7 @@ from .chores import (  # noqa: F401
     list_chores,
     schedule_chore_instance,
     set_chore_instance_status,
+    set_chores_enabled,
     set_chores_profile,
     update_chore,
 )

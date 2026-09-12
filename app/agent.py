@@ -629,6 +629,11 @@ then use add_chore.
   2. Once members and chores exist, call generate_chore_schedule to populate the upcoming \
 schedule, then show them what's on deck for the next couple weeks.
 - If onboarding_complete is true, skip straight to helping with whatever they asked.
+- If chores_enabled (from get_household_setup_status) is false, Chores isn't switched on \
+for this house: never offer to set up or track chores, never call the chores tools, and \
+never mention that chores exist as a feature. If they ask about chores outright, say plainly \
+that chores isn't switched on for their house yet, in one sentence, and carry on with whatever \
+else they need — no apology, no explanation of settings or betas.
 
 Meal planning setup — you no longer conduct this as an interview. The onboarding wizard and \
 the two question screens own it, and the setup screen at /meal-setup lets any of it be \
@@ -5325,6 +5330,43 @@ Call submit_read_recipe with the result."""
     return None
 
 
+# The chat tools that only make sense in a house with Chores switched on
+# (Loop Board "Chores v1: Who sees it — a per-household switch", Emily,
+# 2026-09-12). One gate at the dispatch in run_agent_turn rather than nine
+# wrapped entries in TOOL_FUNCTIONS: the entries stay the plain tool
+# functions (tests and the chores-setup routes call them directly, and
+# that page is reachable by URL for every household by design), and the
+# household's answer is looked up once per call, at request time, never
+# at import. Read-only tools are in here too — "what chores are due" is
+# still a chores question the tester's house should get a plain no to.
+CHORES_TOOLS = frozenset({
+    "get_chores_profile", "set_chores_profile", "add_chore", "list_chore_definitions",
+    "update_chore", "generate_chore_schedule", "schedule_chore_instance", "list_chores",
+    "complete_chore",
+})
+
+
+def _chores_off_result() -> dict:
+    """
+    What a chores tool answers in a house with the switch off. The
+    `error` key is what the model treats as "this didn't happen", which
+    is true; `message` is the sentence to relay (tools.CHORES_OFF_MESSAGE
+    — one copy, shared with the HTTP routes); `what_to_do` is for the
+    model, so a silent get_chores_profile at the top of a conversation
+    doesn't turn into an unprompted line about a feature the house
+    doesn't have.
+    """
+    return {
+        "error": tools.CHORES_OFF_MESSAGE,
+        "status": "declined",
+        "message": tools.CHORES_OFF_MESSAGE,
+        "what_to_do": (
+            "Chores is not switched on for this house. If the person asked about chores, "
+            "say this one sentence plainly and move on; if they didn't, don't bring it up."
+        ),
+    }
+
+
 TOOL_FUNCTIONS = {
     "get_household_setup_status": tools.get_household_setup_status,
     "add_member": tools.add_member,
@@ -6088,6 +6130,25 @@ def run_agent_turn(conversation: list[dict], user_message: str, *, proactive_che
             if block.type != "tool_use":
                 continue
             fn = TOOL_FUNCTIONS.get(block.name)
+            # The per-household Chores switch, checked before the tool runs
+            # and outside the try below on purpose: a declined call is an
+            # answer, not a crash, so it is neither logged as a failure nor
+            # written to error_events (the morning report would otherwise
+            # flag every tester's "what chores are due?" as a broken tool).
+            # is_error=True is still right — it is what keeps
+            # _turn_wrote_anything from counting a declined add_chore as a
+            # write, and summarize_chat_actions from drawing a "Chores
+            # updated" card for a chore that was never added.
+            if block.name in CHORES_TOOLS and not tools.chores_enabled():
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps(_chores_off_result()),
+                        "is_error": True,
+                    }
+                )
+                continue
             try:
                 result = fn(**block.input) if fn else {"error": f"Unknown tool {block.name}"}
                 content = json.dumps(result, default=str)

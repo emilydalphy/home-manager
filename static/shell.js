@@ -99,15 +99,23 @@
   var REHEAT_ACTION_LABEL = 'Mark eaten';
   var REHEAT_UNDO_LABEL = 'Mark not eaten';
 
-  // The beta is meals-only (Emily, 2026-09-08, option 1b on the Chores
-  // ticket) — Chores hasn't been validated yet, so Today's "Your chores"
-  // card is hidden rather than shown to every beta household. This is the
-  // one flag that decides it: false means buildTodayPanel never renders
-  // the chores card markup and never calls loadChores (so no
-  // /api/chores/today request either). The chores backend, the
-  // /chores-setup page, and loadChores/renderChores themselves are all
-  // untouched — flipping this back to true is the whole reversal.
-  var SHOW_CHORES_ON_TODAY = false;
+  // Whether Now shows the "Your chores" card is PER HOUSEHOLD now, not a
+  // constant here (Loop Board "Chores v1: Who sees it — a per-household
+  // switch", Emily, 2026-09-12). From 2026-09-08 to 2026-09-12 a global
+  // SHOW_CHORES_ON_TODAY = false sat in this slot and hid the card for
+  // every household, because the beta is meals-only until Chores has been
+  // tried on real weeks — but "tried on real weeks" means on in Emily's
+  // house and off in the tester's at the same time, which one constant
+  // for everyone cannot say. The switch is households.chores_enabled (off
+  // by default; set_chores_enabled.py flips it), it arrives on
+  // /api/whoami as `chores_enabled`, and the shell keeps it on shellWho
+  // (loaded before any tab renders — see ensureWhoPicked). buildTodayPanel
+  // reads choresEnabled() below: false means the card markup is never
+  // built and loadChores is never called, so no /api/chores/today request
+  // either — exactly what the constant used to guarantee, per house.
+  function choresEnabled() {
+    return !!shellWho.chores_enabled;
+  }
 
   // Inventory is still being built (Loop Board: "Inventory: mark as still
   // in development" — beta testers were putting effort into keeping it up
@@ -132,8 +140,9 @@
   // rebuilt to remove; the feed's remaining, non-time-bound items are
   // dropped for now rather than rehomed.
   //
-  // Hidden behind one constant rather than deleted, the same way
-  // SHOW_CHORES_ON_TODAY above is: /api/notifications and
+  // Hidden behind one constant rather than deleted, the same way the
+  // chores card was between 2026-09-08 and 09-12 (it is a per-household
+  // switch now — see choresEnabled above): /api/notifications and
   // /api/notifications/dismiss are untouched (the plan-week nudge still
   // uses the dismiss route), loadNotifications and the panel's own code are
   // intact, and flipping this back to true puts the button back in its old
@@ -742,11 +751,16 @@
         '<div class="today-body">' +
           '<div id="needs-you-band" class="today-area-needsyou"></div>' +
           '<div id="today-rest" class="today-area-rest"></div>' +
-          // SHOW_CHORES_ON_TODAY (2026-09-08): the beta is meals-only, so
-          // this card is left out of the markup entirely while the flag
-          // is false — not just hidden, so there's nothing for a stray
-          // selector to find.
-          (SHOW_CHORES_ON_TODAY ?
+          // The household's Chores switch (choresEnabled, off /api/whoami):
+          // with it off this card is left out of the markup entirely — not
+          // just hidden, so there's nothing for a stray selector to find
+          // and nothing to invite the tester into. Last in the body, after
+          // the needs-you band and the rest of today, because the design
+          // (shell.css, "Your chores") puts chores as the quiet line at
+          // the foot of Now: today's dinner and what needs deciding come
+          // first, and a chore never competes with either for attention —
+          // no apricot, no dock, ticks are the whole interaction.
+          (choresEnabled() ?
             '<div class="today-area-chores">' +
               '<div class="shell-card chores-card">' +
                 '<div class="chores-header"><h2>Your chores</h2><span class="chores-count" id="chores-count"></span></div>' +
@@ -784,9 +798,9 @@
       loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
       loadTodayMoves(panel),
-      // SHOW_CHORES_ON_TODAY (2026-09-08): skip the call, not just the
-      // render — no chores card means no reason to hit /api/chores/today.
-      (SHOW_CHORES_ON_TODAY ? loadChores(panel) : Promise.resolve())
+      // The Chores switch again: skip the call, not just the render — no
+      // chores card means no reason to hit /api/chores/today.
+      (choresEnabled() ? loadChores(panel) : Promise.resolve())
     ]);
 
     // The how-and-why sheet: /api/coaching may answer before or after this
@@ -1776,13 +1790,35 @@
     if (target.tab) return activateTab(target.tab, true);
   }
 
+  // ---------- Your chores (Now) ----------
+  // Today's chores, whole household, at the foot of Now (Loop Board
+  // "Chores v1: Turn the 'Your chores' card on Now back on", Emily,
+  // 2026-09-12). One fetch, /api/chores/today, which already says
+  // everything the rows need: a chore that slipped comes back as due
+  // today (no guilt pile — one row however many weeks it stands for),
+  // `who_label` is the owner's first name or whose turn it is, and an
+  // outsourced row carries `completable: false` so it draws no tick.
+  //
+  // Built only when the household's Chores switch is on (choresEnabled);
+  // loadChores is also what refreshStaleTabsFromActions calls after a chat
+  // turn changes chores, so it has to be safe to call on a panel with no
+  // card in it — hence the early return on a missing list.
   async function loadChores(panel) {
     var listEl = panel.querySelector('#chores-list');
     var countEl = panel.querySelector('#chores-count');
+    if (!listEl || !countEl) return;
     try {
       var res = await fetch('/api/chores/today');
       if (!res.ok) throw new Error('chores lookup failed');
       var data = await res.json();
+      // The server's own word on the switch, for the one case the boot
+      // read and this read disagree (the switch flipped off under an open
+      // page): take the whole card out rather than show an empty one.
+      if (data.enabled === false) {
+        var area = panel.querySelector('.today-area-chores');
+        if (area) area.remove();
+        return;
+      }
       renderChores(panel, data.chores || [], !!data.chores_set_up);
     } catch (err) {
       console.warn('Chores lookup failed:', err);
@@ -1795,12 +1831,15 @@
     var listEl = panel.querySelector('#chores-list');
     var countEl = panel.querySelector('#chores-count');
     var setupLink = panel.querySelector('#chores-setup-link');
+    if (!listEl || !countEl) return;
     // Only offered to a household that's never been through chores setup —
     // once they have (a profile saved, or any chore exists), there's
     // nothing left to "set up", whether or not one happens to be due today.
-    // choresSetUp is omitted by toggleChore's re-renders (a checkbox tap
-    // doesn't change setup status), so the link is left exactly as
-    // loadChores last set it rather than guessed at here.
+    // choresSetUp is omitted by toggleChore's re-renders (a tick doesn't
+    // change setup status), so the link is left exactly as loadChores last
+    // set it rather than guessed at here. The card itself only exists for
+    // a household with the switch on (buildTodayPanel), so this link can
+    // never invite a house that can't see chores.
     if (setupLink && choresSetUp !== undefined) {
       setupLink.style.display = choresSetUp ? 'none' : 'block';
     }
@@ -1815,50 +1854,63 @@
     countEl.className = 'chores-count' + (ours.length && done === ours.length ? ' all-done' : '');
 
     if (!chores.length) {
-      listEl.innerHTML = '<div class="empty-row">Nothing due today.</div>';
+      // A house that has never set chores up gets the invitation alone —
+      // "No chores today" above "Want help with chores too?" would say
+      // the same thing twice (DESIGN_SYSTEM §8, restating). Otherwise one
+      // plain line: what is true, no tally, nothing about what slipped.
+      listEl.innerHTML = choresSetUp === false ? '' : '<div class="empty-row">No chores today.</div>';
       return;
     }
 
     listEl.innerHTML = chores.map(function (c) {
       var isDone = c.status === 'done';
+      // Whose it is (Loop Board "Chores v1: every chore has a chosen
+      // owner"): the owner's first name, whose turn it is on a shared
+      // chore, or "either of you". The server composes the label so this
+      // row and the Plan | Chores rows to come print the same thing.
+      var who = c.who_label ? '<span class="chore-who">' + escapeHtml(c.who_label) + '</span>' : '';
       // Somebody outside the house does this one. It keeps its place on
       // the day — we know Thursday is cleaner day — and loses the tick,
       // because a tick here means a person in this house did a thing.
       // `completable` is the server's word for that, so the row doesn't
-      // have to know what the modes mean.
+      // have to know what the modes mean. The empty spacer keeps the
+      // names lined up with the rows that do have a tick (the same
+      // .tick-empty the rest-of-today list uses for a move with no tick).
       if (c.outsourced || c.completable === false) {
         return (
           '<div class="chore-row is-outsourced" data-id="' + c.id + '">' +
             '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
             '<span class="pill pill-neutral chore-tag">Not us</span>' +
-            (c.who_label ? '<span class="chore-who">' + escapeHtml(c.who_label) + '</span>' : '') +
+            who +
+            '<span class="tick tick-empty" aria-hidden="true"></span>' +
           '</div>'
         );
       }
+      // The tick is the system's own (.tick/.tick-box, shell.css): a 44px
+      // button around a 20px ring, celadon when done — the same control
+      // as the rest-of-today rows above this card, so the two lists read
+      // as one screen. It replaced a 26px square with the handler on the
+      // square itself, which was under Rule 6's 44px and matched nothing
+      // else on Now once the moves redesign landed. Ivory-on-celadon is
+      // the one thing the palette forbids outright, and .tick's ink is
+      // --on-accent-ink, so the tick inherits a dark stroke.
       return (
         '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' +
-          '<span class="chore-checkbox" role="checkbox" aria-checked="' + isDone + '" tabindex="0">' +
-            // stroke follows the checkbox's own colour rather than being
-            // hardcoded white: ivory on a light accent is the one thing
-            // the palette forbids outright, and this tick was the
-            // instance the brand sweep missed (1.87:1).
-            (isDone ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : '') +
-          '</span>' +
           '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
-          // Whose it is (Loop Board "Chores v1: every chore has a chosen
-          // owner"): the owner's first name, whose turn it is on a shared
-          // chore, or "either of you". The server composes the label so
-          // this row and the Plan | Chores rows to come print the same
-          // thing.
-          (c.who_label ? '<span class="chore-who">' + escapeHtml(c.who_label) + '</span>' : '') +
+          who +
+          '<button type="button" class="tick chore-tick' + (isDone ? ' is-done' : '') + '" ' +
+            'aria-pressed="' + (isDone ? 'true' : 'false') + '" ' +
+            'aria-label="' + (isDone ? 'Put it back on the list' : 'Tick it off') + '">' +
+            '<span class="tick-box">' + TICK_ICON + '</span>' +
+          '</button>' +
         '</div>'
       );
     }).join('');
 
     listEl.querySelectorAll('.chore-row:not(.is-outsourced)').forEach(function (row) {
-      var toggle = function () { toggleChore(panel, row, chores); };
-      row.querySelector('.chore-checkbox').addEventListener('click', toggle);
-      row.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      row.querySelector('.chore-tick').addEventListener('click', function () {
+        toggleChore(panel, row, chores);
+      });
     });
   }
 
@@ -13795,6 +13847,11 @@
       } else if (action.tab === 'today' && panels.today && panels.today.dataset.built) {
         loadNeedsYou(panels.today);
         loadTodayMoves(panels.today);
+        // The chore tools (app/main.py's _CHORE_TOOLS) are tagged `today`,
+        // and the chores card is a third read of that tab — "the bins are
+        // done" said in chat has to strike the row through here without
+        // a reload. A no-op on a panel with no card (the switch off).
+        loadChores(panels.today);
       }
     });
   }
@@ -14333,7 +14390,7 @@
   // the "{name} approved the week" notification is no longer shown to the
   // adult who approved. Each adult having their own secret is a later
   // slice; this trusts the device.
-  var shellWho = { member: null, adults: [], loaded: false };
+  var shellWho = { member: null, adults: [], chores_enabled: false, loaded: false };
   var whoScreenEl = null;
   var whoResolve = null;
 
@@ -14344,6 +14401,10 @@
       var data = await res.json();
       shellWho.member = data.member || null;
       shellWho.adults = data.adults || [];
+      // The household's Chores switch (see choresEnabled, top of file).
+      // Missing on an older server reads as off — the safe side for a
+      // beta that is meals-only by default.
+      shellWho.chores_enabled = !!data.chores_enabled;
       shellWho.loaded = true;
       return data;
     } catch (err) {

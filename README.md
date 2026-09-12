@@ -169,16 +169,22 @@ anchor per meal type, not a cluttered one-off per message.
    (`app/main.py`, `chores_setup_page`), and the backend routes are unchanged. Every chip
    group still has a "type your own" option for anything not listed.
 
-   **Corrected again 2026-09-08: Today no longer renders the chores card
-   unconditionally.** Emily decided (option 1b on the Chores ticket) that
-   the beta is meals-only, so the card is now hidden behind
-   `SHOW_CHORES_ON_TODAY` (`static/shell.js`, currently `false`) — when
-   false, neither the card nor its `loadChores`/`/api/chores/today`
-   (`app/main.py:1238`) fetch runs. `chores-setup.html` remains
-   **orphaned**: nothing anywhere links to it, and that was already true
-   before this change. Flipping `SHOW_CHORES_ON_TODAY` back is the whole
-   reversal on the Today side; whether to link the setup page is separately
-   still open on the Chores ticket, Emily's call.
+   **Corrected again 2026-09-12: whether Now shows the chores card is a
+   per-household switch.** Emily decided on 2026-09-08 (option 1b on the
+   Chores ticket) that the beta is meals-only, and for four days the card
+   was hidden for everyone by a `SHOW_CHORES_ON_TODAY` constant in
+   `static/shell.js`. That constant is gone: the switch is
+   `households.chores_enabled` (off by default for every household),
+   flipped by `python set_chores_enabled.py on --household 1` (on Railway:
+   `railway ssh -- python set_chores_enabled.py on --household 1`), so
+   Chores can be on in Emily's house and off in the tester's at the same
+   time. The shell reads it off `/api/whoami`; with it off, neither the
+   card nor its `loadChores`/`/api/chores/today` fetch runs, no link into
+   `chores-setup.html` renders, and the chores chat tools decline with one
+   sentence. With it on, the card shows today's chores (whole household,
+   owner's first name, an outsourced row with no tick) with the "Want
+   help with chores too? Set them up" link for a house that has never
+   been through setup — so `/chores-setup` is no longer orphaned there.
 
    After onboarding you land in the app shell and can talk to the assistant
    from the ask sheet on any tab:

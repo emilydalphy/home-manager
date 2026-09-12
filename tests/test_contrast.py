@@ -123,21 +123,25 @@ def test_the_completed_chore_tick_is_not_hardcoded_white():
     It was invisible rather than subtle. The tick now inherits the
     checkbox's colour, so it can never disagree with the palette again.
     """
+    # Since 2026-09-12 the chores rows draw the shared .tick (the same
+    # control as the rest-of-today rows), whose glyph is TICK_ICON — so the
+    # rule is pinned on that icon and on .tick.is-done's ink.
     shell_js = (STATIC / "shell.js").read_text()
-    tick = re.search(r"chore-checkbox.*?</svg>", shell_js, re.DOTALL)
-    assert tick, "the chore checkbox no longer renders a tick — update this test"
+    assert 'class="tick chore-tick' in shell_js, "the chore row no longer renders the shared tick — update this test"
+    tick = re.search(r"var TICK_ICON =.*?</svg>", shell_js, re.DOTALL)
+    assert tick, "TICK_ICON no longer renders an svg — update this test"
     assert 'stroke="#fff"' not in tick.group(0), (
-        "the completed-chore tick is hardcoded white again; ivory on a light "
+        "the tick is hardcoded white again; ivory on a light "
         "accent is the one thing the palette forbids outright"
     )
     assert 'stroke="currentColor"' in tick.group(0)
 
     shell_css = (STATIC / "shell.css").read_text()
-    done_checkbox = re.search(
-        r"\.chore-row\.done \.chore-checkbox \{[^}]*\}", shell_css, re.DOTALL
+    done_tick = re.search(
+        r"\.tick\.is-done \.tick-box \{[^}]*\}", shell_css, re.DOTALL
     )
-    assert done_checkbox and "--on-accent-ink" in done_checkbox.group(0), (
-        "the checked chore checkbox must set a dark ink for its tick to inherit"
+    assert done_tick and "--on-accent-ink" in done_tick.group(0), (
+        "the done tick must set a dark ink for its glyph to inherit"
     )
 
 

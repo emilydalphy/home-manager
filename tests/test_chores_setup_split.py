@@ -161,6 +161,7 @@ def test_chores_today_reports_whether_setup_has_happened(signed_in):
     without a second round trip. False until a profile is saved or a chore
     exists; true afterward, even with nothing due today.
     """
+    tools.set_chores_enabled(True)
     res = signed_in.get("/api/chores/today")
     assert res.status_code == 200
     assert res.json()["chores_set_up"] is False
@@ -257,33 +258,40 @@ def test_chores_setup_page_reuses_the_same_save_route():
     assert "/api/onboarding/chores-profile" in CHORES_SETUP
 
 
-def test_today_chores_card_is_hidden_behind_one_constant():
+def test_today_chores_card_is_gated_by_the_household_switch():
     """
     Emily decided 2026-09-08 (option 1b on the Chores ticket) that the
     beta is meals-only: Today's "Your chores" card must not render, and
-    must not fetch /api/chores/today, while Chores is unvalidated. That
-    is expressed as a single named constant in static/shell.js rather
-    than scattered conditionals, so flipping it back on is a one-line
-    change.
+    must not fetch /api/chores/today, while Chores is unvalidated. Until
+    2026-09-12 that was a single constant in static/shell.js, false for
+    every household; it is a per-household switch now (Loop Board
+    "Chores v1: Who sees it — a per-household switch"): households.
+    chores_enabled, read off /api/whoami into shellWho and consulted
+    through one function, choresEnabled().
 
-    This pins three things at the source level: the constant exists and
-    is currently false, the chores card markup is only emitted when it is
-    true (not merely hidden via CSS), and the loadChores() call — the one
-    that hits /api/chores/today — is gated by the same constant so a
-    false flag means zero network traffic, not just an invisible card.
+    This pins three things at the source level: the constant is gone (a
+    reintroduced global would put the tester's house back in step with
+    Emily's), the chores card markup is only emitted behind
+    choresEnabled() (not merely hidden via CSS), and the loadChores()
+    call — the one that hits /api/chores/today — is behind the same
+    function, so a house with the switch off makes zero chores requests.
+    The behaviour itself (built vs. not built, request vs. no request)
+    is exercised under node in tests/test_chores_switch.py.
     """
-    m = re.search(r"var\s+SHOW_CHORES_ON_TODAY\s*=\s*(true|false)\s*;", SHELL_JS)
-    assert m, "SHOW_CHORES_ON_TODAY constant not found in static/shell.js"
-    assert m.group(1) == "false", "chores must stay hidden on Today until Chores is validated"
+    assert "SHOW_CHORES_ON_TODAY" not in SHELL_JS.replace(
+        "SHOW_CHORES_ON_TODAY = false sat in this slot", ""
+    ), "the global chores constant is back — the switch is per household now"
+    assert "function choresEnabled()" in SHELL_JS
+    assert "shellWho.chores_enabled" in SHELL_JS
 
     # The chores card markup (the div that loadChores/renderChores fill
-    # in) is only built when the flag is true — not present unconditionally.
+    # in) is only built when the switch is on — not present unconditionally.
     chores_card_idx = SHELL_JS.index('class="shell-card chores-card"')
-    guard_idx = SHELL_JS.rindex("SHOW_CHORES_ON_TODAY ?", 0, chores_card_idx)
-    assert guard_idx != -1, "chores card markup must be gated by SHOW_CHORES_ON_TODAY"
+    guard_idx = SHELL_JS.rindex("choresEnabled() ?", 0, chores_card_idx)
+    assert guard_idx != -1, "chores card markup must be gated by choresEnabled()"
 
     # loadChores() — the fetch('/api/chores/today') caller — is only
-    # invoked when the flag is true, so a false flag skips the request.
+    # invoked when the switch is on, so an off house skips the request.
     load_chores_call_idx = SHELL_JS.index("loadChores(panel)", SHELL_JS.index("await Promise.all"))
-    call_guard_idx = SHELL_JS.rindex("SHOW_CHORES_ON_TODAY ?", 0, load_chores_call_idx)
-    assert call_guard_idx != -1, "the loadChores(panel) call site must be gated by SHOW_CHORES_ON_TODAY"
+    call_guard_idx = SHELL_JS.rindex("choresEnabled() ?", 0, load_chores_call_idx)
+    assert call_guard_idx != -1, "the loadChores(panel) call site must be gated by choresEnabled()"

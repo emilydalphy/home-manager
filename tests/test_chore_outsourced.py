@@ -472,6 +472,7 @@ def test_a_legacy_row_with_no_mode_is_still_ours(two_adults):
 
 def test_the_today_route_refuses_a_tick_on_an_outsourced_chore(signed_in, two_adults):
     """Catch: over the real HTTP route, not just the tool."""
+    tools.set_chores_enabled(True)
     tools.add_chore("Bathrooms", mode="outsourced", outsourced_to="Maria")
     tools.generate_chore_schedule(days_ahead=0)
     res = signed_in.get("/api/chores/today")
@@ -632,15 +633,21 @@ def _slice(js: str, start: str, end: str) -> str:
 
 def test_the_now_card_draws_the_tag_and_no_tick():
     """
-    Catch: source markers for the hidden Now card (SHOW_CHORES_ON_TODAY is
-    still false). The Plan | Chores screen is its own card; what this one
-    owes is that the row that DOES exist prints honestly.
+    Catch: source markers for the Now card (per-household since 2026-09-12;
+    the card renders only where the switch is on). The Plan | Chores
+    screen is its own card; what this one owes is that the row that DOES
+    exist prints honestly.
     """
     body = _slice(SHELL_JS, "function renderChores(", "\n  function ")
     outsourced_branch = _slice(body, "if (c.outsourced || c.completable === false)", "return (\n        '<div class=\"chore-row'")
-    assert "chore-checkbox" not in outsourced_branch, "no tick on a chore nobody here does"
+    assert "chore-tick" not in outsourced_branch, "no tick on a chore nobody here does"
+    assert "tick-empty" in outsourced_branch, "a spacer keeps the names lined up with the ticked rows"
     assert "pill pill-neutral" in outsourced_branch, "a quiet label, never apricot (Rule 5)"
-    assert "who_label" in outsourced_branch
+    # Who does it — the same `who` span every row prints, built from the
+    # server's who_label above the branch since the rows were re-cut
+    # against the shared tick (2026-09-12).
+    assert "who_label" in body[:body.index("if (c.outsourced || c.completable === false)")]
+    assert "who +" in outsourced_branch
     # The tick handler is wired to the rows that have one.
     assert ".chore-row:not(.is-outsourced)" in body
 

@@ -6,6 +6,19 @@ CREATE TABLE IF NOT EXISTS households (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     goals TEXT NOT NULL DEFAULT '', -- freeform, e.g. "stay on top of chores, eat healthier"
+    -- Whether Chores is switched on for THIS house (Loop Board "Chores v1:
+    -- Who sees it — a per-household switch", Emily, 2026-09-12). The beta
+    -- is meals-only for the tester while Chores is validated on real weeks
+    -- in Emily's own house, so this is per household rather than the
+    -- global front-end constant it replaces (SHOW_CHORES_ON_TODAY in
+    -- static/shell.js, retired the same day). 0 for every household until
+    -- somebody flips it — set_chores_enabled.py at the repo root is the
+    -- switch; there is no screen for it. While 0: no chores card on Now,
+    -- no invitation into /chores-setup, /api/chores/today answers empty
+    -- with enabled: false, and the chores chat tools decline. The chores
+    -- rows themselves are never touched by the switch, so turning it on
+    -- for a household that already has chores shows them at once.
+    chores_enabled INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -1767,24 +1767,32 @@ def chores_today():
     chat round-trip. See the Step 2 note in the README's build-order log
     for why this exists despite that doc's "no new endpoints" line.
 
-    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
-    is meals-only, so the Today card this endpoint feeds is hidden behind
-    `SHOW_CHORES_ON_TODAY` in static/shell.js — while that flag is false,
-    shell.js never calls this route at all (no wasted request), so in
-    practice nothing hits this endpoint from the shell right now. The
-    route itself, `chores_set_up`, and the rest of the chores backend are
-    untouched; flipping that one constant back to true is the whole
-    reversal, no server change needed.
+    Gated per household since 2026-09-12 (Loop Board "Chores v1: Who sees
+    it — a per-household switch", Emily): `households.chores_enabled` is
+    the switch, and it replaced the global `SHOW_CHORES_ON_TODAY` constant
+    in static/shell.js that hid the card for everyone from 2026-09-08. The
+    shell reads the switch off /api/whoami at boot and, when it is off,
+    neither builds the card nor calls this route — so the gate here is the
+    belt to that pair of braces: an older cached shell, a bookmark, a
+    curious tester. While off this answers **200 with an empty list and
+    `enabled: false`** rather than a 4xx, deliberately: the shell's
+    loadChores treats any non-2xx as "couldn't load chores right now" and
+    prints that into a card, and an error line about a feature the house
+    doesn't have is worse than a quiet empty answer. `chores_set_up` is
+    reported honestly (false) rather than forced true to suppress the
+    invitation — the shell hides the whole card off `enabled` instead.
 
     `chores_set_up` rides along on this same response (Emily, 2026-09-05,
-    20a: chores setup moved out of onboarding onto its own page) so a
-    future Today card could decide whether to offer "Want help with
-    chores too? Set them up" without a second round-trip. True once
-    either a chores profile was saved or any chore actually exists —
-    either one means the household already went through setup, even if
-    nothing happens to be due today.
+    20a: chores setup moved out of onboarding onto its own page) so the
+    Now card can decide whether to offer "Want help with chores too? Set
+    them up" without a second round-trip. True once either a chores
+    profile was saved or any chore actually exists — either one means the
+    household already went through setup, even if nothing happens to be
+    due today.
     """
     try:
+        if not tools.chores_enabled():
+            return {"chores": [], "chores_set_up": False, "enabled": False}
         chores = tools.get_chores_due_today()
         profile = tools.get_chores_profile()
         household = tools.get_household_setup_status()
@@ -1792,12 +1800,23 @@ def chores_today():
     except Exception as e:
         logger.exception("Today's-chores lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"chores": chores, "chores_set_up": chores_set_up}
+    return {"chores": chores, "chores_set_up": chores_set_up, "enabled": True}
 
 
 @app.post("/api/chores/{instance_id}/status")
 def set_chore_status(instance_id: int, req: ChoreStatusRequest):
-    """Toggle a chore instance done/pending directly from the Today screen's chores card (no chat round-trip needed)."""
+    """
+    Toggle a chore instance done/pending directly from the Today screen's
+    chores card (no chat round-trip needed).
+
+    A write, so unlike the read above it refuses outright when Chores
+    isn't switched on for the house (403, the one sentence in
+    tools.CHORES_OFF_MESSAGE): nothing on screen can send this while the
+    switch is off, so a request that arrives anyway is not the shell's,
+    and it must not tick a chore in a house that can't see it to untick.
+    """
+    if not tools.chores_enabled():
+        raise HTTPException(status_code=403, detail=tools.CHORES_OFF_MESSAGE)
     try:
         result = tools.set_chore_instance_status(instance_id, req.status)
     except ValueError as e:
@@ -4341,15 +4360,15 @@ def chores_setup_page():
     /api/onboarding/household and /api/onboarding/chores-profile routes
     onboarding always used.
 
-    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
-    is meals-only, so Today's chores card is hidden behind
-    `SHOW_CHORES_ON_TODAY` in static/shell.js -- there was never a link
-    from that card to here anyway (that "Want help with chores too? Set
-    them up" string exists in no frontend file). This page is not linked
-    from anywhere in static/; it is live but orphaned, reachable only by
-    visiting /chores-setup directly. Whether to surface Chores at all is
-    Emily's call, open on the Chores ticket; flipping the flag back is
-    the whole reversal on the Today side.
+    Reachable by URL for every household, on purpose. The one link into
+    it — "Want help with chores too? Set them up" on Now's chores card
+    (renderChores, static/shell.js) — renders only for a household whose
+    `chores_enabled` switch is on (Loop Board "Chores v1: Who sees it — a
+    per-household switch", Emily, 2026-09-12) and that has never been
+    through setup. A house with the switch off gets no link and no card,
+    but this page and its save routes still work if somebody types the
+    address, which is what the card that hid it said should stay true;
+    the switch decides what Now shows, not what exists.
     """
     return FileResponse(os.path.join(static_dir, "chores-setup.html"))
 
@@ -4854,10 +4873,20 @@ def whoami(request: Request):
     shell acts on: true only when nobody is picked AND there is more than
     one adult to choose from. A one-adult household never sees the
     question.
+
+    `chores_enabled` is the household's Chores switch (Loop Board "Chores
+    v1: Who sees it — a per-household switch", Emily, 2026-09-12). It
+    rides here rather than on its own route because the shell already
+    reads this one before any tab renders (ensureWhoPicked → loadWhoami,
+    static/shell.js), so buildTodayPanel can decide whether to build the
+    chores card at all — and skip /api/chores/today entirely — without a
+    second round-trip or a flash of a card that then disappears.
     """
     current = tools.household_id()
     conn = get_conn()
-    row = conn.execute("SELECT name FROM households WHERE id = ?", (current,)).fetchone()
+    row = conn.execute(
+        "SELECT name, chores_enabled FROM households WHERE id = ?", (current,)
+    ).fetchone()
     conn.close()
     member = tools.current_member()
     adults = tools.household_adults()
@@ -4867,6 +4896,7 @@ def whoami(request: Request):
         "member": member,
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,
+        "chores_enabled": bool(row and row["chores_enabled"]),
     }
 
 

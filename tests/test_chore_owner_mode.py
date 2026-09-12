@@ -610,6 +610,7 @@ def test_a_first_name_is_enough_to_credit_a_tick(two_adults):
 
 
 def test_the_now_card_tick_records_the_picked_adult_and_unticking_clears_it(client, two_adults):
+    tools.set_chores_enabled(True)
     tools.add_chore("Bins", mode="whoever")
     instance_id = tools.schedule_chore_instance("Bins", datetime.date.today().isoformat())["instance_id"]
     client.post("/login", data={"password": "test-password", "next": "/"}, follow_redirects=False)
@@ -672,6 +673,7 @@ def test_either_of_you_is_anyone_when_there_are_not_two_adults():
 
 
 def test_the_today_route_serves_the_label(signed_in, two_adults):
+    tools.set_chores_enabled(True)
     tools.add_chore("Bathrooms", owner_name="Vineeth")
     tools.schedule_chore_instance("Bathrooms", datetime.date.today().isoformat())
     body = signed_in.get("/api/chores/today").json()
@@ -679,8 +681,8 @@ def test_the_today_route_serves_the_label(signed_in, two_adults):
     assert body["chores"][0]["completed_by"] is None
 
 
-def test_the_hidden_now_card_prints_the_owner_behind_its_flag():
-    assert "SHOW_CHORES_ON_TODAY = false" in SHELL_JS
+def test_the_now_card_prints_the_owner_behind_the_household_switch():
+    assert "function choresEnabled()" in SHELL_JS
     assert "c.who_label" in SHELL_JS
     assert 'class="chore-who"' in SHELL_JS
     assert ".chore-who" in SHELL_CSS
