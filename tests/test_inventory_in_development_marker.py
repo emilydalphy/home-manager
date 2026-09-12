@@ -19,8 +19,9 @@ with no separate desktop nav). "What we know" and "Inventory" are reached
 through Preferences now, exactly as on the phone, so the Kitchen tile is
 the only entry point this file still has to check.
 
-Two front-end constants gate all of it, same pattern as
-static/shell.js's existing SHOW_CHORES_ON_TODAY:
+Two front-end constants gate all of it, the pattern static/shell.js's
+SHOW_CHORES_ON_TODAY had until it became the per-household choresEnabled()
+switch on 2026-09-12:
   - INVENTORY_IN_DEVELOPMENT in static/shell.js (the two pills)
   - INVENTORY_IN_DEVELOPMENT in static/inventory.html (the sheet's note
     line) — a separate copy because inventory.html is a separate document
@@ -55,8 +56,9 @@ def test_shell_js_constant_exists_and_is_true():
 
 
 def test_shell_js_constant_declared_beside_other_shell_constants():
-    """Lives next to SHOW_CHORES_ON_TODAY, the flag it mirrors."""
-    chores_idx = SHELL_JS.index("var SHOW_CHORES_ON_TODAY")
+    """Lives next to choresEnabled (the per-household switch that replaced
+    the SHOW_CHORES_ON_TODAY constant this flag mirrored) and the bell."""
+    chores_idx = SHELL_JS.index("function choresEnabled()")
     flag_idx = SHELL_JS.index("var INVENTORY_IN_DEVELOPMENT")
     notif_idx = SHELL_JS.index("var SHOW_NOTIF_BELL")
     assert chores_idx < flag_idx < notif_idx

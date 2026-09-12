@@ -465,6 +465,13 @@ _MIGRATIONS = [
     # household can decline, not a migration writing down an answer nobody
     # actually gave.
     ("chores", "outsourced_to", "TEXT NOT NULL DEFAULT ''"),
+    # Loop Board "Chores v1: Who sees it — a per-household switch" (Emily,
+    # 2026-09-12). 0 on every existing household, deliberately including
+    # Emily's own: the switch replaces a front-end constant that was false
+    # for everyone, so "off everywhere" is exactly the state the app was
+    # already in, and turning a house on is a decision somebody makes
+    # (set_chores_enabled.py), not something a migration guesses at.
+    ("households", "chores_enabled", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

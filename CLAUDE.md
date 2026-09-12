@@ -122,18 +122,18 @@ single-meal screen) is a *step* of it. Meals is Plan only; the segmented
 control is gone. Everything Kitchen used to say about the household — "What
 we know" and "Something not working?" — is in a **Preferences** sheet behind
 a gear in the header of every root screen. See the 2026-09-08 decision-log
-entry for the whole shape. Chores still have no tab of their own. **Updated 2026-09-08 (Emily, option
-1b on the Chores ticket):** the beta is meals-only, so Today's "Your
-chores" card is hidden behind one front-end constant,
-`SHOW_CHORES_ON_TODAY` in `static/shell.js` (next to `REHEAT_ACTION_LABEL`),
-currently `false` — when false, `buildTodayPanel` neither renders the card
-nor calls `loadChores`, so `/api/chores/today` (`app/main.py:1238`) isn't
-requested either. Nothing else changed: `loadChores`/`renderChores`
-(`static/shell.js`), the chores backend, and the standalone,
-still-orphaned `/chores-setup` page (`app/main.py`, `chores_setup_page`)
-are all untouched, and flipping that one constant back to `true` is the
-whole reversal. Whether `/chores-setup` should be linked from anywhere
-remains open on the Chores ticket — Emily's call.
+entry for the whole shape. Chores still have no tab of their own. **Updated 2026-09-12 (branch
+`chores-switch-and-now-card`, two Loop Board cards):** whether a house
+sees Chores is a per-household switch, `households.chores_enabled` (off
+by default; `set_chores_enabled.py` flips it; `/api/whoami` carries it;
+`choresEnabled()` in `static/shell.js` reads it). The global
+`SHOW_CHORES_ON_TODAY` constant that hid Today's "Your chores" card for
+everyone from 2026-09-08 is gone. Off: no card, no `/api/chores/today`
+request, no link into `/chores-setup`, the two chores routes answer
+empty / 403, and the nine chores chat tools decline through one gate in
+`agent.run_agent_turn` (`CHORES_TOOLS`). On: the card is back at the foot
+of Now, re-cut against the tokens and the shared `.tick`. See the
+decision-log entry.
 
 **Cook-mode hands-free voice is hidden — Emily, 2026-09-08.** "Let's just
 drop the cook mode voice for now. Just hide it, and we can rebuild it
@@ -350,6 +350,59 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-12 — Chores is switched on per household, and the "Your
+  chores" card is back on Now where the switch is on. Branch
+  `chores-switch-and-now-card`, NOT merged at the time of writing.** Two
+  Loop Board cards, "Chores v1: Who sees it — a per-household switch"
+  (Emily: on in her house, off for the tester, so it is validated on real
+  weeks before it competes with the meal loop) and "Chores v1: Turn the
+  'Your chores' card on Now back on — and make it serve the story".
+  `households.chores_enabled INTEGER NOT NULL DEFAULT 0` in schema.sql
+  AND `_MIGRATIONS`; default off for every household including Emily's,
+  because that is the state the retired global constant already had
+  everyone in — turning a house on is a decision, not a migration's
+  guess. `python set_chores_enabled.py on --household 1` (Railway:
+  `railway ssh -- python set_chores_enabled.py on --household 1`), same
+  guard pattern as `create_household.py`; no admin UI. Read at request
+  time (`tools.chores_enabled()`), never cached. `/api/whoami` carries
+  it; `shellWho.chores_enabled` → `choresEnabled()` replaces
+  `SHOW_CHORES_ON_TODAY` in `buildTodayPanel` (card markup and the
+  `loadChores` call both gated, so an off house makes no
+  `/api/chores/today` request). **One gate for the nine chat tools**, at
+  the dispatch in `run_agent_turn` (`CHORES_TOOLS`), not nine wrapped
+  entries: the declined result is `is_error: True` with
+  `tools.CHORES_OFF_MESSAGE` ("Chores isn't switched on for your house
+  yet.") so `_turn_wrote_anything` never counts a declined `add_chore`
+  and no "Chores updated" card is drawn — and it is neither logged as a
+  failure nor written to `error_events`, so the morning report doesn't
+  read the tester asking about chores as a broken tool. Routes: `GET
+  /api/chores/today` answers **200 `{"chores": [], "chores_set_up":
+  false, "enabled": false}`** while off (a 4xx would print "Couldn't
+  load chores" into a card); `POST /api/chores/{id}/status` refuses with
+  403. `get_household_setup_status` now reports `chores_enabled` and
+  counts a house with people and the switch off as
+  `onboarding_complete` — before this the system prompt read a
+  members-only house as incomplete forever and opened every conversation
+  with the chores questions; one prompt line tells the model not to
+  offer chores in an off house. `/chores-setup` stays reachable by URL
+  (its save routes are ungated); the only link in renders behind the
+  switch. The card itself (ticket 2): re-cut against the tokens and its
+  neighbours rather than redesigned — `--rule`/`--plum-ink`/`--muted`
+  aliases → `--hairline`/`--ink`/`--ink-secondary`, 1px → 1.5px
+  hairline, the 26px `.chore-checkbox` (under Rule 6, handler on the
+  square) → the shared `.tick`/`.tick-box` at the row's end, `.tick-empty`
+  spacer on an outsourced row, 15px/700 name like `.rest-row-title`.
+  Empty line "Nothing due today." → **"No chores today."**; a house that
+  has never set chores up gets the invitation ("Want help with chores
+  too? Set them up", unchanged) alone rather than under an empty line
+  that says the same thing. `refreshStaleTabsFromActions`' `today` branch
+  now calls `loadChores` (the chore tools are tagged `today`; the card
+  went stale after "the bins are done" in chat). Left alone, flagged: the
+  empty moment's "Nothing on your list today." can sit under a chores
+  card with rows on a day with no meal moves — Emily's copy, her call.
+  37 tests in `tests/test_chores_switch.py` (35 red on main); 8 older
+  tests rewritten from the constant to the switch. Suite 3012.
+
 - **2026-09-11 — A draft whose week has ended is no longer the Plan tab's
   front page, and Plan and Now name ONE week. Branch
   `worktree-stale-draft`.** Seen on Friday 2026-09-11: Plan opened on "This
@@ -515,7 +568,9 @@ why*, not duplicating the diff.
   `SHOW_NOTIF_BELL`). One calm line at the top of the sheet: "Inventory is
   still being built. Nothing else in Pomona depends on it, so there's no
   need to keep it up to date." Gate is `INVENTORY_IN_DEVELOPMENT` beside
-  `SHOW_CHORES_ON_TODAY` in `shell.js` — **plus a second copy inside
+  `SHOW_CHORES_ON_TODAY` in `shell.js` (that constant became the
+  per-household `choresEnabled()` on 2026-09-12; the inventory flag still
+  sits beside it) — **plus a second copy inside
   `inventory.html`'s own script**, because that sheet is a separate
   document (standalone at `/inventory` and iframed into Kitchen) and can't
   see `shell.js`'s scope. Turning it off later is two one-line flips, not

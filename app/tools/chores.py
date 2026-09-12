@@ -48,6 +48,57 @@ NOBODY_IN_THE_HOUSE = "someone else"
 # particular — the opposite of a question nobody has answered yet.
 UNCLAIMED = "Your call"
 
+# What the app says when a house asks for chores and Chores isn't switched
+# on for it (Loop Board "Chores v1: Who sees it — a per-household switch",
+# Emily, 2026-09-12). The chat relays this sentence as it is — it is an
+# answer, not a crash, so it is written the way a person would say it
+# across the table and never mentions a setting, a flag or a beta. One
+# copy, read by the agent's tool gate and the two HTTP routes.
+CHORES_OFF_MESSAGE = "Chores isn't switched on for your house yet."
+
+
+def chores_enabled() -> bool:
+    """
+    Is Chores switched on for the household this request is bound to?
+
+    Read at request time, never cached: the switch is flipped from a
+    script while the app is running (set_chores_enabled.py), and the next
+    request has to see it. Reads the `households` row rather than anything
+    chores-shaped on purpose — a house with chores rows and the switch off
+    is a real state (the tester's house after a chat turn that slipped
+    through before the gate existed, or Emily's house with the switch
+    flipped back off to compare), and the rows must not be what decides.
+    A missing household row reads as off, the same way every other
+    default here leans towards showing the tester nothing extra.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT chores_enabled FROM households WHERE id = ?", (household_id(),)
+    ).fetchone()
+    conn.close()
+    return bool(row and row["chores_enabled"])
+
+
+def set_chores_enabled(on: bool, *, household: int | None = None) -> dict:
+    """
+    Flip the switch for one household. Not an agent tool — the whole point
+    of the switch is that the person running the beta decides which house
+    sees Chores, and a chat turn in the tester's house must not be able to
+    turn it on for her. The script at the repo root is the only caller
+    today; `household` lets it name a house without binding a request
+    context, and defaults to the bound one so tests can call it plainly.
+    """
+    target = household if household is not None else household_id()
+    conn = get_conn()
+    cur = conn.execute(
+        "UPDATE households SET chores_enabled = ? WHERE id = ?", (1 if on else 0, target)
+    )
+    conn.commit()
+    conn.close()
+    if cur.rowcount == 0:
+        raise ValueError(f"There is no household with id {target}.")
+    return {"household_id": target, "chores_enabled": bool(on)}
+
 
 def set_chores_profile(
     home_type: str = "",

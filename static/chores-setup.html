@@ -22,14 +22,16 @@
     calls carried over as-is, not rebuilt), meant to be reached afterward
     instead of being forced on every household on day one.
 
-    UPDATED 2026-09-08 (Emily, option 1b on the Chores ticket): the beta
-    is meals-only, so Today's chores card is hidden behind
-    SHOW_CHORES_ON_TODAY in static/shell.js -- there was never a link
-    from that card to here anyway (that "Want help with chores too? Set
-    them up" string is in no frontend file). Nothing links here. The page
-    works if you visit it directly, but a household cannot get to it.
-    Whether to surface Chores at all is Emily's call; flipping the flag
-    back on Today is the whole reversal on that side.
+    How a household gets here (2026-09-12, Loop Board "Chores v1: Who
+    sees it — a per-household switch"): the one link in is "Want help with
+    chores too? Set them up" on Now's chores card (renderChores,
+    static/shell.js), which exists only for a household whose Chores
+    switch (households.chores_enabled, set_chores_enabled.py) is on and
+    that has never been through this page. A house with the switch off
+    has no link and no card; this page still works if the address is
+    typed, on purpose. Between 2026-09-08 and 09-12 the card was hidden
+    for everyone by a SHOW_CHORES_ON_TODAY constant in shell.js, and
+    nothing linked here at all.
 
     Styles below are copied from onboarding.html's <style> block — same
     look, since this is the same questionnaire, just relocated.

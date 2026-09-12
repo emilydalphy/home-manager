@@ -30,20 +30,32 @@ def get_household_setup_status() -> dict:
         "SELECT id, name, pet_type FROM pets WHERE household_id = ?", (household_id(),)
     ).fetchall()
     household = conn.execute(
-        "SELECT goals FROM households WHERE id = ?", (household_id(),)
+        "SELECT goals, chores_enabled FROM households WHERE id = ?", (household_id(),)
     ).fetchone()
     chore_count = conn.execute(
         "SELECT COUNT(*) AS c FROM chores WHERE household_id = ? AND active = 1", (household_id(),)
     ).fetchone()["c"]
     conn.close()
+    # Whether Chores is switched on for this house (Loop Board "Chores v1:
+    # Who sees it — a per-household switch", Emily, 2026-09-12). The
+    # system prompt reads `onboarding_complete` to decide whether to open
+    # with the chores questions, and before the switch existed a house
+    # with members and no chores was "incomplete" forever — which for the
+    # meals-only tester meant the assistant offering to set up chores at
+    # the start of every conversation. With the switch off there is no
+    # chores setup to be incomplete, so the house counts as done once it
+    # has people in it; the chores tools themselves decline behind
+    # agent.py's gate if the model reaches for them anyway.
+    chores_on = bool(household and household["chores_enabled"])
     return {
         "has_members": len(members) > 0,
         "members": [dict(m) for m in members],
         "pets": [dict(p) for p in pets],
         "goals": household["goals"] if household else "",
+        "chores_enabled": chores_on,
         "has_chores": chore_count > 0,
         "chore_count": chore_count,
-        "onboarding_complete": len(members) > 0 and chore_count > 0,
+        "onboarding_complete": len(members) > 0 and (chore_count > 0 or not chores_on),
     }
 
 

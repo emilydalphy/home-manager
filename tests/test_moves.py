@@ -588,8 +588,9 @@ def test_the_bell_is_gone_from_the_ui_but_not_from_the_codebase():
     Emily, 2026-09-08: the notifications feed leaves Today. Everything
     time-bound it carried is a move now, and a second inbox beside the
     timeline is what the redesign existed to remove. Gated behind one
-    constant rather than deleted, the same shape as SHOW_CHORES_ON_TODAY —
-    the routes and the panel code stay, so this is reversible in one line.
+    constant rather than deleted, the same shape the chores card had until
+    it became a per-household switch on 2026-09-12 — the routes and the
+    panel code stay, so this is reversible in one line.
     """
     assert "var SHOW_NOTIF_BELL = false;" in SHELL_JS
     assert "if (!SHOW_NOTIF_BELL) return;" in SHELL_JS, "loadNotifications should not fetch a feed nobody can open"
@@ -624,8 +625,10 @@ def test_today_still_has_no_day_rail_and_keeps_the_open_dinner_card():
     assert "panel._openDinnerCard" in SHELL_JS
 
 
-def test_chores_stay_gated_off_rather_than_being_swept_away():
-    assert "var SHOW_CHORES_ON_TODAY = false;" in SHELL_JS
+def test_chores_stay_gated_rather_than_being_swept_away():
+    """Per household since 2026-09-12 (choresEnabled reads the switch off
+    /api/whoami); the card's code is still here, not deleted."""
+    assert "function choresEnabled()" in SHELL_JS
     assert "function renderChores(" in SHELL_JS
 
 

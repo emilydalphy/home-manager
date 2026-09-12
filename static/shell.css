@@ -394,6 +394,11 @@ html, body {
 }
 .today-area-chores { display: flex; flex-direction: column; gap: 12px; }
 .today-area-rest { display: flex; flex-direction: column; gap: 12px; }
+/* An empty needs-you band or rest list still takes its 12px of gap in the
+   flex column, which only ever showed once something could follow them:
+   with the chores card on (2026-09-12) a quiet day put the card ~40px
+   under the band for no reason a reader could see. */
+.today-area-needsyou:empty, .today-area-rest:empty { display: none; }
 
 /* ---------- Next up (Today, 2026-09-08) ----------
    The compact form of .dinner-hero: about a third of the screen rather than
@@ -993,15 +998,24 @@ html, body {
 .btn-sand:hover { background: var(--sand-deep); }
 
 /* Your chores */
-/* Chores are the quiet line at the bottom of Today: a list, not a third
-   rounded rectangle. Dropping the card is the "vary width, height and fill
-   weight" half of breaking the uniform stack. */
+/* Chores are the quiet line at the foot of Now: a list under a hairline,
+   not a third rounded rectangle. Dropping the card fill is the "vary
+   width, height and fill weight" half of breaking the uniform stack — and
+   it is also what keeps a chore from competing with tonight's dinner or
+   the needs-you band: no fill, no apricot, no dock, ticks are the whole
+   interaction (DESIGN_SYSTEM §6: Now has no primary action of its own).
+   Brought back per household on 2026-09-12 (Loop Board "Chores v1: Turn
+   the 'Your chores' card on Now back on"); built 2026-09-08 before nav v2
+   and the tick component, so the rows below were re-cut against the
+   rest-of-today list above them — same 14px inset, same 1.5px hairline,
+   same 15px/700 title, same .tick at the row's end — rather than left as
+   the one list on the screen that looked like a different app. */
 .chores-card {
   background: none;
   border: none;
   border-top: 1.5px solid var(--hairline);
   border-radius: 0;
-  padding: 14px 2px 0;
+  padding: 14px 14px 0;
 }
 .chores-header {
   display: flex;
@@ -1030,67 +1044,54 @@ html, body {
 .chore-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 52px;
-  border-bottom: 1px solid var(--rule);
-  cursor: pointer;
+  gap: 8px;
+  min-height: 52px;
+  border-bottom: 1.5px solid var(--hairline);
 }
 .chore-row:last-child { border-bottom: none; }
-.chore-checkbox {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 2px solid var(--ink-done-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-/*
-  The tick inside a completed chore. Its SVG used to hardcode stroke="#fff";
-  it now takes `currentColor` so the colour lives here and can follow theme.
-
-  Fixed 2026-09-03 (was the light-mode RULE ONE violation stage 3 flagged
-  and deliberately left in place, at 1.87:1): dark spruce ink on a light
-  accent fill, as the palette requires everywhere else. Now matches what
-  the dark-mode block below already did for the same element.
-*/
-.chore-row.done .chore-checkbox {
-  background: var(--good);
-  border-color: var(--good);
-  color: var(--on-accent-ink);
-}
+/* The tick is the shared .tick/.tick-box (see "The tick" above): 44px of
+   tap target around a 20px ring, celadon with --on-accent-ink when done.
+   It used to be a 26px square of its own here (.chore-checkbox), which
+   was under Rule 6 and the only square tick on Now; .chore-tick is a hook
+   for the row's handler, not a restyle. */
+.chore-row .tick { margin-right: -12px; }
 .chore-name {
   font-family: var(--font-body);
+  font-weight: 700;
   font-size: 15px;
-  color: var(--plum-ink);
+  color: var(--ink);
   flex: 1;
+  min-width: 0;
 }
-/* Whose chore it is — a quiet first name at the row's end. */
+/* Whose chore it is — a quiet first name before the tick, the same
+   12px/600 secondary ink the rest-of-today rows use for their detail. */
 .chore-who {
   flex-shrink: 0;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 12px;
   color: var(--ink-secondary);
 }
 /* A chore somebody outside the house does (Loop Board "Chores v1: tag a
-   chore as outsourced"). No checkbox, so the name starts where the other
-   rows' names do and the row still reads as part of the same list; the
-   cursor goes back to default because there is nothing here to tap. The
-   tag is .pill-neutral (celadon-tint, the same quiet label Inventory's
-   "In development" uses) and never apricot — this is a fact about the
-   row, not the screen's one action. */
-.chore-row.is-outsourced { cursor: default; padding-left: 38px; }
+   chore as outsourced"). No tick — an empty .tick-empty spacer holds its
+   place so the names line up — and the cursor stays default because
+   there is nothing here to tap. The tag is .pill-neutral (celadon-tint,
+   the same quiet label Inventory's "In development" uses) and never
+   apricot — this is a fact about the row, not the screen's one action. */
+.chore-row.is-outsourced { cursor: default; }
 .chore-tag { flex-shrink: 0; }
 /* --ink-done, not --faded: this IS a struck-out completed list item, and
    --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
    Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */
 .chore-row.done .chore-name { color: var(--ink-done); text-decoration: line-through; }
+/* The way into /chores-setup, for a house that has never been through it.
+   .week-setup-link's own inset is for the Meals tab; here the card's
+   padding already places it, so it sits flush with the names. */
+.chores-card .week-setup-link { padding-left: 0; padding-right: 0; }
 .empty-row {
   font-family: var(--font-body);
   font-size: 15px;
-  color: var(--muted);
+  color: var(--ink-secondary);
   padding: 14px 0;
 }
 
@@ -5738,13 +5739,11 @@ span.cook-week-name { cursor: default; }
   input::placeholder,
   textarea::placeholder { color: var(--ink-placeholder); }
 
-  /* The completed-chore tick. Celadon is a light accent in BOTH modes, so
-     RULE ONE applies to it here: dark ink, not white. Light mode's own
-     1.87:1 white-on-celadon instance (flagged by stage 3, out of scope for
-     that stage) was fixed 2026-09-03 to the same --on-accent-ink value, so
-     this rule is now redundant with the base rule above but kept for
-     clarity — 8.46:1 either way. */
-  .chore-row.done .chore-checkbox { color: var(--on-accent-ink); }
+  /* The completed-chore tick used to need its own dark-mode rule here
+     (.chore-row.done .chore-checkbox, --on-accent-ink, 8.46:1). Since
+     2026-09-12 the chores rows use the shared .tick, whose .is-done rule
+     above already sets --on-accent-ink in both modes — RULE ONE, dark ink
+     on a light accent — so there is nothing left to override. */
 }
 
 /* ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------

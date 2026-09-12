@@ -231,9 +231,10 @@ def test_plan_tab_labels_a_reheat_as_leftovers():
 
 def test_chores_setup_stays_reachable_from_today():
     """Chores setup moved out of first-run onboarding onto its own page, so
-    the Today chores card carries the only way back to it. Currently inside
-    the SHOW_CHORES_ON_TODAY gate (beta is meals-only) — the link must still
-    exist in the source so it comes back with the card."""
+    the Today chores card carries the only way back to it. Inside the
+    per-household choresEnabled() gate since 2026-09-12 (it was a global
+    SHOW_CHORES_ON_TODAY constant before that) — the link must still exist
+    in the source so it renders with the card wherever the switch is on."""
     _assert_in("id=\"chores-setup-link\"", SHELL_JS, "the chores-setup link", "shell.js")
     _assert_in(
         "Want help with chores too? Set them up",
