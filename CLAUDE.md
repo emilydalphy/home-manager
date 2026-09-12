@@ -133,7 +133,11 @@ request, no link into `/chores-setup`, the two chores routes answer
 empty / 403, and the nine chores chat tools decline through one gate in
 `agent.run_agent_turn` (`CHORES_TOOLS`). On: the card is back at the foot
 of Now, re-cut against the tokens and the shared `.tick`. See the
-decision-log entry.
+decision-log entry. **Also 2026-09-12 (branch `plan-chores-toggle`):
+Plan has a Meals | Chores control where the switch is on — Chores is a
+state of the Plan root (`weekState.step === 'chores'`), a grouped list
+(Today / This week / Coming up by rhythm) off `GET /api/chores/pending`;
+see that entry.**
 
 **Cook-mode hands-free voice is hidden — Emily, 2026-09-08.** "Let's just
 drop the cook mode voice for now. Just hide it, and we can rebuild it
@@ -349,6 +353,77 @@ Newest first. Keep entries terse: one line of fact, one line of why. Full
 detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
+
+- **2026-09-12 — Plan gets a Meals | Chores toggle showing what's due.
+  Branch `plan-chores-toggle`, NOT merged at the time of writing.** Loop
+  Board "Chores v1: Plan gets a Meals | Chores toggle showing what's due"
+  (Emily, 2026-09-11: a grouped LIST, not a week grid — "today, this
+  week, and then the other ones would likely become monthly, bi-monthly,
+  or semi-annually"). Chores is a **state of the Plan root**: a new
+  value of `weekState.step` (`'chores'`), a sibling of `'week'` in
+  `renderMealsStep`, so it keeps the band and the gear, has no head or
+  crumb of its own, and inherits history and the back gesture from
+  `goMealsStep` (Meals → Chores pushes one entry; Chores → Meals
+  `replace`s, so flipping never stacks). The control is `.wk-seg` copied
+  from the review step (`planModeSegHtml`, hook class `.plan-mode-seg`),
+  in a new `#week-mode-slot` under the band, rendered only on the root
+  and only with `choresEnabled()` — off, Plan is byte-identical. The
+  band on Chores keeps the week's dates and "This week" and drops the
+  meal plan's chip and line (`planChoresBandParts`). **One read per
+  chore, not per instance:** new `GET /api/chores/pending` →
+  `tools.get_chores_pending` (additive, beside `get_chores_due_today`;
+  `_INSTANCE_SELECT` untouched) returns one row per chore — the row done
+  TODAY if there is one (so a tick stays visible, ticked, all day and an
+  untick has a row to land on), else the earliest pending, which for a
+  slipped chore is `_collapse_outstanding`'s single due row — with
+  `group` (`today` / `week` / `later`), `frequency`, and the week it
+  grouped by (`week_start`/`week_end`/`week_label`, from
+  `suggest_planning_period(plan_ahead=False)`; a non-seven-day answer
+  falls back to a Monday week — `_chores_week`). `week` is the REST OF
+  THE HOUSEHOLD'S WEEK, not a rolling seven days, so the band and the
+  heading name one week; anything after it is `later` whatever its
+  rhythm, and the shell heads `later` by frequency (`CHORE_RHYTHM_LABELS`:
+  Every day / Every week / Every two weeks / Every month / Every few
+  months / Just once). Order inside a group is ONE function,
+  `_due_order_key` (to-do before done, longest waiting first). Inactive
+  chores are left out (their surviving pending rows still show on Now —
+  pre-existing, flagged, not fixed here). **A write on the read**,
+  `_top_up_unscheduled`: an active recurring chore with NO pending row
+  (added in chat with no generate after, reactivated, its one row
+  'skipped') gets its next occurrence written by the same
+  `_next_due_date` everything uses — one row, only where there was none,
+  same precedent as `retire_expired_drafts` on `get_week_menu`; the
+  alternative was a list that silently drops a chore. Rows are Now's
+  rows: `choreRowHtml` is extracted from `renderChores` and is now the
+  ONE builder behind both screens (a `.chore-main` wrapper around the
+  words is the only markup change; Now's CSS keeps it invisible,
+  `.pc-list` wraps it so the owner drops to a quiet second line with the
+  day word — "Vineeth · Sunday", "Emily · Oct 2" — off today). Tick:
+  optimistic through the existing `POST /api/chores/{id}/status`, in
+  place (no client-side re-sort; the server's order lands on the next
+  read), revert + toast "That didn't save. Try it again in a moment." on
+  failure. **Cross-surface refresh** (the build-once gotcha): Now's
+  `toggleChore` calls `loadPlanChores` and Plan's `togglePlanChore` calls
+  `loadChores`; `refreshStaleTabsFromActions`' `today` branch re-reads
+  Plan's list whether or not Now is built (the tab is the contract — any
+  chore tool the concurrent `chores-chat-tools` branch adds is tagged
+  `today`). `loadPlanChores` only redraws when the household is looking
+  at Chores; `renderWeekMenu`'s empty-days reset no longer pulls a
+  household off Chores. Empty moments (`EMPTY_ICONS.home`, new): never
+  set up → "Chores aren't set up yet." / "Want me to suggest a list from
+  what I already know about your place?" with the state's ONE dock,
+  "Set up chores" → `/chores-setup` (Rule 5: the only case Chores has a
+  dock); set up and empty → "Nothing's due." / "The house is fine.", no
+  dock. `.is-chores` on the panel grows `#week-plan-view` for this state
+  only (measured: `0 1 auto`, 316px in a 729px panel, left the dock
+  mid-screen) — scoped like `.is-allset` so Meals' layout does not move.
+  Three source-marker tests were kept honest rather than loosened: the
+  `approve.hidden` line is intact with a second line for Chores;
+  `test_chore_outsourced`'s Now-card test now slices `choreRowHtml`, the
+  row's new home, same claims. 24 tests in `tests/test_plan_chores.py`
+  (all 24 red on main); `tests/test_chores_switch.py`'s harness gained
+  the shared builder. Suite 3043. Verified live on a throwaway DB at
+  375×812, light and dark.
 
 - **2026-09-12 — Chores is switched on per household, and the "Your
   chores" card is back on Now where the switch is on. Branch

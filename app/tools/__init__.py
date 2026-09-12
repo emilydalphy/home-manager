@@ -59,6 +59,10 @@ from .chores import (  # noqa: F401
     set_chores_profile,
     update_chore,
 )
+# Plan | Chores' own read (the whole list, grouped) — beside the block
+# above rather than in it, so a change to the nine chat tools' exports
+# and this one don't land on the same lines.
+from .chores import get_chores_pending  # noqa: F401
 # The household's own "cook these days now" pick (see cook_ahead.py). Not
 # an agent tool: the picker is a set of chips on the Cook card, and a
 # choice about which mornings to cook for is the household's to make by

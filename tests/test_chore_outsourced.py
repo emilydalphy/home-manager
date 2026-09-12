@@ -815,18 +815,23 @@ def test_the_now_card_draws_the_tag_and_no_tick():
     screen is its own card; what this one owes is that the row that DOES
     exist prints honestly.
     """
-    body = _slice(SHELL_JS, "function renderChores(", "\n  function ")
-    outsourced_branch = _slice(body, "if (c.outsourced || c.completable === false)", "return (\n        '<div class=\"chore-row'")
+    # The row builder is choreRowHtml since Plan | Chores landed (2026-09-12)
+    # — one builder behind both screens, so this is where the row's shape
+    # is decided; renderChores only maps the list through it.
+    body = _slice(SHELL_JS, "function choreRowHtml(", "\n  function ")
+    assert "choreRowHtml(c)" in _slice(SHELL_JS, "function renderChores(", "\n  function ")
+    outsourced_branch = _slice(body, "if (outsourced) {", "return '<div class=\"chore-row' + (isDone")
     assert "chore-tick" not in outsourced_branch, "no tick on a chore nobody here does"
     assert "tick-empty" in outsourced_branch, "a spacer keeps the names lined up with the ticked rows"
-    assert "pill pill-neutral" in outsourced_branch, "a quiet label, never apricot (Rule 5)"
+    assert "pill pill-neutral" in body[:body.index("if (outsourced) {")], "a quiet label, never apricot (Rule 5)"
+    assert "outsourced ? '<span class=\"pill pill-neutral chore-tag\">Not us</span>'" in body
     # Who does it — the same `who` span every row prints, built from the
     # server's who_label above the branch since the rows were re-cut
     # against the shared tick (2026-09-12).
-    assert "who_label" in body[:body.index("if (c.outsourced || c.completable === false)")]
-    assert "who +" in outsourced_branch
+    assert "who_label" in body[:body.index("if (outsourced) {")]
+    assert "main +" in outsourced_branch and "who +" in body[:body.index("if (outsourced) {")]
     # The tick handler is wired to the rows that have one.
-    assert ".chore-row:not(.is-outsourced)" in body
+    assert ".chore-row:not(.is-outsourced)" in _slice(SHELL_JS, "function renderChores(", "\n  function ")
 
 
 def test_the_count_leaves_out_what_is_not_ours():

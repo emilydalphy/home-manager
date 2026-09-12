@@ -1803,6 +1803,38 @@ def chores_today():
     return {"chores": chores, "chores_set_up": chores_set_up, "enabled": True}
 
 
+@app.get("/api/chores/pending")
+def chores_pending():
+    """
+    The whole chores list, grouped — backs Plan | Chores (Loop Board
+    "Chores v1: Plan gets a Meals | Chores toggle showing what's due",
+    Emily, 2026-09-11). Same small direct-read shape as /api/chores/today
+    above, and the same gate: while the household's Chores switch is off
+    this answers 200 with an empty list and `enabled: false`, never a 4xx,
+    for the reason recorded on that route. `chores_set_up` rides along
+    for the same reason too — the screen's empty state is either "set
+    them up" or "nothing's due", and that is the one fact that decides
+    which.
+
+    A separate route rather than a `?scope=all` on /api/chores/today: the
+    Now card is built against that payload's exact shape, and a list
+    that is one row per CHORE (see tools.get_chores_pending) is a
+    different answer from one that is every instance due today.
+    """
+    try:
+        if not tools.chores_enabled():
+            return {"chores": [], "chores_set_up": False, "enabled": False}
+        listed = tools.get_chores_pending()
+        profile = tools.get_chores_profile()
+        household = tools.get_household_setup_status()
+        chores_set_up = bool(profile.get("has_profile")) or bool(household.get("has_chores"))
+    except Exception as e:
+        logger.exception("Chores list lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    listed.update({"chores_set_up": chores_set_up, "enabled": True})
+    return listed
+
+
 @app.post("/api/chores/{instance_id}/status")
 def set_chore_status(instance_id: int, req: ChoreStatusRequest):
     """
