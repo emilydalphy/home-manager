@@ -350,6 +350,45 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — A draft whose week has ended is no longer the Plan tab's
+  front page, and Plan and Now name ONE week. Branch
+  `worktree-stale-draft`.** Seen on Friday 2026-09-11: Plan opened on "This
+  week · Aug 24–30 · a draft, your turn" (twelve days dead) while Now asked
+  "Shall I put Sep 7–13 together?". Root cause: `_current_weekly_plan_row`
+  (`app/tools/weekly_plan.py`) falls back to the newest non-retired plan
+  when nothing covers today — any dates, any status — while the nudge
+  derived its own week from `suggest_planning_period`. Three changes, Emily's
+  defaults: (1) **an expired draft retires** — `retire_expired_drafts()` is a
+  lazy sweep (no scheduler) run by `get_week_menu` and
+  `get_week_planning_nudge`; a draft whose last day is before today gets
+  `status='retired'`, new column `retired_reason='expired_draft'` (a
+  takeover writes `'superseded'`), period and meals kept. The fallback
+  query refuses such a draft independently, so chat resolves the same way
+  between sweeps. Threshold is the morning after the last day, no grace —
+  a draft never touched the shopping list, and the day it can't be cooked
+  from is the day the tab needs to open on the real week. Approved plans
+  whose week has passed are NOT swept (they were the household's real week;
+  the fallback still shows them — Emily may want that changed too). (2)
+  **`suggest_planning_period` is the one source of "which week"**: the
+  nudge's case 1, the Plan tab's empty state (`get_week_menu` returns
+  `suggested_period`, shell.js adopts it as `planningPeriodDefault`) and
+  `/api/week/planning-period` all read it; a test holds all three equal on a
+  pinned Thursday and Friday. (3) **`PLAN_AHEAD_FROM_WEEKDAY = 4`**: from the
+  fifth day of a period (Friday of a Monday week — the same distance in for
+  a Saturday-start week, i.e. Wednesday) an unapproved current period is
+  skipped and the suggestion is next week (`is_current_period` False → the
+  eyebrow and the Plan head say "Next week"). *Approved* is the test, not
+  merely live: a draft covering today stays on Plan but Now offers the
+  week after. The same constant now opens the nudge for a planned week's
+  successor (was Saturday; Friday now — one threshold, not two), via
+  `_attention_moves_on`, which keeps the old "day before it ends" clause so
+  a 3-day as-we-go horizon still gets its offer. **Onboarding is exempt**
+  (`plan_ahead=False` in `_first_plan_window`): the person chose this week
+  or next on the screen, and shifting under that would invert Julia's bug
+  on a Friday sign-up — the four onboarding tests caught it on the first
+  full run. 22 tests in `tests/test_stale_draft_front_page.py`; one
+  assertion in `test_planning_periods.py`'s dismissal test moved with the
+  rule (Saturday now offers next week under a new key). Suite 2794.
 - **2026-09-11 — Every chore has a chosen owner: owned / shared / whoever.
   Branch `worktree-chore-owner-mode`.** Loop Board "Chores v1: Every chore
   has a chosen owner" — Emily, 2026-09-11: "Owners should be chosen."

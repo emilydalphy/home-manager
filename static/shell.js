@@ -5846,13 +5846,19 @@
   // request per render would be noise. Null until it arrives — every
   // reader falls back to the Monday, which is what this did before.
   var planningPeriodDefault = null;
+  // The day the cached suggestion was fetched on. Since 2026-09-11 the
+  // suggestion moves with the calendar (from Friday an unplanned week's
+  // suggestion is NEXT week — tools.PLAN_AHEAD_FROM_WEEKDAY), so a PWA
+  // left open across midnight re-asks rather than offering yesterday's.
+  var planningPeriodFetchedOn = '';
 
   async function loadPlanningPeriodDefault() {
-    if (planningPeriodDefault) return planningPeriodDefault;
+    if (planningPeriodDefault && planningPeriodFetchedOn === todayLocalStr()) return planningPeriodDefault;
     try {
       var res = await fetch('/api/week/planning-period');
       if (!res.ok) throw new Error('planning period lookup failed');
       planningPeriodDefault = await res.json();
+      planningPeriodFetchedOn = todayLocalStr();
     } catch (err) {
       // Deliberately silent and non-blocking. This only chooses which day
       // a default button offers; failing to get it must not stop the
@@ -5881,6 +5887,13 @@
       var res = await fetch(url);
       if (!res.ok) throw new Error('week-menu lookup failed');
       var data = await res.json();
+      // With no plan to show, the server says which week this screen
+      // should name instead — the same suggest_planning_period answer the
+      // Now nudge is built from, so Plan and Now can't name two weeks.
+      if (data.suggested_period) {
+        planningPeriodDefault = data.suggested_period;
+        planningPeriodFetchedOn = todayLocalStr();
+      }
       renderWeekMenu(panel, data);
       // Meals and Kitchen are two readings of one week, so anything that
       // reloads the plan reloads the cook's tab with it — a swap, an
@@ -6138,7 +6151,10 @@
     // household on a different rhythm is not living a week, so its own
     // dates are the title and the subtitle doesn't repeat them.
     var isWeek = dayCount === 7;
-    var title = isWeek || !range ? 'This week' : range;
+    // "Next week" only for the empty state naming a period that hasn't
+    // started (from Friday, an unplanned week's suggestion is next week —
+    // see weekStepHtml); a plan on screen is always "this week".
+    var title = isWeek || !range ? (data.period_is_ahead ? 'Next week' : 'This week') : range;
     var sub = [];
     if (isWeek && range) sub.push(range);
     // A DRAFT's subtitle says whose turn it is, not the shape of the week:
@@ -6248,7 +6264,17 @@
     // entry takes its place — same buttons, same handlers, rendered into
     // #week-plan-row by renderPlanWeekEntry after this lands.
     if (state === 'none') {
-      return weekStepHeadHtml(data, days) +
+      // Name the week the household would be planning — the same one the
+      // Now nudge asks about (tools.suggest_planning_period, via
+      // planningPeriodDefault) — rather than a bare "This week" that on a
+      // Friday could mean either of two.
+      var suggested = planningPeriodDefault || {};
+      var headData = Object.assign({}, data, {
+        week_label: suggested.label || '',
+        day_count: suggested.day_count || 7,
+        period_is_ahead: suggested.is_current_period === false
+      });
+      return weekStepHeadHtml(headData, days) +
         '<div id="week-plan-row"></div>' +
         // Setup and the other rare actions stay one tap away here too.
         '<div class="wk-foot wk-foot-solo">' +
@@ -8012,9 +8038,13 @@
       (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
     var start = data.period_start_date || data.week_start_date ||
       (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+    // With no plan on screen the row offers the suggested period, which
+    // from Friday is next week (see renderPlanWeekEntry) — say so.
+    var which = (!hasPlan && planningPeriodDefault && planningPeriodDefault.is_current_period === false)
+      ? 'next' : 'current';
     rows.innerHTML =
       mealsMoreRowHtml('wk-more-replan',
-        planEntryLabel(dayCount, 'current', hasPlan), periodRangeLabel(start, dayCount)) +
+        planEntryLabel(dayCount, which, hasPlan), periodRangeLabel(start, dayCount)) +
       // The custom-range picker, unchanged — same opener id, same picker
       // id, same wirePeriodPicker. It only moved.
       '<button type="button" class="wk-more-row" id="week-period-open" aria-expanded="false">' +
@@ -8960,9 +8990,13 @@
     // fallback for the moment before the suggestion lands and for a failed
     // lookup, exactly as the Monday start does.
     var dayCount = (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    // From Friday an unplanned week's suggestion is already NEXT week
+    // (is_current_period false), so the buttons say so instead of calling
+    // a week that hasn't started "this week".
+    var ahead = !!(planningPeriodDefault && planningPeriodDefault.is_current_period === false);
     var periods = [
-      { start: defaultStart, which: 'current' },
-      { start: addDaysLocal(defaultStart, dayCount), which: 'next' }
+      { start: defaultStart, which: ahead ? 'next' : 'current' },
+      { start: addDaysLocal(defaultStart, dayCount), which: ahead ? 'after' : 'next' }
     ];
     row.innerHTML =
       '<div class="shell-card week-plan-row">' +
@@ -9013,7 +9047,11 @@
   // ASSUMPTION (Emily's call): "Plan the next 3 days" / "Plan the 3 after".
   function planEntryLabel(dayCount, which, planned) {
     var verb = planned ? 'Re-plan ' : 'Plan ';
-    if (dayCount === 7) return verb + (which === 'current' ? 'this week' : 'next week');
+    if (dayCount === 7) {
+      // 'after' is the week beyond next — the second button once the
+      // suggestion has moved on to next week (renderPlanWeekEntry).
+      return verb + (which === 'current' ? 'this week' : which === 'after' ? 'the week after' : 'next week');
+    }
     var unit = dayCount + (dayCount === 1 ? ' day' : ' days');
     // "the 3 after", not "the 3 days after" — the dates line right under it
     // says which three, so the second "days" is a word that isn't earning

@@ -65,6 +65,19 @@ def slot_order_sql(column: str) -> str:
 # refuse the same number.
 MAX_PERIOD_DAYS = 28
 
+# From which day of a period the app's attention moves on to the NEXT one.
+# An index into the period, 0 = its first day — so for the default
+# Monday-to-Sunday week it is a weekday, and 4 is Friday (Emily, 2026-09-11:
+# from Friday, "this week" means next week when this week was never
+# planned; two days left is not a week to plan). A household on another
+# rhythm gets the same distance in — the fifth day of a Saturday-start
+# week is Wednesday — because the point is how much of the period is left,
+# not what the calendar calls the day. Two readers, deliberately ONE number:
+# suggest_planning_period skips an unplanned current period from here on,
+# and get_week_planning_nudge offers the following period from here on when
+# the current one is planned. See _attention_moves_on.
+PLAN_AHEAD_FROM_WEEKDAY = 4
+
 
 class SlotRefused(ValueError):
     """
@@ -90,6 +103,12 @@ class SlotRefused(ValueError):
 _SQL_PERIOD_START = "COALESCE(NULLIF(content_start_date, ''), week_start_date)"
 _SQL_PERIOD_LAST_OFFSET = (
     "(CASE WHEN content_start_date = '' AND day_count = 0 THEN 6 ELSE day_count - 1 END)"
+)
+# "This plan's last day is before the bound date" — the period end resolved
+# in SQL, so retire_expired_drafts and _current_weekly_plan_row's fallback
+# agree with plan_period exactly. Takes one bound parameter.
+_SQL_EXPIRED_BEFORE = (
+    f"date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') < date(?)"
 )
 
 
@@ -749,7 +768,7 @@ def get_meal_planning_preferences() -> dict:
     }
 
 
-def suggest_planning_period(from_date: str = "") -> dict:
+def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dict:
     """
     The period the app offers by default — where "this week" starts for
     THIS household, rather than where the calendar says a week starts.
@@ -779,9 +798,34 @@ def suggest_planning_period(from_date: str = "") -> dict:
     date and a length. The rule Pomona is actually defending is that the
     household is never forced into a week they didn't choose — a default
     that guesses better is not the same as a constraint that guesses less.
+
+    **This is the ONE source of "which week" (Emily, 2026-09-11).** On
+    Friday 2026-09-11 the Plan tab led with a draft for Aug 24–30 while Now
+    asked "Shall I put Sep 7–13 together?" — two screens naming two weeks,
+    because each derived its own. Now the nudge, the Plan tab's empty state
+    and the plan-week default all read this, and a test holds the nudge and
+    this to the same answer.
+
+    And from PLAN_AHEAD_FROM_WEEKDAY on, an UNAPPROVED current period is
+    skipped in favour of the next one: on a Friday with no approved plan
+    covering today, "this week" is next week (`is_current_period` False,
+    so a screen can say "next week" rather than "this week"). Approved is
+    the test, not merely live — a draft covering today is exactly the
+    unplanned week this rule is about, and the household is offered the
+    week after it while the draft stays where it is on Plan. An 'as_we_go'
+    household is never shifted: its period starts today by definition.
+
+    `plan_ahead=False` asks for the current period regardless — for the
+    one caller that is not choosing a default but resolving a choice the
+    person already made: onboarding's "this week / next week" (main.py
+    _first_plan_window), which builds a part-week from today for "this
+    week" and has its own floor rule for how short is too short. Shifting
+    underneath it would turn "this week" into next week and "next week"
+    into the one after, on a Friday sign-up — Julia's bug, inverted.
     """
     today = date.fromisoformat(from_date) if from_date else date.today()
     anchor = (_rhythm_anchor() or "sunday")
+    is_current = True
     if anchor == "as_we_go":
         start = today
         day_count = 3
@@ -790,13 +834,39 @@ def suggest_planning_period(from_date: str = "") -> dict:
         start_index = (ready_index + 1) % 7
         start = today - timedelta(days=(today.weekday() - start_index) % 7)
         day_count = 7
+        if plan_ahead and _attention_moves_on(today, start.isoformat(), day_count):
+            conn = get_conn()
+            approved = _live_plan_covering(conn, today.isoformat(), approved_only=True)
+            conn.close()
+            if approved is None:
+                start = start + timedelta(days=day_count)
+                is_current = False
     return {
         "start_date": start.isoformat(),
         "day_count": day_count,
         "planning_anchor": anchor,
         "label": _format_period_range(start.isoformat(), day_count),
         "is_monday_anchored": start.weekday() == 0,
+        "is_current_period": is_current,
     }
+
+
+def _attention_moves_on(today: date, start_date: str, day_count: int) -> bool:
+    """
+    Whether `today` is far enough into the period that the app should be
+    talking about the NEXT one: from its PLAN_AHEAD_FROM_WEEKDAY-th day
+    (Friday of a Monday week), or from the day before its last day,
+    whichever comes first. The second clause is what keeps a short period
+    honest — a three-day 'as_we_go' horizon never reaches a fifth day, and
+    the nudge for what follows it still has to open before it ends (the
+    old "from Saturday" rule, which this generalises rather than replaces).
+    Before the period starts, never — a future period has no "days left".
+    """
+    start = date.fromisoformat(start_date)
+    if today < start:
+        return False
+    end = date.fromisoformat(period_end_date(start_date, day_count))
+    return (today - start).days >= PLAN_AHEAD_FROM_WEEKDAY or (end - today).days <= 1
 
 
 def _rhythm_anchor() -> str:
@@ -816,10 +886,16 @@ def _rhythm_anchor() -> str:
     return (row["value"] if row else "") or ""
 
 
-def _live_plan_covering(conn, day: str):
-    """The non-retired plan whose period contains `day`, or None."""
+def _live_plan_covering(conn, day: str, approved_only: bool = False):
+    """
+    The non-retired plan whose period contains `day`, or None. With
+    approved_only, a draft covering the day does not count — the reading
+    suggest_planning_period needs, where "this week is planned" means
+    somebody said yes to it.
+    """
+    status_clause = "status = 'approved'" if approved_only else "status != 'retired'"
     return conn.execute(
-        f"SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        f"SELECT * FROM weekly_plans WHERE household_id = ? AND {status_clause} "
         f"AND date({_SQL_PERIOD_START}) <= date(?) "
         f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
         f"ORDER BY created_at DESC, id DESC LIMIT 1",
@@ -838,14 +914,23 @@ def get_week_planning_nudge() -> dict:
        That's the more pressing one, and it's offered any day of the week —
        waiting until Sunday to mention that this week was never planned
        would be absurd.
-    2. Otherwise, from Saturday onward, the week that starts next Monday.
-       The design asks for Sunday morning; Saturday is included because
-       this is in-app only, not real push (there is no scheduler and no
-       push infrastructure — see schema.sql on notification_dismissals), so
-       the nudge is only ever seen when the app is opened. Starting a day
-       early means a household that doesn't open it on Sunday still gets
-       the offer before the week begins, rather than on the Monday it was
-       meant to prepare for.
+    2. Otherwise, from PLAN_AHEAD_FROM_WEEKDAY on (Friday of a Monday
+       week — see _attention_moves_on), the period that follows the one
+       covering today. The design asks for Sunday morning; it opened on
+       Saturday from the start because this is in-app only, not real push
+       (there is no scheduler and no push infrastructure — see schema.sql
+       on notification_dismissals), so the nudge is only ever seen when the
+       app is opened, and a household that doesn't open it on Sunday still
+       needs the offer before the week begins. Friday since 2026-09-11, so
+       that Now talks about next week from the same day whether this week
+       was planned or not — one threshold, not two.
+
+    Case 1 reads the week to offer from suggest_planning_period and nothing
+    else (Emily, 2026-09-11: Plan and Now must name the same week). That is
+    what carries the Friday rule here: with nothing approved for this week
+    and only the weekend left, the suggestion is already next week, and the
+    eyebrow says so (`is_current_week` False). If that next period has
+    already been planned ahead, there is nothing to offer and this says so.
 
     Suppressed once dismissed, and the dismissal key is the week itself —
     so "I won't ask again this week" is literally true, and next week's
@@ -863,6 +948,10 @@ def get_week_planning_nudge() -> dict:
     THIS suggested period specifically (below): dismissed, it stays quiet
     until the suggestion changes; not dismissed, it asks again tomorrow.
     """
+    # A draft whose last day has passed is nobody's week any more; retire
+    # it before deciding what to offer, so this and the Plan tab (which
+    # sweeps too, in get_week_menu) are reasoning about the same plans.
+    retire_expired_drafts()
     today = date.today()
     suggestion = suggest_planning_period()
 
@@ -875,20 +964,24 @@ def get_week_planning_nudge() -> dict:
     target_days = suggestion["day_count"]
     is_current = False
     if covering is None:
-        # Nothing covers today, full stop — offer to plan the current
-        # period. See the docstring above for why there's no additional
-        # "already filed this week" guard any more.
-        target, is_current = date.fromisoformat(suggestion["start_date"]), True
+        # Nothing covers today, full stop — offer the suggested period,
+        # which is the current one until PLAN_AHEAD_FROM_WEEKDAY and the
+        # next one from there. See the docstring above for why there's no
+        # additional "already filed this week" guard for the current
+        # period; a shifted-to suggestion IS checked, because "plan next
+        # week" to a household that already has is an offer to undo it.
+        target, is_current = date.fromisoformat(suggestion["start_date"]), suggestion["is_current_period"]
+        if not is_current and _plan_covers_any(target.isoformat(), target_days) is not None:
+            target = None
     elif covering is not None:
-        # The generalisation of "from Saturday onward, offer next week".
-        # A period ends on some day E; the offer opens two days before E,
-        # which for a Monday-to-Sunday week is exactly Saturday — the same
-        # day, for the same reason (this nudge is only ever seen when the
-        # app is opened, so it has to be early enough to be seen at all).
-        # Now it is right for a period of any length or start.
+        # A period ends on some day E; the offer for what follows opens
+        # from the period's PLAN_AHEAD_FROM_WEEKDAY-th day or from the day
+        # before E, whichever is first — Friday for a Monday-to-Sunday
+        # week, and right for a period of any length or start (see
+        # _attention_moves_on).
         cover_start, cover_days = plan_period(covering)
         cover_end = date.fromisoformat(period_end_date(cover_start, cover_days))
-        if (cover_end - today).days <= 1:
+        if _attention_moves_on(today, cover_start, cover_days):
             following = cover_end + timedelta(days=1)
             if _plan_covers_any(following.isoformat(), target_days) is None:
                 target = following
@@ -2183,10 +2276,12 @@ def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,
         }
         conn.execute(
             "UPDATE weekly_plans SET content_start_date = ?, day_count = ?, status = ?, "
-            "superseded_json = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+            "retired_reason = ?, superseded_json = ?, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
             (
                 new_start_date, new_day_count,
                 "retired" if retired else decision["status"],
+                "superseded" if retired else "",
                 json.dumps(record), other_id, household_id(),
             ),
         )
@@ -2413,6 +2508,17 @@ def _current_weekly_plan_row(conn):
     has genuinely stopped being anybody's answer to "what's for dinner"; the
     fallback branch would otherwise resurrect it the moment no plan covered
     today, which is the emptiest week of all to hand back.
+
+    Nor is a DRAFT whose last day has passed (Emily, 2026-09-11). The
+    fallback handed one back as "current" for twelve days — the Plan tab
+    opened on "Aug 24–30 · a draft, your turn" with an Approve button, on
+    a Friday in September. retire_expired_drafts is the sweep that marks
+    such a draft retired; this query refuses it independently, so the chat
+    tools that resolve through here between sweeps get the same answer
+    the screens do. An APPROVED plan whose period has passed is still
+    returned by the fallback: it was the household's real week and the
+    only thing left to show, which is a different question from a draft
+    nobody said yes to.
     """
     today = date.today().isoformat()
     plan = conn.execute(
@@ -2425,10 +2531,54 @@ def _current_weekly_plan_row(conn):
     if plan:
         return plan
     return conn.execute(
-        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        f"SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        f"AND NOT (status = 'draft' AND {_SQL_EXPIRED_BEFORE}) "
         "ORDER BY created_at DESC, id DESC LIMIT 1",
-        (household_id(),),
+        (household_id(), today),
     ).fetchone()
+
+
+def retire_expired_drafts(today: str = "") -> list[int]:
+    """
+    Retire every draft of this household whose last day is already behind
+    us, and say which. The lazy sweep behind Emily's 2026-09-11 decision:
+    a draft whose period has ended without approval is no longer the front
+    page. There is no scheduler in this app, so this runs when the plan
+    and nudge endpoints are read (get_week_menu, get_week_planning_nudge)
+    and nowhere else.
+
+    The threshold is the day AFTER the period's last day, not a grace
+    period beyond it. Approving a draft is what puts its meals on the
+    shopping list; a draft whose every day has passed can no longer be
+    shopped for or cooked from, so keeping it a day longer helps nobody,
+    and the morning after is precisely when the household needs the tab
+    to open on the week that is actually starting.
+
+    Retiring here changes ONE thing: status, with `retired_reason` set to
+    'expired_draft'. The period columns, the meals and the intake are all
+    kept — this is "don't lead with it", not deletion — and unlike a
+    takeover there is nothing to reverse on the grocery list, because a
+    draft never contributed to it. Only drafts: an approved plan whose
+    week has passed was the household's real week and is left alone.
+    """
+    bound = today or date.today().isoformat()
+    conn = get_conn()
+    rows = conn.execute(
+        f"SELECT id FROM weekly_plans WHERE household_id = ? AND status = 'draft' "
+        f"AND {_SQL_EXPIRED_BEFORE} ORDER BY id",
+        (household_id(), bound),
+    ).fetchall()
+    ids = [r["id"] for r in rows]
+    if ids:
+        conn.executemany(
+            "UPDATE weekly_plans SET status = 'retired', retired_reason = 'expired_draft', "
+            "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+            [(plan_id, household_id()) for plan_id in ids],
+        )
+        conn.commit()
+        logger.info("Retired %d expired draft plan(s) as of %s: %s", len(ids), bound, ids)
+    conn.close()
+    return ids
 
 
 def set_week_constraints(constraints_notes: str, weekly_plan_id: int | None = None) -> dict:
@@ -3027,8 +3177,15 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     Omit weekly_plan_id for the household's current (most recently
     created) plan, same convention as get_weekly_plan. Returns
     week_start_date: None and an empty days list if no plan exists yet —
-    there's nothing to anchor 7 days to.
+    there's nothing to anchor 7 days to — plus `suggested_period`, the
+    week the screen should name instead (suggest_planning_period's
+    answer, the same one the Now nudge is built from).
     """
+    # The Plan tab's read is one of the two moments an expired draft is
+    # retired (the nudge is the other) — see retire_expired_drafts.
+    if weekly_plan_id is None:
+        retire_expired_drafts()
+
     conn = get_conn()
     household = conn.execute(
         "SELECT name FROM households WHERE id = ?", (household_id(),)
@@ -3043,6 +3200,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             "household_name": household_name, "days": [], "menu_is_suggested": False,
             "slot_times": _slot_clock_labels(),
             "receipt": None,
+            "suggested_period": suggest_planning_period(),
         }
 
     # design_handoff_plan_the_week: the Meals screen is where a week is

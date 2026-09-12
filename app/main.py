@@ -1042,7 +1042,13 @@ def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
       machinery for a single dinner.
     """
     today = datetime.date.today()
-    period = tools.suggest_planning_period(from_date=today.isoformat())
+    # plan_ahead=False: the person just chose this week or next on the
+    # screen, so the CURRENT period is wanted whatever the weekday. The
+    # Friday rule (tools.PLAN_AHEAD_FROM_WEEKDAY, 2026-09-11) is for the
+    # nudge and the default when nobody has chosen; applied here it would
+    # make a Friday sign-up's "this week" next week and its "next week"
+    # the one after.
+    period = tools.suggest_planning_period(from_date=today.isoformat(), plan_ahead=False)
     start = datetime.date.fromisoformat(period["start_date"])
     day_count = int(period["day_count"]) or 7
     if not start_next_week:

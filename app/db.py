@@ -298,6 +298,12 @@ _MIGRATIONS = [
     # whole record, not just the fact that something happened. '' while a
     # plan has never been superseded. See weekly_plan.retire_overlapping_plans.
     ("weekly_plans", "superseded_json", "TEXT NOT NULL DEFAULT ''"),
+    # Why a retired plan is retired: 'superseded' by a takeover, or
+    # 'expired_draft' by weekly_plan.retire_expired_drafts (a draft whose
+    # period ended without approval, 2026-09-11). '' on every existing row —
+    # live plans have no reason, and a plan retired before this column
+    # existed is left without one rather than guessed at.
+    ("weekly_plans", "retired_reason", "TEXT NOT NULL DEFAULT ''"),
     # "Every meal is a full plate" (Emily, 2026-09-05) — see
     # app/tools/plates.py for the rule and for why the sides attach to the
     # ENTRY rather than to the recipe. '[]' on every existing row means

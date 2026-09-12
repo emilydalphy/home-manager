@@ -527,13 +527,23 @@ class TestPlanningNudgeReappearsDailyUntilReplanned:
         tools.dismiss_notification(first["dismiss_key"])
         assert tools.get_week_planning_nudge()["show"] is False
 
-        # Still within the same suggested week (Mon Aug31-Sun Sep6)...
+        # From Friday the suggestion is next week (PLAN_AHEAD_FROM_WEEKDAY,
+        # Emily 2026-09-11: this week has no approved plan and only the
+        # weekend left), which is a NEW key — so Thursday's dismissal does
+        # not silence it. This used to assert Saturday stayed quiet, when
+        # Saturday was still offering the week that was nearly over.
         self._pin_today(monkeypatch, "2026-09-05")  # Saturday
-        assert tools.get_week_planning_nudge()["show"] is False
+        saturday = tools.get_week_planning_nudge()
+        assert saturday["show"] is True
+        assert saturday["week_start"] == "2026-09-07"
+        assert saturday["is_current_week"] is False
 
-        # ...but a new suggested week (the next Monday) is unaffected.
+        # And the following Monday offers that same week as this week.
         self._pin_today(monkeypatch, "2026-09-07")  # the following Monday
-        assert tools.get_week_planning_nudge()["show"] is True
+        monday = tools.get_week_planning_nudge()
+        assert monday["show"] is True
+        assert monday["week_start"] == "2026-09-07"
+        assert monday["is_current_week"] is True
 
 
 # ---------- overlap takeover ----------
