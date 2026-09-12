@@ -2010,14 +2010,19 @@
   // one neutral (--hairline-strong) now — see .gro-aisle-spine in shell.css.
   // Store identity colours. Every entry is a LIGHT accent, because the avatar
   // carries spruce ink (--on-accent-ink) and RULE ONE has no exceptions.
-  // These stay LITERALS on purpose, unlike the aisle spines above: they are
+  // Read from theme.css's --store-1.."-6 (design hygiene pass, 2026-09-12)
+  // rather than hardcoded here, unlike the aisle spines above: these are
   // arbitrary identity colours rather than semantic roles, and a light accent
-  // fill carrying dark ink is correct on either ground. Measured against
-  // --on-accent-ink in both modes, the worst pair is 5.40:1 (light) / 6.32:1
-  // (dark). Pointing them at tokens would be wrong — --celadon-edge and
-  // --sand-deep both go DARK in dark mode, which would put dark ink on a
-  // dark fill, the exact failure the comment above is about.
-  var GRO_STORE_PALETTE = ['#E0915C', '#A9C4B0', '#F2B98E', '#C7DACD', '#E6D9C4', '#EFD3A9'];
+  // fill carrying dark ink is correct on either ground, so --store-1.."-6 are
+  // deliberately NOT redefined in theme.css's dark block — pointing this at
+  // --celadon-edge or --sand-deep directly would be wrong, since those DO go
+  // dark in dark mode, which would put dark ink on a dark fill. These
+  // resolve inline (`style="background:var(--store-1)"`), so no JS-side
+  // lookup is needed.
+  var GRO_STORE_PALETTE = [
+    'var(--store-1)', 'var(--store-2)', 'var(--store-3)',
+    'var(--store-4)', 'var(--store-5)', 'var(--store-6)'
+  ];
 
   var GRO_ICONS = {
     refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 0 18.4 17"/><path d="M20 5.5V11h-5.5"/></svg>',
@@ -2056,7 +2061,7 @@
   function groStoreColor(name) {
     // "Any store" is the leftovers bucket, not a stop — it gets the quiet
     // sand fill rather than a store identity colour.
-    if (!name || name === 'Unassigned') return '#E6D9C4';
+    if (!name || name === 'Unassigned') return 'var(--store-none)';
     var h = 0;
     for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
     return GRO_STORE_PALETTE[h % GRO_STORE_PALETTE.length];

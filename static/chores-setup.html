@@ -10,6 +10,7 @@
 <title>Chores setup — Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
 <meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <style>
@@ -43,46 +44,46 @@
     max-width: 640px;
     margin: 0 auto;
     padding: 20px 20px 60px;
-    background: var(--oat-cream);
-    color: var(--text-body);
+    background: var(--ground);
+    color: var(--ink);
   }
   .back-link {
     display: inline-flex; align-items: center; min-height: 44px;
     font-family: var(--font-body); font-size: 0.85rem; font-weight: 700;
-    color: var(--text-muted); text-decoration: none; cursor: pointer;
+    color: var(--ink-secondary); text-decoration: none; cursor: pointer;
   }
   .back-link:hover { color: var(--ink-strong); }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink-strong); margin: 12px 0 4px; }
-  p.subtitle { color: var(--text-muted); margin: 0 0 1.5rem; font-size: 0.95rem; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--ink-strong); margin: 12px 0 4px; }
+  p.subtitle { color: var(--ink-secondary); margin: 0 0 1.5rem; font-size: 0.95rem; }
   .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
   input[type=text], input[type=number], textarea, select {
     padding: 11px 12px;
     border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     font-size: 0.95rem;
     font-family: var(--font-body);
     width: 100%;
     background: var(--surface-raised);
-    color: var(--text-body);
+    color: var(--ink);
     min-height: 44px;
   }
   input[type=text]:focus, input[type=number]:focus, textarea:focus, select:focus {
     border-color: var(--ink-strong);
   }
-  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  input::placeholder, textarea::placeholder { color: var(--ink-secondary); }
   textarea { resize: vertical; min-height: 60px; }
   .remove-btn {
     flex: 0 0 44px;
     height: 44px;
     padding: 0;
     border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     background: var(--surface-raised);
     cursor: pointer;
     font-size: 1.1rem;
-    color: var(--text-muted);
+    color: var(--ink-secondary);
   }
-  .remove-btn:hover { border-color: var(--electric-coral); color: var(--electric-coral); }
+  .remove-btn:hover { border-color: var(--urgent); color: var(--urgent); }
   .add-btn {
     background: transparent;
     border: 1px solid var(--ink-strong);
@@ -96,7 +97,7 @@
     cursor: pointer;
     margin-bottom: 1.25rem;
   }
-  .add-btn:hover { background: var(--violet-soft); }
+  .add-btn:hover { background: var(--celadon-tint); }
   label.field-label { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; color: var(--ink-strong); display: block; margin: 1rem 0 6px; }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -107,17 +108,20 @@
     font-family: var(--font-body);
     font-size: 0.85rem;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     background: var(--surface-raised);
-    color: var(--text-body);
+    color: var(--ink);
     cursor: pointer;
   }
-  .chip.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
+     light, not byte-identical, so it stays literal here (design hygiene
+     pass, 2026-09-12; flagged for Emily in the report). */
+  .chip.active { background: var(--spruce); border-color: var(--spruce); color: #fff; }
   .chip.small { padding: 6px 12px; min-height: 32px; font-size: 0.75rem; }
   .next-btn {
     font-family: var(--font-body);
     font-weight: 700;
-    background: var(--turmeric-gold);
+    background: var(--apricot);
     color: var(--ink-strong);
     border: none;
     padding: 13px 22px;
@@ -129,11 +133,11 @@
     margin-right: 10px;
     transition: background 0.15s ease;
   }
-  .next-btn:hover:not(:disabled) { background: var(--gold-hover); }
+  .next-btn:hover:not(:disabled) { background: var(--apricot-deep); }
   .next-btn:disabled { opacity: 0.6; cursor: default; }
   .two-col { display: flex; gap: 10px; }
   .two-col > div { flex: 1; }
-  .loading-note { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
+  .loading-note { color: var(--ink-secondary); font-size: 0.85rem; margin-top: 10px; }
 </style>
 <script src="/static/error-reporter.js"></script>
 </head>

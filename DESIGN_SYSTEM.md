@@ -15,12 +15,14 @@ Everything below is written as a rule you can check, not a vibe.
 
 ## 1. Tokens
 
-**Use canonical names only in new code.** `theme.css` also defines
-`--plum`, `--gold`, `--midnight-violet`, `--oat-cream`, `--violet-light`,
-`--ink-faint`, `--card`, `--muted`, etc. as thin `var()` aliases forwarding
-to the canonical tokens below, kept only so ~40 existing files keep working.
-**Never write a new call site against an alias.** If you touch a line that
-uses one, move it to the canonical name while you're there.
+**Use canonical names only.** `theme.css` used to also define `--plum`,
+`--gold`, `--midnight-violet`, `--oat-cream`, `--violet-light`, `--ink-faint`,
+`--card`, `--muted`, etc. as thin `var()` aliases forwarding to the canonical
+tokens below, kept only so ~40 existing files kept working. The design
+hygiene pass (2026-09-12) migrated every remaining call site to its
+canonical name (same value, so no visual change) and deleted the alias
+block — there is now exactly one name for each token, and there are no
+aliases left to avoid.
 
 All values below are lifted directly from `theme.css`. "Dark" = the
 `@media (prefers-color-scheme: dark)` block; there is no manual toggle yet,
@@ -101,7 +103,7 @@ the app follows the OS.
 | `--good` / `--good-ink` | = `--celadon` / `--celadon-label` | same pattern | Done, handled, your turn. |
 | `--warn` / `--warn-ink` | = `--apricot` / `--apricot-label` | same pattern | Time-boxed, wants doing. |
 
-**Legacy aliases exist** (`--oat-cream`, `--midnight-violet`, `--turmeric-gold`, `--vivid-leaf`, `--electric-coral`, `--violet-light`, `--ink-faint`, `--qty-done`, `--leaf-dark`, `--plum`, `--plum-ink`, `--gold`, `--gold-ink`, `--cream`, `--card`, `--menu-paper`, `--menu-rule`, `--menu-ink`, `--rule`, `--muted`, `--faded`, `--font-heading`). They are `var()` forwards to the tokens above, kept for ~40 old call sites. **Do not use them in new code.**
+**Legacy aliases are gone** (design hygiene pass, 2026-09-12). `theme.css` used to also carry `--oat-cream`, `--midnight-violet`, `--turmeric-gold`, `--vivid-leaf`, `--electric-coral`, `--oat-cream-dark`, `--violet-soft`, `--violet-hover`, `--gold-hover`, `--text-muted`, `--text-body`, `--card-border`, `--violet-light`, `--ink-faint`, `--qty-done`, `--leaf-dark`, `--plum`, `--plum-ink`, `--gold`, `--gold-ink`, `--cream`, `--card`, `--menu-paper`, `--menu-rule`, `--menu-ink`, `--rule`, `--muted`, `--faded` and `--font-heading` (28 names — a few more than this paragraph used to list) as `var()` forwards to the tokens above, kept for ~40 old call sites. Every call site was moved to its canonical name (identical value, so no visual change) and the alias block was deleted once nothing referenced it. If you're reading an old branch or a stale comment that still names one of these, look up its canonical replacement in this file's git history rather than reintroducing it.
 
 ---
 

@@ -9,6 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>This week's meals</title>
 <link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). Light-only, matching this page's data-theme="light". -->
 <meta name="theme-color" content="#1B3328" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
@@ -52,7 +53,7 @@
     font-weight: 700;
     font-size: 0.78rem;
     color: var(--on-accent-ink);
-    background: var(--vivid-leaf);
+    background: var(--celadon);
     border-radius: var(--radius-pill);
     padding: 3px 11px;
   }
@@ -68,9 +69,9 @@
     margin-bottom: 14px;
   }
   .suggested-note {
-    background: var(--violet-soft);
-    color: var(--midnight-violet);
-    border: 1px solid var(--card-border);
+    background: var(--celadon-tint);
+    color: var(--spruce);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-card);
     padding: 0.7rem 1rem;
     font-family: var(--font-body);
@@ -87,7 +88,7 @@
     margin-bottom: 14px;
   }
   .sidebar {
-    background: #1B3328;
+    background: var(--spruce);
     width: 52px;
     flex-shrink: 0;
     display: flex;
@@ -99,7 +100,7 @@
     font-family: "Figtree", sans-serif;
     font-weight: 700;
     font-size: 11px;
-    color: #FBF6EE;
+    color: var(--ground);
     opacity: 0.5;
     text-align: center;
     padding: 7px 0;
@@ -112,14 +113,14 @@
   .sidebar-tab.rot-l:hover:not(.active) { transform: rotate(-3deg); }
   .sidebar-tab.rot-r:hover:not(.active) { transform: rotate(3deg); }
   .sidebar-tab.active {
-    background: #E0915C;
-    color: #1B3328;
+    background: var(--apricot);
+    color: var(--on-accent-ink);
     opacity: 1;
     font-weight: 800;
     cursor: default;
   }
   .content-col {
-    background: #FBF6EE;
+    background: var(--ground);
     flex: 1;
     padding: 26px 28px;
     min-width: 0;
@@ -131,10 +132,10 @@
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #7E7360;
+    color: var(--ink-muted);
     margin-bottom: 4px;
   }
-  .day-title { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 21px; color: #23302A; }
+  .day-title { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 21px; color: var(--ink); }
   .meal-block { text-align: center; margin-bottom: 16px; }
   .meal-block:last-child { margin-bottom: 0; }
   .meal-badge {
@@ -148,23 +149,26 @@
     border-radius: 20px;
     margin-bottom: 7px;
   }
-  .meal-badge.breakfast { background: #E6D9C4; color: #1B3328; transform: rotate(-2deg); }
-  .meal-badge.lunch { background: #A9C4B0; color: var(--on-accent-ink); transform: rotate(2deg); }
-  .meal-badge.dinner { background: #B23A22; color: #fff; transform: rotate(-2deg); }
-  .meal-badge.snack { background: #E0915C; color: #1B3328; transform: rotate(2deg); }
-  .meal-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 14.5px; color: #23302A; line-height: 1.4; }
-  .meal-divider { height: 1px; background: #B23A22; opacity: 0.2; width: 36px; margin: 0 auto 16px; }
+  .meal-badge.breakfast { background: var(--hairline-strong); color: var(--spruce); transform: rotate(-2deg); }
+  .meal-badge.lunch { background: var(--celadon); color: var(--on-accent-ink); transform: rotate(2deg); }
+  /* color: #fff has no exact token twin here — --urgent-ink is #F6EEE1 in
+     light, not byte-identical, so this is left literal (design hygiene
+     pass, 2026-09-12; flagged for Emily in the report, not fixed here). */
+  .meal-badge.dinner { background: var(--urgent); color: #fff; transform: rotate(-2deg); }
+  .meal-badge.snack { background: var(--apricot); color: var(--on-accent-ink); transform: rotate(2deg); }
+  .meal-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 14.5px; color: var(--ink); line-height: 1.4; }
+  .meal-divider { height: 1px; background: var(--urgent); opacity: 0.2; width: 36px; margin: 0 auto 16px; }
 
-  .empty, .error { color: var(--text-muted); font-size: 0.95rem; padding: 1rem 0; }
+  .empty, .error { color: var(--ink-secondary); font-size: 0.95rem; padding: 1rem 0; }
   .pool-toggle {
     display: block;
     text-align: center;
     font-family: var(--font-body);
     font-weight: 700;
-    color: var(--midnight-violet);
+    color: var(--spruce);
     font-size: 0.85rem;
     background: transparent;
-    border: 1px solid var(--midnight-violet);
+    border: 1px solid var(--spruce);
     border-radius: var(--radius-control);
     padding: 12px 0;
     min-height: 44px;
@@ -173,19 +177,19 @@
     margin-top: 6px;
     transition: background 0.15s ease;
   }
-  .pool-toggle:hover { background: var(--violet-soft); }
+  .pool-toggle:hover { background: var(--celadon-tint); }
   h2.category-title {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     font-weight: 600;
     font-size: 1rem;
     margin: 20px 0 8px;
-    color: var(--midnight-violet);
+    color: var(--spruce);
     text-transform: capitalize;
   }
   h2.category-title:first-child { margin-top: 0; }
   .component-card {
-    background: #fff;
-    border: 1px solid var(--card-border);
+    background: var(--surface-raised);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     padding: 0.4rem 1.15rem;
@@ -193,15 +197,15 @@
   }
   .component-card .item {
     font-family: var(--font-body);
-    color: var(--text-body);
+    color: var(--ink);
     padding: 0.6rem 0;
-    border-bottom: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--hairline);
     font-size: 1.05rem;
   }
   .component-card .item:last-child { border-bottom: none; }
   #pool { display: none; }
   #pool.open { display: block; }
-  .footer-note { color: var(--text-muted); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+  .footer-note { color: var(--ink-secondary); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
 </style>
 </head>
 <body>

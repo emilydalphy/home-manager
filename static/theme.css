@@ -129,6 +129,29 @@
   --celadon-label:  #4F6B5B;  /* label + icon stroke inside celadon tiles */
 
   /*
+    Grocery's per-store avatar colours (shell.js groStoreColor/
+    GRO_STORE_PALETTE). Arbitrary identity colours, not semantic roles —
+    unlike every token above, they are deliberately the SAME value in light
+    and dark (not redefined in the dark block below), because the avatar
+    always carries --on-accent-ink per Rule 1 and needs to stay a light
+    accent in both modes. Measured against --on-accent-ink in both modes,
+    the worst pair is 5.40:1 (light) / 6.32:1 (dark). Added design hygiene
+    pass, 2026-09-12 — previously six literal hexes hardcoded in shell.js.
+  */
+  --store-1: #E0915C;
+  --store-2: #A9C4B0;
+  --store-3: #F2B98E;
+  --store-4: #C7DACD;
+  --store-5: #E6D9C4;
+  --store-6: #EFD3A9;
+  /* The "Unassigned"/"Any store" fallback (shell.js groStoreColor) — a
+     quiet neutral, not a store identity, but it shares --store-5's exact
+     value and the same "fixed regardless of theme" reasoning: it must NOT
+     move to --sand-deep/--hairline-strong's dark value, since it was never
+     dark-aware before this token existed and this pass changes no pixels. */
+  --store-none: #E6D9C4;
+
+  /*
     RULE ONE, made a token. Dark spruce text on light accent fills, always.
     Ivory on saturated apricot or celadon fails contrast outright. There is
     no exception, including icon strokes.
@@ -222,48 +245,14 @@
   --motion-ease:    cubic-bezier(.2,.7,.2,1);  /* ease-out: settles in, doesn't bounce */
   --motion-ease-in: cubic-bezier(.4,0,1,1);    /* ease-in: for anything leaving */
 
-  /* ================= COMPATIBILITY ALIASES — do not extend =================
-     Old names, forwarded to the canonical tokens above. Every one of these is
-     a `var()` reference, never a literal, so there is exactly one place any
-     colour is defined. Move call sites off these as you touch them. */
-
-  /* was: the original brand names */
-  --oat-cream:       var(--ground);
-  --midnight-violet: var(--spruce);
-  --turmeric-gold:   var(--apricot);
-  --vivid-leaf:      var(--celadon);
-  --electric-coral:  var(--urgent);
-  --oat-cream-dark:  var(--hairline);
-  --violet-soft:     var(--celadon-tint);
-  --violet-hover:    var(--spruce-raised);
-  --gold-hover:      var(--apricot-deep);
-  --text-muted:      var(--ink-secondary);
-  --text-body:       var(--ink);
-  --card-border:     var(--hairline);
-
-  /* was: the Grocery-redesign set */
-  --violet-light: var(--celadon-label);
-  --ink-faint:    var(--ink-inactive);
-  --qty-done:     var(--ink-done-soft);
-  --leaf-dark:    var(--celadon-label);
-
-  /* was: the app-shell set */
-  --plum:       var(--spruce);
-  --plum-ink:   var(--ink);
-  --gold:       var(--apricot);
-  --gold-ink:   var(--on-accent-ink);  /* CHANGED: dark spruce on apricot */
-  --cream:      var(--ground);
-  --card:       var(--surface);
-  --menu-paper: var(--surface);
-  --menu-rule:  var(--hairline);
-  --menu-ink:   var(--apricot-label);
-  --rule:       var(--hairline);
-  --muted:      var(--ink-secondary);
-  --faded:      var(--ink-inactive);
-
-  /* --font-heading predates the three-face system; --font-display is the name
-     the brand guide uses. */
-  --font-heading: var(--font-display);
+  /* The COMPATIBILITY ALIASES block that used to live here (--oat-cream,
+     --midnight-violet, --plum, --muted, --font-heading, 28 names in all —
+     see DESIGN_SYSTEM.md §1's history) is gone: design hygiene pass,
+     2026-09-12, migrated every remaining call site to its canonical token
+     (same value, so no visual change) and deleted the block once nothing
+     referenced it. If a future revert needs one of these names back, the
+     canonical token it forwarded to is in this file's git history at this
+     comment's location. */
 }
 
 /* ---------- Base ---------- */
@@ -481,10 +470,11 @@ summary:focus-visible,
 /*
   Shared inline mic icon for a single text input/textarea, wired via
   static/dictation.js's setupDictation(). Lives in theme.css (not
-  shell.css) so grocery.html/inventory.html/memory.html — standalone
-  pages that only link theme.css — can use it too. Distinct from
-  grocery.html's own .mic-btn, which is an unrelated floating
-  hands-free-voice-session toggle, not a per-field dictation button.
+  shell.css) so a standalone page that only links theme.css — inventory.html
+  is the one left using it — can use it too. Distinct from the old
+  grocery.html's own .mic-btn (deleted, design hygiene pass, 2026-09-12),
+  which was an unrelated floating hands-free-voice-session toggle, not a
+  per-field dictation button.
 */
 .dictate-btn {
   flex-shrink: 0;
@@ -604,12 +594,14 @@ summary:focus-visible,
 
    THE OPT-OUT: `:root:not([data-theme="light"])` rather than a bare `:root`.
    A page that puts data-theme="light" on its <html> keeps the light values
-   whatever the phone is set to. FOUR pages do, for two different reasons:
+   whatever the phone is set to. One page does now:
      - share.html — the public "printed menu" card, deliberately the same
        for every recipient; see the note at the top of its style block.
-     - grocery.html, cooker.html, kitchen.html — dead legacy pages the shell
-       replaced, reachable only by typing their /static/ URL, carrying ~180
-       light literals between them. Pinned rather than half-converted.
+   (Until the design hygiene pass, 2026-09-12, static/grocery.html,
+   cooker.html and kitchen.html also opted out this way — dead legacy pages
+   the shell had already replaced, reachable only by typing their /static/
+   URL, carrying ~180 light literals between them that were pinned rather
+   than half-converted. Deleted along with the pages, not tokenised.)
    This is also the hook a future manual toggle would use, which is why it
    is an attribute rather than something share.html-specific.
    ========================================================================== */

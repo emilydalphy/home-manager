@@ -17,13 +17,13 @@
   body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; background: var(--page, var(--sand)); }
   .inv-header { padding: 20px 20px 6px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .inv-back { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; color: var(--ink-strong); text-decoration: none; display: block; margin-bottom: 8px; }
-  .inv-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.8rem; color: var(--ink-strong); margin: 0; }
+  .inv-title { font-family: var(--font-display); font-weight: 700; font-size: 1.8rem; color: var(--ink-strong); margin: 0; }
   .inv-summary { font-family: var(--font-body); font-size: 0.84rem; color: var(--ink-secondary); text-align: right; white-space: nowrap; padding-top: 8px; }
 
   .inv-content { padding: 6px 20px 20px; }
   .inv-card { background: var(--surface-raised); border-radius: 18px; padding: 16px 18px 10px; margin-bottom: 16px; }
   .inv-card-header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--hairline); padding-bottom: 10px; margin-bottom: 4px; }
-  .inv-card-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.2rem; color: var(--ink-strong); margin: 0; }
+  .inv-card-name { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--ink-strong); margin: 0; }
   .inv-card-count { font-family: var(--font-body); font-size: 0.84rem; color: var(--ink-muted); }
   .inv-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline); cursor: pointer; }
   .inv-row:last-child { border-bottom: none; }
@@ -52,7 +52,7 @@
   .inv-add-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .inv-add-row input, .inv-add-row select { font-family: var(--font-body); border: 1px solid rgba(0,0,0,.15); border-radius: 10px; padding: 10px 12px; font-size: 0.88rem; }
   .inv-add-row input#inv-add-item { flex: 1; min-width: 120px; }
-  .inv-add-row button { background: var(--midnight-violet); color: var(--oat-cream); border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+  .inv-add-row button { background: var(--spruce); color: var(--ground); border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
 
   /* Photo capture (restored — see design_handoff_home_manager README's
      Phase 4 note on why this was originally dropped, and the later
@@ -66,7 +66,7 @@
 
   #inv-scan-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; background: var(--surface-raised); border-radius: 26px 26px 0 0; padding: 16px 20px 24px; z-index: 999; display: none; max-height: 88vh; overflow-y: auto; animation: invSheetUp .24s cubic-bezier(.2,.8,.2,1); }
   #inv-scan-sheet.open { display: block; }
-  .inv-scan-title { font-family: var(--font-heading); font-weight: 700; font-size: 1.3rem; color: var(--ink); margin: 0 0 4px; }
+  .inv-scan-title { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; color: var(--ink); margin: 0 0 4px; }
   .inv-scan-sub { font-family: var(--font-body); font-size: 0.86rem; color: var(--ink-secondary); margin: 0 0 16px; }
   .inv-scan-loading { text-align: center; padding: 40px 10px; font-family: var(--font-body); color: var(--ink-muted); }
   .inv-scan-item { background: var(--ground); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
@@ -80,7 +80,7 @@
   .inv-scan-empty-note { font-family: var(--font-body); color: var(--ink-muted); text-align: center; padding: 20px 10px; }
   .inv-scan-actions { display: flex; gap: 10px; margin-top: 14px; }
   .inv-scan-actions button { flex: 1; padding: 14px; border-radius: 13px; font-weight: 700; font-size: 0.92rem; cursor: pointer; font-family: var(--font-body); border: none; }
-  .inv-scan-save { background: var(--midnight-violet); color: var(--oat-cream); }
+  .inv-scan-save { background: var(--spruce); color: var(--ground); }
   .inv-scan-cancel { background: transparent; border: 1.5px solid var(--ink-strong) !important; color: var(--ink-strong); }
 
   /* Location pill nav — jump straight to a section instead of scrolling
@@ -89,7 +89,7 @@
      highlights just that card. */
   .inv-loc-nav { display: flex; gap: 8px; padding: 0 20px 10px; overflow-x: auto; }
   .inv-loc-pill { flex: none; font-family: var(--font-body); font-weight: 700; font-size: 0.84rem; padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--hairline-strong); background: var(--surface-raised); color: var(--ink-strong); cursor: pointer; white-space: nowrap; }
-  .inv-loc-pill.active { background: var(--midnight-violet); border-color: var(--midnight-violet); color: var(--oat-cream); }
+  .inv-loc-pill.active { background: var(--spruce); border-color: var(--spruce); color: var(--ground); }
   .inv-card.inv-card-highlight { animation: invCardPulse 1s ease; }
   @keyframes invCardPulse { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--turmeric-gold, var(--apricot)); } }
 
@@ -105,12 +105,12 @@
      still renders as the same grab handle. */
   .inv-sheet-handle { display: block; width: 44px; height: 5px; padding: 0; border: none; appearance: none; border-radius: 999px; background: var(--hairline-strong); margin: 0 auto 14px; cursor: pointer; }
   .inv-sheet-kicker { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--apricot-label); margin: 0 0 4px; }
-  .inv-sheet-name { font-family: var(--font-heading); font-weight: 700; font-size: 1.5rem; color: var(--ink); margin: 0 0 18px; }
+  .inv-sheet-name { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--ink); margin: 0 0 18px; }
   .inv-sheet-label { font-family: var(--font-body); font-size: 0.92rem; color: var(--ink-secondary); margin: 0 0 8px; }
   .inv-stepper-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 20px; }
   .inv-stepper-btn { width: 44px; height: 44px; border-radius: 12px; background: var(--ground); border: none; font-family: var(--font-body); font-weight: 800; font-size: 20px; color: var(--ink-strong); cursor: pointer; }
   .inv-stepper-btn:hover { background: var(--sand); }
-  .inv-stepper-value { width: 120px; text-align: center; font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; }
+  .inv-stepper-value { width: 120px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
   .inv-location-row { display: flex; gap: 8px; margin-bottom: 20px; }
   .inv-location-btn { flex: 1; padding: 13px 0; border-radius: 12px; border: 1.5px solid var(--hairline-strong); background: var(--surface-raised); font-family: var(--font-body); font-weight: 400; color: var(--ink); cursor: pointer; text-align: center; }
   .inv-location-btn.selected { background: var(--celadon-tint); border-color: var(--ink-strong); font-weight: 700; color: var(--ink-strong); }
@@ -123,7 +123,7 @@
   .inv-bb-date { width: 90px; text-align: center; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; }
   .inv-sheet-actions { display: flex; flex-direction: column; gap: 10px; }
   .inv-action-btn { padding: 15px; border-radius: 13px; font-weight: 700; font-size: 0.94rem; cursor: pointer; font-family: var(--font-body); border: none; }
-  .inv-action-add { background: var(--midnight-violet); color: var(--oat-cream); }
+  .inv-action-add { background: var(--spruce); color: var(--ground); }
   .inv-action-add.on-list { background: var(--celadon-tint); color: var(--celadon-label); cursor: default; }
   .inv-action-used { background: transparent; border: 1.5px solid var(--ink-strong); color: var(--ink-strong); }
 
@@ -157,7 +157,7 @@
        (3.21:1 on the dark card). Light is untouched and keeps the UA grey. */
     input::placeholder, textarea::placeholder { color: var(--ink-placeholder); }
 
-    /* Ivory text on a spruce fill. These say `color: var(--oat-cream)`, and
+    /* Ivory text on a spruce fill. These say `color: var(--ground)`, and
        --oat-cream is an alias for --ground, which INVERTS: in dark it is
        #101F19, i.e. dark text on a spruce button. --ivory-ink is the token
        that means "text on spruce" and is right in both modes, but it is

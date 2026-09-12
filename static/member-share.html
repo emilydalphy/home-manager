@@ -9,6 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>My preferences</title>
 <link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
 <meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <meta name="robots" content="noindex, nofollow" />
@@ -23,36 +24,36 @@
   p.subtitle { margin: 0 0 1.5rem; }
   .card {
     background: var(--surface-raised);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     padding: 16px 18px;
     margin-bottom: 14px;
   }
   .card h2 { font-size: 1rem; margin: 0 0 4px; }
-  .card .hint { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 10px; }
+  .card .hint { color: var(--ink-secondary); font-size: 0.8rem; margin: 0 0 10px; }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .chip {
-    background: var(--violet-soft);
+    background: var(--celadon-tint);
     color: var(--ink-strong);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     font-family: var(--font-body);
     font-weight: 500;
     padding: 5px 12px;
     border-radius: var(--radius-pill);
     font-size: 0.85rem;
   }
-  .empty { color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
-  .error { color: var(--electric-coral); font-size: 0.95rem; padding: 1rem 0; }
+  .empty { color: var(--ink-secondary); font-size: 0.85rem; font-style: italic; }
+  .error { color: var(--urgent); font-size: 0.95rem; padding: 1rem 0; }
   .add-row { display: flex; gap: 8px; }
   input[type=text], textarea {
     flex: 1;
     padding: 8px 10px;
     border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     font-size: 0.95rem;
     background: var(--surface-raised);
-    color: var(--text-body);
+    color: var(--ink);
     font-family: var(--font-body);
   }
   textarea { width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box; margin-bottom: 8px; }
@@ -63,18 +64,21 @@
     min-height: 44px;
     border-radius: var(--radius-control);
     border: none;
-    background: var(--midnight-violet);
+    background: var(--spruce);
+    /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
+       light, not byte-identical, so it stays literal (design hygiene pass,
+       2026-09-12; flagged for Emily in the report). */
     color: #fff;
     font-size: 0.9rem;
     cursor: pointer;
     transition: background 0.15s ease;
   }
-  button.action:hover:not(:disabled) { background: var(--violet-hover); }
+  button.action:hover:not(:disabled) { background: var(--spruce-raised); }
   button.action:disabled { opacity: 0.6; cursor: default; }
-  .note-item { padding: 8px 0; border-bottom: 1px solid var(--card-border); font-size: 0.9rem; color: var(--text-body); font-family: var(--font-body); }
+  .note-item { padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 0.9rem; color: var(--ink); font-family: var(--font-body); }
   .note-item:last-child { border-bottom: none; }
-  .note-date { color: var(--text-muted); font-size: 0.75rem; }
-  .footer-note { color: var(--text-muted); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+  .note-date { color: var(--ink-secondary); font-size: 0.75rem; }
+  .footer-note { color: var(--ink-secondary); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
 </style>
 </head>
 <body>

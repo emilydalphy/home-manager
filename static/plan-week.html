@@ -10,6 +10,7 @@
 <title>Plan the week — Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
 <meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
 <style>
@@ -43,40 +44,40 @@
     max-width: 640px;
     margin: 0 auto;
     padding: 24px 20px 140px;   /* room for the fixed footer */
-    background: var(--oat-cream);
-    color: var(--text-body);
+    background: var(--ground);
+    color: var(--ink);
   }
-  h1 { font-family: var(--font-heading); font-weight: 700; font-size: 1.55rem; color: var(--ink-strong); margin: 0 0 12px; line-height: 1.25; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.55rem; color: var(--ink-strong); margin: 0 0 12px; line-height: 1.25; }
   .eyebrow {
     font-family: var(--font-body); font-weight: 700; font-size: 0.72rem;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-secondary);
     margin-bottom: 6px;
   }
   .progress { display: flex; gap: 6px; margin-bottom: 18px; }
-  .step-sub { font-size: 0.95rem; line-height: 1.45; color: var(--text-muted); margin: -4px 0 16px; }
+  .step-sub { font-size: 0.95rem; line-height: 1.45; color: var(--ink-secondary); margin: -4px 0 16px; }
   /* The days as tiles (2026-09-11): the weekday, the date, and a line for
      whatever has been said about it. Tapping opens the day sheet. */
   .day-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
   .day-tile {
     min-height: 74px; padding: 10px 6px 8px; border-radius: 14px;
-    border: 1.5px solid var(--card-border); background: var(--surface-raised);
+    border: 1.5px solid var(--hairline); background: var(--surface-raised);
     display: flex; flex-direction: column; align-items: center; gap: 2px;
     font-family: var(--font-body); cursor: pointer; text-align: center;
   }
   .day-tile:hover { border-color: var(--ink-strong); }
   .day-tile.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
-  .day-tile-dow { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+  .day-tile-dow { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-secondary); }
   .day-tile.on .day-tile-dow { color: var(--ivory-ink-muted, rgba(246,238,225,.85)); }
-  .day-tile-num { font-family: var(--font-heading); font-weight: 700; font-size: 18px; line-height: 1.05; }
+  .day-tile-num { font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.05; }
   .day-tile-note { font-size: 11px; font-weight: 700; line-height: 1.2; min-height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-  .meal-block { padding: 12px 0; border-top: 1.5px solid var(--card-border); }
+  .meal-block { padding: 12px 0; border-top: 1.5px solid var(--hairline); }
   .meal-block:first-child { border-top: 0; padding-top: 0; }
   .meal-block .day-section-label { margin-bottom: 8px; }
   .meal-block .day { margin: 0; padding: 0; border: 0; background: transparent; }
   .footer-links { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .back.skip { color: var(--apricot-label, var(--text-muted)); font-weight: 700; margin-left: auto; }
-  .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
-  .dot.done { background: var(--midnight-violet); }
+  .back.skip { color: var(--apricot-label, var(--ink-secondary)); font-weight: 700; margin-left: auto; }
+  .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--hairline); }
+  .dot.done { background: var(--spruce); }
 
   .why {
     background: var(--plum-panel);
@@ -104,23 +105,23 @@
     letter-spacing: .08em; text-transform: uppercase; color: var(--ink-strong);
     margin-bottom: 5px;
   }
-  .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--text-muted); margin: 0 0 12px; }
+  .block-body { font-size: 0.88rem; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 12px; }
 
   /* ---- Day rows (Q1) ---- */
   .day {
     background: var(--surface-raised);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     border-radius: 14px;
     padding: 14px 15px;
     margin-bottom: 10px;
   }
   .day-head { display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px; }
-  .day-name { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
-  .day-date { font-size: 0.8rem; color: var(--text-muted); }
+  .day-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
+  .day-date { font-size: 0.8rem; color: var(--ink-secondary); }
   /* What the app already knows about this day, so the household isn't
      re-answering something it has been told. Grey on purpose: it's context,
      not an answer. */
-  .day-hint { font-size: 0.82rem; color: var(--text-muted); font-style: italic; margin-bottom: 10px; }
+  .day-hint { font-size: 0.82rem; color: var(--ink-secondary); font-style: italic; margin-bottom: 10px; }
   /* Small captions naming what each row of controls is asking — added so
      "Nothing special" (née "Regular night") isn't left to explain itself,
      and so the presence row reads as a question rather than a stray row of
@@ -128,7 +129,7 @@
      instead of beside it. */
   .day-section-label {
     font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--text-muted); margin: 0 0 6px;
+    text-transform: uppercase; color: var(--ink-secondary); margin: 0 0 6px;
   }
   .day-section-label.presence-section-label { margin-top: 10px; }
   .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -137,12 +138,15 @@
     display: inline-flex; align-items: center;
     font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--card-border);
-    background: var(--surface-raised); color: var(--text-body);
+    border: 1px solid var(--hairline);
+    background: var(--surface-raised); color: var(--ink);
     cursor: pointer;
   }
   .tag:hover { border-color: var(--ink-strong); }
-  .tag.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
+     light, not byte-identical, so it stays literal here (design hygiene
+     pass, 2026-09-12; flagged for Emily in the report). */
+  .tag.on { background: var(--spruce); border-color: var(--spruce); color: #fff; }
 
   /* ---- The holiday (Loop Board "Holidays: Pomona knows 12 October is
      coming and asks how you're spending it", 2026-09-11). One quiet card
@@ -156,16 +160,16 @@
   }
   .holiday-eyebrow {
     font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--text-muted); margin-bottom: 3px;
+    color: var(--ink-secondary); margin-bottom: 3px;
   }
-  .holiday-q { font-family: var(--font-heading); font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); margin: 0 0 9px; }
+  .holiday-q { font-family: var(--font-display); font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); margin: 0 0 9px; }
   .holiday .ack { margin-top: 8px; }
   .holiday-dish { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
   .holiday-dish input {
     flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px;
-    border-radius: var(--radius-control); border: 1px solid var(--card-border);
+    border-radius: var(--radius-control); border: 1px solid var(--hairline);
     font-family: var(--font-body); font-size: 0.9rem;
-    background: var(--surface-raised); color: var(--text-body);
+    background: var(--surface-raised); color: var(--ink);
   }
   .holiday-dish input:focus { border-color: var(--ink-strong); outline: none; }
   .holiday-dish button {
@@ -179,12 +183,12 @@
   /* ---- Guest follow-up ---- */
   .guests {
     margin-top: 12px; padding: 13px 14px;
-    background: var(--oat-cream); border-radius: 12px;
+    background: var(--ground); border-radius: 12px;
   }
-  .guests h3 { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 700; color: var(--ink-strong); margin: 0 0 4px; }
-  .guests p { font-size: 0.83rem; line-height: 1.45; color: var(--text-muted); margin: 0 0 11px; }
+  .guests h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: var(--ink-strong); margin: 0 0 4px; }
+  .guests p { font-size: 0.83rem; line-height: 1.45; color: var(--ink-secondary); margin: 0 0 11px; }
   .stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-  .stepper-label { font-size: 0.88rem; color: var(--text-body); }
+  .stepper-label { font-size: 0.88rem; color: var(--ink); }
   .stepper { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .stepper button {
     width: 36px; height: 36px; flex-shrink: 0;
@@ -192,7 +196,7 @@
     background: var(--surface-raised); color: var(--ink-strong);
     font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
   }
-  .stepper button:hover:not(:disabled) { background: var(--violet-soft); }
+  .stepper button:hover:not(:disabled) { background: var(--celadon-tint); }
   .stepper button:disabled { opacity: .35; cursor: default; }
   .stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); }
 
@@ -203,27 +207,30 @@
     display: inline-flex; align-items: center;
     font-family: var(--font-body); font-size: 0.85rem;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--card-border);
-    background: var(--surface-raised); color: var(--text-body);
+    border: 1px solid var(--hairline);
+    background: var(--surface-raised); color: var(--ink);
     cursor: pointer;
   }
   .chip:hover { border-color: var(--ink-strong); }
-  .chip.on { background: var(--midnight-violet); border-color: var(--midnight-violet); color: #fff; }
+  /* color: #fff has no exact token twin — --ivory-ink is #F6EEE1 in
+     light, not byte-identical, so it stays literal here (design hygiene
+     pass, 2026-09-12; flagged for Emily in the report). */
+  .chip.on { background: var(--spruce); border-color: var(--spruce); color: #fff; }
 
   .card {
-    background: var(--surface-raised); border: 1px solid var(--card-border);
+    background: var(--surface-raised); border: 1px solid var(--hairline);
     border-radius: 14px; padding: 15px 16px;
   }
 
   textarea {
     width: 100%; min-height: 96px; resize: vertical;
     padding: 12px 13px; border-radius: var(--radius-control);
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--hairline);
     font-family: var(--font-body); font-size: 0.92rem; line-height: 1.5;
-    background: var(--surface-raised); color: var(--text-body);
+    background: var(--surface-raised); color: var(--ink);
   }
   textarea:focus { border-color: var(--ink-strong); outline: none; }
-  textarea::placeholder { color: var(--text-muted); }
+  textarea::placeholder { color: var(--ink-secondary); }
 
   /* ---- Footer ---- */
   /* Fixed rather than in flow: the CTA states what's been noted so far
@@ -231,21 +238,21 @@
      the household is still tagging. */
   .footer {
     position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--oat-cream);
-    border-top: 1px solid var(--oat-cream-dark);
+    background: var(--ground);
+    border-top: 1px solid var(--hairline);
     padding: 13px 20px calc(13px + env(safe-area-inset-bottom, 0px));
   }
   .footer-inner { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
   .cta {
     width: 100%; font-family: var(--font-body); font-weight: 700;
-    background: var(--turmeric-gold); color: var(--on-accent-ink);
+    background: var(--apricot); color: var(--on-accent-ink);
     border: none; padding: 14px 22px; min-height: 50px;
     border-radius: var(--radius-control); font-size: 0.98rem; cursor: pointer;
   }
-  .cta:hover:not(:disabled) { background: var(--gold-hover); }
+  .cta:hover:not(:disabled) { background: var(--apricot-deep); }
   .cta:disabled { opacity: .6; cursor: default; }
   .back {
-    background: none; border: none; color: var(--text-muted);
+    background: none; border: none; color: var(--ink-secondary);
     font-family: var(--font-body); font-size: 0.85rem; cursor: pointer;
     min-height: 40px; align-self: center;
   }
@@ -257,7 +264,7 @@
     padding: 12px 14px; font-size: 0.88rem; line-height: 1.5;
     color: var(--ink-strong); margin-bottom: 18px;
   }
-  .loading, .failed { color: var(--text-muted); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+  .loading, .failed { color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 0; text-align: center; }
 
   /* ---- Drafting progress ----
      Shown in place of Q1/Q2 once "draft my week" is tapped. Generating a
