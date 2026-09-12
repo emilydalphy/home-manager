@@ -27,7 +27,7 @@ def test_a_draft_root_is_the_review_with_no_crumb_and_approve_in_the_dock():
     # the week's dates, title and DRAFT chip are the band's (weekBandParts,
     # rendered by renderMealsStep above #week-steps). Only the deeper,
     # approved-week form still draws a .wk-head under its crumb.
-    assert "weekSuggestedNoteHtml(data) +" in review.split("var head = root", 1)[1][:80]
+    assert "? weekSuggestedNoteHtml(data)" in review.split("var head = root", 1)[1][:80]
     assert review.count('<div class="wk-head">') == 1
     assert "weekStepHeadHtml" not in SHELL_JS
     # No invitation line either (copy cleanse, 2026-09-11): the dock's

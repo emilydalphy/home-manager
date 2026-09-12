@@ -120,7 +120,10 @@ def test_plan_fills_its_band_on_the_root_and_hides_it_on_every_step():
     assert step.count("rootBandHtml(") == 1
     parts = _function("weekBandParts")
     assert "id: 'week-band'" in parts
-    assert "title = isWeek || !range ? 'This week' : range;" in parts
+    # "Next week" only when the empty state names a period that hasn't
+    # started (stale-draft fix, 2026-09-11) — see weekBandData.
+    assert "title = isWeek || !range ? (data.period_is_ahead ? 'Next week' : 'This week') : range;" in parts
+    assert "weekBandParts(weekBandData(data), weekState.days || [])" in step
     # The retired in-flow head is gone from the root's two forms.
     assert "weekStepHeadHtml" not in SHELL_JS
     assert "prefsGearRowHtml" not in SHELL_JS
