@@ -783,7 +783,11 @@ def test_a_draft_opens_on_the_review():
     assert 'id="week-check-btn"' not in SHELL_JS
     assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in SHELL_JS
     assert "if (weekState.step === 'review' && draft) weekState.step = 'week';" in SHELL_JS
-    assert "Swap anything. Nothing&rsquo;s bought until you approve." in SHELL_JS
+    # The invitation line ("Swap anything. Nothing's bought until you
+    # approve.") was cut 2026-09-11 (copy cleanse): the dock's "Approve and
+    # build my shopping list" already says it.
+    assert "Swap anything. Nothing&rsquo;s bought" not in SHELL_JS
+    assert "rv-invite" not in SHELL_JS
     assert "goMealsStep('review')" in SHELL_JS  # an approved week still reaches it from More
 
 

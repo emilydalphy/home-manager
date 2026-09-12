@@ -452,7 +452,7 @@
   <!-- ---------- 2 of 4 · Lunches on the go ---------- -->
   <section id="q2" hidden>
     <h1>Any lunches on the go this week?</h1>
-    <p class="step-sub">Tap the days someone takes lunch with them. I&rsquo;ll keep those to food that packs cold.</p>
+    <p class="step-sub">I&rsquo;ll keep those to food that packs cold.</p>
     <div class="chip-row" id="lunch-days"></div>
     <div class="ack" id="lunch-ack"></div>
   </section>
@@ -474,7 +474,6 @@
   <!-- ---------- 4 of 4 · Anything else ---------- -->
   <section id="q4" hidden>
     <h1>Anything else I should plan around?</h1>
-    <p class="step-sub">A night that&rsquo;s already decided, something in the freezer to use up, a craving. I&rsquo;ll keep it and shop for it.</p>
     <textarea id="freeform" placeholder="Friday is pizza night. I want to use the lamb in the freezer."></textarea>
   </section>
 
@@ -531,7 +530,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6l-12 12"></path></svg>
       </button>
     </div>
-    <p class="sheet-lede">Tell me the range once &mdash; I&rsquo;ll cover every meal in between, no need to tag each day.</p>
+    <p class="sheet-lede">One range covers every meal in between &mdash; no need to tag each day.</p>
 
     <div class="field-group" id="away-who-group">
       <span class="field-label">Who&rsquo;s going</span>
@@ -1118,9 +1117,7 @@
     var whole = !data.household_known;
     box.innerHTML =
       '<h3>' + (whole ? 'How many will there be?' : 'Who’s joining you?') + '</h3>' +
-      '<p>' + (whole
-        ? 'I don’t know your household’s make-up yet, so tell me the whole table — adults and children eat differently, and it changes the portions and what I’d suggest cooking.'
-        : 'Adults and children eat differently, so I need both numbers — it changes the portions and what I’d suggest cooking.') + '</p>' +
+      (whole ? '<p>I don’t know your household yet, so count the whole table.</p>' : '') +
       stepperHtml('adults', whole ? 'Adults at the table' : 'Extra adults') +
       stepperHtml('children', whole ? 'Children at the table' : 'Extra children') +
       '<div class="ack"></div>';
@@ -1427,9 +1424,9 @@
       chip.classList.toggle('on', answers.packed_lunch_days.indexOf(chip.dataset.date) !== -1);
     });
     var n = answers.packed_lunch_days.length;
-    $('lunch-ack').textContent = n
-      ? 'I’ll keep those ' + n + ' to things that travel cold, and plan the rest as hot lunches at home.'
-      : '';
+    // No echo under the chips: the screen's own line already says what a
+    // tapped day means (copy cleanse, 2026-09-11).
+    $('lunch-ack').textContent = '';
   }
 
   // ---------- Q2 ----------
@@ -1438,8 +1435,8 @@
       return '<button type="button" class="chip" data-value="' + esc(m) + '">' + esc(m) + '</button>';
     }).join('');
     wireChips($('moods'), answers.moods, function () {
-      $('mood-ack').textContent = answers.moods.length
-        ? 'I’ll lean the week this way without making every night the same.' : '';
+      // No echo: the line under the title already says it (copy cleanse, 2026-09-11).
+      $('mood-ack').textContent = '';
     });
   }
 
@@ -1449,14 +1446,14 @@
     // visibly reflects its own stored profile. The fallback only appears
     // when nothing is saved yet, and taps on it are written back.
     $('cuisine-body').textContent = data.cuisines_are_fallback
-      ? 'You haven’t told me your cuisines yet, so here’s a starting point — whatever you tap I’ll remember for next time too.'
-      : 'The ones you’ve told me you like, from what we know about your household. Whatever you tap wins over your usual rotation this week.';
+      ? 'A starting point — I’ll remember whatever you tap.'
+      : 'Your usual ones. Whatever you tap comes first this week.';
     $('cuisines').innerHTML = data.cuisines.map(function (c) {
       return '<button type="button" class="chip" data-value="' + esc(c) + '">' + esc(c) + '</button>';
     }).join('');
     wireChips($('cuisines'), answers.cuisines, function () {
-      $('cuisine-ack').textContent = answers.cuisines.length
-        ? 'I’ll put these ahead of your usual rotation this week.' : '';
+      // No echo: the body line above the chips already says it (copy cleanse, 2026-09-11).
+      $('cuisine-ack').textContent = '';
     });
   }
 

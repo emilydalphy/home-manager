@@ -635,7 +635,7 @@
     // point on Plan is permanent, so nothing is actually lost.
     wrap.innerHTML =
       '<div class="shell-card plan-nudge-card plan-nudge-dismissed">' +
-        '<div class="plan-nudge-body">Of course. It’ll be waiting for you under Plan — I won’t ask again this week.</div>' +
+        '<div class="plan-nudge-body">It’ll be waiting under Plan — I won’t ask again this week.</div>' +
         '<button type="button" class="plan-nudge-link" id="plan-nudge-later">Plan the week →</button>' +
       '</div>';
     wrap.querySelector('#plan-nudge-later').addEventListener('click', function () {
@@ -1097,9 +1097,10 @@
         (move.time_label ? '<span class="nextup-when">' + escapeHtml(move.time_label) + '</span>' : '') +
       '</div>' +
       moveDishHtml(move, 'hero-dish nextup-dish' + dishSizeClass(move.title)) +
-      // The one Newsreader italic line on the screen (theme.css: "two lines
-      // and it becomes a serif brand") — the move's own reason, never copy
-      // written for the slot.
+      // A plain line, only when the move carries a fact of its own — what a
+      // fridge move is for, which nights a batch covers, how to reheat.
+      // moves.py no longer passes the planner's reasoning here (copy
+      // cleanse, 2026-09-11): it read as noise, not as a person talking.
       (move.reason ? '<div class="hero-accent">' + escapeHtml(move.reason) + '</div>' : '') +
       // Chips and the tick share the last row. The action button that used
       // to sit here is the dock's now (renderTodayDock) — one place for the
@@ -2957,7 +2958,7 @@
 
   function groSortHowHtml(data) {
     var unsorted = groUnsorted(data);
-    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort — nice work.</p>';
+    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort.</p>';
     // Two rows, and the quiet one is last. "1 of 40" is the queue said
     // honestly: it is where you would be after the first answer, out of how
     // many answers it wants.
@@ -2965,7 +2966,7 @@
         '<button type="button" class="gro-howrow" data-gro="goto-sortall">' +
           '<span class="gro-howrow-text">' +
             '<span class="gro-howrow-title">Sort them all on one screen</span>' +
-            '<span class="gro-howrow-sub">One row each. Tap only the exceptions.</span>' +
+            '<span class="gro-howrow-sub">Tap only the exceptions.</span>' +
           '</span>' +
           '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
         '</button>' +
@@ -2995,7 +2996,7 @@
 
   function groSortAllHtml(data) {
     var unsorted = groUnsorted(data);
-    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort — nice work.</p>';
+    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort.</p>';
     var pillStores = groPillStores(data);
     var fallback = groMostUsedStore(data);
     return '<div class="shell-card gro-sortall">' +
@@ -3033,7 +3034,7 @@
   // LIST on its own — see the 'assign' handler.
   function groSortHtml(data) {
     var unsorted = groUnsorted(data);
-    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort — nice work.</p>';
+    if (!unsorted.length) return '<p class="gro-empty">Nothing left to sort.</p>';
     var it = unsorted[0];
     var id = String(it.id);
 
@@ -3224,7 +3225,7 @@
 
   function groNextHtml(data) {
     var remaining = groRemainingStops(data);
-    if (!remaining.length) return '<p class="gro-empty">That is every stop — wrap it up.</p>';
+    if (!remaining.length) return '<p class="gro-empty">That’s every stop — wrap it up.</p>';
     var html = '<div class="gro-store gro-nextstops">' +
       remaining.map(function (name) {
         return '<button type="button" class="gro-nextrow" data-gro="next-stop" ' +
@@ -3437,13 +3438,13 @@
         GRO_ICONS.basket +
         '<span class="gro-ps-text">' +
           '<span class="gro-ps-title">Maybe already home</span>' +
-          '<span class="gro-ps-sub">' + groPlural(flags.length, 'thing', 'things') + ' the kitchen may already have</span>' +
+          '<span class="gro-ps-sub">' + groPlural(flags.length, 'thing', 'things') + '</span>' +
         '</span>' +
         '<span class="gro-ps-check">' + (open ? 'Hide' : 'Check') + '</span>' +
       '</button>';
     if (open) {
       html += '<div class="gro-ps-body">' +
-        '<p class="gro-ps-helper">Inventory thinks these are in the kitchen. Dropping one takes it off today&rsquo;s list.</p>' +
+        '<p class="gro-ps-helper">Dropping one takes it off today&rsquo;s list.</p>' +
         shown.map(function (f) {
           var title = f.onHandLocation ? ' title="In the ' + escapeHtml(f.onHandLocation) + '"' : '';
           return '<div class="gro-ps-row">' +
@@ -3640,7 +3641,7 @@
     return (
       '<div class="shell-card gro-stores-prompt">' +
         '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
-        '<p class="gro-stores-prompt-sub">Tap every shop you use. I&rsquo;ll sort the list by store and plan your stops.</p>' +
+        '<p class="gro-stores-prompt-sub">I&rsquo;ll sort the list by store and plan your stops.</p>' +
         '<div class="gro-pills open">' + chips + '</div>' +
         '<div class="gro-stores-prompt-add">' +
           '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
@@ -5194,16 +5195,14 @@
       // the assistant answers off list_recipes (app/tools/recipes.py).
       '<button type="button" class="kit-row" data-kit="recipes">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Recipes</span>' +
-        '<span class="kit-row-sub">Ask me what we’ve saved</span></span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Recipes</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
       // Bring in a recipe the household already makes, from a web page —
       // the review-before-save sheet (recipe import, 2026-09-11).
       '<button type="button" class="kit-row" data-kit="recipe-link">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span>' +
-        '<span class="kit-row-sub">Paste a recipe page and I’ll read it</span></span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
     '</div>';
@@ -5489,7 +5488,7 @@
       '<p class="rli-source">' +
         (host ? 'From ' + escapeHtml(host) + '. ' : '') +
         (draft.read_by === 'model'
-          ? 'I read this off the page myself, so give it a look before saving.'
+          ? 'Read off the page — check it over before saving.'
           : 'Check it over, then save.') +
       '</p>' +
       '<label class="rli-label" for="rli-name">Name</label>' +
@@ -5568,8 +5567,7 @@
       });
     }).then(function (saved) {
       body.innerHTML =
-        '<p class="rli-done">Saved. \u201c' + escapeHtml(saved.name || payload.name) + '\u201d is one of your recipes now \u2014 ' +
-          'ask me to put it on the week whenever you like.</p>' +
+        '<p class="rli-done">Saved. \u201c' + escapeHtml(saved.name || payload.name) + '\u201d is one of your recipes now.</p>' +
         '<button type="button" class="rli-read" data-rli="another">Add another</button>' +
         '<button type="button" class="rli-link" data-rli="close">Done</button>';
     }).catch(function (err) {
@@ -5991,8 +5989,8 @@
       return '<div class="ready-made">' +
         '<div class="ready-made-ask">' + escapeHtml(entry.need_reason ||
           'First one back — I’ll cover this with something already made.') + '</div>' +
-        '<div class="ready-made-none">I haven’t got anything to earmark for this yet — ' +
-          'nothing batch-cooked earlier and nothing in the freezer.</div>' +
+        '<div class="ready-made-none">Nothing already made to cover it yet — ' +
+          'nothing batch-cooked, nothing in the freezer.</div>' +
       '</div>';
     }
     if (rec.confirmed) {
@@ -6163,7 +6161,7 @@
       // something to show, and says so rather than presenting a suggested
       // arrangement as a schedule.
       (data.menu_is_suggested
-        ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
+        ? '<div class="week-suggested-note">One example — assemble it however you like.</div>'
         : '') +
     '</div>';
   }
@@ -6890,11 +6888,10 @@
     var eating = reviewState.view !== 'days';
     var draft = weekPlanState(data) === 'draft';
     var head = root
-      ? weekStepHeadHtml(data, days) +
-        // The invitation, once, above the dishes: changing things is
-        // expected and cheap (Emily's 2026-09-08 decision on the
-        // sample-menu card).
-        '<div class="rv-invite">Swap anything. Nothing&rsquo;s bought until you approve.</div>'
+      ? weekStepHeadHtml(data, days)
+        // "Swap anything. Nothing's bought until you approve." used to sit
+        // here as an invitation line. Cut 2026-09-11 (copy cleanse): the dock's
+        // "Approve and build my shopping list" already says it.
       : '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' +
         '<div class="wk-head">' +
           '<div class="wk-head-row">' +
@@ -7345,10 +7342,12 @@
 
   var PLATE_GROUP_LABELS = { protein: 'protein', carb: 'carb', vegetable: 'veg' };
 
-  // "Protein, carb, veg. Nothing to thaw." Both halves are read, never
-  // guessed: the groups are the ones the entry recorded (plates.py never
-  // invents them either), and the thaw line is the plan's own defrost task
-  // — the same prep_tasks row Today's fridge move ticks.
+  // Chips for the food groups and sides, then one line for the thaw. Both
+  // are read, never guessed: the groups are the ones the entry recorded
+  // (plates.py never invents them either), and the thaw line is the plan's
+  // own defrost task — the same prep_tasks row Today's fridge move ticks.
+  // The line used to open by restating the chips ("Protein, veg, carb.");
+  // that half was cut on 2026-09-11 (copy cleanse) — the chips already say it.
   // A grab-and-go snack has nothing to say here — no food groups recorded,
   // no added sides, no thaw task — and "Nothing to thaw." on its own isn't
   // information, it's an empty card wearing a caption. Hide rather than
@@ -7365,15 +7364,13 @@
       .map(function (g) { return PLATE_GROUP_LABELS[g] || g; });
     var chips = groups.map(capitalizeFirst)
       .concat(((entry.sides) || []).map(function (s) { return s.name; }));
-    var lines = [];
-    if (groups.length) lines.push(capitalizeFirst(groups.join(', ')) + '.');
-    lines.push(entry.defrost && entry.defrost.note
+    var line = entry.defrost && entry.defrost.note
       ? entry.defrost.note.replace(/\.?$/, '.')
-      : 'Nothing to thaw.');
+      : 'Nothing to thaw.';
     return '<div class="shell-card wk-card">' +
       '<div class="wk-card-title">The plate</div>' +
       chipsRowHtml(chips) +
-      '<div class="wk-card-line">' + escapeHtml(lines.join(' ')) + '</div>' +
+      '<div class="wk-card-line">' + escapeHtml(line) + '</div>' +
     '</div>';
   }
 
@@ -7420,10 +7417,11 @@
     var cookMeal = cookMealForEntry(entry.entry_id);
     var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
     // Emily, 2026-09-11: the meal screen "looks weak for content". One
-    // spruce hero carries the name, the reason it is on this night (the
-    // plan's own recorded reasoning, as the one italic line) and the three
-    // facts; the plate, the recipe and cook-ahead follow as cards; the one
-    // action is in the dock. The "Why this night" card folded into the hero.
+    // spruce hero carries the name and the three facts; the plate, the
+    // recipe and cook-ahead follow as cards; the one action is in the dock.
+    // The plan's recorded reasoning used to sit under the name as an italic
+    // line and was cut the same day (copy cleanse): it was the planner
+    // explaining itself, not something a person would say.
     return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
         escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
       '<div class="dinner-hero wk-meal-hero">' +
@@ -7433,7 +7431,6 @@
           '<span class="nextup-when">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>' +
         '</div>' +
         '<div class="hero-dish' + dishSizeClass(mealDisplayName(entry)) + '">' + escapeHtml(mealDisplayName(entry)) + '</div>' +
-        (entry.reason ? '<div class="hero-accent">' + escapeHtml(entry.reason) + '</div>' : '') +
         (chips.filter(Boolean).length
           ? '<div class="hero-chips">' + chips.filter(Boolean).map(function (c) {
               return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
@@ -8032,15 +8029,15 @@
       // and removing something somebody may already have bought is worse
       // than a slightly long list.
       (hasPlan && data.status === 'approved'
-        ? mealsMoreRowHtml('wk-more-reopen', 'Reopen the week', 'Edit it again — your list stays as it is')
+        ? mealsMoreRowHtml('wk-more-reopen', 'Reopen the week', 'Your list stays as it is')
         : '') +
       // A draft carries "Check the week" on the page itself; an APPROVED
       // week has no decision row for it to sit in, and this step is for
       // every week rather than only for one about to be approved.
       (hasPlan && data.status === 'approved'
-        ? mealsMoreRowHtml('wk-more-check', 'Check the week', 'What you’re eating, and which days')
+        ? mealsMoreRowHtml('wk-more-check', 'Check the week')
         : '') +
-      mealsMoreRowHtml('wk-more-whole-week', 'See the whole week', 'All the meals, and the link to share them') +
+      mealsMoreRowHtml('wk-more-whole-week', 'See the whole week', 'With the link to share it') +
       mealsMoreRowHtml('wk-more-setup', 'Adjust your setup') +
       mealsMoreRowHtml('wk-more-reset', 'Start over');
 
@@ -8968,7 +8965,6 @@
       '<div class="shell-card week-plan-row">' +
         '<div class="week-plan-text">' +
           '<div class="week-plan-title">Plan a week</div>' +
-          '<div class="week-plan-sub">Two rounds of questions, then I’ll draft it. Nothing gets bought until you approve.</div>' +
         '</div>' +
         '<div class="week-plan-buttons">' +
           periods.map(function (p) {
@@ -8997,7 +8993,7 @@
       // freshest — but a household shouldn't have to approve something to
       // reach its own settings.
       '<button type="button" class="week-setup-link" id="week-setup-standing">' +
-        'Weeks not landing how you’d like? Let’s adjust your setup →</button>';
+        'Adjust your setup →</button>';
     row.querySelectorAll('.week-plan-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { startPlanningWeek(btn.dataset.week, dayCount); });
     });
@@ -10180,8 +10176,7 @@
       // A row with a chevron, not a heading over a red link (Emily,
       // 2026-09-11).
       return '<div class="kit-rows"><button type="button" class="kit-row" data-cook="prep-days">' +
-        '<span class="kit-row-text"><span class="kit-row-title">Prep days</span>' +
-        '<span class="kit-row-sub">Tell me which days you prep and I’ll batch the week around them</span></span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Prep days</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button></div>';
     }
@@ -10220,9 +10215,7 @@
     if (!session) return '';
     var chips = [cookMinutesLabel(session.total_minutes_estimate), cookCoversLabel(session.covers)].filter(Boolean);
     var allDone = session.items_total > 0 && session.items_done === session.items_total;
-    var note = allDone
-      ? 'That’s the prep done — the week is easier from here.'
-      : (session.note || '');
+    var note = allDone ? 'That’s the prep done.' : (session.note || '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
         '<button type="button" class="crumb on-spruce" data-cook="exit-session">&lsaquo; Cook</button>' +
@@ -10675,7 +10668,7 @@
   function cookDetailHtml(m, idx, onSpruce, plain) {
     var cls = onSpruce ? ' on-spruce' : '';
     if (!m.has_full_recipe) {
-      return '<p class="cook-norecipe' + cls + '">Freeform meal — no saved recipe detail. Ask in the ask bar for the full recipe.</p>';
+      return '<p class="cook-norecipe' + cls + '">No saved recipe for this one — ask me for it in the chat.</p>';
     }
     var ingredients = (m.ingredients || []).map(function (i) {
       return '<li>' + escapeHtml(cookIngredientLabel(i)) + '</li>';
@@ -11149,10 +11142,11 @@
       if (attChip) chips.push(attChip);
     }
 
-    // Newsreader italic, at most once per screen (DESIGN_SYSTEM §3) and
-    // only on Before you start: it carries a real fact about the cook —
-    // the batch first, because it explains the quantities under it.
-    var note = onPrep ? (cookBatchNote(meal) || meal.advance_prep_notes || meal.reasoning || '') : '';
+    // One plain line, only on Before you start, and only when it carries a
+    // real fact about the cook — the batch first, because it explains the
+    // quantities under it. The planner's reasoning used to be the fallback;
+    // cut 2026-09-11 (copy cleanse).
+    var note = onPrep ? (cookBatchNote(meal) || meal.advance_prep_notes || '') : '';
 
     return '<div class="cook-hero' + (onPrep ? '' : ' cook-hero-slim') + '">' +
       '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
@@ -11279,8 +11273,8 @@
       // isn't there. Say the true thing in each case, and name the way out
       // the screen really has.
       body = meal.has_full_recipe
-        ? '<p class="cook-dim">Nothing to get out for this one yet. The whole method has a way to fill the recipe in.</p>'
-        : '<p class="cook-dim">Nothing written down for this one. Ask me for the recipe and I’ll put one together.</p>';
+        ? '<p class="cook-dim">Nothing to get out yet — fill the recipe in under The whole method.</p>'
+        : '<p class="cook-dim">Nothing written down for this one — ask me for the recipe.</p>';
     }
     return '<div class="cook-body">' + body + '</div>';
   }
@@ -11484,11 +11478,11 @@
     // inventory-is-background policy: nobody should have to read a wall of
     // questions to get to tonight.
     var open = cookState.attentionOpen;
-    var sub = items.length === 1 ? '1 quick thing from last night' : items.length + ' quick things from last night';
+    var sub = items.length === 1 ? '1 quick thing' : items.length + ' quick things';
     var html = '<div class="cook-attention">' +
       '<button type="button" class="cook-attention-head" data-cook="attn-toggle" aria-expanded="' + open + '">' +
         '<span class="cook-attention-text">' +
-          '<span class="cook-attention-title">Needs your attention</span>' +
+          '<span class="cook-attention-title">How did it go?</span>' +
           '<span class="cook-attention-sub">' + escapeHtml(sub) + '</span>' +
         '</span>' +
         '<span class="cook-attention-toggle">' + (open ? 'Hide' : 'Review') + '</span>' +
@@ -11650,7 +11644,7 @@
   // there's no separate cook to rate, the dish was already rated the
   // night it was actually made.
   function toastMealLogged() {
-    showToast('Logged. I’ll remember how it went.', {
+    showToast('Logged — that’ll steer next week.', {
       label: 'Rate it',
       onClick: function () { cookState.attentionOpen = true; renderCook(); },
     });
@@ -13086,11 +13080,14 @@
     return out.join('\n');
   }
 
+  // Plain, and about the thing actually happening (DESIGN_SYSTEM §2b S9 —
+  // no winks). The kitchen-pun set ("Preheating the ideas oven...",
+  // "Whipping this up...") went on 2026-09-11, copy cleanse.
   var LOADING_PHRASES = {
-    grocery: ['Cooking up your list...', 'Sorting the aisles...', 'Filling the cart...'],
-    meal: ['Cooking up a plan...', 'Simmering on your week...', 'Plating up some ideas...', 'Preheating the ideas oven...'],
-    chore: ['Sweeping up the details...', 'Tidying up your schedule...', 'Dusting things off...'],
-    default: ['Whipping this up...', 'Stirring up an answer...', 'Cooking something up...', 'Simmering on it...']
+    grocery: ['Sorting out the list...', 'Working on the list...'],
+    meal: ['Working on the week...', 'Looking at the week...'],
+    chore: ['Working on the chores...'],
+    default: ['One moment...', 'Working on it...']
   };
   function pickLoadingPhrase(message) {
     var m = (message || '').toLowerCase();
@@ -13134,7 +13131,7 @@
     // No exclamation mark, and an offer rather than an instruction — this
     // is the first thing the assistant ever says, and it has to sit beside
     // the same voice as the rest of the app.
-    addAskMessage('assistant', 'Tell me what you’d like different and I’ll rework it — no need to be polite about it.');
+    addAskMessage('assistant', 'Tell me what you’d like different and I’ll rework it.');
   }
 
   function buildAskMessageEl(role, text, actions) {
@@ -14109,7 +14106,8 @@
     var anchor = rhythm.planning_anchor || '';
     if (anchor === 'as_we_go') bits.push('planned as you go');
     else if (anchor) bits.push('plan ready ' + anchor.charAt(0).toUpperCase() + anchor.slice(1) + 's');
-    return bits.length ? bits.join(' · ') : 'Not set yet';
+    // Empty: what the answer does, not "Not set yet" (copy cleanse, 2026-09-11).
+    return bits.length ? bits.join(' · ') : 'Sets when to start cooking';
   }
 
   function prefsPrepLine(mem) {
@@ -14117,7 +14115,7 @@
     // prep_days_summary is a sentence ("Preps on Sunday (about an hour).");
     // this row already says "Prep days", so the lead-in and the full stop
     // are the app repeating itself.
-    return summary ? summary.replace(/^Preps on /, '').replace(/\.$/, '') : 'Not set yet';
+    return summary ? summary.replace(/^Preps on /, '').replace(/\.$/, '') : 'Batches the week around them';
   }
 
   var PREFS_LEFTOVERS = {
@@ -14541,11 +14539,9 @@
         return;
       }
       el.hidden = false;
-      // A label in the sheet, where the chips now sit between the greeting
-      // and the composer; the desktop column's row has its own place and
-      // needs none.
-      el.innerHTML = (el.id === 'ask-examples' ? '<span class="ask-examples-label">Or start with one of these</span>' : '') +
-        prompts.map(function (text, i) {
+      // No label over the chips ("Or start with one of these" used to sit
+      // here; cut 2026-09-11, copy cleanse — it narrated the row under it).
+      el.innerHTML = prompts.map(function (text, i) {
         return '<button type="button" class="ask-chip ask-chip-example" data-i="' + i + '">' +
           escapeHtml(text) + '</button>';
       }).join('');
@@ -14583,9 +14579,9 @@
   // ---------- the how-and-why card ----------
 
   var COACH_CARD_LINES = [
-    ['The buttons do the everyday things.', 'Approve the week, tick off the shopping, start a recipe.'],
-    ['For anything else, tap the chat and type it.', '“Jamie’s out Thursday.” “Less chicken.”'],
-    ['If I get something wrong, tell me there.', 'I’ll fix it and remember.']
+    ['Buttons do the everyday things.', 'Approve the week, tick off the shopping, start a recipe.'],
+    ['Everything else, type in the chat.', '“Jamie’s out Thursday.” “Less chicken.”'],
+    ['If I get it wrong, say so there.', 'I’ll fix it and remember.']
   ];
   var COACH_CARD_TITLE = 'Tap for the usual. Type for the rest.';
 
@@ -14803,7 +14799,7 @@
   // real example each, and the line that answers the question nobody asks
   // out loud — what actually happens when you press send.
 
-  var TIPS_OPENING = 'Say it however it comes out. There’s no right way to phrase it.';
+  var TIPS_OPENING = 'Say it however it comes out.';
 
   var TIPS_GROUPS = [
     { tab: 'Now', example: 'What’s next tonight?', line: 'The day in front of you — what’s cooking, who’s out, what still needs doing.' },
@@ -14813,8 +14809,7 @@
   ];
 
   var TIPS_CLOSERS = [
-    'The more you tell me about your week, the better the plan fits.',
-    'Buttons do the common things. Words do the rest.'
+    'The more you tell me about your week, the better the plan fits.'
   ];
 
   var TIPS_AFTER_SEND = 'I’ll say what changed, and the screen updates. If I couldn’t, I’ll say that too.';

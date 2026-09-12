@@ -460,10 +460,13 @@ def test_a_brand_new_household_is_told_nothing_it_never_said(signed_in):
     assert memory["snacks_per_week"] == 3, "the default itself is unchanged"
     assert memory["snacks_per_week_set"] is False, "nobody has answered it"
     lines = _prefs_lines(memory)
+    # Two of the empty rows say what the answer does for the household
+    # rather than "Not set yet" (copy cleanse, 2026-09-11) — still nothing
+    # the household never said.
     assert lines == {
         "Who’s here": "Not set yet",
-        "Your rhythm": "Not set yet",
-        "Prep days": "Not set yet",
+        "Your rhythm": "Sets when to start cooking",
+        "Prep days": "Batches the week around them",
         "How you eat": "Not set yet",
         # The calendar row (2026-09-11) reads /api/calendar, not memory; with
         # nothing connected its honest answer is this, and nothing more.
