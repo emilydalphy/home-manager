@@ -80,12 +80,18 @@ def test_the_kitchen_root_is_the_cooks_tab():
 
 
 def test_the_kitchen_root_says_the_day_and_the_count():
-    """"Monday · 1 cook tonight" — and "today" rather than "tonight" the
-    moment a cook left today is not a dinner."""
+    """"1 cook tonight" under the band's "Friday" — and "today" rather than
+    "tonight" the moment a cook left today is not a dinner. Since the root
+    band (2026-09-11) the day is the band's eyebrow, not part of this line,
+    and a day with nothing on it has no line at all: the empty moment says
+    "nothing to cook tonight", and the band must not say it a second time."""
     fn = _function("kitchenSubtitle")
     assert "' tonight'" in fn and "' today'" in fn
     assert "slot === 'dinner'" in fn, "the tonight/today test no longer reads the slot"
-    _assert_in("nothing to cook today", SHELL_JS, "the empty-day subtitle", "shell.js")
+    assert "return rows.length ? 'nothing left to cook today' : '';" in fn
+    assert "dayName(" not in fn, "the day belongs to the band's eyebrow now"
+    build = _function("buildKitchenPanel")
+    assert "rootBandHtml({ id: 'kit-band', eyebrow: dayName(todayLocalStr(), { weekday: 'long' }), title: 'Cook' })" in build
 
 
 def test_a_cooking_today_line_carries_the_start_by_and_the_badge():
@@ -263,17 +269,25 @@ def test_cook_voice_is_still_gated_after_the_move():
 # --- 3. the gear, and the Preferences sheet -------------------------------
 
 def test_the_gear_is_in_the_header_of_every_root_screen():
-    """Today, Meals, Grocery, Kitchen — and nowhere deeper."""
-    assert "prefsGearHtml()" in _function("buildTodayPanel"), "Today has no gear"
-    assert "prefsGearHtml()" in _function("buildKitchenPanel"), "Kitchen has no gear"
-    assert "prefsGearHtml()" in _function("buildGroceryPanel"), "Grocery has no gear"
-    assert "prefsGearRowHtml('meals-gear-row')" in _function("buildWeekPanel"), "Meals has no gear"
-    # ...and it is hidden on the deeper steps of the two tabs that have any.
-    assert "gearRow.hidden = !onRoot;" in _function("renderMealsStep"), (
-        "the gear still shows on Meals' Day and Meal steps"
+    """Today, Meals, Grocery, Kitchen — and nowhere deeper.
+
+    Since the root band (2026-09-11) the gear is rendered by rootBandHtml,
+    so "every root has the gear" is "every root has the band" — see
+    tests/test_root_band.py for that — and the deeper steps hide the band
+    rather than the gear on its own."""
+    assert "prefsGearHtml()" in _function("rootBandHtml"), "the band has no gear"
+    assert "rootBandHtml({" in _function("buildTodayPanel"), "Today has no band"
+    assert "rootBandHtml({ id: 'kit-band'" in _function("buildKitchenPanel"), "Kitchen has no band"
+    assert "rootBandHtml({ id: 'gro-band'" in _function("buildGroceryPanel"), "Grocery has no band"
+    assert 'id="week-band-slot"' in _function("buildWeekPanel"), "Meals has no band slot"
+    assert "prefsGearRowHtml" not in SHELL_JS, "the gear-row helper is retired with the band"
+    # ...and the band is hidden on the deeper steps of the two tabs that have any.
+    assert "bandSlot.hidden = !onRoot;" in _function("renderMealsStep"), (
+        "the band still shows on Meals' Day and Meal steps"
     )
-    assert "groGear.hidden = step !== 'list';" in _function("renderGrocery"), (
-        "the gear still shows on a Grocery step other than the list (merged with flows 5: Grocery is steps now)"
+    render = _function("renderGrocery")
+    assert "var onRoot = step === 'list';" in render and "band.hidden = !onRoot;" in render, (
+        "the band still shows on a Grocery step other than the list"
     )
 
 
@@ -760,10 +774,11 @@ def _three_dinners(done_count: int) -> list:
 def test_the_subtitle_counts_what_is_left_once_anything_is_cooked():
     """At eight in the evening with two of three cooked, "3 cooks today" is
     a number nobody recognises."""
-    assert _subtitle(_three_dinners(0), [])["subtitle"] == "Monday · 3 cooks tonight"
-    assert _subtitle(_three_dinners(2), [])["subtitle"] == "Monday · 1 cook left tonight"
-    assert _subtitle(_three_dinners(3), [])["subtitle"] == "Monday · nothing left to cook today"
-    assert _subtitle([], [])["subtitle"] == "Monday · nothing to cook today"
+    assert _subtitle(_three_dinners(0), [])["subtitle"] == "3 cooks tonight"
+    assert _subtitle(_three_dinners(2), [])["subtitle"] == "1 cook left tonight"
+    assert _subtitle(_three_dinners(3), [])["subtitle"] == "nothing left to cook today"
+    # An empty day has no line: the empty moment says it (root band, 2026-09-11).
+    assert _subtitle([], [])["subtitle"] == ""
 
 
 @_needs_node
@@ -773,7 +788,7 @@ def test_the_subtitle_believes_the_moves_done_state_too():
     meals = _three_dinners(0)
     moves = [{"kind": "cook", "entry_id": 1, "done": True, "chips": []},
              {"kind": "cook", "entry_id": 2, "done": True, "chips": []}]
-    assert _subtitle(meals, moves)["subtitle"] == "Monday · 1 cook left tonight"
+    assert _subtitle(meals, moves)["subtitle"] == "1 cook left tonight"
 
 
 @_needs_node

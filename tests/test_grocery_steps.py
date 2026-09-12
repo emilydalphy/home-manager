@@ -89,18 +89,21 @@ def test_list_subtitle_counts_things_and_stops():
     _in("groPlural(stopCount, 'stop', 'stops')", SHELL_JS, "the stops count", "shell.js")
 
 
-def test_the_to_sort_badge_only_exists_when_something_is_unsorted():
-    """Apricot, in the head, and the only way into SORT."""
-    _in("id=\"gro-sortbadge\"", SHELL_JS, "the TO SORT badge", "shell.js")
-    _in("data-gro=\"goto-sort\"", SHELL_JS, "the badge's target", "shell.js")
-    _in("unsorted + ' TO SORT'", SHELL_JS, "the badge copy", "shell.js")
-    _in("step === 'list' && unsorted > 0", SHELL_JS, "the badge's guard", "shell.js")
-    _in(".gro-sortbadge", SHELL_CSS, "the badge style", "shell.css")
-    # Rule 1: an apricot fill carries --on-accent-ink, never ivory.
-    assert "color: var(--on-accent-ink);" in SHELL_CSS.split(".gro-sortbadge {", 1)[1][:600], (
-        "The TO SORT badge is an apricot fill, so its ink must be "
-        "--on-accent-ink (DESIGN_SYSTEM.md Rule 1)."
-    )
+def test_the_way_into_sort_only_exists_when_something_is_unsorted():
+    """A row at the top of the list, and the only way into SORT.
+
+    It was an apricot "N TO SORT" badge in the head until the root band
+    (2026-09-11), which carries no button — so the control moved into the
+    list it is about, in the .kit-row shape, and the badge is gone.
+    """
+    _in("function groSortRowHtml(", SHELL_JS, "the sort row builder", "shell.js")
+    row = SHELL_JS[SHELL_JS.index("function groSortRowHtml("):SHELL_JS.index("function groListHtml(")]
+    assert 'data-gro="goto-sort"' in row, "the row's target"
+    assert "if (!unsorted || groStoresPromptShouldShow()) return '';" in row, "the row's guard"
+    assert "groPlural(unsorted, 'thing', 'things') + ' to sort'" in row, "the row copy"
+    _in("html += groSortRowHtml(data);", SHELL_JS, "the row at the top of LIST", "shell.js")
+    _not_in("gro-sortbadge", SHELL_JS, "the retired TO SORT badge", "shell.js")
+    _not_in(".gro-sortbadge", SHELL_CSS, "the retired badge style", "shell.css")
 
 
 def test_list_carries_the_screens_one_apricot_and_an_inline_add():
@@ -209,9 +212,10 @@ def test_the_unsorted_line_is_gone_rather_than_repaired():
     copy: pass the length, never the array.
     """
     _not_in("TO SORT above", SHELL_JS, "the sort nag", "shell.js")
-    # And the count that IS still in copy — the badge's own — stays a number.
-    _in("badge.textContent = unsorted + ' TO SORT';", SHELL_JS,
-        "the badge count (unsorted is already a number here)", "shell.js")
+    # And the count that IS still in copy — the sort row's own — stays a
+    # number (groSortRowHtml reads .length before it reaches the words).
+    _in("var unsorted = groUnsorted(data).length;\n    if (!unsorted || groStoresPromptShouldShow()) return '';",
+        SHELL_JS, "the row count (unsorted is already a number here)", "shell.js")
 
 
 def test_open_the_list_lands_on_the_list():
