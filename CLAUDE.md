@@ -350,6 +350,56 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-12 — What we know is native: one sheet, collapsible sections,
+  every change saves as it is made. Branch `worktree-what-we-know-native`.**
+  Two Loop Board cards from the 2026-09-11 design audit ("rebuild it native,
+  in the Preferences sheet's vocabulary" + "needs autosave and collapse").
+  It was `static/memory.html` in `#kit-sheet`'s iframe — the last surface
+  running the old app: dotted chips, "Age group"/"Dietary restrictions"
+  labels, a bordered-pill segmented control, Save/Cancel on every edit.
+  Now `shell.js`'s "What we know (native, 2026-09-12)" section renders
+  into `#wwk-body` (new sibling of the frame in `shell.html`;
+  `openKitchenSheet` shows one or the other — Inventory keeps its iframe,
+  deferred beta by Emily's call). Seven sections in the Preferences rows'
+  order plus "Won't eat" (the household dislikes had no row of their own):
+  each head IS a `.prefs-row` reading its line with the Preferences row's
+  OWN function (`PREFS_ROWS` entries now carry `section:` not `tab:`), and
+  opens in place; from a Preferences row only that section is expanded and
+  scrolled to. Chips are `.wwk-chip` = the `.defrost-chip` recipe (celadon
+  selected). Autosave is `wwkCommit`: apply to the cached `/api/memory`
+  (shared with Preferences, so its rows are right on close with no
+  re-read) → redraw → request → revert + toast on failure; a `seq` guard
+  so a late reply never overwrites a later tap; text saves on blur/Enter.
+  Three things learned the hard way, all in `wwkPreservingFocus`/
+  `wwkMorph`: (1) a blur-triggered save that replaced the panel pulled the
+  next tap's chip out from under the click before it landed — section
+  redraws now MORPH block-by-block (only a changed chip row is swapped), and
+  text-field saves redraw only the head line (`quiet`); (2) swapping out a
+  focused input fires its blur synchronously mid-swap, before
+  `isConnected` flips, and that blur's own save re-entered the morph
+  (`NotFoundError` on `replaceWith`) — a `wwkRedrawing` flag tells the
+  focusout handler to ignore it; (3) `scrollIntoView` on the sliding
+  sheet landed short, and a node captured before the load's redraw was
+  detached — the scroller's `scrollTop` is set directly, on a fresh lookup,
+  after the slide. Real-data finds in the pre-reset backup: `age_group`
+  "Adult" (capitalised) so no chip ever read selected — compared
+  lowercased now; `protein_preferences` carrying "more"/"less"/"neutral"
+  under "Fish / seafood"-style keys, which the old page read as unrated —
+  `wwkProteinState` reads both shapes, exact lowercase key wins, clearing
+  clears every key it lived under. `prefsPeopleLine` says "allergic to
+  peanuts, kiwi" for "allergy: …" entries (helper defined AFTER it, because
+  `test_kitchen_and_preferences.py` runs that slice under node). Escape on
+  an add-input closes the input, not the sheet (stopPropagation). Left in
+  place, deliberately: `static/memory.html` and the `/memory` route —
+  `static/index.html` and `static/kitchen.html` (legacy, unrouted) still
+  link there and `tests/test_embedded_pages.py` derives its closure through
+  it; nothing in the shell loads it any more. Left out: dictation mic
+  buttons (the keyboard mic covers it), member rename/remove (no API, old
+  page had none). Verified live on a copy of the pre-reset backup at
+  375×812 light + dark and 1280: every section edited, reloaded, stuck.
+  `tests/test_what_we_know_native.py` (65: markup, wiring, a per-fact
+  checklist of the old page's 36 editable facts, and the two line readers
+  under node); 4 older tests re-pointed from tab to section. Suite 3040.
 - **2026-09-11 — A draft whose week has ended is no longer the Plan tab's
   front page, and Plan and Now name ONE week. Branch
   `worktree-stale-draft`.** Seen on Friday 2026-09-11: Plan opened on "This
