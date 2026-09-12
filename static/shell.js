@@ -13309,7 +13309,6 @@
         // update_inventory and friends all land on the Kitchen tab, which
         // re-reads the cooker view and the inventory tile together.
         refreshKitchenPanel();
-        refreshKitchenPanel();
         // check_off_prep_step is also how a fridge move gets ticked from
         // chat ("mark the chicken thighs done") — same table, same tool,
         // just called from a different surface than Today's own ticks.
