@@ -4610,6 +4610,238 @@ html, body {
   min-height: 0;
   background: var(--ground);
 }
+.kit-sheet-frame[hidden] { display: none; }
+
+/* ---------- What we know (native, 2026-09-12) ----------
+   The Preferences sheet's own vocabulary, one level in: each section is a
+   .prefs-row (bold title, one plain line, a chevron) that opens in place
+   into its controls. Nothing here is apricot — none of it is urgent, none
+   of it is a task (Rule 5) — and nothing animates (§4: the sheet's own
+   slide is the one motion; a section opening is a redraw). */
+.wwk-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 28px;
+}
+.wwk-body[hidden] { display: none; }
+.wwk-body .prefs-sub { padding-bottom: 6px; }
+.wwk-rows { padding: 0 18px; display: flex; flex-direction: column; }
+.wwk-section { border-bottom: 1.5px solid var(--hairline); }
+.wwk-section:last-child { border-bottom: none; }
+/* The head is a .prefs-row; the section's own rule replaces the row's. */
+.wwk-section .wwk-head { border-bottom: none; }
+.wwk-head .prefs-row-sub { white-space: normal; }
+/* The chevron points down closed and up open — the same collapse the
+   Review step's day rows use (.rv-day-chev), without its transition. */
+.wwk-chev { flex: 0 0 auto; display: inline-flex; color: var(--ink-inactive); }
+.wwk-chev svg { width: 18px; height: 18px; }
+.wwk-head[aria-expanded="true"] .wwk-chev { transform: rotate(180deg); }
+/* The quiet tick. --celadon-label is the token for "handled": 5.76:1 on
+   ground in light, 7.14:1 in dark (measured for .rv-day-note). */
+.wwk-saved {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--celadon-label);
+}
+.wwk-saved:empty { display: none; }
+.wwk-panel { padding: 0 2px 16px; display: flex; flex-direction: column; gap: 8px; }
+.wwk-panel[hidden] { display: none; }
+
+/* A lead-in, not a label: the same size and weight as the row's own sub
+   line, in --ink-secondary so it reads as a quiet heading over its chips. */
+.wwk-lead {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  margin: 8px 0 0;
+}
+.wwk-lead-sub { font-weight: 500; color: var(--ink-inactive); }
+.wwk-empty {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-secondary);
+  margin: 4px 0;
+}
+.wwk-person, .wwk-store { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.wwk-person + .wwk-person, .wwk-store + .wwk-store { border-top: 1.5px solid var(--hairline); padding-top: 12px; }
+.wwk-person-name {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+}
+.wwk-store-count {
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--ink-inactive);
+  margin-left: 8px;
+}
+
+/* ---- chips ----
+   The app's selectable chip — the same recipe as .defrost-chip /
+   .ca-ask-day: surface + hairline at rest, and selected is celadon-tint,
+   the token for "settled, already true" (never apricot: nothing here is
+   urgent). 44px tall (Rule 6). */
+.wwk-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wwk-chips-named { gap: 6px; }
+.wwk-chips-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 64px;
+}
+.wwk-chip {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 14px;
+  min-height: 44px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--hairline);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+.wwk-chip:hover { background: var(--sand); }
+.wwk-chip.is-on {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  color: var(--ink-on-celadon);
+}
+/* "Skip it" (a protein rated 1–2): struck through on sand, the quiet
+   neutral — the answer is "no", said plainly. */
+.wwk-chip.is-off {
+  background: var(--sand);
+  color: var(--ink-secondary);
+  text-decoration: line-through;
+}
+/* A chip that IS a fact, with its × — not a choice, so it never selects. */
+.wwk-chip.is-fact { padding: 4px 4px 4px 14px; cursor: default; }
+.wwk-chip.is-fact:hover { background: var(--surface); }
+.wwk-chip-text { font: inherit; color: inherit; background: none; border: none; padding: 0; }
+button.wwk-chip-text { cursor: pointer; min-height: 34px; }
+.wwk-chip-x {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+}
+.wwk-chip-x::after { content: ''; position: absolute; inset: -5px; } /* Rule 6: 44px target */
+.wwk-chip-x:hover { background: var(--sand); }
+/* "+ Add" is a chip too — it becomes an input when tapped. --ink-strong
+   like every "add" link in the app. */
+.wwk-chip-add { color: var(--ink-strong); font-weight: 700; }
+
+/* ---- text ----
+   .snw-input is the app's one text field (16px, so iOS never zooms). */
+.wwk-text { min-height: 44px; }
+.wwk-add-input { flex: 1 1 160px; max-width: 320px; }
+.wwk-fact-row { display: flex; align-items: center; gap: 6px; }
+.wwk-fact-row .snw-input { flex: 1 1 auto; min-width: 0; }
+.wwk-input-row { display: flex; gap: 8px; align-items: stretch; }
+.wwk-input-row .snw-input { flex: 1 1 auto; min-width: 0; }
+
+/* ---- the toggle row (rounding out meals) ----
+   A .prefs-row without its rule, and the verb on the right says what a
+   tap does — the value is the answer, not a switch widget. */
+.wwk-toggle-row {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 8px;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+.wwk-toggle-row .prefs-row-sub { white-space: normal; }
+.wwk-toggle-verb {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+
+/* ---- steppers (the cook screen's .cook-serves-btn, reused) ---- */
+.wwk-count-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.wwk-count-label { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ink); }
+
+/* ---- buttons ----
+   Spruce, never apricot (Rule 5) — a save is not the screen's one action.
+   .wwk-btn is .snw-send's recipe at a row's height; .wwk-link is the
+   quiet text action in its own 44px row (Rule 6). */
+.wwk-btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 0 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wwk-btn:hover { background: var(--spruce-hover); }
+.wwk-btn:disabled { opacity: .45; cursor: default; }
+.wwk-btn-quiet { min-height: 44px; font-size: 14px; }
+.wwk-link {
+  min-height: 44px;
+  border: none;
+  background: none;
+  padding: 0 6px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+.wwk-link:hover { text-decoration: underline; }
+.wwk-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+/* ---- calendar ---- */
+.wwk-cal-line { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ink); margin: 6px 0 0; }
+.wwk-cal-hint { font-family: var(--font-body); font-size: 12.5px; font-weight: 500; color: var(--ink-inactive); word-break: break-all; margin: 2px 0 0; }
+.wwk-cal-status { font-family: var(--font-body); font-size: 14px; line-height: 1.45; color: var(--ink); margin: 6px 0 0; }
+.wwk-cal-trouble { color: var(--urgent-label); }
+.wwk-cal-where { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+.wwk-cal-where summary { font-weight: 700; color: var(--ink-strong); cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.wwk-cal-where p { margin: 4px 0 6px; line-height: 1.4; }
+.wwk-cal-where b { color: var(--ink); }
+.wwk-cal-sample { list-style: none; margin: 4px 0 0; padding: 0; font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
+.wwk-cal-sample li { padding: 3px 0; }
+.wwk-cal-sample b { color: var(--ink); font-weight: 600; }
+
+/* ---- paste a whole list (stores) ---- */
+.wwk-import { display: flex; flex-direction: column; gap: 8px; }
+.wwk-import textarea { resize: vertical; }
 
 /* ---------- "Add from a link" (recipe import, 2026-09-11) ---------- */
 /* Same scrim/sheet geometry as the Kitchen and Something-not-working

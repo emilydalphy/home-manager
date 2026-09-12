@@ -186,38 +186,35 @@
     { key: 'kitchen', path: '/kitchen', label: 'Cook', icon: ICONS.pot, kitchen: true }
   ];
 
-  // The Kitchen hub's entry tiles. The blueprint asks for these to open as
-  // sheets over the hub rather than as full page navigations that leave the
-  // app shell (tab bar and all) with only the browser's back button to
-  // return — which is what /inventory and /memory were until this slice.
+  // The Kitchen entry sheets. The blueprint asks for these to open as
+  // sheets over the current tab rather than as full page navigations that
+  // leave the app shell (tab bar and all) with only the browser's back
+  // button to return — which is what /inventory and /memory were until
+  // Stage 2 slice 3.
   //
-  // Each sheet hosts the EXISTING page in an iframe. Rebuilding
-  // inventory.html and memory.html natively is real work and is explicitly
-  // not this slice; hosting them in a sheet is the least invasive thing that
-  // still satisfies the rule that a screen never becomes a page with its own
-  // chrome — the sheet's header is the way back, and the pages' own back
-  // links hide themselves inside a frame (static/embedded-page.js).
+  // Two kinds of entry, one sheet (#kit-sheet):
   //
-  // `src` is written as a plain /static/*.html literal on purpose:
-  // tests/test_embedded_pages.py derives "which pages can end up in a frame"
-  // by reading this file, and a computed or concatenated path would make
-  // that derivation silently blind.
-  // `hash` names the tab within the page, for the entries that are a tab of
-  // a shared page rather than a page of their own. memory.html reads it on
-  // load (openingTab) and exposes showKitchenTab() for the case where the
-  // page is already open on a different tab.
-  // memory/stores share one page and one sheet title on purpose (Loop Board
-  // "I should be able to see all the onboarding information here"): the
-  // title used to stay 'Stores' even after switching to another tab inside
-  // the sheet, because it is set once at open time from whichever entry
-  // point was tapped (see openKitchenSheet) and switching tabs inside the
-  // iframe never told the sheet chrome to update it. Giving both entries
-  // the same fixed title sidesteps that without needing the sheet to poll
-  // or the iframe to call back out on every tab change.
+  // - `native: true` entries are DOM the shell builds itself. "What we
+  //   know" is one since 2026-09-12 (renderWhatWeKnow, further down): it
+  //   was static/memory.html in an iframe until then — the last surface
+  //   still loading the old app, with its own chips, its own segmented
+  //   control and a Save button. `section` names which of its collapsible
+  //   sections to open on; the Preferences rows pass their own (PREFS_ROWS).
+  //   memory/stores are the same sheet on two sections and share one
+  //   title for the same reason they always did: the title is set once at
+  //   open time, and a section change inside the sheet never rewrites it.
+  // - `src` entries host the EXISTING page in an iframe. Inventory is the
+  //   one left: it is a deferred beta feature by Emily's call
+  //   (INVENTORY_IN_DEVELOPMENT), so it stays framed rather than being
+  //   rebuilt, and its own back link hides itself inside a frame
+  //   (static/embedded-page.js). `src` is written as a plain
+  //   /static/*.html literal on purpose: tests/test_embedded_pages.py
+  //   derives "which pages can end up in a frame" by reading this file,
+  //   and a computed path would make that derivation silently blind.
   var KITCHEN_SHEETS = {
-    memory: { title: 'What we know', src: '/static/memory.html', hash: 'people' },
+    memory: { title: 'What we know', native: true, section: null },
     inventory: { title: 'Inventory', src: '/static/inventory.html' },
-    stores: { title: 'What we know', src: '/static/memory.html', hash: 'stores' }
+    stores: { title: 'What we know', native: true, section: 'stores' }
   };
 
   function currentTabKey() {
@@ -408,7 +405,7 @@
     // No tab is an embedded page any more. Grocery lost its iframe in
     // Stage 2 slice 2 and Kitchen in slice 3, so the lazy-src plumbing that
     // used to live here is gone with them — the only iframe left in the app
-    // is the one inside a Kitchen entry sheet (see KITCHEN_SHEETS).
+    // is Inventory's, inside the Kitchen entry sheet (see KITCHEN_SHEETS).
     if (tab.placeholder) {
       var box = document.createElement('div');
       box.className = 'tab-placeholder';
@@ -5811,52 +5808,45 @@
   // ---------- Kitchen entry sheets ----------
   // Same scrim/sheet pattern as the ask and week sheets, and the same
   // "one open at a time" rule. The sheet supplies the header and the way
-  // back; the page inside it supplies no chrome of its own (its own back
-  // link hides itself in a frame — static/embedded-page.js).
+  // back. What we know is rendered into it natively (see KITCHEN_SHEETS
+  // and the "What we know" section further down); Inventory is still a
+  // page in a frame, and that page supplies no chrome of its own (its own
+  // back link hides itself in a frame — static/embedded-page.js).
   var kitSheetScrim = document.getElementById('kit-sheet-scrim');
   var kitSheetEl = document.getElementById('kit-sheet');
   var kitSheetOpen = null;
 
-  function openKitchenSheet(key, tab) {
+  function openKitchenSheet(key, section) {
     var meta = KITCHEN_SHEETS[key];
     if (!meta || !kitSheetEl) return;
     closeAskSheet();
     closeWeekSheet();
-    var hash = tab || meta.hash;
     var frame = document.getElementById('kit-sheet-frame');
+    var body = document.getElementById('wwk-body');
 
-    // Keep the loaded document, and ask it to change view, rather than
-    // reloading — so reopening a sheet does not throw away a scroll position
-    // or a half-typed edit for no reason.
-    //
-    // What this must NOT do is decide "already showing the right thing" from
-    // the URL. The page's own tab strip moves between tabs without touching
-    // its hash, so after tapping People inside the sheet the src still read
-    // `#stores` while People was on screen — and the Stores tile, seeing a
-    // matching src, reopened on People under a header saying "Stores". The
-    // page therefore exposes showKitchenTab(), which is authoritative about
-    // what it is actually displaying.
-    if (frame.dataset.page !== meta.src) {
-      frame.dataset.page = meta.src;
-      frame.setAttribute('src', meta.src + (hash ? '#' + hash : ''));
-    } else if (hash) {
-      var told = false;
-      try {
-        var win = frame.contentWindow;
-        if (win && typeof win.showKitchenTab === 'function') {
-          win.showKitchenTab(hash);
-          told = true;
+    if (meta.native) {
+      // What we know: built here, not loaded. The frame stays hidden (and
+      // keeps whatever inventory.html it has loaded, so Inventory reopens
+      // without a reload); the native body shows and renders from the
+      // cached read first, then re-reads (openWhatWeKnow).
+      if (frame) frame.hidden = true;
+      if (body) body.hidden = false;
+      openWhatWeKnow(section || meta.section);
+    } else {
+      if (body) body.hidden = true;
+      if (frame) {
+        frame.hidden = false;
+        // Keep the loaded document rather than reloading — so reopening a
+        // sheet does not throw away a scroll position or a half-typed edit
+        // for no reason.
+        if (frame.dataset.page !== meta.src) {
+          frame.dataset.page = meta.src;
+          frame.setAttribute('src', meta.src);
         }
-      } catch (err) {
-        // Same-origin, so this should not throw; if it ever does, fall back
-        // to a reload rather than showing the wrong view under a confident
-        // header.
-        console.warn('Kitchen sheet tab handoff failed:', err);
+        frame.title = meta.title;
       }
-      if (!told) frame.setAttribute('src', meta.src + '#' + hash);
     }
     document.getElementById('kit-sheet-title').textContent = meta.title;
-    frame.title = meta.title;
     kitSheetOpen = key;
     openSheet(kitSheetEl, kitSheetScrim);
   }
@@ -5866,8 +5856,11 @@
     closeSheet(kitSheetEl, kitSheetScrim);
     // Inventory can be edited in there, and the Kitchen tile counts it, so
     // re-read on the way out. This is the sheet's half of the freshness
-    // policy.
+    // policy. What we know's edits already keep prefsState.memory current
+    // as they save (see wwkCommit), so the Preferences rows are right
+    // without a re-read; closing it just notes that it is closed.
     if (kitSheetOpen) refreshKitchenPanel();
+    if (kitSheetOpen && KITCHEN_SHEETS[kitSheetOpen] && KITCHEN_SHEETS[kitSheetOpen].native) wwkState.open = false;
     kitSheetOpen = null;
   }
 
@@ -5879,6 +5872,1258 @@
       if (e.key === 'Escape' && !kitSheetEl.hidden) closeKitchenSheet();
     });
   }
+
+  // ---------- What we know (native, 2026-09-12) ----------
+  //
+  // Loop Board "What we know: rebuild it native, in the Preferences sheet's
+  // vocabulary" + "What we know screen needs autosave and collapse" (both
+  // from the 2026-09-11 design audit). Until this, the sheet loaded
+  // static/memory.html in #kit-sheet's iframe — the last surface still
+  // running the old app: dotted-border chips, "Age group" / "Dietary
+  // restrictions" form labels, a bordered-pill segmented control that
+  // matched nothing else, and a Save button on every edit.
+  //
+  // Now it is DOM the shell builds into #wwk-body, in the words and shapes
+  // of the Preferences sheet it opens from:
+  //
+  // - One scrolling sheet, seven collapsible sections, no segmented
+  //   control. Each section is a .prefs-row — bold title, one plain line
+  //   reading the answer back (the SAME line function the Preferences row
+  //   uses, so tapping through never changes the words), a chevron — and
+  //   opens in place into its controls.
+  // - Every change saves as it is made (wwkCommit, below): the row updates
+  //   on tap, the request goes, a failure puts it back and says so
+  //   (DESIGN_SYSTEM §6's refresh policy). Text saves on blur and on
+  //   Enter. There is no Save button; a quiet "Saved" appears in the
+  //   section head for a moment.
+  // - Chips are the app's own selectable chip (shell.css .wwk-chip, the
+  //   same recipe as .defrost-chip: surface + hairline, selected =
+  //   celadon-tint, the token for "already true"). A selected age group
+  //   reads as selected — on the old page none did.
+  // - Copy: kitchen-table lead-ins, never form labels; a sub-line carries
+  //   the value or says in a few words what the answer does, never "Not
+  //   set yet" on its own (the Preferences rows' own 2026-09-11 pattern).
+  //
+  // Same APIs as the old page, one read per open (/api/memory, /api/facts,
+  // /api/calendar), and the cached /api/memory is shared with Preferences
+  // (prefsState.memory) — an edit here is already on the Preferences rows
+  // when the sheet closes, no re-read needed.
+
+  var wwkState = {
+    open: false,
+    facts: null,           // every freeform fact, all categories (/api/facts)
+    openSections: {},      // section key -> true while expanded
+    pendingCookWho: false, // "Mostly one person" tapped, nobody named yet
+    importOpen: false,     // the Stores section's paste-a-list block
+    importStore: '',
+    scrollTo: null,        // section to bring into view once answers are in
+    seq: 0                 // last request issued — a late reply never wins
+  };
+
+  // The calendar's in-progress state (pasted link, last check, trouble),
+  // separate from prefsState.calendar (what the server says is connected)
+  // because every section re-render rebuilds the DOM and losing a pasted
+  // link on the way to saving it would be maddening. The link is a
+  // secret: the server never hands it back, and this never shows it once
+  // saved (app/calendar_feed.py's status is label + a redacted tail).
+  var wwkCal = { url: '', label: '', checked: null, error: '', busy: false };
+
+  // Same four buckets, same words, same order as static/onboarding.html's
+  // AGE_GROUP_OPTIONS — the two screens ask one question.
+  var WWK_AGE_GROUPS = [
+    { key: 'adult', label: 'Adult' }, { key: 'teen', label: 'Teen' },
+    { key: 'child', label: 'Child' }, { key: 'toddler', label: 'Little one' }
+  ];
+  // The rhythm answers, in onboarding's words (its LUNCH_LOCATION_OPTIONS /
+  // MEALS_TOGETHER_OPTIONS / COOKING_ROLE_OPTIONS / DINNER_WINDOW_OPTIONS /
+  // PLANNING_ANCHOR_OPTIONS / PREP_DAY_OPTIONS / PREP_MINUTES_OPTIONS).
+  var WWK_LUNCH = [{ key: 'home', label: 'Home' }, { key: 'out', label: 'Out' }, { key: 'varies', label: 'Varies' }];
+  var WWK_MEALS_TOGETHER = [
+    { key: 'dinner_only', label: 'Dinner only' }, { key: 'dinner_and_breakfast', label: 'Dinner + breakfast' },
+    { key: 'most_meals', label: 'Most meals' }, { key: 'varies', label: 'Varies' }
+  ];
+  var WWK_COOKING_ROLE = [
+    { key: 'one_person', label: 'Mostly one person' }, { key: 'turns', label: 'We take turns' },
+    { key: 'whoever_free', label: 'Whoever’s free' }
+  ];
+  var WWK_DINNER_WINDOW = [
+    { key: '5_6ish', label: '5–6ish' }, { key: '6_8', label: '6–8' },
+    { key: 'later', label: 'Later' }, { key: 'all_over', label: 'All over the place' }
+  ];
+  var WWK_PLANNING_ANCHOR = [
+    { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' }, { key: 'wednesday', label: 'Wed' },
+    { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
+    { key: 'sunday', label: 'Sun' }, { key: 'as_we_go', label: 'As we go' }
+  ];
+  var WWK_LEFTOVERS = [
+    { key: 'love_them', label: 'Love them — cook once, eat twice' },
+    { key: 'fine_sometimes', label: 'Fine now and then' },
+    { key: 'fresh_each_night', label: 'Fresh every night' }
+  ];
+  var WWK_PREP_DAYS = [
+    { key: 'sunday', label: 'Sun' }, { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' },
+    { key: 'wednesday', label: 'Wed' }, { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' },
+    { key: 'saturday', label: 'Sat' }
+  ];
+  var WWK_PREP_MINUTES = [{ key: 30, label: '30 min' }, { key: 60, label: 'About an hour' }, { key: 120, label: 'Longer' }];
+  var WWK_MAX_PREP_DAYS = 2;
+  // Taste: the same lists the old page carried (its PROTEIN_OPTIONS /
+  // KIT_OPTIONS / RECIPE_COUNT_FIELDS / SNACKS_PER_DAY_FIELD). No onboarding
+  // step collects protein preferences, so that list is this sheet's own.
+  var WWK_PROTEINS = ['Chicken', 'Beef', 'Pork', 'Fish', 'Shrimp', 'Tofu', 'Eggs', 'Beans'];
+  var WWK_KIT = [
+    { key: 'slow_cooker', label: 'Slow cooker' }, { key: 'air_fryer', label: 'Air fryer' },
+    { key: 'grill', label: 'Grill' }, { key: 'instant_pot', label: 'Instant Pot' },
+    { key: 'stand_mixer', label: 'Stand mixer' }, { key: 'blender', label: 'Blender' },
+    { key: 'cast_iron', label: 'Cast iron' }, { key: 'no_dishwasher', label: 'No dishwasher' }
+  ];
+  var WWK_COUNTS = [
+    { field: 'dinners_per_week', label: 'Dinners', max: 7 },
+    { field: 'breakfasts_per_week', label: 'Breakfasts', max: 7 },
+    { field: 'lunches_per_week', label: 'Lunches', max: 7 }
+  ];
+  // Snacks are a DAY's worth of sittings (Julia, 2026-09-08), so their own
+  // row and their own ceiling (memory.edit_preference's 6).
+  var WWK_SNACKS = { field: 'snacks_per_day', label: 'Snacks a day', max: 6 };
+
+  // The sections, in the Preferences sheet's order, plus "Won't eat"
+  // between the people and their rhythm (the household's dislikes had no
+  // row of their own — the old People tab read them out and the old Taste
+  // tab edited them). Each `line` is the Preferences row's own function
+  // where a row exists.
+  var WWK_SECTIONS = [
+    { key: 'people', title: 'Who’s here', line: prefsPeopleLine, body: wwkPeopleHtml },
+    { key: 'wont-eat', title: 'Won’t eat', line: wwkWontEatLine, body: wwkWontEatHtml },
+    { key: 'rhythm', title: 'Your rhythm', line: prefsRhythmLine, body: wwkRhythmHtml },
+    { key: 'prep-days', title: 'Prep days', line: prefsPrepLine, body: wwkPrepDaysHtml },
+    { key: 'taste', title: 'How you eat', line: prefsEatingLine, body: wwkTasteHtml },
+    { key: 'calendar', title: 'Your calendar', line: prefsCalendarLine, body: wwkCalendarHtml },
+    { key: 'stores', title: 'Stores', line: prefsStoresLine, body: wwkStoresHtml }
+  ];
+
+  function wwkSection(key) {
+    for (var i = 0; i < WWK_SECTIONS.length; i++) if (WWK_SECTIONS[i].key === key) return WWK_SECTIONS[i];
+    return null;
+  }
+
+  function wwkWontEatLine(mem) {
+    var d = (mem && mem.dislikes) || [];
+    // Empty: what the answer does, in a few words, not "Not set yet".
+    return d.length ? d.join(', ') : 'Things I never suggest';
+  }
+
+  function wwkMem() { return prefsState.memory; }
+
+  // ---------- open / load / render ----------
+
+  function openWhatWeKnow(section) {
+    var body = document.getElementById('wwk-body');
+    if (!body) return;
+    wwkState.open = true;
+    wwkState.pendingCookWho = false;
+    wwkState.importOpen = false;
+    // Opened with a section, that one alone is expanded; opened bare (a
+    // chat action's "/memory" href), the lines say it all and nothing is.
+    wwkState.openSections = {};
+    if (section && wwkSection(section)) wwkState.openSections[section] = true;
+    // Scrolled to once the answers are in (renderWhatWeKnow) — before
+    // that the panels are empty and there is nothing to scroll past.
+    wwkState.scrollTo = section || null;
+    renderWhatWeKnow();
+    loadWhatWeKnow();
+  }
+
+  // One read of each source per open. Renders straight off the cache
+  // first (the Preferences sheet has usually just read /api/memory), so
+  // the sheet never opens empty and waits. The calendar's read is the
+  // Preferences sheet's own (loadPrefsCalendar) — one place it is fetched.
+  async function loadWhatWeKnow() {
+    try {
+      var reads = await Promise.all([fetch('/api/memory'), fetch('/api/facts'), loadPrefsCalendar()]);
+      if (reads[0].ok) prefsState.memory = await reads[0].json();
+      if (reads[1].ok) wwkState.facts = ((await reads[1].json()).facts) || [];
+    } catch (err) {
+      console.warn('What we know lookup failed:', err);
+    }
+    if (wwkState.open) renderWhatWeKnow();
+    if (prefsState.open) renderPrefsRows();
+  }
+
+  function renderWhatWeKnow() {
+    var body = document.getElementById('wwk-body');
+    if (!body) return;
+    wwkPreservingFocus(body, function () {
+      body.innerHTML =
+        // The purpose in the title ("What we know", the sheet's chrome) and
+        // one line — never a paragraph (§2b S1). This line also carries
+        // the one thing the old page's Save buttons used to say.
+        '<p class="prefs-sub">Tap anything to change it. It saves as you go.</p>' +
+        '<div class="wwk-rows">' +
+          WWK_SECTIONS.map(function (s) {
+            return '<div class="wwk-section" data-section="' + s.key + '">' + wwkSectionInnerHtml(s) + '</div>';
+          }).join('') +
+        '</div>';
+    });
+    if (wwkState.scrollTo && wwkMem()) {
+      wwkScrollTo(wwkState.scrollTo);
+      wwkState.scrollTo = null;
+    }
+  }
+
+  function wwkSectionInnerHtml(s) {
+    var mem = wwkMem();
+    var open = !!wwkState.openSections[s.key];
+    var line = mem ? s.line(mem) : 'Reading it back…';
+    return '<button type="button" class="prefs-row wwk-head" data-wwk="toggle" data-section="' + s.key + '" ' +
+        'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="wwk-panel-' + s.key + '">' +
+        '<span class="prefs-row-text">' +
+          '<span class="prefs-row-title">' + escapeHtml(s.title) + '</span>' +
+          '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' +
+        '</span>' +
+        '<span class="wwk-saved" aria-live="polite"></span>' +
+        '<span class="wwk-chev">' + RV_CHEVRON_SVG + '</span>' +
+      '</button>' +
+      '<div class="wwk-panel" id="wwk-panel-' + s.key + '"' + (open ? '' : ' hidden') + '>' +
+        (open ? (mem ? s.body(mem) : '') : '') +
+      '</div>';
+  }
+
+  // Redraw one section (head line + panel) after a save, leaving the
+  // others — and their half-typed inputs — alone.
+  function wwkRenderSection(key) {
+    var body = document.getElementById('wwk-body');
+    var s = wwkSection(key);
+    if (!body || !s) return;
+    var el = body.querySelector('.wwk-section[data-section="' + key + '"]');
+    if (!el) return;
+    wwkPreservingFocus(el, function () { wwkMorph(el, wwkSectionInnerHtml(s)); });
+  }
+
+  // Redraw by difference, not by replacement. A save's redraw often runs
+  // on the way to another tap — a text field commits on blur, and blur
+  // fires on mousedown, before the click lands — and replacing the whole
+  // panel then pulls the tapped chip out from under the finger: the click
+  // never fires. So the new markup is compared block by block against
+  // what is there, and only a block whose HTML changed is swapped. Blocks
+  // are the panel, a person's or a store's group, a chip row, and the
+  // chips within one; anything else (a lead-in, a stepper row, an input)
+  // is swapped whole when it differs. A chip row is the unit because that
+  // is where a change lands — the row that gained a chip is redrawn, the
+  // rows around it are not touched.
+  var WWK_MORPH_INTO = { 'wwk-panel': 1, 'wwk-person': 1, 'wwk-store': 1, 'wwk-chips': 1, 'wwk-chips wwk-chips-named': 1, 'wwk-import': 1 };
+  function wwkMorph(el, html) {
+    var tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    wwkMorphChildren(el, tpl.content);
+  }
+  function wwkMorphChildren(oldParent, newParent) {
+    var olds = Array.prototype.slice.call(oldParent.children);
+    var news = Array.prototype.slice.call(newParent.children);
+    for (var i = 0; i < Math.max(olds.length, news.length); i++) {
+      var o = olds[i], n = news[i];
+      if (o && o.parentNode !== oldParent) o = null;  // already swapped out from under this pass
+      if (!n) { if (o) o.remove(); continue; }
+      if (!o) { oldParent.appendChild(n); continue; }
+      if (o.outerHTML === n.outerHTML) continue;
+      if (o.tagName === n.tagName && o.className === n.className && WWK_MORPH_INTO[n.className]) {
+        // Same block, different inside: bring its attributes across and
+        // go one level down.
+        for (var a = o.attributes.length - 1; a >= 0; a--) {
+          if (!n.hasAttribute(o.attributes[a].name)) o.removeAttribute(o.attributes[a].name);
+        }
+        for (var b = 0; b < n.attributes.length; b++) {
+          if (o.getAttribute(n.attributes[b].name) !== n.attributes[b].value) o.setAttribute(n.attributes[b].name, n.attributes[b].value);
+        }
+        wwkMorphChildren(o, n);
+      } else {
+        o.replaceWith(n);
+      }
+    }
+  }
+
+  // Redraw only a section's head line. A text field saves on blur, and
+  // blur fires on the way to whatever was tapped next — redrawing the
+  // panel then pulls that next thing out from under the tap (the "+ Add"
+  // it landed on is gone before the click lands). The field already
+  // shows its value, so the panel has nothing to gain from a redraw.
+  function wwkRenderHead(key) {
+    var body = document.getElementById('wwk-body');
+    var s = wwkSection(key);
+    var el = body && body.querySelector('.wwk-section[data-section="' + key + '"] .wwk-head .prefs-row-sub');
+    if (!el || !s || !wwkMem()) return;
+    el.textContent = s.line(wwkMem());
+  }
+
+  // A redraw under a focused text input would drop what is being typed.
+  // Remember which input had focus (by its data-wwk-input identity) and
+  // what it held, redraw, and put both back. A list's add-input is drawn
+  // as a "+ Add" chip, so for one of those the chip is found and opened
+  // again — which is also what keeps the input up for the next entry
+  // after Enter (the value is cleared before that redraw).
+  var wwkRedrawing = false;
+  function wwkPreservingFocus(root, redraw) {
+    var active = document.activeElement;
+    var keep = null;
+    if (active && root.contains(active) && active.hasAttribute('data-wwk-input')) {
+      var scope = ['data-id', 'data-member', 'data-store', 'data-category', 'data-kind'].map(function (a) {
+        return active.hasAttribute(a) ? '[' + a + '="' + CSS.escape(active.getAttribute(a)) + '"]' : '';
+      }).join('');
+      keep = {
+        add: active.getAttribute('data-wwk-input') === 'add',
+        sel: '[data-wwk-input="' + active.getAttribute('data-wwk-input') + '"]' + scope,
+        chip: '[data-wwk="add"]' + scope,
+        value: active.value,
+        start: active.selectionStart,
+        end: active.selectionEnd
+      };
+    }
+    // Swapping out a focused field fires its blur synchronously, mid-swap
+    // (before the node even reads as disconnected). The flag tells the
+    // focusout handler that blur is the redraw's doing, not the
+    // household's — there is nothing to save, and saving would start a
+    // second redraw inside this one.
+    wwkRedrawing = true;
+    try {
+      redraw();
+      if (!keep) return;
+      var again = root.querySelector(keep.sel);
+      if (!again && keep.add) {
+        var chip = root.querySelector(keep.chip);
+        if (chip) again = wwkOpenAdd(chip);
+      }
+      if (!again) return;
+      again.value = keep.value;
+      again.focus();
+      try { again.setSelectionRange(keep.start, keep.end); } catch (err) { /* type=url etc. */ }
+    } finally {
+      wwkRedrawing = false;
+    }
+  }
+
+  function wwkScrollTo(key) {
+    // After the sheet has slid in. The section is looked up THEN, not
+    // now: the read that lands in between redraws the body, and a node
+    // captured here would be a detached one with no position. Set
+    // directly rather than scrollIntoView (which reads the sheet's
+    // geometry mid-slide and lands short); the body is the scroller and
+    // both offsets are against the sheet. No smooth scrolling: not one
+    // of the app's three animations (DESIGN_SYSTEM §4).
+    setTimeout(function () {
+      var body = document.getElementById('wwk-body');
+      var el = body && body.querySelector('.wwk-section[data-section="' + key + '"]');
+      if (el) body.scrollTop = Math.max(0, el.offsetTop - body.offsetTop);
+    }, motionMs('--motion-base') + 20);
+  }
+
+  function wwkToggle(key) {
+    wwkState.openSections[key] = !wwkState.openSections[key];
+    wwkRenderSection(key);
+  }
+
+  // The quiet tick: "Saved" in the section head for a moment, then gone.
+  // No motion — text appears and is removed.
+  function wwkFlashSaved(key) {
+    var body = document.getElementById('wwk-body');
+    var el = body && body.querySelector('.wwk-section[data-section="' + key + '"] .wwk-saved');
+    if (!el) return;
+    el.textContent = 'Saved';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.textContent = ''; }, 1600);
+  }
+
+  // ---------- saving ----------
+
+  // Optimistic, the way every tap in the app saves (DESIGN_SYSTEM §6):
+  // `apply` changes the cached model and the section redraws before the
+  // request goes; a failure puts the snapshot back, redraws, and says so.
+  // `request` returns the server's own copy of what it now holds (every
+  // /api/memory/* route returns the whole memory, /api/onboarding/rhythm
+  // the rhythm block, the facts routes the one fact), and `adopt` folds
+  // that into the cache — but only for the latest request: two quick taps
+  // on a stepper must not let the first reply overwrite the second.
+  // `quiet` (text fields): only the head line redraws — see wwkRenderHead.
+  async function wwkCommit(sectionKey, apply, request, adopt, quiet) {
+    var snapshot = JSON.stringify({ memory: prefsState.memory, facts: wwkState.facts });
+    var seq = ++wwkState.seq;
+    var redraw = quiet ? wwkRenderHead : wwkRenderSection;
+    apply();
+    redraw(sectionKey);
+    if (prefsState.open) renderPrefsRows();
+    try {
+      var result = await request();
+      if (seq === wwkState.seq && adopt) adopt(result);
+      if (seq === wwkState.seq) redraw(sectionKey);
+      if (prefsState.open) renderPrefsRows();
+      wwkFlashSaved(sectionKey);
+      return true;
+    } catch (err) {
+      console.warn('What we know save failed:', err);
+      // Put back exactly what was there — the row and the Preferences
+      // line both — and say so, plainly, with the way out.
+      var before = JSON.parse(snapshot);
+      prefsState.memory = before.memory;
+      wwkState.facts = before.facts;
+      wwkRenderSection(sectionKey);
+      if (prefsState.open) renderPrefsRows();
+      showToast('That didn’t save. Try it again.');
+      return false;
+    }
+  }
+
+  async function wwkPost(path, body) {
+    var res = await fetch(path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(path + ' ' + res.status);
+    try { return await res.json(); } catch (err) { return null; }
+  }
+
+  function wwkAdoptMemory(result) {
+    if (result && result.members) prefsState.memory = result;
+  }
+  function wwkAdoptRhythm(result) {
+    if (result && prefsState.memory) prefsState.memory.rhythm = result;
+  }
+
+  // /api/memory/edit for one preference field.
+  function wwkSavePreference(sectionKey, field, value, apply, quiet) {
+    return wwkCommit(sectionKey, apply, function () {
+      return wwkPost('/api/memory/edit', { field: field, value: value });
+    }, wwkAdoptMemory, quiet);
+  }
+
+  // /api/onboarding/rhythm takes a partial body — only the fields present
+  // are written — which is what makes it safe for one fact at a time.
+  function wwkSaveRhythm(sectionKey, body, apply) {
+    return wwkCommit(sectionKey, apply, function () {
+      return wwkPost('/api/onboarding/rhythm', body);
+    }, wwkAdoptRhythm);
+  }
+
+  // ---------- shared pieces ----------
+
+  function wwkChip(label, attrs, state) {
+    var cls = 'wwk-chip' + (state === 'on' ? ' is-on' : state === 'off' ? ' is-off' : '');
+    var pressed = state === 'on' ? 'true' : 'false';
+    return '<button type="button" class="' + cls + '" aria-pressed="' + pressed + '" ' + attrs + '>' + escapeHtml(label) + '</button>';
+  }
+
+  // A chip that IS a fact ("allergic to peanuts", "Costco: rotisserie
+  // chicken") — its × takes it away. The label part is a button only when
+  // tapping it does something (moving an item to the other store).
+  function wwkFactChip(label, removeAttrs, removeLabel, tapAttrs) {
+    var text = tapAttrs
+      ? '<button type="button" class="wwk-chip-text" ' + tapAttrs + '>' + escapeHtml(label) + '</button>'
+      : '<span class="wwk-chip-text">' + escapeHtml(label) + '</span>';
+    return '<span class="wwk-chip is-fact">' + text +
+      '<button type="button" class="wwk-chip-x" ' + removeAttrs + ' aria-label="' + escapeHtml(removeLabel) + '">&times;</button>' +
+    '</span>';
+  }
+
+  // "+ Add" — a chip that becomes an input when tapped (wwkOpenAdd), so a
+  // list never sits there with an empty box waiting.
+  function wwkAddChip(attrs, label) {
+    return '<button type="button" class="wwk-chip wwk-chip-add" ' + attrs + '>+ ' + escapeHtml(label || 'Add') + '</button>';
+  }
+
+  function wwkLead(text, sub) {
+    return '<p class="wwk-lead">' + escapeHtml(text) +
+      (sub ? ' <span class="wwk-lead-sub">' + escapeHtml(sub) + '</span>' : '') + '</p>';
+  }
+
+  // The freeform facts of one category ("Sam's away most Tuesdays"), each
+  // editable in place — save on blur or Enter, × to forget — plus a way to
+  // add one. Folded into the section that owns the category rather than
+  // kept as a list of their own.
+  function wwkFactsHtml(category) {
+    var facts = (wwkState.facts || []).filter(function (f) { return f.category === category; });
+    var html = wwkLead('Anything else');
+    facts.forEach(function (f) {
+      html += '<div class="wwk-fact-row">' +
+        '<input type="text" class="snw-input wwk-text" data-wwk-input="fact" data-id="' + f.id + '" value="' + escapeHtml(f.text) + '" aria-label="Something I know">' +
+        '<button type="button" class="wwk-chip-x wwk-fact-x" data-wwk="fact-delete" data-id="' + f.id + '" aria-label="Forget this">&times;</button>' +
+      '</div>';
+    });
+    html += '<div class="wwk-chips">' + wwkAddChip('data-wwk="add" data-kind="fact" data-category="' + category + '"', 'Something else') + '</div>';
+    return html;
+  }
+
+  // ---------- Who's here ----------
+
+  function wwkPeopleHtml(mem) {
+    var html = '';
+    (mem.members || []).forEach(function (m) {
+      var name = m.name;
+      html += '<div class="wwk-person">' +
+        '<p class="wwk-person-name">' + escapeHtml(name) + '</p>' +
+        '<div class="wwk-chips" role="group" aria-label="' + escapeHtml(name) + ' is">' +
+          WWK_AGE_GROUPS.map(function (o) {
+            // Older households carry "Adult" rather than "adult" (the
+            // column is freeform; onboarding writes lowercase keys now).
+            // Read either, so the answer that IS there reads as selected.
+            return wwkChip(o.label, 'data-wwk="age" data-member="' + escapeHtml(name) + '" data-value="' + o.key + '"', String(m.age_group || '').toLowerCase() === o.key ? 'on' : '');
+          }).join('') +
+        '</div>' +
+        wwkLead('Never on the plate') +
+        '<div class="wwk-chips" data-list="restriction" data-member="' + escapeHtml(name) + '">' +
+          (m.dietary_restrictions || []).map(function (r) {
+            var words = prefsRestrictionWords(r);
+            words = words.charAt(0).toUpperCase() + words.slice(1);
+            return wwkFactChip(words, 'data-wwk="restriction-remove" data-member="' + escapeHtml(name) + '" data-value="' + escapeHtml(r) + '"', 'Take ' + words + ' off ' + name + '’s list');
+          }).join('') +
+          wwkAddChip('data-wwk="add" data-kind="restriction" data-member="' + escapeHtml(name) + '"') +
+        '</div>' +
+      '</div>';
+    });
+    if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
+    html += wwkFactsHtml('people');
+    return html;
+  }
+
+  function wwkSetAge(name, key) {
+    wwkCommit('people', function () {
+      (wwkMem().members || []).forEach(function (m) { if (m.name === name) m.age_group = key; });
+    }, function () {
+      return wwkPost('/api/memory/member/age-group', { name: name, age_group: key });
+    }, wwkAdoptMemory);
+  }
+
+  function wwkMemberRestrictions(name) {
+    var m = (wwkMem().members || []).filter(function (x) { return x.name === name; })[0];
+    return m ? (m.dietary_restrictions || []).slice() : [];
+  }
+
+  // Removal resends the member's remaining list under replace=true
+  // (set_member_dietary_restrictions' removal mechanism); an add merges.
+  function wwkRemoveRestriction(name, value) {
+    var next = wwkMemberRestrictions(name).filter(function (r) { return r !== value; });
+    wwkCommit('people', function () {
+      (wwkMem().members || []).forEach(function (m) { if (m.name === name) m.dietary_restrictions = next; });
+    }, function () {
+      return wwkPost('/api/memory/member/restrictions', { name: name, restrictions: next, replace: true });
+    }, wwkAdoptMemory);
+  }
+
+  function wwkAddRestriction(name, text) {
+    wwkCommit('people', function () {
+      (wwkMem().members || []).forEach(function (m) {
+        if (m.name === name && (m.dietary_restrictions || []).indexOf(text) === -1) {
+          m.dietary_restrictions = (m.dietary_restrictions || []).concat([text]);
+        }
+      });
+    }, function () {
+      return wwkPost('/api/memory/member/restrictions', { name: name, restrictions: [text], replace: false });
+    }, wwkAdoptMemory);
+  }
+
+  // ---------- Won't eat ----------
+
+  function wwkWontEatHtml(mem) {
+    return '<div class="wwk-chips" data-list="dislike">' +
+      (mem.dislikes || []).map(function (d) {
+        return wwkFactChip(d, 'data-wwk="dislike-remove" data-value="' + escapeHtml(d) + '"', 'Take ' + d + ' off the list');
+      }).join('') +
+      wwkAddChip('data-wwk="add" data-kind="dislike"') +
+    '</div>';
+  }
+
+  function wwkListAdd(sectionKey, field, memKey, text) {
+    var existing = (wwkMem()[memKey] || []).slice();
+    // Already there: nothing to save, the chip is on screen — just redraw
+    // so the add-input goes back to its "+ Add".
+    if (existing.some(function (c) { return c.toLowerCase() === text.toLowerCase(); })) { wwkRenderSection(sectionKey); return; }
+    var next = existing.concat([text]);
+    wwkSavePreference(sectionKey, field, next, function () { wwkMem()[memKey] = next; });
+  }
+
+  function wwkListRemove(sectionKey, field, memKey, item) {
+    wwkCommit(sectionKey, function () {
+      wwkMem()[memKey] = (wwkMem()[memKey] || []).filter(function (c) { return c !== item; });
+    }, function () {
+      return wwkPost('/api/memory/delete', { field: field, item: item });
+    }, wwkAdoptMemory);
+  }
+
+  // ---------- Your rhythm ----------
+
+  function wwkRhythmHtml(mem) {
+    var r = mem.rhythm || {};
+    var members = (mem.members || []).map(function (m) { return m.name; });
+    var role = r.cooking_role ? r.cooking_role.value : '';
+    var who = r.cooking_role ? r.cooking_role.who : '';
+    var html = '';
+    html += wwkLead('When dinner lands') + '<div class="wwk-chips">' +
+      WWK_DINNER_WINDOW.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="dinner_window" data-value="' + o.key + '"', r.dinner_window === o.key ? 'on' : ''); }).join('') + '</div>';
+    html += wwkLead('Plan ready by') + '<div class="wwk-chips">' +
+      WWK_PLANNING_ANCHOR.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="planning_anchor" data-value="' + o.key + '"', r.planning_anchor === o.key ? 'on' : ''); }).join('') + '</div>';
+    html += wwkLead('Who cooks') + '<div class="wwk-chips">' +
+      WWK_COOKING_ROLE.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="cooking_role" data-value="' + o.key + '"', role === o.key ? 'on' : ''); }).join('') + '</div>';
+    if (role === 'one_person' || wwkState.pendingCookWho) {
+      html += '<div class="wwk-chips">' +
+        members.map(function (n) { return wwkChip(n, 'data-wwk="cooking-who" data-value="' + escapeHtml(n) + '"', who === n ? 'on' : ''); }).join('') + '</div>';
+    }
+    html += wwkLead('Meals eaten together') + '<div class="wwk-chips">' +
+      WWK_MEALS_TOGETHER.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="meals_together" data-value="' + o.key + '"', r.meals_together === o.key ? 'on' : ''); }).join('') + '</div>';
+    html += wwkLead('Lunch, on a normal day');
+    members.forEach(function (n) {
+      var standing = ((r.lunch_location || {})[n] || {}).standing || '';
+      html += '<div class="wwk-chips wwk-chips-named"><span class="wwk-chips-name">' + escapeHtml(n) + '</span>' +
+        WWK_LUNCH.map(function (o) { return wwkChip(o.label, 'data-wwk="lunch" data-member="' + escapeHtml(n) + '" data-value="' + o.key + '"', standing === o.key ? 'on' : ''); }).join('') + '</div>';
+    });
+    html += wwkFactsHtml('rhythm');
+    return html;
+  }
+
+  function wwkSetRhythm(field, value) {
+    if (field === 'cooking_role' && value === 'one_person') {
+      // set_cooking_role refuses 'one_person' with nobody named
+      // (app/tools/rhythm.py) — show the names; the write happens on a name.
+      wwkState.pendingCookWho = true;
+      wwkRenderSection('rhythm');
+      return;
+    }
+    var body = {}; body[field] = value;
+    wwkSaveRhythm(field === 'leftovers_stance' ? 'taste' : 'rhythm', body, function () {
+      var r = wwkMem().rhythm || (wwkMem().rhythm = {});
+      if (field === 'cooking_role') { r.cooking_role = { value: value, who: null }; wwkState.pendingCookWho = false; }
+      else r[field] = value;
+    });
+  }
+
+  function wwkSetCookingWho(name) {
+    wwkSaveRhythm('rhythm', { cooking_role: 'one_person', cooking_role_who: name }, function () {
+      wwkMem().rhythm.cooking_role = { value: 'one_person', who: name };
+      wwkState.pendingCookWho = false;
+    });
+  }
+
+  function wwkSetLunch(name, value) {
+    var body = { lunch_location: {} }; body.lunch_location[name] = value;
+    wwkSaveRhythm('rhythm', body, function () {
+      var r = wwkMem().rhythm || (wwkMem().rhythm = {});
+      r.lunch_location = r.lunch_location || {};
+      r.lunch_location[name] = r.lunch_location[name] || { standing: null, overrides: {} };
+      r.lunch_location[name].standing = value;
+    });
+  }
+
+  // ---------- Prep days ----------
+
+  function wwkPrepDaysHtml(mem) {
+    var days = ((mem.rhythm || {}).prep_days) || [];
+    var keys = days.map(function (d) { return d.weekday; });
+    var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes || 0;
+    var html = wwkLead('Up to two') + '<div class="wwk-chips">' +
+      WWK_PREP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="prep-day" data-value="' + o.key + '"', keys.indexOf(o.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
+    if (keys.length) {
+      html += wwkLead('Roughly how long') + '<div class="wwk-chips">' +
+        WWK_PREP_MINUTES.map(function (o) { return wwkChip(o.label, 'data-wwk="prep-minutes" data-value="' + o.key + '"', minutes === o.key ? 'on' : ''); }).join('') + '</div>';
+    }
+    return html;
+  }
+
+  // The whole list is the fact, so every tap sends the whole list — in
+  // week order, whatever order the taps came in (onboarding's own rule).
+  function wwkPrepPayload(keys, minutes) {
+    return WWK_PREP_DAYS.filter(function (o) { return keys.indexOf(o.key) !== -1; })
+      .map(function (o) { return { weekday: o.key, minutes: minutes || null }; });
+  }
+
+  function wwkTogglePrepDay(key) {
+    var days = ((wwkMem().rhythm || {}).prep_days) || [];
+    var keys = days.map(function (d) { return d.weekday; });
+    var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes || null;
+    if (keys.indexOf(key) !== -1) keys = keys.filter(function (k) { return k !== key; });
+    else if (keys.length < WWK_MAX_PREP_DAYS) keys = keys.concat([key]);
+    else return;  // "up to two" — a third tap does nothing, as in onboarding
+    var next = wwkPrepPayload(keys, minutes);
+    wwkSaveRhythm('prep-days', { prep_days: next }, function () {
+      var r = wwkMem().rhythm || (wwkMem().rhythm = {});
+      r.prep_days = next;
+      r.prep_days_summary = wwkPrepSummary(next);
+    });
+  }
+
+  function wwkSetPrepMinutes(picked) {
+    var days = ((wwkMem().rhythm || {}).prep_days) || [];
+    var current = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes || null;
+    // Tapping the length that's already on clears it — "they didn't say"
+    // is a real answer; the days stay.
+    var minutes = current === picked ? null : picked;
+    var next = wwkPrepPayload(days.map(function (d) { return d.weekday; }), minutes);
+    wwkSaveRhythm('prep-days', { prep_days: next }, function () {
+      wwkMem().rhythm.prep_days = next;
+      wwkMem().rhythm.prep_days_summary = wwkPrepSummary(next);
+    });
+  }
+
+  // A local stand-in for app/tools/rhythm.py's prep_days_summary, so the
+  // line reads right the instant a day is tapped; the server's own
+  // sentence replaces it when the reply lands (wwkAdoptRhythm).
+  function wwkPrepSummary(days) {
+    if (!days.length) return '';
+    var names = days.map(function (d) { return d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1); });
+    var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes;
+    var length = minutes === 30 ? ' (about 30 minutes)' : minutes === 60 ? ' (about an hour)' : minutes ? ' (a couple of hours)' : '';
+    return 'Preps on ' + names.join(' and ') + length + '.';
+  }
+
+  // ---------- How you eat ----------
+
+  function wwkTasteHtml(mem) {
+    var r = mem.rhythm || {};
+    var html = '';
+    html += wwkLead('Leftovers') + '<div class="wwk-chips">' +
+      WWK_LEFTOVERS.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="leftovers_stance" data-value="' + o.key + '"', r.leftovers_stance === o.key ? 'on' : ''); }).join('') + '</div>';
+    html += wwkLead('How meals lean') +
+      '<input type="text" class="snw-input wwk-text" data-wwk-input="eating_style" value="' + escapeHtml(mem.eating_style || '') + '" ' +
+        'placeholder="High-protein, low-carb — in your own words" aria-label="How meals lean">';
+    html += wwkLead('Excited about') + '<div class="wwk-chips" data-list="cuisine">' +
+      (mem.cuisine_preferences || []).map(function (c) {
+        return wwkFactChip(c, 'data-wwk="cuisine-remove" data-value="' + escapeHtml(c) + '"', 'Take ' + c + ' off the list');
+      }).join('') +
+      wwkAddChip('data-wwk="add" data-kind="cuisine"') + '</div>';
+    html += wwkLead('Proteins', 'tap once for a favourite, twice to skip it') + '<div class="wwk-chips">' +
+      WWK_PROTEINS.map(function (label) {
+        return wwkChip(label, 'data-wwk="protein" data-value="' + label.toLowerCase() + '"', wwkProteinState(mem, label.toLowerCase()).state);
+      }).join('') + '</div>';
+    // "Every meal is a full plate" (Emily, 2026-09-05): the household is
+    // told once that the app rounds a short meal out, so the setting has
+    // to be findable afterwards. The value is the answer, not a switch.
+    var platesOn = mem.complete_plates !== false;
+    html += '<button type="button" class="wwk-toggle-row" data-wwk="plates">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">Rounding out meals</span>' +
+        '<span class="prefs-row-sub">' + (platesOn ? 'I add a small side when a meal comes out short' : 'I leave your meals exactly as planned') + '</span>' +
+      '</span>' +
+      '<span class="wwk-toggle-verb">' + (platesOn ? 'Stop' : 'Start') + '</span>' +
+    '</button>';
+    html += wwkLead('Each week I plan');
+    WWK_COUNTS.forEach(function (c) { html += wwkStepperHtml(c, mem[c.field]); });
+    html += wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day);
+    html += wwkLead('In your kitchen') + '<div class="wwk-chips">' +
+      WWK_KIT.map(function (k) { return wwkChip(k.label, 'data-wwk="kit" data-value="' + k.key + '"', (mem.kitchen_kit || []).indexOf(k.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
+    html += wwkFactsHtml('taste');
+    return html;
+  }
+
+  // The 34px-visible / 44px-target stepper the cook screen's servings use
+  // (.cook-serves-btn / .cook-serves-count, shell.css) — one stepper, one
+  // place it is drawn.
+  function wwkStepperHtml(c, value) {
+    var n = typeof value === 'number' ? value : 0;
+    return '<div class="wwk-count-row">' +
+      '<span class="wwk-count-label">' + escapeHtml(c.label) + '</span>' +
+      '<span class="cook-serves">' +
+        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="-1" data-max="' + c.max + '" aria-label="Fewer ' + escapeHtml(c.label.toLowerCase()) + '">&minus;</button>' +
+        '<span class="cook-serves-count">' + n + '</span>' +
+        '<button type="button" class="cook-serves-btn" data-wwk="count" data-field="' + c.field + '" data-delta="1" data-max="' + c.max + '" aria-label="More ' + escapeHtml(c.label.toLowerCase()) + '">+</button>' +
+      '</span>' +
+    '</div>';
+  }
+
+  function wwkSetCount(field, delta, max) {
+    var current = typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0;
+    var next = Math.max(0, Math.min(max, current + delta));
+    if (next === current) return;
+    wwkSavePreference('taste', field, next, function () { wwkMem()[field] = next; });
+  }
+
+  // What the household has said about one protein, read tolerantly. The
+  // scale is a 1–5 rating under a lowercase key ({"chicken": 5}), which
+  // is what this sheet writes — but a real household's stored answers
+  // (found 2026-09-12 in the pre-reset backup) also carry older shapes:
+  // "more"/"less"/"neutral" strings under keys like "Fish / seafood" or
+  // "Plant-based / tofu". The old page read none of those, so every chip
+  // sat unrated over an answer that was there. An exact lowercase key
+  // wins; failing that, the first stored key whose first word matches.
+  // `keys` is every stored key the answer lives under, so clearing it
+  // clears all of them (delete_preference pops one exact key).
+  function wwkProteinState(mem, key) {
+    var prefs = mem.protein_preferences || {};
+    var keys = [];
+    var value;
+    if (Object.prototype.hasOwnProperty.call(prefs, key)) { keys.push(key); value = prefs[key]; }
+    Object.keys(prefs).forEach(function (k) {
+      if (k === key) return;
+      var first = k.toLowerCase().split(/[\s\/,]+/)[0];
+      if (first === key || k.toLowerCase() === key) { keys.push(k); if (value === undefined) value = prefs[k]; }
+    });
+    var state = '';
+    if (typeof value === 'number') state = value >= 4 ? 'on' : value <= 2 ? 'off' : '';
+    else if (typeof value === 'string') {
+      var v = value.toLowerCase();
+      state = /^(more|like|love|favou?rite|yes)/.test(v) ? 'on' : /^(less|avoid|no|never|skip)/.test(v) ? 'off' : '';
+    }
+    return { state: state, keys: keys };
+  }
+
+  // A 3-state cycle (unrated -> liked -> skipped -> unrated), since the
+  // stored value is a 1–5 rating rather than a yes/no.
+  function wwkCycleProtein(key) {
+    var now = wwkProteinState(wwkMem(), key);
+    if (now.state === '') {
+      wwkCommit('taste', function () {
+        wwkMem().protein_preferences = wwkMem().protein_preferences || {};
+        wwkMem().protein_preferences[key] = 5;
+      }, function () { return wwkPost('/api/memory/edit', { field: 'protein_preferences', value: wwkOneKey(key, 5) }); }, wwkAdoptMemory);
+    } else if (now.state === 'on') {
+      wwkCommit('taste', function () { wwkMem().protein_preferences[key] = 1; },
+        function () { return wwkPost('/api/memory/edit', { field: 'protein_preferences', value: wwkOneKey(key, 1) }); }, wwkAdoptMemory);
+    } else {
+      var keys = now.keys.length ? now.keys : [key];
+      wwkCommit('taste', function () { keys.forEach(function (k) { delete wwkMem().protein_preferences[k]; }); },
+        async function () {
+          var last = null;
+          for (var i = 0; i < keys.length; i++) last = await wwkPost('/api/memory/delete', { field: 'protein_preferences', item: keys[i] });
+          return last;
+        }, wwkAdoptMemory);
+    }
+  }
+  function wwkOneKey(key, value) { var o = {}; o[key] = value; return o; }
+
+  function wwkTogglePlates() {
+    var next = wwkMem().complete_plates === false;
+    wwkSavePreference('taste', 'complete_plates', next, function () { wwkMem().complete_plates = next; });
+  }
+
+  function wwkToggleKit(key) {
+    var current = wwkMem().kitchen_kit || [];
+    var next = current.indexOf(key) !== -1 ? current.filter(function (k) { return k !== key; }) : current.concat([key]);
+    wwkSavePreference('taste', 'kitchen_kit', next, function () { wwkMem().kitchen_kit = next; });
+  }
+
+  function wwkSaveEatingStyle(text) {
+    if ((wwkMem().eating_style || '') === text) return;
+    // Empty is a real answer — it clears the style.
+    wwkSavePreference('taste', 'eating_style', text, function () { wwkMem().eating_style = text; }, true);
+  }
+
+  // ---------- Your calendar ----------
+  // Read-only, by subscribe link (Loop Board "Meals: plan the week around
+  // what's actually on the household's calendar", 2026-09-11). The one
+  // section that is not tap-and-saved: the link has to be read once
+  // before it is kept, so it is paste -> Check it -> Use this calendar.
+
+  function wwkClock(hhmm) { return hhmm ? humanTime(hhmm) : ''; }
+  function wwkDayName(iso) {
+    var p = iso.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: 'short' });
+  }
+  function wwkThingsLine(n) {
+    if (n === 0) return 'nothing on it for the coming week';
+    return n === 1 ? '1 thing in the coming week' : n + ' things in the coming week';
+  }
+
+  function wwkCalendarHtml() {
+    var status = prefsState.calendar;
+    var html = '';
+    if (status && status.connected) {
+      html += '<p class="wwk-cal-line">' + escapeHtml(status.label || 'Connected') +
+        (status.link_hint ? ' <span class="wwk-cal-hint">' + escapeHtml(status.link_hint) + '</span>' : '') + '</p>';
+      if (status.last_error) {
+        // Calm, stated plainly, paired with its way out (Check again).
+        html += '<p class="wwk-cal-status wwk-cal-trouble">' + escapeHtml(status.last_error) + ' I’ll plan without it until it’s back.</p>';
+      } else {
+        html += '<p class="wwk-cal-status">I read it and found ' + escapeHtml(wwkThingsLine(status.coming_week_count || 0)) + '. I only read it — nothing on your calendar gets added or changed.</p>';
+      }
+      html += '<div class="wwk-actions">' +
+        '<button type="button" class="btn-secondary wwk-btn-quiet" data-wwk="cal-refresh"' + (wwkCal.busy ? ' disabled' : '') + '>Check again</button>' +
+        '<button type="button" class="wwk-link" data-wwk="cal-disconnect">Disconnect</button>' +
+      '</div>';
+      if (wwkCal.error) html += '<p class="wwk-cal-status wwk-cal-trouble">' + escapeHtml(wwkCal.error) + '</p>';
+      return html;
+    }
+    html += '<p class="wwk-cal-status">Paste your calendar’s private link and I’ll plan around what’s on it — a quicker dinner on practice nights, that kind of thing. I only read it.</p>';
+    html += '<details class="wwk-cal-where"><summary>Where’s the link?</summary>' +
+      '<p><b>Google:</b> Settings › your calendar › “Secret address in iCal format”.</p>' +
+      '<p><b>Apple (iCloud):</b> Calendar › the share icon beside the calendar › Public Calendar › copy the link.</p>' +
+      '<p><b>Outlook:</b> Settings › Calendar › Shared calendars › Publish a calendar › the ICS link.</p>' +
+    '</details>';
+    html += '<div class="wwk-input-row">' +
+      '<input class="snw-input wwk-text" id="wwk-cal-url" data-wwk-input="cal-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste the link here" value="' + escapeHtml(wwkCal.url) + '" aria-label="Calendar link">' +
+      '<button type="button" class="wwk-btn" data-wwk="cal-check"' + (wwkCal.busy ? ' disabled' : '') + '>' + (wwkCal.busy ? 'Reading…' : 'Check it') + '</button>' +
+    '</div>';
+    if (wwkCal.error) html += '<p class="wwk-cal-status wwk-cal-trouble">' + escapeHtml(wwkCal.error) + '</p>';
+    var checked = wwkCal.checked;
+    if (checked) {
+      var n = checked.coming_week_count || 0;
+      html += '<p class="wwk-cal-status">' + (n ? 'Found ' + escapeHtml(wwkThingsLine(n)) + '.' : 'That link works, but there’s nothing on it for the coming week.') + '</p>';
+      if (checked.sample && checked.sample.length) {
+        html += '<ul class="wwk-cal-sample">' + checked.sample.map(function (e) {
+          var when = e.all_day ? '' : ' · ' + wwkClock(e.start) + (e.end && e.end !== e.start ? '–' + wwkClock(e.end) : '');
+          return '<li><b>' + escapeHtml(wwkDayName(e.date)) + '</b> · ' + escapeHtml(e.title || '(untitled)') + escapeHtml(when) + '</li>';
+        }).join('') + '</ul>';
+      }
+      if (checked.timezone && checked.timezone_source !== 'feed' && checked.timezone_source !== 'events') {
+        html += '<p class="wwk-cal-hint">Reading times as ' + escapeHtml(checked.timezone) + '.</p>';
+      }
+      if (checked.skipped) {
+        html += '<p class="wwk-cal-hint">Skipped ' + checked.skipped + ' repeating ' + (checked.skipped === 1 ? 'event' : 'events') + ' I couldn’t read.</p>';
+      }
+      html += '<div class="wwk-input-row">' +
+        '<input class="snw-input wwk-text" id="wwk-cal-label" data-wwk-input="cal-label" type="text" maxlength="40" placeholder="Call it" value="' + escapeHtml(wwkCal.label || checked.label || '') + '" aria-label="A name for this calendar">' +
+        '<button type="button" class="wwk-btn" data-wwk="cal-save"' + (wwkCal.busy ? ' disabled' : '') + '>Use this calendar</button>' +
+      '</div>' +
+      '<div class="wwk-actions"><button type="button" class="wwk-link" data-wwk="cal-clear">Not that one</button></div>';
+    }
+    return html;
+  }
+
+  var WWK_OFFLINE_LINE = 'I couldn’t reach Pomona just now. Check your connection and try again.';
+
+  async function wwkCalPost(path, body) {
+    var res;
+    try {
+      res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    } catch (err) {
+      throw new Error(WWK_OFFLINE_LINE);
+    }
+    var data = null;
+    try { data = await res.json(); } catch (err) { data = null; }
+    if (!res.ok) {
+      var detail = data && data.detail;
+      throw new Error(typeof detail === 'string' && detail ? detail : 'Couldn’t do that just now — try again in a moment.');
+    }
+    return data;
+  }
+
+  async function wwkCalCheck() {
+    var input = document.getElementById('wwk-cal-url');
+    var url = ((input && input.value) || '').trim();
+    wwkCal.url = url; wwkCal.error = ''; wwkCal.checked = null;
+    if (!url) { wwkCal.error = 'Paste the link first.'; wwkRenderSection('calendar'); return; }
+    wwkCal.busy = true; wwkRenderSection('calendar');
+    try {
+      wwkCal.checked = await wwkCalPost('/api/calendar/check', { url: url });
+      wwkCal.label = wwkCal.checked.label || '';
+    } catch (err) { wwkCal.error = err.message; }
+    wwkCal.busy = false; wwkRenderSection('calendar');
+  }
+
+  async function wwkCalSave() {
+    var labelInput = document.getElementById('wwk-cal-label');
+    wwkCal.error = ''; wwkCal.busy = true; wwkRenderSection('calendar');
+    try {
+      await wwkCalPost('/api/calendar/connect', { url: wwkCal.url, label: ((labelInput && labelInput.value) || '').trim() });
+      wwkCal.url = ''; wwkCal.label = ''; wwkCal.checked = null;
+      showToast('Connected — I’ll plan around it from here.');
+      await loadPrefsCalendar();
+    } catch (err) { wwkCal.error = err.message; }
+    wwkCal.busy = false; wwkRenderSection('calendar');
+  }
+
+  async function wwkCalRefresh() {
+    wwkCal.error = ''; wwkCal.busy = true; wwkRenderSection('calendar');
+    try {
+      var status = await wwkCalPost('/api/calendar/refresh', {});
+      prefsState.calendar = status;
+      if (!status.last_error) showToast('Read it again — ' + wwkThingsLine(status.coming_week_count || 0) + '.');
+    } catch (err) { wwkCal.error = err.message; }
+    wwkCal.busy = false; wwkRenderSection('calendar');
+  }
+
+  async function wwkCalDisconnect() {
+    wwkCal.error = '';
+    try {
+      await wwkCalPost('/api/calendar/disconnect', {});
+      showToast('Disconnected. Paste the link again any time.');
+      await loadPrefsCalendar();
+    } catch (err) { wwkCal.error = err.message; }
+    wwkRenderSection('calendar');
+  }
+
+  // ---------- Stores ----------
+
+  function wwkStoresHtml(mem) {
+    var stores = mem.usual_stores || [];
+    var typical = mem.store_typical_items || {};
+    var html = '';
+    stores.forEach(function (store) {
+      var items = typical[store] || [];
+      var other = stores.length === 2 ? stores.filter(function (s) { return s !== store; })[0] : null;
+      html += '<div class="wwk-store">' +
+        '<p class="wwk-person-name">' + escapeHtml(store) +
+          '<span class="wwk-store-count">' + (items.length ? items.length + ' thing' + (items.length === 1 ? '' : 's') + ' you usually get here' : 'what you usually get here') + '</span></p>' +
+        '<div class="wwk-chips" data-list="store-item" data-store="' + escapeHtml(store) + '">' +
+          items.map(function (it) {
+            return wwkFactChip(it,
+              'data-wwk="item-forget" data-store="' + escapeHtml(store) + '" data-value="' + escapeHtml(it) + '"',
+              'Forget ' + it + ' at ' + store,
+              other ? 'data-wwk="item-move" data-store="' + escapeHtml(store) + '" data-value="' + escapeHtml(it) + '" title="Move to ' + escapeHtml(other) + '"' : null);
+          }).join('') +
+          wwkAddChip('data-wwk="add" data-kind="store-item" data-store="' + escapeHtml(store) + '"') +
+        '</div>' +
+      '</div>';
+    });
+    html += '<div class="wwk-chips">' + wwkAddChip('data-wwk="add" data-kind="store"', 'Add a store') + '</div>';
+    if (stores.length) {
+      if (wwkState.importOpen) {
+        var picked = wwkState.importStore || stores[0];
+        html += '<div class="wwk-import">' +
+          wwkLead('Paste a whole list', 'one per line — these go to') +
+          '<div class="wwk-chips">' + stores.map(function (s) { return wwkChip(s, 'data-wwk="import-store" data-value="' + escapeHtml(s) + '"', picked === s ? 'on' : ''); }).join('') + '</div>' +
+          '<textarea class="snw-input" id="wwk-import-text" rows="4" placeholder="Rotisserie chicken, frozen berries, coffee beans…" aria-label="Things you usually buy, one per line"></textarea>' +
+          '<div class="wwk-actions">' +
+            '<button type="button" class="wwk-btn" data-wwk="import-save">Add these</button>' +
+            '<button type="button" class="wwk-link" data-wwk="import-cancel">Never mind</button>' +
+          '</div>' +
+        '</div>';
+      } else {
+        html += '<div class="wwk-chips"><button type="button" class="wwk-link" data-wwk="import-open">Paste a whole list</button></div>';
+      }
+    }
+    return html;
+  }
+
+  function wwkAddStore(name) {
+    var stores = (wwkMem().usual_stores || []).slice();
+    // Case-insensitive, matching add_usual_stores' own merge (app/tools).
+    if (stores.some(function (s) { return s.toLowerCase() === name.toLowerCase(); })) {
+      showToast(name + ' is already on your list');
+      wwkRenderSection('stores');
+      return;
+    }
+    var next = stores.concat([name]);
+    wwkSavePreference('stores', 'usual_stores', next, function () { wwkMem().usual_stores = next; });
+  }
+
+  function wwkStoreItems(store) {
+    var t = wwkMem().store_typical_items || (wwkMem().store_typical_items = {});
+    return t[store] || (t[store] = []);
+  }
+
+  function wwkAddStoreItem(store, item) {
+    if (wwkStoreItems(store).some(function (i) { return i.toLowerCase() === item.toLowerCase(); })) { wwkRenderSection('stores'); return; }
+    wwkCommit('stores', function () { wwkStoreItems(store).push(item); },
+      function () { return wwkPost('/api/memory/store-items/add', { store: store, item: item }); }, wwkAdoptMemory);
+  }
+
+  function wwkForgetStoreItem(store, item) {
+    wwkCommit('stores', function () {
+      var t = wwkMem().store_typical_items || {};
+      t[store] = (t[store] || []).filter(function (i) { return i !== item; });
+    }, function () { return wwkPost('/api/memory/store-items/remove', { store: store, item: item }); }, wwkAdoptMemory);
+  }
+
+  // Tapping an item's name moves it to the other store — only meaningful
+  // with exactly two usual stores, the same rule the old page had.
+  function wwkMoveStoreItem(store, item) {
+    var stores = wwkMem().usual_stores || [];
+    var other = stores.filter(function (s) { return s !== store; })[0];
+    if (stores.length !== 2 || !other) return;
+    wwkCommit('stores', function () {
+      var t = wwkMem().store_typical_items || {};
+      t[store] = (t[store] || []).filter(function (i) { return i !== item; });
+      t[other] = (t[other] || []).concat([item]);
+    }, async function () {
+      await wwkPost('/api/memory/store-items/remove', { store: store, item: item });
+      return wwkPost('/api/memory/store-items/add', { store: other, item: item });
+    }, wwkAdoptMemory);
+  }
+
+  async function wwkImportSave() {
+    var stores = wwkMem().usual_stores || [];
+    var store = wwkState.importStore || stores[0];
+    var box = document.getElementById('wwk-import-text');
+    if (!store || !box) return;
+    // Split on newlines and commas, strip bullets/numbering, drop one-letter
+    // scraps and anything already on that store's list.
+    var existing = {};
+    wwkStoreItems(store).forEach(function (i) { existing[i.trim().toLowerCase()] = true; });
+    var toAdd = [];
+    box.value.split(/[\n,]/).forEach(function (raw) {
+      var p = raw.replace(/^[-•\s\d.]+/, '').trim();
+      if (p.length <= 1) return;
+      var key = p.toLowerCase();
+      if (existing[key]) return;
+      existing[key] = true;
+      toAdd.push(p);
+    });
+    wwkState.importOpen = false;
+    if (!toAdd.length) { wwkRenderSection('stores'); return; }
+    var ok = await wwkCommit('stores', function () {
+      var list = wwkStoreItems(store);
+      toAdd.forEach(function (p) { list.push(p); });
+    }, async function () {
+      var last = null;
+      for (var i = 0; i < toAdd.length; i++) last = await wwkPost('/api/memory/store-items/add', { store: store, item: toAdd[i] });
+      return last;
+    }, wwkAdoptMemory);
+    if (ok) showToast('Added ' + toAdd.length + ' thing' + (toAdd.length === 1 ? '' : 's') + ' to ' + store);
+  }
+
+  // ---------- the "+ Add" chip -> input swap ----------
+
+  var WWK_ADD_PLACEHOLDER = {
+    restriction: 'Peanuts, gluten, vegetarian…',
+    dislike: 'Olives, mushrooms…',
+    cuisine: 'Sichuan, Mexican…',
+    'store-item': 'Rotisserie chicken…',
+    store: 'Trader Joe’s…',
+    fact: 'Something I should know'
+  };
+
+  function wwkOpenAdd(btn) {
+    var kind = btn.getAttribute('data-kind');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'snw-input wwk-text wwk-add-input';
+    input.placeholder = WWK_ADD_PLACEHOLDER[kind] || '';
+    input.setAttribute('aria-label', btn.textContent.replace(/^\+\s*/, ''));
+    input.setAttribute('data-wwk-input', 'add');
+    input.setAttribute('data-kind', kind);
+    ['data-member', 'data-store', 'data-category'].forEach(function (a) {
+      if (btn.hasAttribute(a)) input.setAttribute(a, btn.getAttribute(a));
+    });
+    btn.replaceWith(input);
+    input.focus();
+    return input;
+  }
+
+  // Enter or blur commits what was typed; blank puts the "+ Add" chip
+  // back (a redraw of the section does that).
+  function wwkCommitAdd(input, text) {
+    if (input._done) return;
+    input._done = true;
+    text = (text === undefined ? input.value : text).trim();
+    var kind = input.getAttribute('data-kind');
+    var section = { restriction: 'people', dislike: 'wont-eat', cuisine: 'taste', 'store-item': 'stores', store: 'stores' }[kind];
+    if (kind === 'fact') section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[input.getAttribute('data-category')];
+    if (!text) { wwkRenderSection(section); return; }
+    if (kind === 'restriction') wwkAddRestriction(input.getAttribute('data-member'), text);
+    else if (kind === 'dislike') wwkListAdd('wont-eat', 'dislikes', 'dislikes', text);
+    else if (kind === 'cuisine') wwkListAdd('taste', 'cuisine_preferences', 'cuisine_preferences', text);
+    else if (kind === 'store-item') wwkAddStoreItem(input.getAttribute('data-store'), text);
+    else if (kind === 'store') wwkAddStore(text);
+    else if (kind === 'fact') wwkAddFact(input.getAttribute('data-category'), text);
+  }
+
+  // ---------- freeform facts ----------
+
+  function wwkAddFact(category, text) {
+    var section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[category];
+    var temp = { id: 'new-' + Date.now(), category: category, text: text };
+    wwkCommit(section, function () {
+      wwkState.facts = (wwkState.facts || []).concat([temp]);
+    }, function () {
+      return wwkPost('/api/facts/add', { category: category, text: text });
+    }, function (result) {
+      if (result && result.id) {
+        (wwkState.facts || []).forEach(function (f) { if (f.id === temp.id) f.id = result.id; });
+      }
+    });
+  }
+
+  function wwkUpdateFact(id, text) {
+    var fact = (wwkState.facts || []).filter(function (f) { return String(f.id) === String(id); })[0];
+    if (!fact || fact.text === text) return;
+    var section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[fact.category];
+    if (!text) { wwkRenderSection(section); return; }  // blank is an abandoned edit, not a delete
+    if (String(id).indexOf('new-') === 0) return;      // still being created; its reply will carry the id
+    wwkCommit(section, function () { fact.text = text; },
+      function () { return wwkPost('/api/facts/' + id + '/update', { text: text }); }, null, true);
+  }
+
+  function wwkDeleteFact(id) {
+    var fact = (wwkState.facts || []).filter(function (f) { return String(f.id) === String(id); })[0];
+    if (!fact) return;
+    var section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[fact.category];
+    wwkCommit(section, function () {
+      wwkState.facts = wwkState.facts.filter(function (f) { return f !== fact; });
+    }, function () { return wwkPost('/api/facts/' + id + '/delete'); });
+  }
+
+  // ---------- wiring ----------
+  // Delegated on the body, so nothing is re-bound when a section redraws.
+
+  (function wireWhatWeKnow() {
+    var body = document.getElementById('wwk-body');
+    if (!body) return;
+
+    body.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest && e.target.closest('[data-wwk]');
+      if (!t || !body.contains(t)) return;
+      var what = t.getAttribute('data-wwk');
+      var value = t.getAttribute('data-value');
+      var member = t.getAttribute('data-member');
+      var store = t.getAttribute('data-store');
+      if (what === 'toggle') return wwkToggle(t.getAttribute('data-section'));
+      if (!wwkMem()) return;
+      switch (what) {
+        case 'age': return wwkSetAge(member, value);
+        case 'restriction-remove': return wwkRemoveRestriction(member, value);
+        case 'dislike-remove': return wwkListRemove('wont-eat', 'dislikes', 'dislikes', value);
+        case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);
+        case 'rhythm': return wwkSetRhythm(t.getAttribute('data-field'), value);
+        case 'cooking-who': return wwkSetCookingWho(value);
+        case 'lunch': return wwkSetLunch(member, value);
+        case 'prep-day': return wwkTogglePrepDay(value);
+        case 'prep-minutes': return wwkSetPrepMinutes(parseInt(value, 10));
+        case 'protein': return wwkCycleProtein(value);
+        case 'plates': return wwkTogglePlates();
+        case 'count': return wwkSetCount(t.getAttribute('data-field'), parseInt(t.getAttribute('data-delta'), 10), parseInt(t.getAttribute('data-max'), 10));
+        case 'kit': return wwkToggleKit(value);
+        case 'fact-delete': return wwkDeleteFact(t.getAttribute('data-id'));
+        case 'add': return wwkOpenAdd(t);
+        case 'item-forget': return wwkForgetStoreItem(store, value);
+        case 'item-move': return wwkMoveStoreItem(store, value);
+        case 'import-open': wwkState.importOpen = true; wwkState.importStore = ''; return wwkRenderSection('stores');
+        case 'import-cancel': wwkState.importOpen = false; return wwkRenderSection('stores');
+        case 'import-store': wwkState.importStore = value; return wwkRenderSection('stores');
+        case 'import-save': return wwkImportSave();
+        case 'cal-check': return wwkCalCheck();
+        case 'cal-save': return wwkCalSave();
+        case 'cal-refresh': return wwkCalRefresh();
+        case 'cal-disconnect': return wwkCalDisconnect();
+        case 'cal-clear': wwkCal.url = ''; wwkCal.label = ''; wwkCal.checked = null; wwkCal.error = ''; return wwkRenderSection('calendar');
+      }
+    });
+
+    // Text saves on blur and on Enter. Enter blurs, so there is one path.
+    body.addEventListener('keydown', function (e) {
+      var t = e.target;
+      if (!t || !t.hasAttribute || !t.hasAttribute('data-wwk-input')) return;
+      if (e.key === 'Enter' && t.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        var kind = t.getAttribute('data-wwk-input');
+        if (kind === 'cal-url') return wwkCalCheck();
+        if (kind === 'cal-label') return wwkCalSave();
+        // A list's add-input keeps the focus after Enter, so several can
+        // go in a row: the input is emptied first, and the save's redraw
+        // opens a fresh one in its place (wwkPreservingFocus). Enter on a
+        // blank one just closes it.
+        if (kind === 'add') {
+          var typed = t.value;
+          if (!typed.trim()) { t.blur(); return; }
+          t.value = '';
+          wwkCommitAdd(t, typed);
+          return;
+        }
+        t.blur();
+      }
+      // Escape on an add-input closes the input, not the sheet (the
+      // sheet's own Escape listener sits on document, after this).
+      if (e.key === 'Escape' && t.getAttribute('data-wwk-input') === 'add') { e.stopPropagation(); t.value = ''; t.blur(); }
+    });
+
+    body.addEventListener('focusout', function (e) {
+      var t = e.target;
+      if (!t || !t.hasAttribute || !t.hasAttribute('data-wwk-input')) return;
+      // A field that is leaving the DOM (a redraw is swapping it) fires
+      // blur too, synchronously, mid-redraw. That is not the household
+      // leaving the field — nothing to save, and saving would start a
+      // second redraw inside the first (wwkPreservingFocus).
+      if (wwkRedrawing || !t.isConnected) return;
+      var kind = t.getAttribute('data-wwk-input');
+      if (kind === 'eating_style') return wwkSaveEatingStyle(t.value.trim());
+      if (kind === 'fact') return wwkUpdateFact(t.getAttribute('data-id'), t.value.trim());
+      if (kind === 'add') return wwkCommitAdd(t);
+      if (kind === 'cal-url') { wwkCal.url = t.value; return; }
+      if (kind === 'cal-label') { wwkCal.label = t.value; return; }
+    });
+  })();
 
   // ---------- "Add from a link" (recipe import, 2026-09-11) ----------
   // Paste a link -> Pomona reads the page -> the draft is shown to review
@@ -14519,6 +15764,9 @@
   function prefsInvalidate() {
     prefsState.memory = null;
     if (prefsState.open) loadPrefs();
+    // What we know reads the same cache; a chat turn that changed a store
+    // or a dislike while the sheet is open re-reads it too.
+    if (wwkState.open) loadWhatWeKnow();
   }
 
   // ---------- reading the answers back ----------
@@ -14532,11 +15780,25 @@
     var names = members.map(function (m) { return m.name; }).join(', ');
     var avoid = [];
     members.forEach(function (m) {
-      (m.dietary_restrictions || []).forEach(function (r) { if (r) avoid.push(r); });
+      (m.dietary_restrictions || []).forEach(function (r) { if (r) avoid.push(prefsRestrictionWords(r)); });
     });
     if (!avoid.length) return names;
-    var shown = avoid.slice(0, 2).join(', ');
+    // Two allergies in a row read once: "allergic to peanuts, kiwi", not
+    // "allergic to peanuts, allergic to kiwi".
+    var shown = avoid.slice(0, 2).join(', ').replace(/, allergic to /g, ', ');
     return names + ' · ' + shown + (avoid.length > 2 ? ' +' + (avoid.length - 2) : '');
+  }
+
+  // (Defined after prefsPeopleLine on purpose: tests/test_kitchen_and_preferences.py
+  // runs the slice from prefsPeopleLine to PREFS_ROWS under node.)
+  // A restriction the way it is said, not the way it is stored: onboarding
+  // writes an allergy as "allergy: peanuts" (the lower-case prefix is what
+  // the clash checker keys on — static/onboarding.html's
+  // currentRestrictions), and nobody says "allergy colon peanuts" across a
+  // table. Everything else ("Vegetarian", "Gluten-free") is already words.
+  function prefsRestrictionWords(r) {
+    var m = /^allergy:\s*(.+)$/i.exec(String(r || '').trim());
+    return m ? 'allergic to ' + m[1] : String(r || '');
   }
 
   // "dinner around 6:30" — the household's own answer said as a clock, from
@@ -14640,16 +15902,19 @@
     return morningClock(mt.time) + ' to ' + who;
   }
 
-  // Every row: what it says, and which tab of What we know owns the answer
-  // behind it. 'rhythm/prep-days' is a tab plus a spot inside it — see
-  // static/memory.html's openingTab/showKitchenTab.
+  // Every row: what it says, and which section of What we know owns the
+  // answer behind it (WWK_SECTIONS, further down — the native sheet's
+  // collapsible sections, 2026-09-12; these used to be tabs of
+  // static/memory.html). The row and the section it opens read back the
+  // same line from the same function, so tapping through never changes
+  // the words.
   var PREFS_ROWS = [
-    { title: 'Who’s here', tab: 'people', line: prefsPeopleLine },
-    { title: 'Your rhythm', tab: 'rhythm', line: prefsRhythmLine },
-    { title: 'Prep days', tab: 'rhythm/prep-days', line: prefsPrepLine },
-    { title: 'How you eat', tab: 'taste', line: prefsEatingLine },
-    { title: 'Your calendar', tab: 'rhythm/calendar', line: prefsCalendarLine },
-    { title: 'Stores', tab: 'stores', line: prefsStoresLine }
+    { title: 'Who’s here', section: 'people', line: prefsPeopleLine },
+    { title: 'Your rhythm', section: 'rhythm', line: prefsRhythmLine },
+    { title: 'Prep days', section: 'prep-days', line: prefsPrepLine },
+    { title: 'How you eat', section: 'taste', line: prefsEatingLine },
+    { title: 'Your calendar', section: 'calendar', line: prefsCalendarLine },
+    { title: 'Stores', section: 'stores', line: prefsStoresLine }
   ];
 
   // ---------- the sheet ----------
@@ -14700,7 +15965,7 @@
       whoPrefsRowHtml() +
       PREFS_ROWS.map(function (row) {
         var line = mem ? row.line(mem) : 'Reading it back…';
-        return '<button type="button" class="prefs-row" data-prefs="tab" data-tab="' + row.tab + '">' +
+        return '<button type="button" class="prefs-row" data-prefs="section" data-section="' + row.section + '">' +
           '<span class="prefs-row-text">' +
             '<span class="prefs-row-title">' + escapeHtml(row.title) + '</span>' +
             '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' +
@@ -14818,11 +16083,12 @@
     if (!target) return;
     var what = target.getAttribute('data-prefs');
     if (what === 'open') return openPrefsSheet();
-    if (what === 'tab') {
+    if (what === 'section') {
       closePrefsSheet();
-      // What we know, opened on the tab that owns this answer — the same
-      // Kitchen entry sheet the Inventory tile uses.
-      openKitchenSheet('memory', target.getAttribute('data-tab'));
+      // What we know, opened with the section that owns this answer
+      // expanded — the same Kitchen entry sheet the Inventory tile uses,
+      // rendered natively (openWhatWeKnow).
+      openKitchenSheet('memory', target.getAttribute('data-section'));
       return;
     }
     if (what === 'signout') {
