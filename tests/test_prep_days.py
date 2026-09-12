@@ -543,7 +543,9 @@ def test_no_prep_days_offer_on_the_cook_root():
     assert "Tell me which days you prep" not in SHELL_JS
     assert 'data-cook="prep-days"' not in SHELL_JS
     assert "if (!sessions.length) return '';" in SHELL_JS
-    assert "{ title: 'Prep days', tab: 'rhythm/prep-days', line: prefsPrepLine }" in SHELL_JS
+    # (Rows name a SECTION of the native What we know sheet since
+    # 2026-09-12; they named a tab of static/memory.html before that.)
+    assert "{ title: 'Prep days', section: 'prep-days', line: prefsPrepLine }" in SHELL_JS
 
 
 def test_the_session_focus_screen_exists_and_can_be_left():

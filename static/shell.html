@@ -178,15 +178,20 @@
        page navigation that left the app shell — tab bar and all — with only
        the browser's back button to return.
 
-       The sheet hosts the existing page in an iframe. That is deliberate
-       and it is the ONLY iframe left in the app: rebuilding memory.html and
-       inventory.html natively is real work and is not this slice, while
-       hosting them here already satisfies the rule that a screen never
-       becomes a page with its own chrome. This header is the way back; the
-       page inside hides its own back link (static/embedded-page.js).
+       Two bodies, one shown at a time (shell.js's openKitchenSheet):
 
-       Body level, like every other sheet here, because position:fixed has
-       to sit outside the tab panel's stacking/scroll context. -->
+       - #wwk-body is "What we know", native since 2026-09-12 — DOM the
+         shell builds (renderWhatWeKnow), in the Preferences sheet's own
+         row vocabulary, every change saving as it is made. It used to be
+         static/memory.html inside the frame below.
+       - #kit-sheet-frame hosts static/inventory.html, and is now the ONLY
+         iframe left in the app. Inventory is a deferred beta feature by
+         Emily's call, so it stays framed rather than being rebuilt; the
+         page inside hides its own back link (static/embedded-page.js).
+
+       This header is the way back for both. Body level, like every other
+       sheet here, because position:fixed has to sit outside the tab
+       panel's stacking/scroll context. -->
   <div id="kit-sheet-scrim" hidden></div>
   <div id="kit-sheet" hidden role="dialog" aria-label="Household details">
     <div class="ask-sheet-handle" id="kit-sheet-handle"></div>
@@ -195,7 +200,8 @@
       <span class="kit-sheet-hairline"></span>
       <button type="button" class="kit-sheet-close" id="kit-sheet-close" aria-label="Close">&times;</button>
     </div>
-    <iframe id="kit-sheet-frame" class="kit-sheet-frame" title=""></iframe>
+    <div class="wwk-body" id="wwk-body" hidden></div>
+    <iframe id="kit-sheet-frame" class="kit-sheet-frame" title="" hidden></iframe>
   </div>
 
   <!-- Grocery list photo-scan review sheet (Loop Board, 2026-09-11 —

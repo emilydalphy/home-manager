@@ -103,8 +103,9 @@ def test_static_files_and_redirects_get_them_too(client, signed_in):
 def test_framing_is_same_origin_because_the_kitchen_tab_frames_its_own_pages(client):
     """
     'none' would be the stricter-looking answer and it would break the
-    Kitchen tab, whose entry tiles open static/memory.html and
-    static/inventory.html inside an iframe (shell.js's #kit-sheet).
+    Kitchen tab, whose Inventory tile opens static/inventory.html inside
+    an iframe (shell.js's #kit-sheet — the one frame left, since What we
+    know went native on 2026-09-12).
     """
     headers = _headers_for(client)
     assert "frame-ancestors 'self'" in headers["Content-Security-Policy"]

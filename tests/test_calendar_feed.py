@@ -817,17 +817,23 @@ from pathlib import Path
 _STATIC = Path(__file__).resolve().parents[1] / "static"
 
 
-def test_the_calendar_card_lives_on_what_we_knows_rhythm_tab_and_never_prints_the_link():
-    src = (_STATIC / "memory.html").read_text(encoding="utf-8")
-    for marker in ('id="wwk-calendar"', "data-cal-check", "data-cal-save", "data-cal-refresh", "data-cal-disconnect",
-                   "/api/calendar/check", "/api/calendar/connect", "/api/calendar/disconnect", "link_hint"):
-        assert marker in src, marker
-    assert "status.url" not in src, "the client never has, and must never render, the full link"
+def test_the_calendar_section_lives_in_the_native_what_we_know_sheet_and_never_prints_the_link():
+    # The card moved from static/memory.html's Rhythm tab into the native
+    # "What we know" sheet's own "Your calendar" section (shell.js,
+    # wwkCalendarHtml) on 2026-09-12. Same markers, same rule about the link.
+    src = (_STATIC / "shell.js").read_text(encoding="utf-8")
+    card = src[src.index("function wwkCalendarHtml()"):src.index("// ---------- Stores ----------")]
+    for marker in ("data-wwk=\"cal-check\"", "data-wwk=\"cal-save\"", "data-wwk=\"cal-refresh\"",
+                   "data-wwk=\"cal-disconnect\"", "/api/calendar/check", "/api/calendar/connect",
+                   "/api/calendar/disconnect", "link_hint"):
+        assert marker in card, marker
+    assert "status.url" not in card, "the client never has, and must never render, the full link"
 
 
 def test_the_preferences_sheet_has_a_calendar_row_that_opens_the_card():
     src = (_STATIC / "shell.js").read_text(encoding="utf-8")
-    assert "{ title: 'Your calendar', tab: 'rhythm/calendar', line: prefsCalendarLine }" in src
+    assert "{ title: 'Your calendar', section: 'calendar', line: prefsCalendarLine }" in src
+    assert "{ key: 'calendar', title: 'Your calendar', line: prefsCalendarLine, body: wwkCalendarHtml }" in src
     assert "fetch('/api/calendar')" in src
 
 
@@ -839,4 +845,4 @@ def test_no_other_screen_grew_a_calendar_empty_state():
         src = (_STATIC / name).read_text(encoding="utf-8").lower()
         assert "your calendar" not in src and "/api/calendar" not in src, name
     shell = (_STATIC / "shell.js").read_text(encoding="utf-8")
-    assert shell.count("fetch('/api/calendar')") == 1, "one read, from the Preferences sheet, and nowhere else"
+    assert shell.count("fetch('/api/calendar')") == 1, "one read (loadPrefsCalendar), shared by Preferences and What we know, and nowhere else"
