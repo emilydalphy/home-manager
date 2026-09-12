@@ -350,6 +350,28 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Inventory wears an "In development" pill now. Branch
+  `worktree-inventory-in-development`.** Loop Board "Inventory: mark as
+  still in development" — Emily's 2026-09-11 call: inventory stays a
+  not-ready beta feature while staples ships first, and a tester shouldn't
+  spend effort (or feedback) keeping it up to date. Labelled, not hidden:
+  receipt/fridge/pantry scans still land items there, and a hidden screen
+  would make scanned items vanish somewhere nobody can see. Two entry
+  points get the neutral pill (`pill pill-neutral`, celadon, never
+  apricot): the Kitchen tile in `kitchenTilesHtml()` and the desktop rail
+  row — the rail one is appended by JS, not baked into `shell.html`,
+  because a `.pill`'s own `inline-flex` beats `[hidden]` (same lesson as
+  `SHOW_NOTIF_BELL`). One calm line at the top of the sheet: "Inventory is
+  still being built. Nothing else in Pomona depends on it, so there's no
+  need to keep it up to date." Gate is `INVENTORY_IN_DEVELOPMENT` beside
+  `SHOW_CHORES_ON_TODAY` in `shell.js` — **plus a second copy inside
+  `inventory.html`'s own script**, because that sheet is a separate
+  document (standalone at `/inventory` and iframed into Kitchen) and can't
+  see `shell.js`'s scope. Turning it off later is two one-line flips, not
+  one. 7 source-pinning tests (`tests/test_inventory_in_development_marker.py`,
+  pattern of `test_cook_voice_hidden.py`); one older assertion narrowed
+  from `">Inventory<"` to `kit-row-title">Inventory`. Verified live at
+  desktop and 375px (no wrap, no rail at phone width). Suite 2709.
 - **2026-09-11 — Tapping tonight's dinner on Now 500'd when the only plan
   on file was an old week. Branch `worktree-needs-you-old-plan`.** Loop
   Board "Now: 'needs you' dinner card 500s when the only plan on file is
