@@ -185,24 +185,18 @@
 <main id="setup" hidden>
   <div class="eyebrow">Your meal planning setup</div>
   <h1>What I&rsquo;m working with</h1>
-  <p class="intro">
-    Change anything here and I&rsquo;ll follow it from next week onwards. Nothing is locked in from
-    when you signed up.
-  </p>
+  <p class="intro">Change anything here and I&rsquo;ll follow it from next week.</p>
 
   <section class="block">
     <div class="block-label">How many different recipes a week?</div>
-    <p class="block-body">
-      Pick how many breakfasts, lunches and dinners you&rsquo;ll actually cook. I&rsquo;ll fill the
-      rest of the week with those &mdash; leftovers included &mdash; unless you tell me you&rsquo;re away.
-    </p>
+    <p class="block-body">The rest of the week is repeats and leftovers.</p>
     <div class="card" id="counts"></div>
     <div class="saved" id="counts-saved"></div>
   </section>
 
   <section class="block">
     <div class="block-label">Your kitchen</div>
-    <p class="block-body">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
+    <p class="block-body">I&rsquo;ll only suggest recipes your kitchen can make.</p>
     <div class="chip-row" id="kit"></div>
     <div class="saved" id="kit-saved"></div>
   </section>
@@ -221,7 +215,6 @@
 
   <section class="block">
     <div class="block-label">Won&rsquo;t eat</div>
-    <p class="block-body">Everything you&rsquo;ve told me to keep off the table. Correct me any time &mdash; I&rsquo;d rather know.</p>
     <div class="list-chips" id="dislikes"></div>
     <div class="list-add">
       <input class="editable" id="dislike-input" type="text" placeholder="Something else you&rsquo;d rather not see" />
@@ -243,7 +236,6 @@
 
   <section class="block">
     <div class="block-label">At the table</div>
-    <p class="block-body">Whether everyone eats the same thing.</p>
     <div class="stack" id="table-style"></div>
     <div class="saved" id="table-style-saved"></div>
   </section>
@@ -251,8 +243,8 @@
   <section class="block">
     <div class="block-label">A normal week at yours</div>
     <p class="block-body">
-      The single most useful thing you can tell me. The more I know about how your week runs, the
-      more this plan will feel like yours &mdash; it gets sharper as you correct me.
+      The more I know about how your week runs, the more this plan will feel like yours. It&rsquo;ll
+      get sharper as you correct me.
     </p>
     <textarea class="editable" id="typical-week" placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout. One of us travels most other weeks."></textarea>
     <div class="saved" id="typical-week-saved"></div>
@@ -261,7 +253,7 @@
   <section class="block">
     <div class="chat-card">
       <h2>Easier to just tell me?</h2>
-      <p>Some things don&rsquo;t fit in a stepper. Describe the shape of it and I&rsquo;ll set all of this for you.</p>
+      <p>Say it in your own words and I&rsquo;ll set all of this for you.</p>
       <form class="chat-form" id="chat-form">
         <input type="text" id="chat-input" placeholder="&ldquo;We&rsquo;re travelling half of September&rdquo;" autocomplete="off" />
         <button type="submit" id="chat-send">Tell me</button>
@@ -308,7 +300,7 @@
 
   function saidSaved(id, message) {
     var el = $(id);
-    el.textContent = message || 'Noted — I’ll start from that next week too.';
+    el.textContent = message || 'Noted — from next week on.';
     clearTimeout(el._timer);
     el._timer = setTimeout(function () { el.textContent = ''; }, 4000);
   }
@@ -487,7 +479,7 @@
     $(containerId).querySelectorAll('button').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var next = values.filter(function (v) { return v !== btn.dataset.value; });
-        save(field, next, savedId, 'Noted — I’ve taken that off.').then(function () {
+        save(field, next, savedId, 'Noted — that’s off the table.').then(function () {
           renderList(containerId, field, savedId);
         });
       });
@@ -503,7 +495,7 @@
       if (values.some(function (v) { return v.toLowerCase() === value.toLowerCase(); })) { input.value = ''; return; }
       values.push(value);
       input.value = '';
-      save(field, values, savedId, 'Noted — I’ll remember that.').then(function () {
+      save(field, values, savedId, 'Noted.').then(function () {
         renderList(containerId, field, savedId);
       });
     };
@@ -523,7 +515,7 @@
   $('typical-week').addEventListener('blur', function () {
     var value = $('typical-week').value.trim();
     if (value === (prefs.typical_week || '')) return;
-    save('typical_week', value, 'typical-week-saved', 'Noted — that shapes every week I build.');
+    save('typical_week', value, 'typical-week-saved', 'Noted.');
   });
 
   // ---------- the embedded chat ----------

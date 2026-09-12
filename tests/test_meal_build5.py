@@ -12,13 +12,15 @@ def _fn(name):
     return SHELL_JS[start:SHELL_JS.index("\n  }\n", start)]
 
 
-def test_the_meal_opens_on_a_spruce_hero_with_its_reason_and_facts():
+def test_the_meal_opens_on_a_spruce_hero_with_its_facts_and_no_reasoning():
     meal = _fn("mealStepHtml")
     assert '<div class="dinner-hero wk-meal-hero">' in meal
     assert "slotEyebrow(day, slot)" in meal
-    assert "'<div class=\"hero-accent\">' + escapeHtml(entry.reason)" in meal
+    # The planner's reasoning used to be the hero's italic line; cut
+    # 2026-09-11 (copy cleanse) — the hero is the name and the facts.
+    assert "hero-accent" not in meal
+    assert "entry.reason" not in meal
     assert "hero-chips" in meal
-    # The "Why this night" card folded into the hero's one italic line.
     assert 'wk-card-title">Why this night' not in meal
 
 

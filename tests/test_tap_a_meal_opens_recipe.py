@@ -335,7 +335,7 @@ def test_a_dish_with_no_saved_recipe_says_so_rather_than_pretending():
     )
     got = _run_node(harness)
     # A meal with nothing written up says so, and names the way to fill it in.
-    assert "no saved recipe detail" in got["dinner"]
+    assert "No saved recipe for this one" in got["dinner"]
     # A grab-and-go snack does not: "Apple slices" is not a recipe somebody
     # forgot to write, so a card whose whole content is "there isn't one" is
     # an empty card — the same reason the plate card is already hidden here.

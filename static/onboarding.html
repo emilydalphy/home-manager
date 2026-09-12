@@ -28,8 +28,9 @@
   h1 { font-family: var(--font-heading); font-weight: 700; font-size: 31px; letter-spacing: -0.038em; line-height: 1.05; color: var(--ink-strong); margin: 0 0 8px; }
   p.subtitle { color: var(--text-muted); margin: 0 0 1.25rem; font-size: 16px; line-height: 1.45; }
   .q-eyebrow { font-family: var(--font-body); font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--apricot-label, var(--text-muted)); margin: 0 0 8px; }
-  .q-accent { font-family: var(--font-accent); font-style: italic; font-size: 17px; line-height: 1.35; color: var(--ink-secondary); margin: 0 0 1.25rem; }
-  .reveal-note { font-family: var(--font-accent); font-style: italic; font-size: 15px; color: var(--apricot-light); margin: 6px 0 0; }
+  /* The question screens' sub-line is plain Figtree (copy cleanse,
+     2026-09-11): the italic face is the sign-in screen's alone now. */
+  .q-accent { font-family: var(--font-body); font-size: 15px; line-height: 1.45; color: var(--ink-secondary); margin: 0 0 1.25rem; }
   body:not(.intro-active) { padding-bottom: 120px; }
   .progress { display: flex; gap: 6px; margin-bottom: 1.5rem; }
   .dot { height: 4px; flex: 1; border-radius: 2px; background: var(--oat-cream-dark); }
@@ -277,10 +278,11 @@
      oat-cream wizard-step styling above. New markup, canonical
      DESIGN_SYSTEM.md tokens throughout (never the legacy aliases the
      rules above this comment still use) — full-bleed spruce hero
-     (Rule 4: one hero per screen), one apricot primary (Rule 5), one
-     Newsreader-italic accent line carrying the tailoring-made-legible
-     copy, day cards below with dinner starred via the same
-     dot+bold-label idiom shell.css's desktop week grid already uses. */
+     (Rule 4: one hero per screen), one apricot primary (Rule 5), day
+     cards below with dinner starred via the same dot+bold-label idiom
+     shell.css's desktop week grid already uses. The italic "built around
+     what you told me" line under the title was cut on 2026-09-11 (copy
+     cleanse): the receipt below already reads the answers back. */
   .reveal-hero {
     background: var(--spruce);
     margin: -24px -24px 20px;
@@ -296,15 +298,6 @@
     font-family: var(--font-display); font-weight: 700; font-size: 28px;
     letter-spacing: -0.035em; line-height: 1.08; color: var(--ivory-ink);
     margin: 0 0 10px;
-  }
-  /* The one Newsreader italic per screen — carries the "built around what
-     you told me" tailoring callout, and (design_handoff, per Emily) the
-     household's dinner-window/leftovers rhythm facts when there's a
-     natural way to fold them in. See buildRevealCopy(). */
-  .reveal-accent {
-    font-family: var(--font-accent); font-style: italic; font-weight: 400;
-    font-size: 17px; line-height: 1.35; color: var(--apricot-light);
-    margin: 0;
   }
   .reveal-status {
     display: flex; align-items: center; gap: 10px;
@@ -417,12 +410,12 @@
   .reveal-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 1.5rem; }
   .reveal-primary-btn { width: 100%; }
   /* The quiet iteration path — same idiom as shell.css's "or start over"
-     under Approve: one Newsreader-italic text link, not a second button
-     competing with the one apricot primary above it. */
+     under Approve: one plain text link, not a second button competing
+     with the one apricot primary above it. */
   .reveal-quiet-link {
     background: none; border: none; border-bottom: 1.5px solid var(--hairline-strong);
     padding: 0 0 2px; margin: 8px 0 0; min-height: 44px;
-    font-family: var(--font-accent); font-style: italic; font-weight: 400; font-size: 17px;
+    font-family: var(--font-body); font-weight: 600; font-size: 15px;
     color: var(--ink-secondary); cursor: pointer;
   }
   .reveal-quiet-link:hover { color: var(--ink); border-bottom-color: var(--ink-secondary); }
@@ -443,15 +436,6 @@
     text-transform: uppercase;
     color: var(--ink-muted);
     margin: 0 0 10px;
-  }
-  .rhythm-italic {
-    font-family: var(--font-accent);
-    font-style: italic;
-    font-size: 17px;
-    font-weight: 400;
-    line-height: 1.4;
-    color: var(--ink-secondary);
-    margin: 4px 0 0;
   }
   .rhythm-card {
     background: var(--surface);
@@ -827,7 +811,7 @@
   <button class="back-link" type="button" data-step-back="household" hidden></button>
   <p class="q-eyebrow">1 of 4 &middot; Who&rsquo;s eating</p>
   <h1>Who are we planning for?</h1>
-  <p class="q-accent">The names of everyone at home. I&rsquo;ll ask what they eat next.</p>
+  <p class="q-accent">Everyone who eats at home.</p>
   <div id="members"></div>
   <button class="add-btn" id="add-member" type="button">+ Add person</button>
   <!-- Said here, on the step that can fix it, rather than in an alert. It
@@ -851,7 +835,7 @@
   <button class="back-link" type="button" data-step-back="meals" hidden></button>
   <p class="q-eyebrow">2 of 4 &middot; Which meals</p>
   <h1>Which meals should I plan?</h1>
-  <p class="subtitle">Tap the ones you want on the plan. Everything else I&rsquo;ll leave to you.</p>
+  <p class="subtitle">Whatever you don&rsquo;t tap, I leave to you.</p>
   <div class="chip-row" id="meals-chips"></div>
   <p class="step-note" id="meals-empty" hidden>I need at least one meal to plan &mdash; tap one.</p>
   <div><button class="next-btn" id="meals-next" type="button">Continue</button></div>
@@ -862,7 +846,7 @@
   <button class="back-link" type="button" data-step-back="restrictions" hidden></button>
   <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>Anything I should never put on the plate?</h1>
-  <p class="subtitle">Allergies, must-avoids, the way someone eats &mdash; per person, so I get each plate right.</p>
+  <p class="subtitle">Allergies, must-avoids, the way someone eats.</p>
   <div id="diet-by-member"></div>
   <div><button class="next-btn" id="restrictions-next" type="button">Continue</button></div>
 </div>
@@ -875,7 +859,6 @@
   <button class="back-link" type="button" data-step-back="eating-style" hidden></button>
   <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>Is there a certain way you'd like meals to lean?</h1>
-  <p class="subtitle">Tap what fits. Skip it if nothing does.</p>
   <div class="chip-row" id="eating-style-chips"></div>
   <label class="field-label" for="eating-style">Anything else?</label>
   <textarea id="eating-style" rows="2" placeholder="In your own words — optional."></textarea>
@@ -888,7 +871,6 @@
   <button class="back-link" type="button" data-step-back="wont-eat" hidden></button>
   <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>Anything I should never recommend?</h1>
-  <p class="subtitle">I'll steer clear of it completely.</p>
   <div class="chip-row" id="wont-eat-presets"></div>
   <label class="field-label" for="wont-eat-input">Anything else?</label>
   <div class="row">
@@ -903,7 +885,6 @@
   <button class="back-link" type="button" data-step-back="excited-about" hidden></button>
   <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>What are you excited to eat more of lately?</h1>
-  <p class="subtitle">Cuisines, styles, anything sounding good right now.</p>
   <div class="chip-row" id="excited-chips"></div>
   <label class="field-label" for="excited-custom">Anything else?</label>
   <div class="row">
@@ -932,7 +913,7 @@
   <button class="back-link" type="button" data-step-back="prep" hidden></button>
   <p class="q-eyebrow">3 of 4 &middot; What everyone eats</p>
   <h1>Do you like meal prepping?</h1>
-  <p class="subtitle">Which days, and roughly how long? Up to two.</p>
+  <p class="subtitle">Up to two days.</p>
   <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
   <div id="rhythm-prep-minutes-wrap" style="display:none">
     <p class="rhythm-helper" style="margin:10px 0 8px">Roughly how long?</p>
@@ -965,7 +946,7 @@
   <p class="q-eyebrow">4 of 4 &middot; Your first week</p>
   <h1>Just two more! Almost there.</h1>
   <label class="field-label">What you&rsquo;ve got to cook with</label>
-  <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can actually make.</p>
+  <p class="subtitle" style="margin:0 0 8px">I&rsquo;ll only suggest recipes your kitchen can make.</p>
   <div class="chip-row" id="kit-chips"></div>
   <label class="field-label" style="margin-top:18px">When should your first plan start?</label>
   <div class="rhythm-chip-row" id="first-plan-start-chips"></div>
@@ -974,9 +955,8 @@
 </div>
 
 <!-- First-plan reveal — the earliest real first impression, so this gets
-     the actual Inn hero treatment (spruce panel, one apricot primary, one
-     italic accent line) rather than the wizard steps' plain oat-cream
-     form styling above. New markup, canonical DESIGN_SYSTEM.md tokens
+     the actual Inn hero treatment (spruce panel, one apricot primary)
+     rather than the wizard steps' plain oat-cream form styling above. New markup, canonical DESIGN_SYSTEM.md tokens
      throughout — see the .reveal-* rules below. -->
 <div id="step-reveal" style="display:none">
   <div class="reveal-hero">
@@ -987,8 +967,6 @@
          two strings, and generateFirstPlanAndReveal owns the swap. -->
     <p class="reveal-eyebrow">First sample week</p>
     <h1 class="reveal-title" id="reveal-title">Cooking up your first week&hellip;</h1>
-    <p class="reveal-accent" id="reveal-accent">Putting together a real week from what you just told me&hellip;</p>
-    <p class="reveal-note">You can change any of your responses later on under the gear.</p>
   </div>
   <div class="reveal-status" id="reveal-status">
     <span class="reveal-spinner" aria-hidden="true"></span>
@@ -1858,43 +1836,6 @@ function upsertRevealDay(m) {
   document.getElementById('reveal-days').innerHTML = ordered.map(revealDayCardHtml).join('');
 }
 
-// Natural-language rhythm clause — dinner_window and leftovers_stance are
-// household facts the person answered during the rhythm onboarding steps
-// (design_handoff, "Onboarding: household rhythm"), not anything the
-// plan-generation response echoes back. Read from the same in-scope
-// rhythmDinnerWindow/rhythmLeftoversStance globals those steps already
-// populate (see saveRhythmAnswers above). Only the values specific enough
-// to state as a fact are surfaced — "all over the place" or "fine either
-// way" aren't claims worth making in one line.
-function revealRhythmClause() {
-  const windowPhrase = {
-    '5_6ish': 'planned around your usual early dinners',
-    '6_8': 'planned around your usual 6–8 dinners',
-    'later': 'planned around your later dinners',
-  }[rhythmDinnerWindow];
-  if (windowPhrase) return windowPhrase;
-  const leftoversPhrase = {
-    'love_them': "with leftovers built right in, since you're into them",
-    'fresh_each_night': 'kept fresh each night, no leftovers stacked up',
-  }[rhythmLeftoversStance];
-  return leftoversPhrase || '';
-}
-
-function buildRevealCopy(answers) {
-  let base;
-  if (answers.eating_style) {
-    base = `Built around ${escapeHtmlLocal(answers.eating_style)} and everything else you just told me`;
-  } else if (answers.excited_about && answers.excited_about.length) {
-    base = `Built around more ${escapeHtmlLocal(answers.excited_about[0])} and everything else you just told me`;
-  } else if (answers.wont_eat && answers.wont_eat.length) {
-    base = `Built around what you told me — steering clear of ${escapeHtmlLocal(answers.wont_eat[0])}, exactly like you asked`;
-  } else {
-    base = 'Built around exactly what you just told me — not a generic starter';
-  }
-  const rhythm = revealRhythmClause();
-  return rhythm ? `${base}, ${rhythm}.` : `${base}.`;
-}
-
 // ---------- The end-of-setup receipt ----------
 // "I want to be told plainly that setup is complete, what Pomona did, and
 // the one thing to do next, so I never wonder whether I missed a step"
@@ -2038,7 +1979,7 @@ async function renderInviteOffer(memberNames) {
   section.innerHTML = `
     <div class="invite-card">
       <h2>Bring the rest of the house in?</h2>
-      <p class="hint">Everyone gets their own link to add their own preferences and feedback — totally optional, and you can always do this later from What We Know.</p>
+      <p class="hint">Each person gets a link to add what they eat. Optional, and it&rsquo;s under Preferences later too.</p>
       <div id="invite-rows"></div>
     </div>`;
   const rowsDiv = document.getElementById('invite-rows');
@@ -2153,13 +2094,11 @@ let firstPlanWeekStart = '';
 
 async function generateFirstPlanAndReveal(answers) {
   lastFirstPlanAnswers = answers;
-  const accent = document.getElementById('reveal-accent');
   const status = document.getElementById('reveal-status');
   const actions = document.getElementById('reveal-actions');
   const errorActions = document.getElementById('reveal-error-actions');
   const daysDiv = document.getElementById('reveal-days');
   document.getElementById('reveal-title').textContent = REVEAL_TITLE_WAITING;
-  accent.textContent = 'Putting together a real week from what you just told me…';
   status.hidden = false;
   actions.style.display = 'none';
   errorActions.style.display = 'none';
@@ -2189,7 +2128,6 @@ async function generateFirstPlanAndReveal(answers) {
     if (!meals.length) throw new Error('The first plan came back with no meals');
     firstPlanWeekStart = data.week_start_date || '';
     renderRevealDays(meals);
-    accent.textContent = buildRevealCopy(answers);
     renderRevealReceipt(answers, meals);
   } catch (err) {
     console.warn('First-plan generation failed:', err);
@@ -2197,7 +2135,6 @@ async function generateFirstPlanAndReveal(answers) {
     // Calm and plain, and the title stops promising a week — see the
     // calm-in-trouble rule in DESIGN_SYSTEM.md §8.
     document.getElementById('reveal-title').textContent = 'Your first week';
-    accent.textContent = "That didn't come together — shall I have another go?";
     renderRevealFailedReceipt();
   } finally {
     if (waiter) waiter.stop();

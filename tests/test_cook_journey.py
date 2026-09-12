@@ -718,10 +718,18 @@ def test_the_cooking_stages_carry_no_italic_accent_line():
     """DESIGN_SYSTEM §3, amended 2026-09-09: at most one per screen and most
     screens should have none. The one real fact about the cook belongs on
     Before you start; repeating it over every step would be the quota this
-    rule change removed."""
-    assert "cook-hero-note" in _focus("prep")
-    assert "cook-hero-note" not in _focus("step", step=1)
-    assert "cook-hero-note" not in _focus("method")
+    rule change removed.
+
+    Since 2026-09-11 (copy cleanse) the line is plain, not italic, and it
+    carries only a fact — a batch note or the advance-prep note. The
+    planner's `reasoning` no longer reaches it: _MEAL carries one, and
+    Before you start says nothing."""
+    assert "cook-hero-note" not in _focus("prep")
+    assert "Quick on a Tuesday" not in _focus("prep")
+    with_batch = dict(_MEAL, covers_note="Cooking for 6 — covers tonight and leftovers on Thursday.")
+    assert "cook-hero-note" in _focus("prep", meal=with_batch)
+    assert "cook-hero-note" not in _focus("step", step=1, meal=with_batch)
+    assert "cook-hero-note" not in _focus("method", meal=with_batch)
 
 
 @_needs_node
@@ -973,14 +981,14 @@ def test_a_freeform_meal_is_not_pointed_at_a_fill_button_that_does_not_exist():
     freeform = dict(_MEAL, has_full_recipe=False, ingredients=[], instructions=[])
     prep = _focus("prep", meal=freeform)
     method = _focus("method", meal=freeform)
-    assert "the whole method has a way" not in prep.lower()
-    assert "Ask me for the recipe" in prep
+    assert "under The whole method" not in prep
+    assert "ask me for the recipe" in prep
     assert "cook-fill" not in method, "the method really has no fill control here"
 
     # A SAVED recipe with nothing in it does have one, and is told so.
     empty = dict(_MEAL, ingredients=[], instructions=[])
     prep2 = _focus("prep", meal=empty)
-    assert "The whole method has a way to fill the recipe in." in prep2
+    assert "fill the recipe in under The whole method." in prep2
     assert "cook-fill" in _focus("method", meal=empty)
 
 

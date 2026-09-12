@@ -24,7 +24,9 @@ def test_a_draft_root_is_the_review_with_no_crumb_and_approve_in_the_dock():
     assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step
     review = _fn("reviewStepHtml")
     assert "weekStepHeadHtml(data, days)" in review  # the week's own head on the root form
-    assert "rv-invite" in review
+    # No invitation line under the head since 2026-09-11 (copy cleanse): the
+    # dock's Approve label already says nothing is bought until then.
+    assert "rv-invite" not in review
     assert "weekDecideHtml(data) {\n    return '';" in SHELL_JS
     assert 'id="week-check-btn"' not in SHELL_JS
     assert "Tweak it with me" not in SHELL_JS

@@ -425,10 +425,12 @@ console.log(JSON.stringify(coachCardHtml()));
     assert "A QUICK WORD" not in html
     assert 'id="coach-sheet"' in html and 'id="coach-scrim"' in html
     assert "Tap for the usual. Type for the rest." in html
+    # Tightened 2026-09-11 (copy cleanse): fewest words that still teach the
+    # three things, in the welcome flow's own register.
     for line in [
-        "The buttons do the everyday things.",
-        "For anything else, tap the chat and type it.",
-        "If I get something wrong, tell me there.",
+        "Buttons do the everyday things.",
+        "Everything else, type in the chat.",
+        "If I get it wrong, say so there.",
     ]:
         assert line in html, line
     assert 'data-coach="got-it"' in html and ">Got it<" in html
@@ -466,7 +468,11 @@ console.log(JSON.stringify({
     assert tips["after"] == (
         "I’ll say what changed, and the screen updates. If I couldn’t, I’ll say that too."
     )
-    assert tips["opening"] == "Say it however it comes out. There’s no right way to phrase it."
+    # The second sentence ("There's no right way to phrase it.") restated the
+    # first and was cut 2026-09-11 (copy cleanse); so was the closer that
+    # repeated the coach card's title.
+    assert tips["opening"] == "Say it however it comes out."
+    assert tips["closers"] == ["The more you tell me about your week, the better the plan fits."]
 
 
 # --- 3. the wiring that has no pure function to run -----------------------

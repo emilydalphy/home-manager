@@ -194,10 +194,13 @@ def test_the_sign_in_screen_is_readable():
         r"@media \(prefers-color-scheme:\s*dark\)\s*\{.*?\n  \}", "", login, flags=re.DOTALL
     )
     alphas = re.findall(r"color:\s*rgba\(246,\s*238,\s*225,\s*(0?\.\d+)\)", light_only)
-    assert len(alphas) == len(SIGN_IN_TEXT) + 1, (
+    # Exactly the lines this test knows: the "Enter your passphrase to come
+    # in." sub-line under the tagline was cut on 2026-09-11 (copy cleanse —
+    # the field and the button already say it), and its rule went with it.
+    assert len(alphas) == len(SIGN_IN_TEXT), (
         f"the sign-in screen has {len(alphas)} translucent-ivory text colours in "
-        f"light mode; this test knows the backdrop for {len(SIGN_IN_TEXT)} of them "
-        f"plus the tagline. A new one needs its own backdrop looked up, not assumed."
+        f"light mode; this test knows the backdrop for {len(SIGN_IN_TEXT)} of them. "
+        f"A new one needs its own backdrop looked up, not assumed."
     )
 
     for what, rule, backdrop, why in SIGN_IN_TEXT:

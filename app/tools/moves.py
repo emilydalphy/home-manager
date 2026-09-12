@@ -209,7 +209,12 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             "kind": "cook",
             "title": meal.get("meal") or slot.capitalize(),
             "detail": " · ".join(detail_bits),
-            "reason": meal.get("covers_note") or meal.get("reasoning") or "",
+            # The batch note only ("Cooking for 6 — covers tonight and
+            # leftovers on Thursday"): a fact about the cook. The planner's
+            # own `reasoning` used to be the fallback and was cut on
+            # 2026-09-11 (copy cleanse) — it read as the planner explaining
+            # itself, not as something a person would say across the table.
+            "reason": meal.get("covers_note") or "",
             "date": day_str,
             "slot": slot,
             "window_start": start.isoformat(),
