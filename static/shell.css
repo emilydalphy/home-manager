@@ -722,7 +722,10 @@ html, body {
 .ny-fold-text { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .needs-you-card.is-folded .ny-options { display: none; }
 .needs-you-card:not(.is-folded) .ny-unfold { display: none; }
-.ny-unfold { min-height: 44px; background: none; border: none; cursor: pointer; padding: 0 4px; font: inherit; font-weight: 700; font-size: 14px; color: var(--ink-strong); }
+/* min-width added 2026-09-11 (design-tidy pass, item 9): "Pick" alone with
+   0 4px padding measured 35px wide — under the 44px tap target rule (§2
+   rule 6) despite the min-height already covering the other axis. */
+.ny-unfold { min-height: 44px; min-width: 44px; background: none; border: none; cursor: pointer; padding: 0 12px; font: inherit; font-weight: 700; font-size: 14px; color: var(--ink-strong); }
 .ny-option-pick {
   font-family: var(--font-body);
   font-weight: 700;
@@ -1323,6 +1326,18 @@ html, body {
   overflow-y: hidden;
   max-height: 128px; /* ~4-5 lines; mirrors ASK_COMPOSER_MAX_HEIGHT in shell.js */
 }
+/* item 12, design-tidy pass 2026-09-11: theme.css's global
+   textarea:focus-visible ring (its own !important, deliberately, so no
+   page can silently drop the ring) draws a square outline right on this
+   textarea, ignoring .ask-composer-bar's 16px radius around it. Beating an
+   !important rule needs one back — the ring isn't lost, only moved to the
+   rounded container below, where :focus-within draws it once, at the
+   shape a person is actually looking at. */
+.ask-composer-input:focus-visible { outline: none !important; }
+.ask-composer-bar:focus-within {
+  outline: 2px solid var(--apricot);
+  outline-offset: 2px;
+}
 .ask-composer-send {
   flex-shrink: 0;
   width: 40px;
@@ -1400,7 +1415,14 @@ html, body {
   cursor: pointer;
   position: relative;
   font: inherit;
-  color: var(--ink-inactive);
+  /* --ink-inactive measures 3.21:1 on --ground — fails WCAG AA (4.5:1) for
+     the 11px/700 label. --ink-secondary measures 4.44:1 on --ground: still
+     just under the strict 4.5:1 for normal text, but the label is bold and
+     clears AA's 3:1 "large/bold text" bar with room to spare, and it is a
+     large step up from --ink-inactive's 3.21:1. Flagged for Emily: neither
+     token is a clean AA pass at this weight/size; --ink-secondary is the
+     better of the two that already exist. */
+  color: var(--ink-secondary);
 }
 .tab-btn .tab-chip {
   width: 23px;
@@ -1430,12 +1452,19 @@ html, body {
   font-family: var(--font-body);
   font-weight: 800;
   font-size: 11px;
-  color: var(--urgent-ink);
-  background: var(--urgent);
+  /* Default badge is apricot, not terracotta: a count of things needing a
+     look isn't automatically "genuinely late" (design rule 3). The one case
+     that is — today's dinner still without a decision — gets .is-urgent. */
+  color: var(--on-accent-ink);
+  background: var(--apricot);
   border-radius: var(--radius-badge);
   padding: 1px 6px;
 }
 .tab-btn.has-badge:not(.active) .tab-badge { display: block; }
+.tab-btn .tab-badge.is-urgent {
+  color: var(--urgent-ink);
+  background: var(--urgent);
+}
 
 /* ---------- Desktop/tablet shell — "the phone in the room" ----------
    Emily's decision, 2026-09-11 (beta stance; a real two-column layout is a
@@ -3283,25 +3312,36 @@ html, body {
 .gro-primary:disabled { opacity: .6; cursor: default; box-shadow: none; }
 /* The inline add row under the trip button. Spruce, not apricot: adding one
    thing is a side errand next to starting the trip, and a second apricot
-   would break Rule 5. One line at 390px — name, a narrow Qty, Add. */
+   would break Rule 5.
+   Changed 2026-09-11 (design-tidy pass, item 7): this used to be four
+   controls in one row (name / a 62px Qty box / Add / camera), which left
+   the one field that matters — the item name — too narrow to read what was
+   typed in it. Now it's one wide field (.gro-add-field) with the camera
+   sitting inside its own right end, and quantity comes from what's typed
+   (groParseAddInput) instead of a box of its own. */
 .gro-add {
   display: flex;
   gap: 8px;
   padding-top: 8px;
 }
-.gro-add-item, .gro-add-qty {
+.gro-add-field {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gro-add-item {
+  width: 100%;
+  box-sizing: border-box;
   min-height: 44px;
   border: 1.5px solid var(--hairline-strong);
   border-radius: var(--radius-control);
   background: var(--ground);
-  padding: 0 12px;
+  /* Right padding clears the 44px camera button living inside this field. */
+  padding: 0 48px 0 12px;
   font-family: var(--font-body);
   font-size: 15px;
   color: var(--ink);
-  min-width: 0;
 }
-.gro-add-item { flex: 1 1 auto; }
-.gro-add-qty { flex: 0 0 62px; width: 62px; padding: 0 8px; }
 .gro-add-btn {
   flex: 0 0 auto;
   min-height: 44px;
@@ -3318,18 +3358,19 @@ html, body {
 .gro-add-btn:hover { background: var(--spruce-hover); }
 .gro-add-btn:disabled { opacity: .6; cursor: default; }
 /* The photo entry point (Loop Board, 2026-09-11: "snap a photo of a
-   written or on-screen list and have Pomona add it") rides along in the
-   same row, next to the manual add — the nearest existing "put something
-   on the list" control, since the inventory scans this borrows the
-   review-before-save pattern from live on a different tab entirely. 44px
-   on both axes already, no pseudo-element trick needed. */
+   written or on-screen list and have Pomona add it") now sits INSIDE the
+   add field's own right end — absolute against .gro-add-field, 44×44 (Rule
+   6) — rather than as a fifth control trailing the row. */
 .gro-scan-btn {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
   width: 44px;
-  min-height: 44px;
-  border: 1.5px solid var(--hairline-strong);
+  height: 44px;
+  border: none;
   border-radius: var(--radius-control);
-  background: var(--ground);
+  background: none;
   color: var(--ink-strong);
   display: flex;
   align-items: center;
@@ -3866,23 +3907,12 @@ html, body {
 }
 .gro-dupe-merge:hover { color: var(--apricot-label-hover); }
 .gro-dupe-merge:disabled { opacity: .6; cursor: default; }
-/* "+ 11 more" — a card shows four things and then says how many it is
-   holding back, so a 40-item shop doesn't become the whole screen. */
-.gro-more-link {
-  background: none;
-  border: none;
-  border-top: 1.5px solid var(--hairline);
-  width: 100%;
-  min-height: 44px;
-  text-align: left;
-  padding: 0;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--apricot-label);
-  cursor: pointer;
-}
-.gro-more-link:hover { color: var(--apricot-label-hover); }
+
+/* 70px = the floating chat FAB's 54px + 16px clearance (item 13,
+   design-tidy pass 2026-09-11) — the trip's own dock button sits right
+   above the FAB's floating zone, but a long stop's last row still ended up
+   under it before this. */
+.gro-trip-body { padding-bottom: 70px; }
 
 /* Aisle spine + name */
 .gro-aisle {
@@ -3893,7 +3923,11 @@ html, body {
   align-items: center;
   gap: 8px;
 }
-.gro-aisle-spine { width: 3px; height: 13px; border-radius: 2px; flex: 0 0 auto; }
+/* One neutral for every aisle — the eyebrow beside it already names the
+   aisle, so a per-section colour (celadon here, terracotta there) had no
+   key anywhere on screen and terracotta on Meat/Seafood read as urgent
+   when it wasn't (design rule 3). */
+.gro-aisle-spine { width: 3px; height: 13px; border-radius: 2px; flex: 0 0 auto; background: var(--hairline-strong); }
 .gro-aisle-count { margin-left: auto; font-family: var(--font-body); font-weight: 800; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--apricot-label); }
 
 /* ---------- Item row ---------- */
@@ -6441,6 +6475,13 @@ span.cook-week-name { cursor: default; }
   font-size: 13px;
   color: var(--ink-secondary);
 }
+/* Stepper and Change one, one row (item 5, design-tidy pass 2026-09-11) —
+   they used to stack because at 390px "3 mornings" plus "Change one" ran
+   about 10px past the card's width, and flex-wrap took the wrap it was
+   there for. .rv-step-count and .rv-change below give back enough of
+   their own padding to fit both on one line at 375-390px without
+   shrinking either below its 44px tap height; flex-wrap stays as a safety
+   net for a longer slot word ("servings") or a two-digit count. */
 .rv-dish-acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rv-step {
   display: flex;
@@ -6468,7 +6509,7 @@ span.cook-week-name { cursor: default; }
 .rv-step-btn:disabled { color: var(--ink-inactive); cursor: default; }
 .rv-step-count {
   min-width: 88px;
-  padding: 0 6px;
+  padding: 0 3px;
   text-align: center;
   font-family: var(--font-body);
   font-size: 14px;
@@ -6477,7 +6518,7 @@ span.cook-week-name { cursor: default; }
 }
 .rv-change {
   min-height: 44px;
-  padding: 0 16px;
+  padding: 0 10px;
   border-radius: var(--radius-control);
   border: 1.5px solid var(--hairline-strong);
   background: var(--sand);
@@ -6602,7 +6643,10 @@ span.cook-week-name { cursor: default; }
   box-sizing: border-box;
   min-height: 64px;
   display: flex;
-  align-items: center;
+  /* flex-start, not center: a wrapped two-line dish name grows the row, and
+     a centered chevron would drift into the middle of that text instead of
+     sitting at the row's top-right corner. */
+  align-items: flex-start;
   gap: 12px;
   padding: 12px 14px;
   border: 0;
@@ -6628,11 +6672,17 @@ span.cook-week-name { cursor: default; }
   letter-spacing: -.02em;
   line-height: 1.25;
   color: var(--ink);
-  /* One line, truncated — the same call the week card's rows make: seven
-     days truncated beats four days in full. */
+  /* Wraps to two lines rather than truncating with an ellipsis — a
+     component-based household's dinner name is a real, readable sentence
+     ("Herb-Roasted Chicken with Roasted Root Vegetables"), and cutting it
+     off mid-word hid the actual answer to "what's Thursday". The chevron
+     (.rv-day-chev) sits top-right of the row so a wrapped two-line name
+     doesn't push it into the middle of the text. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .rv-day-dinner.is-quiet { color: var(--ink-secondary); font-weight: 500; }
 /* "made ahead" / "leftovers" under the dish. --celadon-label because that is
@@ -6647,6 +6697,10 @@ span.cook-week-name { cursor: default; }
 .rv-day-chev {
   flex: 0 0 auto;
   display: inline-flex;
+  /* Pinned to the row's top edge (align-items: flex-start above), lined up
+     with the uppercase day title rather than drifting to the middle of a
+     wrapped two-line dish name. */
+  margin-top: 2px;
   color: var(--ink-inactive);
   transition: transform .16s ease;
 }
@@ -6767,7 +6821,12 @@ span.cook-week-name { cursor: default; }
 /* It is .crumb now — one definition, up beside .gro-foot. */
 
 /* ---------- DAY: three equal cards ---------- */
-.wk-slots { display: flex; flex-direction: column; gap: 12px; padding: 0 20px; }
+/* 70px = the floating chat FAB's 54px + 16px clearance (item 13,
+   design-tidy pass 2026-09-11). The Day step has no dock at all (Cook's
+   root is the only other screen that goes without one — Rule 5/nav rule
+   2), so its last card sits directly under where the FAB floats above the
+   tab bar unless padded clear of it here. */
+.wk-slots { display: flex; flex-direction: column; gap: 12px; padding: 0 20px 70px; }
 .wk-slot-card { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .wk-slot-body {
   display: flex;
@@ -6783,6 +6842,11 @@ span.cook-week-name { cursor: default; }
   font: inherit;
 }
 .wk-slot-body.is-flat { cursor: default; }
+/* Room for the chevron on the openable variant only — is-flat has nothing
+   to open, so nothing to point at (item 11, design-tidy pass 2026-09-11). */
+.wk-slot-body:not(.is-flat) { position: relative; padding-right: 30px; }
+.wk-slot-chev { position: absolute; top: 2px; right: 0; display: inline-flex; color: var(--ink-inactive); }
+.wk-slot-chev svg { width: 18px; height: 18px; }
 .wk-slot-eyebrow {
   font-family: var(--font-body);
   font-size: 10px;
@@ -6827,6 +6891,13 @@ span.cook-week-name { cursor: default; }
 .wk-meal-hero { margin-top: 6px; }
 .wk-meal-hero .nextup-when { color: var(--ivory-ink-muted); }
 .wk-meal-body { padding: 14px 20px 0; display: flex; flex-direction: column; gap: 12px; }
+/* The Meal step's dock (mealDockHtml) is empty for a day with nothing to
+   do — a past day, an away night — which leaves this card exposed to the
+   same floating-FAB overlap the Day step always has (see .wk-slots above).
+   70px = the FAB's 54px + 16px clearance; harmless extra whitespace on the
+   common case where a real dock already provides it (item 13, design-tidy
+   pass 2026-09-11). */
+.wk-meal-body:not(:has(+ .dock)) { padding-bottom: 70px; }
 .wk-meal-body .wk-card, .wk-meal-body .shell-card { margin: 0; }
 .wk-meal-dock .wk-acts { align-items: center; }
 .wk-meal-dock .wk-act-swap { background: none; border: none; color: var(--apricot-label); padding: 0 8px; }

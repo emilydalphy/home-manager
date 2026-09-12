@@ -1,20 +1,22 @@
 """
 Named one-tap intents in the ask sheet (Loop Board: "Ask sheet: offer named
-one-tap intents instead of only a blank box", Emily 2026-09-10).
+one-tap intents instead of only a blank box", Emily 2026-09-10) — RETIRED
+2026-09-11 (design-tidy pass, item 15).
 
-A blank box makes a household guess the magic words. Four real jobs, said
-the way a person says them, teach the app's range in one glance. Emily
-decided the set and the wording; this file's job is to keep both honest.
+ASK_INTENTS was a fixed set of four chips, the same on every tab by design
+("FIXED — the same four on every visit... a fixed set ships now"). That was
+exactly the bug the 2026-09-11 screen-by-screen review then caught: "the
+example chips are the same on every tab." The per-tab COACH_EXAMPLES trio
+(shell.js) replaced it outright, reusing the mechanism that already existed
+for per-tab examples (a tab's first three visits) — see
+tests/test_coaching.py for that coverage, which now carries what this file
+used to.
 
-The tests mostly RUN shell.js's own functions under node rather than reading
-the source for a marker — the pattern from tests/test_coaching.py, and for
-the same reason. Two of the three things this card promises ("tapping runs
-it immediately", "the chips make sense before the network answers") are
-behaviour, and a source-marker test cannot see either.
-
-Every user-facing string here is asserted verbatim, because Emily approved
-these four lines specifically. If the copy is deliberately reworded, change
-the constant in the same commit and say so — do not delete the test.
+What's left here: confirming ASK_INTENTS and its always-on chip row are
+actually gone (a retirement that silently regresses is worse than a feature
+that never shipped), and the one thing loadQuickActionChips kept doing
+regardless of the chip logic — priming the dish index off /api/week-menu so
+a chat reply naming a dish can link it.
 """
 from __future__ import annotations
 
@@ -28,16 +30,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
-SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
-
-
-# The four, exactly as Emily wrote them on the card.
-THE_FOUR = [
-    "Plan the rest of my week",
-    "What should I cook tonight?",
-    "Swap tonight for something quicker",
-    "What do I need to defrost?",
-]
+SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 
 
 _needs_node = pytest.mark.skipif(
@@ -57,326 +50,96 @@ def _slice(start: str, end: str) -> str:
     return SHELL_JS[a:b]
 
 
-def _intents_block() -> str:
-    """ASK_INTENTS and loadQuickActionChips, which is the whole change."""
+def _quick_action_chips_block() -> str:
     return _slice(
-        "var ASK_INTENTS = [",
+        "  function loadQuickActionChips() {",
         "  // ---------- A dish name in a chat reply is a link too ----------",
     )
 
 
-def _render_block() -> str:
-    return _slice(
-        "  function renderAskChips(actions) {",
-        '  // "core loop handoffs, slice 2" item B',
-    )
+# --- ASK_INTENTS is actually gone, not just unused -------------------------
+
+def test_ask_intents_no_longer_exists():
+    """The name survives in a few comments explaining what replaced it and
+    why (see loadQuickActionChips, renderAskExamples, computeNextStepChips)
+    — this checks the declaration itself is gone, not every mention."""
+    assert "var ASK_INTENTS" not in SHELL_JS
 
 
-def _examples_block() -> str:
-    return _slice("  function renderAskExamples(prompts) {", "\n\n", )
+def test_the_fixed_four_no_longer_reach_a_chip_row():
+    """The lines Emily wrote for the retired set, checked as a source
+    marker so this test goes red if any of the four quietly comes back as
+    a literal string anywhere in the chip-rendering path — the retirement
+    should be complete, not partial."""
+    block = _quick_action_chips_block()
+    for line in [
+        "Plan the rest of my week",
+        "What should I cook tonight?",
+        "Swap tonight for something quicker",
+        "What do I need to defrost?",
+    ]:
+        assert line not in block, f"{line!r} is still in loadQuickActionChips"
 
 
-# The coaching examples and the named intents share one row in the ask
-# sheet — the only surface there is now (the desktop Ask column that used
-# to be a second one was removed 2026-09-11, Emily's "phone in the room"
-# decision). This stub is that one surface so the yielding rule can be run
-# rather than read.
-_EXAMPLES_STUB = """
-const EL = {};
-['ask-chips','ask-examples'].forEach(function (id) {
-  EL[id] = { id: id, innerHTML: '', hidden: true, children: [],
-             querySelectorAll: function () { return []; } };
-});
-const document = { getElementById: function (id) { return EL[id] || null; } };
-function coachExampleTargets() { return [EL['ask-examples']]; }
-function fillIntents(id) { EL[id].innerHTML = '<button>x</button>'; EL[id].hidden = false; }
-function state() {
-  return { examples: !EL['ask-examples'].hidden };
-}
-"""
+def test_ensure_ask_sheet_built_no_longer_renders_a_chip_row_itself():
+    """loadQuickActionChips used to call renderAskChips(ASK_INTENTS) here —
+    the only chip-producing call left in the whole ask-sheet build path is
+    the per-tab coaching mechanism (coachOnTabShown, wired into
+    activateTab), not anything run once at build time."""
+    block = _quick_action_chips_block()
+    assert "renderAskChips(" not in block
 
 
-def _run_examples(tail: str):
-    return _node(
-        "function escapeHtml(s){return String(s);}\n"
-        + _EXAMPLES_STUB
-        + "function openAskSheet(){} function sendAskMessage(){}\n"
-        + _examples_block()
-        + tail
-    )
-
-
-# Two chip containers even though the ask sheet's `#ask-chips` is the only
-# real target askChipTargets() returns today — a second desktop Ask column
-# target (`#today-ask-chips`) existed until 2026-09-11 (Emily's "phone in
-# the room" decision removed it) and askChipTargets is kept as a function
-# returning an array specifically so a future second surface slots back in
-# without touching renderAskChips; this exercises that fan-out generically
-# rather than assuming exactly one target forever. Not the dock: that is
-# `#ask-bar-dock`, which holds the coaching examples, and the distinction
-# matters because the intents are only on screen once the sheet is open. The
-# stub reads its own markup back with a regex rather than parsing it, which
-# is the point: the markup is what a browser would be handed.
-_DOM_STUB = """
-function escapeHtml(s){return String(s == null ? '' : s)
-  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function makeEl() {
-  return {
-    innerHTML: '', hidden: true, handlers: {},
-    querySelectorAll: function () {
-      const el = this, out = [], re = /data-i="(\\d+)"/g;
-      let m;
-      while ((m = re.exec(el.innerHTML)) !== null) {
-        (function (i) {
-          out.push({ dataset: { i: String(i) },
-                     addEventListener: function (_evt, fn) { el.handlers[i] = fn; } });
-        })(Number(m[1]));
-      }
-      return out;
-    },
-    labels: function () {
-      const out = [], re = />([^<]+)<\\/button>/g;
-      let m;
-      while ((m = re.exec(this.innerHTML)) !== null) out.push(m[1]);
-      return out;
-    }
-  };
-}
-const SHEET = makeEl(), COLUMN = makeEl();
-function askChipTargets() { return [SHEET, COLUMN]; }
-const SENT = [], OPENED = [], INDEXED = [];
-function sendAskMessage(t) { SENT.push(t); }
-function openAskSheet(p) { OPENED.push(p === undefined ? null : p); }
-function setDishIndex(m) { INDEXED.push(m); }
-"""
-
-
-def _fetch_stub(*, ok: bool = True, rejects: bool = False) -> str:
-    """/api/week-menu, answered on a later turn of the event loop — so a test
-    can look at the chips in the gap and see whether they waited."""
-    if rejects:
-        body = "return Promise.reject(new Error('offline'));"
-    elif ok:
-        body = "return Promise.resolve({ ok: true, json: function () { return { weekly_plan_id: 7 }; } });"
-    else:
-        body = "return Promise.resolve({ ok: false });"
-    return "const FETCHED = [];\nfunction fetch(u) { FETCHED.push(u); " + body + " }\n"
-
-
-def _run(tail: str, *, ok: bool = True, rejects: bool = False):
-    return _node(
-        _DOM_STUB
-        + _fetch_stub(ok=ok, rejects=rejects)
-        + _render_block()
-        + _intents_block()
-        + tail
-    )
-
-
-# --- 1. the four, and nothing hidden behind them --------------------------
-
-
-@_needs_node
-def test_the_ask_sheet_offers_emilys_four_intents_in_her_order():
-    assert _run("loadQuickActionChips();\nconsole.log(JSON.stringify(SHEET.labels()));") == THE_FOUR
-
-
-@_needs_node
-def test_a_chip_sends_its_own_label_word_for_word():
-    """The label IS the message. A chip carrying a sentence the household
-    cannot see is one nobody can learn from, and teaching what you're
-    allowed to say is this card's whole job."""
-    out = _run(
-        "loadQuickActionChips();\n"
-        "Object.keys(SHEET.handlers).forEach(function (i) { SHEET.handlers[i](); });\n"
-        "console.log(JSON.stringify(SENT));"
-    )
-    assert out == THE_FOUR
-
-
-@_needs_node
-def test_tapping_an_intent_runs_it_and_never_merely_prefills_the_box():
-    """Acceptance criterion, and the one the old pair broke: "Add … to the
-    grocery list" focused the composer instead of doing anything."""
-    out = _run(
-        "loadQuickActionChips();\n"
-        "Object.keys(SHEET.handlers).forEach(function (i) { SHEET.handlers[i](); });\n"
-        "console.log(JSON.stringify({ sent: SENT.length, opened: OPENED }));"
-    )
-    assert out == {"sent": 4, "opened": []}
-
-
-@_needs_node
-def test_no_intent_pre_fills_the_composer_any_more():
-    """Nothing produces a `prefill` any more, so renderAskChips' branch for
-    it is gone with the chip it was written for. Asserted on the intents
-    themselves rather than on the file, because the comment recording why
-    that chip went is worth keeping and would match a source-text check."""
-    out = _run(
-        "console.log(JSON.stringify(ASK_INTENTS.map(function (q) {\n"
-        "  return { prefill: !!q.prefill, onClick: !!q.onClick, msg: q.msg };\n"
-        "})));"
-    )
-    assert out == [{"prefill": False, "onClick": False, "msg": label} for label in THE_FOUR]
-
-
-# --- 2. fixed: the same four, every visit, every tab ----------------------
-
-
-@_needs_node
-def test_both_chip_rows_get_the_same_four():
-    """Whatever surfaces askChipTargets() returns must agree — historically
-    that was the ask sheet plus a desktop Ask column (removed 2026-09-11);
-    exercised here with two stub targets regardless, so renderAskChips can't
-    special-case "the first one" if a second surface ever comes back."""
-    out = _run("loadQuickActionChips();\nconsole.log(JSON.stringify([SHEET.labels(), COLUMN.labels()]));")
-    assert out == [THE_FOUR, THE_FOUR]
-
-
-@_needs_node
-def test_the_four_do_not_change_between_visits():
-    """Emily's call: fixed now, context-aware later. A set that moved
-    underneath the household would tell us nothing about which intents get
-    tapped, which is the reason the fixed set ships first."""
-    out = _run(
-        "loadQuickActionChips();\n"
-        "const first = SHEET.labels();\n"
-        "loadQuickActionChips();\n"
-        "console.log(JSON.stringify([first, SHEET.labels()]));"
-    )
-    assert out[0] == out[1] == THE_FOUR
-
-
-# --- 3. they no longer wait on, or depend on, the network -----------------
-
-
-@_needs_node
-def test_the_chips_are_up_before_the_plan_fetch_answers():
-    """They used to be rendered inside the fetch's .then, so on a slow
-    connection the ask sheet opened with an empty row where the suggestions
-    should be. Read SYNCHRONOUSLY, on the same turn as the call — the fetch
-    has gone out and its .then has not run, which is the exact gap the old
-    code rendered nothing in. (Distinct from the order test above, which
-    only says the four are eventually right.)"""
-    out = _run(
-        "loadQuickActionChips();\n"
-        "const now = { labels: SHEET.labels(), fetched: FETCHED.length, indexed: INDEXED.length };\n"
-        "console.log(JSON.stringify(now));"
-    )
-    assert out == {"labels": THE_FOUR, "fetched": 1, "indexed": 0}
-
-
-@_needs_node
-def test_a_failed_plan_fetch_leaves_the_four_standing():
-    """The old code degraded to a guess ("Plan my week") when the fetch
-    failed — a wrong suggestion rather than none. Now a dropped request
-    costs the dish links in replies and nothing else."""
-    tail = (
-        "loadQuickActionChips();\n"
-        "setTimeout(function () {\n"
-        "  console.log(JSON.stringify({ labels: SHEET.labels(), indexed: INDEXED.length }));\n"
-        "}, 0);"
-    )
-    assert _run(tail, rejects=True) == {"labels": THE_FOUR, "indexed": 0}
-    assert _run(tail, ok=False) == {"labels": THE_FOUR, "indexed": 0}
-
+# --- the one thing that survived the retirement -----------------------------
 
 @_needs_node
 def test_the_plan_is_still_fetched_for_the_dish_index():
-    """The fetch is not dead weight: /api/week-menu is what setDishIndex
-    reads, so a reply naming a dish can link it without a request of its
-    own. Removing it with the chip logic would have broken that silently."""
-    out = _run(
-        "loadQuickActionChips();\n"
+    """The fetch was never just for the chips: /api/week-menu is what
+    setDishIndex reads, so a reply naming a dish can link it without a
+    request of its own. Retiring the chip logic must not have taken this
+    with it."""
+    script = (
+        "const FETCHED = [], INDEXED = [];\n"
+        "function fetch(u) { FETCHED.push(u); "
+        "return Promise.resolve({ ok: true, json: function () { return { weekly_plan_id: 7 }; } }); }\n"
+        "function setDishIndex(m) { INDEXED.push(m); }\n"
+        + _quick_action_chips_block()
+        + "loadQuickActionChips();\n"
         "setTimeout(function () {\n"
         "  console.log(JSON.stringify({ urls: FETCHED, indexed: INDEXED }));\n"
         "}, 0);"
     )
+    out = _node(script)
     assert out["urls"] == ["/api/week-menu"]
     assert out["indexed"] == [{"weekly_plan_id": 7}]
 
 
-# --- 4. the voice, and the blank box that stays -------------------------
-
-
 @_needs_node
-def test_the_intents_carry_no_exclamation_marks_and_nothing_cute():
-    """DESIGN_SYSTEM.md §8. Each line is a job, said plainly.
-
-    Read off the chips shell.js RENDERS, not off THE_FOUR — asserting a
-    Python literal against itself is a test no product change can turn red,
-    which is what the first version of this did."""
-    rendered = _run("loadQuickActionChips();\nconsole.log(JSON.stringify(SHEET.labels()));")
-    assert rendered, "no chips rendered at all"
-    for line in rendered:
-        assert "!" not in line, line
-        assert line == line.strip(), line
-        # §8's "never a dashboard/task-manager register" — a job a person
-        # says, not a feature name or a category label.
-        assert not line.endswith(":"), line
-        assert line[0].isupper(), line
+def test_a_failed_plan_fetch_costs_only_the_dish_links():
+    """No chips to fall back to any more, so there's nothing left for a
+    dropped request to degrade — it just means replies won't link a dish
+    name until the next successful fetch."""
+    script = (
+        "const INDEXED = [];\n"
+        "function fetch(u) { return Promise.reject(new Error('offline')); }\n"
+        "function setDishIndex(m) { INDEXED.push(m); }\n"
+        + _quick_action_chips_block()
+        + "loadQuickActionChips();\n"
+        "setTimeout(function () { console.log(JSON.stringify({ indexed: INDEXED.length })); }, 0);"
+    )
+    assert _node(script) == {"indexed": 0}
 
 
-def test_four_is_the_whole_set_not_a_wall():
-    """The card's own target is 3-4. A long list is the blank box's problem
-    wearing a different hat."""
-    block = _intents_block()
-    body = block[block.index("["):block.index("].map(")]
-    assert body.count("'") == len(THE_FOUR) * 2
-
-
-def test_the_blank_input_is_untouched():
-    """The intents are an addition, never a replacement — the composer is
-    exactly as it was. (Its hint became one line for every tab on
-    2026-09-11, when the chat became an icon; see test_chat_icon.)"""
-    assert "var ASK_HINTS = {" in SHELL_JS
-    assert "id=\"ask-input\"" in (REPO / "static" / "shell.html").read_text(encoding="utf-8")
-
-
-def test_the_chips_still_meet_the_44px_floor_and_wrap():
-    """Four chips do not fit one phone row, so the row has to wrap rather
-    than scroll sideways — DESIGN_SYSTEM.md rule 6 and the no-sideways-
-    scroll rule. Both were already true of .ask-chip; this pins them now
-    that the row is twice as long."""
-    chips_rule = SHELL_CSS[SHELL_CSS.index(".ask-chips {"):SHELL_CSS.index(".ask-chip:hover")]
-    assert "flex-wrap: wrap" in chips_rule
-    assert "min-height: 44px" in chips_rule
-
-
-def test_this_card_ships_no_new_backend():
-    """Every intent maps to tools Pomona already has — the chips send a
-    sentence through the chat turn that was already there. The only route
-    this code names is the one it already named."""
-    block = _intents_block()
+def test_this_function_ships_no_new_backend():
+    """Still true after the retirement: the one route this code names is
+    the one it already named."""
+    block = _quick_action_chips_block()
     assert block.count("fetch(") == 1
     assert "'/api/week-menu'" in block
 
 
-# --- 5. the coaching examples and the intents don't stack ----------------
-
-
-@_needs_node
-def test_the_sheets_examples_yield_when_the_intents_are_up():
-    """Two teaching rows in one sheet say some of the same things
-    (COACH_EXAMPLES even carries "I'm short on time tonight", which is
-    "Swap tonight for something quicker" in other words) — the intents are
-    the permanent version of what the examples were a three-visit stand-in
-    for, so the examples yield to them. (Until 2026-09-11 this also had to
-    hold across a second surface, a permanently-open desktop Ask column;
-    that surface is gone, along with the "which of the two rows do I check"
-    question this test used to answer twice.)"""
-    out = _run_examples(
-        "fillIntents('ask-chips');\n"
-        "renderAskExamples(['a', 'b']);\n"
-        "console.log(JSON.stringify(state()));"
-    )
-    assert out["examples"] is False
-
-
-@_needs_node
-def test_the_examples_still_show_when_no_intents_are_up():
-    """The examples yield to the intents, they are not switched off — after
-    the household's first message the intents are gone and this row is the
-    per-tab teaching aid again, exactly as before."""
-    out = _run_examples("renderAskExamples(['a', 'b']);\nconsole.log(JSON.stringify(state()));")
-    assert out == {"examples": True}
+def test_the_blank_input_is_untouched():
+    """The per-tab examples are an addition to the composer, never a
+    replacement — it is exactly as it was."""
+    assert "var ASK_HINTS = {" in SHELL_JS
+    assert 'id="ask-input"' in SHELL_HTML

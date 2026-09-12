@@ -183,6 +183,8 @@ _FUNCTIONS = [
     "cookOvenLine",
     "cookUnscaledHtml",
     "cookKitFor",
+    "humanQtyAmount",
+    "humanQtyText",
     "cookIngredientLabel",
     "cookIngredientNouns",
     "cookStepNeeds",
@@ -249,6 +251,11 @@ def _run(body: str, state: dict | None = None) -> object:
         + _regex_const("COOK_OVEN_RE")
         + "\n"
         + _var_block("COOK_KIT_WORDS")
+        + "\n"
+        # cookIngredientLabel reads amounts through humanQtyText (item 14,
+        # design-tidy pass 2026-09-11) — its own array of nice fractions,
+        # taken from the file rather than duplicated here.
+        + _var_block("HUMAN_QTY_FRACTIONS")
         + "\n"
         + "\n".join(_extract(n) for n in _FUNCTIONS)
         + "\n"
@@ -1082,12 +1089,14 @@ def test_a_tap_on_the_stepper_is_carried_by_every_stage():
     )
     assert got["asked"] == [5], "one tap, one scale call, for base 4 + 1"
     # The stub answers with amounts proportional to the count asked for.
+    # "2.5 tbsp" reads as "2½ tbsp" now (item 14, design-tidy pass
+    # 2026-09-11) — cookIngredientLabel runs every qty through humanQtyText.
     for where in ("prep", "method", "back"):
         assert "10 Chicken thighs" in got[where], f"{where} lost the rescale"
-        assert "2.5 tbsp Olive oil" in got[where]
+        assert "2 ½ tbsp Olive oil" in got[where]
         assert "4 Chicken thighs" not in got[where]
     # ...and the step screen's "for this step" chips are the new amounts too.
-    assert "2.5 tbsp Olive oil" in got["step"]
+    assert "2 ½ tbsp Olive oil" in got["step"]
     # The count in the stepper agrees with the amounts under it.
     assert ">5<" in got["prep"] and ">5<" in got["method"]
 

@@ -6,8 +6,14 @@ Julia is the first beta tester who arrived never having talked to an app.
 She finished setup, landed on Today, and did not know what she was supposed
 to say. Three parts answer that, and this file guards all three:
 
-  1. **Example prompts under the ask bar**, two per tab, on that tab's first
-     three visits and then gone. Counted per household in localStorage.
+  1. **Example prompts under the ask bar**, three per tab, on that tab's
+     first three visits and then gone. Counted per household in
+     localStorage. (Two per tab, and the same generic four-chip row
+     layered permanently on top of them regardless of tab, until
+     2026-09-11 — item 15 of the design-tidy pass retired that generic row
+     and gave each tab three of its own; see COACH_EXAMPLES in shell.js and
+     tests/test_ask_sheet_named_intents.py's own header for the retirement
+     note.)
   2. **One how-and-why card** on Today, the first time the shell opens after
      setup — the household has a plan and `households.coaching_seen_at` is
      still null. "Got it" writes that column.
@@ -192,7 +198,7 @@ def _tips_block() -> str:
 
 
 @_needs_node
-def test_each_tab_gets_its_own_two_prompts_for_three_visits_and_no_more():
+def test_each_tab_gets_its_own_three_prompts_for_three_visits_and_no_more():
     script = (
         _DOM_STUB + _examples_block() + """
 coachState.ready = true;
@@ -211,12 +217,13 @@ console.log(JSON.stringify(out));
     )
     seen = _node(script)
     expected = {
-        # No exampleName set in this script, so Today falls back to the
-        # name-free sentence — see the two tests below for both branches.
-        "today": ["What’s next tonight?", "One of us is out Thursday"],
-        "week": ["Swap Thursday for something lighter", "Less chicken, more fish this week"],
-        "grocery": ["Add oat milk and lemons", "We already have rice"],
-        "kitchen": ["What can I make with the chicken thighs?", "I’m short on time tonight"],
+        "today": ["What should I cook tonight?", "Swap tonight for something quicker", "What do I need to defrost?"],
+        # No exampleName set in this script, so the away example falls back
+        # to the name-free sentence — see the two tests below for both
+        # branches.
+        "week": ["Plan the rest of my week", "Less chicken this week", "One of us is out Thursday"],
+        "grocery": ["Add what we’re low on", "Move this to Costco", "What’s this for?"],
+        "kitchen": ["Walk me through tonight", "What can I prep now?", "How long will dinner take?"],
     }
     for tab, prompts in expected.items():
         assert seen[tab][0] == prompts, tab
@@ -226,22 +233,27 @@ console.log(JSON.stringify(out));
 
 
 @_needs_node
-def test_todays_away_example_uses_the_households_own_adult():
+def test_plans_away_example_uses_the_households_own_adult():
     """
     This chip shipped hardcoded as "Vineeth is out Thursday" — the
     developer's own partner, read by every household in the beta as an
     example about their week. The name now comes from /api/coaching.
+
+    Lives on Plan's third slot since 2026-09-11 (item 15, design-tidy
+    pass) — the ticket's own text for that slot was "Jamie's out
+    Thursday", the exact same mistake in a new place, so it goes through
+    coachAwayExample() here too rather than being typed in literally.
     """
     script = (
         _DOM_STUB + _examples_block() + """
 coachState.ready = true;
 coachState.householdId = 1;
 coachState.exampleName = 'Marcus';
-coachOnTabShown('today');
+coachOnTabShown('week');
 console.log(JSON.stringify(ELS['ask-examples'].labels()));
 """
     )
-    assert _node(script) == ["What’s next tonight?", "Marcus is out Thursday"]
+    assert _node(script) == ["Plan the rest of my week", "Less chicken this week", "Marcus is out Thursday"]
 
 
 @_needs_node
@@ -257,11 +269,11 @@ def test_the_away_example_still_teaches_when_no_name_is_known_yet():
 coachState.ready = true;
 coachState.householdId = 1;
 coachState.exampleName = null;
-coachOnTabShown('today');
+coachOnTabShown('week');
 console.log(JSON.stringify(ELS['ask-examples'].labels()));
 """
     )
-    assert _node(script) == ["What’s next tonight?", "One of us is out Thursday"]
+    assert _node(script) == ["Plan the rest of my week", "Less chicken this week", "One of us is out Thursday"]
 
 
 def test_no_real_persons_name_is_written_into_the_example_chips():
@@ -319,7 +331,7 @@ coachOnTabShown('grocery');
 console.log(JSON.stringify(ELS['ask-examples'].labels()));
 """
     )
-    assert _node(script) == ["Add oat milk and lemons", "We already have rice"]
+    assert _node(script) == ["Add what we’re low on", "Move this to Costco", "What’s this for?"]
 
 
 @_needs_node
@@ -339,7 +351,9 @@ console.log(JSON.stringify({ spentForOne: spentForOne, freshForTwo: ELS['ask-exa
     )
     out = _node(script)
     assert out["spentForOne"] is True
-    assert out["freshForTwo"] == ["What’s next tonight?", "One of us is out Thursday"]
+    assert out["freshForTwo"] == [
+        "What should I cook tonight?", "Swap tonight for something quicker", "What do I need to defrost?"
+    ]
 
 
 @_needs_node
@@ -354,7 +368,7 @@ console.log(JSON.stringify({ sent: SENT, opened: OPENED.length }));
 """
     )
     out = _node(script)
-    assert out["sent"] == ["Less chicken, more fish this week"]
+    assert out["sent"] == ["Less chicken this week"]
     assert out["opened"] == 1, "the chip must open the surface the reply lands on"
 
 

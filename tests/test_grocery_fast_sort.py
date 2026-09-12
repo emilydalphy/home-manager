@@ -59,7 +59,13 @@ def _grocery_block() -> str:
     and an undo that spends its own payload — lived in exactly that untested
     half. A handler needs an event and an element rather than a DOM, and
     _CLICK below is the eleven lines that supply them."""
-    start = SHELL_JS.index("  var GRO_STORE_PALETTE = [")
+    # Starts at GRO_CATEGORY_LABELS rather than GRO_STORE_PALETTE (changed
+    # 2026-09-11, design-tidy pass item 6): LIST's store cards now group
+    # their rows by aisle the same way the trip screen always has, both
+    # through groAisleGroupHtml, which reads GRO_CATEGORY_LABELS — so it has
+    # to be in scope for the node harness the moment any LIST rendering
+    # path runs, not just TRIP's.
+    start = SHELL_JS.index("  var GRO_CATEGORY_LABELS = {")
     end = SHELL_JS.index("  // ---------- Hands-free voice ----------", start)
     return SHELL_JS[start:end]
 

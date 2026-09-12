@@ -72,14 +72,24 @@ def test_the_three_way_segmented_control_is_gone():
 
 # --- LIST ----------------------------------------------------------------
 
-def test_list_renders_one_card_per_store_with_a_peek():
-    """One card per store, "Costco · 14", four things and then "+ N more"."""
+def test_list_renders_one_card_per_store_grouped_by_aisle_with_no_peek():
+    """One card per store, "Costco · 14", every row shown grouped by aisle —
+    not four things and then "+ N more".
+
+    Changed 2026-09-11 (design-tidy pass, item 6): the peek hid the actual
+    list behind a tap, which is the opposite of what the store card is for
+    ("just show me the list" — DESIGN_SYSTEM §2b S1/S2). GRO_CARD_PEEK,
+    GRO_LOOSE_KEY, groceryState.listExpanded and the expand-store handler
+    all went with it — LIST was their only caller, so there was nothing
+    left to peek. See tests/test_the_no_store_section_has_no_heading... for
+    the corresponding update to the no-store card's own test."""
     _in("function groListHtml(", SHELL_JS, "the LIST step", "shell.js")
     _in("function groStoreCardHtml(", SHELL_JS, "the store card", "shell.js")
     _in("escapeHtml(name) + ' · ' + items.length", SHELL_JS, "the store card's count", "shell.js")
-    _in("var GRO_CARD_PEEK = 4;", SHELL_JS, "how many things a card shows", "shell.js")
-    _in("'+ ' + hidden + ' more</button>'", SHELL_JS, "the +N more control", "shell.js")
-    _in("data-gro=\"expand-store\"", SHELL_JS, "its handler", "shell.js")
+    _in("function groAisleGroupHtml(", SHELL_JS, "the aisle grouping shared with LIST and the trip", "shell.js")
+    _not_in("GRO_CARD_PEEK", SHELL_JS, "the four-row peek", "shell.js")
+    _not_in("data-gro=\"expand-store\"", SHELL_JS, "its handler", "shell.js")
+    _not_in(".gro-more-link", SHELL_CSS, "the +N more control's style", "shell.css")
     _in(".gro-listrow", SHELL_CSS, "the list row style", "shell.css")
 
 
@@ -123,17 +133,29 @@ def test_adding_one_thing_never_costs_a_model_turn():
     """The LIST foot's inline add row POSTs /api/grocery-list/add directly —
     the same route groHandleVoiceCommand's "add oat milk" and the old root's
     "Add an item" card used. The ask bar above the tab bar is still there for
-    anything wordier; it just isn't the only way to add a carton of milk."""
+    anything wordier; it just isn't the only way to add a carton of milk.
+
+    Changed 2026-09-11 (design-tidy pass, item 7): the separate Qty box is
+    gone — one wide "Add something" field now, with quantity parsed from
+    what's typed (groParseAddInput) and the camera living inside the
+    field's own right end rather than trailing it as a fifth control."""
     _in("function groAddItem(", SHELL_JS, "the inline add", "shell.js")
+    _in("function groParseAddInput(", SHELL_JS, "the typed-quantity parser", "shell.js")
     _in("'/api/grocery-list/add'", SHELL_JS, "the add route", "shell.js")
     _in("id=\"gro-add-item\"", SHELL_JS, "the name field", "shell.js")
-    _in("id=\"gro-add-qty\"", SHELL_JS, "the optional quantity field", "shell.js")
+    _not_in("id=\"gro-add-qty\"", SHELL_JS, "the retired separate quantity field", "shell.js")
     _in("data-gro=\"add\"", SHELL_JS, "the Add button", "shell.js")
     _in("case 'add':", SHELL_JS, "its handler", "shell.js")
-    # Enter in either field adds, so a list can be filled without reaching
-    # for the button.
-    _in("e.target.id === 'gro-add-item' || e.target.id === 'gro-add-qty'", SHELL_JS,
-        "the Enter-to-add wiring", "shell.js")
+    # Enter in the field adds, so a list can be filled without reaching for
+    # the button.
+    _in("e.target.id === 'gro-add-item'", SHELL_JS, "the Enter-to-add wiring", "shell.js")
+    # The camera is inside the field now, not a sibling control — its own
+    # wrapper is positioned so the button can sit absolute inside it.
+    _in(".gro-add-field {", SHELL_CSS, "the field wrapping the camera button", "shell.css")
+    field = SHELL_CSS.split(".gro-add-field {", 1)[1][:200]
+    assert "position: relative" in field, "The camera button needs a positioned ancestor to sit inside the field."
+    scan_btn = SHELL_CSS.split(".gro-scan-btn {", 1)[1][:400]
+    assert "position: absolute" in scan_btn, "The camera button sits inside the field's own right end now."
     # Spruce, not apricot: LIST's one apricot is the trip (Rule 5).
     add_btn = SHELL_CSS.split(".gro-add-btn {", 1)[1][:400]
     assert "var(--spruce)" in add_btn and "var(--apricot)" not in add_btn, (
@@ -284,7 +306,12 @@ def test_the_last_sort_choice_returns_to_the_list_with_a_toast():
 def test_trip_shows_one_store_at_a_time():
     _in("function groTripHtml(", SHELL_JS, "the TRIP step", "shell.js")
     _in("function groTripSections(", SHELL_JS, "the stop's aisles", "shell.js")
-    _in("‹ Pause the trip", SHELL_JS, "the pause link", "shell.js")
+    # Changed 2026-09-11 (design-tidy pass, item 1): a crumb names its
+    # parent (design rule 6), and "Pause the trip" didn't — it goes back to
+    # Shop exactly like every other crumb here, and pausing was never a
+    # distinct action (the trip's own stops/tripDone survive the trip either
+    # way, so leaving IS pausing, whatever the crumb calls it).
+    _in("‹ Shop", SHELL_JS, "the trip step's back crumb", "shell.js")
     # The counter counts stops BEHIND you, not this stop's place in the
     # snapshot — changed 2026-09-09 with the WHERE NEXT step, because the
     # household picks its own order and the snapshot index would have said
@@ -428,14 +455,17 @@ def test_sorting_is_only_offered_once_there_is_a_store_to_sort_into():
         "the gate applied to the queue itself", "shell.js")
 
 
-def test_the_no_store_section_has_no_heading_and_a_key_that_cannot_be_a_store():
-    """No avatar and no name, because there is no store to name — and its
-    expanded-state key is bracketed so it can never collide with a household
-    that really does shop somewhere called "Everything"."""
-    _in("var GRO_LOOSE_KEY = '<no-store>';", SHELL_JS, "the reserved key", "shell.js")
-    # It lands in an HTML attribute, so it goes through the same escape every
-    # store name does.
-    _in("escapeHtml(GRO_LOOSE_KEY)", SHELL_JS, "the key being escaped", "shell.js")
+def test_the_no_store_section_has_no_heading():
+    """No avatar and no name, because there is no store to name.
+
+    Until 2026-09-11 this card also carried GRO_LOOSE_KEY, a bracketed key
+    ('<no-store>') its "+ N more" control used as a listExpanded key that
+    could never collide with a household really shopping somewhere called
+    "Everything". Item 6 of the design-tidy pass removed the peek (LIST
+    shows every row now, grouped by aisle), which removed the only reason
+    this key existed — see test_list_renders_one_card_per_store_grouped_by_aisle_with_no_peek.
+    """
+    _not_in("GRO_LOOSE_KEY", SHELL_JS, "the retired peek key", "shell.js")
     # The heading belongs to the CARDS. This section is the entire list of a
     # household with no stops at all ("One list is fine"), so there is
     # nothing a heading could distinguish it from.
