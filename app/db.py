@@ -428,16 +428,25 @@ _MIGRATIONS = [
     # this, and guessing the assignee did it would be inventing history.
     ("chore_instances", "completed_by_member_id", "INTEGER"),
     # The DAY the chore was actually done — Loop Board "Chores v1: no guilt
-    # pile" (Emily, 2026-09-11). Deliberately NOT reusing completed_at,
-    # which is a different fact: completed_at is the UTC instant the tick
-    # reached the server, and done_on is the day on the household's own
-    # calendar that the work happened. They come apart in two ways that
-    # both matter here. "I did it yesterday" back-dates the work without
-    # back-dating the tick, and it is the WORK the next occurrence counts
-    # from. And a tick at 9pm Toronto is already tomorrow in UTC, so
-    # date(completed_at) would quietly put the next mop a day early.
-    # Overloading one column would have lost the audit fact to keep the
-    # schedule fact, or kept the audit fact and got the schedule wrong.
+    # pile" (Emily, 2026-09-11). Its own column beside completed_at, which
+    # stays exactly what it always was: the instant the tick reached the
+    # server.
+    #
+    # What the split actually buys, stated precisely because a looser
+    # version was written here first and the next person would have acted
+    # on it. On the deployed path today the two agree — the container runs
+    # in UTC, so date.today() and date(completed_at) are the same date, and
+    # done_on could have been derived from the timestamp. What it buys is
+    # the one case that CANNOT be derived: "I did it yesterday", where the
+    # work and the tick fall on different days, and it is the WORK the next
+    # occurrence counts from.
+    #
+    # The gap it leaves room for, and which is still open: households.
+    # timezone exists (the morning-text work added it) and nothing in
+    # chores.py reads it, so every date in that module is the server's
+    # calendar day rather than the household's. done_on is the column that
+    # would read a household clock once one is wired in; completed_at
+    # should not, because an audit timestamp belongs in UTC.
     ("chore_instances", "done_on", "TEXT"),
 ]
 

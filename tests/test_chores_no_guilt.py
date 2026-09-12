@@ -81,6 +81,27 @@ def _slipped_weekly(name: str = "Mop", weeks: int = 4, owner: str | None = "Emil
     return chore_id
 
 
+def _seed(chore_id: int, *offsets: int, status: str = "pending", assignee: int | None = -1) -> None:
+    """Occurrences for a chore at the given day offsets from today."""
+    conn = get_conn()
+    if assignee == -1:
+        assignee = conn.execute(
+            "SELECT default_assignee_id FROM chores WHERE id = ?", (chore_id,)
+        ).fetchone()[0]
+    for n in offsets:
+        conn.execute(
+            "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date, status) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (household_id(), chore_id, assignee, (TODAY() + datetime.timedelta(days=n)).isoformat(), status),
+        )
+    conn.commit()
+    conn.close()
+
+
+def _day(n: int) -> str:
+    return (TODAY() + datetime.timedelta(days=n)).isoformat()
+
+
 # --- 1. the column, and where the day it was done comes from ----------------
 
 def test_done_on_is_added_once_and_survives_a_rerun():
@@ -427,6 +448,131 @@ def test_a_schedule_that_is_running_ahead_is_left_exactly_as_it_was(emily):
     ]
 
 
+def test_a_schedule_still_running_ahead_does_not_overrule_the_done_day(emily):
+    """
+    The reviewer's case, and the card's wording taken literally: "the next
+    occurrence is generated from that date, not from the original
+    schedule."
+
+    Exactly the shape onboarding leaves — a fortnight generated up front —
+    with the first two missed and the mop finally done on the tenth day.
+    The stale row three days out used to win, so the next mop came four
+    days later instead of seven and nothing ever moved it.
+    """
+    chore_id = tools.add_chore("Mop", owner_name="Emily", frequency="weekly")["chore_id"]
+    _seed(chore_id, -10, -3, 4)
+    tools.complete_chore(tools.get_chores_due_today()[0]["id"])
+    pending = sorted(r["due_date"] for r in _instances(chore_id) if r["status"] == "pending")
+    assert pending[0] == _day(7), "a whole interval from the day it was done"
+    assert _day(4) not in pending, "the stale row is moved, not left as a second answer"
+
+
+def test_the_rebase_shifts_the_whole_run_so_the_gaps_stay_even(emily):
+    """Re-dating only the next one leaves the one after it a few days
+    behind it — the same "too soon" defect one row down."""
+    chore_id = tools.add_chore("Mop", owner_name="Emily", frequency="weekly")["chore_id"]
+    _seed(chore_id, -3, 4, 11, 18)
+    tools.complete_chore(tools.get_chores_due_today()[0]["id"])
+    pending = sorted(r["due_date"] for r in _instances(chore_id) if r["status"] == "pending")
+    assert pending == [_day(7), _day(14), _day(21)]
+
+
+def test_the_rebase_keeps_each_occurrence_its_own_row_and_its_own_person(emily):
+    """Shifted, not deleted and rebuilt: a shared rotation's turn order
+    survives a tick because the rows themselves do."""
+    vineeth = _adult("Vineeth")
+    chore_id = tools.add_chore("Vacuuming", assignee_names=["Emily", "Vineeth"], frequency="weekly")["chore_id"]
+    _seed(chore_id, -3, assignee=None)
+    _seed(chore_id, 4, assignee=emily)
+    _seed(chore_id, 11, assignee=vineeth)
+    before = {r["id"]: r["assignee_id"] for r in _instances(chore_id) if r["due_date"] > TODAY().isoformat()}
+    tools.complete_chore(tools.get_chores_due_today()[0]["id"])
+    after = {r["id"]: r["assignee_id"] for r in _instances(chore_id) if r["status"] == "pending"}
+    assert after == before, "same rows, same people — only the dates moved"
+
+
+def test_doing_it_early_moves_the_rhythm_forward_too(emily):
+    """The rhythm restarts from the done day in both directions; the point
+    is that the day it happened is what counts, not the day it was asked
+    for."""
+    chore_id = tools.add_chore("Mop", owner_name="Emily", frequency="weekly")["chore_id"]
+    _seed(chore_id, 0, 7)
+    tools.complete_chore(tools.get_chores_due_today()[0]["id"])
+    pending = sorted(r["due_date"] for r in _instances(chore_id) if r["status"] == "pending")
+    assert pending == [_day(7)], "on the day it was asked for, so nothing needed to move"
+
+
+def test_the_sweep_does_not_depend_on_being_handed_the_right_row(emily):
+    """
+    Ticking ANY row of a pile settles the pile. The sweep used to reach
+    only as far as the row it was given, so an earlier one — a card
+    rendered before a date rollover, or a stale instance_id the assistant
+    still held — left the rest standing and the card then showed one chore
+    twice, once ticked and once still due.
+    """
+    chore_id = _slipped_weekly("Mop", weeks=4)
+    oldest = _instances(chore_id)[0]["id"]
+    tools.complete_chore(oldest)
+    still_due = [r for r in _instances(chore_id) if r["status"] == "pending" and r["due_date"] <= TODAY().isoformat()]
+    assert still_due == []
+    assert [c["chore"] for c in tools.get_chores_due_today()] == ["Mop"], "one row, not one ticked and one still due"
+
+
+def test_a_tick_never_touches_an_occurrence_that_was_already_done(emily):
+    """
+    The sweep's `status = 'pending'` guard, driven. Widening it to take
+    done rows as well would flip a completed occurrence to skipped —
+    destroying the very completion record the "skipped, not done"
+    rationale exists to protect, and the fairness view counts.
+    """
+    chore_id = tools.add_chore("Mop", owner_name="Emily", frequency="weekly")["chore_id"]
+    _seed(chore_id, -21, -14, -7)
+    first = _instances(chore_id)[0]["id"]
+    with tools.use_member(emily):
+        tools.complete_chore(first, done_on=_day(-21))
+    kept = {r["id"]: dict(r) for r in _instances(chore_id)}[first]
+
+    tools.complete_chore(tools.get_chores_due_today()[0]["id"])
+
+    after = {r["id"]: dict(r) for r in _instances(chore_id)}[first]
+    assert after["status"] == "done", "an occurrence somebody actually did stays done"
+    assert after["done_on"] == kept["done_on"] == _day(-21)
+    assert after["completed_by_member_id"] == emily
+
+
+def test_a_tick_leaves_an_already_skipped_occurrence_alone(emily):
+    """Skipped is already settled; re-stamping it would churn history for
+    nothing."""
+    chore_id = tools.add_chore("Mop", owner_name="Emily", frequency="weekly")["chore_id"]
+    _seed(chore_id, -21, status="skipped")
+    _seed(chore_id, -14, -7)
+    before = [r for r in _instances(chore_id) if r["status"] == "skipped"]
+    tools.complete_chore(tools.get_chores_due_today()[0]["id"])
+    after = {r["id"]: dict(r) for r in _instances(chore_id)}
+    assert after[before[0]["id"]] == before[0]
+
+
+def test_the_card_and_the_chore_list_name_the_same_person(emily):
+    """
+    One chore, one instant, one answer. The collapse keeps the LATEST
+    slipped occurrence while _up_this_time used to answer with the
+    earliest, so the Now card said one name and list_chore_definitions
+    said the other about the same shared mop.
+    """
+    vineeth = _adult("Vineeth")
+    chore_id = tools.add_chore("Vacuuming", assignee_names=["Emily", "Vineeth"], frequency="weekly")["chore_id"]
+    _seed(chore_id, -28, assignee=emily)
+    _seed(chore_id, -21, assignee=vineeth)
+    _seed(chore_id, -14, assignee=emily)
+    _seed(chore_id, -7, assignee=vineeth)
+
+    card = tools.get_chores_due_today()[0]
+    listed = [d for d in tools.list_chore_definitions() if d["id"] == chore_id][0]
+    assert card["who_label"] == "Vineeth", "the occurrence that is actually owed"
+    assert listed["up_next"] == "Vineeth"
+    assert listed["who_label"] == card["who_label"]
+
+
 # --- 5. what the Today card shows after a tick ------------------------------
 
 def test_a_slipped_chore_ticked_today_stays_on_todays_card(emily):
@@ -536,7 +682,22 @@ def test_a_slipped_chore_puts_nothing_in_the_notification_feed(emily):
 
 # --- 7. households stay separate -------------------------------------------
 
-def test_the_collapse_and_the_sweep_never_cross_households(emily):
+def test_the_collapse_never_crosses_households_and_the_sweep_cannot(emily):
+    """
+    Honest about which half of this is a catch.
+
+    The READ half is real: _collapse_outstanding groups by chore_id inside
+    whatever household_id() is bound to, and counting another household's
+    occurrences into `stands_for` is a mistake this would catch.
+
+    The SWEEP half is NOT falsifiable and is not claimed to be.
+    chore_instances.chore_id points at a globally autoincrementing primary
+    key, so a chore belongs to exactly one household by construction and
+    the `household_id = ?` clause in the sweep can never be the thing that
+    saves it. It is defence-in-depth against a future where chore ids stop
+    being global, and the assertions below are a regression guard, not
+    evidence the clause works.
+    """
     from app import households
 
     beta = households.create_household("The Beta Testers", "beta-passphrase-long-enough")

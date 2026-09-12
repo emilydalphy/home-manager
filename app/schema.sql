@@ -211,10 +211,12 @@ CREATE TABLE IF NOT EXISTS chores (
 -- rest 'skipped', because one mop is one mop and recording four would be
 -- false history the fairness view would then act on.
 --
--- done_on is the DAY the work happened on the household's calendar, which
--- is what the next occurrence counts from. completed_at stays what it has
--- always been, the instant the tick arrived. See db.py's _MIGRATIONS entry
--- for why those are two columns and not one.
+-- done_on is the DAY the work happened and is what the next occurrence
+-- counts from; completed_at stays the instant the tick arrived. On a UTC
+-- server the two agree, so what the separate column buys is the case that
+-- cannot be derived from a timestamp: a back-dated "I did it yesterday".
+-- Both are still the SERVER's calendar day — nothing in chores.py reads
+-- households.timezone. See db.py's _MIGRATIONS entry.
 CREATE TABLE IF NOT EXISTS chore_instances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),

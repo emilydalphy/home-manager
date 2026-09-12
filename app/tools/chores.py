@@ -335,16 +335,35 @@ def _next_in_turn(conn, chore_id: int, rotation: list[int]) -> int | None:
 
 def _up_this_time(conn, chore_id: int, rotation: list[int]) -> int | None:
     """
-    Whose turn it is on a shared chore right now: the earliest instance
-    still pending, or failing that the next person in turn.
+    Whose turn it is on a shared chore right now — and it has to be the
+    turn on the SAME occurrence the screens show, or the Now card says
+    Jamie while list_chore_definitions says Emily about one chore at one
+    moment. That was a real disagreement introduced by the no-guilt-pile
+    collapse, which picks the LATEST slipped occurrence while this picked
+    the earliest.
+
+    So the answer is _collapse_outstanding's representative: the latest
+    occurrence due on or before today. A backlog collapses into the one
+    job that is actually owed, and the turns before it are written off
+    rather than queued up behind it — the whole point of the card is that
+    a bad month does not leave four turns outstanding. Failing that it is
+    the next occurrence ahead, and failing that whoever is next in turn.
     """
-    pending = conn.execute(
-        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? AND status = 'pending' "
-        "ORDER BY due_date ASC, id ASC LIMIT 1",
-        (chore_id, household_id()),
+    today = date.today().isoformat()
+    owed = conn.execute(
+        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date <= ? ORDER BY due_date DESC, id DESC LIMIT 1",
+        (chore_id, household_id(), today),
     ).fetchone()
-    if pending and pending["assignee_id"] is not None:
-        return pending["assignee_id"]
+    if owed and owed["assignee_id"] is not None:
+        return owed["assignee_id"]
+    ahead = conn.execute(
+        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date > ? ORDER BY due_date ASC, id ASC LIMIT 1",
+        (chore_id, household_id(), today),
+    ).fetchone()
+    if ahead and ahead["assignee_id"] is not None:
+        return ahead["assignee_id"]
     return _next_in_turn(conn, chore_id, rotation)
 
 
@@ -641,6 +660,11 @@ def _fill_schedule(conn, chore, today: date, horizon: date) -> list[dict]:
     """
     interval = _FREQUENCY_DAYS.get(chore["frequency"], 7)
     if not interval:
+        # frequency 'once' has no interval, so there is no "next" to write.
+        # Such a chore never gets an occurrence from here at all and has to
+        # be dated by hand with schedule_chore_instance — pre-existing
+        # (generate_chore_schedule's own query has always excluded 'once'),
+        # and silent, which is worth knowing if one ever looks empty.
         return []
     next_due = _next_due_date(conn, chore["id"], interval, today)
     if next_due is None:
@@ -677,6 +701,52 @@ def _fill_schedule(conn, chore, today: date, horizon: date) -> list[dict]:
             created.append({"chore": chore["name"], "due_date": next_due.isoformat(), "instance_id": cur.lastrowid})
         next_due += timedelta(days=interval)
     return created
+
+
+def _rebase_future(conn, chore_id: int, interval: int, done_day: date, today: date) -> int:
+    """
+    Move this chore's still-to-come occurrences onto the rhythm that starts
+    from the day it was just DONE.
+
+    Without this the card's rule holds only when the schedule has run out.
+    A household who generated a fortnight ahead, missed the first two and
+    mopped on the tenth day still got the stale row three days later —
+    "the next occurrence is generated from that date" being quietly
+    overruled by a date written before the mopping happened. Anchoring on
+    the done day and leaving the old row in place would have been worse
+    still: two answers to when the next mop is.
+
+    The whole run is shifted by ONE delta rather than only the first row
+    being moved, so the gaps stay even. Re-dating just the next one leaves
+    the one after it a few days behind it — the same "too soon" defect one
+    row down. Shifting preserves each row's id and its assignee, which is
+    what keeps a shared rotation's turn order intact through a tick.
+
+    **The cost, written down:** a one-off occurrence somebody dated by hand
+    on a recurring chore (schedule_chore_instance) moves with the rhythm
+    too. Nothing in the table distinguishes it from a generated row, and
+    inventing a flag to tell them apart is a bigger claim than this makes.
+    """
+    rows = conn.execute(
+        "SELECT id, due_date FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date > ? ORDER BY due_date ASC, id ASC",
+        (chore_id, household_id(), today.isoformat()),
+    ).fetchall()
+    if not rows:
+        return 0
+    # Never earlier than today: a back-dated tick on a daily chore would
+    # otherwise shift tomorrow's row into last week.
+    target = max(done_day + timedelta(days=interval), today)
+    delta = (target - date.fromisoformat(rows[0]["due_date"])).days
+    if delta == 0:
+        return 0
+    for row in rows:
+        moved = date.fromisoformat(row["due_date"]) + timedelta(days=delta)
+        conn.execute(
+            "UPDATE chore_instances SET due_date = ? WHERE id = ? AND household_id = ?",
+            (moved.isoformat(), row["id"], household_id()),
+        )
+    return len(rows)
 
 
 def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
@@ -921,7 +991,11 @@ def _mark_done(conn, instance_id: int, doer: int | None, done_day: date) -> dict
     Un-ticking (set_chore_instance_status back to pending) brings back the
     one row, not the pile. Deliberate: which occurrences a tick swept up is
     not recorded, and resurrecting three weeks of dates on a mis-tap is the
-    exact thing this card exists to stop.
+    exact thing this card exists to stop. **It does leave the occurrence
+    this tick put on the calendar**, so an un-tick makes list_chores
+    ("pending") answer with two rows for that chore — the one handed back
+    and the one ahead. Harmless on the Today card, which only shows what is
+    due; worth knowing before writing anything that counts pending rows.
     """
     row = conn.execute(
         "SELECT chore_id, due_date FROM chore_instances WHERE id = ? AND household_id = ?",
@@ -932,27 +1006,46 @@ def _mark_done(conn, instance_id: int, doer: int | None, done_day: date) -> dict
         "completed_by_member_id = ? WHERE id = ? AND household_id = ?",
         (done_day.isoformat(), doer, instance_id, household_id()),
     )
+    # Bounded by the LATER of the ticked row's day and today, so the sweep
+    # does not depend on the caller having passed _collapse_outstanding's
+    # representative. Handed an earlier row of the same pile — a card
+    # rendered before a date rollover, a stale instance_id the assistant
+    # still holds — the old `<= row.due_date` left the rest of the pile
+    # standing, and the card then showed one chore twice: once ticked,
+    # once still due. Ticking a FUTURE occurrence early still clears
+    # everything up to it, which is why it is the later of the two.
+    sweep_through = max(row["due_date"], date.today().isoformat())
     cleared = conn.execute(
         "UPDATE chore_instances SET status = 'skipped' WHERE household_id = ? AND chore_id = ? "
         "AND status = 'pending' AND due_date <= ? AND id != ?",
-        (household_id(), row["chore_id"], row["due_date"], instance_id),
+        (household_id(), row["chore_id"], sweep_through, instance_id),
     ).rowcount or 0
 
     chore = conn.execute(
         "SELECT * FROM chores WHERE id = ? AND household_id = ?", (row["chore_id"], household_id())
     ).fetchone()
-    created = []
+    moved = 0
     if chore and chore["active"] and chore["frequency"] != "once":
         interval = _FREQUENCY_DAYS.get(chore["frequency"], 7) or 0
         if interval:
             today = date.today()
-            created = _fill_schedule(conn, chore, today, max(done_day, today) + timedelta(days=interval))
+            moved = _rebase_future(conn, chore["id"], interval, done_day, today)
+            _fill_schedule(conn, chore, today, max(done_day, today) + timedelta(days=interval))
+    # Read the next date back off the table rather than reporting whatever
+    # this call happened to INSERT: after a rebase the next occurrence is
+    # usually a row that already existed and was moved, and a caller told
+    # "next_due: null" about a chore that plainly has one would be wrong.
+    nxt = conn.execute(
+        "SELECT MIN(due_date) AS d FROM chore_instances WHERE chore_id = ? AND household_id = ? AND status = 'pending'",
+        (row["chore_id"], household_id()),
+    ).fetchone()
     return {
         "instance_id": instance_id,
         "status": "done",
         "done_on": done_day.isoformat(),
         "also_cleared": cleared,
-        "next_due": created[0]["due_date"] if created else None,
+        "upcoming_moved": moved,
+        "next_due": nxt["d"] if nxt else None,
     }
 
 
