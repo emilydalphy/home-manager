@@ -734,7 +734,7 @@ def _last_done_day(conn, chore_id: int) -> date | None:
         return None
 
 
-def _next_due_date(conn, chore_id: int, interval: int, today: date) -> date | None:
+def _next_due_date(conn, chore_id: int, interval: int, today: date, outsourced: bool = False) -> date | None:
     """
     When this chore's next occurrence falls — or None when the honest
     answer is "nothing new".
@@ -746,32 +746,39 @@ def _next_due_date(conn, chore_id: int, interval: int, today: date) -> date | No
     been on time for. From the done day, doing it late simply moves the
     rhythm along — which is what a person means when they say they mopped.
 
-    **And a chore that is already due gets nothing written for it at all.**
-    A pending occurrence whose day has gone by is due now; when the NEXT
-    one falls is not knowable until this one is actually done. Stacking a
-    second row on top of it would rebuild the pile one date at a time.
+    **And a chore that is already due gets nothing written for it at all —
+    unless it's OUTSOURCED.** A pending occurrence whose day has gone by is
+    due now; when the NEXT one falls is not knowable until this one is
+    actually done, so for an owned or shared chore stacking a second row on
+    top of it would rebuild the pile one date at a time. That reasoning
+    depends on somebody being able to catch the pending row up by doing it
+    — which is exactly what's not true of an outsourced chore
+    (_refuse_if_outsourced means nobody in the house ever ticks it). Holding
+    the schedule for a missed cleaner visit doesn't protect a person from a
+    guilt pile; it just quietly cancels every cleaner day after the one
+    that slipped, which is worse than the pile it was built to avoid
+    (Loop Board "A slipped outsourced chore stops being scheduled, and
+    nothing on any screen can clear it", Emily). So an outsourced chore is
+    exempt from the hold: its rhythm keeps running as if the slipped
+    occurrence had been settled. The slipped row itself is untouched —
+    still pending, still due, still un-tickable — this only decides
+    whether a future one also gets written.
 
-    **What that means for an OUTSOURCED chore, written down because the two
-    cards landed the same night and neither could see the other.** An
-    outsourced chore is never ticked (_refuse_if_outsourced), so the rule
-    above holds it still: once cleaner day has gone by without being
-    settled, this writes nothing further for that chore until the slipped
-    row is marked 'skipped'. That is the honest reading of both cards — the
-    cleaner not coming is a real thing that happens, and it is the
-    household's to say, not ours to assume by quietly dealing out the next
-    three Thursdays. It costs nothing while the row is still due today, and
-    the chore never disappears: it stays on the screen as one due row
-    carrying completable=False. The gap it leaves is that 'skipped' has no
-    control on any screen yet (the Today card only sends done/pending), so
-    clearing one means the API or a chat tool that does not exist. Worth a
-    card if outsourced chores start slipping in real use.
+    For that exempt case the anchor is the slipped due date itself (the
+    most recent row on file), stepped forward by the interval until the
+    result is after today — never the day the fix happened to run. A
+    weekly cleaner who missed this Thursday gets next Thursday, not a
+    back-dated Thursday and not a drift onto whatever weekday the schedule
+    next ran. Stepping (rather than jumping straight to "today + interval")
+    is what keeps a cleaner who's missed several weeks in a row landing on
+    their usual weekday instead of sliding onto a different one.
     """
     slipped = conn.execute(
         "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
         "AND status = 'pending' AND due_date < ? LIMIT 1",
         (chore_id, household_id(), today.isoformat()),
     ).fetchone()
-    if slipped:
+    if slipped and not outsourced:
         return None
 
     last_due = conn.execute(
@@ -792,6 +799,18 @@ def _next_due_date(conn, chore_id: int, interval: int, today: date) -> date | No
         # no-op — the done-day anchor only takes over once it has run out,
         # which is exactly the case that used to produce a backlog.
         anchor = done_day
+
+    if slipped:
+        # Outsourced and already due: step forward from the slipped date by
+        # whole intervals until landing after today, rather than a single
+        # anchor + interval hop, so a cleaner who's missed more than one
+        # visit still lands on their usual weekday and not on whatever date
+        # one hop happens to produce.
+        next_due = anchor + timedelta(days=interval)
+        while next_due <= today:
+            next_due += timedelta(days=interval)
+        return next_due
+
     # Never write an occurrence into the past. A day that has already gone
     # by is not something anyone can do on time, and a run of them is the
     # pile itself.
@@ -813,7 +832,7 @@ def _fill_schedule(conn, chore, today: date, horizon: date) -> list[dict]:
         # (generate_chore_schedule's own query has always excluded 'once'),
         # and silent, which is worth knowing if one ever looks empty.
         return []
-    next_due = _next_due_date(conn, chore["id"], interval, today)
+    next_due = _next_due_date(conn, chore["id"], interval, today, outsourced=is_outsourced(chore))
     if next_due is None:
         return []
 
@@ -910,7 +929,13 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
 
     A chore that has already slipped is left alone rather than topped up —
     see _next_due_date. It is due now; nothing is gained by writing more
-    dates it has already gone past.
+    dates it has already gone past. The one exception is an outsourced
+    chore: since nobody in the house ever ticks it, holding the schedule
+    for a slipped cleaner day wouldn't spare a person a guilt pile — it
+    would just cancel every cleaner day after the one that was missed. So
+    an outsourced chore keeps generating on schedule even while its
+    slipped occurrence sits there unsettled; see _next_due_date for the
+    exact anchor.
     """
     conn = get_conn()
     chores = conn.execute(

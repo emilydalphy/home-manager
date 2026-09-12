@@ -17,12 +17,16 @@ people"). The promises this file holds:
     - handing it back returns it to owned with no owner, and asks who
     - the starter list reads the profile's existing-help answer rather
       than asking a second time
+    - a slipped occurrence does not stop it from generating (Loop Board
+      "A slipped outsourced chore stops being scheduled, and nothing on
+      any screen can clear it", Emily) — see section 4b
 
 Both files' style: run the real functions and the real routes, and say in
 each docstring whether a test is a catch (it fails on main) or a guard.
 """
 from __future__ import annotations
 
+import datetime
 import json
 import re
 import sqlite3
@@ -32,6 +36,9 @@ import pytest
 
 from app import agent, tools
 from app.db import _run_migrations, get_conn
+from app.tools._shared import household_id
+
+TODAY = datetime.date.today
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -373,6 +380,141 @@ def test_list_chore_definitions_says_which_ones_are_not_ours(two_adults):
     assert by_name["Bathrooms"]["outsourced_to"] == "Maria"
     assert by_name["Dishes"]["outsourced"] is False
     assert by_name["Dishes"]["outsourced_to"] == ""
+
+
+# --- 4b. a slipped occurrence does not stop the rhythm -----------------------
+#
+# Loop Board "A slipped outsourced chore stops being scheduled, and nothing
+# on any screen can clear it" (Emily). Two correct-on-their-own rules used
+# to meet badly here: an outsourced chore is never ticked (section 5
+# below), and _next_due_date holds back a chore that is already due until
+# the slipped occurrence is settled — see test_chores_no_guilt.py. Put
+# together, a cleaner day that slips stopped generating future cleaner
+# days, and nothing anywhere could clear the slipped row to restart it.
+#
+# The fix: the no-guilt hold exists so a PERSON never opens the app to a
+# pile they feel behind on. An outsourced chore can't be handed a pile —
+# nobody in the house is the one behind — so the hold doesn't apply to it.
+# It keeps generating on schedule, reckoned from the slipped due date
+# itself stepped forward by the interval until the result is after today,
+# so a weekly cleaner who missed this Thursday gets next Thursday, not a
+# run of back-dated Thursdays and not a drift onto a different weekday.
+# The slipped row itself is untouched by any of this — still pending,
+# still due, still un-tickable (section 5) — this section is only about
+# whether a FUTURE occurrence also gets written.
+
+
+def _slipped_chore(
+    name: str,
+    weeks: int,
+    *,
+    mode: str | None = None,
+    owner_name: str | None = None,
+    outsourced_to: str | None = None,
+    frequency: str = "weekly",
+) -> int:
+    """
+    A weekly chore whose most recent `weeks` occurrences have already gone
+    by, unsettled — written straight to the table, like _slipped_weekly in
+    test_chores_no_guilt.py, so the dates are genuinely in the past rather
+    than depending on a frozen clock.
+    """
+    chore = tools.add_chore(name, mode=mode, owner_name=owner_name, outsourced_to=outsourced_to, frequency=frequency)
+    chore_id = chore["chore_id"]
+    conn = get_conn()
+    assignee_id = conn.execute(
+        "SELECT default_assignee_id FROM chores WHERE id = ?", (chore_id,)
+    ).fetchone()["default_assignee_id"]
+    for n in range(weeks, 0, -1):
+        conn.execute(
+            "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date) VALUES (?, ?, ?, ?)",
+            (household_id(), chore_id, assignee_id, (TODAY() - datetime.timedelta(days=7 * n)).isoformat()),
+        )
+    conn.commit()
+    conn.close()
+    return chore_id
+
+
+def test_a_missed_cleaner_day_still_gets_next_weeks(two_adults):
+    """
+    Catch: on main, an outsourced chore with a slipped occurrence
+    generates nothing further — the schedule silently stops — because
+    'skipped' (the only thing that would lift the no-guilt hold) has no
+    control on any screen or chat tool. A missed cleaner day should still
+    put next week's on the calendar.
+    """
+    _slipped_chore("Bathrooms", weeks=1, mode="outsourced", outsourced_to="Maria")
+    created = tools.generate_chore_schedule(days_ahead=14)
+    due_dates = sorted(c["due_date"] for c in created if c["chore"] == "Bathrooms")
+    assert due_dates, "the slipped occurrence must not be the last one ever written"
+    # anchor (last week's slipped Thursday) + one interval lands exactly on
+    # today in this setup, which is still not "after today" — the rhythm
+    # steps one more week to land on the household's usual day.
+    assert due_dates[0] == (TODAY() + datetime.timedelta(days=7)).isoformat()
+
+
+def test_no_past_dated_row_is_ever_written_for_it(two_adults):
+    """
+    Catch: the exemption must not reopen the door to the very pile the
+    no-guilt rule exists to prevent. Even with several missed weeks in a
+    row, nothing newly written may fall before today.
+    """
+    _slipped_chore("Lawn", weeks=3, mode="outsourced")
+    created = tools.generate_chore_schedule(days_ahead=21)
+    mine = [c["due_date"] for c in created if c["chore"] == "Lawn"]
+    assert mine, "the lawn should still be back on the schedule"
+    assert all(d > TODAY().isoformat() for d in mine), "no newly written date may be today or in the past"
+
+
+def test_a_slipped_owned_chore_still_generates_nothing(two_adults):
+    """
+    Guard: the hold this ticket is carving an exception out of still
+    applies to an ordinary owned chore — this fix is about outsourced
+    chores only. See test_chores_no_guilt.py for the full contract.
+    """
+    _slipped_chore("Dishes", weeks=2, owner_name="Emily")
+    created = tools.generate_chore_schedule(days_ahead=14)
+    assert [c for c in created if c["chore"] == "Dishes"] == []
+
+
+def test_an_outsourced_chore_due_today_still_generates_normally(two_adults):
+    """Guard: this fix only changes what happens once a chore has slipped
+    into the past — a chore due today (not yet late) was never held back
+    and must not start being treated differently."""
+    chore = tools.add_chore("Bathrooms", mode="outsourced", outsourced_to="Maria", frequency="weekly")
+    created = tools.generate_chore_schedule(days_ahead=14)
+    mine = sorted(c["due_date"] for c in created if c["chore"] == "Bathrooms")
+    assert mine == [
+        TODAY().isoformat(),
+        (TODAY() + datetime.timedelta(days=7)).isoformat(),
+        (TODAY() + datetime.timedelta(days=14)).isoformat(),
+    ]
+
+
+def test_a_backlog_of_outsourced_rows_still_reads_as_one_row(two_adults):
+    """Guard: the collapse-into-one-row behaviour for a backlog (see
+    test_chores_no_guilt.py's test_four_missed_mops_are_one_due_row) must
+    keep holding for an outsourced chore — this fix does not touch it."""
+    _slipped_chore("Bathrooms", weeks=4, mode="outsourced", outsourced_to="Maria")
+    due = tools.get_chores_due_today()
+    assert len(due) == 1
+    assert due[0]["stands_for"] == 4
+    assert due[0]["due_date"] == (TODAY() - datetime.timedelta(days=7)).isoformat()
+    assert due[0]["outsourced"] is True and due[0]["completable"] is False
+
+
+def test_ticking_the_slipped_outsourced_row_is_still_refused(two_adults):
+    """
+    Guard: this ticket deliberately does not add a 'didn't happen' or
+    'skip' control — that belongs to "Chores v1: Skip, swap, or 'not this
+    week'". The slipped row stays exactly as un-tickable as any other
+    outsourced row.
+    """
+    _slipped_chore("Bathrooms", weeks=2, mode="outsourced", outsourced_to="Maria")
+    row = tools.get_chores_due_today()[0]
+    with pytest.raises(ValueError, match="Maria's, not ours"):
+        tools.complete_chore(row["id"])
+    assert tools.get_chores_due_today()[0]["status"] == "pending"
 
 
 # --- 5. no tick, and it counts for nobody ------------------------------------
