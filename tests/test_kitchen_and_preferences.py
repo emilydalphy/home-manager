@@ -401,7 +401,8 @@ def test_a_cook_move_still_carries_the_start_by_the_kitchen_line_shows(monkeypat
 
 import json
 import shutil
-import subprocess
+
+import nodeharness
 
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None, reason="node is needed to execute the screen's own functions"
@@ -418,7 +419,7 @@ _JS_PRELUDE = (
 
 
 def _node(script: str):
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

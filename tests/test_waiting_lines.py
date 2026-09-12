@@ -16,7 +16,8 @@ Two kinds of test here, for two different failure modes:
 import json
 import re
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -36,9 +37,9 @@ _needs_node = pytest.mark.skipif(
 
 def _lines_by_stage() -> dict[str, list[str]]:
     """The STAGE_LINES object, read out of the source under node."""
-    res = subprocess.run(
-        ["node", "-e", f"console.log(JSON.stringify(require({str(WAITING_JS)!r}).STAGE_LINES))"],
-        capture_output=True, text=True, timeout=30,
+    res = nodeharness.run_node(
+        f"console.log(JSON.stringify(require({str(WAITING_JS)!r}).STAGE_LINES))",
+        timeout=30,
     )
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout)
@@ -160,7 +161,7 @@ def test_stage_mapping_never_returns_undefined():
     }}
     console.log(JSON.stringify(results));
     """
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     results = json.loads(res.stdout)
     # 'constructor'/'__proto__'/'toString' matter: a plain object lookup
@@ -186,7 +187,7 @@ def test_the_renderer_survives_a_missing_element_and_a_double_stop():
     c.stop();
     console.log('ok');
     """
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     assert res.stdout.strip() == "ok"
 
@@ -220,7 +221,7 @@ def test_a_stage_change_restarts_at_the_top_of_the_new_stage():
     c.stop();
     console.log(JSON.stringify(painted));
     """
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     painted = json.loads(res.stdout)
     stages = _lines_by_stage()

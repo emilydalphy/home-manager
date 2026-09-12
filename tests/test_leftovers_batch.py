@@ -349,7 +349,8 @@ def test_a_component_based_bulk_card_still_merges_and_scales_the_same_way():
 
 import json
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 SHELL_JS = Path(__file__).resolve().parent.parent / "static" / "shell.js"
@@ -414,7 +415,7 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
           "return kitchenCookingTodayHtml(kitchenTodayRows(meals, moves, iso)); }\n"
         + f"console.log(JSON.stringify({fn}({json.dumps(arg)}{extra_args})));\n"
     )
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

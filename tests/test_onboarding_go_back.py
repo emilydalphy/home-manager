@@ -38,7 +38,8 @@ from __future__ import annotations
 import json
 import re
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -340,7 +341,7 @@ function backLabel(step) { return document.querySelector('[data-step-back="' + s
 
 
 def _run(script: str):
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout)
 

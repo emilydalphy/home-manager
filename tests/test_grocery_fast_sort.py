@@ -30,7 +30,8 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -163,7 +164,7 @@ function pickedChip(html, id) {
 
 def _node(body: str):
     script = _STUB + _grocery_block() + _CLICK + _FIXTURE + body
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

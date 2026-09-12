@@ -426,7 +426,8 @@ def test_the_chat_no_longer_carries_a_meals_hint():
 import json
 import re
 import shutil
-import subprocess
+
+import nodeharness
 
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None, reason="node is needed to execute the screen's own functions"
@@ -450,7 +451,7 @@ def _extract(name: str, source: str) -> str:
 
 
 def _run_node(harness: str):
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

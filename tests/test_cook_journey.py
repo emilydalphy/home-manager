@@ -33,7 +33,8 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -254,9 +255,7 @@ def _run(body: str, state: dict | None = None) -> object:
         + "\n"
         + body
     )
-    res = subprocess.run(
-        ["node", "-e", harness], capture_output=True, text=True, timeout=30
-    )
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

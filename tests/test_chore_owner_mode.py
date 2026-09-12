@@ -19,13 +19,14 @@ from __future__ import annotations
 
 import datetime
 import json
+import re
 import types
 from pathlib import Path
 
 import pytest
 
 from app import agent, tools
-from app.db import _migrate_chore_modes, _run_migrations, get_conn
+from app.db import _MIGRATIONS, _migrate_chore_modes, _run_migrations, get_conn
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -163,16 +164,66 @@ def test_a_row_the_migration_has_not_reached_still_reads_by_the_same_rule(two_ad
     assert by_name["Bins"]["mode"] == "whoever"
 
 
-def test_migration_against_a_database_made_by_main(tmp_path):
-    """The real upgrade path: a file created by main's schema.sql — no
-    mode column at all — opened by this build. Every shape a row could be
-    in, including two that were never valid JSON."""
-    import sqlite3
-    import subprocess
+# The two columns this work added. Named explicitly rather than derived from
+# every _MIGRATIONS entry for these tables, because rotation_member_ids_json
+# is also a migration and predates this one — and it is this migration's
+# INPUT, the thing mode is derived from. Stripping it too would describe a
+# database older than the one under test and leave nothing to derive from.
+ADDED_BY_CHORE_MODES = (("chores", "mode"), ("chore_instances", "completed_by_member_id"))
 
-    schema = subprocess.run(
-        ["git", "show", "origin/main:app/schema.sql"], cwd=REPO, capture_output=True, text=True, check=True
-    ).stdout
+
+def _without_column(schema: str, table: str, column: str) -> tuple[str, int]:
+    """Drop one column's declaration line from one CREATE TABLE block."""
+    head = f"CREATE TABLE IF NOT EXISTS {table} ("
+    start = schema.index(head)
+    end = schema.index(");", start)
+    block = schema[start:end]
+    stripped, count = re.subn(rf"^\s*{re.escape(column)}\s+[^\n]*\n", "", block, flags=re.M)
+    return schema[:start] + stripped + schema[end:], count
+
+
+def _schema_before_chore_modes() -> str:
+    """
+    The database as it stood before this work, derived from TODAY's
+    schema.sql by removing exactly the columns db._MIGRATIONS adds to the
+    two chores tables.
+
+    This used to read `git show origin/main:app/schema.sql`, and that was
+    self-invalidating: it asserted main had no `mode` column, which stopped
+    being true the moment this branch merged — so the test could never pass
+    again once it had done its job, and it failed on main from the merge
+    onwards for a reason that had nothing to do with the migration. It also
+    made a unit test depend on a fetched git remote.
+
+    Deriving the "before" from the "after" keeps the upgrade path honestly
+    tested and stays true however main moves. The assert inside is what
+    stops it going vacuous: if a column is renamed or stops being a
+    migration, the fixture stops being a real "before" and this fails
+    loudly rather than testing a migration against a schema that already
+    has its own result in it.
+    """
+    schema = (REPO / "app" / "schema.sql").read_text(encoding="utf-8")
+    for table, column in ADDED_BY_CHORE_MODES:
+        assert (table, column) in [(t, c) for t, c, _ in _MIGRATIONS], (
+            f"{table}.{column} is no longer a migration, so removing it no "
+            f"longer describes a database this build would have to upgrade"
+        )
+        schema, count = _without_column(schema, table, column)
+        assert count == 1, (
+            f"{table}.{column} is in _MIGRATIONS but is not declared on its "
+            f"own line in schema.sql — the pre-migration fixture can no "
+            f"longer be derived, so this test would stop testing the upgrade"
+        )
+    return schema
+
+
+def test_migration_against_a_database_made_before_modes_existed(tmp_path):
+    """The real upgrade path: a file created before the mode column existed,
+    opened by this build. Every shape a row could be in, including two that
+    were never valid JSON."""
+    import sqlite3
+
+    schema = _schema_before_chore_modes()
     assert "mode TEXT" not in schema.split("CREATE TABLE IF NOT EXISTS chores (")[1].split(");")[0]
     conn = sqlite3.connect(tmp_path / "main.db")
     conn.row_factory = sqlite3.Row
