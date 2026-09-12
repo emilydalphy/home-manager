@@ -1058,17 +1058,20 @@ def complete_chore(instance_id: int, done_by: str | None = None, done_on: str | 
     day, so saying so actually moves the rhythm rather than being humoured.
     """
     conn = get_conn()
-    require_household_row(conn, "chore_instances", instance_id, label="chore instance")
+    # try/finally rather than closing on each path by hand. _mark_done runs
+    # a sweep, a rebase and a refill, any of which can raise after a write
+    # has already opened a transaction on this connection — and a leaked
+    # SQLite connection holding an uncommitted write surfaces later as
+    # "database is locked" somewhere with nothing to do with the cause.
     try:
+        require_household_row(conn, "chore_instances", instance_id, label="chore instance")
         doer = _doer_id(conn, done_by)
         done_day = _done_day(done_on)
-    except ValueError:
+        result = _mark_done(conn, instance_id, doer, done_day)
+        conn.commit()
+        return result
+    finally:
         conn.close()
-        raise
-    result = _mark_done(conn, instance_id, doer, done_day)
-    conn.commit()
-    conn.close()
-    return result
 
 
 def get_chores_due_today() -> list[dict]:
@@ -1127,16 +1130,20 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
     occurrence is reckoned from today.
     """
     conn = get_conn()
-    require_household_row(conn, "chore_instances", instance_id, label="chore instance")
-    if status == "done":
-        result = _mark_done(conn, instance_id, _doer_id(conn, None), date.today())
-    else:
-        conn.execute(
-            "UPDATE chore_instances SET status = ?, completed_at = NULL, done_on = NULL, "
-            "completed_by_member_id = NULL WHERE id = ? AND household_id = ?",
-            (status, instance_id, household_id()),
-        )
-        result = {"instance_id": instance_id, "status": status}
-    conn.commit()
-    conn.close()
-    return result
+    # Same try/finally as complete_chore, and for the same reason: this is
+    # the other door into _mark_done.
+    try:
+        require_household_row(conn, "chore_instances", instance_id, label="chore instance")
+        if status == "done":
+            result = _mark_done(conn, instance_id, _doer_id(conn, None), date.today())
+        else:
+            conn.execute(
+                "UPDATE chore_instances SET status = ?, completed_at = NULL, done_on = NULL, "
+                "completed_by_member_id = NULL WHERE id = ? AND household_id = ?",
+                (status, instance_id, household_id()),
+            )
+            result = {"instance_id": instance_id, "status": status}
+        conn.commit()
+        return result
+    finally:
+        conn.close()

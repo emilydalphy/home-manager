@@ -680,7 +680,105 @@ def test_a_slipped_chore_puts_nothing_in_the_notification_feed(emily):
     assert "mop" not in keys and "chore" not in keys
 
 
-# --- 7. households stay separate -------------------------------------------
+# --- 7. a failed tick leaves nothing open -----------------------------------
+
+def _record_conns(monkeypatch) -> list:
+    """Hand back every connection chores.py opens, so a test can look at it
+    after the call that opened it has gone wrong."""
+    from app.tools import chores as chores_mod
+
+    opened = []
+    real = chores_mod.get_conn
+
+    def spy():
+        conn = real()
+        opened.append(conn)
+        return conn
+
+    monkeypatch.setattr(chores_mod, "get_conn", spy)
+    return opened
+
+
+def test_a_failure_inside_the_tick_still_closes_the_connection(emily, monkeypatch):
+    """
+    Asserts closure DIRECTLY, not by proxy: the connection complete_chore
+    opened is poked afterwards and has to refuse. _mark_done sweeps,
+    rebases and refills, and a raise from any of those used to leave the
+    connection open holding an uncommitted write — which shows up later as
+    "database is locked" somewhere with nothing to do with the cause.
+    """
+    import sqlite3
+
+    from app.tools import chores as chores_mod
+
+    _slipped_weekly("Mop", weeks=2)
+    row_id = tools.get_chores_due_today()[0]["id"]
+    opened = _record_conns(monkeypatch)
+    monkeypatch.setattr(
+        chores_mod, "_mark_done", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        tools.complete_chore(row_id)
+
+    assert opened, "the call really did open one"
+    with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+        opened[-1].execute("SELECT 1")
+
+
+def test_the_today_cards_tick_closes_its_connection_too(emily, monkeypatch):
+    """The other door into _mark_done, asserted the same direct way."""
+    import sqlite3
+
+    from app.tools import chores as chores_mod
+
+    _slipped_weekly("Mop", weeks=2)
+    row_id = tools.get_chores_due_today()[0]["id"]
+    opened = _record_conns(monkeypatch)
+    monkeypatch.setattr(
+        chores_mod, "_mark_done", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        tools.set_chore_instance_status(row_id, "done")
+
+    assert opened
+    with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+        opened[-1].execute("SELECT 1")
+
+
+def test_a_tick_that_fails_part_way_does_not_leave_the_database_locked(emily, monkeypatch):
+    """
+    The consequence rather than the mechanism: the stub WRITES before it
+    raises, exactly as the sweep does before the rebase, so on the old code
+    the leaked connection was holding an open write transaction. The test
+    keeps a reference to it so it cannot be garbage-collected into
+    releasing the lock by accident, then does an ordinary write of its own.
+    """
+    from app.tools import chores as chores_mod
+
+    chore_id = _slipped_weekly("Mop", weeks=2)
+    row_id = tools.get_chores_due_today()[0]["id"]
+    opened = _record_conns(monkeypatch)
+
+    def writes_then_raises(conn, instance_id, doer, done_day):
+        conn.execute("UPDATE chore_instances SET status = 'skipped' WHERE id = ?", (instance_id,))
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(chores_mod, "_mark_done", writes_then_raises)
+    with pytest.raises(RuntimeError, match="boom"):
+        tools.complete_chore(row_id)
+    held = opened[-1]  # noqa: F841 — deliberately kept alive
+
+    tools.add_chore("Bins", owner_name="Emily", frequency="weekly")
+    tools.schedule_chore_instance("Bins", TODAY().isoformat())
+    assert [c["chore"] for c in tools.get_chores_due_today()] == ["Mop", "Bins"]
+    assert [r["status"] for r in _instances(chore_id)] == ["pending", "pending"], (
+        "the failed tick rolled back rather than half-applying"
+    )
+
+
+# --- 8. households stay separate -------------------------------------------
 
 def test_the_collapse_never_crosses_households_and_the_sweep_cannot(emily):
     """
