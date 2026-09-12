@@ -76,20 +76,22 @@ def _examples_block() -> str:
     return _slice("  function renderAskExamples(prompts) {", "\n\n", )
 
 
-# The coaching examples and the intents share the desktop Ask column and
-# nothing else. This stub is the two surfaces side by side so the yielding
-# rule can be run rather than read.
+# The coaching examples and the named intents share one row in the ask
+# sheet — the only surface there is now (the desktop Ask column that used
+# to be a second one was removed 2026-09-11, Emily's "phone in the room"
+# decision). This stub is that one surface so the yielding rule can be run
+# rather than read.
 _EXAMPLES_STUB = """
 const EL = {};
-['ask-chips','today-ask-chips','ask-examples','today-ask-examples'].forEach(function (id) {
+['ask-chips','ask-examples'].forEach(function (id) {
   EL[id] = { id: id, innerHTML: '', hidden: true, children: [],
              querySelectorAll: function () { return []; } };
 });
 const document = { getElementById: function (id) { return EL[id] || null; } };
-function coachExampleTargets() { return [EL['ask-examples'], EL['today-ask-examples']]; }
+function coachExampleTargets() { return [EL['ask-examples']]; }
 function fillIntents(id) { EL[id].innerHTML = '<button>x</button>'; EL[id].hidden = false; }
 function state() {
-  return { dock: !EL['ask-examples'].hidden, column: !EL['today-ask-examples'].hidden };
+  return { examples: !EL['ask-examples'].hidden };
 }
 """
 
@@ -104,9 +106,13 @@ def _run_examples(tail: str):
     )
 
 
-# Two chip containers, because the shell renders this row twice — inside the
-# ask SHEET (`#ask-chips`, the phone) and in the desktop Ask column
-# (`#today-ask-chips`) — and askChipTargets feeds both. Not the dock: that is
+# Two chip containers even though the ask sheet's `#ask-chips` is the only
+# real target askChipTargets() returns today — a second desktop Ask column
+# target (`#today-ask-chips`) existed until 2026-09-11 (Emily's "phone in
+# the room" decision removed it) and askChipTargets is kept as a function
+# returning an array specifically so a future second surface slots back in
+# without touching renderAskChips; this exercises that fan-out generically
+# rather than assuming exactly one target forever. Not the dock: that is
 # `#ask-bar-dock`, which holds the coaching examples, and the distinction
 # matters because the intents are only on screen once the sheet is open. The
 # stub reads its own markup back with a regex rather than parsing it, which
@@ -219,9 +225,10 @@ def test_no_intent_pre_fills_the_composer_any_more():
 
 @_needs_node
 def test_both_chip_rows_get_the_same_four():
-    """The shell draws this row twice — inside the ask sheet on a phone, and
-    in the desktop Ask column. They cannot disagree about what the app can
-    do."""
+    """Whatever surfaces askChipTargets() returns must agree — historically
+    that was the ask sheet plus a desktop Ask column (removed 2026-09-11);
+    exercised here with two stub targets regardless, so renderAskChips can't
+    special-case "the first one" if a second surface ever comes back."""
     out = _run("loadQuickActionChips();\nconsole.log(JSON.stringify([SHEET.labels(), COLUMN.labels()]));")
     assert out == [THE_FOUR, THE_FOUR]
 
@@ -349,42 +356,27 @@ def test_this_card_ships_no_new_backend():
 
 
 @_needs_node
-def test_the_desktop_column_drops_its_coaching_examples_when_the_intents_are_up():
-    """Two teaching rows in one 347px-wide column is 348px of chips, and it
-    pushed the composer off a 1280x900 screen — measured, composer bottom
-    857 before the intents landed and 961 after. The examples were a
-    three-visit stand-in for exactly what the intents now say permanently
+def test_the_sheets_examples_yield_when_the_intents_are_up():
+    """Two teaching rows in one sheet say some of the same things
     (COACH_EXAMPLES even carries "I'm short on time tonight", which is
-    "Swap tonight for something quicker" in other words), so they yield."""
-    out = _run_examples(
-        "fillIntents('today-ask-chips');\n"
-        "renderAskExamples(['a', 'b']);\n"
-        "console.log(JSON.stringify(state()));"
-    )
-    assert out["column"] is False
-
-
-@_needs_node
-def test_the_phones_examples_yield_too_now_that_both_live_in_the_sheet():
-    """Until 2026-09-11 this test pinned the opposite: the phone's examples
-    sat in the ask-bar dock while the intents sat in the sheet, so a guard
-    that read the sheet's chips hid the dock's examples permanently. The
-    chat became an icon that day (Build 1 of the screen-by-screen
-    redesign) and the examples moved INTO the sheet, beside the intents —
-    so the same yielding now holds at both widths, for the same reason it
-    held on desktop: two teaching rows in one place, saying the same things."""
+    "Swap tonight for something quicker" in other words) — the intents are
+    the permanent version of what the examples were a three-visit stand-in
+    for, so the examples yield to them. (Until 2026-09-11 this also had to
+    hold across a second surface, a permanently-open desktop Ask column;
+    that surface is gone, along with the "which of the two rows do I check"
+    question this test used to answer twice.)"""
     out = _run_examples(
         "fillIntents('ask-chips');\n"
         "renderAskExamples(['a', 'b']);\n"
         "console.log(JSON.stringify(state()));"
     )
-    assert out["dock"] is False
+    assert out["examples"] is False
 
 
 @_needs_node
-def test_the_column_still_shows_examples_when_no_intents_are_up():
+def test_the_examples_still_show_when_no_intents_are_up():
     """The examples yield to the intents, they are not switched off — after
     the household's first message the intents are gone and this row is the
     per-tab teaching aid again, exactly as before."""
     out = _run_examples("renderAskExamples(['a', 'b']);\nconsole.log(JSON.stringify(state()));")
-    assert out == {"dock": True, "column": True}
+    assert out == {"examples": True}

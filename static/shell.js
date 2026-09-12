@@ -1,10 +1,19 @@
 /*
   Persistent app shell (design_handoff_shell/README.md §4, §7, §8).
 
-  Renders the tab bar (mobile) / left rail (desktop >=1024px), the docked
-  ask bar, and a single scroll area that swaps between four tab panels
-  without reloading the page (history.pushState + show/hide, not a real
-  navigation).
+  Renders the tab bar, the chat FAB, and a single scroll area that swaps
+  between four tab panels without reloading the page (history.pushState +
+  show/hide, not a real navigation). At every width this is the SAME phone
+  build — Emily's "phone in the room" decision, 2026-09-11 — just centred
+  as one column on a spruce field once there's room to spare (see
+  shell.css's "Desktop/tablet shell" rules and shell.html's #shell-app).
+  There used to be a separate desktop shell here: a six-entry spruce rail
+  (in place of the tab bar) and a permanently-open Ask column (in place of
+  the ask sheet), both >=1024px. Both are gone — the rail's "What we know"
+  and "Inventory" are reached through Preferences exactly as on the phone,
+  its "Share meal plan" button was already redundant with the one on
+  Meals' "See the whole week" row, and the ask sheet now behaves
+  identically at every width.
 
   Step 1: Grocery and Kitchen embed the existing static pages unmodified
   via <iframe> — this is deliberate: it means their internals (filters,
@@ -43,15 +52,11 @@
   not hardcoded to 0. Also adds the shared toast (§6) used when a dinner
   decision resolves.
 
-  Step 6 (final build-order step, §7): the desktop (>=1024px) Today layout
-  is real now — same cards as mobile, rearranged into a CSS grid (dinner
-  full-width on top, then needs-you / chores+grocery / Ask across a row)
-  purely via shell.css's grid-template-areas, no duplicated markup. The
-  Ask sheet and the desktop Ask column render the *same* conversation —
-  see "Ask sheet vs. Ask column" below for how sendAskMessage/addAskMessage
-  write into whichever of the two message-list surfaces currently exist,
-  so resizing across the breakpoint never desyncs them. The docked ask bar
-  is hidden at this breakpoint (nothing left for it to open).
+  Step 6 (final build-order step, §7, as originally built): a desktop
+  (>=1024px) Today layout rearranged the same cards into a CSS grid with a
+  permanently-open Ask column beside them. Both the grid and the column are
+  gone now (2026-09-11, see the top of this comment) — Today is one column
+  at every width, same as every other tab.
 */
 (function () {
   'use strict';
@@ -107,11 +112,10 @@
   // Inventory is still being built (Loop Board: "Inventory: mark as still
   // in development" — beta testers were putting effort into keeping it up
   // to date, which nothing else in the app depends on). This one constant
-  // gates a small neutral "In development" pill at both entry points —
-  // the Kitchen tile in kitchenTilesHtml() below and the desktop rail row
-  // in shell.html (wired further down, beside the other [data-rail-sheet]
-  // setup) — plus the matching note at the top of the inventory sheet
-  // itself, gated by the same-named constant declared in
+  // gates a small neutral "In development" pill at its entry point — the
+  // Kitchen tile in kitchenTilesHtml() below — plus the matching note at
+  // the top of the inventory sheet itself, gated by the same-named
+  // constant declared in
   // static/inventory.html (a separate document loaded in an iframe, so it
   // can't share this file's variable — see the comment there). Receipt,
   // fridge and pantry scans, and everything else about inventory, are
@@ -157,18 +161,16 @@
     var hint = ASK_HINTS[key] || ASK_HINTS._default;
     var input = document.getElementById('ask-input');
     if (input) input.placeholder = hint;
-    var col = document.getElementById('today-ask-input');
-    if (col) col.placeholder = hint;
   }
 
   var TABS = [
-    { key: 'today', path: '/', label: 'Now', railLabel: 'Now', icon: ICONS.sunrise, real: true },
-    { key: 'week', path: '/week', label: 'Plan', railLabel: 'Plan', icon: ICONS.plate, week: true },
+    { key: 'today', path: '/', label: 'Now', icon: ICONS.sunrise, real: true },
+    { key: 'week', path: '/week', label: 'Plan', icon: ICONS.plate, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
-    { key: 'grocery', path: '/grocery', label: 'Shop', railLabel: 'Shop', icon: ICONS.bag, grocery: true },
+    { key: 'grocery', path: '/grocery', label: 'Shop', icon: ICONS.bag, grocery: true },
     // Kitchen is the COOK'S tab (Emily, 2026-09-08). It answers "what's
     // cooking, and what's in the house?": today's cooks, the prep sessions
     // that feed them, the rest of the week, and the two quiet ways into
@@ -181,7 +183,7 @@
     // static/kitchen.html still exists and still works standalone but
     // nothing links to it — the fallback, exactly the treatment
     // static/grocery.html and static/grocery-legacy.html already have.
-    { key: 'kitchen', path: '/kitchen', label: 'Cook', railLabel: 'Cook', icon: ICONS.pot, kitchen: true }
+    { key: 'kitchen', path: '/kitchen', label: 'Cook', icon: ICONS.pot, kitchen: true }
   ];
 
   // The Kitchen hub's entry tiles. The blueprint asks for these to open as
@@ -235,7 +237,6 @@
 
   var scrollEl = document.getElementById('shell-scroll');
   var tabBarEl = document.getElementById('tab-bar');
-  var railRowsEl = document.getElementById('rail-rows');
   var panels = {};
 
   TABS.forEach(function (tab) {
@@ -261,7 +262,8 @@
     scrollEl.appendChild(panel);
     panels[tab.key] = panel;
 
-    // Mobile tab bar button
+    // Tab bar button — the same four tabs at every width now (2026-09-11);
+    // there is no separate desktop rail any more.
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'tab-btn';
@@ -272,18 +274,6 @@
       '<span class="tab-badge">1</span>';
     btn.addEventListener('click', function () { activateTab(tab.key, true); });
     tabBarEl.appendChild(btn);
-
-    // Desktop rail row
-    var row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'rail-row';
-    row.dataset.tab = tab.key;
-    row.innerHTML =
-      '<span class="rail-chip">' + tab.icon + '</span>' +
-      '<span>' + tab.railLabel + '</span>' +
-      '<span class="rail-badge">1</span>';
-    row.addEventListener('click', function () { activateTab(tab.key, true); });
-    railRowsEl.appendChild(row);
   });
 
   function activateTab(key, pushHistory, opts) {
@@ -295,9 +285,9 @@
     // (popstate calls here), which is where it showed: Kitchen → open
     // Inventory → Back left the Inventory sheet sitting over the Grocery
     // panel, and dismissing it then refreshed a Kitchen hub nobody was
-    // looking at. Callers that want a sheet open (the rail shortcuts,
-    // followActionHref) activate the tab first and open it after, so this
-    // does not fight them.
+    // looking at. Callers that want a sheet open (followActionHref)
+    // activate the tab first and open it after, so this does not fight
+    // them.
     closeKitchenSheet();
 
     // The shop-done handoff is page-view-only (see
@@ -317,9 +307,6 @@
       panels[k].classList.toggle('active', k === key);
     });
     document.querySelectorAll('.tab-btn').forEach(function (el) {
-      el.classList.toggle('active', el.dataset.tab === key);
-    });
-    document.querySelectorAll('.rail-row').forEach(function (el) {
       el.classList.toggle('active', el.dataset.tab === key);
     });
     setAskHintForTab(key);
@@ -359,8 +346,8 @@
     // be" — see cookResolveFocusIndex, which never lands on a different
     // meal than the one that was tapped.
     if (tab.kitchen && opts && opts.cookFocus) kitchenEnterCook(opts.cookFocus);
-    // Reaching Kitchen any OTHER way — the tab bar, the desktop rail —
-    // means the recipe deep link that set an origin is over: back belongs
+    // Reaching Kitchen any other way (the tab bar) means the recipe deep
+    // link that set an origin is over: back belongs
     // to Kitchen again (cookState.focusOrigin / openRecipeFor). The cook
     // screen is often still mounted underneath (leaving cook mode by the
     // tab bar doesn't exit it), and clearing the state without redrawing
@@ -439,17 +426,6 @@
     if (currentTabKey() === 'grocery') applyGroceryStepFromHistory(e && e.state);
   });
 
-  // ---------- Today ----------
-  // README §4/§7: heading, needs-you band, tonight's dinner, chores,
-  // grocery summary — same cards on every breakpoint, just rearranged.
-  // Mobile stacks them in DOM order (next-up, needs-you, the rest).
-  // Desktop lays the same DOM out as a CSS grid: the next-up card spans the
-  // full width on its own row, then a 1.5fr/1fr/1fr row of needs-you + the
-  // rest / chores / Ask — no JS-side breakpoint branching, `.today-body`'s
-  // grid-template-areas (shell.css) does the rearranging. The Ask column
-  // only exists (is only ever shown) at >=1024px — see "Ask sheet vs. Ask
-  // column" below for how the same conversation renders into both surfaces
-  // depending on which one exists at the moment.
   // ---------- Today: one timeline of moves ----------
   // Emily's approved Today design, 2026-09-08. The screen answers "what's
   // next for us?" with two blocks and nothing else: ONE compact spruce
@@ -538,24 +514,6 @@
               '</div>' +
             '</div>'
           : '') +
-          '<div class="today-area-ask shell-card ask-column" id="today-ask-column">' +
-            '<div class="ask-messages" id="today-ask-messages"></div>' +
-            '<div class="ask-chips" id="today-ask-chips"></div>' +
-            // Coaching part 1 + part 3 on desktop: the per-tab example
-            // prompts sit above the Ask column's input, with the same
-            // "?" into Helpful tips the mobile dock carries.
-            '<div class="ask-examples-row">' +
-              '<div class="ask-chips ask-examples" id="today-ask-examples" hidden></div>' +
-              '<button type="button" class="ask-tips-btn" data-tips="open" aria-label="Helpful tips" title="Helpful tips">?</button>' +
-            '</div>' +
-            '<form id="today-ask-composer" class="ask-composer-bar">' +
-              '<textarea id="today-ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>' +
-              '<button type="button" id="today-ask-mic-btn" class="ask-composer-mic" aria-label="Dictate message" title="Dictate message">' +
-                '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>' +
-              '</button>' +
-              '<button type="submit" id="today-ask-send-btn" class="ask-composer-send" aria-label="Send">&uarr;</button>' +
-            '</form>' +
-          '</div>' +
         '</div>' +
         // The screen's one action — the featured move's ("Cook this",
         // "Done", "Open the list") or, with no week planned, the offer to
@@ -567,8 +525,6 @@
       '</div>';
 
     panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
-
-    setupAskColumn(panel);
 
     await Promise.all([
       loadPlanWeekNudge(panel),
@@ -691,14 +647,10 @@
 
   function setTodayBadge(count) {
     var tabBtn = document.querySelector('.tab-btn[data-tab="today"]');
-    var railRow = document.querySelector('.rail-row[data-tab="today"]');
-    [[tabBtn, '.tab-badge'], [railRow, '.rail-badge']].forEach(function (pair) {
-      var el = pair[0];
-      if (!el) return;
-      el.classList.toggle('has-badge', count > 0);
-      var badge = el.querySelector(pair[1]);
-      if (badge) badge.textContent = String(count);
-    });
+    if (!tabBtn) return;
+    tabBtn.classList.toggle('has-badge', count > 0);
+    var badge = tabBtn.querySelector('.tab-badge');
+    if (badge) badge.textContent = String(count);
   }
 
   // ---------- Needs-you band (Step 5, README §4/§6) ----------
@@ -5629,32 +5581,6 @@
       return;
     }
     window.location.href = href;
-  }
-
-  // The desktop rail's two shortcuts open the same sheets. They used to be
-  // <a href> full page navigations out of the shell — see shell.html.
-  document.querySelectorAll('[data-rail-sheet]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      activateTab('kitchen', true);
-      openKitchenSheet(btn.getAttribute('data-rail-sheet'));
-    });
-  });
-
-  // INVENTORY_IN_DEVELOPMENT (declared above, beside SHOW_CHORES_ON_TODAY):
-  // the rail's Inventory row is fixed markup in shell.html, not rebuilt on
-  // every render the way kitchenTilesHtml() is, so its pill is appended
-  // here rather than chosen inline. Left out of the document entirely
-  // while the flag is off, the same "removed, not hidden" way
-  // SHOW_NOTIF_BELL's bell is — see shell.html's comment on this row for
-  // why [hidden] alone would not have worked.
-  if (INVENTORY_IN_DEVELOPMENT) {
-    var railInvRow = document.querySelector('.rail-row[data-rail-sheet="inventory"]');
-    if (railInvRow) {
-      var railInvPill = document.createElement('span');
-      railInvPill.className = 'pill pill-neutral kit-row-pill';
-      railInvPill.textContent = 'In development';
-      railInvRow.appendChild(railInvPill);
-    }
   }
 
   // ---------- Week (Step 4, rebuilt for design_handoff_home_manager
@@ -12551,9 +12477,12 @@
     askBar.addEventListener('click', function () { openAskSheet(); });
   }
 
-  // ---------- Share meal plan (rail button + week sheet's "Share") ----------
+  // ---------- Share meal plan (week sheet's "Share") ----------
   // Same flow as the original "Share meal plan" link in static/index.html —
-  // reused as-is against the same /api/share-link endpoint.
+  // reused as-is against the same /api/share-link endpoint. Used to have a
+  // second entry point on the desktop rail (removed 2026-09-11) — this one,
+  // reachable from Meals' "..." sheet ("See the whole week") at every
+  // width, was never the only way to it.
   async function shareWeekPlan() {
     try {
       var res = await fetch('/api/share-link');
@@ -12576,8 +12505,6 @@
       alert('Could not create a share link right now: ' + err.message);
     }
   }
-  var shareBtn = document.getElementById('rail-share');
-  if (shareBtn) shareBtn.addEventListener('click', shareWeekPlan);
 
   // ---------- Ask sheet (Step 3) ----------
   // README §4 "Ask sheet": chat moves off the home screen into a sheet
@@ -12907,8 +12834,7 @@
       // too — otherwise both rows sit in the sheet until the next tab
       // switch. Seen on the phone the day the examples moved into the
       // sheet (2026-09-11).
-      var examples = typeof document !== 'undefined' && document.getElementById(
-        chipsEl.id === 'today-ask-chips' ? 'today-ask-examples' : 'ask-examples');
+      var examples = typeof document !== 'undefined' && document.getElementById('ask-examples');
       if (examples && actions.length) { examples.innerHTML = ''; examples.hidden = true; }
       chipsEl.innerHTML = actions.map(function (q, i) {
         return '<button type="button" class="ask-chip" data-i="' + i + '">' + escapeHtml(q.label) + '</button>';
@@ -12984,9 +12910,7 @@
         // The receipt card's own View does activateTab(action.tab) after
         // closeAskSheet(); this does the same, plus the two things the
         // card can't: it pins the Plan state (not Cook) and lands on the
-        // day that changed. closeAskSheet() is a no-op at desktop widths,
-        // where the Ask column is always visible and the week is already
-        // on screen beside it — there, this just selects the day.
+        // day that changed.
         onClick: function () {
           closeAskSheet();
           focusChangedWeekDay(weekAction.date, weekAction.slot);
@@ -13102,29 +13026,21 @@
     return options[Math.floor(Math.random() * options.length)];
   }
 
-  // Step 6, §7: "The ask sheet only exists below 1024px. Above it, the ask
-  // column replaces it." Both surfaces show the *same* conversation — one
-  // shared history, rendered into whichever of the two message-list
-  // elements currently exist in the DOM (the sheet's #ask-messages always
-  // exists once the page loads; the column's #today-ask-messages only
-  // exists once Today's panel has been built). Sending/receiving writes
-  // into all of them at once rather than picking one "active" surface, so
-  // resizing across the 1024px breakpoint never leaves the other one
-  // stale or empty.
+  // These used to fan out to a second surface too — the permanently-open
+  // desktop Ask column (>=1024px), removed 2026-09-11 along with the rest
+  // of the old desktop rail/column shell (Emily's "phone in the room"
+  // decision). The ask sheet is the only surface now, at every width, so
+  // these just return it — kept as functions/arrays rather than inlined so
+  // a future second surface (a real two-column layout is a later card)
+  // slots back in here without touching every call site again.
   function askMessageTargets() {
-    var t = [askMessagesEl, document.getElementById('today-ask-messages')];
-    return t.filter(function (el) { return !!el; });
+    return askMessagesEl ? [askMessagesEl] : [];
   }
   function askChipTargets() {
-    var t = [askChipsEl, document.getElementById('today-ask-chips')];
-    return t.filter(function (el) { return !!el; });
+    return askChipsEl ? [askChipsEl] : [];
   }
   function askInputTargets() {
-    var t = [
-      { input: askInput, btn: askSendBtn },
-      { input: document.getElementById('today-ask-input'), btn: document.getElementById('today-ask-send-btn') }
-    ];
-    return t.filter(function (pair) { return !!pair.input; });
+    return askInput ? [{ input: askInput, btn: askSendBtn }] : [];
   }
 
   function ensureAskSheetBuilt() {
@@ -13385,42 +13301,28 @@
     } finally {
       askSending = false;
       setAskInputsDisabled(false);
-      // Only focus the surface that's actually visible right now — focusing
-      // a hidden input scrolls nothing into view but is still a stray
-      // side-effect (and on mobile, would fight the (still-hidden) sheet's
-      // own focus below).
-      var activePair = window.matchMedia('(min-width: 1024px)').matches
-        ? { input: document.getElementById('today-ask-input') }
-        : { input: askInput };
-      if (activePair.input) activePair.input.focus();
+      if (askInput) askInput.focus();
     }
-  }
-
-  // On desktop the Ask column is always visible — "opening" it just means
-  // focusing (and optionally pre-filling) its composer, no sheet to show.
-  function isDesktopAsk() {
-    return window.matchMedia('(min-width: 1024px)').matches && !!document.getElementById('today-ask-input');
   }
 
   // ---------- Composer auto-grow (Loop Board: "Chat composer should grow
   // with your message") ----------
-  // #ask-input/#today-ask-input were fixed one-line <input>s — anything
-  // longer than a sentence scrolled out of view while typing. Both are now
-  // <textarea>s that grow with what's typed, up to ~4-5 lines
+  // #ask-input was a fixed one-line <input> — anything longer than a
+  // sentence scrolled out of view while typing. It's a <textarea> now that
+  // grows with what's typed, up to ~4-5 lines
   // (ASK_COMPOSER_MAX_HEIGHT, mirrored in shell.css's .ask-composer-input
-  // max-height), then scroll internally instead of growing further. One
-  // function serves both composer instances since they share markup/CSS.
+  // max-height), then scroll internally instead of growing further.
   //
   // oneLineHeight() is computed from line-height + padding rather than by
   // reading the empty textarea's own scrollHeight — measured live, an EMPTY
   // textarea's scrollHeight tracks its wrapped *placeholder* text, not one
-  // line of real content. The desktop Today column is narrow enough that
-  // this composer's long placeholder wraps to 2-3 lines there, so an empty
-  // box was measuring (and rendering) as multi-line tall — confirmed live
-  // rather than assumed. Computing the one-line height from font metrics
-  // instead sidesteps the placeholder entirely, and works even before the
-  // element has ever been laid out (e.g. the moment its panel is built,
-  // still offscreen), since it doesn't depend on scrollHeight at all.
+  // line of real content (a long placeholder can wrap to 2-3 lines in a
+  // narrow composer, so an empty box was measuring, and rendering, as
+  // multi-line tall — confirmed live rather than assumed). Computing the
+  // one-line height from font metrics instead sidesteps the placeholder
+  // entirely, and works even before the element has ever been laid out
+  // (e.g. the moment its panel is built, still offscreen), since it
+  // doesn't depend on scrollHeight at all.
   var ASK_COMPOSER_MAX_HEIGHT = 128; // px — keep in sync with shell.css's .ask-composer-input max-height
   function oneLineHeight(textarea) {
     var cs = getComputedStyle(textarea);
@@ -13444,11 +13346,10 @@
     if (bar) bar.classList.toggle('is-grown', next > oneLineHeight(textarea) + 2);
   }
 
-  // The sheet pushes one history entry while it's open (mobile/tablet only
-  // — the desktop Ask column never touches history) so the Android/browser
-  // back gesture closes it before it leaves the tab underneath, same as
-  // Meals' and Grocery's own step history. This flag is how the shell's
-  // shared popstate listener (below) tells "the back gesture just left our
+  // The sheet pushes one history entry while it's open, at every width, so
+  // the Android/browser back gesture closes it before it leaves the tab
+  // underneath, same as Meals' and Grocery's own step history. This flag is
+  // how the shell's shared popstate listener (below) tells "the back gesture just left our
   // pushed entry" apart from an ordinary tab/step change, and how
   // openAskSheet avoids double-pushing on a prefill while the sheet is
   // already open.
@@ -13458,13 +13359,6 @@
     ensureAskSheetBuilt();
     closeWeekSheet();
     closeMealsMoreSheet();
-    if (isDesktopAsk()) {
-      var col = document.getElementById('today-ask-input');
-      if (prefill) col.value = prefill;
-      autoGrowAskInput(col);
-      col.focus();
-      return;
-    }
     askScrim.hidden = false;
     askSheet.hidden = false;
     if (!askSheetHistoryPushed) {
@@ -13499,24 +13393,21 @@
   askScrim.addEventListener('click', closeAskSheet);
   document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet);
   document.getElementById('ask-sheet-back').addEventListener('click', closeAskSheet);
-  // Escape closes the sheet on a desktop keyboard (narrower windows below
-  // the 1024px Ask-column breakpoint still use the sheet, and any keyboard
-  // can be attached at that width). isDesktopAsk() width means the column
-  // is showing instead and #ask-sheet is already hidden, so this is a no-op
-  // there — the desktop column itself is unchanged.
+  // Escape closes the sheet at every width now — any keyboard can be
+  // attached to any of them, and the sheet is the only ask surface there
+  // is (2026-09-11; there used to be a permanent desktop column this
+  // didn't apply to).
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !askSheet.hidden) closeAskSheet();
   });
-  // Enter-to-send is deliberately NOT wired here. #ask-input is the sheet
-  // used on phone widths and on any narrower/tablet window below the
-  // permanent desktop column's 1024px breakpoint (the same split this
-  // shell already draws everywhere else — e.g. isDesktopAsk() above,
-  // #ask-bar-dock's own breakpoint). On a touch keyboard, Enter/return
-  // inserting a newline (the textarea's native, un-intercepted behavior)
-  // is the least surprising choice — it's how every native mobile chat
-  // text field already behaves, and the always-visible send button is the
-  // one way to actually send. See setupAskColumn() below for the opposite,
-  // keyboard-first choice made for the desktop column.
+  // Enter-to-send is deliberately NOT wired here. On a touch keyboard,
+  // Enter/return inserting a newline (the textarea's native,
+  // un-intercepted behavior) is the least surprising choice — it's how
+  // every native mobile chat text field already behaves, and the
+  // always-visible send button is the one way to actually send. (A
+  // permanent desktop composer used to make the opposite, keyboard-first
+  // choice here — Enter-to-send, Shift+Enter-for-newline — removed
+  // 2026-09-11 along with the rest of the desktop Ask column.)
   askComposer.addEventListener('submit', function (e) {
     e.preventDefault();
     var message = askInput.value.trim();
@@ -13538,10 +13429,8 @@
   //   which already works with zero code. The button can't trigger that
   //   programmatically, so on iOS it just focuses the input and points at
   //   the keyboard mic once.
-  // Set up once per input/mic-button pair so the sheet's composer and
-  // Today's permanent desktop composer (§7) each dictate independently —
-  // index.html only ever had one composer to worry about, this shell has
-  // two.
+  // Takes an input/mic-button pair so it can be reused wherever a composer
+  // needs dictation — today that's just the ask sheet's own.
   var SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
   function setupDictation(input, micBtn) {
     if (!input || !micBtn) return;
@@ -13620,42 +13509,6 @@
   setupDictation(askInput, document.getElementById('ask-mic-btn'));
   autoGrowAskInput(askInput); // sets its correct one-line height immediately, in case the browser rendered rows="1" differently before this ran
 
-  // Wires up Today's permanent desktop Ask column (§7) — same
-  // ensureAskSheetBuilt/sendAskMessage the sheet uses, just a second entry
-  // point. Called once per Today-panel build (buildTodayPanel), which only
-  // happens once (the panel is built lazily, the first time Today is
-  // shown, and reused after that) — so this never double-wires the form.
-  function setupAskColumn(panel) {
-    ensureAskSheetBuilt(); // populates greeting + chips into the column too, even before it's ever "opened"
-    var composer = panel.querySelector('#today-ask-composer');
-    var input = panel.querySelector('#today-ask-input');
-    function submitTodayAsk(e) {
-      if (e) e.preventDefault();
-      var message = input.value.trim();
-      if (!message) return;
-      input.value = '';
-      autoGrowAskInput(input); // shrink back to one line
-      sendAskMessage(message);
-    }
-    composer.addEventListener('submit', submitTodayAsk);
-    // Unlike the sheet's #ask-input (see the comment above its submit
-    // listener), this composer is desktop-only (isDesktopAsk() gates it to
-    // >=1024px, a permanent column rather than a sheet) — a keyboard-first
-    // surface where Enter-to-send, Shift+Enter-for-newline is the
-    // unsurprising choice (matches Slack/Discord/Linear, which this
-    // permanent panel visually resembles). e.isComposing guards an IME's
-    // Enter-to-confirm-a-candidate from also sending the message.
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-        e.preventDefault();
-        submitTodayAsk();
-      }
-    });
-    input.addEventListener('input', function () { autoGrowAskInput(input); });
-    setupDictation(input, panel.querySelector('#today-ask-mic-btn'));
-    autoGrowAskInput(input); // sets its correct one-line height immediately, in case the browser rendered rows="1" differently before this ran
-  }
-
   // ---------- Notifications (Phase 5 / NOTIFICATIONS.md) ----------
   // Live in-app feed, not real scheduled push — see README's Phase 5
   // notes and schema.sql's notification_dismissals comment for why.
@@ -13717,14 +13570,12 @@
     notifScrim.hidden = true;
     notifPanel.hidden = true;
   }
-  // The bell lives inside the app's chrome, not on top of the page. Mobile
-  // chrome is the ask-bar dock (a flex sibling of #shell-scroll, so it never
-  // scrolls); desktop chrome is the rail. Moving the one element between the
-  // two slots keeps a single button, a single badge and a single click
-  // handler — and makes overlapping scrolled content structurally impossible
-  // rather than something a magic offset has to keep dodging.
-  var bellIsDesktop = window.matchMedia('(min-width: 1024px)');
-
+  // The bell lives inside the app's chrome, not on top of the page — its
+  // slot is a flex sibling of #shell-scroll, so it never scrolls. It used
+  // to move between this slot and a second one in the old desktop rail
+  // (removed 2026-09-11, along with the rest of that rail — the phone build
+  // is the whole shell at every width now); this is just the one slot it
+  // always had on phone.
   function placeNotifBell() {
     if (!notifBell) return;
     if (!SHOW_NOTIF_BELL) {
@@ -13734,18 +13585,12 @@
       if (notifBell.parentNode) notifBell.parentNode.removeChild(notifBell);
       return;
     }
-    var slot;
-    if (bellIsDesktop.matches) {
-      slot = document.getElementById('bell-home-rail');
-    } else {
-      // The active root's header slot (prefsGearHtml). A panel that
-      // re-renders its header throws the bell out of the document with the
-      // old markup; the element itself survives in this closure, so the
-      // next call simply puts it back — which is why this runs after every
-      // tab activation and on any change under #shell-scroll (below).
-      var active = document.querySelector('#shell-scroll .tab-panel.active [data-bell-slot]');
-      slot = active || null;
-    }
+    // The active root's header slot (prefsGearHtml). A panel that
+    // re-renders its header throws the bell out of the document with the
+    // old markup; the element itself survives in this closure, so the
+    // next call simply puts it back — which is why this runs after every
+    // tab activation and on any change under #shell-scroll (below).
+    var slot = document.querySelector('#shell-scroll .tab-panel.active [data-bell-slot]');
     if (slot && notifBell.parentNode !== slot) slot.appendChild(notifBell);
   }
 
@@ -13762,9 +13607,6 @@
       requestAnimationFrame(function () { queued = false; placeNotifBell(); });
     }).observe(scroll, { childList: true, subtree: true });
   })();
-  // Crossing the breakpoint by resizing (or rotating a phone) re-homes it.
-  if (bellIsDesktop.addEventListener) bellIsDesktop.addEventListener('change', placeNotifBell);
-  else if (bellIsDesktop.addListener) bellIsDesktop.addListener(placeNotifBell);  // older WebKit
 
   if (notifBell) notifBell.addEventListener('click', openNotifPanel);
   if (notifScrim) notifScrim.addEventListener('click', closeNotifPanel);
@@ -13806,7 +13648,7 @@
   // people leave open for days — showed a stale bell until someone
   // reloaded. Three triggers now, all funnelled through one function:
   //   - the tab or PWA comes back into view (visibilitychange -> visible),
-  //   - the window regains focus (the desktop rail case),
+  //   - the window regains focus,
   //   - a quiet interval while the page is open and visible.
   // The interval is a courtesy, not the mechanism: DESIGN_SYSTEM §6's
   // refresh policy says a return after being away refetches once, quietly,
@@ -14499,37 +14341,23 @@
   }
 
   function coachExampleTargets() {
-    var t = [document.getElementById('ask-examples'), document.getElementById('today-ask-examples')];
-    return t.filter(function (el) { return !!el; });
+    var el = document.getElementById('ask-examples');
+    return el ? [el] : [];
   }
 
-  // Both surfaces at once, the same reason askChipTargets does it: the
-  // mobile dock's row and Today's Ask column can both be in the document,
-  // and resizing across 1024px must not leave the other one stale.
+  // A single target now (the ask sheet's own #ask-examples) — this used to
+  // also carry the desktop Ask column's row, removed 2026-09-11, hence the
+  // forEach over what's now always a one-element array.
   function renderAskExamples(prompts) {
     coachExampleTargets().forEach(function (el) {
-      // Not beside the named intents. On a phone these two never share a
-      // screen — the examples are in the dock, the intents are inside the
-      // sheet that covers it — but in the desktop Ask column they stack,
-      // and two teaching rows in one 347px column is 348px of chips that
-      // pushed the composer off a 1280x900 screen (measured: composer
-      // bottom 857 before the intents landed, 961 after). They also say
-      // some of the same things: COACH_EXAMPLES' "I'm short on time
-      // tonight" is "Swap tonight for something quicker" in other words.
-      // The intents are the permanent version of what the examples were a
-      // three-visit stand-in for, so the examples yield to them — §8's
-      // "every word earns its place", applied to a whole row.
-      // DESKTOP COLUMN ONLY, and that scoping is the whole correctness of
-      // it. The phone's chips container is filled the moment the sheet is
-      // BUILT, not when it is opened, so a guard that read it at any width
-      // hid the dock's examples permanently — which is this same row's
-      // feature, deleted. Measured on a phone before the scoping went in:
-      // examples hidden with the sheet still closed.
-      // Since 2026-09-11 the phone's examples live INSIDE the sheet as
-      // well (the dock is gone), so the same yielding applies at both
-      // widths: whichever chips container sits beside this one.
-      var intents = document.getElementById(
-        el.id === 'today-ask-examples' ? 'today-ask-chips' : 'ask-chips');
+      // Not beside the named intents: the chips now sit between the
+      // greeting and the composer, and two teaching rows there is one too
+      // many — they also say some of the same things (COACH_EXAMPLES' "I'm
+      // short on time tonight" is "Swap tonight for something quicker" in
+      // other words). The intents are the permanent version of what the
+      // examples were a three-visit stand-in for, so the examples yield to
+      // them — §8's "every word earns its place", applied to a whole row.
+      var intents = document.getElementById('ask-chips');
       if (intents && !intents.hidden && intents.innerHTML) {
         el.innerHTML = '';
         el.hidden = true;
@@ -14541,10 +14369,7 @@
         return;
       }
       el.hidden = false;
-      // A label in the sheet, where the chips now sit between the greeting
-      // and the composer; the desktop column's row has its own place and
-      // needs none.
-      el.innerHTML = (el.id === 'ask-examples' ? '<span class="ask-examples-label">Or start with one of these</span>' : '') +
+      el.innerHTML = '<span class="ask-examples-label">Or start with one of these</span>' +
         prompts.map(function (text, i) {
         return '<button type="button" class="ask-chip ask-chip-example" data-i="' + i + '">' +
           escapeHtml(text) + '</button>';
@@ -14552,10 +14377,6 @@
       el.querySelectorAll('.ask-chip-example').forEach(function (chip) {
         chip.addEventListener('click', function () {
           var text = prompts[Number(chip.dataset.i)];
-          // The existing send path, unchanged: open whichever surface the
-          // conversation lives on at this width, then send. Without the
-          // open, a phone would fire a message into a hidden sheet and
-          // appear to have done nothing.
           openAskSheet();
           sendAskMessage(text);
         });
@@ -14887,9 +14708,8 @@
     tipsSheetEl.hidden = true;
   }
 
-  // Delegated, so the Preferences row and both "?" buttons (the mobile dock
-  // and Today's Ask column, which is re-rendered whenever Today rebuilds)
-  // work without anything wiring a listener.
+  // Delegated, so the Preferences row and the ask sheet's "?" button work
+  // without anything wiring a listener.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-tips]');
     if (target) openTipsSheet();

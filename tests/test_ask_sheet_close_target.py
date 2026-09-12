@@ -103,11 +103,9 @@ def test_escape_closes_the_sheet():
         "No keydown listener closes the ask sheet on Escape. Expected one "
         "guarded on e.key === 'Escape' that calls closeAskSheet()."
     )
-    # Must not fire while the sheet (mobile/tablet surface) is already
-    # hidden — e.g. at desktop widths where the Ask column is used instead.
+    # Must not fire while the sheet is already hidden.
     assert any("askSheet.hidden" in body for body in matches), (
-        "The Escape handler should be gated on the sheet actually being open, "
-        "so it never fights the desktop Ask column."
+        "The Escape handler should be gated on the sheet actually being open."
     )
 
 
@@ -147,9 +145,18 @@ def test_popstate_cooperates_with_the_ask_sheet_without_a_second_listener():
     )
 
 
-def test_desktop_ask_column_is_unaffected():
-    """isDesktopAsk() must still short-circuit openAskSheet before any of
-    the sheet/history plumbing runs — no change to the desktop Ask column."""
+def test_no_desktop_ask_column_short_circuit_remains():
+    """openAskSheet used to check isDesktopAsk() and return early, before any
+    of the sheet/history plumbing ran, so a permanently-open desktop Ask
+    column was never affected by this ticket's change. That column (and the
+    isDesktopAsk() gate) is gone — Emily's "phone in the room" decision,
+    2026-09-11: the ask sheet behaves identically at every width now, so
+    openAskSheet always runs the history/pushState plumbing this file
+    exists to pin."""
+    assert "isDesktopAsk" not in SHELL_JS, (
+        "isDesktopAsk() should not exist any more — the ask sheet is the "
+        "only ask surface at every width."
+    )
     open_fn = re.search(
         r"function openAskSheet\(prefill\) \{(.*?)\n  \}\n",
         SHELL_JS,
@@ -157,10 +164,6 @@ def test_desktop_ask_column_is_unaffected():
     )
     assert open_fn, "Could not locate openAskSheet in shell.js."
     body = open_fn.group(1)
-    isdesktop_pos = body.index("isDesktopAsk()")
-    history_pos = body.index("pushState")
-    assert isdesktop_pos < history_pos, (
-        "openAskSheet must check isDesktopAsk() (and return early) before "
-        "touching history/pushState, so the desktop Ask column never pushes "
-        "a history entry or is otherwise affected by this change."
+    assert "pushState" in body, (
+        "openAskSheet must still push its history entry unconditionally."
     )

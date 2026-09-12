@@ -477,18 +477,22 @@ def test_the_preferences_sheet_carries_the_way_back_to_the_tips():
     assert "How to ask me for things" in SHELL_JS
 
 
-def test_the_ask_bar_carries_a_small_way_into_the_tips_at_both_widths():
-    # The sheet's (phone) is in the markup, in its title row since the chat
-    # became an icon (2026-09-11); the desktop Ask column's is written by
-    # buildTodayPanel.
+def test_the_ask_bar_carries_a_small_way_into_the_tips():
+    # In the sheet's markup, in its title row since the chat became an icon
+    # (2026-09-11). A second copy used to be written by buildTodayPanel for
+    # the desktop Ask column; that column (and its own "?" button) is gone
+    # with the rest of the old desktop rail/column shell.
     assert 'id="ask-tips-btn"' in SHELL_HTML
     assert 'aria-label="Helpful tips"' in SHELL_HTML
-    assert SHELL_JS.count('class="ask-tips-btn" data-tips="open"') == 1
+    assert SHELL_JS.count('class="ask-tips-btn" data-tips="open"') == 0
+    assert SHELL_HTML.count('id="ask-tips-btn"') == 1
 
 
-def test_the_examples_row_exists_at_both_widths():
+def test_the_examples_row_exists():
     assert 'id="ask-examples"' in SHELL_HTML
-    assert 'id="today-ask-examples"' in SHELL_JS
+    # The desktop Ask column's own copy (#today-ask-examples, written by
+    # buildTodayPanel) is gone — the ask sheet is the only ask surface now.
+    assert 'today-ask-examples' not in SHELL_JS
 
 
 def test_a_tab_switch_counts_a_visit():

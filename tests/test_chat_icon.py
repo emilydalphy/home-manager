@@ -30,10 +30,10 @@ def test_the_icon_floats_bottom_right_and_the_dock_clears_it():
     dock = SHELL_CSS[SHELL_CSS.index(".dock {"):]
     dock = dock[:dock.index("}")]
     assert "padding: 8px 84px 14px 20px;" in dock
-    # Desktop hides the icon (the Ask column replaces the sheet) and takes the
-    # clearance back.
-    desk = SHELL_CSS[SHELL_CSS.rindex("@media (min-width: 1024px) {"):]
-    assert ".dock { padding-right: 20px; }" in desk
+    # The FAB is visible at every width (2026-09-11: no more desktop Ask
+    # column for it to make way for), so nothing resets the dock's
+    # clearance back down at a wider breakpoint.
+    assert ".dock, .wk-decide.dock { padding-right: 20px; }" not in SHELL_CSS
 
 
 def test_one_line_for_the_composer_on_every_tab():
@@ -41,7 +41,6 @@ def test_one_line_for_the_composer_on_every_tab():
     for old in ("today: 'Ask me anything", "week: 'Tweak this week", "kitchen: 'What", "grocery: 'Add oat milk"):
         assert old not in SHELL_JS, old
     assert SHELL_HTML.count('placeholder="What&rsquo;s on your mind?"') == 1
-    assert 'placeholder="What&rsquo;s on your mind?" autocomplete="off"' in SHELL_JS  # the desktop column
     assert 'Ask me anything about today&hellip;' not in SHELL_JS
     # The sheet's title says the same thing.
     assert '<div class="ask-sheet-title">What&rsquo;s on your mind?</div>' in SHELL_HTML
@@ -54,9 +53,8 @@ def test_prompts_and_tips_live_inside_the_sheet():
     assert 'id="ask-tips-btn"' in sheet
     dock = SHELL_HTML[SHELL_HTML.index('id="ask-bar-dock"'):SHELL_HTML.index('id="tab-bar"')]
     assert 'ask-examples' not in dock and 'ask-tips-btn' not in dock and 'bell-home-dock' not in dock
-    # In the sheet the examples yield to the named intents at both widths,
-    # not only in the desktop column.
-    assert "el.id === 'today-ask-examples' ? 'today-ask-chips' : 'ask-chips'" in SHELL_JS
+    # In the sheet the examples yield to the named intents.
+    assert "var intents = document.getElementById('ask-chips');" in SHELL_JS
 
 
 def test_the_bell_has_a_slot_beside_every_gear():

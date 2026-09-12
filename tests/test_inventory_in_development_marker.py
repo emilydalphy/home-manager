@@ -6,10 +6,18 @@ date that Pomona isn't asking me to.
 
 Decision taken: LABEL it, don't hide it — scans feed inventory today, so a
 hidden screen would make scanned items vanish somewhere the tester can't
-see. This adds a small neutral "In development" pill at both entry points
-(the Kitchen tile in kitchenTilesHtml(), and the desktop rail row in
-shell.html) plus one plain line at the top of the inventory sheet, and
-touches nothing else — receipt/fridge/pantry scans are untouched.
+see. This adds a small neutral "In development" pill at its entry point
+(the Kitchen tile in kitchenTilesHtml()) plus one plain line at the top of
+the inventory sheet, and touches nothing else — receipt/fridge/pantry scans
+are untouched.
+
+Originally this pill also lived on a second entry point, the desktop rail's
+Inventory row in shell.html — that whole rail (six entries, two emoji, and
+a "Share meal plan" button) was removed 2026-09-11 (Emily's "phone in the
+room" decision: the app is one centred phone-width column at every width,
+with no separate desktop nav). "What we know" and "Inventory" are reached
+through Preferences now, exactly as on the phone, so the Kitchen tile is
+the only entry point this file still has to check.
 
 Two front-end constants gate all of it, same pattern as
 static/shell.js's existing SHOW_CHORES_ON_TODAY:
@@ -71,26 +79,40 @@ def test_kitchen_tile_pill_is_gated_and_uses_the_neutral_pill_classes():
     assert "pill-attention" not in fn
 
 
-def test_rail_row_pill_is_appended_by_js_when_flag_is_true():
+def test_desktop_rail_is_gone():
     """
-    The rail's Inventory row (shell.html) carries no pill markup by
-    default — a `.pill`'s own display:inline-flex would beat a plain
-    [hidden] attribute (the same lesson already documented for
-    .notif-bell/SHOW_NOTIF_BELL), so shell.js appends the element itself,
-    gated by the same INVENTORY_IN_DEVELOPMENT check used for the tile.
+    The desktop rail (shell.html's #shell-rail, six entries including
+    Inventory, removed 2026-09-11) is not coming back — "Inventory" and
+    "What we know" are reached through Preferences at every width, same as
+    on the phone. Pins its removal so this file's inventory-pill coverage
+    doesn't silently start missing a second entry point again if a rail
+    were ever reintroduced without updating this test.
     """
-    assert 'data-rail-sheet="inventory"' in SHELL_HTML
-    # Static markup: no pill baked in (it's appended, not hidden/shown).
-    rail_row_start = SHELL_HTML.index('data-rail-sheet="inventory"')
-    rail_row_end = SHELL_HTML.index("</button>", rail_row_start)
-    assert "pill" not in SHELL_HTML[rail_row_start:rail_row_end]
+    assert "data-rail-sheet" not in SHELL_HTML
+    assert 'id="shell-rail"' not in SHELL_HTML
+    assert ".rail-row" not in SHELL_JS
 
-    wiring_idx = SHELL_JS.index('.rail-row[data-rail-sheet="inventory"]')
-    window = SHELL_JS[max(0, wiring_idx - 400) : wiring_idx + 400]
-    assert "INVENTORY_IN_DEVELOPMENT" in window
-    assert "pill pill-neutral" in window
-    assert MARKER_TEXT in window
-    assert "pill-attention" not in window
+
+def test_no_emoji_entities_anywhere_in_static():
+    """DESIGN_SYSTEM.md rule 7: icons are inline stroke SVG, never emoji.
+    The rail's two rows were the app's last emoji — a pencil
+    (&#9998; / ✎) on "What we know" and an apple (&#127823; / 🍏) on
+    "Inventory" — gone with the rail itself (2026-09-11). Scans every file
+    static/ ships (not just shell.html/js) so a future emoji anywhere in
+    the app trips this rather than only a rail-shaped one.
+    """
+    offenders = []
+    for path in sorted((REPO / "static").rglob("*")):
+        if not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, ValueError):
+            continue  # a binary asset (icon, font, image) — not source text
+        for entity in ("&#9998;", "&#127823;"):
+            if entity in text:
+                offenders.append(f"{path.relative_to(REPO)}: {entity}")
+    assert not offenders, "emoji entity found: " + ", ".join(offenders)
 
 
 def test_inventory_sheet_has_the_top_of_sheet_note_gated_by_its_own_constant():

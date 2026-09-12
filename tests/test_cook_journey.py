@@ -1205,13 +1205,16 @@ def test_a_rescaled_batch_stops_claiming_a_count_it_no_longer_cooks():
 
 
 def test_the_dock_foot_survives_the_desktop_breakpoint():
-    """`padding: 16px 28px 0` in the 1100px block zeroed the bottom, so the
-    dock's foot was switched off at exactly the width nobody had measured —
-    --cook-dock-h still 123px, dock still sticky, padding 0."""
-    # Every .cook-body rule in the file, base and breakpoint alike. The
-    # invariant is the one that was broken: none of them may set padding
-    # with the shorthand, because that silently zeroes the bottom, and each
-    # must name the dock's own height.
+    """`padding: 16px 28px 0` in a >=1100px override used to zero the
+    bottom, so the dock's foot was switched off at exactly the width nobody
+    had measured — --cook-dock-h still 123px, dock still sticky, padding 0.
+
+    That override (part of a wider Kitchen desktop treatment — bigger
+    gutters and type past 1100px) is gone entirely now: Emily's "phone in
+    the room" decision, 2026-09-11, keeps Kitchen's phone gutter at every
+    width, so there is no second .cook-body rule left to reintroduce the
+    shorthand bug. This still pins the one rule that's left naming the
+    dock's own height, so a future override can't drop it again."""
     rules, at = [], 0
     while True:
         try:
@@ -1220,12 +1223,13 @@ def test_the_dock_foot_survives_the_desktop_breakpoint():
             break
         rules.append(SHELL_CSS[at : SHELL_CSS.index("}", at)])
         at += 1
-    assert len(rules) >= 2, "the desktop breakpoint has a rule of its own"
-    for rule in rules:
-        assert "var(--cook-dock-h" in rule, f"a .cook-body rule drops the dock's foot:\n{rule}"
-    # The desktop one is the one that was written with the shorthand.
-    assert "padding:" not in rules[-1], "the shorthand is what zeroed it"
-    assert "padding-inline" in rules[-1]
+    assert len(rules) == 1, (
+        "expected exactly one .cook-body rule (no separate desktop "
+        "treatment) — if a new breakpoint override was added, it must not "
+        "zero the bottom padding with the shorthand (see this test's "
+        "docstring)."
+    )
+    assert "var(--cook-dock-h" in rules[0], f"the .cook-body rule drops the dock's foot:\n{rules[0]}"
 
 
 # ---------- The serving count is part of the cooking session ----------
