@@ -233,6 +233,98 @@
     });
   }
 
+  // ---------- Motion: opening/closing a sheet or dialog ----------
+  //
+  // Emily's decision, 2026-09-11: sheets slide up over a scrim that fades
+  // in, and centred dialogs get the same scrim fade plus a subtle scale
+  // (picked by data-motion="dialog" on the dialog element — see the CSS in
+  // shell.css's "Motion" section). Every bottom sheet and centred dialog in
+  // the shell is routed through this one pair of functions rather than
+  // toggling `.hidden` directly, because a `[hidden]` (display:none) toggle
+  // gives a CSS transition nothing to animate from or to.
+  //
+  // `hidden` still gates layout, hit-testing and accessibility — a closed
+  // sheet is genuinely removed from the tree, not just transparent. The
+  // sequence:
+  //   open:  un-hide, force a reflow (so the browser paints the resting
+  //          off-screen/scaled-down state before anything transitions),
+  //          then add .is-open — the class the CSS transition targets.
+  //   close: remove .is-open (starts the reverse transition), then re-hide
+  //          once the transition actually ends (or a timeout fires, in case
+  //          a hidden tab or an already-mid-transition element never fires
+  //          transitionend — a sheet that never re-hides would stay in the
+  //          tab order and eat clicks).
+  //
+  // Reduced motion needs no branch here: theme.css collapses --motion-base
+  // and --motion-fast to 0ms and the blanket transition-duration override
+  // under that same media query, so transitionend still fires (just
+  // immediately) and this same code path is correct either way.
+  //
+  // Reads a motion duration token off :root so a JS fallback timer (below,
+  // and animateTabPanelIn's) tracks whatever the token is actually set to
+  // right now — including reduced motion's 0ms — rather than a number
+  // hardcoded twice in two languages that could drift apart.
+  function motionMs(varName) {
+    var raw = getComputedStyle(document.documentElement).getPropertyValue(varName);
+    // raw is almost always like "240ms"; a bare number would mean seconds
+    // per the CSS spec, but every value these tokens ever hold is written
+    // in ms, so treat the number as ms.
+    return parseFloat(raw) || 0;
+  }
+
+  function openSheet(el, scrimEl) {
+    if (!el) return;
+    if (scrimEl) scrimEl.hidden = false;
+    el.hidden = false;
+    // Force a reflow between removing `hidden` and adding `.is-open` — with
+    // no read of a layout property in between, the browser would coalesce
+    // both class changes into one paint and the transition would have no
+    // "from" state to animate out of.
+    void el.offsetHeight;
+    if (scrimEl) scrimEl.classList.add('is-open');
+    el.classList.add('is-open');
+  }
+
+  function closeSheet(el, scrimEl) {
+    if (!el || el.hidden) return;
+    el.classList.remove('is-open');
+    if (scrimEl) scrimEl.classList.remove('is-open');
+    var finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      // If something reopened this sheet before this particular close
+      // finished (a fast re-tap), .is-open is back on by now — don't hide
+      // out from under the transition that's currently playing it back in.
+      if (el.classList.contains('is-open')) return;
+      el.hidden = true;
+      if (scrimEl) scrimEl.hidden = true;
+    }
+    el.addEventListener('transitionend', finish, { once: true });
+    setTimeout(finish, motionMs('--motion-base') + 50);
+  }
+
+  // Tab panels crossfade with a small rise (activateTab, below): the
+  // incoming panel starts faded/dropped and settles to rest over
+  // --motion-fast. One-directional — the outgoing panel just hides via the
+  // existing .active toggle — so this never produces the double-height a
+  // true two-panel crossfade would need.
+  function animateTabPanelIn(panel) {
+    if (!panel) return;
+    panel.classList.remove('tp-enter-active');
+    panel.classList.add('tp-enter');
+    void panel.offsetHeight; // force the reflow openSheet's comment explains
+    panel.classList.add('tp-enter-active');
+    var finished = false;
+    function cleanup() {
+      if (finished) return;
+      finished = true;
+      panel.classList.remove('tp-enter', 'tp-enter-active');
+    }
+    panel.addEventListener('transitionend', cleanup, { once: true });
+    setTimeout(cleanup, motionMs('--motion-fast') + 50);
+  }
+
   var scrollEl = document.getElementById('shell-scroll');
   var tabBarEl = document.getElementById('tab-bar');
   var railRowsEl = document.getElementById('rail-rows');
@@ -314,7 +406,13 @@
     if (key !== 'kitchen') stopCookVoice();
 
     Object.keys(panels).forEach(function (k) {
-      panels[k].classList.toggle('active', k === key);
+      var isTarget = k === key;
+      var wasActive = panels[k].classList.contains('active');
+      panels[k].classList.toggle('active', isTarget);
+      // Only the panel that's actually becoming active plays the motion —
+      // re-activating a tab that was already showing (a caller passing
+      // opts at an already-open tab, e.g. groSetScreen) doesn't replay it.
+      if (isTarget && !wasActive) animateTabPanelIn(panels[k]);
     });
     document.querySelectorAll('.tab-btn').forEach(function (el) {
       el.classList.toggle('active', el.dataset.tab === key);
@@ -915,8 +1013,7 @@
 
   function closeDinnerConfirm(answer) {
     if (!dinnerConfirmScrim) return;
-    dinnerConfirmScrim.hidden = true;
-    dinnerConfirmDialog.hidden = true;
+    closeSheet(dinnerConfirmDialog, dinnerConfirmScrim);
     var resolve = dinnerConfirmResolve;
     dinnerConfirmResolve = null;
     if (resolve) resolve(answer);
@@ -930,8 +1027,7 @@
     closeWeekSheet();
     document.getElementById('dinner-confirm-meal').textContent =
       meal + ' — want its ingredients on your grocery list?';
-    dinnerConfirmScrim.hidden = false;
-    dinnerConfirmDialog.hidden = false;
+    openSheet(dinnerConfirmDialog, dinnerConfirmScrim);
     document.getElementById('dinner-confirm-add').focus();
     return new Promise(function (resolve) { dinnerConfirmResolve = resolve; });
   }
@@ -962,8 +1058,7 @@
 
   function closeApproveWho(answer) {
     if (!approveWhoScrim) return;
-    approveWhoScrim.hidden = true;
-    approveWhoDialog.hidden = true;
+    closeSheet(approveWhoDialog, approveWhoScrim);
     var resolve = approveWhoResolve;
     approveWhoResolve = null;
     if (resolve) resolve(answer);
@@ -984,8 +1079,7 @@
     optionsEl.querySelectorAll('.approve-who-option').forEach(function (btn) {
       btn.addEventListener('click', function () { closeApproveWho(btn.dataset.name); });
     });
-    approveWhoScrim.hidden = false;
-    approveWhoDialog.hidden = false;
+    openSheet(approveWhoDialog, approveWhoScrim);
     var first = optionsEl.querySelector('.approve-who-option');
     if (first) first.focus();
     return new Promise(function (resolve) { approveWhoResolve = resolve; });
@@ -1805,6 +1899,31 @@
   }
   function groPostStatus(id, status) {
     return groPostJson('/api/grocery-list/' + id + '/status', { status: status });
+  }
+
+  // A ticked row settles rather than just snapping to its new look (Emily,
+  // 2026-09-11 — one of the app's three animations; see shell.css's Motion
+  // section for the actual transitions this plays). Ticking/unticking
+  // re-renders the whole trip list (groTick -> renderGrocery), and the
+  // "done" and "not done" states of a row come from two different HTML
+  // templates (groTripRowHtml/groDoneRowHtml) rather than one element
+  // whose class changes — so by the time this runs, `id`'s row is already
+  // a brand-new DOM node sitting at its final state, with no earlier frame
+  // for a CSS transition to animate from. This forces that earlier frame:
+  // flip the row (and its checkbox) to the opposite of what it actually
+  // is, reflow, then flip back — the flip back is what actually plays the
+  // CSS transition on .gro-row.done/.gro-box.checked in shell.css.
+  function groAnimateRowSettle(id) {
+    var panel = groPanel();
+    var row = panel && panel.querySelector('.gro-row[data-id="' + id + '"]');
+    if (!row) return; // e.g. groOffline missing, so the row hasn't re-rendered yet
+    var box = row.querySelector('.gro-box');
+    var isDone = row.classList.contains('done');
+    row.classList.toggle('done', !isDone);
+    if (box) box.classList.toggle('checked', !isDone);
+    void row.offsetHeight; // force the reflow openSheet's comment explains
+    row.classList.toggle('done', isDone);
+    if (box) box.classList.toggle('checked', isDone);
   }
 
   // A tick: on the screen now, on the server when it can be. The local copy
@@ -3776,14 +3895,12 @@
     var scrim = document.getElementById('gro-scan-scrim');
     var sheet = document.getElementById('gro-scan-sheet');
     if (!scrim || !sheet) return;
-    scrim.hidden = false;
-    sheet.hidden = false;
+    openSheet(sheet, scrim);
   }
   function groScanCloseSheet() {
     var scrim = document.getElementById('gro-scan-scrim');
     var sheet = document.getElementById('gro-scan-sheet');
-    if (scrim) scrim.hidden = true;
-    if (sheet) sheet.hidden = true;
+    if (sheet) closeSheet(sheet, scrim);
     groScanState.items = [];
   }
 
@@ -4516,10 +4633,12 @@
       // works offline, on purpose — see the "No signal" section above.
       case 'trip-toggle':
         groTick(id, 'in_cart');
+        groAnimateRowSettle(id);
         return;
 
       case 'uncheck':
         groTick(id, 'needed');
+        groAnimateRowSettle(id);
         return;
 
       case 'toggle-incart':
@@ -5321,14 +5440,12 @@
     document.getElementById('kit-sheet-title').textContent = meta.title;
     frame.title = meta.title;
     kitSheetOpen = key;
-    kitSheetScrim.hidden = false;
-    kitSheetEl.hidden = false;
+    openSheet(kitSheetEl, kitSheetScrim);
   }
 
   function closeKitchenSheet() {
     if (!kitSheetScrim) return;
-    kitSheetScrim.hidden = true;
-    kitSheetEl.hidden = true;
+    closeSheet(kitSheetEl, kitSheetScrim);
     // Inventory can be edited in there, and the Kitchen tile counts it, so
     // re-read on the way out. This is the sheet's half of the freshness
     // policy.
@@ -8070,13 +8187,11 @@
     closeAskSheet();
     closeWeekSheet();
     renderMealsMoreSheet();
-    mealsMoreScrim.hidden = false;
-    mealsMoreSheet.hidden = false;
+    openSheet(mealsMoreSheet, mealsMoreScrim);
   }
   function closeMealsMoreSheet() {
     if (!mealsMoreScrim) return;
-    mealsMoreScrim.hidden = true;
-    mealsMoreSheet.hidden = true;
+    closeSheet(mealsMoreSheet, mealsMoreScrim);
   }
   if (mealsMoreScrim) {
     mealsMoreScrim.addEventListener('click', closeMealsMoreSheet);
@@ -12322,13 +12437,11 @@
     if (!weekSheetEl || !weekState.days.length) return;
     closeAskSheet();
     renderWeekSheetRows(weekState.days);
-    weekSheetScrim.hidden = false;
-    weekSheetEl.hidden = false;
+    openSheet(weekSheetEl, weekSheetScrim);
   }
   function closeWeekSheet() {
     if (!weekSheetScrim) return;
-    weekSheetScrim.hidden = true;
-    weekSheetEl.hidden = true;
+    closeSheet(weekSheetEl, weekSheetScrim);
   }
   if (weekSheetScrim) {
     weekSheetScrim.addEventListener('click', closeWeekSheet);
@@ -12440,8 +12553,7 @@
     resetMealCb.disabled = true;
     resetGroceryCb.disabled = true;
     resetConfirmBtn.disabled = true;
-    resetScrim.hidden = false;
-    resetDialog.hidden = false;
+    openSheet(resetDialog, resetScrim);
 
     try {
       var res = await fetch('/api/reset/preview');
@@ -12471,8 +12583,7 @@
 
   function closeResetDialog() {
     if (!resetScrim) return;
-    resetScrim.hidden = true;
-    resetDialog.hidden = true;
+    closeSheet(resetDialog, resetScrim);
   }
 
   async function runReset() {
@@ -13465,8 +13576,7 @@
       col.focus();
       return;
     }
-    askScrim.hidden = false;
-    askSheet.hidden = false;
+    openSheet(askSheet, askScrim);
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
       askSheetHistoryPushed = true;
@@ -13491,8 +13601,7 @@
   // invisible extra back-press later landing back on the same tab/path —
   // the same trade every forward-only push in this file already makes.
   function closeAskSheet() {
-    askScrim.hidden = true;
-    askSheet.hidden = true;
+    closeSheet(askSheet, askScrim);
     askSheetHistoryPushed = false;
   }
 
@@ -13708,14 +13817,12 @@
   }
 
   function openNotifPanel() {
-    notifScrim.hidden = false;
-    notifPanel.hidden = false;
+    openSheet(notifPanel, notifScrim);
     renderNotifPanel(); // whatever's already in hand, instantly
     loadNotifications(); // then a quiet refetch — someone else in the house may have acted on one since this loaded (loadNotifications re-renders once the panel is visible)
   }
   function closeNotifPanel() {
-    notifScrim.hidden = true;
-    notifPanel.hidden = true;
+    closeSheet(notifPanel, notifScrim);
   }
   // The bell lives inside the app's chrome, not on top of the page. Mobile
   // chrome is the ask-bar dock (a flex sibling of #shell-scroll, so it never
@@ -14355,16 +14462,14 @@
     closeSnwSheet();
     prefsState.open = true;
     renderPrefsRows();
-    prefsScrimEl.hidden = false;
-    prefsSheetEl.hidden = false;
+    openSheet(prefsSheetEl, prefsScrimEl);
     loadPrefs();
   }
 
   function closePrefsSheet() {
     if (!prefsSheetEl) return;
     prefsState.open = false;
-    prefsScrimEl.hidden = true;
-    prefsSheetEl.hidden = true;
+    closeSheet(prefsSheetEl, prefsScrimEl);
   }
 
   // Delegated, so the gear works from every root screen's header without

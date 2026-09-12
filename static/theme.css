@@ -206,6 +206,17 @@
   --toast-bg:  #23302A;
   --toast-ink: #fff;
 
+  /* ---------- Motion (Emily, 2026-09-11) ----------
+     Exactly three animations in the whole app — sheets/dialogs opening,
+     tab panels crossfading, a ticked grocery row settling. See
+     DESIGN_SYSTEM.md §4 "Motion" and shell.js's openSheet()/closeSheet().
+     Same values regardless of light/dark, so defined once here rather than
+     duplicated in the dark-mode block below. */
+  --motion-fast:    180ms;
+  --motion-base:    240ms;
+  --motion-ease:    cubic-bezier(.2,.7,.2,1);  /* ease-out: settles in, doesn't bounce */
+  --motion-ease-in: cubic-bezier(.4,0,1,1);    /* ease-in: for anything leaving */
+
   /* ================= COMPATIBILITY ALIASES — do not extend =================
      Old names, forwarded to the canonical tokens above. Every one of these is
      a `var()` reference, never a literal, so there is exactly one place any
@@ -558,6 +569,18 @@ summary:focus-visible,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Belt-and-suspenders for the three motion tokens themselves (2026-09-11):
+   the blanket rule just above already forces every transition/animation
+   duration to ~0 under this same media query, but the tokens say the same
+   thing explicitly — a future call site that reads --motion-base directly
+   (a JS setTimeout fallback, say) sees 0ms too, not just CSS. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
   }
 }
 

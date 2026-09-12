@@ -3950,7 +3950,9 @@ html, body {
   margin: 0;
   min-width: 0;
 }
-.gro-row.done .gro-name { color: var(--ink-done); text-decoration: line-through; }
+/* The strike is a ::after line (this file's Motion section, further down)
+   rather than text-decoration, so scaleX can transition it in and out. */
+.gro-row.done .gro-name { color: var(--ink-done); }
 .gro-qty {
   height: 24px;
   padding: 0 8px;
@@ -7395,6 +7397,118 @@ span.cook-week-name { cursor: default; }
 .gro-staple-act:disabled { opacity: .6; cursor: default; }
 .gro-staple-row .gro-staple-act:nth-of-type(1) { grid-area: pause; }
 .gro-staple-row .gro-staple-act:nth-of-type(2) { grid-area: remove; }
+
+/* ===========================================================
+   Motion (Emily, 2026-09-11). Exactly three animations in the
+   whole app — see DESIGN_SYSTEM.md §4 "Motion":
+     1. Sheets slide up over a scrim that fades in; centred
+        dialogs fade + scale instead of sliding.
+     2. Tab panels crossfade with a 6px rise (activateTab, shell.js).
+     3. A ticked grocery row settles (buildGroceryPanel's trip list).
+   Tokens (--motion-fast/--motion-base/--motion-ease/--motion-ease-in)
+   live in theme.css and collapse to 0ms under prefers-reduced-motion,
+   so nothing in this section needs its own reduced-motion branch.
+   Nothing else in the app animates.
+   =========================================================== */
+
+/* ---- 1. Sheets & dialogs (shell.js openSheet()/closeSheet()) ----
+   `hidden` still gates layout/accessibility; `.is-open` is what
+   transitions. `animation: none` cancels each sheet's old
+   entrance-only keyframe (defined at its own rule earlier in this
+   file) without touching that rule's resting appearance. */
+#ask-sheet, #week-sheet, #kit-sheet, #meals-more-sheet, #gro-scan-sheet,
+#prefs-sheet, #notif-panel {
+  animation: none;
+  translate: 0 100%;
+  transition: translate var(--motion-base) var(--motion-ease);
+}
+#ask-sheet.is-open, #week-sheet.is-open, #kit-sheet.is-open,
+#meals-more-sheet.is-open, #gro-scan-sheet.is-open, #prefs-sheet.is-open,
+#notif-panel.is-open {
+  translate: 0 0;
+}
+#ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim,
+#gro-scan-scrim, #prefs-scrim, #notif-scrim,
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
+  animation: none;
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--motion-ease);
+}
+#ask-scrim.is-open, #week-sheet-scrim.is-open, #kit-sheet-scrim.is-open,
+#meals-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
+#notif-scrim.is-open,
+#reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open {
+  opacity: 1;
+}
+
+/* Centred dialogs: same scrim fade, a subtle scale instead of a slide —
+   the variant is picked by data-motion="dialog" on the dialog markup
+   (shell.html), not by listing IDs here, so a future dialog only needs
+   that one attribute to get the same treatment. */
+[data-motion="dialog"] {
+  animation: none;
+  scale: .96;
+  opacity: 0;
+  transition: scale var(--motion-base) var(--motion-ease),
+              opacity var(--motion-base) var(--motion-ease);
+}
+[data-motion="dialog"].is-open {
+  scale: 1;
+  opacity: 1;
+}
+
+/* ---- 2. Tab panels crossfade with a 6px rise (activateTab, shell.js) ----
+   One-directional fade-in on the incoming panel only — the outgoing panel
+   just hides, so this never produces the double-height a true two-panel
+   crossfade would need. --motion-fast (not --motion-base): a tab switch is
+   a much shorter hop than a sheet opening over the whole screen. */
+.tab-panel.tp-enter {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--motion-fast) var(--motion-ease),
+              transform var(--motion-fast) var(--motion-ease);
+}
+.tab-panel.tp-enter.tp-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- 3. A ticked grocery row settles (the trip list: groTripRowHtml/
+   groDoneRowHtml + groAnimateRowSettle, shell.js) ----
+   The checkbox fill, the strike-through and the row's ink all ease
+   together over --motion-base; unticking reverses the same transition.
+   The strike is a ::after line scaled from the left edge (transform-origin
+   left) rather than text-decoration, so it can transition at all — see the
+   removed `text-decoration: line-through` at .gro-row.done .gro-name above.
+   Ticking a row swaps in a differently-templated element (groTripRowHtml
+   vs groDoneRowHtml) rather than toggling a class on one persistent node,
+   so groAnimateRowSettle (shell.js) does the same "start from the opposite
+   state, force a reflow, settle to the real one" trick openSheet() uses for
+   sheets — these transitions are what it settles into. */
+.gro-row .gro-box {
+  transition: background var(--motion-base) var(--motion-ease),
+              border-color var(--motion-base) var(--motion-ease);
+}
+.gro-row .gro-name {
+  position: relative;
+  transition: color var(--motion-base) var(--motion-ease);
+}
+.gro-row .gro-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+.gro-row.done .gro-name::after {
+  transform: scaleX(1);
+}
+
 /* ---------- "Who's this?" (slice 1 of per-adult login, 2026-09-11) ----------
    The one screen between the passphrase and the shell, for a household
    with more than one adult and nobody picked on this device yet. A full
