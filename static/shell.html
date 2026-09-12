@@ -42,6 +42,13 @@
         <span class="rail-chip">&#9998;</span>
         <span>What we know</span>
       </button>
+      <!-- The "In development" pill on this row is appended by shell.js
+           (see INVENTORY_IN_DEVELOPMENT there, near the other
+           [data-rail-sheet] wiring) rather than written here: a `.pill`'s
+           own `display: inline-flex` beats a plain [hidden] attribute, the
+           same lesson placeNotifBell already documents for the bell, so
+           the element is left out of the document entirely while the flag
+           is off instead of being hidden. -->
       <button type="button" class="rail-row" data-rail-sheet="inventory">
         <span class="rail-chip">&#127823;</span>
         <span>Inventory</span>

@@ -41,6 +41,7 @@
   }
   .inv-soon-btn[aria-pressed="true"] { text-decoration: none; background: rgba(178, 58, 34,.12); border-radius: 999px; padding: 2px 8px; }
   .inv-filter-note { font-family: var(--font-body); font-size: 0.84rem; color: var(--ink-secondary); margin: 0 20px 10px; }
+  .inv-dev-note { font-family: var(--font-body); font-size: 0.84rem; color: var(--ink-secondary); margin: 0 20px 14px; }
   .inv-flag { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
   .inv-flag.soon { color: var(--urgent-label); background: rgba(178, 58, 34,.12); }
   .inv-flag.low { color: var(--apricot-label); background: rgba(224, 145, 92,.14); }
@@ -185,6 +186,15 @@
   <p class="inv-summary" id="inv-summary" role="status">Loading…</p>
 </div>
 
+<!-- INVENTORY_IN_DEVELOPMENT (declared in the script below, same pattern
+     and same name as static/shell.js's constant, which gates the two
+     entry-point pills — see the comment there): inventory is still being
+     built, so this one plain line says so before anything else. Hidden by
+     JS rather than left out entirely so flipping the constant back to
+     false is the whole reversal. DESIGN_SYSTEM.md §8: no exclamation
+     marks, no apology. -->
+<p class="inv-dev-note" id="inv-dev-note" hidden>Inventory is still being built. Nothing else in Pomona depends on it, so there’s no need to keep it up to date.</p>
+
 <div class="inv-content" style="padding-bottom:0">
   <div class="inv-add-card">
     <p class="inv-add-title">Add to inventory</p>
@@ -292,6 +302,13 @@ function escapeHtml(s) {
 // this page is reached directly (the rail's standalone "Inventory" link,
 // which is NOT inside an iframe), the plain '/kitchen' navigation is
 // correct as-is and left alone.
+// Same constant name, same purpose, as static/shell.js's
+// INVENTORY_IN_DEVELOPMENT — this page runs in its own document (loaded
+// standalone at /inventory, or embedded in the Kitchen sheet's iframe), so
+// it can't share that file's variable and carries its own copy instead.
+// Gates #inv-dev-note below; nothing else on this page changes.
+const INVENTORY_IN_DEVELOPMENT = true;
+
 const LOCATION_ORDER = ['fridge', 'freezer', 'pantry'];
 const LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
 
@@ -753,6 +770,11 @@ async function runScan(kind, file) {
 });
 
 setupDictation(document.getElementById('inv-add-item'), document.getElementById('inv-add-item-mic-btn'));
+
+if (INVENTORY_IN_DEVELOPMENT) {
+  const devNote = document.getElementById('inv-dev-note');
+  if (devNote) devNote.hidden = false;
+}
 
 loadInventory();
 </script>
