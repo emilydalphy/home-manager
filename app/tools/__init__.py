@@ -141,6 +141,25 @@ from .grocery import (  # noqa: F401
     repair_grocery_quantities,
     update_grocery_item,
 )
+# Holidays (Loop Board "Holidays: Pomona knows 12 October is coming...",
+# 2026-09-11): computed by rule for the household's country/province, read
+# off its calendar feed, asked about once, answered here. See holidays.py.
+from .holidays import (  # noqa: F401
+    ANSWER_LABELS as HOLIDAY_ANSWER_LABELS,
+    ANSWERS as HOLIDAY_ANSWERS,
+    answer_holiday,
+    apply_to_plan as apply_holiday_answers_to_plan,
+    generation_context as holiday_generation_context,
+    get_holiday_answer,
+    get_upcoming_holidays,
+    holiday_day_label,
+    holiday_needs_you_item,
+    holiday_on,
+    holidays_for_dates,
+    holidays_for_period,
+    rule_holidays,
+    set_holiday_region,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,

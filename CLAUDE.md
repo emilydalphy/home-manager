@@ -350,6 +350,87 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Pomona knows the holiday is coming and ASKS, never
+  assumes. Branch `worktree-holiday-aware`, slice 1.** Loop Board
+  "Holidays: Pomona knows 12 October is coming and asks how you're
+  spending it". Emily's frame (2026-09-11): "it's a lot to assume that we
+  would be making the big meal, we might be going over to someone's
+  house. It's more that it should be aware of and accommodate holidays."
+  So: `app/tools/holidays.py` computes Canadian holidays BY RULE (Easter
+  formula, nth-weekday, province table; nothing pinned to 2026), and a
+  calendar-feed all-day event whose title IS a holiday name counts the
+  same way — exact-name-after-normalisation, because a substring match
+  turned "Reid's birthday" (eid) and a 4-day "Reid at camp" into asking
+  holidays. Multi-day spans never count (slice-1 limit; a two-day Rosh
+  Hashanah is dropped). `holiday_answers` keyed (household, date) — a
+  date, not a week revision, because the answer can come from Now, chat
+  or the Days screen before any intake exists — with `households.country`
+  / `province` defaulting CA/ON. The question, in the intake's Days screen
+  and on Now from 3 days out (once a day, on the household's clock):
+  "How are you spending Thanksgiving?" → Hosting / Going to someone's /
+  Just us / Not sure yet. **Out** = the existing attendance write with
+  nobody home for DINNER only (`source='holiday'`), so slot_needs goes
+  `away`, the dinner is `planned_empty` and its groceries reverse —
+  superseding, not overwriting, any quick/ready-made need so undo brings
+  it back. **Bring a dish** = a `plan_meal` entry in that dinner slot with
+  attendance left home (so it shops and cooks on the day); the out write
+  is skipped, so the two never fight. **Hosting** = Build 4's `guests`
+  night tag + `guest_counts` through `save_week_intake` (new revision,
+  every other answer byte-identical) — the big-meal menu / split shop /
+  timeline is slice 2 and reads `answer` + `headcount`. **A trip already
+  covering the day wins**: hosting records the headcount only, just-us
+  leaves the stretch's attendance and need alone (verifier caught the
+  first version relabelling the trip's row and losing its link). Changing
+  an answer hands the dinner back as an open question, never a blank.
+  Planner: context + prompt line, and `apply_holiday_answers_to_plan`
+  after the slot-needs pass so enforcement doesn't depend on the model
+  reading. Asking holidays: New Year's, Easter Sunday, Mother's/Father's
+  Day, Canada Day, Thanksgiving, Christmas, Boxing Day; the rest are
+  label-only (one flag per row). QC gets National Patriots' Day + Fête
+  nationale, no Civic; NL no Civic; blank province = national days only.
+  US: `set_holiday_region` refuses until a US table exists. 57 tests in
+  `tests/test_holidays.py`; verified live on a throwaway DB. Suite 2761
+  before the merge with main's chores work.
+- **2026-09-11 — Pomona knows the holiday is coming and ASKS, never
+  assumes. Branch `worktree-holiday-aware`, slice 1.** Loop Board
+  "Holidays: Pomona knows 12 October is coming and asks how you're
+  spending it". Emily's frame (2026-09-11): "it's a lot to assume that we
+  would be making the big meal, we might be going over to someone's
+  house. It's more that it should be aware of and accommodate holidays."
+  So: `app/tools/holidays.py` computes Canadian holidays BY RULE (Easter
+  formula, nth-weekday, province table; nothing pinned to 2026), and a
+  calendar-feed all-day event whose title IS a holiday name counts the
+  same way — exact-name-after-normalisation, because a substring match
+  turned "Reid's birthday" (eid) and a 4-day "Reid at camp" into asking
+  holidays. Multi-day spans never count (slice-1 limit; a two-day Rosh
+  Hashanah is dropped). `holiday_answers` keyed (household, date) — a
+  date, not a week revision, because the answer can come from Now, chat
+  or the Days screen before any intake exists — with `households.country`
+  / `province` defaulting CA/ON. The question, in the intake's Days screen
+  and on Now from 3 days out (once a day, on the household's clock):
+  "How are you spending Thanksgiving?" → Hosting / Going to someone's /
+  Just us / Not sure yet. **Out** = the existing attendance write with
+  nobody home for DINNER only (`source='holiday'`), so slot_needs goes
+  `away`, the dinner is `planned_empty` and its groceries reverse —
+  superseding, not overwriting, any quick/ready-made need so undo brings
+  it back. **Bring a dish** = a `plan_meal` entry in that dinner slot with
+  attendance left home (so it shops and cooks on the day); the out write
+  is skipped, so the two never fight. **Hosting** = Build 4's `guests`
+  night tag + `guest_counts` through `save_week_intake` (new revision,
+  every other answer byte-identical) — the big-meal menu / split shop /
+  timeline is slice 2 and reads `answer` + `headcount`. **A trip already
+  covering the day wins**: hosting records the headcount only, just-us
+  leaves the stretch's attendance and need alone (verifier caught the
+  first version relabelling the trip's row and losing its link). Changing
+  an answer hands the dinner back as an open question, never a blank.
+  Planner: context + prompt line, and `apply_holiday_answers_to_plan`
+  after the slot-needs pass so enforcement doesn't depend on the model
+  reading. Asking holidays: New Year's, Easter Sunday, Mother's/Father's
+  Day, Canada Day, Thanksgiving, Christmas, Boxing Day; the rest are
+  label-only (one flag per row). QC gets National Patriots' Day + Fête
+  nationale, no Civic; NL no Civic; blank province = national days only.
+  US: `set_holiday_region` refuses until a US table exists. 57 tests in
+  `tests/test_holidays.py`; verified live on a throwaway DB.
 - **2026-09-11 — Every chore has a chosen owner: owned / shared / whoever.
   Branch `worktree-chore-owner-mode`.** Loop Board "Chores v1: Every chore
   has a chosen owner" — Emily, 2026-09-11: "Owners should be chosen."

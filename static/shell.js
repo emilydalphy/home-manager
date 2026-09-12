@@ -489,6 +489,9 @@
             prefsGearHtml() +
           '</div>' +
           '<h1 class="today-greeting">Now</h1>' +
+          // The holiday, when today is one — name and answer in the
+          // neutral pill, under the title. Hidden on an ordinary day.
+          '<span class="today-holiday pill pill-neutral" id="today-holiday" hidden></span>' +
           '<div class="today-progress" id="today-progress"></div>' +
         '</div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
@@ -754,6 +757,23 @@
         '</div>'
       );
     }
+    if (item.type === 'holiday_ask') {
+      // Loop Board "Holidays: Pomona knows 12 October is coming and asks
+      // how you're spending it": within three days of a holiday nobody has
+      // answered for, Now asks — four answers, one tap, never assumed.
+      return (
+        '<div class="shell-card needs-you-card urgency-' + item.urgency + '" data-card-type="holiday_ask">' +
+          '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
+          '<div class="ny-title">' + escapeHtml(item.title) + '</div>' +
+          '<div class="ny-options ny-holiday-options">' +
+            item.options.map(function (opt) {
+              return '<button type="button" class="ny-holiday-answer" data-date="' + escapeHtml(item.date) + '" ' +
+                'data-answer="' + escapeHtml(opt.answer) + '">' + escapeHtml(opt.label) + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>'
+      );
+    }
     if (item.type === 'dinner_open') {
       // An open slot the app already handed back on the Plan screen (see
       // openSlotCardHtml) — same shape of card, surfaced here too because
@@ -789,11 +809,12 @@
   }
 
   function renderNeedsYou(panel, items) {
+    panel._needsYouItems = items;
     // Only the dinner decisions reach this band on Today now — see the
     // note above needsYouCardHtml. Everything else /api/needs-you returns
     // is either a move on the timeline or nothing this screen shows.
     var visible = items.filter(function (it) {
-      return it.type === 'dinner_open' || it.type === 'dinner_decision';
+      return it.type === 'dinner_open' || it.type === 'dinner_decision' || it.type === 'holiday_ask';
     });
     setTodayHeading(panel, visible.length);
 
@@ -837,6 +858,37 @@
         openAskSheet('For ' + dayName(btn.dataset.date, { weekday: 'long' }) + '’s dinner, I’d like ');
       });
     });
+    band.querySelectorAll('[data-card-type="holiday_ask"] .ny-holiday-answer').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        answerHolidayFromNow(panel, btn.dataset.date, btn.dataset.answer, btn.closest('.needs-you-card'));
+      });
+    });
+  }
+
+  // One tap on the Now card records the answer (POST /api/holidays/answer,
+  // the same write the intake's Days screen makes) and the card goes. The
+  // day's dinner may just have changed underneath — out empties it — so
+  // the timeline is refetched. Naming a dish is a sentence, not a tap:
+  // the toast points at chat for it.
+  async function answerHolidayFromNow(panel, date, answer, cardEl) {
+    try {
+      var res = await fetch('/api/holidays/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: date, answer: answer })
+      });
+      if (!res.ok) throw new Error('holiday answer failed');
+      var saved = await res.json();
+      showToast('I’ll ' + saved.ack);
+      var remaining = ((panel._needsYouItems || []).filter(function (it) {
+        return !(it.type === 'holiday_ask' && it.date === date);
+      }));
+      dismissNeedsYouCard(panel, cardEl, remaining);
+      loadTodayMoves(panel);
+    } catch (err) {
+      console.warn('Holiday answer failed:', err);
+      showToast('I couldn’t save that just now — try again in a moment.');
+    }
   }
 
   function dismissNeedsYouCard(panel, cardEl, remainingItems) {
@@ -1160,6 +1212,11 @@
       badge.textContent = label || '';
       badge.hidden = !label;
       badge.className = 'today-weekstate is-' + (data.week_state || 'none');
+    }
+    var holidayEl = panel.querySelector('#today-holiday');
+    if (holidayEl) {
+      holidayEl.textContent = data.holiday ? data.holiday.label : '';
+      holidayEl.hidden = !data.holiday;
     }
 
     var progress = panel.querySelector('#today-progress');
@@ -6236,6 +6293,10 @@
         '<span class="wk-day-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
       '</span>' +
       '<span class="wk-day-meals">' +
+        // The quiet label on a holiday's row (DESIGN_SYSTEM §2b S6: the
+        // word for it, in the neutral pill) — "Thanksgiving · going to
+        // someone’s". Only a day that is one carries it.
+        (day.holiday ? '<span class="wk-holiday pill pill-neutral">' + escapeHtml(day.holiday.label) + '</span>' : '') +
         WEEK_SLOTS.map(function (slot) { return weekRowLineHtml(day, slot); }).join('') +
         (day.snacks || []).map(weekSnackLineHtml).join('') +
       '</span>' +
@@ -6761,6 +6822,14 @@
     return dayName(day.date, { weekday: 'long' }) + ' ' + dayName(day.date, { day: 'numeric' });
   }
 
+  // The holiday's quiet pill on its day card — same label the week card
+  // and the Day step carry, so the three views agree.
+  function reviewDayHolidayHtml(day) {
+    return day.holiday
+      ? '<span class="rv-day-holiday wk-holiday pill pill-neutral">' + escapeHtml(day.holiday.label) + '</span>'
+      : '';
+  }
+
   // The face of a day card: the day, and the one line that answers "what
   // are we eating". Dinner, because that is the meal people actually check
   // — unless nobody is home, in which case the day's own away sentence is
@@ -6816,6 +6885,7 @@
         '<div class="rv-day-head is-flat">' +
           '<span class="rv-day-col">' +
             '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
+            reviewDayHolidayHtml(day) +
             '<span class="rv-day-dinner' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
             reviewDayNoteHtml(face.note, face.clash) +
           '</span>' +
@@ -6830,6 +6900,7 @@
           ' aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<span class="rv-day-col">' +
           '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
+          reviewDayHolidayHtml(day) +
           '<span class="rv-day-dinner' + quiet + '">' + escapeHtml(line) + '</span>' +
           reviewDayNoteHtml(face.note, face.clash) +
         '</span>' +
@@ -7131,6 +7202,7 @@
 
   function daySubtitle(day) {
     var parts = [dayName(day.date, { month: 'short', day: 'numeric' })];
+    if (day.holiday) parts.push(day.holiday.label);
     var att = dayAttendanceLine(day);
     if (att) parts.push(att);
     return parts.join(' · ');

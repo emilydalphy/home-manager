@@ -185,6 +185,13 @@ html, body {
 .today-weekstate.is-set { color: var(--celadon-label); }
 .today-weekstate[hidden] { display: none; }
 
+/* The holiday, when today is one — the neutral pill under the title,
+   "Thanksgiving · going to someone’s". A label, not a card: it says what
+   the day is and what was decided, and asks nothing (the ask is a
+   needs-you card three days out). */
+.today-holiday { margin-top: 8px; align-self: flex-start; }
+.today-holiday[hidden] { display: none; }
+
 .today-area-nudge { padding: 0 20px; }
 .today-area-nudge:not(:empty) { padding-bottom: 14px; }
 
@@ -525,6 +532,19 @@ html, body {
   font-size: 15px;
   color: var(--plum-ink);
 }
+/* The holiday ask (2026-09-11): four answers as pills in a row, the same
+   shape the intake's Days screen uses for them. Outline pills — the
+   screen's one apricot is the dock (Rule 5). */
+.ny-holiday-options { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ny-holiday-answer {
+  min-height: 44px; padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--hairline-strong);
+  background: var(--ground); color: var(--ink);
+  font-family: var(--font-body); font-weight: 600; font-size: 14px;
+  cursor: pointer;
+}
+.ny-holiday-answer:hover { background: var(--sand); border-color: var(--ink-strong); }
 /* Folded (2026-09-11): one row — kicker, title, Pick — until Pick unfolds
    the options in place. */
 .ny-fold { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -6219,6 +6239,10 @@ span.cook-week-name { cursor: default; }
 }
 .wk-day-row.is-today .wk-day-num { color: var(--ink-strong); }
 .wk-day-meals { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+/* The quiet label on a holiday's row (S6: the word for the day). Same
+   neutral pill as everywhere else, sized to sit above the three lines. */
+.rv-day-holiday { margin: 2px 0 4px; }
+.wk-holiday { align-self: flex-start; margin-bottom: 2px; font-size: 11px; padding: 2px 8px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .wk-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* The whole legend, in three dots: apricot cooks, celadon is already made,
    grey is nothing to do, and an outline is a question still open. */

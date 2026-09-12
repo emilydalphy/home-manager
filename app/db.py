@@ -409,6 +409,14 @@ _MIGRATIONS = [
     # inferred one.
     ("members", "phone", "TEXT NOT NULL DEFAULT ''"),
     ("members", "morning_text_on", "INTEGER NOT NULL DEFAULT 0"),
+    # Where the household is, for its holidays (app/tools/holidays.py).
+    # Both are ASSUMPTIONS for every existing household, the same way the
+    # timezone above is: the beta households are in Ontario. Canada is the
+    # only country with a holiday table so far; the province decides the
+    # February day and a few provincial ones. Changed in chat
+    # (set_holiday_region) — there is no screen for it.
+    ("households", "country", "TEXT NOT NULL DEFAULT 'CA'"),
+    ("households", "province", "TEXT NOT NULL DEFAULT 'ON'"),
     # Loop Board "Chores v1: every chore has a chosen owner" (Emily,
     # 2026-09-11). '' on every existing chore = "not decided yet";
     # _migrate_chore_modes below turns that into owned/shared/whoever from
