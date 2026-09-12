@@ -53,10 +53,12 @@ from .chores import (  # noqa: F401
     is_outsourced,
     list_chore_definitions,
     list_chores,
+    move_chore,
     schedule_chore_instance,
     set_chore_instance_status,
     set_chores_enabled,
     set_chores_profile,
+    skip_chore,
     update_chore,
 )
 # The household's own "cook these days now" pick (see cook_ahead.py). Not

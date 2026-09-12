@@ -350,6 +350,43 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-12 — Chores v1: add or change anything by saying so. Branch
+  `chores-chat-tools`, NOT merged at the time of writing.** Re-verified the
+  chat tools against the Chores screen for the whole user story (add,
+  change frequency/owner/mode, mark outsourced, mark done, ask what's
+  due — all already true on `main`) and closed the two real gaps: no chat
+  tool skipped a single occurrence, and none re-dated one. Added
+  `skip_chore(chore_name, when?)` and `move_chore(chore_name, to_date,
+  from_date?)` to `app/tools/chores.py`, both additive (no existing
+  function's body changed) and both resolving "which occurrence" via a
+  new shared helper, `_due_or_next_pending_id` — the latest pending
+  instance due on or before today, else the earliest one ahead, the same
+  representative `_collapse_outstanding` already uses for the Now card.
+  `skip_chore` is a thin door onto the existing `set_chore_instance_status`
+  (so chat and the Today card's own skip agree), and — resolving to "the
+  due one" — also sweeps any backlog behind it exactly like a tick does
+  (`also_cleared`), so "skip the vacuuming" doesn't leave two more slipped
+  weeks still reading as due; naming a specific date skips only that one,
+  no sweep. `move_chore` re-dates the row in place (keeps its id and
+  whoever already had it) rather than creating a new one the way
+  `schedule_chore_instance` always does, refuses rather than doubling a
+  chore up on a date it's already got, and only touches a `pending` row —
+  a `done` one is history. Both joined `CHORES_TOOLS` (the switch gate),
+  `TOOL_FUNCTIONS`, `TOOL_DEFINITIONS`, and `_CHORE_TOOLS` in
+  `app/main.py` (tagged `today`, so the shell refreshes and the card reads
+  "Skipped .../Moved ..." — two new `_VERB_PREFIXES` entries). System
+  prompt gained one bullet distinguishing "not this week" (skip_chore, not
+  a tick, not missed) from "push it to Saturday" (move_chore, same chore
+  and person, just re-dated) — everything else in the existing chores
+  guidance (no-guilt phrasing, owner/mode/outsourced wording) was already
+  correct and needed no change. `tests/test_chores_chat_tools.py` adds one
+  agent-dispatch-path test per chores tool (the original nine plus these
+  two — nine already passed on `main` through that path, just untested
+  that way before) plus unit tests for skip/move's rules including
+  household isolation; `tests/test_chores_switch.py`'s gate-completeness
+  test and its `_CHORES_TOOL_CALLS`/"declines while off" coverage grew
+  from nine tools to eleven. Suite 3042 (23 new; 12 fail on `main`).
+
 - **2026-09-12 — Chores is switched on per household, and the "Your
   chores" card is back on Now where the switch is on. Branch
   `chores-switch-and-now-card`, NOT merged at the time of writing.** Two
