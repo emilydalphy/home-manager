@@ -7463,6 +7463,7 @@ span.cook-week-name { cursor: default; }
 }
 .gro-row.done .gro-name::after {
   transform: scaleX(1);
+}
 
 /* ---------- Desktop/tablet shell: body-level sheet widths ----------
    Kept after every individual sheet's own rule (all of which sit earlier
