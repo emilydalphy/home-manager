@@ -20,42 +20,26 @@
 <script src="/static/error-reporter.js"></script>
 </head>
 <body>
-  <div id="shell-app">
+  <!-- The desktop/tablet shell — "the phone in the room" (Emily, 2026-09-11,
+       beta stance; a real two-column layout is a later card). At >=768px
+       #shell-app becomes one centred column, max-width 520px, on a spruce
+       field (see shell.css's "Desktop/tablet shell" rules) — the exact
+       phone chrome, just not edge-to-edge. This mark is the field's one
+       piece of furniture: faint, bottom-left, >=1024px only. It reuses the
+       exact glyph from static/login.html's .signin-plaque (the ovoid +
+       crease + stem/leaf) so the app's two spruce moments — the front door,
+       and the room the phone now sits in — share one mark. Below 768px this
+       renders nothing visible; there is no separate desktop rail any more
+       (removed 2026-09-11 along with its six entries, two emoji and "Share
+       meal plan" button — "What we know"/"Inventory" are reached through
+       Preferences exactly as on the phone, and sharing the week already
+       lives on Meals' "See the whole week" row, reachable from the "..."
+       sheet on every width). -->
+  <div id="shell-field-mark" aria-hidden="true">
+    <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg>
+  </div>
 
-    <nav id="shell-rail">
-      <div class="rail-top">
-        <div class="wordmark">Pomona</div>
-        <!-- Desktop home for the notifications bell. The bell is ONE element,
-             moved between this slot and #bell-home-dock by placeNotifBell()
-             in shell.js — see there for why it lives in chrome rather than
-             floating over the page. -->
-        <span id="bell-home-rail"></span>
-      </div>
-      <div id="rail-rows"></div>
-      <div class="rail-divider"></div>
-      <!-- These were the last two full page navigations out of the shell:
-           following one left the app entirely, tab bar and all, with only
-           the browser's back button to return. They open the same two
-           destinations as Kitchen entry sheets now, so the rail is a
-           shortcut into the app rather than a way out of it. -->
-      <button type="button" class="rail-row" data-rail-sheet="memory">
-        <span class="rail-chip">&#9998;</span>
-        <span>What we know</span>
-      </button>
-      <!-- The "In development" pill on this row is appended by shell.js
-           (see INVENTORY_IN_DEVELOPMENT there, near the other
-           [data-rail-sheet] wiring) rather than written here: a `.pill`'s
-           own `display: inline-flex` beats a plain [hidden] attribute, the
-           same lesson placeNotifBell already documents for the bell, so
-           the element is left out of the document entirely while the flag
-           is off instead of being hidden. -->
-      <button type="button" class="rail-row" data-rail-sheet="inventory">
-        <span class="rail-chip">&#127823;</span>
-        <span>Inventory</span>
-      </button>
-      <div class="rail-spacer"></div>
-      <button type="button" id="rail-share" class="rail-share">Share meal plan</button>
-    </nav>
+  <div id="shell-app">
 
     <div id="shell-main">
       <div id="shell-scroll"></div>
@@ -90,9 +74,10 @@
        underneath — which meant that once a panel scrolled, the bell painted
        on top of real content (at 390px it covered the last word of Today's
        dinner reasoning line). It now lives IN the app's non-scrolling
-       chrome instead: the ask-bar dock on mobile, the rail on desktop.
-       placeNotifBell() in shell.js moves this one element between the two
-       slots. Parked here in the markup; it is never displayed from here. -->
+       chrome instead — the active root's header slot (prefsGearHtml), same
+       at every width now that the old desktop rail is gone (2026-09-11).
+       placeNotifBell() in shell.js moves this one element into that slot.
+       Parked here in the markup; it is never displayed from here. -->
   <button type="button" id="notif-bell" class="notif-bell" hidden aria-label="Notifications">
     <span class="notif-bell-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
     <span class="notif-badge" id="notif-badge" hidden></span>

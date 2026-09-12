@@ -8,7 +8,10 @@
 html, body {
   height: 100%;
   margin: 0;
-  background: var(--cream);
+  /* Canonical token, not the --cream alias (DESIGN_SYSTEM.md §1) — touched
+     while wiring the >=768px spruce field below, which repaints this same
+     rule's background on wide viewports. */
+  background: var(--ground);
 }
 
 #shell-app {
@@ -20,9 +23,10 @@ html, body {
 }
 
 /* #shell-main wraps the scroll area + ask bar + tab bar. It's the flex
-   child that must fill #shell-app on every breakpoint — on mobile
-   #shell-app is a column with only this one child; on desktop #shell-app
-   becomes a row and this sits beside the rail (see media query below). */
+   child that fills #shell-app at every breakpoint — #shell-app is always a
+   column with only this one child now (there used to be a sibling rail at
+   >=1024px, turning #shell-app into a row; removed 2026-09-11 — see
+   "Desktop/tablet shell" below for what replaced it). */
 #shell-main {
   flex: 1;
   min-height: 0;
@@ -384,7 +388,6 @@ html, body {
 }
 .today-area-chores { display: flex; flex-direction: column; gap: 12px; }
 .today-area-rest { display: flex; flex-direction: column; gap: 12px; }
-.today-area-ask { display: none; } /* the Ask column only exists at >=1024px — see §7 */
 
 /* ---------- Next up (Today, 2026-09-08) ----------
    The compact form of .dinner-hero: about a third of the screen rather than
@@ -1177,10 +1180,9 @@ html, body {
      the one thing standing between "the grown composer stays inside the
      sheet" and "it doesn't." Already scrollable via overflow-y above, so
      letting it shrink toward 0 under real pressure only means less history
-     visible at once, not lost — same trade the desktop Ask column already
-     makes with its own .ask-messages (min-height:0 below). Verified: a
-     390x420 viewport with the composer grown to its cap and 20 seeded
-     messages no longer overflows past the sheet's own bottom edge. */
+     visible at once, not lost. Verified: a 390x420 viewport with the
+     composer grown to its cap and 20 seeded messages no longer overflows
+     past the sheet's own bottom edge. */
   min-height: 0;
 }
 .ask-msg { display: flex; flex-direction: column; gap: 8px; }
@@ -1435,182 +1437,80 @@ html, body {
 }
 .tab-btn.has-badge:not(.active) .tab-badge { display: block; }
 
-/* ---------- Desktop shell (breakpoint 1024px) ---------- */
-#shell-rail { display: none; }
+/* ---------- Desktop/tablet shell — "the phone in the room" ----------
+   Emily's decision, 2026-09-11 (beta stance; a real two-column layout is a
+   later card): replaces the old six-entry spruce rail, the permanently-open
+   desktop Ask column and the wide/multi-column per-tab treatments below.
+   At every width the app IS the phone build — same four tabs in the bottom
+   tab bar, same dock, chat as a sheet off a FAB — just centred as one
+   column on a spruce field once there's room to spare. Nothing here reads
+   the viewport as "desktop" any more; 768px and 1024px only change how much
+   spruce shows around the column, never what's inside it. */
+#shell-field-mark {
+  display: none;
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 0;
+  color: var(--apricot);
+  opacity: .22;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  /* The field. body's own background carries it (see the html,body rule at
+     the top of this file, now --ground there and --spruce here) so the
+     spruce shows in the gutter on every side of the column, including
+     above/below it on a short window. */
+  body { background: var(--spruce); }
+
+  /* The column. Same #shell-app the phone uses — max-width plus centering
+     is the entire "desktop layout": no flex-direction:row, no sidebar, no
+     rearranged grid. --ground (not the surrounding --spruce) so the column
+     itself still reads as the app's own ivory/dark canvas. */
+  #shell-app {
+    max-width: 520px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--ground);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  @media (min-width: 768px) {
+    /* Dark field: --spruce again (not a separate darker-than-ground token)
+       per Emily's call — its dark value (#22422F) is deliberately LIGHTER
+       than --ground's dark value (#101F19), so the column reads as a darker
+       shape in a lighter room without any extra treatment. The hairline is
+       for crispness at the seam: --spruce-edge is transparent in light mode
+       (costs nothing there) and #2C4B38 in dark, which measures roughly
+       1.2:1 against both field and column — a seam, not a color contrast,
+       which is the same job it does on the hero panel elsewhere in this
+       file. */
+    #shell-app { border: 1.5px solid var(--spruce-edge); box-sizing: border-box; }
+  }
+}
 
 @media (min-width: 1024px) {
-  #shell-app { flex-direction: row; }
+  /* Nearly-full-height at 768–1023px (no radius reads better there); once
+     there's real spruce above and below, the column gets all four corners
+     back — --radius-hero top AND bottom, unlike the hero panel's own
+     bottom-only use of that token. */
+  #shell-app { border-radius: var(--radius-hero); overflow: hidden; }
 
-  #tab-bar { display: none; }
-
-  #shell-rail {
-    display: flex;
-    flex-direction: column;
-    width: 230px;
-    flex-shrink: 0;
-    background: var(--plum);
-    height: 100%;
-    box-sizing: border-box;
-    padding: 22px 0 18px;
-  }
-  .rail-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 0 18px 18px 22px;
-  }
-  #shell-rail .wordmark {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 19px;
-    color: #fff;
-    padding: 0;
-  }
-  /* On spruce, a spruce bell would disappear — it lifts off the rail
-     instead, same treatment as the rail's own "Share meal plan" outline. */
-  #shell-rail .notif-bell {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, .12);
-    color: var(--apricot-light);
-  }
-  #shell-rail .notif-bell:hover { background: rgba(255, 255, 255, .2); }
-  #shell-rail .notif-bell .notif-badge { top: 5px; right: 5px; }
-  .rail-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 22px;
-    color: rgba(255,255,255,.78);
-    text-decoration: none;
-    font-family: var(--font-body);
-    font-size: 16px;
-    font-weight: 600;
-    border: none;
-    background: none;
-    width: 100%;
-    box-sizing: border-box;
-    cursor: pointer;
-    text-align: left;
-    position: relative;
-  }
-  .rail-row .rail-chip {
-    width: 18px;
-    height: 18px;
-    border-radius: 6px;
-    background: rgba(255,255,255,.25);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .rail-row .rail-chip svg { width: 12px; height: 12px; }
-  .rail-row.active {
-    background: rgba(224, 145, 92,.18);
-    color: #fff;
-    font-weight: 700;
-  }
-  .rail-row.active .rail-chip { background: var(--gold); color: var(--plum-ink); }
-  .rail-row .rail-badge {
-    display: none;
-    margin-left: auto;
-    background: var(--urgent);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-    border-radius: 10px;
-    padding: 1px 7px;
-  }
-  .rail-row.has-badge .rail-badge { display: inline-block; }
-  #shell-rail .rail-divider {
-    height: 1px;
-    background: rgba(255,255,255,.15);
-    margin: 10px 22px;
-  }
-  #shell-rail .rail-spacer { flex: 1; }
-  #shell-rail .rail-share {
-    margin: 0 22px;
-    padding: 12px 16px;
-    border: 1.5px solid rgba(255,255,255,.4);
-    border-radius: 12px;
-    background: none;
-    color: #fff;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    text-align: center;
-  }
-  #shell-rail .rail-share:hover { background: rgba(255,255,255,.08); }
-
-  /* §7: "The ask sheet only exists below 1024px. Above it, the ask column
-     replaces it" — so the docked bar that opens the sheet has nothing to
-     open up here; Today's Ask column (below) is the replacement. */
-  #ask-bar-dock { display: none; }
-
-  /* Desktop keeps the mobile design's shape rather than replacing it: the
-     hero still bleeds the full width of the content column, and the bands
-     above and below it still sit in a gutter — just a wider one. The
-     content column is capped and centred so the hero doesn't become a
-     letterbox on a 27" screen. */
-  .today-content { max-width: 1040px; margin: 0 auto; padding: 0 0 24px; width: 100%; }
-  .today-area-nudge { padding: 0 32px; }
-  .dinner-hero { border-radius: var(--radius-hero); margin: 0 32px; padding: 26px 28px 24px; }
-  .today-area-nextup { margin: 0 32px 14px; }
-  .nextup-hero { padding: 20px 28px 18px; }
-  /* Wide enough that the one action stops being a full-width slab — but it
-     shares its row with the tick, so it shrinks rather than left-aligning
-     the way the old hero's did. */
-  .dinner-hero.nextup-hero .hero-action { align-self: auto; flex: 0 0 auto; padding: 0 32px; }
-  .dinner-hero.nextup-hero .nextup-foot { justify-content: flex-start; }
-  .dinner-hero .hero-dish { font-size: 38px; }
-  .dinner-hero .hero-dish-sm { font-size: 30px; }
-  .dinner-hero .hero-dish-xs { font-size: 25px; }
-  /* Wide enough for the hero's action to stop being a full-width slab. */
-  .dinner-hero .hero-action { align-self: flex-start; padding: 0 28px; }
-  .dinner-hero .hero-quiet { align-self: flex-start; }
-
-  /* Step 6's three-column body, re-cut for the tiles: the two-up pair joins
-     needs-you in the left column (they are the same "things wanting doing"
-     material), chores keep the middle, Ask keeps the right. */
-  .today-body {
-    display: grid;
-    /* Two columns while SHOW_CHORES_ON_TODAY is false (2026-09-08): the
-       middle "chores" track sat empty at 245px and pushed "The rest of
-       today" narrow. When chores return, give them a track again. */
-    grid-template-columns: 1.5fr 1fr;
-    grid-template-areas:
-      "needsyou ask"
-      "rest ask";
-    gap: 24px;
-    align-items: start;
-    padding: 24px 32px 0;
-  }
-  .today-area-needsyou { grid-area: needsyou; }
-  .today-area-rest { grid-area: rest; }
-  .today-area-chores { grid-area: chores; }
-  .today-area-ask {
-    grid-area: ask;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-    max-height: calc(100vh - 160px);
-  }
-  .today-area-ask .ask-messages { flex: 1; min-height: 0; }
-
-  /* §7 put the controls at the right-hand end of a needs-you card on a wide
-     screen. The top ribbon it also called for is gone system-wide (a card is
-     a hairline now), so only the alignment survives. */
-  .ny-actions { grid-template-columns: auto auto; justify-content: flex-end; }
-  .ny-actions .btn-gold, .ny-actions .btn-sand { padding-left: 22px; padding-right: 22px; }
-
-  /* No tab bar (and, per above, no docked ask bar) at this breakpoint — a
-     plain safe margin off the bottom of the viewport is enough. */
-  .toast { bottom: 32px; }
+  /* The field's one piece of furniture (see shell.html's #shell-field-mark
+     for the glyph and why it's the login screen's mark reused). */
+  #shell-field-mark { display: block; }
 }
+
+/* The sheets that used to span edge-to-edge at any width (built for a phone
+   viewport, which was always true before) now sit inside the column's own
+   width instead of the full spruce field — same centering trick #ask-sheet
+   already used for its own, narrower cap just above. This rule is placed at
+   the very end of the file on purpose (see the comment there): several of
+   these ids carry their own narrower per-id media query elsewhere in the
+   file (e.g. #week-sheet's own >=400px width:400px), and a media query adds
+   NO specificity, so this has to out-order them, not out-specify them. */
 
 /* ---------- Week — the weekly menu (Step 4, README §5) ---------- */
 /* "Treat this as a printed restaurant menu, not a table." Mobile is a
@@ -1819,85 +1719,10 @@ html, body {
 /* Desktop grid: hidden below 1100px, where the day-card stack above shows instead. */
 .week-grid { display: none; }
 
-@media (min-width: 1100px) {
-  .week-content { max-width: 1100px; }
-  .week-days { display: none; }
-  .week-grid { display: block; }
-
-  .week-grid-sheet {
-    padding: 26px 30px 22px;
-    background: var(--surface);
-    border: 1.5px solid var(--hairline);
-    border-radius: var(--radius-card);
-  }
-  .week-grid-sheet .menu-rule-line,
-  .week-grid-sheet .menu-household,
-  .week-grid-sheet .menu-subtitle { display: none; }
-
-  /* ---------- InnMeals week grid: dinner dominant, soft spines, the
-     joined-tile motif on today's column (DESIGN_SYSTEM.md §4) ----------
-     Replaces the old hairline table (a plain re-colored `<table>` — the
-     "week desktop" ticket's whole complaint). Each row is its own flex
-     band rather than one CSS grid, because the joined column needs a
-     margin/radius that differs row to row (square top at the header,
-     square bottom at dinner, square throughout in between) — easier to
-     say per row than to fight out of a single grid's uniform gap. */
-  .wg2-grid { display: flex; flex-direction: column; }
-  /* Breakfast/lunch: floating soft tiles, quiet on purpose — the dinner row
-     below is the one this screen leads with. */
-  .wg2-tile {
-    flex: 1 1 0;
-    margin: 4px 3px;
-    border-radius: var(--radius-control);
-    background: var(--surface);
-    padding: 8px 12px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    min-height: 46px;
-  }
-  /* The per-meal "Why this?" tap-to-reveal — stored reasoning stays out of
-     the cell until asked for, same pattern as Cook's .cook-why. */
-  .wg2-why {
-    position: relative;
-    align-self: flex-start;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    border: none;
-    background: none;
-    padding: 0;
-    margin-top: 2px;
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: 11px;
-    color: var(--apricot-label);
-    cursor: pointer;
-  }
-  /* Visually a small text link (it has to be, inside a compact grid tile),
-     but nothing tappable is under 44x44px — same invisible-hitbox trick
-     .cook-attn-btn already uses. */
-  .wg2-why::after { content: ''; position: absolute; inset: -15px -8px; }
-  /* Dinner: the dominant row — it's the starred meal. Bigger tile, a spruce
-     accent border standing in for the hero it echoes. */
-  .wg2-dinner-tile {
-    flex: 1 1 0;
-    margin: 6px 3px 0;
-    border-radius: 16px;
-    background: var(--surface);
-    border-left: 3px solid var(--spruce);
-    padding: 14px 14px 12px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    min-height: 108px;
-  }
-  #week-header { display: none; }
-}
+/* The old 7x3 desktop grid (>=1100px) that used to live here is gone —
+   Emily's 2026-09-11 "phone in the room" decision: no separate wide layout,
+   the day-card stack above is the whole-week view at every width now, just
+   centred in the column (see "Desktop/tablet shell" earlier in this file). */
 
 /* ---------- This Week — mobile (design_handoff_home_manager option 6a) ----------
    Phone-only per that package's file table; the >=1100px desktop grid above
@@ -2361,9 +2186,11 @@ html, body {
 @media (min-width: 400px) {
   #week-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 400px; }
 }
-@media (min-width: 1100px) {
-  #week-sheet, #week-sheet-scrim { display: none !important; }
-}
+/* The old >=1100px "hide the whole-week sheet, the desktop grid replaces
+   it" rule is gone with that grid (2026-09-11) — there is no wide
+   replacement any more, so the sheet behaves exactly as it does on phone at
+   every width (just centred in the column — see the >=768px sheet-width
+   rule in "Desktop/tablet shell" above). */
 
 /* ===========================================================
    Notifications bell (design_handoff_home_manager Phase 5).
@@ -2381,14 +2208,14 @@ html, body {
    dinner reasoning line.
 
    So it is no longer positioned at all. It sits in the flow of the app's
-   non-scrolling chrome — the ask-bar dock on mobile, the rail on desktop
-   (placeNotifBell in shell.js moves the one element between the two). A
-   button that lives inside chrome cannot overlap the content next to it, at
-   any scroll position, which is the property the old magic offset could
-   never actually give.
+   non-scrolling chrome — the active root's header slot, at every width now
+   that the old desktop rail is gone (2026-09-11; placeNotifBell in shell.js
+   moves the one element into it). A button that lives inside chrome cannot
+   overlap the content next to it, at any scroll position, which is the
+   property the old magic offset could never actually give.
 
    Keeps the icon system it always had: the same line-SVG vocabulary as the
-   tab bar and rail, and the active-tab chip's spruce-fill/apricot-ink. */
+   tab bar, and the active-tab chip's spruce-fill/apricot-ink. */
 .notif-bell {
   position: relative;   /* for .notif-badge */
   flex: 0 0 auto;
@@ -3240,24 +3067,11 @@ html, body {
 .reset-actions button { flex: 1; min-height: 48px; border-radius: 13px; }
 .reset-actions button[disabled] { opacity: .5; cursor: not-allowed; }
 
-/* ---------- Desktop Meals (>=1100px) ----------
-   Deliberately at the end of the file. These override the base (phone) Meals
-   rules further up, and a media query adds NO specificity — so placed beside
-   the desktop grid block above, every one of them lost to the later
-   single-class rule it was meant to beat.
-
-   There is no separate desktop Meals screen any more, and that is the point.
-   It used to be a 7x3 paper grid that REPLACED the phone layout; then (as
-   the comment here used to say) the phone column plus that grid underneath
-   it. Emily's approved Week/Day/Meal design makes the seven-row card the
-   whole-week overview at every width, so the grid came out rather than
-   sitting under a card that says the same thing. What's left is the same
-   column, capped and centred, with a wider gutter. */
-@media (min-width: 1100px) {
-  .week-content { max-width: 1040px; }
-  #week-approve-row { padding-left: 32px; padding-right: 32px; }
-  #week-steps > #week-plan-row { padding-left: 32px; padding-right: 32px; }
-}
+/* The ">=1100px Desktop Meals" wide-gutter block that used to live here is
+   gone too (2026-09-11) — Emily's "phone in the room" decision keeps the
+   column at its phone width even inside the >=768px centred column, rather
+   than widening it again once there's room. Meals is the same column at
+   every width now. */
 
 /* ===========================================================================
    Grocery — the native tab (Pomona InnGrocery, Stage 2 slice 2)
@@ -4555,19 +4369,9 @@ html, body {
   margin: 0;
 }
 
-/* ---------- Wide screens ----------
-   The blueprint scopes the old bespoke 3-column desktop grocery OUT of this
-   pass, so this is the same single column, given room to breathe — not a
-   second layout to keep in step with the first. */
-@media (min-width: 1100px) {
-  .grocery-content { max-width: 720px; }
-  .gro-head { padding: 18px 28px 0; }
-  .crumb { margin: 12px 24px 0; }
-  .crumb.on-spruce { margin: 0; }
-  .gro-title { font-size: 36px; }
-  .gro-body { padding: 12px 28px 0; }
-  .gro-voice { margin: 12px 28px 0; }
-}
+/* The old ">=1100px wide screens" block (a wider gutter for Grocery) is gone
+   (2026-09-11) — the column keeps its phone width and padding all the way
+   up, per Emily's "phone in the room" decision. */
 
 /* The toast's optional action (see showToast's `action` arg) — today only the
    pre-shop check's "Undo". Apricot on the dark toast, same as every other
@@ -4660,10 +4464,10 @@ html, body {
    "In development" pill below, which is a label, not an alert — it does
    not change this row's own quiet treatment. */
 .kit-row[data-sheet="inventory"] .kit-row-icon { color: var(--ink-placeholder); }
-/* The "In development" pill shared by the Kitchen tile and the rail row
-   (INVENTORY_IN_DEVELOPMENT). .pill/.pill-neutral (theme.css) are the
-   design system's neutral status pill; this just adds the spacing to sit
-   inline next to a row's label text. */
+/* The "In development" pill on the Kitchen tile (INVENTORY_IN_DEVELOPMENT).
+   .pill/.pill-neutral (theme.css) are the design system's neutral status
+   pill; this just adds the spacing to sit inline next to a row's label
+   text. */
 .kit-row-pill { margin-left: 8px; vertical-align: 1px; white-space: nowrap; flex-shrink: 0; }
 
 /* The "Worth doing sometime" card (.kit-worth*) went with the old hub on
@@ -5211,8 +5015,9 @@ html, body {
   margin-top: 20px;
   /* 84px on the right: the chat icon (.chat-fab, 54px + its 16px inset)
      floats over this strip's right end, so the button and its link stop
-     short of it and the two read as one row. Desktop hides the icon and
-     resets this below. */
+     short of it and the two read as one row. The FAB is visible at every
+     width now (2026-09-11 — no more desktop Ask column for it to make way
+     for), so this padding is never reset. */
   padding: 8px 84px 14px 20px;
   display: flex;
   flex-direction: column;
@@ -5777,30 +5582,9 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 
-/* ---------- Wide ---------- */
-@media (min-width: 1100px) {
-  .kitchen-content { max-width: 720px; }
-  .kit-body { padding: 18px 28px 0; }
-
-  /* Cooking is one column given room to breathe: it lives inside
-     .kitchen-content, which is already 720px wide here, so it needs no
-     width rule of its own any more (it used to be scoped to the Meals
-     tab's Cook state, which no longer exists). */
-  .cook-hero { padding: 18px 28px; }
-  .cook-hero-headline { font-size: 38px; }
-  /* padding-block/-inline, never the shorthand: `padding: 16px 28px 0`
-     zeroed the bottom here, which switched the dock's foot off on desktop
-     entirely — --cook-dock-h was still 123px and the dock was still
-     sticky, so the whole point of it stopped applying at exactly the width
-     nobody had measured. The design system's own gutter rule warns about
-     this shorthand for the same reason. */
-  .cook-body {
-    padding-inline: 28px;
-    padding-top: 16px;
-    padding-bottom: calc(var(--cook-dock-h, 0px) + 8px);
-  }
-  .cook-voice, .cook-attention { margin-left: 28px; margin-right: 28px; }
-}
+/* The old ">=1100px Wide" block (720px Kitchen content, bigger padding and
+   headline size) is gone (2026-09-11) — Kitchen keeps its phone gutter and
+   type scale at every width now, same as Meals and Grocery above. */
 
 /* The prep pair and the entry tiles both collapse to one column on a narrow
    phone rather than squeezing two unreadable cards side by side. */
@@ -5925,8 +5709,8 @@ span.cook-week-name { cursor: default; }
 .prefs-gear:hover { background: var(--sand); }
 .prefs-gear svg { width: 17px; height: 17px; }
 .prefs-gear[hidden] { display: none; }
-/* The bell's phone-width home, beside the gear in every root's band
-   (prefsGearHtml). Empty on desktop, where the bell lives in the rail. */
+/* The bell's home, beside the gear in every root's band (prefsGearHtml) —
+   at every width now that the old desktop rail is gone (2026-09-11). */
 .bell-slot { display: contents; }
 /* Beside the gear the bell takes the gear's own dress — a 34px outline
    tile with the full 44px target via ::after (Rule 6) — rather than the
@@ -7223,21 +7007,9 @@ span.cook-week-name { cursor: default; }
 }
 .wk-more-rows .week-period-picker { padding: 4px 0 10px; }
 
-/* Desktop: the same column, capped and centred — the seven-row card IS the
-   whole-week overview at every width, which is why the old 7x3 desktop grid
-   came out rather than sitting under a card that says the same thing. */
-@media (min-width: 1100px) {
-  .wk-head { padding: 32px 32px 14px; }
-  .wk-title { font-size: 38px; }
-  .wk-week-card { margin: 0 32px; }
-  .wk-notes { padding: 12px 32px 0; }
-  .wk-decide { padding: 16px 32px 2px; }
-  .wk-foot { padding: 8px 32px 4px; }
-  .wk-slots, .wk-card { margin-left: 12px; margin-right: 12px; }
-  .wk-slots { padding: 0 32px; }
-  .wk-card { margin: 0 32px 12px; }
-  #week-steps > .wk-acts { padding: 4px 32px 0; }
-}
+/* The old ">=1100px Desktop" wide-gutter block (32px padding, a 38px title)
+   is gone (2026-09-11) — the seven-row card keeps its phone gutter and type
+   scale at every width, same as the rest of Meals above. */
 
 .wk-foot-solo { justify-content: flex-end; }
 
@@ -7276,11 +7048,6 @@ span.cook-week-name { cursor: default; }
   cursor: pointer;
 }
 .ask-tips-btn:hover { color: var(--ink-strong); border-color: var(--ink-placeholder); }
-
-/* Desktop: the examples sit above the Ask column's input, with the same
-   "?" on the end of the row. */
-.ask-examples-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ask-examples-row .ask-chips { flex: 1 1 auto; }
 
 /* ---------- the how-and-why card ---------- */
 /* The one-time sheet (coachCardHtml). Its title reuses .plan-nudge-title. */
@@ -7625,6 +7392,30 @@ span.cook-week-name { cursor: default; }
 }
 .gro-row.done .gro-name::after {
   transform: scaleX(1);
+
+/* ---------- Desktop/tablet shell: body-level sheet widths ----------
+   Kept after every individual sheet's own rule (all of which sit earlier
+   in this file) — a media query adds NO specificity, so several of these
+   ids' own narrower per-id rules elsewhere in the file (e.g. #week-sheet's
+   own >=400px width:400px, #ask-sheet's own >=480px width:440px) would
+   otherwise win on source order alone despite being declared for a
+   different, narrower reason. This has to out-order them, not out-specify
+   them. Every body-level bottom sheet that used to span edge-to-edge at
+   any width (built for a phone viewport, which was always true before)
+   now sits inside the column's own width instead of the full spruce field
+   — the same centering trick #ask-sheet already uses for its own, narrower
+   cap (#ask-sheet itself is intentionally excluded here: 440px already
+   reads fine inside a 520px column, and Julia's readability cap on it
+   predates and is independent of this ticket). */
+@media (min-width: 768px) {
+  #week-sheet, #kit-sheet, #meals-more-sheet, #gro-scan-sheet, #rli-sheet,
+  #coach-sheet, #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 520px;
+    max-width: 100%;
+  }
 }
 
 /* ---------- "Who's this?" (slice 1 of per-adult login, 2026-09-11) ----------
@@ -7735,9 +7526,8 @@ span.cook-week-name { cursor: default; }
 }
 .who-error[hidden] { display: none; }
 
-/* Desktop has no chat icon (the Ask column replaces the sheet, and the
-   ask-bar dock is hidden above), so the dock takes its clearance back.
-   Kept at the end of the file so it follows the base .dock rule. */
-@media (min-width: 1024px) {
-  .dock, .wk-decide.dock { padding-right: 20px; }
-}
+/* The old ">=1024px" rule that gave the dock its clearance back is gone
+   (2026-09-11): the chat FAB sits over the dock's right end at every width
+   now (there is no more Ask column for it to make way for — see
+   "Desktop/tablet shell" earlier in this file), so the dock keeps the same
+   right padding it always reserves for the FAB on phone. */

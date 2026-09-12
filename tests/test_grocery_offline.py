@@ -585,7 +585,7 @@ def test_sign_out_and_a_401_forget_the_copy():
 
 def test_claude_features_say_they_need_a_signal_rather_than_looking_broken():
     ask = SHELL_JS[SHELL_JS.index("async function sendAskMessage(message)"):]
-    ask = ask[:ask.index("function isDesktopAsk()")]
+    ask = ask[:ask.index("Composer auto-grow")]
     assert "addAskMessage('assistant', askNoSignal ? ASK_NO_SIGNAL_LINE : 'Error: ' + err.message);" in ask
     inv = (REPO / "static" / "inventory.html").read_text(encoding="utf-8")
     assert 'noSignal ? "I need a signal for this one" : "Couldn\'t read that photo"' in inv

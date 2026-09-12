@@ -115,6 +115,15 @@
     flex-direction: column;
     gap: 12px;
     padding: 0 26px 44px;
+    /* Sign-in-as-desktop-room (Emily, 2026-09-11): at 1440px the field and
+       button used to stretch edge to edge with only the 26px gutter to stop
+       them — a passphrase field wider than most monitors' reading measure.
+       The page itself stays full-bleed spruce (§1 of the desktop-room brief);
+       only the field/button/helper column gets a sane reading width. */
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    box-sizing: border-box;
   }
   .signin-bottom form {
     display: flex;
