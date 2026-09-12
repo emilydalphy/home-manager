@@ -104,6 +104,22 @@
   // untouched — flipping this back to true is the whole reversal.
   var SHOW_CHORES_ON_TODAY = false;
 
+  // Inventory is still being built (Loop Board: "Inventory: mark as still
+  // in development" — beta testers were putting effort into keeping it up
+  // to date, which nothing else in the app depends on). This one constant
+  // gates a small neutral "In development" pill at both entry points —
+  // the Kitchen tile in kitchenTilesHtml() below and the desktop rail row
+  // in shell.html (wired further down, beside the other [data-rail-sheet]
+  // setup) — plus the matching note at the top of the inventory sheet
+  // itself, gated by the same-named constant declared in
+  // static/inventory.html (a separate document loaded in an iframe, so it
+  // can't share this file's variable — see the comment there). Receipt,
+  // fridge and pantry scans, and everything else about inventory, are
+  // completely untouched: this only ever adds a label, never hides
+  // anything. Flipping both constants back to false is the whole
+  // reversal.
+  var INVENTORY_IN_DEVELOPMENT = true;
+
   // The notifications bell and its feed left the app with the Today
   // redesign (Emily, 2026-09-08). Today is a timeline of moves now, and
   // everything time-bound the feed used to carry — a dinner to cook, a
@@ -5160,7 +5176,10 @@
     return '<div class="kit-rows">' +
       '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Inventory</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
+        (INVENTORY_IN_DEVELOPMENT ?
+          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
+        '</span>' +
         '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
@@ -5614,6 +5633,23 @@
       openKitchenSheet(btn.getAttribute('data-rail-sheet'));
     });
   });
+
+  // INVENTORY_IN_DEVELOPMENT (declared above, beside SHOW_CHORES_ON_TODAY):
+  // the rail's Inventory row is fixed markup in shell.html, not rebuilt on
+  // every render the way kitchenTilesHtml() is, so its pill is appended
+  // here rather than chosen inline. Left out of the document entirely
+  // while the flag is off, the same "removed, not hidden" way
+  // SHOW_NOTIF_BELL's bell is — see shell.html's comment on this row for
+  // why [hidden] alone would not have worked.
+  if (INVENTORY_IN_DEVELOPMENT) {
+    var railInvRow = document.querySelector('.rail-row[data-rail-sheet="inventory"]');
+    if (railInvRow) {
+      var railInvPill = document.createElement('span');
+      railInvPill.className = 'pill pill-neutral kit-row-pill';
+      railInvPill.textContent = 'In development';
+      railInvRow.appendChild(railInvPill);
+    }
+  }
 
   // ---------- Week (Step 4, rebuilt for design_handoff_home_manager
   // option 6a) ----------
