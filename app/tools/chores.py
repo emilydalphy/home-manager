@@ -7,6 +7,9 @@ import json
 from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id, require_household_row, current_member
+# Module, not name (see CLAUDE.md on the tools package): only
+# get_chores_pending's week reads it, at call time.
+from . import weekly_plan as _weekly_plan
 
 
 _FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quarterly": 91, "once": None}
@@ -1674,3 +1677,187 @@ def move_chore(chore_name: str, to_date: str, from_date: str | None = None) -> d
     conn.close()
     described["instance_id"] = described.pop("id")
     return {**described, "moved": True}
+
+# ---------------------------------------------------------------------------
+# Plan | Chores — the whole list, grouped
+# ---------------------------------------------------------------------------
+# Loop Board "Chores v1: Plan gets a Meals | Chores toggle showing what's
+# due" (Emily, 2026-09-11). The Now card answers "what's due today?";
+# this answers "what's on the list?" — every chore the house has, once
+# each, under Today / This week / Coming up, so neither adult has to hold
+# the list in their head or be the one who brings it up. Emily chose a
+# grouped LIST over a week grid: "today, this week, and then the other
+# ones would likely become monthly, bi-monthly, or semi-annually."
+#
+# Written beside get_chores_due_today rather than folded into it, so the
+# Now card's payload doesn't change shape under a screen that is already
+# built against it; the two share _INSTANCE_SELECT, _instance_dicts and
+# _collapse_outstanding, which is what keeps "who has it", the outsourced
+# tag and the no-guilt-pile collapse identical on the two surfaces.
+
+# Where a row sits on the list. 'today' is due now (or done today);
+# 'week' is the rest of this household's week; 'later' is everything
+# beyond it, which the shell breaks down by the chore's own rhythm
+# (its `frequency`) rather than by date — a quarterly chore three weeks
+# out is "every few months", not "October".
+CHORE_GROUPS = ("today", "week", "later")
+
+
+def _chores_week(today: date) -> tuple[date, date]:
+    """
+    The seven days this household calls "this week", as (first, last).
+
+    Read from the ONE source of "which week" (suggest_planning_period,
+    Emily 2026-09-11) so the heading on Plan | Chores names the same days
+    the Plan band and the Now nudge do — with plan_ahead off, because a
+    chores list is about the week being lived, and the Friday plan-ahead
+    shift that makes an unplanned meal week "next week" has no meaning
+    for the bins. A household planning meals as it goes (a three-day
+    horizon) still lives in weeks; for it, and for any answer that isn't
+    seven days starting on or before today, the calendar week from Monday
+    is the fallback.
+    """
+    try:
+        period = _weekly_plan.suggest_planning_period(from_date=today.isoformat(), plan_ahead=False)
+        start = date.fromisoformat(period["start_date"])
+        if period.get("day_count") == 7 and start <= today:
+            return start, start + timedelta(days=6)
+    except Exception:
+        pass
+    start = today - timedelta(days=today.weekday())
+    return start, start + timedelta(days=6)
+
+
+def _due_order_key(item: dict) -> tuple:
+    """
+    How rows order inside a group: the most due first.
+
+    The ONE place this rule lives (the due-by-how-long card owns it, and
+    it is expected to change). For now: anything still to do before
+    anything done today, then by the day it was asked for — the longest
+    waiting at the top, the soonest coming up at the top of a future
+    group — and the row id last so two chores due the same day keep a
+    stable order between reads. No number derived from this is ever
+    printed; it decides order and nothing else.
+    """
+    return (1 if item["status"] == "done" else 0, item["due_date"], item["id"])
+
+
+def _chore_group(item: dict, today: date, week_end: date) -> str:
+    """Which of CHORE_GROUPS a row belongs under. Done today sits with today."""
+    if item["status"] == "done" or item["due_date"] <= today.isoformat():
+        return "today"
+    if item["due_date"] <= week_end.isoformat():
+        return "week"
+    return "later"
+
+
+def _top_up_unscheduled(conn, today: date) -> int:
+    """
+    Write the NEXT occurrence for any active recurring chore that has no
+    pending row at all, so the list never silently drops a chore.
+
+    The schedule is only ever filled a fortnight ahead (generate_chore_
+    schedule's default) and refilled one interval past a tick, so a chore
+    can legitimately have nothing pending: added in chat without the
+    schedule being generated after, reactivated, or its one due row
+    'skipped' from the card. On the Now card that is invisible and
+    harmless — nothing was due today anyway. On the one screen whose job
+    is the whole list, a chore with no row is a chore that has quietly
+    fallen off the list. One row each, dated by the same _next_due_date
+    every other path uses, so nothing here can start a pile; and only
+    where there is NO pending row, so a household that has a schedule is
+    left exactly as it was. A write on a read, like retire_expired_drafts
+    on the Plan tab, and for the same reason: the alternative is a screen
+    that is wrong until somebody happens to run a tool.
+    """
+    written = 0
+    chores = conn.execute(
+        "SELECT * FROM chores WHERE household_id = ? AND active = 1 AND frequency != 'once' "
+        "AND id NOT IN (SELECT chore_id FROM chore_instances WHERE household_id = ? AND status = 'pending')",
+        (household_id(), household_id()),
+    ).fetchall()
+    for chore in chores:
+        interval = _FREQUENCY_DAYS.get(chore["frequency"], 7)
+        if not interval:
+            continue
+        next_due = _next_due_date(conn, chore["id"], interval, today, outsourced=is_outsourced(chore))
+        if next_due is None:
+            continue
+        written += len(_fill_schedule(conn, chore, today, next_due))
+    return written
+
+
+def get_chores_pending() -> dict:
+    """
+    Every chore on the household's list, ONCE each, grouped for Plan |
+    Chores: `today` (due now, or done today), `week` (the rest of this
+    household's week) and `later` (beyond it), with the chore's
+    `frequency` on each row so the shell can head the later ones by
+    rhythm. Also `week_start` / `week_end` / `week_label`, so the screen
+    names the same days it groups by.
+
+    One row per chore, not one per instance: a daily chore has a
+    fortnight of rows in the table and is one line on a list. The row
+    that stands for a chore is the one done TODAY if there is one (so a
+    tick stays visible, ticked, for the rest of the day — and an untick
+    has a row to land on), otherwise its earliest pending occurrence,
+    which for anything that slipped is _collapse_outstanding's single due
+    row. A chore done today and due again tomorrow shows once, done; the
+    tomorrow row takes over at the next day's read.
+
+    Rows carry exactly what get_chores_due_today's do (who_label,
+    outsourced, completable, stands_for) — the shell must not recompute
+    any of it. Inactive chores are left out even where a pending row
+    survives deactivation (update_chore leaves them; the Now card shows
+    them, which is a pre-existing wrinkle and not this list's to fix by
+    showing a chore the household said it was done with).
+
+    Nothing here says overdue, missed or how late: a slipped chore is
+    due, in the today group, once.
+    """
+    conn = get_conn()
+    try:
+        today = date.today()
+        today_iso = today.isoformat()
+        if _top_up_unscheduled(conn, today):
+            conn.commit()
+        week_start, week_end = _chores_week(today)
+        rows = conn.execute(
+            _INSTANCE_SELECT + """
+            WHERE ci.household_id = ?
+              AND c.active = 1
+              AND (ci.status = 'pending'
+                   OR (ci.status = 'done'
+                       AND COALESCE(NULLIF(ci.done_on, ''), date(ci.completed_at), ci.due_date) = ?))
+            ORDER BY ci.due_date ASC, ci.id ASC
+            """,
+            (household_id(), today_iso),
+        ).fetchall()
+        frequencies = {
+            r["id"]: r["frequency"]
+            for r in conn.execute("SELECT id, frequency FROM chores WHERE household_id = ?", (household_id(),))
+        }
+        items = _collapse_outstanding(_instance_dicts(conn, rows), today)
+    finally:
+        conn.close()
+
+    # One row per chore: done today wins, else the earliest pending (the
+    # rows arrive in due-date order, so the first pending seen is it).
+    chosen: dict[int, dict] = {}
+    for item in items:
+        held = chosen.get(item["chore_id"])
+        if held is None or (item["status"] == "done" and held["status"] != "done"):
+            chosen[item["chore_id"]] = item
+    out = []
+    for item in chosen.values():
+        item["frequency"] = frequencies.get(item["chore_id"], "weekly")
+        item["group"] = _chore_group(item, today, week_end)
+        out.append(item)
+    out.sort(key=lambda item: (CHORE_GROUPS.index(item["group"]),) + _due_order_key(item))
+    return {
+        "chores": out,
+        "week_start": week_start.isoformat(),
+        "week_end": week_end.isoformat(),
+        "week_label": _weekly_plan._format_period_range(week_start.isoformat(), 7),
+    }

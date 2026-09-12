@@ -598,7 +598,11 @@ function makePanel() {
   };
   return panel;
 }
-""" + _function("renderChores") + _function("toggleChore")
+// Plan | Chores shares the row builder (choreRowHtml) and is told about a
+// tick here (loadPlanChores) — stubbed, since this file is about Now.
+var panels = {};
+function loadPlanChores() {}
+""" + _function("choreRowHtml") + _function("renderChores") + _function("toggleChore")
 
 
 _ROWS = [

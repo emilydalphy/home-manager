@@ -664,7 +664,11 @@
     bag:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
     pot:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
+    // Plan | Chores' empty moments: the house itself, since both of its
+    // lines are about the place rather than a meal or a list.
+    home:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 4.5l8 7"/><path d="M6.5 10v9.5h11V10"/><path d="M10 19.5v-5h4v5"/></svg>'
   };
 
   function emptyMomentHtml(icon, sentence, detail, extraClass) {
@@ -1859,56 +1863,69 @@
       return;
     }
 
-    listEl.innerHTML = chores.map(function (c) {
-      var isDone = c.status === 'done';
-      // Whose it is (Loop Board "Chores v1: every chore has a chosen
-      // owner"): the owner's first name, whose turn it is on a shared
-      // chore, or "either of you". The server composes the label so this
-      // row and the Plan | Chores rows to come print the same thing.
-      var who = c.who_label ? '<span class="chore-who">' + escapeHtml(c.who_label) + '</span>' : '';
-      // Somebody outside the house does this one. It keeps its place on
-      // the day — we know Thursday is cleaner day — and loses the tick,
-      // because a tick here means a person in this house did a thing.
-      // `completable` is the server's word for that, so the row doesn't
-      // have to know what the modes mean. The empty spacer keeps the
-      // names lined up with the rows that do have a tick (the same
-      // .tick-empty the rest-of-today list uses for a move with no tick).
-      if (c.outsourced || c.completable === false) {
-        return (
-          '<div class="chore-row is-outsourced" data-id="' + c.id + '">' +
-            '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
-            '<span class="pill pill-neutral chore-tag">Not us</span>' +
-            who +
-            '<span class="tick tick-empty" aria-hidden="true"></span>' +
-          '</div>'
-        );
-      }
-      // The tick is the system's own (.tick/.tick-box, shell.css): a 44px
-      // button around a 20px ring, celadon when done — the same control
-      // as the rest-of-today rows above this card, so the two lists read
-      // as one screen. It replaced a 26px square with the handler on the
-      // square itself, which was under Rule 6's 44px and matched nothing
-      // else on Now once the moves redesign landed. Ivory-on-celadon is
-      // the one thing the palette forbids outright, and .tick's ink is
-      // --on-accent-ink, so the tick inherits a dark stroke.
-      return (
-        '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' +
-          '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
-          who +
-          '<button type="button" class="tick chore-tick' + (isDone ? ' is-done' : '') + '" ' +
-            'aria-pressed="' + (isDone ? 'true' : 'false') + '" ' +
-            'aria-label="' + (isDone ? 'Put it back on the list' : 'Tick it off') + '">' +
-            '<span class="tick-box">' + TICK_ICON + '</span>' +
-          '</button>' +
-        '</div>'
-      );
-    }).join('');
+    listEl.innerHTML = chores.map(function (c) { return choreRowHtml(c); }).join('');
 
     listEl.querySelectorAll('.chore-row:not(.is-outsourced)').forEach(function (row) {
       row.querySelector('.chore-tick').addEventListener('click', function () {
         toggleChore(panel, row, chores);
       });
     });
+  }
+
+  // One chore as a row — the ONE builder behind Now's "Your chores" card
+  // and Plan | Chores (Loop Board "Chores v1: Plan gets a Meals | Chores
+  // toggle", 2026-09-12), so a chore reads the same on the two screens:
+  // its name, whose it is, the outsourced tag, the tick. `when` is the
+  // day word Plan's list adds after the name ("Tuesday", "Oct 2") for a
+  // row that isn't today's; Now never passes one.
+  //
+  // Whose it is (Loop Board "Chores v1: every chore has a chosen owner"):
+  // the owner's first name, whose turn it is on a shared chore, or
+  // "either of you". The server composes the label (who_label) so the two
+  // screens print the same thing and neither recomputes it.
+  //
+  // Somebody outside the house does an OUTSOURCED one. It keeps its place
+  // on the day — we know Thursday is cleaner day — and loses the tick,
+  // because a tick here means a person in this house did a thing.
+  // `completable` is the server's word for that, so the row doesn't have
+  // to know what the modes mean. The empty spacer keeps the names lined
+  // up with the rows that do have a tick (the same .tick-empty the
+  // rest-of-today list uses for a move with no tick).
+  //
+  // The tick is the system's own (.tick/.tick-box, shell.css): a 44px
+  // button around a 20px ring, celadon when done — the same control as
+  // the rest-of-today rows, so the lists read as one app. It replaced a
+  // 26px square with the handler on the square itself, which was under
+  // Rule 6's 44px. Ivory-on-celadon is the one thing the palette forbids
+  // outright, and .tick's ink is --on-accent-ink, so the tick inherits a
+  // dark stroke.
+  //
+  // .chore-main wraps the words so a list can stack them (Plan's rows put
+  // the owner on a quiet second line, .pc-list in shell.css) while Now
+  // keeps them on one — same markup, one CSS rule apart.
+  function choreRowHtml(c, when) {
+    var isDone = c.status === 'done';
+    var outsourced = !!(c.outsourced || c.completable === false);
+    var who = c.who_label
+      ? '<span class="chore-who">' + escapeHtml(c.who_label + (when ? ' · ' + when : '')) + '</span>'
+      : (when ? '<span class="chore-who">' + escapeHtml(when) + '</span>' : '');
+    var main = '<span class="chore-main">' +
+      '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
+      (outsourced ? '<span class="pill pill-neutral chore-tag">Not us</span>' : '') +
+      who +
+    '</span>';
+    if (outsourced) {
+      return '<div class="chore-row is-outsourced" data-id="' + c.id + '">' + main +
+        '<span class="tick tick-empty" aria-hidden="true"></span>' +
+      '</div>';
+    }
+    return '<div class="chore-row' + (isDone ? ' done' : '') + '" data-id="' + c.id + '">' + main +
+      '<button type="button" class="tick chore-tick' + (isDone ? ' is-done' : '') + '" ' +
+        'aria-pressed="' + (isDone ? 'true' : 'false') + '" ' +
+        'aria-label="' + (isDone ? 'Put it back on the list' : 'Tick it off') + '">' +
+        '<span class="tick-box">' + TICK_ICON + '</span>' +
+      '</button>' +
+    '</div>';
   }
 
   async function toggleChore(panel, row, chores) {
@@ -1929,6 +1946,10 @@
         body: JSON.stringify({ status: nextStatus })
       });
       if (!res.ok) throw new Error('status update failed');
+      // The same chore is a row on Plan | Chores, which is built once per
+      // page load (CLAUDE.md's stale-panel gotcha): a tick here has to
+      // show there without a reload. A no-op until Plan has been opened.
+      if (panels.week && panels.week.dataset.built) loadPlanChores(panels.week);
     } catch (err) {
       console.warn('Chore toggle failed, rolling back:', err);
       chore.status = prevStatus;
@@ -7574,9 +7595,13 @@
   // routes — a refresh starts at 'week' by design (see the step machine
   // below), because the week is the answer and a deep step is where you
   // happened to be, not where you asked to land.
+  // chores / choresTrouble: the Chores state's own read (/api/chores/
+  // pending, see loadPlanChores) and whether the last one failed. Cached
+  // here beside the week so flipping Meals ↔ Chores never refetches to
+  // draw, only to fold in changes quietly (§6 refresh policy).
   var weekState = {
     selectedIndex: null, days: [], data: null, pendingDayFocus: null,
-    step: 'week', mealSlot: 'dinner'
+    step: 'week', mealSlot: 'dinner', chores: null, choresTrouble: false
   };
 
   async function buildWeekPanel(panel) {
@@ -7594,6 +7619,14 @@
         // control followed — a band belongs to the root of a tab, not to
         // a step inside it.
         '<div id="week-band-slot" hidden></div>' +
+        // Meals | Chores (Loop Board "Chores v1: Plan gets a Meals | Chores
+        // toggle showing what's due", 2026-09-12): the one segmented
+        // control on this tab, under the band and only on the root —
+        // Chores is a STATE of Plan (weekState.step 'chores'), not a page.
+        // Rendered by renderMealsStep, and only for a household whose
+        // Chores switch is on (choresEnabled): off, this slot stays empty
+        // and Plan is exactly what it was.
+        '<div id="week-mode-slot" hidden></div>' +
         '<div id="week-plan-view">' +
         // The one band that belongs to the WEEK rather than to any day of
         // it, above the card and hidden on the Day and Meal steps (see
@@ -9363,6 +9396,256 @@
     '</div>';
   }
 
+  // ==========================================================================
+  // Plan | Chores — a STATE of the Plan tab
+  // ==========================================================================
+  // Loop Board "Chores v1: Plan gets a Meals | Chores toggle showing what's
+  // due" (Emily, 2026-09-11 — decided as a grouped LIST, not a week grid:
+  // "today, this week, and then the other ones would likely become
+  // monthly, bi-monthly, or semi-annually"). As one of the adults running
+  // the house, open Plan, flip to Chores, and see what needs doing, who
+  // has it, and what's already done — so neither of you has to hold the
+  // list in your head or be the one who brings it up.
+  //
+  // It is a value of weekState.step ('chores'), a sibling of 'week' at the
+  // root rather than a step under it: it keeps the band and the gear, has
+  // no head and no crumb of its own, and inherits the back gesture and
+  // history from goMealsStep like every other step (§6: a state, never a
+  // page). Meals → Chores pushes one entry so Back returns to Meals;
+  // Chores → Meals replaces it, so the two never stack. The control only
+  // renders with the household's Chores switch on (choresEnabled); off,
+  // nothing about Plan | Meals changes.
+  //
+  // The list comes from /api/chores/pending (tools.get_chores_pending):
+  // one row per chore, already grouped and ordered by the server, with
+  // who_label / outsourced / completable / stands_for composed there — the
+  // rows here print them and never recompute them. A slipped chore is one
+  // row under Today (the no-guilt-pile collapse); nothing here says
+  // overdue, missed, or how late.
+
+  // Group headings, in the household's words. 'later' — the server's
+  // "beyond this week" — is broken down by each chore's rhythm rather
+  // than by date, per Emily: a quarterly chore three weeks out is "every
+  // few months", not "October". The rhythms are the frequencies
+  // app/tools/chores.py supports (_FREQUENCY_DAYS); the words are here so
+  // renaming one is a one-line change.
+  var CHORE_GROUP_LABELS = { today: 'Today', week: 'This week', later: 'Coming up' };
+  var CHORE_GROUP_ORDER = ['today', 'week', 'later'];
+  var CHORE_RHYTHM_LABELS = {
+    daily: 'Every day',
+    weekly: 'Every week',
+    biweekly: 'Every two weeks',
+    monthly: 'Every month',
+    quarterly: 'Every few months',
+    once: 'Just once'
+  };
+  var CHORE_RHYTHM_ORDER = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'once'];
+
+  // The band on the Chores state: the same frame as Meals — the week's
+  // dates and "This week" — minus the meal plan's chip and line, which
+  // are about the draft, not the bins. The dates come from the list's own
+  // read (week_label, the same suggest_planning_period the Meals band
+  // uses), so the "This week" heading below and the band name one week.
+  function planChoresBandParts(mealsParts) {
+    var chores = weekState.chores;
+    return {
+      id: mealsParts.id,
+      eyebrow: (chores && chores.week_label) || mealsParts.eyebrow,
+      title: 'This week',
+      sub: '',
+      badge: ''
+    };
+  }
+
+  // Meals | Chores — the .wk-seg control the review step's "What we're
+  // eating | Which days" already uses, two words, no icons (§5: one
+  // control per screen; this is the tab's one). Rebuilt only when the
+  // selected half changes so a re-render doesn't rewire it for nothing.
+  function planModeSegHtml(mode) {
+    var chores = mode === 'chores';
+    return '<div class="wk-seg plan-mode-seg" role="tablist" aria-label="Meals or chores">' +
+      '<button type="button" class="wk-seg-btn' + (chores ? '' : ' is-on') + '"' +
+        ' role="tab" aria-selected="' + (chores ? 'false' : 'true') + '"' +
+        ' data-plan-mode="meals">Meals</button>' +
+      '<button type="button" class="wk-seg-btn' + (chores ? ' is-on' : '') + '"' +
+        ' role="tab" aria-selected="' + (chores ? 'true' : 'false') + '"' +
+        ' data-plan-mode="chores">Chores</button>' +
+    '</div>';
+  }
+
+  function renderPlanModeSeg(panel, show, mode) {
+    var slot = panel.querySelector('#week-mode-slot');
+    if (!slot) return;
+    slot.hidden = !show;
+    if (!show) {
+      slot.innerHTML = '';
+      slot.dataset.mode = '';
+      return;
+    }
+    if (slot.dataset.mode === mode) return;
+    slot.innerHTML = planModeSegHtml(mode);
+    slot.dataset.mode = mode;
+    slot.querySelectorAll('[data-plan-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var to = btn.getAttribute('data-plan-mode') === 'chores' ? 'chores' : 'week';
+        if (to === weekState.step) return;
+        // Meals → Chores pushes (Back returns to Meals); Chores → Meals
+        // replaces, so flipping back and forth never builds a stack of
+        // history entries on one screen.
+        goMealsStep(to, { replace: to === 'week' });
+      });
+    });
+  }
+
+  // The day word on a row that isn't today's: the weekday inside this
+  // week ("Tuesday"), the date beyond it ("Oct 2"). Today's rows carry
+  // none — the heading says it.
+  function planChoreWhen(c) {
+    if (c.group === 'today' || !c.due_date) return '';
+    if (c.group === 'week') return dayName(c.due_date, { weekday: 'long' });
+    return dayName(c.due_date, { month: 'short', day: 'numeric' });
+  }
+
+  function planChoresStepHtml() {
+    var data = weekState.chores;
+    if (weekState.choresTrouble && !data) {
+      return '<div class="menu-loading">Couldn’t check just now — pull to refresh.</div>';
+    }
+    if (!data) return '<div class="menu-loading">Loading your chores&hellip;</div>';
+    var chores = data.chores || [];
+    if (!chores.length) {
+      // Never set up: the invitation, and the tab's one apricot in the
+      // dock (Rule 5 — this is the only case the Chores state has a dock).
+      if (data.chores_set_up === false) {
+        return emptyMomentHtml('home', 'Chores aren’t set up yet.',
+            'Want me to suggest a list from what I already know about your place?', 'pc-empty') +
+          '<div class="dock pc-dock">' +
+            '<button type="button" class="dock-primary" id="pc-setup">Set up chores</button>' +
+          '</div>';
+      }
+      // Set up, nothing on the list. No dock: there is nothing to do.
+      return emptyMomentHtml('home', 'Nothing’s due.', 'The house is fine.', 'pc-empty');
+    }
+    var byGroup = {};
+    chores.forEach(function (c) {
+      var g = CHORE_GROUP_LABELS[c.group] ? c.group : 'later';
+      (byGroup[g] = byGroup[g] || []).push(c);
+    });
+    return '<div class="pc-body">' + CHORE_GROUP_ORDER.map(function (g) {
+      var rows = byGroup[g];
+      if (!rows || !rows.length) return '';
+      return '<section class="rv-group pc-group" data-pc-group="' + g + '">' +
+        '<div class="rv-group-label">' + escapeHtml(CHORE_GROUP_LABELS[g]) + '</div>' +
+        '<div class="shell-card rv-group-card pc-list">' +
+          (g === 'later' ? planChoresByRhythmHtml(rows) : rows.map(function (c) {
+            return choreRowHtml(c, planChoreWhen(c));
+          }).join('')) +
+        '</div>' +
+      '</section>';
+    }).join('') + '</div>';
+  }
+
+  // Coming up, by rhythm: a quiet subhead per frequency, shortest rhythm
+  // first, the server's order (soonest first) inside each.
+  function planChoresByRhythmHtml(rows) {
+    var byRhythm = {};
+    rows.forEach(function (c) {
+      var r = CHORE_RHYTHM_LABELS[c.frequency] ? c.frequency : 'once';
+      (byRhythm[r] = byRhythm[r] || []).push(c);
+    });
+    return CHORE_RHYTHM_ORDER.map(function (r) {
+      var group = byRhythm[r];
+      if (!group || !group.length) return '';
+      return '<div class="pc-rhythm" data-pc-rhythm="' + r + '">' +
+        '<div class="pc-rhythm-label">' + escapeHtml(CHORE_RHYTHM_LABELS[r]) + '</div>' +
+        group.map(function (c) { return choreRowHtml(c, planChoreWhen(c)); }).join('') +
+      '</div>';
+    }).join('');
+  }
+
+  function wirePlanChores(panel, steps) {
+    var setup = steps.querySelector('#pc-setup');
+    if (setup) {
+      // A full page, like /meal-setup — see app/main.py's /chores-setup.
+      setup.addEventListener('click', function () { window.location.href = '/chores-setup'; });
+    }
+    steps.querySelectorAll('.chore-row:not(.is-outsourced)').forEach(function (row) {
+      var tick = row.querySelector('.chore-tick');
+      if (!tick) return;
+      tick.addEventListener('click', function () {
+        togglePlanChore(panel, Number(row.dataset.id));
+      });
+    });
+  }
+
+  // The read behind the Chores state. Safe to call from anywhere and at
+  // any time: it updates the cache, and only redraws when the household
+  // is actually looking at Chores — a chat turn that changes chores
+  // (refreshStaleTabsFromActions) or a tick on Now lands here whether Plan
+  // is on Meals, a day, or a meal.
+  var planChoresFetching = null;
+  async function loadPlanChores(panel) {
+    if (!choresEnabled()) return;
+    if (planChoresFetching) return planChoresFetching;
+    planChoresFetching = (async function () {
+      try {
+        var res = await fetch('/api/chores/pending');
+        if (!res.ok) throw new Error('chores list lookup failed');
+        var data = await res.json();
+        // The server's own word on the switch (it can be flipped under an
+        // open page): the control goes, and the list with it.
+        if (data.enabled === false) {
+          shellWho.chores_enabled = false;
+          weekState.chores = null;
+          if (weekState.step === 'chores') goMealsStep('week', { replace: true });
+          else renderMealsStep(panel);
+          return;
+        }
+        weekState.chores = data;
+        weekState.choresTrouble = false;
+      } catch (err) {
+        console.warn('Chores list lookup failed:', err);
+        weekState.choresTrouble = true;
+      } finally {
+        planChoresFetching = null;
+      }
+      if (weekState.step === 'chores') renderMealsStep(panel);
+    })();
+    return planChoresFetching;
+  }
+
+  // A tick on Plan | Chores: done in place, before the server answers
+  // (§6: the common case never waits), through the same
+  // /api/chores/{id}/status the Now card uses. A failed save puts the row
+  // back and says so. The row stays where it is, ticked, for the rest of
+  // the day — the server keeps a chore done today in the today group
+  // (get_chores_pending), so the next read agrees with the tap.
+  async function togglePlanChore(panel, id) {
+    var data = weekState.chores;
+    var chore = data && (data.chores || []).filter(function (c) { return c.id === id; })[0];
+    if (!chore || chore.outsourced || chore.completable === false) return;
+    var prevStatus = chore.status;
+    var nextStatus = prevStatus === 'done' ? 'pending' : 'done';
+    chore.status = nextStatus;
+    if (weekState.step === 'chores') renderMealsStep(panel);
+    try {
+      var res = await fetch('/api/chores/' + id + '/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      if (!res.ok) throw new Error('status update failed');
+      // Now's "Your chores" card shows the same row (built once per page
+      // load) — tell it, so a tick here is a tick there without a reload.
+      if (panels.today && panels.today.dataset.built) loadChores(panels.today);
+    } catch (err) {
+      console.warn('Chore toggle failed, rolling back:', err);
+      chore.status = prevStatus;
+      if (weekState.step === 'chores') renderMealsStep(panel);
+      showToast('That didn’t save. Try it again in a moment.');
+    }
+  }
+
   // ---------- the step machine ----------
 
   function mealsCurrentDay() {
@@ -9416,6 +9699,10 @@
     var panel = panels['week'];
     if (!panel || !panel.dataset.built) return;
     renderMealsStep(panel);
+    // Arriving on Chores draws what is cached and reads again quietly —
+    // the other adult may have ticked something since (§6: a quiet
+    // background check, never a reload under the thumb).
+    if (weekState.step === 'chores') loadPlanChores(panel);
     // A step change is a screen change, so it starts at the top — the same
     // rule Cook's focus screen and Grocery's shopping mode already follow.
     if (scrollEl) scrollEl.scrollTop = 0;
@@ -9434,6 +9721,7 @@
     if (state && state.mealsSlot) weekState.mealSlot = state.mealsSlot;
     weekState.step = step;
     renderMealsStep(panel);
+    if (weekState.step === 'chores') loadPlanChores(panel);
   }
 
   function renderMealsStep(panel) {
@@ -9467,14 +9755,27 @@
     // The All set screen paints the whole panel spruce, not just its own
     // box, so the ground never shows under the dock.
     panel.classList.toggle('is-allset', weekState.step === 'allset');
+    // Chores fills the panel the same way (is-chores, shell.css) so its
+    // empty moment centres and its one dock sits at the foot — scoped to
+    // this state rather than fixed on #week-plan-view for every step, so
+    // nothing about Plan | Meals moves.
+    panel.classList.toggle('is-chores', weekState.step === 'chores');
 
-    var onRoot = weekState.step === 'week';
+    // Chores is a state of the ROOT (a sibling of the week, not a step
+    // under it): it keeps the band and the gear, and has no crumb of its
+    // own. Only reachable with the household's switch on — a step left in
+    // history from before the switch went off folds back to the week.
+    if (weekState.step === 'chores' && !choresEnabled()) weekState.step = 'week';
+    var onChores = weekState.step === 'chores';
+    var onRoot = weekState.step === 'week' || onChores;
     var approve = panel.querySelector('#week-approve-row');
     // The approved receipt belongs to the week, not to one day of it — it
     // sits above the card on the root and nowhere else. A draft's clash no
     // longer renders here: it sits on the dish it is about, inside the
     // review the draft opens on (reviewDishRowHtml).
     if (approve) approve.hidden = !onRoot || draft;
+    // ...and not on Chores either: the receipt is the meal week's.
+    if (approve && onChores) approve.hidden = true;
     // The band (and the gear in it) is the root's, not a step's — same
     // rule the Plan/Cook control it replaced followed. Rebuilt only when
     // its words change, so a re-render doesn't throw the bell out of the
@@ -9484,6 +9785,7 @@
       bandSlot.hidden = !onRoot;
       if (onRoot) {
         var parts = weekBandParts(weekBandData(data), weekState.days || []);
+        if (onChores) parts = planChoresBandParts(parts);
         var key = JSON.stringify(parts);
         if (bandSlot.dataset.bandKey !== key) {
           bandSlot.innerHTML = rootBandHtml(parts);
@@ -9491,7 +9793,14 @@
         }
       }
     }
+    // Meals | Chores, under the band, on the root only, switch on only.
+    renderPlanModeSeg(panel, onRoot && choresEnabled(), onChores ? 'chores' : 'meals');
 
+    if (onChores) {
+      steps.innerHTML = planChoresStepHtml();
+      wirePlanChores(panel, steps);
+      return;
+    }
     if (weekState.step === 'meal') {
       steps.innerHTML = mealStepHtml(day, weekState.mealSlot);
       ensureCookDataForMeals(panel);
@@ -11316,7 +11625,10 @@
     // a slot, a chat edit) so the screen never moves under their thumb.
     if (!days.length) {
       weekState.selectedIndex = null;
-      weekState.step = 'week';
+      // Chores doesn't depend on the week having days, so a reload of an
+      // empty plan (a `week` action from chat) must not pull the household
+      // off the list they are reading.
+      if (weekState.step !== 'chores') weekState.step = 'week';
     } else if (weekState.selectedIndex === null || weekState.selectedIndex >= days.length) {
       var todayIndexForSelect = days.reduce(function (found, d, i) { return d.isToday ? i : found; }, -1);
       weekState.selectedIndex = todayIndexForSelect >= 0 ? todayIndexForSelect : 0;
@@ -15089,14 +15401,22 @@
         // The list changing also changes Today's shop move, which is a
         // reading of the same items.
         refreshTodayMoves();
-      } else if (action.tab === 'today' && panels.today && panels.today.dataset.built) {
-        loadNeedsYou(panels.today);
-        loadTodayMoves(panels.today);
-        // The chore tools (app/main.py's _CHORE_TOOLS) are tagged `today`,
-        // and the chores card is a third read of that tab — "the bins are
-        // done" said in chat has to strike the row through here without
-        // a reload. A no-op on a panel with no card (the switch off).
-        loadChores(panels.today);
+      } else if (action.tab === 'today') {
+        if (panels.today && panels.today.dataset.built) {
+          loadNeedsYou(panels.today);
+          loadTodayMoves(panels.today);
+          // The chore tools (app/main.py's _CHORE_TOOLS) are tagged `today`,
+          // and the chores card is a third read of that tab — "the bins are
+          // done" said in chat has to strike the row through here without
+          // a reload. A no-op on a panel with no card (the switch off).
+          loadChores(panels.today);
+        }
+        // The same chores are a state of Plan (Meals | Chores), built once
+        // per page load like every panel — so a `today`-tagged action
+        // re-reads that list too, whether or not Now itself has been
+        // opened. Any chore tool the backend adds later is tagged `today`
+        // as well; the tab is the contract, not the tool's name.
+        if (panels.week && panels.week.dataset.built) loadPlanChores(panels.week);
       }
     });
   }

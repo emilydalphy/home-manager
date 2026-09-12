@@ -1055,6 +1055,17 @@ html, body {
    was under Rule 6 and the only square tick on Now; .chore-tick is a hook
    for the row's handler, not a restyle. */
 .chore-row .tick { margin-right: -12px; }
+/* The row's words — name, tag, owner — as one group, so Plan | Chores can
+   stack them under the name (.pc-list, in the Plan section) from the SAME
+   markup (choreRowHtml). On Now the group is invisible: the same 8px gap,
+   the name still takes the room, the tick still sits at the end. */
+.chore-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
 .chore-name {
   font-family: var(--font-body);
   font-weight: 700;
@@ -6700,6 +6711,60 @@ span.cook-week-name { cursor: default; }
   font-weight: 700;
   box-shadow: var(--shadow-card);
 }
+
+/* ---------- Plan | Chores (a state of the Plan root) ----------
+   Loop Board "Chores v1: Plan gets a Meals | Chores toggle showing what's
+   due", 2026-09-12. The control is .wk-seg (above) with a hook class; the
+   list borrows the review step's group grammar (.rv-group-label eyebrow,
+   .rv-group-card card) so Today / This week / Coming up read as the same
+   tab the week does, and its rows are Now's .chore-row (choreRowHtml in
+   shell.js) with the owner dropped onto a quiet second line. Nothing here
+   is a new component and nothing is a new colour: every value is a token
+   already measured where it sits — .rv-group-label on --ground (12.59
+   light / 14.40 dark), .chore-name --ink on --surface (13.52 / 12.49),
+   .chore-who --ink-secondary on --surface (4.70 light / 7.36 dark, the
+   same pair the rest-of-today detail lines use), .pc-rhythm-label the
+   same --ink-secondary pair at 12px/700, the "Not us" pill
+   --ink-on-celadon on --celadon-tint (10.65 / 10.37). Computed from
+   theme.css's values, 2026-09-12. */
+.plan-mode-seg { margin-top: 4px; }
+#week-mode-slot[hidden] { display: none; }
+/* 48px under the last card (76 with .week-content's own 28): the chat icon
+   floats over the strip's right end (.chat-fab, 54px + 12px inset), and
+   with no dock on this state the last row's tick has to be able to scroll
+   out from under it. Measured at 375×812. */
+.pc-body { display: flex; flex-direction: column; gap: 18px; padding: 0 20px 48px; }
+/* The card carries the gutter the rows had on Now's card (14px), and the
+   tick's -12px pull keeps the ring inside it, as there. */
+.pc-list { padding: 0 14px; }
+.pc-list .chore-row { min-height: 56px; padding: 6px 0; }
+/* The owner (and the day word) on a quiet second line: the name takes the
+   whole first line, and whatever follows it — the "Not us" tag, the name —
+   wraps beneath. Same markup as Now; this rule is the whole difference. */
+.pc-list .chore-main { flex-wrap: wrap; row-gap: 3px; column-gap: 8px; }
+.pc-list .chore-name { flex: 1 1 100%; }
+/* Coming up, by rhythm: a quiet subhead ("Every month") over its rows, a
+   hairline between one rhythm and the next. Body face, not the eyebrow
+   caps — it is a subhead inside a card, one step under the group label. */
+.pc-rhythm + .pc-rhythm { border-top: 1.5px solid var(--hairline); }
+.pc-rhythm-label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  padding: 12px 0 0;
+}
+.pc-rhythm .chore-row:last-child { border-bottom: none; }
+/* The two empty moments fill the space under the control; the one dock
+   (never set up → "Set up chores") sits at the foot like every other. */
+.pc-empty { min-height: 240px; }
+#week-steps .pc-dock { margin-top: auto; }
+/* #week-plan-view is `0 1 auto` for the meal steps (measured: 316px in a
+   729px panel on the empty state), so on its own the dock sat mid-screen
+   with ground under it. The Chores state grows it — this state only, the
+   way .is-allset grows #week-steps — so the moment centres and the dock
+   reaches the foot. */
+.tab-panel.is-chores #week-plan-view { flex: 1 0 auto; }
 
 .rv-body { display: flex; flex-direction: column; gap: 18px; padding: 0 20px; }
 /* On --ground, where --ink-secondary is 4.44:1 — just under AA. */
