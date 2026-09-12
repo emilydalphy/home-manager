@@ -48,6 +48,22 @@ def _extract(name: str, source: str = SHELL_JS) -> str:
     return source[start : j + 1]
 
 
+def _var_block(name: str, source: str = SHELL_JS) -> str:
+    """Lift one bracket-balanced `var NAME = [...]` array literal."""
+    start = source.index(f"var {name} = [")
+    i = source.index("[", start)
+    depth, j = 0, i
+    while True:
+        if source[j] == "[":
+            depth += 1
+        elif source[j] == "]":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return source[start : j + 1] + ";"
+
+
 def _run_node(harness: str):
     res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
@@ -258,6 +274,11 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         # frame's whole point is that it renders none of them.
         + "function cookTicked(){ return false; }\n"
         + _extract("cookMealKey") + "\n"
+        # cookIngredientLabel reads its amount through humanQtyText now
+        # (item 14, design-tidy pass 2026-09-11).
+        + _var_block("HUMAN_QTY_FRACTIONS") + "\n"
+        + _extract("humanQtyAmount") + "\n"
+        + _extract("humanQtyText") + "\n"
         + _extract("cookIngredientLabel") + "\n"
         # 2026-09-10, review round: the "eyeball these" note is rendered off
         # the meal now rather than poked into a hidden <p> after a rescale,

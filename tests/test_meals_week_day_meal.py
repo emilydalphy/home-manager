@@ -537,6 +537,11 @@ def _day_snack_cards_html(day: dict) -> str:
         + "var weekState = { data: {} };\n"
         + "var swapState = null;\n"
         + "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
+        # Only the one icon daySlotCardHtml actually draws (the chevron on
+        # its openable button, added 2026-09-11 for item 11 of the
+        # design-tidy pass) — the real GRO_ICONS lives with the Grocery
+        # block this harness doesn't otherwise pull in.
+        + "var GRO_ICONS = { chevRight: '<svg aria-hidden=\"true\"></svg>' };\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
         + _extract("snackSlotKey", SHELL_JS) + "\n"
         + _extract("daySlotEntry", SHELL_JS) + "\n"

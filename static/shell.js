@@ -233,6 +233,75 @@
     });
   }
 
+  // ---------- Quantities and times as a person writes them (DESIGN_SYSTEM
+  // §8) ----------
+  // Ingredients were rendering the server's plain decimal ("0.5 lbs Flank
+  // steak", "0.75 cups Rice" — see app/tools/quantities.py's
+  // _format_quantity, which is correct but not what a person writes down)
+  // and a clock conversion already existed twice under two different names
+  // (morningClock here, plus the same handful of lines it wrapped). One
+  // formatter each, used everywhere this tab renders a measured amount or
+  // a wall-clock time (design-tidy pass 2026-09-11, item 14) — grep
+  // humanQty/humanQtyText/humanTime before adding a new render site that
+  // reformats one of these by hand.
+
+  // Every fraction this app's own quantity math actually produces —
+  // recipes.py's scaling and quantities.py's _round_to_nice_fraction both
+  // stop at quarters (plus thirds/eighths already present in some saved
+  // recipes) — so there's nothing to gain from a general continued-
+  // fraction search, and no risk of rounding a real decimal into a
+  // plausible-looking wrong one.
+  var HUMAN_QTY_FRACTIONS = [
+    [1 / 8, '⅛'], [1 / 4, '¼'], [1 / 3, '⅓'], [3 / 8, '⅜'],
+    [1 / 2, '½'], [5 / 8, '⅝'], [2 / 3, '⅔'], [3 / 4, '¾'],
+    [7 / 8, '⅞']
+  ];
+  // 0.5 -> "½", 1.5 -> "1½", 2 -> "2". A decimal with nothing close enough
+  // to a nice fraction (0.05 tolerance) is left alone rather than rounded
+  // into a plausible-looking wrong amount.
+  function humanQtyAmount(n) {
+    var num = Number(n);
+    if (!isFinite(num)) return String(n);
+    var whole = Math.floor(num + 1e-9);
+    var frac = num - whole;
+    if (frac < 0.02) return String(whole);
+    var best = null, bestDiff = 0.05;
+    HUMAN_QTY_FRACTIONS.forEach(function (pair) {
+      var diff = Math.abs(pair[0] - frac);
+      if (diff < bestDiff) { bestDiff = diff; best = pair[1]; }
+    });
+    if (!best) return String(num);
+    return whole ? (whole + ' ' + best) : best;
+  }
+  // humanQty(n, unit): "½ lb", "2 lbs", "1 head" — n and its unit word
+  // (already correctly singular/plural for n; see _format_quantity, which
+  // this pairs with rather than duplicates) as two separate values.
+  function humanQty(n, unit) {
+    var shown = humanQtyAmount(n);
+    return unit ? (shown + ' ' + unit) : shown;
+  }
+  // Most call sites only ever have the SERVER'S already-assembled string
+  // ("0.5 lb", "2 heads", "milk" — cookIngredientLabel and its callers, the
+  // grocery list) rather than a separate amount and unit. This re-splits
+  // just the leading decimal back out, reformats it with humanQtyAmount,
+  // and leaves everything after it — the unit word — untouched.
+  function humanQtyText(text) {
+    var raw = String(text == null ? '' : text).trim();
+    var m = /^(\d+(?:\.\d+)?)(\s.*)?$/.exec(raw);
+    if (!m) return raw;
+    return humanQtyAmount(parseFloat(m[1])) + (m[2] || '');
+  }
+  // "18:30" -> "6:30 pm", "07:00" -> "7:00 am", "12:00" -> "12:00 pm".
+  function humanTime(hhmm) {
+    var parts = String(hhmm || '').split(':');
+    var h = parseInt(parts[0], 10);
+    if (isNaN(h)) return hhmm;
+    var m = parts[1] || '00';
+    var suffix = h >= 12 ? ' pm' : ' am';
+    var hour = h % 12 || 12;
+    return hour + ':' + m + suffix;
+  }
+
   var scrollEl = document.getElementById('shell-scroll');
   var tabBarEl = document.getElementById('tab-bar');
   var railRowsEl = document.getElementById('rail-rows');
@@ -266,10 +335,14 @@
     btn.type = 'button';
     btn.className = 'tab-btn';
     btn.dataset.tab = tab.key;
+    // An explicit label so the button's accessible name is always just
+    // "Now"/"Plan"/etc. — never picking up the badge count's text too
+    // ("Now 1"), whatever aria-hidden state the badge happens to be in.
+    btn.setAttribute('aria-label', tab.label);
     btn.innerHTML =
       '<span class="tab-chip">' + tab.icon + '</span>' +
       '<span class="tab-label">' + tab.label + '</span>' +
-      '<span class="tab-badge">1</span>';
+      '<span class="tab-badge" aria-hidden="true">1</span>';
     btn.addEventListener('click', function () { activateTab(tab.key, true); });
     tabBarEl.appendChild(btn);
 
@@ -680,24 +753,35 @@
     return '';
   }
 
-  function setTodayHeading(panel, count, isError) {
+  function setTodayHeading(panel, count, isError, isUrgent) {
     // The needs-you count no longer has a line of its own on Today — the
     // line under the title is "N of M done", written by renderTodayMoves —
     // but it still drives the tab badge, which is the one place a count of
     // unanswered questions is worth carrying. A failed lookup badges zero
     // rather than badging a guess.
-    setTodayBadge(isError ? 0 : count);
+    setTodayBadge(isError ? 0 : count, isError ? false : isUrgent);
   }
 
-  function setTodayBadge(count) {
+  // isUrgent: true only for the genuinely-late case (design rule 3) — today's
+  // dinner still without a decision, not just "something to look at" (e.g.
+  // tomorrow's dinner, which is a nudge, not overdue). See renderNeedsYou.
+  function setTodayBadge(count, isUrgent) {
     var tabBtn = document.querySelector('.tab-btn[data-tab="today"]');
     var railRow = document.querySelector('.rail-row[data-tab="today"]');
     [[tabBtn, '.tab-badge'], [railRow, '.rail-badge']].forEach(function (pair) {
       var el = pair[0];
       if (!el) return;
-      el.classList.toggle('has-badge', count > 0);
+      var shown = count > 0;
+      el.classList.toggle('has-badge', shown);
       var badge = el.querySelector(pair[1]);
-      if (badge) badge.textContent = String(count);
+      if (!badge) return;
+      badge.textContent = String(count);
+      badge.classList.toggle('is-urgent', shown && !!isUrgent);
+      // Not shown -> hide from assistive tech too. The tab button also
+      // carries its own aria-label so its accessible name never becomes
+      // "Now 1" even while the badge is shown.
+      if (shown) badge.removeAttribute('aria-hidden');
+      else badge.setAttribute('aria-hidden', 'true');
     });
   }
 
@@ -795,7 +879,12 @@
     var visible = items.filter(function (it) {
       return it.type === 'dinner_open' || it.type === 'dinner_decision';
     });
-    setTodayHeading(panel, visible.length);
+    // Tonight's own dinner still undecided is the genuinely-late case
+    // (design rule 3) — everything the day has left is running out.
+    // Tomorrow's is a heads-up, not overdue, so it stays the default color.
+    var todayStrForBadge = todayLocalStr();
+    var urgentForBadge = visible.some(function (it) { return it.date === todayStrForBadge; });
+    setTodayHeading(panel, visible.length, false, urgentForBadge);
 
     var band = panel.querySelector('#needs-you-band');
     band.innerHTML = visible.map(needsYouCardHtml).join('');
@@ -1534,17 +1623,12 @@
     produce: 'Produce', dairy: 'Dairy', 'meat/seafood': 'Meat / seafood',
     pantry: 'Pantry', frozen: 'Frozen', other: 'Other'
   };
-  // Aisle spine colours. These are `var()` references, not literals: a custom
-  // property DOES cascade into an inline style attribute, so emitting
-  // `style="background: var(--apricot)"` resolves per theme exactly like a
-  // stylesheet rule would. Getting them onto tokens is what makes the spines
-  // follow dark mode — #4F6B5B and #B23A22 on the dark ground were 1.5:1 and
-  // 2.8:1.
-  var GRO_AISLE_COLORS = {
-    produce: 'var(--celadon)', dairy: 'var(--apricot)',
-    'meat/seafood': 'var(--urgent)', pantry: 'var(--celadon-label)',
-    frozen: 'var(--urgent)', other: 'var(--ink-inactive)'
-  };
+  // The trip's aisle spine used to color-code by section (celadon for
+  // Produce, urgent-red for Meat/Seafood, etc.) with no key anywhere on
+  // screen — a colour with no legend just looks decorative, and terracotta
+  // on Meat/Seafood in particular reads as urgent when it isn't (design
+  // rule 3). The eyebrow beside it already names the aisle, so the spine is
+  // one neutral (--hairline-strong) now — see .gro-aisle-spine in shell.css.
   // Store identity colours. Every entry is a LIGHT accent, because the avatar
   // carries spruce ink (--on-accent-ink) and RULE ONE has no exceptions.
   // These stay LITERALS on purpose, unlike the aisle spines above: they are
@@ -1566,15 +1650,6 @@
     dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
     camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>'
   };
-
-  // How many things a store card shows before "+ N more".
-  var GRO_CARD_PEEK = 4;
-
-  // The listExpanded key for the no-store section. Not a store name, and it
-  // must never collide with one: a household really could shop somewhere
-  // called "Everything", and the two cards would then share an expanded
-  // state. The angle brackets are illegal in a store name the UI accepts.
-  var GRO_LOOSE_KEY = '<no-store>';
 
   // Above this many things to sort, the tab offers the fast paths first
   // instead of dropping the household straight into the one-at-a-time queue.
@@ -1599,7 +1674,6 @@
   // showToast's shorter default.
   var GRO_UNDO_MS = 8000;
 
-  function groAisleColor(section) { return GRO_AISLE_COLORS[section] || 'var(--ink-inactive)'; }
   function groStoreColor(name) {
     // "Any store" is the leftovers bucket, not a stop — it gets the quiet
     // sand fill rather than a store identity colour.
@@ -1666,7 +1740,6 @@
     staples: [],
     staplesOpen: false,
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // WRAP UP's confirmation
-    listExpanded: {},       // store name -> bool: "+ N more" tapped on LIST
     // The one LIST row whose ⋯ menu is open, as a string id, or null. One at
     // a time on purpose — the old per-row menu worked the same way, and two
     // open editors on a phone list is two places a half-typed quantity can
@@ -2126,7 +2199,7 @@
     // without moving a hand to the button.
     panel.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
-      if (e.target.id === 'gro-add-item' || e.target.id === 'gro-add-qty') {
+      if (e.target.id === 'gro-add-item') {
         e.preventDefault();
         groAddItem();
       }
@@ -2494,24 +2567,15 @@
   function groCaptureAddRow(foot) {
     var item = foot.querySelector('#gro-add-item');
     if (!item) return null;
-    var qty = foot.querySelector('#gro-add-qty');
-    return {
-      item: item.value,
-      qty: qty ? qty.value : '',
-      focused: document.activeElement === item ? 'item'
-        : (qty && document.activeElement === qty ? 'qty' : null)
-    };
+    return { item: item.value, focused: document.activeElement === item };
   }
   function groRestoreAddRow(foot, saved) {
     if (!saved) return;
     var item = foot.querySelector('#gro-add-item');
-    var qty = foot.querySelector('#gro-add-qty');
     if (item) item.value = saved.item;
-    if (qty) qty.value = saved.qty;
-    var back = saved.focused === 'item' ? item : (saved.focused === 'qty' ? qty : null);
-    if (!back) return;
-    back.focus();
-    try { back.setSelectionRange(back.value.length, back.value.length); } catch (err) { /* not all inputs allow it */ }
+    if (!item || !saved.focused) return;
+    item.focus();
+    try { item.setSelectionRange(item.value.length, item.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
   // Title, subtitle and back link for each step, in one place so the copy is
@@ -2562,7 +2626,7 @@
       var done = 0;
       stops.forEach(function (n) { if (groceryState.tripDone[n]) done += 1; });
       return {
-        back: '‹ Pause the trip',
+        back: '‹ Shop',
         title: store || 'The trip',
         sub: 'Stop ' + (done + 1) + ' of ' + Math.max(stops.length, 1) +
           ' · ' + groTripItems(data).length + ' left'
@@ -2714,20 +2778,62 @@
     }).join('');
   }
 
+  // Merge N store-shaped `sections` arrays (each [{section, items}, ...])
+  // into one ordered list, combining by section name across sources so a
+  // second source (a sole store's loose pile riding along on LIST, say)
+  // files into the aisle it belongs to rather than trailing after it as a
+  // group of its own. Shared by every LIST card and by the trip screen
+  // (groTripSections).
+  function groFoldSectionLists(lists) {
+    var out = [];
+    var byName = {};
+    (lists || []).forEach(function (sections) {
+      (sections || []).forEach(function (sec) {
+        if (!sec.items.length) return;
+        if (!byName[sec.section]) {
+          byName[sec.section] = { section: sec.section, items: [] };
+          out.push(byName[sec.section]);
+        }
+        byName[sec.section].items = byName[sec.section].items.concat(sec.items);
+      });
+    });
+    return out;
+  }
+
+  // The subset of a `sections` array whose items pass `predicate`, sections
+  // with nothing left dropped entirely.
+  function groSectionsFiltered(sections, predicate) {
+    var out = [];
+    (sections || []).forEach(function (sec) {
+      var kept = sec.items.filter(predicate);
+      if (kept.length) out.push({ section: sec.section, items: kept });
+    });
+    return out;
+  }
+
+  // One aisle's worth of a card: the eyebrow that already names it (no
+  // per-section colour — see the trip screen's own note on why the spine
+  // is one neutral) and every row in it. LIST shows the whole list this way
+  // now, grouped by aisle rather than a four-row peek behind "+ N more" —
+  // Emily's read on the store card was "just show me the list" (design rule
+  // 2b S1/S2), and a household's real shop is never four things.
+  function groAisleGroupHtml(sec, data) {
+    return '<div class="gro-aisle">' +
+        '<span class="gro-aisle-spine"></span>' +
+        '<span class="gro-eyebrow">' + escapeHtml(GRO_CATEGORY_LABELS[sec.section] || sec.section) + '</span>' +
+      '</div>' +
+      sec.items.map(function (it) { return groListRowHtml(it, data); }).join('');
+  }
+
   // A store's card minus the head — no avatar, no name, because there is no
   // store to name. Rows still go through groListRowHtml, so the menu, the
   // quantity and the tick behave exactly as they do under a stop; the only
   // thing missing is a heading this household never chose.
   function groLooseCardHtml(data, items) {
-    var expanded = !!groceryState.listExpanded[GRO_LOOSE_KEY];
-    var shown = expanded ? items : items.slice(0, GRO_CARD_PEEK);
-    var hidden = items.length - shown.length;
+    var any = data.stores['Unassigned'];
+    var sections = groFoldSectionLists([any && any.sections]);
     return '<div class="gro-store">' +
-      shown.map(function (it) { return groListRowHtml(it, data); }).join('') +
-      (hidden > 0
-        ? '<button type="button" class="gro-more-link" data-gro="expand-store" data-store="' +
-            escapeHtml(GRO_LOOSE_KEY) + '">+ ' + hidden + ' more</button>'
-        : '') +
+      sections.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('') +
     '</div>';
   }
 
@@ -2739,9 +2845,8 @@
   // row ⋯ that is the only way to change your mind about one. "Anywhere" has
   // to be a place you can point at, not a disappearance.
   function groAnywhereCardHtml(data, items) {
-    var expanded = !!groceryState.listExpanded[GRO_LOOSE_KEY];
-    var shown = expanded ? items : items.slice(0, GRO_CARD_PEEK);
-    var hidden = items.length - shown.length;
+    var any = data.stores['Unassigned'];
+    var sections = groSectionsFiltered(any && any.sections, groItemDecided);
     return '<div class="gro-store">' +
       '<div class="gro-card-head">' +
         // A basket rather than an initial: there is no name here to take a
@@ -2754,30 +2859,27 @@
           GRO_ICONS.basket + '</span>' +
         '<span class="gro-store-name">Anywhere &middot; ' + items.length + '</span>' +
       '</div>' +
-      shown.map(function (it) { return groListRowHtml(it, data); }).join('') +
-      (hidden > 0
-        ? '<button type="button" class="gro-more-link" data-gro="expand-store" data-store="' +
-            escapeHtml(GRO_LOOSE_KEY) + '">+ ' + hidden + ' more</button>'
-        : '') +
+      sections.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('') +
     '</div>';
   }
 
   function groStoreCardHtml(data, name) {
     var items = groStoreCardItems(data, name);
-    var expanded = !!groceryState.listExpanded[name];
-    var shown = expanded ? items : items.slice(0, GRO_CARD_PEEK);
-    var hidden = items.length - shown.length;
+    var s = data.stores[name];
+    var lists = [s && s.sections];
+    // A sole-store household's loose pile has nowhere else it could be
+    // bought — same reasoning groStoreCardItems already applies to the
+    // header count, folded in here so every one of those rows is actually
+    // on screen rather than counted and then hidden.
+    if (groSoleStore(data) === name) lists.push(data.stores['Unassigned'] && data.stores['Unassigned'].sections);
+    var sections = groFoldSectionLists(lists);
     return '<div class="gro-store">' +
       '<div class="gro-card-head">' +
         '<span class="gro-store-avatar" style="background:' + groStoreColor(name) + '">' +
           escapeHtml(groStoreInitial(name)) + '</span>' +
         '<span class="gro-store-name">' + escapeHtml(name) + ' · ' + items.length + '</span>' +
       '</div>' +
-      shown.map(function (it) { return groListRowHtml(it, data); }).join('') +
-      (hidden > 0
-        ? '<button type="button" class="gro-more-link" data-gro="expand-store" data-store="' + escapeHtml(name) + '">' +
-            '+ ' + hidden + ' more</button>'
-        : '') +
+      sections.map(function (sec) { return groAisleGroupHtml(sec, data); }).join('') +
     '</div>';
   }
 
@@ -3152,7 +3254,7 @@
       html += '<div class="gro-store">';
       sections.forEach(function (sec) {
         html += '<div class="gro-aisle">' +
-          '<span class="gro-aisle-spine" style="background:' + groAisleColor(sec.section) + '"></span>' +
+          '<span class="gro-aisle-spine"></span>' +
           '<span class="gro-eyebrow">' + escapeHtml(GRO_CATEGORY_LABELS[sec.section] || sec.section) + '</span>' +
           '<span class="gro-aisle-count">' + sec.items.length + ' left</span>' +
         '</div>';
@@ -3177,7 +3279,10 @@
         (open ? '<div class="gro-done-body">' + inCart.map(groDoneRowHtml).join('') + '</div>' : '') +
       '</div>';
     }
-    return html;
+    // Wrapped for its own bottom clearance (item 13, design-tidy pass
+    // 2026-09-11): a long stop's last row otherwise sits right where the
+    // floating chat FAB hovers above the "Done at X" dock.
+    return '<div class="gro-trip-body">' + html + '</div>';
   }
 
   function groTripRowHtml(it) {
@@ -3353,21 +3458,30 @@
     // a dock (rule 2 — "a second apricot" is what Rule 5 already forbids,
     // and a second STRIP is the same mistake one level up).
     // The photo button (Loop Board, 2026-09-11 — "snap a photo of a
-    // written or on-screen list and have Pomona add it") rides along in
-    // the same row as the manual add, the nearest existing "put something
+    // written or on-screen list and have Pomona add it") rides along inside
+    // the same field as the manual add, the nearest existing "put something
     // on the list" affordance — the inventory scans this borrows the
-    // pattern from live on a different tab (Kitchen's Inventory sheet),
-    // and where exactly this control sits was left an open design
-    // question on the ticket. See groScanOpenPicker/groScanUploadPhoto.
+    // pattern from live on a different tab (Kitchen's Inventory sheet).
+    //
+    // Changed 2026-09-11 (design-tidy pass, item 7): four controls in one
+    // row ("Add something" / Qty / Add / camera) truncated the one field
+    // that matters — the item name — to make room for a Qty box most adds
+    // never use. Now it's one wide text field with the camera sitting
+    // inside its own right end (absolute, 44×44 — see .gro-add-field) and
+    // a spruce Add after it. Quantity comes from what's typed, via
+    // groParseAddInput ("2 lb carrots", "milk 2") rather than a box of its
+    // own; nothing recognizable in the text just means no quantity, same as
+    // leaving the old Qty box blank.
     return '<div class="gro-add">' +
-        '<input type="text" class="gro-add-item" id="gro-add-item" ' +
-          'placeholder="Add something" aria-label="Something to add to the list" />' +
-        '<input type="text" class="gro-add-qty" id="gro-add-qty" placeholder="Qty" aria-label="How much" />' +
+        '<div class="gro-add-field">' +
+          '<input type="text" class="gro-add-item" id="gro-add-item" ' +
+            'placeholder="Add something" aria-label="Something to add to the list" />' +
+          '<button type="button" class="gro-scan-btn" id="gro-scan-btn" data-gro="scan-open" ' +
+            'title="Add from a photo of your list" aria-label="Add from a photo of your list">' +
+            GRO_ICONS.camera +
+          '</button>' +
+        '</div>' +
         '<button type="button" class="gro-add-btn" id="gro-add-btn" data-gro="add">Add</button>' +
-        '<button type="button" class="gro-scan-btn" id="gro-scan-btn" data-gro="scan-open" ' +
-          'title="Add from a photo of your list" aria-label="Add from a photo of your list">' +
-          GRO_ICONS.camera +
-        '</button>' +
       '</div>';
   }
 
@@ -3717,6 +3831,45 @@
 
   // ---------- Actions ----------
 
+  // A short, deliberately narrow parser for the merged add field (item 7,
+  // design-tidy pass 2026-09-11 — one "Add something" field replaced the
+  // separate Qty box). Pulls a leading "2 lb" / "3" off the front, or a
+  // trailing bare number off the end, and returns whatever's left as the
+  // item name. There's no existing helper this can reuse: quantities.py's
+  // _parse_quantity reads a quantity-shaped string already split from the
+  // item name, and shell.js had no client-side equivalent before this. A
+  // wrong guess here would silently attach the wrong amount to a list row,
+  // so anything this can't confidently read (no recognizable unit, no bare
+  // number) is added with no quantity at all rather than a guessed one —
+  // exactly what leaving the old Qty box blank did.
+  var GRO_ADD_UNIT_WORDS = [
+    'lb', 'lbs', 'pound', 'pounds', 'oz', 'ounce', 'ounces', 'kg', 'g', 'gram',
+    'grams', 'cup', 'cups', 'tbsp', 'tsp', 'can', 'cans', 'bag', 'bags', 'box',
+    'boxes', 'bunch', 'bunches', 'head', 'heads', 'dozen', 'pack', 'packs',
+    'jar', 'jars', 'bottle', 'bottles', 'loaf', 'loaves', 'l', 'ml'
+  ];
+  function groParseAddInput(text) {
+    var raw = String(text || '').trim();
+    if (!raw) return { item: '', quantity: '' };
+    // "2 lb carrots" / "3 apples" / "1.5 cups rice"
+    var lead = raw.match(/^(\d+(?:[.\/]\d+)?)\s*([a-zA-Z]*)\s+(.+)$/);
+    if (lead) {
+      var leadUnit = lead[2].toLowerCase();
+      if (!leadUnit || GRO_ADD_UNIT_WORDS.indexOf(leadUnit) !== -1) {
+        return { item: lead[3].trim(), quantity: leadUnit ? lead[1] + ' ' + leadUnit : lead[1] };
+      }
+    }
+    // "milk 2" / "eggs 12"
+    var trail = raw.match(/^(.+?)\s+(\d+(?:[.\/]\d+)?)\s*([a-zA-Z]*)$/);
+    if (trail) {
+      var trailUnit = trail[3].toLowerCase();
+      if (!trailUnit || GRO_ADD_UNIT_WORDS.indexOf(trailUnit) !== -1) {
+        return { item: trail[1].trim(), quantity: trailUnit ? trail[2] + ' ' + trailUnit : trail[2] };
+      }
+    }
+    return { item: raw, quantity: '' };
+  }
+
   // The LIST foot's inline add — one POST to /api/grocery-list/add, no model
   // turn, exactly as the root's "Add an item" card and the voice session's
   // "add oat milk" both do it. An item added with no store lands in the
@@ -3726,18 +3879,18 @@
     var panel = groPanel();
     if (!panel) return;
     var itemInput = panel.querySelector('#gro-add-item');
-    var qtyInput = panel.querySelector('#gro-add-qty');
     var btn = panel.querySelector('#gro-add-btn');
-    if (!itemInput || !qtyInput || !btn) return;
-    var name = itemInput.value.trim();
-    if (!name) { itemInput.focus(); return; }
-    var qty = qtyInput.value.trim();
+    if (!itemInput || !btn) return;
+    var typed = itemInput.value.trim();
+    if (!typed) { itemInput.focus(); return; }
+    var parsed = groParseAddInput(typed);
+    var name = parsed.item || typed;
+    var qty = parsed.quantity;
     btn.disabled = true;
     // Cleared BEFORE the write: groDo re-renders on the way out, and the
     // foot's value-preserving re-render would otherwise put the typed text
     // straight back into an emptied field.
     itemInput.value = '';
-    qtyInput.value = '';
     var ok = await groDo(function () {
       return groPost('/api/grocery-list/add', { item: name, quantity: qty, category: 'other' });
     }, "Couldn't add that — try again.");
@@ -3746,9 +3899,7 @@
     if (freshBtn) freshBtn.disabled = false;
     if (!ok) {
       // Nothing was saved, so the typing has to come back rather than vanish.
-      if (freshItem) freshItem.value = name;
-      var freshQty = panel.querySelector('#gro-add-qty');
-      if (freshQty) freshQty.value = qty;
+      if (freshItem) freshItem.value = typed;
       return;
     }
     if (freshItem) freshItem.focus();
@@ -4169,11 +4320,6 @@
         // body level (see groScanUploadPhoto) since position:fixed has to
         // sit outside this panel's stacking/scroll context.
         groScanOpenPicker();
-        return;
-
-      case 'expand-store':
-        groceryState.listExpanded[el.dataset.store] = true;
-        renderGrocery();
         return;
 
       // ----- the LIST row's quiet ⋯ (see groRowMenuHtml) -----
@@ -5179,16 +5325,12 @@
   // Three quiet rows in one card, above the fold (2026-09-11; they were
   // tiles below it), each with one fact. Same entry points as before.
   function kitchenTilesHtml() {
+    // Order changed 2026-09-11 (design-tidy pass, item 8): Recipes and Add
+    // from a link are the two things this tab's own core loop touches
+    // (what's saved, what's cooking); Inventory is the in-development beta
+    // feature (see INVENTORY_IN_DEVELOPMENT) and goes last. Same three
+    // rows, same stroke-icon treatment, only the order moved.
     return '<div class="kit-rows">' +
-      '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
-        (INVENTORY_IN_DEVELOPMENT ?
-          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
-        '</span>' +
-        '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
       // There is no recipe browser in this app, and this row does not
       // pretend there is one: it opens the chat on the question, which
       // the assistant answers off list_recipes (app/tools/recipes.py).
@@ -5204,6 +5346,15 @@
         '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
         '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span>' +
         '<span class="kit-row-sub">Paste a recipe page and I’ll read it</span></span>' +
+        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+      '</button>' +
+      '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
+        '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
+        '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
+        (INVENTORY_IN_DEVELOPMENT ?
+          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
+        '</span>' +
+        '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
     '</div>';
@@ -7305,7 +7456,14 @@
 
     return '<div class="shell-card wk-slot-card" data-wk-slot="' + slot + '">' +
       (openable
-        ? '<button type="button" class="wk-slot-body" data-wk-meal="' + slot + '">' + body + '</button>'
+        // A chevron (this opens the Meal step) and an explicit label — the
+        // button's own content is an eyebrow plus a dish name with no verb
+        // anywhere on it, so a screen reader had nothing that said this
+        // was a link to somewhere (item 11, design-tidy pass 2026-09-11).
+        ? '<button type="button" class="wk-slot-body" data-wk-meal="' + slot + '" ' +
+            'aria-label="' + escapeHtml('Open ' + name) + '">' + body +
+            '<span class="wk-slot-chev" aria-hidden="true">' + GRO_ICONS.chevRight + '</span>' +
+          '</button>'
         : '<div class="wk-slot-body is-flat">' + body + '</div>') +
       // The ready-made recommendation still belongs to dinner and to
       // nothing else — it is an answer to "the first one back tonight",
@@ -10615,7 +10773,8 @@
   // shopping-shaped qty for the cooking one — see recipes.cooking_
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
-    return ((ing && ing.qty ? ing.qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
+    return ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
   }
 
   // The words that would count as this ingredient being named in a step.
@@ -12613,58 +12772,24 @@
   }
 
   // Named one-tap intents (Loop Board: "Ask sheet: offer named one-tap
-  // intents instead of only a blank box", decided by Emily 2026-09-10).
-  // A blank box makes a household guess the magic words; four real jobs,
-  // said the way a person says them, teach the app's range in one glance.
-  // Replaces the two context-aware quick actions this surface used to
-  // carry ("Pomona: rethink the chat's pre-given quick actions", Emily
-  // 2026-09-03) — the same machinery, four better lines through it.
+  // intents instead of only a blank box", decided by Emily 2026-09-10) —
+  // RETIRED 2026-09-11 (design-tidy pass, item 15). This was a fixed set of
+  // four, the same on every tab by Emily's own explicit call at the time
+  // ("FIXED — the same four on every visit... a fixed set ships now"). It
+  // is exactly what made every tab's chips read the same, which the
+  // screen-by-screen review then flagged as the bug: "the example chips
+  // are the same on every tab." Her later instruction supersedes the
+  // earlier one — the per-tab COACH_EXAMPLES trio below is the one
+  // pre-conversation chip row now, using the mechanism that already
+  // existed for it (a tab's first three visits). See renderAskExamples'
+  // own comment, which used to explain why the per-tab examples yielded to
+  // this fixed row — that yielding is gone with it.
   //
-  // FIXED — the same four on every visit, and that is Emily's call rather
-  // than a shortcut. Context-aware chips are where this goes next and are
-  // the better product; a fixed set ships now and tells us which intents
-  // people actually tap, which is the thing nobody can currently answer.
-  // TWO COSTS OF A FIXED SET, both found by review and neither one a
-  // reason to gate a chip here — the gate would be the context-awareness
-  // Emily deferred, and deferring it was the decision:
-  //   * On a household with no plan, three of the four ask about a week
-  //     that doesn't exist. The assistant answers honestly, so the price
-  //     is a wasted tap.
-  //   * THE OTHER DIRECTION HAS TEETH AND IS THE ONE TO KNOW ABOUT. The
-  //     pair this replaces offered a planning chip ONLY under `!hasPlan`.
-  //     "Plan the rest of my week" is now offered to a household already
-  //     mid-week, and generating a period TAKES OVER the days it overlaps
-  //     (agent.py's own instruction; `retire_overlapping_plans` has no
-  //     exemption for an APPROVED plan). The chip's wording points at the
-  //     remaining days, which is what was asked for — but nothing confirms
-  //     first, and the underlying "replan over a running week without
-  //     asking" hazard is its own Loop Board card. Raised with Emily
-  //     rather than answered here: the four are hers.
-  //
-  // EACH CHIP SENDS ITS OWN LABEL, WORD FOR WORD. A chip carrying a hidden
-  // sentence is one nobody can learn from — and teaching what you're
-  // allowed to say is the whole job here, so what it sends has to be what
-  // it says. It also leaves no second wording to drift out of step.
-  //
-  // GONE WITH THE OLD PAIR: "Add … to the grocery list", which pre-filled
-  // the composer instead of running. It isn't one of the four, and this
-  // card's own rule is that tapping an intent does the thing. Grocery's
-  // own placeholder ("Add oat milk and lemons…", ASK_HINTS.grocery) still
-  // teaches the same sentence in the place it belongs.
-  var ASK_INTENTS = [
-    'Plan the rest of my week',
-    'What should I cook tonight?',
-    'Swap tonight for something quicker',
-    'What do I need to defrost?'
-  ].map(function (label) { return { label: label, msg: label }; });
-
-  // The chips no longer depend on the plan, so they go up the moment the
-  // ask experience is built rather than after a round trip. The fetch is
-  // still made and is no longer optional-feeling: /api/week-menu is what
-  // setDishIndex reads, so a reply that names a dish can link it without a
-  // request of its own. A failed fetch costs those links and nothing else.
+  // The one thing this function did besides render chips: prime the dish
+  // index (setDishIndex) off /api/week-menu, so a reply naming a dish can
+  // link it without a request of its own. That still has to happen the
+  // moment the ask experience is built, independent of which chips show.
   function loadQuickActionChips() {
-    renderAskChips(ASK_INTENTS);
     fetch('/api/week-menu')
       .then(function (res) { return res.ok ? res.json() : null; })
       .catch(function () { return null; })
@@ -12925,8 +13050,9 @@
           // `if (action.prefill) openAskSheet(action.prefill)`, for the old
           // "Add … to the grocery list" chip, which focused the composer
           // instead of doing anything. Nothing produces a `prefill` now
-          // (ASK_INTENTS run, offerNextStepChips navigate or send), so the
-          // branch is gone rather than left standing with a comment
+          // (renderAskChips is only reached by offerNextStepChips these
+          // days, which navigates or sends), so the branch is gone rather
+          // than left standing with a comment
           // describing a chip that no longer exists. `openAskSheet(text)`
           // still takes a prefill and is still used by the entry points
           // that genuinely want one — they just don't come through here.
@@ -12999,8 +13125,9 @@
       chips.push({ label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } });
     } else if (weekAction) {
       // The one wording for "there's a draft, go approve it". It used to
-      // be shared with the pre-conversation quick actions; those are the
-      // fixed four now (ASK_INTENTS) and no longer say it, so this is the
+      // be shared with the pre-conversation quick actions; ASK_INTENTS
+      // dropped it when it went fixed, and item 15's per-tab COACH_EXAMPLES
+      // that replaced ASK_INTENTS doesn't say it either, so this is the
       // only place it lives.
       chips.push({ label: 'Approve this week', msg: 'I’d like to approve this week’s plan.' });
     }
@@ -14178,14 +14305,10 @@
   // "Reach me before the moment" (2026-09-11): the morning text row's one
   // line — who gets it and when, or Off. Its own read (/api/morning-text)
   // for the same reason the calendar has one: it isn't household memory.
-  function morningClock(hhmm) {
-    var parts = String(hhmm || '07:00').split(':');
-    var h = parseInt(parts[0], 10), m = parts[1] || '00';
-    if (isNaN(h)) return hhmm;
-    var suffix = h >= 12 ? ' pm' : ' am';
-    var hour = h % 12 || 12;
-    return hour + ':' + m + suffix;
-  }
+  // Thin wrapper: humanTime does the actual conversion now (item 14,
+  // design-tidy pass 2026-09-11); this keeps morningClock's own default
+  // (blank reads as 7:00 am) at its two call sites.
+  function morningClock(hhmm) { return humanTime(hhmm || '07:00'); }
   function prefsMorningLine() {
     var mt = typeof prefsState !== 'undefined' ? prefsState.morningText : null;
     if (!mt) return 'Reading it back…';
@@ -14400,10 +14523,13 @@
   // to say. Three parts, all teaching the same one thing — the ask bar is
   // the app, and the buttons are the shortcuts:
   //
-  //   1. Two tappable example prompts under the ask bar, per tab, on the
+  //   1. Three tappable example prompts under the ask bar, per tab, on the
   //      first three visits to that tab and then gone for good. They send
   //      through sendAskMessage, the same path the quick-action chips use,
-  //      and they are .ask-chip like every other chip here.
+  //      and they are .ask-chip like every other chip here. (Two per tab
+  //      until 2026-09-11, when item 15 of the design-tidy pass made them
+  //      three and, more to the point, actually per-tab — see COACH_EXAMPLES
+  //      below, and loadQuickActionChips' comment for what this replaced.)
   //   2. One card on Today the first time the shell opens after setup — the
   //      household has a plan and has never dismissed it.
   //   3. A "Helpful tips" sheet, behind a Preferences row and a "?" beside
@@ -14418,23 +14544,26 @@
 
   var COACH_VISITS_TO_SHOW = 3;
 
-  // Two per tab, in the household's own words rather than in command form —
-  // the point is that a sentence works, not that there is a syntax. Grocery
-  // deliberately echoes ASK_HINTS.grocery: that line is grey placeholder
-  // text inside the bar, and this is the tappable proof that it does what it
-  // says.
+  // Three per tab (item 15, design-tidy pass 2026-09-11 — Now/Plan/Shop/
+  // Cook's own copy, given verbatim on the ticket), in the household's own
+  // words rather than in command form — the point is that a sentence
+  // works, not that there is a syntax.
   //
-  // Today's second example carries a name, and it has to be one of THIS
-  // household's. It shipped hardcoded as "Vineeth is out Thursday" — the
-  // developer's own partner — which every beta household then read as an
-  // example about their own week. `example_name` comes from /api/coaching;
-  // until it answers, and for a household with nobody on record yet, the
-  // name-free sentence teaches exactly the same thing.
+  // Plan's third example carries a name, and it has to be one of THIS
+  // household's — the same lesson Today's own away-example already
+  // learned the hard way (it shipped hardcoded as "Vineeth is out
+  // Thursday", the developer's own partner, which every beta household
+  // then read as an example about their own week). The ticket's own text
+  // for this slot ("Jamie's out Thursday") is that same mistake in a new
+  // place, so it's coachAwayExample() here too, same as Today's null slot:
+  // `example_name` comes from /api/coaching, and for a household with
+  // nobody on record yet the name-free sentence teaches exactly the same
+  // thing.
   var COACH_EXAMPLES = {
-    today: ['What’s next tonight?', null],
-    week: ['Swap Thursday for something lighter', 'Less chicken, more fish this week'],
-    grocery: ['Add oat milk and lemons', 'We already have rice'],
-    kitchen: ['What can I make with the chicken thighs?', 'I’m short on time tonight']
+    today: ['What should I cook tonight?', 'Swap tonight for something quicker', 'What do I need to defrost?'],
+    week: ['Plan the rest of my week', 'Less chicken this week', null],
+    grocery: ['Add what we’re low on', 'Move this to Costco', 'What’s this for?'],
+    kitchen: ['Walk me through tonight', 'What can I prep now?', 'How long will dinner take?']
   };
 
   // The one example built from household data rather than written down.
@@ -14508,29 +14637,19 @@
   // and resizing across 1024px must not leave the other one stale.
   function renderAskExamples(prompts) {
     coachExampleTargets().forEach(function (el) {
-      // Not beside the named intents. On a phone these two never share a
-      // screen — the examples are in the dock, the intents are inside the
-      // sheet that covers it — but in the desktop Ask column they stack,
-      // and two teaching rows in one 347px column is 348px of chips that
-      // pushed the composer off a 1280x900 screen (measured: composer
-      // bottom 857 before the intents landed, 961 after). They also say
-      // some of the same things: COACH_EXAMPLES' "I'm short on time
-      // tonight" is "Swap tonight for something quicker" in other words.
-      // The intents are the permanent version of what the examples were a
-      // three-visit stand-in for, so the examples yield to them — §8's
-      // "every word earns its place", applied to a whole row.
-      // DESKTOP COLUMN ONLY, and that scoping is the whole correctness of
-      // it. The phone's chips container is filled the moment the sheet is
-      // BUILT, not when it is opened, so a guard that read it at any width
-      // hid the dock's examples permanently — which is this same row's
-      // feature, deleted. Measured on a phone before the scoping went in:
-      // examples hidden with the sheet still closed.
-      // Since 2026-09-11 the phone's examples live INSIDE the sheet as
-      // well (the dock is gone), so the same yielding applies at both
-      // widths: whichever chips container sits beside this one.
-      var intents = document.getElementById(
+      // Not beside a next-step chip. offerNextStepChips fills #ask-chips
+      // with something concrete about a turn that just happened ("See your
+      // week", "Open the list") — that is more relevant than a
+      // pre-conversation suggestion, so the examples yield to it while it
+      // stands. Until 2026-09-11 this also yielded to ASK_INTENTS, the
+      // fixed four-chip row that used to fill #ask-chips on every ask-sheet
+      // build regardless of tab — retired for item 15 of the design-tidy
+      // pass, because a permanent row the examples always yielded to is
+      // exactly what made every tab's chips look the same. The per-tab
+      // COACH_EXAMPLES trio is the only pre-conversation row now.
+      var nextStep = document.getElementById(
         el.id === 'today-ask-examples' ? 'today-ask-chips' : 'ask-chips');
-      if (intents && !intents.hidden && intents.innerHTML) {
+      if (nextStep && !nextStep.hidden && nextStep.innerHTML) {
         el.innerHTML = '';
         el.hidden = true;
         return;
