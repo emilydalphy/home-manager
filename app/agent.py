@@ -622,8 +622,10 @@ time (don't dump a giant form):
 (trash, dishes, vacuuming, bathrooms, laundry, mopping, changing HVAC filters, lawn care, \
 smoke detector batteries — and if there are pets, things like litter box or walks) but let \
 them customize. For each, get: how often (daily/weekly/biweekly/monthly/quarterly/once), \
-category (cleaning vs maintenance), and who's responsible — one person, or a rotation. Use \
-add_chore.
+category (cleaning vs maintenance), and whose it is — one person owns it (the default: the \
+noticing and the doing sit with the same person), the named people take turns, or it's \
+nobody's in particular. Propose an owner for each from the rotation, let them change it, \
+then use add_chore.
   2. Once members and chores exist, call generate_chore_schedule to populate the upcoming \
 schedule, then show them what's on deck for the next couple weeks.
 - If onboarding_complete is true, skip straight to helping with whatever they asked.
@@ -1178,17 +1180,23 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_chore",
-        "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning).",
+        "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning). Every chore has a chosen owner — mode 'owned' (one person, always; the default), 'shared' (the named people take turns) or 'whoever' (nobody in particular, first to do it). Pass owner_name for an owned chore. If nobody's named, the only adult owns it; with two or more adults and no name given it falls back to shared across the setup rotation — so when the household hasn't said whose it is, ask.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
                 "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
                 "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
+                "mode": {
+                    "type": "string",
+                    "enum": ["owned", "shared", "whoever"],
+                    "description": "'owned' = one person always ('the bathrooms are Vineeth's'). 'shared' = take turns ('let's alternate the vacuuming'). 'whoever' = nobody's in particular ('either of us can do the bins'). Defaults to owned.",
+                },
+                "owner_name": {"type": "string", "description": "Who owns it, for mode 'owned'."},
                 "assignee_names": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "One name = always assigned to them. Multiple names = rotates round-robin. Omit for unassigned.",
+                    "description": "For mode 'shared': the people taking turns, in order. One name here without a mode means owned by that person.",
                 },
             },
             "required": ["name"],
@@ -1196,7 +1204,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "list_chore_definitions",
-        "description": "List the recurring chore templates (name, category, frequency, who's assigned) — not individual due-date instances.",
+        "description": "List the recurring chore templates (name, category, frequency, and who it belongs to: mode owned/shared/whoever, the owner, the people taking turns and whose turn it is right now) — not individual due-date instances.",
         "input_schema": {
             "type": "object",
             "properties": {"active_only": {"type": "boolean"}},
@@ -1204,14 +1212,16 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "update_chore",
-        "description": "Update an existing chore's frequency, category, assigned rotation, or active status.",
+        "description": "Update an existing chore's frequency, category, who it belongs to, or active status. Owner changes by saying so: 'give the bathrooms to Vineeth' = mode 'owned' + owner_name 'Vineeth'; 'let's take turns on the vacuuming' = mode 'shared' (+ assignee_names if they named who); 'either of us can do the bins' = mode 'whoever'. Upcoming instances move to the new answer; ones already done keep whoever did them.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "chore_id": {"type": "integer"},
                 "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
                 "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
-                "assignee_names": {"type": "array", "items": {"type": "string"}},
+                "mode": {"type": "string", "enum": ["owned", "shared", "whoever"]},
+                "owner_name": {"type": "string", "description": "The new owner (implies mode 'owned' if mode is omitted)."},
+                "assignee_names": {"type": "array", "items": {"type": "string"}, "description": "For 'shared': who takes turns, in order. Omit to keep the people already on it."},
                 "active": {"type": "boolean", "description": "Set false to deactivate/remove a chore without deleting history."},
             },
             "required": ["chore_id"],
@@ -1219,7 +1229,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "generate_chore_schedule",
-        "description": "Auto-generate upcoming chore instances for all active chores, assigning round-robin across each chore's rotation. Call after onboarding and whenever the upcoming schedule needs filling in further.",
+        "description": "Auto-generate upcoming chore instances for all active chores. Each goes to its owner (owned), to the next person in turn (shared), or to nobody (whoever). Call after onboarding and whenever the upcoming schedule needs filling in further.",
         "input_schema": {
             "type": "object",
             "properties": {"days_ahead": {"type": "integer"}},
@@ -1240,7 +1250,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "list_chores",
-        "description": "List chore instances, filtered by status and how many days ahead to look.",
+        "description": "List chore instances, filtered by status and how many days ahead to look. Each says who it's for (who_label: a first name, or 'either of you') and, once done, who actually did it (completed_by).",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1251,10 +1261,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "complete_chore",
-        "description": "Mark a chore instance as done, given its instance_id.",
+        "description": "Mark a chore instance as done, given its instance_id. Credited to the signed-in adult unless done_by names someone else ('Vineeth did the bins').",
         "input_schema": {
             "type": "object",
-            "properties": {"instance_id": {"type": "integer"}},
+            "properties": {
+                "instance_id": {"type": "integer"},
+                "done_by": {"type": "string", "description": "Who actually did it, if not the person talking."},
+            },
             "required": ["instance_id"],
         },
     },
@@ -5367,19 +5380,82 @@ _RECOMMEND_CHORES_TOOL = {
                         "name": {"type": "string"},
                         "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
                         "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
+                        "mode": {
+                            "type": "string",
+                            "enum": ["owned", "shared", "whoever"],
+                            "description": "owned = one person always (the default); shared = the named people take turns; whoever = nobody in particular.",
+                        },
+                        "owner_name": {
+                            "type": "string",
+                            "description": "For owned: who owns it. One of rotation_members.",
+                        },
                         "assignee_names": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "Subset of the household's rotation_members. Omit/empty for unassigned.",
+                            "description": "For shared: who takes turns, a subset of rotation_members in turn order.",
                         },
                     },
-                    "required": ["name", "category", "frequency"],
+                    "required": ["name", "category", "frequency", "mode"],
                 },
             },
         },
         "required": ["chores"],
     },
 }
+
+
+def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) -> list[dict]:
+    """
+    Every proposed chore leaves here with a mode and, when owned, an owner
+    — the household changes it per row before saving, but the starter list
+    never hands back a row nobody's responsible for by accident.
+
+    The model is asked for both; this covers what it leaves out. An owned
+    row with no owner is dealt round the rotation in turn (so a list of
+    twelve doesn't land on one person), a shared row with fewer than two
+    people gets the whole rotation, and with no rotation named at all the
+    row becomes whoever — there is nobody to propose. Rows that aren't
+    dicts are dropped rather than crashing the wizard.
+    """
+    people = [n.strip() for n in (rotation_members or []) if isinstance(n, str) and n.strip()]
+    lower = {n.lower(): n for n in people}
+    out = []
+    deal = 0
+    for raw in chores or []:
+        if not isinstance(raw, dict):
+            continue
+        row = dict(raw)
+        mode = row.get("mode") if row.get("mode") in ("owned", "shared", "whoever") else None
+        names = [lower.get(str(n).strip().lower(), str(n).strip())
+                 for n in (row.get("assignee_names") or []) if str(n).strip()]
+        owner = str(row.get("owner_name") or "").strip()
+        owner = lower.get(owner.lower(), owner)
+        if mode is None:
+            mode = "owned" if len(names) <= 1 else "shared"
+        if mode == "owned":
+            if not owner and names:
+                owner = names[0]
+            if not owner and people:
+                owner = people[deal % len(people)]
+                deal += 1
+            if not owner:
+                mode = "whoever"
+            names = [owner] if owner else []
+        elif mode == "shared":
+            if len(names) < 2:
+                names = [n for n in people if n not in names] if not names else names + [n for n in people if n not in names]
+            if len(names) < 2:
+                mode, owner = ("owned", names[0]) if names else ("whoever", "")
+                names = [owner] if owner else []
+            else:
+                owner = ""
+        else:
+            owner, names = "", []
+        row["mode"] = mode
+        row["owner_name"] = owner
+        row["assignee_names"] = names
+        out.append(row)
+    return out
 
 
 def generate_chore_recommendations(profile: dict) -> list[dict]:
@@ -5396,9 +5472,11 @@ def generate_chore_recommendations(profile: dict) -> list[dict]:
 {json.dumps(profile, indent=2)}
 
 Recommend a starting cleaning/maintenance chore list for this household. Guidelines:
-- Only use names from rotation_members for assignee_names. Assign chores to a single \
-person where that makes sense, or list multiple names for chores that should rotate \
-between people. Leave assignee_names empty for anything nobody's clearly responsible for.
+- Every chore has a chosen owner. Default to mode 'owned' with an owner_name drawn from \
+rotation_members, spreading the load fairly across them rather than piling onto one person. \
+Use 'shared' (with assignee_names, two or more of rotation_members, in turn order) only for \
+things that genuinely suit taking turns, and 'whoever' sparingly, for small things anyone \
+grabs. Only ever use names from rotation_members. If rotation_members is empty, use 'whoever'.
 - Scale frequency to the stated standard: 'relaxed' = less frequent, 'standard' = \
 typical/moderate, 'meticulous' = more frequent.
 - Scale bathroom-related chores to the bathroom count if it's more than 1-2.
@@ -5427,7 +5505,9 @@ Call submit_chore_recommendations with the result."""
     )
     for block in response.content:
         if block.type == "tool_use":
-            return block.input.get("chores", [])
+            return _normalize_chore_recommendations(
+                block.input.get("chores", []), profile.get("rotation_members") or []
+            )
     return []
 
 

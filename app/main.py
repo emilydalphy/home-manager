@@ -516,6 +516,11 @@ class ChoreItemInput(BaseModel):
     name: str
     category: str = "cleaning"
     frequency: str = "weekly"
+    # Who it belongs to — see app/tools/chores.py MODES. The wizard sends
+    # back whatever the household settled on per row; '' means "you
+    # decide", which add_chore resolves to owned by whoever can be inferred.
+    mode: str = ""
+    owner_name: str = ""
     assignee_names: list[str] = []
 
 
@@ -1170,6 +1175,11 @@ def onboarding_chores_recommend(req: ChoreProfileRequest):
         profile = req.dict()
         profile["pets"] = pets
         profile["goals"] = household.get("goals", "")
+        # Every proposed chore gets an owner, drawn from the rotation named
+        # in setup. A questionnaire that named nobody still has adults to
+        # draw on — use them rather than proposing a list that's nobody's.
+        if not [n for n in profile.get("rotation_members") or [] if n and n.strip()]:
+            profile["rotation_members"] = [a["name"] for a in tools.household_adults() if a["name"]]
         chores = generate_chore_recommendations(profile)
     except AssistantUnavailableError as e:
         logger.warning("Chore recommendation hit a transient Claude API failure: %s", e)
@@ -1218,6 +1228,8 @@ def onboarding_chores_save(req: ChoreSaveRequest):
                 name=c.name.strip(),
                 frequency=c.frequency,
                 category=c.category,
+                mode=c.mode.strip() or None,
+                owner_name=c.owner_name.strip() or None,
                 assignee_names=c.assignee_names or None,
             )
         tools.generate_chore_schedule(days_ahead=14)

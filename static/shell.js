@@ -1431,6 +1431,12 @@
             (isDone ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>' : '') +
           '</span>' +
           '<span class="chore-name">' + escapeHtml(c.chore) + '</span>' +
+          // Whose it is (Loop Board "Chores v1: every chore has a chosen
+          // owner"): the owner's first name, whose turn it is on a shared
+          // chore, or "either of you". The server composes the label so
+          // this row and the Plan | Chores rows to come print the same
+          // thing.
+          (c.who_label ? '<span class="chore-who">' + escapeHtml(c.who_label) + '</span>' : '') +
         '</div>'
       );
     }).join('');

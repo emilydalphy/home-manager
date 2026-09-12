@@ -868,6 +868,13 @@ html, body {
   color: var(--plum-ink);
   flex: 1;
 }
+/* Whose chore it is — a quiet first name at the row's end. */
+.chore-who {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
 /* --ink-done, not --faded: this IS a struck-out completed list item, and
    --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
    Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */
