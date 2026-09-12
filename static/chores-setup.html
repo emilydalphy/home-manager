@@ -175,9 +175,14 @@
 <label class="field-label">Who's in the chore rotation?</label>
 <div class="chip-row" id="rotation-chips"></div>
 
-<label class="field-label">Any existing help (cleaning service, etc.)?</label>
+<!-- Loop Board "Chores v1: tag a chore as outsourced". This is the one
+     place the household is asked about help, and it is asked in their
+     words — the starter list reads the answer and proposes which chores
+     to tag, so nobody is asked a second time in the app's words
+     ("configure outsourced tasks"). -->
+<label class="field-label">Anyone come in to help?</label>
 <div class="row">
-  <input type="text" id="existing-help" placeholder="e.g. cleaning service, or leave blank for none" style="flex:1.5" />
+  <input type="text" id="existing-help" placeholder="e.g. a cleaner, the lawn people &mdash; or leave it blank" style="flex:1.5" />
   <input type="text" id="existing-help-freq" placeholder="How often?" style="flex:1" />
 </div>
 

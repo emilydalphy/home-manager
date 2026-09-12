@@ -178,6 +178,18 @@ CREATE TABLE IF NOT EXISTS chores_profile (
 --            order, and generate_chore_schedule round-robins through it.
 --   whoever  nobody in particular; first to tick it. rotation is '[]' and
 --            default_assignee_id is NULL; instances carry no assignee.
+--   outsourced
+--            somebody outside the house does it — a cleaner, a lawn
+--            service, a laundry pickup (Loop Board "Chores v1: tag a
+--            chore as outsourced"). Underneath it looks like 'whoever'
+--            (rotation '[]', default_assignee_id NULL, instances with no
+--            assignee) and it means the opposite thing, which is why it
+--            is a fourth mode rather than a flag on that one: a
+--            'whoever' chore is still the household's to do, and an
+--            outsourced one is nobody in the house's. It keeps its
+--            frequency and still shows on its day — we know Thursday is
+--            cleaner day — but it carries no tick and counts for nobody.
+--            outsourced_to is the optional name of whoever does it.
 --
 -- '' is "not decided yet": every chore that existed before mode did, until
 -- db._migrate_chore_modes derives one from the rotation it already had
@@ -192,7 +204,12 @@ CREATE TABLE IF NOT EXISTS chores (
     frequency TEXT NOT NULL DEFAULT 'weekly', -- daily | weekly | biweekly | monthly | quarterly | once
     default_assignee_id INTEGER REFERENCES members(id), -- the owner when mode = 'owned'; first of the rotation when 'shared'
     rotation_member_ids_json TEXT NOT NULL DEFAULT '[]', -- the people named on this chore, in turn order
-    mode TEXT NOT NULL DEFAULT '', -- owned | shared | whoever | '' (see above)
+    mode TEXT NOT NULL DEFAULT '', -- owned | shared | whoever | outsourced | '' (see above)
+    -- Who does it, when it isn't us: "Maria", "the lawn people". Optional
+    -- even when mode = 'outsourced' — the household may not want to name
+    -- them — and always '' for every other mode, so the label can never
+    -- outlive the tag that made it true.
+    outsourced_to TEXT NOT NULL DEFAULT '',
     active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -203,6 +220,20 @@ CREATE TABLE IF NOT EXISTS chores (
 -- which is not always the same person. Both are kept so the fairness view
 -- can count by owner and by doer. A done instance is history: changing a
 -- chore's owner later never rewrites either column on it.
+--
+-- due_date is when the schedule ASKED for it, and a pending one that has
+-- gone by is simply due now — never overdue, never counted in days late
+-- (Loop Board "Chores v1: no guilt pile", Emily, 2026-09-11). The whole
+-- backlog of a chore shows as one due row; ticking that row marks the
+-- rest 'skipped', because one mop is one mop and recording four would be
+-- false history the fairness view would then act on.
+--
+-- done_on is the DAY the work happened and is what the next occurrence
+-- counts from; completed_at stays the instant the tick arrived. On a UTC
+-- server the two agree, so what the separate column buys is the case that
+-- cannot be derived from a timestamp: a back-dated "I did it yesterday".
+-- Both are still the SERVER's calendar day — nothing in chores.py reads
+-- households.timezone. See db.py's _MIGRATIONS entry.
 CREATE TABLE IF NOT EXISTS chore_instances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
@@ -210,7 +241,8 @@ CREATE TABLE IF NOT EXISTS chore_instances (
     assignee_id INTEGER REFERENCES members(id),
     due_date TEXT NOT NULL, -- ISO date
     status TEXT NOT NULL DEFAULT 'pending', -- pending | done | skipped
-    completed_at TEXT,
+    completed_at TEXT, -- when the tick arrived (UTC timestamp)
+    done_on TEXT, -- ISO date the work actually happened; back-datable ("I did it yesterday")
     completed_by_member_id INTEGER REFERENCES members(id), -- who ticked it; NULL when unknown or not done
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

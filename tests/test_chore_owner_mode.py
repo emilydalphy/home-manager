@@ -767,8 +767,13 @@ def test_the_recommend_route_draws_on_the_adults_when_setup_named_nobody(signed_
 
 
 def test_the_recommend_prompt_asks_for_an_owner_by_default():
+    # Four values since Loop Board "Chores v1: Tag a chore as outsourced" —
+    # outsourced is a fourth mode beside the three ways a chore can belong
+    # to someone in the house, not a flag on top of them. Asserted in full
+    # rather than as a prefix, so adding a fifth is a decision somebody
+    # makes here rather than something a slice quietly widens.
     props = agent._RECOMMEND_CHORES_TOOL["input_schema"]["properties"]["chores"]["items"]
-    assert props["properties"]["mode"]["enum"] == ["owned", "shared", "whoever"]
+    assert props["properties"]["mode"]["enum"] == ["owned", "shared", "whoever", "outsourced"]
     assert "owner_name" in props["properties"]
     assert "mode" in props["required"]
 
@@ -817,9 +822,10 @@ def test_the_chat_tools_carry_mode_and_owner():
     by_name = {t["name"]: t for t in agent.TOOL_DEFINITIONS}
     add = by_name["add_chore"]["input_schema"]["properties"]
     upd = by_name["update_chore"]["input_schema"]["properties"]
-    assert add["mode"]["enum"] == ["owned", "shared", "whoever"]
+    # Four values — see the note on the recommend tool above.
+    assert add["mode"]["enum"] == ["owned", "shared", "whoever", "outsourced"]
     assert "owner_name" in add and "owner_name" in upd
-    assert upd["mode"]["enum"] == ["owned", "shared", "whoever"]
+    assert upd["mode"]["enum"] == ["owned", "shared", "whoever", "outsourced"]
     # The phrases the household will actually say are in the description,
     # so the model maps them without guessing.
     desc = by_name["update_chore"]["description"].lower()

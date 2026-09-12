@@ -433,6 +433,38 @@ _MIGRATIONS = [
     # NULL on every existing instance: nothing recorded the person before
     # this, and guessing the assignee did it would be inventing history.
     ("chore_instances", "completed_by_member_id", "INTEGER"),
+    # The DAY the chore was actually done — Loop Board "Chores v1: no guilt
+    # pile" (Emily, 2026-09-11). Its own column beside completed_at, which
+    # stays exactly what it always was: the instant the tick reached the
+    # server.
+    #
+    # What the split actually buys, stated precisely because a looser
+    # version was written here first and the next person would have acted
+    # on it. On the deployed path today the two agree — the container runs
+    # in UTC, so date.today() and date(completed_at) are the same date, and
+    # done_on could have been derived from the timestamp. What it buys is
+    # the one case that CANNOT be derived: "I did it yesterday", where the
+    # work and the tick fall on different days, and it is the WORK the next
+    # occurrence counts from.
+    #
+    # The gap it leaves room for, and which is still open: households.
+    # timezone exists (the morning-text work added it) and nothing in
+    # chores.py reads it, so every date in that module is the server's
+    # calendar day rather than the household's. done_on is the column that
+    # would read a household clock once one is wired in; completed_at
+    # should not, because an audit timestamp belongs in UTC.
+    ("chore_instances", "done_on", "TEXT"),
+    # Loop Board "Chores v1: tag a chore as outsourced". Who does it when
+    # it isn't anyone in the house — "Maria", "the lawn people". '' on
+    # every existing chore, and no backfill goes with it, deliberately:
+    # nothing before this could say a chore was outsourced, so there is no
+    # older fact to read one out of. chores_profile.existing_help is the
+    # nearest thing and it is free text about the HOUSEHOLD, not about any
+    # particular chore — the starter list reads it to PROPOSE which rows
+    # to tag (agent.generate_chore_recommendations), which is an offer the
+    # household can decline, not a migration writing down an answer nobody
+    # actually gave.
+    ("chores", "outsourced_to", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -742,6 +774,7 @@ def _run_migrations(conn):
     _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
     _migrate_chore_modes(conn)
+    _backfill_chore_done_on(conn)
 
 
 def _migrate_chore_modes(conn):
@@ -783,6 +816,31 @@ def _migrate_chore_modes(conn):
             "UPDATE chores SET mode = ?, rotation_member_ids_json = ?, default_assignee_id = ? WHERE id = ?",
             (mode, json.dumps(rotation), owner, row["id"]),
         )
+
+
+def _backfill_chore_done_on(conn):
+    """
+    Loop Board "Chores v1: no guilt pile" (Emily, 2026-09-11). Every chore
+    already ticked off has a completed_at timestamp and no done_on, so the
+    day it was done is DERIVED from the timestamp rather than asked for
+    again — the same move _migrate_chore_modes makes with the rotation.
+
+    Only rows that are done, have a timestamp, and have no done_on yet, so
+    it is idempotent and a back-dated done_on is never overwritten. A done
+    row with no timestamp at all (there should be none, but the column has
+    always been nullable) is left alone: readers coalesce down to due_date,
+    so nothing depends on this having run, and writing a date we would
+    have had to guess is inventing history.
+    """
+    conn.execute(
+        """
+        UPDATE chore_instances
+           SET done_on = date(completed_at)
+         WHERE status = 'done'
+           AND completed_at IS NOT NULL
+           AND (done_on IS NULL OR done_on = '')
+        """
+    )
 
 
 def init_db():
