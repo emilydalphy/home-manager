@@ -11,9 +11,12 @@ what the first is for:
   SHOW_CHORES_ON_TODAY constant that hid the card for everyone from
   2026-09-08. It rides on /api/whoami into the shell; while off there is
   no card, no /api/chores/today request, no invitation into
-  /chores-setup, the two chores routes answer empty / 403, and the nine
-  chores chat tools decline with one plain sentence instead of
-  half-working. set_chores_enabled.py flips it — no admin UI.
+  /chores-setup, the two chores routes answer empty / 403, and every
+  chores chat tool declines with one plain sentence instead of
+  half-working (nine at the time this file was written; skip_chore and
+  move_chore joined the same gate on 2026-09-12 — see
+  test_the_chores_tools_are_the_gated_set below). set_chores_enabled.py
+  flips it — no admin UI.
 
   "Chores v1: Turn the 'Your chores' card on Now back on — and make it
   serve the story": today's chores next to tonight's dinner, whole
@@ -273,10 +276,12 @@ _CHORES_TOOL_CALLS = [
     ("schedule_chore_instance", {"chore_name": "Bins", "due_date": TODAY}),
     ("list_chores", {}),
     ("complete_chore", {"instance_id": 1}),
+    ("skip_chore", {"chore_name": "Bins"}),
+    ("move_chore", {"chore_name": "Bins", "to_date": TODAY}),
 ]
 
 
-def test_the_nine_chores_tools_are_the_gated_set():
+def test_the_chores_tools_are_the_gated_set():
     """Every chores entry in TOOL_FUNCTIONS is behind the gate, and nothing else is."""
     assert agent.CHORES_TOOLS == {name for name, _ in _CHORES_TOOL_CALLS}
     assert agent.CHORES_TOOLS <= set(agent.TOOL_FUNCTIONS)

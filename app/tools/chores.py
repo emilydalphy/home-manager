@@ -1444,3 +1444,233 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
         return result
     finally:
         conn.close()
+
+
+# --- changing one occurrence without a full tick ------------------------------
+#
+# Loop Board "Chores v1: Add or change anything by saying so" (Emily,
+# 2026-09-12). Two things chat could not do: say "skip this week" without
+# it counting as either done or missed, and say "push it to Saturday"
+# without inventing a duplicate. Both act on ONE occurrence, the same way
+# complete_chore does — see _due_or_next_pending_id for how "which one" is
+# decided when the household names a chore but not a specific date.
+
+
+def _chore_named(conn, chore_name: str) -> dict:
+    """An existing chore row by exact name, or a plain refusal. Shared by
+    the tools below that take a chore by name rather than an id."""
+    chore = conn.execute(
+        "SELECT * FROM chores WHERE household_id = ? AND name = ?", (household_id(), chore_name)
+    ).fetchone()
+    if not chore:
+        raise ValueError(f"No chore named '{chore_name}'.")
+    return chore
+
+
+def _due_or_next_pending_id(conn, chore_id: int, today: date) -> int | None:
+    """
+    The occurrence "the due one" means for a chore, when nothing more
+    specific was named: the same representative _collapse_outstanding
+    hands the Now card and _up_this_time hands the assignee — the latest
+    pending instance due on or before today, so a whole slipped run
+    resolves to the single row that is genuinely due right now; failing
+    that, the earliest pending instance still ahead. None means there is
+    nothing pending to act on at all (never scheduled, or a 'once' chore
+    already settled) — the caller asks rather than guessing a date out of
+    thin air.
+
+    Shared by skip_chore and move_chore so "skip the vacuuming" and "push
+    the vacuuming to Saturday" agree with complete_chore on which
+    occurrence a bare chore name means.
+    """
+    owed = conn.execute(
+        "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date <= ? ORDER BY due_date DESC, id DESC LIMIT 1",
+        (chore_id, household_id(), today.isoformat()),
+    ).fetchone()
+    if owed:
+        return owed["id"]
+    ahead = conn.execute(
+        "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date > ? ORDER BY due_date ASC, id ASC LIMIT 1",
+        (chore_id, household_id(), today.isoformat()),
+    ).fetchone()
+    return ahead["id"] if ahead else None
+
+
+def skip_chore(chore_name: str, when: str | None = None) -> dict:
+    """
+    Skip a single occurrence without marking it done — "not this week",
+    "skip the vacuuming", "we're not doing the bathrooms this time".
+
+    Unlike complete_chore, skipping does NOT move the chore's rhythm:
+    nobody did the work, so there is no day it happened for the next
+    occurrence to count from — the schedule simply carries on as it was.
+    A skipped occurrence is history the same way a done one is (see
+    _mark_done's own sweep, which marks a cleared backlog "skipped" for
+    the identical reason): it is never counted toward anyone and never
+    read back as missed.
+
+    `when` picks which occurrence: left out (or "this week"/"this
+    time"/"today") is the one due right now — the same representative
+    complete_chore's one tick would settle the whole backlog through (see
+    _due_or_next_pending_id); a specific YYYY-MM-DD picks a different
+    dated occurrence instead, for skipping a week that hasn't come up yet
+    ("skip the 20th's bathrooms, we'll have guests").
+
+    An outsourced occurrence CAN be skipped — the cleaner not showing is
+    a real thing that happens to a real Thursday — it just still can't be
+    ticked (see _refuse_if_outsourced, which this deliberately never
+    calls). The write itself goes through set_chore_instance_status, the
+    same door the Today card's own skip already uses, so chat and the
+    card agree on what a skip does.
+
+    Resolving to the occurrence due right now also settles the rest of
+    ANY backlog behind it, the identical sweep _mark_done runs for a
+    tick (`also_cleared` says how many, for the same "don't report the
+    job twice" reason list_chores' stands_for exists) — a household that
+    says "skip the vacuuming" once should not still see it as due because
+    two more slipped weeks were sitting under the one row shown. Naming a
+    specific future date skips only that one occurrence; there is no pile
+    behind a date that hasn't come up yet.
+    """
+    conn = get_conn()
+    try:
+        chore = _chore_named(conn, chore_name)
+        when_key = (when or "").strip().lower()
+        is_the_due_one = not when_key or when_key in ("this week", "this time", "today")
+        if is_the_due_one:
+            instance_id = _due_or_next_pending_id(conn, chore["id"], date.today())
+            if instance_id is None:
+                raise ValueError(f"There's no {chore_name} coming up to skip.")
+        else:
+            try:
+                target = date.fromisoformat(when_key)
+            except ValueError:
+                raise ValueError(f"I couldn't read {when!r} as a date — it wants YYYY-MM-DD, or say 'this week'.")
+            row = conn.execute(
+                "SELECT id, due_date FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+                "AND status = 'pending' AND due_date = ?",
+                (chore["id"], household_id(), target.isoformat()),
+            ).fetchone()
+            if not row:
+                raise ValueError(f"There's no {chore_name} due {target.isoformat()} to skip.")
+            instance_id = row["id"]
+
+        also_cleared = 0
+        if is_the_due_one:
+            # Same bound as _mark_done's sweep: the later of this row's
+            # due date and today, so skipping a FUTURE "due one" (nothing
+            # slipped yet) still only reaches backwards, never forwards
+            # into occurrences that haven't happened yet.
+            due_date = conn.execute(
+                "SELECT due_date FROM chore_instances WHERE id = ? AND household_id = ?",
+                (instance_id, household_id()),
+            ).fetchone()["due_date"]
+            sweep_through = max(due_date, date.today().isoformat())
+            also_cleared = conn.execute(
+                "UPDATE chore_instances SET status = 'skipped' WHERE household_id = ? AND chore_id = ? "
+                "AND status = 'pending' AND due_date <= ? AND id != ?",
+                (household_id(), chore["id"], sweep_through, instance_id),
+            ).rowcount or 0
+            conn.commit()
+    finally:
+        conn.close()
+    result = set_chore_instance_status(instance_id, "skipped")
+    result["chore"] = chore_name
+    result["also_cleared"] = also_cleared
+    return result
+
+
+def move_chore(chore_name: str, to_date: str, from_date: str | None = None) -> dict:
+    """
+    Move a single occurrence of a chore to a different day — "push the
+    vacuuming to Saturday", "move trash night to Wednesday this week".
+
+    Re-dates that ONE occurrence in place rather than cancelling and
+    rebooking it: the row keeps its id and whoever already had it, so a
+    shared rotation's turn order and anything already recorded against it
+    stay exactly as they were. (schedule_chore_instance, by contrast,
+    always creates a brand new row — it has no way to touch one already
+    on the calendar, which is the gap this closes.) Only a PENDING
+    occurrence can be moved; one already done is history, not a date to
+    rearrange.
+
+    `from_date` names which occurrence when there's more than one it
+    could mean ("move the 12th's bathroom clean to the 14th"); left out,
+    it's the one due right now — the same representative complete_chore
+    and skip_chore resolve to (see _due_or_next_pending_id).
+
+    Refuses rather than doubling a chore up on one day: if it already has
+    another occurrence due on `to_date`, nothing is written and the
+    household is asked to pick a different day or settle the existing one
+    first.
+    """
+    conn = get_conn()
+    try:
+        chore = _chore_named(conn, chore_name)
+        try:
+            target = date.fromisoformat((to_date or "").strip())
+        except ValueError:
+            raise ValueError(f"I couldn't read {to_date!r} as a date — it wants YYYY-MM-DD.")
+
+        if from_date:
+            try:
+                source = date.fromisoformat(from_date.strip())
+            except ValueError:
+                raise ValueError(f"I couldn't read {from_date!r} as a date — it wants YYYY-MM-DD.")
+            row = conn.execute(
+                "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+                "AND status = 'pending' AND due_date = ?",
+                (chore["id"], household_id(), source.isoformat()),
+            ).fetchone()
+            if not row:
+                # Say WHY there's nothing to move when it's because the
+                # work is already done — a much more useful answer than
+                # the same blank "there's nothing there" a truly empty
+                # date gets, and the one case a household is actually
+                # likely to hit by naming a specific day.
+                done = conn.execute(
+                    "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+                    "AND status = 'done' AND due_date = ?",
+                    (chore["id"], household_id(), source.isoformat()),
+                ).fetchone()
+                if done:
+                    raise ValueError(f"{chore_name} is already done that day — nothing to move.")
+                raise ValueError(f"There's no {chore_name} due {source.isoformat()} to move.")
+            instance_id = row["id"]
+        else:
+            instance_id = _due_or_next_pending_id(conn, chore["id"], date.today())
+            if instance_id is None:
+                raise ValueError(
+                    f"There's no {chore_name} coming up to move — say which date, "
+                    "or generate the schedule first."
+                )
+
+        dup = conn.execute(
+            "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+            "AND status = 'pending' AND due_date = ? AND id != ?",
+            (chore["id"], household_id(), target.isoformat(), instance_id),
+        ).fetchone()
+        if dup:
+            raise ValueError(
+                f"{chore_name} is already on {target.isoformat()} — pick a different day, "
+                "or settle that one first."
+            )
+
+        conn.execute(
+            "UPDATE chore_instances SET due_date = ? WHERE id = ? AND household_id = ?",
+            (target.isoformat(), instance_id, household_id()),
+        )
+        conn.commit()
+        row = conn.execute(
+            _INSTANCE_SELECT + " WHERE ci.id = ? AND ci.household_id = ?", (instance_id, household_id())
+        ).fetchone()
+        described = _instance_dicts(conn, [row])[0]
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
+    conn.close()
+    described["instance_id"] = described.pop("id")
+    return {**described, "moved": True}

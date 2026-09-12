@@ -1016,6 +1016,11 @@ their own app is how they stop opening it. Asked outright ("what did we miss?"),
 plainly and once — name the chores that are due and stop, with no tally and no comment on \
 the stretch. If they mention having done something days ago, pass done_on to \
 complete_chore so the rhythm restarts from then.
+- "Not this week"/"skip it" is skip_chore, not complete_chore — it isn't done and it isn't \
+missed either, so say it back the same plain way ("skipped this week's vacuuming") with no \
+apology and no note that it'll be due again, which it will be anyway. "Push it to Saturday"/ \
+"move it" is move_chore — it's still the same chore and the same person's, just a different \
+day; don't describe it as cancelling or rescheduling from scratch.
 - Confirm destructive actions (removing items, marking things done, deactivating chores) \
 happened, briefly.
 """
@@ -1297,6 +1302,31 @@ TOOL_DEFINITIONS = [
                 "done_on": {"type": "string", "description": "YYYY-MM-DD, the day it was actually done, if that wasn't today ('I did it yesterday'). Never a future date."},
             },
             "required": ["instance_id"],
+        },
+    },
+    {
+        "name": "skip_chore",
+        "description": "Skip a single occurrence of a chore without marking it done — 'not this week', 'skip the vacuuming', 'we're not doing the bathrooms this time'. Defaults to the occurrence due right now, the same one complete_chore's tick would settle (and, same as a tick, that also settles any backlog behind it — also_cleared says how many, don't report it as a count of what was missed); pass `when` as a YYYY-MM-DD to skip one specific dated occurrence instead. A skipped occurrence isn't counted toward anyone and is never read back as missed, and — unlike a tick — it does not move the chore's rhythm along, since nobody actually did the work. Outsourced chores can be skipped too ('the cleaner's not coming this week') even though they can never be ticked.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "chore_name": {"type": "string"},
+                "when": {"type": "string", "description": "YYYY-MM-DD for a specific occurrence, or leave out (or say 'this week') for the one due right now."},
+            },
+            "required": ["chore_name"],
+        },
+    },
+    {
+        "name": "move_chore",
+        "description": "Move a single occurrence of a chore to a different day — 'push the vacuuming to Saturday', 'move trash night to Wednesday this week'. Re-dates that one occurrence in place: it keeps its id and whoever already had it, so a shared rotation's turn order stays untouched. Defaults to the occurrence due right now; pass `from_date` (YYYY-MM-DD) when there's more than one occurrence it could mean. Refuses rather than doubling a chore up on one day — if it already has another occurrence due on `to_date`, say so and ask which day they actually want.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "chore_name": {"type": "string"},
+                "to_date": {"type": "string", "description": "YYYY-MM-DD, the new day."},
+                "from_date": {"type": "string", "description": "YYYY-MM-DD of the specific occurrence to move, if it's not the one due right now."},
+            },
+            "required": ["chore_name", "to_date"],
         },
     },
     {
@@ -5332,17 +5362,20 @@ Call submit_read_recipe with the result."""
 
 # The chat tools that only make sense in a house with Chores switched on
 # (Loop Board "Chores v1: Who sees it — a per-household switch", Emily,
-# 2026-09-12). One gate at the dispatch in run_agent_turn rather than nine
-# wrapped entries in TOOL_FUNCTIONS: the entries stay the plain tool
-# functions (tests and the chores-setup routes call them directly, and
-# that page is reachable by URL for every household by design), and the
-# household's answer is looked up once per call, at request time, never
-# at import. Read-only tools are in here too — "what chores are due" is
-# still a chores question the tester's house should get a plain no to.
+# 2026-09-12). One gate at the dispatch in run_agent_turn rather than
+# wrapped entries in TOOL_FUNCTIONS for each one: the entries stay the
+# plain tool functions (tests and the chores-setup routes call them
+# directly, and that page is reachable by URL for every household by
+# design), and the household's answer is looked up once per call, at
+# request time, never at import. Read-only tools are in here too — "what
+# chores are due" is still a chores question the tester's house should
+# get a plain no to. skip_chore and move_chore (Loop Board "Chores v1:
+# Add or change anything by saying so", 2026-09-12) joined the original
+# nine the same way: any new chores tool belongs in this set, full stop.
 CHORES_TOOLS = frozenset({
     "get_chores_profile", "set_chores_profile", "add_chore", "list_chore_definitions",
     "update_chore", "generate_chore_schedule", "schedule_chore_instance", "list_chores",
-    "complete_chore",
+    "complete_chore", "skip_chore", "move_chore",
 })
 
 
@@ -5392,6 +5425,8 @@ TOOL_FUNCTIONS = {
     "schedule_chore_instance": tools.schedule_chore_instance,
     "list_chores": tools.list_chores,
     "complete_chore": tools.complete_chore,
+    "skip_chore": tools.skip_chore,
+    "move_chore": tools.move_chore,
     "add_recipe": tools.add_recipe,
     "list_recipes": tools.list_recipes,
     "get_recipe": tools.get_recipe,

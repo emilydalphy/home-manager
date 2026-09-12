@@ -3874,7 +3874,10 @@ def add_member_share_note(token: str, req: MemberNoteRequest):
 # anything. Anything NOT listed falls back to the household-info href
 # (see _categorize_tool) rather than being silently dropped, since a write
 # tool we haven't explicitly categorized is still something that changed.
-_CHORE_TOOLS = {"add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore"}
+_CHORE_TOOLS = {
+    "add_chore", "update_chore", "generate_chore_schedule", "schedule_chore_instance", "complete_chore",
+    "skip_chore", "move_chore",
+}
 _WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "approve_weekly_plan"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
@@ -3921,7 +3924,7 @@ _VERB_PREFIXES = [
     ("swap_", "Swapped in"), ("update_", "Updated"), ("set_", "Updated"), ("mark_", "Updated"),
     ("generate_", "Generated"), ("approve_", "Approved"), ("exclude_", "Excluded"), ("include_", "Added back"),
     ("clear_", "Cleared"), ("consolidate_", "Consolidated"), ("resolve_", "Resolved"), ("flag_", "Flagged"),
-    ("log_", "Logged"), ("plan_", "Planned"), ("schedule_", "Scheduled"),
+    ("log_", "Logged"), ("plan_", "Planned"), ("schedule_", "Scheduled"), ("skip_", "Skipped"), ("move_", "Moved"),
 ]
 # "items"/"restrictions"/"new_meal"/"goals" are listed ahead of the older,
 # more generic fields: set_member_dietary_restrictions(name, restrictions)
