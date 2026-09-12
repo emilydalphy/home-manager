@@ -1430,6 +1430,60 @@ def calendar_status():
     return calendar_feed.status()
 
 
+# ---------- Holidays ----------
+#
+# Loop Board "Holidays: Pomona knows 12 October is coming and asks how
+# you're spending it" (Emily, 2026-09-11). Two routes: the holidays in a
+# window (with the answer so far), and the answer itself — the same write
+# the intake's Days screen, the Now card and chat all make. No new screen;
+# see app/tools/holidays.py.
+
+class HolidayAnswerRequest(BaseModel):
+    date: str
+    answer: str
+    # Extra people beyond the household, when hosting. None keeps what's
+    # recorded when the answer is unchanged.
+    headcount: int | None = None
+    # The dish they're bringing, when out. '' clears it; None keeps it.
+    bring_dish: str | None = None
+    answered_by: str = ""
+
+
+@app.get("/api/holidays")
+def holidays_in_window(start: str = "", days: int = 60):
+    """The holidays from `start` (today if blank) for `days` days, each with the household's answer."""
+    if start:
+        try:
+            datetime.date.fromisoformat(start)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="start must be an ISO date (YYYY-MM-DD).")
+    if days < 1 or days > 366:
+        raise HTTPException(status_code=400, detail="days has to be between 1 and 366.")
+    try:
+        return {"holidays": tools.get_upcoming_holidays(start, days)}
+    except Exception as e:
+        logger.exception("Holiday lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/holidays/answer")
+def holiday_answer_route(req: HolidayAnswerRequest):
+    """
+    Record how the household is spending one holiday. Returns the saved
+    answer, its one-line acknowledgement, and what changed on the plan.
+    """
+    try:
+        return tools.answer_holiday(
+            req.date, req.answer, headcount=req.headcount, bring_dish=req.bring_dish,
+            answered_by=req.answered_by,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Holiday answer failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/morning-text")
 def morning_text_settings():
     """The Preferences sheet's "Morning text" row and sheet read this."""

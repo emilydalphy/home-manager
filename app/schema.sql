@@ -1330,6 +1330,34 @@ CREATE TABLE IF NOT EXISTS calendar_feeds (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- How the household is spending a holiday (Loop Board "Holidays: Pomona
+-- knows 12 October is coming and asks how you're spending it", Emily,
+-- 2026-09-11). One row per (household, date): the holiday is computed by
+-- rule (app/tools/holidays.py) or read off the household's own calendar
+-- feed, and this is only the ANSWER — hosting / out / just_us / unsure —
+-- with the two facts that hang off it: how many extra at the table when
+-- hosting, and the dish they're bringing when going to someone's. Its own
+-- table rather than a week_intake tag because the answer is about a DATE,
+-- not a revision of a week's questions: it can be given on Now three days
+-- out, or in chat, before or after any intake exists, and it carries
+-- fields (headcount, the dish) a night tag cannot. It is also the seam
+-- for the hosting big-meal build (slice 2), which reads `answer` and
+-- `headcount` from here.
+CREATE TABLE IF NOT EXISTS holiday_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    date TEXT NOT NULL,                       -- ISO date of the holiday
+    holiday_name TEXT NOT NULL,               -- as it was shown when answered ("Thanksgiving")
+    answer TEXT NOT NULL,                     -- hosting | out | just_us | unsure
+    headcount INTEGER NOT NULL DEFAULT 0,     -- extra guests beyond the household, when hosting
+    bring_dish TEXT NOT NULL DEFAULT '',      -- the dish they're taking, when out ('' = nothing)
+    bring_dish_recipe_id INTEGER,             -- the saved recipe it matched, if one did
+    answered_by TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (household_id, date)
+);
+
 -- Seed a single default household so V1 works out of the box
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'

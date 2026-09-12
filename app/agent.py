@@ -858,6 +858,12 @@ set_item_store to remember it per item, and get_grocery_list_by_store instead of
 get_grocery_list_by_section once more than one store is in play.
 - Ad hoc grocery items ("also grab batteries") just use add_grocery_item/add_grocery_items like \
 anything else — no special handling needed, a grocery item doesn't need to trace back to a recipe.
+- Holidays: Pomona knows the household's holidays (get_upcoming_holidays) and never assumes how \
+they're spending one. When they say — "we're at my mom's for Thanksgiving", "we're hosting \
+Christmas, ten of us", "just us this year", "not sure yet" — record it with answer_holiday \
+(hosting / out / just_us / unsure), and the dish they're bringing when they name one. Say what \
+that means in one line ("I'll leave Monday's dinner off and add the casserole to the week"). \
+Say "the holiday" or its name, never "event mode"; a big day is "a big meal".
 - Staples are the things a household buys on a rhythm, food or not ("we always get coffee", \
 "we go through dish soap about every month", "keep cat litter stocked"): add_staple, and Pomona puts \
 it on the list just before it's probably due — no counting, no inventory. "We've got plenty" is \
@@ -2049,6 +2055,44 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "answer_holiday",
+        "description": "Record how the household is spending a holiday Pomona knows about (the country's holidays by rule, plus holiday-looking days on their own calendar): 'hosting', 'out' (going to someone's), 'just_us', or 'unsure'. \"We're going to my mom's for Thanksgiving\" = out; \"we're hosting, eight of us\" = hosting with headcount = extras beyond the household (so 8 at a table of 3 is headcount 5 — ask if you can't tell which they mean); \"just us this year\" = just_us; \"not sure yet\" = unsure, and Pomona asks again on Now three days out. 'out' takes that dinner off the week (nothing planned, nothing bought); name the dish in bring_dish when they're taking one (\"I'm bringing the sweet potato casserole\") and it's planned into that day as the thing they cook, groceries included, the way any planned meal is — a saved recipe by that name is used when there is one. Answering again replaces the answer and undoes the old one. Never assume the answer; ask. Use get_upcoming_holidays first if you don't know the date.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string", "description": "The holiday's ISO date (YYYY-MM-DD)."},
+                "answer": {"type": "string", "enum": ["hosting", "out", "just_us", "unsure"]},
+                "headcount": {"type": "integer", "description": "EXTRA people beyond the household, when hosting. Omit to keep what's recorded."},
+                "bring_dish": {"type": "string", "description": "The dish they're bringing, when out. '' to say nothing after all. Omit to keep what's recorded."},
+            },
+            "required": ["date", "answer"],
+        },
+    },
+    {
+        "name": "get_upcoming_holidays",
+        "description": "The holidays Pomona knows about in a window of days from a start date (default: the next 60 days from today), each with the household's answer so far. Use before answer_holiday when the date isn't known, and for 'what's coming up', 'when's Thanksgiving', 'did we say what we're doing for Christmas'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "start_date": {"type": "string", "description": "ISO date; today if omitted."},
+                "day_count": {"type": "integer", "description": "How many days from start_date; 60 if omitted, at most 366."},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "set_holiday_region",
+        "description": "Where the household is, for its holidays: country (Canada only so far) and province/territory (\"we're in BC\", \"Manitoba\"). Only what's given changes; the default is Ontario. Family Day and its provincial siblings depend on it.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "country": {"type": "string", "description": "Two-letter code, e.g. CA."},
+                "province": {"type": "string", "description": "Two-letter code or name, e.g. ON, BC, 'Nova Scotia'."},
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "set_away_stretch",
         "description": "Mark a whole away stretch in one gesture — e.g. \"we're away Saturday lunch through Sunday lunch\", or \"Vineeth's away for the weekend\" — the way to handle a trip conversationally, matching the week intake's own range gesture. Every slot from from_date/from_slot to to_date/to_slot INCLUSIVE has the travelers taken out of it. If that leaves NOBODY home for a slot, that slot is marked away (no planning, no groceries — same guarantee as a nobody-home dinner, now for any slot); if others are still home, the meal still happens, just for fewer people. Two more slots are derived automatically PER TRAVELER: that person's last meal at home before they go becomes 'quick' (grab-and-go), and their first meal back becomes 'ready_made' (earmarked with a batch/defrost recommendation rather than cooked fresh — the household still has to confirm that recommendation, see confirm_slot_recommendation). Use set_member_attendance instead for one person missing one meal, and set_slot_need for a single slot rather than a whole range.",
         "input_schema": {
@@ -2562,6 +2606,16 @@ you follow their tag. The calendar only ever TIGHTENS a day; it never makes a da
 never removes a meal, and never overrides `attendance`. If `calendar.note` is set the read \
 was stale or failed and it says so — plan as usual and don't mention the calendar for days \
 it has nothing on.
+- `holidays`, when present, lists the holidays in this period (by the household's own \
+country and province, or from their calendar) with how the household said they're spending \
+each one and what that means for the day (`plan`). Follow it exactly: `out` means they eat \
+dinner elsewhere — send NO dinner entry for that date (the app handles it, and a dish they're \
+bringing is already planned into that slot); `hosting` means a dinner they host for the table \
+in `extra_guests` beyond the household — a real, generous dinner that fits the day, not a \
+weeknight one, and name the holiday in the reasoning; `just_us` is an ordinary day at home, \
+a little nicer is fine; `unsure` and `not_asked` mean plan a normal dinner and keep it easy \
+to change. Never assume a big meal: the household said what the day is. Call it "the \
+holiday" or by its name — never "event mode".
 - household_memory's `kitchen_kit` is what this household actually owns to cook with. Only \
 suggest recipes their kitchen can make: no air-fryer recipe for a household without one, no \
 slow-cooker night if there's no slow cooker. If "no_dishwasher" is listed, keep an eye on how \
@@ -3713,6 +3767,14 @@ def _generate_weekly_plan(
     )
     if calendar_ctx is not None:
         context["calendar"] = calendar_ctx
+    # Loop Board "Holidays: Pomona knows 12 October is coming and asks how
+    # you're spending it" (2026-09-11): the holidays in this period and the
+    # household's answer for each, so the planner never proposes a
+    # Tuesday-style dinner for a day they're out. Absent entirely for a
+    # period with none. See the `holidays` bullet above and holidays.py.
+    holiday_lines = tools.holiday_generation_context(content_start_date, day_count)
+    if holiday_lines:
+        context["holidays"] = holiday_lines
 
     # Run the actual generation call BEFORE creating the weekly_plans row.
     # This used to be the other way around — create the plan, then generate
@@ -4117,6 +4179,13 @@ def _finish_week_slots(
     # question first — see apply_slot_needs_to_plan's docstring for the
     # full invariant this guarantees regardless of what the model did.
     tools.apply_slot_needs_to_plan(plan_id, week_start_date, day_count=day_count)
+
+    # The dish the household is bringing to a holiday they're out for goes
+    # into that day's dinner slot, clearing whatever the model put there
+    # (holidays.apply_to_plan). AFTER the slot-needs pass — a day they are
+    # out for without a dish is an away slot that pass already wrote — and
+    # BEFORE the audit, so the slot reads as filled, not missing.
+    tools.apply_holiday_answers_to_plan(plan_id, week_start_date, day_count=day_count)
 
     # Two rows claiming one slot is how a night nobody is home ends up with
     # groceries bought for it — audit_plan_slots has always computed this,
@@ -5325,6 +5394,9 @@ TOOL_FUNCTIONS = {
     "get_expiring_soon": tools.get_expiring_soon,
     "get_fresh_perishable_inventory": tools.get_fresh_perishable_inventory,
     "remove_inventory_item": tools.remove_inventory_item,
+    "answer_holiday": tools.answer_holiday,
+    "get_upcoming_holidays": tools.get_upcoming_holidays,
+    "set_holiday_region": tools.set_holiday_region,
     "set_away_stretch": tools.set_away_stretch,
     "set_member_attendance": tools.set_member_attendance,
     "set_guest_count": tools.set_guest_count,
