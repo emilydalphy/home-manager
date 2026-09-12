@@ -194,20 +194,32 @@ console.log(JSON.stringify({ landed: landed, depth: depth() }));
 
 @_needs_node
 def test_the_progress_strip_is_hidden_during_the_intro_and_starts_at_the_first_question():
+    """
+    UPDATED 2026-09-12: the questions' progress cue is the same four-dot
+    pager the intro screens carry, drawn into each question's own foot by
+    renderProgress — so an intro screen, which has no .q-pager and no
+    section, gets nothing drawn, and a question gets four dots with its
+    own section's dot long.
+    """
     out = _run(_nav_harness() + """
 const seen = {};
 %s.forEach(function (k) {
+  const pager = makeEl('div'); pager._classes.add('q-pager');
+  ELS['step-' + k].appendChild(pager);
   showStep(k);
-  seen[k] = { hidden: ELS['progress'].hidden, dots: ELS['progress']._children.length };
+  seen[k] = {
+    dots: pager._children.length,
+    on: pager._children.map(function (d, i) { return d._classes.has('is-on') ? i + 1 : 0; }).filter(Boolean),
+  };
 });
 console.log(JSON.stringify(seen));
-""" % json.dumps(INTRO + ["household", "rhythm-1"]))
+""" % json.dumps(INTRO + ["household", "restrictions", "leftovers", "kit-repeats"]))
     for k in INTRO:
-        assert out[k]["hidden"] is True, f"the questions' progress strip showed during {k}"
-    assert out["household"]["hidden"] is False
-    # Ten dots for ten questions — the intro screens don't count as dots.
-    assert out["household"]["dots"] == 10
-    assert out["rhythm-1"]["dots"] == 10
+        assert out[k]["dots"] == 0, f"a question pager was drawn during {k}"
+    # Four dots for the four stops, exactly one of them long.
+    for k, section in (("household", 1), ("restrictions", 2), ("leftovers", 3), ("kit-repeats", 4)):
+        assert out[k]["dots"] == 4, f"{k} has {out[k]['dots']} dots, not four"
+        assert out[k]["on"] == [section], f"{k} lights dot {out[k]['on']}, not {section}"
 
 
 @_needs_node
@@ -221,12 +233,14 @@ def test_the_page_paints_spruce_during_the_intro_and_ivory_from_the_first_questi
 const body = makeEl('body');
 document.body = body;
 const seen = [];
-['intro-purpose', 'household', 'intro-know', 'rhythm-1'].forEach(function (k) {
+['intro-purpose', 'household', 'intro-know', 'leftovers'].forEach(function (k) {
   showStep(k); seen.push([k, body.classList.contains('intro-active')]);
 });
 console.log(JSON.stringify(seen));
 """)
-    assert out == [["intro-purpose", True], ["household", False], ["intro-know", True], ["rhythm-1", False]]
+    # 'rhythm-1' used to be the fourth step here; it left the flow on
+    # 2026-09-11 and resolveStep sends an unknown key to the first screen.
+    assert out == [["intro-purpose", True], ["household", False], ["intro-know", True], ["leftovers", False]]
 
 
 # ---------- the styling goes through tokens ----------

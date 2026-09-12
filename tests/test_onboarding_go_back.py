@@ -159,7 +159,15 @@ function makeEl(tag) {
     classList: {
       add: function (c) { el._classes.add(c); },
       remove: function (c) { el._classes.delete(c); },
-      toggle: function (c) { if (el._classes.has(c)) el._classes.delete(c); else el._classes.add(c); },
+      // Honours the second argument the way a browser does (2026-09-12):
+      // showStep toggles body classes with a force flag, and a toggle that
+      // ignored it happened to pass only while the steps under test
+      // alternated.
+      toggle: function (c, force) {
+        const on = force === undefined ? !el._classes.has(c) : !!force;
+        if (on) el._classes.add(c); else el._classes.delete(c);
+        return on;
+      },
       contains: function (c) { return el._classes.has(c); }
     },
     appendChild: function (c) { c._parent = el; el._children.push(c); return c; },
@@ -306,6 +314,10 @@ function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
         _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
         _const("STEP_TITLES"),
+        # The section pager (2026-09-12): which of the four stops each
+        # question belongs to, and how many stops there are.
+        _const("QUESTION_SECTIONS"),
+        _const("SECTION_COUNT"),
         _fn("stepFlow"),
         _fn("stepBefore"),
         _fn("resolveStep"),

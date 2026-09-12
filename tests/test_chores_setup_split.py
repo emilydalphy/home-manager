@@ -200,53 +200,37 @@ def test_reveal_is_the_last_step_in_onboarding():
 
 def test_progress_dots_still_match_the_question_step_count():
     """
-    Item C: the progress dots must equal the step count they represent.
+    Item C: the progress cue must cover the steps it represents.
 
-    The dots were already scoped to only the fixed pre-reveal question
-    steps (reveal and the old chores steps were deliberately excluded
-    before this change, per the comment in renderProgress), so removing
-    the two chores steps from ALL_STEPS doesn't change the dot count —
-    this pins that the dotted portion ends exactly where 'reveal' begins.
-
-    UPDATED 2026-09-09 (the go-back branch): this used to compare two
-    hand-written lists — `const ALL_STEPS` against a `const questionSteps`
-    literal inside renderProgress. The second list is gone; the dots are
-    derived from stepFlow() now, for the same reason the back destinations
-    are, so the two can no longer disagree with each other. The property
-    being asserted is unchanged.
+    UPDATED 2026-09-12 (the setup-luxury branch): the ten-segment strip is
+    gone. Each question screen carries the welcome screens' four-dot pager
+    instead, drawn by renderProgress from QUESTION_SECTIONS — one entry per
+    question step, naming which of the four stops it belongs to. What is
+    worth pinning is the same property as before, in the new shape: every
+    step between the intro and 'reveal' has a section, nothing else does,
+    and the long dot only ever moves forward.
     """
     all_steps_m = re.search(r"const ALL_STEPS = \[([^\]]*)\]", ONBOARDING)
     assert all_steps_m
     all_steps = [s.strip().strip("'") for s in all_steps_m.group(1).split(",")]
-
-    assert "const questionSteps = [" not in ONBOARDING, (
-        "the dots are back to a hand-maintained list; derive them from stepFlow()"
-    )
-    # UPDATED 2026-09-10 (the welcome-flow branch): the five intro screens
-    # ahead of the first question carry their own pager and are filtered
-    # out of the dots alongside 'reveal' — see renderProgress and
-    # tests/test_onboarding_welcome_flow.py for the count.
-    assert "stepFlow().filter(k => k !== 'reveal' && INTRO_STEPS.indexOf(k) === -1)" in ONBOARDING
     intro_m = re.search(r"const INTRO_STEPS = \[([^\]]*)\]", ONBOARDING)
     assert intro_m
     intro_steps = [s.strip().strip("'") for s in intro_m.group(1).split(",")]
+    sections_m = re.search(r"const QUESTION_SECTIONS = \{([^}]*)\}", ONBOARDING)
+    assert sections_m, "QUESTION_SECTIONS is gone — see renderProgress"
+    sections = dict(re.findall(r"'([\w-]+)':\s*(\d+)", sections_m.group(1)))
 
-    # UPDATED 2026-09-10: this used to slice the list at 'reveal' and then
-    # assert the slice equalled the same slice — unfalsifiable by
-    # construction, so it said nothing about the dots at all. What is worth
-    # pinning is that the dotted run covers every step that is a question
-    # and no step that isn't. renderProgress removes the intro and exactly
-    # one more key, so 'reveal' has to be the LAST step for the dots to stop
-    # where they should; a step added after it (which is where the old
-    # chores steps sat) would silently lose its dot, and that is what fails
-    # here now.
     assert all_steps[: len(intro_steps)] == intro_steps, "the intro isn't at the front"
-    question_steps = all_steps[len(intro_steps): all_steps.index("reveal")]
-    assert question_steps == [s for s in all_steps if s != "reveal" and s not in intro_steps], (
-        "a step sits after 'reveal' — the dots stop before it"
-    )
     assert all_steps[-1] == "reveal"
-    assert len(question_steps) == len(all_steps) - 1 - len(intro_steps)
+    question_steps = all_steps[len(intro_steps): all_steps.index("reveal")]
+    assert list(sections) == question_steps, (
+        "QUESTION_SECTIONS and the question steps of ALL_STEPS disagree — a "
+        "question with no section shows no pager"
+    )
+    numbers = [int(sections[k]) for k in question_steps]
+    assert numbers == sorted(numbers), "the long dot would move backwards"
+    assert numbers[0] == 1 and numbers[-1] == 4 and set(numbers) == {1, 2, 3, 4}
+    assert "const SECTION_COUNT = 4;" in ONBOARDING
 
 
 def test_chores_setup_page_reuses_the_same_save_route():

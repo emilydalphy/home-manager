@@ -403,6 +403,70 @@ why*, not duplicating the diff.
   37 tests in `tests/test_chores_switch.py` (35 red on main); 8 older
   tests rewritten from the constant to the switch. Suite 3012.
 
+- **2026-09-12 — The setup question screens are the welcome screens'
+  rhythm on ivory, and the reveal is the mirror of "Hi, I'm Pomona."
+  Branch `worktree-setup-luxury`.** Loop Board "Setup question screens in
+  the welcome flow's look: one idea per screen, big type, lots of air"
+  (Emily, 2026-09-10: "luxurious, like the Apple onboarding for a new
+  iPhone"). The 2026-09-11 audit found the questions breaking from the
+  five approved welcome screens: three progress cues at once (a
+  ten-segment strip, a "1 of 4 · Who's eating" eyebrow, the crumb), a
+  darker apricot on Continue (`.next-btn`'s own fill vs the intro's
+  `--apricot`), an × on every name row including the empty ones, controls
+  hugging the title. All in `static/onboarding.html` (CSS + markup + the
+  navigation block); copy untouched except two form labels. Each question
+  is now crumb → 64px → `.q-title` (Bricolage 700 33px, `text-wrap:
+  balance`) → one `.q-line` (17px `--ink-secondary`) → 32px → controls →
+  a fixed `.q-foot` (§6 one dock) holding the four-dot `.q-pager`, the
+  quiet skip line where a step has one, and the ONE `.btn-primary`. The
+  strip and the eyebrow are gone: **`QUESTION_SECTIONS`** maps each
+  question to one of four stops and `renderProgress` draws the intro's
+  own dot row (`--hairline-strong`, current dot 18px `--ink-strong` — spruce
+  on ivory, ivory on the dark ground). The grouping follows the ORDER
+  asked (people+meals · what you eat · leftovers/prep/dinner · first week)
+  so the long dot only moves forward; note the last welcome screen lists
+  "How your week runs" before "What you eat" and the flow asks them the
+  other way round — reordering questions is a bigger call than a look,
+  Emily's to make. Chips are one look for both families (`.chip` and
+  `.rhythm-chip`, 46px, 10px gaps, spruce when chosen, `--ivory-ink` not
+  `#fff`); the × on a name row exists only once the row has a name
+  (`.row.is-empty`, kept by `addMemberRow`) and is a stroke SVG; "+ Add
+  person" is a full-width spruce outline; "Anything else?" moved from a
+  label over each typed-answer box into its placeholder with an `.sr-only`
+  label (§8.6); dinner-time's "So I can tell you when to start cooking."
+  moved from under the chips to under the question, same words. **Every
+  arrival is a crossfade** (`.step-enter`: opacity + 8px rise over
+  `--motion-base`, the fixed foot fades only, `showStep` stamps it on a
+  real arrival and not on the reveal's history trap); the body eases
+  `background-color` and the apricot glow moved to a `body::before` layer
+  so it can fade instead of cutting. This is DESIGN_SYSTEM §4's animation
+  (2) applied to setup, not a fourth kind — but §4's "exactly three" list
+  names tab panels only, so the doc needs a line (Tier 2, flagged, not
+  edited here). **The reveal** (rule S5) is on spruce again
+  (`body.reveal-active`, sharing the intro's rules): the mark, the eyebrow,
+  a 38px title, then **the one number** — `renderRevealNumber`, the meal
+  count from `revealPlanCounts` at 96px with the receipt's own word
+  (meal/meals); chosen over dinners because it is the count the receipt
+  already states and adds no new word — then the celadon receipt, the day
+  cards as `--spruce-raised` tiles with `--apricot-rule` dividers, the
+  invite as another tile, and the one apricot in a fixed spruce foot
+  (`#reveal-actions` / `#reveal-error-actions` are each a foot; only one
+  shows). Left alone on purpose: the crumb, every question and its order,
+  the reveal's pre-existing italic on "Nothing planned", the LLM-failure
+  path (now a raised spruce tile, calm). Verified in Chromium at 375×812
+  light and dark and at 1280 against a throwaway copy of the
+  before-onboarding-reset backup; the fake API key makes generation fail,
+  so the success state was checked by calling the page's own renderers
+  with a five-day plan. Tests: `tests/test_onboarding_setup_luxury.py`
+  (51, new) — one pager and no eyebrow per question, `.btn-primary` and no
+  own fill on the question button, no × on an empty row (run under node),
+  chips ≥44px, tokens only, no italics, the cleansed copy still there,
+  the crossfade, the reveal on spruce with the number. The two tests that
+  pinned the strip (`test_chores_setup_split.py`,
+  `test_onboarding_welcome_flow.py`) now pin `QUESTION_SECTIONS`; the
+  go-back DOM stub's `classList.toggle` honours its force argument (it
+  didn't, and the old intro-active test passed only because its steps
+  alternated). Suite 3026 (was 2975).
 - **2026-09-11 — A draft whose week has ended is no longer the Plan tab's
   front page, and Plan and Now name ONE week. Branch
   `worktree-stale-draft`.** Seen on Friday 2026-09-11: Plan opened on "This
