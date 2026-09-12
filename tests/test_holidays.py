@@ -63,6 +63,17 @@ def test_the_february_day_follows_the_province():
     assert _named(quebec, "Thanksgiving") == "2027-10-11", "the national days still apply"
 
 
+def test_quebec_and_newfoundland_keep_their_own_days():
+    qc = tools.rule_holidays(2026, "CA", "QC")
+    assert _named(qc, "National Patriots’ Day") == "2026-05-18" and _named(qc, "Victoria Day") is None
+    assert _named(qc, "Fête nationale") == "2026-06-24" and _named(qc, "Civic Holiday") is None
+    nl = tools.rule_holidays(2026, "CA", "NL")
+    assert _named(nl, "Civic Holiday") is None and _named(nl, "Victoria Day") == "2026-05-18"
+    blank = tools.rule_holidays(2026, "CA", "")
+    assert _named(blank, "Victoria Day") and _named(blank, "Civic Holiday"), "a national day with no province on record"
+    assert _named(blank, "Family Day") is None and _named(blank, "Fête nationale") is None
+
+
 def test_a_country_with_no_table_gets_no_holidays_rather_than_canadas():
     assert tools.rule_holidays(2026, "US") == []
     with pytest.raises(ValueError):
@@ -134,6 +145,46 @@ def test_a_pa_day_or_a_timed_event_is_not_a_holiday(monkeypatch):
     _connect(monkeypatch, _feed_with(_shift(tg, 2), "Christmas party", all_day=False))
     assert [h["date"] for h in tools.holidays_for_period(tg, 7)] == [tg]
     assert hol.looks_like_holiday("Birthday — Nana") is False
+
+
+@pytest.mark.parametrize("title", [
+    "Reid's birthday", "Heidi visiting", "Holiday Inn checkout", "Summer holidays",
+    "School holiday", "Christmas concert rehearsal", "Easter egg hunt at school",
+    "Family dinner", "Victoria arriving", "Eid party at Sam's",
+])
+def test_a_title_that_only_mentions_a_holiday_is_not_one(title, monkeypatch):
+    """The verifier's false positives (2026-09-11): a bare substring match
+    made every one of these an asking holiday. The whole title has to be
+    the holiday's name."""
+    assert hol.looks_like_holiday(title) is False
+    tg = _thanksgiving()
+    _connect(monkeypatch, _feed_with(_shift(tg, 2), title))
+    assert [h["date"] for h in tools.holidays_for_period(tg, 7)] == [tg]
+
+
+@pytest.mark.parametrize("title", [
+    "Thanksgiving Day (Canada)", "Christmas Day", "New Year’s Day (observed)", "Eid al-Fitr",
+    "Diwali", "Boxing Day", "Rosh Hashanah", "Family Day",
+])
+def test_a_title_that_is_a_holidays_name_counts(title):
+    assert hol.looks_like_holiday(title) is True
+
+
+def test_a_multi_day_all_day_event_is_a_stretch_not_a_holiday(monkeypatch):
+    """"Reid at camp" Thu–Sun used to spawn one asking holiday per expanded
+    day. A span is skipped outright; a one-day holiday beside it still counts."""
+    from tests.test_calendar_feed import _google, _vevent
+    tg = _thanksgiving()
+    start = date.fromisoformat(_shift(tg, 3))
+    end = start + timedelta(days=4)  # DTEND is exclusive: four days
+    ics = _google(
+        _vevent(f"DTSTART;VALUE=DATE:{start:%Y%m%d}", f"DTEND;VALUE=DATE:{end:%Y%m%d}", "UID:camp", "SUMMARY:Diwali")
+        + _vevent(f"DTSTART;VALUE=DATE:{date.fromisoformat(_shift(tg, 1)):%Y%m%d}", "UID:one", "SUMMARY:Eid")
+    )
+    _connect(monkeypatch, ics)
+    found = tools.holidays_for_period(tg, 7)
+    assert [h["name"] for h in found] == ["Thanksgiving", "Eid"]
+    assert sum(1 for h in found if h["source"] == "calendar") <= 1
 
 
 def test_a_calendar_that_cannot_be_read_is_a_missing_label_not_a_missing_week(monkeypatch):
@@ -392,6 +443,69 @@ def test_a_trip_already_covering_the_day_is_left_alone(family):
     assert tools.get_slot_attendance(tg, "dinner")["source"] != "holiday"
     tools.answer_holiday(tg, "just_us")
     assert tools.get_slot_attendance(tg, "dinner")["nobody_home"], "the trip is theirs, not the holiday's"
+
+
+def test_hosting_then_just_us_on_a_trip_covered_day_leaves_the_trip_intact(family, recipe):
+    """The verifier's find: the hosting fallback wrote over the trip's
+    attendance row, and clearing it re-derived a generic away with no
+    stretch link — so a dinner planned later bought groceries for a night
+    the household is away."""
+    tg = _thanksgiving()
+    stretch = tools.set_away_stretch(_shift(tg, -1), "dinner", tg, "dinner")
+    before_att = tools.get_slot_attendance(tg, "dinner")
+    before_need = tools.get_slot_need(tg, "dinner")
+    assert before_att["nobody_home"] and before_need["need"] == "away" and before_need["away_stretch_id"]
+
+    assert tools.answer_holiday(tg, "hosting", headcount=4)["hosting"] == "already_out"
+    assert tools.get_holiday_answer(tg)["headcount"] == 4, "recorded for slice 2"
+    tools.answer_holiday(tg, "just_us")
+
+    assert tools.get_slot_attendance(tg, "dinner") == before_att
+    assert tools.get_slot_need(tg, "dinner") == before_need
+    plan = tools.create_weekly_plan(tg)
+    tools.plan_meal(tg, "Chili", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+    tools.apply_slot_needs_to_plan(plan["weekly_plan_id"], tg)
+    tools.approve_weekly_plan(plan["weekly_plan_id"], approved_by="Emily")
+    assert _slot(plan["weekly_plan_id"], tg)["slot_state"] == "planned_empty"
+    assert "beans" not in _list()
+
+
+def test_out_covers_a_quick_need_and_undo_puts_it_back(family):
+    tg = _thanksgiving()
+    tools.set_slot_need(tg, "dinner", "quick", reason="Grab-and-go before the drive.")
+    tools.answer_holiday(tg, "out")
+    need = tools.get_slot_need(tg, "dinner")
+    assert need["need"] == "away" and need["superseded_need"] == "quick"
+    tools.answer_holiday(tg, "just_us")
+    need = tools.get_slot_need(tg, "dinner")
+    assert need["need"] == "quick" and need["reason"] == "Grab-and-go before the drive."
+
+
+def test_out_covers_a_quick_need_with_no_members_on_record_too():
+    tg = _thanksgiving()
+    tools.set_slot_need(tg, "dinner", "quick")
+    tools.answer_holiday(tg, "out")
+    assert tools.get_slot_need(tg, "dinner")["need"] == "away"
+    tools.answer_holiday(tg, "unsure")
+    assert tools.get_slot_need(tg, "dinner")["need"] == "quick"
+
+
+def test_the_once_a_day_gate_runs_on_the_households_clock():
+    """A "not sure yet" at nine in the evening in Toronto is stamped as
+    the next day in UTC. It still counts as today's answer, and tomorrow
+    still asks."""
+    tg = _thanksgiving()
+    tg_date = date.fromisoformat(tg)
+    tools.answer_holiday(tg, "unsure")
+    evening = tg_date - timedelta(days=2)
+    conn = get_conn()
+    # 21:00 Toronto (EDT, UTC-4) is 01:00 UTC the following day.
+    conn.execute("UPDATE holiday_answers SET updated_at = ?", ((evening + timedelta(days=1)).isoformat() + " 01:00:00",))
+    conn.commit()
+    conn.close()
+    assert hol._answered_on(tools.get_holiday_answer(tg)["updated_at"]) == evening
+    assert tools.holiday_needs_you_item(today=evening) is None, "answered this evening, local time"
+    assert tools.holiday_needs_you_item(today=evening + timedelta(days=1))["date"] == tg
 
 
 def test_an_ordinary_day_cannot_be_answered():

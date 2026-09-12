@@ -114,8 +114,22 @@ def _weekday_on_or_before(year: int, month: int, day: int, weekday: int) -> date
     return d - timedelta(days=(d.weekday() - weekday) % 7)
 
 
+_ALL_PROVINCES = frozenset({"AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"})
+
+
+class _Except(frozenset):
+    """Every province but these — a national day one or two provinces don't keep.
+    A household whose province is blank still gets these (it is a national
+    day), but not a day only some provinces keep."""
+
+
+def _except(*codes: str) -> "_Except":
+    return _Except(_ALL_PROVINCES - set(codes))
+
+
 # One row per holiday: (name, rule(year) -> date, provinces, asks).
-#   provinces: None = the whole country; a set = only those provinces.
+#   provinces: None = the whole country; a set = only those provinces;
+#              _except(...) = everywhere but those.
 #   asks: whether the intake and Now ask how the household is spending
 #         it. A day people gather and cook around asks; a day that is
 #         mostly a label on the calendar (Halloween, Remembrance Day, the
@@ -133,10 +147,12 @@ _CANADA = [
     ("Easter Sunday", _easter, None, True),
     ("Easter Monday", lambda y: _easter(y) + timedelta(days=1), None, False),
     ("Mother’s Day", lambda y: _nth_weekday(y, 5, 6, 2), None, True),
-    ("Victoria Day", lambda y: _weekday_on_or_before(y, 5, 24, 0), None, False),
+    ("Victoria Day", lambda y: _weekday_on_or_before(y, 5, 24, 0), _except("QC"), False),
+    ("National Patriots’ Day", lambda y: _weekday_on_or_before(y, 5, 24, 0), {"QC"}, False),
     ("Father’s Day", lambda y: _nth_weekday(y, 6, 6, 3), None, True),
+    ("Fête nationale", lambda y: date(y, 6, 24), {"QC"}, False),
     ("Canada Day", lambda y: date(y, 7, 1), None, True),
-    ("Civic Holiday", lambda y: _nth_weekday(y, 8, 0, 1), None, False),
+    ("Civic Holiday", lambda y: _nth_weekday(y, 8, 0, 1), _except("QC", "NL"), False),
     ("Labour Day", lambda y: _nth_weekday(y, 9, 0, 1), None, False),
     ("Thanksgiving", lambda y: _nth_weekday(y, 10, 0, 2), None, True),
     ("Halloween", lambda y: date(y, 10, 31), None, False),
@@ -167,7 +183,12 @@ def rule_holidays(year: int, country: str = "CA", province: str = "") -> list[di
     province = (province or "").upper()
     out = []
     for name, rule, provinces, asks in rules:
-        if provinces is not None and province not in provinces:
+        keeps = (
+            provinces is None
+            or province in provinces
+            or (not province and isinstance(provinces, _Except))
+        )
+        if not keeps:
             continue
         out.append({"date": rule(year).isoformat(), "name": name, "asks": asks, "source": "rule"})
     return sorted(out, key=lambda h: h["date"])
@@ -175,28 +196,47 @@ def rule_holidays(year: int, country: str = "CA", province: str = "") -> list[di
 
 # ---------- the household's own calendar ----------
 
-# Words that make an all-day event on the household's calendar read as a
-# holiday. Deliberately a list of holiday NAMES, not "day" or "party": a
-# birthday or a PA day is context for the planner (calendar_feed already
-# hands those over) but not a day to ask hosting/out/just-us about.
-CALENDAR_HOLIDAY_WORDS = (
-    "thanksgiving", "christmas", "xmas", "boxing day", "new year", "easter",
-    "good friday", "canada day", "family day", "victoria day", "labour day",
-    "labor day", "civic holiday", "remembrance day", "halloween",
-    "mother's day", "mother’s day", "mothers day", "father's day", "father’s day", "fathers day",
+# The names an all-day event on the household's calendar can carry to
+# count as a holiday. The WHOLE title has to be one of these (after a
+# parenthetical like "(Canada)" or "(observed)" is dropped) — not a word
+# inside it. "Christmas concert rehearsal", "Easter egg hunt at school",
+# "Reid's birthday", "Summer holidays" and "Holiday Inn checkout" are all
+# real titles a verifier tried, and none of them is a day to ask
+# hosting/out/just-us about. A birthday or a PA day is still context for
+# the planner (calendar_feed hands those over); it just isn't a holiday.
+CALENDAR_HOLIDAY_NAMES = (
+    "thanksgiving", "thanksgiving day", "christmas", "christmas day", "christmas eve", "xmas",
+    "boxing day", "new year", "new years", "new year's day", "new years day", "new year's eve", "new years eve",
+    "easter", "easter sunday", "easter monday", "good friday", "orthodox easter", "orthodox christmas",
+    "canada day", "family day", "victoria day", "national patriots day", "national patriots' day",
+    "labour day", "labor day", "civic holiday", "remembrance day", "halloween",
+    "mother's day", "mothers day", "father's day", "fathers day",
+    "fête nationale", "fete nationale", "saint-jean-baptiste", "st-jean-baptiste",
+    "national day for truth and reconciliation", "truth and reconciliation day",
     "hanukkah", "chanukah", "passover", "rosh hashanah", "yom kippur",
-    "diwali", "eid", "ramadan", "lunar new year", "chinese new year", "nowruz",
-    "vaisakhi", "kwanzaa", "st. patrick", "st patrick", "valentine",
-    "independence day", "holiday",
+    "diwali", "holi", "eid", "eid al-fitr", "eid ul-fitr", "eid al-adha", "eid ul-adha",
+    "lunar new year", "chinese new year", "nowruz", "vaisakhi", "kwanzaa",
+    "st. patrick's day", "st patrick's day", "st patricks day", "saint patrick's day",
+    "valentine's day", "valentines day", "independence day",
 )
 
-_CALENDAR_WORD_RE = re.compile(
-    "|".join(re.escape(w) for w in CALENDAR_HOLIDAY_WORDS), re.IGNORECASE
-)
+_PARENTHETICAL_RE = re.compile(r"\s*\([^)]*\)")
+_OBSERVED_RE = re.compile(r"\s*[-–—:]?\s*\bobserved\b\s*$", re.IGNORECASE)
+
+
+def _normalise_title(title: str) -> str:
+    text = _PARENTHETICAL_RE.sub("", title or "")
+    text = _OBSERVED_RE.sub("", text)
+    text = text.replace("’", "'").replace("‘", "'")
+    return re.sub(r"\s+", " ", text).strip().strip(".!").strip().lower()
+
+
+_CALENDAR_NAMES = {_normalise_title(n) for n in CALENDAR_HOLIDAY_NAMES}
 
 
 def looks_like_holiday(title: str) -> bool:
-    return bool(title) and bool(_CALENDAR_WORD_RE.search(title))
+    """True only when the title IS a holiday's name, not when it mentions one."""
+    return _normalise_title(title) in _CALENDAR_NAMES
 
 
 def _calendar_holidays(dates: list[str]) -> list[dict]:
@@ -217,15 +257,28 @@ def _calendar_holidays(dates: list[str]) -> list[dict]:
         return []
     if not info:
         return []
+    # A multi-day all-day event ("Reid at camp", Thu–Sun) arrives as one
+    # instance per day. A span is a stretch, not a holiday, so a title that
+    # runs over consecutive days is left out entirely rather than becoming
+    # three holidays and three Now cards.
+    by_title: dict[str, set[str]] = {}
+    for ev in info.get("events") or []:
+        if ev.get("all_day") and ev.get("title"):
+            by_title.setdefault(ev["title"], set()).add(ev["date"])
+    spans = {
+        title for title, days in by_title.items()
+        if any((date.fromisoformat(d) + timedelta(days=1)).isoformat() in days for d in days)
+    }
     out = []
     seen: set[str] = set()
     for ev in info.get("events") or []:
         if not ev.get("all_day") or ev["date"] not in dates or ev["date"] in seen:
             continue
-        if not looks_like_holiday(ev.get("title") or ""):
+        title = ev.get("title") or ""
+        if title in spans or not looks_like_holiday(title):
             continue
         seen.add(ev["date"])
-        out.append({"date": ev["date"], "name": ev["title"], "asks": True, "source": "calendar"})
+        out.append({"date": ev["date"], "name": title, "asks": True, "source": "calendar"})
     return out
 
 
@@ -530,7 +583,14 @@ def _apply_effects(saved: dict) -> dict:
             if att["explicit"] and att["nobody_home"]:
                 changed["dinner"] = "already_out"  # a trip already covers it; leave its record alone
             else:
-                _slot_needs.set_slot_need(d, "dinner", "away", reason=_out_reason(name))
+                # Remember the need the away covers over (a 'quick' edge, a
+                # ready-made earmark) the way a trip's sync does, so undoing
+                # the answer puts it back rather than losing it.
+                current = _slot_needs.get_slot_need(d, "dinner")
+                _slot_needs.set_slot_need(
+                    d, "dinner", "away", reason=_out_reason(name),
+                    superseded=_attendance._supersede_record(current),
+                )
                 if att["household_size"]:
                     _attendance.set_slot_attendance(d, "dinner", present_member_ids=[], source=_SOURCE)
                 changed["dinner"] = "out"
@@ -564,7 +624,17 @@ def _undo_effects(previous: dict) -> None:
             _attendance.clear_slot_attendance(d, "dinner")
         need = _slot_needs.get_slot_need(d, "dinner")
         if need["need"] == "away" and need["reason"] == _out_reason(name):
-            _slot_needs.clear_slot_need(d, "dinner")
+            # The no-members path (attendance could not infer away, so the
+            # need was set directly): restore what it covered, else clear.
+            restored = need.get("superseded") or None
+            if restored and restored.get("need"):
+                _slot_needs.set_slot_need(
+                    d, "dinner", restored["need"], reason=restored.get("reason") or "",
+                    away_stretch_id=restored.get("away_stretch_id"),
+                    for_member_ids=restored.get("for_member_ids") or None,
+                )
+            else:
+                _slot_needs.clear_slot_need(d, "dinner")
             plan_id = _plan_for(d)
             if plan_id is not None:
                 _reopen(plan_id, d, name)
@@ -645,6 +715,12 @@ def _set_hosting(d: str, headcount: int) -> str:
     """
     from . import attendance as _attendance
 
+    att = _attendance.get_slot_attendance(d, "dinner")
+    if att["explicit"] and att["nobody_home"]:
+        # A trip already has this dinner as nobody-home. The headcount is
+        # recorded on the answer for slice 2; the trip's own row, its away
+        # need and its stretch link are left exactly as they are.
+        return "already_out"
     intake, week_start, day_count = _intake_covering(d)
     if intake is not None:
         tags = {k: list(v) for k, v in (intake["night_tags"] or {}).items()}
@@ -674,7 +750,7 @@ def _clear_hosting(d: str) -> None:
         counts = {k: v for k, v in (intake["guest_counts"] or {}).items() if k != d}
         _week_intake.save_week_intake(week_start, night_tags=tags, guest_counts=counts, day_count=day_count)
     att = _attendance.get_slot_attendance(d, "dinner")
-    if att["explicit"] and att["guest_count"]:
+    if att["explicit"] and att["guest_count"] and not att["away_stretch_id"] and not att["nobody_home"]:
         _attendance.set_guest_count(d, "dinner", 0, source=att["source"] or _SOURCE)
 
 
@@ -763,7 +839,7 @@ def holiday_needs_you_item(today: date | None = None) -> dict | None:
         a = h.get("answer")
         if a and a["answer"] != "unsure":
             continue
-        if a and (a["updated_at"] or "")[:10] >= today.isoformat():
+        if a and _answered_on(a["updated_at"]) >= today:
             continue
         when = _when_label(h["date"], today)
         return {
@@ -776,6 +852,30 @@ def holiday_needs_you_item(today: date | None = None) -> dict | None:
             "options": [{"answer": k, "label": v} for k, v in ANSWER_LABELS.items()],
         }
     return None
+
+
+def _answered_on(updated_at: str) -> date:
+    """
+    The household's local date an answer was given. updated_at is SQLite's
+    UTC `datetime('now')`; a "not sure yet" at nine in the evening in
+    Toronto is already tomorrow in UTC, and comparing the raw stamp with
+    the local day would skip the next day's ask.
+    """
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+
+    try:
+        stamp = datetime.fromisoformat(updated_at).replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return date.min
+    conn = get_conn()
+    row = conn.execute("SELECT timezone FROM households WHERE id = ?", (household_id(),)).fetchone()
+    conn.close()
+    try:
+        zone = ZoneInfo((row["timezone"] if row else "") or "America/Toronto")
+    except Exception:
+        zone = ZoneInfo("America/Toronto")
+    return stamp.astimezone(zone).date()
 
 
 def _when_label(date_str: str, today: date) -> str:
