@@ -203,6 +203,18 @@ CREATE TABLE IF NOT EXISTS chores (
 -- which is not always the same person. Both are kept so the fairness view
 -- can count by owner and by doer. A done instance is history: changing a
 -- chore's owner later never rewrites either column on it.
+--
+-- due_date is when the schedule ASKED for it, and a pending one that has
+-- gone by is simply due now — never overdue, never counted in days late
+-- (Loop Board "Chores v1: no guilt pile", Emily, 2026-09-11). The whole
+-- backlog of a chore shows as one due row; ticking that row marks the
+-- rest 'skipped', because one mop is one mop and recording four would be
+-- false history the fairness view would then act on.
+--
+-- done_on is the DAY the work happened on the household's calendar, which
+-- is what the next occurrence counts from. completed_at stays what it has
+-- always been, the instant the tick arrived. See db.py's _MIGRATIONS entry
+-- for why those are two columns and not one.
 CREATE TABLE IF NOT EXISTS chore_instances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
@@ -210,7 +222,8 @@ CREATE TABLE IF NOT EXISTS chore_instances (
     assignee_id INTEGER REFERENCES members(id),
     due_date TEXT NOT NULL, -- ISO date
     status TEXT NOT NULL DEFAULT 'pending', -- pending | done | skipped
-    completed_at TEXT,
+    completed_at TEXT, -- when the tick arrived (UTC timestamp)
+    done_on TEXT, -- ISO date the work actually happened; back-datable ("I did it yesterday")
     completed_by_member_id INTEGER REFERENCES members(id), -- who ticked it; NULL when unknown or not done
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

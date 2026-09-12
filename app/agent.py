@@ -1003,6 +1003,14 @@ times_cooked so you can favor familiar favorites) before proposing something bra
 to check actual state before answering rather than assuming.
 - If a chore's upcoming schedule looks thin or someone asks "what's coming up," call \
 generate_chore_schedule to make sure instances exist that far out before listing them.
+- A chore that slipped is DUE, not overdue. Never say "overdue", "you missed", "behind", \
+"late" or "still not done", never count how many days or weeks it has been sitting there, \
+and never volunteer a list of what did not get done — not in a summary, not as a \
+well-meant nudge, not softened with a joke. Somebody had a bad week; being told off by \
+their own app is how they stop opening it. Asked outright ("what did we miss?"), answer \
+plainly and once — name the chores that are due and stop, with no tally and no comment on \
+the stretch. If they mention having done something days ago, pass done_on to \
+complete_chore so the rhythm restarts from then.
 - Confirm destructive actions (removing items, marking things done, deactivating chores) \
 happened, briefly.
 """
@@ -1256,7 +1264,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "list_chores",
-        "description": "List chore instances, filtered by status and how many days ahead to look. Each says who it's for (who_label: a first name, or 'either of you') and, once done, who actually did it (completed_by).",
+        "description": "List chore instances, filtered by status and how many days ahead to look. Each says who it's for (who_label: a first name, or 'either of you') and, once done, who actually did it (completed_by) and the day they did it (done_on). Anything still pending whose day has gone by is simply DUE — there is no overdue status here. However many occurrences of one chore slipped, they come back as a single due row carrying stands_for; that number is there so you don't double-count, not to be read out as a tally.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1267,12 +1275,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "complete_chore",
-        "description": "Mark a chore instance as done, given its instance_id. Credited to the signed-in adult unless done_by names someone else ('Vineeth did the bins').",
+        "description": "Mark a chore instance as done, given its instance_id. Credited to the signed-in adult unless done_by names someone else ('Vineeth did the bins'). Pass done_on when they did it before telling you ('I mopped yesterday') — the next occurrence is counted from that day. One tick settles the whole chore: any earlier occurrence of it still sitting there is cleared too (also_cleared says how many, so you don't report the job twice — never read it back as a count of what was missed).",
         "input_schema": {
             "type": "object",
             "properties": {
                 "instance_id": {"type": "integer"},
                 "done_by": {"type": "string", "description": "Who actually did it, if not the person talking."},
+                "done_on": {"type": "string", "description": "YYYY-MM-DD, the day it was actually done, if that wasn't today ('I did it yesterday'). Never a future date."},
             },
             "required": ["instance_id"],
         },

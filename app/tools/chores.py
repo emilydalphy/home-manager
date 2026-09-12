@@ -554,6 +554,131 @@ def update_chore(
     return result
 
 
+# --- when the next one falls due ---------------------------------------------
+#
+# Loop Board "Chores v1: No guilt pile — a slipped chore is due, not overdue"
+# (Emily, 2026-09-11). Two rules live in this section, and they are the
+# whole of the card's arithmetic.
+
+# The day a chore was actually done. done_on is the answer; the two
+# fallbacks are for rows written before that column existed, so nothing in
+# this module depends on db._backfill_chore_done_on having run first — the
+# same stance chore_mode() takes towards _migrate_chore_modes.
+_DONE_DAY_SQL = "COALESCE(NULLIF(done_on, ''), date(completed_at), due_date)"
+
+
+def _last_done_day(conn, chore_id: int) -> date | None:
+    """The day this chore was last actually done, or None if it never was."""
+    row = conn.execute(
+        f"SELECT {_DONE_DAY_SQL} AS done_day FROM chore_instances "
+        "WHERE chore_id = ? AND household_id = ? AND status = 'done' "
+        f"ORDER BY {_DONE_DAY_SQL} DESC, id DESC LIMIT 1",
+        (chore_id, household_id()),
+    ).fetchone()
+    if not row or not row["done_day"]:
+        return None
+    try:
+        return date.fromisoformat(row["done_day"])
+    except ValueError:
+        return None
+
+
+def _next_due_date(conn, chore_id: int, interval: int, today: date) -> date | None:
+    """
+    When this chore's next occurrence falls — or None when the honest
+    answer is "nothing new".
+
+    **The clock runs from the day it was last DONE, not the day it was last
+    DUE.** Reckoning from the due date is what turned one slipped mop into a
+    pile: the next occurrence landed in the past, so did the one after it,
+    and filling the schedule dealt out four rows nobody could ever have
+    been on time for. From the done day, doing it late simply moves the
+    rhythm along — which is what a person means when they say they mopped.
+
+    **And a chore that is already due gets nothing written for it at all.**
+    A pending occurrence whose day has gone by is due now; when the NEXT
+    one falls is not knowable until this one is actually done. Stacking a
+    second row on top of it would rebuild the pile one date at a time.
+    """
+    slipped = conn.execute(
+        "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date < ? LIMIT 1",
+        (chore_id, household_id(), today.isoformat()),
+    ).fetchone()
+    if slipped:
+        return None
+
+    last_due = conn.execute(
+        "SELECT due_date FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "ORDER BY due_date DESC, id DESC LIMIT 1",
+        (chore_id, household_id()),
+    ).fetchone()
+    if not last_due:
+        # Never scheduled at all — it starts today, exactly as before.
+        return today
+
+    anchor = date.fromisoformat(last_due["due_date"])
+    done_day = _last_done_day(conn, chore_id)
+    if done_day and done_day > anchor:
+        # Done after the last date the schedule named: the rhythm restarts
+        # from when it actually happened. While the schedule still runs
+        # ahead of the done day, that schedule is the answer and this is a
+        # no-op — the done-day anchor only takes over once it has run out,
+        # which is exactly the case that used to produce a backlog.
+        anchor = done_day
+    # Never write an occurrence into the past. A day that has already gone
+    # by is not something anyone can do on time, and a run of them is the
+    # pile itself.
+    return max(anchor + timedelta(days=interval), today)
+
+
+def _fill_schedule(conn, chore, today: date, horizon: date) -> list[dict]:
+    """
+    Write this chore's occurrences from its next due date out to `horizon`,
+    skipping any date that already has one. Shared by the bulk generate and
+    by a tick, so "when does the next one fall" has exactly one
+    implementation rather than two that can disagree.
+    """
+    interval = _FREQUENCY_DAYS.get(chore["frequency"], 7)
+    if not interval:
+        return []
+    next_due = _next_due_date(conn, chore["id"], interval, today)
+    if next_due is None:
+        return []
+
+    mode = chore_mode(chore)
+    people = _rotation_ids(chore)
+    last = conn.execute(
+        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "ORDER BY due_date DESC, id DESC LIMIT 1",
+        (chore["id"], household_id()),
+    ).fetchone()
+    last_assignee_id = last["assignee_id"] if last else None
+    rotation_cursor = people.index(last_assignee_id) + 1 if last_assignee_id in people else 0
+
+    created = []
+    while next_due <= horizon:
+        exists = conn.execute(
+            "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? AND due_date = ?",
+            (chore["id"], household_id(), next_due.isoformat()),
+        ).fetchone()
+        if not exists:
+            if mode == "owned":
+                assignee_id = people[0] if people else None
+            elif mode == "shared" and people:
+                assignee_id = people[rotation_cursor % len(people)]
+                rotation_cursor += 1
+            else:
+                assignee_id = None
+            cur = conn.execute(
+                "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date) VALUES (?, ?, ?, ?)",
+                (household_id(), chore["id"], assignee_id, next_due.isoformat()),
+            )
+            created.append({"chore": chore["name"], "due_date": next_due.isoformat(), "instance_id": cur.lastrowid})
+        next_due += timedelta(days=interval)
+    return created
+
+
 def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
     """
     Auto-generate upcoming chore instances for every active chore, out to
@@ -563,6 +688,10 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
     (continuing from whoever had it last), whoever goes to nobody. Call
     this after onboarding, and periodically (e.g. "generate this week's
     chores") to keep the schedule filled in.
+
+    A chore that has already slipped is left alone rather than topped up —
+    see _next_due_date. It is due now; nothing is gained by writing more
+    dates it has already gone past.
     """
     conn = get_conn()
     chores = conn.execute(
@@ -572,46 +701,8 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
     created = []
     today = date.today()
     horizon = today + timedelta(days=days_ahead)
-
     for chore in chores:
-        interval = _FREQUENCY_DAYS.get(chore["frequency"], 7)
-        mode = chore_mode(chore)
-        people = _rotation_ids(chore)
-
-        last = conn.execute(
-            "SELECT due_date, assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
-            "ORDER BY due_date DESC, id DESC LIMIT 1",
-            (chore["id"], household_id()),
-        ).fetchone()
-
-        if last:
-            next_due = date.fromisoformat(last["due_date"]) + timedelta(days=interval)
-            last_assignee_id = last["assignee_id"]
-        else:
-            next_due = today
-            last_assignee_id = None
-
-        rotation_cursor = people.index(last_assignee_id) + 1 if last_assignee_id in people else 0
-
-        while next_due <= horizon:
-            exists = conn.execute(
-                "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? AND due_date = ?",
-                (chore["id"], household_id(), next_due.isoformat()),
-            ).fetchone()
-            if not exists:
-                if mode == "owned":
-                    assignee_id = people[0] if people else None
-                elif mode == "shared" and people:
-                    assignee_id = people[rotation_cursor % len(people)]
-                    rotation_cursor += 1
-                else:
-                    assignee_id = None
-                cur = conn.execute(
-                    "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date) VALUES (?, ?, ?, ?)",
-                    (household_id(), chore["id"], assignee_id, next_due.isoformat()),
-                )
-                created.append({"chore": chore["name"], "due_date": next_due.isoformat(), "instance_id": cur.lastrowid})
-            next_due += timedelta(days=interval)
+        created.extend(_fill_schedule(conn, chore, today, horizon))
 
     conn.commit()
     conn.close()
@@ -657,6 +748,9 @@ _INSTANCE_SELECT = """
     SELECT ci.id, c.name AS chore, ci.due_date, ci.status,
            ci.assignee_id, m.name AS assignee,
            ci.completed_by_member_id, d.name AS completed_by,
+           CASE WHEN ci.status = 'done'
+                THEN COALESCE(NULLIF(ci.done_on, ''), date(ci.completed_at), ci.due_date)
+           END AS done_on,
            c.id AS chore_id, c.mode, c.rotation_member_ids_json, c.default_assignee_id
     FROM chore_instances ci
     JOIN chores c ON c.id = ci.chore_id
@@ -692,7 +786,55 @@ def _instance_dicts(conn, rows) -> list[dict]:
             "mode": row_mode,
             "who_label": who,
             "completed_by": r["completed_by"],
+            # The day the work happened (not the instant it was ticked).
+            "done_on": r["done_on"],
+            # How many occurrences this row stands for. Always 1 until
+            # _collapse_outstanding merges a backlog into one due row.
+            "stands_for": 1,
         })
+    return out
+
+
+def _collapse_outstanding(items: list[dict], today: date) -> list[dict]:
+    """
+    Everything a chore has let slip shows as ONE due row.
+
+    Loop Board "Chores v1: No guilt pile" (Emily, 2026-09-11). A weekly mop
+    nobody got to for a month is four pending rows in the table and one job
+    in the house. Four rows IS the guilt pile — and nobody should be asked
+    to tick the same mop four times to make it go away.
+
+    **Collapsed on the read, not by merging the rows away**, for two
+    reasons. The rows are honest history: the schedule really did name
+    those days, and the fairness view reads them. And time keeps making
+    more of them, so a write-side collapse would have to run on every read
+    anyway — a read quietly rewriting the household's data. The write
+    belongs on the tick instead, which is where _mark_done clears the group.
+
+    The row that stands for the group is the LATEST one due on or before
+    today: the occurrence that is genuinely due now, so nothing downstream
+    is handed a date weeks back to be tempted into counting days from.
+    `stands_for` says how many it covers, for anything that asks — nothing
+    prints it unprompted, and nothing anywhere turns it into a tally.
+    """
+    today_iso = today.isoformat()
+    out: list[dict] = []
+    seen: dict[int, int] = {}
+    for raw in items:
+        item = dict(raw)
+        item.setdefault("stands_for", 1)
+        if item["status"] != "pending" or item["due_date"] > today_iso:
+            out.append(item)
+            continue
+        at = seen.get(item["chore_id"])
+        if at is None:
+            seen[item["chore_id"]] = len(out)
+            out.append(item)
+        elif item["due_date"] >= out[at]["due_date"]:
+            item["stands_for"] = out[at]["stands_for"] + 1
+            out[at] = item
+        else:
+            out[at]["stands_for"] += 1
     return out
 
 
@@ -700,7 +842,13 @@ def list_chores(status: str = "pending", days_ahead: int = 14) -> list[dict]:
     """
     List chore instances, optionally filtered by status (pending/done/
     skipped/all). Each carries who it's for (assignee, who_label) and, once
-    done, who actually did it (completed_by).
+    done, who actually did it (completed_by) and the day they did it
+    (done_on).
+
+    Anything still pending whose day has gone by is simply DUE — one row
+    per chore however many occurrences slipped, carrying `stands_for`.
+    There is no overdue status here to report and no count of days late to
+    read off: see _collapse_outstanding.
     """
     conn = get_conn()
     end_date = (date.today() + timedelta(days=days_ahead)).isoformat()
@@ -713,7 +861,7 @@ def list_chores(status: str = "pending", days_ahead: int = 14) -> list[dict]:
         """,
         (household_id(), status, status, end_date),
     ).fetchall()
-    result = _instance_dicts(conn, rows)
+    result = _collapse_outstanding(_instance_dicts(conn, rows), date.today())
     conn.close()
     return result
 
@@ -731,27 +879,103 @@ def _doer_id(conn, done_by: str | None) -> int | None:
     return member["id"] if member else None
 
 
-def complete_chore(instance_id: int, done_by: str | None = None) -> dict:
+def _done_day(done_on: str | None) -> date:
+    """
+    The day a tick says the work happened. Nothing given means today.
+
+    A date nobody can read, or one that hasn't happened yet, is a plain
+    question back rather than a quiet guess — the same stance _doer_id
+    takes towards a name it doesn't recognise.
+    """
+    if not done_on or not str(done_on).strip():
+        return date.today()
+    try:
+        day = date.fromisoformat(str(done_on).strip())
+    except ValueError:
+        raise ValueError(f"I couldn't read {done_on!r} as a date — it wants YYYY-MM-DD.")
+    if day > date.today():
+        raise ValueError(f"{day.isoformat()} hasn't happened yet — when was it actually done?")
+    return day
+
+
+def _mark_done(conn, instance_id: int, doer: int | None, done_day: date) -> dict:
+    """
+    One tick, and everything it settles.
+
+    The row goes done, carrying the DAY the work happened beside the
+    instant the tick arrived. Then two things follow from the no-guilt-pile
+    card, and both are the point of doing this in one place:
+
+    - **Every other pending occurrence of the same chore due on or before
+      it is cleared.** A backlog shows as one due row (see
+      _collapse_outstanding), so one tick has to settle the whole group or
+      the household is asked to tick the same mop four times. They are
+      marked 'skipped' rather than 'done': those occurrences did not
+      happen, and writing four mops for one would be false history the
+      fairness view would go on to count. Nothing shows a skipped row, so
+      this reads as the pile simply being gone.
+    - **The next occurrence is written from the done day.** That is what
+      stops a chore done late from coming straight back due — see
+      _next_due_date.
+
+    Un-ticking (set_chore_instance_status back to pending) brings back the
+    one row, not the pile. Deliberate: which occurrences a tick swept up is
+    not recorded, and resurrecting three weeks of dates on a mis-tap is the
+    exact thing this card exists to stop.
+    """
+    row = conn.execute(
+        "SELECT chore_id, due_date FROM chore_instances WHERE id = ? AND household_id = ?",
+        (instance_id, household_id()),
+    ).fetchone()
+    conn.execute(
+        "UPDATE chore_instances SET status = 'done', completed_at = datetime('now'), done_on = ?, "
+        "completed_by_member_id = ? WHERE id = ? AND household_id = ?",
+        (done_day.isoformat(), doer, instance_id, household_id()),
+    )
+    cleared = conn.execute(
+        "UPDATE chore_instances SET status = 'skipped' WHERE household_id = ? AND chore_id = ? "
+        "AND status = 'pending' AND due_date <= ? AND id != ?",
+        (household_id(), row["chore_id"], row["due_date"], instance_id),
+    ).rowcount or 0
+
+    chore = conn.execute(
+        "SELECT * FROM chores WHERE id = ? AND household_id = ?", (row["chore_id"], household_id())
+    ).fetchone()
+    created = []
+    if chore and chore["active"] and chore["frequency"] != "once":
+        interval = _FREQUENCY_DAYS.get(chore["frequency"], 7) or 0
+        if interval:
+            today = date.today()
+            created = _fill_schedule(conn, chore, today, max(done_day, today) + timedelta(days=interval))
+    return {
+        "instance_id": instance_id,
+        "status": "done",
+        "done_on": done_day.isoformat(),
+        "also_cleared": cleared,
+        "next_due": created[0]["due_date"] if created else None,
+    }
+
+
+def complete_chore(instance_id: int, done_by: str | None = None, done_on: str | None = None) -> dict:
     """
     Mark a chore instance as done. `done_by` names who did it when it
     wasn't the signed-in adult ("Vineeth did the bins"); otherwise the
-    session's adult gets the credit.
+    session's adult gets the credit. `done_on` (YYYY-MM-DD) back-dates the
+    WORK for "I did it yesterday" — the next occurrence counts from that
+    day, so saying so actually moves the rhythm rather than being humoured.
     """
     conn = get_conn()
     require_household_row(conn, "chore_instances", instance_id, label="chore instance")
     try:
         doer = _doer_id(conn, done_by)
+        done_day = _done_day(done_on)
     except ValueError:
         conn.close()
         raise
-    conn.execute(
-        "UPDATE chore_instances SET status = 'done', completed_at = datetime('now'), completed_by_member_id = ? "
-        "WHERE id = ? AND household_id = ?",
-        (doer, instance_id, household_id()),
-    )
+    result = _mark_done(conn, instance_id, doer, done_day)
     conn.commit()
     conn.close()
-    return {"instance_id": instance_id, "status": "done"}
+    return result
 
 
 def get_chores_due_today() -> list[dict]:
@@ -761,6 +985,19 @@ def get_chores_due_today() -> list[dict]:
     done instances (not just pending) so the UI can show an accurate
     "x of y done" count rather than only the still-open ones.
 
+    **A pending chore whose day has gone by is due, and shows here exactly
+    like anything else due today** (Loop Board "Chores v1: no guilt pile",
+    Emily, 2026-09-11). It used to be due_date = today on the nose, so a
+    chore that slipped fell off the screen entirely and came back only as
+    a fresh pile of past dates the next time the schedule was generated.
+    Nothing in the payload says how long ago it was asked for, and one
+    chore is one row however many occurrences went by — see
+    _collapse_outstanding.
+
+    Done instances are the ones done TODAY, whatever day they were asked
+    for. Otherwise ticking a chore that slipped would make the row vanish
+    under the finger and take the "1 of 1" count with it.
+
     Household-wide, not filtered to a signed-in member: there's no
     per-user login concept yet (see household_id() above), so this can't
     actually distinguish "my chores" from anyone else's the way the
@@ -768,15 +1005,20 @@ def get_chores_due_today() -> list[dict]:
     rather than silently faked.
     """
     conn = get_conn()
-    today = date.today().isoformat()
+    today = date.today()
+    today_iso = today.isoformat()
     rows = conn.execute(
         _INSTANCE_SELECT + """
-        WHERE ci.household_id = ? AND ci.due_date = ? AND ci.status != 'skipped'
-        ORDER BY ci.id ASC
+        WHERE ci.household_id = ?
+          AND ci.due_date <= ?
+          AND (ci.status = 'pending'
+               OR (ci.status = 'done'
+                   AND COALESCE(NULLIF(ci.done_on, ''), date(ci.completed_at), ci.due_date) = ?))
+        ORDER BY ci.due_date ASC, ci.id ASC
         """,
-        (household_id(), today),
+        (household_id(), today_iso, today_iso),
     ).fetchall()
-    result = _instance_dicts(conn, rows)
+    result = _collapse_outstanding(_instance_dicts(conn, rows), today)
     conn.close()
     return result
 
@@ -786,22 +1028,22 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
     Mark a chore instance done or back to pending directly from the Today
     screen's chores card (no chat round-trip needed) — same shape as
     check_off_meal/check_off_prep_step below. A tick is credited to the
-    session's adult (completed_by_member_id); un-ticking clears it.
+    session's adult (completed_by_member_id) and dated today; un-ticking
+    clears both. A tick here goes through the same _mark_done as chat, so
+    a slipped chore's whole backlog clears on one tap and the next
+    occurrence is reckoned from today.
     """
     conn = get_conn()
     require_household_row(conn, "chore_instances", instance_id, label="chore instance")
     if status == "done":
-        conn.execute(
-            "UPDATE chore_instances SET status = 'done', completed_at = datetime('now'), completed_by_member_id = ? "
-            "WHERE id = ? AND household_id = ?",
-            (_doer_id(conn, None), instance_id, household_id()),
-        )
+        result = _mark_done(conn, instance_id, _doer_id(conn, None), date.today())
     else:
         conn.execute(
-            "UPDATE chore_instances SET status = ?, completed_at = NULL, completed_by_member_id = NULL "
-            "WHERE id = ? AND household_id = ?",
+            "UPDATE chore_instances SET status = ?, completed_at = NULL, done_on = NULL, "
+            "completed_by_member_id = NULL WHERE id = ? AND household_id = ?",
             (status, instance_id, household_id()),
         )
+        result = {"instance_id": instance_id, "status": status}
     conn.commit()
     conn.close()
-    return {"instance_id": instance_id, "status": status}
+    return result

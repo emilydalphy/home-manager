@@ -427,6 +427,18 @@ _MIGRATIONS = [
     # NULL on every existing instance: nothing recorded the person before
     # this, and guessing the assignee did it would be inventing history.
     ("chore_instances", "completed_by_member_id", "INTEGER"),
+    # The DAY the chore was actually done — Loop Board "Chores v1: no guilt
+    # pile" (Emily, 2026-09-11). Deliberately NOT reusing completed_at,
+    # which is a different fact: completed_at is the UTC instant the tick
+    # reached the server, and done_on is the day on the household's own
+    # calendar that the work happened. They come apart in two ways that
+    # both matter here. "I did it yesterday" back-dates the work without
+    # back-dating the tick, and it is the WORK the next occurrence counts
+    # from. And a tick at 9pm Toronto is already tomorrow in UTC, so
+    # date(completed_at) would quietly put the next mop a day early.
+    # Overloading one column would have lost the audit fact to keep the
+    # schedule fact, or kept the audit fact and got the schedule wrong.
+    ("chore_instances", "done_on", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -736,6 +748,7 @@ def _run_migrations(conn):
     _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
     _migrate_chore_modes(conn)
+    _backfill_chore_done_on(conn)
 
 
 def _migrate_chore_modes(conn):
@@ -777,6 +790,31 @@ def _migrate_chore_modes(conn):
             "UPDATE chores SET mode = ?, rotation_member_ids_json = ?, default_assignee_id = ? WHERE id = ?",
             (mode, json.dumps(rotation), owner, row["id"]),
         )
+
+
+def _backfill_chore_done_on(conn):
+    """
+    Loop Board "Chores v1: no guilt pile" (Emily, 2026-09-11). Every chore
+    already ticked off has a completed_at timestamp and no done_on, so the
+    day it was done is DERIVED from the timestamp rather than asked for
+    again — the same move _migrate_chore_modes makes with the rotation.
+
+    Only rows that are done, have a timestamp, and have no done_on yet, so
+    it is idempotent and a back-dated done_on is never overwritten. A done
+    row with no timestamp at all (there should be none, but the column has
+    always been nullable) is left alone: readers coalesce down to due_date,
+    so nothing depends on this having run, and writing a date we would
+    have had to guess is inventing history.
+    """
+    conn.execute(
+        """
+        UPDATE chore_instances
+           SET done_on = date(completed_at)
+         WHERE status = 'done'
+           AND completed_at IS NOT NULL
+           AND (done_on IS NULL OR done_on = '')
+        """
+    )
 
 
 def init_db():
