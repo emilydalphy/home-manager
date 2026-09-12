@@ -1219,24 +1219,39 @@ def onboarding_chores_profile(req: ChoreProfileRequest):
 
 @app.post("/api/onboarding/chores/save")
 def onboarding_chores_save(req: ChoreSaveRequest):
-    """Create the chores the user kept/edited from the recommendations, then generate the upcoming schedule."""
+    """
+    Create the chores the user kept/edited from the recommendations, then
+    generate the upcoming schedule.
+
+    A row naming someone who isn't a member (a typo, a name the wizard never
+    offered) is a question, not a crash: add_chore raises a plain ValueError
+    for it, so that row is skipped and reported back, and the rows around it
+    still save. The old behaviour invented a member from the stray name.
+    """
+    created = 0
+    skipped: list[dict] = []
     try:
         for c in req.chores:
             if not c.name.strip():
                 continue
-            tools.add_chore(
-                name=c.name.strip(),
-                frequency=c.frequency,
-                category=c.category,
-                mode=c.mode.strip() or None,
-                owner_name=c.owner_name.strip() or None,
-                assignee_names=c.assignee_names or None,
-            )
+            try:
+                tools.add_chore(
+                    name=c.name.strip(),
+                    frequency=c.frequency,
+                    category=c.category,
+                    mode=c.mode.strip() or None,
+                    owner_name=c.owner_name.strip() or None,
+                    assignee_names=c.assignee_names or None,
+                )
+            except ValueError as e:
+                skipped.append({"name": c.name.strip(), "reason": str(e)})
+                continue
+            created += 1
         tools.generate_chore_schedule(days_ahead=14)
     except Exception as e:
         logger.exception("Chore save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"saved": True, "created": len(req.chores)}
+    return {"saved": True, "created": created, "skipped": skipped}
 
 
 @app.get("/api/coaching")

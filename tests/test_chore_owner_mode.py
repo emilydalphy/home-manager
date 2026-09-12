@@ -741,6 +741,25 @@ def test_save_accepts_per_row_owner_overrides(signed_in, two_adults):
     assert today["Bins"]["assignee"] is None
 
 
+def test_save_skips_a_row_naming_nobody_and_keeps_the_rest(signed_in, two_adults):
+    # A stray name (a typo, or one the wizard never offered) used to invent
+    # a member on main, and would 500 with a half-save once ownership stopped
+    # doing that. Now the row is skipped and reported; its neighbours save.
+    res = signed_in.post("/api/onboarding/chores/save", json={"chores": [
+        {"name": "Trash", "mode": "owned", "owner_name": "Emily"},
+        {"name": "Bathrooms", "mode": "owned", "owner_name": "Nobody"},
+        {"name": "Vacuuming", "mode": "shared", "assignee_names": ["Emily", "Vineeth"]},
+    ]})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["created"] == 2
+    assert [s["name"] for s in body["skipped"]] == ["Bathrooms"]
+    assert "Nobody" in body["skipped"][0]["reason"]
+    names = {d["name"] for d in tools.list_chore_definitions()}
+    assert names == {"Trash", "Vacuuming"}
+    assert {m["name"] for m in tools.list_members()} == {"Emily", "Vineeth"}
+
+
 # --- 9. the chat tools know the words ----------------------------------------
 
 def test_the_chat_tools_carry_mode_and_owner():
