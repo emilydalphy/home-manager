@@ -163,6 +163,49 @@ def test_a_row_the_migration_has_not_reached_still_reads_by_the_same_rule(two_ad
     assert by_name["Bins"]["mode"] == "whoever"
 
 
+def test_migration_against_a_database_made_by_main(tmp_path):
+    """The real upgrade path: a file created by main's schema.sql — no
+    mode column at all — opened by this build. Every shape a row could be
+    in, including two that were never valid JSON."""
+    import sqlite3
+    import subprocess
+
+    schema = subprocess.run(
+        ["git", "show", "origin/main:app/schema.sql"], cwd=REPO, capture_output=True, text=True, check=True
+    ).stdout
+    assert "mode TEXT" not in schema.split("CREATE TABLE IF NOT EXISTS chores (")[1].split(");")[0]
+    conn = sqlite3.connect(tmp_path / "main.db")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(schema)
+    conn.execute("INSERT INTO members (household_id, name) VALUES (1, 'Emily'), (1, 'Vineeth')")
+    rows = [
+        ("one", 1, "[1]"), ("two", 1, "[1, 2]"), ("none", None, "[]"), ("default-only", 2, "[]"),
+        ("not-json", None, "not json"), ("blank", None, ""), ("null-and-two", None, "[null, 2]"),
+    ]
+    conn.executemany(
+        "INSERT INTO chores (household_id, name, default_assignee_id, rotation_member_ids_json) VALUES (1, ?, ?, ?)",
+        rows,
+    )
+    conn.commit()
+
+    _run_migrations(conn)
+    _run_migrations(conn)
+    conn.commit()
+    got = {r["name"]: (r["mode"], json.loads(r["rotation_member_ids_json"]), r["default_assignee_id"])
+           for r in conn.execute("SELECT name, mode, rotation_member_ids_json, default_assignee_id FROM chores")}
+    assert "completed_by_member_id" in [r["name"] for r in conn.execute("PRAGMA table_info(chore_instances)")]
+    conn.close()
+    assert got == {
+        "one": ("owned", [1], 1),
+        "two": ("shared", [1, 2], 1),
+        "none": ("whoever", [], None),
+        "default-only": ("owned", [2], 2),
+        "not-json": ("whoever", [], None),
+        "blank": ("whoever", [], None),
+        "null-and-two": ("owned", [2], 2),
+    }
+
+
 # --- 2. add_chore: owned is the default ----------------------------------
 
 def test_add_chore_defaults_to_owned_by_the_only_adult():
@@ -224,6 +267,54 @@ def test_add_chore_draws_on_the_rotation_named_in_setup(two_adults):
 def test_add_chore_rejects_a_made_up_mode(two_adults):
     with pytest.raises(ValueError):
         tools.add_chore("Bins", mode="rotating")
+
+
+# --- 2b. names resolve against the people already here — never invented ----
+
+def test_an_owner_is_matched_exactly_case_aside(two_adults):
+    assert tools.add_chore("Bathrooms", owner_name="vineeth")["owner"] == "Vineeth"
+
+
+def test_an_owner_is_matched_by_first_name_when_that_is_unique():
+    _adult("Emily Dalphy")
+    _adult("Vineeth Kumar")
+    result = tools.add_chore("Bathrooms", owner_name="Vineeth")
+    assert result["owner"] == "Vineeth Kumar"
+    assert [m["name"] for m in tools.list_members()] == ["Emily Dalphy", "Vineeth Kumar"], "no duplicate Vineeth"
+
+
+def test_two_people_with_the_same_first_name_is_a_question():
+    _adult("Sam Lee")
+    _adult("Sam Roy")
+    with pytest.raises(ValueError, match="more than one Sam"):
+        tools.add_chore("Bathrooms", owner_name="Sam")
+    assert tools.list_chore_definitions() == []
+
+
+def test_an_unknown_owner_is_a_question_and_creates_nobody(two_adults):
+    with pytest.raises(ValueError, match="don't know anyone called Vinneth"):
+        tools.add_chore("Bathrooms", owner_name="Vinneth")
+    chore_id = tools.add_chore("Bathrooms", owner_name="Emily")["chore_id"]
+    with pytest.raises(ValueError, match="don't know anyone called Vinneth"):
+        tools.update_chore(chore_id, owner_name="Vinneth")
+    assert tools.list_chore_definitions()[0]["owner"] == "Emily"
+    assert sorted(m["name"] for m in tools.list_members()) == ["Emily", "Vineeth"]
+
+
+def test_the_legacy_assignee_names_go_through_the_same_resolver(two_adults):
+    with pytest.raises(ValueError, match="don't know anyone called Nobody"):
+        tools.add_chore("Vacuuming", assignee_names=["Emily", "Nobody"])
+    tools.add_chore("Bins", mode="whoever")
+    with pytest.raises(ValueError, match="don't know anyone called Nobody"):
+        tools.schedule_chore_instance("Bins", datetime.date.today().isoformat(), assignee_name="Nobody")
+    assert sorted(m["name"] for m in tools.list_members()) == ["Emily", "Vineeth"]
+
+
+def test_a_setup_rotation_name_that_matches_nobody_is_skipped_not_invented(two_adults):
+    tools.set_chores_profile(rotation_members=["Vineeth", "Cleaner Co"])
+    result = tools.add_chore("Lawn")
+    assert result["mode"] == "owned" and result["owner"] == "Vineeth"
+    assert sorted(m["name"] for m in tools.list_members()) == ["Emily", "Vineeth"]
 
 
 # --- 3. generate_chore_schedule assigns by mode ----------------------------
@@ -330,6 +421,20 @@ def test_the_old_assignee_names_shape_still_sets_the_mode(two_adults):
     assert tools.update_chore(chore_id, assignee_names=[])["mode"] == "whoever"
 
 
+def test_a_refused_owner_change_writes_nothing_and_lets_the_connection_go(two_adults):
+    """Found in verification: frequency was written before the owner
+    question was asked, and the open connection then locked the database
+    for the next write."""
+    chore_id = tools.add_chore("Vacuuming", assignee_names=["Emily", "Vineeth"], frequency="weekly")["chore_id"]
+    with pytest.raises(ValueError, match="Whose should it be"):
+        tools.update_chore(chore_id, frequency="daily", mode="owned")
+    row = _chore_row(chore_id)
+    assert row["frequency"] == "weekly" and row["mode"] == "shared"
+    # The next write must not hit "database is locked".
+    assert tools.update_chore(chore_id, frequency="daily")["mode"] == "shared"
+    assert _chore_row(chore_id)["frequency"] == "daily"
+
+
 def test_changing_frequency_alone_leaves_the_owner_alone(two_adults):
     chore_id = tools.add_chore("Bathrooms", owner_name="Vineeth")["chore_id"]
     result = tools.update_chore(chore_id, frequency="biweekly")
@@ -356,6 +461,37 @@ def test_done_instances_keep_the_person_who_did_them(two_adults):
     assert after[done_id]["completed_by_member_id"] == two_adults["Emily"]
     pending = [r for r in after.values() if r["status"] == "pending"]
     assert pending and {r["assignee_id"] for r in pending} == {two_adults["Vineeth"]}
+
+
+def test_an_owner_change_touches_no_other_chore(two_adults):
+    bath = tools.add_chore("Bathrooms", owner_name="Emily", frequency="weekly")["chore_id"]
+    vac = tools.add_chore("Vacuuming", assignee_names=["Emily", "Vineeth"], frequency="weekly")["chore_id"]
+    tools.generate_chore_schedule(days_ahead=21)
+    before = _instances(vac)
+    tools.update_chore(bath, owner_name="Vineeth")
+    assert _instances(vac) == before
+
+
+def test_owned_stays_with_the_owner_over_several_generations(two_adults):
+    chore_id = tools.add_chore("Bathrooms", owner_name="Vineeth", frequency="weekly")["chore_id"]
+    for days in (7, 21, 35, 35):
+        tools.generate_chore_schedule(days_ahead=days)
+    rows = _instances(chore_id)
+    assert len(rows) == 6
+    assert {r["assignee_id"] for r in rows} == {two_adults["Vineeth"]}
+    assert len({r["due_date"] for r in rows}) == 6, "no date generated twice"
+
+
+def test_going_shared_continues_after_whoever_actually_did_the_last_one(two_adults):
+    """The doer, not the person it was scheduled for, is the fairness fact:
+    Emily's chore that Vineeth did means Emily is up next."""
+    chore_id = tools.add_chore("Vacuuming", owner_name="Emily", frequency="weekly")["chore_id"]
+    tools.generate_chore_schedule(days_ahead=21)
+    first = _instances(chore_id)[0]["id"]
+    tools.complete_chore(first, done_by="Vineeth")
+    tools.update_chore(chore_id, mode="shared", assignee_names=["Emily", "Vineeth"])
+    pending = [r["assignee_id"] for r in _instances(chore_id) if r["status"] == "pending"]
+    assert pending[0] == two_adults["Emily"]
 
 
 def test_going_shared_picks_up_the_turn_after_the_last_done(two_adults):
@@ -395,11 +531,31 @@ def test_vineeth_did_the_bins_credits_vineeth(two_adults):
     assert row["completed_by_member_id"] == two_adults["Vineeth"]
 
 
-def test_a_name_that_is_nobody_in_the_house_is_not_invented(two_adults):
+def test_a_name_that_is_nobody_in_the_house_is_a_question_not_the_signed_in_adult(two_adults):
+    """Found in verification: "Vinneth did the bins" with Emily signed in
+    went down as Emily. Now it's a question back, and nothing is recorded."""
     tools.add_chore("Bins", owner_name="Emily")
     instance_id = tools.schedule_chore_instance("Bins", datetime.date.today().isoformat())["instance_id"]
-    tools.complete_chore(instance_id, done_by="Vinneth")
-    assert tools.list_members() and all(m["name"] != "Vinneth" for m in tools.list_members())
+    with tools.use_member(two_adults["Emily"]):
+        with pytest.raises(ValueError, match="don't know anyone called Vinneth"):
+            tools.complete_chore(instance_id, done_by="Vinneth")
+    conn = get_conn()
+    row = conn.execute("SELECT status, completed_by_member_id FROM chore_instances WHERE id = ?", (instance_id,)).fetchone()
+    conn.close()
+    assert row["status"] == "pending" and row["completed_by_member_id"] is None
+    assert all(m["name"] != "Vinneth" for m in tools.list_members())
+    # ...and the connection was let go: the next write goes through.
+    with tools.use_member(two_adults["Emily"]):
+        tools.complete_chore(instance_id, done_by="Vineeth")
+    assert tools.list_chores(status="done")[0]["completed_by"] == "Vineeth"
+
+
+def test_a_first_name_is_enough_to_credit_a_tick(two_adults):
+    tools.add_member("Grandma Jo")
+    tools.add_chore("Bins", owner_name="Emily")
+    instance_id = tools.schedule_chore_instance("Bins", datetime.date.today().isoformat())["instance_id"]
+    tools.complete_chore(instance_id, done_by="grandma")
+    assert tools.list_chores(status="done")[0]["completed_by"] == "Grandma Jo"
 
 
 def test_the_now_card_tick_records_the_picked_adult_and_unticking_clears_it(client, two_adults):
@@ -503,6 +659,23 @@ def test_normaliser_fills_in_an_owner_for_every_row():
     assert by_name["Litter"]["mode"] == "owned" and by_name["Litter"]["owner_name"] == "Vineeth"
 
 
+def test_normaliser_drops_a_name_that_is_not_in_the_rotation():
+    """Found in verification: an owner_name of "Nobody" survived. A name
+    the household didn't give falls back to the dealt-round rule."""
+    rows = agent._normalize_chore_recommendations(
+        [
+            {"name": "Bathrooms", "category": "cleaning", "frequency": "weekly", "mode": "owned", "owner_name": "Nobody"},
+            {"name": "Vacuuming", "category": "cleaning", "frequency": "weekly", "mode": "shared", "assignee_names": ["Emily", "Cleaner"]},
+            {"name": "Kitchen", "category": "cleaning", "frequency": "daily", "mode": "owned", "owner_name": "vineeth"},
+        ],
+        ["Emily", "Vineeth Kumar"],
+    )
+    by_name = {r["name"]: r for r in rows}
+    assert by_name["Bathrooms"]["owner_name"] == "Emily"
+    assert by_name["Vacuuming"]["assignee_names"] == ["Emily", "Vineeth Kumar"]
+    assert by_name["Kitchen"]["owner_name"] == "Vineeth Kumar", "a first name still finds the person"
+
+
 def test_normaliser_with_nobody_named_proposes_whoever():
     rows = agent._normalize_chore_recommendations(
         [{"name": "Bathrooms", "category": "cleaning", "frequency": "weekly", "mode": "owned"}], []
@@ -582,3 +755,34 @@ def test_the_chat_tools_carry_mode_and_owner():
     desc = by_name["update_chore"]["description"].lower()
     assert "take turns" in desc and "either of us" in desc and "give the" in desc
     assert "done_by" in by_name["complete_chore"]["input_schema"]["properties"]
+
+
+# --- 10. households stay separate on every new path -------------------------
+
+def test_the_new_paths_never_cross_households(two_adults):
+    from app import households
+
+    beta = households.create_household("The Beta Testers", "beta-passphrase-long-enough")
+    bath = tools.add_chore("Bathrooms", owner_name="Emily", frequency="weekly")["chore_id"]
+    tools.generate_chore_schedule(days_ahead=14)
+    with tools.use_household(beta):
+        # Household 1's people are nobody here.
+        with pytest.raises(ValueError, match="don't know anyone called Emily"):
+            tools.add_chore("Bins", owner_name="Emily")
+        tools.add_member("Priya")
+        tools.set_member_age_group("Priya", "Adult")
+        beta_chore = tools.add_chore("Bins")
+        assert beta_chore["owner"] == "Priya", "the only adult HERE, not in household 1"
+        tools.generate_chore_schedule(days_ahead=14)
+        beta_id = tools.list_chores()[0]["id"]
+        with pytest.raises(ValueError, match="don't know anyone called Vineeth"):
+            tools.complete_chore(beta_id, done_by="Vineeth")
+        assert [d["name"] for d in tools.list_chore_definitions()] == ["Bins"]
+        assert tools.add_chore("Sweep", mode="whoever")["who_label"] == "anyone", "one adult here, not two"
+        beta_before = _instances(beta_chore["chore_id"])
+
+    # An owner change in household 1 leaves the other household's schedule as it was.
+    tools.update_chore(bath, owner_name="Vineeth")
+    with tools.use_household(beta):
+        assert _instances(beta_chore["chore_id"]) == beta_before
+        assert {r["assignee_id"] for r in _instances(beta_chore["chore_id"])} != {two_adults["Vineeth"]}

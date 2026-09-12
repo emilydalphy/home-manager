@@ -1180,7 +1180,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_chore",
-        "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning). Every chore has a chosen owner — mode 'owned' (one person, always; the default), 'shared' (the named people take turns) or 'whoever' (nobody in particular, first to do it). Pass owner_name for an owned chore. If nobody's named, the only adult owns it; with two or more adults and no name given it falls back to shared across the setup rotation — so when the household hasn't said whose it is, ask.",
+        "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning). Every chore has a chosen owner — mode 'owned' (one person, always; the default), 'shared' (the named people take turns) or 'whoever' (nobody in particular, first to do it). Pass owner_name for an owned chore. Names must be people already in the household (add_member first if they're new — this tool never creates one). If nobody's named, the only adult owns it; with two or more adults and no name given it falls back to shared across the setup rotation — so when the household hasn't said whose it is, ask.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -5419,6 +5419,7 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
     """
     people = [n.strip() for n in (rotation_members or []) if isinstance(n, str) and n.strip()]
     lower = {n.lower(): n for n in people}
+    lower.update({n.split(" ")[0].lower(): n for n in people if n.split(" ")[0].lower() not in lower})
     out = []
     deal = 0
     for raw in chores or []:
@@ -5426,10 +5427,12 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
             continue
         row = dict(raw)
         mode = row.get("mode") if row.get("mode") in ("owned", "shared", "whoever") else None
-        names = [lower.get(str(n).strip().lower(), str(n).strip())
-                 for n in (row.get("assignee_names") or []) if str(n).strip()]
-        owner = str(row.get("owner_name") or "").strip()
-        owner = lower.get(owner.lower(), owner)
+        # Only people the household actually named. A name the model made
+        # up ("Nobody", a misspelling) is dropped so the row falls back to
+        # the dealt-round rule instead of proposing a stranger.
+        names = [lower[str(n).strip().lower()] for n in (row.get("assignee_names") or [])
+                 if str(n).strip().lower() in lower]
+        owner = lower.get(str(row.get("owner_name") or "").strip().lower(), "")
         if mode is None:
             mode = "owned" if len(names) <= 1 else "shared"
         if mode == "owned":

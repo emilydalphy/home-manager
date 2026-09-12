@@ -7,7 +7,6 @@ import json
 from datetime import date, timedelta
 from ..db import get_conn
 from ._shared import household_id, require_household_row, current_member
-from . import household as _household
 
 
 _FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quarterly": 91, "once": None}
@@ -166,19 +165,58 @@ def _dedupe(ids: list[int]) -> list[int]:
     return out
 
 
+def _member_named(conn, name: str, *, what: str = "who did you mean") -> int | None:
+    """
+    An existing member by name: an exact match (case-insensitive), else the
+    one person whose first name it is. Never creates anybody — a chore's
+    owner is somebody already in the house, and a typo must not become a
+    person (it did: "Vinneth" got a members row). Unknown or ambiguous
+    raises a plain question the assistant can put to the household; blank
+    is None.
+    """
+    key = (name or "").strip().lower()
+    if not key:
+        return None
+    rows = conn.execute(
+        "SELECT id, name FROM members WHERE household_id = ? ORDER BY id ASC", (household_id(),)
+    ).fetchall()
+    exact = [r["id"] for r in rows if (r["name"] or "").strip().lower() == key]
+    if len(exact) == 1:
+        return exact[0]
+    first = [r["id"] for r in rows if _first_name(r["name"]).lower() == key]
+    if len(first) == 1:
+        return first[0]
+    if len(exact) > 1 or len(first) > 1:
+        raise ValueError(f"There's more than one {name.strip()} here — {what}?")
+    raise ValueError(f"I don't know anyone called {name.strip()} here — {what}?")
+
+
 def _people_pool(conn) -> list[int]:
     """
     Who to draw on when nobody was named: the rotation named in setup
     first, then the household's adults, then anyone at all (a household
-    set up through chat may never have marked ages).
+    set up through chat may never have marked ages). A setup name that no
+    longer matches a member is skipped, not invented.
     """
     profile = conn.execute(
         "SELECT rotation_members_json FROM chores_profile WHERE household_id = ?", (household_id(),)
     ).fetchone()
-    names = json.loads(profile["rotation_members_json"]) if profile else []
-    names = [n.strip() for n in names if n and n.strip()]
-    if names:
-        return _dedupe([_household._get_or_create_member(conn, n) for n in names])
+    try:
+        names = json.loads(profile["rotation_members_json"]) if profile else []
+    except (TypeError, ValueError):
+        names = []
+    ids = []
+    for n in names:
+        if not isinstance(n, str) or not n.strip():
+            continue
+        try:
+            found = _member_named(conn, n)
+        except ValueError:
+            found = None
+        if found is not None:
+            ids.append(found)
+    if ids:
+        return _dedupe(ids)
     adults = _adult_ids(conn)
     if adults:
         return adults
@@ -227,7 +265,7 @@ def _resolve_people(
       rotation / the adults.
     """
     names = [n.strip() for n in (names or []) if n and n.strip()]
-    ids = _dedupe([_household._get_or_create_member(conn, n) for n in names])
+    ids = _dedupe([i for i in (_member_named(conn, n) for n in names) if i is not None])
     existing = existing or []
     if mode is not None and mode not in MODES:
         raise ValueError(f"'{mode}' isn't a way to own a chore. Use owned, shared or whoever.")
@@ -286,8 +324,9 @@ def _next_in_turn(conn, chore_id: int, rotation: list[int]) -> int | None:
     if not rotation:
         return None
     last = conn.execute(
-        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? ORDER BY due_date DESC, id DESC LIMIT 1",
-        (chore_id,),
+        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "ORDER BY due_date DESC, id DESC LIMIT 1",
+        (chore_id, household_id()),
     ).fetchone()
     if last and last["assignee_id"] in rotation:
         return rotation[(rotation.index(last["assignee_id"]) + 1) % len(rotation)]
@@ -300,9 +339,9 @@ def _up_this_time(conn, chore_id: int, rotation: list[int]) -> int | None:
     still pending, or failing that the next person in turn.
     """
     pending = conn.execute(
-        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND status = 'pending' "
+        "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? AND status = 'pending' "
         "ORDER BY due_date ASC, id ASC LIMIT 1",
-        (chore_id,),
+        (chore_id, household_id()),
     ).fetchone()
     if pending and pending["assignee_id"] is not None:
         return pending["assignee_id"]
@@ -343,20 +382,29 @@ def _reassign_pending(conn, chore_id: int) -> int:
     picks up the turn order from the most recent done instance so the
     change doesn't hand the same person two in a row.
     """
-    chore = conn.execute("SELECT * FROM chores WHERE id = ?", (chore_id,)).fetchone()
+    chore = conn.execute("SELECT * FROM chores WHERE id = ? AND household_id = ?", (chore_id, household_id())).fetchone()
     mode = chore_mode(chore)
     people = _rotation_ids(chore)
     pending = conn.execute(
-        "SELECT id FROM chore_instances WHERE chore_id = ? AND status = 'pending' ORDER BY due_date ASC, id ASC",
-        (chore_id,),
+        "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? AND status = 'pending' "
+        "ORDER BY due_date ASC, id ASC",
+        (chore_id, household_id()),
     ).fetchall()
     if mode == "shared" and people:
+        # The turn continues after whoever actually DID the last one, not
+        # whoever it was scheduled for — the doer is the fairness fact.
         last_done = conn.execute(
-            "SELECT assignee_id FROM chore_instances WHERE chore_id = ? AND status = 'done' "
+            "SELECT assignee_id, completed_by_member_id FROM chore_instances "
+            "WHERE chore_id = ? AND household_id = ? AND status = 'done' "
             "ORDER BY due_date DESC, id DESC LIMIT 1",
-            (chore_id,),
+            (chore_id, household_id()),
         ).fetchone()
-        cursor = people.index(last_done["assignee_id"]) + 1 if last_done and last_done["assignee_id"] in people else 0
+        last_person = None
+        if last_done:
+            last_person = last_done["completed_by_member_id"]
+            if last_person is None:
+                last_person = last_done["assignee_id"]
+        cursor = people.index(last_person) + 1 if last_person in people else 0
     for n, inst in enumerate(pending):
         if mode == "owned":
             assignee = people[0] if people else None
@@ -364,7 +412,10 @@ def _reassign_pending(conn, chore_id: int) -> int:
             assignee = people[(cursor + n) % len(people)]
         else:
             assignee = None
-        conn.execute("UPDATE chore_instances SET assignee_id = ? WHERE id = ?", (assignee, inst["id"]))
+        conn.execute(
+            "UPDATE chore_instances SET assignee_id = ? WHERE id = ? AND household_id = ?",
+            (assignee, inst["id"], household_id()),
+        )
     return len(pending)
 
 
@@ -391,7 +442,11 @@ def add_chore(
         names = [owner_name] + [n for n in names if n.strip().lower() != owner_name.strip().lower()]
         if mode is None:
             mode = "owned"
-    mode, ids = _resolve_people(conn, mode, names)
+    try:
+        mode, ids = _resolve_people(conn, mode, names)
+    except ValueError:
+        conn.close()
+        raise
     cur = conn.execute(
         "INSERT INTO chores (household_id, name, category, frequency, default_assignee_id, rotation_member_ids_json, mode) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -399,7 +454,7 @@ def add_chore(
     )
     conn.commit()
     chore_id = cur.lastrowid
-    row = conn.execute("SELECT * FROM chores WHERE id = ?", (chore_id,)).fetchone()
+    row = conn.execute("SELECT * FROM chores WHERE id = ? AND household_id = ?", (chore_id, household_id())).fetchone()
     described = _describe(conn, row)
     conn.close()
     return {
@@ -455,30 +510,43 @@ def update_chore(
     """
     conn = get_conn()
     require_household_row(conn, "chores", chore_id, label="chore")
-    if frequency is not None:
-        conn.execute("UPDATE chores SET frequency = ? WHERE id = ? AND household_id = ?", (frequency, chore_id, household_id()))
-    if category is not None:
-        conn.execute("UPDATE chores SET category = ? WHERE id = ? AND household_id = ?", (category, chore_id, household_id()))
-    reassigned = None
-    if mode is not None or owner_name is not None or assignee_names is not None:
-        row = conn.execute("SELECT * FROM chores WHERE id = ?", (chore_id,)).fetchone()
-        names = list(assignee_names or [])
-        if owner_name and owner_name.strip():
-            names = [owner_name] + [n for n in names if n.strip().lower() != owner_name.strip().lower()]
-            if mode is None:
-                mode = "owned"
-        elif mode is None and assignee_names is not None and not names:
-            # An explicit empty list is what "nobody's" looked like before
-            # mode existed; keep meaning that rather than re-deriving an owner.
-            mode = "whoever"
-        new_mode, ids = _resolve_people(conn, mode, names, existing=_rotation_ids(row), strict=mode == "owned")
-        _write_people(conn, chore_id, new_mode, ids)
-        reassigned = _reassign_pending(conn, chore_id)
-    if active is not None:
-        conn.execute("UPDATE chores SET active = ? WHERE id = ? AND household_id = ?", (1 if active else 0, chore_id, household_id()))
-    conn.commit()
-    row = conn.execute("SELECT * FROM chores WHERE id = ?", (chore_id,)).fetchone()
-    described = _describe(conn, row)
+    try:
+        # Work out who first, before anything is written: a refused owner
+        # change ("whose should it be?") must leave the row exactly as it
+        # was, frequency included.
+        people = None
+        if mode is not None or owner_name is not None or assignee_names is not None:
+            row = conn.execute(
+                "SELECT * FROM chores WHERE id = ? AND household_id = ?", (chore_id, household_id())
+            ).fetchone()
+            names = list(assignee_names or [])
+            if owner_name and owner_name.strip():
+                names = [owner_name] + [n for n in names if n.strip().lower() != owner_name.strip().lower()]
+                if mode is None:
+                    mode = "owned"
+            elif mode is None and assignee_names is not None and not names:
+                # An explicit empty list is what "nobody's" looked like before
+                # mode existed; keep meaning that rather than re-deriving an owner.
+                mode = "whoever"
+            people = _resolve_people(conn, mode, names, existing=_rotation_ids(row), strict=mode == "owned")
+
+        if frequency is not None:
+            conn.execute("UPDATE chores SET frequency = ? WHERE id = ? AND household_id = ?", (frequency, chore_id, household_id()))
+        if category is not None:
+            conn.execute("UPDATE chores SET category = ? WHERE id = ? AND household_id = ?", (category, chore_id, household_id()))
+        reassigned = None
+        if people is not None:
+            _write_people(conn, chore_id, *people)
+            reassigned = _reassign_pending(conn, chore_id)
+        if active is not None:
+            conn.execute("UPDATE chores SET active = ? WHERE id = ? AND household_id = ?", (1 if active else 0, chore_id, household_id()))
+        conn.commit()
+        row = conn.execute("SELECT * FROM chores WHERE id = ? AND household_id = ?", (chore_id, household_id())).fetchone()
+        described = _describe(conn, row)
+    except Exception:
+        conn.rollback()
+        conn.close()
+        raise
     conn.close()
     result = {"chore_id": chore_id, "updated": True, "name": row["name"], **described}
     if reassigned is not None:
@@ -511,8 +579,9 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
         people = _rotation_ids(chore)
 
         last = conn.execute(
-            "SELECT due_date, assignee_id FROM chore_instances WHERE chore_id = ? ORDER BY due_date DESC, id DESC LIMIT 1",
-            (chore["id"],),
+            "SELECT due_date, assignee_id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+            "ORDER BY due_date DESC, id DESC LIMIT 1",
+            (chore["id"], household_id()),
         ).fetchone()
 
         if last:
@@ -526,8 +595,8 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
 
         while next_due <= horizon:
             exists = conn.execute(
-                "SELECT id FROM chore_instances WHERE chore_id = ? AND due_date = ?",
-                (chore["id"], next_due.isoformat()),
+                "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? AND due_date = ?",
+                (chore["id"], household_id(), next_due.isoformat()),
             ).fetchone()
             if not exists:
                 if mode == "owned":
@@ -562,7 +631,11 @@ def schedule_chore_instance(chore_name: str, due_date: str, assignee_name: str |
     mode = chore_mode(chore)
     people = _rotation_ids(chore)
     if assignee_name:
-        assignee_id = _household._get_or_create_member(conn, assignee_name)
+        try:
+            assignee_id = _member_named(conn, assignee_name)
+        except ValueError:
+            conn.close()
+            raise
     elif mode == "owned":
         assignee_id = people[0] if people else None
     elif mode == "shared":
@@ -645,22 +718,15 @@ def list_chores(status: str = "pending", days_ahead: int = 14) -> list[dict]:
     return result
 
 
-def _member_id_by_name(conn, name: str | None) -> int | None:
-    """An existing member's id by name — never creates one: crediting a tick
-    to a typo would put a stranger in the fairness count."""
-    if not name or not name.strip():
-        return None
-    row = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (household_id(), name.strip())
-    ).fetchone()
-    return row["id"] if row else None
-
-
 def _doer_id(conn, done_by: str | None) -> int | None:
-    """Who gets credit for a tick: the person named, else the session's adult."""
-    named = _member_id_by_name(conn, done_by)
-    if named is not None:
-        return named
+    """
+    Who gets credit for a tick: the person named, else the session's adult.
+    A name that matches nobody is a question back to the household, never
+    quietly the person who was talking — "Vinneth did the bins" with Emily
+    signed in must not go down as Emily.
+    """
+    if done_by and done_by.strip():
+        return _member_named(conn, done_by, what="who did it")
     member = current_member()
     return member["id"] if member else None
 
@@ -673,7 +739,11 @@ def complete_chore(instance_id: int, done_by: str | None = None) -> dict:
     """
     conn = get_conn()
     require_household_row(conn, "chore_instances", instance_id, label="chore instance")
-    doer = _doer_id(conn, done_by)
+    try:
+        doer = _doer_id(conn, done_by)
+    except ValueError:
+        conn.close()
+        raise
     conn.execute(
         "UPDATE chore_instances SET status = 'done', completed_at = datetime('now'), completed_by_member_id = ? "
         "WHERE id = ? AND household_id = ?",
