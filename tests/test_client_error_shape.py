@@ -21,7 +21,8 @@ import io
 import json
 import pathlib
 import shutil
-import subprocess
+
+import nodeharness
 from contextlib import redirect_stdout
 
 import pytest
@@ -371,7 +372,7 @@ def _run_reporter(fire: str):
         + fire
         + "\nconsole.log(JSON.stringify(sent));"
     )
-    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

@@ -29,7 +29,8 @@ from __future__ import annotations
 import datetime
 import json
 import shutil
-import subprocess
+
+import nodeharness
 import types
 from pathlib import Path
 
@@ -255,7 +256,7 @@ def _chips(actions: list[dict]) -> list[dict]:
         "  return { label: c.label, msg: c.msg || null, navigates: !!c.onClick, did: navCalls };\n"
         "})));\n"
     )
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

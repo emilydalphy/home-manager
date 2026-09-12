@@ -25,7 +25,8 @@ from __future__ import annotations
 import datetime
 import json
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -70,9 +71,7 @@ def _pick(meals: list[dict], hour: int):
         + f"const out = todaysMealIndex({json.dumps(meals)}, {hour});\n"
         + "console.log(JSON.stringify(out));\n"
     )
-    res = subprocess.run(
-        ["node", "-e", harness], capture_output=True, text=True, timeout=30
-    )
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 

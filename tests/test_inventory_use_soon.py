@@ -22,7 +22,8 @@ import datetime
 import json
 import re
 import shutil
-import subprocess
+
+import nodeharness
 from pathlib import Path
 
 import pytest
@@ -70,7 +71,7 @@ def _is_use_soon(expiration_dates: list) -> list[bool]:
         + "\n"
         + f"console.log(JSON.stringify({json.dumps(items)}.map(isUseSoon)));\n"
     )
-    res = subprocess.run(["node", "-e", harness], capture_output=True, text=True, timeout=30)
+    res = nodeharness.run_node(harness, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
