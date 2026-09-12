@@ -37,6 +37,7 @@ the app follows the OS.
 | `--spruce-raised` | `#24402F` | `#2E5140` | Chips/icon tiles **on spruce only** — never on ivory. |
 | `--spruce-hover` | `#2B4A37` | `#32573F` | Hover on a fill already sitting on spruce. |
 | `--spruce-edge` | `transparent` | `#2C4B38` | Dark-only hairline separating the hero from a ground that's now nearly the same value. Safe to reference unconditionally — costs light mode nothing. |
+| `--field` | `#12211A` | `#0B1712` | The room the phone sits in at ≥768px (the "phone in the room" desktop stance, 2026-09-11): one step darker than spruce so the root band still reads as the app's own top edge. Nothing is ever set in it. |
 | `--ink-strong` | `#1B3328` | `#F3EBDD` | Spruce playing the role of *ink* (active tab, "add" links, outline-button labels). Swings to Ink in dark because spruce itself becomes a panel there. |
 | `--celadon-tint` | `#E2EDE5` | `#1C3B2C` | The gentle, non-urgent tile — the nudge, not the task. |
 

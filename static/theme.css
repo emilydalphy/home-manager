@@ -73,6 +73,11 @@
     that is now nearly the same value.
   */
   --spruce-edge:    transparent;
+  /* The room the phone sits in on a wide screen (shell.css, >=768px):
+     one step darker than spruce so the root band (spruce) still reads as
+     the app's own top edge and not as the wall behind it. Spruce on this
+     field measures 1.35:1 — a seam, not text; nothing is set in it. */
+  --field:          #12211A;
 
   /*
     THE PURE-WHITE TIER. A handful of surfaces used literal #fff rather than
@@ -622,6 +627,7 @@ summary:focus-visible,
     /* The hairline that replaces the hero's shadow. Dark only — it is
        `transparent` on :root, so this is where it becomes real. (guide) */
     --spruce-edge:    #2C4B38;
+    --field:          #0B1712;   /* darker than dark ground (#101F19); spruce band 1.9:1 on it */
 
     /* (derived) Hover on a fill already sitting on spruce. One step above
        --spruce-raised, capped by apricot-light needing 4.5:1 on it — at

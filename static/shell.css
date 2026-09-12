@@ -1491,7 +1491,7 @@ html, body {
      the top of this file, now --ground there and --spruce here) so the
      spruce shows in the gutter on every side of the column, including
      above/below it on a short window. */
-  body { background: var(--spruce); }
+  body { background: var(--field); }
 
   /* The column. Same #shell-app the phone uses — max-width plus centering
      is the entire "desktop layout": no flex-direction:row, no sidebar, no
@@ -1525,7 +1525,15 @@ html, body {
      there's real spruce above and below, the column gets all four corners
      back — --radius-hero top AND bottom, unlike the hero panel's own
      bottom-only use of that token. */
-  #shell-app { border-radius: var(--radius-hero); overflow: hidden; }
+  #shell-app {
+    border-radius: var(--radius-hero);
+    overflow: hidden;
+    /* Real field above and below the column, so the four corners have
+       something to be corners against — the phone sits in the room, it
+       doesn't fill it. */
+    height: calc(100dvh - 48px);
+    margin: 24px auto;
+  }
 
   /* The field's one piece of furniture (see shell.html's #shell-field-mark
      for the glyph and why it's the login screen's mark reused). */
