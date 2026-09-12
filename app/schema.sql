@@ -167,20 +167,42 @@ CREATE TABLE IF NOT EXISTS chores_profile (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- A chore definition (e.g. "Take out trash", recurs weekly)
+-- A chore definition (e.g. "Take out trash", recurs weekly).
+--
+-- Every chore has a chosen owner (Loop Board "Chores v1", Emily,
+-- 2026-09-11): `mode` says what kind, and the two older columns say who.
+--
+--   owned    one named person, every time. rotation_member_ids_json holds
+--            exactly that person and default_assignee_id is the same id.
+--   shared   named people take turns — rotation_member_ids_json is the
+--            order, and generate_chore_schedule round-robins through it.
+--   whoever  nobody in particular; first to tick it. rotation is '[]' and
+--            default_assignee_id is NULL; instances carry no assignee.
+--
+-- '' is "not decided yet": every chore that existed before mode did, until
+-- db._migrate_chore_modes derives one from the rotation it already had
+-- (one person -> owned, several -> shared, none -> whoever). Readers go
+-- through chores.chore_mode(), which applies the same rule to a '' row, so
+-- nothing depends on the backfill having run first.
 CREATE TABLE IF NOT EXISTS chores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
     name TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'cleaning', -- cleaning | maintenance | other
     frequency TEXT NOT NULL DEFAULT 'weekly', -- daily | weekly | biweekly | monthly | quarterly | once
-    default_assignee_id INTEGER REFERENCES members(id),
-    rotation_member_ids_json TEXT NOT NULL DEFAULT '[]', -- member ids to round-robin through; overrides default_assignee_id if non-empty
+    default_assignee_id INTEGER REFERENCES members(id), -- the owner when mode = 'owned'; first of the rotation when 'shared'
+    rotation_member_ids_json TEXT NOT NULL DEFAULT '[]', -- the people named on this chore, in turn order
+    mode TEXT NOT NULL DEFAULT '', -- owned | shared | whoever | '' (see above)
     active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- A specific occurrence of a chore that needs doing on/around a date
+-- A specific occurrence of a chore that needs doing on/around a date.
+-- assignee_id is whose it was when it was scheduled (NULL for a
+-- 'whoever' chore); completed_by_member_id is who actually ticked it,
+-- which is not always the same person. Both are kept so the fairness view
+-- can count by owner and by doer. A done instance is history: changing a
+-- chore's owner later never rewrites either column on it.
 CREATE TABLE IF NOT EXISTS chore_instances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
@@ -189,6 +211,7 @@ CREATE TABLE IF NOT EXISTS chore_instances (
     due_date TEXT NOT NULL, -- ISO date
     status TEXT NOT NULL DEFAULT 'pending', -- pending | done | skipped
     completed_at TEXT,
+    completed_by_member_id INTEGER REFERENCES members(id), -- who ticked it; NULL when unknown or not done
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

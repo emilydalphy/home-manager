@@ -350,6 +350,37 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Every chore has a chosen owner: owned / shared / whoever.
+  Branch `worktree-chore-owner-mode`.** Loop Board "Chores v1: Every chore
+  has a chosen owner" — Emily, 2026-09-11: "Owners should be chosen."
+  Before: rotation-only (`rotation_member_ids_json` round-robin in
+  `generate_chore_schedule`), no owner default, no record of who ticked.
+  Now `chores.mode` ∈ {owned, shared, whoever}, **owned is the default**;
+  owner = `default_assignee_id` when owned (no second "who" column — the
+  migration `_migrate_chore_modes` in `app/db.py` is a pure derivation:
+  one person → owned, several → shared, none → whoever; idempotent, runs
+  every startup, tolerates malformed rotation JSON). Engine assigns by
+  mode; `whoever` → NULL assignee. `chore_instances.completed_by_member_id`
+  records the doer separately from the assignee (both kept for the v2
+  fairness view); an owner change reassigns pending instances only, done
+  ones keep their person, and a shared turn continues after whoever
+  actually did the last one. Chat: `add_chore`/`update_chore` take `mode`
+  + `owner_name` ("give the bathrooms to Vineeth" → owned; "let's take
+  turns" → shared; "either of us" → whoever); `complete_chore` takes
+  `done_by`. **Naming someone is never how a member gets created here**
+  (verifier round 1 caught "Vinneth" inventing a person and a typo'd
+  `done_by` crediting the signed-in adult): names resolve exact, then
+  unique first name, else a calm question back; the save route skips and
+  reports such a row instead of half-saving. Starter list proposes an
+  owner per row, dealt round the setup rotation when the model leaves one
+  blank. API rows carry `mode`, `owner`, `up_next`, `who_label` ("either
+  of you" only with exactly two adults, else "anyone") for the screens the
+  Plan | Chores and Now-card cards will build; the hidden Now card prints
+  `who_label` behind the unchanged `SHOW_CHORES_ON_TODAY = false`. Left
+  for those cards: the toggle screen, per-row editing in the (orphaned)
+  wizard, how "who's up" reads. 61 tests in `tests/test_chore_owner_mode.py`
+  incl. migration against a DB built from main's schema and cross-household
+  isolation of every new path. Suite 2772.
 - **2026-09-11 — Inventory wears an "In development" pill now. Branch
   `worktree-inventory-in-development`.** Loop Board "Inventory: mark as
   still in development" — Emily's 2026-09-11 call: inventory stays a

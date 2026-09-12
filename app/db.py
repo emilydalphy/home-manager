@@ -409,6 +409,16 @@ _MIGRATIONS = [
     # inferred one.
     ("members", "phone", "TEXT NOT NULL DEFAULT ''"),
     ("members", "morning_text_on", "INTEGER NOT NULL DEFAULT 0"),
+    # Loop Board "Chores v1: every chore has a chosen owner" (Emily,
+    # 2026-09-11). '' on every existing chore = "not decided yet";
+    # _migrate_chore_modes below turns that into owned/shared/whoever from
+    # the rotation the chore already had, so nobody re-enters anything. See
+    # schema.sql's comment on chores.mode for what each value means.
+    ("chores", "mode", "TEXT NOT NULL DEFAULT ''"),
+    # Who actually ticked a chore off, beside assignee_id (whose it was).
+    # NULL on every existing instance: nothing recorded the person before
+    # this, and guessing the assignee did it would be inventing history.
+    ("chore_instances", "completed_by_member_id", "INTEGER"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -717,6 +727,48 @@ def _run_migrations(conn):
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
+    _migrate_chore_modes(conn)
+
+
+def _migrate_chore_modes(conn):
+    """
+    Loop Board "Chores v1: every chore has a chosen owner" (Emily,
+    2026-09-11). Before chores.mode existed, who did a chore was implied by
+    how many people were in its rotation. That implication IS the answer,
+    so it is written down rather than asked again:
+
+    - exactly one person in the rotation -> 'owned' (that person owns it)
+    - two or more                        -> 'shared' (they take turns, as
+                                            the schedule already did)
+    - nobody                             -> 'whoever' (first to tick it)
+
+    A single-person rotation and a NULL-rotation chore with only a
+    default_assignee_id both count as one person: the old add_chore wrote
+    both columns from the same name, and a row with only the default set
+    (older still) meant the same thing. Idempotent and run every startup:
+    only rows still at '' are touched, and a chore created after this
+    exists always carries a real mode from the moment it is inserted.
+    """
+    rows = conn.execute(
+        "SELECT id, rotation_member_ids_json, default_assignee_id FROM chores WHERE mode = ''"
+    ).fetchall()
+    for row in rows:
+        try:
+            rotation = [m for m in json.loads(row["rotation_member_ids_json"] or "[]") if m is not None]
+        except (TypeError, ValueError):
+            rotation = []
+        if not rotation and row["default_assignee_id"] is not None:
+            rotation = [row["default_assignee_id"]]
+        if len(rotation) == 1:
+            mode, owner = "owned", rotation[0]
+        elif rotation:
+            mode, owner = "shared", rotation[0]
+        else:
+            mode, owner = "whoever", None
+        conn.execute(
+            "UPDATE chores SET mode = ?, rotation_member_ids_json = ?, default_assignee_id = ? WHERE id = ?",
+            (mode, json.dumps(rotation), owner, row["id"]),
+        )
 
 
 def init_db():
