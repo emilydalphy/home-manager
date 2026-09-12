@@ -6780,6 +6780,14 @@
     return dayName(day.date, { weekday: 'long' }) + ' ' + dayName(day.date, { day: 'numeric' });
   }
 
+  // The holiday's quiet pill on its day card — same label the week card
+  // and the Day step carry, so the three views agree.
+  function reviewDayHolidayHtml(day) {
+    return day.holiday
+      ? '<span class="rv-day-holiday wk-holiday pill pill-neutral">' + escapeHtml(day.holiday.label) + '</span>'
+      : '';
+  }
+
   // The face of a day card: the day, and the one line that answers "what
   // are we eating". Dinner, because that is the meal people actually check
   // — unless nobody is home, in which case the day's own away sentence is
@@ -6835,6 +6843,7 @@
         '<div class="rv-day-head is-flat">' +
           '<span class="rv-day-col">' +
             '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
+            reviewDayHolidayHtml(day) +
             '<span class="rv-day-dinner' + face.quiet + '">' + escapeHtml(face.line) + '</span>' +
             reviewDayNoteHtml(face.note, face.clash) +
           '</span>' +
@@ -6849,6 +6858,7 @@
           ' aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<span class="rv-day-col">' +
           '<span class="rv-day-title">' + escapeHtml(title) + '</span>' +
+          reviewDayHolidayHtml(day) +
           '<span class="rv-day-dinner' + quiet + '">' + escapeHtml(line) + '</span>' +
           reviewDayNoteHtml(face.note, face.clash) +
         '</span>' +

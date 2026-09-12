@@ -833,7 +833,9 @@
       var tile = $('day-tiles').querySelector('[data-date="' + day.date + '"]');
       if (!tile) return;
       var note = dayNoteFor(day);
-      tile.classList.toggle('on', !!note);
+      // Filled only once the household has said something about the day
+      // — a holiday's name alone is the calendar talking, not them.
+      tile.classList.toggle('on', !!dayNoteFor(day, true));
       tile.querySelector('.day-tile-note').textContent = note;
       tile.title = note || (day.hint || '');
     });
@@ -1135,14 +1137,17 @@
   function paintDay(dayEl) {
     var d = dayEl.dataset.date;
     var tags = answers.night_tags[d] || [];
-    dayEl.querySelectorAll('.tag').forEach(function (btn) {
+    // The dinner block's own pills and ack — the holiday block above it
+    // has a .tag row and an .ack of its own, painted by paintHolidayBlock.
+    var dinner = dayEl.querySelector('.meal-block[data-slot="dinner"]') || dayEl;
+    dinner.querySelectorAll('.tag').forEach(function (btn) {
       btn.classList.toggle('on', tags.indexOf(btn.dataset.tag) !== -1);
     });
     // Multiple tags join with "And I'll " — one sentence per consequence,
     // so two answers read as two things happening rather than one blurred
     // promise.
     var acks = TAGS.filter(function (t) { return tags.indexOf(t.key) !== -1; }).map(function (t) { return t.ack; });
-    dayEl.querySelector('.ack').textContent = acks.length
+    dinner.querySelector('.ack').textContent = acks.length
       ? 'I’ll ' + acks.join(' And I’ll ')
       : '';
     renderGuests(dayEl, tags.indexOf('guests') !== -1);

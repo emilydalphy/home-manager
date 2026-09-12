@@ -383,6 +383,9 @@ def _days_prelude() -> str:
         + _extract("reviewDayHasMore", SHELL_JS) + "\n"
         + _extract("reviewDayFaceLine", SHELL_JS) + "\n"
         + _extract("reviewDayNoteHtml", SHELL_JS) + "\n"
+        # The holiday pill on a day card (2026-09-11) — one more helper the
+        # card reaches for, lifted the same way as the rest.
+        + _extract("reviewDayHolidayHtml", SHELL_JS) + "\n"
         + _extract("reviewSlotLineHtml", SHELL_JS) + "\n"
         # Was reviewDaySlotKeys, and it is the same function: it moved up
         # beside daySlotEntry and lost the review- prefix when the Approve

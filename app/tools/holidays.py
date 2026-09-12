@@ -285,17 +285,33 @@ _PROVINCE_CODES = {
 
 
 def _answer_dict(row) -> dict:
+    headcount = int(row["headcount"] or 0)
+    if row["answer"] == "hosting" and not headcount:
+        # Answered "hosting" without a number, then counted on the intake's
+        # own guest steppers: that count lives in attendance, and it is
+        # the headcount slice 2 will want, so it is the one reported.
+        headcount = _dinner_guests(row["date"])
     return {
         "date": row["date"],
         "holiday_name": row["holiday_name"],
         "answer": row["answer"],
         "answer_label": ANSWER_LABELS.get(row["answer"], row["answer"]),
-        "headcount": int(row["headcount"] or 0),
+        "headcount": headcount,
         "bring_dish": row["bring_dish"] or "",
         "bring_dish_recipe_id": row["bring_dish_recipe_id"],
         "answered_by": row["answered_by"] or "",
         "updated_at": row["updated_at"],
     }
+
+
+def _dinner_guests(date_str: str) -> int:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT guest_count FROM slot_attendance WHERE household_id = ? AND date = ? AND slot = 'dinner'",
+        (household_id(), date_str),
+    ).fetchone()
+    conn.close()
+    return int(row["guest_count"] or 0) if row else 0
 
 
 def get_holiday_answer(date_str: str) -> dict | None:

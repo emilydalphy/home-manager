@@ -6226,6 +6226,7 @@ span.cook-week-name { cursor: default; }
 .wk-day-meals { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 /* The quiet label on a holiday's row (S6: the word for the day). Same
    neutral pill as everywhere else, sized to sit above the three lines. */
+.rv-day-holiday { margin: 2px 0 4px; }
 .wk-holiday { align-self: flex-start; margin-bottom: 2px; font-size: 11px; padding: 2px 8px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .wk-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* The whole legend, in three dots: apricot cooks, celadon is already made,
