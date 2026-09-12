@@ -111,7 +111,11 @@ def test_the_two_quiet_tiles_are_inventory_and_recipes():
     """Rows in one card since 2026-09-11 (Build 8), above the fold, one fact
     each — still quiet, still no apricot."""
     tiles = _function("kitchenTilesHtml")
-    assert ">Inventory<" in tiles and ">Recipes<" in tiles
+    # Inventory's title is followed by the "In development" pill (Loop
+    # Board: mark inventory as still being built) rather than closing
+    # straight away — see tests/test_inventory_in_development_marker.py
+    # for that pill's own coverage.
+    assert 'kit-row-title">Inventory' in tiles and ">Recipes<" in tiles
     assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (
         "Kitchen's root has no primary action and no apricot (DESIGN_SYSTEM Rule 5)"

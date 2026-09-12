@@ -350,6 +350,100 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Pomona knows the holiday is coming and ASKS, never
+  assumes. Branch `worktree-holiday-aware`, slice 1.** Loop Board
+  "Holidays: Pomona knows 12 October is coming and asks how you're
+  spending it". Emily's frame (2026-09-11): "it's a lot to assume that we
+  would be making the big meal, we might be going over to someone's
+  house. It's more that it should be aware of and accommodate holidays."
+  So: `app/tools/holidays.py` computes Canadian holidays BY RULE (Easter
+  formula, nth-weekday, province table; nothing pinned to 2026), and a
+  calendar-feed all-day event whose title IS a holiday name counts the
+  same way — exact-name-after-normalisation, because a substring match
+  turned "Reid's birthday" (eid) and a 4-day "Reid at camp" into asking
+  holidays. Multi-day spans never count (slice-1 limit; a two-day Rosh
+  Hashanah is dropped). `holiday_answers` keyed (household, date) — a
+  date, not a week revision, because the answer can come from Now, chat
+  or the Days screen before any intake exists — with `households.country`
+  / `province` defaulting CA/ON. The question, in the intake's Days screen
+  and on Now from 3 days out (once a day, on the household's clock):
+  "How are you spending Thanksgiving?" → Hosting / Going to someone's /
+  Just us / Not sure yet. **Out** = the existing attendance write with
+  nobody home for DINNER only (`source='holiday'`), so slot_needs goes
+  `away`, the dinner is `planned_empty` and its groceries reverse —
+  superseding, not overwriting, any quick/ready-made need so undo brings
+  it back. **Bring a dish** = a `plan_meal` entry in that dinner slot with
+  attendance left home (so it shops and cooks on the day); the out write
+  is skipped, so the two never fight. **Hosting** = Build 4's `guests`
+  night tag + `guest_counts` through `save_week_intake` (new revision,
+  every other answer byte-identical) — the big-meal menu / split shop /
+  timeline is slice 2 and reads `answer` + `headcount`. **A trip already
+  covering the day wins**: hosting records the headcount only, just-us
+  leaves the stretch's attendance and need alone (verifier caught the
+  first version relabelling the trip's row and losing its link). Changing
+  an answer hands the dinner back as an open question, never a blank.
+  Planner: context + prompt line, and `apply_holiday_answers_to_plan`
+  after the slot-needs pass so enforcement doesn't depend on the model
+  reading. Asking holidays: New Year's, Easter Sunday, Mother's/Father's
+  Day, Canada Day, Thanksgiving, Christmas, Boxing Day; the rest are
+  label-only (one flag per row). QC gets National Patriots' Day + Fête
+  nationale, no Civic; NL no Civic; blank province = national days only.
+  US: `set_holiday_region` refuses until a US table exists. 57 tests in
+  `tests/test_holidays.py`; verified live on a throwaway DB. Suite 2761
+  before the merge with main's chores work.
+- **2026-09-11 — Every chore has a chosen owner: owned / shared / whoever.
+  Branch `worktree-chore-owner-mode`.** Loop Board "Chores v1: Every chore
+  has a chosen owner" — Emily, 2026-09-11: "Owners should be chosen."
+  Before: rotation-only (`rotation_member_ids_json` round-robin in
+  `generate_chore_schedule`), no owner default, no record of who ticked.
+  Now `chores.mode` ∈ {owned, shared, whoever}, **owned is the default**;
+  owner = `default_assignee_id` when owned (no second "who" column — the
+  migration `_migrate_chore_modes` in `app/db.py` is a pure derivation:
+  one person → owned, several → shared, none → whoever; idempotent, runs
+  every startup, tolerates malformed rotation JSON). Engine assigns by
+  mode; `whoever` → NULL assignee. `chore_instances.completed_by_member_id`
+  records the doer separately from the assignee (both kept for the v2
+  fairness view); an owner change reassigns pending instances only, done
+  ones keep their person, and a shared turn continues after whoever
+  actually did the last one. Chat: `add_chore`/`update_chore` take `mode`
+  + `owner_name` ("give the bathrooms to Vineeth" → owned; "let's take
+  turns" → shared; "either of us" → whoever); `complete_chore` takes
+  `done_by`. **Naming someone is never how a member gets created here**
+  (verifier round 1 caught "Vinneth" inventing a person and a typo'd
+  `done_by` crediting the signed-in adult): names resolve exact, then
+  unique first name, else a calm question back; the save route skips and
+  reports such a row instead of half-saving. Starter list proposes an
+  owner per row, dealt round the setup rotation when the model leaves one
+  blank. API rows carry `mode`, `owner`, `up_next`, `who_label` ("either
+  of you" only with exactly two adults, else "anyone") for the screens the
+  Plan | Chores and Now-card cards will build; the hidden Now card prints
+  `who_label` behind the unchanged `SHOW_CHORES_ON_TODAY = false`. Left
+  for those cards: the toggle screen, per-row editing in the (orphaned)
+  wizard, how "who's up" reads. 61 tests in `tests/test_chore_owner_mode.py`
+  incl. migration against a DB built from main's schema and cross-household
+  isolation of every new path. Suite 2772.
+- **2026-09-11 — Inventory wears an "In development" pill now. Branch
+  `worktree-inventory-in-development`.** Loop Board "Inventory: mark as
+  still in development" — Emily's 2026-09-11 call: inventory stays a
+  not-ready beta feature while staples ships first, and a tester shouldn't
+  spend effort (or feedback) keeping it up to date. Labelled, not hidden:
+  receipt/fridge/pantry scans still land items there, and a hidden screen
+  would make scanned items vanish somewhere nobody can see. Two entry
+  points get the neutral pill (`pill pill-neutral`, celadon, never
+  apricot): the Kitchen tile in `kitchenTilesHtml()` and the desktop rail
+  row — the rail one is appended by JS, not baked into `shell.html`,
+  because a `.pill`'s own `inline-flex` beats `[hidden]` (same lesson as
+  `SHOW_NOTIF_BELL`). One calm line at the top of the sheet: "Inventory is
+  still being built. Nothing else in Pomona depends on it, so there's no
+  need to keep it up to date." Gate is `INVENTORY_IN_DEVELOPMENT` beside
+  `SHOW_CHORES_ON_TODAY` in `shell.js` — **plus a second copy inside
+  `inventory.html`'s own script**, because that sheet is a separate
+  document (standalone at `/inventory` and iframed into Kitchen) and can't
+  see `shell.js`'s scope. Turning it off later is two one-line flips, not
+  one. 7 source-pinning tests (`tests/test_inventory_in_development_marker.py`,
+  pattern of `test_cook_voice_hidden.py`); one older assertion narrowed
+  from `">Inventory<"` to `kit-row-title">Inventory`. Verified live at
+  desktop and 375px (no wrap, no rail at phone width). Suite 2709.
 - **2026-09-11 — Tapping tonight's dinner on Now 500'd when the only plan
   on file was an old week. Branch `worktree-needs-you-old-plan`.** Loop
   Board "Now: 'needs you' dinner card 500s when the only plan on file is

@@ -888,6 +888,13 @@ html, body {
   color: var(--plum-ink);
   flex: 1;
 }
+/* Whose chore it is — a quiet first name at the row's end. */
+.chore-who {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
 /* --ink-done, not --faded: this IS a struck-out completed list item, and
    --faded (--ink-inactive, 3.21:1) is the token for unselected navigation.
    Sharing it left a 7.2:1 tick sitting beside a 3.2:1 name on one row. */
@@ -4531,8 +4538,16 @@ html, body {
 .cook-day-min { font-weight: 600; color: var(--ink-secondary); font-size: 13px; }
 .cook-week-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
 /* Inventory is background by policy — the quietest row on the quietest
-   screen, a neutral stroke and no badge of any kind. */
+   screen, a neutral stroke and (until INVENTORY_IN_DEVELOPMENT, see
+   shell.js) no badge of any kind. Its one badge now is the neutral
+   "In development" pill below, which is a label, not an alert — it does
+   not change this row's own quiet treatment. */
 .kit-row[data-sheet="inventory"] .kit-row-icon { color: var(--ink-placeholder); }
+/* The "In development" pill shared by the Kitchen tile and the rail row
+   (INVENTORY_IN_DEVELOPMENT). .pill/.pill-neutral (theme.css) are the
+   design system's neutral status pill; this just adds the spacing to sit
+   inline next to a row's label text. */
+.kit-row-pill { margin-left: 8px; vertical-align: 1px; white-space: nowrap; flex-shrink: 0; }
 
 /* The "Worth doing sometime" card (.kit-worth*) went with the old hub on
    2026-09-08 — it was an entry point to something that was never built,
