@@ -54,7 +54,9 @@ def test_prompts_and_tips_live_inside_the_sheet():
     dock = SHELL_HTML[SHELL_HTML.index('id="ask-bar-dock"'):SHELL_HTML.index('id="tab-bar"')]
     assert 'ask-examples' not in dock and 'ask-tips-btn' not in dock and 'bell-home-dock' not in dock
     # In the sheet the examples yield to the named intents.
-    assert "var intents = document.getElementById('ask-chips');" in SHELL_JS
+    # In the sheet the examples yield to a next-step chip (the fixed named
+    # intents were retired 2026-09-11, design-tidy item 15).
+    assert "var nextStep = document.getElementById('ask-chips');" in SHELL_JS
 
 
 def test_the_bell_has_a_slot_beside_every_gear():
