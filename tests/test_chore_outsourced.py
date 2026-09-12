@@ -466,6 +466,41 @@ def test_no_past_dated_row_is_ever_written_for_it(two_adults):
     assert all(d > TODAY().isoformat() for d in mine), "no newly written date may be today or in the past"
 
 
+def test_a_manual_future_one_off_does_not_swallow_the_intervening_weeks(two_adults):
+    """
+    Catch: an independent review found that anchoring on the most recent
+    due_date across EVERY instance (rather than on the slipped row's own
+    due date) breaks when a manual future one-off exists.
+
+    Repro: a weekly outsourced chore has one slipped pending row 14 days
+    ago, plus a one-off instance scheduled by hand 30 days out
+    (schedule_chore_instance). Anchoring on the day-30 row (the most
+    recent row on file) instead of the day-(-14) slipped row silently
+    swallowed every weekly slot in between — days 7, 14, 21 and 28 never
+    got written, a 5-week gap collapsing into a single row at day 37.
+    """
+    chore_id = tools.add_chore("Bathrooms", mode="outsourced", outsourced_to="Maria", frequency="weekly")["chore_id"]
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO chore_instances (household_id, chore_id, assignee_id, due_date) VALUES (?, ?, ?, ?)",
+        (household_id(), chore_id, None, (TODAY() - datetime.timedelta(days=14)).isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    tools.schedule_chore_instance("Bathrooms", (TODAY() + datetime.timedelta(days=30)).isoformat())
+
+    created = tools.generate_chore_schedule(days_ahead=40)
+    mine = sorted(c["due_date"] for c in created if c["chore"] == "Bathrooms")
+
+    expected = [(TODAY() + datetime.timedelta(days=n)).isoformat() for n in (7, 14, 21, 28, 35)]
+    assert mine == expected, "every weekly slot between the slip and the manual one-off must still be written"
+
+    on_day_30 = [
+        r for r in _instances(chore_id) if r["due_date"] == (TODAY() + datetime.timedelta(days=30)).isoformat()
+    ]
+    assert len(on_day_30) == 1, "the manual one-off must not be duplicated by the generated cadence"
+
+
 def test_a_slipped_owned_chore_still_generates_nothing(two_adults):
     """
     Guard: the hold this ticket is carving an exception out of still

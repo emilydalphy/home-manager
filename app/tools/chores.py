@@ -764,22 +764,43 @@ def _next_due_date(conn, chore_id: int, interval: int, today: date, outsourced: 
     still pending, still due, still un-tickable — this only decides
     whether a future one also gets written.
 
-    For that exempt case the anchor is the slipped due date itself (the
-    most recent row on file), stepped forward by the interval until the
-    result is after today — never the day the fix happened to run. A
+    For that exempt case the anchor is the slipped row's OWN due date —
+    the most recent pending, past-dated row, i.e. the same row the
+    'slipped' query below finds — stepped forward by the interval until
+    the result is after today, never the day the fix happened to run. A
     weekly cleaner who missed this Thursday gets next Thursday, not a
     back-dated Thursday and not a drift onto whatever weekday the schedule
     next ran. Stepping (rather than jumping straight to "today + interval")
     is what keeps a cleaner who's missed several weeks in a row landing on
     their usual weekday instead of sliding onto a different one.
+
+    That anchor is deliberately NOT the same as the ordinary path's below
+    (the most recent due_date across every instance, regardless of
+    status): a manually scheduled future one-off (schedule_chore_instance)
+    can be the most recent row on file without being the slipped
+    occurrence at all, and anchoring an outsourced catch-up on it would
+    silently skip every weekly slot between the slip and that one-off — a
+    real gap an independent review caught. The ordinary path's own anchor
+    choice is a pre-existing quirk and out of scope here; it's untouched.
     """
     slipped = conn.execute(
-        "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
-        "AND status = 'pending' AND due_date < ? LIMIT 1",
+        "SELECT due_date FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+        "AND status = 'pending' AND due_date < ? ORDER BY due_date DESC, id DESC LIMIT 1",
         (chore_id, household_id(), today.isoformat()),
     ).fetchone()
     if slipped and not outsourced:
         return None
+
+    if slipped and outsourced:
+        # Outsourced and already due: anchor on the slipped row's own due
+        # date (see docstring), then step forward by whole intervals until
+        # landing after today, rather than a single anchor + interval hop,
+        # so a cleaner who's missed more than one visit still lands on
+        # their usual weekday and not on whatever date one hop produces.
+        next_due = date.fromisoformat(slipped["due_date"]) + timedelta(days=interval)
+        while next_due <= today:
+            next_due += timedelta(days=interval)
+        return next_due
 
     last_due = conn.execute(
         "SELECT due_date FROM chore_instances WHERE chore_id = ? AND household_id = ? "
@@ -799,17 +820,6 @@ def _next_due_date(conn, chore_id: int, interval: int, today: date, outsourced: 
         # no-op — the done-day anchor only takes over once it has run out,
         # which is exactly the case that used to produce a backlog.
         anchor = done_day
-
-    if slipped:
-        # Outsourced and already due: step forward from the slipped date by
-        # whole intervals until landing after today, rather than a single
-        # anchor + interval hop, so a cleaner who's missed more than one
-        # visit still lands on their usual weekday and not on whatever date
-        # one hop happens to produce.
-        next_due = anchor + timedelta(days=interval)
-        while next_due <= today:
-            next_due += timedelta(days=interval)
-        return next_due
 
     # Never write an occurrence into the past. A day that has already gone
     # by is not something anyone can do on time, and a run of them is the
