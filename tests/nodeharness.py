@@ -32,29 +32,29 @@ site bringing the ceiling back.
 """
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import tempfile
 
 
-def run_node_json(script: str, timeout: int = 30):
-    """
-    Execute `script` under node and parse its stdout as JSON — the shape
-    every caller here wants. Raises an assertion naming node's stderr if
-    it exits non-zero, exactly as the inline calls did.
-    """
-    res = run_node(script, timeout=timeout)
-    assert res.returncode == 0, f"node failed: {res.stderr}"
-    return json.loads(res.stdout.strip())
-
-
+# Deliberately just the one function. A run_node_json wrapper was written
+# first and had no callers: every file keeps its own returncode assertion
+# and its own json.loads, because the assertion message names that file's
+# harness and is what a failure reads as. Absorbing two lines at the cost
+# of a worse failure message is not a trade worth making.
 def run_node(script: str, timeout: int = 30) -> subprocess.CompletedProcess:
     """
     The raw form, for the few callers that read stderr or a non-zero exit
     themselves. The temp file is always removed, including on a timeout —
     node's own failure modes must not leave scripts behind in /tmp.
     """
+    # One hazard the `-e` form did not have: node decides CommonJS vs ESM
+    # from the nearest package.json, and these harnesses are CommonJS (they
+    # `require`). A package.json carrying "type": "module" in the temp
+    # directory — or TMPDIR pointed inside a project that has one — would
+    # make node parse every harness as ESM and break all of them at once.
+    # Not worth guarding against here; worth recognising if that is ever
+    # the symptom.
     handle, path = tempfile.mkstemp(suffix=".js", prefix="home-manager-harness-")
     try:
         with os.fdopen(handle, "w", encoding="utf-8") as f:

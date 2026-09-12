@@ -21,7 +21,18 @@ line. And macOS allows a much larger single argument, so this passes on a
 Mac and fails on Linux, CI included.
 
 tests/nodeharness.py is the fix — the script goes in a temp file and node
-is pointed at the path. These two tests stop the ceiling coming back.
+is pointed at the path.
+
+WHAT THESE TWO TESTS DO AND DO NOT DO. The first scans every .py under
+tests/, the helper included. An earlier version globbed test_*.py only,
+which excluded tests/nodeharness.py — the one file where going back to
+`-e` would undo the whole fix — and an independent review proved the hole:
+reverting the helper left both of these green while 38 other tests went
+red. It now catches that, and a new call site in either quote style, with
+-e or --eval or -p, on one line or split across several. What it cannot
+see is a script assembled at runtime into a variable that happens to hold
+"-e"; nothing here does that, and the second test is the backstop for the
+guard rotting generally.
 """
 from __future__ import annotations
 
@@ -35,6 +46,9 @@ SHELL_JS = REPO / "static" / "shell.js"
 # The kernel's per-argument limit, and the whole reason this file exists.
 MAX_ARG_STRLEN = 128 * 1024
 
+# node accepts -e, --eval and -p; any of them takes the script as an argument.
+NODE_FLAG = re.compile(r"""["'](?:-e|--eval|-p|--print)["']""")
+
 
 def test_no_test_passes_a_script_to_node_as_an_argument():
     """
@@ -43,11 +57,22 @@ def test_no_test_passes_a_script_to_node_as_an_argument():
     not merely risk the bug — on any harness of real size it would be it.
     """
     offenders = []
-    for path in sorted(TESTS.glob("test_*.py")):
+    # Every .py under tests/, not just test_*.py — an independent review
+    # pointed out that the first version excluded tests/nodeharness.py
+    # itself, the one file where reverting to `-e` would undo the whole
+    # fix. Verified: with the narrow glob, putting `-e` back in the helper
+    # left both of these green while 38 other tests went red.
+    for path in sorted(TESTS.rglob("*.py")):
         source = path.read_text(encoding="utf-8")
         for number, line in enumerate(source.splitlines(), start=1):
-            if re.search(r'"node"\s*,\s*"-e"', line):
-                offenders.append(f"{path.name}:{number}")
+            # Both quote styles and both spellings node accepts, and the
+            # flag need not be on the same line as "node" — a reformat that
+            # split the list across lines used to slip past.
+            if re.search(r"""["']node["']""", line) or NODE_FLAG.search(line):
+                window = "\n".join(source.splitlines()[max(0, number - 3):number + 2])
+                if re.search(r"""["']node["']""", window) and NODE_FLAG.search(window):
+                    offenders.append(f"{path.name}:{number}")
+    offenders = sorted(set(offenders))
     assert offenders == [], (
         "these hand node a script as an argument, which dies at 128 KiB — "
         f"use tests/nodeharness.py instead: {offenders}"
