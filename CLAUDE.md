@@ -385,7 +385,20 @@ why*, not duplicating the diff.
   that way before) plus unit tests for skip/move's rules including
   household isolation; `tests/test_chores_switch.py`'s gate-completeness
   test and its `_CHORES_TOOL_CALLS`/"declines while off" coverage grew
-  from nine tools to eleven. Suite 3042 (23 new; 12 fail on `main`).
+  from nine tools to eleven. Suite 3042 (23 new; **15 fail on `main`**: the
+  12 skip/move behaviour tests, the renamed gate-completeness test, and
+  the 2 new `test_each_chores_tool_declines_while_off` parametrize cases
+  — all three follow from the same nine-to-eleven change to
+  `test_chores_switch.py`, not just the new test file on its own).
+  **Follow-up same day:** the refusal strings in both tools said "pending
+  occurrence" — reads clinical next to the rest of this file's voice
+  (e.g. `_refuse_if_outsourced`'s "there's nothing to tick off"). Reworded
+  to match: "There's no Mop coming up to skip/move", "Mop is already done
+  that day — nothing to move" (a done row on the named date now gets its
+  own message instead of the same blank "nothing there" an empty date
+  gets), "Mop is already on 2026-09-20" for the duplicate refusal. Same
+  `ValueError`, same control flow — wording only; no test pinned the old
+  text, so nothing else changed.
 
 - **2026-09-12 — Chores is switched on per household, and the "Your
   chores" card is back on Now where the switch is on. Branch

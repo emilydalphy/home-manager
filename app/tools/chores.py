@@ -1542,7 +1542,7 @@ def skip_chore(chore_name: str, when: str | None = None) -> dict:
         if is_the_due_one:
             instance_id = _due_or_next_pending_id(conn, chore["id"], date.today())
             if instance_id is None:
-                raise ValueError(f"{chore_name} doesn't have a pending occurrence to skip right now.")
+                raise ValueError(f"There's no {chore_name} coming up to skip.")
         else:
             try:
                 target = date.fromisoformat(when_key)
@@ -1554,7 +1554,7 @@ def skip_chore(chore_name: str, when: str | None = None) -> dict:
                 (chore["id"], household_id(), target.isoformat()),
             ).fetchone()
             if not row:
-                raise ValueError(f"{chore_name} doesn't have a pending occurrence on {target.isoformat()}.")
+                raise ValueError(f"There's no {chore_name} due {target.isoformat()} to skip.")
             instance_id = row["id"]
 
         also_cleared = 0
@@ -1625,13 +1625,25 @@ def move_chore(chore_name: str, to_date: str, from_date: str | None = None) -> d
                 (chore["id"], household_id(), source.isoformat()),
             ).fetchone()
             if not row:
-                raise ValueError(f"{chore_name} doesn't have a pending occurrence on {source.isoformat()}.")
+                # Say WHY there's nothing to move when it's because the
+                # work is already done — a much more useful answer than
+                # the same blank "there's nothing there" a truly empty
+                # date gets, and the one case a household is actually
+                # likely to hit by naming a specific day.
+                done = conn.execute(
+                    "SELECT id FROM chore_instances WHERE chore_id = ? AND household_id = ? "
+                    "AND status = 'done' AND due_date = ?",
+                    (chore["id"], household_id(), source.isoformat()),
+                ).fetchone()
+                if done:
+                    raise ValueError(f"{chore_name} is already done that day — nothing to move.")
+                raise ValueError(f"There's no {chore_name} due {source.isoformat()} to move.")
             instance_id = row["id"]
         else:
             instance_id = _due_or_next_pending_id(conn, chore["id"], date.today())
             if instance_id is None:
                 raise ValueError(
-                    f"{chore_name} doesn't have an upcoming occurrence to move — say which date, "
+                    f"There's no {chore_name} coming up to move — say which date, "
                     "or generate the schedule first."
                 )
 
@@ -1642,7 +1654,7 @@ def move_chore(chore_name: str, to_date: str, from_date: str | None = None) -> d
         ).fetchone()
         if dup:
             raise ValueError(
-                f"{chore_name} already has one due {target.isoformat()} — pick a different day, "
+                f"{chore_name} is already on {target.isoformat()} — pick a different day, "
                 "or settle that one first."
             )
 
