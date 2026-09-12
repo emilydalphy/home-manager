@@ -3,6 +3,72 @@
   Step 1 build: shell chrome only (routes, tabs/rail, scroll area, docked
   ask bar). Per-tab content for Today/Week/Grocery/Kitchen is Step 1's
   placeholder/embed layer, not the real screens (those are later steps).
+
+  ---------------------------------------------------------------------------
+  TABLE OF CONTENTS (design hygiene pass, 2026-09-12)
+  ---------------------------------------------------------------------------
+  Line numbers are approximate — they drift as the file changes — so search
+  for a distinctive word from the entry below if a number is off by a few
+  lines. Major sections below are marked in the file with a heavier
+  double-rule banner (four rows of "="); sub-sections nested under one use
+  the plainer single-line dashed divider already threaded through this file.
+  Titles below are deliberately paraphrased rather than quoted verbatim —
+  several test files locate a section by searching shell.css for its exact
+  banner text, and an identical copy of that text up here would make that
+  search find this table of contents instead of the real section further
+  down (silently emptying whatever slice the test meant to check). If you
+  extend this table, keep paraphrasing rather than pasting a banner's exact
+  wording, and rerun the full suite before trusting a green result.
+
+    8     Shell chrome — #shell-app / #shell-main, base html/body rule
+    96    Scroll area
+    186   the root band — how every tab root opens
+    357   Empty states as designed moments
+    420   today's screen — the Now tab (Pomona InnToday)
+            463   Next up · 509 The tick · 550 Rest of today
+            569   A dish name is a link to its recipe
+            719   Needs-you band · 843 Toast
+    867   the hero panel — shared by Today and Meals
+            1166  The chat icon (every screen)
+    1212  the ask sheet — the chat, one icon on every screen (Step 3)
+    1497  Mobile tab bar
+    1573  Desktop/tablet shell — the phone-in-the-room stance (>=768px)
+    1665  the week screen — the weekly menu, down through the notification
+            bell (Step 4)
+            1874  Meals (Pomona InnMeals) · 2069 Derived trip states
+            2231  Week sheet (the 6a grid)
+            2349  Notification bell
+            2504  The offer to plan a week · 2672 Pick your own days
+            2781  The draft · 2891 Approve the week · 3073 Start over
+    3230  the grocery screen — the native tab (Pomona InnGrocery)
+            3250  Step head, crumb, foot (shared by every deeper step)
+            3497  Photo-scan review sheet
+            3752  the pre-shop check (maybe it's already home)
+            3845  Store card · 4045 Item row
+            4141  Sort, sort-how, sort-all, where-next
+            4364  Review · 4445 Hands-free voice log · 4464 Wrap up
+    4557  the kitchen screen — the native hub (InnKitchen)
+            4633  The Kitchen entry sheet
+    4710  the what-we-know sheet — native, collapsible sections (2026-09-12)
+            4928  recipe import from a pasted link (2026-09-11)
+    5078  the cook screen — the Meals tab's second state (InnCooker)
+            5109  The hero: tonight · 5226 Cook ahead
+            5287  Focused single-meal cook mode · 5380 The dock
+            5471  Sections · 5516 Prep · 5586 Rest of the week
+            5643  The recipe panel · 5795 Hands-free · 5852 Needs attention
+    5999  dark-mode overrides — the leftovers (§ Pomona stage 3)
+    6078  the feedback tile (Emily's option a, 2026-09-08)
+    6086  preferences — the gear, and the sheet behind it
+            6367  the daily text-message sheet
+    6420  the meals steps — week, day and one meal (2026-09-08 design)
+            6443  shared head · 6471 week card · 6643 all-set · 6726 review
+            6785  Plan | Chores (a state of the Plan root)
+            7230  day/meal back link · 7233 day · 7390 meal
+            7497  Onboarding coaching (Emily + Julia, 2026-09-08)
+            7645  Staples (app/tools/staples.py)
+    7783  motion (Emily, 2026-09-11) — the three animations, reduced-motion
+    7894  Desktop/tablet shell: body-level sheet widths
+    7919  the household member picker (slice 1 of per-adult login)
 */
 
 html, body {
