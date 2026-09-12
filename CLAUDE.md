@@ -350,6 +350,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-11 — Tapping tonight's dinner on Now 500'd when the only plan
+  on file was an old week. Branch `worktree-needs-you-old-plan`.** Loop
+  Board "Now: 'needs you' dinner card 500s when the only plan on file is
+  an old week" (Phase 0 bug, seen on a throwaway DB while verifying the
+  redesign). Reading the card was fine — `get_needs_you_items` reads
+  `meal_plan_entries` by date, not by plan. The tap was the failure:
+  `resolve_needs_you_dinner` (`app/tools/weekly_plan.py`) asked
+  `get_weekly_plan()` for "the" plan, which falls back to the newest one
+  when no period contains today, and handed that stale id to `plan_meal`,
+  whose period guard (`app/tools/meal_plans.py` ~120) rightly refuses to
+  file a meal where no screen would show it. Fix: pass the plan id only
+  when its period actually covers the picked date, otherwise `None` — the
+  same unlinked shape a one-off chat-planned meal already has, which Now,
+  `get_meal_plan` and the grocery buffer all treat as first-class. Two
+  tests (tool + HTTP route) fail on main with the exact error. Verifier
+  checked the four neighbours: no plan / old + current (attaches to the
+  current) / future-only / downstream grocery — all fine, and the
+  unlinked meal is visible tonight, so this isn't a 500 traded for a
+  silent loss. Suite 2704.
 - **2026-09-11 — The morning text: anticipation OUT of the app. Branch
   `worktree-reach-me`, NOT merged at the time of writing.** Loop Board
   "Reach me before the moment" (Emily: "prioritize the push
