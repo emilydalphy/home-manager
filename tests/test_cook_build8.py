@@ -24,17 +24,22 @@ def test_the_rest_of_the_week_is_one_line_per_day_three_days_then_the_rest_by_na
 
 
 def test_empty_means_empty_and_names_the_next_cook():
+    # Since the root band (2026-09-11) the empty day is the shared empty
+    # moment, with the next cook as its second line.
     today = _fn("kitchenCookingTodayHtml")
-    assert "kitchenNextCookLine(meals, todayIso)" in today
+    assert "emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso))" in today
     nxt = _fn("kitchenNextCookLine")
-    assert "' Next: '" in nxt
+    assert "'Next: '" in nxt
 
 
-def test_the_two_italic_headings_left_the_root_and_prep_days_is_a_row():
+def test_the_two_italic_headings_left_the_root_and_prep_days_is_not_on_it():
     root = _fn("renderKitchen")
     assert "cookDefrostLinkHtml()" not in root and "cookAheadAskLinkHtml()" not in root
+    # The "Prep days" row left the root with the root band (2026-09-11):
+    # it is a setting, and Preferences already has that row.
     offer = _fn("cookPrepSessionsHtml")
-    assert '<span class="kit-row-title">Prep days</span>' in offer
+    assert '<span class="kit-row-title">Prep days</span>' not in offer
+    assert 'data-cook="prep-days"' not in SHELL_JS
     assert "Prep ahead? " not in SHELL_JS
 
 

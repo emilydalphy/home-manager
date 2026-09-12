@@ -535,14 +535,15 @@ def test_the_cook_view_renders_the_sessions_card_from_the_payload():
     )
 
 
-def test_the_quiet_offer_when_no_prep_days_are_set():
-    # A row with a chevron since 2026-09-11 (Build 8), not a heading over a
-    # red link.
-    assert '<span class="kit-row-title">Prep days</span>' in SHELL_JS
-    assert "Tell me which days you prep" in SHELL_JS
-    # It only shows for a household that never answered — see
-    # prep_days_set on the cooker payload.
-    assert "if (data.prep_days_set) return '';" in SHELL_JS
+def test_no_prep_days_offer_on_the_cook_root():
+    # The "Prep days" offer row left the Cook root with the root band
+    # (Emily, 2026-09-11): it is a setting, and Preferences already carries
+    # a "Prep days" row (PREFS_ROWS). With no sessions the root shows
+    # nothing here.
+    assert "Tell me which days you prep" not in SHELL_JS
+    assert 'data-cook="prep-days"' not in SHELL_JS
+    assert "if (!sessions.length) return '';" in SHELL_JS
+    assert "{ title: 'Prep days', tab: 'rhythm/prep-days', line: prefsPrepLine }" in SHELL_JS
 
 
 def test_the_session_focus_screen_exists_and_can_be_left():

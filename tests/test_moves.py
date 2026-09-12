@@ -557,7 +557,7 @@ SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
     "data-move-tick",                 # the tick control
     "function toggleTodayMove(",
     "/api/today/moves",               # one fetch, not four
-    "id=\"today-week-state\"",       # WEEK SET / DRAFT / NOTHING PLANNED
+    "WEEK_STATE_LABELS[data.week_state]",  # Week set / Draft — the band's chip since 2026-09-11
     "' of ' + moves.length + ' done'",
 ])
 def test_today_renders_the_two_blocks_and_their_ticks(marker):

@@ -131,10 +131,17 @@ def test_every_deeper_grocery_step_offers_a_way_back(step):
 
 def test_the_grocery_root_has_no_crumb():
     """The other half of the rule: a tab root is not deeper than anything, so
-    it gets no back link. LIST is the fallthrough return at the end."""
-    body = _gro_head_body()
-    tail = body[body.rindex("return {"):]
-    assert "back: ''" in tail, "the Shop root should render no crumb"
+    it gets no back link. Since the root band (2026-09-11) LIST never asks
+    groHeadFor at all — renderGrocery shows the band and hides the crumb on
+    the root, and the crumb-and-head pair on every deeper step."""
+    render = SHELL_JS[SHELL_JS.index("function renderGrocery("):SHELL_JS.index("function groCaptureStoresPromptInput(")]
+    assert "var onRoot = step === 'list';" in render
+    assert "if (onRoot) {" in render and "back.hidden = true;" in render.split("if (onRoot) {", 1)[1][:200], (
+        "the Shop root should render no crumb"
+    )
+    assert "var headFor = groHeadFor(data, step);" in render.split("} else {", 1)[1][:200], (
+        "only the deeper steps take a head from groHeadFor"
+    )
 
 
 def test_a_crumb_never_uses_the_browsers_back():
@@ -258,5 +265,10 @@ def test_a_screen_with_no_single_action_has_no_dock():
     screen with nothing to say.
     """
     dock = _gro_dock_body()
-    assert "return canGo" in dock, "LIST should be able to render no dock"
+    assert "if (canGo) return '<button type=\"button\" class=\"gro-primary\" data-gro=\"start-trip\">" in dock
+    # Over the shops question, and on the just-finished trip's own screen,
+    # LIST renders no dock at all. (An empty list is the exception since
+    # 2026-09-11: its empty moment's next step, "Go to Plan", is the dock.)
+    assert "!groStoresPromptShouldShow() && !groceryState.justFinishedTrip" in dock
+    assert "return '';" in dock.split("data-gro=\"goto-plan\"", 1)[1][:80], "LIST should be able to render no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS

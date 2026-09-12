@@ -23,7 +23,13 @@ def test_a_draft_root_is_the_review_with_no_crumb_and_approve_in_the_dock():
     assert "if (weekState.step === 'review' && draft) weekState.step = 'week';" in step
     assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step
     review = _fn("reviewStepHtml")
-    assert "weekStepHeadHtml(data, days)" in review  # the week's own head on the root form
+    # The root form has no in-flow head since the root band (2026-09-11):
+    # the week's dates, title and DRAFT chip are the band's (weekBandParts,
+    # rendered by renderMealsStep above #week-steps). Only the deeper,
+    # approved-week form still draws a .wk-head under its crumb.
+    assert "weekSuggestedNoteHtml(data) +" in review.split("var head = root", 1)[1][:80]
+    assert review.count('<div class="wk-head">') == 1
+    assert "weekStepHeadHtml" not in SHELL_JS
     assert "rv-invite" in review
     assert "weekDecideHtml(data) {\n    return '';" in SHELL_JS
     assert 'id="week-check-btn"' not in SHELL_JS

@@ -439,6 +439,78 @@
     if (currentTabKey() === 'grocery') applyGroceryStepFromHistory(e && e.state);
   });
 
+  // ---------- The root band (every tab root) ----------
+  // Emily, 2026-09-11, Option B on the screen-by-screen review: the four
+  // roots used to lay their date, title, badge and gear out four different
+  // ways (a date strip on Now, a title-and-hairline on Shop, an eyebrow on
+  // Cook, a gear row above the week card on Plan). They open with ONE
+  // component now — a full-bleed spruce band carrying an eyebrow (the date
+  // or the context), the title, at most one status chip and one sub-line,
+  // with the gear and the bell top-right — and the ivory content pours
+  // over its foot with the hero's own 30px radius, the joined-tile motif
+  // at screen scale (DESIGN_SYSTEM §4, §5 "Root band"). Sub-screens keep
+  // their crumb and title; only roots get this.
+  //
+  // The band never carries a button: the one thing to press lives in the
+  // dock (nav rule 2), which is also where the screen's apricot is (Rule
+  // 5). The ids let each root update the parts that change (the sub-line
+  // after a load, the badge after an approval) without rebuilding the
+  // header and throwing the bell out of its slot.
+  function rootBandHtml(opts) {
+    var id = opts.id;
+    return '<header class="root-band" id="' + id + '">' +
+      '<div class="root-band-top">' +
+        '<div class="root-band-lead">' +
+          '<span class="root-band-eyebrow" id="' + id + '-eyebrow">' + escapeHtml(opts.eyebrow || '') + '</span>' +
+          '<span class="root-band-badge" id="' + id + '-badge"' + (opts.badge ? '' : ' hidden') + '>' +
+            escapeHtml(opts.badge || '') + '</span>' +
+        '</div>' +
+        // Every root carries the Preferences gear and the bell's slot
+        // (prefsGearHtml) — here, in the band, and nowhere deeper.
+        '<div class="root-band-tools">' + prefsGearHtml() + '</div>' +
+      '</div>' +
+      '<h1 class="root-band-title" id="' + id + '-title">' + escapeHtml(opts.title || '') + '</h1>' +
+      '<p class="root-band-sub" id="' + id + '-sub"' + (opts.sub ? '' : ' hidden') + '>' + escapeHtml(opts.sub || '') + '</p>' +
+    '</header>';
+  }
+
+  // Update the parts of a band that change after a load. Any key left
+  // undefined is left alone; an empty string hides the sub-line or badge.
+  function setRootBand(panel, id, parts) {
+    if (!panel) return;
+    ['eyebrow', 'title', 'sub', 'badge'].forEach(function (key) {
+      if (parts[key] === undefined) return;
+      var el = panel.querySelector('#' + id + '-' + key);
+      if (!el) return;
+      el.textContent = parts[key] || '';
+      if (key === 'sub' || key === 'badge') el.hidden = !parts[key];
+    });
+  }
+
+  // ---------- Empty states as designed moments ----------
+  // One component for every root with nothing on it (Emily, 2026-09-11):
+  // a stroke icon in a celadon tile, one sentence, and — when there is a
+  // next step — that step in the dock, never a button in the block. It
+  // fills the space between the band and the dock and centres itself
+  // there (.empty-moment in shell.css), so an empty screen reads as a
+  // moment rather than as a line at the top with air under it.
+  var EMPTY_ICONS = {
+    sunrise:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M2.5 19h19"/><path d="M12 3.5v2"/><path d="M5 7l1.5 1.5"/><path d="M19 7l-1.5 1.5"/></svg>',
+    bag:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
+    pot:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>'
+  };
+
+  function emptyMomentHtml(icon, sentence, detail, extraClass) {
+    return '<div class="empty-moment' + (extraClass ? ' ' + extraClass : '') + '">' +
+      '<span class="empty-moment-icon">' + (EMPTY_ICONS[icon] || '') + '</span>' +
+      '<p class="empty-moment-line">' + escapeHtml(sentence) + '</p>' +
+      (detail ? '<p class="empty-moment-detail">' + escapeHtml(detail) + '</p>' : '') +
+    '</div>';
+  }
+
   // ---------- Today ----------
   // README §4/§7: heading, needs-you band, tonight's dinner, chores,
   // grocery summary — same cards on every breakpoint, just rearranged.
@@ -475,22 +547,14 @@
   async function buildTodayPanel(panel) {
     panel.innerHTML =
       '<div class="today-content">' +
-        // The date as an eyebrow running into a hairline (InnToday), now
-        // with the week's state at the far end of the same rule — one
-        // glance says what day it is and whether there's a plan behind it.
-        '<div class="today-heading">' +
-          '<div class="today-datestrip">' +
-            '<span class="today-date" id="today-date"></span>' +
-            '<span class="today-hairline"></span>' +
-            '<span class="today-weekstate" id="today-week-state" hidden></span>' +
-            // Every root screen carries the Preferences gear in its header
-            // (see prefsGearHtml). Today has no deeper step, so it is never
-            // hidden here.
-            prefsGearHtml() +
-          '</div>' +
-          '<h1 class="today-greeting">Now</h1>' +
-          '<div class="today-progress" id="today-progress"></div>' +
-        '</div>' +
+        // The root band (rootBandHtml): the date as its eyebrow, the
+        // week's state as its chip, "N of M done" as its one line. Today
+        // has no deeper step, so the gear is never hidden here.
+        rootBandHtml({
+          id: 'today-band',
+          eyebrow: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+          title: 'Now'
+        }) +
         // The offer to plan a week. Outside .today-body, not inside it:
         // .today-body is a named-area grid on desktop, and an area whose
         // only child is display:none still leaves its row's gap behind.
@@ -557,6 +621,12 @@
             '</form>' +
           '</div>' +
         '</div>' +
+        // The empty moment (emptyMomentHtml) — a day with no moves at all.
+        // Filled by renderTodayEmpty; hidden on any day with something on
+        // it, so a planned day is exactly what it was. After the body, so
+        // a question about another day ("Tomorrow needs a dinner") sits
+        // under the band and the moment centres in what is left.
+        '<div id="today-empty" class="today-area-empty" hidden></div>' +
         // The screen's one action — the featured move's ("Cook this",
         // "Done", "Open the list") or, with no week planned, the offer to
         // plan one. Same .dock every other tab uses (nav v2 rule 2); it
@@ -565,8 +635,6 @@
         // single to do.
         '<div class="dock today-dock" id="today-dock" hidden></div>' +
       '</div>';
-
-    panel.querySelector('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
 
     setupAskColumn(panel);
 
@@ -622,7 +690,9 @@
         '</div>' +
         '<div class="plan-nudge-title">Shall I put ' + escapeHtml(nudge.week_label) + ' together?</div>' +
       '</div>';
-    if (panel) renderTodayDock(panel);
+    // On a day with nothing on it the empty moment asks this instead
+    // (renderTodayEmpty) — the card is hidden there, not rebuilt.
+    if (panel) { renderTodayEmpty(panel); renderTodayDock(panel); }
   }
 
   async function dismissPlanWeekNudge(panel) {
@@ -630,6 +700,7 @@
     var wrap = panel.querySelector('#plan-week-nudge');
     if (!nudge || !wrap) return;
     panel._nudgeDismissed = true;
+    renderTodayEmpty(panel);
     renderTodayDock(panel);
     // Say what dismissing means, and where the offer went — the entry
     // point on Plan is permanent, so nothing is actually lost.
@@ -733,7 +804,7 @@
         // under the title, a second tall card on a screen that already had
         // the plan offer and the coaching card. One row, one "Pick" that
         // unfolds them in place.
-        '<div class="shell-card needs-you-card is-folded urgency-' + item.urgency + '" data-card-type="dinner_decision">' +
+        '<div class="shell-card needs-you-card is-folded urgency-' + item.urgency + '" data-card-type="dinner_decision" data-ny-date="' + escapeHtml(item.date) + '">' +
           '<div class="ny-fold">' +
             '<div class="ny-fold-text">' +
               '<div class="ny-kicker">' + escapeHtml(item.kicker) + '</div>' +
@@ -814,7 +885,16 @@
     panel._openDinnerCard = visible.some(function (it) {
       return (it.type === 'dinner_open' || it.type === 'dinner_decision') && it.date === todayStr;
     });
+    // Whether tonight's "needs a dinner" card is here at all — the empty
+    // moment's "Just tonight" (renderTodayDock) unfolds it, and needs to
+    // know if there is one to unfold.
+    panel._tonightDecision = visible.some(function (it) {
+      return it.type === 'dinner_decision' && it.date === todayStr;
+    });
+    // Once tonight is settled there is nothing left to unfold.
+    if (!panel._tonightDecision) panel._justTonight = false;
     if (panel._moves) renderTodayMoves(panel, panel._moves);
+    else renderTodayEmpty(panel);
 
     band.querySelectorAll('[data-ny-unfold]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -1147,27 +1227,23 @@
     '</div>';
   }
 
-  var WEEK_STATE_LABELS = { set: 'WEEK SET', draft: 'DRAFT', none: 'NOTHING PLANNED' };
+  // The band's chip says the state of the plan behind the day. No plan is
+  // no chip: with nothing planned the empty moment already says so, and
+  // a chip reading "nothing planned" over it would say it twice.
+  var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };
 
   function renderTodayMoves(panel, data) {
     if (!data) return;
     panel._moves = data;
     var moves = data.moves || [];
 
-    var badge = panel.querySelector('#today-week-state');
-    if (badge) {
-      var label = WEEK_STATE_LABELS[data.week_state || 'none'];
-      badge.textContent = label || '';
-      badge.hidden = !label;
-      badge.className = 'today-weekstate is-' + (data.week_state || 'none');
-    }
-
-    var progress = panel.querySelector('#today-progress');
-    if (progress) {
-      progress.textContent = moves.length
-        ? (data.done || 0) + ' of ' + moves.length + ' done'
-        : 'Nothing planned for today yet';
-    }
+    // The band: "3 of 4 done" is the day's one line. A day with no moves
+    // has no line here — the tomorrow card or the empty moment below says
+    // what there is to say, and the band must not say it a second time.
+    setRootBand(panel, 'today-band', {
+      badge: WEEK_STATE_LABELS[data.week_state] || '',
+      sub: moves.length ? (data.done || 0) + ' of ' + moves.length + ' done' : ''
+    });
 
     // The one exception to "the card is whatever the server ranked first"
     // (Emily, 2026-09-08): an unanswered dinner is itself the decision, and
@@ -1208,15 +1284,16 @@
       '</div>';
     }
     // Nothing left to do today. Say so, and — when there is one — name
-    // tomorrow's first move rather than leaving a blank screen.
-    if (!featured && !pending.length && !panel._openDinnerCard) {
+    // tomorrow's first move rather than leaving a blank screen. A day with
+    // no moves AT ALL is the empty moment's (renderTodayEmpty), not a
+    // card's.
+    if (!featured && !pending.length && !panel._openDinnerCard && moves.length) {
       html += data.tomorrow
         ? tomorrowCardHtml(data.tomorrow)
-        : '<div class="shell-card today-empty">' +
-            (settled.length ? 'That&rsquo;s everything for today.' : 'Nothing on your list today.') +
-          '</div>';
+        : '<div class="shell-card today-empty">That&rsquo;s everything for today.</div>';
     }
     restEl.innerHTML = html;
+    renderTodayEmpty(panel);
 
     panel.querySelectorAll('[data-move-tick]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -1262,13 +1339,28 @@
     if (!dock) return;
     var featured = panel._featured || null;
     var nudge = panel._nudge || null;
+    var empty = todayIsEmpty(panel);
     var html = '';
     if (featured) {
       html = '<button type="button" class="dock-primary" data-move-action="' + escapeHtml(featured.id) + '">' +
         escapeHtml((featured.action && featured.action.label) || 'Do it') + '</button>';
+    } else if (empty && todayNeedsPlan(panel)) {
+      // The empty moment's next step. "Just tonight" is the old card's
+      // "Pick" — it unfolds tonight's two suggestions (renderTodayEmpty);
+      // with none on offer it opens the chat on tonight instead. The
+      // offer stays after "Not now" here, because on a day with nothing
+      // else on it the offer IS the screen; only the card is silenced.
+      html = '<div class="dock-row">' +
+        '<button type="button" class="dock-primary" id="plan-nudge-go">Let’s plan the week</button>' +
+        '<button type="button" class="dock-link" id="today-just-tonight">Just tonight</button>' +
+      '</div>';
     } else if (nudge && nudge.show && !panel._nudgeDismissed) {
-      html = '<div class="dock-links"><button type="button" class="dock-link" id="plan-nudge-dismiss">Not now</button></div>' +
-        '<button type="button" class="dock-primary" id="plan-nudge-go">Let’s plan the week</button>';
+      // One row, the same shape as the empty moment's: the apricot on the
+      // left, the quiet link beside it, the chat icon at the end.
+      html = '<div class="dock-row">' +
+        '<button type="button" class="dock-primary" id="plan-nudge-go">Let’s plan the week</button>' +
+        '<button type="button" class="dock-link" id="plan-nudge-dismiss">Not now</button>' +
+      '</div>';
     }
     dock.innerHTML = html;
     dock.hidden = !html;
@@ -1282,26 +1374,102 @@
     var planGo = dock.querySelector('#plan-nudge-go');
     if (planGo) {
       planGo.addEventListener('click', function () {
-        // nudge.day_count, not seven — see renderPlanWeekNudge.
-        startPlanningWeek(nudge.week_start, nudge.day_count || 7);
+        // nudge.day_count, not seven — see renderPlanWeekNudge. A
+        // dismissed offer carries only its week_start; the household's
+        // own period length (planningPeriodDefault) fills the gap.
+        var days = nudge.day_count || (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+        startPlanningWeek(nudge.week_start, days);
       });
     }
     var dismiss = dock.querySelector('#plan-nudge-dismiss');
     if (dismiss) dismiss.addEventListener('click', function () { dismissPlanWeekNudge(panel); });
+    var tonight = dock.querySelector('#today-just-tonight');
+    if (tonight) {
+      tonight.addEventListener('click', function () {
+        if (panel._tonightDecision) {
+          panel._justTonight = true;
+          renderTodayEmpty(panel);
+          var card = panel.querySelector('#needs-you-band [data-card-type="dinner_decision"]');
+          if (card) card.classList.remove('is-folded');
+        } else {
+          openAskSheet('For tonight’s dinner, I’d like ');
+        }
+      });
+    }
+  }
+
+  // A day with nothing on it at all — no moves, nothing featured. The
+  // loads race, so this is only an answer once the moves have arrived.
+  function todayIsEmpty(panel) {
+    var data = panel._moves;
+    return !!(data && !(data.moves || []).length && !panel._featured);
+  }
+
+  // Is there a period waiting to be planned? The nudge names it whether
+  // it is showing or was dismissed for the week (both carry week_start);
+  // with the week covered there is nothing to offer.
+  function todayNeedsPlan(panel) {
+    var nudge = panel._nudge;
+    return !!(nudge && nudge.week_start);
+  }
+
+  // The empty moment on Now (Emily's copy, 2026-09-11). Three cases for a
+  // day with no moves: a period needs planning ("Quiet day…", with the
+  // plan and tonight's dinner as the dock's two moves — the offer card and
+  // tonight's card both step aside, so the dock is the only thing to
+  // press); the week is covered and tomorrow has a move (the tomorrow
+  // card); or simply nothing. "Just tonight" brings tonight's card back,
+  // unfolded, in the moment's place.
+  function renderTodayEmpty(panel) {
+    var slot = panel.querySelector('#today-empty');
+    var nudgeWrap = panel.querySelector('#plan-week-nudge');
+    if (!slot) return;
+    var empty = todayIsEmpty(panel);
+    var needsPlan = todayNeedsPlan(panel);
+    var hideFurniture = empty && needsPlan;
+    if (nudgeWrap) nudgeWrap.hidden = hideFurniture;
+    // Tonight's card steps aside for the moment (its "Pick" is the dock's
+    // "Just tonight"); a question about another day — "Tomorrow needs a
+    // dinner" — is still a real question, and stays.
+    var tonightCard = panel.querySelector('#needs-you-band [data-card-type="dinner_decision"][data-ny-date="' + todayLocalStr() + '"]');
+    if (tonightCard) tonightCard.hidden = hideFurniture && !panel._justTonight;
+    if (!empty) { slot.hidden = true; slot.innerHTML = ''; return; }
+    var data = panel._moves || {};
+    var html;
+    if (needsPlan) {
+      html = panel._justTonight ? '' : emptyMomentHtml('sunrise', 'Quiet day. Want me to sort dinner, or the whole week?');
+    } else if (data.tomorrow) {
+      html = tomorrowCardHtml(data.tomorrow);
+    } else {
+      html = emptyMomentHtml('sunrise', 'Nothing on your list today.');
+    }
+    slot.innerHTML = html;
+    slot.hidden = !html;
+    // The tomorrow card's dish is a link to its recipe, as everywhere on
+    // Now (see renderTodayMoves) — wired here too, since this can render
+    // after that pass has run.
+    slot.querySelectorAll('[data-move-dish]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
+        if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Now', tab: 'today' });
+      });
+    });
   }
 
   function renderTodayMovesError(panel) {
     var nextUp = panel.querySelector('#today-next-up');
     if (nextUp) { nextUp.hidden = true; nextUp.innerHTML = ''; }
     panel._featured = null;
+    panel._moves = null;
     renderTodayDock(panel);
-    var progress = panel.querySelector('#today-progress');
     // "Nothing to do" is a real answer from a real count; a failed lookup
     // is not that, and saying it anyway would tell someone the day is clear
     // when the truth is only that the app couldn't check.
-    if (progress) progress.textContent = 'Couldn’t check just now — pull to refresh.';
+    setRootBand(panel, 'today-band', { sub: 'Couldn’t check just now — pull to refresh.' });
     var restEl = panel.querySelector('#today-rest');
     if (restEl) restEl.innerHTML = '';
+    renderTodayEmpty(panel);
   }
 
   async function loadTodayMoves(panel) {
@@ -2080,20 +2248,26 @@
   function buildGroceryPanel(panel) {
     panel.innerHTML =
       '<div class="grocery-content">' +
+        // The root band, LIST's head (renderGrocery shows one or the other:
+        // the band on the root, the crumb and .gro-head on every deeper
+        // step). Its eyebrow counts the list — "60 things · 1 stop" — and
+        // the gear rides in it. What used to be the head's TO SORT badge
+        // is a row at the top of the list now (groSortRowHtml): the band
+        // carries no button.
+        rootBandHtml({ id: 'gro-band', title: 'Shop' }) +
         '<button type="button" class="crumb" id="gro-back" data-gro="step-back" hidden></button>' +
-        '<div class="gro-head">' +
+        '<div class="gro-head" id="gro-head" hidden>' +
           '<div class="gro-head-row">' +
             '<h1 class="gro-title" id="gro-title">Shop</h1>' +
-            // The TO SORT badge is a control, not decoration: it is the only
-            // way into the SORT step, and it only exists while something has
-            // no store.
-            '<button type="button" class="gro-sortbadge" id="gro-sortbadge" data-gro="goto-sort" hidden></button>' +
             '<span class="gro-hairline"></span>' +
             // The mic and the refresh button left the head on 2026-09-11
             // (Emily, screen-by-screen review): hands-free returns with
             // cook-mode voice after launch, and pull-to-refresh is the
             // refresh. Both stay in the markup, hidden by the flag, because
             // the voice session and the refresh handler are still wired.
+            // (They sit in the step head, not the band: the band carries
+            // no button, so turning the flag back on means finding them a
+            // home on the root first.)
             '<button type="button" class="gro-icon-btn" id="gro-mic-btn" data-gro="voice" ' +
               (SHOW_GRO_HEADER_TOOLS ? '' : 'hidden ') +
               'title="Hands-free: check off, add, or ask about items by voice" ' +
@@ -2101,9 +2275,6 @@
             '<button type="button" class="gro-icon-btn" id="gro-refresh-btn" data-gro="refresh" ' +
               (SHOW_GRO_HEADER_TOOLS ? '' : 'hidden ') +
               'title="Reload the latest list" aria-label="Reload the latest list">' + GRO_ICONS.refresh + '</button>' +
-            // The Preferences gear, in the header like every other root
-            // screen's. Hidden on the deeper steps (renderGrocery).
-            prefsGearHtml() +
           '</div>' +
           '<div class="gro-sub" id="gro-sub" hidden></div>' +
         '</div>' +
@@ -2379,13 +2550,14 @@
     var panel = groPanel();
     if (!panel) return;
     var back = panel.querySelector('#gro-back');
+    var head = panel.querySelector('#gro-head');
+    var band = panel.querySelector('#gro-band');
     var title = panel.querySelector('#gro-title');
-    var badge = panel.querySelector('#gro-sortbadge');
     var sub = panel.querySelector('#gro-sub');
     var body = panel.querySelector('#gro-body');
     var foot = panel.querySelector('#gro-foot');
     var dock = panel.querySelector('#gro-dock');
-    if (!back || !title || !badge || !sub || !body || !foot || !dock) return;
+    if (!back || !head || !band || !title || !sub || !body || !foot || !dock) return;
 
     // Re-rendering replaces the list under the reader's thumb, so hold the
     // scroll position across it. "Nothing else moves, ever."
@@ -2394,9 +2566,10 @@
     renderGroceryOfflineLine();
     if (groceryState.loadError || !groceryState.data) {
       back.hidden = true;
-      badge.hidden = true;
-      sub.hidden = true;
-      title.textContent = 'Shop';
+      head.hidden = true;
+      band.hidden = false;
+      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(null), sub: '' });
+      body.classList.remove('is-empty');
       body.innerHTML = groceryState.loadError === 'no-signal'
         ? '<p class="gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
         : groceryState.loadError
@@ -2423,29 +2596,22 @@
     if (groceryState.step === 'next' && !groRemainingStops(data).length) groceryState.step = 'wrap';
     var step = groceryState.step;
 
-    var head = groHeadFor(data, step);
-    back.hidden = !head.back;
-    if (head.back) back.textContent = head.back;
-    title.textContent = head.title;
-    sub.hidden = !head.sub;
-    if (head.sub) sub.textContent = head.sub;
-
-    // The gear belongs to the root only, like the badge below.
-    var groGear = panel.querySelector('.prefs-gear');
-    if (groGear) groGear.hidden = step !== 'list';
-    // The badge belongs to LIST — on the deeper steps it would be a second
-    // way out of a screen that already has one.
-    var unsorted = groUnsorted(data).length;
-    // groUnsorted already answers "is there anything to sort, and is sorting
-    // even a question here" (groCanSort): a household with one shop or none
-    // gets nothing back from it, so the badge, the step and its fast paths
-    // all go quiet together. The one thing left to check here is that the
-    // shops question itself isn't still on screen underneath.
-    var showBadge = step === 'list' && unsorted > 0 && !groStoresPromptShouldShow();
-    badge.hidden = !showBadge;
-    if (showBadge) {
-      badge.textContent = unsorted + ' TO SORT';
-      badge.setAttribute('aria-label', groPlural(unsorted, 'thing', 'things') + ' to sort');
+    // The root wears the band (and the gear in it); every deeper step
+    // wears the crumb and the step head instead. One or the other, never
+    // both.
+    var onRoot = step === 'list';
+    band.hidden = !onRoot;
+    head.hidden = onRoot;
+    if (onRoot) {
+      setRootBand(panel, 'gro-band', { eyebrow: groBandEyebrow(data), sub: '' });
+      back.hidden = true;
+    } else {
+      var headFor = groHeadFor(data, step);
+      back.hidden = !headFor.back;
+      if (headFor.back) back.textContent = headFor.back;
+      title.textContent = headFor.title;
+      sub.hidden = !headFor.sub;
+      if (headFor.sub) sub.textContent = headFor.sub;
     }
 
     // The body holds a live input too while the shops card is up — its
@@ -2461,6 +2627,9 @@
     else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
     else body.innerHTML = groListHtml(data);
     groRestoreStoresPromptInput(body, storesTyped);
+    // The empty moment fills the panel and centres itself (shell.css) —
+    // the body has to be told it is carrying one.
+    body.classList.toggle('is-empty', !!body.querySelector('.empty-moment'));
 
     // LIST's foot holds a live input. A re-render it didn't ask for — the
     // usual-stores fetch landing, another tab pushing a refresh — must not
@@ -2514,8 +2683,9 @@
     try { back.setSelectionRange(back.value.length, back.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
-  // Title, subtitle and back link for each step, in one place so the copy is
-  // readable as a set rather than scattered through four builders.
+  // Title, subtitle and back link for each DEEPER step, in one place so the
+  // copy is readable as a set rather than scattered through four builders.
+  // The root has no head: it opens with the band (rootBandHtml).
   function groHeadFor(data, step) {
     if (step === 'sort') {
       return {
@@ -2568,18 +2738,44 @@
           ' · ' + groTripItems(data).length + ' left'
       };
     }
-    if (step === 'wrap') return { back: '‹ Shop', title: 'How did it go?', sub: '' };
-    var t = groTotals(data);
-    var stopCount = groStoresWithNeeded(data).length;
-    var sub = '';
-    if (t.needed) {
-      sub = groPlural(t.needed, 'thing', 'things');
-      if (stopCount) sub += ' · ' + groPlural(stopCount, 'stop', 'stops');
+    // 'wrap' — LIST never asks: the root's head is the band (groBandEyebrow).
+    return { back: '‹ Shop', title: 'How did it go?', sub: '' };
+  }
+
+  // The root band's eyebrow: "60 things · 1 stop" while there is a list,
+  // and the date while there isn't — the empty moment says "nothing to
+  // buy", so the band doesn't say it a second time (and an empty eyebrow
+  // would leave the title sitting in a hole).
+  function groBandEyebrow(data) {
+    var t = data ? groTotals(data) : { needed: 0 };
+    if (!t.needed) {
+      return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     }
-    return { back: '', title: 'Shop', sub: sub };
+    var stopCount = groStoresWithNeeded(data).length;
+    var eyebrow = groPlural(t.needed, 'thing', 'things');
+    if (stopCount) eyebrow += ' · ' + groPlural(stopCount, 'stop', 'stops');
+    return eyebrow;
   }
 
   // ---------- LIST ----------
+  // The way into SORT: a row at the top of the list, only while something
+  // has no store. It was an apricot "3 TO SORT" badge in the head until
+  // 2026-09-11; the root band carries no button, so the control moved
+  // into the list it is about, in the same row shape Cook's root uses
+  // (.kit-row). groUnsorted already answers "is sorting even a question
+  // here" (groCanSort), so a household with one shop or none gets no row.
+  // Not while the shops question itself is still on screen underneath.
+  function groSortRowHtml(data) {
+    var unsorted = groUnsorted(data).length;
+    if (!unsorted || groStoresPromptShouldShow()) return '';
+    return '<div class="kit-rows gro-sortrow"><button type="button" class="kit-row" data-gro="goto-sort" ' +
+        'aria-label="' + escapeHtml(groPlural(unsorted, 'thing', 'things') + ' to sort') + '">' +
+      '<span class="kit-row-text"><span class="kit-row-title">' + escapeHtml(groPlural(unsorted, 'thing', 'things') + ' to sort') + '</span>' +
+      '<span class="kit-row-sub">' + (unsorted === 1 ? 'It doesn’t' : 'They don’t') + ' have a store yet</span></span>' +
+      '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+    '</button></div>';
+  }
+
   function groListHtml(data) {
     var stops = groStoresWithNeeded(data);
     var unsorted = groUnsorted(data);
@@ -2615,9 +2811,13 @@
         }
         return html + groShopDoneHtml();
       }
-      return html + '<p class="gro-empty">Nothing on the list yet — it’ll arrive here when you plan a week.</p>' + groStaplesHtml();
+      // The empty moment (emptyMomentHtml): one sentence, and "Go to
+      // Plan" in the dock (groDockHtml). The staples card keeps its place
+      // under it — a rhythm is a real thing even on an empty list.
+      return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groStaplesHtml();
     }
 
+    html += groSortRowHtml(data);
     html += groDuplicatesHtml(data);
 
     // A stop with nothing of its own gets no card. That happens exactly
@@ -3384,9 +3584,16 @@
       // which Rule 5 doesn't allow. No action, so no dock — the rule's own
       // "a screen with no single action has no dock" case.
       var canGo = stops.length > 0 && !groStoresPromptShouldShow();
-      return canGo
-        ? '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>'
-        : '';
+      if (canGo) return '<button type="button" class="gro-primary" data-gro="start-trip">Start the trip</button>';
+      // Nothing to buy at all: the empty moment's next step is the Plan
+      // tab, where a week gets approved and this list gets built. Only
+      // when the list is genuinely empty — never over the shops question,
+      // and never over the just-finished trip's own screen (S5).
+      var loose = groLooseItems(data);
+      if (!stops.length && !loose.length && !groStoresPromptShouldShow() && !groceryState.justFinishedTrip) {
+        return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>';
+      }
+      return '';
     }
     // SORT HOW's one apricot is the bulk answer, because it is the one that
     // finishes the job in a single tap. The other two paths are rows in the
@@ -4090,6 +4297,10 @@
       // the queue directly: a menu of ways to answer three questions costs
       // more than answering them. Past GRO_FAST_SORT_MIN the fast paths come
       // first, and the queue is one of the three things they offer.
+      case 'goto-plan':
+        activateTab('week', true);
+        return;
+
       case 'goto-sort': {
         var toSort = groceryState.data ? groUnsorted(groceryState.data).length : 0;
         goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort');
@@ -4873,13 +5084,10 @@
         // hidden at a time — the same shape Grocery's shopping mode uses,
         // and never a route: /kitchen is the path in both.
         '<div id="kit-root-view">' +
-          '<div class="kit-titlerow">' +
-            '<span class="kit-eyebrow">What’s cooking</span>' +
-            '<span class="kit-hairline"></span>' +
-            prefsGearHtml() +
-          '</div>' +
-          '<h1 class="kit-title">Cook</h1>' +
-          '<p class="kit-sub" id="kit-sub"></p>' +
+          // The root band: the day as its eyebrow, "1 cook tonight" as its
+          // one line (renderKitchen), the gear in it. Cook mode replaces
+          // this whole view, so the band never shows over a step.
+          rootBandHtml({ id: 'kit-band', eyebrow: dayName(todayLocalStr(), { weekday: 'long' }), title: 'Cook' }) +
           '<div class="kit-body" id="kit-body"></div>' +
         '</div>' +
         '<div id="kit-cook-view" hidden></div>' +
@@ -5042,53 +5250,59 @@
     return bits.join(' · ');
   }
 
-  // "Monday · 1 cook tonight". "tonight" only while every cook left today
-  // really is a dinner — a lunch to make at eleven in the morning is not
-  // tonight, and saying so would be the kind of small lie that stops
-  // anyone trusting the line.
+  // "1 cook tonight" — the band's one line; the day itself is the band's
+  // eyebrow (buildKitchenPanel). "tonight" only while every cook left
+  // today really is a dinner — a lunch to make at eleven in the morning
+  // is not tonight, and saying so would be the kind of small lie that
+  // stops anyone trusting the line.
   //
   // Once anything today has been ticked the count says "left": at eight in
   // the evening with two of three cooked, "3 cooks today" is a number
   // nobody recognises and it reads as though the evening has not started.
   // The done state is the rows' own, which is the plan's and the moves'
   // taken together (kitchenTodayRows).
+  //
+  // A day with nothing on it at all returns nothing: the empty moment
+  // under the band says "nothing to cook tonight", and the band must not
+  // say it too (Emily, 2026-09-11 — the two used to say it twice).
   function kitchenSubtitle(rows, meals, todayIso) {
-    var day = dayName(todayIso, { weekday: 'long' });
     var cooks = rows.filter(function (r) { return !r.isReheat && !r.done; });
     var anyDone = rows.some(function (r) { return r.done; });
     if (!cooks.length) {
-      return rows.length ? day + ' · nothing left to cook today' : day + ' · nothing to cook today';
+      return rows.length ? 'nothing left to cook today' : '';
     }
     var allDinner = cooks.every(function (r) {
       var meal = (meals || [])[r.idx];
       return meal && meal.slot === 'dinner';
     });
     var noun = cooks.length === 1 ? 'cook' : 'cooks';
-    return day + ' · ' + cooks.length + ' ' + noun + (anyDone ? ' left' : '') +
+    return cooks.length + ' ' + noun + (anyDone ? ' left' : '') +
       (allDinner ? ' tonight' : ' today');
   }
 
   function kitchenCookingTodayHtml(rows, meals, todayIso) {
+    // Empty means empty (§2b S4): the empty moment (emptyMomentHtml), and
+    // the next cook by name as its second line when there is one. No
+    // section head over it — the moment is the section.
+    if (!rows.length) return emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso));
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow cook-eyebrow-warm">Cooking today</span>' +
         '<span class="cook-rule"></span>' +
       '</div>' +
-      (rows.length
-        ? '<div class="cook-week">' + rows.map(kitchenTodayRowHtml).join('') + '</div>'
-        // Empty means empty (§2b S4): one line, and the next cook by name.
-        : '<p class="cook-empty">Nothing on the stove today.' + kitchenNextCookLine(meals, todayIso) + '</p>') +
+      '<div class="cook-week">' + rows.map(kitchenTodayRowHtml).join('') + '</div>' +
     '</section>';
   }
 
-  // " Next: Saturday, pancakes." — the first real cook after today, so a
-  // quiet day still says what is coming.
+  // "Next: Saturday, pancakes." — the first real cook after today, so a
+  // quiet day still says what is coming. Plain text (the empty moment
+  // escapes it); empty when there is no real fact to state.
   function kitchenNextCookLine(meals, todayIso) {
     var next = (meals || []).filter(function (m) {
       return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && m.meal;
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
     if (!next) return '';
-    return ' Next: ' + escapeHtml(dayName(next.date, { weekday: 'long' })) + ', ' + escapeHtml(next.meal) + '.';
+    return 'Next: ' + dayName(next.date, { weekday: 'long' }) + ', ' + next.meal + '.';
   }
 
   function kitchenTodayRowHtml(row) {
@@ -5215,13 +5429,14 @@
   function renderKitchen() {
     var panel = kitchenPanel();
     if (!panel) return;
-    var sub = panel.querySelector('#kit-sub');
     var body = panel.querySelector('#kit-body');
     if (!body) return;
     var todayIso = todayLocalStr();
+    setRootBand(panel, 'kit-band', { eyebrow: dayName(todayIso, { weekday: 'long' }) });
 
     if (cookState.loadError || !cookState.data) {
-      if (sub) sub.textContent = dayName(todayIso, { weekday: 'long' });
+      setRootBand(panel, 'kit-band', { sub: '' });
+      body.classList.remove('is-empty');
       body.innerHTML =
         '<p class="cook-error">Couldn’t load the kitchen right now — switch tabs and back to try again.' + snwLink() + '</p>' +
         kitchenTilesHtml();
@@ -5231,10 +5446,17 @@
     var data = cookState.data;
     var meals = data.meals || [];
     var rows = kitchenTodayRows(meals, kitchenState.moves, todayIso);
-    if (sub) sub.textContent = kitchenSubtitle(rows, meals, todayIso);
+    setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });
+    // The empty moment fills the panel and centres itself (shell.css);
+    // the body has to be told it is carrying one.
+    body.classList.toggle('is-empty', !rows.length);
 
     if (!data.weekly_plan_id) {
+      // No plan at all: the same empty moment, with the way to a plan as
+      // its second line — Cook's root has no dock to put it in (nav rule
+      // 2), and the in-prose link keeps its own 44px row.
       body.innerHTML =
+        emptyMomentHtml('pot', 'Nothing to cook tonight.') +
         '<p class="cook-empty">No plan yet this week &mdash; ' +
           '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab first</button>.</p>' +
         kitchenTilesHtml();
@@ -5782,12 +6004,13 @@
         // switched to: cooking is a step of the Kitchen tab now, so this
         // tab has one job and no control saying otherwise.
         //
-        // What sits in its place is the Preferences gear, which every root
-        // screen carries in its header (see prefsGearRowHtml). It is hidden
-        // on the Day and Meal steps, the same rule the segmented control
-        // followed — a gear belongs to the root of a tab, not to a step
-        // inside it.
-        prefsGearRowHtml('meals-gear-row') +
+        // What sits in its place is the root band (rootBandHtml) — the
+        // week's dates, "This week", its state and the Preferences gear,
+        // like every other root. Filled by renderMealsStep and hidden on
+        // the Day, Meal and Review steps, the same rule the segmented
+        // control followed — a band belongs to the root of a tab, not to
+        // a step inside it.
+        '<div id="week-band-slot" hidden></div>' +
         '<div id="week-plan-view">' +
         // The one band that belongs to the WEEK rather than to any day of
         // it, above the card and hidden on the Day and Meal steps (see
@@ -6090,7 +6313,8 @@
   // popstate handler at the top of this file); a refresh lands on WEEK,
   // because weekState.step starts there and nothing restores it.
 
-  var WEEK_BADGES = { set: 'SET', draft: 'DRAFT', none: 'NOTHING YET' };
+  // The band's chip. No plan is no chip — the entry card under it says so.
+  var WEEK_BADGES = { set: 'Approved', draft: 'Draft' };
 
   function weekPlanState(data) {
     if (!data || !data.weekly_plan_id || !(data.days || []).length) return 'none';
@@ -6127,45 +6351,57 @@
     return parts.join(', ');
   }
 
-  function weekStepHeadHtml(data, days) {
+  // The Plan root's band (rootBandHtml), as its parts. The week's dates are
+  // the eyebrow and "This week" the title; a household on a different
+  // rhythm is not living a week, so its own dates are the title and the
+  // eyebrow says how long the stretch is instead. With no plan at all the
+  // eyebrow names the period the household would plan next
+  // (planningPeriodDefault — the same dates the "Plan a week" entry
+  // offers), so the band still says which days this screen is about.
+  function weekBandParts(data, days) {
     var state = weekPlanState(data);
-    var dayCount = data.day_count || days.length || 7;
+    var dayCount = data.day_count || days.length ||
+      (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
     // periodRangeLabel is the fallback only; the server's own week_label
     // already knows the real span of a custom period.
     var range = data.week_label ||
       (data.week_start_date ? periodRangeLabel(data.week_start_date, dayCount) : '');
-    // Seven days is "this week" because that is what a week is called. A
-    // household on a different rhythm is not living a week, so its own
-    // dates are the title and the subtitle doesn't repeat them.
+    if (!range && state === 'none') {
+      var start = (planningPeriodDefault && planningPeriodDefault.start_date) || thisWeekStartLocal();
+      range = periodRangeLabel(start, dayCount);
+    }
     var isWeek = dayCount === 7;
     var title = isWeek || !range ? 'This week' : range;
+    var eyebrow = isWeek || !range ? range : dayCount + ' days';
     var sub = [];
-    if (isWeek && range) sub.push(range);
-    // A DRAFT's subtitle says whose turn it is, not the shape of the week:
-    // the shape is what the seven rows underneath are for, and the one
-    // thing the badge can't say on its own is that nothing happens until
+    // A DRAFT's line says whose turn it is, not the shape of the week:
+    // the shape is what the rows underneath are for, and the one thing
+    // the chip can't say on its own is that nothing happens until
     // somebody here decides (Emily's approved design, 2026-09-08).
     if (state === 'draft') {
       sub.push('a draft, your turn');
-    } else {
+    } else if (state === 'set') {
       var counts = weekCountsLabel(days);
       if (counts) sub.push(counts);
     }
     if (data.trip_summary) sub.push(data.trip_summary);
-    return '<div class="wk-head">' +
-      '<div class="wk-head-row">' +
-        '<h1 class="wk-title">' + escapeHtml(title) + '</h1>' +
-        '<span class="wk-state is-' + state + '">' + WEEK_BADGES[state] + '</span>' +
-      '</div>' +
-      (sub.length ? '<div class="wk-sub">' + escapeHtml(sub.join(' · ')) + '</div>' : '') +
-      // A component-based household has no real day mapping underneath —
-      // get_week_menu spreads its pool across the days so this screen has
-      // something to show, and says so rather than presenting a suggested
-      // arrangement as a schedule.
-      (data.menu_is_suggested
-        ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
-        : '') +
-    '</div>';
+    return {
+      id: 'week-band',
+      eyebrow: eyebrow,
+      title: title,
+      sub: sub.join(' · '),
+      badge: WEEK_BADGES[state] || ''
+    };
+  }
+
+  // A component-based household has no real day mapping underneath —
+  // get_week_menu spreads its pool across the days so this screen has
+  // something to show, and says so rather than presenting a suggested
+  // arrangement as a schedule. Under the band, above the card.
+  function weekSuggestedNoteHtml(data) {
+    return data.menu_is_suggested
+      ? '<div class="week-suggested-note">One example arrangement — your household assembles freely.</div>'
+      : '';
   }
 
   // One line of one row. The dot is the whole legend: apricot = somebody
@@ -6248,15 +6484,14 @@
     // entry takes its place — same buttons, same handlers, rendered into
     // #week-plan-row by renderPlanWeekEntry after this lands.
     if (state === 'none') {
-      return weekStepHeadHtml(data, days) +
-        '<div id="week-plan-row"></div>' +
+      return '<div id="week-plan-row"></div>' +
         // Setup and the other rare actions stay one tap away here too.
         '<div class="wk-foot wk-foot-solo">' +
           '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
         '</div>';
     }
     var dayCount = data.day_count || days.length || 7;
-    return weekStepHeadHtml(data, days) +
+    return weekSuggestedNoteHtml(data) +
       '<div class="shell-card wk-week-card">' +
         days.map(weekRowHtml).join('') +
       '</div>' +
@@ -6889,8 +7124,10 @@
   function reviewStepHtml(data, days, root) {
     var eating = reviewState.view !== 'days';
     var draft = weekPlanState(data) === 'draft';
+    // On the root the head is the band (weekBandParts, rendered by
+    // renderMealsStep above #week-steps); only the invitation is here.
     var head = root
-      ? weekStepHeadHtml(data, days) +
+      ? weekSuggestedNoteHtml(data) +
         // The invitation, once, above the dishes: changing things is
         // expected and cheap (Emily's 2026-09-08 decision on the
         // sample-menu card).
@@ -7604,10 +7841,22 @@
     // longer renders here: it sits on the dish it is about, inside the
     // review the draft opens on (reviewDishRowHtml).
     if (approve) approve.hidden = !onRoot || draft;
-    // The gear is the root's, not a step's — same rule the Plan/Cook
-    // control it replaced followed.
-    var gearRow = panel.querySelector('#meals-gear-row');
-    if (gearRow) gearRow.hidden = !onRoot;
+    // The band (and the gear in it) is the root's, not a step's — same
+    // rule the Plan/Cook control it replaced followed. Rebuilt only when
+    // its words change, so a re-render doesn't throw the bell out of the
+    // slot it was just placed in (placeNotifBell) for nothing.
+    var bandSlot = panel.querySelector('#week-band-slot');
+    if (bandSlot) {
+      bandSlot.hidden = !onRoot;
+      if (onRoot) {
+        var parts = weekBandParts(data, weekState.days || []);
+        var key = JSON.stringify(parts);
+        if (bandSlot.dataset.bandKey !== key) {
+          bandSlot.innerHTML = rootBandHtml(parts);
+          bandSlot.dataset.bandKey = key;
+        }
+      }
+    }
 
     if (weekState.step === 'meal') {
       steps.innerHTML = mealStepHtml(day, weekState.mealSlot);
@@ -10171,20 +10420,12 @@
 
   function cookPrepSessionsHtml(data) {
     var sessions = data.prep_sessions || [];
-    if (!sessions.length) {
-      // A household that told us its prep days and simply has a quiet one
-      // gets nothing here — asking again for an answer they already gave
-      // is the app not listening. Only a household that has never said
-      // gets the offer, and it is one quiet line, not a card.
-      if (data.prep_days_set) return '';
-      // A row with a chevron, not a heading over a red link (Emily,
-      // 2026-09-11).
-      return '<div class="kit-rows"><button type="button" class="kit-row" data-cook="prep-days">' +
-        '<span class="kit-row-text"><span class="kit-row-title">Prep days</span>' +
-        '<span class="kit-row-sub">Tell me which days you prep and I’ll batch the week around them</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button></div>';
-    }
+    // No sessions, nothing here. The "Prep days" offer that used to stand
+    // in for them on a household that had never said its days left the
+    // root on 2026-09-11 (Emily's root-band decision): it is a setting,
+    // and Preferences already has a "Prep days" row (PREFS_ROWS) — a
+    // settings card on the cook's screen was the setting in two places.
+    if (!sessions.length) return '';
     return '<section class="cook-section" id="kit-prep-sessions">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow">Prep sessions</span>' +
@@ -10887,16 +11128,6 @@
     renderCook();
   }
 
-  // "Tell Pomona which days you prep" — the standing answer lives on What
-  // we know's Rhythm tab, and that is a sheet over whatever tab you're on
-  // (§6: everything that isn't one of the four screens is a state, a sheet
-  // or a step), so Cook opens it in place rather than navigating away from
-  // a half-cooked week.
-  function openRhythmFromCook() {
-    // 'tab/anchor': What we know opens Rhythm and scrolls to the prep-days block.
-    openKitchenSheet('memory', 'rhythm/prep-days');
-  }
-
   // Hand this meal's ticked raw components to the prep day. One call per
   // component (the route takes one description and the meals it feeds);
   // the last response is the refreshed view every /api/cooker/* write
@@ -11564,7 +11795,6 @@
     if (what === 'exit-focus') return cookExitFocus();
     if (what === 'session') return cookEnterSession(el.getAttribute('data-date'));
     if (what === 'exit-session') return cookExitFocus();
-    if (what === 'prep-days') return openRhythmFromCook();
     if (what === 'prep-cut-pick') {
       var cutPicks = cookPrepCutPicks({ entry_id: el.getAttribute('data-entry-id') });
       var cutItem = el.getAttribute('data-item');
@@ -14042,11 +14272,11 @@
     '<path d="M19.2 14.2a1.5 1.5 0 0 0 .3 1.65l.05.05a1.8 1.8 0 1 1-2.55 2.55l-.05-.05a1.5 1.5 0 0 0-1.65-.3 1.5 1.5 0 0 0-.9 1.37v.13a1.8 1.8 0 1 1-3.6 0v-.07a1.5 1.5 0 0 0-.98-1.37 1.5 1.5 0 0 0-1.65.3l-.05.05A1.8 1.8 0 1 1 5.57 15.9l.05-.05a1.5 1.5 0 0 0 .3-1.65 1.5 1.5 0 0 0-1.37-.9h-.13a1.8 1.8 0 1 1 0-3.6h.07a1.5 1.5 0 0 0 1.37-.98 1.5 1.5 0 0 0-.3-1.65l-.05-.05A1.8 1.8 0 1 1 8.06 4.47l.05.05a1.5 1.5 0 0 0 1.65.3h.07a1.5 1.5 0 0 0 .9-1.37v-.13a1.8 1.8 0 1 1 3.6 0v.07a1.5 1.5 0 0 0 .9 1.37 1.5 1.5 0 0 0 1.65-.3l.05-.05a1.8 1.8 0 1 1 2.55 2.55l-.05.05a1.5 1.5 0 0 0-.3 1.65v.07a1.5 1.5 0 0 0 1.37.9h.13a1.8 1.8 0 1 1 0 3.6h-.07a1.5 1.5 0 0 0-1.37.9z"/>' +
     '</svg>';
 
-  // The gear itself. Rendered into the header of each of the four root
-  // screens — and nowhere deeper: Meals' Day and Meal steps hide the row
-  // it sits in (renderMealsStep), Grocery hides it while shopping a store
-  // (renderGrocery), and Kitchen's lives inside the root view, which cook
-  // mode replaces outright.
+  // The gear itself. Rendered into the root band (rootBandHtml) of each of
+  // the four root screens — and nowhere deeper: Meals' Day and Meal steps
+  // hide the band (renderMealsStep), Grocery hides it while shopping a
+  // store (renderGrocery), and Kitchen's lives inside the root view, which
+  // cook mode replaces outright.
   function prefsGearHtml() {
     // The notifications bell's phone-width home is the slot beside the
     // gear (placeNotifBell moves the one bell element into whichever root
@@ -14059,12 +14289,6 @@
       'aria-label="Preferences" title="Preferences">' + PREFS_GEAR_ICON + '</button>';
   }
 
-  // For a screen whose header is not a title row the gear can sit inside
-  // (Meals, whose root header belongs to the week card): its own right-
-  // aligned row, hidden as a unit on the deeper steps.
-  function prefsGearRowHtml(id) {
-    return '<div class="prefs-gear-row" id="' + id + '">' + prefsGearHtml() + '</div>';
-  }
 
   var prefsState = { memory: null, calendar: null, morningText: null, open: false };
 

@@ -122,12 +122,246 @@ html, body {
   margin: 0;
 }
 
+/* =====================================================================
+   THE ROOT BAND — how every tab root opens
+   =====================================================================
+   Emily's decision, 2026-09-11 (Option B on the screen-by-screen review;
+   DESIGN_SYSTEM §5 "Root band", §6). Now, Plan, Shop and Cook used to lay
+   their date, title, badge and gear out four different ways. They open
+   with ONE component now (rootBandHtml in shell.js):
+
+     - a full-bleed spruce band, about 110px of it showing on a phone: an
+       eyebrow (the date, or the context — "60 things · 1 stop"), the
+       screen title in the display face, at most one status chip and one
+       sub-line;
+     - the gear and the bell top-right inside it, each a 44px target;
+     - the ivory content pouring over its foot with the hero's 30px radius
+       — the joined-tile motif (§4) at screen scale, the same shape as
+       sign-in's card and the meal screen's hero. Drawn as the band's own
+       ::after rather than a negative margin on the content: the four
+       roots' content containers are flex columns with docks pinned to
+       their feet, and the sheet's edge is one rule here instead of four
+       margins there.
+
+   The band never carries a button (Rules 4/5: the dock is where the
+   apricot lives), and it is under a third of the screen at 375×812.
+   Sub-screens keep their crumb and title — roots only.
+
+   Dark mode: --spruce is already lighter there and --spruce-edge stops
+   being transparent, so the band lifts off the ground by fill plus that
+   hairline, the same way the hero does (§4). Contrast, measured from
+   computed styles in the browser (2026-09-11), all clearing AA:
+     dark  — on --spruce (#22422F): --ivory-ink 9.39:1 · --ivory-ink-muted
+             8.17:1 · --apricot-light 6.41:1; on the chip and tool tiles
+             (--spruce-raised #2E5140): ivory-ink-muted 6.52:1 ·
+             apricot-light 5.11:1.
+     light — on --spruce (#1B3328): --ivory-ink 11.76:1 · --ivory-ink-muted
+             (rgba .92, composited) 10.18:1 · --apricot-light 7.81:1; on
+             --spruce-raised (#24402F): ivory-ink-muted 8.62:1 ·
+             apricot-light 6.55:1. */
+.root-band {
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  /* 20px gutter; the last 30px of the foot is under the ivory sheet, so
+     about 115px of spruce shows (128px with a sub-line). */
+  padding: 14px 20px 42px;
+  min-height: 145px;
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  display: flex;
+  flex-direction: column;
+  /* No shadow: the hero's shadow says "floating over the ground", and
+     this band is joined to the sheet below it, not floating. */
+}
+/* The ivory sheet's leading edge: the band's last 30px, in the ground
+   colour, rounded like the hero and the sign-in card. In dark mode the
+   --spruce-edge hairline runs along that curve — it is transparent in
+   light, so this costs light mode nothing (theme.css). */
+.root-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30px;
+  background: var(--ground);
+  border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+  border-top: 1.5px solid var(--spruce-edge);
+  box-sizing: border-box;
+}
+.root-band[hidden] { display: none; }
+.root-band-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.root-band-lead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
+}
+.root-band-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--apricot-light);
+}
+/* The status chip — "Draft", "Approved", "Week set" — in one style on
+   every root: small caps on the raised spruce with the muted ivory,
+   never a pink pill and never a fill of its own. */
+.root-band-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--spruce-raised);
+  color: var(--ivory-ink-muted);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.root-band-badge[hidden] { display: none; }
+.root-band-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 31px;
+  letter-spacing: -0.038em;
+  line-height: 1.05;
+  color: var(--ivory-ink);
+  margin: 2px 0 0;
+}
+.root-band-sub {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--ivory-ink-muted);
+  margin: 3px 0 0;
+}
+.root-band-sub[hidden] { display: none; }
+/* The gear and the bell, top-right. 44px boxes (Rule 6) with 18px icons —
+   padding, not bigger glyphs — on the raised spruce so they read on the
+   band; the pair sits tight so the eyebrow keeps the width. Both take
+   this dress from the band, overriding the outline tile they wear in an
+   ivory header (.prefs-gear, .bell-slot .notif-bell below). */
+.root-band-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.root-band-tools .prefs-gear,
+.root-band-tools .bell-slot .notif-bell {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-tile);
+  background: var(--spruce-raised);
+  color: var(--ivory-ink-muted);
+}
+.root-band-tools .prefs-gear::after,
+.root-band-tools .bell-slot .notif-bell::after { inset: 0; }
+.root-band-tools .prefs-gear:hover,
+.root-band-tools .bell-slot .notif-bell:hover { background: var(--spruce-hover); }
+.root-band-tools .prefs-gear svg,
+.root-band-tools .bell-slot .notif-bell-icon svg { width: 18px; height: 18px; }
+.root-band-tools .bell-slot .notif-bell { color: var(--apricot-light); }
+.root-band-tools .bell-slot .notif-badge { top: 9px; right: 9px; }
+/* Under the sheet's curve the first card gets its air from the sheet
+   itself: the ::after's 30px is ground colour, so whatever follows the
+   band starts a full curve below the spruce. No extra spacing rule. */
+@media (min-width: 1024px) {
+  /* Desktop keeps the phone's shape: the band still spans its content
+     column, with the hero's own rounded corners rather than bleeding to
+     a 27" edge (the same move .dinner-hero makes up there). */
+  .root-band {
+    border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+    padding: 20px 32px 42px;
+    margin-top: 16px;
+  }
+  .root-band-title { font-size: 36px; }
+}
+
+/* ---------- Empty states as designed moments ----------
+   One component for every root with nothing on it (emptyMomentHtml):
+   a stroke icon in a celadon tile — the gentle, non-urgent tile (§1) —
+   one sentence in the display face, and the next step in the dock, never
+   a button here. It grows to fill the space between the band and the
+   dock and centres itself in it, so it sits in the middle third of the
+   screen rather than at the top with air under it; the containers that
+   carry one are flex columns filling the panel (.is-empty below). */
+.empty-moment {
+  flex: 1 0 auto;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+.empty-moment-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-tile);
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  color: var(--celadon-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.empty-moment-icon svg { width: 24px; height: 24px; }
+.empty-moment-line {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--ink);
+  margin: 0;
+  max-width: 300px;
+}
+.empty-moment-detail {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+  margin: -6px 0 0;
+  max-width: 300px;
+}
+/* The Now empty slot sits in the gutter like its neighbours; Shop's and
+   Cook's bodies grow to fill the panel while they carry the moment. */
+.today-area-empty { padding: 0 20px; display: flex; flex-direction: column; flex: 1 0 auto; }
+.today-area-empty[hidden], .today-area-nudge[hidden], .needs-you-card[hidden] { display: none; }
+.gro-body.is-empty, .kit-body.is-empty { flex: 1 0 auto; }
+/* The dock's one row: the apricot on the left, the quiet link beside it,
+   the chat icon at the end of the strip (Now's "Let's plan the week" +
+   "Not now", and the empty moment's "Just tonight"). */
+.dock-row { display: flex; align-items: center; gap: 14px; }
+.dock-row .dock-primary { flex: 1 1 auto; width: auto; min-width: 0; }
+.dock-row .dock-link { flex: 0 0 auto; }
+
 /* ---------- Today (Pomona — InnToday) ----------
-   Three bands: a greeting inside the gutter, a hero that bleeds the full
-   width of the panel, then a body back inside the gutter. NavBlueprint §03:
-   "The 20px gutter never moves" — which is exactly why the hero cannot be a
-   child of a padded container, and isn't. .today-content carries no side
-   padding at all; each band declares its own. */
+   The root band (above), then the cards back inside the gutter.
+   NavBlueprint §03: "The 20px gutter never moves" — which is exactly why
+   the band cannot be a child of a padded container, and isn't.
+   .today-content carries no side padding at all; each band declares its
+   own. */
 .today-content {
   flex-shrink: 0;
   display: flex;
@@ -138,52 +372,6 @@ html, body {
   padding: 0 0 8px;
 }
 .today-content .today-dock { margin-top: auto; }
-
-.today-heading { padding: 24px 20px 18px; }
-.today-datestrip { display: flex; align-items: center; gap: 10px; }
-.today-date {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--apricot-label);
-  white-space: nowrap;
-}
-.today-hairline { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
-.today-greeting {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 30px;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-  color: var(--ink);
-  margin: 7px 0 0;
-}
-/* "3 of 4 done" — the day's own progress, under the title. Quiet by
-   design: it reports, it doesn't ask. */
-.today-progress {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--ink-secondary);
-  margin-top: 5px;
-}
-
-/* WEEK SET / DRAFT / NOTHING PLANNED, at the far end of the date's own
-   hairline. An eyebrow, not a badge with a fill — the date strip is a rule
-   across the top of the screen and a coloured pill would break it. */
-.today-weekstate {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--ink-muted);
-}
-.today-weekstate.is-set { color: var(--celadon-label); }
-.today-weekstate[hidden] { display: none; }
 
 .today-area-nudge { padding: 0 20px; }
 .today-area-nudge:not(:empty) { padding-bottom: 14px; }
@@ -1382,7 +1570,6 @@ html, body {
      content column is capped and centred so the hero doesn't become a
      letterbox on a 27" screen. */
   .today-content { max-width: 1040px; margin: 0 auto; padding: 0 0 24px; width: 100%; }
-  .today-heading { padding: 32px 32px 20px; }
   .today-area-nudge { padding: 0 32px; }
   .dinner-hero { border-radius: var(--radius-hero); margin: 0 32px; padding: 26px 28px 24px; }
   .today-area-nextup { margin: 0 32px 14px; }
@@ -3110,10 +3297,18 @@ html, body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  /* Fills the panel so the dock (margin-top: auto on .gro-dock) sits at
+     the foot of a short list rather than under its last card — until
+     2026-09-11 "Start the trip" sat mid-screen on a one-store list, and
+     read as a button in the page rather than the dock's. Same move
+     .today-content makes. */
+  flex: 1 0 auto;
 }
 
-/* ---------- Step head: the title, the TO SORT badge, the two icon buttons ---------- */
+/* ---------- Step head: the title and the two icon buttons ----------
+   The DEEPER steps' head — the root opens with the band (.root-band). */
 .gro-head { padding: 10px 20px 0; }
+.gro-head[hidden] { display: none; }
 .gro-head-row {
   display: flex;
   align-items: center;
@@ -3194,28 +3389,10 @@ html, body {
   color: var(--ink-secondary);
 }
 .gro-offline[hidden] { display: none; }
-/* "3 TO SORT" — the only way into the SORT step, so it is a real 44px
-   target: 22px drawn, the rest claimed by the pseudo-element, exactly the
-   trick .gro-icon-btn above uses. Apricot fill carrying --on-accent-ink
-   (Rule 1). */
-.gro-sortbadge {
-  position: relative;
-  flex: 0 0 auto;
-  height: 22px;
-  padding: 0 9px;
-  border: none;
-  border-radius: var(--radius-badge-sm);
-  background: var(--apricot);
-  color: var(--on-accent-ink);
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .13em;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.gro-sortbadge::after { content: ''; position: absolute; inset: -11px; }
-.gro-sortbadge[hidden] { display: none; }
+/* The way into SORT — a row at the top of the list (groSortRowHtml), in
+   Cook's .kit-row shape; it was an apricot "3 TO SORT" badge in the head
+   until the root band (2026-09-11), which carries no button. */
+.gro-sortrow { margin-bottom: 4px; }
 /* ---------- The crumb: every deeper screen's one way back ----------
    Nav v2 rule 1 (Emily, 2026-09-09): a screen deeper than a tab root
    carries exactly ONE of these and it NAMES its parent — "‹ This week",
@@ -3269,6 +3446,9 @@ html, body {
    The add row stays behind in .gro-foot: adding one thing is a side errand,
    not what the screen is for, and two strips would be no strip at all. */
 .gro-dock { padding-bottom: 12px; }
+/* At the foot of the panel, not under the last card (see .grocery-content).
+   Two selectors deep so it outranks .dock's own 20px margin below. */
+.grocery-content .gro-dock { margin-top: auto; }
 .gro-sort-later {
   align-self: center;
   min-height: 44px;
@@ -4433,49 +4613,17 @@ html, body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  /* Fills the panel so the empty moment can centre itself in it. */
+  flex: 1 0 auto;
 }
-.kit-titlerow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 20px 0;
-}
-.kit-eyebrow {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--apricot-label);
-  white-space: nowrap;
-}
-.kit-hairline { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--hairline); }
-.kit-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 30px;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-  color: var(--ink);
-  margin: 7px 0 15px;
-  padding: 0 20px;
-}
+#kit-root-view { display: flex; flex-direction: column; flex: 1 0 auto; }
 
 /* The "what we know" hero and its four count chips (.kit-hero*, .kit-chip*)
    left this screen on 2026-09-08: everything the app knows about the
    household is in the Preferences sheet now, and Kitchen is the cook's
-   tab. The Kitchen root has no hero at all — three sections of lines and
-   two quiet tiles, and nothing on it is urgent. */
-
-/* The day, under the title: "Monday · 1 cook tonight". */
-.kit-sub {
-  font-family: var(--font-body);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--ink-secondary);
-  margin: -8px 0 0;
-  padding: 0 20px;
-}
+   tab. The Kitchen root opens with the root band (.root-band) — the day
+   as its eyebrow, "1 cook tonight" as its line — and nothing on it is
+   urgent. */
 #kit-root-view[hidden], #kit-cook-view[hidden] { display: none; }
 
 .kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
@@ -5644,16 +5792,12 @@ span.cook-week-name { cursor: default; }
 /* ---------- Wide ---------- */
 @media (min-width: 1100px) {
   .kitchen-content { max-width: 720px; }
-  .kit-titlerow { padding: 22px 28px 0; }
-  .kit-title { padding: 0 28px; font-size: 36px; }
-  .kit-sub { padding: 0 28px; }
   .kit-body { padding: 18px 28px 0; }
 
   /* Cooking is one column given room to breathe: it lives inside
      .kitchen-content, which is already 720px wide here, so it needs no
      width rule of its own any more (it used to be scoped to the Meals
      tab's Cook state, which no longer exists). */
-  .prefs-gear-row { padding: 12px 28px 0; }
   .cook-hero { padding: 18px 28px; }
   .cook-hero-headline { font-size: 38px; }
   /* padding-block/-inline, never the shorthand: `padding: 16px 28px 0`
@@ -5793,16 +5937,13 @@ span.cook-week-name { cursor: default; }
 .prefs-gear:hover { background: var(--sand); }
 .prefs-gear svg { width: 17px; height: 17px; }
 .prefs-gear[hidden] { display: none; }
-/* Meals' root header belongs to the week card, so its gear gets a row of
-   its own — right-aligned, and hidden as a unit on the Day and Meal steps
-   (renderMealsStep), exactly as the Plan | Cook control it replaced was. */
-.prefs-gear-row { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 10px 20px 0; }
-/* The bell's phone-width home, beside the gear in every root's header
+/* The bell's phone-width home, beside the gear in every root's band
    (prefsGearHtml). Empty on desktop, where the bell lives in the rail. */
 .bell-slot { display: contents; }
-/* In a header the bell takes the gear's own dress — 34px outline tile, full
-   44px target via ::after (Rule 6) — rather than the 54px spruce tile it
-   wore in the dock, so the two sit as a pair. */
+/* Beside the gear the bell takes the gear's own dress — a 34px outline
+   tile with the full 44px target via ::after (Rule 6) — rather than the
+   54px spruce tile it wore in the dock, so the two sit as a pair. In the
+   root band both are re-dressed on spruce (.root-band-tools). */
 .bell-slot .notif-bell {
   width: 34px;
   height: 34px;
@@ -5815,7 +5956,6 @@ span.cook-week-name { cursor: default; }
 .bell-slot .notif-bell:hover { background: var(--sand); }
 .bell-slot .notif-bell-icon svg { width: 17px; height: 17px; }
 .bell-slot .notif-badge { top: 3px; right: 3px; }
-.prefs-gear-row[hidden] { display: none; }
 
 #coach-card-slot:empty { display: none; }
 #coach-scrim,
@@ -6126,7 +6266,11 @@ span.cook-week-name { cursor: default; }
    rather than the one #week-plan-row used to get as a sibling of the root. */
 #week-steps > #week-plan-row { padding-left: 20px; padding-right: 20px; }
 
-/* ---------- shared head ---------- */
+/* ---------- shared head (the deeper steps') ----------
+   The root opens with the band (.root-band, filled into #week-band-slot
+   by renderMealsStep); Day, Meal and the approved week's Review keep this
+   head under their crumb. */
+#week-band-slot[hidden] { display: none; }
 .wk-head { padding: 22px 20px 12px; }
 .wk-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .wk-title {
@@ -6146,10 +6290,10 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
   margin-top: 6px;
 }
-/* The state badge. Celadon says settled (it is the token for "already
-   true"); the urgent TINT — not the urgent fill — says a decision is
-   waiting, because a draft wants attention without being an emergency
-   (Rule 3); an unplanned week gets the warm neutral and no colour at all. */
+/* The Review step's state badge (the root's is the band's chip). Celadon
+   says settled (it is the token for "already true"); the urgent TINT —
+   not the urgent fill — says a decision is waiting, because a draft wants
+   attention without being an emergency (Rule 3). */
 .wk-state {
   flex: 0 0 auto;
   height: 22px;
@@ -6165,7 +6309,6 @@ span.cook-week-name { cursor: default; }
 }
 .wk-state.is-set { background: var(--celadon); color: var(--on-accent-ink); }
 .wk-state.is-draft { background: var(--urgent-tint); color: var(--urgent-label); }
-.wk-state.is-none { background: var(--sand); color: var(--ink-secondary); }
 
 /* ---------- WEEK: one card, seven rows ---------- */
 .wk-week-card { margin: 0 20px; padding: 4px 0; overflow: hidden; }
