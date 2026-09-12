@@ -827,14 +827,61 @@ def test_resetting_a_household_leaves_it_able_to_sign_in(beta_household):
     ]
     conn.close()
     assert "household_credentials" in tables
-    assert "household_credentials" in reset_household.__doc__ or True  # doc is prose; behaviour below
 
-    # The credential survives a wipe of every discovered data table.
+    # The line that used to sit here was
+    #     assert "household_credentials" in reset_household.__doc__ or True
+    # which, ending in `or True`, could not fail — and its own comment said
+    # so ("doc is prose; behaviour below"). What it was standing in for was
+    # never covered by anything else: `never_wipe` is a local inside
+    # reset_household.main(), so it cannot be imported, and a grep of the
+    # whole repo for it returns only its own definition. Take
+    # household_credentials out of that set and the script deletes the row
+    # that signs a household in — locking them out of the app permanently,
+    # with no way back and nothing on screen to explain it, which is the
+    # exact disaster this test's docstring describes.
+    #
+    # Read out of the source by AST rather than by string match, so
+    # reformatting the set does not quietly stop the guard working.
+    never_wipe = _never_wipe_tables()
+    assert "household_credentials" in never_wipe, (
+        "reset_household.main() would delete the passphrase row — a reset is "
+        "meant to empty a household, not lock it out of the app"
+    )
+    assert "households" in never_wipe, (
+        "reset_household.main() would delete the household itself"
+    )
+
+    # A smoke test of the same rule from the other side. It wipes ONE
+    # household-scoped table rather than every table the script discovers —
+    # the comment here used to claim otherwise — because the ordering a
+    # full wipe needs is the script's own job, and the guard above is what
+    # actually pins the rule.
     conn = get_conn()
     conn.execute("DELETE FROM grocery_items WHERE household_id = ?", (beta_household,))
     conn.commit()
     conn.close()
     assert households.authenticate(BETA_PASSPHRASE) == beta_household
+
+
+def _never_wipe_tables() -> set[str]:
+    """
+    The `never_wipe` set out of reset_household.main(), read from the
+    source. It is a local, so there is nothing to import; parsing is what
+    lets a test see it at all.
+    """
+    import ast
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parent.parent / "reset_household.py").read_text()
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "never_wipe" for t in node.targets
+        ):
+            return {e.value for e in node.value.elts if isinstance(e, ast.Constant)}
+    raise AssertionError(
+        "reset_household.py no longer defines never_wipe — if the protection "
+        "moved, move this guard with it rather than deleting it"
+    )
 
 
 def test_the_admin_script_can_replace_a_lost_passphrase(beta_household):
