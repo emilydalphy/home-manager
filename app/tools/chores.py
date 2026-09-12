@@ -14,15 +14,39 @@ _FREQUENCY_DAYS = {"daily": 1, "weekly": 7, "biweekly": 14, "monthly": 30, "quar
 # Who a chore belongs to — Loop Board "Chores v1: every chore has a chosen
 # owner" (Emily, 2026-09-11). See schema.sql's comment on chores.mode.
 #
-#   owned    one named person, every time
-#   shared   named people take turns (the round-robin the schedule always did)
-#   whoever  nobody in particular — first to tick it
+#   owned      one named person, every time
+#   shared     named people take turns (the round-robin the schedule always did)
+#   whoever    nobody in particular — first to tick it
+#   outsourced somebody outside the house does it — a cleaner, a lawn
+#              service, a laundry pickup
 #
-# Owned is the default: the point of the card is that the noticing and the
+# Owned is the default: the point of that card is that the noticing and the
 # doing sit with one person, so a chore only ends up shared or whoever
 # because somebody said so.
-MODES = ("owned", "shared", "whoever")
+#
+# Outsourced is the fourth (Loop Board "Chores v1: tag a chore as
+# outsourced"). It looks like 'whoever' underneath — nobody named, no
+# assignee on its instances — and it means the opposite: a 'whoever' chore
+# is still ours to do and this one is not. So it is a mode rather than a
+# flag on that one, and everywhere the app asks "whose is this?" it gets a
+# fourth answer instead of a blank. It keeps its frequency and still shows
+# on its day (we know Thursday is cleaner day); it carries no tick, and it
+# counts for nobody.
+MODES = ("owned", "shared", "whoever", "outsourced")
 DEFAULT_MODE = "owned"
+
+# What an outsourced row says at the end when the household didn't name
+# who does it. "Someone else" rather than the word "outsourced": the tag
+# is for us, the row is read by a person standing in their kitchen.
+NOBODY_IN_THE_HOUSE = "someone else"
+
+# What an owned chore with nobody on it says — the shape left behind by
+# handing an outsourced chore back (see update_chore). "Your call" is
+# already this app's words for a decision handed back to the household:
+# it is what an open meal slot prints on Meals. Not "either of you",
+# which is the label for a chore the house has DECIDED is nobody's in
+# particular — the opposite of a question nobody has answered yet.
+UNCLAIMED = "Your call"
 
 
 def set_chores_profile(
@@ -127,6 +151,24 @@ def chore_mode(row) -> str:
     if len(people) == 1:
         return "owned"
     return "shared" if people else "whoever"
+
+
+def is_outsourced(row) -> bool:
+    """
+    True when somebody outside the house does this chore. The one question
+    to ask before counting a chore toward anybody — the fairness view and
+    any effort total must skip these, because they are nobody's load.
+    Takes a chores row or a chore_instances row joined to one (both carry
+    `mode`), so there is one answer rather than two that can disagree.
+    """
+    return chore_mode(row) == "outsourced"
+
+
+def _outsourced_label(row) -> str:
+    """Who does it, when it isn't us. '' unless the row is outsourced."""
+    if not is_outsourced(row):
+        return ""
+    return (row["outsourced_to"] if "outsourced_to" in row.keys() else "") or ""
 
 
 def _first_name(name: str | None) -> str:
@@ -263,12 +305,24 @@ def _resolve_people(
       shared fallback.
     - shared with fewer than two people named: filled from the setup
       rotation / the adults.
+    - outsourced: nobody in the house, whoever was named or not. A name
+      passed alongside it is somebody outside the household (a cleaner
+      isn't a member), so it is NOT resolved against members — it rides in
+      `outsourced_to` instead, which is the caller's job to pass on.
     """
     names = [n.strip() for n in (names or []) if n and n.strip()]
-    ids = _dedupe([i for i in (_member_named(conn, n) for n in names) if i is not None])
     existing = existing or []
     if mode is not None and mode not in MODES:
-        raise ValueError(f"'{mode}' isn't a way to own a chore. Use owned, shared or whoever.")
+        raise ValueError(
+            f"'{mode}' isn't a way to own a chore. Use owned, shared, whoever or outsourced."
+        )
+    # Before any name is looked up: an outsourced chore is nobody in the
+    # house's, and the person who does it is not a member — resolving
+    # "Maria" here would ask the household who Maria is when they have
+    # just finished telling us she doesn't live here.
+    if mode == "outsourced":
+        return "outsourced", []
+    ids = _dedupe([i for i in (_member_named(conn, n) for n in names) if i is not None])
 
     if mode is None:
         if len(ids) == 1:
@@ -307,11 +361,17 @@ def _resolve_people(
     return ("owned", pool[:1]) if pool else ("whoever", [])
 
 
-def _write_people(conn, chore_id: int, mode: str, ids: list[int]) -> None:
+def _write_people(conn, chore_id: int, mode: str, ids: list[int], outsourced_to: str = "") -> None:
+    # outsourced_to is written on EVERY call, not only the outsourced ones:
+    # the label is only ever true while the tag is, so handing the chore
+    # back to the house clears it in the same statement that changes the
+    # mode. A label left behind would print a cleaner's name beside a chore
+    # somebody in the house had just taken back.
+    label = (outsourced_to or "").strip() if mode == "outsourced" else ""
     conn.execute(
-        "UPDATE chores SET mode = ?, rotation_member_ids_json = ?, default_assignee_id = ? "
+        "UPDATE chores SET mode = ?, rotation_member_ids_json = ?, default_assignee_id = ?, outsourced_to = ? "
         "WHERE id = ? AND household_id = ?",
-        (mode, json.dumps(ids), ids[0] if ids else None, chore_id, household_id()),
+        (mode, json.dumps(ids), ids[0] if ids else None, label, chore_id, household_id()),
     )
 
 
@@ -348,22 +408,45 @@ def _up_this_time(conn, chore_id: int, rotation: list[int]) -> int | None:
     return _next_in_turn(conn, chore_id, rotation)
 
 
+def _blank_who_label(conn, mode: str, people: list[int]) -> str:
+    """
+    What a row says when there is no name to print. "Either of you" is the
+    right blank for a chore the household has decided is nobody's in
+    particular, and the wrong one for the other two blanks — an
+    outsourced chore is precisely nobody HERE's, and an owned chore with
+    nobody on it is a question nobody has answered yet.
+    """
+    if mode == "outsourced":
+        return NOBODY_IN_THE_HOUSE
+    if mode == "owned" and not people:
+        return UNCLAIMED
+    return _nobody_label(conn)
+
+
 def _describe(conn, row, names_by_id: dict[int, str] | None = None) -> dict:
     """
     The owner fields every chore row carries on the way out — what the
     Plan | Chores rows and the Now card will show. `who_label` is the one
     to print: the owner's first name, whose turn it is on a shared chore,
-    or "either of you" when it's nobody's in particular.
+    "either of you" when it's nobody's in particular, or who does it when
+    it isn't us at all.
+
+    An outsourced row also says `outsourced` outright and carries
+    `completable: False`, so a screen draws the tag and leaves the tick
+    off rather than having to know what the modes mean.
     """
     names_by_id = names_by_id if names_by_id is not None else _names_by_id(conn)
     mode = chore_mode(row)
     people = _rotation_ids(row)
     owner_id = people[0] if mode == "owned" and people else None
     up_next_id = _up_this_time(conn, row["id"], people) if mode == "shared" else None
+    outsourced_to = _outsourced_label(row)
     if mode == "owned":
         who = _first_name(names_by_id.get(owner_id))
     elif mode == "shared":
         who = _first_name(names_by_id.get(up_next_id))
+    elif mode == "outsourced":
+        who = outsourced_to or NOBODY_IN_THE_HOUSE
     else:
         who = ""
     return {
@@ -371,7 +454,18 @@ def _describe(conn, row, names_by_id: dict[int, str] | None = None) -> dict:
         "owner": names_by_id.get(owner_id) if owner_id is not None else None,
         "assignees": [names_by_id.get(i, "?") for i in people],
         "up_next": names_by_id.get(up_next_id) if up_next_id is not None else None,
-        "who_label": who or _nobody_label(conn),
+        # "either of you" is the right blank for a whoever chore and the
+        # wrong one for an outsourced chore, which is precisely nobody
+        # here — so the fallback only applies to the modes it's true of.
+        "who_label": who or _blank_who_label(conn, mode, people),
+        "outsourced": mode == "outsourced",
+        "outsourced_to": outsourced_to,
+        "completable": mode != "outsourced",
+        # An owned chore with nobody on it is the one shape the house can
+        # be left in by handing an outsourced chore back (see
+        # update_chore) — a real question for the household, not a bug, so
+        # it is said out loud rather than filled in with a guess.
+        "needs_owner": mode == "owned" and not people,
     }
 
 
@@ -426,19 +520,27 @@ def add_chore(
     assignee_names: list[str] | None = None,
     mode: str | None = None,
     owner_name: str | None = None,
+    outsourced_to: str | None = None,
 ) -> dict:
     """
     Create a new recurring chore definition. Every chore has a chosen
     owner: `mode` is owned (one person, always — the default), shared
-    (the named people take turns) or whoever (nobody in particular).
-    `owner_name` names the owner; `assignee_names` names the people taking
-    turns. With neither, the only adult (or the only person in the setup
-    rotation) owns it; if there's no one obvious, it's shared across the
-    people named in setup.
+    (the named people take turns), whoever (nobody in particular) or
+    outsourced (somebody outside the house does it). `owner_name` names
+    the owner; `assignee_names` names the people taking turns;
+    `outsourced_to` names whoever comes in to do it ("Maria", "the lawn
+    people") and is optional even then. With none of them, the only adult
+    (or the only person in the setup rotation) owns it; if there's no one
+    obvious, it's shared across the people named in setup.
     """
     conn = get_conn()
     names = list(assignee_names or [])
-    if owner_name and owner_name.strip():
+    # Naming who comes in IS the tag: "the cleaner does the bathrooms"
+    # doesn't also say the word outsourced, and asking for it twice would
+    # be asking the household to speak the app's language.
+    if outsourced_to and outsourced_to.strip() and mode is None:
+        mode = "outsourced"
+    if owner_name and owner_name.strip() and mode != "outsourced":
         names = [owner_name] + [n for n in names if n.strip().lower() != owner_name.strip().lower()]
         if mode is None:
             mode = "owned"
@@ -447,10 +549,11 @@ def add_chore(
     except ValueError:
         conn.close()
         raise
+    label = (outsourced_to or "").strip() if mode == "outsourced" else ""
     cur = conn.execute(
-        "INSERT INTO chores (household_id, name, category, frequency, default_assignee_id, rotation_member_ids_json, mode) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (household_id(), name, category, frequency, ids[0] if ids else None, json.dumps(ids), mode),
+        "INSERT INTO chores (household_id, name, category, frequency, default_assignee_id, rotation_member_ids_json, mode, outsourced_to) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (household_id(), name, category, frequency, ids[0] if ids else None, json.dumps(ids), mode, label),
     )
     conn.commit()
     chore_id = cur.lastrowid
@@ -470,7 +573,8 @@ def list_chore_definitions(active_only: bool = True) -> list[dict]:
     """
     List the recurring chore templates themselves (not individual due-date
     instances): name, category, frequency, and who it belongs to — mode,
-    owner, the people taking turns, and whose turn it is right now.
+    owner, the people taking turns, whose turn it is right now, and
+    whether somebody outside the house does it (outsourced, outsourced_to).
     """
     conn = get_conn()
     query = "SELECT * FROM chores c WHERE c.household_id = ?"
@@ -502,11 +606,18 @@ def update_chore(
     active: bool | None = None,
     mode: str | None = None,
     owner_name: str | None = None,
+    outsourced_to: str | None = None,
 ) -> dict:
     """
     Update an existing chore's frequency, category, who it belongs to, or
     active status. Changing the owner or mode moves every instance not yet
     done onto the new answer; done ones keep whoever did them.
+
+    Tagging a chore outsourced ("the cleaner does the bathrooms now")
+    takes it off whoever had it and off every instance not yet done.
+    Handing it back — any other mode, with nobody named — returns it to
+    owned with no owner and says `needs_owner`, so the household is asked
+    whose it is rather than having one guessed for them.
     """
     conn = get_conn()
     require_household_row(conn, "chores", chore_id, label="chore")
@@ -515,12 +626,17 @@ def update_chore(
         # change ("whose should it be?") must leave the row exactly as it
         # was, frequency included.
         people = None
-        if mode is not None or owner_name is not None or assignee_names is not None:
+        label = ""
+        if mode is not None or owner_name is not None or assignee_names is not None or outsourced_to is not None:
             row = conn.execute(
                 "SELECT * FROM chores WHERE id = ? AND household_id = ?", (chore_id, household_id())
             ).fetchone()
+            was_outsourced = is_outsourced(row)
             names = list(assignee_names or [])
-            if owner_name and owner_name.strip():
+            if outsourced_to is not None and outsourced_to.strip() and mode is None:
+                # Naming who comes in is the tag — same as add_chore.
+                mode = "outsourced"
+            if owner_name and owner_name.strip() and mode != "outsourced":
                 names = [owner_name] + [n for n in names if n.strip().lower() != owner_name.strip().lower()]
                 if mode is None:
                     mode = "owned"
@@ -528,7 +644,23 @@ def update_chore(
                 # An explicit empty list is what "nobody's" looked like before
                 # mode existed; keep meaning that rather than re-deriving an owner.
                 mode = "whoever"
-            people = _resolve_people(conn, mode, names, existing=_rotation_ids(row), strict=mode == "owned")
+            if was_outsourced and mode == "outsourced":
+                # Re-labelling ("it's Maria now, not the agency") keeps the
+                # tag; an omitted label leaves the one already on the row.
+                label = (outsourced_to if outsourced_to is not None else row["outsourced_to"]) or ""
+                people = ("outsourced", [])
+            elif was_outsourced and mode in ("owned", None) and not names:
+                # Un-tagging with nobody named. Deliberately NOT
+                # _resolve_people's owned path, which would infer the only
+                # adult or fall back to sharing it round: the household
+                # has just taken a chore back off somebody, and who picks
+                # it up is exactly the thing they haven't said. So the
+                # untag lands, the owner is blank, and `needs_owner` asks
+                # — one light tap (DESIGN_SYSTEM §7), not a guess.
+                people = ("owned", [])
+            else:
+                label = (outsourced_to or "") if mode == "outsourced" else ""
+                people = _resolve_people(conn, mode, names, existing=_rotation_ids(row), strict=mode == "owned")
 
         if frequency is not None:
             conn.execute("UPDATE chores SET frequency = ? WHERE id = ? AND household_id = ?", (frequency, chore_id, household_id()))
@@ -536,7 +668,7 @@ def update_chore(
             conn.execute("UPDATE chores SET category = ? WHERE id = ? AND household_id = ?", (category, chore_id, household_id()))
         reassigned = None
         if people is not None:
-            _write_people(conn, chore_id, *people)
+            _write_people(conn, chore_id, *people, outsourced_to=label)
             reassigned = _reassign_pending(conn, chore_id)
         if active is not None:
             conn.execute("UPDATE chores SET active = ? WHERE id = ? AND household_id = ?", (1 if active else 0, chore_id, household_id()))
@@ -560,7 +692,9 @@ def generate_chore_schedule(days_ahead: int = 14) -> list[dict]:
     `days_ahead`. Skips dates that already have a pending/done instance for
     that chore. Who each one goes to follows the chore's mode: owned goes
     to the owner every time, shared takes turns through the named people
-    (continuing from whoever had it last), whoever goes to nobody. Call
+    (continuing from whoever had it last), whoever and outsourced go to
+    nobody (an outsourced chore still gets its instances, so the week
+    shows that Thursday is cleaner day — it just isn't ours). Call
     this after onboarding, and periodically (e.g. "generate this week's
     chores") to keep the schedule filled in.
     """
@@ -657,7 +791,8 @@ _INSTANCE_SELECT = """
     SELECT ci.id, c.name AS chore, ci.due_date, ci.status,
            ci.assignee_id, m.name AS assignee,
            ci.completed_by_member_id, d.name AS completed_by,
-           c.id AS chore_id, c.mode, c.rotation_member_ids_json, c.default_assignee_id
+           c.id AS chore_id, c.mode, c.rotation_member_ids_json, c.default_assignee_id,
+           c.outsourced_to
     FROM chore_instances ci
     JOIN chores c ON c.id = ci.chore_id
     LEFT JOIN members m ON m.id = ci.assignee_id
@@ -669,7 +804,14 @@ def _instance_dicts(conn, rows) -> list[dict]:
     """
     One instance per row, with who it's for spelled out: `assignee` is
     whose it was when scheduled, `completed_by` who ticked it, and
-    `who_label` the name to print (first name, or "either of you").
+    `who_label` the name to print (first name, "either of you", or who
+    comes in to do it when it isn't us).
+
+    An outsourced instance carries `outsourced` and `completable: False`
+    so a screen draws the tag and no tick without having to know what the
+    modes mean — and, just as important, so nothing counts it: it is
+    nobody's load, and a "1 of 3 done" that includes cleaner day is a
+    household being told it is behind on something it never had to do.
     """
     nobody = None
     out = []
@@ -677,8 +819,11 @@ def _instance_dicts(conn, rows) -> list[dict]:
         # The chore's own columns ride along on the join, so chore_mode()
         # can read the row directly.
         row_mode = chore_mode(r)
+        outsourced = row_mode == "outsourced"
         who = _first_name(r["assignee"])
-        if not who:
+        if not who and outsourced:
+            who = _outsourced_label(r) or NOBODY_IN_THE_HOUSE
+        elif not who:
             if nobody is None:
                 nobody = _nobody_label(conn)
             who = nobody
@@ -692,6 +837,9 @@ def _instance_dicts(conn, rows) -> list[dict]:
             "mode": row_mode,
             "who_label": who,
             "completed_by": r["completed_by"],
+            "outsourced": outsourced,
+            "outsourced_to": _outsourced_label(r),
+            "completable": not outsourced,
         })
     return out
 
@@ -718,6 +866,40 @@ def list_chores(status: str = "pending", days_ahead: int = 14) -> list[dict]:
     return result
 
 
+def _refuse_if_outsourced(conn, instance_id: int) -> None:
+    """
+    An outsourced chore cannot be ticked off, by anybody, ever.
+
+    The question this answers, written down because it is a decision and
+    not an oversight: should an outsourced instance be completable at all?
+    No. A tick in this app means a person in the house did a thing, and it
+    is what the fairness view counts — so allowing one would either credit
+    somebody who didn't do it (the signed-in adult, by _doer_id's default,
+    which is exactly the "Vinneth did the bins" failure recorded on the
+    owner card) or record a completion belonging to nobody. Neither is
+    worth having, and a household that wants the credit can hand the chore
+    back with one tap.
+
+    A calm sentence rather than a silent accept: a tick that appears to
+    land and doesn't is the worse failure. 'skipped' is still allowed —
+    the cleaner not coming is a real thing that happens to a real Thursday.
+    """
+    row = conn.execute(
+        "SELECT c.mode, c.name, c.outsourced_to FROM chore_instances ci "
+        "JOIN chores c ON c.id = ci.chore_id "
+        "WHERE ci.id = ? AND ci.household_id = ?",
+        (instance_id, household_id()),
+    ).fetchone()
+    if row is None or not is_outsourced(row):
+        return
+    who = (row["outsourced_to"] or "").strip()
+    raise ValueError(
+        f"{row['name']} is {who}'s, not ours — there's nothing to tick off."
+        if who
+        else f"{row['name']} is somebody else's — there's nothing to tick off."
+    )
+
+
 def _doer_id(conn, done_by: str | None) -> int | None:
     """
     Who gets credit for a tick: the person named, else the session's adult.
@@ -735,11 +917,13 @@ def complete_chore(instance_id: int, done_by: str | None = None) -> dict:
     """
     Mark a chore instance as done. `done_by` names who did it when it
     wasn't the signed-in adult ("Vineeth did the bins"); otherwise the
-    session's adult gets the credit.
+    session's adult gets the credit. An outsourced chore is refused —
+    nobody in the house did it, so there is nobody to credit.
     """
     conn = get_conn()
     require_household_row(conn, "chore_instances", instance_id, label="chore instance")
     try:
+        _refuse_if_outsourced(conn, instance_id)
         doer = _doer_id(conn, done_by)
     except ValueError:
         conn.close()
@@ -786,11 +970,17 @@ def set_chore_instance_status(instance_id: int, status: str = "done") -> dict:
     Mark a chore instance done or back to pending directly from the Today
     screen's chores card (no chat round-trip needed) — same shape as
     check_off_meal/check_off_prep_step below. A tick is credited to the
-    session's adult (completed_by_member_id); un-ticking clears it.
+    session's adult (completed_by_member_id); un-ticking clears it. An
+    outsourced chore has no tick to give — see _refuse_if_outsourced.
     """
     conn = get_conn()
     require_household_row(conn, "chore_instances", instance_id, label="chore instance")
     if status == "done":
+        try:
+            _refuse_if_outsourced(conn, instance_id)
+        except ValueError:
+            conn.close()
+            raise
         conn.execute(
             "UPDATE chore_instances SET status = 'done', completed_at = datetime('now'), completed_by_member_id = ? "
             "WHERE id = ? AND household_id = ?",

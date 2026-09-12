@@ -522,6 +522,9 @@ class ChoreItemInput(BaseModel):
     mode: str = ""
     owner_name: str = ""
     assignee_names: list[str] = []
+    # Who does it when it isn't us ("Maria", "the lawn people"), for
+    # mode 'outsourced'. Free text, never resolved to a member.
+    outsourced_to: str = ""
 
 
 class ChoreSaveRequest(BaseModel):
@@ -1242,6 +1245,7 @@ def onboarding_chores_save(req: ChoreSaveRequest):
                     mode=c.mode.strip() or None,
                     owner_name=c.owner_name.strip() or None,
                     assignee_names=c.assignee_names or None,
+                    outsourced_to=c.outsourced_to.strip() or None,
                 )
             except ValueError as e:
                 skipped.append({"name": c.name.strip(), "reason": str(e)})

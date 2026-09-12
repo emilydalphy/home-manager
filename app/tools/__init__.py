@@ -48,6 +48,7 @@ from .chores import (  # noqa: F401
     generate_chore_schedule,
     get_chores_due_today,
     get_chores_profile,
+    is_outsourced,
     list_chore_definitions,
     list_chores,
     schedule_chore_instance,

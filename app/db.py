@@ -427,6 +427,17 @@ _MIGRATIONS = [
     # NULL on every existing instance: nothing recorded the person before
     # this, and guessing the assignee did it would be inventing history.
     ("chore_instances", "completed_by_member_id", "INTEGER"),
+    # Loop Board "Chores v1: tag a chore as outsourced". Who does it when
+    # it isn't anyone in the house — "Maria", "the lawn people". '' on
+    # every existing chore, and no backfill goes with it, deliberately:
+    # nothing before this could say a chore was outsourced, so there is no
+    # older fact to read one out of. chores_profile.existing_help is the
+    # nearest thing and it is free text about the HOUSEHOLD, not about any
+    # particular chore — the starter list reads it to PROPOSE which rows
+    # to tag (agent.generate_chore_recommendations), which is an offer the
+    # household can decline, not a migration writing down an answer nobody
+    # actually gave.
+    ("chores", "outsourced_to", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

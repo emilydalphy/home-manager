@@ -1186,7 +1186,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_chore",
-        "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning). Every chore has a chosen owner — mode 'owned' (one person, always; the default), 'shared' (the named people take turns) or 'whoever' (nobody in particular, first to do it). Pass owner_name for an owned chore. Names must be people already in the household (add_member first if they're new — this tool never creates one). If nobody's named, the only adult owns it; with two or more adults and no name given it falls back to shared across the setup rotation — so when the household hasn't said whose it is, ask.",
+        "description": "Create a new recurring chore definition (e.g. 'Take out trash', weekly, cleaning). Every chore has a chosen owner — mode 'owned' (one person, always; the default), 'shared' (the named people take turns), 'whoever' (nobody in particular, first to do it) or 'outsourced' (somebody outside the house does it — a cleaner, a lawn service, a laundry pickup). Pass owner_name for an owned chore, or outsourced_to for an outsourced one. owner_name/assignee_names must be people already in the household (add_member first if they're new — this tool never creates one); outsourced_to is NOT a household member and is never looked up as one. If nobody's named, the only adult owns it; with two or more adults and no name given it falls back to shared across the setup rotation — so when the household hasn't said whose it is, ask.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1195,10 +1195,14 @@ TOOL_DEFINITIONS = [
                 "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
                 "mode": {
                     "type": "string",
-                    "enum": ["owned", "shared", "whoever"],
-                    "description": "'owned' = one person always ('the bathrooms are Vineeth's'). 'shared' = take turns ('let's alternate the vacuuming'). 'whoever' = nobody's in particular ('either of us can do the bins'). Defaults to owned.",
+                    "enum": ["owned", "shared", "whoever", "outsourced"],
+                    "description": "'owned' = one person always ('the bathrooms are Vineeth's'). 'shared' = take turns ('let's alternate the vacuuming'). 'whoever' = nobody's in particular ('either of us can do the bins'). 'outsourced' = somebody outside the house does it ('the cleaner does the bathrooms', 'the lawn people come every other week') — it still shows on the week, nobody here is asked for it, and it counts for nobody. Defaults to owned.",
                 },
                 "owner_name": {"type": "string", "description": "Who owns it, for mode 'owned'."},
+                "outsourced_to": {
+                    "type": "string",
+                    "description": "For mode 'outsourced': who comes in to do it, in the household's own words ('Maria', 'the lawn people'). Optional — leave it out if they didn't say. Naming somebody here implies mode 'outsourced'. This is NOT a household member and must never be passed to add_member.",
+                },
                 "assignee_names": {
                     "type": "array",
                     "items": {"type": "string"},
@@ -1218,15 +1222,19 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "update_chore",
-        "description": "Update an existing chore's frequency, category, who it belongs to, or active status. Owner changes by saying so: 'give the bathrooms to Vineeth' = mode 'owned' + owner_name 'Vineeth'; 'let's take turns on the vacuuming' = mode 'shared' (+ assignee_names if they named who); 'either of us can do the bins' = mode 'whoever'. Upcoming instances move to the new answer; ones already done keep whoever did them.",
+        "description": "Update an existing chore's frequency, category, who it belongs to, or active status. Owner changes by saying so: 'give the bathrooms to Vineeth' = mode 'owned' + owner_name 'Vineeth'; 'let's take turns on the vacuuming' = mode 'shared' (+ assignee_names if they named who); 'either of us can do the bins' = mode 'whoever'; 'the cleaner does the bathrooms now' = mode 'outsourced' (+ outsourced_to if they named who). Handing one back — 'we're doing the bathrooms ourselves again' — is mode 'owned' with no owner_name, which returns it to the household and asks whose it is; say that question back to them rather than picking somebody. Upcoming instances move to the new answer; ones already done keep whoever did them.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "chore_id": {"type": "integer"},
                 "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
                 "category": {"type": "string", "enum": ["cleaning", "maintenance", "other"]},
-                "mode": {"type": "string", "enum": ["owned", "shared", "whoever"]},
+                "mode": {"type": "string", "enum": ["owned", "shared", "whoever", "outsourced"]},
                 "owner_name": {"type": "string", "description": "The new owner (implies mode 'owned' if mode is omitted)."},
+                "outsourced_to": {
+                    "type": "string",
+                    "description": "For mode 'outsourced': who comes in to do it ('Maria', 'the lawn people'). Optional. Naming somebody here implies mode 'outsourced'. Not a household member — never pass it to add_member.",
+                },
                 "assignee_names": {"type": "array", "items": {"type": "string"}, "description": "For 'shared': who takes turns, in order. Omit to keep the people already on it."},
                 "active": {"type": "boolean", "description": "Set false to deactivate/remove a chore without deleting history."},
             },
@@ -5454,8 +5462,8 @@ _RECOMMEND_CHORES_TOOL = {
                         "frequency": {"type": "string", "enum": ["daily", "weekly", "biweekly", "monthly", "quarterly", "once"]},
                         "mode": {
                             "type": "string",
-                            "enum": ["owned", "shared", "whoever"],
-                            "description": "owned = one person always (the default); shared = the named people take turns; whoever = nobody in particular.",
+                            "enum": ["owned", "shared", "whoever", "outsourced"],
+                            "description": "owned = one person always (the default); shared = the named people take turns; whoever = nobody in particular; outsourced = the help the household already has does it.",
                         },
                         "owner_name": {
                             "type": "string",
@@ -5465,6 +5473,10 @@ _RECOMMEND_CHORES_TOOL = {
                             "type": "array",
                             "items": {"type": "string"},
                             "description": "For shared: who takes turns, a subset of rotation_members in turn order.",
+                        },
+                        "outsourced_to": {
+                            "type": "string",
+                            "description": "For outsourced: who does it, in the household's own words from existing_help ('the cleaner', 'the lawn people'). Optional.",
                         },
                     },
                     "required": ["name", "category", "frequency", "mode"],
@@ -5488,6 +5500,13 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
     people gets the whole rotation, and with no rotation named at all the
     row becomes whoever — there is nobody to propose. Rows that aren't
     dicts are dropped rather than crashing the wizard.
+
+    An outsourced row (the household already told us about a cleaner or a
+    lawn service — see the prompt) is left to nobody in the house on
+    purpose, and its label is whatever the model read back out of
+    existing_help. It is a PROPOSAL: every row is editable before it
+    saves, so the worst case is one tag the household unticks, not a chore
+    that silently stops being asked for.
     """
     people = [n.strip() for n in (rotation_members or []) if isinstance(n, str) and n.strip()]
     lower = {n.lower(): n for n in people}
@@ -5498,7 +5517,7 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
         if not isinstance(raw, dict):
             continue
         row = dict(raw)
-        mode = row.get("mode") if row.get("mode") in ("owned", "shared", "whoever") else None
+        mode = row.get("mode") if row.get("mode") in ("owned", "shared", "whoever", "outsourced") else None
         # Only people the household actually named. A name the model made
         # up ("Nobody", a misspelling) is dropped so the row falls back to
         # the dealt-round rule instead of proposing a stranger.
@@ -5507,6 +5526,17 @@ def _normalize_chore_recommendations(chores: list, rotation_members: list[str]) 
         owner = lower.get(str(row.get("owner_name") or "").strip().lower(), "")
         if mode is None:
             mode = "owned" if len(names) <= 1 else "shared"
+        if mode == "outsourced":
+            # Nobody in the house, whatever names came back with it — a
+            # cleaner is not one of rotation_members, so the label is kept
+            # as free text and the people fields are emptied.
+            row["mode"] = "outsourced"
+            row["owner_name"] = ""
+            row["assignee_names"] = []
+            row["outsourced_to"] = str(row.get("outsourced_to") or "").strip()
+            out.append(row)
+            continue
+        row["outsourced_to"] = ""
         if mode == "owned":
             if not owner and names:
                 owner = names[0]
@@ -5558,9 +5588,13 @@ typical/moderate, 'meticulous' = more frequent.
 - Only include yard-related chores if has_yard is true.
 - Only include pet-related chores (litter box, pet area cleanup, etc.) if pets is non-empty \
 — match the chore to the actual pet type(s) listed.
-- If existing_help describes outside help (e.g. a cleaning service) with a frequency, \
-don't duplicate what that service already covers — adjust or reduce overlapping deep-clean \
-chores instead of doubling up.
+- If existing_help describes outside help (e.g. a cleaning service, a lawn service, a \
+laundry pickup), the household has already told you about it — do not ask again. Keep the \
+chores that help covers on the list and mark each of them mode 'outsourced', with \
+outsourced_to set to how the household described them ('the cleaner', 'the lawn people'). \
+Scale their frequency to existing_help_frequency when it says one. They still belong on the \
+week — knowing Thursday is cleaner day is the point — they are just nobody in the house's to \
+do. Only tag what the described help actually covers; everything else stays ours.
 - Fold in anything from include_notes as its own chore or two. Do not include anything \
 described in exclude_notes.
 - Aim for a practical, non-exhaustive list — roughly 8 to 14 chores covering both routine \
