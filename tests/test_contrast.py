@@ -240,7 +240,6 @@ def test_the_sign_in_field_fill_is_what_this_test_thinks_it_is():
 STRUCK_TEXT_RULES = [
     ("static/shell.css", r"\.chore-row\.done \.chore-name \{[^}]*\}", "completed chore"),
     ("static/shell.css", r"\.gro-row\.done \.gro-name \{[^}]*\}", "bought grocery item"),
-    ("static/grocery.html", r"\.gl-row\.done \.gl-name \{[^}]*\}", "bought grocery item (standalone page)"),
 ]
 
 

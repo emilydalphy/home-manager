@@ -723,7 +723,9 @@ class GroceryAddRequest(BaseModel):
     quantity: str = ""
     category: str = "other"
     # design_handoff_home_manager Phase 2: which household adult added this,
-    # from the client-side identity switcher (see static/grocery.html) —
+    # from the client-side identity switcher that lived in static/grocery.html
+    # (deleted, design hygiene pass, 2026-09-12 — per-adult attribution is
+    # now the session-based member_id()/current_member() flow instead) —
     # optional and defaults to the old unattributed "user" so every existing
     # caller of this endpoint keeps working unchanged.
     added_by: str = "user"
@@ -4308,14 +4310,20 @@ static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-# App-shell redesign (design_handoff_shell/README.md), Step 1: the four
-# top-level shell routes all serve the same shell.html — it's a persistent
-# app frame whose client-side router (static/shell.js) shows/hides tab
-# content without a page reload. static/index.html, grocery.html and
-# cooker.html are unmodified and still reachable directly under /static/
-# (via the mount below); the shell embeds them via <iframe> for now, so
-# their own behavior (chat, grocery filters, cook steps, etc.) needed zero
-# changes. /week and /kitchen are new destinations with no prior route.
+# Every tab is native now (design hygiene pass, 2026-09-12): the four
+# top-level shell routes all serve the same shell.html — a persistent app
+# frame whose client-side router (static/shell.js) shows/hides tab content
+# without a page reload. /, /week, /grocery and /kitchen are the shell's own
+# deep-link targets for Now/Plan/Shop/Cook (see TABS in shell.js and
+# SHELL_ROUTES in service-worker.js) — a refresh on any of them, or a
+# pushState back to one, has to land on shell.html, so these are live
+# routes even though "grocery"/"kitchen" also used to be a pre-rebrand
+# static page's name. static/index.html, static/grocery.html,
+# static/cooker.html, static/kitchen.html and static/memory.html were that
+# earlier, pre-shell app (chat box as the home screen, iframed Grocery/Cook
+# pages) and are gone — nothing live reached them once every tab went
+# native. /cooker and /memory, which served or redirected into those pages
+# directly, are gone with them.
 @app.get("/")
 def index():
     return FileResponse(os.path.join(static_dir, "shell.html"))
@@ -4336,29 +4344,6 @@ def kitchen_page():
     return FileResponse(os.path.join(static_dir, "shell.html"))
 
 
-# Cooking is a state of the Meals tab now (Stage 2 slice 3) — the same
-# week's plan with the recipes opened up, which is why it belongs with the
-# week rather than in Kitchen, where it only ever lived by pointing that
-# tab's iframe at cooker.html.
-#
-# Redirecting to /week lands on Meals' default Plan state rather than
-# straight into Cook. That is deliberate: Cook is a state, not a route, in
-# exactly the way Grocery's To buy / Plan stops / Review are states of
-# /grocery. The two real ways in are Today's "Start cooking" and Meals'
-# own "Cook" — this route exists only so an old bookmark still arrives
-# somewhere sensible.
-@app.get("/cooker")
-def cooker_page():
-    return RedirectResponse(url="/week")
-
-
-# /onboarding and /memory are NOT redirected yet, on purpose: the README
-# retires them as top-level destinations once Kitchen's "What we know"
-# absorbs their content, but that content merge hasn't been built (it's not
-# part of Step 1's scope). Redirecting them now, before Kitchen actually
-# has a "What we know" section, would strand first-time setup and memory
-# edits with no way to reach them. They keep serving their real pages
-# unchanged until that merge happens.
 @app.get("/onboarding")
 def onboarding_page():
     return FileResponse(os.path.join(static_dir, "onboarding.html"))
@@ -4406,11 +4391,6 @@ def chores_setup_page():
     the switch decides what Now shows, not what exists.
     """
     return FileResponse(os.path.join(static_dir, "chores-setup.html"))
-
-
-@app.get("/memory")
-def memory_page():
-    return FileResponse(os.path.join(static_dir, "memory.html"))
 
 
 @app.get("/inventory")

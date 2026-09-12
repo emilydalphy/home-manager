@@ -1,5 +1,5 @@
 """
-The shell embeds several pages in iframes, and that has a recurring bug.
+The shell embeds pages in iframes, and that has a recurring bug.
 
 Every top-level route the shell owns (/, /week, /grocery, /kitchen) serves
 shell.html. So an ordinary link to one of them, followed from *inside* an
@@ -14,19 +14,28 @@ not review, not a browser check of that page, nothing. These tests are the
 thing that catches it: a new embedded page, or a new top-level link added to
 an existing one, fails here instead of shipping.
 
-Three things below are deliberately derived from the app rather than listed
+Design hygiene pass (2026-09-12): static/grocery.html, static/cooker.html,
+static/kitchen.html and static/memory.html — the pre-rebrand pages this file
+used to check alongside inventory — are deleted. Every tab went native
+before them (What we know absorbed memory.html's content on 2026-09-12,
+Grocery/Kitchen/Cook went native earlier), so nothing live embedded them any
+more; inventory.html is the only page the shell still puts in a frame
+(`#kit-sheet-frame`), and it stays that way on purpose (inventory is a
+deferred beta feature, Emily's call). EMBEDDABLE is one entry now, but the
+whole point of computing it as a closure below is that it doesn't need to
+stay that way by hand — a future embed is caught the same way memory and
+inventory themselves were.
+
+Two things below are deliberately derived from the app rather than listed
 by hand, because each one is a way this check could quietly stop working:
 
 - **Which routes serve the shell**, including ones that only *redirect* into
-  a shell route (/cooker does exactly this). A link to a redirect is just as
-  fatal as a link to the destination.
-- **Which pages can end up in a frame**, computed as a closure. inventory
-  and memory are embeddable only because the Kitchen hub navigates its own
-  frame to them — so "what shell.js embeds" is not the whole answer, and it
-  was never going to be.
-- **Navigation written in JavaScript**, not just in `href`. The Kitchen hub
-  navigates *exclusively* by `location.href`, so a check that only read
-  anchors would be blind on the one page most likely to grow a new link.
+  a shell route. A link to a redirect is just as fatal as a link to the
+  destination.
+- **Which pages can end up in a frame**, computed as a closure. inventory is
+  embeddable only because the Kitchen hub navigates its own frame to it —
+  so "what shell.js embeds" is not the whole answer, and it was never going
+  to be.
 
 And because a derivation that returns nothing would make every assertion
 below pass vacuously, test_the_derivations_are_not_silently_empty pins them.
@@ -52,7 +61,7 @@ MAIN_PY = (REPO / "app" / "main.py").read_text()
 # Kept as a literal so the failure message can name it, but
 # test_the_embeddable_list_matches_the_app checks it against a closure
 # computed from the app, so it cannot fall out of date silently.
-EMBEDDABLE = ["grocery", "kitchen", "cooker", "inventory", "memory"]
+EMBEDDABLE = ["inventory"]
 
 GUARD_SCRIPT = "/static/embedded-page.js"
 
@@ -94,11 +103,6 @@ def _shell_routes() -> set[str]:
     """
     Routes that land the browser on the whole app shell — directly, or via
     a redirect chain.
-
-    /cooker is the reason the redirect half exists: it 302s to /kitchen,
-    which serves shell.html. Following it from inside a frame doubles the
-    shell exactly like a direct link would, and static/index.html already
-    ships that very link.
     """
     files, redirects = _route_files(), _route_redirects()
     direct = {r for r, f in files.items() if f == "shell.html"}
@@ -131,8 +135,9 @@ def _embeddable_closure() -> set[str]:
     Seeded from what shell.js actually embeds, then followed transitively:
     a page an embedded page navigates its frame to is itself embedded.
     That second step is not decoration — it is the only reason inventory
-    and memory are in scope, and both had to be discovered by a bug report
-    rather than by anything checking.
+    (and, until the design hygiene pass, memory) was ever in scope, and
+    both had to be discovered by a bug report rather than by anything
+    checking.
     """
     shell_js = (STATIC / "shell.js").read_text()
     files = _route_files()
@@ -162,10 +167,6 @@ class _BackLinkAudit(HTMLParser):
     """
     Collects every <a href="/..."> in a page, recording whether it sits
     inside (or is) an element carrying data-shell-back.
-
-    Tracks depth rather than just "did we see the attribute", because the
-    two existing markup shapes differ: grocery marks a wrapping <div>,
-    everything else marks the anchor itself.
     """
 
     VOID = {"br", "img", "input", "hr", "meta", "link", "source", "area", "col"}
@@ -208,9 +209,9 @@ def test_the_derivations_are_not_silently_empty():
     routes = _shell_routes()
     assert routes, "no shell routes derived from app/main.py — the regex has gone stale"
     assert "/" in routes, f"'/' must serve the shell; derived {sorted(routes)}"
-    assert "/cooker" in routes, (
-        "/cooker redirects into /kitchen and so is a shell route; the redirect "
-        "resolution has stopped working"
+    assert "/kitchen" in routes, (
+        "/kitchen must serve the shell directly (it's Cook's deep-link route); "
+        "the file-route derivation has stopped working"
     )
     assert _embeddable_closure(), "no embeddable pages derived from static/shell.js"
     assert _route_files(), "no page routes derived from app/main.py"
@@ -304,7 +305,7 @@ def test_the_embeddable_list_matches_the_app():
     nobody remembered to guard — so a page becoming embeddable without
     appearing here has to be a test failure, not a silent pass. Computed as
     a closure, so a page reached only via the Kitchen hub's own frame
-    navigation counts, which is how inventory and memory got here.
+    navigation counts, which is how inventory got here.
     """
     missing = sorted(_embeddable_closure() - set(EMBEDDABLE))
     assert not missing, (
@@ -314,47 +315,29 @@ def test_the_embeddable_list_matches_the_app():
     )
 
 
-def test_the_guard_supports_both_behaviours_even_though_only_one_is_used():
+def test_the_guard_still_supports_the_rewrite_behaviour_though_nothing_uses_it():
     """
-    embedded-page.js has two modes and both must survive in the file, but
-    as of Stage 2 slice 3 only one of them is used by any page.
+    embedded-page.js has two modes. Only "hide" is exercised by a real page
+    now that inventory is the sole embed (until 2026-09-12 grocery and
+    cooker hid their back link while inventory and memory rewrote theirs to
+    /static/kitchen.html, a sibling page inside the same frame — that
+    second case's only two call sites are gone with memory.html).
 
-    It used to be a genuine split: grocery and cooker HID their back link
-    (the shell's tab bar was already the way back) while inventory and
-    memory REWROTE theirs to /static/kitchen.html, because they were pushed
-    views inside the Kitchen tab's iframe and needed a way back to the hub
-    that did not load a second app shell.
-
-    That second case no longer exists. The Kitchen hub is a native panel,
-    and inventory and memory open as sheets over it whose own header is the
-    way back — so rewriting their link would point at the superseded
-    kitchen.html *inside* the screen that replaced it. All four framed
-    pages hide their link now.
-
-    The rewrite branch stays in the guard anyway, and this test keeps
-    pinning it: it is the documented meaning of any non-"hide" value, and
+    The rewrite branch stays in the guard anyway: it is the documented
+    meaning of any non-"hide" data-shell-back value, and
     test_shell_back_markers_are_values_the_guard_understands still accepts
-    a /static/... path. Deleting the branch would quietly turn a valid
-    marker value into a broken href.
+    a /static/... path for a future embed that needs it. Deleting the
+    branch would quietly turn a valid marker value into a broken href.
     """
     guard = (STATIC / "embedded-page.js").read_text()
     assert "style.display = 'none'" in guard, "the hide behaviour is missing"
     assert "setAttribute('href'" in guard, "the rewrite behaviour is missing"
 
-    for page in ("grocery", "cooker", "inventory", "memory"):
+    for page in EMBEDDABLE:
         html = (STATIC / f"{page}.html").read_text()
         assert 'data-shell-back="hide"' in html, (
-            f"{page}.html should hide its back link inside the shell — the tab "
-            f"bar (or, for a Kitchen entry sheet, that sheet's header) is the "
-            f"way back"
-        )
-
-    for page in ("inventory", "memory"):
-        html = (STATIC / f"{page}.html").read_text()
-        assert 'data-shell-back="/static/kitchen.html"' not in html, (
-            f"{page}.html still points its back link at static/kitchen.html, "
-            f"which is the superseded hub the native Kitchen panel replaced. "
-            f'Inside the shell it should be data-shell-back="hide".'
+            f"{page}.html should hide its back link inside the shell — the "
+            f"Kitchen entry sheet's own header is the way back"
         )
 
 

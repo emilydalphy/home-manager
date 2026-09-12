@@ -841,7 +841,7 @@ def test_no_other_screen_grew_a_calendar_empty_state():
     """A household that connects nothing is completely unaffected: the word
     only appears in the two settings surfaces, not on Now, Plan, Shop or
     Cook."""
-    for name in ("index.html", "plan-week.html", "grocery.html", "kitchen.html", "cooker.html", "onboarding.html"):
+    for name in ("plan-week.html", "onboarding.html"):
         src = (_STATIC / name).read_text(encoding="utf-8").lower()
         assert "your calendar" not in src and "/api/calendar" not in src, name
     shell = (_STATIC / "shell.js").read_text(encoding="utf-8")

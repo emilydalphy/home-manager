@@ -25,10 +25,10 @@ onboarding.html checks — these pin the source text directly:
    while the flag is false, stopCookVoice's existing
    "only stop if there's an active session" check already covers it —
    nothing there needed to change, which this test pins.
-5. static/cooker.html (the legacy standalone page, unreachable from the
-   shell per CLAUDE.md/theme.css) is left alone but for a one-line
-   pointer comment at its own hands-free section, naming the constant
-   above.
+5. static/cooker.html, the legacy standalone page this used to also pin a
+   pointer-comment check against, is gone (design hygiene pass,
+   2026-09-12) — nothing live ever reached it, so its own copy of the
+   hands-free feature went with it.
 """
 from __future__ import annotations
 
@@ -37,7 +37,6 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text()
-COOKER_HTML = (REPO / "static" / "cooker.html").read_text()
 
 
 def _extract_function(name: str, source: str) -> str:
@@ -138,14 +137,3 @@ def test_stop_cook_voice_remains_a_safe_noop():
     fn = _extract_function("stopCookVoice", SHELL_JS)
     assert "cookState.voiceSession" in fn
     assert ".isActive()" in fn
-
-
-def test_cooker_html_points_at_the_shell_constant():
-    """
-    static/cooker.html is the legacy standalone page and still has its
-    own copy of the hands-free feature, but it is unreachable from the
-    live shell (confirmed via CLAUDE.md / theme.css: the shell no longer
-    routes to it). Rather than duplicate the gating there, it carries a
-    one-line pointer back to COOK_VOICE_ENABLED.
-    """
-    assert "COOK_VOICE_ENABLED" in COOKER_HTML
