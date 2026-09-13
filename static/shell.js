@@ -18120,10 +18120,16 @@
         }
       });
     }
+    // Both of these close the sheet before they go, like "See your week"
+    // above and the receipt cards' own View: activateTab only switches the
+    // panel underneath, and on a phone the sheet covers that panel — so
+    // without the close the tap looked like nothing (Emily, 2026-09-13,
+    // already on Shop with the sheet open: "I'm clicking 'open the list'
+    // and it's not bringing me anywhere").
     if (weekApproved) {
-      chips.push({ label: 'Open the list', onClick: function () { activateTab('grocery', true); } });
+      chips.push({ label: 'Open the list', onClick: function () { closeAskSheet(); activateTab('grocery', true); } });
     } else if (groceryAction) {
-      chips.push({ label: 'Plan my stops', onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); } });
+      chips.push({ label: 'Plan my stops', onClick: function () { closeAskSheet(); activateTab('grocery', true, { groScreen: 'plan' }); } });
     } else if (weekAction) {
       // The one wording for "there's a draft, go approve it". It used to
       // be shared with the pre-conversation quick actions; ASK_INTENTS
