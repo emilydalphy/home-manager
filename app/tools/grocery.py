@@ -1211,6 +1211,126 @@ def undo_carried_over_decision(item_id: int) -> dict:
     return {"item_id": item_id, "item": row["item"], "status": "carried"}
 
 
+# ---------- "I'll use something else instead" ----------
+# Loop Board, 2026-09-13 (Emily: "if we want to use an alternative that
+# should be a spot we can put it here too, for example, instead of fresh
+# oregano I'll use dry oregano"). A per-week swap, made while sorting the
+# list: the line becomes the alternative — or comes off, when the
+# alternative is already in the house — and the recipe's ingredient line
+# says "using dry oregano instead" when cooking (cooker.get_cooker_view).
+# Never a recipe edit, never an inventory record. The "have it already"
+# half of the same ticket is pre_shop.drop_grocery_item_pre_shop: a
+# soft-remove with an undo, listed on the wrap-up, and nothing written to
+# inventory (policy 2026-09-01 — nobody does inventory work to finish the
+# loop).
+
+
+def substitute_grocery_item(item_id: int, alternative: str, at_home: bool = False, author: str = "") -> dict:
+    """
+    Swap a grocery line for something else this week. The line is renamed
+    to `alternative` (its quantity kept as written — nobody can convert
+    fresh oregano into dry, so the number stays for the person to adjust)
+    and picks up the alternative's usual store if the line had none. With
+    `at_home`, the alternative is already in the house, so the line is
+    soft-removed as well (the same removal "have it already" makes —
+    reversible, and listed on the wrap-up). Either way the swap is recorded
+    against the week, so the recipe can say so when it is cooked. Raises
+    ValueError for an unknown line or a blank alternative.
+    """
+    alternative = " ".join((alternative or "").strip().split())
+    if not alternative:
+        raise ValueError("Say what to use instead.")
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id, item, quantity, status, store, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise ValueError(f"No grocery list item with id {item_id}.")
+    if row["status"] not in ("needed", "spice"):
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "unchanged": True}
+    plan_id = row["source_weekly_plan_id"]
+    if plan_id is None:
+        current = _weekly_plan._current_weekly_plan_row(conn)
+        plan_id = current["id"] if current else None
+    conn.execute(
+        "INSERT INTO grocery_substitutions (household_id, grocery_item_id, weekly_plan_id, original_item, alternative, at_home) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (household_id(), item_id, plan_id, row["item"], alternative, 1 if at_home else 0),
+    )
+    prefs = conn.execute(
+        "SELECT item, store FROM item_store_preferences WHERE household_id = ?", (household_id(),),
+    ).fetchall()
+    pref = next((p for p in prefs if _merge_key(p["item"]) == _merge_key(alternative)), None)
+    store = row["store"] or (pref["store"] if pref else "")
+    if at_home:
+        conn.execute(
+            "UPDATE grocery_items SET item = ?, store = ?, status = 'removed', removed_by = ?, "
+            "removed_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (alternative, store, acting_name(author) or "", item_id, household_id()),
+        )
+    else:
+        # A spice waiting unticked becomes a needed line: choosing what
+        # to buy instead is choosing to buy it.
+        conn.execute(
+            "UPDATE grocery_items SET item = ?, store = ?, status = 'needed' WHERE id = ? AND household_id = ?",
+            (alternative, store, item_id, household_id()),
+        )
+    conn.commit()
+    conn.close()
+    return {
+        "item_id": item_id, "item": alternative, "original_item": row["item"],
+        "at_home": bool(at_home), "status": "removed" if at_home else "needed",
+    }
+
+
+def undo_substitution(item_id: int) -> dict:
+    """Put a substituted line back under its original name (and back on the list, if the swap took it off)."""
+    conn = get_conn()
+    sub = conn.execute(
+        "SELECT id, original_item, at_home FROM grocery_substitutions WHERE household_id = ? AND grocery_item_id = ? "
+        "ORDER BY id DESC LIMIT 1",
+        (household_id(), item_id),
+    ).fetchone()
+    if sub is None:
+        conn.close()
+        return {"item_id": item_id, "unchanged": True}
+    row = conn.execute(
+        "SELECT status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()),
+    ).fetchone()
+    if row is not None:
+        if sub["at_home"] and row["status"] == "removed":
+            conn.execute(
+                "UPDATE grocery_items SET item = ?, status = 'needed', removed_by = '', removed_at = NULL "
+                "WHERE id = ? AND household_id = ?",
+                (sub["original_item"], item_id, household_id()),
+            )
+        else:
+            conn.execute(
+                "UPDATE grocery_items SET item = ? WHERE id = ? AND household_id = ?",
+                (sub["original_item"], item_id, household_id()),
+            )
+    conn.execute("DELETE FROM grocery_substitutions WHERE id = ?", (sub["id"],))
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": sub["original_item"], "status": "needed"}
+
+
+def substitutions_for_plan(plan_id: int | None) -> list[dict]:
+    """This week's swaps, for the cook view: [{original_item, alternative, at_home}]."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT original_item, alternative, at_home FROM grocery_substitutions "
+        "WHERE household_id = ? AND (weekly_plan_id IS NULL OR weekly_plan_id = ?) ORDER BY id",
+        (household_id(), plan_id),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def clear_grocery_list(status: str = "needed") -> dict:
     """
     Remove ALL items with the given status (default 'needed') in one shot —

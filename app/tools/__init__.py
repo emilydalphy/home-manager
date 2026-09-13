@@ -165,7 +165,10 @@ from .grocery import (  # noqa: F401
     remove_grocery_item,
     repair_grocery_quantities,
     set_aside_carried_over_items,
+    substitute_grocery_item,
+    substitutions_for_plan,
     undo_carried_over_decision,
+    undo_substitution,
     update_grocery_item,
 )
 # Holidays (Loop Board "Holidays: Pomona knows 12 October is coming...",

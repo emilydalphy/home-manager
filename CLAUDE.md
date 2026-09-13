@@ -371,6 +371,33 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
+  every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
+  time of writing.** Loop Board feature (Emily: "there should also be the
+  'have this already' option ... instead of fresh oregano I'll use dry
+  oregano"). Both verbs sit wherever an item is being sorted — the
+  one-at-a-time queue, the one-screen sort, and a LIST row's `⋯` (the
+  only place for a one-shop household, which never sees a sorting step).
+  - **"Have it" is the pre-shop drop, not the inventory route — and the
+    queue's existing "Have it" pill was moved off `/already-have` to say
+    so.** That route (`move_grocery_item_to_inventory`) writes a row to
+    `inventory_items`, and the ticket's own rule is policy 2026-09-01:
+    "have it already" is a per-week answer, never inventory work.
+    `drop_grocery_item_pre_shop` already was exactly that — soft-remove,
+    undo, listed on the wrap-up under "Already have", and a staple's line
+    dropped this way tells the staple "we have plenty". The
+    `/already-have` route and its handler stay for anything else.
+  - **"Use something else" is a per-WEEK record** (`grocery_substitutions`,
+    `grocery.substitute_grocery_item`): the line is renamed to the
+    alternative — quantity kept as written, since nobody can convert fresh
+    oregano into dry, so the number stays for the person to adjust — or
+    soft-removed when the alternative is at home; `get_cooker_view`
+    annotates every matching ingredient in that week's meals with
+    `substitute`, and `cookIngredientLabel` (the one place a cook-screen
+    ingredient is worded) appends "— using dry oregano instead". Not a
+    recipe edit: next week the recipe asks for fresh again. The existing
+    `log_cooking_deviation` / `recipe_notes` is a permanent note on the
+    recipe and was left alone for that reason.
 - **2026-09-13 — Spices this week: one opt-in section, the list assumes
   a spice rack. Branch `worktree-grocery-sorting-round`, NOT merged at
   the time of writing.** Loop Board improvement (Emily: "put all the

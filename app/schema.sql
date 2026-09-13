@@ -308,6 +308,26 @@ CREATE TABLE IF NOT EXISTS recipe_notes (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- "I'll use something else instead" on the grocery list (Loop Board,
+-- Emily, 2026-09-13: "instead of fresh oregano I'll use dry oregano"). One
+-- row per swap made while sorting the week's list: the line is renamed to
+-- the alternative (or taken off, when the alternative is already at home),
+-- and the recipe's ingredient line says so when cooking (get_cooker_view
+-- annotates matching ingredients with `substitute`). Per WEEK, not a
+-- recipe edit — next week the recipe asks for fresh oregano again. The
+-- original name is kept so an undo can put the line back exactly. See
+-- tools/grocery.py substitute_grocery_item.
+CREATE TABLE IF NOT EXISTS grocery_substitutions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    grocery_item_id INTEGER NOT NULL,
+    weekly_plan_id INTEGER,            -- the week it applies to; NULL = whatever week is current
+    original_item TEXT NOT NULL,
+    alternative TEXT NOT NULL,
+    at_home INTEGER NOT NULL DEFAULT 0, -- 1: the alternative is already in the house, so the line came off
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Loop Board: "Per-person taste learning + solo-night personalization".
 -- ADDITIVE on top of recipes.rating/feedback_notes, which stay exactly as
 -- they are — the household-level rating, and the fallback default for

@@ -2505,6 +2505,10 @@
     // open editors on a phone list is two places a half-typed quantity can
     // be lost.
     openRowId: null,
+    // The one row whose "Use something else" field is open (SORT, SORT
+    // ALL or a LIST row's ⋯), as a string id, or null. One at a time, for
+    // the same reason openRowId is.
+    substOpenId: null,
     inCartOpen: false,      // "In your cart · N" group on TRIP
     // How many things SORT set out to sort, so the progress line can say
     // "2 of 3" rather than counting down from a number nobody saw.
@@ -2995,6 +2999,14 @@
         e.preventDefault();
         panel.querySelector('[data-gro="stores-prompt-add"]').click();
       }
+      // Enter in a "What instead?" field is "Put it on the list" — the
+      // common case; "I have it" stays a tap.
+      if (e.target.classList && e.target.classList.contains('gro-subst-input')) {
+        e.preventDefault();
+        var substBtn = e.target.closest('.gro-subst');
+        substBtn = substBtn && substBtn.querySelector('[data-gro="subst-save"][data-have="0"]');
+        if (substBtn) substBtn.click();
+      }
     });
 
     groWireConnectivity();
@@ -3339,6 +3351,7 @@
     // straight away, an unrelated re-render is no longer a rare event. Same
     // rule as the foot's add row below.
     var storesTyped = groCaptureStoresPromptInput(body);
+    var substTyped = groCaptureSubstInput(body);
     if (step === 'carry') body.innerHTML = groCarryHtml(data);
     else if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'sorthow') body.innerHTML = groSortHowHtml(data);
@@ -3348,6 +3361,7 @@
     else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
     else body.innerHTML = groListHtml(data);
     groRestoreStoresPromptInput(body, storesTyped);
+    groRestoreSubstInput(body, substTyped);
     // The empty moment fills the panel and centres itself (shell.css) —
     // the body has to be told it is carrying one.
     body.classList.toggle('is-empty', !!body.querySelector('.empty-moment'));
@@ -3374,6 +3388,23 @@
   function groRestoreStoresPromptInput(body, saved) {
     if (!saved || !saved.value) return;
     var input = body.querySelector('#gro-stores-prompt-input');
+    if (!input) return;
+    input.value = saved.value;
+    if (!saved.focused) return;
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
+  }
+
+  // The "What instead?" field, same rule: a re-render the person didn't
+  // ask for must not eat a half-typed "dry oregano".
+  function groCaptureSubstInput(body) {
+    var input = body.querySelector('.gro-subst-input');
+    if (!input) return null;
+    return { id: input.id, value: input.value, focused: document.activeElement === input };
+  }
+  function groRestoreSubstInput(body, saved) {
+    if (!saved || !saved.value) return;
+    var input = body.querySelector('#' + saved.id);
     if (!input) return;
     input.value = saved.value;
     if (!saved.focused) return;
@@ -3901,6 +3932,12 @@
         '<button type="button" class="gro-pill gro-pill-else" data-gro="row-exclude" data-id="' + id + '" ' +
           'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
       '</div>' +
+      // The two answers sorting offers, here too — for a one-shop
+      // household this row is the only place they can be given.
+      '<div class="gro-pills open gro-rowmenu-answers">' +
+        groHaveItPillHtml(it) + groSubstPillHtml(it) +
+      '</div>' +
+      (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
       '<div class="gro-rowmenu-foot">' +
         // A tap on a thing you buy is how a staple gets made without a
         // form (the other way is telling the assistant). Hidden once it
@@ -4059,12 +4096,19 @@
         var chips = pillStores.map(function (n) {
           return groSortAllChip(id, it.item, n, n, picked === n);
         }).join('') + groSortAllChip(id, it.item, '', 'Any', picked === '');
+        // "Have it" and "Use something else" ride on the same row. Neither
+        // is staged: both take the row off this screen (or rename it), so
+        // they write at once and the picks made so far stay in
+        // groceryState.sortAllPicks across the re-render.
         return '<div class="gro-sortall-row" data-row-for="' + id + '">' +
             '<div class="gro-sortall-head">' +
               '<span class="gro-sortall-name">' + escapeHtml(it.item) + '</span>' +
               (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
             '</div>' +
-            '<div class="gro-pills open gro-sortall-pills">' + chips + '</div>' +
+            '<div class="gro-pills open gro-sortall-pills">' + chips +
+              groHaveItPillHtml(it) + groSubstPillHtml(it) +
+            '</div>' +
+            (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
           '</div>';
       }).join('') +
     '</div>';
@@ -4077,6 +4121,53 @@
       'aria-label="' + escapeHtml(itemName) + ': ' +
         (store ? escapeHtml(store) : 'no particular shop') + '">' +
       escapeHtml(label) + '</button>';
+  }
+
+  // ---------- "Have it already" / "Use something else" ----------
+  // Emily, 2026-09-13: "there should also be the 'have this already'
+  // option ... and if we want to use an alternative that should be a spot
+  // we can put it here too, for example, instead of fresh oregano I'll use
+  // dry oregano." Both live wherever an item is being sorted — the queue,
+  // the one-screen sort, and a LIST row's ⋯ (the only place for a one-shop
+  // household, which never sees a sorting step) — and both undo from the
+  // toast they leave.
+  //
+  // "Have it" is a per-week answer, not an inventory record (policy
+  // 2026-09-01: nobody does inventory work to finish the loop): it is the
+  // pre-shop "Drop it" — a soft-remove, listed on the wrap-up under
+  // "Already have" with its own undo — and never /already-have, which
+  // writes to the kitchen's inventory. A staple's line dropped this way
+  // tells the staple "we have plenty" (drop_grocery_item_pre_shop).
+  //
+  // "Use something else" opens one small field under the item: what
+  // instead, then either "Put it on the list" (the line becomes the
+  // alternative) or "I have it" (the swap is noted and the line comes
+  // off). The recipe's ingredient line says "using X instead" when it is
+  // cooked (cookIngredientLabel).
+  function groSubstFieldHtml(it) {
+    var id = String(it.id);
+    return '<div class="gro-subst" data-subst-for="' + id + '">' +
+      '<input type="text" class="gro-rowmenu-input gro-subst-input" id="gro-subst-' + id + '" ' +
+        'placeholder="What instead?" aria-label="What to use instead of ' + escapeHtml(it.item) + '" />' +
+      '<div class="gro-subst-actions">' +
+        '<button type="button" class="gro-ps-btn gro-ps-btn-keep" data-gro="subst-save" data-have="0" ' +
+          'data-id="' + id + '" data-name="' + escapeHtml(it.item) + '">Put it on the list</button>' +
+        '<button type="button" class="gro-ps-btn gro-ps-btn-drop" data-gro="subst-save" data-have="1" ' +
+          'data-id="' + id + '" data-name="' + escapeHtml(it.item) + '">I have it</button>' +
+      '</div>' +
+    '</div>';
+  }
+  function groHaveItPillHtml(it, extraClass) {
+    var id = String(it.id);
+    return '<button type="button" class="gro-pill gro-pill-have' + (extraClass || '') + '" data-gro="have-it" data-id="' + id + '" ' +
+      'data-name="' + escapeHtml(it.item) + '" aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>';
+  }
+  function groSubstPillHtml(it, extraClass) {
+    var id = String(it.id);
+    var open = groceryState.substOpenId === id;
+    return '<button type="button" class="gro-pill gro-pill-else' + (extraClass || '') + (open ? ' gro-pill-on' : '') + '" ' +
+      'data-gro="subst-open" data-id="' + id + '" aria-expanded="' + open + '" ' +
+      'aria-label="Use something else instead of ' + escapeHtml(it.item) + '">Use something else</button>';
   }
 
   // ---------- SORT ----------
@@ -4108,17 +4199,19 @@
           }).join('') +
           '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="" ' +
             'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
-          // Secondary action, same backend path as "Have it" always had — a
-          // store pill sorts the item, this takes it off the list entirely
-          // because it turns out no store is needed.
-          '<button type="button" class="gro-pill gro-pill-have" data-gro="already-have" data-id="' + id + '" ' +
-            'aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>' +
+          // Secondary actions: a store pill sorts the item; "Have it" takes
+          // it off the list because it turns out nothing needs buying (a
+          // per-week answer, no inventory — see groHaveItPillHtml); "Use
+          // something else" opens the field below.
+          groHaveItPillHtml(it) +
+          groSubstPillHtml(it) +
           // Covers the other reason a thing leaves the sort queue without a
           // store: it's being picked up on a trip that isn't one of this
           // household's stores. Same /exclude route as ever.
           '<button type="button" class="gro-pill gro-pill-else" data-gro="triage-exclude" data-id="' + id + '" ' +
             'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
         '</div>' +
+        (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
       '</div>' +
       '<p class="gro-sort-progress">' + position + ' of ' + total + '</p>' +
       // The quiet way out: the list, with these under the TO SORT badge as
@@ -5330,6 +5423,7 @@
       // ----- the LIST row's quiet ⋯ (see groRowMenuHtml) -----
       case 'row-menu':
         groceryState.openRowId = groceryState.openRowId === id ? null : id;
+        groceryState.substOpenId = null;
         renderGrocery();
         return;
 
@@ -5654,9 +5748,79 @@
         return;
       }
 
-      // "Wait, I already have this" is a natural thing to realize mid-sort.
-      // Same backend path "Have it" always used; it takes the item off the
-      // list into the kitchen and advances like a store pick does.
+      // "Wait, I already have this" — on the queue, the one-screen sort or
+      // a LIST row's ⋯. The pre-shop drop (soft-remove, undo, on the
+      // wrap-up), never an inventory write — see groHaveItPillHtml.
+      case 'have-it': {
+        var haveName = el.dataset.name || 'That';
+        var haveId = id;
+        var onSortScreen = GRO_SORT_STEPS.indexOf(groceryState.step) !== -1;
+        el.disabled = true;
+        groceryState.openRowId = null;
+        groceryState.substOpenId = null;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + haveId + '/pre-shop', { decision: 'drop', author: 'user' });
+        }, "Couldn't update that — try again.").then(function (ok) {
+          if (!ok) return;
+          if (onSortScreen) groAdvanceSort();
+          showToast(haveName + ' off the list — you have it', {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPostEmpty('/api/grocery-list/' + haveId + '/pre-shop-undo');
+              }, "Couldn't undo that — try again.");
+            }
+          });
+        });
+        return;
+      }
+
+      case 'subst-open':
+        groceryState.substOpenId = groceryState.substOpenId === id ? null : id;
+        renderGrocery();
+        if (groceryState.substOpenId === id) {
+          var substInput = groPanel() && groPanel().querySelector('#gro-subst-' + id);
+          if (substInput) substInput.focus();
+        }
+        return;
+
+      case 'subst-save': {
+        var substPanel = groPanel();
+        var substField = substPanel && substPanel.querySelector('#gro-subst-' + id);
+        var alternative = substField ? substField.value.trim() : '';
+        if (!alternative) { if (substField) substField.focus(); return; }
+        var substHave = el.dataset.have === '1';
+        var substName = el.dataset.name || 'That';
+        var substId = id;
+        var onSort = GRO_SORT_STEPS.indexOf(groceryState.step) !== -1;
+        el.disabled = true;
+        groceryState.openRowId = null;
+        groceryState.substOpenId = null;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + substId + '/substitute', {
+            alternative: alternative, at_home: substHave, author: 'user'
+          });
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (!ok) return;
+          // The renamed line is still in the queue if it has no store;
+          // with "I have it" it is gone, and the queue moves on.
+          if (onSort && substHave) groAdvanceSort();
+          showToast(substHave
+            ? substName + ' off the list — using ' + alternative + ' instead'
+            : alternative + ' instead of ' + substName, {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPostEmpty('/api/grocery-list/' + substId + '/substitute-undo');
+              }, "Couldn't undo that — try again.");
+            }
+          });
+        });
+        return;
+      }
+
+      // The kitchen-inventory version, kept for anything else that still
+      // calls it; the sorting screens use 'have-it' above.
       case 'already-have':
         el.disabled = true;
         groDo(function () {
@@ -13435,7 +13599,12 @@
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
     var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
-    return ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    var label = ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    // "I'll use something else instead", said while sorting the week's
+    // list (Shop) — the recipe still asks for fresh oregano, and this is
+    // where the cook hears that dry is what's going in.
+    if (ing && ing.substitute) label += ' — using ' + ing.substitute + ' instead';
+    return label;
   }
 
   // The words that would count as this ingredient being named in a step.

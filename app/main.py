@@ -726,6 +726,12 @@ class SpiceTickRequest(BaseModel):
     ticked: bool = True
 
 
+class SubstituteRequest(BaseModel):
+    alternative: str
+    at_home: bool = False
+    author: str = ""
+
+
 class StapleAddRequest(BaseModel):
     item: str
     quantity: str = ""
@@ -3654,6 +3660,36 @@ def tick_spice_view(item_id: int, req: SpiceTickRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Spice tick failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/substitute")
+def substitute_grocery_item_view(item_id: int, req: SubstituteRequest):
+    """
+    "I'll use something else instead" while sorting the list: the line
+    becomes the alternative (or comes off, with at_home), and the recipe's
+    ingredient line says so when cooking. Undo via /substitute-undo.
+    """
+    try:
+        result = tools.substitute_grocery_item(item_id, req.alternative, at_home=req.at_home, author=req.author)
+    except ValueError as e:
+        if "No grocery list item" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery substitution failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/substitute-undo")
+def undo_substitute_grocery_item_view(item_id: int):
+    """Undo a substitution — the line goes back to its original name, and back on the list if the swap took it off."""
+    try:
+        result = tools.undo_substitution(item_id)
+    except Exception as e:
+        logger.exception("Grocery substitution undo failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 
