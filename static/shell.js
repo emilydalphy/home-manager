@@ -16805,7 +16805,10 @@
       // moves the week's "N of M cooked" everywhere else that counts it.
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
+      // The same two lines the focused screen's tick uses (cookFocusCheckMeal):
+      // a cook gets "Logged…", an un-cook says it saved (S10).
       if (justCooked) toastMealLogged();
+      else toastSaved();
     } catch (err) {
       el.disabled = false;
       showToast('That didn’t save — try again.');

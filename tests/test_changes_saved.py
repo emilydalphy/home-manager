@@ -265,22 +265,26 @@ function toastMealLogged() { TOASTS.push({ msg: 'LOGGED' }); }
 function cookPost(url, body) { POSTS.push({ url: url, body: body }); return Promise.resolve({ items: [] }); }
 function el(attrs) { return { disabled: false, getAttribute: function (n) { return attrs[n] === undefined ? null : attrs[n]; } }; }
 var document = { querySelector: function () { return { value: '2 cups' }; } };
-""" + _function("cookCheckPrep") + _function("cookResolveAttention") + _function("cookLogUsage") + _function("cookFocusCheckMeal") + """
+""" + _function("cookCheckPrep") + _function("cookResolveAttention") + _function("cookLogUsage") + _function("cookFocusCheckMeal") + _function("cookCheckMeal") + """
 (async function () {
   await cookCheckPrep(el({ 'data-prep-id': '4', 'data-next': 'done' }));
   await cookResolveAttention(el({ 'data-attn-id': '9', 'data-status': 'used' }));
   await cookLogUsage(el({ 'data-attn-id': '9' }));
   await cookFocusCheckMeal(el({ 'data-entry-id': '12', 'data-next': 'pending' }));
+  // The Cook root's own row toggle, un-cooking — the same decision from
+  // the other screen (found by the branch's verifier, 2026-09-13).
+  await cookCheckMeal(el({ 'data-entry-id': '12', 'data-next': 'pending', 'aria-label': 'Mark not cooked' }));
   var uncook = TOASTS.map(function (t) { return t.msg; });
   TOASTS.length = 0;
   await cookFocusCheckMeal(el({ 'data-entry-id': '12', 'data-next': 'done' }));
-  console.log(JSON.stringify({ four: uncook, cooked: TOASTS.map(function (t) { return t.msg; }) }));
+  await cookCheckMeal(el({ 'data-entry-id': '12', 'data-next': 'done', 'aria-label': 'Mark cooked' }));
+  console.log(JSON.stringify({ five: uncook, cooked: TOASTS.map(function (t) { return t.msg; }) }));
 })();
 """
     out = _node(script)
-    assert out["four"] == ["Changes saved"] * 4
-    # "Mark it cooked" keeps its own, richer line — it is not replaced.
-    assert out["cooked"] == ["LOGGED"]
+    assert out["five"] == ["Changes saved"] * 5
+    # "Mark it cooked" keeps its own, richer line on both screens — it is not replaced.
+    assert out["cooked"] == ["LOGGED", "LOGGED"]
 
 
 # ---------- the chat ----------
