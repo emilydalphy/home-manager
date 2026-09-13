@@ -455,6 +455,120 @@ def get_household_rhythm() -> dict:
     }
 
 
+def save_rhythm_answers(
+    lunch_location: dict[str, str] | None = None,
+    meals_together: str = "",
+    cooking_role: str = "",
+    cooking_role_who: str = "",
+    dinner_window: str = "",
+    planning_anchor: str = "",
+    leftovers_stance: str = "",
+    prep_days: list | None = None,
+    source: str = "onboarding",
+) -> dict:
+    """
+    Save any subset of the locked household-rhythm questions in ONE
+    transaction — /api/onboarding/rhythm's whole job, one call.
+
+    Defect hunt, 2026-09-13: the route used to call set_lunch_location,
+    set_meals_together, set_cooking_role, ... one at a time, each opening
+    its own connection and committing on the spot. Every one of those
+    setters validates only its OWN value, so a bad field partway through
+    (an invalid cooking_role, a prep day over MAX_PREP_DAYS) raised after
+    the fields before it had already landed — a half-saved rhythm with no
+    way to tell, from the household's side, which answers actually took.
+
+    So: every field is validated here FIRST, with no write yet — the same
+    checks the individual setters make, just made before touching the
+    database rather than as each write happens — and only once everything
+    given is valid does a single connection open, write every field, and
+    commit once. One bad field now refuses the whole call and changes
+    nothing, the same guarantee any one setter already gives for itself.
+
+    The individual setters (set_lunch_location, set_meals_together, ...)
+    are unchanged and still the right call for a single chat correction —
+    this is only for a caller (the onboarding route) saving several
+    fields as one answer.
+    """
+    lunch_location = lunch_location or {}
+    lunch_writes: list[tuple[str, str]] = []  # (member_name, location)
+    for member_name, location in lunch_location.items():
+        member_name = (member_name or "").strip()
+        if not member_name:
+            continue
+        if location not in LUNCH_LOCATIONS:
+            raise ValueError(f"location must be one of {LUNCH_LOCATIONS}, not {location!r}.")
+        lunch_writes.append((member_name, location))
+
+    if meals_together and meals_together not in MEALS_TOGETHER_OPTIONS:
+        raise ValueError(f"value must be one of {MEALS_TOGETHER_OPTIONS}, not {meals_together!r}.")
+
+    cooking_role_write_who = ""
+    if cooking_role:
+        if cooking_role not in COOKING_ROLES:
+            raise ValueError(f"value must be one of {COOKING_ROLES}, not {cooking_role!r}.")
+        cooking_role_write_who = (cooking_role_who or "").strip()
+        if cooking_role == "one_person" and not cooking_role_write_who:
+            raise ValueError("who is required when value='one_person'.")
+        if cooking_role != "one_person":
+            cooking_role_write_who = ""
+
+    if dinner_window and dinner_window not in DINNER_WINDOWS:
+        raise ValueError(f"value must be one of {DINNER_WINDOWS}, not {dinner_window!r}.")
+
+    if planning_anchor and planning_anchor not in PLANNING_ANCHORS:
+        raise ValueError(f"value must be one of {PLANNING_ANCHORS}, not {planning_anchor!r}.")
+
+    if leftovers_stance and leftovers_stance not in LEFTOVERS_STANCES:
+        raise ValueError(f"value must be one of {LEFTOVERS_STANCES}, not {leftovers_stance!r}.")
+
+    # _normalize_prep_days raises on anything invalid and has no side
+    # effect of its own — exactly the "validate without writing" this
+    # whole function needs, already built for set_prep_days.
+    normalized_prep_days = _normalize_prep_days(prep_days) if prep_days is not None else None
+
+    # -- every field above is valid; now the one write, one commit. --
+    logged: list[str] = []
+    conn = get_conn()
+    try:
+        for member_name, location in lunch_writes:
+            _upsert(conn, member_name, "", "lunch_location", location, "", source)
+            logged.append(f"rhythm:lunch_location:{member_name}")
+        if meals_together:
+            _upsert(conn, "", "", "meals_together", meals_together, "", source)
+            logged.append("rhythm:meals_together")
+        if cooking_role:
+            _upsert(conn, "", "", "cooking_role", cooking_role, cooking_role_write_who, source)
+            logged.append("rhythm:cooking_role")
+        if dinner_window:
+            _upsert(conn, "", "", "dinner_window", dinner_window, "", source)
+            logged.append("rhythm:dinner_window")
+        if planning_anchor:
+            _upsert(conn, "", "", "planning_anchor", planning_anchor, "", source)
+            logged.append("rhythm:planning_anchor")
+        if leftovers_stance:
+            _upsert(conn, "", "", "leftovers_stance", leftovers_stance, "", source)
+            logged.append("rhythm:leftovers_stance")
+        if normalized_prep_days is not None:
+            _upsert(conn, "", "", "prep_days", json.dumps(normalized_prep_days), "", source)
+            logged.append("rhythm:prep_days")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    # Event logging (the Memory view's growth counter) is its own
+    # connection, same as every individual setter already does it — a
+    # miscount there is not the half-save this function exists to close,
+    # so it stays outside the transaction above rather than complicating it.
+    for field in logged:
+        _household._log_preference_event(field, "write")
+
+    return get_household_rhythm()
+
+
 def effective_lunch_location(member_name: str, weekday: str) -> str | None:
     """
     A member's lunch location for one specific weekday: the override for

@@ -1027,30 +1027,30 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
     etc.) — this endpoint is just the structured-form path onto the same
     storage, so an onboarding answer and a later chat correction are the
     same write.
+
+    tools.save_rhythm_answers does the actual work in one transaction —
+    see its docstring (defect hunt, 2026-09-13) for why this used to call
+    the individual setters one at a time and half-save a rhythm when a
+    later field was invalid.
     """
     try:
-        for member_name, location in req.lunch_location.items():
-            member_name = (member_name or "").strip()
-            if member_name and location in tools.LUNCH_LOCATIONS:
-                tools.set_lunch_location(member_name, location, source="onboarding")
-        if req.meals_together:
-            tools.set_meals_together(req.meals_together, source="onboarding")
-        if req.cooking_role:
-            tools.set_cooking_role(req.cooking_role, who=req.cooking_role_who, source="onboarding")
-        if req.dinner_window:
-            tools.set_dinner_window(req.dinner_window, source="onboarding")
-        if req.planning_anchor:
-            tools.set_planning_anchor(req.planning_anchor, source="onboarding")
-        if req.leftovers_stance:
-            tools.set_leftovers_stance(req.leftovers_stance, source="onboarding")
-        if req.prep_days is not None:
-            tools.set_prep_days(req.prep_days, source="onboarding")
+        result = tools.save_rhythm_answers(
+            lunch_location=req.lunch_location,
+            meals_together=req.meals_together,
+            cooking_role=req.cooking_role,
+            cooking_role_who=req.cooking_role_who,
+            dinner_window=req.dinner_window,
+            planning_anchor=req.planning_anchor,
+            leftovers_stance=req.leftovers_stance,
+            prep_days=req.prep_days,
+            source="onboarding",
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Onboarding rhythm save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return tools.get_household_rhythm()
+    return result
 
 
 @app.get("/api/members/{name}/share-link")
