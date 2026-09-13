@@ -9684,39 +9684,273 @@
   }
 
   // ---------- MEAL ----------
+  // Emily picked "Meal · B · The clock" from the Beyond-lists canvas on
+  // 2026-09-12: the meal screen is a spruce hero (the dish, when it's on
+  // the table, when to start, who's cooking) and then the cook as a clock —
+  // one stop per step, each with the time it lands at, "Everything out"
+  // first. The chips card ("The plate") and the bullet-list recipe card
+  // that sat under the hero until then are gone; the thaw note moved into
+  // the hero's one line.
+  //
+  // The stops here and cook mode's steps are the SAME list — both read
+  // cookMeal.instructions off the cooker view (cookStepStageHtml walks the
+  // same array one step at a time), and "Everything out" is cook mode's
+  // own Before-you-start ticklist (cookGetOutHtml) said in one line. That
+  // is why the stops are built from the Cook view's card rather than from
+  // the week entry: a step list that differed from the one you cook by
+  // would be the app contradicting itself one tap apart.
 
-  var PLATE_GROUP_LABELS = { protein: 'protein', carb: 'carb', vegetable: 'veg' };
-
-  // Chips for the food groups and sides, then one line for the thaw. Both
-  // are read, never guessed: the groups are the ones the entry recorded
-  // (plates.py never invents them either), and the thaw line is the plan's
-  // own defrost task — the same prep_tasks row Today's fridge move ticks.
-  // The line used to open by restating the chips ("Protein, veg, carb.");
-  // that half was cut on 2026-09-11 (copy cleanse) — the chips already say it.
-  // A grab-and-go snack has nothing to say here — no food groups recorded,
-  // no added sides, no thaw task — and "Nothing to thaw." on its own isn't
-  // information, it's an empty card wearing a caption. Hide rather than
-  // show it; a real meal (which always carries at least a food-group read)
-  // never trips this.
-  function plateCardIsEmpty(entry) {
-    return !((entry.food_groups && entry.food_groups.length) ||
-      (entry.sides && entry.sides.length) ||
-      (entry.defrost && entry.defrost.note));
+  // ----- words for numbers, time as a person says it -----
+  var NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+    'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
+    'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  var TENS_WORDS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  // 0–99 in words ("forty-five"); anything bigger stays a numeral.
+  function numberWord(n) {
+    n = Math.round(Number(n));
+    if (!isFinite(n) || n < 0 || n > 99) return String(n);
+    if (n < 20) return NUMBER_WORDS[n];
+    var tens = Math.floor(n / 10), ones = n % 10;
+    return TENS_WORDS[tens] + (ones ? '-' + NUMBER_WORDS[ones] : '');
+  }
+  // "six stops", "one stop", "14 stops" — words up to twelve, digits past
+  // that (the design's rule; nobody reads "fourteen stops" faster).
+  function countInWords(n, noun) {
+    n = Math.round(Number(n)) || 0;
+    var word = n <= 12 ? numberWord(n) : String(n);
+    return word + ' ' + noun + (n === 1 ? '' : 's');
+  }
+  // "thirty minutes", "an hour", "an hour and a half", "two hours and ten
+  // minutes" — the eyebrow's number, said aloud. Never seconds.
+  function minutesInWords(total) {
+    total = Math.round(Number(total)) || 0;
+    if (total < 60) return numberWord(total) + ' minute' + (total === 1 ? '' : 's');
+    var h = Math.floor(total / 60), m = total % 60;
+    var hours = h === 1 ? 'an hour' : numberWord(h) + ' hours';
+    if (!m) return hours;
+    if (m === 30) return h === 1 ? 'an hour and a half' : numberWord(h) + ' and a half hours';
+    if (m === 15) return hours + ' and a quarter';
+    return hours + ' and ' + numberWord(m) + ' minute' + (m === 1 ? '' : 's');
+  }
+  // Minutes since midnight -> "6:05", the same shape as get_week_menu's
+  // slot_times and moves.py's _clock (no am/pm — the slot already says).
+  function clockLabel(mins) {
+    if (mins === null || mins === undefined || !isFinite(mins)) return '';
+    mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+    var h = Math.floor(mins / 60) % 12 || 12;
+    var m = mins % 60;
+    return h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  // "half six", "a quarter past seven", "seven", "twenty to seven" — the
+  // hero's "On the table by …" (DESIGN_SYSTEM §8: time as a person says
+  // it, not a timestamp). Off the five-minute grid it falls back to the
+  // clock ("6:07"), since "seven past six" is not something anyone says.
+  function spokenTime(mins) {
+    if (mins === null || mins === undefined || !isFinite(mins)) return '';
+    mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+    var h = Math.floor(mins / 60), m = mins % 60;
+    var hourWord = function (hh) { return numberWord(hh % 12 || 12); };
+    if (m === 0) return h % 24 === 12 ? 'noon' : hourWord(h);
+    if (m % 5) return clockLabel(mins);
+    if (m === 15) return 'a quarter past ' + hourWord(h);
+    if (m === 30) return 'half ' + hourWord(h);
+    if (m === 45) return 'a quarter to ' + hourWord(h + 1);
+    if (m < 30) return numberWord(m) + ' past ' + hourWord(h);
+    return numberWord(60 - m) + ' to ' + hourWord(h + 1);
+  }
+  // get_week_menu's slot_times ("8:00", "12:30", "6:30", or "noon") back
+  // into minutes since midnight. The label carries no am/pm on purpose —
+  // moves.py's _clock says the time the way a person does — so the slot
+  // supplies it: breakfast is the morning, everything else the afternoon
+  // or evening. Null when the label is missing or unreadable.
+  function slotTableMinutes(times, slot) {
+    var label = times && times[slot];
+    if (isSnackSlot(slot)) label = times && times.snack;
+    if (!label) return null;
+    if (label === 'noon') return 12 * 60;
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(label).trim());
+    if (!m) return null;
+    var h = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+    if (h === 12) h = slot === 'breakfast' ? 0 : 12;
+    else if (slot !== 'breakfast' && h < 12) h += 12;
+    return h * 60 + mm;
   }
 
-  function plateCardHtml(entry) {
-    var groups = (entry.food_groups || [])
-      .map(function (g) { return PLATE_GROUP_LABELS[g] || g; });
-    var chips = groups.map(capitalizeFirst)
-      .concat(((entry.sides) || []).map(function (s) { return s.name; }));
-    var line = entry.defrost && entry.defrost.note
-      ? entry.defrost.note.replace(/\.?$/, '.')
-      : 'Nothing to thaw.';
-    return '<div class="shell-card wk-card">' +
-      '<div class="wk-card-title">The plate</div>' +
-      chipsRowHtml(chips) +
-      '<div class="wk-card-line">' + escapeHtml(line) + '</div>' +
-    '</div>';
+  // ----- the recipe's own numbers -----
+  // Total minutes for the cook: prep + cook off the cooker-view card (the
+  // same two fields moves.py adds up for "Start by 5:35"), a plain
+  // `minutes`, or the week entry's "35 min" meta. Null when nothing says.
+  function mealTotalMinutes(meal) {
+    if (!meal) return null;
+    var total = (Number(meal.prep_time_minutes) || 0) + (Number(meal.cook_time_minutes) || 0);
+    if (!total && meal.minutes) total = Number(meal.minutes) || 0;
+    if (!total && typeof meal.meta === 'string') {
+      var m = /^(\d+)\s*min/.exec(meal.meta);
+      if (m) total = parseInt(m[1], 10);
+    }
+    return total > 0 ? total : null;
+  }
+  // Per-step minutes, when a recipe ever carries them (`step_minutes`, one
+  // number per instruction). No recipe does today — recipes.instructions_
+  // json is a list of strings and nothing else — so this is the rule
+  // written down for the day one does, not a path that runs.
+  function mealStepMinutes(meal) {
+    var steps = (meal && meal.instructions) || [];
+    var mins = meal && meal.step_minutes;
+    if (!Array.isArray(mins) || mins.length !== steps.length || !steps.length) return null;
+    var out = mins.map(function (x) { return Number(x); });
+    if (out.some(function (x) { return !isFinite(x) || x < 0; })) return null;
+    if (!out.some(function (x) { return x > 0; })) return null;
+    return out;
+  }
+
+  // ----- a step as a stop -----
+  // Words a title should not end on: "Heat the oil in" is not a stop.
+  var STOP_TITLE_TAIL = /^(a|an|the|in|on|of|to|and|or|with|for|at|until|over|into|then|but|from|onto|under|about|by|as|so|if|while|till|through)$/i;
+  // The step's first verb phrase as the stop's title — the words up to its
+  // first comma or full stop when that is four words or fewer (and the
+  // rest of the step as its one line), else its first three words, fewer
+  // if that would end on a joining word (and the whole step as the line).
+  // Sentence case for both; nothing lowercased, since "Parmesan" is a name.
+  function stopTitleSplit(step) {
+    var text = String(step || '').replace(/\s+/g, ' ').trim();
+    if (!text) return { title: '', line: '' };
+    // A full stop inside a number ("1.5 cups") is not the end of a phrase.
+    var cut = text.search(/[,;:!?]|\.(?!\d)|\s[–—-]\s/);
+    var head = cut === -1 ? text : text.slice(0, cut);
+    var headWords = head.trim().split(' ');
+    var title, rest;
+    if (headWords.length <= 4 && cut !== -1) {
+      title = head.trim();
+      rest = text.slice(cut).replace(/^[\s,.;:!?–—-]+/, '');
+    } else if (headWords.length <= 4) {
+      title = head.trim();
+      rest = '';
+    } else {
+      // A long opening clause: the title is its first three words (two
+      // when the third is a joining word — "Stir-fry broccoli and" is not
+      // a stop) and the line is the WHOLE step. Cutting the clause in two
+      // would leave a line beginning mid-phrase ("and carrots, cook until
+      // tender") — the few repeated words read better than that.
+      var n = 3;
+      while (n > 2 && STOP_TITLE_TAIL.test(headWords[n - 1])) n -= 1;
+      title = headWords.slice(0, n).join(' ');
+      rest = text;
+    }
+    title = title.replace(/[.,;:!?]+$/, '');
+    return { title: capitalizeFirst(title), line: capitalizeFirst(rest.trim()) };
+  }
+  // "steak · broccoli · carrots" — the ingredients as names only, each
+  // shorn of its prep note ("Baby spinach, chopped" -> "Baby spinach").
+  // The amounts live one tap in (mealStopOutHtml), in a person's units.
+  function ingredientNamesLine(ings) {
+    return (ings || []).map(function (ing) {
+      return String((ing && ing.item) || '').split(',')[0].trim();
+    }).filter(Boolean).join(' · ');
+  }
+
+  // ----- the clock itself -----
+  // mealClockStops(meal, household) -> [{ time, minutes, title, line,
+  // estimated, kind }]. Pure: everything it says is read off `meal` (the
+  // cooker-view card, or anything with the same fields) and `household`
+  // ({ tableMinutes }: when this slot lands, minutes since midnight).
+  //
+  // The timing rule, in one place:
+  //   start = table time − the recipe's total minutes (prep + cook — the
+  //           arithmetic moves.py's "Start by 5:35" already does).
+  //   The first stop is "Everything out", at the start.
+  //   Then one stop per instruction. A recipe that says how long each step
+  //   takes (step_minutes) gets exact times, each stop at the start plus
+  //   the steps before it, nothing rounded. No recipe does today, so the
+  //   stops are SPREAD evenly from the start to the table time — the last
+  //   one landing on the table — every time rounded to the nearest five
+  //   minutes, and each stop marked `estimated` so the eyebrow can say
+  //   "About". Never seconds.
+  //   No total minutes, or no table time: the stops with no times at all.
+  function mealClockStops(meal, household) {
+    var steps = (meal && meal.instructions) || [];
+    var ings = (meal && meal.ingredients) || [];
+    var stops = [];
+    if (ings.length) {
+      stops.push({ kind: 'out', title: 'Everything out', line: ingredientNamesLine(ings),
+        time: null, minutes: null, estimated: false });
+    }
+    steps.forEach(function (s) {
+      var split = stopTitleSplit(s);
+      stops.push({ kind: 'step', title: split.title, line: split.line,
+        time: null, minutes: null, estimated: false });
+    });
+    if (!stops.length) return stops;
+
+    var table = household && typeof household.tableMinutes === 'number' && isFinite(household.tableMinutes)
+      ? household.tableMinutes : null;
+    var perStep = mealStepMinutes(meal);
+    var total = perStep
+      ? perStep.reduce(function (a, b) { return a + b; }, 0)
+      : mealTotalMinutes(meal);
+    if (table === null || !total) return stops;
+
+    var start = table - total;
+    if (perStep) {
+      var at = start;
+      var stepPos = 0;
+      stops.forEach(function (stop) {
+        stop.minutes = at;
+        stop.time = clockLabel(at);
+        if (stop.kind === 'step') { at += perStep[stepPos]; stepPos += 1; }
+      });
+      return stops;
+    }
+
+    var n = stops.length;
+    stops.forEach(function (stop, i) {
+      var raw = n === 1 ? start : start + (total * i) / (n - 1);
+      var mins = i === n - 1 && n > 1 ? table : Math.round(raw / 5) * 5;
+      stop.minutes = mins;
+      stop.time = clockLabel(mins);
+      stop.estimated = true;
+    });
+    return stops;
+  }
+
+  // "Thirty minutes, six stops" / "About thirty minutes, six stops" (the
+  // times are spread, not the recipe's own) / "Six stops" (no minutes on
+  // record). Words, not digits, up to twelve.
+  function mealClockEyebrow(stops, total) {
+    if (!stops.length) return '';
+    var count = countInWords(stops.length, 'stop');
+    if (!total) return capitalizeFirst(count);
+    var estimated = stops.some(function (s) { return s.estimated; });
+    return capitalizeFirst((estimated ? 'about ' : '') + minutesInWords(total) + ', ' + count);
+  }
+
+  // ----- who's cooking -----
+  // The one household fact that names a cook: cooking_role = one person,
+  // with a name (rhythm.py's set_cooking_role). Turns, whoever's free, or
+  // unanswered all mean nobody in particular, and then the chip is left
+  // off rather than guessed. Read off /api/memory's rhythm, fetched once
+  // for the Plan tab the first time a meal opens (ensureRhythmForMeals).
+  function mealCookName() {
+    var rhythm = weekState.rhythm;
+    var role = rhythm && rhythm.cooking_role;
+    return role && role.value === 'one_person' && role.who ? String(role.who).trim() : '';
+  }
+
+  async function ensureRhythmForMeals(panel) {
+    if (weekState.rhythm !== undefined || weekState.rhythmFetch) return;
+    weekState.rhythmFetch = true;
+    try {
+      var res = await fetch('/api/memory');
+      if (!res.ok) throw new Error('memory failed');
+      var memory = await res.json();
+      weekState.rhythm = (memory && memory.rhythm) || null;
+      if (weekState.step === 'meal') renderMealsStep(panel);
+    } catch (err) {
+      // No chip, and the screen is still right without it.
+      weekState.rhythm = null;
+    } finally {
+      weekState.rhythmFetch = false;
+    }
   }
 
   // The cook card this entry is on, in the Cook view's own data. The
@@ -9752,85 +9986,178 @@
     }
   }
 
-  function mealStepHtml(day, slot) {
-    var entry = daySlotEntry(day, slot);
-    var chips = [
-      cookTimeChip(entry),
-      entry.serves ? 'Serves ' + entry.serves : '',
-      entry.plate_note
-    ];
-    var cookMeal = cookMealForEntry(entry.entry_id);
-    var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
-    // Emily, 2026-09-11: the meal screen "looks weak for content". One
-    // spruce hero carries the name and the three facts; the plate, the
-    // recipe and cook-ahead follow as cards; the one action is in the dock.
-    // The plan's recorded reasoning used to sit under the name as an italic
-    // line and was cut the same day (copy cleanse): it was the planner
-    // explaining itself, not something a person would say.
-    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
-        escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
-      '<div class="dinner-hero wk-meal-hero">' +
-        '<div class="hero-top">' +
-          '<span class="hero-eyebrow">' + escapeHtml(slotEyebrow(day, slot)) + '</span>' +
-          '<span class="hero-rule"></span>' +
-          '<span class="nextup-when">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>' +
-        '</div>' +
-        '<div class="hero-dish' + dishSizeClass(mealDisplayName(entry)) + '">' + escapeHtml(mealDisplayName(entry)) + '</div>' +
-        (chips.filter(Boolean).length
-          ? '<div class="hero-chips">' + chips.filter(Boolean).map(function (c) {
-              return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
-            }).join('') + '</div>'
+  // A cook that has been started and not finished: at least one step
+  // ticked in cook mode's own store (the same ticks cookStepStageHtml
+  // resumes from) and the meal not yet marked cooked. The dock then says
+  // "Keep cooking" rather than offering a start time that has passed.
+  function mealCookUnderway(cookMeal) {
+    if (!cookMeal || cookMeal.cooked_status === 'done') return false;
+    var steps = cookMeal.instructions || [];
+    var key = cookMealKey(cookMeal);
+    for (var i = 0; i < steps.length; i++) {
+      if (cookTicked('steps', key + ':' + i)) return true;
+    }
+    return false;
+  }
+
+  // Everything the clock needs about this slot, in one place: the card,
+  // the stops, the start, the table time. `cookMeal` is null until the
+  // cooker view has loaded (ensureCookDataForMeals re-renders when it has)
+  // and for a reheat night, which has no cook in it.
+  function mealClockFor(day, slot, entry, cookMeal) {
+    var times = (weekState.data && weekState.data.slot_times) || {};
+    var table = slotTableMinutes(times, slot);
+    var isCook = !!(cookMeal && !cookMeal.is_leftovers && entry && entry.source !== 'leftovers');
+    var stops = isCook ? mealClockStops(cookMeal, { tableMinutes: table }) : [];
+    var total = isCook ? mealTotalMinutes(cookMeal) || mealTotalMinutes(entry) : null;
+    var start = stops.length && stops[0].minutes !== null ? stops[0].minutes
+      : (isCook && total && table !== null ? table - total : null);
+    return { cookMeal: cookMeal, isCook: isCook, stops: stops, total: total, table: table, start: start };
+  }
+
+  // The hero's one plain line: the thaw the plan wrote for this meal (the
+  // same prep_tasks row Today's fridge move ticks), or where a reheat
+  // night's food came from. Nothing when there is nothing to say — the
+  // old "Nothing to thaw." was an empty line wearing a caption.
+  function mealHeroLine(entry) {
+    if (!entry) return '';
+    if (entry.defrost && entry.defrost.note) return entry.defrost.note.replace(/\.?$/, '.');
+    if (entry.leftover_from) {
+      var when = dayName(entry.leftover_from.date, { weekday: 'long' });
+      return entry.leftover_from.cook_ahead ? 'Made ahead ' + when + '.' : 'Leftovers from ' + when + '.';
+    }
+    // A reheat with no chain to point at ("leftovers", written in words)
+    // already says so in the dish name; a line saying it again is fluff.
+    return '';
+  }
+
+  function mealHeroHtml(day, slot, entry, clock) {
+    var weekday = dayName(day.date, { weekday: 'long' });
+    var chips = [];
+    if (clock.isCook && clock.start !== null) chips.push('Start at ' + clockLabel(clock.start));
+    var cook = clock.isCook ? mealCookName() : '';
+    if (cook) chips.push(cook + '’s cooking');
+    var line = mealHeroLine(entry);
+    return '<div class="dinner-hero wk-meal-hero">' +
+      '<div class="hero-top">' +
+        '<span class="hero-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot) + ' · ' + weekday) + '</span>' +
+        '<span class="hero-rule"></span>' +
+        (clock.table !== null
+          ? '<span class="wk-meal-by">On the table by ' + escapeHtml(spokenTime(clock.table)) + '</span>'
           : '') +
       '</div>' +
+      '<div class="hero-dish wk-meal-dish' + dishSizeClass(mealDisplayName(entry)) + '">' + escapeHtml(mealDisplayName(entry)) + '</div>' +
+      (chips.length
+        ? '<div class="hero-chips">' + chips.map(function (c) {
+            return '<span class="hero-chip">' + escapeHtml(c) + '</span>';
+          }).join('') + '</div>'
+        : '') +
+      (line ? '<p class="hero-accent wk-meal-line">' + escapeHtml(line) + '</p>' : '') +
+    '</div>';
+  }
+
+  // One stop. The first ("Everything out") is a button: its line is the
+  // names, and a tap opens the amounts in a person's units (humanQtyText
+  // by way of cookIngredientLabel — the same words cook mode's own
+  // ticklist uses).
+  function mealStopHtml(stop, i, cookMeal) {
+    var first = i === 0;
+    var time = stop.time
+      ? '<span class="wk-stop-time">' + escapeHtml(stop.time) + '</span>'
+      : '<span class="wk-stop-time is-blank"></span>';
+    var spine = '<span class="wk-stop-spine" aria-hidden="true"><span class="wk-stop-dot"></span></span>';
+    if (stop.kind === 'out') {
+      var ings = (cookMeal && cookMeal.ingredients) || [];
+      return '<li class="wk-stop is-first is-out">' + time + spine +
+        '<button type="button" class="wk-stop-body wk-stop-toggle" data-wk-stop-toggle aria-expanded="false" ' +
+          'aria-label="' + escapeHtml(stop.title + ' — show the amounts') + '">' +
+          '<span class="wk-stop-title">' + escapeHtml(stop.title) + GRO_ICONS.chevRight + '</span>' +
+          '<span class="wk-stop-line">' + escapeHtml(stop.line) + '</span>' +
+          '<ul class="wk-stop-amounts" hidden>' +
+            ings.map(function (ing) { return '<li>' + escapeHtml(cookIngredientLabel(ing)) + '</li>'; }).join('') +
+          '</ul>' +
+        '</button>' +
+      '</li>';
+    }
+    return '<li class="wk-stop' + (first ? ' is-first' : '') + '">' + time + spine +
+      '<div class="wk-stop-body">' +
+        '<span class="wk-stop-title">' + escapeHtml(stop.title) + '</span>' +
+        (stop.line ? '<span class="wk-stop-line">' + escapeHtml(stop.line) + '</span>' : '') +
+      '</div>' +
+    '</li>';
+  }
+
+  // The clock under the hero: one eyebrow, then the stops. Nothing for a
+  // reheat night (no cook in it) or while the cooker view is still on its
+  // way; a dish with no saved recipe says so, in the words cook mode
+  // uses — except a grab-and-go snack, where "no saved recipe" is not
+  // information (2026-09-10: "Apple slices" is not a recipe somebody
+  // forgot to write).
+  function mealClockHtml(slot, clock) {
+    if (!clock.isCook) return '';
+    var cookMeal = clock.cookMeal;
+    if (!cookMeal.has_full_recipe && !clock.stops.length) {
+      if (isSnackSlot(slot)) return '';
+      return '<div class="wk-clock"><p class="cook-norecipe">No saved recipe for this one — ask me for it in the chat.</p></div>';
+    }
+    if (!clock.stops.length) {
+      return '<div class="wk-clock"><p class="cook-norecipe">No steps saved yet — ask me for the recipe in the chat.</p></div>';
+    }
+    return '<div class="wk-clock">' +
+      '<div class="wk-clock-eyebrow">' + escapeHtml(mealClockEyebrow(clock.stops, clock.total)) + '</div>' +
+      '<ol class="wk-stops">' +
+        clock.stops.map(function (s, i) { return mealStopHtml(s, i, cookMeal); }).join('') +
+      '</ol>' +
+    '</div>';
+  }
+
+  function mealStepHtml(day, slot) {
+    var entry = daySlotEntry(day, slot);
+    var cookMeal = cookMealForEntry(entry.entry_id);
+    var clock = mealClockFor(day, slot, entry, cookMeal);
+    var aheadHtml = cookMeal ? cookAheadHtml(cookMeal) : '';
+    return '<button type="button" class="crumb" data-wk-back="day">‹ ' +
+        escapeHtml(dayName(day.date, { weekday: 'long' })) + '</button>' +
+      mealHeroHtml(day, slot, entry, clock) +
       '<div class="wk-meal-body">' +
-      // A real meal always carries at least a food-group read, so this only
-      // ever actually hides the card for a grab-and-go snack — the plate
-      // card stays exactly as it was for breakfast/lunch/dinner.
-      ((isSnackSlot(slot) && plateCardIsEmpty(entry)) ? '' : plateCardHtml(entry)) +
-      // The recipe itself. Emily, 2026-09-09: tapping a dish should bring
-      // you to the screen with the recipe on it — and inside Meals the
-      // dish's screen is this one, so the recipe belongs here rather than
-      // two taps further on. The panel is the cook screen's own
-      // (cookDetailHtml), rendered `plain`: same words, same order, no
-      // working controls. cookAheadHtml is reused from that screen in
-      // exactly the same way, and for the same reason.
-      mealRecipeCardHtml(cookMeal, slot) +
-      (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
+        mealClockHtml(slot, clock) +
+        // The cook-ahead picker stays — it is a real decision about other
+        // nights (which ones this batch covers) with nowhere else to live
+        // on Plan, borrowed whole from the cook screen as before.
+        (aheadHtml ? '<div class="shell-card wk-card">' + aheadHtml + '</div>' : '') +
       '</div>' +
       // The screen's one apricot primary (Rule 5), in the dock like every
-      // other screen's (nav v2 rule 2) — the Day step's own segments are
-      // quiet for exactly this reason.
-      mealDockHtml(day, slot);
+      // other screen's (nav v2 rule 2).
+      mealDockHtml(day, slot, clock);
   }
 
-  // The Meal step's actions, docked. Empty (no dock) when the slot has
-  // nothing to do — a past day, an away night.
-  function mealDockHtml(day, slot) {
-    var acts = slotActionsHtml(day, slot, true);
-    if (!acts) return '';
-    return '<div class="wk-decide dock wk-meal-dock">' + acts + '</div>';
-  }
-
-  // Nothing at all when the Cook view has no card for this entry: either
-  // it hasn't loaded yet (ensureCookDataForMeals re-renders when it does)
-  // or this slot is a reheat night, which is a line and never a way into a
-  // recipe — the rule Kitchen's own rows already follow. A card that IS
-  // here with no saved recipe still renders, because cookDetailHtml says
-  // so plainly ("Freeform meal — no saved recipe detail"), and a name that
-  // says nothing is what this ticket exists to fix.
-  function mealRecipeCardHtml(cookMeal, slot) {
-    if (!cookMeal || cookMeal.is_leftovers) return '';
-    // ...and nothing for a grab-and-go snack with no recipe behind it
-    // either (2026-09-10). "Apple slices" is not a freeform meal somebody
-    // forgot to write up, so a card whose whole content is "no saved
-    // recipe detail" is an empty card — exactly what this screen already
-    // takes the plate card away for on the same slot. A breakfast, lunch
-    // or dinner with no recipe keeps the line: there, the absence is worth
-    // saying, and it names the way to fill it in.
-    if (isSnackSlot(slot || '') && !cookMeal.has_full_recipe) return '';
-    return '<div class="shell-card wk-card wk-recipe-card">' +
-      '<div class="wk-card-title">The recipe</div>' +
-      cookDetailHtml(cookMeal, 'meal', false, true) +
+  // The Meal step's dock: "Start at 6:00" (the clock's own start), "Start
+  // cooking" when there is no time to name, "Keep cooking" once a cook is
+  // under way — all the same door into cook mode (data-wk-cook, through
+  // openRecipeFor) that "Cook this" was — with "Swap this meal" as the
+  // quiet link into the swap-in-place flow. A reheat night or a grab-and-go
+  // snack keeps "Mark eaten". Empty (no dock) when the slot has nothing to
+  // do — a past day, an away night.
+  function mealDockHtml(day, slot, clock) {
+    var entry = daySlotEntry(day, slot);
+    if (!entry || entry.state !== 'planned' || day.isPast) return '';
+    var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
+    var label;
+    if (eaten) label = REHEAT_ACTION_LABEL;
+    else if (clock && mealCookUnderway(clock.cookMeal)) label = 'Keep cooking';
+    else if (clock && clock.start !== null) label = 'Start at ' + clockLabel(clock.start);
+    else label = 'Start cooking';
+    return '<div class="wk-decide dock wk-meal-dock">' +
+      '<div class="dock-row">' +
+        '<button type="button" class="dock-primary" data-wk-cook="' + slot + '">' +
+          escapeHtml(label) + '</button>' +
+        '<button type="button" class="dock-link wk-act-swap" data-wk-swap="' + slot + '">Swap this meal</button>' +
+      '</div>' +
+      // The swap line only once there is something on it — the call going
+      // out, the reason and its Undo. Its idle state ("Tell me what
+      // instead") stays on the Day step's cards; here the dock is the one
+      // action and its one quiet link, and the chat is a tap away anyway.
+      (swapStateFor(day.date, slot) ? swapLineHtml(day, slot) : '') +
     '</div>';
   }
 
@@ -10275,6 +10602,7 @@
     if (weekState.step === 'meal') {
       steps.innerHTML = mealStepHtml(day, weekState.mealSlot);
       ensureCookDataForMeals(panel);
+      ensureRhythmForMeals(panel);
     } else if (weekState.step === 'day') {
       steps.innerHTML = dayStepHtml(day);
     } else if (weekState.step === 'review') {
@@ -10311,6 +10639,17 @@
     steps.querySelectorAll('[data-wk-meal]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal') });
+      });
+    });
+    // "Everything out" opens to the amounts, in a person's units, and
+    // closes again — a read, never a write, so it stays on this screen.
+    steps.querySelectorAll('[data-wk-stop-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var open = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        var list = btn.querySelector('.wk-stop-amounts');
+        if (list) list.hidden = open;
+        btn.classList.toggle('is-open', !open);
       });
     });
     steps.querySelectorAll('[data-wk-cook]').forEach(function (btn) {

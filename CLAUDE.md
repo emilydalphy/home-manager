@@ -421,6 +421,49 @@ why*, not duplicating the diff.
   the tinted node, as before. Not done: `move.detail` still repeats the
   clock the rail shows ("dinner · 25 min · 6:30"); dropping it is a
   moves.py change left for a follow-up.
+- **2026-09-13 — The meal screen is a clock. Branch `worktree-meal-clock`,
+  NOT merged at the time of writing.** Emily picked "Meal · B · The clock"
+  from the Beyond-lists canvas on 2026-09-12. Plan › a day › a meal is now
+  a spruce hero in the gutter ("DINNER · MONDAY", "On the table by half
+  six", the dish, "Start at 6:00" and — only when `cooking_role` is one
+  named person — "Emily's cooking"; the thaw note as its one line), one
+  eyebrow ("About thirty minutes, seven stops"), and the cook as stops on a
+  spine: "Everything out" first (names on the line, amounts one tap in via
+  `humanQtyText`), then one stop per instruction with the time it lands at.
+  The dock is "Start at 6:00" / "Start cooking" / "Keep cooking" (a step
+  already ticked in cook mode's store) with "Swap this meal" as the quiet
+  link. "The plate" chips card and the bullet-list "The recipe" card are
+  gone (`plateCardHtml`, `mealRecipeCardHtml`, `.wk-recipe-card` deleted);
+  the cook-ahead picker keeps its card under the stops. **The timing rule**
+  (`mealClockStops`, pure, unit-tested under node in
+  `tests/test_meal_clock.py`): start = the slot's table time
+  (`get_week_menu`'s `slot_times`, read back into minutes by
+  `slotTableMinutes` — the label has no am/pm, the slot supplies it) minus
+  the recipe's prep + cook minutes off the cooker-view card (moves.py's own
+  "Start by" arithmetic). No recipe carries per-step minutes
+  (`instructions_json` is a list of strings), so the stops are SPREAD
+  evenly from the start to the table time, the last one landing on the
+  table, each rounded to the nearest five minutes and marked `estimated` —
+  which is what makes the eyebrow say "About". A `step_minutes` array, if a
+  recipe ever carries one, gets exact unrounded times and no "About". No
+  total minutes: stops with no times and the eyebrow "Six stops". Never
+  seconds. **The stops and cook mode's steps are one list** — both read
+  `cookMeal.instructions` off `/api/cooker-view`, which is why the screen
+  builds off the Cook view's card (`cookMealForEntry`) and not the week
+  entry; verified in the browser (7 stops ↔ "Step 1 of 6" + Everything
+  out). Judgment calls: (1) a stop's title is the step's opening clause
+  when it is ≤4 words, else its first three words (fewer if that ends on a
+  joining word) with the WHOLE step as the line — a line starting
+  mid-phrase read worse than a few repeated words; (2) the swap line's idle
+  "Tell me what instead" is not rendered in this dock (it stays on the Day
+  step's cards) — the dock is one action and one quiet link; (3) the
+  "Serves N" and plate-note chips are gone with the design's two chips;
+  (4) a recipe with no ingredients gets no "Everything out" stop rather
+  than an empty one; (5) the cook's name comes from `/api/memory`'s
+  rhythm, fetched once per page for the Plan tab (`ensureRhythmForMeals`),
+  and the chip is omitted for "turns"/"whoever's free"/unanswered rather
+  than guessed. The chevron on "Everything out" turns without a transition
+  (§4: three animations, all spoken for).
 
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
