@@ -76,11 +76,16 @@ _COUNT_WORDS = {
 _COUNT_WORD = "|".join(_COUNT_WORDS)
 
 # "5 different dinners", "five dinners", "three new recipes", "4 meals this
-# week". A number, then at most two words, then a word for the things being
-# counted. "30 min on weeknights" and "under 20 minutes" don't match: the
-# counted noun has to be a dish word.
+# week". A number, optionally ONE describing word from a short list, then a
+# PLURAL dish word. Deliberately narrow: an earlier draft allowed any two
+# words between and a singular noun, and "under 30 minutes for dinner",
+# "we have 4 kids eating dinner" and "we are 5 for dinner" all matched —
+# each one silently switching the whole pass off for that week. A number
+# of people or minutes is not a number of dishes.
 _COUNT_ASK = re.compile(
-    rf"\b(\d+|{_COUNT_WORD})\b(?:\s+\w+){{0,2}}\s+(?:dinners?|meals?|dishes|dish|recipes?)\b",
+    rf"\b(\d+|{_COUNT_WORD})\b"
+    r"(?:\s+(?:different|new|distinct|separate|unique|fresh|proper|main|big))?"
+    r"\s+(?:dinners|meals|dishes|recipes)\b",
     re.IGNORECASE,
 )
 
