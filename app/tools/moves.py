@@ -213,7 +213,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
         # move changes: it is the same cook, the same tick, the same card.
         started = _cooker.cook_started_dt(meal.get("cook_started_at"))
         start = started or planned_start
-        table = (started + timedelta(minutes=duration)) if started else at
+        # With no minutes on the card there is nothing to move the table
+        # time by: the plan's stands (the receipt and the hero say the same).
+        table = (started + timedelta(minutes=duration)) if (started and duration) else at
         detail_bits = [slot]
         if duration:
             detail_bits.append(f"{duration} min")

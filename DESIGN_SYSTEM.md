@@ -188,8 +188,8 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   2026-09-13 on branch `worktree-changes-saved` (Swap · I'll pick, chat changes, What we
   know, chore ticks and undo, Cook's prep/attention/usage/un-cook, Plan the week's
   attendance, holiday and away saves). Still open: a Save button under the open-slot
-  options (they apply on tap today), and Start cooking, which records nothing yet (its own
-  card: "Cook: the real start time moves the clock").
+  options (they apply on tap today). Start cooking records the real start since 2026-09-13
+  (branch `worktree-real-start-time`) and says so once, only when the clock moved.
 
 ---
 

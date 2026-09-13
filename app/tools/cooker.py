@@ -367,6 +367,15 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # also leaves cooked_at where it was, so a second tap doesn't move the
     # time the meal was actually cooked.
     if all(s == status for s in linked_statuses.values()):
+        # Still forget a start on a not-cooked row: "Mark not cooked" is
+        # the one way to clear a start tapped by mistake, and it must work
+        # whether or not the tick itself has anything to change.
+        if status == "pending":
+            conn.executemany(
+                "UPDATE meal_plan_entries SET cook_started_at = NULL WHERE id = ? AND household_id = ?",
+                [(eid, household_id()) for eid in linked_ids],
+            )
+            conn.commit()
         conn.close()
         result["unchanged"] = True
         if status == "done":
@@ -614,6 +623,11 @@ def cook_total_minutes(meal: dict | None) -> int | None:
     main = (meal.get("prep_time_minutes") or 0) + (meal.get("cook_time_minutes") or 0)
     longest = 0
     for side in meal.get("sides") or []:
+        # A side with no steps has nothing on the clock — the Meal step's
+        # own stops skip it (shell.js mealClockSides), so the total does
+        # too, or Now's "Start by" and the Meal step's would disagree again.
+        if not [s for s in (side.get("instructions") or []) if str(s).strip()]:
+            continue
         try:
             mins = int(side.get("minutes")) if side.get("minutes") is not None else 0
         except (TypeError, ValueError):
@@ -621,6 +635,13 @@ def cook_total_minutes(meal: dict | None) -> int | None:
         longest = max(longest, mins)
     total = max(int(main or 0), longest)
     return total if total > 0 else None
+
+
+def _weekday_word(iso: str) -> str:
+    try:
+        return datetime.fromisoformat(iso).strftime("%A")
+    except (TypeError, ValueError):
+        return "that day"
 
 
 def cook_started_dt(value: str | None) -> datetime | None:
@@ -698,12 +719,29 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, cook_started_at FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        "SELECT id, date, cook_started_at, recipe_id, freeform_meal FROM meal_plan_entries "
+        "WHERE id = ? AND household_id = ?",
         (entry_id, household_id()),
     ).fetchone()
     if row is None:
         conn.close()
         raise ValueError(f"No meal plan entry with id {entry_id}.")
+    # Only a cook that is happening now has a real start. Cook mode opens
+    # any night from the shelf (reading tomorrow's recipe tonight is
+    # normal); a start recorded on it would sit there for days, its
+    # Tonight card saying "started two hours late" tomorrow (found by the
+    # branch's verifier, 2026-09-13). A day that isn't today is refused
+    # with a plain sentence and nothing written; a reheat night has no
+    # cook in it to start.
+    today = household_now(now_utc).date().isoformat()
+    if row["date"] != today:
+        conn.close()
+        when = _weekday_word(row["date"])
+        return {"status": "refused", "entry_id": entry_id,
+                "message": f"That’s {when}’s — I’ll note the start when you cook it {when}."}
+    if row["recipe_id"] is None and (row["freeform_meal"] or "").strip().lower().startswith("leftover"):
+        conn.close()
+        return {"status": "refused", "entry_id": entry_id, "message": "Nothing to start on a reheat night."}
     already_started = row["cook_started_at"] is not None
     if not already_started:
         conn.execute(

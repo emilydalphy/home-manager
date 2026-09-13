@@ -7682,6 +7682,7 @@
       // about the tick), so the row drops it rather than telling someone
       // who has just cooked when they should have started.
       if (/^Start by /.test(chip)) { if (!done) bits.unshift('start by ' + chip.slice('Start by '.length)); }
+      else if (/^Started /.test(chip)) { if (!done) bits.push(chip); }
       else bits.push(chip);
     });
     if (!bits.length) {
@@ -17425,8 +17426,18 @@
   async function cookRecordStart(meal) {
     try {
       var out = await cookPost('/api/cooker/start', { entry_id: meal.entry_id });
+      if (out && out.status === 'refused') {
+        // Not tonight's cook (tomorrow's recipe, read tonight), or a reheat:
+        // the steps are open, no time is noted, and the reply says why.
+        showToast(out.message || START_MOVED_TROUBLE, null, 6000);
+        return;
+      }
       renderCookFrom(out);
       refreshPlanSurfacesAfterCook();
+      // The Meal step on Plan holds its own copy of the cooker view
+      // (weekState.cookView) and reads it first; drop it so the next draw
+      // there shows the real start rather than the plan's.
+      if (typeof weekState !== 'undefined' && weekState) weekState.cookView = null;
       if (out.already_started) return;
       var started = isoClockMinutes(out.started_at);
       var table = isoClockMinutes(out.on_the_table);

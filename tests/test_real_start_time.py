@@ -206,9 +206,13 @@ def test_cook_total_minutes_is_the_recipe_or_the_longest_side():
     # Twenty-five-minute potatoes beside a fifteen-minute stir-fry: the
     # potatoes set the clock, exactly as shell.js's mealClockTotal says.
     assert _cooker.cook_total_minutes({"prep_time_minutes": 5, "cook_time_minutes": 10,
-                                       "sides": [{"name": "Roasted potatoes", "minutes": 25}]}) == 25
+                                       "sides": [{"name": "Roasted potatoes", "minutes": 25, "instructions": ["Roast."]}]}) == 25
     assert _cooker.cook_total_minutes({"prep_time_minutes": 5, "cook_time_minutes": 30,
-                                       "sides": [{"name": "Green salad", "minutes": 5}]}) == 35
+                                       "sides": [{"name": "Green salad", "minutes": 5, "instructions": ["Toss."]}]}) == 35
+    # A side with minutes but no steps is nothing on the clock — the Meal
+    # step's stops skip it (mealClockSides), so the total does too.
+    assert _cooker.cook_total_minutes({"prep_time_minutes": 5, "cook_time_minutes": 10,
+                                       "sides": [{"name": "Rice", "minutes": 25}]}) == 15
     assert _cooker.cook_total_minutes({"prep_time_minutes": None, "cook_time_minutes": None}) is None
     assert _cooker.cook_total_minutes({"sides": [{"name": "Salad", "minutes": "nope"}]}) is None
     assert _cooker.cook_total_minutes(None) is None
@@ -688,3 +692,57 @@ def test_the_dispatch_and_the_route_are_wired():
     main = (REPO / "app" / "main.py").read_text(encoding="utf-8")
     assert '@app.post("/api/cooker/start")' in main
     assert "tools.start_cooking(req.entry_id)" in main
+
+
+# ---------- after the verifier ----------
+
+def test_only_tonights_cook_can_be_started(tonight):
+    """Tomorrow's recipe read tonight is normal; a start on it would sit
+    there for days. Refused, with the day named, and nothing written."""
+    tomorrow = (TODAY + datetime.timedelta(days=1)).isoformat()
+    plan_id = tools.get_plan_id_for_date(ISO_TODAY)
+    tools.plan_meal(tomorrow, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id)
+    conn = get_conn()
+    row = conn.execute("SELECT id FROM meal_plan_entries WHERE household_id = ? AND date = ?",
+                       (tools.household_id(), tomorrow)).fetchone()
+    conn.close()
+    out = tools.start_cooking(row["id"], now_utc=_utc(20, 15))
+    assert out["status"] == "refused"
+    assert datetime.date.fromisoformat(tomorrow).strftime("%A") in out["message"]
+    assert _started_at(row["id"]) is None
+    # Tonight's still starts.
+    assert tools.start_cooking(tonight, now_utc=_utc(18, 2))["started_at"] == f"{ISO_TODAY}T18:02:00"
+
+
+def test_mark_not_cooked_clears_a_stray_start_even_on_a_row_that_was_never_cooked(tonight):
+    tools.start_cooking(tonight, now_utc=_utc(18, 2))
+    assert _started_at(tonight) is not None
+    out = tools.check_off_meal(tonight, "pending")
+    assert out.get("unchanged") is True
+    assert _started_at(tonight) is None
+
+
+def test_a_meal_with_no_minutes_keeps_the_plans_table_time_on_now():
+    tools.add_member("Emily")
+    tools.add_recipe("Mystery", ingredients=[{"item": "Something", "qty": "1"}])
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.plan_meal(ISO_TODAY, "Mystery", slot="dinner", weekly_plan_id=plan_id)
+    _set_timezone("UTC")
+    conn = get_conn()
+    entry_id = conn.execute("SELECT id FROM meal_plan_entries WHERE household_id = ? AND date = ?",
+                            (tools.household_id(), ISO_TODAY)).fetchone()["id"]
+    conn.close()
+    before = _cook_move(_at(17, 0))["detail"]
+    tools.start_cooking(entry_id, now_utc=_utc(18, 2))
+    after = _cook_move(_at(18, 5))
+    assert after["detail"] == before  # the plan's table time stands
+    assert "Started 6:02" in after["chips"]
+
+
+def test_the_shell_handles_a_refused_start_and_the_kitchen_row_drops_the_chip_once_cooked():
+    src = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
+    i = src.index("  async function cookRecordStart(meal) {")
+    body = src[i:i + 1400]
+    assert "if (out && out.status === 'refused') {" in body
+    assert "weekState.cookView = null;" in body
+    assert "else if (/^Started /.test(chip)) { if (!done) bits.push(chip); }" in src
