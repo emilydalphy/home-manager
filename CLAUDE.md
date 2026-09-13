@@ -371,6 +371,42 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Spices this week: one opt-in section, the list assumes
+  a spice rack. Branch `worktree-grocery-sorting-round`, NOT merged at
+  the time of writing.** Loop Board improvement (Emily: "put all the
+  spices together under one section ... select the ones you want to add
+  to the list to buy ... it also takes up a lot of space and scrolling").
+  New `app/tools/spices.py`: `is_spice(name)` is a MAINTAINED LIST of
+  names (spices, dried herbs, salt/pepper, cooking oils) tried from the
+  most specific reading down — whole name, descriptors stripped, form
+  word dropped ("cumin seeds"), last word alone — and never a heuristic
+  on the word "spice". Fresh herbs stay in produce: basil, cilantro,
+  parsley, mint, dill, chives, rosemary, thyme, sage, tarragon count only
+  when written "dried", and "fresh" anything never counts. `_NOT_ALONE`
+  is what keeps a bell pepper, a garlic clove and a fresh chili out.
+  - **The model is a STATUS, not a flag.** A plan's spice is inserted by
+    `add_grocery_item` with `status = 'spice'`; a tick makes it
+    'needed'; an untick puts it back. So every reader of "to buy" —
+    counts, the sort queue, the trip, pre-shop flags, the wrap-up — is
+    right without knowing spices exist, and the merge (`add_grocery_item`
+    now matches 'spice' rows too) keeps two recipes' cumin on one line.
+    A PERSON adding a spice by name ticks the pending line: their add is
+    a want. `_reverse_meal_grocery_contributions` and
+    `clear_stale_grocery_items` treat 'spice' like 'needed'; a new
+    week's approval deletes the previous week's still-unticked spices
+    (never wanted) while a ticked one goes through keep-or-drop like any
+    line, and keeping it ticks this week's twin.
+  - **Judgment calls, all one line to change:** salt, pepper and oils
+    are spice-rack things (Emily's ticket left it open); a spice with a
+    purchased line made within `RECENTLY_BOUGHT_DAYS` (56) is not offered
+    again — the same "created_at stands in for bought" reasoning as
+    `staples._seed_history` — and the section names what it left out so
+    "all the spices the recipes need" stays true; the section is closed
+    by default on LIST (less scrolling was half the ask), with its line
+    "All the spices the recipes need. Tick the ones you need to buy."
+    Six existing tests that read a recipe's olive oil / salt off the
+    needed list now read the section as well — the amounts they pin are
+    unchanged, only where the line waits moved.
 - **2026-09-13 — Last week's leftovers: asked before they add onto this
   week. Branch `worktree-grocery-sorting-round`, NOT merged at the time of
   writing.** Loop Board bug (Emily: "some of the quantities are so high

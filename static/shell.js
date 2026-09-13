@@ -2492,6 +2492,13 @@
     // suggestion by groListRowHtml.
     staples: [],
     staplesOpen: false,
+    // "Spices this week" (app/tools/spices.py): every spice the week's
+    // recipes call for, waiting UNTICKED in one section rather than spread
+    // through the aisles — the list assumes a spice rack (Emily,
+    // 2026-09-13). Ticking one makes it an ordinary line in its store.
+    // Closed by default: less scrolling was half the ask.
+    spices: { items: [], recently_bought: [] },
+    spicesOpen: false,
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // WRAP UP's confirmation
     // The one LIST row whose ⋯ menu is open, as a string id, or null. One at
     // a time on purpose — the old per-row menu worked the same way, and two
@@ -3085,6 +3092,15 @@
     } catch (err) { groceryState.carried = []; }
   }
 
+  async function groLoadSpices() {
+    try {
+      var res = await fetch('/api/grocery-list/spices');
+      if (!res.ok) { groceryState.spices = { items: [], recently_bought: [] }; return; }
+      var got = await res.json();
+      groceryState.spices = { items: got.items || [], recently_bought: got.recently_bought || [] };
+    } catch (err) { groceryState.spices = { items: [], recently_bought: [] }; }
+  }
+
   async function groLoadStaples() {
     try {
       var res = await fetch('/api/staples');
@@ -3109,7 +3125,7 @@
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried()]);
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices()]);
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -3559,6 +3575,10 @@
         }
         return html + groShopDoneHtml();
       }
+      // Spices waiting unticked are not "nothing to buy" — they are the
+      // list, until one is ticked. The section stands where the stops
+      // would, and the dock stays quiet (nothing to start a trip for).
+      if (groceryState.spices.items.length) return html + groSpicesHtml() + groStaplesHtml();
       // The empty moment (emptyMomentHtml): one sentence, and "Go to
       // Plan" in the dock (groDockHtml). The staples card keeps its place
       // under it — a rhythm is a real thing even on an empty list.
@@ -3609,7 +3629,54 @@
       var anywhere = groSoleStore(data) ? [] : groRideAlongItems(data);
       if (anywhere.length) html += groAnywhereCardHtml(data, anywhere);
     }
-    return html + groStaplesHtml();
+    return html + groSpicesHtml() + groStaplesHtml();
+  }
+
+  // ---------- Spices this week ----------
+  // One section for every spice and dried herb the week's recipes call for
+  // (app/tools/spices.py decides which names). Unticked by default and off
+  // the to-buy count; a tick makes the line an ordinary one in its store
+  // (and back on the sort row if it has none yet), an untick puts it back
+  // here — the same box, so both answers live in the same place. Fresh
+  // herbs never come here: a bunch of cilantro is produce, bought weekly.
+  // The same card shape as Staples below, closed by default.
+  function groSpicesHtml() {
+    var spices = groceryState.spices;
+    var items = spices.items;
+    if (!items.length && !spices.recently_bought.length) return '';
+    var open = groceryState.spicesOpen;
+    var ticked = items.filter(function (sp) { return sp.ticked; }).length;
+    var sub = groPlural(items.length, 'spice', 'spices') + (ticked ? ' · ' + ticked + ' to buy' : '');
+    var html = '<div class="gro-staples gro-spices">' +
+      '<button type="button" class="gro-ps-head" data-gro="spices-toggle" aria-expanded="' + open + '">' +
+        GRO_ICONS.basket +
+        '<span class="gro-ps-text">' +
+          '<span class="gro-ps-title">Spices this week</span>' +
+          '<span class="gro-ps-sub">' + escapeHtml(sub) + '</span>' +
+        '</span>' +
+        '<span class="gro-ps-check">' + (open ? 'Hide' : 'See') + '</span>' +
+      '</button>';
+    if (open) {
+      html += '<div class="gro-staples-body gro-spices-body">' +
+        '<p class="gro-spices-line">All the spices the recipes need. Tick the ones you need to buy.</p>' +
+        items.map(function (sp) {
+          var id = String(sp.id);
+          return '<div class="gro-row gro-spice-row" data-gro="spice-tick" data-id="' + id + '" data-ticked="' + (sp.ticked ? '1' : '0') + '">' +
+            '<button type="button" class="gro-box' + (sp.ticked ? ' checked' : '') + '" role="checkbox" ' +
+              'aria-checked="' + (sp.ticked ? 'true' : 'false') + '" data-gro="spice-tick" data-id="' + id + '" ' +
+              'data-ticked="' + (sp.ticked ? '1' : '0') + '" ' +
+              'aria-label="' + escapeHtml((sp.ticked ? 'Don’t need to buy ' : 'Need to buy ') + sp.item) + '">' +
+              (sp.ticked ? GRO_ICONS.tick : '') + '</button>' +
+            '<p class="gro-name">' + escapeHtml(sp.item) + '</p>' +
+            (sp.quantity ? '<span class="gro-qty">' + escapeHtml(sp.quantity) + '</span>' : '') +
+          '</div>';
+        }).join('') +
+        (spices.recently_bought.length
+          ? '<p class="gro-spices-recent">Bought lately, so not listed: ' + escapeHtml(spices.recently_bought.join(', ')) + '</p>'
+          : '') +
+      '</div>';
+    }
+    return html + '</div>';
   }
 
   // ---------- Two rows of the same thing ----------
@@ -4389,7 +4456,11 @@
       // when the list is genuinely empty — never over the shops question,
       // and never over the just-finished trip's own screen (S5).
       var loose = groLooseItems(data);
-      if (!stops.length && !loose.length && !groStoresPromptShouldShow() && !groceryState.justFinishedTrip) {
+      // …and not while spices wait unticked: there is a list, it is just
+      // all in one section, and "Go to Plan" would send someone away
+      // from it.
+      if (!stops.length && !loose.length && !groStoresPromptShouldShow() && !groceryState.justFinishedTrip &&
+          !groceryState.spices.items.length) {
         return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>';
       }
       return '';
@@ -5428,6 +5499,24 @@
         groceryState.staplesOpen = !groceryState.staplesOpen;
         renderGrocery();
         return;
+
+      // ----- Spices this week -----
+      case 'spices-toggle':
+        groceryState.spicesOpen = !groceryState.spicesOpen;
+        renderGrocery();
+        return;
+
+      // The box is the whole answer, both ways: a tick puts the spice on
+      // the list in its store, an untick takes it back into the section.
+      // No toast — the box is its own receipt, and undo is the same tap.
+      case 'spice-tick': {
+        var wasTicked = el.dataset.ticked === '1';
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/spice', { ticked: !wasTicked });
+        }, "Couldn't save that — try again.");
+        return;
+      }
 
       case 'staple-pause':
       case 'staple-resume': {

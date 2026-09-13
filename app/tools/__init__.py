@@ -171,6 +171,12 @@ from .grocery import (  # noqa: F401
 # Holidays (Loop Board "Holidays: Pomona knows 12 October is coming...",
 # 2026-09-11): computed by rule for the household's country/province, read
 # off its calendar feed, asked about once, answered here. See holidays.py.
+# Spices (2026-09-13): one opt-in section on the list — see spices.py.
+from .spices import (  # noqa: F401
+    is_spice,
+    list_spices_this_week,
+    tick_spice,
+)
 from .holidays import (  # noqa: F401
     ANSWER_LABELS as HOLIDAY_ANSWER_LABELS,
     ANSWERS as HOLIDAY_ANSWERS,

@@ -4416,6 +4416,26 @@ html, body {
    side of the label narrows. */
 .gro-sortall-pills .gro-pill { padding: 10px 13px; font-size: 13px; }
 
+/* ---------- Spices this week ----------
+   The Staples card's shape (below), holding trip-style tick rows (.gro-row
+   / .gro-box) so a tick here looks like a tick anywhere in the tab. No
+   .done strike — the row is not bought, it is on the list now. */
+.gro-spices .gro-spice-row { cursor: pointer; }
+.gro-spices-line {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 10px 0 4px;
+}
+.gro-spices-recent {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 6px 0 4px;
+}
+
 /* ---------- CARRY: last week's leftovers, keep or drop ----------
    One row per line an earlier week left unbought, in the pre-shop check's
    row shape (.gro-ps-row / .gro-ps-btn) — the same keep-or-drop question,

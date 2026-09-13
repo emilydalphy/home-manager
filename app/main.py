@@ -722,6 +722,10 @@ class CarriedOverDecisionRequest(BaseModel):
     decision: str  # keep | drop
 
 
+class SpiceTickRequest(BaseModel):
+    ticked: bool = True
+
+
 class StapleAddRequest(BaseModel):
     item: str
     quantity: str = ""
@@ -3621,6 +3625,35 @@ def undo_carried_over_item_view(item_id: int):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Carried-over undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.get("/api/grocery-list/spices")
+def get_spices_this_week_view():
+    """
+    The "Spices this week" section (spices.py): every spice the week's
+    recipes call for, unticked by default and off the to-buy count until
+    ticked, plus any already ticked onto the list. `recently_bought` names
+    the ones left out because a line for them was bought lately.
+    """
+    try:
+        result = tools.list_spices_this_week()
+    except Exception as e:
+        logger.exception("Spices lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
+@app.post("/api/grocery-list/{item_id}/spice")
+def tick_spice_view(item_id: int, req: SpiceTickRequest):
+    """Tick a spice onto the list (an ordinary needed line, in its store) or untick it back into the section."""
+    try:
+        result = tools.tick_spice(item_id, ticked=req.ticked)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Spice tick failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 
