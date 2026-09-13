@@ -13499,10 +13499,18 @@
   // the plain question first (DESIGN_SYSTEM §8 rule 7), then the chips
   // that answer it, then the shared buttons below. The count line says
   // what the ticks add up to, in eggs, not in feature words.
-  function cookAheadComponentQuestion(comp) {
+  // How many different recipes a component is in — the same dish on two
+  // days is one recipe, cooked twice. The chips are one per MEAL, so the
+  // lines under them count meals (verifier, 2026-09-13: the two counts
+  // read "3 recipes" and "4 recipes" about one block).
+  function cookAheadComponentRecipeCount(comp) {
     var dishes = {};
     (comp.uses || []).forEach(function (u) { dishes[(u.dish || '').toLowerCase()] = true; });
-    var n = Object.keys(dishes).length;
+    return Object.keys(dishes).length;
+  }
+
+  function cookAheadComponentQuestion(comp) {
+    var n = cookAheadComponentRecipeCount(comp);
     var plural = /s$/i.test(comp.ingredient || comp.label || '');
     return comp.label + (plural ? ' are' : ' is') + ' in ' + n + ' recipes this week. Make ' +
       (plural ? 'them' : 'it') + ' all at once?';
@@ -13516,7 +13524,7 @@
     if (ticked.length < 2) {
       count = 'Each recipe makes its own.';
     } else {
-      count = 'One cook on ' + dayName(ticked[0].date, { weekday: 'long' }) + ' for ' + ticked.length + ' recipes' +
+      count = 'One cook on ' + dayName(ticked[0].date, { weekday: 'long' }) + ' for ' + ticked.length + ' meals' +
         (comp.quantity ? ' · ' + comp.quantity + ' ' + comp.ingredient : '');
     }
     return '<div class="ca-ask-block ca-comp-block">' +
@@ -13582,7 +13590,7 @@
       var source = comp && (comp.uses || []).filter(function (u) { return u.entry_id === a.source_entry_id; })[0];
       if (source) day = dayName(source.date, { weekday: 'long' });
       var n = 1 + (a.covered_entry_ids || []).length;
-      parts.push((a.label || (comp && comp.label) || 'Batch') + ': one cook ' + day + ' for ' + n + ' recipes');
+      parts.push((a.label || (comp && comp.label) || 'Batch') + ': one cook ' + day + ' for ' + n + ' meals');
     });
     if (!parts.length) return cookAheadDoneLine(items, applied, refused);
     return parts.join(' · ');
@@ -13703,7 +13711,7 @@
       } else if (applied.length) {
         showToast('Got it — one batch covers those days now.');
       } else if (componentsApplied.length) {
-        showToast('Got it — one cook for the lot.');
+        showToast('Got it — one cook for all of them.');
       }
       await loadWeekMenu(panel); // refetches cook_ahead_asked_at so the card hides itself
       refreshKitchenPanel(); // Kitchen, if it's built, now has fewer cooks and some made-ahead days
@@ -14198,7 +14206,7 @@
       var total = (item.later || []).length + 1;
       return item.dish + ' on ' + total + ' ' + cookSlotWord(item.slot, total);
     }).concat(comps.map(function (comp) {
-      return comp.label + ' in ' + (comp.uses || []).length + ' recipes';
+      return comp.label + ' in ' + cookAheadComponentRecipeCount(comp) + ' recipes';
     })).join(' · ');
   }
 
