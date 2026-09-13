@@ -818,6 +818,43 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
     }
 
 
+def carry_sides(from_sides: list[dict], to_entry_id: int) -> list[dict]:
+    """
+    Put the sides one entry had onto its replacement (plate_parts.change_part
+    and its undo, 2026-09-13): the same dish with a different protein is
+    the same plate, and the roasted potatoes the household just added must
+    not vanish because the meat changed. Written through attach_sides (the
+    same column and shape), then bought again on an approved week — the
+    swap that made the new entry reversed the old entry's shopping, sides
+    included, so each side buys itself back the way add_component does.
+    The old grocery_link_ids are dropped first: they name rows that no
+    longer exist. Returns the sides as attached.
+    """
+    sides = []
+    for s in from_sides or []:
+        if not isinstance(s, dict) or not s.get("name"):
+            continue
+        sides.append({k: v for k, v in s.items() if k != "grocery_link_ids"})
+    if not sides:
+        return []
+    covered: list[str] = []
+    for s in sides:
+        for g in s.get("covers") or []:
+            if g in ALL_GROUPS and g not in covered:
+                covered.append(g)
+    attach_sides(to_entry_id, sides, covered)
+    conn = get_conn()
+    row = _entry_row(conn, to_entry_id)
+    conn.close()
+    if row is not None:
+        for s in sides:
+            try:
+                _buy_side_now(row, s)
+            except Exception:
+                logger.exception("Buying the carried side %r for entry %s failed", s.get("name"), to_entry_id)
+    return sides
+
+
 def _buy_side_now(row, side: dict) -> list[str]:
     """
     Put one just-added side on the grocery list, if the week it belongs to

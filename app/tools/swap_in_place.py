@@ -573,7 +573,7 @@ def swap_meal_in_place(
     return out
 
 
-def apply_pick(weekly_plan_id: int, entry: dict, pick: dict) -> dict:
+def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool = False) -> dict:
     """
     Put an already-chosen dish on `entry`'s slot: save it as a recipe if it
     is new, swap it in through swap_meal_in_plan, and write the undo note.
@@ -581,14 +581,22 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict) -> dict:
     change card (tools.proposals) applies a pick the household has looked
     at and saved through exactly the same door — never a second swap.
     Does NOT run the allergen or taste gates; the caller does, before.
+
+    `carry_sides`: keep the slot's sides on the new entry (plate_parts.
+    change_part — the same dish with a different protein is the same
+    plate). A swap to a different dish leaves them behind, as it always
+    has: the potatoes went with the chops, not with the night.
     """
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     _save_recipe_if_new(pick, serves)
+    sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], pick["meal_name"], slot=entry["slot"],
         food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
     )
     new_entry_id = result["entry_id"]
+    if sides:
+        _plates.carry_sides(sides, new_entry_id)
 
     # Written once. A second swap of the same slot carries the ORIGINAL
     # forward rather than recording the dish it is replacing, so Undo means
@@ -604,6 +612,8 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict) -> dict:
     derived = dict(entry["derived_from"])
     derived["swapped_from"] = swapped_from
     derived["swapped_in_place_at"] = datetime.datetime.now().isoformat(timespec="seconds")
+    # Undo carries the plate back the same way (undo_meal_swap).
+    derived["carry_sides"] = bool(carry_sides)
     reason = (pick.get("reason") or "").strip()
     _write_entry_note(new_entry_id, reason, derived)
 
@@ -661,12 +671,16 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     if not name:
         raise ValueError("That meal hasn't been swapped, so there's nothing to put back.")
 
+    # A change that carried the plate's sides forward carries them back.
+    sides = _plates.get_sides(entry_id) if (entry["derived_from"] or {}).get("carry_sides") else []
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], name, slot=entry["slot"],
         food_groups=previous.get("food_groups") or [],
     )
+    if sides:
+        _plates.carry_sides(sides, result["entry_id"])
     derived = {k: v for k, v in (entry["derived_from"] or {}).items()
-               if k not in ("swapped_from", "swapped_in_place_at")}
+               if k not in ("swapped_from", "swapped_in_place_at", "carry_sides")}
     _write_entry_note(result["entry_id"], previous.get("reasoning") or "", derived)
     return {
         "status": "restored",

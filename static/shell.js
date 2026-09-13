@@ -11713,7 +11713,7 @@
     label = part.name ? '<span class="plate-role">' + escapeHtml(part.word) + '</span>' + escapeHtml(part.name)
       : '<span class="plate-word">' + escapeHtml(part.word) + '</span>';
     return '<button type="button" class="plate-part' + (part.name ? '' : ' is-quiet') + '" ' +
-      'data-plate-part="' + escapeHtml(part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
+      'data-plate-part="' + escapeHtml(part.role === 'side' ? '' : part.role) + '" data-plate-slot="' + escapeHtml(slot) + '" ' +
       (part.source === 'side' && part.name ? 'data-plate-side="' + escapeHtml(part.name) + '" ' : '') +
       'aria-label="' + escapeHtml('Change the ' + part.word.toLowerCase()) + '">' +
       label + PLATE_CARET + '</button>';
@@ -11735,7 +11735,7 @@
       return '<div class="plate-row' + (p.missing ? ' is-missing' : '') + '">' +
         '<span class="plate-row-role">' + escapeHtml(p.word) + '</span>' +
         '<span class="plate-row-name">' + escapeHtml(name) + '</span>' +
-        '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role) + '" ' +
+        '<button type="button" class="plate-row-change" data-plate-part="' + escapeHtml(p.role === 'side' ? '' : p.role) + '" ' +
           'data-plate-slot="' + escapeHtml(slot) + '"' +
           (p.source === 'side' && p.name ? ' data-plate-side="' + escapeHtml(p.name) + '"' : '') + '>' +
           (p.missing ? 'Add' : 'Change') + '</button>' +
@@ -13637,6 +13637,7 @@
       mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
       selected: null, offer: null
     };
+    var thisOpen = mealAddState;
     var title = document.querySelector('#wk-add-sheet .kit-sheet-title');
     if (title) {
       title.textContent = mode === 'protein' ? 'Change the protein'
@@ -13661,7 +13662,9 @@
       console.warn('Could not fetch the options:', err);
       offer = { options: [] };
     }
-    if (!mealAddState || mealAddState.entryId !== entry.entry_id || !rows) return;
+    // The state object itself, not just the entry: a slow protein fetch
+    // must not land its options in a carb sheet opened for the same meal.
+    if (mealAddState !== thisOpen || !rows) return;
     if (mode === 'add' && role && PART_COVERS[role]) {
       // This part's kind first; the rest after.
       var want = PART_COVERS[role];
@@ -13884,9 +13887,10 @@
       clearSwapUndoTimer();
       swapState = { date: st.date, slot: st.slot, avoid: [], message: said };
       renderMealsStep(panel);
+      var replaced = (st.side && st.side.toLowerCase() !== String(out.name || '').toLowerCase()) ? st.side : '';
       toastSaved({
         label: 'Undo',
-        onClick: function () { return runMealAddUndo(panel, st, out.name); }
+        onClick: function () { return runMealAddUndo(panel, st, out.name, replaced); }
       }, out.note ? 9000 : SWAP_UNDO_MS);
       swapUndoTimer = setTimeout(function () {
         swapUndoTimer = null;
@@ -13901,7 +13905,11 @@
     }
   }
 
-  async function runMealAddUndo(panel, st, name) {
+  // `replaced`: the side "Change the carb" took off to put this one on —
+  // the undo puts it back (by its catalogue name, through add-component's
+  // typed line, which knows the catalogue), so undoing a change is a
+  // change back, not a plate left short.
+  async function runMealAddUndo(panel, st, name, replaced) {
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
@@ -13909,6 +13917,14 @@
         body: JSON.stringify({ entry_id: st.entryId, name: name })
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      if (replaced) {
+        var back = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entry_id: st.entryId, key: null, text: replaced })
+        });
+        if (!back.ok) throw new Error('put back failed (' + back.status + ')');
+      }
       await loadWeekMenu(panel);
       showToast('Taken back off.');
     } catch (err) {

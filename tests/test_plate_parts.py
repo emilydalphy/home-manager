@@ -299,3 +299,82 @@ def test_the_sheet_selects_then_saves_and_the_protein_goes_through_the_swaps_und
     add = SHELL_JS[m:m + 3000]
     assert "swapState = { date: st.date, slot: st.slot, avoid: [], message: said };" in add
     assert "toastSaved({" in add
+
+
+# ---------- after the verifier (round 2) ----------
+
+def test_a_variant_that_keeps_the_dishes_name_is_saved_under_a_name_that_says_what_changed(week):
+    # "Chili" rewritten with turkey: the model keeps the name (the protein
+    # isn't in it), and a recipe is only saved when its name is new — so
+    # without this the old beef Chili would be planned again and reported
+    # as a change. Reproduced by the branch's verifier, 2026-09-13.
+    entry_id = _dinner(week, MONDAY)["entry_id"]
+    out = pp.change_part(
+        week, entry_id, "protein", "Ground turkey",
+        asker=lambda c: _variant("Chili", "turkey",
+                                 ingredients=[{"item": "Ground turkey", "qty": "1 lb", "category": "meat/seafood"}],
+                                 reason="Turkey instead of beef."),
+    )
+    assert out["status"] == "changed"
+    assert out["meal"] == "Chili with ground turkey"
+    saved = tools.get_recipe("Chili with ground turkey")
+    assert saved["main_protein"] == "turkey"
+    assert any(i["item"] == "Ground turkey" for i in saved["ingredients"])
+    assert tools.get_recipe("Chili")["main_protein"] == "beef"  # untouched
+    assert _dinner(week, MONDAY)["plate_parts"][0]["name"] == "Turkey"
+    # A proposed name that is another saved recipe's is renamed the same way.
+    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    out = pp.change_part(week, entry_id, "protein", "Ground beef", asker=lambda c: _variant("Chili", "beef"))
+    assert out["meal"] == "Chili with ground beef"
+
+
+def test_changing_the_protein_keeps_the_sides_and_so_does_undo(week):
+    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    tools.add_component(entry_id, key="roasted-potatoes")
+    dinner = _dinner(week, TUESDAY)
+    assert [s["name"] for s in dinner["sides"]] == ["Roasted potatoes"]
+    assert [p for p in dinner["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"
+    out = pp.change_part(week, dinner["entry_id"], "protein", "Ground beef", asker=lambda c: _variant())
+    after = _dinner(week, TUESDAY)
+    assert after["title"] == "Beef burgers"
+    assert [s["name"] for s in after["sides"]] == ["Roasted potatoes"]
+    assert [p for p in after["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"
+    # ...and back.
+    tools.undo_meal_swap(week, out["entry_id"])
+    back = _dinner(week, TUESDAY)
+    assert back["title"] == "Turkey burgers"
+    assert [s["name"] for s in back["sides"]] == ["Roasted potatoes"]
+
+
+def test_a_plain_swap_still_leaves_the_sides_behind(week):
+    # "Swap · I'll pick" is a different dish: the potatoes went with the
+    # chops, not with the night. Unchanged.
+    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    tools.add_component(entry_id, key="roasted-potatoes")
+    out = tools.swap_meal_in_place(week, entry_id, picker=lambda c: dict(_variant("Lemon chicken", "chicken"), is_new_recipe=True))
+    assert out["status"] == "swapped"
+    assert _dinner(week, TUESDAY)["sides"] == []
+
+
+def test_the_cut_is_offered_and_only_the_same_protein_is_not(week):
+    assert [o["name"] for o in pp._clean_options(
+        [{"name": "Chicken thighs"}, {"name": "Chicken breasts"}, {"name": "Chicken"}, {"name": "Ground chicken"}, {"name": "Pork loin"}],
+        "chicken",
+    )] == ["Chicken thighs", "Chicken breasts", "Pork loin"]
+
+
+def test_a_side_with_no_role_still_shows_on_the_card():
+    parts = pp.parts_of_plate("dinner", ["protein", "vegetable", "carb"], "chicken",
+                              [{"name": "Garlic yogurt sauce", "covers": []}], "")
+    assert parts[-1] == {"role": "side", "word": "Side", "name": "Garlic yogurt sauce", "source": "side", "missing": False}
+    # ...as a plain tap into the sheet (no role), with "Take it off" there.
+    assert "data-plate-part=\"' + escapeHtml(part.role === 'side' ? '' : part.role)" in SHELL_JS
+
+
+def test_the_sheet_ignores_a_fetch_from_an_earlier_open_and_undo_of_a_changed_side_puts_the_old_one_back():
+    i = SHELL_JS.index("  async function openMealAddSheet(")
+    body = SHELL_JS[i:SHELL_JS.index("  function drawMealAddRows(")]
+    assert "var thisOpen = mealAddState;" in body and "if (mealAddState !== thisOpen || !rows) return;" in body
+    j = SHELL_JS.index("  async function runMealAddUndo(panel, st, name, replaced) {")
+    undo = SHELL_JS[j:j + 1500]
+    assert "if (replaced) {" in undo and "text: replaced" in undo

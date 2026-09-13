@@ -107,6 +107,10 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
         for g in side.get("covers") or []:
             covered_by_side.setdefault(g, side.get("name") or "")
     parts = []
+    # A side that names no role (a sauce; a typed line the model could not
+    # cost) is still on the plate and still shows — as its own chip, after
+    # the roles, so nothing the household added disappears from the card.
+    extras = [s.get("name") for s in sides or [] if isinstance(s, dict) and s.get("name") and not (s.get("covers") or [])]
     for role in ROLES:
         if role not in wanted:
             continue
@@ -127,6 +131,8 @@ def parts_of_plate(slot: str, food_groups: list[str], main_protein: str | None,
             parts.append({"role": role, "word": ROLE_WORDS[role], "name": None, "source": "dish", "missing": False})
         elif known:
             parts.append({"role": role, "word": ROLE_WORDS[role], "name": None, "source": None, "missing": True})
+    for name in extras:
+        parts.append({"role": "side", "word": "Side", "name": name, "source": "side", "missing": False})
     return parts
 
 
@@ -238,9 +244,14 @@ def _clean_options(raw: list, exclude: str) -> list[dict]:
         if not isinstance(o, dict):
             continue
         name = (o.get("name") or "").strip()
-        # "Ground turkey" is the turkey the dish already has: an option that
-        # names the current protein anywhere in it is not a change.
-        if not name or name.lower() in seen or (exclude and exclude.lower() in name.lower()):
+        # "Ground turkey" is the turkey the dish already has, and so is a
+        # bare "Turkey" — but "Chicken breasts" offered for a chicken-thigh
+        # dish is the cut-level change this sheet exists for. So: the
+        # option is the same protein only when it is that word alone or
+        # "ground <word>"; a cut ("Chicken breasts", "Pork loin") stays.
+        low = name.lower()
+        same = bool(exclude) and low in ((exclude or "").lower(), "ground " + (exclude or "").lower())
+        if not name or low in seen or same:
             continue
         seen.add(name.lower())
         out.append({"name": name[:1].upper() + name[1:], "note": (o.get("note") or "").strip()[:40]})
@@ -362,6 +373,40 @@ def _ask_variant(context: dict) -> dict:
     return {}
 
 
+def _variant_name(proposed: str, current: str, choice: str) -> str:
+    """
+    A name for the rewritten dish that cannot be mistaken for a recipe
+    already saved. The model keeps the name when the protein isn't in it
+    ("Chili"), and apply_pick saves a recipe only if its name is new — so
+    "Chili" rewritten with turkey would be thrown away and the old Chili
+    planned again, reported as a change. The same if the proposed name
+    happens to be another saved recipe's. Either way the name says what
+    changed: "Chili with ground turkey".
+    """
+    proposed = (proposed or "").strip()
+    if not proposed:
+        proposed = current
+    taken = {(r.get("name") or "").strip().lower() for r in _recipes_list()}
+    if proposed.lower() != current.strip().lower() and proposed.lower() not in taken:
+        return proposed
+    base = proposed if proposed.lower() != current.strip().lower() else current.strip()
+    candidate = f"{base} with {choice.strip().lower()}"
+    if candidate.lower() in taken:
+        n = 2
+        while f"{candidate} {n}".lower() in taken:
+            n += 1
+        candidate = f"{candidate} {n}"
+    return candidate
+
+
+def _recipes_list() -> list[dict]:
+    from . import recipes as _recipes
+    try:
+        return _recipes.list_recipes()
+    except Exception:
+        return []
+
+
 # Calm and plain, paired with its way out, and it names the state of the
 # plan (DESIGN_SYSTEM §8) — the same shape as swap_in_place.REFUSAL.
 REFUSAL = "I couldn’t make that change — the dish is as it was. Try a different protein, or tell me in the chat."
@@ -396,14 +441,16 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     if not name or not _swap._clean_ingredients(pick.get("ingredients")):
         logger.warning("plate_part_change came back with no usable dish")
         return {"status": "refused", "message": REFUSAL}
-    pick["meal_name"] = name
+    pick["meal_name"] = _variant_name(name, entry["meal"], choice)
     if not (pick.get("main_protein") or "").strip():
         pick["main_protein"] = choice.lower()
     why = _swap.pick_gate(pick, entry)
     if why:
         logger.warning("plate_part_change refused %r: %s", name, why)
         return {"status": "refused", "message": f"I left it as it was — {choice} {why}."}
-    out = _swap.apply_pick(weekly_plan_id, entry, pick)
+    # The same dish with a different protein is the same plate: the sides
+    # go with it (carry_sides), where a swap to another dish leaves them.
+    out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True)
     out["status"] = "changed"
     out["role"] = role
     out["choice"] = choice
