@@ -44,12 +44,14 @@ from .attention import (  # noqa: F401
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
     CHORES_OFF_MESSAGE,
+    ChoreRefused,
     add_chore,
     chores_enabled,
     complete_chore,
     generate_chore_schedule,
     get_chores_due_today,
     get_chores_profile,
+    hand_chore,
     is_outsourced,
     list_chore_definitions,
     list_chores,
@@ -65,6 +67,16 @@ from .chores import (  # noqa: F401
 # above rather than in it, so a change to the nine chat tools' exports
 # and this one don't land on the same lines.
 from .chores import get_chores_pending  # noqa: F401
+# The ··· on a chore row (Loop Board "Chores v1: Skip, swap, or 'not this
+# week'"): the same three changes by INSTANCE id, plus who a row can be
+# handed to. Route-only, like set_chore_instance_status above them — the
+# screen has the row in hand, so none of them is an agent tool.
+from .chores import (  # noqa: F401
+    chore_people,
+    hand_chore_instance,
+    move_chore_instance,
+    skip_chore_instance,
+)
 # The household's own "cook these days now" pick (see cook_ahead.py). Not
 # an agent tool: the picker is a set of chips on the Cook card, and a
 # choice about which mornings to cook for is the household's to make by

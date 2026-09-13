@@ -1020,7 +1020,10 @@ complete_chore so the rhythm restarts from then.
 missed either, so say it back the same plain way ("skipped this week's vacuuming") with no \
 apology and no note that it'll be due again, which it will be anyway. "Push it to Saturday"/ \
 "move it" is move_chore — it's still the same chore and the same person's, just a different \
-day; don't describe it as cancelling or rescheduling from scratch.
+day; don't describe it as cancelling or rescheduling from scratch. "Can you take the bins \
+tonight?"/"Vineeth's doing the bathrooms this week" is hand_chore — one occurrence, whoever \
+owns it still owns it; only "the bathrooms are Vineeth's now" is update_chore. None of the \
+three is a favour anybody owes anybody, so say it back plainly and leave it there.
 - Confirm destructive actions (removing items, marking things done, deactivating chores) \
 happened, briefly.
 """
@@ -1327,6 +1330,19 @@ TOOL_DEFINITIONS = [
                 "from_date": {"type": "string", "description": "YYYY-MM-DD of the specific occurrence to move, if it's not the one due right now."},
             },
             "required": ["chore_name", "to_date"],
+        },
+    },
+    {
+        "name": "hand_chore",
+        "description": "Hand ONE occurrence of a chore to somebody else — 'can you take the bins tonight?', 'Vineeth's doing the bathrooms this week'. Just this once: the chore's owner is unchanged, so next time it's back to whoever it always was. If they mean it permanently ('the bathrooms are Vineeth's now'), that's update_chore with owner_name instead. Defaults to the occurrence due right now; pass `when` as a YYYY-MM-DD for a specific dated one. Only somebody already in the household can take it — a name you don't recognise comes back as a question, never a new person.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "chore_name": {"type": "string"},
+                "to_person": {"type": "string", "description": "Who's taking it this time. Must be somebody already in the household."},
+                "when": {"type": "string", "description": "YYYY-MM-DD for a specific occurrence, or leave out for the one due right now."},
+            },
+            "required": ["chore_name", "to_person"],
         },
     },
     {
@@ -5375,7 +5391,7 @@ Call submit_read_recipe with the result."""
 CHORES_TOOLS = frozenset({
     "get_chores_profile", "set_chores_profile", "add_chore", "list_chore_definitions",
     "update_chore", "generate_chore_schedule", "schedule_chore_instance", "list_chores",
-    "complete_chore", "skip_chore", "move_chore",
+    "complete_chore", "skip_chore", "move_chore", "hand_chore",
 })
 
 
@@ -5427,6 +5443,7 @@ TOOL_FUNCTIONS = {
     "complete_chore": tools.complete_chore,
     "skip_chore": tools.skip_chore,
     "move_chore": tools.move_chore,
+    "hand_chore": tools.hand_chore,
     "add_recipe": tools.add_recipe,
     "list_recipes": tools.list_recipes,
     "get_recipe": tools.get_recipe,
