@@ -10643,9 +10643,11 @@
     biweekly: 'Every two weeks',
     monthly: 'Every month',
     quarterly: 'Every few months',
+    semiannual: 'Twice a year',
+    yearly: 'Once a year',
     once: 'Just once'
   };
-  var CHORE_RHYTHM_ORDER = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'once'];
+  var CHORE_RHYTHM_ORDER = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'semiannual', 'yearly', 'once'];
 
   // The band on the Chores state: the same frame as Meals — the week's
   // dates and "This week" — minus the meal plan's chip and line, which

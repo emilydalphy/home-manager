@@ -500,16 +500,29 @@ class OnboardingRhythmRequest(BaseModel):
 
 
 class ChoreProfileRequest(BaseModel):
-    home_type: str = ""
-    bedrooms: int = 0
-    bathrooms: int = 0
-    has_yard: bool = False
-    standard: str = "standard"  # relaxed | standard | meticulous
-    rotation_members: list[str] = []
-    existing_help: str = ""
-    existing_help_frequency: str = ""
-    include_notes: str = ""
-    exclude_notes: str = ""
+    """
+    The chores questionnaire. Every field is optional and None means "not
+    answered on this call" (Loop Board "Chores v1: A starter list from
+    what Pomona already knows"): the recommend route fills a None from
+    the saved chores profile, so a screen that only asked the genuinely
+    new questions — standard, help, notes — never has to send the home
+    facts back, and never re-asks them. The profile-save route reads a
+    None as the old defaults, so it saves exactly what it always did.
+    """
+    home_type: str | None = None
+    bedrooms: int | None = None
+    bathrooms: int | None = None
+    has_yard: bool | None = None
+    standard: str | None = None  # relaxed | standard | meticulous
+    rotation_members: list[str] | None = None
+    existing_help: str | None = None
+    existing_help_frequency: str | None = None
+    include_notes: str | None = None
+    exclude_notes: str | None = None
+
+    def answered(self) -> dict:
+        """Only the fields this call actually sent."""
+        return {k: v for k, v in self.dict().items() if v is not None}
 
 
 class ChoreItemInput(BaseModel):
@@ -1179,26 +1192,46 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
     )
 
 
+@app.get("/api/onboarding/chores/known")
+def onboarding_chores_known():
+    """
+    What Pomona already knows before a chores setup asks anything (Loop
+    Board "Chores v1: A starter list from what Pomona already knows"):
+    the people and the adults, the pets on file, the home facts if a
+    chores profile was ever saved (home.known says whether), the saved
+    profile itself, and every rhythm with its words for a picker. The
+    setup step reads this first and asks only for what is missing —
+    never again for home type, bedrooms, bathrooms, yard, pets or who
+    lives here. Read-only.
+    """
+    try:
+        return tools.known_for_chores()
+    except Exception as e:
+        logger.exception("Chores known-facts lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/onboarding/chores/recommend")
 def onboarding_chores_recommend(req: ChoreProfileRequest):
     """
-    Turn a household chores profile into a recommended chore list via a
-    single forced tool-call to Claude. Pets and household goals are pulled
-    in automatically from what's already saved. Returns suggestions only —
-    nothing is created yet; the wizard shows these as an editable checklist
-    and the user's final choices go to /api/onboarding/chores/save.
+    Propose the household's starter chore list. Suggestions only — nothing
+    is created or saved here; the household keeps, tweaks or drops each
+    row and the result goes to /api/onboarding/chores/save (or they skip,
+    and /api/onboarding/chores-profile keeps just their answers).
+
+    The profile the list is built from is the saved chores profile with
+    whatever THIS call answered on top (None = not asked this time), the
+    pets from the pets table, the household's goals, and — when setup
+    named nobody for the rotation — the adults, so no row arrives
+    nobody's. The list itself is rule-based (tools.starter_chore_list);
+    Claude only adjusts it from the free-text notes, and if Claude is
+    unavailable the rule-based list is returned as it is rather than a
+    503 (agent.generate_chore_recommendations). Each row carries name,
+    category, frequency (the stored key), frequency_label (the household's
+    words), mode, owner_name, assignee_names, outsourced_to and basis.
     """
     try:
-        pets = tools.list_pets()
-        household = tools.get_household_setup_status()
-        profile = req.dict()
-        profile["pets"] = pets
-        profile["goals"] = household.get("goals", "")
-        # Every proposed chore gets an owner, drawn from the rotation named
-        # in setup. A questionnaire that named nobody still has adults to
-        # draw on — use them rather than proposing a list that's nobody's.
-        if not [n for n in profile.get("rotation_members") or [] if n and n.strip()]:
-            profile["rotation_members"] = [a["name"] for a in tools.household_adults() if a["name"]]
+        profile = tools.profile_for_starter(req.answered())
         chores = generate_chore_recommendations(profile)
     except AssistantUnavailableError as e:
         logger.warning("Chore recommendation hit a transient Claude API failure: %s", e)
@@ -1206,7 +1239,11 @@ def onboarding_chores_recommend(req: ChoreProfileRequest):
     except Exception as e:
         logger.exception("Chore recommendation failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"chores": chores}
+    return {
+        "chores": chores,
+        "profile": {k: v for k, v in profile.items() if k != "goals"},
+        "frequencies": tools.frequency_choices(),
+    }
 
 
 @app.post("/api/onboarding/chores-profile")
@@ -1215,20 +1252,22 @@ def onboarding_chores_profile(req: ChoreProfileRequest):
     Save the chores questionnaire answers directly as context — no LLM call,
     no chores created yet. Used when skipping the recommendation/review
     step; the chat assistant can read this later via get_chores_profile
-    instead of re-asking these questions.
+    instead of re-asking these questions. A field this call didn't send
+    (None) saves as its old default, exactly as before the fields became
+    optional.
     """
     try:
         tools.set_chores_profile(
-            home_type=req.home_type,
-            bedrooms=req.bedrooms,
-            bathrooms=req.bathrooms,
-            has_yard=req.has_yard,
-            standard=req.standard,
-            rotation_members=req.rotation_members,
-            existing_help=req.existing_help,
-            existing_help_frequency=req.existing_help_frequency,
-            include_notes=req.include_notes,
-            exclude_notes=req.exclude_notes,
+            home_type=req.home_type or "",
+            bedrooms=req.bedrooms or 0,
+            bathrooms=req.bathrooms or 0,
+            has_yard=bool(req.has_yard),
+            standard=req.standard if req.standard is not None else "standard",
+            rotation_members=req.rotation_members or [],
+            existing_help=req.existing_help or "",
+            existing_help_frequency=req.existing_help_frequency or "",
+            include_notes=req.include_notes or "",
+            exclude_notes=req.exclude_notes or "",
         )
     except Exception as e:
         logger.exception("Chores profile save failed")
@@ -1253,6 +1292,11 @@ def onboarding_chores_save(req: ChoreSaveRequest):
         for c in req.chores:
             if not c.name.strip():
                 continue
+            if c.frequency not in tools._FREQUENCY_DAYS:
+                # A rhythm the schedule can't keep is a question too, not
+                # a row silently stored as weekly.
+                skipped.append({"name": c.name.strip(), "reason": f"'{c.frequency}' isn't a rhythm I can keep."})
+                continue
             try:
                 tools.add_chore(
                     name=c.name.strip(),
@@ -1267,11 +1311,13 @@ def onboarding_chores_save(req: ChoreSaveRequest):
                 skipped.append({"name": c.name.strip(), "reason": str(e)})
                 continue
             created += 1
-        tools.generate_chore_schedule(days_ahead=14)
+        # The next two weeks, so Now and Plan | Chores are populated the
+        # moment the household comes back from setup.
+        generated = tools.generate_chore_schedule(days_ahead=14)
     except Exception as e:
         logger.exception("Chore save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"saved": True, "created": created, "skipped": skipped}
+    return {"saved": True, "created": created, "skipped": skipped, "scheduled": len(generated)}
 
 
 @app.get("/api/coaching")

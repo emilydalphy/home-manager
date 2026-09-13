@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS chores (
     household_id INTEGER NOT NULL REFERENCES households(id),
     name TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'cleaning', -- cleaning | maintenance | other
-    frequency TEXT NOT NULL DEFAULT 'weekly', -- daily | weekly | biweekly | monthly | quarterly | once
+    frequency TEXT NOT NULL DEFAULT 'weekly', -- daily | weekly | biweekly | monthly | quarterly | semiannual | yearly | once (chores._FREQUENCY_DAYS)
     default_assignee_id INTEGER REFERENCES members(id), -- the owner when mode = 'owned'; first of the rotation when 'shared'
     rotation_member_ids_json TEXT NOT NULL DEFAULT '[]', -- the people named on this chore, in turn order
     mode TEXT NOT NULL DEFAULT '', -- owned | shared | whoever | outsourced | '' (see above)

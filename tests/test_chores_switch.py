@@ -269,6 +269,7 @@ def _stub_client(monkeypatch, responses):
 _CHORES_TOOL_CALLS = [
     ("get_chores_profile", {}),
     ("set_chores_profile", {"home_type": "House"}),
+    ("get_starter_chore_list", {}),
     ("add_chore", {"name": "Bins", "frequency": "weekly"}),
     ("list_chore_definitions", {}),
     ("update_chore", {"chore_name": "Bins", "mode": "shared"}),

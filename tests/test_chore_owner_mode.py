@@ -744,15 +744,24 @@ def _stub_recommendation(monkeypatch, chores):
 
 
 def test_the_recommend_route_returns_mode_and_owner_per_row(signed_in, two_adults, monkeypatch):
+    """
+    Since Loop Board "Chores v1: A starter list from what Pomona already
+    knows" the list is rule-based and the model only ADDS to it (the
+    `chores` key of submit_chore_recommendations), so the two stubbed rows
+    arrive on the end of the starter list — still with a mode and an
+    owner each, which is what this test has always pinned.
+    """
     _stub_recommendation(monkeypatch, [
-        {"name": "Bathrooms", "category": "cleaning", "frequency": "weekly", "mode": "owned", "owner_name": "Vineeth"},
-        {"name": "Kitchen", "category": "cleaning", "frequency": "daily"},
+        {"name": "Polish the silver", "category": "cleaning", "frequency": "monthly", "mode": "owned", "owner_name": "Vineeth"},
+        {"name": "Water the plants", "category": "other", "frequency": "weekly"},
     ])
     res = signed_in.post("/api/onboarding/chores/recommend", json={"rotation_members": ["Emily", "Vineeth"]})
     assert res.status_code == 200
-    rows = res.json()["chores"]
-    assert rows[0]["mode"] == "owned" and rows[0]["owner_name"] == "Vineeth"
-    assert rows[1]["mode"] == "owned" and rows[1]["owner_name"] in ("Emily", "Vineeth")
+    rows = {r["name"]: r for r in res.json()["chores"]}
+    assert rows["Polish the silver"]["mode"] == "owned" and rows["Polish the silver"]["owner_name"] == "Vineeth"
+    assert rows["Water the plants"]["mode"] == "owned" and rows["Water the plants"]["owner_name"] in ("Emily", "Vineeth")
+    # ...and every starter row has one too.
+    assert all(r["mode"] == "owned" and r["owner_name"] in ("Emily", "Vineeth") for r in rows.values())
 
 
 def test_the_recommend_route_draws_on_the_adults_when_setup_named_nobody(signed_in, two_adults, monkeypatch):

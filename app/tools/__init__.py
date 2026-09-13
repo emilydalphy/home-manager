@@ -44,6 +44,7 @@ from .attention import (  # noqa: F401
 from .chores import (  # noqa: F401
     _FREQUENCY_DAYS,
     CHORES_OFF_MESSAGE,
+    FREQUENCY_WORDS,
     ChoreRefused,
     add_chore,
     chores_enabled,
@@ -67,6 +68,19 @@ from .chores import (  # noqa: F401
 # above rather than in it, so a change to the nine chat tools' exports
 # and this one don't land on the same lines.
 from .chores import get_chores_pending  # noqa: F401
+# The starter list (Loop Board "Chores v1: A starter list from what Pomona
+# already knows"): rule-based rows from the household's facts, read by the
+# recommend route (starter_chore_list, profile_for_starter), by the setup
+# screen (known_for_chores) and by the chat (get_starter_chore_list).
+from .chore_starter import (  # noqa: F401
+    NEVER_DROPPED,
+    frequency_choices,
+    get_starter_chore_list,
+    known_for_chores,
+    profile_for_starter,
+    starter_chore_list,
+    with_frequency_label,
+)
 # The ··· on a chore row (Loop Board "Chores v1: Skip, swap, or 'not this
 # week'"): the same three changes by INSTANCE id, plus who a row can be
 # handed to. Route-only, like set_chore_instance_status above them — the

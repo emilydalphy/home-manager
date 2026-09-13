@@ -371,6 +371,81 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — A starter chore list from what Pomona already knows.
+  Branch `worktree-chores-starter-list`, NOT merged at the time of
+  writing.** Loop Board "Chores v1: A starter list from what Pomona
+  already knows" (Phase 2). Setup proposes the list; the household keeps,
+  tweaks and drops instead of typing housework out, and nobody becomes
+  the administrator.
+  - **The list is rules, not the model — and the model can only adjust
+    it.** Before: `generate_chore_recommendations` was one forced tool
+    call with nothing underneath, so a house could be proposed a list
+    with no laundry, no bins and nothing seasonal, and the route only knew
+    what the page posted. Now `app/tools/chore_starter.py` builds the
+    baseline from facts (bathrooms → one row each while sayable; laundry;
+    garbage / recycling / green bin; yard rows iff `has_yard`; pet CARE
+    per kind — daily walks or litter, monthly flea/tick, yearly vet,
+    grooming — iff pets; furnace filter / gutters / winter tires iff a
+    house; patio furniture iff a yard; closet swap, smoke detectors,
+    windows, oven, monthly tidy-and-donate for everyone) and deals an
+    owner onto every row. Claude is then asked ONLY for `chores` (adds),
+    `drop` and `change` over that list (`_merge_chore_adjustments`);
+    `NEVER_DROPPED` = Laundry + Garbage out, which the model cannot
+    remove — the household does, by hand. **Any API failure returns the
+    baseline** (found in live verification: a 401 is not an
+    `AssistantUnavailableError`, and a 500 from the starter list would
+    have been the wrong answer to "show me a list").
+  - **Owner rule, stated:** dealt round `rotation_members` in the order
+    setup named them, top to bottom, one row each; a row the described
+    help covers is tagged outsourced and skips the deal; nobody named →
+    every row `whoever`. No `shared` proposals — owned is the default the
+    owner card chose, and a proposal is one tap to change.
+  - **Two new rhythms: `semiannual` (182) and `yearly` (365)** in
+    `_FREQUENCY_DAYS`, the three tool enums, `CHORE_RHYTHM_LABELS`/`ORDER`
+    in shell.js ("Twice a year", "Once a year") and the schema comment.
+    Twice-a-year things squeezed into "quarterly" would have been asked
+    for at the wrong time. `FREQUENCY_WORDS` (chores.py) is the Python
+    twin of the JS labels and a test pins the two dicts equal. Words are
+    the shell's existing ones ("Every two weeks" — the card's "every
+    couple of weeks" was NOT adopted, flagged for Emily).
+  - **Setup never asks again.** `GET /api/onboarding/chores/known` (people,
+    adults, pets, `home.known` + facts, saved profile, rhythm picker).
+    `ChoreProfileRequest` fields are now `Optional`, None = "not asked this
+    call": `/recommend` merges answers over the saved profile
+    (`profile_for_starter`), pets from the table, adults when nobody was
+    named; `/chores-profile` treats None as the old defaults so the skip
+    path saves exactly what it always did. `/recommend` writes nothing —
+    not even the profile; the keep and the skip both save it.
+    `/chores/save` now refuses a rhythm it can't keep (reported in
+    `skipped`, like a stray name) and returns `scheduled`.
+  - **The chat path is the same list.** `get_starter_chore_list` (gated
+    chores tool) = saved profile + pets + adults → the rules; the system
+    prompt's chores walk-through now asks only what isn't on file, saves
+    with `set_chores_profile`, reads this list back in words, then
+    `add_chore` per kept row + `generate_chore_schedule`. "Never type out
+    a list of your own instead."
+  - **chores-setup.html got the smallest review that exposes the
+    contract** (prefill from `/known`, pets shown not asked, per-row
+    owner/rhythm/"Someone else does it"/drop, "Keep these" vs "Not now").
+    The sibling card "Setup becomes a step under Chores" builds the real
+    screen; this page and `GET /chores-setup` were deliberately kept.
+  - **Left alone, and a card:** every new chore's first occurrence is
+    TODAY (`_next_due_date`'s "never scheduled → today"), so keeping 28
+    rows puts 28 on Now on day one, the yearly vet visit included.
+    Pre-existing; staggering the first fortnight is a product call.
+  - **Verifier's two catches, fixed:** the help's "How often?" answer now
+    re-rhythms EVERY row the help is tagged onto (the lawn people's
+    fortnight is when the lawn is mown), not just the cleaning rows — one
+    question was asked, so one answer applies, and review corrects the
+    odd row. And the pure function no longer crashes on what a saved
+    profile or the chat can hand it: a non-numeric room count reads as
+    "not known" (`_count` → 0, the same one row an unknown home gets)
+    and a non-string in the rotation is nobody.
+  - Tests: `tests/test_chore_starter_list.py` (37, one section per
+    acceptance criterion) plus one parametrize case in
+    `test_chores_switch.py`; three older tests re-pinned to the new
+    contract (recommend returns baseline + adds; save's body gained
+    `scheduled`; the gated-tool set). 3383 passed.
 - **2026-09-13 — Un-tick and re-tick a bought grocery line and the kitchen
   holds ONE of it. Branch `worktree-grocery-retick`, NOT merged at the time
   of writing.** Loop Board "Un-tick and re-tick a bought grocery item and

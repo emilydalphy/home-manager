@@ -689,7 +689,8 @@ def test_an_outsourced_row_is_never_skipped_for_naming_a_stranger(signed_in, two
     res = signed_in.post("/api/onboarding/chores/save", json={"chores": [
         {"name": "Bathrooms", "mode": "outsourced", "outsourced_to": "Maria"},
     ]})
-    assert res.json() == {"saved": True, "created": 1, "skipped": []}
+    body = res.json()
+    assert (body["saved"], body["created"], body["skipped"]) == (True, 1, [])
 
 
 # --- 7. the starter list reads the help they already told us about -----------
