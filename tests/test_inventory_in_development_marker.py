@@ -66,12 +66,13 @@ def test_shell_js_constant_declared_beside_other_shell_constants():
 
 def test_kitchen_tile_pill_is_gated_and_uses_the_neutral_pill_classes():
     """
-    kitchenTilesHtml()'s Inventory row prints the pill only inside an
+    cookMoreRowsHtml()'s Inventory row (Cook's More sheet, 2026-09-13; it
+    was kitchenTilesHtml() on the root before that) prints the pill only inside an
     INVENTORY_IN_DEVELOPMENT conditional, using the design system's
     neutral pill (theme.css .pill / .pill-neutral) rather than a new class.
     """
-    fn_start = SHELL_JS.index("function kitchenTilesHtml()")
-    fn_end = SHELL_JS.index("function renderKitchen()")
+    fn_start = SHELL_JS.index("function cookMoreRowsHtml()")
+    fn_end = SHELL_JS.index("function openCookMoreSheet()")
     fn = SHELL_JS[fn_start:fn_end]
     assert "data-sheet=\"inventory\"" in fn
     assert "INVENTORY_IN_DEVELOPMENT" in fn

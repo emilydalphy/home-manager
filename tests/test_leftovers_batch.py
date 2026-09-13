@@ -383,11 +383,15 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
     "Tonight" hero these tests used to render (cookHeroHtml /
     cookReheatHeroHtml / cookServesChip) went with the Cook overview when
     cooking moved to the Kitchen tab. The rules it enforced did not go with
-    it — they moved to the Kitchen root's "Cooking today" lines, which is
-    what the tests below render now. The one thing genuinely no longer
-    covered here is the hero's "for 6" batch chip: it lives on the focused
-    cook screen (cookFocusHtml), which is not a pure function and cannot be
-    lifted out this way. See test_the_batch_note_is_carried_on_the_line.
+    it — they moved to the Kitchen root's "Cooking today" lines. UPDATED
+    AGAIN 2026-09-13 (the shelf design): those lines are the root's one
+    spruce Tonight card plus its dock now (kitchenCookingTodayHtml +
+    cookRootDockHtml), and the rest of the week is the shelf
+    (cookShelfHtml). Same rules, rendered by the new functions. The one
+    thing genuinely no longer covered here is the hero's "for 6" batch
+    chip: it lives on the focused cook screen (cookFocusHtml), which is
+    not a pure function and cannot be lifted out this way. See
+    test_the_batch_note_is_carried_on_the_line.
     """
     src = SHELL_JS.read_text()
     harness = (
@@ -400,19 +404,30 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         "const cookState = { tonightIdx: 99, cookAheadPicks: {} };\n"
         "function dayName(d){ return 'Tue'; }\n"
         "function dayNameShort(d){ return 'Tue'; }\n"
+        + _extract("addDaysLocal", src) + "\n"
         + _extract("kitchenTodayLine", src) + "\n"
         + _extract("kitchenTodayRows", src) + "\n"
         + _extract("kitchenTodayRowHtml", src) + "\n"
+        # The Tonight card and its dock (the shelf design, 2026-09-13).
+        + src[src.index("  var COOK_DISH_WORDS = ["):src.index("  // The nights the shelf shows")]
+        + _extract("cookShelfNights", src) + "\n"
+        + _extract("cookShelfHtml", src) + "\n"
+        + _extract("cookShelfTileHtml", src) + "\n"
+        + _extract("cookTonightRow", src) + "\n"
+        + _extract("cookTonightEyebrow", src) + "\n"
+        + _extract("cookTonightNote", src) + "\n"
+        + _extract("cookThawTitle", src) + "\n"
+        + _extract("cookThawDoneLine", src) + "\n"
+        + _extract("cookFocusPrepTasks", src) + "\n"
+        + _extract("cookTonightTimes", src) + "\n"
+        + _extract("cookTonightCardHtml", src) + "\n"
         + _extract("kitchenCookingTodayHtml", src) + "\n"
-        # One line per day since 2026-09-11 (Build 8); the day row is what
-        # the rest-of-week section renders now (cookRestRowHtml is gone).
-        + _extract("cookRestDayRowHtml", src) + "\n"
-        + _extract("cookRestOfWeekHtml", src) + "\n"
+        + _extract("cookRootDockHtml", src) + "\n"
         # The Kitchen root builds its rows and renders them in one breath
-        # (renderKitchen); this is that pair, so a test can hand in the
+        # (renderKitchen); this is that trio, so a test can hand in the
         # meals and the moves the way the screen gets them.
-        + "function _card(meals, moves, iso){ "
-          "return kitchenCookingTodayHtml(kitchenTodayRows(meals, moves, iso)); }\n"
+        + "function _card(meals, moves, iso){ var rows = kitchenTodayRows(meals, moves, iso); "
+          "return kitchenCookingTodayHtml(rows, meals, iso, {}) + cookRootDockHtml(cookTonightRow(rows)); }\n"
         + f"console.log(JSON.stringify({fn}({json.dumps(arg)}{extra_args})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)
@@ -421,7 +436,7 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
 
 
 def _card(meals: list, iso: str, moves: list | None = None) -> str:
-    """The Kitchen root's "Cooking today" card, as the screen builds it."""
+    """The Kitchen root's Tonight card and dock, as the screen builds them."""
     return _render("_card", meals, f", {json.dumps(moves or [])}, {json.dumps(iso)}")
 
 
@@ -450,18 +465,18 @@ def test_a_reheat_today_offers_one_action_and_no_cook_flow():
     recipe to open, no "Cook" badge, one action and it says "eaten"."""
     html = _card([_REHEAT_MEAL], THU)
     assert "Leftovers — Tuesday’s Bulgogi Wraps" in html
-    assert "Mark eaten" in html
-    assert 'data-cook="focus"' not in html, "nothing to open — there is no recipe here"
-    assert ">Reheat<" in html
-    assert ">Cook<" not in html
+    assert "Mark eaten" in html and 'data-cook="check-meal"' in html, "the dock's one action"
+    assert "Start cooking" not in html, "nothing to cook — there is no recipe here"
+    assert "Reheat — cooked on Tue." in html
 
 
 @_needs_node
 def test_a_cook_today_is_a_line_that_opens_the_recipe():
     html = _card([_COOK_MEAL], TUE)
     assert "Bulgogi Wraps" in html
-    assert ">Cook<" in html
-    assert 'data-cook="focus"' in html, "the cook line opens the focused screen"
+    assert "Start cooking" in html and 'data-cook="start-tonight" data-idx="0"' in html, (
+        "the dock opens the focused screen"
+    )
 
 
 @_needs_node
@@ -476,15 +491,20 @@ def test_the_batch_note_is_carried_on_the_line():
         "time_label": "6:30 tonight", "detail": "dinner · 55 min · 6:30",
     }
     html = _card([_COOK_MEAL], TUE, [move])
-    assert "start by 5:35 · 55 min" in html
+    assert ">Start<" in html and ">5:35<" in html
+    assert ">On the table<" in html and ">6:30<" in html
 
 
 @_needs_node
 def test_a_reheat_row_in_the_week_list_is_not_a_way_into_a_recipe():
-    """Since 2026-09-11 (Build 8) the rest of the week is one line per DAY:
-    the day's cooks by name, each a way into its recipe, and its reheats as
-    a count — never a button, because a reheat has no recipe to open."""
-    html = _render("cookRestOfWeekHtml", [_REHEAT_MEAL, _COOK_MEAL], ', {}, "1999-01-01", true')
-    assert "1 reheat" in html
-    assert 'data-cook="focus" data-idx="0"' not in html, "the reheat is a count, not a button"
+    """Since 2026-09-13 the rest of the week is the shelf, one tile per
+    night. A reheat night's tile says "Leftovers" and opens the reheat's
+    own card (cookReheatFocusHtml — the screen Now's hero already opens),
+    never a recipe; the cook's tile opens its recipe."""
+    html = _render("cookShelfHtml", [_REHEAT_MEAL, _COOK_MEAL],
+                   ', {"period_start_date": "%s", "day_count": 3}, "1999-01-01"' % TUE)
+    assert html.count('class="shelf-tile') == 3
+    assert ">Leftovers<" in html and 'data-cook="focus" data-idx="0"' in html
     assert 'data-cook="focus" data-idx="1"' in html, "the cook still opens its recipe"
+    assert ">Bulgogi<" in html
+    assert "shelf-tile is-empty" in html and ">—<" in html, "Wednesday has nothing planned"

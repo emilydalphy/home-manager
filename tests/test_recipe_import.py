@@ -739,7 +739,7 @@ def test_add_recipe_keeps_source_url_blank_for_every_other_caller():
 def test_the_cook_root_offers_add_from_a_link_next_to_recipes():
     import os
     js = open(os.path.join(os.path.dirname(__file__), "..", "static", "shell.js"), encoding="utf-8").read()
-    start = js.index("function kitchenTilesHtml()")
+    start = js.index("function cookMoreRowsHtml()")  # Cook's More sheet since 2026-09-13
     tiles = js[start:js.index("\n  }\n", start)]
     assert 'data-kit="recipe-link"' in tiles and ">Add from a link<" in tiles
     assert 'class="kit-row"' in tiles and "btn-primary" not in tiles  # rows since 2026-09-11

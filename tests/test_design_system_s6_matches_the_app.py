@@ -70,12 +70,17 @@ def test_the_code_agrees_that_cook_mode_is_a_step_of_that_tab():
     assert "Cook mode is a STEP of this tab" in SHELL_JS
 
 
-def test_the_no_primary_action_rule_survives_and_is_about_the_root():
-    """Acceptance criterion: the rule stays, because rule 2 leans on it
-    ("a screen with no single action has no dock"). What changed is that it
-    names the root — cook mode one step down really does carry an apricot."""
+def test_the_primary_action_rule_is_about_the_root_and_says_what_changed():
+    """Until 2026-09-13 the bullet read "Cook's root has no primary action"
+    and rule 2 leaned on it ("a screen with no single action has no dock").
+    The shelf design (Emily, Tier 2) gave the root "Start cooking" in a
+    dock; the bullet now says so, keeps the old wording as history, and
+    rule 2's half — a screen with no single action has no dock — survives
+    with Cook's empty night as a live example. Cook mode one step down
+    still carries its own apricot."""
     six = _section_six()
-    assert "**Cook's root has no primary action.**" in six
+    assert "**Cook's root has one primary action: \"Start cooking\", in its dock**" in six
+    assert "Cook's root has no primary action" in six, "the old rule stays as history"
     assert "A screen with no single action has no dock" in six
     assert "Mark it cooked" in six
 

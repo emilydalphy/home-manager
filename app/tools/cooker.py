@@ -14,6 +14,7 @@ from . import plates as _plates
 from . import prep_sessions as _prep_sessions
 from . import quantities as _quantities
 from . import recipes as _recipes
+from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 
 # Slot states with no meal behind them, so nothing to cook. See
@@ -828,7 +829,8 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     )
 
     if plan.get("weekly_plan_id") is None and not loose_meals:
-        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False}
+        return {"weekly_plan_id": None, "meals": [], "prep_tasks": [], "prep_sessions": [], "prep_days_set": False, "meals_done": 0, "meals_total": 0, "prep_done": 0, "prep_total": 0, "all_away": False,
+                "period_start_date": None, "day_count": 0, "cook_name": _cook_name()}
 
     if plan.get("weekly_plan_id") is None:
         # Loose meals with no plan behind them at all — a brand-new
@@ -1084,4 +1086,34 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # gets the Cook screen's offer to say which days you prep.
         "prep_days_set": _prep_sessions.has_prep_days(),
         "all_away": all_away,
+        # The planning period itself, for Cook's shelf (2026-09-13, "The
+        # shelf" design): one tile per night of the period, planned or
+        # not, so the strip can show an empty night as an empty night
+        # rather than skipping it. get_weekly_plan already works these
+        # out (plan_period); they ride along here the way prep_sessions
+        # does, so every /api/cooker/* write hands back a view the shelf
+        # can redraw from. None / 0 when there is no plan — the loose
+        # meals above carry real dates and the shelf falls back to a
+        # week from today.
+        "period_start_date": plan.get("period_start_date"),
+        "day_count": plan.get("day_count") or 0,
+        # Who cooks, when the household said one person does (the
+        # cooking_role rhythm fact, 'one_person' + a name). Cook's Tonight
+        # card puts the name in its eyebrow; any other answer ("we take
+        # turns", "whoever's free") is None here and the card names nobody
+        # rather than guessing. This is the first thing that READS the
+        # answer — DESIGN_SYSTEM §2b S4 noted on 2026-09-11 that
+        # cooking_role was stored and shown but never acted on.
+        "cook_name": _cook_name(),
     }
+
+
+def _cook_name() -> str | None:
+    """The one person who cooks, by name, or None (see get_cooker_view)."""
+    try:
+        role = _rhythm.get_household_rhythm().get("cooking_role") or {}
+    except Exception:
+        return None
+    if role.get("value") != "one_person":
+        return None
+    return (role.get("who") or "").strip() or None

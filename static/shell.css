@@ -4761,28 +4761,33 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* =====================================================================
    KITCHEN — the native hub (Stage 2 slice 3, built to InnKitchen)
    =====================================================================
-   The quiet screen. Nothing here is urgent, which is why there is no
-   apricot fill anywhere below: the blueprint's one-primary-action rule
-   says Kitchen has none, and giving it one would be a lie about what the
-   screen is for. Every action here is spruce, celadon, or plain.
+   The cook's tab. Its root is "Cook · D · The shelf" (Emily, 2026-09-13):
+   the shelf (a sideways strip of the period's nights), ONE spruce card for
+   tonight (the root's one hero, rule 4), at most two quiet get-ready rows,
+   and "Start cooking" in the dock — the root's one apricot (rule 5; until
+   this design the root had none by rule, see DESIGN_SYSTEM §6). Everything
+   else on it is spruce, celadon, sand or plain.
    ===================================================================== */
 .kitchen-content {
   max-width: 640px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-  /* Cook's root has no dock (nav rule 2), so nothing reserves room for the
-     chat button the way .dock's right padding does elsewhere — the foot
-     clears the FAB's 54px + its 16px lift itself, or the last row's
-     corner sits under it on a short screen. */
+  /* With no dock (nothing to cook tonight, or it's done) the foot clears
+     the chat button itself (54px + its 16px lift); with one, the dock is
+     the foot (.has-dock, set by renderKitchen). */
   padding: 0 0 84px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  /* Fills the panel so the empty moment can centre itself in it. */
+  /* Fills the panel: the empty moment centres in it, the dock
+     (margin-top: auto) sits at its foot. */
   flex: 1 0 auto;
 }
+.kitchen-content.has-dock { padding-bottom: 0; }
 #kit-root-view { display: flex; flex-direction: column; flex: 1 0 auto; }
+#kit-root-view .cook-root-dock { margin-top: auto; }
+#kit-dock[hidden] { display: none; }
 
 /* The "what we know" hero and its four count chips (.kit-hero*, .kit-chip*)
    left this screen on 2026-09-08: everything the app knows about the
@@ -4825,12 +4830,219 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .kit-row-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); line-height: 1.35; }
 .kit-row-chev { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
 .kit-row-chev svg { width: 16px; height: 16px; }
-/* The rest of the week, one line per day. */
-.cook-day-row { align-items: flex-start; }
-.cook-day-dishes { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.cook-day-dish { text-align: left; }
-.cook-day-min { font-weight: 600; color: var(--ink-secondary); font-size: 13px; }
-.cook-week-name.is-quiet { color: var(--ink-secondary); font-weight: 500; }
+/* The rest-of-week day rows (.cook-day-*) went with that list on
+   2026-09-13; the shelf below is the week now. */
+
+/* ---------- The shelf ----------
+   One tile per night of the planning period, in a strip that scrolls
+   sideways inside the 20px gutter (it bleeds to the screen edges so tiles
+   slide under them, and rests aligned to the gutter). 74px tiles, 6px
+   apart, the day as an eyebrow, the date in the display face (tonight's
+   bigger and bolder — the same 19/800 vs 16/700 step Plan's day tiles
+   take), and one word for the dish. Tonight is the celadon tint with its
+   edge and label (§1: the gentle, non-urgent tile). Nothing under 44px. */
+.cook-shelf {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 -20px;
+  padding: 2px 20px 6px;
+  scroll-padding: 0 20px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.cook-shelf::-webkit-scrollbar { display: none; }
+.shelf-tile {
+  flex: 0 0 74px;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: var(--radius-tile);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: inherit;
+  color: var(--ink);
+  text-align: center;
+  cursor: default;
+}
+button.shelf-tile { cursor: pointer; }
+button.shelf-tile:hover { background: var(--surface-raised); }
+.shelf-day {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.shelf-num {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+.shelf-dish {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.shelf-tile.is-tonight { background: var(--celadon-tint); border-color: var(--celadon-edge); }
+.shelf-tile.is-tonight .shelf-day { color: var(--celadon-label); }
+.shelf-tile.is-tonight .shelf-num { font-size: 19px; font-weight: 800; color: var(--ink-on-celadon); }
+.shelf-tile.is-tonight .shelf-dish { color: var(--ink-on-celadon); }
+.shelf-tile.is-empty .shelf-dish { color: var(--ink-muted); }
+.shelf-tile.is-done .shelf-dish { color: var(--ink-done); text-decoration: line-through; }
+
+/* ---------- Tonight: the root's one spruce card ----------
+   20px radius, 18px padding, the hero's shadow (§4: shadow belongs to the
+   hero) — and the same --spruce-edge hairline the root band wears, because
+   on the dark ground the shadow reads as nothing and the edge is the lift.
+   Under a third of the screen at 375×812 (§2b S3). No button in it: the
+   dock carries the action, the shelf's tonight tile opens the meal. */
+.cook-tonight {
+  background: var(--spruce);
+  color: var(--ivory-ink);
+  border-radius: var(--radius-card);
+  border: 1.5px solid var(--spruce-edge);
+  padding: 18px;
+  box-shadow: var(--shadow-hero);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cook-tonight-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--apricot-light);
+}
+.cook-tonight-dish {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.034em;
+  line-height: 1.08;
+  color: var(--ivory-ink);
+  overflow-wrap: anywhere;
+}
+.cook-tonight.is-done .cook-tonight-dish { color: var(--ivory-ink-muted); }
+/* Start / on the table: two raised tiles (--spruce-raised is the chip fill
+   on spruce, never on ivory). One tile when only one fact is known. */
+.cook-tonight-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cook-tonight-times:has(> :only-child) { grid-template-columns: 1fr; }
+.cook-tonight-tile {
+  background: var(--spruce-raised);
+  border-radius: var(--radius-tile);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.cook-tonight-tile-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ivory-ink-muted);
+}
+.cook-tonight-tile-value {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  color: var(--ivory-ink);
+}
+.cook-tonight-note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ivory-ink-muted);
+}
+/* Today's other meals on a multi-slot day (a 21-slot plan's breakfast and
+   lunch), in the ticklist shape the root used to be. */
+.cook-also-today { margin-top: -2px; }
+
+/* ---------- The get-ready rows ----------
+   At most two, under the card, and quiet: no card border, 52px min, a
+   32px icon tile — celadon for a thaw (the fridge move is the nudge, not
+   the task), sand for prep — the title in the display face, one line,
+   and a chevron when the row opens somewhere. A loose prep task carries
+   its tick instead (it has nowhere to open). */
+.cook-ready { display: flex; flex-direction: column; }
+.cook-ready-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--ink);
+  font: inherit;
+  cursor: default;
+}
+button.cook-ready-row { cursor: pointer; }
+.cook-ready-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: var(--radius-badge);
+  background: var(--sand);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cook-ready-icon svg { width: 18px; height: 18px; }
+.cook-ready-row.is-thaw .cook-ready-icon { background: var(--celadon-tint); color: var(--celadon-label); }
+.cook-ready-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cook-ready-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+}
+.cook-ready-line {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+.cook-ready-chev { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
+.cook-ready-chev svg { width: 16px; height: 16px; }
+.cook-ready-row .cook-box { flex: 0 0 auto; }
+
+/* "More ···" — the foot's one quiet link to the three rare entry points
+   (the Cook More sheet). Its own 44px row (rule 6). */
+.cook-more-foot { display: flex; padding: 2px 0 0; }
 /* Inventory is background by policy — the quietest row on the quietest
    screen, a neutral stroke and (until INVENTORY_IN_DEVELOPMENT, see
    shell.js) no badge of any kind. Its one badge now is the neutral
@@ -5601,7 +5813,8 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
    in a fixed strip above the tab bar, the same place on every screen,
    labelled for what it does — "Approve and build my shopping list", "Done
    at Loblaws", "Start cooking" — and it does not scroll away. A screen with
-   no single action has no dock; Cook's root is the standing example.
+   no single action has no dock; Cook's root was the standing example until
+   the shelf design (2026-09-13) gave it "Start cooking" (.cook-root-dock).
 
    Sticky rather than in flow: the phone is across the counter and the next
    thing to do must not be a scroll away. It is in the page's own scroller,
@@ -5787,7 +6000,7 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
 .cook-week-row .cook-box { border-color: var(--sand-deep); background: var(--ground); }
 .cook-week-row .cook-box.checked { background: var(--celadon); border-color: var(--celadon); }
 
-/* The second line of a "Cooking today" row: "start by 5:35 · 55 min",
+/* The second line of a today row (.cook-also-today): "start by 5:35 · 55 min",
    read off the same moves payload Today's timeline uses. Indented past the
    tick so it lines up under the dish rather than under the box. */
 .cook-week-sub {
@@ -5799,7 +6012,7 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
   color: var(--ink-inactive);
 }
 .cook-week-item.is-done .cook-week-sub { color: var(--ink-done-soft); }
-/* "+ 3 more cooks" — the rest of the week is three lines until asked. */
+/* The foot's "More ···" link (cookMoreLinkHtml). */
 .cook-more-link { padding-left: 2px; }
 
 /* ---------- The rest of the week: subordinate, dense on purpose ---------- */
@@ -6282,9 +6495,9 @@ span.cook-week-name { cursor: default; }
    A quiet tile at the bottom of Kitchen, a small in-prose link on the
    error states, and the sheet both open. Every colour is a token; the
    sheet reuses the existing scrim/sheet geometry (#kit-sheet) rather than
-   inventing a second one. Nothing here is apricot-filled: Kitchen has zero
-   primary actions by design (Rule 5), and a "tell me what broke" box is
-   not the exception that earns the screen's first one. */
+   inventing a second one. Nothing here is apricot-filled: Cook's one
+   apricot is "Start cooking" in the dock (Rule 5), and a "tell me what
+   broke" box is not a second one. */
 
 /* =====================================================================
    PREFERENCES — the gear, and the sheet behind it
@@ -6478,7 +6691,7 @@ span.cook-week-name { cursor: default; }
 /* The one error paragraph that lives inside a spruce hero (Kitchen's).
    --apricot-label is tuned for a light ground; on spruce the lifted
    apricot is the one that reads. */
-/* On Kitchen's spruce hero the link stays ivory: Kitchen carries no apricot by design (nothing there is urgent). */
+/* On Kitchen's spruce hero the link stays ivory: the root's one apricot is the dock's, and a link in an error line is not it. */
 .snw-link-hero { color: var(--ivory-ink-muted); text-decoration: underline; text-decoration-color: var(--apricot-rule); }
 .snw-link-hero:hover { color: var(--ivory-ink); }
 
@@ -7850,14 +8063,15 @@ span.cook-week-name { cursor: default; }
 .wk-card .cook-ahead-go:hover { background: var(--sand); }
 
 /* ---------- the "More" sheet ---------- */
-#meals-more-scrim {
+/* Cook's More (#cook-more-*) is the same sheet — one geometry, two ids. */
+#meals-more-scrim, #cook-more-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 40;
 }
-#meals-more-sheet {
+#meals-more-sheet, #cook-more-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -7874,7 +8088,11 @@ span.cook-week-name { cursor: default; }
   gap: 8px;
   animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
 }
-#meals-more-scrim[hidden], #meals-more-sheet[hidden] { display: none; }
+#meals-more-scrim[hidden], #meals-more-sheet[hidden],
+#cook-more-scrim[hidden], #cook-more-sheet[hidden] { display: none; }
+/* The rows in Cook's More are .kit-rows — the card border is the sheet's,
+   so the card drops its own. */
+#cook-more-rows .kit-rows { border: 0; background: none; padding: 0 2px; }
 .wk-more-rows { display: flex; flex-direction: column; }
 .wk-more-row {
   width: 100%;
@@ -8205,18 +8423,18 @@ span.cook-week-name { cursor: default; }
    transitions. `animation: none` cancels each sheet's old
    entrance-only keyframe (defined at its own rule earlier in this
    file) without touching that rule's resting appearance. */
-#ask-sheet, #week-sheet, #kit-sheet, #meals-more-sheet, #gro-scan-sheet,
+#ask-sheet, #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet,
 #prefs-sheet, #notif-panel {
   animation: none;
   translate: 0 100%;
   transition: translate var(--motion-base) var(--motion-ease);
 }
 #ask-sheet.is-open, #week-sheet.is-open, #kit-sheet.is-open,
-#meals-more-sheet.is-open, #gro-scan-sheet.is-open, #prefs-sheet.is-open,
+#meals-more-sheet.is-open, #cook-more-sheet.is-open, #gro-scan-sheet.is-open, #prefs-sheet.is-open,
 #notif-panel.is-open {
   translate: 0 0;
 }
-#ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim,
+#ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim, #cook-more-scrim,
 #gro-scan-scrim, #prefs-scrim, #notif-scrim,
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim {
   animation: none;
@@ -8224,7 +8442,7 @@ span.cook-week-name { cursor: default; }
   transition: opacity var(--motion-base) var(--motion-ease);
 }
 #ask-scrim.is-open, #week-sheet-scrim.is-open, #kit-sheet-scrim.is-open,
-#meals-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
+#meals-more-scrim.is-open, #cook-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
 #notif-scrim.is-open,
 #reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open {
   opacity: 1;
@@ -8333,7 +8551,7 @@ span.cook-week-name { cursor: default; }
    reads fine inside a 520px column, and Julia's readability cap on it
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
-  #week-sheet, #kit-sheet, #meals-more-sheet, #gro-scan-sheet, #rli-sheet,
+  #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
   #coach-sheet, #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
     left: 50%;
     right: auto;
