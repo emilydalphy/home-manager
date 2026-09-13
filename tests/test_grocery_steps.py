@@ -354,7 +354,11 @@ def test_finishing_a_stop_ends_that_stop_and_asks_where_next():
     # tests/test_shop_trip_exit.py); this button says what it does.
     _in("Skip the rest</button>", SHELL_JS, "the way to end the trip", "shell.js")
     _not_in("done shopping for today", SHELL_JS, "the old, ambiguous end-the-trip label", "shell.js")
-    _in("data-gro=\"next-stop\"", SHELL_JS, "picking the next stop", "shell.js")
+    # The rows became store cards shared with "Where are we headed?" on
+    # 2026-09-13 (groStopCardsHtml takes the action by name), so the
+    # attribute is no longer a literal — the handler and the call are.
+    _in("groStopCardsHtml(data, remaining, 'next-stop'", SHELL_JS, "picking the next stop", "shell.js")
+    _in("case 'next-stop':", SHELL_JS, "its handler", "shell.js")
 
 
 # --- WRAP UP -------------------------------------------------------------

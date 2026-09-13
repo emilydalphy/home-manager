@@ -552,8 +552,9 @@ groceryState.tripDone = { Costco: true };
 const html = groNextHtml(groceryState.data);
 console.log(JSON.stringify({
   html: html,
-  // Inside the card, where --ink-secondary clears AA — see shell.css.
-  insideCard: html.indexOf('gro-next-note') < html.lastIndexOf('</div>')
+  // Inside the stops block, under the cards — a celadon tile since
+  // 2026-09-13 (the store-card design pass); see shell.css .gro-stops-note.
+  insideCard: html.indexOf('gro-stops-note') < html.lastIndexOf('</div>')
 }));
 """)
     assert "2 things with no shop will come with you." in out["html"]
@@ -675,7 +676,9 @@ def test_a_bulk_assign_does_not_remember_a_shop_for_every_item(signed_in):
 
 def test_the_new_screens_use_tokens_only():
     """Rule 9 — a literal hex outside theme.css is a review failure."""
-    for marker in (".gro-howrow", ".gro-sortall-row", ".gro-nextrow", ".gro-secondary"):
+    # .gro-nextrow became .gro-stop on 2026-09-13 (the store cards both
+    # WHERE NEXT and WHERE ARE WE HEADED are made of).
+    for marker in (".gro-howrow", ".gro-sortall-row", ".gro-stop", ".gro-secondary"):
         assert marker in SHELL_CSS, f"{marker} should be styled"
     block = SHELL_CSS[SHELL_CSS.index("/* ---------- SORT HOW"):SHELL_CSS.index("/* ---------- Review")]
     assert ".gro-secondary {" in block, "the block boundaries still cover the new rules"
@@ -687,7 +690,7 @@ def test_the_new_screens_use_tokens_only():
 def test_nothing_new_is_under_the_tap_size():
     """Rule 6 — every new tappable row is at least 44px tall."""
     block = SHELL_CSS[SHELL_CSS.index("/* ---------- SORT HOW"):SHELL_CSS.index("/* ---------- Review")]
-    for rule in (".gro-howrow {", ".gro-nextrow {"):
+    for rule in (".gro-howrow {", ".gro-stop {"):
         start = block.index(rule)
         body = block[start:block.index("}", start)]
         assert "min-height: 60px" in body, f"{rule} needs a real tap target"

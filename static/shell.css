@@ -4528,7 +4528,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* Measured in Chromium off computed styles, both schemes: the title is
    --ink on --surface, 13.52:1 light / 12.49:1 dark; this line is
    --ink-secondary on the same surface, 4.70:1 / 7.36:1. Same pair carries
-   .gro-nextrow-name / .gro-nextrow-count below. */
+   .gro-stop-name / .gro-stop-count below. */
 .gro-howrow-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
 
 /* ---------- SORT ALL: the whole list, one row each ----------
@@ -4611,47 +4611,107 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-carry .gro-ps-actions { margin-top: 8px; }
 .gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
 
-/* ---------- WHERE NEXT: the stops that are left ---------- */
-.gro-nextstops { padding: 0 14px; }
-.gro-nextrow {
+/* ---------- WHERE ARE WE HEADED / WHERE NEXT: the stop cards ----------
+   One component for both screens (Emily, 2026-09-13: the start-of-trip
+   question should look like "Where next?", and both should get "some
+   colour"). Each stop is its own card — surface, hairline, --radius-card,
+   the 12px card gap — rather than a row in a shared list, so a shop reads
+   as a place to drive to. The colour is the store's own: a spine down the
+   card's left edge in the palette colour the LIST's avatar already gives
+   it, square on the edge it shares with the card and round on the outside
+   (the joined-tile motif, DESIGN_SYSTEM §4), with the initial in it.
+   Neither screen has an apricot fill: the cards are the choice, and Rule 5
+   is "at most one". Contrast, measured (Rule 8): the initial is
+   --on-accent-ink on the store palette, worst pair 5.40:1 light / 6.32:1
+   dark (theme.css); the count is --ink-secondary on --surface, 4.70:1
+   light / 7.36:1 dark; the ONLY HERE micro-label is --apricot-label on
+   --surface, 5.20:1 light / 8.53:1 dark. */
+.gro-stops { display: flex; flex-direction: column; gap: 12px; }
+.gro-stop {
   display: flex;
-  align-items: center;
-  gap: 11px;
+  align-items: stretch;
+  gap: 0;
   width: 100%;
   min-height: 60px;
-  padding: 9px 0;
-  background: none;
-  border: none;
-  border-top: 1.5px solid var(--hairline);
+  padding: 0 14px 0 0;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
   text-align: left;
   font-family: inherit;
   cursor: pointer;
 }
-.gro-nextrow:first-child { border-top: none; }
-.gro-nextrow-text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.gro-nextrow-name {
-  font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: -0.015em;
+.gro-stop:hover { border-color: var(--hairline-strong); }
+.gro-stop-spine {
+  flex: 0 0 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  color: var(--on-accent-ink);
+}
+.gro-stop-text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 13px 12px 13px 14px;
+}
+.gro-stop-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.gro-nextrow-count { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); }
-/* Inside the stops card, not a sibling under it. Two reasons and they agree:
-   the line is about those rows, and the ink it wants only clears AA on the
-   card's surface. Measured in Chromium off computed styles — --ink-secondary
-   on --surface 4.70:1 light / 7.36:1 dark, against 4.44:1 for the same ink
-   on --ground. */
-.gro-next-note {
+.gro-stop-count { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink-secondary); }
+/* "ONLY HERE  Rotisserie chicken, coffee beans" — the things this stop
+   alone has, so a shopper deciding which shop to skip can see what she
+   would be skipping. The micro-label is the one uppercase in the card,
+   in --apricot-label (its token role: uppercase micro-labels); the names
+   are plain --ink. */
+.gro-stop-only {
+  margin-top: 4px;
   font-family: var(--font-body);
   font-size: 13px;
-  color: var(--ink-secondary);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.gro-stop-only-label {
+  display: inline-block;
+  margin-right: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+  vertical-align: 1px;
+}
+.gro-stop .gro-chev { align-self: center; }
+/* The shopless things come to whichever stop you pick — said once, under
+   the cards, as the celadon tile (settled, already true; the nudge, not
+   the task). Measured: --ink-on-celadon on --celadon-tint 10.65:1 light /
+   10.37:1 dark. */
+.gro-stops-note {
   margin: 0;
-  padding: 10px 0 12px;
-  border-top: 1.5px solid var(--hairline);
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink-on-celadon);
 }
 
 /* A full-width action that is NOT the screen's primary — the same size and

@@ -371,6 +371,47 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — "Start the trip" asks "Where are we headed?", and both
+  store-pick screens are store cards. Branch `worktree-shop-store-screens`,
+  NOT merged at the time of writing.** Loop Board feature (Emily: "it
+  should ask me (through a select screen) which store we're headed to ...
+  similar to the 'where's next' screen ... And make the design of that
+  one + the where next screen a bit nicer - add some colour"). Before,
+  "Start the trip" opened whichever stop the list put first; the
+  household's own choice of route only began at the second stop. New
+  HEADED step in `static/shell.js` (`groHeadedHtml`, `head-for`): the
+  stops as cards, and the card you tap is the stop the snapshot opens on
+  (`groBeginTrip(stops, startAt)` — `groStartTrip` is now the question,
+  `groBeginTrip` the snapshot). One stop asks nothing; a paused trip is
+  continued, never asked again ("Finish later" / "Continue the trip" are
+  untouched). WHERE NEXT is the same cards (`groStopCardsHtml`), so the
+  two match by construction.
+  - **The design pass, and what it is not.** One card per stop
+    (`.gro-stop`): a spine in the store's palette colour down the card's
+    left edge, square where it meets the card and round outside (the
+    joined-tile motif), the initial in it, the name in the display face,
+    the count, and the things ONLY HERE. The shopless note became the
+    celadon tile under the cards. Neither screen gets an apricot fill —
+    the cards are the choice, and HEADED has no dock at all (rule 2: no
+    single action, no dock; the crumb is the way back). Ratios measured
+    in Chromium and in the CSS comment: ONLY HERE `--apricot-label` on
+    `--surface` 5.20:1 light / 8.53:1 dark; the rest are pairs already
+    cited elsewhere. The store palette itself is unchanged (Tier 2).
+  - **"Only here" = a remembered item -> store preference
+    (`groIsUsuallyHere`, `item_store_preferences`)**, the one thing the
+    data has that says "you can't get this at the other stop"; every row
+    on a stop's list carries that store, so the row's store would say
+    nothing. Three by name, "+N" for the rest. Emily's phrase kept over
+    the app's "usually here"; one string to change (`groStopCardsHtml`).
+  - **Found by review: the back gesture can land on HEADED with a trip
+    already on** (HEADED, TRIP and NEXT each push a history entry), and a
+    card tapped there re-snapshotted — Costco no longer done, the count
+    of what came home back to zero. `head-for` now carries the guard
+    `groStartTrip` has: with a live trip, the card is read as WHERE NEXT
+    reads it (into that stop if still open, else `groResumeTrip`).
+  - Tests: `tests/test_shop_where_headed.py` (17). Six harness trips in
+    `tests/test_shop_trip_exit.py` now name Costco (`startTripAt`), and
+    three `.gro-nextrow` markers moved to `.gro-stop`.
 - **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
   every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
   time of writing.** Loop Board feature (Emily: "there should also be the

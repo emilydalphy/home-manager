@@ -2407,8 +2407,15 @@
   //   SORT     one unsorted item at a time: its name, its quantity, and the
   //            store pills (plus Any / Have it / Somewhere else). Exists only
   //            while something is unsorted.
+  //   HEADED   "Where are we headed?" (Emily, 2026-09-13): the week's stops
+  //            as store cards — the count, and anything only bought there —
+  //            so the trip starts on the list for the shop the household is
+  //            actually driving to. Exists only when there is more than one
+  //            stop; a one-shop week goes straight into TRIP.
   //   TRIP     one stop at a time: this store's things with a tick each, the
   //            trolley collapsed underneath, and "Done at Costco → Metro".
+  //   NEXT     "Where next?" between stops: the same store cards, for what
+  //            is left.
   //   WRAP UP  what didn't make it into the cart, the trip's own count, and
   //            "Finish the trip".
   //
@@ -3469,6 +3476,7 @@
     else if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'sorthow') body.innerHTML = groSortHowHtml(data);
     else if (step === 'sortall') body.innerHTML = groSortAllHtml(data);
+    else if (step === 'headed') body.innerHTML = groHeadedHtml(data);
     else if (step === 'next') body.innerHTML = groNextHtml(data);
     else if (step === 'trip') body.innerHTML = groTripHtml(data);
     else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
@@ -3572,6 +3580,14 @@
     }
     if (step === 'sortall') {
       return { back: '‹ Shop', title: 'Sort them all', sub: groUnsorted(data).length + ' to sort' };
+    }
+    if (step === 'headed') {
+      var headedStops = groStoresWithNeeded(data);
+      return {
+        back: '‹ Shop',
+        title: 'Where are we headed?',
+        sub: groPlural(headedStops.length, 'stop', 'stops') + ' · ' + groPlural(groTotals(data).needed, 'thing', 'things')
+      };
     }
     if (step === 'next') {
       var left = groRemainingStops(data).length;
@@ -4501,31 +4517,87 @@
   function groNextHtml(data) {
     var remaining = groRemainingStops(data);
     if (!remaining.length) return '<p class="gro-empty">That’s every stop — wrap it up.</p>';
-    var html = '<div class="gro-store gro-nextstops">' +
-      remaining.map(function (name) {
-        return '<button type="button" class="gro-nextrow" data-gro="next-stop" ' +
-            'data-store="' + escapeHtml(name) + '">' +
-            '<span class="gro-store-avatar" style="background:' + groStoreColor(name) + '">' +
+    return groStopCardsHtml(data, remaining, 'next-stop', ' left');
+  }
+
+  // ---------- WHERE ARE WE HEADED ----------
+  // Emily, 2026-09-13: "it should ask me (through a select screen) which
+  // store we're headed to so it knows which grocery store to start with
+  // for the trip — similar to the 'where's next' screen". So it IS that
+  // screen, one step earlier: the same store cards, before any list is
+  // shown, and picking one takes the snapshot and opens that stop first.
+  // Only asked when there is a choice — groStartTrip walks a one-shop
+  // week straight in.
+  function groHeadedHtml(data) {
+    var stops = groStoresWithNeeded(data);
+    if (!stops.length) return '<p class="gro-empty">Nothing to buy.</p>';
+    return groStopCardsHtml(data, stops, 'head-for', '');
+  }
+
+  // The store cards both screens are made of (Emily, 2026-09-13: "make the
+  // design of that one + the where next screen a bit nicer — add some
+  // colour"). One card per stop: a spine in the store's own colour down the
+  // card's left edge (square where it meets the card, round on the outside —
+  // the joined-tile motif, DESIGN_SYSTEM §4) with the initial in it, the
+  // name in the display face, how many things are on it, and the things
+  // only bought there. Colour comes from the store palette and the
+  // celadon note, not from a second apricot: the cards ARE the choice, so
+  // neither screen has a primary fill (Rule 5's "at most one").
+  //
+  // `suffix` is what follows the count — " left" between stops, nothing
+  // before the trip starts, when nothing has been bought yet.
+  function groStopCardsHtml(data, stops, action, suffix) {
+    var html = '<div class="gro-stops">' +
+      stops.map(function (name) {
+        var only = groOnlyHereItems(data, name);
+        return '<button type="button" class="gro-stop" data-gro="' + action + '" ' +
+            'data-store="' + escapeHtml(name) + '" ' +
+            'aria-label="' + escapeHtml(name) + ', ' + groPlural(groStopRemaining(data, name), 'thing', 'things') + suffix + '">' +
+            '<span class="gro-stop-spine" style="background:' + groStoreColor(name) + '">' +
               escapeHtml(groStoreInitial(name)) + '</span>' +
-            '<span class="gro-nextrow-text">' +
-              '<span class="gro-nextrow-name">' + escapeHtml(name) + '</span>' +
-              '<span class="gro-nextrow-count">' + groPlural(groStopRemaining(data, name), 'thing', 'things') + ' left</span>' +
+            '<span class="gro-stop-text">' +
+              '<span class="gro-stop-name">' + escapeHtml(name) + '</span>' +
+              '<span class="gro-stop-count">' + groPlural(groStopRemaining(data, name), 'thing', 'things') + suffix + '</span>' +
+              (only.length ? '<span class="gro-stop-only">' +
+                '<span class="gro-stop-only-label">Only here</span>' +
+                escapeHtml(groOnlyHereLine(only)) + '</span>' : '') +
             '</span>' +
             '<span class="gro-chev">' + GRO_ICONS.chevRight + '</span>' +
           '</button>';
       }).join('');
     // Said once, because it is the one thing about this screen a shopper
     // could get wrong: the shopless things are not at any of these stops,
-    // they come to whichever one you pick. Inside the card rather than under
-    // it, because it is about these rows — and because --ink-secondary on
-    // the card's surface clears AA where the same ink on the ground does not
-    // (4.70:1 against 4.44:1, both measured; see the rule in shell.css).
+    // they come to whichever one you pick. A celadon tile — the reassuring
+    // one, "settled, already true" — under the cards, inside the same
+    // block. Measured: --ink-on-celadon on --celadon-tint 10.65:1 light /
+    // 10.37:1 dark (the same pair Plan's period strip cites in shell.css).
     var ride = groRideAlongItems(data).length;
     if (ride) {
-      html += '<p class="gro-next-note">' + groPlural(ride, 'thing', 'things') +
+      html += '<p class="gro-stops-note">' + groPlural(ride, 'thing', 'things') +
         ' with no shop will come with you.</p>';
     }
     return html + '</div>';
+  }
+
+  // The things on this stop's list that the household has told us come
+  // from here (a remembered item -> store preference, groIsUsuallyHere) —
+  // the ones you can't pick up at the other stop, which is what decides
+  // whether a shop can be skipped today. Read off the remembered
+  // preferences rather than the row's store: every row on a stop's list
+  // has that store, and "all of them" would say nothing.
+  function groOnlyHereItems(data, name) {
+    var s = data.stores[name];
+    if (!s) return [];
+    return groStoreItems(s).concat(s.inCart || []).filter(function (it) {
+      return groIsUsuallyHere(it.item, name);
+    }).map(function (it) { return it.item; });
+  }
+  // Three by name, and a count for the rest — the card is a choice, not
+  // the list.
+  function groOnlyHereLine(names) {
+    var shown = names.slice(0, 3);
+    var more = names.length - shown.length;
+    return shown.join(', ') + (more > 0 ? ' +' + more : '');
   }
 
   // ---------- A paused trip, as LIST sees it ----------
@@ -4767,6 +4839,10 @@
         groTripPauseLinkHtml() +
       '</div>';
     }
+    // HEADED has no dock at all: the cards are the choice, no trip is on
+    // yet so there is nothing to finish later, and the crumb is the way
+    // back (rule 2 — a screen with no single action has no dock).
+    if (step === 'headed') return '';
     if (step === 'next') {
       // Quiet, and deliberately not a fill: the stops above are the choice
       // this screen is for, and an apricot on ending the trip early would
@@ -5507,8 +5583,22 @@
     }
     var stops = groStoresWithNeeded(data);
     if (!stops.length) return;
+    // More than one stop is a question — "Where are we headed?" — and the
+    // answer is what the snapshot opens on. One stop is no question.
+    if (stops.length > 1) {
+      goGroceryStep('headed');
+      return;
+    }
+    groBeginTrip(stops, 0);
+  }
+
+  // The snapshot itself, opening on the stop the household named. Reached
+  // from HEADED's cards (any stop) and from groStartTrip (the only stop).
+  function groBeginTrip(stops, startAt) {
+    var data = groceryState.data;
+    if (!data || !stops.length) return;
     groceryState.tripStops = stops;
-    groceryState.tripIndex = 0;
+    groceryState.tripIndex = Math.min(Math.max(startAt || 0, 0), stops.length - 1);
     groceryState.tripBought = 0;
     groceryState.tripTotal = groTotals(data).needed;
     groceryState.wrapKept = {};
@@ -5780,6 +5870,37 @@
       case 'start-trip':
         groStartTrip();
         return;
+
+      // HEADED's answer: the trip starts, and it starts here. The stops
+      // are read fresh rather than from the screen, so a list that changed
+      // while the question was up (the other adult ticking something off)
+      // is snapshotted as it is now; a store that is no longer on it falls
+      // back to the first stop rather than to nothing.
+      case 'head-for': {
+        if (!groceryState.data) return;
+        // The back gesture can step onto this screen with a trip already
+        // on (HEADED, TRIP and NEXT each push a history entry). A live
+        // trip is never snapshotted again — that would forget which
+        // stops are behind us and the count of what came home — so the
+        // card is read as WHERE NEXT would read it: into that stop if it
+        // is still open, else wherever resuming makes sense. Same guard
+        // groStartTrip has (found by review).
+        if (groceryState.tripStops && groceryState.tripStops.length) {
+          var liveAt = groceryState.tripStops.indexOf(el.dataset.store);
+          if (liveAt !== -1 && !groceryState.tripDone[el.dataset.store] &&
+              groStopRemaining(groceryState.data, el.dataset.store) > 0) {
+            groceryState.inCartOpen = false;
+            goGroceryStep('trip', { tripIndex: liveAt });
+          } else {
+            groResumeTrip();
+          }
+          return;
+        }
+        var headStops = groStoresWithNeeded(groceryState.data);
+        var headAt = headStops.indexOf(el.dataset.store);
+        groBeginTrip(headStops, headAt === -1 ? 0 : headAt);
+        return;
+      }
 
       case 'add':
         // Straight to /api/grocery-list/add — see groAddItem. The ask bar
