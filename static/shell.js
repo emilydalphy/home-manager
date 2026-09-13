@@ -8558,13 +8558,15 @@
   // showed; all optional. Plain-words rule (DESIGN_SYSTEM §8): a sentence,
   // never a dashboard label in front of it.
   function rliCitationRowHtml(cite) {
+    // Each blank travels with the word before it, so a wrap never strands
+    // a comma on its own line.
     return '<div class="rli-cite" role="group" aria-label="Where it came from">' +
-      '<span class="rli-cite-word">From</span>' +
-      '<input id="rli-cite-book" class="rli-cite-input" type="text" placeholder="which book" aria-label="Book" value="' + escapeHtml(cite.book || '') + '">' +
-      '<span class="rli-cite-word">,</span>' +
-      '<input id="rli-cite-author" class="rli-cite-input" type="text" placeholder="who wrote it" aria-label="Author" value="' + escapeHtml(cite.author || '') + '">' +
-      '<span class="rli-cite-word">, p.</span>' +
-      '<input id="rli-cite-page" class="rli-cite-input is-short" type="text" inputmode="numeric" placeholder="page" aria-label="Page" value="' + escapeHtml(cite.page || '') + '">' +
+      '<span class="rli-cite-part is-book"><span class="rli-cite-word">From</span>' +
+        '<input id="rli-cite-book" class="rli-cite-input" type="text" placeholder="which book" aria-label="Book" value="' + escapeHtml(cite.book || '') + '"></span>' +
+      '<span class="rli-cite-part"><span class="rli-cite-word">by</span>' +
+        '<input id="rli-cite-author" class="rli-cite-input" type="text" placeholder="who wrote it" aria-label="Author" value="' + escapeHtml(cite.author || '') + '"></span>' +
+      '<span class="rli-cite-part is-short"><span class="rli-cite-word">, p.</span>' +
+        '<input id="rli-cite-page" class="rli-cite-input is-short" type="text" inputmode="numeric" placeholder="page" aria-label="Page" value="' + escapeHtml(cite.page || '') + '"></span>' +
     '</div>';
   }
 

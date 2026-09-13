@@ -5555,10 +5555,14 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
   font-size: 15px;
   color: var(--ink);
 }
-.rli-cite-word { line-height: 44px; }
+.rli-cite-part { display: inline-flex; align-items: baseline; gap: 4px; flex: 1 1 160px; min-width: 0; }
+.rli-cite-part.is-book { flex-basis: 100%; } /* the title gets the whole first line */
+.rli-cite-part.is-short { flex: 0 1 110px; }
+.rli-cite-word { line-height: 44px; white-space: nowrap; }
 .rli-cite-input {
   min-height: 44px;
-  flex: 1 1 140px;
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
   border: 0;
   border-bottom: 1.5px solid var(--hairline-strong);
@@ -5570,7 +5574,7 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
   font-style: italic;
   color: var(--ink);
 }
-.rli-cite-input.is-short { flex: 0 1 72px; font-style: normal; }
+.rli-cite-input.is-short { font-style: normal; }
 .rli-cite-input::placeholder { color: var(--ink-placeholder); font-style: normal; }
 .rli-cite-input:focus { outline: none; border-bottom-color: var(--spruce); }
 
