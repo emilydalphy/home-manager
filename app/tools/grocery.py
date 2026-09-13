@@ -602,7 +602,7 @@ def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
         return
     qtys = [
         r["quantity"] or "" for r in conn.execute(
-            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
             (household_id(), item_id),
         ).fetchall()
     ]

@@ -4418,7 +4418,7 @@ _GENERATE_SIDES_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string", "description": "The ingredient name with no prep descriptor — 'Baby spinach', never 'Baby spinach, chopped'."},
-                                    "qty": {"type": "string", "description": "How it's actually bought at the store ('1 head', '1 bunch', '1 lb', '1 box'), not a prepped measurement."},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store ('1 head', '1 bunch', '1 lb', '1 box'), not a prepped measurement — except eggs and garlic, which are the number used ('2' eggs, '2 cloves'), never '1 dozen' or '1 head'."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -4468,7 +4468,8 @@ something with no cooking at all.
 - It should taste like it belongs with the dish — same rough cuisine and register. Rice with a \
 curry, not couscous; a sharp slaw with something rich.
 - Write each ingredient's qty as it's actually bought at the store (a head, a bunch, a bag, a \
-lb, a box), name the kind of produce when the count depends on it ("Persian cucumbers" with qty \
+lb, a box) — except eggs and garlic, which are the number the side uses ("2" eggs, "2 cloves"), \
+never "1 dozen" or "1 head" — name the kind of produce when the count depends on it ("Persian cucumbers" with qty \
 "6" — a bare "Cucumbers" reads as full-size English ones), and don't re-buy staples the \
 household certainly has (salt, pepper, oil) — leave those out of the ingredient list entirely \
 even though the steps use them.
