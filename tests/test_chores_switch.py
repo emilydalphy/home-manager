@@ -640,6 +640,11 @@ function makePanel() {
 // tick here (loadPlanChores) — stubbed, since this file is about Now.
 var panels = {};
 function loadPlanChores() {}
+// A tick says "Changes saved" and a failed one says so too (S10,
+// 2026-09-13) — the pop-up is not what this file is about.
+var TOASTS = [];
+function showToast(m) { TOASTS.push(m); }
+function toastSaved() { TOASTS.push('Changes saved'); }
 """ + _chore_menu() + _function("choreRowHtml") + _function("renderChores") \
         + _function("nowChoreCtx") + _function("toggleChore")
 

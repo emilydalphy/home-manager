@@ -335,6 +335,7 @@ var panels = {};
 var scrollEl = null;
 var TOASTS = [];
 function showToast(m) { TOASTS.push(m); }
+function toastSaved() { TOASTS.push('Changes saved'); }
 function dayName(dateStr, opts) { return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', opts); }
 var LOADS = [];
 function loadChores(p) { LOADS.push('now'); }
@@ -656,7 +657,8 @@ Promise.resolve().then(function () { return Promise.resolve(); }).then(function 
     # The failed untick is put back — still done — and said so.
     assert out["posts"][1] == {"url": "/api/chores/11/status", "body": {"status": "pending"}}
     assert out["snaps"][2]["binsDone"] is True
-    assert out["toasts"] == ["That didn’t save. Try it again in a moment."]
+    # The tick that landed says so (S10, 2026-09-13); the one that failed says that.
+    assert out["toasts"] == ["Changes saved", "That didn’t save. Try it again in a moment."]
     # The successful tick told Now's card; the failed one did not.
     assert out["loads"] == ["now"]
 
@@ -731,6 +733,8 @@ var CALLS = [];
 var panels = { week: { dataset: { built: '1' } } };
 function loadPlanChores(p) { CALLS.push(p === panels.week); }
 function fetch() { return Promise.resolve({ ok: true }); }
+function showToast() {}
+function toastSaved() {}
 function makePanel() {
   var list = { innerHTML: '', querySelectorAll: function () { return []; } };
   return { querySelector: function (sel) { return sel === '#chores-list' ? list : sel === '#chores-count' ? { textContent: '', className: '' } : null; } };
