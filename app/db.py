@@ -173,6 +173,7 @@ _MIGRATIONS = [
     ("recipes", "advance_prep_notes", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "cooked_status", "TEXT NOT NULL DEFAULT 'pending'"),
     ("meal_plan_entries", "cooked_at", "TEXT"),
+    ("meal_plan_entries", "inventory_depleted_at", "TEXT"),
     ("grocery_items", "store", "TEXT NOT NULL DEFAULT ''"),
     ("inventory_items", "category", "TEXT NOT NULL DEFAULT 'other'"),
     ("inventory_items", "location", "TEXT NOT NULL DEFAULT ''"),

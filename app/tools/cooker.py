@@ -251,13 +251,76 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     than repeating the row. So checking off any one of those linked entries
     marks every entry sharing that same component name (within the same
     plan) done/pending together, and inventory depletion still only runs
-    once (against entry_id itself) since the ingredients were only actually
-    used once for the whole batch.
+    once for the whole batch since the ingredients were only actually used
+    once — once per BATCH, not once per entry_id ticked, which is the
+    distinction the paragraph below is built on (the claim is taken over
+    every linked entry, so ticking a second sibling cannot buy a second
+    helping of the same cook).
+
+    A BATCH'S INGREDIENTS COME OUT OF INVENTORY AT MOST ONCE
+    (2026-09-13, meal_plan_entries.inventory_depleted_at). This used to run
+    on every single call with status='done', so ticking twice took the
+    ingredients twice: 20 tortillas -> 12 -> 4 -> the row deleted outright,
+    driven live. It is reachable two ways, and only the first is fixed by
+    the unchanged-status no-op that grocery.mark_grocery_item has:
+
+      - Today and Kitchen are separate build-once panels that can disagree
+        about whether tonight is cooked, and Today's tick dispatches here
+        through moves.set_move_done — so two unticked boxes can each post
+        'done'. A retried or double-tapped POST is the same shape, and
+        because /api/cooker/check-meal is a sync `def` route Starlette runs
+        it in a threadpool, so two of those really do run at once.
+      - The cook checkbox is a plain TOGGLE: shell.js renders
+        data-next="pending" once a meal is done and posts whatever
+        data-next says. So the ordinary way to send 'done' twice is
+        tick -> untick -> tick, three taps on one control — and a status
+        guard alone does not see that at all, because the status really did
+        change in between.
+
+    "At most once" therefore has to hold against two threads and across a
+    whole component batch, not just against one row read a moment earlier —
+    both of which the first version of this got wrong (17/20 concurrent
+    pairs double-depleted; tick(A) -> untick(B) -> tick(B) took a second
+    batch every time). So the depletion is CLAIMED before it runs, in one
+    BEGIN IMMEDIATE transaction over every linked entry
+    (_claim_inventory_depletion) — the same lock-from-the-first-read shape
+    weekly_plan._replace_slot_entries uses, and for the same reason: read
+    and write have to be one indivisible step or two writers both see NULL.
+    Whoever loses the claim depletes nothing. The claim covers the whole
+    linked set because a component batch is cooked once for all its
+    siblings, so a stamp on any one of them means the food is gone.
+
+    UN-TICKING DOES NOT PUT THE INGREDIENTS BACK, deliberately, which is
+    why the memory has to be its own column rather than cooked_at (which an
+    untick sets back to NULL). There is no ledger of what a depletion took
+    — unlike a grocery line, which records grocery_item_links — so once
+    this function returns, the amounts are gone. Every way of reversing it
+    is a guess, and each is wrong in a different direction:
+    deplete_inventory_for_meal DELETES a row whose quantity reaches zero or
+    cannot be reconciled, so a re-created row would have lost its location,
+    category and expiry; a depletion that reported success but wrote
+    nothing back (units_reconciled False, where the tracked quantity was
+    too imprecise to subtract from) took nothing at all, so "restoring" it
+    would INVENT inventory; and the household may have edited those same
+    rows in between. A partial restore is worse than none, because it
+    silently inflates a pantry that then gets shopped against. So an untick
+    means only "this is not cooked yet" — the result says inventory_restored:
+    False rather than staying quiet about it — and putting something back is
+    the inventory screen's job (or chat: "put the tortillas back"). What the
+    column buys is that the mistake is bounded at one meal's worth however
+    many times the box is tapped, instead of compounding per tap.
+
+    That "any restore would be a guess" is true of the data as it stands,
+    not of the design: this column could have carried the per-item delta and
+    made an exact restore constructible. It doesn't, because a reversal
+    still could not rebuild a DELETED row's location and expiry, and
+    half-exact is the worst of the three. The door is open if Emily wants it.
     """
     conn = get_conn()
     row = conn.execute(
         """
-        SELECT mpe.weekly_plan_id, COALESCE(r.name, mpe.freeform_meal) AS meal
+        SELECT mpe.weekly_plan_id, mpe.cooked_status, mpe.inventory_depleted_at,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.id = ? AND mpe.household_id = ?
         """,
@@ -267,6 +330,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         conn.close()
         raise ValueError(f"No meal plan entry with id {entry_id}.")
     linked_ids = [entry_id]
+    linked_statuses = {entry_id: row["cooked_status"]}
     if row and row["weekly_plan_id"] is not None:
         plan_row = conn.execute(
             "SELECT planning_mode FROM weekly_plans WHERE id = ?", (row["weekly_plan_id"],)
@@ -274,7 +338,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         if plan_row and plan_row["planning_mode"] == "component_based":
             siblings = conn.execute(
                 """
-                SELECT mpe.id FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+                SELECT mpe.id, mpe.cooked_status FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
                 WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ?
                   AND LOWER(COALESCE(r.name, mpe.freeform_meal)) = LOWER(?)
                 """,
@@ -282,6 +346,27 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
             ).fetchall()
             if siblings:
                 linked_ids = [r["id"] for r in siblings]
+                linked_statuses = {r["id"]: r["cooked_status"] for r in siblings}
+
+    # ANY linked entry, not just this row: unticking a component card whose
+    # siblings were done is still an untick of something that was cooked.
+    was_done = any(s == "done" for s in linked_statuses.values())
+    result = {"entry_id": entry_id, "cooked_status": status, "linked_entry_ids": linked_ids}
+
+    # Nothing to change at all: every linked entry already reads this way.
+    # Written as "every linked entry" rather than a wholesale early return on
+    # this one row, because a component-based card is done only when all its
+    # siblings are (see get_cooker_view's merge) — a sibling planned after
+    # the batch was cooked still needs the tick to reach it. Returning here
+    # also leaves cooked_at where it was, so a second tap doesn't move the
+    # time the meal was actually cooked.
+    if all(s == status for s in linked_statuses.values()):
+        conn.close()
+        result["unchanged"] = True
+        if status == "done":
+            result["inventory_depleted"] = []
+            result["inventory_queued_for_review"] = []
+        return result
 
     cooked_at = "datetime('now')" if status == "done" else "NULL"
     conn.executemany(
@@ -290,12 +375,141 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     )
     conn.commit()
     conn.close()
-    result = {"entry_id": entry_id, "cooked_status": status, "linked_entry_ids": linked_ids}
     if status == "done":
-        depletion = deplete_inventory_for_meal(entry_id)
-        result["inventory_depleted"] = depletion["depleted"]
-        result["inventory_queued_for_review"] = depletion["queued_for_review"]
+        # Claim FIRST, deplete second. Reading "has this been depleted?" and
+        # then depleting are two steps, and between them a second thread
+        # reads the same NULL — see the docstring.
+        #
+        # Claiming first means the two ways this can go wrong both fail
+        # toward UNDER-depleting, which is the direction chosen everywhere
+        # else here: a crash inside deplete_inventory_for_meal leaves the
+        # batch stamped whether or not the food came out, and a lock held
+        # past the busy timeout between the status commit above and the
+        # claim leaves the meal reading cooked with nothing taken (a plain
+        # re-tick then early-returns on the unchanged status). Both leave a
+        # pantry that says there is MORE than there is, which costs a trip;
+        # claiming after the fact would fail the other way and cost a
+        # dinner, and is the bug this whole change is about.
+        if not _claim_inventory_depletion(linked_ids):
+            # Somebody already has this batch's ingredients out of the
+            # kitchen: a repeat tick, a re-tick after an untick, a component
+            # sibling, or the other panel a millisecond ago.
+            result["inventory_depleted"] = []
+            result["inventory_queued_for_review"] = []
+            result["inventory_already_depleted"] = True
+        else:
+            depletion = deplete_inventory_for_meal(entry_id)
+            result["inventory_depleted"] = depletion["depleted"]
+            result["inventory_queued_for_review"] = depletion["queued_for_review"]
+            if not _changed_any_inventory_row(depletion["depleted"]):
+                _release_inventory_depletion(linked_ids)
+    elif was_done:
+        # See the docstring: nothing is put back, and the caller is told so
+        # rather than left to assume either way.
+        result["inventory_restored"] = False
     return result
+
+
+def _changed_any_inventory_row(depleted: list[dict]) -> bool:
+    """
+    Did the depletion pass actually move anything?
+
+    Not the same question as "is `depleted` non-empty", which is what the
+    first version of this asked and got wrong. An ingredient is reported as
+    depleted whenever the recipe named an amount and the match was
+    confident — INCLUDING the case where the tracked quantity was too
+    imprecise to subtract from ("a big carton"), where
+    _use_inventory_row_by_id deliberately writes nothing and says so with
+    units_reconciled: False. Stamping that would be recording a depletion
+    that did not happen, and would then block the real one for good once
+    the household tidied the quantity up.
+
+    Granularity is the whole entry, not the ingredient: a pass that moved
+    one row and skipped another still counts, and the skipped one stays
+    skipped. Per-ingredient memory is a ledger, which is the thing this
+    column deliberately is not.
+    """
+    return any((d.get("result") or {}).get("units_reconciled") for d in depleted)
+
+
+def _claim_inventory_depletion(entry_ids: list[int]) -> bool:
+    """
+    Take the right to deplete this batch, atomically. True if we got it.
+
+    One BEGIN IMMEDIATE transaction, so the write lock is held from the
+    FIRST read rather than from the first write — sqlite3's legacy
+    isolation_level="" would otherwise leave a gap between reading NULL and
+    stamping it, which is exactly the gap two threadpool workers both fit
+    through. Same shape and same reasoning as
+    weekly_plan._replace_slot_entries.
+
+    All-or-nothing across the linked set: if ANY entry in a component batch
+    is already stamped, the food is already out, so nobody claims.
+    """
+    if not entry_ids:
+        return False
+    placeholders = ",".join("?" * len(entry_ids))
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        rows = conn.execute(
+            f"SELECT inventory_depleted_at FROM meal_plan_entries "
+            f"WHERE household_id = ? AND id IN ({placeholders})",
+            (household_id(), *entry_ids),
+        ).fetchall()
+        if not rows or any(r["inventory_depleted_at"] is not None for r in rows):
+            conn.rollback()
+            return False
+        conn.execute(
+            f"UPDATE meal_plan_entries SET inventory_depleted_at = datetime('now') "
+            f"WHERE household_id = ? AND id IN ({placeholders})",
+            (household_id(), *entry_ids),
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def _release_inventory_depletion(entry_ids: list[int]) -> None:
+    """
+    Give the claim back, for a pass that moved nothing.
+
+    A leftovers night, a freeform meal, a recipe nothing is tracked for and
+    a quantity too imprecise to subtract from all take nothing, and a stamp
+    left on those would mean the column read "this batch's ingredients have
+    been taken" about food still on the shelf — and would block the real
+    depletion later, when the night stops being a reheat or the quantity
+    gets tidied up. Safe to release: whoever lost the claim depleted
+    nothing, so the end state is the true one either way.
+
+    Guarded like _claim_inventory_depletion — but note what the guard can
+    and cannot do, because the two are easy to run together: it closes the
+    connection, and it CANNOT save the stamp, since the UPDATE is the thing
+    that failed. A raise here leaves the batch reading "taken" with nothing
+    moved, permanently. That is the same under-depleting direction as the
+    rest of this (see check_off_meal), so the guard is about not leaking a
+    connection on top of it — the avoidable half of the two.
+    """
+    if not entry_ids:
+        return
+    placeholders = ",".join("?" * len(entry_ids))
+    conn = get_conn()
+    try:
+        conn.execute(
+            f"UPDATE meal_plan_entries SET inventory_depleted_at = NULL "
+            f"WHERE household_id = ? AND id IN ({placeholders})",
+            (household_id(), *entry_ids),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:

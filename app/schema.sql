@@ -534,6 +534,23 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- has no rating is worth gently asking about, but only once, and only
     -- for something recently made.
     cooked_at TEXT,
+    -- When this entry's ingredients were actually taken out of tracked
+    -- inventory (cooker.deplete_inventory_for_meal). Separate from
+    -- cooked_at, because the cook checkbox is a TOGGLE: cooked_at goes back
+    -- to NULL on an un-tick, and if that were the only memory then
+    -- tick -> untick -> tick would take the same ingredients out twice
+    -- (20 tortillas -> 12 -> 4). Un-ticking does not put anything back —
+    -- there is no ledger of what a depletion took — so this column is what
+    -- bounds the damage instead: at most one helping per BATCH, however
+    -- many times the box is tapped and by however many panels at once.
+    -- Written by an atomic claim over every linked entry before the
+    -- depletion runs, never by the depletion itself; cleared again only
+    -- when that pass turns out to have moved no inventory row at all (a
+    -- reheat, a freeform meal, an unparseable quantity), so it never reads
+    -- "taken" about food still on the shelf. NULL means nothing has come
+    -- out for this entry yet — including on every row that predates the
+    -- column, which is not backfilled. See check_off_meal.
+    inventory_depleted_at TEXT,
     -- Phase 6: a short "why this?" rationale, generated and persisted at
     -- plan-generation time (not computed on demand — the model already has
     -- the relevant preferences/history/constraints in context right then,

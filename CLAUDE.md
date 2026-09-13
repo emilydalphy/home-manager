@@ -354,6 +354,119 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — A meal's ingredients come out of the kitchen once, however
+  many times the box is tapped. Branch `overnight/cook-tick-double-depletes`,
+  NOT merged at the time of writing.** `check_off_meal` ran
+  `deplete_inventory_for_meal` on EVERY call with `status='done'`, with
+  nothing recording that it had already run for that entry — the previous
+  `cooked_status` wasn't even selected. Reproduced in-process and over a
+  real `POST /api/cooker/check-meal`: 20 tortillas -> 12 -> 4 -> the
+  inventory row DELETED outright.
+  - **The unchanged-status guard `mark_grocery_item` has is necessary and
+    NOT sufficient, and that is the whole shape of this fix.** The Kitchen
+    cook checkbox is a TOGGLE — shell.js renders `data-next="pending"` once
+    a meal is done and posts whatever `data-next` says — so the ordinary
+    way to send `done` twice is **tick -> untick -> tick**, three taps on
+    one control, in which the status genuinely changed in between and a
+    status comparison sees nothing wrong. (Independently re-checked: a
+    status guard alone, applied to main, still gives 20 -> 12 -> 12 -> 4.)
+    It fixes only the other route in: Today and Kitchen are separate
+    build-once panels that can disagree about whether tonight is cooked,
+    and Today's tick dispatches to this same function through
+    `moves.set_move_done`, so two unticked boxes can each post `done` (a
+    retried POST is the same shape). Both are in the fix; only the second
+    is in the precedent.
+  - So the memory is its own column, `meal_plan_entries.inventory_depleted_at`
+    (schema.sql + `_MIGRATIONS`). Not `cooked_at`, which an untick sets back
+    to NULL, i.e. the one field that forgets exactly when it matters.
+  - **"At most once" has to hold against two THREADS and across a whole
+    component BATCH, and the first cut of this held against neither.** Both
+    found on review, both reproduced, both now fixed and pinned:
+    `/api/cooker/check-meal` is a sync `def` route, so Starlette runs it in
+    a threadpool and two panels really do post at once — reading the column
+    on one connection and stamping it on another let both threads see NULL,
+    measured at **17/20** concurrent pairs double-depleting; and stamping
+    only the entry that was tapped let `tick(A) -> untick(B) -> tick(B)`
+    take a second batch off a component card every time. The depletion is
+    now **claimed before it runs**, in one `BEGIN IMMEDIATE` transaction
+    over every linked entry (`_claim_inventory_depletion`) — the
+    lock-from-the-first-read shape `weekly_plan._replace_slot_entries`
+    already uses, and for its reason. Whoever loses the claim depletes
+    nothing. 0/20 after.
+  - **The claim is RELEASED when the pass turns out to have moved nothing**,
+    which is what keeps the column honest. `depleted` is not the same
+    question as "inventory changed": an ingredient is reported depleted
+    whenever the recipe named an amount and the match was confident,
+    *including* `units_reconciled: False`, where `_use_inventory_row_by_id`
+    deliberately writes nothing because the tracked quantity ("a big
+    carton") could not be subtracted from. The first cut stamped those, so
+    it recorded a depletion that never happened and then blocked the real
+    one for good once the household tidied the quantity up — reproduced.
+    A leftovers night, a freeform meal and a recipe nothing is tracked for
+    release for the same reason, which is also what lets a night that stops
+    being a reheat deplete the first time it really is cooked.
+  - **Nothing is backfilled**, so a meal already ticked `done` before this
+    deploy has a NULL stamp and an untick -> re-tick on one of those will
+    take its ingredients once more. Deliberate: a startup backfill that
+    stamped every done row would also re-stamp the reheats and unparseable
+    quantities the release rule exists to clear, so it would trade a
+    bounded one-off for a permanent wrong.
+  - **UN-TICKING PUTS NOTHING BACK, deliberately — Emily's to overrule.**
+    There is no ledger of what a depletion took (a grocery line has
+    `grocery_item_links`; this has nothing), so once the call returns the
+    amounts are gone and every reversal is a guess wrong in a different
+    direction: `deplete_inventory_for_meal` DELETES a row whose quantity
+    reaches zero or can't be reconciled, so a re-created row has lost its
+    location, category and expiry; a depletion that reported success but
+    wrote nothing back (`units_reconciled` False, the tracked quantity too
+    imprecise to subtract from) took nothing, so "restoring" it INVENTS
+    inventory; and the household may have edited those rows in between. A
+    partial restore is worse than none, because it silently inflates a
+    pantry that then gets shopped against. So an untick means only "this
+    is not cooked yet", the result says `inventory_restored: False` rather
+    than staying quiet, and putting something back is the inventory
+    screen's job. What the column buys is that a mis-tap costs one meal's
+    worth however many times the box is tapped, instead of compounding.
+    **The door is open, though, and the entry should not be read as saying
+    otherwise:** a restore is a guess given the data as it stands, not in
+    principle — this column could have carried the per-item delta and made
+    one constructible. It doesn't, because a reversal still could not
+    rebuild a DELETED row's location and expiry, and half-exact is the
+    worst of the three. Emily's to reopen.
+  - **The guard is "every LINKED entry already reads this way", not "this
+    row does".** A component-based card is done only when all its siblings
+    are (`get_cooker_view`'s merge), so a wholesale early return would
+    leave a sibling planned after the batch was cooked pending forever.
+    Returning early also leaves `cooked_at` where it was, so a second tap
+    doesn't move the time the meal was actually cooked.
+  - `tests/test_cook_tick_double_depletes.py`, 27 tests, **21 red against
+    `0d359e5`** (checked by overlaying `git checkout 0d359e5 -- app/`, not
+    by stashing against a HEAD that already carries the fix). Of the other
+    six, five are no-regression guards — including the one guarding against
+    the unchanged-status widening being too broad — and the sixth
+    (`..._tidying_that_quantity_up_...`) is green on main because main has
+    no stamp to get wrong, but red against the first cut of this fix, which
+    stamped a pass that had written nothing. Each says which it is in its
+    own docstring. `tests/test_leftovers_batch.py:293` already covered
+    the twice-ticked REHEAT; this covers the cook night, toggled. Three of
+    the concurrency tests are timing-dependent by nature and say so; the
+    8-trial one is the reliable guard (red 5/5 against the pre-claim
+    version). Branch collects **3209**, 3207 passed, 2 failed — the two
+    known Sunday failures in `test_onboarding_reveal_stream.py`, which fail
+    on main too. (Main collects 3182.)
+  - **Two things left alone and reported rather than fixed, both the same
+    class one door over.** (1) `grocery.mark_grocery_item`: its guard is
+    also status-only, so `purchased -> needed -> purchased` adds to
+    inventory twice (Eggs 12 -> 12 -> 24, measured). (2) The
+    attention-queue path: an ingredient the recipe gives no quantity for is
+    queued rather than depleted, so nothing is stamped, and
+    `add_attention_item` dedupes only against *pending* rows — so once the
+    household has answered, a toggle re-asks and answering again takes it
+    again (Lettuce 2 heads -> 1 head -> row gone, for one meal, via
+    `record_attention_item_usage`, which is a live UI path). Not fixed here
+    because the second depletion happens outside `check_off_meal`, in a
+    path that neither reads nor writes this column; closing it means the
+    attention resolution stamping the entry, which is its own card.
 - **2026-09-13 — A dinner answered on Now, on a day no plan covers, was
   saved and then invisible on every screen. Branch
   `overnight/needs-you-dinner-invisible`, NOT merged at the time of
