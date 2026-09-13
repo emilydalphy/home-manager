@@ -57,8 +57,11 @@ _SPICES = {
     "cardamom", "allspice", "fennel seed", "fenugreek", "mustard seed",
     "caraway", "anise", "star anise", "saffron", "sumac", "mace", "juniper",
     "chili powder", "chilli powder", "chili flake", "chilli flake",
-    "red pepper flake", "pepper flake", "cayenne", "cayenne pepper",
+    "red pepper flake", "pepper flake", "crushed red pepper", "red chili flake",
+    "red chili powder", "dried red chili", "cayenne", "cayenne pepper",
     "chipotle powder", "ancho powder", "curry powder", "garam masala",
+    "lemon pepper", "vanilla bean", "vanilla pod", "dill weed", "steak spice",
+    "onion flake", "spice",  # "... spice" is a blend: steak spice, cajun spice, five spice
     "five spice", "five-spice", "chinese five spice", "za'atar", "zaatar",
     "ras el hanout", "berbere", "harissa powder", "old bay", "taco seasoning",
     "italian seasoning", "herbes de provence", "poultry seasoning",
@@ -70,7 +73,7 @@ _SPICES = {
     "salt", "sea salt", "kosher salt", "flaky salt", "table salt",
     "msg", "bouillon", "bouillon cube", "stock cube", "vanilla extract",
     "vanilla", "almond extract", "baking soda", "baking powder", "cream of tartar",
-    "bay leaf", "bay leave",
+    "bay leaf",
     # dried herbs (dried by default when written bare)
     "oregano", "marjoram", "dried basil", "dried cilantro", "dried parsley",
     "dried mint", "dried dill", "dried chive", "dried rosemary", "dried thyme",
@@ -92,8 +95,10 @@ _FRESH_BY_DEFAULT = {
 
 _DESCRIPTORS = {
     "ground", "whole", "smoked", "sweet", "hot", "mild", "flaked", "crushed",
-    "kosher", "sea", "fine", "coarse", "powdered", "cracked", "freshly",
-    "spanish", "hungarian", "organic", "toasted", "red", "thai", "indian",
+    "kosher", "sea", "fine", "coarse", "powdered", "cracked", "freshly", "grated",
+    "spanish", "hungarian", "organic", "toasted", "thai", "indian",
+    # a bouillon cube's flavour, a chili powder's chili
+    "beef", "chicken", "vegetable", "fish", "chipotle", "ancho", "guajillo",
 }
 _DRIED_WORDS = {"dried", "dry"}
 
@@ -125,11 +130,11 @@ def is_spice(name: str) -> bool:
     words = [w for w in words if w not in _DRIED_WORDS]
     if not words:
         return False
-    whole = _grocery._merge_key(" ".join(words))
+    whole = _leaf(_grocery._merge_key(" ".join(words)))
     if whole in _SPICES or (dried and ("dried " + whole) in _SPICES):
         return True
     stripped = [w for w in words if w not in _DESCRIPTORS] or words
-    key = _grocery._merge_key(" ".join(stripped))
+    key = _leaf(_grocery._merge_key(" ".join(stripped)))
     if not key:
         return False
     last = key.split(" ")[-1]
@@ -146,8 +151,14 @@ def is_spice(name: str) -> bool:
 
 
 # The word a spice comes as: "cumin seeds", "cinnamon sticks", "vanilla
-# pods", "paprika powder". Dropped so the spice underneath can be matched.
-_FORM_WORDS = {"seed", "stick", "pod", "powder", "flake", "extract", "leaf", "leave"}
+# pods", "paprika powder", "saffron threads". Dropped so the spice
+# underneath can be matched.
+_FORM_WORDS = {"seed", "stick", "pod", "powder", "flake", "extract", "leaf", "thread", "strand"}
+
+
+def _leaf(key: str) -> str:
+    """The merge key singularises "leaves" to "leave"; every list here says "leaf"."""
+    return key[:-6] + " leaf" if key.endswith(" leave") else key
 
 # Single words that are spices only inside a longer name. "pepper" alone is
 # the black kind (grocery._NUMBER_CHANGES_MEANING says why "peppers" is
@@ -160,8 +171,8 @@ _CHILI = {"chili", "chilli", "chile", "chilies", "chillies", "chiles", "chilis"}
 
 _NOT_ALONE = {
     "pepper", "clove", "chili",
-    "seed", "powder", "leaf", "leave", "cube", "extract", "flake", "stick", "pod",
-    "seasoning", "vanilla",
+    "seed", "powder", "leaf", "cube", "extract", "flake", "stick", "pod",
+    "thread", "strand", "vanilla",
 }
 
 

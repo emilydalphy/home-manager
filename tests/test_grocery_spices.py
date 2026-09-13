@@ -78,6 +78,11 @@ def curry_week() -> int:
     "Vanilla extract", "Sesame seeds", "Mustard seeds", "Fennel seeds", "Baking powder",
     "Salt", "Kosher salt", "flaky sea salt", "Black pepper", "Cracked black pepper", "Pepper",
     "Salt and pepper", "Peppercorns", "Olive oil", "Vegetable oil", "Sesame oil", "chili oil",
+    # verifier, 2026-09-13: the realistic phrasings that slipped through
+    "Saffron threads", "Nutmeg, grated", "Beef bouillon cube", "Vegetable stock cube",
+    "Chipotle chili powder", "Crushed red pepper", "Red chili flakes", "Lemon pepper",
+    "Vanilla beans", "Dill weed", "Steak spice", "Chili lime seasoning", "Five spice powder",
+    "Pumpkin pie spice", "Seasoned salt", "Cumin, ground",
 ])
 def test_spices_and_dried_herbs_count(name):
     assert spices.is_spice(name) is True
@@ -93,6 +98,10 @@ def test_spices_and_dried_herbs_count(name):
     # pantry, not spice rack
     "Sugar", "flour", "Cornstarch", "soy sauce", "Chicken stock", "curry paste", "Dijon mustard",
     "Chili crisp", "Butter", "Lemon", "Chipotle in adobo",
+    # verifier, 2026-09-13
+    "Coriander leaves", "Red pepper", "Green pepper", "Red bell pepper", "Beef", "Chicken thighs",
+    "Peppermint", "Vanilla yogurt", "Pepper jack cheese", "Salted butter", "Salt cod",
+    "Ginger paste", "Green chili", "Onion soup mix", "Cinnamon roll",
 ])
 def test_everything_else_stays_where_it_is(name):
     assert spices.is_spice(name) is False
