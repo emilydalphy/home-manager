@@ -4559,6 +4559,58 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    side of the label narrows. */
 .gro-sortall-pills .gro-pill { padding: 10px 13px; font-size: 13px; }
 
+/* ---------- "Have it" / "Use something else" ----------
+   The two answers sorting offers on every item. The pills are the sort
+   chips (.gro-pill-have / .gro-pill-else); the field that opens under
+   "Use something else" borrows the ⋯ menu's input and the pre-shop pair
+   of buttons, so nothing here is a new kind of control. */
+.gro-subst { padding: 4px 0 10px; }
+.gro-subst .gro-subst-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+.gro-subst-actions { display: flex; gap: 8px; }
+.gro-subst-actions .gro-ps-btn-drop { border-color: var(--hairline-strong); }
+.gro-sortcard .gro-subst { padding: 0 0 12px; }
+.gro-rowmenu-answers { padding-top: 0; }
+
+/* ---------- Spices this week ----------
+   The Staples card's shape (below), holding trip-style tick rows (.gro-row
+   / .gro-box) so a tick here looks like a tick anywhere in the tab. No
+   .done strike — the row is not bought, it is on the list now. */
+.gro-spices .gro-spice-row { cursor: pointer; }
+.gro-spices-line {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 10px 0 4px;
+}
+.gro-spices-recent {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  margin: 6px 0 4px;
+}
+
+/* ---------- CARRY: last week's leftovers, keep or drop ----------
+   One row per line an earlier week left unbought, in the pre-shop check's
+   row shape (.gro-ps-row / .gro-ps-btn) — the same keep-or-drop question,
+   asked as a step rather than a banner, so the rows sit on the card's
+   hairline instead of the banner's celadon edge. This week's own amount
+   gets its own line under the name: two numbers, never one. */
+.gro-carry { padding: 0 14px; }
+.gro-carry .gro-carry-row { border-top: 1.5px solid var(--hairline); }
+.gro-carry .gro-carry-row:first-of-type { border-top: none; }
+.gro-carry .gro-ps-name { display: flex; align-items: baseline; gap: 10px; }
+.gro-carry-thisweek {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  margin: 0 0 10px;
+}
+.gro-carry .gro-ps-actions { margin-top: 8px; }
+.gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
+
 /* ---------- WHERE NEXT: the stops that are left ---------- */
 .gro-nextstops { padding: 0 14px; }
 .gro-nextrow {

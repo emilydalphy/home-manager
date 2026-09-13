@@ -2398,6 +2398,12 @@
   //   LIST     the root: one card per store, the needed things under it, a
   //            "N TO SORT" badge when anything has no store yet, and the
   //            screen's one apricot action — "Start the trip".
+  //   CARRY    "Still on the list from last week — keep or drop?" (Emily,
+  //            2026-09-13). What an earlier week left unbought, set aside by
+  //            the new approval (app/tools/grocery.py
+  //            set_aside_carried_over_items) rather than summed into this
+  //            week's amounts. One screen, per-item Keep / Don't need, and
+  //            it comes BEFORE sorting. Exists only while something waits.
   //   SORT     one unsorted item at a time: its name, its quantity, and the
   //            store pills (plus Any / Have it / Somewhere else). Exists only
   //            while something is unsorted.
@@ -2536,6 +2542,12 @@
     // from then on until the next approval refills the list.
     sortDeferred: false,
     sortFirst: false,
+    // Last week's leftovers waiting for a keep or drop (/api/grocery-list/
+    // carried-over), and whether the household said "later" to them this
+    // page view. Same shape as the sort pair above, and cleared the same
+    // way — the next approval refills the list and asks again.
+    carried: [],
+    carryDeferred: false,
     data: null,
     loadError: false,
     usualStores: [],        // household's saved stores, offered as sort pills
@@ -2565,12 +2577,23 @@
     // suggestion by groListRowHtml.
     staples: [],
     staplesOpen: false,
+    // "Spices this week" (app/tools/spices.py): every spice the week's
+    // recipes call for, waiting UNTICKED in one section rather than spread
+    // through the aisles — the list assumes a spice rack (Emily,
+    // 2026-09-13). Ticking one makes it an ordinary line in its store.
+    // Closed by default: less scrolling was half the ask.
+    spices: { items: [], recently_bought: [] },
+    spicesOpen: false,
     alreadyHaveSummary: { already_have: [], elsewhere: [] },  // WRAP UP's confirmation
     // The one LIST row whose ⋯ menu is open, as a string id, or null. One at
     // a time on purpose — the old per-row menu worked the same way, and two
     // open editors on a phone list is two places a half-typed quantity can
     // be lost.
     openRowId: null,
+    // The one row whose "Use something else" field is open (SORT, SORT
+    // ALL or a LIST row's ⋯), as a string id, or null. One at a time, for
+    // the same reason openRowId is.
+    substOpenId: null,
     inCartOpen: false,      // "In your cart · N" group on TRIP
     // How many things SORT set out to sort, so the progress line can say
     // "2 of 3" rather than counting down from a number nobody saw.
@@ -3079,6 +3102,14 @@
         e.preventDefault();
         panel.querySelector('[data-gro="stores-prompt-add"]').click();
       }
+      // Enter in a "What instead?" field is "Put it on the list" — the
+      // common case; "I have it" stays a tap.
+      if (e.target.classList && e.target.classList.contains('gro-subst-input')) {
+        e.preventDefault();
+        var substBtn = e.target.closest('.gro-subst');
+        substBtn = substBtn && substBtn.querySelector('[data-gro="subst-save"][data-have="0"]');
+        if (substBtn) substBtn.click();
+      }
     });
 
     groWireConnectivity();
@@ -3166,6 +3197,25 @@
     } catch (err) { groceryState.preShopFlags = []; }
   }
 
+  // What an earlier week left unbought, set aside at approval. A failure
+  // here means no question this time, never a broken list.
+  async function groLoadCarried() {
+    try {
+      var res = await fetch('/api/grocery-list/carried-over');
+      if (!res.ok) { groceryState.carried = []; return; }
+      groceryState.carried = (await res.json()).items || [];
+    } catch (err) { groceryState.carried = []; }
+  }
+
+  async function groLoadSpices() {
+    try {
+      var res = await fetch('/api/grocery-list/spices');
+      if (!res.ok) { groceryState.spices = { items: [], recently_bought: [] }; return; }
+      var got = await res.json();
+      groceryState.spices = { items: got.items || [], recently_bought: got.recently_bought || [] };
+    } catch (err) { groceryState.spices = { items: [], recently_bought: [] }; }
+  }
+
   async function groLoadStaples() {
     try {
       var res = await fetch('/api/staples');
@@ -3190,7 +3240,7 @@
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples()]);
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices()]);
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -3239,6 +3289,7 @@
   // refill (an approval builds the list) is a new list, so sorting comes
   // first again.
   function refreshGroceryPanel() {
+    groceryState.carryDeferred = false;
     groceryState.sortDeferred = false;
     if (groIsBuilt()) loadGrocery();
   }
@@ -3252,6 +3303,15 @@
     if (!data || groceryState.loadError) return;
     if (groceryState.step !== 'list' || groceryState.sortDeferred) return;
     if (groStoresPromptShouldShow()) return;
+    // Last week's leftovers first, before the sort queue: they are the
+    // amounts that used to add themselves onto this week's, and sorting a
+    // line whose quantity is still in question is sorting the wrong
+    // number. Emily's call (2026-09-13, option a): one screen before
+    // sorting starts.
+    if (groceryState.carried.length && !groceryState.carryDeferred) {
+      goGroceryStep('carry', { push: false, first: true });
+      return;
+    }
     var toSort = groUnsorted(data).length;
     if (!toSort) { groceryState.sortFirst = false; return; }
     goGroceryStep(toSort >= GRO_FAST_SORT_MIN ? 'sorthow' : 'sort', { push: false, first: true });
@@ -3369,6 +3429,7 @@
     if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1 && !groUnsorted(data).length) {
       groceryState.step = 'list';
     }
+    if (groceryState.step === 'carry' && !groceryState.carried.length) groceryState.step = 'list';
     if ((groceryState.step === 'trip' || groceryState.step === 'wrap' || groceryState.step === 'next') &&
         !groceryState.tripStops) {
       groceryState.step = 'list';
@@ -3403,7 +3464,9 @@
     // straight away, an unrelated re-render is no longer a rare event. Same
     // rule as the foot's add row below.
     var storesTyped = groCaptureStoresPromptInput(body);
-    if (step === 'sort') body.innerHTML = groSortHtml(data);
+    var substTyped = groCaptureSubstInput(body);
+    if (step === 'carry') body.innerHTML = groCarryHtml(data);
+    else if (step === 'sort') body.innerHTML = groSortHtml(data);
     else if (step === 'sorthow') body.innerHTML = groSortHowHtml(data);
     else if (step === 'sortall') body.innerHTML = groSortAllHtml(data);
     else if (step === 'next') body.innerHTML = groNextHtml(data);
@@ -3411,6 +3474,7 @@
     else if (step === 'wrap') body.innerHTML = groWrapHtml(data);
     else body.innerHTML = groListHtml(data);
     groRestoreStoresPromptInput(body, storesTyped);
+    groRestoreSubstInput(body, substTyped);
     // The empty moment fills the panel and centres itself (shell.css) —
     // the body has to be told it is carrying one.
     body.classList.toggle('is-empty', !!body.querySelector('.empty-moment'));
@@ -3444,6 +3508,23 @@
     try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
   }
 
+  // The "What instead?" field, same rule: a re-render the person didn't
+  // ask for must not eat a half-typed "dry oregano".
+  function groCaptureSubstInput(body) {
+    var input = body.querySelector('.gro-subst-input');
+    if (!input) return null;
+    return { id: input.id, value: input.value, focused: document.activeElement === input };
+  }
+  function groRestoreSubstInput(body, saved) {
+    if (!saved || !saved.value) return;
+    var input = body.querySelector('#' + saved.id);
+    if (!input) return;
+    input.value = saved.value;
+    if (!saved.focused) return;
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch (err) { /* not all inputs allow it */ }
+  }
+
   function groCaptureAddRow(foot) {
     var item = foot.querySelector('#gro-add-item');
     if (!item) return null;
@@ -3462,6 +3543,13 @@
   // copy is readable as a set rather than scattered through four builders.
   // The root has no head: it opens with the band (rootBandHtml).
   function groHeadFor(data, step) {
+    if (step === 'carry') {
+      return {
+        back: '‹ Shop',
+        title: 'Still on the list from last week',
+        sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · keep or drop?'
+      };
+    }
     if (step === 'sort') {
       return {
         back: '‹ Shop',
@@ -3540,6 +3628,51 @@
   // uses (.kit-row). groUnsorted already answers "is sorting even a question
   // here" (groCanSort), so a household with one shop or none gets no row.
   // Not while the shops question itself is still on screen underneath.
+  // The way back into CARRY once "Later" was said: the same row shape as
+  // the sort row below, above it, only while something still waits.
+  function groCarryRowHtml(data) {
+    var waiting = groceryState.carried.length;
+    if (!waiting || groStoresPromptShouldShow()) return '';
+    return '<div class="kit-rows gro-sortrow"><button type="button" class="kit-row" data-gro="goto-carry" ' +
+        'aria-label="' + escapeHtml(groPlural(waiting, 'thing', 'things') + ' still on the list from last week') + '">' +
+      '<span class="kit-row-text"><span class="kit-row-title">' + escapeHtml(groPlural(waiting, 'thing', 'things') + ' from last week') + '</span>' +
+      '<span class="kit-row-sub">Keep or drop?</span></span>' +
+      '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+    '</button></div>';
+  }
+
+  // ---------- CARRY: last week's leftovers, keep or drop ----------
+  // One row per line an earlier week left unbought: its name, the old
+  // amount, and — when this week's recipes want the same thing — this
+  // week's own amount on its own line, so the two are never read as one
+  // number (that silent sum is the bug this screen replaces). Keep adds the
+  // old amount onto this week's line; Don't need takes it off. Both undo
+  // from the toast. Quiet throughout: no apricot, and no dock — there is
+  // no single action, the rows are the actions.
+  function groCarryHtml(data) {
+    var carried = groceryState.carried;
+    if (!carried.length) return '<p class="gro-empty">Nothing left from last week.</p>';
+    return '<div class="shell-card gro-carry">' +
+      carried.map(function (c) {
+        var id = String(c.item_id);
+        return '<div class="gro-ps-row gro-carry-row">' +
+          '<p class="gro-ps-name">' + escapeHtml(c.item) +
+            (c.quantity ? ' <span class="gro-qty">' + escapeHtml(c.quantity) + '</span>' : '') + '</p>' +
+          (c.this_week_quantity
+            ? '<p class="gro-carry-thisweek">This week&rsquo;s recipes: ' + escapeHtml(c.this_week_quantity) + '</p>'
+            : '') +
+          '<div class="gro-ps-actions">' +
+            '<button type="button" class="gro-ps-btn gro-ps-btn-keep" data-gro="carry-decide" data-decision="keep" ' +
+              'data-id="' + id + '" data-name="' + escapeHtml(c.item) + '">Keep</button>' +
+            '<button type="button" class="gro-ps-btn gro-ps-btn-drop" data-gro="carry-decide" data-decision="drop" ' +
+              'data-id="' + id + '" data-name="' + escapeHtml(c.item) + '">Don&rsquo;t need</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    '<button type="button" class="gro-sort-later" data-gro="carry-later">Decide later</button>';
+  }
+
   function groSortRowHtml(data) {
     var unsorted = groUnsorted(data).length;
     if (!unsorted || groStoresPromptShouldShow()) return '';
@@ -3592,12 +3725,17 @@
         }
         return html + groShopDoneHtml();
       }
+      // Spices waiting unticked are not "nothing to buy" — they are the
+      // list, until one is ticked. The section stands where the stops
+      // would, and the dock stays quiet (nothing to start a trip for).
+      if (groceryState.spices.items.length) return html + groSpicesHtml() + groStaplesHtml();
       // The empty moment (emptyMomentHtml): one sentence, and "Go to
       // Plan" in the dock (groDockHtml). The staples card keeps its place
       // under it — a rhythm is a real thing even on an empty list.
       return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groStaplesHtml();
     }
 
+    html += groCarryRowHtml(data);
     html += groSortRowHtml(data);
     html += groDuplicatesHtml(data);
 
@@ -3641,7 +3779,54 @@
       var anywhere = groSoleStore(data) ? [] : groRideAlongItems(data);
       if (anywhere.length) html += groAnywhereCardHtml(data, anywhere);
     }
-    return html + groStaplesHtml();
+    return html + groSpicesHtml() + groStaplesHtml();
+  }
+
+  // ---------- Spices this week ----------
+  // One section for every spice and dried herb the week's recipes call for
+  // (app/tools/spices.py decides which names). Unticked by default and off
+  // the to-buy count; a tick makes the line an ordinary one in its store
+  // (and back on the sort row if it has none yet), an untick puts it back
+  // here — the same box, so both answers live in the same place. Fresh
+  // herbs never come here: a bunch of cilantro is produce, bought weekly.
+  // The same card shape as Staples below, closed by default.
+  function groSpicesHtml() {
+    var spices = groceryState.spices;
+    var items = spices.items;
+    if (!items.length && !spices.recently_bought.length) return '';
+    var open = groceryState.spicesOpen;
+    var ticked = items.filter(function (sp) { return sp.ticked; }).length;
+    var sub = groPlural(items.length, 'spice', 'spices') + (ticked ? ' · ' + ticked + ' to buy' : '');
+    var html = '<div class="gro-staples gro-spices">' +
+      '<button type="button" class="gro-ps-head" data-gro="spices-toggle" aria-expanded="' + open + '">' +
+        GRO_ICONS.basket +
+        '<span class="gro-ps-text">' +
+          '<span class="gro-ps-title">Spices this week</span>' +
+          '<span class="gro-ps-sub">' + escapeHtml(sub) + '</span>' +
+        '</span>' +
+        '<span class="gro-ps-check">' + (open ? 'Hide' : 'See') + '</span>' +
+      '</button>';
+    if (open) {
+      html += '<div class="gro-staples-body gro-spices-body">' +
+        '<p class="gro-spices-line">All the spices the recipes need. Tick the ones you need to buy.</p>' +
+        items.map(function (sp) {
+          var id = String(sp.id);
+          return '<div class="gro-row gro-spice-row" data-gro="spice-tick" data-id="' + id + '" data-ticked="' + (sp.ticked ? '1' : '0') + '">' +
+            '<button type="button" class="gro-box' + (sp.ticked ? ' checked' : '') + '" role="checkbox" ' +
+              'aria-checked="' + (sp.ticked ? 'true' : 'false') + '" data-gro="spice-tick" data-id="' + id + '" ' +
+              'data-ticked="' + (sp.ticked ? '1' : '0') + '" ' +
+              'aria-label="' + escapeHtml((sp.ticked ? 'Don’t need to buy ' : 'Need to buy ') + sp.item) + '">' +
+              (sp.ticked ? GRO_ICONS.tick : '') + '</button>' +
+            '<p class="gro-name">' + escapeHtml(sp.item) + '</p>' +
+            (sp.quantity ? '<span class="gro-qty">' + escapeHtml(sp.quantity) + '</span>' : '') +
+          '</div>';
+        }).join('') +
+        (spices.recently_bought.length
+          ? '<p class="gro-spices-recent">Bought lately, so not listed: ' + escapeHtml(spices.recently_bought.join(', ')) + '</p>'
+          : '') +
+      '</div>';
+    }
+    return html + '</div>';
   }
 
   // ---------- Two rows of the same thing ----------
@@ -3866,6 +4051,12 @@
         '<button type="button" class="gro-pill gro-pill-else" data-gro="row-exclude" data-id="' + id + '" ' +
           'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
       '</div>' +
+      // The two answers sorting offers, here too — for a one-shop
+      // household this row is the only place they can be given.
+      '<div class="gro-pills open gro-rowmenu-answers">' +
+        groHaveItPillHtml(it) + groSubstPillHtml(it) +
+      '</div>' +
+      (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
       '<div class="gro-rowmenu-foot">' +
         // A tap on a thing you buy is how a staple gets made without a
         // form (the other way is telling the assistant). Hidden once it
@@ -4024,12 +4215,19 @@
         var chips = pillStores.map(function (n) {
           return groSortAllChip(id, it.item, n, n, picked === n);
         }).join('') + groSortAllChip(id, it.item, '', 'Any', picked === '');
+        // "Have it" and "Use something else" ride on the same row. Neither
+        // is staged: both take the row off this screen (or rename it), so
+        // they write at once and the picks made so far stay in
+        // groceryState.sortAllPicks across the re-render.
         return '<div class="gro-sortall-row" data-row-for="' + id + '">' +
             '<div class="gro-sortall-head">' +
               '<span class="gro-sortall-name">' + escapeHtml(it.item) + '</span>' +
               (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
             '</div>' +
-            '<div class="gro-pills open gro-sortall-pills">' + chips + '</div>' +
+            '<div class="gro-pills open gro-sortall-pills">' + chips +
+              groHaveItPillHtml(it) + groSubstPillHtml(it) +
+            '</div>' +
+            (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
           '</div>';
       }).join('') +
     '</div>';
@@ -4042,6 +4240,53 @@
       'aria-label="' + escapeHtml(itemName) + ': ' +
         (store ? escapeHtml(store) : 'no particular shop') + '">' +
       escapeHtml(label) + '</button>';
+  }
+
+  // ---------- "Have it already" / "Use something else" ----------
+  // Emily, 2026-09-13: "there should also be the 'have this already'
+  // option ... and if we want to use an alternative that should be a spot
+  // we can put it here too, for example, instead of fresh oregano I'll use
+  // dry oregano." Both live wherever an item is being sorted — the queue,
+  // the one-screen sort, and a LIST row's ⋯ (the only place for a one-shop
+  // household, which never sees a sorting step) — and both undo from the
+  // toast they leave.
+  //
+  // "Have it" is a per-week answer, not an inventory record (policy
+  // 2026-09-01: nobody does inventory work to finish the loop): it is the
+  // pre-shop "Drop it" — a soft-remove, listed on the wrap-up under
+  // "Already have" with its own undo — and never /already-have, which
+  // writes to the kitchen's inventory. A staple's line dropped this way
+  // tells the staple "we have plenty" (drop_grocery_item_pre_shop).
+  //
+  // "Use something else" opens one small field under the item: what
+  // instead, then either "Put it on the list" (the line becomes the
+  // alternative) or "I have it" (the swap is noted and the line comes
+  // off). The recipe's ingredient line says "using X instead" when it is
+  // cooked (cookIngredientLabel).
+  function groSubstFieldHtml(it) {
+    var id = String(it.id);
+    return '<div class="gro-subst" data-subst-for="' + id + '">' +
+      '<input type="text" class="gro-rowmenu-input gro-subst-input" id="gro-subst-' + id + '" ' +
+        'placeholder="What instead?" aria-label="What to use instead of ' + escapeHtml(it.item) + '" />' +
+      '<div class="gro-subst-actions">' +
+        '<button type="button" class="gro-ps-btn gro-ps-btn-keep" data-gro="subst-save" data-have="0" ' +
+          'data-id="' + id + '" data-name="' + escapeHtml(it.item) + '">Put it on the list</button>' +
+        '<button type="button" class="gro-ps-btn gro-ps-btn-drop" data-gro="subst-save" data-have="1" ' +
+          'data-id="' + id + '" data-name="' + escapeHtml(it.item) + '">I have it</button>' +
+      '</div>' +
+    '</div>';
+  }
+  function groHaveItPillHtml(it, extraClass) {
+    var id = String(it.id);
+    return '<button type="button" class="gro-pill gro-pill-have' + (extraClass || '') + '" data-gro="have-it" data-id="' + id + '" ' +
+      'data-name="' + escapeHtml(it.item) + '" aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>';
+  }
+  function groSubstPillHtml(it, extraClass) {
+    var id = String(it.id);
+    var open = groceryState.substOpenId === id;
+    return '<button type="button" class="gro-pill gro-pill-else' + (extraClass || '') + (open ? ' gro-pill-on' : '') + '" ' +
+      'data-gro="subst-open" data-id="' + id + '" aria-expanded="' + open + '" ' +
+      'aria-label="Use something else instead of ' + escapeHtml(it.item) + '">Use something else</button>';
   }
 
   // ---------- SORT ----------
@@ -4073,17 +4318,19 @@
           }).join('') +
           '<button type="button" class="gro-pill" data-gro="assign" data-id="' + id + '" data-store="" ' +
             'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
-          // Secondary action, same backend path as "Have it" always had — a
-          // store pill sorts the item, this takes it off the list entirely
-          // because it turns out no store is needed.
-          '<button type="button" class="gro-pill gro-pill-have" data-gro="already-have" data-id="' + id + '" ' +
-            'aria-label="Already have ' + escapeHtml(it.item) + '">Have it</button>' +
+          // Secondary actions: a store pill sorts the item; "Have it" takes
+          // it off the list because it turns out nothing needs buying (a
+          // per-week answer, no inventory — see groHaveItPillHtml); "Use
+          // something else" opens the field below.
+          groHaveItPillHtml(it) +
+          groSubstPillHtml(it) +
           // Covers the other reason a thing leaves the sort queue without a
           // store: it's being picked up on a trip that isn't one of this
           // household's stores. Same /exclude route as ever.
           '<button type="button" class="gro-pill gro-pill-else" data-gro="triage-exclude" data-id="' + id + '" ' +
             'aria-label="Getting ' + escapeHtml(it.item) + ' somewhere else">Somewhere else</button>' +
         '</div>' +
+        (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
       '</div>' +
       '<p class="gro-sort-progress">' + position + ' of ' + total + '</p>' +
       // The quiet way out: the list, with these under the TO SORT badge as
@@ -4487,7 +4734,11 @@
       // when the list is genuinely empty — never over the shops question,
       // and never over the just-finished trip's own screen (S5).
       var loose = groLooseItems(data);
-      if (!stops.length && !loose.length && !groStoresPromptShouldShow() && !groceryState.justFinishedTrip) {
+      // …and not while spices wait unticked: there is a list, it is just
+      // all in one section, and "Go to Plan" would send someone away
+      // from it.
+      if (!stops.length && !loose.length && !groStoresPromptShouldShow() && !groceryState.justFinishedTrip &&
+          !groceryState.spices.items.length) {
         return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>';
       }
       return '';
@@ -5393,10 +5644,60 @@
           return;
         }
         // Leaving a sort screen for the list is "later" — the list must not
-        // bounce straight back into the queue.
+        // bounce straight back into the queue. Same for the leftovers.
         if (GRO_SORT_STEPS.indexOf(groceryState.step) !== -1) groceryState.sortDeferred = true;
+        if (groceryState.step === 'carry') groceryState.carryDeferred = true;
         goGroceryStep('list');
         return;
+
+      // ----- CARRY: last week's leftovers -----
+      case 'goto-carry':
+        goGroceryStep('carry');
+        return;
+
+      case 'carry-later':
+        groceryState.carryDeferred = true;
+        goGroceryStep('list');
+        return;
+
+      case 'carry-decide': {
+        var carryDecision = el.dataset.decision;
+        var carryName = el.dataset.name || 'That';
+        var carryId = id;
+        var carryRow = el.closest('.gro-carry-row');
+        if (carryRow) carryRow.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + carryId + '/carried-over', { decision: carryDecision });
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (!ok) return;
+          groAdvanceCarry();
+          showToast(carryDecision === 'keep' ? carryName + ' kept' : carryName + ' off the list', {
+            label: 'Undo',
+            onClick: function () {
+              var undoAnswer = null;
+              groDo(function () {
+                return groPostEmpty('/api/grocery-list/' + carryId + '/carried-over-undo')
+                  .then(function (r) { undoAnswer = r; return r; });
+              }, "Couldn't undo that — try again.").then(function (undone) {
+                if (!undone) return;
+                // A kept amount that can't come back off this week's line
+                // (bought since, or two amounts that never reconciled) is
+                // not reopened — saying so beats asking twice.
+                if (undoAnswer && undoAnswer.unchanged) {
+                  showToast('Too late to undo that one — the line has moved on.');
+                  return;
+                }
+                // The question is back; if the screen had moved on, so
+                // does the household — the row at the top of the list is
+                // the way back in.
+                if (groceryState.step === 'list') renderGrocery();
+              });
+            }
+          });
+        });
+        return;
+      }
 
       case 'sort-later':
         groceryState.sortDeferred = true;
@@ -5496,6 +5797,7 @@
       // ----- the LIST row's quiet ⋯ (see groRowMenuHtml) -----
       case 'row-menu':
         groceryState.openRowId = groceryState.openRowId === id ? null : id;
+        groceryState.substOpenId = null;
         renderGrocery();
         return;
 
@@ -5666,6 +5968,24 @@
         renderGrocery();
         return;
 
+      // ----- Spices this week -----
+      case 'spices-toggle':
+        groceryState.spicesOpen = !groceryState.spicesOpen;
+        renderGrocery();
+        return;
+
+      // The box is the whole answer, both ways: a tick puts the spice on
+      // the list in its store, an untick takes it back into the section.
+      // No toast — the box is its own receipt, and undo is the same tap.
+      case 'spice-tick': {
+        var wasTicked = el.dataset.ticked === '1';
+        el.disabled = true;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + id + '/spice', { ticked: !wasTicked });
+        }, "Couldn't save that — try again.");
+        return;
+      }
+
       case 'staple-pause':
       case 'staple-resume': {
         var pausing = action === 'staple-pause';
@@ -5802,9 +6122,79 @@
         return;
       }
 
-      // "Wait, I already have this" is a natural thing to realize mid-sort.
-      // Same backend path "Have it" always used; it takes the item off the
-      // list into the kitchen and advances like a store pick does.
+      // "Wait, I already have this" — on the queue, the one-screen sort or
+      // a LIST row's ⋯. The pre-shop drop (soft-remove, undo, on the
+      // wrap-up), never an inventory write — see groHaveItPillHtml.
+      case 'have-it': {
+        var haveName = el.dataset.name || 'That';
+        var haveId = id;
+        var onSortScreen = GRO_SORT_STEPS.indexOf(groceryState.step) !== -1;
+        el.disabled = true;
+        groceryState.openRowId = null;
+        groceryState.substOpenId = null;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + haveId + '/pre-shop', { decision: 'drop', author: 'user' });
+        }, "Couldn't update that — try again.").then(function (ok) {
+          if (!ok) return;
+          if (onSortScreen) groAdvanceSort();
+          showToast(haveName + ' off the list — you have it', {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPostEmpty('/api/grocery-list/' + haveId + '/pre-shop-undo');
+              }, "Couldn't undo that — try again.");
+            }
+          });
+        });
+        return;
+      }
+
+      case 'subst-open':
+        groceryState.substOpenId = groceryState.substOpenId === id ? null : id;
+        renderGrocery();
+        if (groceryState.substOpenId === id) {
+          var substInput = groPanel() && groPanel().querySelector('#gro-subst-' + id);
+          if (substInput) substInput.focus();
+        }
+        return;
+
+      case 'subst-save': {
+        var substPanel = groPanel();
+        var substField = substPanel && substPanel.querySelector('#gro-subst-' + id);
+        var alternative = substField ? substField.value.trim() : '';
+        if (!alternative) { if (substField) substField.focus(); return; }
+        var substHave = el.dataset.have === '1';
+        var substName = el.dataset.name || 'That';
+        var substId = id;
+        var onSort = GRO_SORT_STEPS.indexOf(groceryState.step) !== -1;
+        el.disabled = true;
+        groceryState.openRowId = null;
+        groceryState.substOpenId = null;
+        groDo(function () {
+          return groPost('/api/grocery-list/' + substId + '/substitute', {
+            alternative: alternative, at_home: substHave, author: 'user'
+          });
+        }, "Couldn't save that — try again.").then(function (ok) {
+          if (!ok) return;
+          // The renamed line is still in the queue if it has no store;
+          // with "I have it" it is gone, and the queue moves on.
+          if (onSort && substHave) groAdvanceSort();
+          showToast(substHave
+            ? substName + ' off the list — using ' + alternative + ' instead'
+            : alternative + ' instead of ' + substName, {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPostEmpty('/api/grocery-list/' + substId + '/substitute-undo');
+              }, "Couldn't undo that — try again.");
+            }
+          });
+        });
+        return;
+      }
+
+      // The kitchen-inventory version, kept for anything else that still
+      // calls it; the sorting screens use 'have-it' above.
       case 'already-have':
         el.disabled = true;
         groDo(function () {
@@ -5978,6 +6368,20 @@
   // over and the shopper lands back on the list with the good news. The
   // auto-return is what makes SORT a queue rather than a screen you have to
   // remember to leave.
+  // The last answer on CARRY hands over to whatever comes next — the sort
+  // queue when something has no store, the list otherwise — exactly as the
+  // first landing would have, had there been nothing from last week.
+  function groAdvanceCarry() {
+    if (groceryState.carried.length) {
+      renderGrocery();
+      return;
+    }
+    groceryState.step = 'list';
+    groceryState.carryDeferred = false;
+    groMaybeSortFirst();
+    renderGrocery();
+  }
+
   function groAdvanceSort() {
     var left = groceryState.data ? groUnsorted(groceryState.data).length : 0;
     if (left) {
@@ -14666,7 +15070,12 @@
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
     var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
-    return ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    var label = ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    // "I'll use something else instead", said while sorting the week's
+    // list (Shop) — the recipe still asks for fresh oregano, and this is
+    // where the cook hears that dry is what's going in.
+    if (ing && ing.substitute) label += ' — using ' + ing.substitute + ' instead';
+    return label;
   }
 
   // The words that would count as this ingredient being named in a step.

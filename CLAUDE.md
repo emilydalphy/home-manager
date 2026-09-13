@@ -371,6 +371,108 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
+  every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
+  time of writing.** Loop Board feature (Emily: "there should also be the
+  'have this already' option ... instead of fresh oregano I'll use dry
+  oregano"). Both verbs sit wherever an item is being sorted — the
+  one-at-a-time queue, the one-screen sort, and a LIST row's `⋯` (the
+  only place for a one-shop household, which never sees a sorting step).
+  - **"Have it" is the pre-shop drop, not the inventory route — and the
+    queue's existing "Have it" pill was moved off `/already-have` to say
+    so.** That route (`move_grocery_item_to_inventory`) writes a row to
+    `inventory_items`, and the ticket's own rule is policy 2026-09-01:
+    "have it already" is a per-week answer, never inventory work.
+    `drop_grocery_item_pre_shop` already was exactly that — soft-remove,
+    undo, listed on the wrap-up under "Already have", and a staple's line
+    dropped this way tells the staple "we have plenty". The
+    `/already-have` route and its handler stay for anything else.
+  - **"Use something else" is a per-WEEK record** (`grocery_substitutions`,
+    `grocery.substitute_grocery_item`): the line is renamed to the
+    alternative — quantity kept as written, since nobody can convert fresh
+    oregano into dry, so the number stays for the person to adjust — or
+    soft-removed when the alternative is at home; `get_cooker_view`
+    annotates every matching ingredient in that week's meals with
+    `substitute`, and `cookIngredientLabel` (the one place a cook-screen
+    ingredient is worded) appends "— using dry oregano instead". Not a
+    recipe edit: next week the recipe asks for fresh again. The existing
+    `log_cooking_deviation` / `recipe_notes` is a permanent note on the
+    recipe and was left alone for that reason.
+- **2026-09-13 — Spices this week: one opt-in section, the list assumes
+  a spice rack. Branch `worktree-grocery-sorting-round`, NOT merged at
+  the time of writing.** Loop Board improvement (Emily: "put all the
+  spices together under one section ... select the ones you want to add
+  to the list to buy ... it also takes up a lot of space and scrolling").
+  New `app/tools/spices.py`: `is_spice(name)` is a MAINTAINED LIST of
+  names (spices, dried herbs, salt/pepper, cooking oils) tried from the
+  most specific reading down — whole name, descriptors stripped, form
+  word dropped ("cumin seeds"), last word alone — and never a heuristic
+  on the word "spice". Fresh herbs stay in produce: basil, cilantro,
+  parsley, mint, dill, chives, rosemary, thyme, sage, tarragon count only
+  when written "dried", and "fresh" anything never counts. `_NOT_ALONE`
+  is what keeps a bell pepper, a garlic clove and a fresh chili out.
+  - **The model is a STATUS, not a flag.** A plan's spice is inserted by
+    `add_grocery_item` with `status = 'spice'`; a tick makes it
+    'needed'; an untick puts it back. So every reader of "to buy" —
+    counts, the sort queue, the trip, pre-shop flags, the wrap-up — is
+    right without knowing spices exist, and the merge (`add_grocery_item`
+    now matches 'spice' rows too) keeps two recipes' cumin on one line.
+    A PERSON adding a spice by name ticks the pending line: their add is
+    a want. `_reverse_meal_grocery_contributions` and
+    `clear_stale_grocery_items` treat 'spice' like 'needed'; a new
+    week's approval deletes the previous week's still-unticked spices
+    (never wanted) while a ticked one goes through keep-or-drop like any
+    line, and keeping it ticks this week's twin.
+  - **Judgment calls, all one line to change:** salt, pepper and oils
+    are spice-rack things (Emily's ticket left it open); a spice with a
+    purchased line made within `RECENTLY_BOUGHT_DAYS` (56) is not offered
+    again — the same "created_at stands in for bought" reasoning as
+    `staples._seed_history` — and the section names what it left out so
+    "all the spices the recipes need" stays true; the section is closed
+    by default on LIST (less scrolling was half the ask), with its line
+    "All the spices the recipes need. Tick the ones you need to buy."
+    Six existing tests that read a recipe's olive oil / salt off the
+    needed list now read the section as well — the amounts they pin are
+    unchanged, only where the line waits moved.
+- **2026-09-13 — Last week's leftovers: asked before they add onto this
+  week. Branch `worktree-grocery-sorting-round`, NOT merged at the time of
+  writing.** Loop Board bug (Emily: "some of the quantities are so high
+  but I think it might be because it was adding on from last week's").
+  Root cause, reproduced in `tests/test_grocery_carry_over.py`:
+  `approve_weekly_plan` ingests through `add_grocery_item`, whose merge
+  finds ANY still-'needed' line with the same name — including last
+  week's unbought "2 lbs chicken thighs" — sums this week's 2 lbs into it
+  and stamps the NEW plan's id on the row (`keep_standing` is only for
+  hand adds). So the list said 4 lbs, nothing said why, and
+  `clear_stale_grocery_items` could never take the old share off because
+  the row now belonged to the new week. It fires every time a week is
+  approved while the previous one still has a day left — any Sunday —
+  because `_live_plan_ids` keeps a plan alive through its last day, so
+  generation's cleanup pass leaves those lines in place. Same code path
+  as the open "hand-added unit vs plan unit concatenates" card
+  (`_try_consolidate_quantity` → `_repeat_or_concatenate`): that card is
+  the same merge failing to reconcile units; this one is the merge
+  succeeding on the wrong two weeks. Not fixed here.
+  - **Fix: set aside, then ask.** On the transition into 'approved',
+    `grocery.set_aside_carried_over_items` moves every 'needed' line from
+    an earlier plan whose period has STARTED to `status = 'carried'`
+    (`carried_from_plan_id` remembers whose), before a single ingredient
+    lands — so this week's amounts go on clean lines. The Shop tab asks
+    one screen before sorting: "Still on the list from last week — keep
+    or drop?" (Emily's option (a), 2026-09-13), showing this week's own
+    amount on its own line. Keep adds the old amount onto this week's
+    line out loud (or restores the line as a standing want, source NULL,
+    so no later cleanup deletes something asked for); Don't need
+    soft-removes; both undo, and the wrap-up's already-have list skips
+    both (`removed_by` carried_kept / carried_dropped).
+  - **What is NOT a leftover, on purpose:** a hand-added line (a standing
+    want — merges exactly as before), a staple's suggestion, an excluded
+    line, anything already in a cart, and — the judgment call — a plan
+    that has not started yet: approving two weeks ahead is building next
+    week's list, and nobody has had a chance to buy it, so those still
+    merge the old way. Unanswered 'carried' rows are cleared with the
+    rest by `clear_stale_grocery_items` once their plan has gone by.
+
 - **2026-09-13 — A way out of the Shop loop before every store is done.
   Branch `worktree-shop-exit`, NOT merged at the time of writing.** Loop
   Board "Shop: a way out of the Shop loop" (Bug, High, Beta). Emily, on

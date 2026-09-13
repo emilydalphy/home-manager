@@ -252,8 +252,12 @@ def test_the_grocery_list_still_buys_one_bottle():
     tools.approve_weekly_plan(plan_id, "Emily")
 
     bought = {g["item"]: g["quantity"] for g in tools.list_grocery_list()}
-    assert bought["Olive oil"] == "1 bottle"
     assert bought["Baby spinach"] == "1 bag"
+    # The oil waits unticked in the "Spices this week" section now
+    # (spices.py, 2026-09-13) — one bottle there, and not on the to-buy list.
+    spices = {g["item"]: g["quantity"] for g in tools.list_grocery_list(status="spice")}
+    assert spices["Olive oil"] == "1 bottle"
+    assert "Olive oil" not in bought
 
 
 def test_the_saved_recipe_keeps_its_shopping_quantities():

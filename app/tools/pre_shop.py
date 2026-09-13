@@ -213,7 +213,12 @@ def get_already_have_decisions() -> list[dict]:
         # removed_by 'staple' is a "not this trip" / "we have plenty" answer
         # on a staple's own line, not an already-have decision a person
         # made here — it would read as their words otherwise.
+        # Nor a last-week leftover kept or dropped on the carry-over step
+        # (grocery.keep_carried_over_item / drop_carried_over_item): that
+        # step has its own undo, and a kept line was merged onto this
+        # week's, so "put it back" here would list it twice.
         "WHERE household_id = ? AND status = 'removed' AND removed_by != '' AND removed_by != 'staple' "
+        "AND removed_by NOT IN ('carried_kept', 'carried_dropped') "
         "AND removed_at IS NOT NULL AND removed_at >= ? ORDER BY removed_at DESC",
         (household_id(), cutoff),
     ).fetchall()

@@ -8,6 +8,7 @@ from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import attention as _attention
 from . import cook_ahead as _cook_ahead
+from . import grocery as _grocery
 from . import inventory as _inventory
 from . import leftovers as _leftovers
 from . import plates as _plates
@@ -1051,6 +1052,25 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         m["ingredients"] = _recipes.cooking_ingredients(
             m["ingredients"], servings=m.get("default_servings") or m.get("servings"),
         )
+
+    # "I'll use something else instead", said while sorting the list
+    # (grocery.substitute_grocery_item): the recipe keeps asking for fresh
+    # oregano, and the card says what is actually going in. Matched on the
+    # list's own merge key, so "Fresh oregano" and "fresh oregano, chopped"
+    # both hear about it.
+    swaps = {
+        _grocery._merge_key(sw["original_item"]): sw
+        for sw in _grocery.substitutions_for_plan(plan_id)
+    }
+    if swaps:
+        for m in meals:
+            for ing in m["ingredients"]:
+                if not isinstance(ing, dict):
+                    continue
+                sw = swaps.get(_grocery._merge_key(ing.get("item") or ""))
+                if sw:
+                    ing["substitute"] = sw["alternative"]
+                    ing["substitute_at_home"] = bool(sw["at_home"])
 
     prep_tasks = get_prep_schedule(plan_id) if plan_id is not None else []
     return {
