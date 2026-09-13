@@ -939,6 +939,145 @@ def implausible_quantity_message(line: dict, servings: int | None) -> str:
     )
 
 
+# ---------- produce counts that only make sense for a small kind (Emily, 2026-09-13) ----------
+#
+# "It says 6 cucumbers - does it mean the persian cucumbers? Because that
+# makes sense, but 6 english cucumbers would be a crazy amount."
+#
+# The plausibility table above has no vegetable class on purpose: a count
+# of onions the model gets wrong had not happened, and the table's job is
+# to REWRITE a cooking amount, which is the wrong fix here — "6 cucumbers"
+# was very likely six Persian ones, and turning it into "2" would buy the
+# wrong amount of the right thing. What the line is missing is a WORD, not
+# a number, and only the model knows which word; the generation prompt now
+# asks for it whenever the count depends on the kind. This table is the
+# deterministic catch for the times it forgets: the handful of produce
+# where the ordinary full-size kind and a small kind are both bought by
+# the count, and the count alone says which one was meant. It only ever
+# FLAGS (plan_quality._produce_variety_named → the morning report); no
+# amount and no name is rewritten, and the grocery list shows the line as
+# the recipe wrote it.
+#
+# Each entry: (the bare noun, the words that still mean the ordinary kind,
+# what the ordinary kind is called, the small kind to ask about or None,
+# a per-serving ceiling for the ordinary kind). A name is judged only when
+# its last word is the noun and EVERY other word is in the ordinary list
+# or in _PRODUCE_GENERIC_WORDS — any other word ("Persian", "cherry",
+# "baby", "green" on an onion) is the model naming a kind, and a kind
+# named is never second-guessed.
+# The ceilings are per serving and generous, like _PLAUSIBLE_PER_SERVING:
+# a French onion soup for four with six onions passes; six cucumbers in a
+# salad for four does not. Only a count is judged ("6", "6 large", "6
+# each", "1 dozen") — a pound of tomatoes is a weight the kind does not
+# change — and a qty note of "small" is the kind being said in the amount
+# instead. The kind can be said anywhere in the name — "Persian
+# cucumbers", "Cucumbers (Persian)", "Cucumbers, Persian" — and a word
+# that only describes ("fresh", "sliced") says nothing either way.
+_PRODUCE_COUNT_PER_SERVING = (
+    ("cucumber", ("english", "field", "seedless", "hothouse", "greenhouse"),
+     "English cucumbers", "Persian", 1),
+    ("tomato", ("beefsteak", "vine", "on-the-vine", "vine-ripened", "field", "red", "heirloom",
+                "hothouse", "greenhouse", "slicing"),
+     "full-size tomatoes", "cherry or plum", 2),
+    ("potato", ("russet", "yukon", "gold", "idaho", "baking", "white", "yellow"),
+     "full-size potatoes", "baby", 2),
+    ("pepper", ("bell", "red", "green", "yellow", "orange"),
+     "bell peppers", "mini", 1.5),
+    ("onion", ("yellow", "red", "white", "brown", "cooking", "spanish", "vidalia"),
+     "full-size onions", "pearl", 1.5),
+    ("apple", ("granny", "smith", "honeycrisp", "gala", "fuji", "macintosh", "mcintosh", "pink", "lady",
+               "red", "green", "baking", "tart", "sweet"),
+     "full-size apples", None, 2),
+)
+
+# A qty note that already says the small kind was meant ("6 small").
+_SMALL_KIND_NOTES = ("small", "mini", "baby", "little")
+
+# Words in a name that describe the thing without naming a kind — a
+# "(fresh)" tag, a prep descriptor after a comma, "on the vine" — so they
+# neither exempt the line nor count as the kind being spelled out.
+_PRODUCE_GENERIC_WORDS = frozenset((
+    "fresh", "ripe", "firm", "raw", "whole", "large", "medium", "organic", "local",
+    "peeled", "sliced", "diced", "chopped", "halved", "quartered", "grated", "cubed", "thinly", "thin",
+    "on", "the", "of", "and", "or",
+))
+
+# Units that are still a count of the thing itself, and how many each is.
+_COUNT_UNITS = {"each": 1, "ct": 1, "count": 1, "pc": 1, "pcs": 1, "piece": 1, "pieces": 1, "dozen": 12}
+
+
+def _produce_class(item: str) -> tuple | None:
+    """(the _PRODUCE_COUNT_PER_SERVING entry, whether the name spelled the
+    ordinary kind out) for an ingredient written as the ordinary kind, or
+    None — an item the table has no opinion about, or one whose name
+    already says a different kind, anywhere in it: "Persian cucumbers",
+    "Cucumbers (Persian)" and "Cucumbers, Persian" all say it."""
+    lowered = (item or "").strip().lower()
+    # The noun is the last word of the name proper — before any
+    # parenthetical or comma tail; those words are descriptors, judged
+    # alongside the words in front of the noun.
+    tail_words = re.findall(r"[a-zà-ÿ'-]+", " ".join(re.findall(r"\(([^)]*)\)", lowered)))
+    proper = re.sub(r"\s*\([^)]*\)", "", lowered)
+    proper, _comma, comma_tail = proper.partition(",")
+    tail_words += re.findall(r"[a-zà-ÿ'-]+", comma_tail)
+    words = proper.split()
+    if not words:
+        return None
+    last = words[-1]
+    singular = last[:-2] if last.endswith("oes") else last[:-1] if last.endswith("s") else last
+    descriptors = words[:-1] + tail_words
+    for entry in _PRODUCE_COUNT_PER_SERVING:
+        noun, ordinary = entry[0], entry[1]
+        if singular != noun:
+            continue
+        if all(word in ordinary or word in _PRODUCE_GENERIC_WORDS for word in descriptors):
+            return entry, any(word in ordinary and word not in _PRODUCE_GENERIC_WORDS for word in descriptors)
+        return None
+    return None
+
+
+def produce_count_problem(item: str, qty: str, servings: int | None = None) -> dict | None:
+    """
+    Why a bare COUNT of produce only makes sense for the small kind, or
+    None when the count fits the ordinary kind for `servings` people (or
+    when the name says which kind, the amount is not a count, or the table
+    has no opinion). Returns {"noun", "ordinary", "small", "per_serving",
+    "high"} so a caller can say so in words.
+    """
+    found = _produce_class(item)
+    if not found:
+        return None
+    (noun, _ordinary, ordinary_name, small, high), named = found
+    core, note = _quantities._split_quantity_note((qty or "").strip())
+    if any(word in note.lower().split() for word in _SMALL_KIND_NOTES):
+        return None
+    parsed = _quantities._parse_quantity(core)
+    if not parsed or (parsed[1] is not None and parsed[1] not in _COUNT_UNITS):
+        return None
+    count = parsed[0] * _COUNT_UNITS.get(parsed[1] or "", 1)
+    per_serving = count / _servings_or_base(servings)
+    if per_serving <= high:
+        return None
+    return {
+        "noun": noun, "ordinary": ordinary_name, "small": small, "named": named,
+        "per_serving": per_serving, "high": high,
+    }
+
+
+def produce_count_message(item: str, qty: str, problem: dict, servings: int | None) -> str:
+    """One clause for a line produce_count_problem flagged, in the app's
+    own voice: "Cucumbers '6' would be a lot of English cucumbers for 2 —
+    Persian ones? The recipe should say which kind". A name that already
+    says the ordinary kind ("English cucumbers") is not asked which kind —
+    the count is simply a lot."""
+    table = _servings_or_base(servings)
+    item, qty = (item or "").strip(), (qty or "").strip()
+    if problem["named"]:
+        return f"{item} '{qty}' is a lot for {table}"
+    ask = f"{problem['small']} ones? The recipe" if problem["small"] else "the recipe"
+    return f"{item} '{qty}' would be a lot of {problem['ordinary']} for {table} — {ask} should say which kind"
+
+
 def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
     """
     What actually goes in the pan for `item`, for `servings` people —

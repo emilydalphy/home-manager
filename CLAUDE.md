@@ -371,6 +371,42 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — "6 cucumbers": the kind goes in the name when the count
+  depends on it. Branch `worktree-ingredient-variety`, NOT merged at the
+  time of writing.** Loop Board improvement (Emily, on the list: "does it
+  mean the persian cucumbers? Because that makes sense, but 6 english
+  cucumbers would be a crazy amount"). Not a bug in the list: the line was
+  exactly what the recipe wrote, and the ingest never strips a word. What
+  was missing was the WORD, and only the model knows it — so the fix is a
+  prompt sentence (both plan prompts, the sides prompt, and the
+  `add_recipe` tool's `item` description): name the kind whenever the
+  count only makes sense for that kind, a bare name reads as the
+  full-size kind.
+  - **The catch is a flag, never a rewrite.** `recipes._PRODUCE_COUNT_PER_
+    SERVING` — cucumbers, tomatoes, potatoes, peppers, onions, apples, each
+    with a per-serving ceiling for the ordinary kind (1, 2, 2, 1.5, 1.5, 2)
+    — is deliberately NOT a class in `_PLAUSIBLE_PER_SERVING`: that table
+    rewrites the cook amount, and "6 cucumbers" → "2" would buy the wrong
+    amount of the right thing when six Persian ones were meant. A bare
+    count over the ceiling on a name that does not say a different kind is
+    reported by `plan_quality._produce_variety_named` ("info", morning
+    report, like `_quantities_plausible`); the list and the cook view show
+    the line as written. A named kind ("Persian", "cherry", "baby", "green"
+    on an onion) is never second-guessed, wherever in the name it is said
+    ("Cucumbers (Persian)", "Cucumbers, Persian" — the verifier's catch);
+    "English cucumbers '6'" is still caught but only as "a lot", not asked
+    which kind. "1 dozen" / "6 ct" count as counts.
+  - **Not annotating the list line ("6 cucumbers — small ones?")**, on
+    purpose: no field to carry it without a schema change, the row's name
+    is the merge key and a store-preference key, and at the list the
+    servings are unknown — a wrong "small ones?" on a real list is worse
+    than a quiet line in the report. Its own card if the prompt sentence
+    is not enough.
+  - **"Persian cucumbers" and "Cucumbers" from two recipes stay two
+    lines** (`grocery._merge_key` already does this): they are two
+    different things at the store, and the merge is built to fail toward
+    two lines. Pinned in `tests/test_ingredient_variety.py`.
+
 - **2026-09-13 — "One-pot" was a claim about the plate, not the method.
   Branch `worktree-plate-tags-method`, NOT merged at the time of writing.**
   Emily: a grilled turkey-burger-and-charred-vegetables plate got tagged
