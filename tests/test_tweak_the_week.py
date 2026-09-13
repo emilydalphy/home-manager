@@ -303,14 +303,34 @@ def test_an_approval_is_not_a_tweak_and_sends_you_to_the_list_instead():
         {"kicker": "LIST UPDATED", "change": "12 items ready to shop", "tab": "grocery"},
     ])
     assert [c["label"] for c in chips] == ["Open the list"]
-    assert chips[0]["did"] == [["activateTab", "grocery", None]]
+    assert chips[0]["did"] == [["closeAskSheet"], ["activateTab", "grocery", None]]
 
 
 @_needs_node
 def test_a_grocery_only_turn_is_unchanged_by_any_of_this():
     chips = _chips([{"kicker": "LIST UPDATED", "change": "Added milk", "tab": "grocery"}])
     assert [c["label"] for c in chips] == ["Plan my stops"]
-    assert chips[0]["did"] == [["activateTab", "grocery", {"groScreen": "plan"}]]
+    assert chips[0]["did"] == [["closeAskSheet"], ["activateTab", "grocery", {"groScreen": "plan"}]]
+
+
+@_needs_node
+def test_every_navigating_chip_closes_the_sheet_before_it_goes():
+    """Emily, 2026-09-13, on her phone with the sheet open over Shop: "I'm
+    clicking 'open the list' and it's not bringing me anywhere." activateTab
+    switches the panel *under* the sheet; on a phone the sheet covers it, so
+    a chip that only switches tabs looks like a dead button. Every chip that
+    navigates must close the sheet first, the way the receipt cards' View
+    already does."""
+    turns = [
+        [{"kicker": "WEEK UPDATED", "change": "Week approved — your list is ready", "tab": "week"}],
+        [{"kicker": "LIST UPDATED", "change": "Added milk", "tab": "grocery"}],
+        [_week_action()],
+    ]
+    for actions in turns:
+        for chip in _chips(actions):
+            if not chip["navigates"]:
+                continue
+            assert chip["did"][0] == ["closeAskSheet"], f'{chip["label"]!r} navigated without closing the sheet: {chip["did"]}'
 
 
 @_needs_node
