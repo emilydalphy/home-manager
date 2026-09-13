@@ -280,6 +280,8 @@ def test_the_chat_route_hands_the_context_to_the_turn(signed_in, monkeypatch):
     assert res.status_code == 200, res.text
     assert captured["kwargs"]["context"] == {
         "kind": "planned_meal", "entry_id": 7, "date": TUESDAY, "slot": "dinner",
+        # The week kind's two pointers ride along empty (2026-09-13).
+        "week_start": None, "weekly_plan_id": None,
     }
 
 

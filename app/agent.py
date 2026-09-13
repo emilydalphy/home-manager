@@ -565,6 +565,26 @@ those off". Instead of "Dismissed" -> "Of course. It'll be waiting under Meals �
 again this week". Instead of "Tell me anything" -> "The more you tell me, the less you'll \
 swap". Instead of "Preferences saved" -> "Noted — I'll start from that next week too".
 
+READING WHAT THEY MEANT — five behaviours you are held to on every turn (Emily, 2026-09-13: \
+"we need to incorporate the smart throughout this app"):
+1. Read the intent and change the smallest thing. "Tacos is good but make it chicken" keeps \
+the tacos and changes the protein. "Something else for Thursday" keeps Thursday's brief (quick, \
+not chicken, whatever was asked) and changes the dish. Never throw away what they liked to fix \
+what they didn't.
+2. A reason is a fact. "No shrimp — the kids won't eat it" is a dislike to remember (the memory \
+tools: add_food_dislikes, set_member_dietary_restrictions for an allergy, add_fact otherwise) \
+AND a change to make, in the same turn. Say what you remembered in a few words; never ask about \
+it again, never drop it silently.
+3. Say the consequence once, before it bites. If "make it chicken" puts chicken on three nights, \
+or two chicken dinners mean one pack of thighs on the list, say so in one line — as a fact with \
+what you did about it, not as a question.
+4. Offer three, never an open question. When they don't know what they want ("something else"), \
+the answer is three things to tap, each fitting what you already know about that night, plus \
+the option of keeping what was there. "What would you like instead?" is never the reply.
+5. Never ask which one they meant when the screen already says. The subject block below (a \
+meal, or the week) is the subject: "it", "that one", "Thursday", a bare "make it beef" all \
+resolve against it. Ask only when two readings would lead to different plates.
+
 Length: one line above the plan, no recap. "Your week's here — there's one night I'd like your \
 call on." Detail lives in per-slot reasons of 4-9 words, not in prose. Never list what you \
 did. Stay clear and concise throughout: short sentences, no padding, no repeating information \
@@ -1606,6 +1626,60 @@ TOOL_DEFINITIONS = [
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
             },
             "required": ["weekly_plan_id", "meal_date", "new_meal"],
+        },
+    },
+    {
+        "name": "propose_plan_changes",
+        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is a full dish the way submit_swap/add_recipe would write it — meal_name, a one-line reason (under ten words, warm, plain, why it fits), ingredients in store-bought units, instructions, food_groups, main_protein, prep/cook minutes — so it is cookable and shoppable the moment it is saved. The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "date": {"type": "string", "description": "YYYY-MM-DD"},
+                            "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
+                            "action": {"type": "string", "enum": ["change", "keep"]},
+                            "candidates": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "meal_name": {"type": "string"},
+                                        "reason": {"type": "string", "description": "One short line the household reads on the card: why this fits. Under ten words, no exclamation mark."},
+                                        "ingredients": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "item": {"type": "string"},
+                                                    "qty": {"type": "string"},
+                                                    "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
+                                                },
+                                                "required": ["item"],
+                                            },
+                                        },
+                                        "instructions": {"type": "array", "items": {"type": "string"}},
+                                        "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+                                        "cuisine": {"type": "string"},
+                                        "main_protein": {"type": "string"},
+                                        "prep_time_minutes": {"type": "integer"},
+                                        "cook_time_minutes": {"type": "integer"},
+                                        "default_servings": {"type": "integer"},
+                                    },
+                                    "required": ["meal_name", "reason"],
+                                },
+                            },
+                        },
+                        "required": ["date", "slot", "action"],
+                    },
+                },
+                "line": {"type": "string", "description": "Optional: the one line above the card, if it isn't the reply itself."},
+            },
+            "required": ["weekly_plan_id", "rows"],
         },
     },
     {
@@ -5498,6 +5572,7 @@ TOOL_FUNCTIONS = {
     "set_week_constraints": tools.set_week_constraints,
     "get_weekly_plan": tools.get_weekly_plan,
     "swap_meal_in_plan": tools.swap_meal_in_plan,
+    "propose_plan_changes": tools.propose_plan_changes,
     "swap_component_in_plan": tools.swap_component_in_plan,
     "swap_dinner_nights": tools.swap_dinner_nights,
     "approve_weekly_plan": tools.approve_weekly_plan,
@@ -5963,7 +6038,7 @@ _TWEAK_REPLY_BLOCK = {
 #
 # `kind` is the seam for other "open chat about X" entry points; only the
 # meal kind is wired.
-CHAT_CONTEXT_KINDS = ("planned_meal",)
+CHAT_CONTEXT_KINDS = ("planned_meal", "weekly_plan")
 
 
 def _format_context_ingredients(ingredients: list[dict]) -> str:
@@ -5976,14 +6051,88 @@ def _format_context_ingredients(ingredients: list[dict]) -> str:
     return "; ".join(parts)
 
 
+def _build_week_context_block(context: dict) -> dict | None:
+    """
+    The system block for a turn sent from the Plan tab with a week showing
+    (Emily, 2026-09-13, "Shaping the Draft" Flow C): every planned slot
+    with its dish and entry id, the plan's id and status, and the change
+    card protocol — propose, don't write; the household saves.
+    """
+    try:
+        week = tools.describe_plan_for_chat(
+            week_start=context.get("week_start"), weekly_plan_id=context.get("weekly_plan_id"),
+        )
+    except Exception:
+        logger.exception("Resolving the week for chat context failed; running the turn without it")
+        return None
+    if not week:
+        logger.info("Chat context named a week with no plan; running without it")
+        return None
+    lines = []
+    for day in week["days"]:
+        parts = []
+        for s in day["slots"]:
+            if s.get("meal"):
+                extra = f" ({s['meta']})" if s.get("meta") else ""
+                parts.append(f"{s['slot']}: {s['meal']}{extra} [entry {s.get('entry_id')}]")
+            else:
+                parts.append(f"{s['slot']}: {s.get('state') or 'nothing'}")
+        lines.append(
+            f"- {day['weekday']} {day['date']}: " + ("; ".join(parts) if parts else "nothing planned")
+        )
+    status = week.get("status") or "draft"
+    state_line = (
+        "The week is APPROVED, so its ingredients are already on the grocery list; a change saved "
+        "from the card takes the old dish's off and puts the new dish's on by itself."
+        if status == "approved" else
+        "The week is still a DRAFT: nothing is on the grocery list yet, and nothing changes there "
+        "until they approve the week."
+    )
+    text = (
+        f"This message was sent from the Plan tab with the week of {week['week_start_date']} showing "
+        f"(weekly_plan_id {week['weekly_plan_id']}, status {status}). THE WEEK is the subject of this "
+        "message: a day name, \"tonight\", \"the tacos\", \"less chicken\", \"Thursday needs to be "
+        "quick\" all refer to it. Do not call get_weekly_plan or get_week_menu just to find it — it "
+        "is here:\n"
+        + "\n".join(lines) + "\n"
+        + state_line + "\n"
+        "How changes work in this mode — the CHANGE CARD:\n"
+        "- To change what's eaten on any slot, call propose_plan_changes ONCE with every row the "
+        "message asks for. Never call swap_meal_in_plan or plan_meal for a planned slot here: the "
+        "household saves from the card, and nothing is written until they do. (plan_meal is still "
+        "right for an OPEN or EMPTY night — there is nothing on it to propose against.)\n"
+        "- One candidate per row for a plain change; two to four when they asked for options or "
+        "said \"something else\"; action 'keep' for a night they told you to leave alone "
+        "(\"Thursday's fine\", \"keep Thursday\").\n"
+        "- Keep what they liked: \"tacos is good but make it chicken\" is the same tacos with "
+        "chicken, same minutes, not a new dish. A follow-up that changes one row of a card you "
+        "already made is a new propose_plan_changes with all the rows again (the kept ones as "
+        "'keep' or unchanged).\n"
+        "- A reason in the message (\"the kids won't eat shrimp\", \"we've had a lot of "
+        "stir-fries\") is remembered with the memory tools in the SAME turn, and the card re-picks "
+        "around it. Say what you remembered in a few words.\n"
+        "- Moving a dinner to another night is still swap_dinner_nights; approving is still "
+        "approve_weekly_plan; a comment that changes nothing on the week is remembered and answered "
+        "in one line (\"Noted — ... Nothing in this draft to change.\").\n"
+        "- Reply with ONE short line that matches the card — the consequence if there is one "
+        "(\"With Wednesday that's chicken twice, so Saturday stays on the pork chops.\"), otherwise "
+        "what you offered. Never list the rows; the card shows them. Never say the change is made "
+        "— it isn't until they save."
+    )
+    return {"type": "text", "text": text}
+
+
 def _build_chat_context_block(context: dict | None) -> dict | None:
     """
-    The system block for a turn sent from a meal card, or None when the
-    context is missing, malformed, or names a meal that is no longer on
-    the plan — in which case the turn is simply an ordinary one.
+    The system block for a turn sent from a meal card or from the Plan tab,
+    or None when the context is missing, malformed, or names a meal or
+    week that is no longer there — in which case the turn is simply an
+    ordinary one.
     """
     if not isinstance(context, dict) or context.get("kind") not in CHAT_CONTEXT_KINDS:
         return None
+    if context.get("kind") == "weekly_plan":
+        return _build_week_context_block(context)
     try:
         meal = tools.describe_planned_meal(
             entry_id=context.get("entry_id"),

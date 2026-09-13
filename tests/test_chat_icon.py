@@ -19,7 +19,10 @@ def test_the_bar_is_gone_and_one_icon_opens_the_sheet():
     assert SHELL_HTML.count('id="chat-fab"') == 1
     # The icon is wired to the same open path the bar used.
     assert "document.getElementById('chat-fab')" in SHELL_JS
-    assert "askBar.addEventListener('click', function () { openAskSheet(); });" in SHELL_JS
+    # Since 2026-09-13 the icon opens the sheet ABOUT the week when Plan is
+    # showing one (weekAskContext is null everywhere else, so the sheet
+    # opens plain on the other three tabs) — see test_chat_change_card.py.
+    assert "askBar.addEventListener('click', function () { openAskSheet('', weekAskContext()); });" in SHELL_JS
 
 
 def test_the_icon_floats_bottom_right_and_the_dock_clears_it():

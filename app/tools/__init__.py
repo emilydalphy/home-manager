@@ -612,6 +612,18 @@ from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
 )
+# The chat's change card (Emily, 2026-09-13, "Shaping the Draft" Flows C
+# and D): propose_plan_changes IS an agent tool — the only one here that
+# writes nothing — and the rest are the card's own routes.
+from .proposals import (  # noqa: F401
+    another_for_row,
+    apply_proposal,
+    choose_candidate,
+    describe_plan_for_chat,
+    get_proposal,
+    propose_plan_changes,
+    undo_proposal,
+)
 # Now's "Tonight: X. Still good?" card and its swap-from-the-plan sheet
 # (Emily, 2026-09-13). Not agent tools — a screen's own read and one
 # "Yes" write; the swap itself is swap_dinner_nights above.
