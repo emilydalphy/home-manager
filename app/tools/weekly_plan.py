@@ -4444,8 +4444,8 @@ def approve_weekly_plan(
     what populates the list, so the list only ever reflects a week the
     household actually said yes to.
 
-    Safe to call more than once. Two separate guards, because they cover
-    different things:
+    Safe to call more than once, AND safe to call twice at once. Two
+    separate guards, because they cover different things:
 
     - Re-approving an ALREADY-approved plan adds nothing at all. The
       grocery work happens on the transition into 'approved', not on every
@@ -4458,6 +4458,28 @@ def approve_weekly_plan(
       recorded in meal_plan_grocery_links is skipped, so a plan whose
       meals already put their ingredients on the list another way (a swap,
       or plan_meal called with the flag) doesn't double up its quantities.
+
+    Both guards used to be READ on one connection and then acted on by a
+    later, separate write — so two adults tapping Approve at the same
+    instant could both read "not approved yet" before either had written
+    anything, and both would go on to ingest the week's groceries once
+    each. Measured at a 0ms gap between two threaded calls on a seeded
+    database: 6/6 trials doubled the grocery lines (and the
+    set_aside_carried_over_items carry-over and the approval receipt with
+    them); 0/6 at a 20ms gap, because by then the first call had already
+    committed. Same class of bug this repo has already closed three times
+    — atomic-period-takeover, swap-atomic, drop-dish-atomic — and the same
+    shape: the status flip into 'approved' is now a single conditional
+    UPDATE (`WHERE status != 'approved'`), and everything the transition
+    does — the carry-over set-aside, the recipe-week grocery ingest, the
+    grocery-count receipt — runs inside the SAME transaction as that flip,
+    on one connection, with an explicit `BEGIN IMMEDIATE` so the write
+    lock is held from the first statement rather than sqlite3's default of
+    only the first write. A caller that loses the race (0 rows flipped,
+    because the plan was already approved when this call started, or
+    another call approved it in the gap since) rolls back having written
+    nothing and returns the exact same "was_already_approved" shape a
+    second honest call always has.
 
     Raises ValueError for a weekly_plan_id that doesn't exist, rather than
     reporting a cheerful approval of nothing — same as clear_weekly_plan
@@ -4479,6 +4501,20 @@ def approve_weekly_plan(
     description). Re-approving an already-approved plan is exempt: the
     decision was already made, so it takes the guard's other branch below
     (adds nothing, asks nothing) rather than this one.
+
+    This confirmation gate, and the conflict check behind it, run BEFORE
+    the atomic transaction below and off a plain, un-locked read of the
+    plan's status — deliberately, the same call the takeover/swap/drop
+    fixes made: `check_plan_conflicts` does real work (reading every
+    member and fact) and nothing that slow belongs inside a write lock. A
+    plan that is concurrently approved by someone else in the gap between
+    that read and the transaction is caught correctly where it matters —
+    the transaction's own conditional UPDATE still bails and nothing is
+    double-written — but in the one-in-a-million case where a hard
+    conflict exists AND two approvals land in that exact gap, the loser
+    can see one extra "needs_confirmation" round-trip for a week that was,
+    by the time it asked, already approved. Confirming past it is still
+    harmless: the guard below simply finds nothing left to do.
     """
     conn = get_conn()
     existing = conn.execute(
@@ -4489,6 +4525,7 @@ def approve_weekly_plan(
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     was_already_approved = existing["status"] == "approved"
+    conn.close()
 
     # Run before the approval work, so the warning (and the confirmation
     # gate just below) describe the plan that was actually approved, and a
@@ -4519,7 +4556,6 @@ def approve_weekly_plan(
         # `note` here, not conflicts_note_after_approval: nothing has been
         # approved, so the sentence should still say "before you approve" —
         # the same wording the draft's own review-band warning uses.
-        conn.close()
         return {
             "weekly_plan_id": weekly_plan_id,
             "status": "needs_confirmation",
@@ -4533,156 +4569,212 @@ def approve_weekly_plan(
     # confirmed past it). Same clash, worded for a decision already made —
     # see conflicts_note_after_approval.
     conflicts_note = _coordination.conflicts_note_after_approval(conflicts)
-    # A re-approval never overwrites the original approver/time — the
-    # receipt names who actually settled the week, and the first yes is the
-    # one that built the list. Only a genuine transition into 'approved'
-    # (including a re-approval after a reopen, which clears these back out)
-    # writes them.
-    conn.execute(
-        "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, household_id()),
-    )
     approved_by = acting_name(approved_by)
-    if not was_already_approved:
-        conn.execute(
-            "UPDATE weekly_plans SET approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (approved_by.strip(), acting_member_id_for(approved_by), weekly_plan_id, household_id()),
-        )
-    conn.commit()
-    if was_already_approved:
-        receipt = conn.execute(
-            "SELECT approved_by, approved_at, approved_grocery_added, approved_grocery_skipped "
-            "FROM weekly_plans WHERE id = ? AND household_id = ?",
-            (weekly_plan_id, household_id()),
-        ).fetchone()
-        conn.close()
-        return {
-            "weekly_plan_id": weekly_plan_id,
-            "status": "approved",
-            "groceries_added": [],
-            "already_have_skipped": [],
-            # The counts stay the ORIGINAL approval's — this call added
-            # nothing, and the receipt still describes the yes that built
-            # the list.
-            "groceries_added_count": receipt["approved_grocery_added"] if receipt else 0,
-            "already_have_skipped_count": receipt["approved_grocery_skipped"] if receipt else 0,
-            "was_already_approved": True,
-            "approved_by": receipt["approved_by"] if receipt else "",
-            "approved_at": receipt["approved_at"] if receipt else None,
-            "conflicts": conflicts,
-            "conflicts_note": conflicts_note,
-        }
-    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
-    approved_at = conn.execute(
-        "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",
-        (weekly_plan_id, household_id()),
-    ).fetchone()["approved_at"]
-    conn.close()
+    # Resolved here, not inside the transaction below: acting_member_id_for
+    # calls current_member(), which opens its OWN connection (a local
+    # `from ..db import get_conn` inside _shared.py, invisible to anything
+    # that watches this module's own get_conn) to read the members table.
+    # Called as a bare argument to the UPDATE it would run AFTER BEGIN
+    # IMMEDIATE — a second connection reading while the first holds the
+    # write lock. Harmless in practice (a read, not a write, so it cannot
+    # deadlock against the RESERVED lock) but it breaks the one-connection
+    # invariant every atomic write in this file otherwise holds to exactly,
+    # so it is computed out here instead, exactly where `approved_by`
+    # itself already is.
+    approved_by_member_id = acting_member_id_for(approved_by)
+    return _settle_weekly_plan_approval(weekly_plan_id, approved_by, approved_by_member_id, conflicts, conflicts_note)
 
-    # Before a single ingredient lands: whatever is still unbought from an
-    # EARLIER week is set aside, so this week's amounts go on clean lines
-    # and the Shop tab can ask "still on the list from last week — keep or
-    # drop?" instead of the two weeks silently summing into one number.
-    # See grocery.set_aside_carried_over_items for what counts.
-    carried_over = _grocery.set_aside_carried_over_items(weekly_plan_id)
 
-    # Grouped by RECIPE, not left one row per meal. A week's shop is a
-    # recipe-week question: the same breakfast six mornings needs one bag
-    # of spinach, not six, and only something that looks at all six meals
-    # at once can know that. Ingesting per meal is what put 6 bags of
-    # spinach and 4 bottles of honey on Emily's first approved week —
-    # every downstream step was working correctly on wrong inputs. See
-    # _add_recipe_ingredients_for_entries for which ingredients stop
-    # multiplying and which (rightly) still add up.
-    by_recipe: dict[int, dict] = {}
-    for entry in entries:
-        group = by_recipe.setdefault(
-            entry["recipe_id"], {
-                "ingredients_json": entry["ingredients_json"],
-                "default_servings": entry["default_servings"],
-                "entry_ids": [],
-            },
-        )
-        group["entry_ids"].append(entry["id"])
+def _settle_weekly_plan_approval(
+    weekly_plan_id: int, approved_by: str, approved_by_member_id: int | None,
+    conflicts: list[dict], conflicts_note: str | None,
+) -> dict:
+    """
+    The write behind a genuine transition into 'approved' — one connection,
+    one commit, the shape atomic-period-takeover/swap-atomic/
+    drop-dish-atomic all used. The write lock is taken FIRST, with an
+    explicit BEGIN IMMEDIATE, not left to sqlite3's default of opening a
+    transaction implicitly at the first write: without it, the status flip
+    below and the grocery ingest after it were two separate implicit
+    transactions on the same connection (the flip committed on its own),
+    which is exactly the gap two simultaneous approvals raced through.
+    From the BEGIN on, a second caller blocks until this one commits or
+    rolls back, and sees THIS call's result when it resumes — not a second
+    helping of groceries.
 
-    # One buffer for the WHOLE approval, not one per recipe. Grouping by
-    # recipe is the right unit for a sealed package (six breakfasts of the
-    # same dish, one bag of spinach) but the wrong one for rounding a
-    # per-portion amount: Emily's 17 peppers came from five DIFFERENT
-    # dinners, so five separate calls below each round their own share up
-    # and the week ends up buying a pepper more than it wants. The buffer
-    # holds every per-portion amount unrounded until all five have spoken,
-    # then writes one rounded line — see recipes.WeekGroceryBuffer.
-    buffer = _recipes.WeekGroceryBuffer(weekly_plan_id)
-    added_items = []
-    already_have = []
-    for group in by_recipe.values():
-        added, have = _recipes._add_recipe_ingredients_for_entries(
-            group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
-            default_servings=group["default_servings"], buffer=buffer,
-        )
-        added_items.extend(added)
-        already_have.extend(have)
-
-    # A side the app attached to complete a plate belongs to ONE meal, not to
-    # the recipe, so it goes in as its own one-entry group (plates.py). It is
-    # still recorded against that entry's id, which is what lets removing the
-    # meal remove its side's shopping too. It goes through the SAME buffer as
-    # the recipe ingredients above rather than one of its own, and the buffer
-    # is flushed only once both loops are done: a side sharing an ingredient
-    # with the night's own recipe (or another night's) must round together
-    # with it, or the two independent roundings can each tip up and buy more
-    # than either alone would have asked for — the same class of bug as the
-    # 17 peppers. No default_servings is passed here: sides carry no
-    # servings of their own (see plates.py's sides_json shape), so
-    # servings_scale_factor falls back to attendance alone — that entry's
-    # eaters relative to the household, not a recipe-servings anchor that
-    # doesn't exist for a side.
-    for entry in entries:
-        side_ingredients = _entry_side_ingredients(entry)
-        if side_ingredients:
-            added, have = _recipes._add_recipe_ingredients_for_entries(
-                [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer
-            )
-            added_items.extend(added)
-            already_have.extend(have)
-    buffer.flush()
-
-    # Counted as distinct names, matching preview_plan_grocery_impact, so
-    # the number the draft promised and the number the receipt reports are
-    # the same number rather than two different ways of counting the same
-    # groceries. Persisted because neither is recoverable later — see
-    # schema.sql on approved_grocery_added.
-    added_count = len({n.strip().lower() for n in added_items})
-    skipped_count = len({n.strip().lower() for n in already_have})
+    `conflicts`/`conflicts_note`/`approved_by_member_id` ride straight
+    through from approve_weekly_plan, computed before this opens (see its
+    docstring for why each stays outside the lock): they are reported back
+    or written unchanged, never re-derived here — nothing in this function
+    reads anything but weekly_plans/meal_plan_entries/grocery_items/
+    meal_plan_grocery_links, on this one connection.
+    """
     conn = get_conn()
-    conn.execute(
-        "UPDATE weekly_plans SET approved_grocery_added = ?, approved_grocery_skipped = ? "
-        "WHERE id = ? AND household_id = ?",
-        (added_count, skipped_count, weekly_plan_id, household_id()),
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        # THE GUARD. Re-approving an ALREADY-approved plan, and two
+        # approvals racing each other, are now the same case: the flip
+        # only succeeds for a genuine draft/reopened -> approved
+        # transition, so a plan that is already 'approved' — whether it
+        # was when this call started, or became so in the gap since,
+        # under another call's lock — leaves this UPDATE at 0 rows and
+        # nothing below it ever runs. A re-approval never overwrites the
+        # original approver/time this way either: the receipt names who
+        # actually settled the week, and the first yes is the one that
+        # built the list.
+        flipped = conn.execute(
+            "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now'), "
+            "approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now') "
+            "WHERE id = ? AND household_id = ? AND status != 'approved'",
+            (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
+        ).rowcount
+        if flipped == 0:
+            conn.rollback()
+            receipt = conn.execute(
+                "SELECT approved_by, approved_at, approved_grocery_added, approved_grocery_skipped "
+                "FROM weekly_plans WHERE id = ? AND household_id = ?",
+                (weekly_plan_id, household_id()),
+            ).fetchone()
+            result = {
+                "weekly_plan_id": weekly_plan_id,
+                "status": "approved",
+                "groceries_added": [],
+                "already_have_skipped": [],
+                # The counts stay the ORIGINAL approval's — this call added
+                # nothing, and the receipt still describes the yes that
+                # built the list.
+                "groceries_added_count": receipt["approved_grocery_added"] if receipt else 0,
+                "already_have_skipped_count": receipt["approved_grocery_skipped"] if receipt else 0,
+                "was_already_approved": True,
+                "approved_by": receipt["approved_by"] if receipt else "",
+                "approved_at": receipt["approved_at"] if receipt else None,
+                "conflicts": conflicts,
+                "conflicts_note": conflicts_note,
+                "carried_over": [],
+                "carried_over_count": 0,
+            }
+        else:
+            entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+            approved_at = conn.execute(
+                "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",
+                (weekly_plan_id, household_id()),
+            ).fetchone()["approved_at"]
 
-    return {
-        "weekly_plan_id": weekly_plan_id,
-        "status": "approved",
-        "groceries_added": added_items,
-        "already_have_skipped": already_have,
-        "groceries_added_count": added_count,
-        "already_have_skipped_count": skipped_count,
-        "was_already_approved": False,
-        "approved_by": approved_by.strip(),
-        "approved_at": approved_at,
-        "conflicts": conflicts,
-        "conflicts_note": conflicts_note,
-        # Unbought lines from an earlier week, set aside for the household
-        # to keep or drop on the Shop tab. Named here so the approval can
-        # say so; nothing was merged.
-        "carried_over": carried_over,
-        "carried_over_count": len(carried_over),
-    }
+            # Before a single ingredient lands: whatever is still unbought
+            # from an EARLIER week is set aside, so this week's amounts go
+            # on clean lines and the Shop tab can ask "still on the list
+            # from last week — keep or drop?" instead of the two weeks
+            # silently summing into one number. See
+            # grocery.set_aside_carried_over_items for what counts. `conn`
+            # rides through so this joins the same transaction rather than
+            # committing on its own ahead of the ingest below.
+            carried_over = _grocery.set_aside_carried_over_items(weekly_plan_id, conn=conn)
+
+            # Grouped by RECIPE, not left one row per meal. A week's shop is
+            # a recipe-week question: the same breakfast six mornings needs
+            # one bag of spinach, not six, and only something that looks at
+            # all six meals at once can know that. Ingesting per meal is
+            # what put 6 bags of spinach and 4 bottles of honey on Emily's
+            # first approved week — every downstream step was working
+            # correctly on wrong inputs. See _add_recipe_ingredients_for_entries
+            # for which ingredients stop multiplying and which (rightly)
+            # still add up.
+            by_recipe: dict[int, dict] = {}
+            for entry in entries:
+                group = by_recipe.setdefault(
+                    entry["recipe_id"], {
+                        "ingredients_json": entry["ingredients_json"],
+                        "default_servings": entry["default_servings"],
+                        "entry_ids": [],
+                    },
+                )
+                group["entry_ids"].append(entry["id"])
+
+            # One buffer for the WHOLE approval, not one per recipe.
+            # Grouping by recipe is the right unit for a sealed package
+            # (six breakfasts of the same dish, one bag of spinach) but the
+            # wrong one for rounding a per-portion amount: Emily's 17
+            # peppers came from five DIFFERENT dinners, so five separate
+            # calls below each round their own share up and the week ends
+            # up buying a pepper more than it wants. The buffer holds every
+            # per-portion amount unrounded until all five have spoken, then
+            # writes one rounded line — see recipes.WeekGroceryBuffer. It
+            # takes `conn` too, so every line it flushes lands on this same
+            # transaction.
+            buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=conn)
+            added_items = []
+            already_have = []
+            for group in by_recipe.values():
+                added, have = _recipes._add_recipe_ingredients_for_entries(
+                    group["entry_ids"], json.loads(group["ingredients_json"]), weekly_plan_id,
+                    default_servings=group["default_servings"], buffer=buffer, conn=conn,
+                )
+                added_items.extend(added)
+                already_have.extend(have)
+
+            # A side the app attached to complete a plate belongs to ONE
+            # meal, not to the recipe, so it goes in as its own one-entry
+            # group (plates.py). It is still recorded against that entry's
+            # id, which is what lets removing the meal remove its side's
+            # shopping too. It goes through the SAME buffer as the recipe
+            # ingredients above rather than one of its own, and the buffer
+            # is flushed only once both loops are done: a side sharing an
+            # ingredient with the night's own recipe (or another night's)
+            # must round together with it, or the two independent roundings
+            # can each tip up and buy more than either alone would have
+            # asked for — the same class of bug as the 17 peppers. No
+            # default_servings is passed here: sides carry no servings of
+            # their own (see plates.py's sides_json shape), so
+            # servings_scale_factor falls back to attendance alone — that
+            # entry's eaters relative to the household, not a
+            # recipe-servings anchor that doesn't exist for a side.
+            for entry in entries:
+                side_ingredients = _entry_side_ingredients(entry)
+                if side_ingredients:
+                    added, have = _recipes._add_recipe_ingredients_for_entries(
+                        [entry["id"]], side_ingredients, weekly_plan_id, buffer=buffer, conn=conn
+                    )
+                    added_items.extend(added)
+                    already_have.extend(have)
+            buffer.flush()
+
+            # Counted as distinct names, matching preview_plan_grocery_impact,
+            # so the number the draft promised and the number the receipt
+            # reports are the same number rather than two different ways of
+            # counting the same groceries. Persisted because neither is
+            # recoverable later — see schema.sql on approved_grocery_added.
+            added_count = len({n.strip().lower() for n in added_items})
+            skipped_count = len({n.strip().lower() for n in already_have})
+            conn.execute(
+                "UPDATE weekly_plans SET approved_grocery_added = ?, approved_grocery_skipped = ? "
+                "WHERE id = ? AND household_id = ?",
+                (added_count, skipped_count, weekly_plan_id, household_id()),
+            )
+            conn.commit()
+            result = {
+                "weekly_plan_id": weekly_plan_id,
+                "status": "approved",
+                "groceries_added": added_items,
+                "already_have_skipped": already_have,
+                "groceries_added_count": added_count,
+                "already_have_skipped_count": skipped_count,
+                "was_already_approved": False,
+                "approved_by": approved_by.strip(),
+                "approved_at": approved_at,
+                "conflicts": conflicts,
+                "conflicts_note": conflicts_note,
+                # Unbought lines from an earlier week, set aside for the
+                # household to keep or drop on the Shop tab. Named here so
+                # the approval can say so; nothing was merged.
+                "carried_over": carried_over,
+                "carried_over_count": len(carried_over),
+            }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return result
 
 
 def _replace_slot_entries(
