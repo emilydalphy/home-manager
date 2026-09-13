@@ -13906,9 +13906,10 @@
   }
 
   // `replaced`: the side "Change the carb" took off to put this one on —
-  // the undo puts it back (by its catalogue name, through add-component's
-  // typed line, which knows the catalogue), so undoing a change is a
-  // change back, not a plate left short.
+  // the undo puts it back by name through add-component's typed line,
+  // which resolves a catalogue name to the catalogue's own side
+  // (plates.addition_by_name), so undoing a change is a change back,
+  // not a plate left short.
   async function runMealAddUndo(panel, st, name, replaced) {
     try {
       var res = await fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {

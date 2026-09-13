@@ -638,6 +638,17 @@ def addition_by_key(key: str) -> dict | None:
     return None
 
 
+def addition_by_name(name: str) -> dict | None:
+    """The catalogue row whose name is `name`, spelled any way; None if none."""
+    wanted = _name_key(name or "")
+    if not wanted:
+        return None
+    for a in ADDITIONS:
+        if _name_key(a["name"]) == wanted:
+            return a
+    return None
+
+
 def _catalogue_side(addition: dict) -> dict:
     """One catalogue row as a side ready for sides_json — the same shape
     _clean_side stores, plus `servings` (what it was written for) and
@@ -994,6 +1005,12 @@ def add_component(
         if addition is None:
             raise ValueError(f"No addition called {key!r}.")
         side = _catalogue_side(addition)
+    elif addition_by_name(text) is not None:
+        # "Roasted potatoes" typed is the catalogue's roasted potatoes —
+        # amounts, step and minutes included — not a model's guess at
+        # them. Also how a changed side's Undo puts the old one back
+        # (shell.js runMealAddUndo, 2026-09-13).
+        side = _catalogue_side(addition_by_name(text))
     else:
         if len(text) > 80:
             raise ValueError("That’s a bit long for one addition — a few words is plenty.")

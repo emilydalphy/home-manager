@@ -378,3 +378,16 @@ def test_the_sheet_ignores_a_fetch_from_an_earlier_open_and_undo_of_a_changed_si
     j = SHELL_JS.index("  async function runMealAddUndo(panel, st, name, replaced) {")
     undo = SHELL_JS[j:j + 1500]
     assert "if (replaced) {" in undo and "text: replaced" in undo
+
+
+def test_a_typed_name_that_is_the_catalogues_uses_the_catalogue(week):
+    # The undo of "Change the carb" puts the old side back by name; the
+    # catalogue's roasted potatoes come back, amounts and step and all —
+    # never a bare line with no amount (verifier, round 2).
+    entry_id = _dinner(week, TUESDAY)["entry_id"]
+    out = tools.add_component(entry_id, text="roasted Potatoes", side_generator=lambda ctx: (_ for _ in ()).throw(AssertionError("asked the model")))
+    assert out["status"] == "added"
+    side = out["side"]
+    assert side["name"] == "Roasted potatoes" and side["covers"] == ["carb"]
+    assert side["minutes"] and side["instructions"] and side["ingredients"][0]["qty"]
+    assert [p for p in _dinner(week, TUESDAY)["plate_parts"] if p["role"] == "carb"][0]["name"] == "Roasted potatoes"
