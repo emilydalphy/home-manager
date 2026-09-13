@@ -762,6 +762,34 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- case's inventory entry is left alone on undo; only the grocery list
     -- decision is reversed.
     already_have_inventory_id INTEGER,
+    -- When the 'purchased' tick put this line into the kitchen
+    -- (mark_grocery_item -> _add_to_inventory). Status alone cannot carry
+    -- this: the no-op guard compares statuses, so purchased -> needed ->
+    -- purchased genuinely changes each time and used to add the line to
+    -- inventory on every re-tick (Eggs 12 -> 12 -> 24). Written inside the
+    -- same BEGIN IMMEDIATE transaction that flips the status, so two
+    -- 'purchased' posts landing together cannot both add. Cleared only by
+    -- an untick whose restore below actually put the kitchen back; when
+    -- the row has been touched since, the stamp STAYS, so the re-tick adds
+    -- nothing on top of what is already there. NULL means nothing has gone
+    -- in for this line yet — including every row that predates the column,
+    -- which is not backfilled. Sibling of meal_plan_entries.
+    -- inventory_depleted_at, with the opposite reversal decision, because a
+    -- purchase knows what it wrote and a depletion does not.
+    inventory_added_at TEXT,
+    -- The receipt for that write, JSON: {"inventory_id", "fresh" (a row the
+    -- tick created, vs a merge into stock already there), "before" and
+    -- "after" (quantity, source, category, expiration_date, updated_at as
+    -- the row read on either side of the write; "before" is null for a
+    -- fresh row)}. An untick may reverse the write ONLY when the row still
+    -- reads exactly "after" (quantity and updated_at — every inventory
+    -- writer bumps updated_at), and then does the exact inverse: deletes a
+    -- fresh row, or puts a merged row's fields back to "before". Nothing is
+    -- ever subtracted or guessed from the current quantity. NULL alongside
+    -- a NULL stamp; NULL with a set stamp can only mean a row from before
+    -- the column, or a write this build could not describe — both leave
+    -- the kitchen alone on untick.
+    inventory_receipt_json TEXT,
     -- Phase 4, §4.5: hide this item from the normal shown/shopped list
     -- without deleting it — for something the Shopper will get elsewhere
     -- (a butcher, a farmers market) rather than on the regular trip. Stays

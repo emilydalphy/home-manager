@@ -116,6 +116,20 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
     return existing_qty, False
 
 
+_RECEIPT_FIELDS = ("quantity", "source", "category", "expiration_date", "updated_at")
+
+
+def _receipt_snapshot(conn, inventory_id: int) -> dict | None:
+    """The fields of one inventory row that grocery.mark_grocery_item's
+    receipt records on either side of a write — see
+    grocery_items.inventory_receipt_json. None when the row is gone."""
+    row = conn.execute(
+        f"SELECT {', '.join(_RECEIPT_FIELDS)} FROM inventory_items WHERE id = ? AND household_id = ?",
+        (inventory_id, household_id()),
+    ).fetchone()
+    return {k: row[k] for k in _RECEIPT_FIELDS} if row else None
+
+
 def _add_to_inventory(
     item: str,
     quantity: str = "",
@@ -123,8 +137,24 @@ def _add_to_inventory(
     expiration_date: str | None = None,
     category: str | None = None,
     location: str | None = None,
+    conn=None,
 ) -> dict:
-    conn = get_conn()
+    """
+    Merge into a matching row or insert a fresh one. Returns
+    {"item_id", "item", "fresh", "before", "after"}: fresh says whether a
+    row was created (vs merged into stock already there), before/after are
+    _receipt_snapshot views of the row on either side of the write (before
+    is None for a fresh row). Those three exist for grocery.mark_grocery_item,
+    which records them so an untick can reverse exactly this write and
+    nothing else; other callers can ignore them.
+
+    Pass conn to run inside the caller's transaction (no commit, no close)
+    — mark_grocery_item does, so the write, its stamp and its receipt land
+    atomically with the status flip, or not at all.
+    """
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     # If a location is given, only merge into a row already tracked at that
     # SAME location — a "BBQ sauce" bought new for the pantry shouldn't
     # silently merge into an already-opened one sitting in the fridge; that
@@ -156,20 +186,23 @@ def _add_to_inventory(
             fields += ", location = ?"
             params.append(location)
         params.append(existing["id"])
+        before = _receipt_snapshot(conn, existing["id"])
         conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
-        conn.commit()
         item_id = existing["id"]
     else:
+        before = None
         item_category = category or "other"
         item_location = _quantities._resolve_location(location, item_category)
         cur = conn.execute(
             "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (household_id(), item, quantity, source, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_category, item_location),
         )
-        conn.commit()
         item_id = cur.lastrowid
-    conn.close()
-    return {"item_id": item_id, "item": item}
+    after = _receipt_snapshot(conn, item_id)
+    if own_conn:
+        conn.commit()
+        conn.close()
+    return {"item_id": item_id, "item": item, "fresh": existing is None, "before": before, "after": after}
 
 
 def update_inventory(
@@ -212,7 +245,10 @@ def update_inventory(
     to leave an existing item's location as-is.
     """
     if action == "add":
-        return _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date, category=category, location=location)
+        # The receipt fields (fresh/before/after) are mark_grocery_item's
+        # business, not the chat agent's — keep this tool's answer as it was.
+        added = _add_to_inventory(item, quantity, source="chat", expiration_date=expiration_date, category=category, location=location)
+        return {"item_id": added["item_id"], "item": added["item"]}
 
     if action == "set":
         conn = get_conn()

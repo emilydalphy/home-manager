@@ -3,6 +3,7 @@ The grocery list: adding, merging, marking, clearing and repairing items.
 """
 from __future__ import annotations
 
+import json
 from datetime import date
 from ..db import get_conn
 from ._shared import acting_name, household_id, require_household_row
@@ -956,45 +957,166 @@ def clear_grocery_list(status: str = "needed") -> dict:
     return {"removed_count": count}
 
 
+def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> bool:
+    """
+    Reverse exactly the inventory write a purchased tick recorded, on the
+    caller's connection. True if the kitchen was put back; False if there
+    was nothing safe to do — and "safe" is the whole of it:
+
+    The receipt (grocery_items.inventory_receipt_json) says which row the
+    tick wrote, whether it created that row or merged into stock already
+    there, and what the row read on either side of the write. The row is
+    reversed ONLY if it still reads exactly what the write left it at,
+    quantity and updated_at both — every writer of inventory_items bumps
+    updated_at, so a row used from, edited, nudged or re-set since the tick
+    fails the check even when its number happens to read the same. Then:
+    a row the tick created is deleted (it exists only because of the tick,
+    the same call undo_pre_shop_drop makes on already_have_inventory_id);
+    a merged row gets its quantity, source, category and expiry put back to
+    the recorded before-state, not to "now minus what we added" — the
+    before-state is known, so nothing is computed. Anything else (row gone,
+    row touched, no receipt at all — a line bought before the column
+    existed) leaves inventory alone. Never subtracts, never deletes on a
+    guess: the household's later edits are the truer record of the shelf.
+    """
+    if not receipt_json:
+        return False
+    try:
+        receipt = json.loads(receipt_json)
+    except (TypeError, ValueError):
+        return False
+    inventory_id = receipt.get("inventory_id")
+    after = receipt.get("after") or {}
+    if not inventory_id or not after:
+        return False
+    current = _inventory._receipt_snapshot(conn, inventory_id)
+    if current is None:
+        return False
+    if current.get("quantity") != after.get("quantity") or current.get("updated_at") != after.get("updated_at"):
+        return False
+    if receipt.get("fresh"):
+        conn.execute(
+            "DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (inventory_id, household_id())
+        )
+        return True
+    before = receipt.get("before") or {}
+    if not before:
+        return False
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, source = ?, category = ?, expiration_date = ?, "
+        "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (
+            before.get("quantity") if before.get("quantity") is not None else "",
+            before.get("source") or "chat",
+            before.get("category") or "other",
+            before.get("expiration_date"),
+            inventory_id,
+            household_id(),
+        ),
+    )
+    return True
+
+
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     Update a grocery item's status (needed/in_cart/purchased). Marking
     something purchased also adds it to tracked pantry/fridge inventory
     automatically (source='grocery_checkoff'), with expiration left unset —
-    see update_inventory/get_inventory.
+    see update_inventory/get_inventory. That add happens ONCE per line
+    however many times it is ticked, un-ticked and ticked again; moving a
+    purchased line back off 'purchased' takes it back OUT of the kitchen
+    when the kitchen row is still exactly as the tick left it, and leaves
+    the kitchen alone otherwise (the result says which:
+    inventory_added / inventory_restored). See _restore_inventory_from_
+    receipt for the argument.
     """
     conn = get_conn()
-    row = conn.execute(
-        "SELECT item, quantity, category, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
-    ).fetchone()
-    if row is None:
+    added = None
+    restored = None
+    try:
+        # One BEGIN IMMEDIATE, so the write lock is held from the first read
+        # (the shape cooker._claim_inventory_depletion and
+        # weekly_plan._replace_slot_entries use, for the same reason): the
+        # status route is a sync def in a threadpool, and two 'purchased'
+        # posts for one line at the same instant both read the old status
+        # otherwise — 20/20 concurrent pairs doubled before this.
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT item, quantity, category, status, staple_id, inventory_added_at, inventory_receipt_json "
+            "FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            raise ValueError(f"No grocery list item with id {item_id}.")
+        # Idempotent on purpose (grocery offline, 2026-09-11): a phone in a
+        # store with one bar can send the same status twice — the request
+        # got through but the reply didn't, so the queue in
+        # static/grocery-offline.js sends it again, and "Done at <store>"
+        # tapped twice after a "try again" does the same. Setting an
+        # unchanged status is a no-op. This guard is necessary and NOT
+        # sufficient: purchased -> needed -> purchased changes the status
+        # each time, which is why the inventory write is keyed on
+        # inventory_added_at below and not on this comparison.
+        if row["status"] == status:
+            conn.rollback()
+            return {"item_id": item_id, "status": status, "unchanged": True}
+        fields = "status = ?"
+        params: list = [status]
+        if status == "purchased":
+            if row["inventory_added_at"] is None:
+                receipt = _inventory._add_to_inventory(
+                    row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"], conn=conn
+                )
+                fields += ", inventory_added_at = datetime('now'), inventory_receipt_json = ?"
+                params.append(json.dumps({
+                    "inventory_id": receipt["item_id"],
+                    "fresh": receipt["fresh"],
+                    "before": receipt["before"],
+                    "after": receipt["after"],
+                }))
+                added = True
+            else:
+                # Already in the kitchen from an earlier tick on this line
+                # and never taken back out — the status moves, the shelf
+                # does not.
+                added = False
+        elif row["status"] == "purchased" or row["inventory_added_at"] is not None:
+            # Leaving 'purchased' (or a line whose earlier untick could not
+            # restore): try the exact reversal. The stamp clears only when
+            # the shelf really was put back, so a later re-tick is a first
+            # tick again; when it was not, the stamp stays and the re-tick
+            # adds nothing on top of what is already there. A line bought
+            # before the stamp existed has no receipt, so this reports
+            # inventory_restored: False rather than staying quiet.
+            restored = _restore_inventory_from_receipt(conn, row["inventory_receipt_json"])
+            if restored:
+                fields += ", inventory_added_at = NULL, inventory_receipt_json = NULL"
+        conn.execute(
+            f"UPDATE grocery_items SET {fields} WHERE id = ? AND household_id = ?",
+            (*params, item_id, household_id()),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
         conn.close()
-        raise ValueError(f"No grocery list item with id {item_id}.")
-    # Idempotent on purpose (grocery offline, 2026-09-11): a phone in a store
-    # with one bar can send the same status twice — the request got through
-    # but the reply didn't, so the queue in static/grocery-offline.js sends
-    # it again, and "Done at <store>" tapped twice after a "try again" does
-    # the same. Setting an unchanged status is a no-op rather than a second
-    # add to inventory, which used to double the pantry's quantity for every
-    # repeated "purchased".
-    if row["status"] == status:
-        conn.close()
-        return {"item_id": item_id, "status": status, "unchanged": True}
-    conn.execute(
-        "UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ?",
-        (status, item_id, household_id()),
-    )
-    conn.commit()
-    conn.close()
-    if status == "purchased" and row:
-        _inventory._add_to_inventory(row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"])
+    result: dict = {"item_id": item_id, "status": status}
+    if added is not None:
+        result["inventory_added"] = added
+    if restored is not None:
+        result["inventory_restored"] = restored
+    if status == "purchased":
         # A bought staple teaches its rhythm, whoever put the line there —
         # a hand-added "coffee" counts the same as the suggestion Pomona
-        # made. No-op for anything that isn't a staple. Imported here, not
-        # at the top: staples.py imports this module for the merge key.
+        # made. No-op for anything that isn't a staple, and one bought date
+        # per day per staple, so a re-tick teaches nothing twice. Imported
+        # here, not at the top: staples.py imports this module for the
+        # merge key. After the commit above, on its own connection.
         from . import staples as _staples
         _staples.record_staple_purchase(row["item"], source="grocery", staple_id=row["staple_id"])
-    return {"item_id": item_id, "status": status}
+    return result
 
 
 def update_grocery_item(item_id: int, quantity: str | None = None, category: str | None = None) -> dict:

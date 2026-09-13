@@ -371,6 +371,84 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — Un-tick and re-tick a bought grocery line and the kitchen
+  holds ONE of it. Branch `worktree-grocery-retick`, NOT merged at the time
+  of writing.** Loop Board "Un-tick and re-tick a bought grocery item and
+  it goes into the kitchen twice" (Bug, Phase 0). `grocery.mark_grocery_item`
+  added a purchased line to inventory on every transition INTO 'purchased';
+  its 2026-09-11 no-op guard (`app/tools/grocery.py`, the
+  `row["status"] == status` early return) compares statuses, so it catches
+  the offline replay it was written for and nothing else — purchased ->
+  needed -> purchased changes the status each time. Reproduced in-process
+  and over the real route: Eggs 12 -> 12 -> 24. The sibling of the cook
+  tick entry below, found and reported by it.
+  - **Memory is its own column, `grocery_items.inventory_added_at`**
+    (schema.sql + `_MIGRATIONS`, nullable, NOT backfilled), same reasoning
+    as `inventory_depleted_at`: status forgets. The add runs only while the
+    stamp is NULL. **Claimed inside the same `BEGIN IMMEDIATE` that flips
+    the status** — the status route is a sync def in a threadpool, and two
+    'purchased' posts for one line at the same instant doubled on **20/20**
+    trials before (the old guard had the same race; it read the status on
+    one connection and wrote on another). `_add_to_inventory` grew a `conn`
+    parameter so the inventory write, the stamp and the receipt land in
+    one transaction or not at all. 0/20 after.
+  - **UN-TICKING PUTS IT BACK — when it can prove exactly what it added,
+    and only then. The opposite call from the cook tick, deliberately, and
+    from the code rather than by analogy.** What a purchase writes is
+    KNOWN at the moment it writes it: `_add_to_inventory` either inserts a
+    fresh row (the line's own quantity, category, an estimated expiry) or
+    merges into a same-name row via `_try_consolidate_quantity` and
+    overwrites its `source` and `category`. A depletion has no ledger and
+    deletes rows at zero; a purchase can write down what it did. So the
+    tick records a receipt, `grocery_items.inventory_receipt_json`: which
+    inventory row, `fresh` or merge, and the row's quantity / source /
+    category / expiration_date / updated_at on BOTH sides of the write.
+    The untick reverses ONLY when the row still reads exactly the "after"
+    (quantity AND `updated_at` — every writer of `inventory_items` bumps
+    `updated_at`, so "used 6, set back to 12" still reads as touched),
+    and then does the exact inverse: deletes a fresh row (the call
+    `undo_pre_shop_drop` already makes on `already_have_inventory_id`, the
+    precedent this extends), or puts a merged row back to its recorded
+    "before" — never "now minus what we added", nothing computed. Row
+    gone, row touched, no receipt: the kitchen is left alone, the result
+    says `inventory_restored: False`, and **the stamp STAYS**, so the
+    re-tick adds nothing on top of what is already there (`inventory_added:
+    False`). The answers to the card's questions: after the add the
+    quantity is recoverable because it is recorded, not derived; if the
+    household used some in between, the 8 they have is their number now
+    and stays, and the re-tick does not put 12 more on it; if the row was
+    merged, the before-state is restored exactly, category included (the
+    tick's 'other' overwriting a 'pantry' row comes back 'pantry'). A row
+    is never reduced or deleted on anything less than "this is the row and
+    it is exactly as we left it". **Emily's to overrule** in either
+    direction: never restoring (the cook-tick stance) would leave phantom
+    eggs the next list is shopped against; restoring on quantity alone
+    would occasionally undo a hand-set number.
+  - **Not backfilled**, so a line already 'purchased' before this deploys
+    has a NULL stamp and no receipt: an untick there leaves the kitchen
+    alone, and the re-tick adds ONCE more, then never again. Same bounded
+    one-off the sibling column accepted, for the same reason — a startup
+    backfill would stamp rows whose inventory may long since be eaten.
+  - The agent's `mark_grocery_item` tool description now says to read
+    `inventory_added` / `inventory_restored` before telling the household
+    what happened to the kitchen. `update_inventory(action="add")` still
+    returns `{"item_id", "item"}` — the receipt fields are stripped there.
+  - `tests/test_grocery_retick_double_adds.py`, 22 tests, **21 red against
+    the merge base** (the 22nd is the replay guard, kept green on purpose);
+    tick/untick/retick, purchased -> in_cart -> purchased, fresh and merge
+    reversals with source/category/expiry, used-some / stepped / removed /
+    hand-reset rows left alone, the pre-column line, 20 concurrent pairs,
+    the route, and a migration test on a DB derived from today's schema
+    minus the two columns (the `test_chore_owner_mode` pattern). Suite
+    3345 -> **3367 passed**. Also driven over a real uvicorn on a
+    throwaway DB: Eggs 12 -> gone -> 12 -> unchanged; Butter 6 -> 12 -> 6
+    -> 12 (merge); Yogurt 12 -> 8 (stepper) -> untick leaves 8 -> retick
+    leaves 8.
+  - **Reported, not fixed:** `staples.record_staple_purchase` writes a
+    'bought' event on the tick and nothing takes it back on an untick, so
+    a staple un-bought today still believes it was bought today and learns
+    its rhythm from that date (one event per day, so a re-tick teaches
+    nothing twice — the untick is the gap). Its own card.
 - **2026-09-13 — Skip, swap, or "not this week": a ··· on every chore row.
   Branch `overnight/chores-skip-hand-move`, NOT merged at the time of
   writing.** Loop Board "Chores v1: Skip, swap, or 'not this week'"
