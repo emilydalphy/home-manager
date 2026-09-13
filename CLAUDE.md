@@ -371,6 +371,53 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — "Tell me what instead" knows which meal it was tapped on,
+  and the chat request has a `context` field now. Branch
+  `worktree-tell-me-instead-context`, NOT merged at the time of writing.**
+  Loop Board "'Tell me what instead' knows which meal you tapped it on,
+  and acts on one yes" (Emily, on the Tuesday burgers: she tapped the link
+  beside the recipe, chat had no idea which meal she meant, then asked her
+  to confirm too many times).
+  - **Root cause, both halves.** The link put a sentence in the composer
+    ("Swap Tuesday's dinner for something else", shell.js's `[data-wk-tell]`
+    handler) and nothing else: `ChatRequest` was `{session_id, message}`,
+    and the only "context" the agent ever had was `_is_tweak_context`
+    sniffing a prefill prefix (agent.py, `TWEAK_CONTEXT_PREFIXES` — its own
+    comment says "the chat endpoint carries no context field of its
+    own"). Delete the sentence, type what you want, and the model is
+    starting from zero. The repeated confirmations then follow from three
+    standing prompt rules stacking on one change: "Clarifying questions"
+    (which meal?), the propose-then-confirm rule in the same paragraph,
+    and the grocery-list rule ("nothing reaches the list without the
+    household saying so"), which the model applies again after a swap on
+    an approved week even though `swap_meal_in_plan` already moved the
+    lines. That's from the prompt, not a transcript — the conversation
+    itself isn't stored.
+  - **The mechanism is structured, server-resolved, per-turn.**
+    `ChatRequest.context` is a pointer (`{kind, entry_id, date, slot}`),
+    never a description: `tools.describe_planned_meal` re-reads the meal
+    from the household's own live plan each turn, by id first and then by
+    date+slot, because a swap deletes and re-inserts the row and "actually,
+    chicken" one message later must still land. `_build_chat_context_block`
+    appends a system block (like `_TWEAK_REPLY_BLOCK`, never an edit to the
+    frozen cached prompt) naming the meal, its ingredients, whether the
+    week is approved, and the rule: confirm ONCE in one line, act on any
+    yes, no second question, no grocery-list question. The shell sends the
+    context with every message while the "About Tuesday's dinner · …" line
+    is above the composer, and drops it when the sheet closes or the × is
+    tapped — sent every turn, not once, so the yes carries the subject and
+    the rule with it. `kind` is the seam for other "open chat about X"
+    entry points; only `planned_meal` is wired.
+  - **Anything unresolvable is an ordinary turn, never an error**: a
+    planned_empty or open slot, a component plan, another household's id,
+    a bad date — all None, all logged, block omitted. A same-dish change
+    (turkey → beef) is add_recipe of a named variant then
+    swap_meal_in_plan with old_meal, which is what keeps the slot and moves
+    the grocery lines by itself; the block says so in those words so the
+    model doesn't invent a third path. `context` is only passed to
+    run_agent_turn when present, so every existing test fake with the old
+    signature still fits.
+
 - **2026-09-13 — "Plan next week ›" under a two-day plan offered two more
   days. Branch `worktree-sunday-week-span`, NOT merged at the time of
   writing.** Loop Board "Planning on a Sunday offered only the next 2

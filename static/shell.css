@@ -1610,6 +1610,52 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .ask-chip:hover { background: var(--sand); }
 
+/* The subject line above the composer — "About Tuesday's dinner · Turkey
+   Burgers" — for a chat opened from a meal card (Emily, 2026-09-13). One
+   quiet line, not a chip row: it is a fact about the conversation, not a
+   suggestion to tap, so it sits in --ink-secondary with the dish in
+   --ink-strong and the one tappable thing (the ×) at 44px. */
+.ask-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  /* The text lines up with the composer's own (its 2px border + 16px
+     padding); the row's height is the ×'s 44px, so it pulls itself back
+     into the sheet's 12px gaps rather than opening a band of air. */
+  padding: 0 0 0 18px;
+  margin: -6px 0 -10px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-secondary);
+  flex-shrink: 0;
+}
+.ask-context[hidden] { display: none; }
+.ask-context-label { flex-shrink: 0; }
+.ask-context-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-strong);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ask-context-clear {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1;
+  border-radius: var(--radius-chip);
+  cursor: pointer;
+}
+.ask-context-clear:hover { background: var(--sand); }
+
 .ask-composer-bar {
   background: var(--ground);
   border: 2px solid var(--spruce);

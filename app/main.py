@@ -402,9 +402,39 @@ def _has_bound_household(request: Request) -> bool:
     return not security.is_public_path(request.scope["path"])
 
 
+class ChatContext(BaseModel):
+    """
+    What the household is looking at as they send a message — the subject
+    of the turn, sent by the shell when chat is opened FROM something
+    rather than from the ask bar. Today one kind: `planned_meal`, from a
+    meal card's "Tell me what instead" (Loop Board, Emily 2026-09-13).
+    entry_id is the card's row; date and slot let the server find the meal
+    again after a swap has replaced that row. The server resolves all of
+    it against the household's own live plan (tools.describe_planned_meal)
+    — nothing here is trusted as a description, only as a pointer.
+    """
+    kind: str
+    entry_id: int | None = None
+    date: str | None = None
+    slot: str | None = None
+
+
 class ChatRequest(BaseModel):
     session_id: str = "default"
     message: str
+    context: ChatContext | None = None
+
+
+def _chat_turn_kwargs(*, proactive_check: bool, context: ChatContext | None) -> dict:
+    """
+    run_agent_turn's keyword arguments for one turn. `context` is only
+    passed when there is one, so a turn from the ask bar is the exact call
+    it has always been.
+    """
+    kwargs = {"proactive_check": proactive_check}
+    if context is not None:
+        kwargs["context"] = context.model_dump()
+    return kwargs
 
 
 class ChatAction(BaseModel):
@@ -4391,7 +4421,10 @@ def chat(req: ChatRequest, request: Request):
     history = SESSIONS.get(session_id, [])
     is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
     try:
-        reply, updated_history = run_agent_turn(history, req.message, proactive_check=is_new_sitting)
+        reply, updated_history = run_agent_turn(
+            history, req.message,
+            **_chat_turn_kwargs(proactive_check=is_new_sitting, context=req.context),
+        )
     except AssistantUnavailableError as e:
         # Claude's API itself was down/overloaded even after retrying inside
         # run_agent_turn — str(e) is already a warm, customer-facing
@@ -4413,7 +4446,8 @@ def chat(req: ChatRequest, request: Request):
     return ChatResponse(**result)
 
 
-def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool):
+def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive_check: bool,
+                      context: ChatContext | None = None):
     """
     Run run_agent_turn on a background thread and yield its progress as
     Server-Sent Events, the chat-loop twin of _stream_week_generation
@@ -4438,7 +4472,10 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
         try:
-            reply, updated_history = run_agent_turn(history, message, proactive_check=proactive_check)
+            reply, updated_history = run_agent_turn(
+                history, message,
+                **_chat_turn_kwargs(proactive_check=proactive_check, context=context),
+            )
             events.put(("done", _finish_chat_turn(session_id, history, reply, updated_history)))
         except AssistantUnavailableError as e:
             logger.warning("Chat turn hit a transient Claude API failure: %s", e)
@@ -4476,6 +4513,7 @@ def chat_stream(req: ChatRequest, request: Request):
     return StreamingResponse(
         _stream_chat_turn(
             session_id=session_id, message=req.message, history=history, proactive_check=is_new_sitting,
+            context=req.context,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
