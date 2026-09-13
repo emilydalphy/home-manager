@@ -16227,10 +16227,26 @@
   // whether the 3 was answered or assumed — snacks_per_week_set
   // (app/tools/memory.py). Without it a brand-new household was told it
   // eats three snacks a week, which nobody had ever said.
+  //
+  // It reads the WHOLE section back, not just leftovers and snacks: those
+  // two were all it said until 2026-09-13, so telling Pomona you love Thai
+  // food saved correctly and changed nothing on the row — which reads as
+  // "it didn't take". The parts run in the order the section's own
+  // controls run (Leftovers, How meals lean, Excited about, Proteins, and
+  // the counts last), so the row and the screen it opens name things in
+  // the same order and a new answer never reshuffles the line under
+  // whoever just gave it. Nothing is padded: a part the household has said
+  // nothing about contributes nothing, never a filler phrase.
   function prefsEatingLine(mem) {
     var bits = [];
     var stance = ((mem && mem.rhythm) || {}).leftovers_stance || '';
     if (PREFS_LEFTOVERS[stance]) bits.push(PREFS_LEFTOVERS[stance]);
+    var style = prefsStyleWords(mem && mem.eating_style);
+    if (style) bits.push(style);
+    var cuisines = prefsCuisineWords(mem);
+    if (cuisines) bits.push(cuisines);
+    var proteins = prefsProteinWords(mem);
+    if (proteins) bits.push(proteins);
     // Two snack numbers, two answered-flags, and this line reads back
     // whichever question the household was actually asked. Onboarding asks
     // per DAY since 2026-09-08 (Julia), so that one wins when both are on;
@@ -16245,7 +16261,83 @@
       var perWeek = mem.snacks_per_week || 0;
       bits.push(perWeek ? perWeek + ' snack' + (perWeek === 1 ? '' : 's') + ' a week' : 'no snacks');
     }
-    return bits.length ? bits.join(' · ') : 'Not set yet';
+    return bits.length ? prefsClamp(bits) : 'Not set yet';
+  }
+
+  // A fully-answered household says more than fits. 60 characters is the
+  // cap here rather than in CSS because this line has two homes and they
+  // truncate differently: .prefs-row-sub is one nowrap line with an
+  // ellipsis, .wwk-head .prefs-row-sub wraps and would grow the section
+  // head instead. One length, both places.
+  var PREFS_LINE_MAX = 60;
+  function prefsClamp(bits) {
+    var line = bits.join(' · ');
+    if (line.length <= PREFS_LINE_MAX) return line;
+    // Whole answers come off the end, never half of one: a line ending
+    // "· 2…" reads as something broken, where an ellipsis after a finished
+    // phrase reads as "there's more inside".
+    var kept = bits.slice();
+    while (kept.length > 1 && (kept.join(' · ') + '…').length > PREFS_LINE_MAX) kept.pop();
+    line = kept.join(' · ');
+    // One answer longer than the whole line is the only case left; it is
+    // cut on a word.
+    if ((line + '…').length > PREFS_LINE_MAX) {
+      line = line.slice(0, PREFS_LINE_MAX - 1);
+      var space = line.lastIndexOf(' ');
+      if (space > PREFS_LINE_MAX / 2) line = line.slice(0, space);
+      line = line.replace(/[\s·,]+$/, '');
+    }
+    return line + '…';
+  }
+
+  // The household's own words for how their meals lean. eating_style is
+  // ONE freeform value and onboarding joins every tapped preset and the
+  // typed line into it with commas ("High-protein, Low-carb, no red meat
+  // on weeknights"), so the row takes the first clause only — a reminder,
+  // not a transcript, and short enough that it can't crowd out the answers
+  // after it. Cased as typed: re-casing somebody's answer is the app
+  // editing what they said.
+  function prefsStyleWords(style) {
+    return String(style || '').split(',')[0].trim();
+  }
+
+  // The cuisines, newest last two named. Nothing in /api/memory is
+  // timestamped, so "what you just added" has to be read off the list's
+  // own order — wwkListAdd appends, so the tail IS the most recent thing
+  // said, which is exactly what somebody checking that a change took is
+  // looking for. Named in list order, so the row and the section's chips
+  // read left to right the same way; "+N" for the older ones, the same
+  // shape the people row uses for a second allergy.
+  var PREFS_CUISINES_SHOWN = 2;
+  function prefsCuisineWords(mem) {
+    var all = ((mem && mem.cuisine_preferences) || []).filter(function (c) { return c; });
+    var shown = all.slice(-PREFS_CUISINES_SHOWN).join(', ');
+    return all.length > PREFS_CUISINES_SHOWN ? shown + ' +' + (all.length - PREFS_CUISINES_SHOWN) : shown;
+  }
+
+  // Which proteins the household leans toward or away from, said the way
+  // the older stored answers already word it ("more"/"less" — see
+  // wwkProteinState). Read THROUGH that function, over the same eight
+  // labels the section's chips are drawn from, so the row can never claim
+  // a leaning the chips don't show and the two shapes a real household's
+  // answers come in (a 1-5 rating, or "more"/"less" under a key like
+  // "Fish / seafood") are handled in one place rather than two.
+  // Chip order, not stored-key order: a re-rating keeps its slot in the
+  // stored map (set_household_meal_preferences merges), so that order is
+  // only half a recency signal, and the order the household sees when they
+  // open the section is worth more than half a signal.
+  var PREFS_PROTEINS_SHOWN = 2;
+  function prefsProteinWords(mem) {
+    var liked = [];
+    var skipped = [];
+    WWK_PROTEINS.forEach(function (label) {
+      var state = wwkProteinState(mem || {}, label.toLowerCase()).state;
+      if (state === 'on') liked.push('more ' + label.toLowerCase());
+      else if (state === 'off') skipped.push('less ' + label.toLowerCase());
+    });
+    // Favourites first: a household taps far more of them than skips, so
+    // that is the half most likely to be the thing just changed.
+    return liked.concat(skipped).slice(0, PREFS_PROTEINS_SHOWN).join(', ');
   }
 
   function prefsStoresLine(mem) {

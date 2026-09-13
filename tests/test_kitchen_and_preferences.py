@@ -445,10 +445,24 @@ def _node(script: str):
 
 def _prefs_block() -> str:
     """The whole Preferences read-back region, lifted in one slice: the five
-    row functions, the two wording maps they read, and PREFS_ROWS itself."""
+    row functions, the two wording maps they read, and PREFS_ROWS itself.
+
+    Plus WWK_PROTEINS and wwkProteinState, which live with the "How you
+    eat" section body they were written for and which the row's own line
+    reads through since 2026-09-13 — one protein reader, not a second one
+    that can disagree with the chips."""
     start = SHELL_JS.index("function prefsPeopleLine(mem) {")
     end = SHELL_JS.index("];", SHELL_JS.index("var PREFS_ROWS = [")) + 2
-    return SHELL_JS[start:end]
+    return _proteins_block() + "\n" + SHELL_JS[start:end]
+
+
+def _proteins_block() -> str:
+    proteins = SHELL_JS.index("var WWK_PROTEINS = [")
+    return (
+        SHELL_JS[proteins : SHELL_JS.index("\n", proteins)]
+        + "\n"
+        + _function("wwkProteinState")
+    )
 
 
 def _prefs_lines(memory: dict) -> dict:

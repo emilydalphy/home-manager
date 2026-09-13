@@ -1,0 +1,219 @@
+"""
+"How you eat" reads the whole section back, not just leftovers and snacks.
+
+Loop Board "Preferences: the 'How you eat' line should reflect what you
+just changed" (2026-09-13). The row's sub-line named the leftovers stance
+and the snack count and nothing else, so telling Pomona you love Thai food
+saved correctly and left the row word-for-word as it was — which reads as
+"it didn't take", and is exactly the doubt a read-back row exists to
+settle.
+
+Every test here RUNS static/shell.js's own `prefsEatingLine` under node
+against a real /api/memory payload, rather than reading the source for a
+marker: the bug was a line that didn't move, which is behaviour a marker
+test cannot see.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from tests import nodeharness
+
+REPO = Path(__file__).resolve().parent.parent
+SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
+
+
+def _function(name: str) -> str:
+    start = SHELL_JS.index(f"function {name}(")
+    i = SHELL_JS.index("{", start)
+    depth, j = 0, i
+    while True:
+        if SHELL_JS[j] == "{":
+            depth += 1
+        elif SHELL_JS[j] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return SHELL_JS[start : j + 1]
+
+
+def _block() -> str:
+    """The Preferences read-back region, plus the two things the eating line
+    reaches out of it for: WWK_PROTEINS and wwkProteinState, which live with
+    the section body they were written for."""
+    start = SHELL_JS.index("function prefsPeopleLine(mem) {")
+    end = SHELL_JS.index("];", SHELL_JS.index("var PREFS_ROWS = [")) + 2
+    proteins = SHELL_JS.index("var WWK_PROTEINS = [")
+    return (
+        SHELL_JS[proteins : SHELL_JS.index("\n", proteins)]
+        + "\n"
+        + _function("wwkProteinState")
+        + "\n"
+        + SHELL_JS[start:end]
+    )
+
+
+def _line(memory: dict) -> str:
+    """The words the "How you eat" row shows for one /api/memory payload."""
+    script = (
+        _block() + "\n"
+        + f"console.log(JSON.stringify(prefsEatingLine({json.dumps(memory)})));\n"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+# --- the report: a cuisine add has to move the line -----------------------
+
+def test_adding_a_cuisine_changes_the_line(signed_in):
+    """The card's own user story, driven through the real save path the
+    sheet uses (POST /api/memory/edit with the whole list, which is what
+    wwkListAdd sends) rather than against a hand-built payload."""
+    before = _line(signed_in.get("/api/memory").json())
+    assert "Thai" not in before
+
+    signed_in.post("/api/memory/edit", json={
+        "field": "cuisine_preferences", "value": ["Thai"],
+    })
+    after = _line(signed_in.get("/api/memory").json())
+    assert after != before, "the row said the same thing after the save"
+    assert "Thai" in after
+
+
+def test_the_newest_cuisines_are_the_ones_named(signed_in):
+    """Nothing in /api/memory is timestamped, so "what you just added" is
+    read off the list's own order — wwkListAdd appends, so the tail is the
+    most recent answer. Four cuisines: the last two by name, the rest as
+    "+N"."""
+    signed_in.post("/api/memory/edit", json={
+        "field": "cuisine_preferences",
+        "value": ["Italian", "Greek", "Thai", "Mexican"],
+    })
+    assert _line(signed_in.get("/api/memory").json()) == "Thai, Mexican +2"
+
+
+def test_a_household_with_no_cuisines_gets_no_cuisine_words():
+    """Nothing is padded. A part nobody has answered contributes nothing —
+    not a filler phrase, and not "Not set yet" wedged mid-line."""
+    assert _line({"cuisine_preferences": [], "rhythm": {"leftovers_stance": "love_them"}}) \
+        == "leftovers welcome"
+    assert _line({}) == "Not set yet"
+
+
+# --- the rest of the section --------------------------------------------
+
+def test_the_whole_section_reads_back_in_the_order_its_controls_run():
+    """Leftovers, how meals lean, excited about, proteins, then the counts —
+    the order wwkTasteHtml draws them, so the row and the screen it opens
+    name things the same way round."""
+    line = _line({
+        "rhythm": {"leftovers_stance": "love_them"},
+        "eating_style": "Keto",
+        "cuisine_preferences": ["Thai"],
+        "protein_preferences": {"fish": 1},
+        "snacks_per_day": 2, "snacks_per_day_set": True,
+    })
+    assert line == "leftovers welcome · Keto · Thai · less fish · 2 snacks a day"
+
+
+@pytest.mark.parametrize(
+    "prefs, expected",
+    [
+        # The shape this sheet writes: a 1-5 rating under a lowercase key.
+        ({"chicken": 5}, "more chicken"),
+        ({"fish": 1}, "less fish"),
+        ({"chicken": 3}, ""),  # neutral is not a leaning
+        # The shape a real household's stored answers came in (2026-09-12,
+        # the pre-reset backup): "more"/"less" under a fuller key.
+        ({"Fish / seafood": "less"}, "less fish"),
+        ({"Chicken": "more"}, "more chicken"),
+        # Favourites before skips, and at most two of them.
+        ({"beef": 5, "fish": 1, "chicken": 5}, "more chicken, more beef"),
+    ],
+)
+def test_the_protein_leanings_are_read_the_way_the_chips_read_them(prefs, expected):
+    """One protein reader for the row and for the section's chips
+    (wwkProteinState), so the line can never claim a leaning the chips
+    don't show — including for the older stored shapes."""
+    line = _line({"protein_preferences": prefs})
+    assert line == (expected or "Not set yet")
+
+
+def test_the_eating_style_is_one_clause_of_the_households_own_words():
+    """eating_style is ONE freeform value and onboarding joins every tapped
+    preset and the typed line into it with commas. The row takes the first
+    clause — a reminder, not a transcript — cased as it was typed."""
+    assert _line({"eating_style": "High-protein, Low-carb, no red meat on weeknights"}) \
+        == "High-protein"
+
+
+def test_a_snacks_answer_still_reads_back(signed_in):
+    """The two facts the line used to carry are still in it, and still only
+    when the household actually answered (snacks_per_week is NOT NULL
+    DEFAULT 3 — see tests/test_kitchen_and_preferences.py)."""
+    assert _line(signed_in.get("/api/memory").json()) == "Not set yet"
+    signed_in.post("/api/memory/edit", json={"field": "snacks_per_day", "value": 2})
+    assert _line(signed_in.get("/api/memory").json()) == "2 snacks a day"
+
+
+# --- it has to fit on the row --------------------------------------------
+
+def test_a_household_that_answered_everything_is_cut_at_sixty_with_an_ellipsis():
+    line = _line({
+        "rhythm": {"leftovers_stance": "fine_sometimes"},
+        "eating_style": "Mediterranean",
+        "cuisine_preferences": ["Italian", "Greek", "Thai", "Mexican"],
+        "protein_preferences": {"chicken": 5, "fish": 1},
+        "snacks_per_day": 2, "snacks_per_day_set": True,
+    })
+    assert len(line) <= 60, line
+    # Whole answers come off the end, never half of one — "· 2…" reads as
+    # something broken.
+    assert line == "leftovers now and then · Mediterranean · Thai, Mexican +2…"
+
+
+def test_a_short_answer_is_not_given_an_ellipsis_it_doesnt_need():
+    assert _line({"cuisine_preferences": ["Thai"]}) == "Thai"
+
+
+# --- one helper, two places ----------------------------------------------
+
+def test_the_section_head_and_the_preferences_row_say_the_same_words():
+    """AC 2: What we know's "How you eat" head reads its line with the
+    Preferences row's own function, so tapping through never changes the
+    words. Run rather than grepped — both entries are resolved and called,
+    and the two are asserted to be the SAME function object."""
+    memory = {
+        "rhythm": {"leftovers_stance": "love_them"},
+        "cuisine_preferences": ["Thai", "Mexican"],
+        "protein_preferences": {"fish": 1},
+    }
+    sections = SHELL_JS.index("var WWK_SECTIONS = [")
+    sections = SHELL_JS[sections : SHELL_JS.index("];", sections) + 2]
+    bodies = "".join(
+        f"function {name}() {{ return ''; }}\n"
+        for name in ("wwkPeopleHtml", "wwkWontEatHtml", "wwkRhythmHtml",
+                     "wwkPrepDaysHtml", "wwkTasteHtml", "wwkCalendarHtml",
+                     "wwkStoresHtml")
+    )
+    script = (
+        _block() + "\n"
+        + _function("wwkWontEatLine") + "\n"
+        + bodies
+        + sections + "\n"
+        + f"const MEM = {json.dumps(memory)};\n"
+        + "const row = PREFS_ROWS.filter(r => r.section === 'taste')[0];\n"
+        + "const sec = WWK_SECTIONS.filter(s => s.key === 'taste')[0];\n"
+        + "console.log(JSON.stringify([row.line(MEM), sec.line(MEM), row.line === sec.line]));\n"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    row_line, section_line, same = json.loads(res.stdout.strip())
+    assert row_line == section_line == "leftovers welcome · Thai, Mexican · less fish"
+    assert same, "the row and the section head no longer share one function"
