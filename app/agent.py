@@ -1370,7 +1370,7 @@ TOOL_DEFINITIONS = [
                     "items": {
                         "type": "object",
                         "properties": {
-                            "item": {"type": "string"},
+                            "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones)."},
                             "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 dozen', '1 can') — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead."},
                             "category": {
                                 "type": "string",
@@ -2862,7 +2862,13 @@ prep descriptor tacked on ("Baby spinach, chopped", "Carrots, julienned"). This 
 phrasing: the grocery list merges lines by exact item name, so "Baby spinach" in one recipe and \
 "Baby spinach, chopped" in another become two separate lines that never combine — quietly \
 doubling what the household is told to buy. Prep instructions belong in the recipe's \
-instructions text, never in the ingredient name.
+instructions text, never in the ingredient name. One descriptor DOES belong in the name: the \
+kind, whenever the count only makes sense for that kind — "Persian cucumbers" with qty "6", \
+"Cherry tomatoes" with "1 pint", "Baby potatoes" with "1.5 lbs", "Mini sweet peppers" with "8". \
+A bare "Cucumbers", "Tomatoes", "Potatoes", "Peppers", "Onions" or "Apples" reads as the \
+ordinary full-size kind (an English cucumber, a beefsteak tomato, a russet, a bell pepper), so \
+"6 cucumbers" sends the shopper home with six English cucumbers — a crazy amount — when the \
+recipe meant six small Persian ones. Say which kind; the list shows exactly the name you write.
 - Ingredients used in only a small amount per recipe, where a single store-bought unit obviously \
 covers many uses across a whole week — spices, dried herbs, cooking oil, vinegar, soy sauce and \
 similar condiments, salt, pepper, sugar — should only carry a real qty on the FIRST recipe this \
@@ -3107,9 +3113,11 @@ dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; 
 are dairy; fresh vegetables/herbs are produce.
 - Write each ingredient's qty as how it's actually bought at the store (a head, a bunch, a bag, \
 a lb, a dozen, a can), not how much ends up used once prepped, and keep the item name itself \
-free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") — see the day-based \
-prompt's guidance on this and on not re-adding a fresh unit of a staple (spices, oil, condiments) \
-on every item that uses it, same rules apply here.
+free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") — but DO name the kind \
+whenever the count depends on it ("Persian cucumbers" with qty "6", never a bare "Cucumbers" \
+meaning small ones: a bare name reads as the full-size kind) — see the day-based prompt's \
+guidance on this and on not re-adding a fresh unit of a staple (spices, oil, condiments) on \
+every item that uses it, same rules apply here.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
 recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
 - near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
@@ -4456,8 +4464,10 @@ something with no cooking at all.
 - It should taste like it belongs with the dish — same rough cuisine and register. Rice with a \
 curry, not couscous; a sharp slaw with something rich.
 - Write each ingredient's qty as it's actually bought at the store (a head, a bunch, a bag, a \
-lb, a box), and don't re-buy staples the household certainly has (salt, pepper, oil) — leave \
-those out of the ingredient list entirely even though the steps use them.
+lb, a box), name the kind of produce when the count depends on it ("Persian cucumbers" with qty \
+"6" — a bare "Cucumbers" reads as full-size English ones), and don't re-buy staples the \
+household certainly has (salt, pepper, oil) — leave those out of the ingredient list entirely \
+even though the steps use them.
 - Set `covers` to what the side genuinely supplies. If you're asked for a vegetable and a carb \
 and one side honestly does both (a grain salad), say so and send just the one.
 

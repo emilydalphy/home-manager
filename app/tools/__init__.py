@@ -394,6 +394,8 @@ from .recipes import (  # noqa: F401
     log_recipe_note,
     mark_recipe_feedback,
     plausible_cooking_quantity,
+    produce_count_message,
+    produce_count_problem,
     save_cooking_quantities,
     scale_recipe,
     settle_cooking_quantities,
