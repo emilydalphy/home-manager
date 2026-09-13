@@ -18173,6 +18173,12 @@
   var resetGroceryCb = document.getElementById('reset-grocery-list');
   var resetConfirmBtn = document.getElementById('reset-confirm');
   var resetSubmitting = false;
+  // The plan the preview counted, and the one the reset then clears — the
+  // plan on screen, never "whichever covers today" (Loop Board,
+  // 2026-09-13: on a Sunday those differ, and Start over cleared last
+  // week's draft while the approved week on screen kept its meals and
+  // lost its groceries).
+  var resetPlanId = null;
 
   function plural(n, one, many) {
     return n + ' ' + (n === 1 ? one : many);
@@ -18208,18 +18214,27 @@
     openSheet(resetDialog, resetScrim);
 
     try {
-      var res = await fetch('/api/reset/preview');
+      var shown = weekState.data && weekState.data.weekly_plan_id;
+      var url = '/api/reset/preview' + (shown ? '?weekly_plan_id=' + encodeURIComponent(shown) : '');
+      var res = await fetch(url);
       if (!res.ok) throw new Error('reset preview failed');
       var data = await res.json();
+      resetPlanId = data.weekly_plan_id || null;
+      var weekName = data.week_label ? ' (' + data.week_label + ')' : '';
       setResetOptionState(
         resetMealCb, mealSub, data.meal_count,
         'Nothing planned this week.',
-        'Removes ' + plural(data.meal_count, 'planned meal', 'planned meals') + ' and the groceries they added.'
+        'Removes ' + plural(data.meal_count, 'planned meal', 'planned meals') + weekName + ' and the groceries they added.'
       );
+      // Clearing the list under an approved week leaves that week without
+      // its groceries, and nothing puts them back on its own — say so.
+      var groceryTail = (data.plan_status === 'approved' && data.meal_count)
+        ? ' The approved week keeps its meals; to get its groceries back, reopen the week and approve it again.'
+        : '';
       setResetOptionState(
         resetGroceryCb, grocerySub, data.grocery_count,
         'The list is already empty.',
-        'Removes ' + plural(data.grocery_count, 'item', 'items') + ' still to buy.'
+        'Removes ' + plural(data.grocery_count, 'item', 'items') + ' still to buy.' + groceryTail
       );
     } catch (err) {
       console.warn('Reset preview failed:', err);
@@ -18250,7 +18265,7 @@
       var res = await fetch('/api/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meal_plan: doMealPlan, grocery_list: doGroceryList })
+        body: JSON.stringify({ meal_plan: doMealPlan, grocery_list: doGroceryList, weekly_plan_id: resetPlanId })
       });
       if (!res.ok) throw new Error('reset failed');
       var data = await res.json();

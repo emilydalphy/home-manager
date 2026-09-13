@@ -544,7 +544,10 @@ _UNICODE_FRACTIONS = {
 # "tablespoons" and "tbsp" are both known); the rest are the kitchen and
 # package words a recipe line uses.
 _UNIT_WORDS = {
-    w for w in _quantities._UNIT_ALIASES if _quantities._UNIT_ALIASES[w]
+    # "egg" is a unit to the grocery layer (a twelfth of a dozen — see
+    # quantities._PACK_CONVERSION_GROUPS) but on a recipe line "2 large
+    # eggs" the eggs are the THING, so they stay out of the unit words.
+    w for w in _quantities._UNIT_ALIASES if _quantities._UNIT_ALIASES[w] not in ("", "egg")
 } | {
     "clove", "cloves", "can", "cans", "tin", "tins", "slice", "slices", "pinch", "pinches",
     "bunch", "bunches", "head", "heads", "stalk", "stalks", "stick", "sticks", "sprig", "sprigs",

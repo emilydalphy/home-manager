@@ -853,6 +853,12 @@ class ResetRequest(BaseModel):
     """
     meal_plan: bool = False
     grocery_list: bool = False
+    # The plan the Plan tab is showing — the one "clear this week's meal
+    # plan" means. Sent by the dialog from its own preview, so the plan
+    # counted is the plan cleared (Loop Board, 2026-09-13: the default
+    # resolver cleared last week's draft under an approved week). Left
+    # unset only by an older client; then the default resolver answers.
+    weekly_plan_id: int | None = None
 
 
 @app.on_event("startup")
@@ -3173,15 +3179,17 @@ def add_prep_cut_view(req: PrepCutRequest):
 
 
 @app.get("/api/reset/preview")
-def reset_preview():
+def reset_preview(weekly_plan_id: int | None = None):
     """
     Counts for the Meals tab's "Start over" confirm dialog — how many
     planned meals and how many still-needed grocery items a reset would
     remove — so the dialog can name real numbers and grey out a choice
     that would do nothing. Read-only; see tools.get_reset_preview.
+    weekly_plan_id is the plan the tab is showing — the dialog always
+    sends it, so the plan counted here is the plan the reset clears.
     """
     try:
-        return tools.get_reset_preview()
+        return tools.get_reset_preview(weekly_plan_id)
     except Exception as e:
         logger.exception("Reset preview failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -3206,7 +3214,7 @@ def reset(req: ResetRequest):
     result = {"meal_plan": None, "grocery_list": None}
     try:
         if req.meal_plan:
-            result["meal_plan"] = tools.clear_weekly_plan()
+            result["meal_plan"] = tools.clear_weekly_plan(req.weekly_plan_id)
         if req.grocery_list:
             result["grocery_list"] = tools.clear_grocery_list(status="needed")
     except Exception as e:
