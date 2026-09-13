@@ -371,6 +371,100 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-13 — "How did it go?": "Will grab elsewhere" picks the store,
+  "Don't need anymore", and "Add a new store" that comes back. Branch
+  `worktree-shop-store-screens`, NOT merged at the time of writing.** Loop
+  Board improvement (Emily: "'somewhere else' make it 'will grab
+  elsewhere' and then if they select that show the drop down of the other
+  stores ... an option ... to add a new store (also in the sorting screen
+  in case) ... make sure the flow brings them back to this screen. Also
+  add a 'don't need anymore' option"). The wrap-up's "Somewhere else"
+  used to EXCLUDE the row (`/exclude`, status 'excluded' — off every
+  list); a thing you will grab at Metro is on Metro's list, not off the
+  list, so the answer is now a store picker under the row
+  (`groWrapStorePickerHtml`, `wrap-move`) and the line moves there. The
+  SORT screens' own "Somewhere else" chip still excludes — unchanged, so
+  the open leftovers question (an excluded line still absorbing next
+  week's amount) is untouched here; the wrap-up simply no longer feeds
+  that path.
+  - **A wrap-up move is this week's answer, never a new preference:**
+    `GroceryStoreRequest` gained `remember` (default true, so the LIST
+    row's pills and SORT behave exactly as before) and the wrap-up sends
+    `remember: false` — "Costco was out of eggs, Metro this week" must
+    not quietly rewrite "eggs come from Costco" (`set_grocery_item_store`
+    updates a known preference immediately, by design). Undo is the same
+    call back to the store it came from. A moved line reads "Grabbing at
+    Metro" (`wrapMoved`, in the trip snapshot) rather than being asked
+    about again.
+  - **"Don't need anymore" is the pre-shop drop** — the same
+    `drop_grocery_item_pre_shop` "Have it" uses (soft-remove, toast undo
+    through `/pre-shop-undo`, never bought, never inventory). Both land
+    on the wrap-up's confirmation card, whose line now reads "Not needed
+    this week:" rather than "You said you already have:" so it is true of
+    both.
+  - **The way back is a sheet, not a route.** Stores live in the What we
+    know sheet (`openKitchenSheet('stores')`), which slides over the
+    current screen; the chat's `/memory` href reaches it through the
+    Kitchen tab (`followActionHref`) and would have lost the wrap-up.
+    "Add a new store" (WRAP UP's picker, SORT, SORT ALL —
+    `groAddStorePillHtml`) arms `groceryState.storeReturn` ({step, kind,
+    id, name, from}) and opens the sheet on the "+ Add a store" field
+    (`wwkFocusAdd`); `wwkAddStore` hands a saved store to
+    `groUsualStoreAdded`, which closes the sheet and makes it the answer
+    where it was asked (queue: assigned; SORT ALL: staged; wrap-up:
+    moved); `closeKitchenSheet` calls `groStoresSheetClosed`, which
+    forgets the hand-off and takes any shop the sheet knows that the
+    list's copy doesn't (additive — the sheet's cached read can be
+    older than the list's optimistic state). One URL throughout; nav-v2
+    rules kept.
+  - Also: the wrap-up row's quantity chip stretched under the name as a
+    full-width bar (`.gro-qty` is `display:flex` inside a block span,
+    pre-existing) — `.gro-wrap-name` is a flex row now.
+  - Tests: `tests/test_shop_wrap_up_answers.py` (21: node harness for
+    the answers, the picker and both directions of the hand-off; the
+    route's `remember`; source markers for the sheet wiring).
+- **2026-09-13 — "Start the trip" asks "Where are we headed?", and both
+  store-pick screens are store cards. Branch `worktree-shop-store-screens`,
+  NOT merged at the time of writing.** Loop Board feature (Emily: "it
+  should ask me (through a select screen) which store we're headed to ...
+  similar to the 'where's next' screen ... And make the design of that
+  one + the where next screen a bit nicer - add some colour"). Before,
+  "Start the trip" opened whichever stop the list put first; the
+  household's own choice of route only began at the second stop. New
+  HEADED step in `static/shell.js` (`groHeadedHtml`, `head-for`): the
+  stops as cards, and the card you tap is the stop the snapshot opens on
+  (`groBeginTrip(stops, startAt)` — `groStartTrip` is now the question,
+  `groBeginTrip` the snapshot). One stop asks nothing; a paused trip is
+  continued, never asked again ("Finish later" / "Continue the trip" are
+  untouched). WHERE NEXT is the same cards (`groStopCardsHtml`), so the
+  two match by construction.
+  - **The design pass, and what it is not.** One card per stop
+    (`.gro-stop`): a spine in the store's palette colour down the card's
+    left edge, square where it meets the card and round outside (the
+    joined-tile motif), the initial in it, the name in the display face,
+    the count, and the things ONLY HERE. The shopless note became the
+    celadon tile under the cards. Neither screen gets an apricot fill —
+    the cards are the choice, and HEADED has no dock at all (rule 2: no
+    single action, no dock; the crumb is the way back). Ratios measured
+    in Chromium and in the CSS comment: ONLY HERE `--apricot-label` on
+    `--surface` 5.20:1 light / 8.53:1 dark; the rest are pairs already
+    cited elsewhere. The store palette itself is unchanged (Tier 2).
+  - **"Only here" = a remembered item -> store preference
+    (`groIsUsuallyHere`, `item_store_preferences`)**, the one thing the
+    data has that says "you can't get this at the other stop"; every row
+    on a stop's list carries that store, so the row's store would say
+    nothing. Three by name, "+N" for the rest. Emily's phrase kept over
+    the app's "usually here"; one string to change (`groStopCardsHtml`).
+  - **Found by review: the back gesture can land on HEADED with a trip
+    already on** (HEADED, TRIP and NEXT each push a history entry), and a
+    card tapped there re-snapshotted — Costco no longer done, the count
+    of what came home back to zero. `head-for` now carries the guard
+    `groStartTrip` has: with a live trip, the card is read as WHERE NEXT
+    reads it (into that stop if still open, else `groResumeTrip`).
+  - Tests: `tests/test_shop_where_headed.py` (17). Six harness trips in
+    `tests/test_shop_trip_exit.py` now name Costco (`startTripAt`), and
+    three `.gro-nextrow` markers moved to `.gro-stop`.
+
 - **2026-09-13 — Swap says who picks: "Swap · I'll pick". Branch
   `worktree-meal-open-and-swap`, NOT merged at the time of writing.**
   Loop Board improvement (Emily: "when you click the 'swap' button, it

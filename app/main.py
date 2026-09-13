@@ -817,6 +817,11 @@ class GroceryStatusRequest(BaseModel):
 
 class GroceryStoreRequest(BaseModel):
     store: str = ""
+    # False for a one-off move — the wrap-up's "Will grab elsewhere" (Emily,
+    # 2026-09-13): this week the eggs come from Metro because Costco was
+    # out, and next week's list should still put them at Costco. See
+    # tools.set_grocery_item_store's remember.
+    remember: bool = True
 
 
 class GroceryStoreAssignment(BaseModel):
@@ -3830,7 +3835,7 @@ def keep_all_pre_shop_flags_view():
 def set_grocery_list_item_store(item_id: int, req: GroceryStoreRequest):
     """Assign which store a specific listed item should be bought at, directly from the Grocery List view."""
     try:
-        result = tools.set_grocery_item_store(item_id, req.store)
+        result = tools.set_grocery_item_store(item_id, req.store, remember=req.remember)
     except Exception as e:
         logger.exception("Grocery list store assignment failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

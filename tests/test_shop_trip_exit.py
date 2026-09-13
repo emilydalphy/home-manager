@@ -103,6 +103,11 @@ function click(dataset) {
   return el;
 }
 function settle(fn) { setTimeout(fn, 30); }
+// "Start the trip" over more than one stop asks "Where are we headed?"
+// first (2026-09-13, Loop Board: the trip starts on the store you name).
+// Every trip in this file starts at Costco, the first stop, which is where
+// the old button used to land without asking.
+function startTripAt(store) { click({ gro: 'start-trip' }); click({ gro: 'head-for', store: store }); }
 // Two shops, three things, nothing in any trolley. The trip Emily was
 // describing, shrunk to a size a test can read.
 function twoShops(opts) {
@@ -162,7 +167,7 @@ def test_finish_later_from_where_next_lands_on_the_list_with_the_trip_kept():
     stop (the mis-tap guard is untouched); the dock link is the exit."""
     out = _node("""
 twoShops();
-click({ gro: 'start-trip' });
+startTripAt('Costco');
 click({ gro: 'stop-done' });
 settle(function () {
   const beforeCrumb = groHeadFor(groceryState.data, 'next').back;
@@ -188,7 +193,7 @@ def test_finish_later_mid_stop_keeps_the_trolley_and_writes_nothing():
     and no stop is recorded as finished."""
     out = _node("""
 twoShops({ costcoInCart: [{ id: 2, item: 'Oats', quantity: '1', store: 'Costco', store_decided: 1 }] });
-click({ gro: 'start-trip' });
+startTripAt('Costco');
 click({ gro: 'trip-pause' });
 const s = tripState();
 s.posts = POSTS.length;
@@ -275,7 +280,7 @@ def test_continuing_after_done_at_costco_asks_where_next_rather_than_reopening_c
     way on was to finish it a second time."""
     out = _node("""
 twoShops();
-click({ gro: 'start-trip' });
+startTripAt('Costco');
 click({ gro: 'stop-done' });
 settle(function () {
   click({ gro: 'trip-pause' });
@@ -297,7 +302,7 @@ settle(function () {
 def test_continuing_mid_stop_returns_to_that_stop():
     out = _node("""
 twoShops();
-click({ gro: 'start-trip' });
+startTripAt('Costco');
 click({ gro: 'next-stop', store: 'Metro' });
 click({ gro: 'trip-pause' });
 const paused = groceryState.step;
@@ -343,7 +348,7 @@ def test_the_tab_bar_is_never_hidden_by_the_trip():
     assert "tab-bar" not in block
     out = _node("""
 twoShops();
-click({ gro: 'start-trip' });
+startTripAt('Costco');
 click({ gro: 'stop-done' });
 settle(function () {
   const before = JSON.stringify(tripState());
@@ -410,7 +415,7 @@ def test_a_paused_trip_comes_back_after_a_relaunch():
     read once, and the trip is exactly what it was."""
     out = _node("""
 twoShops();
-click({ gro: 'start-trip' });
+startTripAt('Costco');
 click({ gro: 'stop-done' });
 settle(function () {
   click({ gro: 'trip-pause' });
