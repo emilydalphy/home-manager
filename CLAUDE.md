@@ -1027,6 +1027,97 @@ why*, not duplicating the diff.
   match, and reversed two-pot phrasing ("simmer the sauce in one pot while
   the pasta boils in another") isn't caught either — both real but
   low-frequency compared to the reported bug.
+- **2026-09-13 — Add a recipe by photographing the page of a cookbook — and
+  the book is cited. Branch `worktree-recipe-photo`, NOT merged at the time
+  of writing.** Loop Board (Feature, High, Phase 1.5). Emily: "uploading
+  your own recipe if you can take a photo of a recipe in a cookbook. Then
+  make sure the book/photos is cited." The link import with a photo in
+  front of it, and the first time the app keeps an image.
+  - **Same shape as the link import, deliberately.** `POST
+    /api/recipes/import-photo` (multipart `photo` + optional `photo2` +
+    `hint`, like the scans) → `agent.read_recipe_from_photos_llm` reads the
+    page(s) in ONE forced-tool vision call (`_READ_RECIPE_PHOTO_TOOL`: the
+    recipes on the page AND the credit — running head, folio, "never
+    invent a title") → `recipe_import.draft_from_photo_read` normalises
+    through the same `draft_from_model` / `split_ingredient_line` /
+    `guess_category` path, marked `read_by: "photo"`, with `citation`
+    {book, author, page} and `candidates` when the page holds two recipes
+    → the same review sheet → `/api/recipes/add`. Two photos are one call,
+    not one per photo: a method that starts on the left page and finishes
+    on the right can only be read whole. A bad read is the reader's own
+    plain sentence (400) and keeps nothing.
+  - **Storage: files beside the database, rows as the index, nothing by
+    path.** `app/recipe_photos.py`: `<dirname(DB_PATH)>/recipe_photos/
+    <household_id>/<recipe_id>-<n>.jpg` (same Railway volume as the DB, so
+    it survives a redeploy for the same reason), `recipe_photos` table
+    (household_id, recipe_id, position, filename, media_type). The read
+    stashes the photo as PENDING under a random token in the household's
+    own `pending/` folder; the save moves it onto the recipe; a token that
+    is stale, foreign or malformed is skipped, never an error; pending
+    files are swept after a day. `GET /api/recipes/{id}/photos/{n}` looks
+    the row up under `household_id()` and builds the path from the row
+    inside that household's folder — another household's ids are a 404,
+    and no request string ever touches a path. `reset_household.py` drops
+    the folder with the rows. **No server-side resample:** there is no
+    imaging library in this app and adding Pillow is a dependency decision
+    for Emily, not a code change; the phone shrinks the page instead
+    (`shrinkPhotoForUpload`, long edge 1600px, JPEG 0.86 — a 12MP page
+    lands at ~400 KB) and the server checks the bytes are a JPEG/PNG/WEBP
+    (magic bytes, not the header) under a 5 MB cap.
+  - **One field says where a recipe came from.** `recipes.recipe_citation`
+    builds `{kind: book|link, ..., text}` from `source_url` +
+    the new `source_book/source_author/source_page` columns (nullable
+    defaults, `_MIGRATIONS`); wording is "From Salt Fat Acid Heat, Samin
+    Nosrat, p. 212" / "pp. 212–213" for a spread / "From a cookbook" for a
+    photo with no visible credit / "From seriouseats.com" for a link —
+    never "Source:" (§8). Carried on `list_recipes`, the cooker view meals
+    and `get_week_menu` slots as `citation` (+ `photo_urls`), and rendered
+    by ONE shell function, `recipeCitationHtml` (book in italics; a button
+    "See the page" over the kept photo), inserted in three places:
+    `mealStepHtml` under the clock, `daySlotCardHtml` under the dish name
+    (text only — the card is already a button), and cook mode's Before
+    you start. Before this, `source_url` was shown nowhere but the import
+    sheet — a link recipe on the plan said nothing about where it was from.
+    The chat's `add_recipe` tool gained the three credit fields too ("the
+    lasagne from the Ottolenghi book" saves cited).
+  - **The review asks for the credit as a sentence, not a form** (§7):
+    "From [which book] / by [who wrote it], p. [page]" — inline
+    underlined inputs prefilled with what the page showed, all optional;
+    each blank travels with the word before it so a wrap never strands a
+    comma. A two-recipe page shows "This page has two recipes — which
+    one?" with one row per recipe; a tap swaps the whole draft.
+  - **The chat path is the composer's camera, not multimodal chat.** The
+    chat does not accept images today (the fridge/pantry scans are direct
+    routes, not chat), so `#ask-photo-btn` beside the mic opens the same
+    sheet with the typed words as the `hint` (fenced as data in the
+    prompt; may name the book). Building image attachments into
+    `/api/chat` is a separate card. Cook's More sheet gets the row "Add
+    from a cookbook" under "Add from a link" (`GRO_ICONS.camera`).
+  - **Cost:** one `read_recipe_from_photos_llm` row in `api_calls` per
+    read via `_create_with_retry`; `tests/test_usage.py`'s call-site pin
+    and the `api_calls` schema comment now count eleven. Same "scan" rate
+    bucket. Verified live against a throwaway DB with the vision call
+    stubbed (no API key on this machine): row → picker → shrink → read →
+    candidates → credit → save → the credit on the day card, the Meal
+    step and Before you start → "See the page" opens the served photo;
+    the composer camera passes the typed note through. 71 tests in
+    `tests/test_recipe_photo_import.py`; conftest wipes `recipe_photos`.
+  - **Verifier round (same day):** two saves racing on one pending token
+    used to 500 the loser with the filesystem path in `detail` and leave
+    its recipe row behind — `attach_pending` now skips a token whose file
+    vanished between the check and the move (never raises; a path never
+    reaches a response), and the save route wraps the attach the same
+    way. The link host is parsed with `urlsplit` (lowercase, no userinfo,
+    no port — `https://evil.com@seriouseats.com/x` is seriouseats.com),
+    not regexed. The review row reads the stored comma form, its page
+    blank is text with "p."/"pp." following the value, and the
+    unreadable-photo sentence is the server's in both places.
+    `recipe_import.normalise_amount` fixes the three spellings
+    `_parse_quantity` was blind to on model-copied amounts — "1 ½ cups",
+    "400 g / 14 oz" (first printed wins), "2–3 cloves" (top end, as
+    `split_ingredient_line` already did) — for the photo draft AND the
+    model-read half of the link import; markup-read links were already
+    going through the line splitter and are unchanged.
 - **2026-09-13 — Sorting the list: "Have it" and "Use something else" on
   every item. Branch `worktree-grocery-sorting-round`, NOT merged at the
   time of writing.** Loop Board feature (Emily: "there should also be the

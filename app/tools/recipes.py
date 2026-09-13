@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from urllib.parse import urlsplit
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
@@ -30,6 +31,9 @@ def add_recipe(
     advance_prep_notes: str = "",
     advance_prep_step_indices: list[int] | None = None,
     source_url: str = "",
+    source_book: str = "",
+    source_author: str = "",
+    source_page: str = "",
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -59,6 +63,10 @@ def add_recipe(
     steps from "day of" steps instead of just listing them flat.
     source_url is the web page a recipe was brought in from (the recipe
     import sheet sets it); leave it blank for anything generated or typed.
+    source_book / source_author / source_page credit the cookbook a recipe
+    came from ("Salt Fat Acid Heat", "Samin Nosrat", "212") — set them when
+    the user names the book, even without the other two; leave blank
+    otherwise. Every screen that shows the recipe says where it came from.
 
     Before anything is written, every line's cooking amount is held to
     the per-serving ranges in _PLAUSIBLE_PER_SERVING at default_servings
@@ -70,24 +78,67 @@ def add_recipe(
     cur = conn.execute(
         "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
         "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
-        "source_url) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "source_url, source_book, source_author, source_page) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
             json.dumps(food_groups or []), cuisine, main_protein,
             json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
             advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
+            (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
         ),
     )
     conn.commit()
     recipe_id = cur.lastrowid
     conn.close()
+    citation = recipe_citation(source_url, source_book, source_author, source_page)
     return {
         "recipe_id": recipe_id, "name": name, "tags": tags or [], "food_groups": food_groups or [],
         "cuisine": cuisine, "main_protein": main_protein, "instructions": instructions or [],
         "default_servings": default_servings, "advance_prep_step_indices": advance_prep_step_indices or [],
         "source_url": source_url or "",
+        "source_book": (source_book or "").strip(), "source_author": (source_author or "").strip(),
+        "source_page": (source_page or "").strip(),
+        "citation": citation,
     }
+
+
+def recipe_citation(source_url: str = "", source_book: str = "", source_author: str = "", source_page: str = "",
+                    has_photo: bool = False) -> dict | None:
+    """
+    Where a recipe came from, said the one way every screen says it (Loop
+    Board recipe-photo import, 2026-09-13). None for a recipe generated or
+    typed in — those show no credit at all.
+
+    A book:  {"kind": "book", "book", "author", "page", "text": "From Salt Fat Acid Heat, Samin Nosrat, p. 212"}
+    A link:  {"kind": "link", "url", "host", "text": "From seriouseats.com"}
+
+    `text` is the plain sentence; the shell renders `book` in italics from
+    the parts. The book wins when both are set (a photo of a page that also
+    carries a URL is still a book). Never "Source:" — DESIGN_SYSTEM §8.
+    """
+    book = (source_book or "").strip()
+    author = (source_author or "").strip()
+    page = (source_page or "").strip()
+    url = (source_url or "").strip()
+    if book or author or page or has_photo:
+        parts = [book or "a cookbook"]
+        if author:
+            parts.append(author)
+        if page:
+            parts.append(("pp. " if re.search(r"[–\-]", page) else "p. ") + page)
+        return {"kind": "book", "book": book, "author": author, "page": page, "text": "From " + ", ".join(parts)}
+    if url:
+        # The registered host only: lowercase, no scheme, no userinfo
+        # ("https://evil.com@seriouseats.com/x" is seriouseats.com), no
+        # port, no path, no leading www.
+        try:
+            host = (urlsplit(url).hostname or "").lower()
+        except ValueError:
+            host = ""
+        host = re.sub(r"^www\.", "", host)
+        return {"kind": "link", "url": url, "host": host, "text": f"From {host}" if host else "From a link"}
+    return None
 
 
 def update_recipe_details(
@@ -171,7 +222,8 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
         SELECT id, name, notes, ingredients_json, tags_json, food_groups_json,
                times_cooked, last_cooked_date, rating, feedback_notes, cuisine, main_protein,
                temporarily_excluded, instructions_json, default_servings, prep_time_minutes,
-               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, source_url
+               cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, source_url,
+               source_book, source_author, source_page
         FROM recipes WHERE household_id = ?
         {exclusion_clause}
         ORDER BY (rating = 'liked') DESC, (rating = 'disliked') ASC, times_cooked DESC, name ASC
@@ -195,6 +247,11 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             if len(notes_by_recipe[nr["recipe_id"]]) < 3:  # most recent few is plenty of signal
                 notes_by_recipe[nr["recipe_id"]].append(nr["note"])
     conn.close()
+    # The page photos a recipe was read from, if any (recipe photo import).
+    # Imported lazily: app.recipe_photos reads this package's _shared, and
+    # this package is still being assembled when this module is imported.
+    from ..recipe_photos import photo_urls_by_recipe
+    photos_by_recipe = photo_urls_by_recipe() if recipe_ids else {}
 
     return [
         {
@@ -225,6 +282,19 @@ def list_recipes(include_temporarily_excluded: bool = True) -> list[dict]:
             "advance_prep_step_indices": json.loads(r["advance_prep_step_indices_json"]),
             # The web page it was brought in from, or '' (recipe import).
             "source_url": r["source_url"] or "",
+            # The cookbook it was photographed from, or '' (recipe photo import).
+            "source_book": r["source_book"] or "",
+            "source_author": r["source_author"] or "",
+            "source_page": r["source_page"] or "",
+            # Where it came from, ready to say — None for a generated or
+            # typed recipe. Every screen that shows a recipe renders this
+            # one field rather than re-deriving it from the four above.
+            "citation": recipe_citation(
+                r["source_url"], r["source_book"], r["source_author"], r["source_page"],
+                has_photo=bool(photos_by_recipe.get(r["id"])),
+            ),
+            # The page photo(s) it was read from, in page order; [] otherwise.
+            "photo_urls": photos_by_recipe.get(r["id"], []),
         }
         for r in rows
     ]

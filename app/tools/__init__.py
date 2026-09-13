@@ -411,6 +411,7 @@ from .recipes import (  # noqa: F401
     plausible_cooking_quantity,
     produce_count_message,
     produce_count_problem,
+    recipe_citation,
     save_cooking_quantities,
     scale_recipe,
     settle_cooking_quantities,

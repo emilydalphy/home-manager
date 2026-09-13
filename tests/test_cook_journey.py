@@ -214,6 +214,7 @@ _FUNCTIONS = [
     "cookGetOutRowHtml",
     "cookGetOutHtml",
     "cookKitHtml",
+    "recipeCitationHtml",  # the credit line at the foot of Before you start (recipe photo import)
     "cookPrepStageHtml",
     "cookStepStageHtml",
     "cookMethodStageHtml",

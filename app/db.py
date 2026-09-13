@@ -189,6 +189,11 @@ _MIGRATIONS = [
     ("recipes", "advance_prep_step_indices_json", "TEXT NOT NULL DEFAULT '[]'"),
     # The link a recipe was imported from (recipe import, 2026-09-11).
     ("recipes", "source_url", "TEXT NOT NULL DEFAULT ''"),
+    # The cookbook a recipe was photographed from (recipe photo import,
+    # 2026-09-13). The recipe_photos table is new, so schema.sql creates it.
+    ("recipes", "source_book", "TEXT NOT NULL DEFAULT ''"),
+    ("recipes", "source_author", "TEXT NOT NULL DEFAULT ''"),
+    ("recipes", "source_page", "TEXT NOT NULL DEFAULT ''"),
     # Phase 6: set explicitly at creation time (an atomic "does this household
     # have zero prior plans yet?" check at the moment of insert), never
     # inferred later by querying for the earliest plan row — see

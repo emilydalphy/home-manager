@@ -125,6 +125,10 @@ def main():
     conn.execute("UPDATE households SET goals = '' WHERE id = ?", (household_id,))
     conn.commit()
     conn.close()
+    # The recipe page photos live on disk beside the database, indexed by
+    # the recipe_photos rows just wiped — drop the files with them.
+    from app import recipe_photos
+    recipe_photos.remove_household_photos(household_id)
 
     print(
         "\nDone. The app now has zero household members, so the next visit to "

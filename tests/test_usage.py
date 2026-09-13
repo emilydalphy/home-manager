@@ -464,6 +464,10 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # markup gets its visible text read by the model. See
         # agent.read_recipe_from_page_llm and app/recipe_import.py.
         "read_recipe_from_page_llm",
+        # One or two photographed cookbook pages, read for the recipe and
+        # the book's credit in a single vision call. See
+        # agent.read_recipe_from_photos_llm and /api/recipes/import-photo.
+        "read_recipe_from_photos_llm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

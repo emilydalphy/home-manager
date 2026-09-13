@@ -6204,6 +6204,151 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
 }
 .rli-problem[hidden] { display: none; }
 
+/* ---- "Add from a cookbook" (recipe photo import, 2026-09-13) ---- */
+/* The page photo(s) before reading: small, in a row, each with its own
+   44px remove. */
+.rli-shots { display: flex; gap: 8px; }
+.rli-shot {
+  position: relative;
+  width: 96px;
+  height: 128px;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  border: 1.5px solid var(--hairline);
+  background: var(--surface);
+}
+.rli-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rli-shot-remove {
+  position: absolute;
+  z-index: 1; /* its own stacking context, so the ::before disc sits under the × and over the photo */
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ivory-ink);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+/* The × sits on a small scrim-coloured disc so it reads on any page. */
+.rli-shot-remove::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--scrim);
+  z-index: -1;
+}
+/* A page with two recipes: one row of quiet outline buttons, the chosen
+   one tinted — a highlight that says why (§2b S6) via the group's label. */
+.rli-cands { display: flex; flex-direction: column; gap: 6px; }
+.rli-cand {
+  min-height: 44px;
+  text-align: left;
+  padding: 0 14px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.rli-cand.is-chosen { background: var(--celadon-tint); border-color: var(--celadon-edge); }
+/* The credit as a sentence with blanks in it: "From [book], [author], p. [page]".
+   Inputs styled as underlined words so it reads as a line, not a form. */
+.rli-cite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 4px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+}
+.rli-cite-part { display: inline-flex; align-items: baseline; gap: 4px; flex: 1 1 160px; min-width: 0; }
+.rli-cite-part.is-book { flex-basis: 100%; } /* the title gets the whole first line */
+.rli-cite-part.is-short { flex: 0 1 110px; }
+.rli-cite-word { line-height: 44px; white-space: nowrap; }
+.rli-cite-input {
+  min-height: 44px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1.5px solid var(--hairline-strong);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 4px;
+  font-family: var(--font-body);
+  font-size: 16px; /* iOS: under 16px zooms on focus */
+  font-style: italic;
+  color: var(--ink);
+}
+.rli-cite-input.is-short { font-style: normal; }
+.rli-cite-input::placeholder { color: var(--ink-placeholder); font-style: normal; }
+.rli-cite-input:focus { outline: none; border-bottom-color: var(--spruce); }
+
+/* Where a recipe came from, on every screen that shows one (recipe photo
+   import, 2026-09-13; recipeCitationHtml in shell.js). One quiet line —
+   the book in italics, its author, the page — never a "Source:" label.
+   With a kept page photo it is a button, sized to rule 6. */
+.recipe-cite {
+  display: block;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.recipe-cite i { font-style: italic; }
+button.recipe-cite {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+.recipe-cite-open { color: var(--apricot-label); font-weight: 700; white-space: nowrap; }
+button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); }
+.wk-meal-cite { padding: 6px 4px 0; }
+.wk-slot-cite { font-size: 12.5px; margin-top: 2px; }
+.cook-cite { padding: 10px 4px 0; }
+
+/* The kept page photo, in a sheet over whatever is open. Same geometry as
+   #rli-sheet, one step above it in z so it can open from the review too. */
+#rph-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: fadeIn .18s ease;
+  z-index: 42;
+}
+#rph-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 43;
+  max-height: 92%;
+  background: var(--ground);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 12px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#rph-scrim[hidden], #rph-sheet[hidden] { display: none; }
+.rph-body { overflow-y: auto; min-height: 0; padding: 0 18px; display: flex; flex-direction: column; gap: 10px; }
+.rph-img { width: 100%; height: auto; display: block; border-radius: var(--radius-control); border: 1.5px solid var(--hairline); }
+
 /* =====================================================================
    COOK — the Meals tab's second state (Stage 2 slice 3, InnCooker)
    ===================================================================== */

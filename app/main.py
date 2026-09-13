@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, backup, calendar_feed, households, ratelimit, recipe_import, security
+from . import agent, backup, calendar_feed, households, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -721,6 +721,14 @@ class AddRecipeRequest(BaseModel):
     cuisine: str = ""
     main_protein: str = ""
     source_url: str = ""
+    # The cookbook credit (recipe photo import, 2026-09-13) — whatever the
+    # photo showed plus whatever the household filled in; all optional.
+    source_book: str = ""
+    source_author: str = ""
+    source_page: str = ""
+    # The pending page photo(s) /api/recipes/import-photo stashed, to keep
+    # with the recipe. Only ever this household's tokens resolve.
+    photo_tokens: list[str] = []
 
 
 class CookingDeviationRequest(BaseModel):
@@ -1578,6 +1586,81 @@ def import_recipe_url(request: Request, req: ImportRecipeUrlRequest):
     return {"draft": draft}
 
 
+@app.post("/api/recipes/import-photo")
+async def import_recipe_photo(
+    request: Request,
+    photo: UploadFile = File(...),
+    photo2: UploadFile | None = File(None),
+    hint: str = Form(""),
+):
+    """
+    Bring a recipe in from a photographed cookbook page (Loop Board,
+    2026-09-13) — one photo, or two when the recipe runs across the
+    spread. Same shape as the link import: the model reads the page(s)
+    (agent.read_recipe_from_photos_llm, one vision call for the pair) and
+    a DRAFT comes back with a proposed citation; nothing is saved here.
+    The photo(s) are stashed as pending under this household and the draft
+    carries their tokens, so the save can keep them with the recipe. A bad
+    read stashes nothing — the household retakes.
+
+    Multipart like the receipt and fridge scans; `hint` is whatever the
+    household typed alongside (the chat path), fenced as data in the prompt.
+    """
+    _enforce_rate_limit(request, "scan")
+    uploads = [photo] + ([photo2] if photo2 is not None and photo2.filename else [])
+    images: list[tuple[bytes, str]] = []
+    for upload in uploads[:recipe_photos.MAX_PHOTOS]:
+        data = await upload.read()
+        try:
+            media_type = recipe_photos.check_upload(data)
+        except recipe_photos.PhotoError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        images.append((data, media_type))
+    try:
+        detail = await run_in_threadpool(
+            agent.read_recipe_from_photos_llm,
+            [(base64.b64encode(data).decode("ascii"), media_type) for data, media_type in images],
+            hint or "",
+        )
+        draft = recipe_import.draft_from_photo_read(detail)
+    except recipe_import.RecipeImportError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except AssistantUnavailableError as e:
+        logger.warning("Recipe photo import hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Recipe photo import failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    try:
+        tokens = [recipe_photos.stash_pending(data, media_type) for data, media_type in images]
+    except OSError:
+        # The read worked; only keeping the picture didn't. The recipe is
+        # the thing the household came for, so the draft still goes back —
+        # without photos, and the sheet says nothing about them.
+        logger.exception("Couldn't keep the recipe photo")
+        tokens = []
+    draft["photo_tokens"] = tokens
+    for candidate in draft.get("candidates") or []:
+        candidate["photo_tokens"] = tokens
+    return {"draft": draft}
+
+
+@app.get("/api/recipes/{recipe_id}/photos/{position}")
+def recipe_photo(recipe_id: int, position: int):
+    """
+    One of the session household's recipe page photos. The row is looked
+    up under household_id() and the file is read from that household's
+    own folder (app/recipe_photos.py) — another household's photo is a
+    404 whatever ids are asked for, and nothing about the path comes from
+    the request.
+    """
+    found = recipe_photos.photo_file(recipe_id, position)
+    if not found:
+        raise HTTPException(status_code=404, detail="No photo here.")
+    path, media_type = found
+    return FileResponse(path, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
+
+
 # ---------- the household's calendar (read-only, by subscribe link) ----------
 #
 # Loop Board "Meals: plan the week around what's actually on the household's
@@ -1763,7 +1846,25 @@ def add_recipe_endpoint(req: AddRecipeRequest):
             cuisine=req.cuisine.strip(),
             main_protein=req.main_protein.strip(),
             source_url=source_url,
+            source_book=req.source_book.strip()[:200],
+            source_author=req.source_author.strip()[:200],
+            source_page=req.source_page.strip()[:40],
         )
+        # The page photo(s) the draft was read from, kept with the recipe
+        # (recipe photo import). Only this household's pending tokens
+        # resolve; a stale or foreign token is skipped, never an error.
+        photos = []
+        if req.photo_tokens:
+            try:
+                photos = recipe_photos.attach_pending(result["recipe_id"], req.photo_tokens)
+            except Exception:
+                # The recipe is saved; the photo isn't on it. Logged, never
+                # surfaced — a filesystem error names a path, and a path
+                # is not a sentence for the household.
+                logger.exception("Attaching the recipe photo failed")
+        result["photo_urls"] = [p["url"] for p in photos]
+        if photos and not result.get("citation"):
+            result["citation"] = tools.recipe_citation(has_photo=True)
     except HTTPException:
         raise
     except Exception as e:

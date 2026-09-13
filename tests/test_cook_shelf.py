@@ -418,8 +418,9 @@ def test_recipes_add_from_a_link_and_inventory_are_behind_one_more_link():
     assert 'data-kit="more">More ···</button>' in link
     assert "cook-empty-link" in link, "the 44px in-prose link (rule 6)"
     rows = _function("cookMoreRowsHtml")
-    assert rows.count('class="kit-row"') == 3
+    assert rows.count('class="kit-row"') == 4  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
     for needle in ('data-kit="recipes"', ">Recipes<", 'data-kit="recipe-link"', ">Add from a link<",
+                   'data-kit="recipe-photo"', ">Add from a cookbook<",
                    'data-sheet="inventory"', 'kit-row-title">Inventory'):
         assert needle in rows, needle
     assert "dock-primary" not in rows and "btn-primary" not in rows
